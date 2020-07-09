@@ -1,0 +1,15 @@
+{
+  "name": "antix-parse",
+  "version": "1.0.0",
+  "description": "EverQuest log parsing application.",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "author": "Guild Antix",
+  "license": "MIT",
+  "dependencies": {
+    "electron": "^9.1.0",
+    "materialize-css": "^1.0.0-rc.2"
+  }
+}
