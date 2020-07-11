@@ -1,0 +1,67 @@
+<p style="margin: 0;">
+    <mat-toolbar class="titlebar" color="primary">
+        <span>Antix Parse</span>
+        <span class="spacer"></span>
+        <button mat-icon-button aria-label="Exit application" (click)="quitApp()">
+            <mat-icon>clear</mat-icon>
+        </button>
+    </mat-toolbar>
+</p>
+<section>
+    <mat-tab-group animationDuration="0ms" (selectedIndexChange)="onChangeTabs($event)" [selectedIndex]="0">
+        <mat-tab label="DKP Tracker">
+                <mat-toolbar>
+                    <span>DKP Tracker</span>
+                    <span class="spacer"></span>
+                </mat-toolbar>
+                <div class="tab-content">
+
+                    <button mat-button color="accent" (click)="parseToBulkUpload()">Copy Bulk Upload String</button>
+                    <button mat-button color="warn" (click)="markAllDkpEntered()">All DKP Entries Completed</button>
+
+                </div>
+
+        </mat-tab>
+        <mat-tab label="Overlays">
+                <mat-toolbar>
+                    <span>Overlays</span>
+                    <span class="spacer"></span>
+                </mat-toolbar>
+                <div class="tab-content"></div>
+
+        </mat-tab>
+        <mat-tab label="Settings">
+                <mat-toolbar>
+                    <span>Settings</span>
+                    <span class="spacer"></span>
+                    <small>Version {{version}}</small>
+                </mat-toolbar>
+                <div class="tab-content">
+
+                    <fieldset>
+                        <legend><span>Log File</span><span class="spacer"></span><button mat-button (click)="openModal()" color="accent">Select Log File</button></legend>
+                        <small>Current: {{logFile}}</small>
+                    </fieldset>
+        
+                    <fieldset>
+                        <legend><span>Text to Speech</span></legend>
+                        <mat-select [(ngModel)]="voiceIndex" (selectionChange)="onChangeVoice()">
+                            <mat-option *ngFor="let option of voiceOptions; let i = index" [value]="i">{{option.name}}</mat-option>
+                        </mat-select>
+                    </fieldset>
+
+                </div>
+
+        </mat-tab>
+    </mat-tab-group>
+
+    <input type="file" #fileSelector style="display:none;" accept="*.txt" (change)="fileSelected($event)" />
+    <div class="console" *ngIf="showConsole">
+        <ul>
+            <li *ngFor="let item of dkpEntries">
+                <span class="inline-button warn" (click)="removeEntry(item)">delete</span> {{item.character}} [<span class="item-link">{{item.item}}</span>] for <span class="dkp credit">{{item.dkp}}</span> DKP {{item.timeStamp | date:'MMM dd'}}
+            </li>
+        </ul>
+    </div>
+
+</section>
