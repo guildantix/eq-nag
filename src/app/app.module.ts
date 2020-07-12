@@ -9,20 +9,22 @@ import { MainComponent } from './main.component';
 import { RouterModule, Routes } from '@angular/router';
 import { appRoutes } from './ng.routes';
 
-@NgModule({
-  imports: [
+@NgModule( {
+    imports: [
         BrowserModule,
         FormsModule,
         MaterialModule,
         DialogModule,
         BrowserAnimationsModule,
         RouterModule.forRoot( appRoutes, { enableTracing: false, useHash: true } ),
-  ],
+    ],
     declarations: [
         AppComponent,
         MainComponent,
     ],
-  providers: [],
-  bootstrap: [AppComponent],
-})
-export class AppModule {}
+    providers: [
+        
+    ],
+    bootstrap: [ AppComponent ],
+} )
+export class AppModule { }

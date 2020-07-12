@@ -1,6 +1,4 @@
 import { Component, ViewChild, ElementRef, NgZone } from '@angular/core';
-import { IpcRenderer, remote } from 'electron';
-// import { DkpEntryModel } from '../../data/models/dkp-entry.js';
 import * as _ from 'lodash';
 import { MatSnackBar, MatSnackBarRef, SimpleSnackBar } from '@angular/material/snack-bar';
 
