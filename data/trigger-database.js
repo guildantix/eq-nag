@@ -1,7 +1,9 @@
 const Store = require( './store' );
 const _ = require( 'lodash' );
 const Trigger = require( './models/trigger' );
-const { v4: uuid } = require( 'uuid' );
+const generate = require('nanoid/generate');
+const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+const idLen = 16;
 
 class TriggerDatabaseStore extends Store {
 
@@ -38,7 +40,7 @@ class TriggerDatabaseStore extends Store {
         this.#data.triggers = this.#data.triggers ? this.#data.triggers : [];
 
         // Generate a new id for the trigger.
-        trigger.triggerId = uuid();
+        trigger.triggerId = generate( alphabet, idLen );
 
         // Add it to the store.
         this.#data.triggers.push( trigger );
@@ -113,7 +115,7 @@ class TriggerDatabaseStore extends Store {
     /**
      * Returns the trigger with the given id.
      * 
-     * @param {uuid} triggerId The trigger id of the desired trigger.
+     * @param {string} triggerId The trigger id of the desired trigger.
      */
     find( triggerId ) {
 
@@ -134,7 +136,7 @@ class TriggerDatabaseStore extends Store {
 
 
 
-    
+
     /**
      * Returns a list of triggers predicate returns truthy for.
      * 
