@@ -22,6 +22,7 @@ function createWindow() {
         frame: false,
         webPreferences: {
             nodeIntegration: true,
+            devTools: app.isDev(),
         },
     } );
 
@@ -33,7 +34,9 @@ function createWindow() {
         } )
     );
     // Open the DevTools.
-    mainWindow.webContents.openDevTools();
+    if ( app.isDev() ) {
+        mainWindow.webContents.openDevTools();
+    }
 
     mainWindow.on( 'closed', function () {
         logWatcherWindow.close();
@@ -109,6 +112,8 @@ function createWindow() {
     //     console.log( event, path );
     // } );
 };
+
+app.isDev = () => process.defaultApp === true;
 
 app.commandLine.appendSwitch( 'enable-speech-dispatcher' );
 
