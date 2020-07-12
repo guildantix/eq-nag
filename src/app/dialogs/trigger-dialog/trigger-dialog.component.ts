@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { IpcRenderer } from 'electron';
+import { IpcService } from 'src/app/ipc.service';
 
 @Component( {
     selector: 'app-trigger-dialog',
@@ -8,24 +8,12 @@ import { IpcRenderer } from 'electron';
 } )
 export class TriggerDialogComponent implements OnInit {
     
-    private ipc: IpcRenderer;
-
-    constructor() {
-        if ( ( <any>window ).require ) {
-            try {
-                this.ipc = ( <any>window ).require( 'electron' ).ipcRenderer;
-            } catch ( e ) {
-                throw e;
-            }
-        } else {
-            console.warn( 'App not running inside Electron!' );
-        }
-    }
+    constructor( private ipcService: IpcService ) { }
 
     ngOnInit () { }
 
     public closeModal (): void {
-        this.ipc.send( 'trigger:dialog:close' );
+        this.ipcService.closeNewTriggerDialog();
     }
 
     public onChangeTabs ( index: number ): void {

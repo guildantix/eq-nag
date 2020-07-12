@@ -1,19 +1,19 @@
-import { Component, ViewChild, ElementRef, NgZone } from '@angular/core';
-import { IpcRenderer, remote } from 'electron';
-// import { DkpEntryModel } from '../../data/models/dkp-entry.js';
+import { Component, ViewChild, ElementRef, OnInit } from '@angular/core';
 import * as _ from 'lodash';
 import { MatSnackBar, MatSnackBarRef, SimpleSnackBar } from '@angular/material/snack-bar';
-// implements OnInit
+import { IpcService } from './ipc.service';
+import { DkpEntryModel } from './core.model';
+import { VirtualTimeScheduler } from 'rxjs';
+
 @Component( {
     selector: 'app-main',
     templateUrl: 'main.component.html',
     styleUrls: [ 'main.component.scss', 'core.scss' ]
 } )
-export class MainComponent  {
+export class MainComponent implements OnInit  {
 
-    private ipc: IpcRenderer;
     public msg: string;
-    public dkpEntries: any[] = [];
+    public dkpEntries: DkpEntryModel[] = [];
     public version: string;
     public logFile: string = 'Not Selected';
     public showConsole: boolean = true;
@@ -22,88 +22,46 @@ export class MainComponent  {
 
     @ViewChild( 'fileSelector' ) private fileSelector: ElementRef<HTMLInputElement>;
 
-    constructor( private ngZone: NgZone, private snackBar: MatSnackBar ) {
-        if ( ( <any>window ).require ) {
-            try {
-                speechSynthesis.onvoiceschanged = () => {
-                    this.voiceOptions = speechSynthesis.getVoices();
-                };
-                this.ipc = ( <any>window ).require( 'electron' ).ipcRenderer;
-                this.ipc.on( 'info', ( event, data ) => {
-                    this.msg = data.msg;
-                } );
-                this.ipc.on( 'tick', ( event, data ) => {
-                    ngZone.run( () => {
-                        this.dkpEntries = data.dkpEntries;
-                        this.logFile = data.logFile;
-                        this.voiceIndex = data.voiceIndex;
-                    } );
-                } );
-                this.ipc.on( 'transmitDkpDatabase', ( event: any, data: any[] ) => {
-                    ngZone.run( () => {
-                        this.dkpEntries = data;
-                    } );
-                } );
-                this.ipc.on( 'changeLogFile', ( event: any, data: any ) => {
-                    ngZone.run( () => {
-                        this.logFile = data;
-                    } );
-                } );
-                this.ipc.on( 'addDkpEntry', ( event: any, data: any ) => {
-                    ngZone.run( () => {
-                        if ( data && this.voiceIndex > -1 ) {
-                            var utter = new SpeechSynthesisUtterance();
-                            utter.text = `${data.item} awarded to ${data.character} for ${data.dkp} DKP.`;
-                            utter.voice = this.voiceOptions[ this.voiceIndex ];
-                            utter.onend = function ( event ) {  }
-                            speechSynthesis.speak( utter );
-                        }
-                    } );
-                } );
-                this.ipc.on( 'dkpAwardRemoved', ( event, data ) => {
-                    ngZone.run( () => {
-                        let i = _.findIndex( this.dkpEntries, ( e ) => e.entryId === data );
-                        this.dkpEntries.splice( i, 1 );
-                    } );
-                } );
-                this.ipc.on( 'update-available', ( event: any, data: any[] ) => {
-                    console.log( 'update available' );
-                    ngZone.run( () => {
-                        let bar: MatSnackBarRef<SimpleSnackBar> = snackBar.open( 'New release available.', 'Dismiss', { duration: 5000 } );
-                    } );
-                } );
-                this.ipc.on( 'update-downloaded', ( event: any, data: any[] ) => {
-                    console.log( 'update downloaded' );
-                    ngZone.run( () => {
-                        let bar: MatSnackBarRef<SimpleSnackBar> = snackBar.open( 'New release downloaded.', 'Restart', { duration: 5000 } );
-                        bar.onAction().subscribe( () => {
-                            this.ipc.send( 'restart_app', null );
-                        } );
-                    } );
-                } );
-                this.ipc.send( 'app_version' );
-                this.ipc.once( 'app_version', ( e, v ) => {
-                    ngZone.run( () => {
-                        this.version = v.version;
-                    } );
-                } );
-                this.ipc.on( 'console:log', ( event: any, data: any ) => {
-                    console.log( 'log', data );
-                } );
-            } catch ( e ) {
-                throw e;
+    constructor( private snackBar: MatSnackBar, private ipcService: IpcService ) {
+        speechSynthesis.onvoiceschanged = () => {
+            this.voiceOptions = speechSynthesis.getVoices();
+        };
+    }
+
+    ngOnInit (): void {
+        this.ipcService.tickReceived().subscribe( data => {
+            this.dkpEntries = data.dkpEntries;
+            this.logFile = data.logFile;
+            this.voiceIndex = data.voiceIndex;
+        } );
+
+        this.ipcService.dkpEntryAdded().subscribe( model => {
+            if ( model && this.voiceIndex > -1 ) {
+                var utter = new SpeechSynthesisUtterance();
+                utter.text = `${model.item} awarded to ${model.character} for ${model.dkp} DKP.`;
+                utter.voice = this.voiceOptions[ this.voiceIndex ];
+                utter.onend = function ( event ) {  }
+                speechSynthesis.speak( utter );
             }
-        } else {
-            console.warn( 'App not running inside Electron!' );
-        }
+        } );
+
+        this.ipcService.dkpEntryRemoved().subscribe( entryId => {
+            let i = _.findIndex( this.dkpEntries, ( e: DkpEntryModel ) => e.entryId === entryId );
+            this.dkpEntries.splice( i, 1 );
+        } );
+
+        this.ipcService.receiveDkpDatabase().subscribe( data => this.dkpEntries = data );
+        this.ipcService.logFileChanged().subscribe( data => this.logFile = data );
+        this.ipcService.getAppVersion().subscribe( version => this.version = version );
+        this.ipcService.consoleLogRequested().subscribe( data => console.log( 'from main', data ) );
     }
 
     removeEntry ( entry: any ): void {
-        this.ipc.send( 'removeDkpAward', entry );
+        this.ipcService.removeDkpAward( entry );
     }
 
     quitApp (): void {
-        this.ipc.send( 'quitApp' );
+        this.ipcService.quitApp();
     }
 
     openModal () {
@@ -127,7 +85,7 @@ export class MainComponent  {
     }
 
     fileSelected ( e: any ) {
-        this.ipc.send( 'logSelected', this.fileSelector.nativeElement.files[ 0 ].path );
+        this.ipcService.updateLogFile( this.fileSelector.nativeElement.files[ 0 ].path );
     }
 
     onChangeTabs ( selectedIndex: number ): void {
@@ -135,7 +93,7 @@ export class MainComponent  {
     }
 
     onChangeVoice (): void {
-        this.ipc.send( 'selectVoice', this.voiceIndex );
+        this.ipcService.updateVoiceIndex( this.voiceIndex );
     }
 
     parseToBulkUpload (): void {
@@ -147,7 +105,7 @@ export class MainComponent  {
             } );
 
             // Send the data to the clipboard
-            this.ipc.send( 'clipboard:writeText', bulkUploadString.replace( /\r\n$/gi, '' ) );
+            this.ipcService.sendTextToClipboard( bulkUploadString.replace( /\r\n$/gi, '' ) );
 
             // Notify the user of success
             this.snackBar.open( 'Bulk data has been copied to your clipboard!', 'Dismiss', { duration: 5000 } );
@@ -155,14 +113,14 @@ export class MainComponent  {
     }
 
     markAllDkpEntered (): void {
-        this.ipc.send( 'dkp:markAsEntered', this.dkpEntries );
+        this.ipcService.markDkpEntriesAsEntered( this.dkpEntries );
     }
 
     resetDkpLog (): void {
-        this.ipc.send( 'dkp:reset' );
+        this.ipcService.clearDkpLog();
     }
 
     showNewTriggerDialog (): void {
-        this.ipc.send( 'trigger:dialog:new' );
+        this.ipcService.showNewTriggerDialog();
     }
 }

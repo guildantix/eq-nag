@@ -5,6 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { MaterialModule } from '../material.module';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { TriggerDialogComponent } from './trigger-dialog/trigger-dialog.component';
+import { IpcService } from '../ipc.service';
 
 @NgModule( {
     imports: [
@@ -19,6 +20,9 @@ import { TriggerDialogComponent } from './trigger-dialog/trigger-dialog.componen
     declarations: [
         TriggerDialogComponent
     ],
-    providers: [ DialogService ],
+    providers: [
+        DialogService,
+        IpcService
+    ],
 } )
 export class DialogModule { }
