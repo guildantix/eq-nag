@@ -5,6 +5,9 @@ import { DialogModule } from './dialogs/dialog.module';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { AppComponent } from './app.component';
 import { FormsModule } from '@angular/forms';
+import { MainComponent } from './main.component';
+import { RouterModule, Routes } from '@angular/router';
+import { appRoutes } from './ng.routes';
 
 @NgModule({
   imports: [
@@ -13,8 +16,12 @@ import { FormsModule } from '@angular/forms';
         MaterialModule,
         DialogModule,
         BrowserAnimationsModule,
+        RouterModule.forRoot( appRoutes, { enableTracing: false, useHash: true } ),
   ],
-  declarations: [AppComponent],
+    declarations: [
+        AppComponent,
+        MainComponent,
+    ],
   providers: [],
   bootstrap: [AppComponent],
 })
