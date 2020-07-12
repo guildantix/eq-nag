@@ -8,3 +8,5 @@ class Trigger {
     actions = [];
 
 }
+
+module.exports = Trigger;
