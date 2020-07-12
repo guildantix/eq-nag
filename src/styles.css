@@ -38,3 +38,7 @@ ol, p, ul {
     font-size: 16px;
     line-height: 28px;
 }
+
+::-webkit-scrollbar {
+    display: none;
+}

@@ -8,6 +8,7 @@ const DkpDatabaseStore = require( './data/dkp-database' );
 const TriggerDatabaseStore = require( './data/trigger-database' );
 
 var mainWindow, logWatcherWindow, testWindow;
+var triggerWindow;
 const userPreferences = new UserPreferencesStore( {} );
 const dkpDatabase = new DkpDatabaseStore();
 const triggerDatabase = new TriggerDatabaseStore();
@@ -141,6 +142,33 @@ function openModal() {
         modal.show();
     } );
 }
+
+ipcMain.on( 'trigger:dialog:new', ( event, arg ) => {
+    triggerWindow = new BrowserWindow( {
+        parent: mainWindow,
+        modal: true,
+        show: false,
+        width: 700,
+        height: 870,
+        frame: false,
+        webPreferences: {
+            nodeIntegration: true,
+            devTools: app.isDev(),
+        }
+    } );
+    triggerWindow.loadURL( `file://${__dirname}/dist/index.html#/trigger/new` );
+    // modal.loadURL( "https://www.sitepoint.com" );
+    triggerWindow.once( "ready-to-show", () => {
+        triggerWindow.show();
+    } );
+} );
+
+ipcMain.on( 'trigger:dialog:close', ( event, arg ) => {
+    if ( triggerWindow ) {
+        triggerWindow.close();
+        triggerWindow = null;
+    }
+} );
 
 ipcMain.on( "openModal", ( event, arg ) => {
     openModal();
