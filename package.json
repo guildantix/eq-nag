@@ -30,6 +30,7 @@
     "lodash": "^4.17.15",
     "rxjs": "~6.5.5",
     "tslib": "^2.0.0",
+    "uuid": "^8.2.0",
     "zone.js": "~0.10.3"
   },
   "devDependencies": {
@@ -55,8 +56,8 @@
     "typescript": "~3.9.5"
   },
   "repository": {
-    "type" : "git",
-    "url" : "https://github.com/guildantix/eq-parse.git",
+    "type": "git",
+    "url": "https://github.com/guildantix/eq-parse.git",
     "token": "e3460400ae1273a5cac83e1b86a5aceae7f8bab7"
   },
   "build": {
@@ -68,7 +69,10 @@
         "nsis"
       ],
       "publish": [
-        {"provider": "github", "token": "e3460400ae1273a5cac83e1b86a5aceae7f8bab7"}
+        {
+          "provider": "github",
+          "token": "e3460400ae1273a5cac83e1b86a5aceae7f8bab7"
+        }
       ]
     },
     "portable": {
