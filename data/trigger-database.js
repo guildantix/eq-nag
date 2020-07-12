@@ -1,3 +1,4 @@
+const { app, BrowserWindow, ipcMain } = require( "electron" );
 const Store = require( './store' );
 const _ = require( 'lodash' );
 const Trigger = require( './models/trigger' );
@@ -18,6 +19,44 @@ class TriggerDatabaseStore extends Store {
         super( {
             configName: "trigger-database",
             defaults: { triggers: [] },
+        } );
+
+        this.#data = this.parseDataFile();
+    }
+
+
+
+
+
+
+
+
+
+    
+    /**
+     * Attaches store events to ipc main and dispatches react events to the main window.
+     * 
+     * @param {BrowserWindow} mainWindow The main window of the application.
+     * @param {TriggerDatabaseStore} _store The store object.
+     * @param {function} sendTick The send tick method.
+     */
+    attachIpcEvents( mainWindow, sendTick ) {
+        ipcMain.on( 'trigger:add', ( event, data ) => {
+            this.add( data );
+            sendTick();
+        } );
+
+        ipcMain.on( 'trigger:remove', ( event, data ) => {
+            this.remove( data );
+            sendTick();
+        } );
+
+        ipcMain.on( 'trigger:find', ( event, triggerId ) => {
+            event.sender.webContents.send( 'trigger:find', this.find( triggerId ) );
+        } );
+
+        ipcMain.on( 'trigger:get', ( event ) => {
+            event.sender.webContents.send( 'trigger:find', this.getAll() );
         } );
     }
 

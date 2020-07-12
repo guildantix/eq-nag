@@ -5,10 +5,12 @@ const path = require( "path" );
 const { clipboard } = require( 'electron' );
 const UserPreferencesStore = require( './data/user-preferences' );
 const DkpDatabaseStore = require( './data/dkp-database' );
+const TriggerDatabaseStore = require( './data/trigger-database' );
 
 var mainWindow, logWatcherWindow, testWindow;
 const userPreferences = new UserPreferencesStore( {} );
 const dkpDatabase = new DkpDatabaseStore();
+const triggerDatabase = new TriggerDatabaseStore();
 
 GH_TOKEN = "e3460400ae1273a5cac83e1b86a5aceae7f8bab7";
 
@@ -188,7 +190,7 @@ ipcMain.on( 'removeDkpAward', ( event, data ) => {
 ipcMain.on( 'quitApp', ( event, data ) => { app.quit(); } );
 
 function sendTick() {
-    mainWindow.webContents.send( 'tick', { dkpEntries: dkpDatabase.getAllUnentered(), logFile: userPreferences.logFile, voiceIndex: userPreferences.voiceIndex } );
+    mainWindow.webContents.send( 'tick', { dkpEntries: dkpDatabase.getAllUnentered(), logFile: userPreferences.logFile, voiceIndex: userPreferences.voiceIndex, triggers: triggerDatabase.getAll() } );
 }
 
 autoUpdater.signals.updateDownloaded( () => {
@@ -220,3 +222,5 @@ ipcMain.on( 'dkp:markAsEntered', ( event, entries ) => {
     dkpDatabase.markRangeEntered( entries );
     sendTick();
 } );
+
+triggerDatabase.attachIpcEvents( mainWindow, sendTick );
