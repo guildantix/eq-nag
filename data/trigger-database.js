@@ -2,7 +2,7 @@ const { app, BrowserWindow, ipcMain } = require( "electron" );
 const Store = require( './store' );
 const _ = require( 'lodash' );
 const Trigger = require( './models/trigger' );
-const generate = require('nanoid/generate');
+const generate = require('nanoid').generate;
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const idLen = 16;
 
@@ -32,7 +32,7 @@ class TriggerDatabaseStore extends Store {
 
 
 
-    
+
     /**
      * Attaches store events to ipc main and dispatches react events to the main window.
      * 
@@ -229,3 +229,5 @@ class TriggerDatabaseStore extends Store {
         }
     }
 }
+
+module.exports = TriggerDatabaseStore;
