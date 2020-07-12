@@ -7,7 +7,7 @@ import { MatSnackBar, MatSnackBarRef, SimpleSnackBar } from '@angular/material/s
 @Component( {
     selector: 'app-main',
     templateUrl: 'main.component.html',
-    styleUrls: [ 'main.component.scss' ]
+    styleUrls: [ 'main.component.scss', 'core.scss' ]
 } )
 export class MainComponent  {
 
@@ -160,5 +160,9 @@ export class MainComponent  {
 
     resetDkpLog (): void {
         this.ipc.send( 'dkp:reset' );
+    }
+
+    showNewTriggerDialog (): void {
+        this.ipc.send( 'trigger:dialog:new' );
     }
 }

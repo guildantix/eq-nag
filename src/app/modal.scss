@@ -1,0 +1,50 @@
+:host ::ng-deep .modal .mat-tab-label-container {
+    position: fixed;
+    z-index: 2;
+    background-color: rgb(49, 49, 49);
+    left: 0;
+    right: 0;
+}
+
+.modal {
+
+    .titlebar {
+        color: white;
+    }
+
+    header {
+        margin: 0;
+        width: 100%;
+    }
+
+    section {
+        margin: 0;
+        flex: 1 1 auto;
+        width: 100%;
+        overflow: auto;
+    }
+    
+    footer {
+        
+        button {
+            margin:0 10px;
+        }
+
+        margin: 0;
+        // position: fixed;
+        // bottom: 0;
+        padding: 20px;
+        width: 100%;
+        background-color: rgb(33,33,33);
+    }
+
+    .tab-content {
+        padding-top: 47px;
+    }
+
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    align-items: center;
+    height: 100%;
+}

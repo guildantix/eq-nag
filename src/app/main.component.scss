@@ -22,88 +22,10 @@ div.console {
     }
 }
 
-button.close-button {
-    position: fixed;
-    right: 0;
-    top: 0;
-    z-index: 11;
-}
-
-.titlebar {
-    -webkit-user-select: none;
-    -webkit-app-region: drag;
-    color: #00000075;
-
-    button {
-        -webkit-app-region: no-drag;
-    }
-}
-
-mat-toolbar {
-    .spacer {
-        flex: 1 1 auto;
-    }
-    small {
-        font-size: small;
-    }
-}
-
-div.tab-content {
-    padding: 20px 5px 0 5px;
-}
-
 span.item-link {
     color: #f00cf3;
 }
 
-.inline-button {
-    border-radius: 5px;
-    background-color: #921f1f;
-    padding: 1px 5px;
-    margin: 6px 0;
-    line-height: 18px;
-    cursor: pointer;
-}
-
-.inline-button.warn {
-    color: #ffafaf;
-}
-
 .dkp.credit {
     color: #ff4c4c;
-}
-
-fieldset {
-
-    legend,
-    mat-select {
-        max-width: 400px;
-    }
-
-    legend {
-        border-bottom: 1px solid #ffffff47;
-        margin-bottom: 10px;
-        min-width: 400px;
-        font-weight: 300;
-        display: flex;
-        box-sizing: border-box;
-        padding: 0px 16px 4px 16px;
-        flex-direction: row;
-        align-items: center;
-        white-space: nowrap;
-
-        .spacer {
-            flex: 1 1 auto;
-        }
-    }
-
-    small {
-        font-weight: 300;
-        display: block;
-        color: #ffffff47;
-    }
-
-    border:none;
-    margin-bottom: 20px;
-    
 }
