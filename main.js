@@ -8,7 +8,6 @@ const DkpDatabaseStore = require( './data/dkp-database' );
 const TriggerDatabaseStore = require( './data/trigger-database' );
 
 var mainWindow, logWatcherWindow, testWindow;
-// var triggerWindows = [];
 const userPreferences = new UserPreferencesStore( {} );
 const dkpDatabase = new DkpDatabaseStore();
 const triggerDatabase = new TriggerDatabaseStore();
@@ -45,19 +44,6 @@ function createWindow() {
         logWatcherWindow.close();
         mainWindow = null
         logWatcherWindow = null;
-        // for ( let i = 0; i < triggerWindows?.length; i++ ) {
-        //     if ( triggerWindows[ i ] ) {
-        //         triggerWindows[ i ]?.close();
-        //         triggerWindows[ i ] = null;
-        //     }
-        // }
-        // triggerWindows?.forEach( f => {
-        //     if ( f != null ) {
-        //         f.close();
-        //     }
-
-        //     f = null;
-        // } );
     } );
 
     mainWindow.on( 'resize', function ( e ) {
@@ -174,8 +160,6 @@ ipcMain.on( 'trigger:dialog:new', ( event, arg ) => {
     triggerWindow.once( "ready-to-show", () => {
         triggerWindow.show();
     } );
-
-    triggerWindows.push( triggerWindow );
 } );
 
 ipcMain.on( 'trigger:dialog:edit', ( event, arg ) => {
@@ -196,8 +180,6 @@ ipcMain.on( 'trigger:dialog:edit', ( event, arg ) => {
     triggerWindow.once( "ready-to-show", () => {
         triggerWindow.show();
     } );
-
-    // triggerWindows.push( triggerWindow );
 } );
 
 ipcMain.on( 'window:child:close', ( event, arg ) => {
