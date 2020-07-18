@@ -2,7 +2,7 @@ import { Component, ViewChild, ElementRef, OnInit } from '@angular/core';
 import * as _ from 'lodash';
 import { MatSnackBar, MatSnackBarRef, SimpleSnackBar } from '@angular/material/snack-bar';
 import { IpcService } from './ipc.service';
-import { DkpEntryModel } from './core.model';
+import { DkpEntryModel, TriggerModel } from './core.model';
 import { VirtualTimeScheduler } from 'rxjs';
 
 @Component( {
@@ -19,6 +19,7 @@ export class MainComponent implements OnInit  {
     public showConsole: boolean = true;
     public voiceIndex: number = null;
     public voiceOptions: SpeechSynthesisVoice[] = [];
+    public triggers: TriggerModel[] = [];
 
     @ViewChild( 'fileSelector' ) private fileSelector: ElementRef<HTMLInputElement>;
 
@@ -33,6 +34,8 @@ export class MainComponent implements OnInit  {
             this.dkpEntries = data.dkpEntries;
             this.logFile = data.logFile;
             this.voiceIndex = data.voiceIndex;
+            this.triggers = data.triggers;
+            // console.log( 'triggers tick', data.triggers );
         } );
 
         this.ipcService.dkpEntryAdded().subscribe( model => {
