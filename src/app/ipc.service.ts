@@ -2,7 +2,7 @@ import { Injectable, NgZone } from '@angular/core';
 import { IpcRenderer } from 'electron';
 import { Observable, Observer } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
-import { DataTickModel, DkpEntryModel } from './core.model';
+import { DataTickModel, DkpEntryModel, TriggerModel } from './core.model';
 
 @Injectable()
 export class IpcService {
@@ -169,6 +169,86 @@ export class IpcService {
 
     public closeNewTriggerDialog (): void {
         this.ipc.send( 'trigger:dialog:close' );
+    }
+
+    public createNewTrigger ( model: TriggerModel ): Observable<string> {
+        let obs: Observable<string> = new Observable<string>( ( observer: Observer<string> ) => {
+            
+            this.ipc.once( 'trigger:create', ( e, triggerId ) => {
+                this.ngZone.run( () => {
+                    observer.next( triggerId );
+                    observer.complete();
+                } );
+            } );
+            this.ipc.send( 'trigger:create', model );
+
+        } );
+
+        return obs;
+    }
+
+    public getTriggers (): Observable<TriggerModel[]> {
+        let obs: Observable<TriggerModel[]> = new Observable<TriggerModel[]>( ( observer: Observer<TriggerModel[]> ) => {
+            
+            this.ipc.once( 'trigger:get', ( e, triggers: TriggerModel[] ) => {
+                this.ngZone.run( () => {
+                    observer.next( triggers );
+                    observer.complete();
+                } );
+            } );
+            this.ipc.send( 'trigger:get', null );
+
+        } );
+
+        return obs;
+    }
+
+    public getTrigger ( triggerId: string ): Observable<TriggerModel> {
+        let obs: Observable<TriggerModel> = new Observable<TriggerModel>( ( observer: Observer<TriggerModel> ) => {
+            
+            this.ipc.once( 'trigger:get', ( e, trigger: TriggerModel ) => {
+                this.ngZone.run( () => {
+                    observer.next( trigger );
+                    observer.complete();
+                } );
+            } );
+            this.ipc.send( 'trigger:get', triggerId );
+
+        } );
+
+        return obs;
+    }
+
+    public updateTrigger ( model: TriggerModel ): Observable<boolean> {
+        let obs: Observable<boolean> = new Observable<boolean>( ( observer: Observer<boolean> ) => {
+            
+            this.ipc.once( 'trigger:update', ( e, updated: boolean ) => {
+                this.ngZone.run( () => {
+                    observer.next( updated );
+                    observer.complete();
+                } );
+            } );
+            this.ipc.send( 'trigger:update', model );
+
+        } );
+
+        return obs;
+    }
+
+    public deleteTrigger ( triggerId: string ): Observable<boolean> {
+        let obs: Observable<boolean> = new Observable<boolean>( ( observer: Observer<boolean> ) => {
+            
+            this.ipc.once( 'trigger:delete', ( e, deleted: boolean ) => {
+                this.ngZone.run( () => {
+                    observer.next( deleted );
+                    observer.complete();
+                } );
+            } );
+            this.ipc.send( 'trigger:delete', triggerId );
+
+        } );
+
+        return obs;
     }
 
 }
