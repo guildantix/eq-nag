@@ -5,6 +5,7 @@ export class TriggerModel {
     public capturePhrases: CapturePhrase[] = [];
     public comments: string = '';
     public actions: any[] = [];
+    public captureMethod: string = 'Any match';
 
 }
 
