@@ -4,6 +4,7 @@ import { MatSnackBar, MatSnackBarRef, SimpleSnackBar } from '@angular/material/s
 import { IpcService } from './ipc.service';
 import { DkpEntryModel, TriggerModel } from './core.model';
 import { VirtualTimeScheduler } from 'rxjs';
+import { DialogService } from './dialogs/dialog.service';
 
 @Component( {
     selector: 'app-main',
@@ -23,7 +24,7 @@ export class MainComponent implements OnInit  {
 
     @ViewChild( 'fileSelector' ) private fileSelector: ElementRef<HTMLInputElement>;
 
-    constructor( private snackBar: MatSnackBar, private ipcService: IpcService ) {
+    constructor( private snackBar: MatSnackBar, private ipcService: IpcService, private dialogService: DialogService ) {
         speechSynthesis.onvoiceschanged = () => {
             this.voiceOptions = speechSynthesis.getVoices();
         };
@@ -125,5 +126,20 @@ export class MainComponent implements OnInit  {
 
     showNewTriggerDialog (): void {
         this.ipcService.showNewTriggerDialog();
+    }
+
+    showEditTriggerDialog ( triggerId: string ): void {
+        this.ipcService.showEditTriggerDialog( triggerId );
+    }
+
+    deleteTrigger ( index: number ): void {
+        this.dialogService.showConfirmDialog(
+            `Are you sure you want to delete ${this.triggers[ index ].name}?`,
+            'Click "Yes" to delete this trigger.', 'Click "No" to close this dialog without deleting this trigger.',
+            confirmed => {
+                if ( confirmed === true ) {
+                    this.ipcService.deleteTrigger( this.triggers[ index ].triggerId ).subscribe();
+                }
+            } );
     }
 }

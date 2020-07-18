@@ -8,7 +8,7 @@ const DkpDatabaseStore = require( './data/dkp-database' );
 const TriggerDatabaseStore = require( './data/trigger-database' );
 
 var mainWindow, logWatcherWindow, testWindow;
-var triggerWindow;
+// var triggerWindows = [];
 const userPreferences = new UserPreferencesStore( {} );
 const dkpDatabase = new DkpDatabaseStore();
 const triggerDatabase = new TriggerDatabaseStore();
@@ -45,6 +45,19 @@ function createWindow() {
         logWatcherWindow.close();
         mainWindow = null
         logWatcherWindow = null;
+        // for ( let i = 0; i < triggerWindows?.length; i++ ) {
+        //     if ( triggerWindows[ i ] ) {
+        //         triggerWindows[ i ]?.close();
+        //         triggerWindows[ i ] = null;
+        //     }
+        // }
+        // triggerWindows?.forEach( f => {
+        //     if ( f != null ) {
+        //         f.close();
+        //     }
+
+        //     f = null;
+        // } );
     } );
 
     mainWindow.on( 'resize', function ( e ) {
@@ -144,9 +157,9 @@ function openModal() {
 }
 
 ipcMain.on( 'trigger:dialog:new', ( event, arg ) => {
-    triggerWindow = new BrowserWindow( {
+    let triggerWindow = new BrowserWindow( {
         parent: mainWindow,
-        modal: true,
+        modal: false,
         show: false,
         width: 700,
         height: 870,
@@ -161,13 +174,35 @@ ipcMain.on( 'trigger:dialog:new', ( event, arg ) => {
     triggerWindow.once( "ready-to-show", () => {
         triggerWindow.show();
     } );
+
+    triggerWindows.push( triggerWindow );
 } );
 
-ipcMain.on( 'trigger:dialog:close', ( event, arg ) => {
-    if ( triggerWindow ) {
-        triggerWindow.close();
-        triggerWindow = null;
-    }
+ipcMain.on( 'trigger:dialog:edit', ( event, arg ) => {
+    let triggerWindow = new BrowserWindow( {
+        parent: mainWindow,
+        modal: false,
+        show: false,
+        width: 700,
+        height: 870,
+        frame: false,
+        webPreferences: {
+            nodeIntegration: true,
+            devTools: app.isDev(),
+        }
+    } );
+    triggerWindow.loadURL( `file://${__dirname}/dist/index.html#/trigger/${arg}` );
+    // modal.loadURL( "https://www.sitepoint.com" );
+    triggerWindow.once( "ready-to-show", () => {
+        triggerWindow.show();
+    } );
+
+    // triggerWindows.push( triggerWindow );
+} );
+
+ipcMain.on( 'window:child:close', ( event, arg ) => {
+    let bwin = BrowserWindow.fromWebContents( event.sender );
+    bwin?.close();
 } );
 
 ipcMain.on( "openModal", ( event, arg ) => {

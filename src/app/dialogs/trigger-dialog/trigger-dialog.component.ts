@@ -3,6 +3,7 @@ import { IpcService } from 'src/app/ipc.service';
 import { TriggerModel, CapturePhrase } from 'src/app/core.model';
 import { animate, state, style, transition, trigger } from '@angular/animations';
 import { MatTableDataSource, MatTable } from '@angular/material/table';
+import { ActivatedRoute } from '@angular/router';
 // import { NgForm } from '@angular/forms';
 
 @Component( {
@@ -28,15 +29,29 @@ export class TriggerDialogComponent implements OnInit {
     
     @ViewChild( 'capturePhrasesTable' ) capturePhrasesTable: MatTable<any>;
 
-    constructor( private ipcService: IpcService ) { }
+    constructor( private ipcService: IpcService, private route: ActivatedRoute ) { }
 
     ngOnInit () {
         this.model = new TriggerModel();
+
+        this.route.params.subscribe( params => {
+            
+            this.triggerId = params[ 'id' ]; 
+
+            if ( this.triggerId != null ) {
+                this.ipcService.getTrigger( this.triggerId ).subscribe( trigger => {
+                    this.model = trigger;
+                    console.log( 'result', trigger );
+                } );
+            }
+     
+            // In a real app: dispatch action to load the details here.
+        } );
         this.addNewCapturePhrase();
     }
 
     public closeModal (): void {
-        this.ipcService.closeNewTriggerDialog();
+        this.ipcService.closeThisChild();
     }
 
     public onChangeTabs ( index: number ): void {
@@ -57,6 +72,9 @@ export class TriggerDialogComponent implements OnInit {
     public save (): void {
         if ( this.triggerId == null ) {
             this.ipcService.createNewTrigger( this.model ).subscribe( triggerId => { } );
+            this.closeModal();
+        } else {
+            this.ipcService.updateTrigger( this.model ).subscribe( success => { } );
             this.closeModal();
         }
     }

@@ -61,3 +61,7 @@ ol, p, ul {
 .mat-primary .mat-option.mat-selected:not(.mat-option-disabled) {
     color: #ffffff;
 }
+
+.mat-input-element { 
+    caret-color: #ffffff; 
+}
