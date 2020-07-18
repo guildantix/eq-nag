@@ -3,6 +3,7 @@ import { IpcService } from 'src/app/ipc.service';
 import { TriggerModel, CapturePhrase } from 'src/app/core.model';
 import { animate, state, style, transition, trigger } from '@angular/animations';
 import { MatTableDataSource, MatTable } from '@angular/material/table';
+// import { NgForm } from '@angular/forms';
 
 @Component( {
     selector: 'app-trigger-dialog',
@@ -20,6 +21,7 @@ export class TriggerDialogComponent implements OnInit {
 
     public model: TriggerModel;
     public phraseTableColumns = [ 'number', 'phrase', 'regEx', 'delete' ];
+    public triggerId: string = null;
     // public expandedElement: CapturePhrase | null;
     // public capturePhraseKind: string = 'Any match';
     // public dataSource = new MatTableDataSource<CapturePhrase>();
@@ -50,5 +52,12 @@ export class TriggerDialogComponent implements OnInit {
     public deleteCapturePhrase ( index: number ): void {
         this.model.capturePhrases?.splice( index, 1 );
         this.capturePhrasesTable?.renderRows();
+    }
+
+    public save (): void {
+        if ( this.triggerId == null ) {
+            this.ipcService.createNewTrigger( this.model ).subscribe( triggerId => { } );
+            this.closeModal();
+        }
     }
 }
