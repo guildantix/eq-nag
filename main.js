@@ -218,7 +218,12 @@ ipcMain.on( 'removeDkpAward', ( event, data ) => {
 ipcMain.on( 'quitApp', ( event, data ) => { app.quit(); } );
 
 function sendTick() {
-    mainWindow.webContents.send( 'tick', { dkpEntries: dkpDatabase.getAllUnentered(), logFile: userPreferences.logFile, voiceIndex: userPreferences.voiceIndex, triggers: triggerDatabase.getAll() } );
+    mainWindow.webContents.send( 'tick', {
+        dkpEntries: dkpDatabase.getAllUnentered(),
+        logFile: userPreferences.logFile,
+        voiceIndex: userPreferences.voiceIndex,
+        triggers: triggerDatabase.getAll()
+    } );
 }
 
 autoUpdater.signals.updateDownloaded( () => {
