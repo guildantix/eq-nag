@@ -1,0 +1,17 @@
+<h2 mat-dialog-title>Confirm</h2>
+
+<mat-dialog-content>
+
+    <p>{{this.data.message}}</p>
+    <p *ngIf="data.yesMessage != null">{{data.yesMessage}}</p>
+    <p *ngIf="data.noMessage != null">{{data.noMessage}}</p>
+    
+</mat-dialog-content>
+
+<mat-dialog-actions>
+
+  <button mat-button mat-dialog-close class="t-confirm-no" color="warn">No</button>
+  <!-- Can optionally provide a result for the closing dialog. -->
+  <button mat-button [mat-dialog-close]="true" class="t-confirm-yes" color="accent">Yes</button>
+
+</mat-dialog-actions>

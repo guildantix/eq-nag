@@ -13,7 +13,7 @@ class TriggerDatabaseStore extends Store {
     #data;
 
     get count() {
-        return this.#data?.entries?.length;
+        return this.#data?.triggers?.length;
     }
 
     constructor() {
@@ -50,9 +50,9 @@ class TriggerDatabaseStore extends Store {
 
         ipcMain.on( 'trigger:get', ( event, triggerId ) => {
             if ( triggerId != null && triggerId.length > 0 ) {
-                event.sender.webContents.send( 'trigger:find', this.find( triggerId ) );
+                event.sender.webContents.send( 'trigger:get', this.find( triggerId ) );
             } else {
-                event.sender.webContents.send( 'trigger:find', this.getAll() );
+                event.sender.webContents.send( 'trigger:get', this.getAll() );
             }
         } );
 
@@ -172,7 +172,7 @@ class TriggerDatabaseStore extends Store {
         if ( this.#data?.triggers?.length > i ) {
 
             // Remove the trigger by index.
-            let removed = this.#data.entries.splice( i, 1 );
+            let removed = this.#data.triggers.splice( i, 1 );
 
             // Save the changes to the data.
             this.storeDataFile( this.#data );

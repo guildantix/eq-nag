@@ -9,7 +9,7 @@
     "test": "ng test",
     "lint": "ng lint",
     "e2e": "ng e2e",
-    "start:electron": "tsc && ng build --base-href ./ && electron .",
+    "start:electron": "tsc && ng build --base-href ./ --configuration=production && electron .",
     "build": "electron-builder build --win --publish never",
     "deploy": "electron-builder build --win --publish always"
   },

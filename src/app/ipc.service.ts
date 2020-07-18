@@ -167,8 +167,12 @@ export class IpcService {
         this.ipc.send( 'trigger:dialog:new' );
     }
 
-    public closeNewTriggerDialog (): void {
-        this.ipc.send( 'trigger:dialog:close' );
+    public showEditTriggerDialog ( triggerId: string ): void {
+        this.ipc.send( 'trigger:dialog:edit', triggerId );
+    }
+
+    public closeThisChild (): void {
+        this.ipc.send( 'window:child:close' );
     }
 
     public createNewTrigger ( model: TriggerModel ): Observable<string> {
@@ -212,6 +216,7 @@ export class IpcService {
                     observer.complete();
                 } );
             } );
+            console.log( 'trigger:get', triggerId );
             this.ipc.send( 'trigger:get', triggerId );
 
         } );
