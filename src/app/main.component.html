@@ -19,8 +19,17 @@
                     <button mat-button color="accent" (click)="parseToBulkUpload()">Copy Bulk Upload String</button>
                     <button mat-button color="warn" (click)="markAllDkpEntered()">All DKP Entries Completed</button>
                     <br />
-                    <button mat-button color="primary" (click)="showNewTriggerDialog()">New Trigger</button>
 
+                </div>
+
+        </mat-tab>
+        <mat-tab label="Triggers">
+                <mat-toolbar>
+                    <span>Triggers</span>
+                    <span class="spacer"></span>
+                    <button mat-button color="accent" (click)="showNewTriggerDialog()">New Trigger</button>
+                </mat-toolbar>
+                <div class="tab-content">
                 </div>
 
         </mat-tab>
