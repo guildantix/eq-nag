@@ -33,6 +33,7 @@ export class DataTickModel {
     public dkpEntries: DkpEntryModel[] = [];
     public logFile: string;
     public voiceIndex: number;
+    public triggers: TriggerModel[] = [];
 
 }
 
