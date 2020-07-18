@@ -42,3 +42,22 @@ ol, p, ul {
 ::-webkit-scrollbar {
     display: none;
 }
+
+.mat-focused .mat-form-field-label {
+    /*change color of label*/
+    color: #ffffff !important;
+}
+
+    /* change color of underline */
+/* .mat-form-field-underline {
+    background-color: green !important;
+}  */
+
+    /*change color of underline when focused*/
+/* .mat-form-field-ripple {
+    background-color: green !important;
+} */
+
+.mat-primary .mat-option.mat-selected:not(.mat-option-disabled) {
+    color: #ffffff;
+}
