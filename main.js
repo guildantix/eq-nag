@@ -41,7 +41,7 @@ function createWindow() {
     }
 
     mainWindow.on( 'closed', function () {
-        logWatcherWindow.close();
+        logWatcherWindow?.close();
         mainWindow = null
         logWatcherWindow = null;
     } );
@@ -62,17 +62,22 @@ function createWindow() {
     logWatcherWindow = new BrowserWindow( {
         //   width: 800,
         //   height: 600,
-        show: false,
+        show: true,
         webPreferences: { nodeIntegration: true, webSecurity: false },
     } );
     logWatcherWindow.webContents.openDevTools();
     logWatcherWindow.loadFile("./threads/log-watcher.html");
 
-    if ( userPreferences.logFile != null ) {
-        logWatcherWindow.webContents.once( 'dom-ready', () => {
+    logWatcherWindow.on( 'closed', function () {
+        logWatcherWindow = null;
+    } );
+
+    logWatcherWindow.webContents.once( 'dom-ready', () => {
+        if ( userPreferences.logFile != null ) {
             logWatcherWindow.webContents.send( 'changeLogFile', userPreferences.logFile );
-        } );
-    }
+        }
+        sendTick();
+    } );
 
     mainWindow.webContents.once( 'dom-ready', () => {
         autoUpdater.checkForUpdatesAndNotify().then( result => {
@@ -235,11 +240,15 @@ ipcMain.on( 'removeDkpAward', ( event, data ) => {
 ipcMain.on( 'quitApp', ( event, data ) => { app.quit(); } );
 
 function sendTick() {
+    let _triggers = triggerDatabase.getAll();
     mainWindow.webContents.send( 'tick', {
         dkpEntries: dkpDatabase.getAllUnentered(),
         logFile: userPreferences.logFile,
         voiceIndex: userPreferences.voiceIndex,
-        triggers: triggerDatabase.getAll()
+        triggers: _triggers
+    } );
+    logWatcherWindow.webContents.send( 'tick', {
+        triggers: _triggers
     } );
 }
 
