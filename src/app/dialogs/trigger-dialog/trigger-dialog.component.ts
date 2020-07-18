@@ -21,7 +21,7 @@ export class TriggerDialogComponent implements OnInit {
     public model: TriggerModel;
     public phraseTableColumns = [ 'number', 'phrase', 'regEx', 'delete' ];
     // public expandedElement: CapturePhrase | null;
-    public capturePhraseKind: string = 'Any match';
+    // public capturePhraseKind: string = 'Any match';
     // public dataSource = new MatTableDataSource<CapturePhrase>();
     
     @ViewChild( 'capturePhrasesTable' ) capturePhrasesTable: MatTable<any>;

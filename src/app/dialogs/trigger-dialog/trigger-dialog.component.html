@@ -27,10 +27,10 @@
                         <legend class="full-width"><span>Phrases ({{model.capturePhrases?.length}})</span><span class="spacer"></span><button mat-button (click)="addNewCapturePhrase()" color="accent">New</button></legend>
                         <mat-form-field style="width: 200px;">
                             <mat-label>Capture Method</mat-label>
-                            <mat-select [(ngModel)]="capturePhraseKind">
+                            <mat-select [(ngModel)]="model.captureMethod">
                                 <mat-option value="Any match">Any match</mat-option>
-                                <mat-option value="Sequential">Sequential</mat-option>
-                                <mat-option value="Concurrent">Concurrent</mat-option>
+                                <mat-option value="Sequential" disabled>Sequential</mat-option>
+                                <mat-option value="Concurrent" disabled>Concurrent</mat-option>
                             </mat-select>
                             <!-- <mat-hint>
                                 <p><strong>Any match</strong> will execute this trigger if any phrase matches a log entry.</p>

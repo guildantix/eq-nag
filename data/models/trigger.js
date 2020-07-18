@@ -6,6 +6,7 @@ class Trigger {
     useRegEx = false;
     comments = '';
     actions = [];
+    captureMethod = 'Any match';
 
 }
 
