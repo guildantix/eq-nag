@@ -2,9 +2,10 @@ const { app, BrowserWindow, ipcMain } = require( "electron" );
 const Store = require( './store' );
 const _ = require( 'lodash' );
 const Trigger = require( './models/trigger' );
-const generate = require('nanoid').generate;
+const customAlphabet = require( 'nanoid' ).customAlphabet;
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const idLen = 16;
+const nanoid = customAlphabet( alphabet, 16 );
 
 class TriggerDatabaseStore extends Store {
 
@@ -41,23 +42,32 @@ class TriggerDatabaseStore extends Store {
      * @param {function} sendTick The send tick method.
      */
     attachIpcEvents( mainWindow, sendTick ) {
-        ipcMain.on( 'trigger:add', ( event, data ) => {
-            this.add( data );
+        ipcMain.on( 'trigger:create', ( event, trigger ) => {
+            let triggerId = this.add( trigger );
+            event.sender.webContents.send( 'trigger:create', triggerId );
             sendTick();
         } );
 
-        ipcMain.on( 'trigger:remove', ( event, data ) => {
-            this.remove( data );
+        ipcMain.on( 'trigger:get', ( event, triggerId ) => {
+            if ( triggerId != null && triggerId.length > 0 ) {
+                event.sender.webContents.send( 'trigger:find', this.find( triggerId ) );
+            } else {
+                event.sender.webContents.send( 'trigger:find', this.getAll() );
+            }
+        } );
+
+        ipcMain.on( 'trigger:update', ( event, trigger ) => {
+            let updated = this.update( trigger );
+            event.sender.webContents.send( 'trigger:update', updated );
             sendTick();
         } );
 
-        ipcMain.on( 'trigger:find', ( event, triggerId ) => {
-            event.sender.webContents.send( 'trigger:find', this.find( triggerId ) );
+        ipcMain.on( 'trigger:delete', ( event, triggerId ) => {
+            let deleted = this.remove( triggerId );
+            event.sender.webContents.send( 'trigger:delete', deleted );
+            sendTick();
         } );
 
-        ipcMain.on( 'trigger:get', ( event ) => {
-            event.sender.webContents.send( 'trigger:find', this.getAll() );
-        } );
     }
 
 
@@ -72,6 +82,8 @@ class TriggerDatabaseStore extends Store {
     /**
      * Adds the given trigger to the store.
      * 
+     * @returns {string} Returns the generated trigger id.
+     * 
      * @param {Trigger} trigger The trigger to add to the store.
      */
     add( trigger ) {
@@ -79,13 +91,15 @@ class TriggerDatabaseStore extends Store {
         this.#data.triggers = this.#data.triggers ? this.#data.triggers : [];
 
         // Generate a new id for the trigger.
-        trigger.triggerId = generate( alphabet, idLen );
+        trigger.triggerId = nanoid();
 
         // Add it to the store.
         this.#data.triggers.push( trigger );
 
         // Save changes to the data.
         this.storeDataFile( this.#data );
+
+        return trigger.triggerId;
     }
 
 
@@ -102,11 +116,37 @@ class TriggerDatabaseStore extends Store {
      * 
      * @param {Trigger} trigger The trigger to remove.
      */
-    remove( trigger ) {
+    removeTrigger( trigger ) {
         if ( this.#data?.triggers?.length > 0 ) {
 
             // Find the index of the trigger.
             let i = _.findIndex( this.#data.triggers, ( e ) => e.triggerId === trigger.triggerId );
+
+            // Remove the trigger by index.
+            return this.removeIndex( i );
+
+        }
+    }
+
+
+
+
+
+
+
+
+
+    
+    /**
+     * Removes the specified trigger.
+     * 
+     * @param {string} triggerId The trigger to remove.
+     */
+    remove( triggerId ) {
+        if ( this.#data?.triggers?.length > 0 ) {
+
+            // Find the index of the trigger.
+            let i = _.findIndex( this.#data.triggers, ( e ) => e.triggerId === triggerId );
 
             // Remove the trigger by index.
             return this.removeIndex( i );
@@ -165,6 +205,41 @@ class TriggerDatabaseStore extends Store {
         if ( i > -1 && i < this.#data?.triggers?.length ) {
             return this.#data.triggers[ i ];
         }
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Updates the given trigger in the store.
+     * 
+     * @returns {boolean} Returns true if the trigger was updated.
+     * 
+     * @param {TriggerModel} trigger The trigger to update.
+     */
+    update( trigger ) {
+
+        // Find the index of the trigger by Id.
+        let i = _.findIndex( this.#data.triggers, ( e ) => e.triggerId === trigger.triggerId );
+
+        // If the index is valid, then update the found trigger.
+        if ( i > -1 && i < this.#data?.triggers?.length ) {
+            this.#data.triggers[ i ] = trigger;
+
+            // Save changes to the data.
+            this.storeDataFile( this.#data );
+
+            return true;
+        } else {
+            return false;
+        }
+        
     }
 
 
