@@ -35,3 +35,21 @@ export class DataTickModel {
     public voiceIndex: number;
 
 }
+
+// export enum TriggerActionTypes {
+//     TextToSpeech = 1
+// }
+
+// export interface ITriggerAction {
+
+//     actionType: TriggerActionTypes;
+//     label: string;
+
+// }
+
+// export class TtsTriggerActionModel implements ITriggerAction {
+    
+//     public actionType: TriggerActionTypes = TriggerActionTypes.TextToSpeech;
+//     public label: string;
+
+// }
