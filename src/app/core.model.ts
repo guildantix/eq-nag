@@ -1,12 +1,18 @@
-export class Trigger {
+export class TriggerModel {
     
     public triggerId: string = null;
     public name: string = '';
-    public capturePhrases: string | string[] = [];
-    public useRegEx: boolean = false;
+    public capturePhrases: CapturePhrase[] = [];
     public comments: string = '';
     public actions: any[] = [];
 
+}
+
+export class CapturePhrase {
+    public phrase: string;
+    public useRegEx: boolean = false;
+    public requirePreviousPhrase: boolean = false;
+    public duration: number = null;
 }
 
 export class DkpEntryModel {
@@ -26,5 +32,5 @@ export class DataTickModel {
     public dkpEntries: DkpEntryModel[] = [];
     public logFile: string;
     public voiceIndex: number;
-    
+
 }

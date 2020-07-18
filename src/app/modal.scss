@@ -8,6 +8,10 @@
 
 .modal {
 
+    .card {
+        max-width: 400px;
+    }
+
     .titlebar {
         color: white;
     }
@@ -39,7 +43,24 @@
     }
 
     .tab-content {
-        padding-top: 47px;
+
+        mat-form-field {
+            width: 100%;
+        }
+
+        padding: 47px 10px 0 10px;
+        // padding-top: 47px;
+    }
+    .tab-content.flex {
+
+        .card {
+            width: 400px;
+            margin: 5px;
+        }
+
+        display: flex;
+        flex-direction: column;
+        align-items: center;
     }
 
     display: flex;
