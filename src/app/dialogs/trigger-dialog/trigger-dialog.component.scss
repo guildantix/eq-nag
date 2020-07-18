@@ -1,0 +1,18 @@
+.flex-layout {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+mat-form-field {
+    font-size: 12px;
+}
+
+.margin-t-50 {
+    margin-top: 50px;
+}
+
+legend.full-width {
+    min-width: 100%;
+}
