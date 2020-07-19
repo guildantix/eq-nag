@@ -6,11 +6,13 @@ const { clipboard } = require( 'electron' );
 const UserPreferencesStore = require( './data/user-preferences' );
 const DkpDatabaseStore = require( './data/dkp-database' );
 const TriggerDatabaseStore = require( './data/trigger-database' );
+const OverlayDatabaseStore = require( "./data/overlay-database" );
 
 var mainWindow, logWatcherWindow, testWindow;
 const userPreferences = new UserPreferencesStore( {} );
 const dkpDatabase = new DkpDatabaseStore();
 const triggerDatabase = new TriggerDatabaseStore();
+const overlayDatabase = new OverlayDatabaseStore();
 
 GH_TOKEN = "e3460400ae1273a5cac83e1b86a5aceae7f8bab7";
 
@@ -245,7 +247,8 @@ function sendTick() {
         dkpEntries: dkpDatabase.getAllUnentered(),
         logFile: userPreferences.logFile,
         voiceIndex: userPreferences.voiceIndex,
-        triggers: _triggers
+        triggers: _triggers,
+        overlays: overlayDatabase.getAll()
     } );
     logWatcherWindow.webContents.send( 'tick', {
         triggers: _triggers
@@ -283,3 +286,4 @@ ipcMain.on( 'dkp:markAsEntered', ( event, entries ) => {
 } );
 
 triggerDatabase.attachIpcEvents( mainWindow, sendTick );
+overlayDatabase.attachIpcEvents( mainWindow, sendTick );
