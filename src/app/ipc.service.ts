@@ -2,7 +2,7 @@ import { Injectable, NgZone } from '@angular/core';
 import { IpcRenderer } from 'electron';
 import { Observable, Observer } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
-import { DataTickModel, DkpEntryModel, TriggerModel } from './core.model';
+import { DataTickModel, DkpEntryModel, TriggerModel, OverlayWindowModel } from './core.model';
 
 @Injectable()
 export class IpcService {
@@ -216,7 +216,6 @@ export class IpcService {
                     observer.complete();
                 } );
             } );
-            console.log( 'trigger:get', triggerId );
             this.ipc.send( 'trigger:get', triggerId );
 
         } );
@@ -250,6 +249,86 @@ export class IpcService {
                 } );
             } );
             this.ipc.send( 'trigger:delete', triggerId );
+
+        } );
+
+        return obs;
+    }
+
+    public createNewOverlayWindow ( model: OverlayWindowModel ): Observable<string> {
+        let obs: Observable<string> = new Observable<string>( ( observer: Observer<string> ) => {
+            
+            this.ipc.once( 'overlay:create', ( e, overlayId ) => {
+                this.ngZone.run( () => {
+                    observer.next( overlayId );
+                    observer.complete();
+                } );
+            } );
+            this.ipc.send( 'overlay:create', model );
+
+        } );
+
+        return obs;
+    }
+
+    public getOverlayWindows (): Observable<OverlayWindowModel[]> {
+        let obs: Observable<OverlayWindowModel[]> = new Observable<OverlayWindowModel[]>( ( observer: Observer<OverlayWindowModel[]> ) => {
+            
+            this.ipc.once( 'overlay:get', ( e, overlays: OverlayWindowModel[] ) => {
+                this.ngZone.run( () => {
+                    observer.next( overlays );
+                    observer.complete();
+                } );
+            } );
+            this.ipc.send( 'overlay:get', null );
+
+        } );
+
+        return obs;
+    }
+
+    public getOverlayWindow ( overlayId: string ): Observable<OverlayWindowModel> {
+        let obs: Observable<OverlayWindowModel> = new Observable<OverlayWindowModel>( ( observer: Observer<OverlayWindowModel> ) => {
+            
+            this.ipc.once( 'overlay:get', ( e, overlay: OverlayWindowModel ) => {
+                this.ngZone.run( () => {
+                    observer.next( overlay );
+                    observer.complete();
+                } );
+            } );
+            this.ipc.send( 'overlay:get', overlayId );
+
+        } );
+
+        return obs;
+    }
+
+    public updateOverlayWindow ( model: OverlayWindowModel ): Observable<boolean> {
+        let obs: Observable<boolean> = new Observable<boolean>( ( observer: Observer<boolean> ) => {
+            
+            this.ipc.once( 'overlay:update', ( e, updated: boolean ) => {
+                this.ngZone.run( () => {
+                    observer.next( updated );
+                    observer.complete();
+                } );
+            } );
+            this.ipc.send( 'overlay:update', model );
+
+        } );
+
+        return obs;
+    }
+
+    public deleteOverlayWindow ( overlayId: string ): Observable<boolean> {
+        let obs: Observable<boolean> = new Observable<boolean>( ( observer: Observer<boolean> ) => {
+            
+            this.ipc.once( 'overlay:delete', ( e, deleted: boolean ) => {
+                this.ngZone.run( () => {
+                    observer.next( deleted );
+                    observer.complete();
+                } );
+            } );
+            this.ipc.send( 'overlay:delete', overlayId );
 
         } );
 

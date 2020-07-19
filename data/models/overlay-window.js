@@ -5,6 +5,8 @@ class OverlayWindow {
     windowWidth = null;
     x = null;
     y = null;
+    name = '';
+    overlayType = '';
 
 }
 

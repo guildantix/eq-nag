@@ -37,6 +37,18 @@ export class DataTickModel {
 
 }
 
+export class OverlayWindowModel {
+
+    public overlayId: string = null;
+    public windowHeight: number = null;
+    public windowWidth: number = null;
+    public x: number = null;
+    public y: number = null;
+    public name: string = '';
+    public overlayType: string = '';
+
+}
+
 // export enum TriggerActionTypes {
 //     TextToSpeech = 1
 // }
