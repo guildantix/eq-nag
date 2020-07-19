@@ -43,15 +43,95 @@ function LogWatcher() {
 
     ipcRenderer.on( 'tick', function (event, data) {
         triggers = data.triggers;
+        generateTriggerFns();
     } );
 }
 
+function generateTriggerFns() {
+    triggers?.forEach( trigger => {
+        if ( trigger.capturePhrases?.length > 0 ) {
+            
+            // Any match.
+            if ( trigger.captureMethod === 'Any match' ) {
+
+                // First we generate parse functions for each capture phrase in the trigger.
+                let _phraseParsers = [];
+                trigger.capturePhrases?.forEach( phrase => {
+
+                    if ( phrase.phrase?.length > 0 ) {
+                        // Only create parse functions for phrases that have content.
+                        if ( phrase.useRegEx ) {
+                            // Use different parse functions for regex vs normal.
+                            let _reg = new RegExp( phrase.phrase, 'gi' );
+                            _phraseParsers.push( value => {
+                                let _res = _reg.exec( value );
+                                return {
+                                    match: _res?.length > 0,
+                                    result: _res
+                                };
+                            } );
+                        } else {
+                            // We won't care about case sensitivity.
+                            let _phr = phrase.phrase.toLowerCase();
+                            _phraseParsers.push( value => {
+                                if ( value && value.length > 0 ) {
+                                    return {
+                                        match: value.toLowerCase().indexOf( _phr ) > -1,
+                                        result: [ value ]
+                                    };
+                                } else {
+                                    return {
+                                        match: false,
+                                        result: []
+                                    };
+                                }
+                            } );
+                        }
+                    }
+                } );
+                
+                trigger._parse = value => {
+                    for ( let i = 0; i < _phraseParsers?.length; i++ ){
+                        let _res = _phraseParsers[ i ]( value );
+                        if ( _res?.match ) {
+                            return _res;
+                        }
+                    }
+
+                    return {
+                        match: false,
+                        result: []
+                    };
+                };
+            } else {
+                // Currently, only supported match method is 'Any match'.
+                trigger._parse = value => {
+                    return {
+                        match: false,
+                        result: []
+                    };
+                };
+            }
+
+        } else {
+            // if the trigger is missing capture phrases, then do nothing.
+            trigger._parse = value => {
+                return {
+                    match: false,
+                    result: []
+                };
+            };
+        }
+    } );
+}
+
+let rgxTrigger = /grats;/gi;
+let rgxTimestamp = /^\[(.*?)\]\s*/gi;
+let rgxGrabText = /\'(.*?)\'$/gi;
+let rgxDelimiter = /;/gi;
+let rgxNum = /(\d+)/gi;
+
 function parseLogEntries( raw ) {
-    let rgxTrigger = /grats;/gi;
-    let rgxTimestamp = /^\[(.*?)\]\s*/gi;
-    let rgxGrabText = /\'(.*?)\'$/gi;
-    let rgxDelimiter = /;/gi;
-    let rgxNum = /(\d+)/gi;
     let timestamp = new Date( rgxTimestamp.exec( raw )[ 1 ] );
 
     if ( raw.match( rgxTrigger ) ) {
@@ -63,24 +143,30 @@ function parseLogEntries( raw ) {
         ipcRenderer.send( 'addDkpEntry', new DkpEntryModel( timestamp, character, item, +dkp ) );
     } else {
         let log = raw.replace( rgxTimestamp, '' );
-        // We can optomize this by generating these as functions on the tick.
-        triggers.forEach( trigger => {
-            if ( trigger.capturePhrases?.length > 0 ) {
-                // Any match.
-                for ( let i = 0; i < trigger.capturePhrases.length; i++ ) {
-                    if ( trigger.capturePhrases[ i ].phrase ) {
-                        if ( trigger.capturePhrases[ i ].useRegEx ) {
-                            let _reg = new RegExp( trigger.capturePhrases[ i ].phrase, 'gi' );
-                            let _res = _reg.exec( log );
-                            // console.log( 'exec testing', _reg.exec( log ) );
-                            if ( _res?.length > 0 ) {
-                                console.log( 'match found', _res[ 0 ] );
-                            }
-                        }
-                    }
-                }
+        triggers.forEach( f => {
+            let res = f._parse( log );
+            if ( res.match ) {
+                console.log( 'match found!', res.result[ 0 ] );
             }
         } );
+        // // We can optimize this by generating these as functions on the tick.
+        // triggers.forEach( trigger => {
+        //     if ( trigger.capturePhrases?.length > 0 ) {
+        //         // Any match.
+        //         for ( let i = 0; i < trigger.capturePhrases.length; i++ ) {
+        //             if ( trigger.capturePhrases[ i ].phrase ) {
+        //                 if ( trigger.capturePhrases[ i ].useRegEx ) {
+        //                     let _reg = new RegExp( trigger.capturePhrases[ i ].phrase, 'gi' );
+        //                     let _res = _reg.exec( log );
+        //                     // console.log( 'exec testing', _reg.exec( log ) );
+        //                     if ( _res?.length > 0 ) {
+        //                         console.log( 'match found', _res[ 0 ] );
+        //                     }
+        //                 }
+        //             }
+        //         }
+        //     }
+        // } );
     }
 
 }
