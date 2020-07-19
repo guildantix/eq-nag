@@ -28,15 +28,6 @@ export class DkpEntryModel {
 
 }
 
-export class DataTickModel {
-
-    public dkpEntries: DkpEntryModel[] = [];
-    public logFile: string;
-    public voiceIndex: number;
-    public triggers: TriggerModel[] = [];
-
-}
-
 export class OverlayWindowModel {
 
     public overlayId: string = null;
@@ -46,6 +37,16 @@ export class OverlayWindowModel {
     public y: number = null;
     public name: string = '';
     public overlayType: string = '';
+
+}
+
+export class DataTickModel {
+
+    public dkpEntries: DkpEntryModel[] = [];
+    public logFile: string;
+    public voiceIndex: number;
+    public triggers: TriggerModel[] = [];
+    public overlays: OverlayWindowModel[] = [];
 
 }
 

@@ -2,7 +2,7 @@ import { Component, ViewChild, ElementRef, OnInit } from '@angular/core';
 import * as _ from 'lodash';
 import { MatSnackBar, MatSnackBarRef, SimpleSnackBar } from '@angular/material/snack-bar';
 import { IpcService } from './ipc.service';
-import { DkpEntryModel, TriggerModel } from './core.model';
+import { DkpEntryModel, TriggerModel, OverlayWindowModel } from './core.model';
 import { VirtualTimeScheduler } from 'rxjs';
 import { DialogService } from './dialogs/dialog.service';
 
@@ -21,6 +21,7 @@ export class MainComponent implements OnInit  {
     public voiceIndex: number = null;
     public voiceOptions: SpeechSynthesisVoice[] = [];
     public triggers: TriggerModel[] = [];
+    public overlays: OverlayWindowModel[] = [];
 
     @ViewChild( 'fileSelector' ) private fileSelector: ElementRef<HTMLInputElement>;
 
@@ -36,7 +37,7 @@ export class MainComponent implements OnInit  {
             this.logFile = data.logFile;
             this.voiceIndex = data.voiceIndex;
             this.triggers = data.triggers;
-            // console.log( 'triggers tick', data.triggers );
+            this.overlays = data.overlays;
         } );
 
         this.ipcService.dkpEntryAdded().subscribe( model => {
@@ -139,6 +140,17 @@ export class MainComponent implements OnInit  {
             confirmed => {
                 if ( confirmed === true ) {
                     this.ipcService.deleteTrigger( this.triggers[ index ].triggerId ).subscribe();
+                }
+            } );
+    }
+
+    deleteOverlay ( index: number ): void {
+        this.dialogService.showConfirmDialog(
+            `Are you sure you want to delete ${this.overlays[ index ].name}?`,
+            'Click "Yes" to delete this overlay.', 'Click "No" to close this dialog without deleting this overlay.',
+            confirmed => {
+                if ( confirmed === true ) {
+                    this.ipcService.deleteOverlayWindow( this.overlays[ index ].overlayId ).subscribe();
                 }
             } );
     }
