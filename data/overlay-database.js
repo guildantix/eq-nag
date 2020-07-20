@@ -131,6 +131,8 @@ class OverlayDatabaseStore extends Store {
     
     /**
      * Returns all overlays.
+     * 
+     * @returns {OverlayWindow[]} Returns the list of all overlay windows.
      */
     getAll() {
         return this.#data.overlays;

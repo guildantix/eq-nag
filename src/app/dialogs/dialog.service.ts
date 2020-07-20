@@ -1,6 +1,9 @@
 import { Injectable } from '@angular/core';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { ConfirmDialogComponent } from './confirm-dialog/confirm-dialog.component';
+import { OverlayWindowModel } from '../core.model';
+import { Observable } from 'rxjs';
+import { OverlayDetailsDialogComponent } from './overlay-details-dialog/overlay-details-dialog.component';
 
 @Injectable()
 export class DialogService {
@@ -37,6 +40,27 @@ export class DialogService {
 
         dialogRef.afterClosed().subscribe( onClose );
         
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Shows the overlay window details.
+     * 
+     * @param model The overlay window model to edit.
+     */
+    public showOverlayDetailsDialog ( model: OverlayWindowModel ): Observable<OverlayWindowModel> {
+        return this.dialog.open( OverlayDetailsDialogComponent, {
+            width: '550px',
+            data: model
+        } ).afterClosed();
     }
     
 }

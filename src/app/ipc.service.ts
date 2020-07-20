@@ -335,4 +335,20 @@ export class IpcService {
         return obs;
     }
 
+    public enableOverlayEditMode ( overlayId: string ): void {
+        this.ipc.send( 'overlay:enable-edit', overlayId );
+    }
+
+    public disableOverlayEditMode ( overlayId: string ): void {
+        this.ipc.send( 'overlay:disable-edit', overlayId );
+    }
+
+    public showEditOverlayDialog ( overlayId: string ): void {
+        this.ipc.send( 'overlay:dialog:edit', overlayId );
+    }
+
+    public broadcastOverlayModel ( overlay: OverlayWindowModel ): void {
+        this.ipc.send( 'overlay:broadcast', overlay );
+    }
+
 }

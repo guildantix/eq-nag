@@ -1,0 +1,67 @@
+// @import url('https://fonts.googleapis.com/css2?family=Open+Sans+Condensed:ital,wght@0,300;0,700;1,300&family=Oswald:wght@200;300;400;500;600;700&family=Press+Start+2P&family=Ranchers&family=Red+Rose:wght@300;400;700&family=Roboto+Mono:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;1,100;1,200;1,300;1,400;1,500;1,600;1,700&family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap');
+
+.flex-layout {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+mat-form-field {
+    font-size: 12px;
+}
+
+.margin-t-50 {
+    margin-top: 50px;
+}
+
+legend.full-width {
+    min-width: 100%;
+}
+
+table.capture-phrases {
+    width: 100%;
+}
+
+.font-ddl {
+    max-width: unset;
+    
+}
+
+.mat-select-panel mat-option.mat-option {
+    height: unset;
+}
+
+.mat-option-text.mat-option-text {
+    white-space: normal;
+}
+
+mat-option.font-option {
+    height: unset;
+
+    small {
+        display: block;
+        color: #ffffff82;
+        margin-top: -27px;
+        margin-left: 10px;
+        margin-bottom: -10px;
+    }
+}
+
+span.place-holder {
+    display: inline;
+    position: relative;
+}
+// The quick brown fox jumped over the lazy dog.
+::ng-deep mat-option.font-option span.mat-option-text::before {
+    content: "The quick brown fox jumped over the lazy dog."
+}
+// ::ng-deep mat-option.font-option span.mat-option-text span.place-holder::after {
+//     content: " Roboto";
+//     display: block;
+//     color: #ffffff82;
+//     margin-top: -27px;
+//     margin-left: 10px;
+//     margin-bottom: -10px;
+//     font-size: smaller;
+// }
