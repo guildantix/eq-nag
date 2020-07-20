@@ -362,7 +362,6 @@ ipcMain.on( 'overlay:enable-edit', ( event, overlayId ) => {
 ipcMain.on( 'overlay:disable-edit', ( event, overlayId ) => {
     
     if ( overlayDictionary && overlayDictionary[ overlayId ] ) {
-        // overlayDictionary[ overlayId ].window.transparent = true;
         overlayDictionary[ overlayId ].window.setIgnoreMouseEvents( true );
         overlayDictionary[ overlayId ].window.webContents.send( 'overlay:window:disable-edit' );
     } else {
@@ -419,7 +418,7 @@ function loadOverlay( model, enableEdit ) {
         overlay.webContents.once( 'dom-ready', () => {
             // overlay.webContents.send( 'overlay:window:enable-edit' );
             // overlay.setIgnoreMouseEvents( false );
-            console.log( 'sending no edit mode' );
+            // console.log( 'sending no edit mode' );
             overlay.webContents.send( 'overlay:window:model', model );
             // overlay.transparent = false;
         } );

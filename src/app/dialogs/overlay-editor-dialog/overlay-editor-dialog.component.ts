@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild } from '@angular/core';
+import { Component, OnInit, HostListener } from '@angular/core';
 import { IpcService } from 'src/app/ipc.service';
 import { OverlayWindowModel } from 'src/app/core.model';
 import { ActivatedRoute } from '@angular/router';
@@ -39,6 +39,10 @@ export class OverlayEditorDialogComponent implements OnInit {
         } else {
             return 1;
         }
+    }
+
+    @HostListener( 'window:beforeunload' ) doSomething () {
+        this.ipcService.disableOverlayEditMode( this.overlayId );
     }
 
     constructor( private ipcService: IpcService, private route: ActivatedRoute ) { }
@@ -112,12 +116,3 @@ export class OverlayEditorDialogComponent implements OnInit {
         }
     }
 }
-
-
-// <!-- Roboto(i): 100, 300, 400, 500, 700, 900 -->
-// <!-- Red Rose: 300, 400, 700 -->
-// <!-- Oswald: 200, 300, 400, 500, 600, 700 -->
-// <!-- Roboto Mono (i): 100, 200, 300, 400, 500, 600, 700 -->
-// <!-- Open Sans Condensed: 300(i), 700 -->
-// <!-- Ranchers: 400 -->
-// <!-- Press Start 2P: 400 -->
