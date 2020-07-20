@@ -7,6 +7,10 @@ class OverlayWindow {
     y = null;
     name = '';
     overlayType = '';
+    fontFamily = 'Roboto';
+    fontSize = 14;
+    lineHeight = 90;
+    fontWeight = 400;
 
 }
 

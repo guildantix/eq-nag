@@ -5,7 +5,7 @@
   "scripts": {
     "tsc": "tsc",
     "ng": "ng",
-    "start": "ng serve",
+    "start": "electron .",
     "test": "ng test",
     "lint": "ng lint",
     "e2e": "ng e2e",

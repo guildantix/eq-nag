@@ -1,0 +1,57 @@
+<div class="modal">
+    <header>
+        <mat-toolbar class="titlebar" color="default">
+            <span>Overlay Editor</span>
+            <span class="spacer"></span>
+            <button mat-icon-button aria-label="Exit application" (click)="closeModal()">
+                <mat-icon>clear</mat-icon>
+            </button>
+        </mat-toolbar>
+    </header>
+    <section>
+        <form #overlayForm="ngForm">
+            <mat-tab-group animationDuration="0ms" [selectedIndex]="0">
+                <mat-tab label="General">
+                    <div class="tab-content">
+
+                        <fieldset>
+                            <legend>Content</legend>
+
+                            <mat-form-field appearance="fill">
+                                <mat-label>Font</mat-label>
+                                <mat-select class="font-ddl" [(ngModel)]="model.fontFamily" name="ddlFontFamily" disableOptionCentering (selectionChange)="onChangeFontFamily()" style="max-width: unset;">
+                                    <mat-option class="font-option" value="Roboto" style="font-family: Roboto, sans-serif; font-size: 16px;"><small>Roboto</small></mat-option>
+                                    <mat-option class="font-option" value="Red Rose" style="font-family: 'Red Rose', sans-serif; font-size: 16px;"><small>Red Rose</small></mat-option>
+                                    <mat-option class="font-option" value="Oswald" style="font-family: Oswald, sans-serif; font-size: 16px;"><small>Oswald</small></mat-option>
+                                    <mat-option class="font-option" value="Roboto Mono" style="font-family: 'Roboto Mono', sans-serif; font-size: 16px;"><small>Roboto Mono</small></mat-option>
+                                    <mat-option class="font-option" value="Open Sans Condensed" style="font-family: 'Open Sans Condensed', sans-serif; font-size: 16px;"><small>Open Sans Condensed</small></mat-option>
+                                    <mat-option class="font-option" value="Ranchers" style="font-family: Ranchers, sans-serif; font-size: 16px;"><small>Ranchers</small></mat-option>
+                                    <mat-option class="font-option" value="Press Start 2P" style="font-family: 'Press Start 2P', sans-serif; font-size: 14px;"><small>Press Start 2P</small></mat-option>
+                                </mat-select>
+                            </mat-form-field>
+
+                            <mat-label>Font size</mat-label>
+                            <mat-slider thumbLabel tickInterval="1" min="1" max="64" style="width: 100%;" [(ngModel)]="model.fontSize" name="sldrFontSize" (change)="broadcastModel()"></mat-slider>
+
+                            <mat-label>Spacing</mat-label>
+                            <mat-slider thumbLabel tickInterval="1" step="5" min="10" max="300" style="width: 100%;" [(ngModel)]="model.lineHeight" name="sldrLineHeight" (change)="broadcastModel()"></mat-slider>
+
+                            <mat-label>Font weight</mat-label>
+                            <mat-slider thumbLabel tickInterval="1" step="1" min="0" [max]="maxFontWeightIndex" style="width: 100%;" [(ngModel)]="fontWeightIndex" name="sldrFontWeight" (change)="broadcastModel()"></mat-slider>
+
+                        </fieldset>
+
+                        <fieldset>
+                            <legend>Window</legend>
+
+                        </fieldset>
+                    </div>
+                </mat-tab>
+            </mat-tab-group>
+        </form>
+    </section>
+    <footer>
+        <button mat-button [disabled]="overlayForm.invalid" (click)="save()">Save</button>
+        <button mat-button color="warn" (click)="closeModal()">Cancel</button>
+    </footer>
+</div>

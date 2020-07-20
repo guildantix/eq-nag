@@ -144,6 +144,20 @@ export class MainComponent implements OnInit  {
             } );
     }
 
+    showNewOverlayDialog (): void {
+        this.dialogService.
+            showOverlayDetailsDialog( new OverlayWindowModel() )
+            .subscribe( model => {
+                if ( model?.isValid() === true ) {
+                    this.ipcService.createNewOverlayWindow( model ).subscribe( overlayId => { } );
+                }
+            } );
+    }
+
+    enableOverlayEdit ( overlayId: string ): void {
+        this.ipcService.showEditOverlayDialog( overlayId );
+    }
+
     deleteOverlay ( index: number ): void {
         this.dialogService.showConfirmDialog(
             `Are you sure you want to delete ${this.overlays[ index ].name}?`,
@@ -154,4 +168,12 @@ export class MainComponent implements OnInit  {
                 }
             } );
     }
+
+    // showOverlayTest (): void {
+    //     this.ipcService.showTestOverlay();
+    // }
+
+    // closeOverlayTest (): void {
+    //     this.ipcService.closeTestOverlay();
+    // }
 }

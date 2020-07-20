@@ -7,6 +7,8 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { TriggerDialogComponent } from './trigger-dialog/trigger-dialog.component';
 import { IpcService } from '../ipc.service';
 import { ConfirmDialogComponent } from './confirm-dialog/confirm-dialog.component';
+import { OverlayDetailsDialogComponent } from './overlay-details-dialog/overlay-details-dialog.component';
+import { OverlayEditorDialogComponent } from './overlay-editor-dialog/overlay-editor-dialog.component';
 
 @NgModule( {
     imports: [
@@ -17,11 +19,15 @@ import { ConfirmDialogComponent } from './confirm-dialog/confirm-dialog.componen
     ],
     exports: [
         TriggerDialogComponent,
-        ConfirmDialogComponent
+        ConfirmDialogComponent,
+        OverlayDetailsDialogComponent,
+        OverlayEditorDialogComponent,
     ],
     declarations: [
         TriggerDialogComponent,
-        ConfirmDialogComponent
+        ConfirmDialogComponent,
+        OverlayDetailsDialogComponent,
+        OverlayEditorDialogComponent,
     ],
     providers: [
         DialogService,

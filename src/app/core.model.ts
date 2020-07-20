@@ -37,6 +37,14 @@ export class OverlayWindowModel {
     public y: number = null;
     public name: string = '';
     public overlayType: string = '';
+    public fontFamily: string = 'Roboto';
+    public fontSize: number = 14;
+    public lineHeight: number = 90;
+    public fontWeight: number = 400;
+
+    public isValid (): boolean {
+        return name != null && this.overlayType != null;
+    }
 
 }
 

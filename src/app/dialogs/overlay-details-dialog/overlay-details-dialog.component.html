@@ -1,0 +1,32 @@
+<h2 mat-dialog-title>New Overlay</h2>
+
+<mat-dialog-content>
+
+    <form #detailsForm="ngForm">
+
+        <mat-form-field>
+            <mat-label>Name</mat-label>
+            <input matInput [(ngModel)]="model.name" name="txtName" required />
+        </mat-form-field>
+        
+        <mat-form-field>
+            <mat-label>Overlay Type</mat-label>
+            <mat-select [(ngModel)]="model.overlayType" name="ddlOverlayType" required>
+                <mat-option value="Log">Log</mat-option>
+                <mat-option value="Alert">Alert</mat-option>
+                <mat-option value="Timer" disabled>Timer</mat-option>
+                <mat-option value="Chart" disabled>Chart</mat-option>
+            </mat-select>
+        </mat-form-field>
+
+    </form>
+    
+</mat-dialog-content>
+
+<mat-dialog-actions>
+
+  <button mat-button (click)="cancel()" class="t-confirm-no" color="default">Cancel</button>
+  <!-- Can optionally provide a result for the closing dialog. -->
+  <button mat-button [mat-dialog-close]="model" class="t-confirm-yes" color="accent">Save Changes</button>
+
+</mat-dialog-actions>
