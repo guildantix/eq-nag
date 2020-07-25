@@ -1,5 +1,11 @@
-.containter {
-    position: relative;
+.color-palette-background {
+    position: fixed;
+    left:0;
+    right:0;
+    top:0;
+    bottom:0;
+    background-color: rgba(0,0,0,0.5);
+    z-index: 8;
 }
 
 .color-picker {
@@ -9,11 +15,15 @@
     height: 3rem;
     border: 3px solid rgba(255,255,255,0.5);
     cursor: pointer;
+    margin: 0.5rem;
 
 }
 
 .color-palette {
-    position: absolute;
+    position: fixed;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
     display: block;
     z-index: 9;
 

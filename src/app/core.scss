@@ -75,3 +75,20 @@ fieldset {
     margin-bottom: 20px;
     
 }
+
+.f-row {
+    width: 100%;
+    // border:1px solid red;
+}
+
+@for $i from 1 through 12 {
+    .f-sm-#{$i} {
+        width: percentage($i * (1/12));
+        display: inline-block;
+        // border:1px solid yellow;
+    }
+}
+
+.al-center {
+    text-align: center;
+}
