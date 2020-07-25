@@ -36,6 +36,9 @@ function Overlay() {
         contentArea.style.fontSize = `${data.fontSize}px`;
         contentArea.style.lineHeight = `${( data.lineHeight > 10 ? data.lineHeight : 90 ) / 100}em`;
         contentArea.style.fontWeight = data.fontWeight > 0 ? data.fontWeight : 300;
+        if ( data.fontColor ) {
+            contentArea.style.color = `${data.fontColor}`;
+        }
         // document.querySelector( '.content-area' ).style.fontFamily = 'Press Start 2P';
         // document.querySelectorAll( '.content-area' ).forEach( f => {
         //     console.log( 'found', f );
