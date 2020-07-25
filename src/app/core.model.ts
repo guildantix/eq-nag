@@ -42,6 +42,11 @@ export class OverlayWindowModel {
     public lineHeight: number = 90;
     public fontWeight: number = 400;
     public fontColor: string = '#ffffff';
+    public fontTransparency: number = 1.0;
+    public backgroundColor: string = '#000000';
+    public backgroundTransparency: number = 1.0;
+    public borderColor: string = '#000000';
+    public borderTransparency: number = 1.0;
 
     public isValid (): boolean {
         return name != null && this.overlayType != null;

@@ -13,10 +13,15 @@
             <mat-tab label="General">
                 <div class="tab-content">
 
-                    <fieldset>
-                        <legend>Content</legend>
+                    <fieldset class="margin-t-25">
+                        <!-- <legend>Content</legend> -->
 
                         <mat-form-field appearance="fill">
+                            <mat-label>Name</mat-label>
+                            <input matInput type="text" [(ngModel)]="model.name" />
+                        </mat-form-field>
+
+                        <mat-form-field>
                             <mat-label>Font</mat-label>
                             <mat-select class="font-ddl" [(ngModel)]="model.fontFamily" name="ddlFontFamily" disableOptionCentering (selectionChange)="onChangeFontFamily()" style="max-width: unset;">
                                 <mat-option class="font-option" value="Roboto" style="font-family: Roboto, sans-serif; font-size: 16px;"><small>Roboto</small></mat-option>
@@ -29,25 +34,40 @@
                             </mat-select>
                         </mat-form-field>
 
-                        <mat-label>Font size</mat-label>
-                        <mat-slider thumbLabel tickInterval="1" min="1" max="64" style="width: 100%;" [(ngModel)]="model.fontSize" name="sldrFontSize" (change)="broadcastModel()"></mat-slider>
+                        <div class="f-row">
+                            <div class="f-sm-4 al-center"><mat-label>Size</mat-label></div>
+                            <div class="f-sm-4 al-center"><mat-label>Spacing</mat-label></div>
+                            <div class="f-sm-4 al-center"><mat-label>Weight</mat-label></div>
+                        </div>
+                        <div class="f-row">
+                            <div class="f-sm-4"><mat-slider thumbLabel tickInterval="1" min="1" max="64" style="width: 100%;" [(ngModel)]="model.fontSize" name="sldrFontSize" (change)="broadcastModel()"></mat-slider></div>
+                            <div class="f-sm-4"><mat-slider thumbLabel tickInterval="1" step="5" min="10" max="300" style="width: 100%;" [(ngModel)]="model.lineHeight" name="sldrLineHeight" (change)="broadcastModel()"></mat-slider></div>
+                            <div class="f-sm-4"><mat-slider thumbLabel tickInterval="1" step="1" min="0" [max]="maxFontWeightIndex" style="width: 100%;" [(ngModel)]="fontWeightIndex" name="sldrFontWeight" (change)="broadcastModel()"></mat-slider></div>
+                        </div>
 
-                        <mat-label>Spacing</mat-label>
-                        <mat-slider thumbLabel tickInterval="1" step="5" min="10" max="300" style="width: 100%;" [(ngModel)]="model.lineHeight" name="sldrLineHeight" (change)="broadcastModel()"></mat-slider>
-
-                        <mat-label>Font weight</mat-label>
-                        <mat-slider thumbLabel tickInterval="1" step="1" min="0" [max]="maxFontWeightIndex" style="width: 100%;" [(ngModel)]="fontWeightIndex" name="sldrFontWeight" (change)="broadcastModel()"></mat-slider>
-                        
-
-                        <app-color-picker [(ngModel)]="model.fontColor" (change)="broadcastModel()"></app-color-picker>
+                        <div class="f-row">
+                            <div class="f-sm-4 al-center"><mat-label>Text</mat-label></div>
+                            <div class="f-sm-4 al-center"><mat-label>Background</mat-label></div>
+                            <div class="f-sm-4 al-center"><mat-label>Border</mat-label></div>
+                        </div>
+                        <div class="f-row">
+                            <div class="f-sm-4 al-center"><app-color-picker [(ngModel)]="model.fontColor" (change)="broadcastModel()"></app-color-picker></div>
+                            <div class="f-sm-4 al-center"><app-color-picker [(ngModel)]="model.backgroundColor" (change)="broadcastModel()"></app-color-picker></div>
+                            <div class="f-sm-4 al-center"><app-color-picker [(ngModel)]="model.borderColor" (change)="broadcastModel()"></app-color-picker></div>
+                        </div>
+                        <div class="f-row">
+                            <div class="f-sm-4"><mat-slider thumbLabel tickInterval="1" min="0" max="100" style="width: 100%;" [(ngModel)]="fontTransparency" name="sldrFontSize" (change)="onChangeFontTransparency()"></mat-slider></div>
+                            <div class="f-sm-4"><mat-slider thumbLabel tickInterval="1" min="0" max="100" style="width: 100%;" [(ngModel)]="backgroundTransparency" name="sldrFontSize" (change)="onChangeBackgroundTransparency()"></mat-slider></div>
+                            <div class="f-sm-4"><mat-slider thumbLabel tickInterval="1" min="0" max="100" style="width: 100%;" [(ngModel)]="borderTransparency" name="sldrFontSize" (change)="onChangeBorderTransparency()"></mat-slider></div>
+                        </div>
 
                     </fieldset>
 
-                    <fieldset>
+                    <!-- <fieldset>
                         <legend>Window</legend>
 
-                    </fieldset>
-                    <br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br />
+                    </fieldset> -->
+                    <!-- <br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /> -->
                 </div>
             </mat-tab>
         </mat-tab-group>

@@ -38,8 +38,11 @@ export class OverlayEditorDialogComponent implements OnInit {
     public fontWeightIndex: number = 0;
     public color: ThemePalette = 'primary';
     public fontColor: Color = new Color( 255, 255, 255, 1 );
+    public fontTransparency: number = 100;
+    public backgroundTransparency: number = 0;
+    public borderTransparency: number = 0;
     
-    public get maxFontWeightIndex (): number {
+    public get maxFontWeightIndex(): number {
         if ( this.model?.fontFamily != null ) {
             return availableFonts[ this.model.fontFamily ].length - 1;
         } else {
@@ -47,18 +50,18 @@ export class OverlayEditorDialogComponent implements OnInit {
         }
     }
 
-    @HostListener( 'window:beforeunload' ) doSomething () {
+    @HostListener( 'window:beforeunload' ) doSomething() {
         this.ipcService.disableOverlayEditMode( this.overlayId );
     }
 
     constructor( private ipcService: IpcService, private route: ActivatedRoute ) { }
 
-    ngOnInit () {
+    ngOnInit() {
         this.model = new OverlayWindowModel();
 
         this.route.params.subscribe( params => {
             
-            this.overlayId = params[ 'id' ]; 
+            this.overlayId = params[ 'id' ];
 
             if ( this.overlayId != null ) {
                 this.ipcService.getOverlayWindow( this.overlayId ).subscribe( overlay => {
@@ -70,6 +73,10 @@ export class OverlayEditorDialogComponent implements OnInit {
                     this.model.lineHeight = this.model.lineHeight > 0 ? this.model.lineHeight : 90;
                     this.model.fontWeight = this.model.fontWeight > 100 ? this.model.fontWeight : 400;
                     this.fontWeightIndex = availableFonts[ this.model.fontFamily ].indexOf( this.model.fontWeight );
+                    console.log( 'transparency', this.model.fontTransparency );
+                    this.fontTransparency = Math.round( this.model.fontTransparency * 100 );
+                    this.backgroundTransparency = Math.round( this.model.backgroundTransparency * 100 );
+                    this.borderTransparency = Math.round( this.model.borderTransparency * 100 );
 
                 } );
             }
@@ -78,7 +85,7 @@ export class OverlayEditorDialogComponent implements OnInit {
         
     }
 
-    public onChangeFontFamily (): void {
+    public onChangeFontFamily(): void {
         let fi: number = availableFonts[ this.model.fontFamily ].indexOf( this.model.fontWeight );
         this.fontWeightIndex = -1;
 
@@ -104,7 +111,22 @@ export class OverlayEditorDialogComponent implements OnInit {
         this.broadcastModel();
     }
 
-    public onChangeFontColor (): void {
+    public onChangeFontTransparency(): void {
+        this.model.fontTransparency = this.fontTransparency / 100;
+        this.broadcastModel();
+    }
+
+    public onChangeBackgroundTransparency(): void {
+        this.model.backgroundTransparency = this.backgroundTransparency / 100;
+        this.broadcastModel();
+    }
+
+    public onChangeBorderTransparency(): void {
+        this.model.borderTransparency = this.borderTransparency / 100;
+        this.broadcastModel();
+    }
+
+    public onChangeFontColor(): void {
         this.model.fontColor = this.fontColor.toHex();
         this.broadcastModel();
     }
@@ -114,11 +136,11 @@ export class OverlayEditorDialogComponent implements OnInit {
         this.ipcService.broadcastOverlayModel( this.model );
     }
 
-    public closeModal (): void {
+    public closeModal(): void {
         this.ipcService.closeThisChild();
     }
 
-    public save (): void {
+    public save(): void {
         if ( this.overlayId == null ) {
             this.closeModal();
         } else {

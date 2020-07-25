@@ -168,9 +168,14 @@ class OverlayDatabaseStore extends Store {
             }
         } );
 
-        ipcMain.on( 'overlay:update', ( event, overlay ) => {
+        ipcMain.on( 'overlay:update:meta', ( event, overlay ) => {
+            let model = this.find( overlay.overlayId );
+            overlay.x = model.x;
+            overlay.y = model.y;
+            overlay.windowWidth = model.windowWidth;
+            overlay.windowHeight = model.windowHeight;
             let updated = this.update( overlay );
-            event.sender.webContents.send( 'overlay:update', updated );
+            event.sender.webContents.send( 'overlay:update:meta', updated );
             sendTick();
         } );
 

@@ -306,13 +306,13 @@ export class IpcService {
     public updateOverlayWindow ( model: OverlayWindowModel ): Observable<boolean> {
         let obs: Observable<boolean> = new Observable<boolean>( ( observer: Observer<boolean> ) => {
             
-            this.ipc.once( 'overlay:update', ( e, updated: boolean ) => {
+            this.ipc.once( 'overlay:update:meta', ( e, updated: boolean ) => {
                 this.ngZone.run( () => {
                     observer.next( updated );
                     observer.complete();
                 } );
             } );
-            this.ipc.send( 'overlay:update', model );
+            this.ipc.send( 'overlay:update:meta', model );
 
         } );
 
