@@ -2,6 +2,10 @@ import { Component, OnInit, HostListener } from '@angular/core';
 import { IpcService } from 'src/app/ipc.service';
 import { OverlayWindowModel } from 'src/app/core.model';
 import { ActivatedRoute } from '@angular/router';
+import { ThemePalette } from '@angular/material/core';
+import { AbstractControl, FormControl } from '@angular/forms';
+import { ColorUtility, Color } from '../../utilities';
+// import { Color } from '@angular-material-components/color-picker';
 // import { NgForm } from '@angular/forms';
 
 const availableFonts = {
@@ -32,7 +36,9 @@ export class OverlayEditorDialogComponent implements OnInit {
     public phraseTableColumns = [ 'number', 'phrase', 'regEx', 'delete' ];
     public overlayId: string = null;
     public fontWeightIndex: number = 0;
-
+    public color: ThemePalette = 'primary';
+    public fontColor: Color = new Color( 255, 255, 255, 1 );
+    
     public get maxFontWeightIndex (): number {
         if ( this.model?.fontFamily != null ) {
             return availableFonts[ this.model.fontFamily ].length - 1;
@@ -98,7 +104,12 @@ export class OverlayEditorDialogComponent implements OnInit {
         this.broadcastModel();
     }
 
-    public broadcastModel (): void {
+    public onChangeFontColor (): void {
+        this.model.fontColor = this.fontColor.toHex();
+        this.broadcastModel();
+    }
+
+    public broadcastModel(): void {
         this.model.fontWeight = availableFonts[ this.model.fontFamily ][ this.fontWeightIndex ];
         this.ipcService.broadcastOverlayModel( this.model );
     }

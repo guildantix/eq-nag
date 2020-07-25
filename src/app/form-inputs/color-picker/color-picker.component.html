@@ -1,0 +1,9 @@
+<div class="containter">
+    <div class="color-picker" #colorInput (click)="toggle()" [style.background-color]="value.toHex()">
+        
+    </div>
+
+    <div class="color-palette" [style.left]="popupLeft" [style.top]="popupTop" *ngIf="showPopup">
+        <div class="palette-row" *ngFor="let row of colorPalette"><span class="palette-tile" [ngClass]="{selected: color.equals(value)}" *ngFor="let color of row" aria-label="{{color.toHex()}}" aria-selected="false" [style.background-color]="color.toRgb()" (click)="selectColor(color)"></span></div>
+    </div>
+</div>

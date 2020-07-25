@@ -11,6 +11,7 @@ class OverlayWindow {
     fontSize = 14;
     lineHeight = 90;
     fontWeight = 400;
+    fontColor = '#ffffff';
 
 }
 

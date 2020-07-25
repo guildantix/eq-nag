@@ -1,0 +1,40 @@
+.containter {
+    position: relative;
+}
+
+.color-picker {
+    
+    display: inline-block;
+    width: 3rem;
+    height: 3rem;
+    border: 3px solid rgba(255,255,255,0.5);
+    cursor: pointer;
+
+}
+
+.color-palette {
+    position: absolute;
+    display: block;
+    z-index: 9;
+
+    .palette-row {
+        display: table-row;
+        box-sizing: border-box;
+        // margin-bottom: -4px;
+
+        span.palette-tile {
+            display: table-cell;
+            width: 1.75rem;
+            height: 1.75rem;
+            border: 2px solid transparent;
+            box-sizing: border-box;
+            cursor: pointer;
+
+            &.selected {
+                outline: #00000094 2px solid;
+                position: relative;
+                border-color: #ffffff7a;
+            }
+        }
+    }
+}
