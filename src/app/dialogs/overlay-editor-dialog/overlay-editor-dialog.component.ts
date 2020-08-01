@@ -1,6 +1,6 @@
 import { Component, OnInit, HostListener } from '@angular/core';
 import { IpcService } from 'src/app/ipc.service';
-import { OverlayWindowModel } from 'src/app/core.model';
+import { OverlayWindowModel, ActionTypes } from 'src/app/core.model';
 import { ActivatedRoute } from '@angular/router';
 import { ThemePalette } from '@angular/material/core';
 import { AbstractControl, FormControl } from '@angular/forms';
@@ -147,5 +147,26 @@ export class OverlayEditorDialogComponent implements OnInit {
             this.ipcService.updateOverlayWindow( this.model ).subscribe( success => { } );
             this.closeModal();
         }
+    }
+
+    public sendDisplayTextTest(): void {
+        let phrases: string[] = [
+            'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+            'Vivamus viverra luctus nibh, porta consequat neque mattis a.',
+            'Etiam mollis justo felis, non suscipit velit commodo sed.',
+            'Maecenas lobortis mi sed felis scelerisque viverra.',
+            'Phasellus nec nibh a nulla porttitor gravida.',
+        ];
+        phrases.forEach( phrase => {
+            let comp: any = {
+                overlayId: this.overlayId,
+                action: {
+                    actionType: ActionTypes.DisplayText,
+                    duration: Math.floor(Math.random() * 5) + 1,
+                    displayText: phrase,
+                }
+            }
+            this.ipcService.sendOverlayComponent( comp );
+        } );
     }
 }

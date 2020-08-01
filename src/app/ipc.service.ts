@@ -351,4 +351,8 @@ export class IpcService {
         this.ipc.send( 'overlay:broadcast', overlay );
     }
 
+    public sendOverlayComponent( component: any ): void {
+        this.ipc.send( 'overlay:send:component', component );
+    }
+
 }

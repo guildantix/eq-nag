@@ -304,7 +304,7 @@ ipcMain.on( 'dkp:markAsEntered', ( event, entries ) => {
 } );
 
 ipcMain.on( 'overlay:enable-edit', ( event, overlayId ) => {
-    
+    console.log( 'calling enable edit for', overlayId );
     if ( overlayDictionary && overlayDictionary[ overlayId ] ) {
         // console.log( 'overlay enable', overlayId );
         // overlayDictionary[ overlayId ].window.transparent = false;
@@ -480,7 +480,13 @@ ipcMain.on( 'overlay:broadcast', ( event, model ) => {
     if ( overlayDictionary && overlayDictionary[ model.overlayId ] ) {
         overlayDictionary[ model.overlayId ].window.send( 'overlay:window:model', model );
     }
-})
+} );
+
+ipcMain.on( 'overlay:send:component', ( event, component ) => {
+    if ( overlayDictionary && overlayDictionary[ component.overlayId ] ) {
+        overlayDictionary[ component.overlayId ].window.send( 'overlay:receive:component', component );
+    }
+} );
 
 triggerDatabase.attachIpcEvents( mainWindow, sendTick );
 overlayDatabase.attachIpcEvents( mainWindow, sendTick );
