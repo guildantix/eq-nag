@@ -1,6 +1,6 @@
 import { Component, OnInit, ViewChild } from '@angular/core';
 import { IpcService } from 'src/app/ipc.service';
-import { TriggerModel, CapturePhrase, ActionTypes, TriggerAction } from 'src/app/core.model';
+import { TriggerModel, CapturePhrase, ActionTypes, TriggerAction, OverlayWindowModel } from 'src/app/core.model';
 import { animate, state, style, transition, trigger } from '@angular/animations';
 import { MatTableDataSource, MatTable } from '@angular/material/table';
 import { ActivatedRoute } from '@angular/router';
@@ -26,6 +26,11 @@ export class TriggerDialogComponent implements OnInit {
     public actionTableColumns = [ 'number', 'actionType', 'delete' ];
     public triggerId: string = null;
     public actionTypes: typeof ActionTypes = ActionTypes;
+    public overlays: OverlayWindowModel[] = [];
+
+    public get logOverlays(): OverlayWindowModel[] {
+        return this.overlays.filter( f => f.overlayType === 'Log' );
+    }
     // public expandedElement: CapturePhrase | null;
     // public capturePhraseKind: string = 'Any match';
     // public dataSource = new MatTableDataSource<CapturePhrase>();
@@ -48,6 +53,8 @@ export class TriggerDialogComponent implements OnInit {
                     console.log( 'result', trigger );
                 } );
             }
+
+            this.ipcService.getOverlayWindows().subscribe( overlays => this.overlays = overlays );
      
             // In a real app: dispatch action to load the details here.
         } );

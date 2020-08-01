@@ -79,6 +79,8 @@ export class TriggerAction {
 
     public actionId: string;
     public actionType: ActionTypes;
+    public overlayId: string;
+    public displayText: string;
 
 }
 

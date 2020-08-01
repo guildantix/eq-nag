@@ -25,6 +25,8 @@ class TriggerAction {
 
     actionId = null;
     actionType = ActionTypes.DisplayText;
+    overlayId;
+    displayText;
 
 }
 
