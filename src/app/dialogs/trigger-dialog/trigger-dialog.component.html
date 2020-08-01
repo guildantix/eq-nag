@@ -82,27 +82,99 @@
     
                     </div>
                 </mat-tab>
-                <!-- <mat-tab label="Actions">
+                <mat-tab label="Actions">
                     <div class="tab-content">
-                        <div style="height: 36px;"><button mat-button color="accent" style="float: right; margin-right: 50px;"><mat-icon>add</mat-icon>New</button></div>
+                        <div style="height: 36px;"><button mat-button color="accent" style="float: right; margin-right: 50px;" (click)="addNewAction()"><mat-icon>add</mat-icon>New</button></div>
                         <div class="flex-layout">
-                            <mat-card class="card" *ngFor="let capturePhrase of model.capturePhrases; let i = index" style="margin: 20px; width: 400px;">
+                            <mat-card class="card action-card" *ngFor="let action of model.actions; let i = index" style="margin: 20px; width: 500px;">
                                 <mat-card-header>
-                                    <div mat-card-avatar class="example-header-image"></div>
-                                    <mat-card-title>Shiba Inu</mat-card-title>
-                                    <mat-card-subtitle>Dog Breed</mat-card-subtitle>
+                                    <div mat-card-avatar class="example-header-image">
+                                        <span class="material-icons" *ngIf="action.actionType == null">block</span>
+                                        <span class="material-icons" *ngIf="action.actionType === actionTypes.DisplayText">text_format</span>
+                                        <span class="material-icons" *ngIf="action.actionType === actionTypes.PlayAudio">audiotrack</span>
+                                        <span class="material-icons" *ngIf="action.actionType === actionTypes.Speak">volume_up</span>
+                                        <span class="material-icons" *ngIf="action.actionType === actionTypes.Timer">timer</span>
+                                        <span class="material-icons" *ngIf="action.actionType === actionTypes.Countdown">watch</span>
+                                        <span class="material-icons" *ngIf="action.actionType === actionTypes.StoreVariable">sd_storage</span>
+                                    </div>
+                                    <mat-card-title>{{action.actionType == null ? 'Unset Action' : actionTypes[action.actionType]}}</mat-card-title>
+                                    <mat-card-subtitle>
+                                        <span *ngIf="action.actionType === actionTypes.DisplayText">Display text on an overlay.</span>
+                                        <span *ngIf="action.actionType === actionTypes.PlayAudio">Play an audio file.</span>
+                                        <span *ngIf="action.actionType === actionTypes.Speak">Speak a phrase.</span>
+                                        <span *ngIf="action.actionType === actionTypes.Timer">Start a timer.</span>
+                                        <span *ngIf="action.actionType === actionTypes.Countdown">Start a countdown.</span>
+                                        <span *ngIf="action.actionType === actionTypes.StoreVariable">Store a value in a variable.</span>
+                                    </mat-card-subtitle>
                                 </mat-card-header>
                                 <mat-card-content>
+
+                                    <mat-form-field>
+                                        <mat-label>Action Type</mat-label>
+                                        <mat-select [(ngModel)]="action.actionType" name="ddlActionType_{{i}}">
+                                            <mat-option [value]="actionTypes.DisplayText">Display Text</mat-option>
+                                            <mat-option [value]="actionTypes.PlayAudio">Play Audio</mat-option>
+                                            <mat-option [value]="actionTypes.Speak">Speak</mat-option>
+                                            <mat-option [value]="actionTypes.Timer">Timer</mat-option>
+                                            <mat-option [value]="actionTypes.Countdown">Countdown</mat-option>
+                                            <mat-option [value]="actionTypes.StoreVariable">Store Variable</mat-option>
+                                        </mat-select>
+                                    </mat-form-field>
+
+                                    <div *ngIf="action.actionType === actionTypes.DisplayText">
+
+                                    </div>
         
                                 </mat-card-content>
                                 <mat-card-actions>
-                                    <button mat-button>Disable</button>
-                                    <button mat-button color="warn">Delete</button>
+                                    <!-- <button mat-button>Disable</button> -->
+                                    <button mat-button color="warn" (click)="deleteAction(i)">Delete</button>
                                 </mat-card-actions>
                             </mat-card>
                         </div>
+                        <!-- <div>
+                            <table mat-table #actionsTable="matTable"
+                                [dataSource]="model.actions"
+                                class="capture-phrases">
+    
+                                <ng-container matColumnDef="number">
+                                    <th mat-header-cell *matHeaderCellDef style="width: 50px;"> No. </th>
+                                    <td mat-cell *matCellDef="let element; let i = index"> {{i + 1}} </td>
+                                </ng-container>
+    
+                                <ng-container matColumnDef="actionType">
+                                    <th mat-header-cell *matHeaderCellDef> Type </th>
+                                    <td mat-cell *matCellDef="let element; let i = index">
+                                        <mat-form-field>
+                                            <mat-label>Action Type</mat-label>
+                                            <mat-select [(ngModel)]="element.actionType">
+                                                <mat-option [value]="actionTypes.DisplayText">Display Text</mat-option>
+                                                <mat-option [value]="actionTypes.PlayAudio">Play Audio</mat-option>
+                                                <mat-option [value]="actionTypes.Speak">Speak</mat-option>
+                                                <mat-option [value]="actionTypes.Timer">Timer</mat-option>
+                                                <mat-option [value]="actionTypes.Countdown">Countdown</mat-option>
+                                                <mat-option [value]="actionTypes.StoreVariable">Store Variable</mat-option>
+                                            </mat-select>
+                                        </mat-form-field>
+                                    </td>
+                                </ng-container>
+    
+                                <ng-container matColumnDef="delete">
+                                    <th mat-header-cell *matHeaderCellDef style="text-align: center; width: 50px;">  </th>
+                                    <td mat-cell *matCellDef="let element; let i = index">
+                                        <button mat-icon-button color="warn" aria-label="Delete this trigger action" (click)="deleteAction(i)">
+                                            <mat-icon>clear</mat-icon>
+                                        </button>
+                                    </td>
+                                </ng-container>
+    
+                                <tr mat-header-row *matHeaderRowDef="actionTableColumns"></tr>
+                                <tr mat-row *matRowDef="let element; columns: actionTableColumns;"></tr>
+
+                            </table>
+                        </div> -->
                     </div>
-                </mat-tab> -->
+                </mat-tab>
             </mat-tab-group>
         </form>
     </section>
