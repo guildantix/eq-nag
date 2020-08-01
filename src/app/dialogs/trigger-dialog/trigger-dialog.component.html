@@ -123,6 +123,18 @@
 
                                     <div *ngIf="action.actionType === actionTypes.DisplayText">
 
+                                        <mat-form-field>
+                                            <mat-label>Overlay Window</mat-label>
+                                            <mat-select [(ngModel)]="action.overlayId" name="ddlLogOverlay_{{i}}">
+                                                <mat-option *ngFor="let option of logOverlays" [value]="option.overlayId">{{option.name}}</mat-option>
+                                            </mat-select>
+                                        </mat-form-field>
+
+                                        <mat-form-field>
+                                            <mat-label>Display Text</mat-label>
+                                            <input matInput [(ngModel)]="action.displayText" name="txtDisplayText_{{i}}" />
+                                        </mat-form-field>
+
                                     </div>
         
                                 </mat-card-content>
