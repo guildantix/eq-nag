@@ -5,7 +5,7 @@ const customAlphabet = require( 'nanoid' ).customAlphabet;
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const idLen = 16;
 const nanoid = customAlphabet( alphabet, 16 );
-const OverlayWindow = require( './models/overlay-window' );
+const { OverlayWindow } = require( './models/overlay-window' );
 
 class OverlayDatabaseStore extends Store {
 

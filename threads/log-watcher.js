@@ -4,11 +4,14 @@ const path = require( 'path' );
 const process = require( 'process' );
 const fs = require( 'fs' );
 const DkpEntryModel = require( '../data/models/dkp-entry' );
+const { Trigger, TriggerAction } = require( '../data/models/trigger' );
+const { OverlayComponent } = require( '../data/models/overlay-window' );
 
 const chokidar = require( "chokidar" );
 var currentPosition = 0;
 
 var watcher = null;
+/** @type {Trigger[]} */
 var triggers = [];
 
 function LogWatcher() {

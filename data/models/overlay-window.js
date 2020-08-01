@@ -1,3 +1,5 @@
+const { ActionTypes, TriggerAction } = require( './trigger' );
+
 class OverlayWindow {
 
     overlayId = null;
@@ -20,4 +22,17 @@ class OverlayWindow {
 
 }
 
-module.exports = OverlayWindow;
+class OverlayComponent {
+    /** @type {TriggerAction} */
+    action;
+    /** @type {string[]} */
+    matches = [];
+    /** @type {Date} */
+    removeAt;
+    /** @type {HTMLDivElement} */
+    dom;
+    overlayId = '';
+    intervalId = -1;
+}
+
+module.exports = { OverlayWindow, OverlayComponent };

@@ -81,6 +81,7 @@ export class TriggerAction {
     public actionType: ActionTypes;
     public overlayId: string;
     public displayText: string;
+    public duration: number;
 
 }
 

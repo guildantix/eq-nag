@@ -27,7 +27,7 @@ class TriggerAction {
     actionType = ActionTypes.DisplayText;
     overlayId;
     displayText;
-
+    duration = 0;
 }
 
 class Trigger {
