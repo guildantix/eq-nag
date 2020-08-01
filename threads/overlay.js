@@ -1,4 +1,5 @@
 const DomUtilities = require( '../utilities/dom' );
+const StringUtilities = require( '../utilities/string' );
 const { OverlayWindow, OverlayComponent } = require( '../data/models/overlay-window' );
 const { ActionTypes, TriggerAction } = require( '../data/models/trigger' );
 const { ipcRenderer } = require( 'electron' );
@@ -97,7 +98,7 @@ function render( comp ) {
     let now = new Date();
     if ( comp.action.actionType === ActionTypes.DisplayText ) {
         comp.removeAt = new Date( now.setSeconds( comp.action.duration ) );
-        let content = displayTextTemplate( { value: comp.action.displayText } );
+        let content = displayTextTemplate( { value: StringUtilities.format( comp.action.displayText, comp.matches ) } );
         let div = document.createElement( 'div' );
         div.innerHTML = content;
         comp.dom = div;

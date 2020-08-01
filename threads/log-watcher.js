@@ -149,7 +149,16 @@ function parseLogEntries( raw ) {
         triggers.forEach( f => {
             let res = f._parse( log );
             if ( res.match ) {
-                console.log( 'match found!', res.result[ 0 ] );
+                f.actions.forEach( action => {
+                    let comp = new OverlayComponent();
+                    comp.action = action;
+                    comp.overlayId = action.overlayId;
+                    comp.matches = res.result;
+                    ipcRenderer.send( 'overlay:send:component', comp );
+                } );
+                // comp.action = f;
+                // console.log( 'match found!', res.result[ 0 ] );
+                // ipcRenderer.send( 'addDkpEntry', new DkpEntryModel( timestamp, character, item, +dkp ) );
             }
         } );
         // // We can optimize this by generating these as functions on the tick.

@@ -37,6 +37,7 @@ class Trigger {
     capturePhrases = [];
     useRegEx = false;
     comments = '';
+    /** @type {TriggerAction[]} */
     actions = [];
     captureMethod = 'Any match';
 
