@@ -71,7 +71,7 @@ export class IpcService {
         }
     }
 
-    public tickReceived (): Observable<DataTickModel> {
+    public tickReceived(): Observable<DataTickModel> {
         let obs: Observable<DataTickModel> = new Observable<DataTickModel>( ( observer: Observer<DataTickModel> ) => {
             this._tickObservers.push( observer );
         } );
@@ -79,7 +79,7 @@ export class IpcService {
         return obs;
     }
 
-    public receiveDkpDatabase (): Observable<DkpEntryModel[]> {
+    public receiveDkpDatabase(): Observable<DkpEntryModel[]> {
         let obs: Observable<DkpEntryModel[]> = new Observable<DkpEntryModel[]>( ( observer: Observer<DkpEntryModel[]> ) => {
             this._transmitObservers.push( observer );
         } );
@@ -87,7 +87,7 @@ export class IpcService {
         return obs;
     }
 
-    public logFileChanged (): Observable<string> {
+    public logFileChanged(): Observable<string> {
         let obs: Observable<string> = new Observable<string>( ( observer: Observer<string> ) => {
             this._logFileChangeObservers.push( observer );
         } );
@@ -95,7 +95,7 @@ export class IpcService {
         return obs;
     }
 
-    public dkpEntryAdded (): Observable<DkpEntryModel> {
+    public dkpEntryAdded(): Observable<DkpEntryModel> {
         let obs: Observable<DkpEntryModel> = new Observable<DkpEntryModel>( ( observer: Observer<DkpEntryModel> ) => {
             this._dkpAddedObservers.push( observer );
         } );
@@ -103,7 +103,7 @@ export class IpcService {
         return obs;
     }
 
-    public dkpEntryRemoved (): Observable<number> {
+    public dkpEntryRemoved(): Observable<number> {
         let obs: Observable<number> = new Observable<number>( ( observer: Observer<number> ) => {
             this._dkpRemovedObservers.push( observer );
         } );
@@ -111,7 +111,7 @@ export class IpcService {
         return obs;
     }
 
-    public getAppVersion (): Observable<string> {
+    public getAppVersion(): Observable<string> {
         let obs: Observable<string> = new Observable<string>( ( observer: Observer<string> ) => {
             
             this.ipc.once( 'app_version', ( e, v ) => {
@@ -127,7 +127,7 @@ export class IpcService {
         return obs;
     }
 
-    public consoleLogRequested (): Observable<any> {
+    public consoleLogRequested(): Observable<any> {
         let obs: Observable<any> = new Observable<any>( ( observer: Observer<any> ) => {
             this._consoleLogRequestObservers.push( observer );
         } );
@@ -135,47 +135,47 @@ export class IpcService {
         return obs;
     }
 
-    public removeDkpAward ( entry: DkpEntryModel ): void {
+    public removeDkpAward( entry: DkpEntryModel ): void {
         this.ipc.send( 'removeDkpAward', entry );
     }
 
-    public quitApp (): void {
+    public quitApp(): void {
         this.ipc.send( 'quitApp' );
     }
 
-    public updateLogFile ( logFile: string ): void {
+    public updateLogFile( logFile: string ): void {
         this.ipc.send( 'logSelected', logFile );
     }
 
-    public updateVoiceIndex ( index: number ): void {
+    public updateVoiceIndex( index: number ): void {
         this.ipc.send( 'selectVoice', index );
     }
 
-    public sendTextToClipboard ( value: string ): void {
+    public sendTextToClipboard( value: string ): void {
         this.ipc.send( 'clipboard:writeText', value );
     }
 
-    public markDkpEntriesAsEntered ( entries: DkpEntryModel[] ): void {
+    public markDkpEntriesAsEntered( entries: DkpEntryModel[] ): void {
         this.ipc.send( 'dkp:markAsEntered', entries );
     }
 
-    public clearDkpLog (): void {
+    public clearDkpLog(): void {
         this.ipc.send( 'dkp:reset' );
     }
 
-    public showNewTriggerDialog (): void {
+    public showNewTriggerDialog(): void {
         this.ipc.send( 'trigger:dialog:new' );
     }
 
-    public showEditTriggerDialog ( triggerId: string ): void {
+    public showEditTriggerDialog( triggerId: string ): void {
         this.ipc.send( 'trigger:dialog:edit', triggerId );
     }
 
-    public closeThisChild (): void {
+    public closeThisChild(): void {
         this.ipc.send( 'window:child:close' );
     }
 
-    public createNewTrigger ( model: TriggerModel ): Observable<string> {
+    public createNewTrigger( model: TriggerModel ): Observable<string> {
         let obs: Observable<string> = new Observable<string>( ( observer: Observer<string> ) => {
             
             this.ipc.once( 'trigger:create', ( e, triggerId ) => {
@@ -191,7 +191,7 @@ export class IpcService {
         return obs;
     }
 
-    public getTriggers (): Observable<TriggerModel[]> {
+    public getTriggers(): Observable<TriggerModel[]> {
         let obs: Observable<TriggerModel[]> = new Observable<TriggerModel[]>( ( observer: Observer<TriggerModel[]> ) => {
             
             this.ipc.once( 'trigger:get', ( e, triggers: TriggerModel[] ) => {
@@ -207,7 +207,7 @@ export class IpcService {
         return obs;
     }
 
-    public getTrigger ( triggerId: string ): Observable<TriggerModel> {
+    public getTrigger( triggerId: string ): Observable<TriggerModel> {
         let obs: Observable<TriggerModel> = new Observable<TriggerModel>( ( observer: Observer<TriggerModel> ) => {
             
             this.ipc.once( 'trigger:get', ( e, trigger: TriggerModel ) => {
@@ -223,7 +223,7 @@ export class IpcService {
         return obs;
     }
 
-    public updateTrigger ( model: TriggerModel ): Observable<boolean> {
+    public updateTrigger( model: TriggerModel ): Observable<boolean> {
         let obs: Observable<boolean> = new Observable<boolean>( ( observer: Observer<boolean> ) => {
             
             this.ipc.once( 'trigger:update', ( e, updated: boolean ) => {
@@ -239,7 +239,7 @@ export class IpcService {
         return obs;
     }
 
-    public deleteTrigger ( triggerId: string ): Observable<boolean> {
+    public deleteTrigger( triggerId: string ): Observable<boolean> {
         let obs: Observable<boolean> = new Observable<boolean>( ( observer: Observer<boolean> ) => {
             
             this.ipc.once( 'trigger:delete', ( e, deleted: boolean ) => {
@@ -255,7 +255,7 @@ export class IpcService {
         return obs;
     }
 
-    public createNewOverlayWindow ( model: OverlayWindowModel ): Observable<string> {
+    public createNewOverlayWindow( model: OverlayWindowModel ): Observable<string> {
         let obs: Observable<string> = new Observable<string>( ( observer: Observer<string> ) => {
             
             this.ipc.once( 'overlay:create', ( e, overlayId ) => {
@@ -271,7 +271,7 @@ export class IpcService {
         return obs;
     }
 
-    public getOverlayWindows (): Observable<OverlayWindowModel[]> {
+    public getOverlayWindows(): Observable<OverlayWindowModel[]> {
         let obs: Observable<OverlayWindowModel[]> = new Observable<OverlayWindowModel[]>( ( observer: Observer<OverlayWindowModel[]> ) => {
             
             this.ipc.once( 'overlay:get', ( e, overlays: OverlayWindowModel[] ) => {
@@ -287,7 +287,7 @@ export class IpcService {
         return obs;
     }
 
-    public getOverlayWindow ( overlayId: string ): Observable<OverlayWindowModel> {
+    public getOverlayWindow( overlayId: string ): Observable<OverlayWindowModel> {
         let obs: Observable<OverlayWindowModel> = new Observable<OverlayWindowModel>( ( observer: Observer<OverlayWindowModel> ) => {
             
             this.ipc.once( 'overlay:get', ( e, overlay: OverlayWindowModel ) => {
@@ -303,7 +303,7 @@ export class IpcService {
         return obs;
     }
 
-    public updateOverlayWindow ( model: OverlayWindowModel ): Observable<boolean> {
+    public updateOverlayWindow( model: OverlayWindowModel ): Observable<boolean> {
         let obs: Observable<boolean> = new Observable<boolean>( ( observer: Observer<boolean> ) => {
             
             this.ipc.once( 'overlay:update:meta', ( e, updated: boolean ) => {
@@ -319,7 +319,7 @@ export class IpcService {
         return obs;
     }
 
-    public deleteOverlayWindow ( overlayId: string ): Observable<boolean> {
+    public deleteOverlayWindow( overlayId: string ): Observable<boolean> {
         let obs: Observable<boolean> = new Observable<boolean>( ( observer: Observer<boolean> ) => {
             
             this.ipc.once( 'overlay:delete', ( e, deleted: boolean ) => {
@@ -335,19 +335,19 @@ export class IpcService {
         return obs;
     }
 
-    public enableOverlayEditMode ( overlayId: string ): void {
+    public enableOverlayEditMode( overlayId: string ): void {
         this.ipc.send( 'overlay:enable-edit', overlayId );
     }
 
-    public disableOverlayEditMode ( overlayId: string ): void {
+    public disableOverlayEditMode( overlayId: string ): void {
         this.ipc.send( 'overlay:disable-edit', overlayId );
     }
 
-    public showEditOverlayDialog ( overlayId: string ): void {
+    public showEditOverlayDialog( overlayId: string ): void {
         this.ipc.send( 'overlay:dialog:edit', overlayId );
     }
 
-    public broadcastOverlayModel ( overlay: OverlayWindowModel ): void {
+    public broadcastOverlayModel( overlay: OverlayWindowModel ): void {
         this.ipc.send( 'overlay:broadcast', overlay );
     }
 
