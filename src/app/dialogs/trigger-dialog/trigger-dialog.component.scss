@@ -20,3 +20,15 @@ legend.full-width {
 table.capture-phrases {
     width: 100%;
 }
+
+.example-header-image {
+    .material-icons {
+        font-size: 50px;
+    }
+}
+
+.card.action-card {
+    mat-card-content {
+        padding-top: 50px;
+    }
+}

@@ -64,6 +64,24 @@ export class DataTickModel {
 
 }
 
+export enum ActionTypes {
+    
+    DisplayText = 0,
+    PlayAudio = 1,
+    Speak = 2,
+    Timer = 3,
+    Countdown = 4,
+    StoreVariable = 5,
+
+}
+
+export class TriggerAction {
+
+    public actionId: string;
+    public actionType: ActionTypes;
+
+}
+
 // export enum TriggerActionTypes {
 //     TextToSpeech = 1
 // }

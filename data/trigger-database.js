@@ -1,7 +1,7 @@
 const { app, BrowserWindow, ipcMain } = require( "electron" );
 const Store = require( './store' );
 const _ = require( 'lodash' );
-const Trigger = require( './models/trigger' );
+const { Trigger, TriggerAction, ActionTypes } = require( './models/trigger' );
 const customAlphabet = require( 'nanoid' ).customAlphabet;
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const idLen = 16;
@@ -92,6 +92,7 @@ class TriggerDatabaseStore extends Store {
 
         // Generate a new id for the trigger.
         trigger.triggerId = nanoid();
+        trigger.actions?.forEach( f => f.actionId = f.actionId ? f.actionId : nanoid() );
 
         // Add it to the store.
         this.#data.triggers.push( trigger );
@@ -224,6 +225,8 @@ class TriggerDatabaseStore extends Store {
      * @param {TriggerModel} trigger The trigger to update.
      */
     update( trigger ) {
+
+        trigger.actions?.forEach( f => f.actionId = f.actionId ? f.actionId : nanoid() );
 
         // Find the index of the trigger by Id.
         let i = _.findIndex( this.#data.triggers, ( e ) => e.triggerId === trigger.triggerId );
