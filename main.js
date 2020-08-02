@@ -3,10 +3,10 @@ const { autoUpdater } = require('electron-updater');
 const url = require( "url" );
 const path = require( "path" );
 const { clipboard } = require( 'electron' );
-const UserPreferencesStore = require( './data/user-preferences' );
-const DkpDatabaseStore = require( './data/dkp-database' );
-const TriggerDatabaseStore = require( './data/trigger-database' );
-const OverlayDatabaseStore = require( "./data/overlay-database" );
+const UserPreferencesStore = require( './src/electron/data/user-preferences' );
+const DkpDatabaseStore = require( './src/electron/data/dkp-database' );
+const TriggerDatabaseStore = require( './src/electron/data/trigger-database' );
+const OverlayDatabaseStore = require( "./src/electron/data/overlay-database" );
 
 var mainWindow, logWatcherWindow, testWindow;
 const userPreferences = new UserPreferencesStore( {} );
@@ -81,7 +81,7 @@ function createWindow() {
         webPreferences: { nodeIntegration: true, webSecurity: false },
     } );
     logWatcherWindow.webContents.openDevTools();
-    logWatcherWindow.loadFile("./threads/log-watcher.html");
+    logWatcherWindow.loadFile("./src/electron/threads/log-watcher.html");
 
     logWatcherWindow.on( 'closed', function () {
         logWatcherWindow = null;
@@ -323,7 +323,7 @@ function loadOverlay( model, enableEdit ) {
         },
         skipTaskbar: true,
     } );
-    overlay.loadFile( "./threads/overlay.html" );
+    overlay.loadFile( "./src/electron/threads/overlay.html" );
     overlay.setIgnoreMouseEvents( true );
     overlay.setAlwaysOnTop( true, "screen" );
 
