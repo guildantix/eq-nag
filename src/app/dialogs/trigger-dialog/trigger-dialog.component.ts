@@ -31,12 +31,8 @@ export class TriggerDialogComponent implements OnInit {
     public get logOverlays(): OverlayWindowModel[] {
         return this.overlays.filter( f => f.overlayType === 'Log' );
     }
-    // public expandedElement: CapturePhrase | null;
-    // public capturePhraseKind: string = 'Any match';
-    // public dataSource = new MatTableDataSource<CapturePhrase>();
     
     @ViewChild( 'capturePhrasesTable' ) capturePhrasesTable: MatTable<any>;
-    // @ViewChild( 'actionsTable' ) actionsTable: MatTable<any>;
 
     constructor( private ipcService: IpcService, private route: ActivatedRoute, private dialogService: DialogService ) { }
 
@@ -50,7 +46,6 @@ export class TriggerDialogComponent implements OnInit {
             if ( this.triggerId != null ) {
                 this.ipcService.getTrigger( this.triggerId ).subscribe( trigger => {
                     this.model = trigger;
-                    console.log( 'result', trigger );
                 } );
             }
 
@@ -72,7 +67,6 @@ export class TriggerDialogComponent implements OnInit {
     public addNewCapturePhrase(): void {
         this.model.capturePhrases.push( new CapturePhrase() );
         this.capturePhrasesTable?.renderRows();
-        // this.dataSource.data = this.model.capturePhrases;
     }
 
     public deleteCapturePhrase( index: number ): void {
@@ -90,8 +84,6 @@ export class TriggerDialogComponent implements OnInit {
 
     public addNewAction(): void {
         this.model.actions.push( new TriggerAction() );
-        // this.actionsTable?.renderRows();
-        // this.dataSource.data = this.model.capturePhrases;
     }
 
     public deleteAction( index: number ): void {
@@ -102,7 +94,6 @@ export class TriggerDialogComponent implements OnInit {
             ( confirmed ) => {
                 if ( confirmed ) {
                     this.model.actions?.splice( index, 1 );
-                    // this.actionsTable?.renderRows();
                 }
             } );
     }

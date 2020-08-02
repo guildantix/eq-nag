@@ -50,20 +50,7 @@ export class ColorPickerComponent implements OnInit, ControlValueAccessor {
     }
 
     @Output( 'change' ) public change: EventEmitter<string> = new EventEmitter<string>();
-    // @HostListener( 'window:click', [ '$event.target' ] ) public onWindowClick( el ) {
-    //     if ( this.showPopup ) {
-    //         this.showPopup = false;
-    //     }
-    // }
     @ViewChild( 'colorInput' ) public colorInputEl: ElementRef<HTMLDivElement>;
-
-    // public get popupLeft(): string {
-    //     return `${this.colorInputEl?.nativeElement?.offsetLeft}px`;
-    // }
-
-    // public get popupTop(): string {
-    //     return `${this.colorInputEl?.nativeElement?.offsetTop + this.colorInputEl?.nativeElement?.offsetHeight}px`;
-    // }
 
     constructor() { }
 
@@ -89,7 +76,6 @@ export class ColorPickerComponent implements OnInit, ControlValueAccessor {
     }
 
     writeValue( value: string ) {
-        console.log( 'writing value', value );
         this.value = ColorUtility.FromHex( value );
     }
   

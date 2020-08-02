@@ -16,18 +16,12 @@ const Handlebars = require("handlebars");
 
 /** @type {OverlayComponent[]} */
 var overlayComponents = [];
-// var renderInterval = -1;
-// var renderFps = 10;
-var displayTextTemplate;// = Handlebars.compile( document.querySelector( '#displayTextTemplate' ).innerHTML );
+var displayTextTemplate;
 
 function Overlay() {
 
     DomUtilities.docReady( f => {
-        // document.querySelector( '#header' ).textContent = 'Overlay LOADED';
         displayTextTemplate = Handlebars.compile( document.querySelector( '#displayTextTemplate' ).innerHTML );
-        var selectElements = document.querySelectorAll('select');
-        var instances = M.FormSelect.init( selectElements, {} );
-        // renderInterval = window.setInterval( render, 1000 / renderFps );
     } );
 
     ipcRenderer.on( 'overlay:receive:component',
@@ -107,29 +101,6 @@ function render( comp ) {
             comp.dom.parentNode.removeChild( comp.dom );
         }, comp.action.duration * 1000 );
     }
-    // // Remove expired components.
-    // let count = overlayComponents.length;
-    // let expiredIndices = [];
-    // overlayComponents.forEach( ( comp, i ) => {
-    //     if ( comp.removeAt <= now ) {
-    //         expiredIndices.push( i );
-    //     }
-    // } );
-    // for ( let i = expiredIndices.length - 1; i >= 0; i-- ) {
-    //     overlayComponents.splice( i, 1 );
-    // }
-
-    // // If we're redrawing or components where removed.
-    // if ( redraw || count != overlayComponents.length ) {
-    //     let content = '';
-    //     overlayComponents.forEach( comp => {
-    //         if ( comp.action.actionType === ActionTypes.DisplayText ) {
-    //             comp.removeAt = new Date( now.setSeconds( comp.action.duration ) );
-    //             content += displayTextTemplate( { value: comp.action.displayText } );
-    //         }
-    //     } );
-    //     contentArea.innerHTML = content;
-    // }
 }
 
 function componentToHex( c ) {

@@ -6,5 +6,5 @@
 <div class="color-palette-background" *ngIf="showPopup" (click)="showPopup = false"></div>
 
 <div class="color-palette" *ngIf="showPopup">
-    <div class="palette-row" *ngFor="let row of colorPalette"><span class="palette-tile" [ngClass]="{selected: color.equals(value)}" *ngFor="let color of row" aria-label="{{color.toHex()}}" aria-selected="false" [style.background-color]="color.toRgb()" (click)="selectColor(color)"></span></div>
+    <div class="palette-row" *ngFor="let row of colorPalette"><span class="palette-tile" [ngClass]="{selected: color.equals(value)}" *ngFor="let color of row" attr.aria-label="{{color.toHex()}}" aria-selected="false" [style.background-color]="color.toRgb()" (click)="selectColor(color)"></span></div>
 </div>
