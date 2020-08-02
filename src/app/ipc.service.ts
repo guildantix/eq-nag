@@ -28,7 +28,7 @@ export class IpcService {
                     } );
                 } );
                 
-                this.ipc.on( 'transmitDkpDatabase', ( event: any, data: DkpEntryModel[] ) => {
+                this.ipc.on( 'dkp:event:transmit', ( event: any, data: DkpEntryModel[] ) => {
                     ngZone.run( () => {
                         this._transmitObservers?.forEach( f => {
                             f.next( data );

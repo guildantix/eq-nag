@@ -73,7 +73,7 @@ class DkpDatabaseStore extends Store {
         } );
         
         ipcMain.on( 'dkp:get', ( event, data ) => {
-            event.sender.webContents.send( 'transmitDkpDatabase', this.getAllUnentered() );
+            event.sender.webContents.send( 'dkp:event:transmit', this.getAllUnentered() );
         } );
         
         ipcMain.on( 'dkp:remove', ( event, data ) => {
