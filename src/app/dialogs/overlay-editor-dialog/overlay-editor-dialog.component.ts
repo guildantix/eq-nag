@@ -41,6 +41,7 @@ export class OverlayEditorDialogComponent implements OnInit {
     public fontTransparency: number = 100;
     public backgroundTransparency: number = 0;
     public borderTransparency: number = 0;
+    public _noChangesModel: OverlayWindowModel;
     
     public get maxFontWeightIndex(): number {
         if ( this.model?.fontFamily != null ) {
@@ -66,6 +67,7 @@ export class OverlayEditorDialogComponent implements OnInit {
             if ( this.overlayId != null ) {
                 this.ipcService.getOverlayWindow( this.overlayId ).subscribe( overlay => {
                     this.ipcService.enableOverlayEditMode( this.overlayId );
+                    this._noChangesModel = Object.assign( new OverlayWindowModel(), overlay );
                     this.model = overlay;
 
                     this.model.fontFamily = this.model.fontFamily ? this.model.fontFamily : 'Roboto';
@@ -73,7 +75,6 @@ export class OverlayEditorDialogComponent implements OnInit {
                     this.model.lineHeight = this.model.lineHeight > 0 ? this.model.lineHeight : 90;
                     this.model.fontWeight = this.model.fontWeight > 100 ? this.model.fontWeight : 400;
                     this.fontWeightIndex = availableFonts[ this.model.fontFamily ].indexOf( this.model.fontWeight );
-                    console.log( 'transparency', this.model.fontTransparency );
                     this.fontTransparency = Math.round( this.model.fontTransparency * 100 );
                     this.backgroundTransparency = Math.round( this.model.backgroundTransparency * 100 );
                     this.borderTransparency = Math.round( this.model.borderTransparency * 100 );
@@ -134,6 +135,11 @@ export class OverlayEditorDialogComponent implements OnInit {
     public broadcastModel(): void {
         this.model.fontWeight = availableFonts[ this.model.fontFamily ][ this.fontWeightIndex ];
         this.ipcService.broadcastOverlayModel( this.model );
+    }
+
+    public cancel(): void {
+        this.ipcService.updateOverlayWindow( this._noChangesModel ).subscribe( success => { } );
+        this.closeModal();
     }
 
     public closeModal(): void {
