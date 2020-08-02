@@ -44,7 +44,7 @@ export class IpcService {
                     } );
                 } );
 
-                this.ipc.on( 'addDkpEntry', ( event: any, data: DkpEntryModel ) => {
+                this.ipc.on( 'dkp:add', ( event: any, data: DkpEntryModel ) => {
                     ngZone.run( () => {
                         this._dkpAddedObservers?.forEach( f => {
                             f.next( data );
@@ -52,7 +52,7 @@ export class IpcService {
                     } );
                 } );
 
-                this.ipc.on( 'dkpAwardRemoved', ( event: any, data: any ) => {
+                this.ipc.on( 'dkp:event:removed', ( event: any, data: any ) => {
                     ngZone.run( () => {
                         this._dkpRemovedObservers?.forEach( f => {
                             f.next( data );
@@ -136,7 +136,7 @@ export class IpcService {
     }
 
     public removeDkpAward( entry: DkpEntryModel ): void {
-        this.ipc.send( 'removeDkpAward', entry );
+        this.ipc.send( 'dkp:remove', entry );
     }
 
     public quitApp(): void {
