@@ -116,16 +116,6 @@ app.on( 'activate', function () {
     if ( mainWindow === null ) createWindow()
 } );
 
-ipcMain.on( 'log:select', ( event, arg ) => {
-    userPreferences.logFile = arg;
-    logWatcherWindow.webContents.send( 'log:changed', arg );
-    event.sender.send( 'log:changed', arg );
-} );
-
-ipcMain.on( 'voice:select', ( event, arg ) => {
-    userPreferences.voiceIndex = arg;
-} );
-
 ipcMain.on( 'app:quit', ( event, data ) => { app.quit(); } );
 
 function sendTick() {
@@ -163,7 +153,9 @@ ipcMain.on( 'clipboard:writeText', ( event, value ) => {
 } );
 
 var mainWindowRef = new ForwardRef( () => mainWindow ? mainWindow : null );
+var logWatcherRef = new ForwardRef( () => logWatcherWindow ? logWatcherWindow : null );
 
+userPreferences.attachIpcEvents( mainWindowRef, logWatcherRef, sendTick );
 winManager.attachIpcEvents( mainWindowRef, sendTick, overlayDatabase );
 dkpDatabase.attachIpcEvents( mainWindowRef, sendTick );
 triggerDatabase.attachIpcEvents( mainWindowRef, sendTick );

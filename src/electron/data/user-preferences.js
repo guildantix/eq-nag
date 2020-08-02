@@ -1,4 +1,7 @@
+const { ipcMain } = require( "electron" );
 const Store = require( './store' );
+const ForwardRef = require( '../forward-ref' );
+const { consoleTestResultHandler } = require( "tslint/lib/test" );
 
 class UserPreferencesStore extends Store {
 
@@ -67,6 +70,36 @@ class UserPreferencesStore extends Store {
         
         this.#data = this.parseDataFile();
         
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Attaches store events to ipc main and dispatches react events to the main window.
+     * 
+     * @param {ForwardRef} mainWindowRef The main window of the application.
+     * @param {ForwardRef} logWatcherRef The log watcher window of the application.
+     * @param {function} sendTick The send tick method.
+     */
+    attachIpcEvents( mainWindowRef, logWatcherRef, sendTick ) {
+
+        ipcMain.on( 'log:select', ( event, arg ) => {
+            this.logFile = arg;
+            logWatcherRef.reference?.webContents.send( 'log:changed', arg );
+            event.sender.send( 'log:changed', arg );
+        } );
+        
+        ipcMain.on( 'voice:select', ( event, arg ) => {
+            this.voiceIndex = arg;
+        } );
+
     }
 
 }
