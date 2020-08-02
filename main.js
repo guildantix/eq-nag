@@ -7,6 +7,7 @@ const UserPreferencesStore = require( './src/electron/data/user-preferences' );
 const DkpDatabaseStore = require( './src/electron/data/dkp-database' );
 const TriggerDatabaseStore = require( './src/electron/data/trigger-database' );
 const OverlayDatabaseStore = require( "./src/electron/data/overlay-database" );
+const ForwardRef = require( './src/electron/forward-ref' );
 
 var mainWindow, logWatcherWindow, testWindow;
 const userPreferences = new UserPreferencesStore( {} );
@@ -150,7 +151,6 @@ ipcMain.on( 'trigger:dialog:new', ( event, arg ) => {
         }
     } );
     triggerWindow.loadURL( `file://${__dirname}/dist/index.html#/trigger/new` );
-    // modal.loadURL( "https://www.sitepoint.com" );
     triggerWindow.once( "ready-to-show", () => {
         triggerWindow.show();
     } );
@@ -170,7 +170,6 @@ ipcMain.on( 'trigger:dialog:edit', ( event, arg ) => {
         }
     } );
     triggerWindow.loadURL( `file://${__dirname}/dist/index.html#/trigger/${arg}` );
-    // modal.loadURL( "https://www.sitepoint.com" );
     triggerWindow.once( "ready-to-show", () => {
         triggerWindow.show();
     } );
@@ -196,34 +195,6 @@ ipcMain.on( 'logSelected', ( event, arg ) => {
 
 ipcMain.on( 'selectVoice', ( event, arg ) => {
     userPreferences.voiceIndex = arg;
-} );
-
-ipcMain.on( 'addDkpEntry', ( event, data ) => {
-    mainWindow.webContents.send( 'addDkpEntry', data );
-    dkpDatabase.add( data );
-    sendTick();
-} );
-
-ipcMain.on( 'removeLastDkpEntry', ( event, data ) => {
-    dkpDatabase.removeIndex( dkpDatabase.count - 1 );
-    sendTick();
-} );
-
-ipcMain.on( 'replaceLastDkpEntry', ( event, data ) => {
-    dkpDatabase.removeIndex( dkpDatabase.count - 1 );
-    dkpDatabase.add( data );
-    sendTick( event );
-} );
-
-ipcMain.on( 'requestDkpEntries', ( event, data ) => {
-    event.sender.webContents.send( 'transmitDkpDatabase', dkpDatabase.getAllUnentered() );
-} );
-
-ipcMain.on( 'removeDkpAward', ( event, data ) => {
-    let success = dkpDatabase.remove( data );
-    if ( success ) {
-        event.sender.webContents.send( 'dkpAwardRemoved', data.entryId );
-    }
 } );
 
 ipcMain.on( 'quitApp', ( event, data ) => { app.quit(); } );
@@ -260,16 +231,6 @@ ipcMain.on( 'app_version', ( event ) => {
 
 ipcMain.on( 'clipboard:writeText', ( event, value ) => {
     clipboard.writeText( value );
-} );
-
-ipcMain.on( 'dkp:reset', ( event, value ) => {
-    dkpDatabase.clear();
-    sendTick();
-} );
-
-ipcMain.on( 'dkp:markAsEntered', ( event, entries ) => {
-    dkpDatabase.markRangeEntered( entries );
-    sendTick();
 } );
 
 ipcMain.on( 'overlay:enable-edit', ( event, overlayId ) => {
@@ -403,5 +364,8 @@ ipcMain.on( 'overlay:send:component', ( event, component ) => {
     }
 } );
 
+var mainWindowRef = new ForwardRef( () => mainWindow ? mainWindow : null );
+
+dkpDatabase.attachIpcEvents( mainWindowRef, sendTick );
 triggerDatabase.attachIpcEvents( mainWindow, sendTick );
 overlayDatabase.attachIpcEvents( mainWindow, sendTick );

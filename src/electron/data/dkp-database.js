@@ -1,6 +1,8 @@
+const { ipcMain, BrowserWindow } = require( "electron" );
 const Store = require( './store' );
 const _ = require( 'lodash' );
 const DkpEntryModel = require( './models/dkp-entry' );
+const ForwardRef = require( '../forward-ref' );
 
 class DkpDatabaseStore extends Store {
 
@@ -23,6 +25,64 @@ class DkpDatabaseStore extends Store {
         if ( this.#data && this.#data.entries && this.#data.entries.length > 0 ) {
             this.#dkpEntryIds = _.maxBy( this.#data.entries, f => f.entryId ).entryId;
         }
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Attaches store events to ipc main and dispatches react events to the main window.
+     * 
+     * @param {ForwardRef} mainWindowRef The main window of the application.
+     * @param {TriggerDatabaseStore} _store The store object.
+     * @param {function} sendTick The send tick method.
+     */
+    attachIpcEvents( mainWindowRef, sendTick ) {
+
+        ipcMain.on( 'dkp:reset', ( event, value ) => {
+            this.clear();
+            sendTick();
+        } );
+        
+        ipcMain.on( 'dkp:markAsEntered', ( event, entries ) => {
+            this.markRangeEntered( entries );
+            sendTick();
+        } );
+
+        ipcMain.on( 'addDkpEntry', ( event, data ) => {
+            this.add( data );
+            mainWindowRef.reference?.webContents.send( 'addDkpEntry', data );
+            sendTick();
+        } );
+        
+        ipcMain.on( 'removeLastDkpEntry', ( event, data ) => {
+            this.removeIndex( this.count - 1 );
+            sendTick();
+        } );
+        
+        ipcMain.on( 'replaceLastDkpEntry', ( event, data ) => {
+            this.removeIndex( this.count - 1 );
+            this.add( data );
+            sendTick( event );
+        } );
+        
+        ipcMain.on( 'requestDkpEntries', ( event, data ) => {
+            event.sender.webContents.send( 'transmitDkpDatabase', this.getAllUnentered() );
+        } );
+        
+        ipcMain.on( 'removeDkpAward', ( event, data ) => {
+            let success = this.remove( data );
+            if ( success ) {
+                event.sender.webContents.send( 'dkpAwardRemoved', data.entryId );
+            }
+        } );
+
     }
 
 

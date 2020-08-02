@@ -54,7 +54,7 @@ export class IpcService {
 
                 this.ipc.on( 'dkpAwardRemoved', ( event: any, data: any ) => {
                     ngZone.run( () => {
-                        this._consoleLogRequestObservers?.forEach( f => {
+                        this._dkpRemovedObservers?.forEach( f => {
                             f.next( data );
                         } );
                     } );
