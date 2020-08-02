@@ -2,7 +2,7 @@ var dkpEntryIds = 0;
 
 class DkpEntryModel {
 
-    entryId = 0;
+    entryId = null;
     timeStamp = new Date();
     character = '';
     item = '';

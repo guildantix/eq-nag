@@ -12,7 +12,7 @@ export class IpcService {
     private _transmitObservers: Observer<DkpEntryModel[]>[] = [];
     private _logFileChangeObservers: Observer<string>[] = [];
     private _dkpAddedObservers: Observer<DkpEntryModel>[] = [];
-    private _dkpRemovedObservers: Observer<number>[] = [];
+    private _dkpRemovedObservers: Observer<string>[] = [];
     private _consoleLogRequestObservers: Observer<any>[] = [];
 
     constructor( private ngZone: NgZone ) {
@@ -103,8 +103,8 @@ export class IpcService {
         return obs;
     }
 
-    public dkpEntryRemoved(): Observable<number> {
-        let obs: Observable<number> = new Observable<number>( ( observer: Observer<number> ) => {
+    public dkpEntryRemoved(): Observable<string> {
+        let obs: Observable<string> = new Observable<string>( ( observer: Observer<string> ) => {
             this._dkpRemovedObservers.push( observer );
         } );
 
