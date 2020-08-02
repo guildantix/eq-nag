@@ -18,7 +18,7 @@ export class CapturePhrase {
 
 export class DkpEntryModel {
 
-    public entryId: number = 0;
+    public entryId: string = null;
     public timeStamp: Date = new Date();
     public character: string = '';
     public item: string = '';

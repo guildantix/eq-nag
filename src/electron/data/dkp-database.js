@@ -3,10 +3,11 @@ const Store = require( './store' );
 const _ = require( 'lodash' );
 const DkpEntryModel = require( './models/dkp-entry' );
 const ForwardRef = require( '../forward-ref' );
+const customAlphabet = require( 'nanoid' ).customAlphabet;
+const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+const nanoid = customAlphabet( alphabet, 16 );
 
 class DkpDatabaseStore extends Store {
-
-    #dkpEntryIds = 0;
 
     /** The data store for this object. */
     #data;
@@ -22,9 +23,6 @@ class DkpDatabaseStore extends Store {
         } );
 
         this.#data = this.parseDataFile();
-        if ( this.#data && this.#data.entries && this.#data.entries.length > 0 ) {
-            this.#dkpEntryIds = _.maxBy( this.#data.entries, f => f.entryId ).entryId;
-        }
     }
 
 
@@ -102,7 +100,7 @@ class DkpDatabaseStore extends Store {
     add( entry ) {
         this.#data.entries = this.#data.entries ? this.#data.entries : [];
         this.#data.entries.push( entry );
-        entry.entryId = entry.entryId > 0 ? entry.entryId : ++this.#dkpEntryIds;
+        entry.entryId = nanoid();
         this.storeDataFile( this.#data );
     }
 
