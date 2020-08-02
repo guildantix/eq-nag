@@ -1,5 +1,6 @@
 const { app, BrowserWindow, ipcMain } = require( "electron" );
 const Store = require( './store' );
+const ForwardRef = require( '../forward-ref' );
 const _ = require( 'lodash' );
 const customAlphabet = require( 'nanoid' ).customAlphabet;
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
@@ -150,10 +151,10 @@ class OverlayDatabaseStore extends Store {
     /**
      * Attaches store events to ipc main and dispatches react events to the main window.
      * 
-     * @param {BrowserWindow} mainWindow The main window of the application.
+     * @param {ForwardRef} mainWindowRef The main window of the application.
      * @param {function} sendTick The send tick method.
      */
-    attachIpcEvents( mainWindow, sendTick ) {
+    attachIpcEvents( mainWindowRef, sendTick ) {
         ipcMain.on( 'overlay:create', ( event, overlay ) => {
             let overlayId = this.add( overlay );
             event.sender.webContents.send( 'overlay:create', overlayId );

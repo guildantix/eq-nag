@@ -367,5 +367,5 @@ ipcMain.on( 'overlay:send:component', ( event, component ) => {
 var mainWindowRef = new ForwardRef( () => mainWindow ? mainWindow : null );
 
 dkpDatabase.attachIpcEvents( mainWindowRef, sendTick );
-triggerDatabase.attachIpcEvents( mainWindow, sendTick );
-overlayDatabase.attachIpcEvents( mainWindow, sendTick );
+triggerDatabase.attachIpcEvents( mainWindowRef, sendTick );
+overlayDatabase.attachIpcEvents( mainWindowRef, sendTick );
