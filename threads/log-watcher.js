@@ -27,9 +27,7 @@ function LogWatcher() {
             fs.open( data, 'r', function ( err, fd ) {
                 var stats = fs.fstatSync( fd );
                 var file = fd;
-                // if ( currentPosition > stats.size ) {
-                //     currentPosition = stats.size;
-                // }
+                
                 fs.read( file, new Buffer( stats.size - currentPosition ), 0, stats.size - currentPosition, currentPosition, ( err, bytecount, buff ) => {
                     currentPosition += bytecount;
                     let read = buff.toString( 'utf-8', 0, bytecount );
@@ -158,29 +156,8 @@ function parseLogEntries( raw ) {
                         ipcRenderer.send( 'overlay:send:component', comp );
                     }
                 } );
-                // comp.action = f;
-                // console.log( 'match found!', res.result[ 0 ] );
-                // ipcRenderer.send( 'addDkpEntry', new DkpEntryModel( timestamp, character, item, +dkp ) );
             }
         } );
-        // // We can optimize this by generating these as functions on the tick.
-        // triggers.forEach( trigger => {
-        //     if ( trigger.capturePhrases?.length > 0 ) {
-        //         // Any match.
-        //         for ( let i = 0; i < trigger.capturePhrases.length; i++ ) {
-        //             if ( trigger.capturePhrases[ i ].phrase ) {
-        //                 if ( trigger.capturePhrases[ i ].useRegEx ) {
-        //                     let _reg = new RegExp( trigger.capturePhrases[ i ].phrase, 'gi' );
-        //                     let _res = _reg.exec( log );
-        //                     // console.log( 'exec testing', _reg.exec( log ) );
-        //                     if ( _res?.length > 0 ) {
-        //                         console.log( 'match found', _res[ 0 ] );
-        //                     }
-        //                 }
-        //             }
-        //         }
-        //     }
-        // } );
     }
 
 }

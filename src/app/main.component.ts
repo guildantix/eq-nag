@@ -71,22 +71,6 @@ export class MainComponent implements OnInit  {
 
     openModal () {
         this.fileSelector.nativeElement.click();
-        // // console.log( "Open a modal" );
-        // let options: Electron.OpenDialogOptions = {
-        //     // See place holder 1 in above image
-        //     title: "Select log file",
-
-        //     // See place holder 3 in above image
-        //     buttonLabel: "Select",
-
-        //     // See place holder 4 in above image
-        //     filters: [
-        //         { name: 'All Files', extensions: [ '*.txt' ] }
-        //     ],
-        //     properties: [ 'openFile' ]
-        // };
-        // remote.dialog.showOpenDialog( remote.getCurrentWindow(), options );
-        
     }
 
     fileSelected ( e: any ) {
@@ -169,11 +153,4 @@ export class MainComponent implements OnInit  {
             } );
     }
 
-    // showOverlayTest (): void {
-    //     this.ipcService.showTestOverlay();
-    // }
-
-    // closeOverlayTest (): void {
-    //     this.ipcService.closeTestOverlay();
-    // }
 }

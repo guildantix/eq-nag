@@ -103,37 +103,6 @@ function createWindow() {
         sendTick();
     } );
 
-    // // testMethod();
-    // testWindow = new BrowserWindow( {
-    //     width: userPreferences.windowWidth,
-    //     height: userPreferences.windowHeight,
-    //     x: userPreferences.windowX,
-    //     y: userPreferences.windowY,
-    //     transparent: true,
-    //     frame: false,
-    //     webPreferences: {
-    //         nodeIntegration: true,
-    //     },
-    // } );
-    // testWindow.loadURL(
-    //     url.format( {
-    //         pathname: path.join( __dirname, `/threads/testing.html` ),
-    //         protocol: "file:",
-    //         slashes: true
-    //     } )
-    // );
-    // testWindow.setIgnoreMouseEvents( true );
-    // testWindow.setAlwaysOnTop( true, "screen" );
-    // mainWindow.setIgnoreMouseEvents( true );
-    // mainWindow.setAlwaysOnTop( true, "screen" );
-
-    // setInterval( () => {
-    //     mainWindow.setAlwaysOnTop( true, "screen" );
-    // }, 1000 );
-    // chokidar.watch( "E:\\everquest\\Logs\\eqlog_Halindar_aradune.txt" ).on( "all", ( event, path ) => {
-    //     console.log( event, path );
-    // } );
-
     let overlays = overlayDatabase.getAll();
     overlays?.forEach( m => {
         loadOverlay( m );
@@ -304,10 +273,7 @@ ipcMain.on( 'dkp:markAsEntered', ( event, entries ) => {
 } );
 
 ipcMain.on( 'overlay:enable-edit', ( event, overlayId ) => {
-    console.log( 'calling enable edit for', overlayId );
     if ( overlayDictionary && overlayDictionary[ overlayId ] ) {
-        // console.log( 'overlay enable', overlayId );
-        // overlayDictionary[ overlayId ].window.transparent = false;
         overlayDictionary[ overlayId ].window.setIgnoreMouseEvents( false );
         overlayDictionary[ overlayId ].window.webContents.send( 'overlay:window:enable-edit' );
     } else {
@@ -317,45 +283,6 @@ ipcMain.on( 'overlay:enable-edit', ( event, overlayId ) => {
         } else {
             console.error( `Could not find over lay ${overlayId}` );
         }
-        // loadOverlay()
-        // // testMethod();
-        // let overlay = new BrowserWindow( {
-        //     width: 800,
-        //     height: 800,
-        //     x: 100,
-        //     y: 100,
-        //     transparent: true,
-        //     frame: false,
-        //     webPreferences: {
-        //         nodeIntegration: true,
-        //     },
-        //     skipTaskbar: true,
-        // } );
-        // overlay.loadFile( "./threads/overlay.html" );
-        // // testWindow.loadURL(
-        // //     url.format( {
-        // //         pathname: path.join( __dirname, `/threads/testing.html` ),
-        // //         protocol: "file:",
-        // //         slashes: true
-        // //     } )
-        // // );
-        // overlay.setIgnoreMouseEvents( true );
-        // overlay.setAlwaysOnTop( true, "screen" );
-        // // mainWindow.setIgnoreMouseEvents( true );
-        // // mainWindow.setAlwaysOnTop( true, "screen" );
-
-        // let interval = setInterval( () => {
-        //     overlay.setAlwaysOnTop( true, "screen" );
-        // }, 1000 );
-        // // chokidar.watch( "E:\\everquest\\Logs\\eqlog_Halindar_aradune.txt" ).on( "all", ( event, path ) => {
-        // //     console.log( event, path );
-        // // } );
-
-        // overlay.once( 'dom-ready', () => {
-        //     overlay.webContents.send( 'enable-edit' );
-        // } );
-    
-        // overlayDictionary[ overlayId ] = { window: overlay, interval: interval };
     }
 } );
 
@@ -398,7 +325,6 @@ function loadOverlay( model, enableEdit ) {
     } );
     overlay.loadFile( "./threads/overlay.html" );
     overlay.setIgnoreMouseEvents( true );
-    // overlay.webContents.openDevTools();
     overlay.setAlwaysOnTop( true, "screen" );
 
     let interval = setInterval( () => {
@@ -407,20 +333,13 @@ function loadOverlay( model, enableEdit ) {
 
     if ( enableEdit ) {
         overlay.webContents.once( 'dom-ready', () => {
-            console.log( 'sending under edit mode' );
             overlay.webContents.send( 'overlay:window:enable-edit' );
             overlay.setIgnoreMouseEvents( false );
             overlay.webContents.send( 'overlay:window:model', model );
-            // overlay.transparent = false;
         } );
     } else {
-        console.log( 'not in edit mode' );
         overlay.webContents.once( 'dom-ready', () => {
-            // overlay.webContents.send( 'overlay:window:enable-edit' );
-            // overlay.setIgnoreMouseEvents( false );
-            // console.log( 'sending no edit mode' );
             overlay.webContents.send( 'overlay:window:model', model );
-            // overlay.transparent = false;
         } );
     }
 
@@ -433,7 +352,6 @@ function loadOverlay( model, enableEdit ) {
 
     overlay.on( 'move', function () {
         let bounds = overlay.webContents.getOwnerBrowserWindow().getBounds();
-        // console.log( 'moving', bounds.x );
         model.x = bounds.x;
         model.y = bounds.y;
         overlayDatabase.update( model );
@@ -443,7 +361,6 @@ function loadOverlay( model, enableEdit ) {
     
 }
 
-// var calledCount = 0;
 ipcMain.on( 'overlay:close-test', ( event, overlayId ) => {
     if ( overlayDictionary && overlayDictionary[ overlayId ] ) {
         clearInterval( overlayDictionary[ overlayId ].interval );
@@ -453,7 +370,6 @@ ipcMain.on( 'overlay:close-test', ( event, overlayId ) => {
 } );
 
 ipcMain.on( 'overlay:dialog:edit', ( event, overlayId ) => {
-    // let overlayModel = overlayDatabase.find( overlayId );
     let overlayEditorDialog = new BrowserWindow( {
         parent: mainWindow,
         modal: false,
@@ -467,9 +383,8 @@ ipcMain.on( 'overlay:dialog:edit', ( event, overlayId ) => {
         }
     } );
     overlayEditorDialog.loadURL( `file://${__dirname}/dist/index.html#/overlay/${overlayId}` );
-    // modal.loadURL( "https://www.sitepoint.com" );
     overlayEditorDialog.once( 'dom-read', () => {
-        // overlayEditorDialog.webContents.send( 'overlay:window:model', overlayModel );
+        
     } );
     overlayEditorDialog.once( "ready-to-show", () => {
         overlayEditorDialog.show();

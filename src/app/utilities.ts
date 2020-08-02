@@ -1,4 +1,3 @@
-// import { Color } from '@angular-material-components/color-picker';
 
 export class ColorUtility {
     public static FromHex( hex: string ): Color {
@@ -133,7 +132,6 @@ const pSBCr = ( d, r, g, b, a, i, m ) => {
 const pSBC = ( p: any, c0: any, c1: any, l: any ) => {
     let r: any, g: any, b: any, P: any, f: any, t: any, h: any, i = parseInt, m = Math.round, a: any = typeof ( c1 ) == "string";
     if ( typeof ( p ) != "number" || p < -1 || p > 1 || typeof ( c0 ) != "string" || ( c0[ 0 ] != 'r' && c0[ 0 ] != '#' ) || ( c1 && !a ) ) return null;
-    // if ( !this.pSBCr )
     h = c0.length > 9, h = a ? c1.length > 9 ? true : c1 == "c" ? !h : false : h, f = pSBCr( c0, r, g, b, a, i, m ), P = p < 0, t = c1 && c1 != "c" ? pSBCr( c1, r, g, b, a, i, m ) : P ? { r: 0, g: 0, b: 0, a: -1 } : { r: 255, g: 255, b: 255, a: -1 }, p = P ? p * -1 : p, P = 1 - p;
     if ( !f || !t ) return null;
     if ( l ) r = m( P * f.r + p * t.r ), g = m( P * f.g + p * t.g ), b = m( P * f.b + p * t.b );

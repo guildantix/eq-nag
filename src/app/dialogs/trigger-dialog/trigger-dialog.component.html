@@ -31,15 +31,10 @@
                             <mat-form-field style="width: 200px;">
                                 <mat-label>Capture Method</mat-label>
                                 <mat-select [(ngModel)]="model.captureMethod" name="ddlCaptureMethod">
-                                    <mat-option value="Any match">Any match</mat-option>
-                                    <mat-option value="Sequential" disabled>Sequential</mat-option>
-                                    <mat-option value="Concurrent" disabled>Concurrent</mat-option>
+                                    <mat-option value="Any match" matTooltip="Execute this trigger if any phrase matches a single log entry" matTooltipPosition="right">Any match</mat-option>
+                                    <mat-option value="Sequential" disabled matTooltip="Execute this trigger if all phrases match sequentially across multiple log entries" matTooltipPosition="right">Sequential</mat-option>
+                                    <mat-option value="Concurrent" disabled matTooltip="Execute this trigger if all phrases match in a single log entry" matTooltipPosition="right">Concurrent</mat-option>
                                 </mat-select>
-                                <!-- <mat-hint>
-                                    <p><strong>Any match</strong> will execute this trigger if any phrase matches a log entry.</p>
-                                    <p><strong>Sequential</strong> will execute this trigger if all phrases match sequentially across multiple log entries.</p>
-                                    <p><strong>Concurrent</strong> will execute this trigger if all phrases match in a single log entry.</p>
-                                </mat-hint> -->
                             </mat-form-field>
                             <table mat-table #capturePhrasesTable="matTable"
                                 [dataSource]="model.capturePhrases"
@@ -144,7 +139,6 @@
         
                                 </mat-card-content>
                                 <mat-card-actions>
-                                    <!-- <button mat-button>Disable</button> -->
                                     <button mat-button color="warn" (click)="deleteAction(i)">Delete</button>
                                 </mat-card-actions>
                             </mat-card>
