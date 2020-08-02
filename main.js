@@ -90,7 +90,7 @@ function createWindow() {
 
     logWatcherWindow.webContents.once( 'dom-ready', () => {
         if ( userPreferences.logFile != null ) {
-            logWatcherWindow.webContents.send( 'changeLogFile', userPreferences.logFile );
+            logWatcherWindow.webContents.send( 'log:changed', userPreferences.logFile );
         }
         sendTick();
     } );
@@ -124,18 +124,18 @@ app.on( 'activate', function () {
     if ( mainWindow === null ) createWindow()
 } );
 
-function openModal() {
-    const { BrowserWindow } = require( "electron" );
-    let modal = new BrowserWindow( {
-        parent: mainWindow,
-        modal: true,
-        show: false,
-    } );
-    modal.loadURL( "https://www.sitepoint.com" );
-    modal.once( "ready-to-show", () => {
-        modal.show();
-    } );
-}
+// function openModal() {
+//     const { BrowserWindow } = require( "electron" );
+//     let modal = new BrowserWindow( {
+//         parent: mainWindow,
+//         modal: true,
+//         show: false,
+//     } );
+//     modal.loadURL( "https://www.sitepoint.com" );
+//     modal.once( "ready-to-show", () => {
+//         modal.show();
+//     } );
+// }
 
 ipcMain.on( 'trigger:dialog:new', ( event, arg ) => {
     let triggerWindow = new BrowserWindow( {
@@ -180,24 +180,24 @@ ipcMain.on( 'window:child:close', ( event, arg ) => {
     bwin?.close();
 } );
 
-ipcMain.on( "openModal", ( event, arg ) => {
-    openModal();
-    mainWindow.webContents.send( "info", {
-        msg: "hello from main process",
-    } );
-} );
+// ipcMain.on( "openModal", ( event, arg ) => {
+//     openModal();
+//     mainWindow.webContents.send( "info", {
+//         msg: "hello from main process",
+//     } );
+// } );
 
-ipcMain.on( 'logSelected', ( event, arg ) => {
+ipcMain.on( 'log:select', ( event, arg ) => {
     userPreferences.logFile = arg;
-    logWatcherWindow.webContents.send( 'changeLogFile', arg );
-    event.sender.send( 'changeLogFile', arg );
+    logWatcherWindow.webContents.send( 'log:changed', arg );
+    event.sender.send( 'log:changed', arg );
 } );
 
-ipcMain.on( 'selectVoice', ( event, arg ) => {
+ipcMain.on( 'voice:select', ( event, arg ) => {
     userPreferences.voiceIndex = arg;
 } );
 
-ipcMain.on( 'quitApp', ( event, data ) => { app.quit(); } );
+ipcMain.on( 'app:quit', ( event, data ) => { app.quit(); } );
 
 function sendTick() {
     let _triggers = triggerDatabase.getAll();
@@ -221,12 +221,12 @@ autoUpdater.on( 'update-available', () => {
     mainWindow.webContents.send( 'update_available' );
 } );
 
-ipcMain.on( 'restart_app', () => {
+ipcMain.on( 'app:restart', () => {
     autoUpdater.quitAndInstall();
 } );
 
-ipcMain.on( 'app_version', ( event ) => {
-    event.sender.send( 'app_version', { version: app.getVersion() } );
+ipcMain.on( 'app:version', ( event ) => {
+    event.sender.send( 'app:version', { version: app.getVersion() } );
 } );
 
 ipcMain.on( 'clipboard:writeText', ( event, value ) => {

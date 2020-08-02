@@ -15,7 +15,7 @@ var watcher = null;
 var triggers = [];
 
 function LogWatcher() {
-    ipcRenderer.on( 'changeLogFile', function ( event, data ) {
+    ipcRenderer.on( 'log:changed', function ( event, data ) {
         fs.open( data, 'r', function ( err, fd ) {
             var file = fd;
             currentPosition = fs.fstatSync( file ).size;
