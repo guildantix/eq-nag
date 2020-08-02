@@ -23,10 +23,13 @@ class DkpDatabaseStore extends Store {
         } );
 
         this.#data = this.parseDataFile();
-        // TODO: Remove after a couple versions.
-        this.#data?.entries?.forEach( f => {
-            f.entryId = f.entryId > 0 ? nanoid() : f.entryId;
-        } );
+        if ( !this.#data.version || this.#data.version < 3 ) {
+            this.#data?.entries?.forEach( f => {
+                f.entryId = f.entryId > 0 ? nanoid() : f.entryId;
+            } );
+            this.#data.version = 3;
+            this.storeDataFile( this.#data );
+        }
     }
 
 
