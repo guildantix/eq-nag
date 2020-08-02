@@ -141,7 +141,7 @@ function parseLogEntries( raw ) {
         let character = text[ 1 ];
         let dkp = rgxNum.exec( text[ 3 ] )[ 0 ];
         
-        ipcRenderer.send( 'addDkpEntry', new DkpEntryModel( timestamp, character, item, +dkp ) );
+        ipcRenderer.send( 'dkp:add', new DkpEntryModel( timestamp, character, item, +dkp ) );
     } else {
         let log = raw.replace( rgxTimestamp, '' );
         triggers.forEach( f => {

@@ -55,31 +55,31 @@ class DkpDatabaseStore extends Store {
             sendTick();
         } );
 
-        ipcMain.on( 'addDkpEntry', ( event, data ) => {
+        ipcMain.on( 'dkp:add', ( event, data ) => {
             this.add( data );
-            mainWindowRef.reference?.webContents.send( 'addDkpEntry', data );
+            mainWindowRef.reference?.webContents.send( 'dkp:add', data );
             sendTick();
         } );
         
-        ipcMain.on( 'removeLastDkpEntry', ( event, data ) => {
+        ipcMain.on( 'dkp:remove-last-entry', ( event, data ) => {
             this.removeIndex( this.count - 1 );
             sendTick();
         } );
         
-        ipcMain.on( 'replaceLastDkpEntry', ( event, data ) => {
+        ipcMain.on( 'dkp:replace-last-entry', ( event, data ) => {
             this.removeIndex( this.count - 1 );
             this.add( data );
             sendTick( event );
         } );
         
-        ipcMain.on( 'requestDkpEntries', ( event, data ) => {
+        ipcMain.on( 'dkp:get', ( event, data ) => {
             event.sender.webContents.send( 'transmitDkpDatabase', this.getAllUnentered() );
         } );
         
-        ipcMain.on( 'removeDkpAward', ( event, data ) => {
+        ipcMain.on( 'dkp:remove', ( event, data ) => {
             let success = this.remove( data );
             if ( success ) {
-                event.sender.webContents.send( 'dkpAwardRemoved', data.entryId );
+                event.sender.webContents.send( 'dkp:event:removed', data.entryId );
             }
         } );
 
