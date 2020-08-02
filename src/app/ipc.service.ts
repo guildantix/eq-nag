@@ -36,7 +36,7 @@ export class IpcService {
                     } );
                 } );
 
-                this.ipc.on( 'changeLogFile', ( event: any, data: string ) => {
+                this.ipc.on( 'log:changed', ( event: any, data: string ) => {
                     ngZone.run( () => {
                         this._logFileChangeObservers?.forEach( f => {
                             f.next( data );
@@ -114,13 +114,13 @@ export class IpcService {
     public getAppVersion(): Observable<string> {
         let obs: Observable<string> = new Observable<string>( ( observer: Observer<string> ) => {
             
-            this.ipc.once( 'app_version', ( e, v ) => {
+            this.ipc.once( 'app:version', ( e, v ) => {
                 this.ngZone.run( () => {
                     observer.next( v.version );
                     observer.complete();
                 } );
             } );
-            this.ipc.send( 'app_version' );
+            this.ipc.send( 'app:version' );
 
         } );
 
@@ -140,15 +140,15 @@ export class IpcService {
     }
 
     public quitApp(): void {
-        this.ipc.send( 'quitApp' );
+        this.ipc.send( 'app:quit' );
     }
 
     public updateLogFile( logFile: string ): void {
-        this.ipc.send( 'logSelected', logFile );
+        this.ipc.send( 'log:select', logFile );
     }
 
     public updateVoiceIndex( index: number ): void {
-        this.ipc.send( 'selectVoice', index );
+        this.ipc.send( 'voice:select', index );
     }
 
     public sendTextToClipboard( value: string ): void {
