@@ -2,6 +2,7 @@ const { app, BrowserWindow, ipcMain } = require( "electron" );
 const Store = require( './store' );
 const _ = require( 'lodash' );
 const { Trigger, TriggerAction, ActionTypes } = require( './models/trigger' );
+const ForwardRef = require( '../forward-ref' );
 const customAlphabet = require( 'nanoid' ).customAlphabet;
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const idLen = 16;
@@ -37,11 +38,11 @@ class TriggerDatabaseStore extends Store {
     /**
      * Attaches store events to ipc main and dispatches react events to the main window.
      * 
-     * @param {BrowserWindow} mainWindow The main window of the application.
+     * @param {ForwardRef} mainWindowRef The main window of the application.
      * @param {TriggerDatabaseStore} _store The store object.
      * @param {function} sendTick The send tick method.
      */
-    attachIpcEvents( mainWindow, sendTick ) {
+    attachIpcEvents( mainWindowRef, sendTick ) {
         ipcMain.on( 'trigger:create', ( event, trigger ) => {
             let triggerId = this.add( trigger );
             event.sender.webContents.send( 'trigger:create', triggerId );
