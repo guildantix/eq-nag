@@ -4,7 +4,7 @@ const path = require( 'path' );
 const process = require( 'process' );
 const fs = require( 'fs' );
 const DkpEntryModel = require( '../data/models/dkp-entry' );
-const { Trigger, TriggerAction } = require( '../data/models/trigger' );
+const { Trigger, TriggerAction, ActionTypes } = require( '../data/models/trigger' );
 const { OverlayComponent } = require( '../data/models/overlay-window' );
 
 const chokidar = require( "chokidar" );
@@ -150,11 +150,13 @@ function parseLogEntries( raw ) {
             let res = f._parse( log );
             if ( res.match ) {
                 f.actions.forEach( action => {
-                    let comp = new OverlayComponent();
-                    comp.action = action;
-                    comp.overlayId = action.overlayId;
-                    comp.matches = res.result;
-                    ipcRenderer.send( 'overlay:send:component', comp );
+                    if ( action.actionType === ActionTypes.DisplayText ) {
+                        let comp = new OverlayComponent();
+                        comp.action = action;
+                        comp.overlayId = action.overlayId;
+                        comp.matches = res.result;
+                        ipcRenderer.send( 'overlay:send:component', comp );
+                    }
                 } );
                 // comp.action = f;
                 // console.log( 'match found!', res.result[ 0 ] );
