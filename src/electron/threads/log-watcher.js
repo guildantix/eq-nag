@@ -66,6 +66,7 @@ function generateTriggerFns() {
                             let _reg = new RegExp( phrase.phrase, 'gi' );
                             _phraseParsers.push( value => {
                                 let _res = _reg.exec( value );
+                                _reg.lastIndex = 0;
                                 return {
                                     match: _res?.length > 0,
                                     result: _res
@@ -133,8 +134,15 @@ let rgxDelimiter = /;/gi;
 let rgxNum = /(\d+)/gi;
 
 function parseLogEntries( raw ) {
-    let timestamp = new Date( rgxTimestamp.exec( raw )[ 1 ] );
 
+    rgxTrigger.lastIndex = 0;
+    rgxTimestamp.lastIndex = 0;
+    rgxGrabText.lastIndex = 0;
+    rgxDelimiter.lastIndex = 0;
+    rgxNum.lastIndex = 0;
+
+    let timestamp = new Date( rgxTimestamp.exec( raw )[ 1 ] );
+    
     if ( raw.match( rgxTrigger ) ) {
         let text = rgxGrabText.exec( raw )[ 1 ].split( rgxDelimiter );
         let item = text[ 2 ];
