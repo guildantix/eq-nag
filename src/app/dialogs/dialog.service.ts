@@ -1,9 +1,10 @@
 import { Injectable } from '@angular/core';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { ConfirmDialogComponent } from './confirm-dialog/confirm-dialog.component';
-import { OverlayWindowModel } from '../core.model';
+import { OverlayWindowModel, TriggerAction } from '../core.model';
 import { Observable } from 'rxjs';
 import { OverlayDetailsDialogComponent } from './overlay-details-dialog/overlay-details-dialog.component';
+import { TriggerActionWizardModalComponent } from './trigger-action-wizard-modal/trigger-action-wizard-modal.component';
 
 @Injectable()
 export class DialogService {
@@ -40,6 +41,32 @@ export class DialogService {
 
         dialogRef.afterClosed().subscribe( onClose );
         
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Displays the trigger action wizard.
+     * 
+     * @param model The trigger action to edit/create.
+     * @param onClose This function is executed after the user makes changes.  If the model is null, the user cancelled their changes.
+     */
+    public showTriggerActionWizardDialog( model: TriggerAction, onClose: ( model: TriggerAction ) => void ): void {
+        
+        let dialogRef: MatDialogRef<TriggerActionWizardModalComponent> = this.dialog.open( TriggerActionWizardModalComponent, {
+            width: '550px',
+            data: model
+        } );
+
+        dialogRef.afterClosed().subscribe( onClose );
+
     }
 
 

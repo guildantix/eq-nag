@@ -175,6 +175,10 @@ export class IpcService {
         this.ipc.send( 'window:child:close' );
     }
 
+    public resizeTriggerWindow( width: number = null, height: number = null ): void {
+        this.ipc.send( 'trigger:dialog:resize', { width: width, height: height } );
+    }
+
     public createNewTrigger( model: TriggerModel ): Observable<string> {
         let obs: Observable<string> = new Observable<string>( ( observer: Observer<string> ) => {
             
