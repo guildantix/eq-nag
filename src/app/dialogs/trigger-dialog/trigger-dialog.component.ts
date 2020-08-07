@@ -1,4 +1,5 @@
 import { Component, OnInit, ViewChild } from '@angular/core';
+
 import { IpcService } from 'src/app/ipc.service';
 import { TriggerModel, CapturePhrase, ActionTypes, TriggerAction, OverlayWindowModel } from 'src/app/core.model';
 import { animate, state, style, transition, trigger } from '@angular/animations';
@@ -84,6 +85,10 @@ export class TriggerDialogComponent implements OnInit {
 
     public addNewAction(): void {
         this.model.actions.push( new TriggerAction() );
+    }
+
+    public showActionWizard( action: TriggerAction ): void {
+        this.dialogService.showTriggerActionWizardDialog( action, model => console.log( 'model', model ) );
     }
 
     public deleteAction( index: number ): void {

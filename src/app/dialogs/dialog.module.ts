@@ -10,6 +10,7 @@ import { ConfirmDialogComponent } from './confirm-dialog/confirm-dialog.componen
 import { OverlayDetailsDialogComponent } from './overlay-details-dialog/overlay-details-dialog.component';
 import { OverlayEditorDialogComponent } from './overlay-editor-dialog/overlay-editor-dialog.component';
 import { FormInputModule } from '../form-inputs/form-inputs.module';
+import { TriggerActionWizardModalComponent } from './trigger-action-wizard-modal/trigger-action-wizard-modal.component';
 
 @NgModule( {
     imports: [
@@ -25,12 +26,14 @@ import { FormInputModule } from '../form-inputs/form-inputs.module';
         ConfirmDialogComponent,
         OverlayDetailsDialogComponent,
         OverlayEditorDialogComponent,
+        TriggerActionWizardModalComponent,
     ],
     declarations: [
         TriggerDialogComponent,
         ConfirmDialogComponent,
         OverlayDetailsDialogComponent,
         OverlayEditorDialogComponent,
+        TriggerActionWizardModalComponent,
     ],
     providers: [
         DialogService,

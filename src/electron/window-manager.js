@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain } = require( "electron" );
+const { app, BrowserWindow, ipcMain, screen } = require( "electron" );
 const ForwardRef = require( './forward-ref' );
 const OverlayDatabaseStore = require( "./data/overlay-database" );
 
@@ -66,6 +66,19 @@ class WindowManager {
             triggerWindow.once( "ready-to-show", () => {
                 triggerWindow.show();
             } );
+        } );
+
+        ipcMain.on( 'trigger:dialog:resize', ( event, size ) => {
+            let bwin = BrowserWindow.fromWebContents( event.sender );
+            
+            if ( size?.width && size?.height ) {
+                bwin.setSize( size.width, size.height );
+                bwin.setPosition( ( screen.getPrimaryDisplay().workAreaSize.width / 2 ) - ( size.width / 2 ), ( screen.getPrimaryDisplay().workAreaSize.height / 2 ) - ( size.height / 2 ) );
+            } else {
+                bwin.setSize( 700, 870 );
+                bwin.setPosition( ( screen.getPrimaryDisplay().workAreaSize.width / 2 ) - ( 700 / 2 ), ( screen.getPrimaryDisplay().workAreaSize.height / 2 ) - ( 870 / 2 ) );
+            }
+
         } );
         
         ipcMain.on( 'window:child:close', ( event, arg ) => {
