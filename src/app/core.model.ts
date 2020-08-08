@@ -10,6 +10,7 @@ export class TriggerModel {
 }
 
 export class CapturePhrase {
+    public phraseId: string;
     public phrase: string;
     public useRegEx: boolean = false;
     public requirePreviousPhrase: boolean = false;
@@ -72,6 +73,7 @@ export enum ActionTypes {
     Timer = 3,
     Countdown = 4,
     StoreVariable = 5,
+    DotTimer = 6,
 
 }
 
@@ -79,8 +81,10 @@ export class TriggerAction {
 
     public actionId: string;
     public actionType: ActionTypes;
+    public phraseId: string;
     public overlayId: string;
     public displayText: string;
     public duration: number;
+    public variableName: string;
 
 }
