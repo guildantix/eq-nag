@@ -24,6 +24,13 @@ class TriggerDatabaseStore extends Store {
         } );
 
         this.#data = this.parseDataFile();
+        if ( !this.#data.version || this.#data.version < 3 ) {
+            this.#data?.triggers?.forEach( f => {
+                f.capturePhrases?.forEach( p => p.phraseId = p.phraseId == null ? nanoid() : p.phraseId );
+            } );
+            this.#data.version = 3;
+            this.storeDataFile( this.#data );
+        }
     }
 
 

@@ -59,8 +59,8 @@ function generateTriggerFns() {
                 let _phraseParsers = [];
                 trigger.capturePhrases?.forEach( phrase => {
 
+                    // Only create parse functions for phrases that have content.
                     if ( phrase.phrase?.length > 0 ) {
-                        // Only create parse functions for phrases that have content.
                         if ( phrase.useRegEx ) {
                             // Use different parse functions for regex vs normal.
                             let _reg = new RegExp( phrase.phrase, 'gi' );
@@ -68,6 +68,7 @@ function generateTriggerFns() {
                                 let _res = _reg.exec( value );
                                 _reg.lastIndex = 0;
                                 return {
+                                    phraseId: phrase.phraseId,
                                     match: _res?.length > 0,
                                     result: _res
                                 };
@@ -78,6 +79,7 @@ function generateTriggerFns() {
                             _phraseParsers.push( value => {
                                 if ( value && value.length > 0 ) {
                                     return {
+                                        phraseId: phrase.phraseId,
                                         match: value.toLowerCase().indexOf( _phr ) > -1,
                                         result: [ value ]
                                     };
@@ -106,7 +108,7 @@ function generateTriggerFns() {
                     };
                 };
             } else {
-                // Currently, only supported match method is 'Any match'.
+                // Currently, the only supported match method is 'Any match'.
                 trigger._parse = value => {
                     return {
                         match: false,
@@ -132,6 +134,7 @@ let rgxTimestamp = /^\[(.*?)\]\s*/gi;
 let rgxGrabText = /\'(.*?)\'$/gi;
 let rgxDelimiter = /;/gi;
 let rgxNum = /(\d+)/gi;
+let storedVariables = {};
 
 function parseLogEntries( raw ) {
 
@@ -156,12 +159,20 @@ function parseLogEntries( raw ) {
             let res = f._parse( log );
             if ( res.match ) {
                 f.actions.forEach( action => {
-                    if ( action.actionType === ActionTypes.DisplayText ) {
-                        let comp = new OverlayComponent();
-                        comp.action = action;
-                        comp.overlayId = action.overlayId;
-                        comp.matches = res.result;
-                        ipcRenderer.send( 'overlay:send:component', comp );
+                    if ( action.phraseId == null || action.phraseId === res.phraseId ) {
+                        if ( action.actionType === ActionTypes.DisplayText ) {
+                            let comp = new OverlayComponent();
+                            comp.action = action;
+                            comp.overlayId = action.overlayId;
+                            comp.matches = res.result;
+                            ipcRenderer.send( 'overlay:send:component', comp );
+                        } else if ( action.actionType === ActionTypes.StoreVariable ) {
+                            if ( res.result.length === 1 ) {
+                                storedVariables[ action.variableName ] = res.result[ 0 ];
+                            } else {
+                                storedVariables[ action.variableName ] = res.result[ 1 ];
+                            }
+                        }
                     }
                 } );
             }
@@ -171,3 +182,20 @@ function parseLogEntries( raw ) {
 }
 
 module.exports = LogWatcher;
+
+// Capture spell being cast
+// You begin casting Cascading Darkness.
+
+// Exit conditions
+// A loathling lich resisted your Cascading Darkness!
+// Your Envenomed Bolt spell is interrupted.
+// A black wolf has been slain by Grimrot!
+// You have slain a black wolf!
+
+// Spell lands:
+//  On Hit:
+//      You hit a black wolf for 41 points of poison damage by Envenomed Bolt.
+//      You hit (          ) for ()                         by (            )
+//  On Tick 1:
+//      A black wolf has taken 10 damage from your Envenomed Bolt.
+//      (          )           ()             your (            )

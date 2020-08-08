@@ -108,13 +108,23 @@
                                         <mat-label>Action Type</mat-label>
                                         <mat-select [(ngModel)]="action.actionType" name="ddlActionType_{{i}}">
                                             <mat-option [value]="actionTypes.DisplayText">Display Text</mat-option>
-                                            <mat-option [value]="actionTypes.PlayAudio">Play Audio</mat-option>
-                                            <mat-option [value]="actionTypes.Speak">Speak</mat-option>
-                                            <mat-option [value]="actionTypes.Timer">Timer</mat-option>
-                                            <mat-option [value]="actionTypes.Countdown">Countdown</mat-option>
+                                            <!-- <mat-option [value]="actionTypes.PlayAudio">Play Audio</mat-option> -->
+                                            <!-- <mat-option [value]="actionTypes.Speak">Speak</mat-option> -->
+                                            <!-- <mat-option [value]="actionTypes.Timer">Timer</mat-option> -->
+                                            <!-- <mat-option [value]="actionTypes.Countdown">Countdown</mat-option> -->
                                             <mat-option [value]="actionTypes.StoreVariable">Store Variable</mat-option>
                                         </mat-select>
                                     </mat-form-field>
+
+                                    <div *ngIf="action.actionType != null">
+                                        <mat-form-field>
+                                            <mat-label>Trigger on phrase</mat-label>
+                                            <mat-select [(ngModel)]="action.phraseId" name="ddlActionPhrase_{{i}}">
+                                                <mat-option [value]="null">Any Phrase</mat-option>
+                                                <mat-option *ngFor="let phrase of model.capturePhrases" [value]="phrase.phraseId">{{phrase.phrase}}</mat-option>
+                                            </mat-select>
+                                        </mat-form-field>
+                                    </div>
 
                                     <div *ngIf="action.actionType === actionTypes.DisplayText">
 
@@ -133,6 +143,18 @@
                                         <mat-form-field>
                                             <mat-label>Display for seconds</mat-label>
                                             <input matInput [(ngModel)]="action.duration" name="txtDisplayText_Duration_{{i}}" type="number" />
+                                        </mat-form-field>
+
+                                    </div>
+
+                                    <div *ngIf="action.actionType === actionTypes.StoreVariable">
+
+                                        <p>When using a regular expression capture phrase, the first capture group will be stored in a variable for use in other triggers.</p>
+                                        <p>Choose a name for that variable</p>
+
+                                        <mat-form-field>
+                                            <mat-label>Variable Name</mat-label>
+                                            <input matInput [(ngModel)]="action.variableName" name="txtVariableName_{{i}}" />
                                         </mat-form-field>
 
                                     </div>
