@@ -70,7 +70,7 @@ class WindowManager {
 
         ipcMain.on( 'trigger:dialog:resize', ( event, size ) => {
             let bwin = BrowserWindow.fromWebContents( event.sender );
-            
+
             if ( size?.width && size?.height ) {
                 bwin.setSize( size.width, size.height );
                 bwin.setPosition( ( screen.getPrimaryDisplay().workAreaSize.width / 2 ) - ( size.width / 2 ), ( screen.getPrimaryDisplay().workAreaSize.height / 2 ) - ( size.height / 2 ) );
@@ -112,6 +112,18 @@ class WindowManager {
                 } else {
                     console.error( `Could not find over lay ${overlayId}` );
                 }
+            }
+        } );
+
+        ipcMain.on( 'overlay:highlight', ( event, overlayId ) => {
+            if ( overlayDictionary && overlayDictionary[ overlayId ] ) {
+                overlayDictionary[ overlayId ].window.webContents.send( 'overlay:window:highlight' );
+            }
+        } );
+        
+        ipcMain.on( 'overlay:dim', ( event, overlayId ) => {
+            if ( overlayDictionary && overlayDictionary[ overlayId ] ) {
+                overlayDictionary[ overlayId ].window.webContents.send( 'overlay:window:dim' );
             }
         } );
         

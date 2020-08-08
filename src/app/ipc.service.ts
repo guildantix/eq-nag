@@ -359,4 +359,12 @@ export class IpcService {
         this.ipc.send( 'overlay:send:component', component );
     }
 
+    public highlightOverlay( overlayId: string ): void {
+        this.ipc.send( 'overlay:highlight', overlayId );
+    }
+
+    public dimOverlay( overlayId: string ): void {
+        this.ipc.send( 'overlay:dim', overlayId );
+    }
+
 }

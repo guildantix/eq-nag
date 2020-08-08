@@ -1,0 +1,29 @@
+
+// form-submitted
+mat-radio-group {
+    &.ng-dirty.ng-invalid,
+    &.ng-touched.ng-invalid {
+        mat-radio-button {
+            label {
+                color: #f44336;
+                .mat-radio-outer-circle {
+                    border-color: #f44336;
+                }
+            }
+        }
+    }
+}
+form.form-submitted {
+    mat-radio-group {
+        &.ng-invalid {
+            mat-radio-button {
+                label {
+                    color: #f44336;
+                    .mat-radio-outer-circle {
+                        border-color: #f44336;
+                    }
+                }
+            }
+        }
+    }
+}
