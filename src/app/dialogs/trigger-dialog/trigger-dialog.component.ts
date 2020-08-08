@@ -6,7 +6,10 @@ import { animate, state, style, transition, trigger } from '@angular/animations'
 import { MatTableDataSource, MatTable } from '@angular/material/table';
 import { ActivatedRoute } from '@angular/router';
 import { DialogService } from '../dialog.service';
+import { customAlphabet } from 'nanoid';
 // import { NgForm } from '@angular/forms';
+const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+const nanoid = customAlphabet( alphabet, 16 );
 
 @Component( {
     selector: 'app-trigger-dialog',
@@ -66,7 +69,9 @@ export class TriggerDialogComponent implements OnInit {
     }
 
     public addNewCapturePhrase(): void {
-        this.model.capturePhrases.push( new CapturePhrase() );
+        let phrase: CapturePhrase = new CapturePhrase();
+        phrase.phraseId = nanoid();
+        this.model.capturePhrases.push( phrase );
         this.capturePhrasesTable?.renderRows();
     }
 
