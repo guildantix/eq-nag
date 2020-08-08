@@ -101,6 +101,7 @@ class TriggerDatabaseStore extends Store {
         // Generate a new id for the trigger.
         trigger.triggerId = nanoid();
         trigger.actions?.forEach( f => f.actionId = f.actionId ? f.actionId : nanoid() );
+        trigger.capturePhrases?.forEach( f => f.phraseId = f.phraseId ? f.phraseId : nanoid() );
 
         // Add it to the store.
         this.#data.triggers.push( trigger );
@@ -235,6 +236,7 @@ class TriggerDatabaseStore extends Store {
     update( trigger ) {
 
         trigger.actions?.forEach( f => f.actionId = f.actionId ? f.actionId : nanoid() );
+        trigger.capturePhrases?.forEach( f => f.phraseId = f.phraseId ? f.phraseId : nanoid() );
 
         // Find the index of the trigger by Id.
         let i = _.findIndex( this.#data.triggers, ( e ) => e.triggerId === trigger.triggerId );
