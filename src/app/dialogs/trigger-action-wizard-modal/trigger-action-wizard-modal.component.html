@@ -2,48 +2,80 @@
 
 <mat-dialog-content>
 
-    <!-- <mat-horizontal-stepper linear #stepper>
-        <mat-step [stepControl]="firstFormGroup" [editable]="isEditable">
-          <form [formGroup]="firstFormGroup">
-            <ng-template matStepLabel>Fill out your name</ng-template>
-            <mat-form-field>
-              <mat-label>Name</mat-label>
-              <input matInput formControlName="firstCtrl" placeholder="Last name, First name" required>
-            </mat-form-field>
-            <div>
-              <button mat-button matStepperNext>Next</button>
-            </div>
-          </form>
+    <mat-horizontal-stepper linear #stepper style="width:  700px;">
+        <mat-step [stepControl]="formActionType" errorMessage="Action type is required.">
+            <form #formActionType="ngForm" [ngClass]="{'form-submitted': formActionType.submitted}">
+                <ng-template matStepLabel>Action Type</ng-template>
+
+                <mat-radio-group aria-label="Select an action type" [(ngModel)]="model.actionType" name="rdgActionType" required>
+                    <mat-radio-button [value]="ActionTypes.DisplayText">Display Text</mat-radio-button>
+                    <mat-radio-button [value]="ActionTypes.PlayAudio">Play Audio</mat-radio-button>
+                    <mat-radio-button [value]="ActionTypes.Speak">Speak</mat-radio-button>
+                    <mat-radio-button [value]="ActionTypes.Timer">Timer</mat-radio-button>
+                    <mat-radio-button [value]="ActionTypes.Countdown">Countdown</mat-radio-button>
+                    <mat-radio-button [value]="ActionTypes.StoreVariable">Store Variable</mat-radio-button>
+                </mat-radio-group>
+
+                <div>
+                    <button mat-button matStepperNext>Next</button>
+                </div>
+            </form>
         </mat-step>
-        <mat-step [stepControl]="secondFormGroup" [editable]="isEditable">
-          <form [formGroup]="secondFormGroup">
-            <ng-template matStepLabel>Fill out your address</ng-template>
-            <mat-form-field>
-              <mat-label>Address</mat-label>
-              <input matInput formControlName="secondCtrl" placeholder="Ex. 1 Main St, New York, NY"
-                     required>
-            </mat-form-field>
-            <div>
-              <button mat-button matStepperPrevious>Back</button>
-              <button mat-button matStepperNext>Next</button>
-            </div>
-          </form>
+        <mat-step [stepControl]="formOverlay">
+            <form #formOverlay="ngForm" [ngClass]="{'form-submitted': formOverlay.submitted}">
+                <ng-template matStepLabel>Overlay</ng-template>
+                    <mat-radio-group aria-label="Select an overlay window" [(ngModel)]="model.overlayId" name="rdgOverlay" required>
+                        <mat-radio-button [value]="option.overlayId" *ngFor="let option of overlays" (mouseover)="highlightOverlay(option.overlayId)" (mouseout)="dimOverlay(option.overlayId)">{{option.name}} ({{option.overlayType}})</mat-radio-button>
+                    </mat-radio-group>
+                <div>
+                    <button mat-button matStepperPrevious>Back</button>
+                    <button mat-button matStepperNext>Next</button>
+                </div>
+            </form>
+        </mat-step>
+        <mat-step [stepControl]="formDisplayText" *ngIf="model.actionType === ActionTypes.DisplayText">
+            <form #formDisplayText="ngForm">
+                <ng-template matStepLabel>Display Text</ng-template>
+                <mat-form-field style="width: 100%;">
+                    <mat-label>Display Text</mat-label>
+                    <input matInput [(ngModel)]="model.displayText" name="txtDisplayText" required>
+                </mat-form-field>
+                <div>
+                    <button mat-button matStepperPrevious>Back</button>
+                    <button mat-button matStepperNext>Next</button>
+                </div>
+            </form>
+        </mat-step>
+        <mat-step [stepControl]="formDuration" *ngIf="model.actionType === ActionTypes.DisplayText">
+            <form #formDuration="ngForm">
+                <ng-template matStepLabel>Duration</ng-template>
+                <p>How long should this text stay on the screen?</p>
+                <mat-form-field>
+                    <mat-label>Duration</mat-label>
+                    <input matInput [(ngModel)]="model.duration" name="txtDuration" type="number" required>
+                </mat-form-field>
+                <div>
+                    <button mat-button matStepperPrevious>Back</button>
+                    <button mat-button matStepperNext>Next</button>
+                </div>
+            </form>
         </mat-step>
         <mat-step>
-          <ng-template matStepLabel>Done</ng-template>
-          <p>You are now done.</p>
-          <div>
-            <button mat-button matStepperPrevious>Back</button>
-            <button mat-button (click)="stepper.reset()">Reset</button>
-          </div>
+            <ng-template matStepLabel>Done</ng-template>
+            <!-- <p>You are now done.</p> -->
+            <div>
+                <button mat-button matStepperPrevious>Back</button>
+                <button mat-button (click)="stepper.reset()" color="warn">Start over</button>
+                <button mat-button color="accent">Save</button>
+            </div>
         </mat-step>
-      </mat-horizontal-stepper> -->
-    
+    </mat-horizontal-stepper>
+
 </mat-dialog-content>
 
-<mat-dialog-actions>
+<!-- <mat-dialog-actions>
 
   <button mat-button mat-dialog-close class="t-confirm-no" color="warn">No</button>
   <button mat-button [mat-dialog-close]="true" class="t-confirm-yes" color="accent">Yes</button>
 
-</mat-dialog-actions>
+</mat-dialog-actions> -->

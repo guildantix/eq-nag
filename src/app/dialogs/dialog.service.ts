@@ -61,7 +61,7 @@ export class DialogService {
     public showTriggerActionWizardDialog( model: TriggerAction, onClose: ( model: TriggerAction ) => void ): void {
         
         let dialogRef: MatDialogRef<TriggerActionWizardModalComponent> = this.dialog.open( TriggerActionWizardModalComponent, {
-            width: '550px',
+            width: '750px',
             data: model
         } );
 

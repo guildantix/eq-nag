@@ -46,6 +46,14 @@ function Overlay() {
         document.querySelector( 'body' ).classList.remove( 'show-border' );
     } );
 
+    ipcRenderer.on( 'overlay:window:highlight', function ( event ) {
+        document.querySelector( 'body' ).classList.add( 'highlight-border' );
+    } );
+
+    ipcRenderer.on( 'overlay:window:dim', function ( event ) {
+        document.querySelector( 'body' ).classList.remove( 'highlight-border' );
+    } );
+
     ipcRenderer.on( 'overlay:window:model',
         /**
          * Changes the window properties based on the given model.
