@@ -1,0 +1,16 @@
+<div class="duration-wrapper">
+    <mat-form-field>
+        <mat-label>Hrs</mat-label>
+        <input matInput type="number" [(ngModel)]="hours" [disabled]="disabled" (change)="valueChanged($event)" />
+    </mat-form-field>
+    <label>:</label>
+    <mat-form-field>
+        <mat-label>Mins</mat-label>
+        <input matInput type="number" [(ngModel)]="minutes" [disabled]="disabled" (change)="valueChanged($event)" />
+    </mat-form-field>
+    <label>:</label>
+    <mat-form-field>
+        <mat-label>Sec</mat-label>
+        <input matInput type="number" [(ngModel)]="seconds" [disabled]="disabled" (change)="valueChanged($event)" />
+    </mat-form-field>
+</div>
