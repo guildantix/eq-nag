@@ -1,7 +1,7 @@
 import { Component, OnInit, ViewChild } from '@angular/core';
 
 import { IpcService } from 'src/app/ipc.service';
-import { TriggerModel, CapturePhrase, ActionTypes, TriggerAction, OverlayWindowModel } from 'src/app/core.model';
+import { TriggerModel, CapturePhrase, ActionTypes, TriggerAction, OverlayWindowModel, OperatorTypes, TriggerCondition, TriggerConditionTypes } from 'src/app/core.model';
 import { animate, state, style, transition, trigger } from '@angular/animations';
 import { MatTableDataSource, MatTable } from '@angular/material/table';
 import { ActivatedRoute } from '@angular/router';
@@ -28,8 +28,10 @@ export class TriggerDialogComponent implements OnInit {
     public model: TriggerModel;
     public phraseTableColumns = [ 'number', 'phrase', 'regEx', 'delete' ];
     public actionTableColumns = [ 'number', 'actionType', 'delete' ];
+    public conditionTableColumns = [ 'variable', 'operator', 'value', 'delete' ];
     public triggerId: string = null;
     public actionTypes: typeof ActionTypes = ActionTypes;
+    public operatorTypes: typeof OperatorTypes = OperatorTypes;
     public overlays: OverlayWindowModel[] = [];
     public storedVariables: string[] = [];
 
@@ -38,6 +40,7 @@ export class TriggerDialogComponent implements OnInit {
     }
     
     @ViewChild( 'capturePhrasesTable' ) capturePhrasesTable: MatTable<any>;
+    @ViewChild( 'conditionsTable' ) conditionsTable: MatTable<any>;
 
     constructor( private ipcService: IpcService, private route: ActivatedRoute, private dialogService: DialogService ) { }
 
@@ -106,6 +109,26 @@ export class TriggerDialogComponent implements OnInit {
             ( confirmed ) => {
                 if ( confirmed ) {
                     this.model.actions?.splice( index, 1 );
+                }
+            } );
+    }
+
+    public addNewCondition(): void {
+        let condition: TriggerCondition = new TriggerCondition();
+        condition.conditionType = TriggerConditionTypes.VariableValue;
+        this.model.conditions.push( condition );
+        this.conditionsTable?.renderRows();
+    }
+
+    public deleteCondition( index: number ): void {
+        this.dialogService.showConfirmDialog(
+            'Are you certain you want to delete this condition?',
+            'Click "Yes" to delete the condition.',
+            'Click "No" to cancel and close this dialog without deleting the condition.',
+            ( confirmed ) => {
+                if ( confirmed ) {
+                    this.model.conditions?.splice( index, 1 );
+                    this.conditionsTable?.renderRows();
                 }
             } );
     }

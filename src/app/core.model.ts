@@ -6,6 +6,33 @@ export class TriggerModel {
     public comments: string = '';
     public actions: any[] = [];
     public captureMethod: string = 'Any match';
+    public conditions: TriggerCondition[] = [];
+
+}
+
+export enum TriggerConditionTypes {
+    
+    VariableValue = 1,
+
+}
+
+export enum OperatorTypes {
+    
+    IsNull =                0,
+    Equals =                1 << 0,
+    DoesNotEqual =          1 << 1,
+    LessThan =              1 << 2,
+    GreaterThan =           1 << 3,
+
+}
+
+export class TriggerCondition {
+    
+    public conditionId: string = null;
+    public conditionType: TriggerConditionTypes = TriggerConditionTypes.VariableValue;
+    public operatorType: OperatorTypes;
+    public variableName: string;
+    public variableValue: string;
 
 }
 
