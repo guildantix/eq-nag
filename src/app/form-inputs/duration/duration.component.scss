@@ -1,0 +1,14 @@
+.duration-wrapper {
+    display: flex;
+    >mat-form-field {
+        width: 30%;
+    }
+    >label {
+        width: 5%;
+        display: inline-block;
+        line-height: 48px;
+        font-size: 20px;
+        font-weight: bold;
+        text-align: center;
+    }
+}

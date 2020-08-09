@@ -5,6 +5,7 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { MaterialModule } from '../material.module';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { CommonModule } from '@angular/common';
+import { DurationComponent } from './duration/duration.component';
 
 @NgModule({
     imports: [
@@ -14,10 +15,12 @@ import { CommonModule } from '@angular/common';
         BrowserAnimationsModule,
     ],
     exports: [
-        ColorPickerComponent
+        ColorPickerComponent,
+        DurationComponent,
     ],
     declarations: [
-        ColorPickerComponent
+        ColorPickerComponent,
+        DurationComponent,
     ],
     providers: [],
 })
