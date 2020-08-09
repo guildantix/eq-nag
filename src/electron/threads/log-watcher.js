@@ -8,11 +8,13 @@ const { Trigger, TriggerAction, ActionTypes } = require( '../data/models/trigger
 const { OverlayComponent } = require( '../data/models/overlay-window' );
 
 const chokidar = require( "chokidar" );
+const StringUtilities = require( '../utilities/string' );
 var currentPosition = 0;
 
 var watcher = null;
 /** @type {Trigger[]} */
 var triggers = [];
+var storedVariables = {};
 
 function LogWatcher() {
     ipcRenderer.on( 'log:changed', function ( event, data ) {
@@ -63,10 +65,11 @@ function generateTriggerFns() {
                     if ( phrase.phrase?.length > 0 ) {
                         if ( phrase.useRegEx ) {
                             // Use different parse functions for regex vs normal.
-                            let _reg = new RegExp( phrase.phrase, 'gi' );
+                            // console.log( 'testing', StringUtilities.parseStoredVariablesToRegex( phrase.phrase, storedVariables ) );
+                            let _reg = new RegExp( StringUtilities.parseStoredVariablesToRegex( phrase.phrase, storedVariables ), 'gi' );
                             _phraseParsers.push( value => {
-                                let _res = _reg.exec( value );
-                                _reg.lastIndex = 0;
+                                let _res = new RegExp( StringUtilities.parseStoredVariablesToRegex( phrase.phrase, storedVariables ), 'gi' ).exec( value );
+                                // _reg.lastIndex = 0;
                                 return {
                                     phraseId: phrase.phraseId,
                                     match: _res?.length > 0,
@@ -75,7 +78,7 @@ function generateTriggerFns() {
                             } );
                         } else {
                             // We won't care about case sensitivity.
-                            let _phr = phrase.phrase.toLowerCase();
+                            let _phr = StringUtilities.parseStoredVariablesToLiteral( phrase.phrase, storedVariables ).toLowerCase();
                             _phraseParsers.push( value => {
                                 if ( value && value.length > 0 ) {
                                     return {
@@ -134,7 +137,6 @@ let rgxTimestamp = /^\[(.*?)\]\s*/gi;
 let rgxGrabText = /\'(.*?)\'$/gi;
 let rgxDelimiter = /;/gi;
 let rgxNum = /(\d+)/gi;
-let storedVariables = {};
 
 function parseLogEntries( raw ) {
 
@@ -163,6 +165,7 @@ function parseLogEntries( raw ) {
                         if ( action.actionType === ActionTypes.DisplayText ) {
                             let comp = new OverlayComponent();
                             comp.action = action;
+                            comp.action.displayText = StringUtilities.parseStoredVariablesToLiteral( action.displayText, storedVariables );
                             comp.overlayId = action.overlayId;
                             comp.matches = res.result;
                             ipcRenderer.send( 'overlay:send:component', comp );
@@ -189,6 +192,7 @@ module.exports = LogWatcher;
 // Exit conditions
 // A loathling lich resisted your Cascading Darkness!
 // Your Envenomed Bolt spell is interrupted.
+// Your Journeyman Boots spell did not take hold. (Blocked by Pack Spirit.)
 // A black wolf has been slain by Grimrot!
 // You have slain a black wolf!
 
