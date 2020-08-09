@@ -83,6 +83,10 @@ class TriggerDatabaseStore extends Store {
             sendTick();
         } );
 
+        ipcMain.on( 'trigger:get:stored-variables', ( event, data ) => {
+            event.sender.webContents.send( 'trigger:get:stored-variables', this.getVariableNames() );
+        } );
+
     }
 
 
@@ -294,6 +298,30 @@ class TriggerDatabaseStore extends Store {
      */
     getAll() {
         return this.#data.triggers;
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Returns all variable names.
+     */
+    getVariableNames() {
+        let variables = [];
+        this.#data?.triggers?.forEach( trigger => {
+            trigger.actions?.forEach( action => {
+                if ( action.actionType === ActionTypes.StoreVariable ) {
+                    variables.push( action.variableName );
+                }
+            } );
+        } );
+        return variables;
     }
     
 

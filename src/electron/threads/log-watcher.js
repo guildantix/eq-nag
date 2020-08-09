@@ -174,6 +174,8 @@ function parseLogEntries( raw ) {
                             } else {
                                 storedVariables[ action.variableName ] = res.result[ 1 ];
                             }
+                        } else if ( action.actionType === ActionTypes.ClearVariable ) {
+                            storedVariables[ action.variableName ] = null;
                         }
                     }
                 } );
