@@ -43,8 +43,8 @@ class TriggerAction {
     variableName = null;
     /** @type number */
     ticks = null;
-    /** @type string */
-    phraseId;
+    /** @type string[] */
+    phrases;
 
 }
 

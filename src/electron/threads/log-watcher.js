@@ -65,8 +65,7 @@ function generateTriggerFns() {
                     if ( phrase.phrase?.length > 0 ) {
                         if ( phrase.useRegEx ) {
                             // Use different parse functions for regex vs normal.
-                            // console.log( 'testing', StringUtilities.parseStoredVariablesToRegex( phrase.phrase, storedVariables ) );
-                            let _reg = new RegExp( StringUtilities.parseStoredVariablesToRegex( phrase.phrase, storedVariables ), 'gi' );
+                            // let _reg = new RegExp( StringUtilities.parseStoredVariablesToRegex( phrase.phrase, storedVariables ), 'gi' );
                             _phraseParsers.push( value => {
                                 let _res = new RegExp( StringUtilities.parseStoredVariablesToRegex( phrase.phrase, storedVariables ), 'gi' ).exec( value );
                                 // _reg.lastIndex = 0;
@@ -161,10 +160,10 @@ function parseLogEntries( raw ) {
             let res = f._parse( log );
             if ( res.match ) {
                 f.actions.forEach( action => {
-                    if ( action.phraseId == null || action.phraseId === res.phraseId ) {
+                    if ( action.phrases == null || action.phrases?.length === 0 || action.phrases?.indexOf( res.phraseId ) > -1 ) {
                         if ( action.actionType === ActionTypes.DisplayText ) {
                             let comp = new OverlayComponent();
-                            comp.action = action;
+                            comp.action = Object.assign( new TriggerAction(), action );
                             comp.action.displayText = StringUtilities.parseStoredVariablesToLiteral( action.displayText, storedVariables );
                             comp.overlayId = action.overlayId;
                             comp.matches = res.result;
