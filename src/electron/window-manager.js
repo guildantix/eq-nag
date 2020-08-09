@@ -93,7 +93,7 @@ class WindowManager {
             } else {
                 let model = overlayDatabase.find( overlayId );
                 if ( model ) {
-                    loadOverlay( model, overlayDatabase );
+                    loadOverlay( model, overlayDatabase, true );
                 } else {
                     console.error( `Could not find over lay ${overlayId}` );
                 }

@@ -11,7 +11,7 @@ import { DialogService } from './dialogs/dialog.service';
     templateUrl: 'main.component.html',
     styleUrls: [ 'main.component.scss', 'core.scss' ]
 } )
-export class MainComponent implements OnInit  {
+export class MainComponent implements OnInit {
 
     public msg: string;
     public dkpEntries: DkpEntryModel[] = [];
@@ -31,7 +31,7 @@ export class MainComponent implements OnInit  {
         };
     }
 
-    ngOnInit (): void {
+    ngOnInit(): void {
         this.ipcService.tickReceived().subscribe( data => {
             this.dkpEntries = data.dkpEntries;
             this.logFile = data.logFile;
@@ -45,7 +45,7 @@ export class MainComponent implements OnInit  {
                 var utter = new SpeechSynthesisUtterance();
                 utter.text = `${model.item} awarded to ${model.character} for ${model.dkp} DKP.`;
                 utter.voice = this.voiceOptions[ this.voiceIndex ];
-                utter.onend = function ( event ) {  }
+                utter.onend = function ( event ) { }
                 speechSynthesis.speak( utter );
             }
         } );
@@ -61,31 +61,31 @@ export class MainComponent implements OnInit  {
         this.ipcService.consoleLogRequested().subscribe( data => console.log( 'from main', data ) );
     }
 
-    removeEntry ( entry: any ): void {
+    removeEntry( entry: any ): void {
         this.ipcService.removeDkpAward( entry );
     }
 
-    quitApp (): void {
+    quitApp(): void {
         this.ipcService.quitApp();
     }
 
-    openModal () {
+    openModal() {
         this.fileSelector.nativeElement.click();
     }
 
-    fileSelected ( e: any ) {
+    fileSelected( e: any ) {
         this.ipcService.updateLogFile( this.fileSelector.nativeElement.files[ 0 ].path );
     }
 
-    onChangeTabs ( selectedIndex: number ): void {
+    onChangeTabs( selectedIndex: number ): void {
         this.showConsole = selectedIndex === 0;
     }
 
-    onChangeVoice (): void {
+    onChangeVoice(): void {
         this.ipcService.updateVoiceIndex( this.voiceIndex );
     }
 
-    parseToBulkUpload (): void {
+    parseToBulkUpload(): void {
         let bulkUploadString: string = '';
         if ( this.dkpEntries ) {
 
@@ -101,23 +101,23 @@ export class MainComponent implements OnInit  {
         }
     }
 
-    markAllDkpEntered (): void {
+    markAllDkpEntered(): void {
         this.ipcService.markDkpEntriesAsEntered( this.dkpEntries );
     }
 
-    resetDkpLog (): void {
+    resetDkpLog(): void {
         this.ipcService.clearDkpLog();
     }
 
-    showNewTriggerDialog (): void {
+    showNewTriggerDialog(): void {
         this.ipcService.showNewTriggerDialog();
     }
 
-    showEditTriggerDialog ( triggerId: string ): void {
+    showEditTriggerDialog( triggerId: string ): void {
         this.ipcService.showEditTriggerDialog( triggerId );
     }
 
-    deleteTrigger ( index: number ): void {
+    deleteTrigger( index: number ): void {
         this.dialogService.showConfirmDialog(
             `Are you sure you want to delete ${this.triggers[ index ].name}?`,
             'Click "Yes" to delete this trigger.', 'Click "No" to close this dialog without deleting this trigger.',
@@ -128,21 +128,23 @@ export class MainComponent implements OnInit  {
             } );
     }
 
-    showNewOverlayDialog (): void {
+    showNewOverlayDialog(): void {
         this.dialogService.
             showOverlayDetailsDialog( new OverlayWindowModel() )
             .subscribe( model => {
                 if ( model?.isValid() === true ) {
-                    this.ipcService.createNewOverlayWindow( model ).subscribe( overlayId => { } );
+                    this.ipcService.createNewOverlayWindow( model ).subscribe( overlayId => {
+                        this.ipcService.showEditOverlayDialog( overlayId );
+                    } );
                 }
             } );
     }
 
-    enableOverlayEdit ( overlayId: string ): void {
+    enableOverlayEdit( overlayId: string ): void {
         this.ipcService.showEditOverlayDialog( overlayId );
     }
 
-    deleteOverlay ( index: number ): void {
+    deleteOverlay( index: number ): void {
         this.dialogService.showConfirmDialog(
             `Are you sure you want to delete ${this.overlays[ index ].name}?`,
             'Click "Yes" to delete this overlay.', 'Click "No" to close this dialog without deleting this overlay.',
