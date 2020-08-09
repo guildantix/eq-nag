@@ -31,6 +31,7 @@ export class TriggerDialogComponent implements OnInit {
     public triggerId: string = null;
     public actionTypes: typeof ActionTypes = ActionTypes;
     public overlays: OverlayWindowModel[] = [];
+    public storedVariables: string[] = [];
 
     public get logOverlays(): OverlayWindowModel[] {
         return this.overlays.filter( f => f.overlayType === 'Log' );
@@ -54,6 +55,7 @@ export class TriggerDialogComponent implements OnInit {
             }
 
             this.ipcService.getOverlayWindows().subscribe( overlays => this.overlays = overlays );
+            this.ipcService.getStoredVariables().subscribe( variables => this.storedVariables = variables );
      
             // In a real app: dispatch action to load the details here.
         } );

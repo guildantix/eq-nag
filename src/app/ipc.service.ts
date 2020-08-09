@@ -259,6 +259,25 @@ export class IpcService {
         return obs;
     }
 
+    /**
+     * Returns a list of all stored variables.
+     */
+    public getStoredVariables(): Observable<string[]> {
+        let obs: Observable<string[]> = new Observable<string[]>( ( observer: Observer<string[]> ) => {
+            
+            this.ipc.once( 'trigger:get:stored-variables', ( e, storedVariables: string[] ) => {
+                this.ngZone.run( () => {
+                    observer.next( storedVariables );
+                    observer.complete();
+                } );
+            } );
+            this.ipc.send( 'trigger:get:stored-variables', null );
+
+        } );
+
+        return obs;
+    }
+
     public createNewOverlayWindow( model: OverlayWindowModel ): Observable<string> {
         let obs: Observable<string> = new Observable<string>( ( observer: Observer<string> ) => {
             

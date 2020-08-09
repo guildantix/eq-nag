@@ -74,7 +74,8 @@ export enum ActionTypes {
     Countdown = 4,
     StoreVariable = 5,
     DotTimer = 6,
-
+    ClearVariable = 7,
+    
 }
 
 export class TriggerAction {

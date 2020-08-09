@@ -91,6 +91,7 @@
                                         <span class="material-icons" *ngIf="action.actionType === actionTypes.Timer">timer</span>
                                         <span class="material-icons" *ngIf="action.actionType === actionTypes.Countdown">watch</span>
                                         <span class="material-icons" *ngIf="action.actionType === actionTypes.StoreVariable">sd_storage</span>
+                                        <span class="material-icons" *ngIf="action.actionType === actionTypes.ClearVariable">sd_storage</span>
                                     </div>
                                     <mat-card-title>{{action.actionType == null ? 'Unset Action' : actionTypes[action.actionType]}}</mat-card-title>
                                     <mat-card-subtitle>
@@ -100,6 +101,7 @@
                                         <span *ngIf="action.actionType === actionTypes.Timer">Start a timer.</span>
                                         <span *ngIf="action.actionType === actionTypes.Countdown">Start a countdown.</span>
                                         <span *ngIf="action.actionType === actionTypes.StoreVariable">Store a value in a variable.</span>
+                                        <span *ngIf="action.actionType === actionTypes.ClearVariable">Empties the value in a variable.</span>
                                     </mat-card-subtitle>
                                 </mat-card-header>
                                 <mat-card-content>
@@ -113,6 +115,7 @@
                                             <!-- <mat-option [value]="actionTypes.Timer">Timer</mat-option> -->
                                             <!-- <mat-option [value]="actionTypes.Countdown">Countdown</mat-option> -->
                                             <mat-option [value]="actionTypes.StoreVariable">Store Variable</mat-option>
+                                            <mat-option [value]="actionTypes.ClearVariable">Clear Variable</mat-option>
                                         </mat-select>
                                     </mat-form-field>
 
@@ -154,6 +157,19 @@
                                         <mat-form-field>
                                             <mat-label>Variable Name</mat-label>
                                             <input matInput [(ngModel)]="action.variableName" name="txtVariableName_{{i}}" />
+                                        </mat-form-field>
+
+                                    </div>
+
+                                    <div *ngIf="action.actionType === actionTypes.ClearVariable">
+
+                                        <p>Choose a variable to clear.</p>
+
+                                        <mat-form-field>
+                                            <mat-label>Variable Name</mat-label>
+                                            <mat-select [(ngModel)]="action.variableName" name="ddlVariableName_{{i}}">
+                                                <mat-option *ngFor="let variable of storedVariables" [value]="variable">{{variable}}</mat-option>
+                                            </mat-select>
                                         </mat-form-field>
 
                                     </div>
