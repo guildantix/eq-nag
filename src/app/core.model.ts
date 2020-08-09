@@ -81,7 +81,7 @@ export class TriggerAction {
 
     public actionId: string;
     public actionType: ActionTypes;
-    public phraseId: string;
+    public phrases: string[] = [];
     public overlayId: string;
     public displayText: string;
     public duration: number;

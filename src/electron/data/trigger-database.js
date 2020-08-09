@@ -31,6 +31,13 @@ class TriggerDatabaseStore extends Store {
             this.#data.version = 3;
             this.storeDataFile( this.#data );
         }
+        if ( this.#data.version < 4 ) {
+            this.#data?.triggers?.forEach( f => {
+                f.actions?.forEach( p => p.phrases = p.phraseId ? [ p.phraseId ] : [] );
+            } );
+            this.#data.version = 4;
+            this.storeDataFile( this.#data );
+        }
     }
 
 

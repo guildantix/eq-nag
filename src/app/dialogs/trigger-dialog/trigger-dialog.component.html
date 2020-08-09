@@ -119,8 +119,7 @@
                                     <div *ngIf="action.actionType != null">
                                         <mat-form-field>
                                             <mat-label>Trigger on phrase</mat-label>
-                                            <mat-select [(ngModel)]="action.phraseId" name="ddlActionPhrase_{{i}}">
-                                                <mat-option [value]="null">Any Phrase</mat-option>
+                                            <mat-select [(ngModel)]="action.phrases" name="ddlActionPhrase_{{i}}" multiple>
                                                 <mat-option *ngFor="let phrase of model.capturePhrases" [value]="phrase.phraseId">{{phrase.phrase}}</mat-option>
                                             </mat-select>
                                         </mat-form-field>
