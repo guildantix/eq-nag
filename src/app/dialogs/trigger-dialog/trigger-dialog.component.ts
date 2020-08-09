@@ -34,6 +34,7 @@ export class TriggerDialogComponent implements OnInit {
     public operatorTypes: typeof OperatorTypes = OperatorTypes;
     public overlays: OverlayWindowModel[] = [];
     public storedVariables: string[] = [];
+    public Math: typeof Math = Math;
 
     public get logOverlays(): OverlayWindowModel[] {
         return this.overlays.filter( f => f.overlayType === 'Log' );
