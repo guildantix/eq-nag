@@ -4,7 +4,7 @@ const path = require( 'path' );
 const process = require( 'process' );
 const fs = require( 'fs' );
 const DkpEntryModel = require( '../data/models/dkp-entry' );
-const { Trigger, TriggerAction, ActionTypes } = require( '../data/models/trigger' );
+const { Trigger, TriggerAction, ActionTypes, TriggerConditionTypes, OperatorTypes } = require( '../data/models/trigger' );
 const { OverlayComponent } = require( '../data/models/overlay-window' );
 
 const chokidar = require( "chokidar" );
@@ -97,10 +97,36 @@ function generateTriggerFns() {
                 } );
                 
                 trigger._parse = value => {
-                    for ( let i = 0; i < _phraseParsers?.length; i++ ){
-                        let _res = _phraseParsers[ i ]( value );
-                        if ( _res?.match ) {
-                            return _res;
+                    let conditionsPassed = true;
+
+                    // First, the trigger must pass each condition.
+                    trigger.conditions?.forEach( condition => {
+                        if ( condition.conditionType === TriggerConditionTypes.VariableValue ) {
+                            if ( condition.operatorType === OperatorTypes.Equal ) {
+                                if ( condition.variableValue && storedVariables[ condition.variableName ] !== condition.variableValue ) {
+                                    conditionsPassed = false;
+                                }
+                            } else if ( condition.operatorType === OperatorTypes.IsNull ) {
+                                if ( storedVariables[ condition.variableName ] != null ) {
+                                    conditionsPassed = false;
+                                }
+                            } else if ( condition.operatorType === OperatorTypes.DoesNotEqual ) {
+                                if ( condition.variableValue && storedVariables[ condition.variableName ] === condition.variableValue ) {
+                                    conditionsPassed = false;
+                                } else if ( !condition.variableValue && storedVariables[ condition.variableName ] == null ) {
+                                    conditionsPassed = false;
+                                }
+                            }
+                        }
+                    } );
+
+                    // If all conditions passed, then parse the phrase.
+                    if ( conditionsPassed ) {
+                        for ( let i = 0; i < _phraseParsers?.length; i++ ) {
+                            let _res = _phraseParsers[ i ]( value );
+                            if ( _res?.match ) {
+                                return _res;
+                            }
                         }
                     }
 
@@ -190,17 +216,19 @@ module.exports = LogWatcher;
 // Capture spell being cast
 // You begin casting Cascading Darkness.
 
-// Exit conditions
-// A loathling lich resisted your Cascading Darkness!
-// Your Envenomed Bolt spell is interrupted.
-// Your Journeyman Boots spell did not take hold. (Blocked by Pack Spirit.)
-// A black wolf has been slain by Grimrot!
-// You have slain a black wolf!
+// Exit conditions (casting)
+//X A loathling lich resisted your Cascading Darkness!
+//X Your Envenomed Bolt spell is interrupted.
+//X Your Journeyman Boots spell did not take hold. (Blocked by Pack Spirit.)
+
+// Exit conditions (timer)
+//  A black wolf has been slain by Grimrot!
+//  You have slain a black wolf!
 
 // Spell lands:
 //  On Hit:
-//      You hit a black wolf for 41 points of poison damage by Envenomed Bolt.
-//      You hit (          ) for ()                         by (            )
+//        You hit a black wolf for 41 points of poison damage by Envenomed Bolt.
+//        You hit (          ) for ()                         by (            )
 //  On Tick 1:
-//      A black wolf has taken 10 damage from your Envenomed Bolt.
-//      (          )           ()             your (            )
+//        A black wolf has taken 10 damage from your Envenomed Bolt.
+//        (          )           ()             your (            )

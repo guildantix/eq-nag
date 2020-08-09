@@ -38,6 +38,13 @@ class TriggerDatabaseStore extends Store {
             this.#data.version = 4;
             this.storeDataFile( this.#data );
         }
+        if ( this.#data.version < 5 ) {
+            this.#data?.triggers?.forEach( trigger => {
+                trigger.conditions = trigger.conditions ? trigger.conditions : [];
+            } );
+            this.#data.version = 5;
+            this.storeDataFile( this.#data );
+        }
     }
 
 
@@ -113,6 +120,7 @@ class TriggerDatabaseStore extends Store {
         trigger.triggerId = nanoid();
         trigger.actions?.forEach( f => f.actionId = f.actionId ? f.actionId : nanoid() );
         trigger.capturePhrases?.forEach( f => f.phraseId = f.phraseId ? f.phraseId : nanoid() );
+        trigger.conditions?.forEach(f => f.conditionId = f.conditionId ? f.conditionId : nanoid() );
 
         // Add it to the store.
         this.#data.triggers.push( trigger );
@@ -248,6 +256,7 @@ class TriggerDatabaseStore extends Store {
 
         trigger.actions?.forEach( f => f.actionId = f.actionId ? f.actionId : nanoid() );
         trigger.capturePhrases?.forEach( f => f.phraseId = f.phraseId ? f.phraseId : nanoid() );
+        trigger.conditions?.forEach(f => f.conditionId = f.conditionId ? f.conditionId : nanoid() );
 
         // Find the index of the trigger by Id.
         let i = _.findIndex( this.#data.triggers, ( e ) => e.triggerId === trigger.triggerId );

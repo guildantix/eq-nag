@@ -18,6 +18,26 @@ var ActionTypes = {
     ClearVariable: 7,
 }
 
+var TriggerConditionTypes = {
+    '0': 'Unknown',
+    '1': 'VariableValue',
+    Unknown: 0,
+    VariableValue: 1,
+}
+
+var OperatorTypes = {
+    '0': 'IsNull',
+    '1': 'Equals',
+    '2': 'DoesNotEqual',
+    '4': 'LessThan',
+    '8': 'GreaterThan',
+    IsNull: 0,
+    Equals: 1,
+    DoesNotEqual: 2,
+    LessThan: 4,
+    GreaterThan: 8,
+}
+
 class CapturePhrase {
 
     /** @type string */
@@ -50,6 +70,21 @@ class TriggerAction {
 
 }
 
+class TriggerCondition {
+    
+    /** @type string */
+    conditionId;
+    /** @type TriggerConditionTypes */
+    conditionType;
+    /** @type OperatorTypes */
+    operatorType;
+    /** @type string */
+    variableName;
+    /** @type string */
+    variableValue;
+
+}
+
 class Trigger {
     
     triggerId = null;
@@ -61,7 +96,9 @@ class Trigger {
     /** @type {TriggerAction[]} */
     actions = [];
     captureMethod = 'Any match';
+    /** @type TriggerCondition[] */
+    conditions = [];
 
 }
 
-module.exports = { Trigger, TriggerAction, ActionTypes, CapturePhrase };
+module.exports = { Trigger, TriggerAction, ActionTypes, CapturePhrase, TriggerConditionTypes, OperatorTypes };
