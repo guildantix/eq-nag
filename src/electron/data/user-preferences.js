@@ -127,6 +127,14 @@ class UserPreferencesStore extends Store {
         ipcMain.on( 'settings:set:fct', ( event, arg ) => {
             this.enableFct = arg;
         } );
+        
+        ipcMain.on( 'settings:set:damageDealtOverlayId', ( event, arg ) => {
+            this.damageDealtOverlayId = arg;
+        } );
+        
+        ipcMain.on( 'settings:set:damageReceivedOverlayId', ( event, arg ) => {
+            this.damageReceivedOverlayId = arg;
+        } );
 
     }
 

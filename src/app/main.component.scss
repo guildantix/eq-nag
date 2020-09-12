@@ -1,3 +1,11 @@
+div.tab-content {
+    overflow-y: auto;
+    height: 100%;
+
+    > fieldset:not(:first-child) {
+        margin-top: 50px;
+    }
+}
 div.console {
     width: 100%;
     overflow-y: auto;
@@ -28,4 +36,9 @@ span.item-link {
 
 .dkp.credit {
     color: #ff4c4c;
+}
+
+fieldset p mat-form-field {
+    max-width: 400px;
+    width: 100%;
 }

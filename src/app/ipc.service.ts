@@ -155,6 +155,14 @@ export class IpcService {
         this.ipc.send( 'settings:set:fct', enabled );
     }
 
+    public updateDamageDealtOverlayId( overlayId: string ): void {
+        this.ipc.send( 'settings:set:damageDealtOverlayId', overlayId );
+    }
+
+    public updateDamageReceivedOverlayId( overlayId: string ): void {
+        this.ipc.send( 'settings:set:damageReceivedOverlayId', overlayId );
+    }
+
     public sendTextToClipboard( value: string ): void {
         this.ipc.send( 'clipboard:writeText', value );
     }

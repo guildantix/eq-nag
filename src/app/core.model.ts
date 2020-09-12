@@ -1,3 +1,5 @@
+import { StringProtocolResponse } from 'electron';
+
 export class TriggerModel {
     
     public triggerId: string = null;
@@ -90,6 +92,8 @@ export class DataTickModel {
     public triggers: TriggerModel[] = [];
     public overlays: OverlayWindowModel[] = [];
     public enableFct: boolean = false;
+    public damageDealtOverlayId: string;
+    public damageReceivedOverlayId: string;
 
 }
 
