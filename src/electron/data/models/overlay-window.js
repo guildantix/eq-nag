@@ -33,6 +33,8 @@ class OverlayComponent {
     dom;
     overlayId = '';
     intervalId = -1;
+    /** @type {Date} */
+    start;
 }
 
 module.exports = { OverlayWindow, OverlayComponent };
