@@ -132,7 +132,29 @@
                     </fieldset>
 
                     <fieldset>
-                        <mat-checkbox [(ngModel)]="enableFct" (change)="onEnableFctChange()">Enable Floating Combat Text</mat-checkbox>
+                        <legend><span>Floating Combat Text</span></legend>
+                        <p>
+                            <mat-checkbox [(ngModel)]="enableFct" (change)="onEnableFctChange()">Enable</mat-checkbox>
+                        </p>
+                        
+                        <p>
+                            <mat-form-field>
+                                <mat-label>Damage Dealt Overlay</mat-label>
+                                <mat-select [(ngModel)]="damageDealtOverlayId" name="ddlDamageDealtOverlay" (selectionChange)="onChangeDealtFctOverylays()">
+                                    <mat-option *ngFor="let option of fctOverlays" [value]="option.overlayId">{{option.name}}</mat-option>
+                                </mat-select>
+                            </mat-form-field>
+                        </p>
+
+                        <p>
+                            <mat-form-field>
+                                <mat-label>Damage Received Overlay</mat-label>
+                                <mat-select [(ngModel)]="damageTakenOverlayId" name="ddlDamageReceivedOverlay" (selectionChange)="onChangeReceivedFctOverylays()">
+                                    <mat-option *ngFor="let option of fctOverlays" [value]="option.overlayId">{{option.name}}</mat-option>
+                                </mat-select>
+                            </mat-form-field>
+                        </p>
+                        
                     </fieldset>
 
                 </div>

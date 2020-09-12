@@ -23,8 +23,14 @@ export class MainComponent implements OnInit {
     public voiceOptions: SpeechSynthesisVoice[] = [];
     public triggers: TriggerModel[] = [];
     public overlays: OverlayWindowModel[] = [];
+    public damageDealtOverlayId: string;
+    public damageTakenOverlayId: string;
 
     @ViewChild( 'fileSelector' ) private fileSelector: ElementRef<HTMLInputElement>;
+
+    public get fctOverlays(): OverlayWindowModel[] {
+        return this.overlays.filter( f => f.overlayType === 'FCT' );
+    }
 
     constructor( private snackBar: MatSnackBar, private ipcService: IpcService, private dialogService: DialogService ) {
         speechSynthesis.onvoiceschanged = () => {
@@ -40,6 +46,8 @@ export class MainComponent implements OnInit {
             this.triggers = data.triggers;
             this.overlays = data.overlays;
             this.enableFct = data.enableFct;
+            this.damageDealtOverlayId = data.damageDealtOverlayId;
+            this.damageTakenOverlayId = data.damageReceivedOverlayId;
         } );
 
         this.ipcService.dkpEntryAdded().subscribe( model => {
@@ -89,6 +97,14 @@ export class MainComponent implements OnInit {
 
     onEnableFctChange(): void {
         this.ipcService.updateEnableFct( this.enableFct );
+    }
+
+    onChangeDealtFctOverylays(): void {
+        this.ipcService.updateDamageDealtOverlayId( this.damageDealtOverlayId );
+    }
+
+    onChangeReceivedFctOverylays(): void {
+        this.ipcService.updateDamageReceivedOverlayId( this.damageTakenOverlayId );
     }
 
     parseToBulkUpload(): void {
