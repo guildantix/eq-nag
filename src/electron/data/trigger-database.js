@@ -256,7 +256,7 @@ class TriggerDatabaseStore extends Store {
 
         trigger.actions?.forEach( f => f.actionId = f.actionId ? f.actionId : nanoid() );
         trigger.capturePhrases?.forEach( f => f.phraseId = f.phraseId ? f.phraseId : nanoid() );
-        trigger.conditions?.forEach(f => f.conditionId = f.conditionId ? f.conditionId : nanoid() );
+        trigger.conditions?.forEach( f => f.conditionId = f.conditionId ? f.conditionId : nanoid() );
 
         // Find the index of the trigger by Id.
         let i = _.findIndex( this.#data.triggers, ( e ) => e.triggerId === trigger.triggerId );

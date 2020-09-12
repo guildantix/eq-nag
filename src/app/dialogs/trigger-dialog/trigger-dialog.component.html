@@ -190,13 +190,15 @@
                                         </mat-select>
                                     </mat-form-field>
 
-                                    <div *ngIf="action.actionType != null && action.actionType !== actionTypes.DotTimer">
+                                    <div *ngIf="action.actionType != null">
+
                                         <mat-form-field>
                                             <mat-label>Trigger on phrase</mat-label>
                                             <mat-select [(ngModel)]="action.phrases" name="ddlActionPhrase_{{i}}" multiple>
                                                 <mat-option *ngFor="let phrase of model.capturePhrases" [value]="phrase.phraseId">{{phrase.phrase}}</mat-option>
                                             </mat-select>
                                         </mat-form-field>
+
                                     </div>
 
                                     <div *ngIf="action.actionType === actionTypes.DisplayText">
@@ -246,6 +248,13 @@
                                     </div>
 
                                     <div *ngIf="action.actionType === actionTypes.DotTimer">
+
+                                        <mat-form-field>
+                                            <mat-label>Overlay Window</mat-label>
+                                            <mat-select [(ngModel)]="action.overlayId" name="ddlDotTimerOverlay_{{i}}">
+                                                <mat-option *ngFor="let option of timerOverlays" [value]="option.overlayId">{{option.name}}</mat-option>
+                                            </mat-select>
+                                        </mat-form-field>
 
                                         <p>Please enter the duration of the DoT. ({{Math.floor((action.duration > 0 ? action.duration : 0) / 6)}} ticks)</p>
 

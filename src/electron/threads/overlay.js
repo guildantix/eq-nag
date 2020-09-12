@@ -17,11 +17,13 @@ const Handlebars = require("handlebars");
 /** @type {OverlayComponent[]} */
 var overlayComponents = [];
 var displayTextTemplate;
+var dotTimerTemplate;
 
 function Overlay() {
 
     DomUtilities.docReady( f => {
         displayTextTemplate = Handlebars.compile( document.querySelector( '#displayTextTemplate' ).innerHTML );
+        dotTimerTemplate = Handlebars.compile( document.querySelector( '#dotTimerTemplate' ).innerHTML );
     } );
 
     ipcRenderer.on( 'overlay:receive:component',
@@ -108,6 +110,21 @@ function render( comp ) {
         comp.intervalId = window.setTimeout( () => {
             comp.dom.parentNode.removeChild( comp.dom );
         }, comp.action.duration * 1000 );
+    } if ( comp.action.actionType === ActionTypes.DotTimer ) {
+        let content = dotTimerTemplate( { value: StringUtilities.format( comp.action.displayText, comp.matches ) } );
+        let div = document.createElement( 'div' );
+        div.innerHTML = content;
+        comp.dom = div;
+        contentArea.appendChild( comp.dom );
+        comp.start = new Date();
+        comp.intervalId = window.setInterval( () => {
+            let perc = ( Math.abs( ( new Date() ) - comp.start ) / 1000 ) / comp.action.duration;
+            console.log( 'testing', comp.dom );
+            comp.dom.querySelector( 'div.determinate' ).style.width = `${perc*100}%`;
+            if ( perc >= 1 ) {
+                comp.dom.parentNode.removeChild( comp.dom );
+            }
+        }, 250 );
     }
 }
 

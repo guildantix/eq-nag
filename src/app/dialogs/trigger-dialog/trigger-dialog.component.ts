@@ -39,6 +39,10 @@ export class TriggerDialogComponent implements OnInit {
     public get logOverlays(): OverlayWindowModel[] {
         return this.overlays.filter( f => f.overlayType === 'Log' );
     }
+
+    public get timerOverlays(): OverlayWindowModel[] {
+        return this.overlays.filter( f => f.overlayType === 'Timer' );
+    }
     
     @ViewChild( 'capturePhrasesTable' ) capturePhrasesTable: MatTable<any>;
     @ViewChild( 'conditionsTable' ) conditionsTable: MatTable<any>;

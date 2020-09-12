@@ -88,6 +88,7 @@ function createWindow() {
         }
         sendTick();
     } );
+    logWatcherWindow.setPosition( 100, 500 );
 
     mainWindow.webContents.once( 'dom-ready', () => {
         autoUpdater.checkForUpdatesAndNotify().then( result => {

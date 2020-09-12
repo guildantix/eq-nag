@@ -9,6 +9,7 @@ const { OverlayComponent } = require( '../data/models/overlay-window' );
 
 const chokidar = require( "chokidar" );
 const StringUtilities = require( '../utilities/string' );
+const NumberUtilities = require( '../utilities/numbers' );
 var currentPosition = 0;
 
 var watcher = null;
@@ -162,24 +163,106 @@ let rgxTimestamp = /^\[(.*?)\]\s*/gi;
 let rgxGrabText = /\'(.*?)\'$/gi;
 let rgxDelimiter = /;/gi;
 let rgxNum = /(\d+)/gi;
+let rgxCombatText = /damage|miss|dodge|riposte|parry|become better|backstab|stun|attack/gi;
+
+let fctRegExs = [
+    // 0: rgxMelee
+    /You ([a-zA-Z0-9_]*) (.*) for ([0-9]*) points of damage\./gi, 
+    // 1: rgxMeleeMiss
+    /You try to ([a-zA-Z0-9_]*) (.*),/gi, 
+    // 2: rgxSpellDmg
+    /(.*) has taken ([0-9]*) damage from your (.*)\./gi,
+    // 3: rgxThorns
+    /(.*) is pierced by YOUR thorns for ([0-9]*) points of non-melee damage\./gi,
+    // 4: rgxSkillUp
+    /You have become better at ([a-zA-Z0-9_]*)! \(([0-9]*)\)/gi,
+    // 5: rgxTakeMeleeDmg
+    /(.*) ([a-zA-Z0-9_]*) YOU for ([0-9]*) points of damage\./gi,
+    // 6: rgxAvoidMeleeDmg
+    /(.*) tries to ([a-zA-Z0-9_]*) YOU, but ([a-zA-Z0-9_\s]*)/gi,
+    // 7: rgxTakeSpellDmg
+    /(.*) hit you for ([0-9]*) points of ([a-zA-Z0-9_]*) damage by (.*)\./gi,
+]
 
 function parseLogEntries( raw ) {
 
-    rgxTrigger.lastIndex = 0;
     rgxTimestamp.lastIndex = 0;
-    rgxGrabText.lastIndex = 0;
-    rgxDelimiter.lastIndex = 0;
-    rgxNum.lastIndex = 0;
+    rgxTrigger.lastIndex = 0;
+    rgxCombatText.lastIndex = 0;
 
     let timestamp = new Date( rgxTimestamp.exec( raw )[ 1 ] );
     
     if ( raw.match( rgxTrigger ) ) {
+        
+        rgxGrabText.lastIndex = 0;
+        rgxDelimiter.lastIndex = 0;
+        rgxNum.lastIndex = 0;
+
         let text = rgxGrabText.exec( raw )[ 1 ].split( rgxDelimiter );
         let item = text[ 2 ];
         let character = text[ 1 ];
         let dkp = rgxNum.exec( text[ 3 ] )[ 0 ];
         
         ipcRenderer.send( 'dkp:add', new DkpEntryModel( timestamp, character, item, +dkp ) );
+    } else if ( raw.match( rgxCombatText ) ) {
+
+        for ( let i = 0; i < fctRegExs.length; i++ ) {
+            fctRegExs[ i ].lastIndex = 0;
+            let results = fctRegExs[ i ].exec( raw );
+
+            if ( results && results.length > 1 ) {
+                if ( i === 0 ) {
+                    // My melee damage.
+                    let type = results[ 1 ];
+                    let target = results[ 2 ];
+                    let dmg = NumberUtilities.toShorthandString( results[ 3 ] );
+
+                } else if ( i === 1 ) {
+                    // My melee misses.
+                    let miss = 'miss';
+
+                } else if ( i === 2 ) {
+                    // My spell hits
+                    let target = results[ 1 ];
+                    let dmg = NumberUtilities.toShorthandString( results[ 2 ] );
+                    let spell = results[ 3 ];
+
+                } else if ( i === 3 ) {
+                    // My thorns dmg
+                    let target = results[ 1 ];
+                    let dmg = NumberUtilities.toShorthandString( results[ 2 ] );
+
+                } else if ( i === 4 ) {
+                    // My skill up
+                    let skill = results[ 1 ];
+                    let level = results[ 2 ];
+
+                } else if ( i === 5 ) {
+                    // Melee damage taken
+                    let attacker = results[ 1 ];
+                    let type = results[ 2 ];
+                    let dmg = NumberUtilities.toShorthandString( results[ 3 ] );
+
+                } else if ( i === 6 ) {
+                    // Me avoiding melee
+                    let attacker = results[ 1 ];
+                    let type = results[ 2 ];
+                    let miss = results[ 3 ];
+
+                } else if ( i === 7 ) {
+                    // Me taking spell damage
+                    let attacker = results[ 1 ];
+                    let dmg = NumberUtilities.toShorthandString( results[ 2 ] );
+                    let resist = results[ 3 ];
+                    let spell = results[ 4 ];
+
+                }
+
+                // leave the loop, we found the correct FCT type.
+                break;
+            }
+        }
+        
     } else {
         let log = raw.replace( rgxTimestamp, '' );
         triggers.forEach( f => {
@@ -202,6 +285,13 @@ function parseLogEntries( raw ) {
                             }
                         } else if ( action.actionType === ActionTypes.ClearVariable ) {
                             storedVariables[ action.variableName ] = null;
+                        } else if ( action.actionType === ActionTypes.DotTimer ) {
+                            let comp = new OverlayComponent();
+                            comp.action = Object.assign( new TriggerAction(), action );
+                            comp.action.displayText = `${f.name} --== {1} ==--`;
+                            comp.overlayId = action.overlayId;
+                            comp.matches = res.result;
+                            ipcRenderer.send( 'overlay:send:component', comp );
                         }
                     }
                 } );
@@ -224,6 +314,9 @@ module.exports = LogWatcher;
 // Exit conditions (timer)
 //  A black wolf has been slain by Grimrot!
 //  You have slain a black wolf!
+
+// ^You hit (.*) for 5 points of disease damage by ${SpellBeingCast}\.
+// ^You hit (.*) for ([0-9]*) ?points of (.*)? ?damage by Poison Bolt\.
 
 // Spell lands:
 //  On Hit:
