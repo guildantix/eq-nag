@@ -19,6 +19,7 @@ export class MainComponent implements OnInit {
     public logFile: string = 'Not Selected';
     public showConsole: boolean = true;
     public voiceIndex: number = null;
+    public enableFct: boolean = false;
     public voiceOptions: SpeechSynthesisVoice[] = [];
     public triggers: TriggerModel[] = [];
     public overlays: OverlayWindowModel[] = [];
@@ -38,6 +39,7 @@ export class MainComponent implements OnInit {
             this.voiceIndex = data.voiceIndex;
             this.triggers = data.triggers;
             this.overlays = data.overlays;
+            this.enableFct = data.enableFct;
         } );
 
         this.ipcService.dkpEntryAdded().subscribe( model => {
@@ -83,6 +85,10 @@ export class MainComponent implements OnInit {
 
     onChangeVoice(): void {
         this.ipcService.updateVoiceIndex( this.voiceIndex );
+    }
+
+    onEnableFctChange(): void {
+        this.ipcService.updateEnableFct( this.enableFct );
     }
 
     parseToBulkUpload(): void {

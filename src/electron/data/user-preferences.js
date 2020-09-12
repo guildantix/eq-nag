@@ -60,6 +60,30 @@ class UserPreferencesStore extends Store {
         this.storeDataFile( this.#data );
     }
 
+    get enableFct() {
+        return this.#data.enableFct === true;
+    }
+    set enableFct( val ) {
+        this.#data.enableFct = val === true;
+        this.storeDataFile( this.#data );
+    }
+
+    get damageDealtOverlayId() {
+        return this.#data.damageDealtOverlayId;
+    }
+    set damageDealtOverlayId( val ) {
+        this.#data.damageDealtOverlayId = val;
+        this.storeDataFile( this.#data );
+    }
+
+    get damageReceivedOverlayId() {
+        return this.#data.damageReceivedOverlayId;
+    }
+    set damageReceivedOverlayId( val ) {
+        this.#data.damageReceivedOverlayId = val;
+        this.storeDataFile( this.#data );
+    }
+
     constructor() {
         super( {
             // We'll call our data file 'user-preferences'
@@ -98,6 +122,10 @@ class UserPreferencesStore extends Store {
         
         ipcMain.on( 'voice:select', ( event, arg ) => {
             this.voiceIndex = arg;
+        } );
+        
+        ipcMain.on( 'settings:set:fct', ( event, arg ) => {
+            this.enableFct = arg;
         } );
 
     }

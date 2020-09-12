@@ -131,6 +131,10 @@
                         </mat-select>
                     </fieldset>
 
+                    <fieldset>
+                        <mat-checkbox [(ngModel)]="enableFct" (change)="onEnableFctChange()">Enable Floating Combat Text</mat-checkbox>
+                    </fieldset>
+
                 </div>
 
         </mat-tab>

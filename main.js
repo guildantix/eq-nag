@@ -126,7 +126,10 @@ function sendTick() {
         logFile: userPreferences.logFile,
         voiceIndex: userPreferences.voiceIndex,
         triggers: _triggers,
-        overlays: overlayDatabase.getAll()
+        overlays: overlayDatabase.getAll(),
+        damageDealtOverlayId: userPreferences.damageDealtOverlayId,
+        damageReceivedOverlayId: userPreferences.damageReceivedOverlayId,
+        enableFct: userPreferences.enableFct,
     } );
     logWatcherWindow.webContents.send( 'tick', {
         triggers: _triggers

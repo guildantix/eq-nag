@@ -89,6 +89,7 @@ export class DataTickModel {
     public voiceIndex: number;
     public triggers: TriggerModel[] = [];
     public overlays: OverlayWindowModel[] = [];
+    public enableFct: boolean = false;
 
 }
 

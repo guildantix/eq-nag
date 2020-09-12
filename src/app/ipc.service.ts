@@ -151,6 +151,10 @@ export class IpcService {
         this.ipc.send( 'voice:select', index );
     }
 
+    public updateEnableFct( enabled: boolean ): void {
+        this.ipc.send( 'settings:set:fct', enabled );
+    }
+
     public sendTextToClipboard( value: string ): void {
         this.ipc.send( 'clipboard:writeText', value );
     }
