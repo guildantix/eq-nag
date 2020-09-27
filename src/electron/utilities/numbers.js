@@ -41,9 +41,20 @@ function round( value, precision ) {
     return Math.round( value * multiplier ) / multiplier;
 }
 
+/**
+ * Returns a whole number between the given min and max bounds.
+ * 
+ * @param {number} min The inclusive minimum bounds of the random number.
+ * @param {number} max The exclusive maximum bounds of the random number.
+ */
+function randomBounded( min, max ) {
+    return Math.floor( Math.random() * ( max - min ) ) + min;
+}
+
 let NumberUtilities = {
     round: round,
     toShorthandString: toShorthandString,
+    randomBounded: randomBounded,
 };
 
 module.exports = NumberUtilities;

@@ -10,12 +10,18 @@ const { OverlayComponent } = require( '../data/models/overlay-window' );
 const chokidar = require( "chokidar" );
 const StringUtilities = require( '../utilities/string' );
 const NumberUtilities = require( '../utilities/numbers' );
+const FctModel = require( '../data/models/fct' );
+// const UserPreferencesStore = require( '../data/user-preferences' );
 var currentPosition = 0;
 
 var watcher = null;
 /** @type {Trigger[]} */
 var triggers = [];
 var storedVariables = {};
+var enableFct = false;
+var damageDealtOverlayId = null;
+var damageReceivedOverlayId = null;
+// const userPreferences = new UserPreferencesStore( {} );
 
 function LogWatcher() {
     ipcRenderer.on( 'log:changed', function ( event, data ) {
@@ -45,8 +51,12 @@ function LogWatcher() {
         } );
     } );
 
-    ipcRenderer.on( 'tick', function (event, data) {
+    ipcRenderer.on( 'tick', function ( event, data ) {
+        console.log( 'tick received', data );
         triggers = data.triggers;
+        enableFct = data.enableFct;
+        damageDealtOverlayId = data.damageDealtOverlayId;
+        damageReceivedOverlayId = data.damageReceivedOverlayId;
         generateTriggerFns();
     } );
 }
@@ -191,7 +201,7 @@ function parseLogEntries( raw ) {
     rgxCombatText.lastIndex = 0;
 
     let timestamp = new Date( rgxTimestamp.exec( raw )[ 1 ] );
-    
+
     if ( raw.match( rgxTrigger ) ) {
         
         rgxGrabText.lastIndex = 0;
@@ -204,22 +214,29 @@ function parseLogEntries( raw ) {
         let dkp = rgxNum.exec( text[ 3 ] )[ 0 ];
         
         ipcRenderer.send( 'dkp:add', new DkpEntryModel( timestamp, character, item, +dkp ) );
-    } else if ( raw.match( rgxCombatText ) ) {
+    } else if ( enableFct && raw.match( rgxCombatText )?.length > 0 ) {
 
         for ( let i = 0; i < fctRegExs.length; i++ ) {
             fctRegExs[ i ].lastIndex = 0;
             let results = fctRegExs[ i ].exec( raw );
-
+            
             if ( results && results.length > 1 ) {
+                
+                let model = new FctModel();
+                model.dealt = i >= 0 && i <= 4 ? true : false;
+                model.overlayId = model.dealt ? damageDealtOverlayId : damageReceivedOverlayId;
+
                 if ( i === 0 ) {
                     // My melee damage.
                     let type = results[ 1 ];
                     let target = results[ 2 ];
                     let dmg = NumberUtilities.toShorthandString( results[ 3 ] );
 
+                    model.text = `${dmg}`;
+
                 } else if ( i === 1 ) {
                     // My melee misses.
-                    let miss = 'miss';
+                    let dmg = 'miss';
 
                 } else if ( i === 2 ) {
                     // My spell hits
@@ -227,10 +244,14 @@ function parseLogEntries( raw ) {
                     let dmg = NumberUtilities.toShorthandString( results[ 2 ] );
                     let spell = results[ 3 ];
 
+                    model.text = `${dmg}`;
+
                 } else if ( i === 3 ) {
                     // My thorns dmg
                     let target = results[ 1 ];
                     let dmg = NumberUtilities.toShorthandString( results[ 2 ] );
+
+                    model.text = `${dmg}`;
 
                 } else if ( i === 4 ) {
                     // My skill up
@@ -242,6 +263,8 @@ function parseLogEntries( raw ) {
                     let attacker = results[ 1 ];
                     let type = results[ 2 ];
                     let dmg = NumberUtilities.toShorthandString( results[ 3 ] );
+
+                    model.text = `${dmg}`;
 
                 } else if ( i === 6 ) {
                     // Me avoiding melee
@@ -256,7 +279,12 @@ function parseLogEntries( raw ) {
                     let resist = results[ 3 ];
                     let spell = results[ 4 ];
 
+                    model.text = `${dmg}`;
+
                 }
+
+                console.log( 'sending', model );
+                ipcRenderer.send( 'overlay:send:component', model );
 
                 // leave the loop, we found the correct FCT type.
                 break;
