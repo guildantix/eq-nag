@@ -26,6 +26,10 @@ export class MainComponent implements OnInit {
     public damageDealtOverlayId: string;
     public damageTakenOverlayId: string;
 
+    public _testDealtOverlayId: string = 'wT8389KxT5zlsaiE';
+    public _testTakenOverlayId: string = 'wT8389KxT5zlsaiE';
+    public _testId: number;
+
     @ViewChild( 'fileSelector' ) private fileSelector: ElementRef<HTMLInputElement>;
 
     public get fctOverlays(): OverlayWindowModel[] {
@@ -175,6 +179,28 @@ export class MainComponent implements OnInit {
                     this.ipcService.deleteOverlayWindow( this.overlays[ index ].overlayId ).subscribe();
                 }
             } );
+    }
+
+    public testFn(): void {
+        if ( this._testId > 0 ) {
+            window.clearInterval( this._testId );
+            this._testId = null;
+
+        } else {
+            this.ipcService.sendTestFn( { overlayId: this._testDealtOverlayId, dealt: true, text: '' + Math.floor(Math.random() * 999 + 1) } );
+            this.ipcService.sendTestFn( { overlayId: this._testDealtOverlayId, dealt: true, text: '' + Math.floor(Math.random() * 999 + 1) } );
+            this.ipcService.sendTestFn( { overlayId: this._testDealtOverlayId, dealt: true, text: '' + Math.floor(Math.random() * 999 + 1), critical: true } );
+            // this.ipcService.sendTestFn( { overlayId: this._testDealtOverlayId, dealt: true, text: '' + Math.floor(Math.random() * 999 + 1), critical: true } );
+            // this.ipcService.sendTestFn( { overlayId: this._testDealtOverlayId, dealt: true, text: '' + Math.floor(Math.random() * 999 + 1), critical: true } );
+            // this.ipcService.sendTestFn( { overlayId: this._testDealtOverlayId, dealt: true, text: '' + Math.floor(Math.random() * 999 + 1), critical: true } );
+            // this.ipcService.sendTestFn( { overlayId: this._testDealtOverlayId, dealt: true, text: '' + Math.floor(Math.random() * 999 + 1), critical: true } );
+            // this.ipcService.sendTestFn( { overlayId: this._testDealtOverlayId, dealt: true, text: '' + Math.floor(Math.random() * 999 + 1), critical: true } );
+            // this.ipcService.sendTestFn( { overlayId: this._testDealtOverlayId, dealt: true, text: '' + Math.floor(Math.random() * 999 + 1), critical: true } );
+            this._testId = window.setInterval( () => {
+                this.ipcService.sendTestFn( { overlayId: this._testDealtOverlayId, dealt: true, text: '' + Math.floor(Math.random() * 999 + 1) } );
+            }, 1000 );
+        }
+        
     }
 
 }

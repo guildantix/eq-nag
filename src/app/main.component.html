@@ -13,6 +13,7 @@
                 <mat-toolbar>
                     <span>DKP Tracker</span>
                     <span class="spacer"></span>
+                    <button mat-button color="accent" (click)="testFn()">Test Fn</button>
                 </mat-toolbar>
                 <div class="tab-content">
 
@@ -111,6 +112,41 @@
                 </div>
 
         </mat-tab>
+        <mat-tab label="Floating Combat Text">
+            <mat-toolbar>
+                <span>Floating Combat Text</span>
+                <span class="spacer"></span>
+            </mat-toolbar>
+            <div class="tab-content">
+
+                <fieldset>
+                    <legend><span>General</span></legend>
+                    <p>
+                        <mat-checkbox [(ngModel)]="enableFct" (change)="onEnableFctChange()">Enable</mat-checkbox>
+                    </p>
+                    
+                    <p>
+                        <mat-form-field>
+                            <mat-label>Damage Dealt Overlay</mat-label>
+                            <mat-select [(ngModel)]="damageDealtOverlayId" name="ddlDamageDealtOverlay" (selectionChange)="onChangeDealtFctOverylays()">
+                                <mat-option *ngFor="let option of fctOverlays" [value]="option.overlayId">{{option.name}}</mat-option>
+                            </mat-select>
+                        </mat-form-field>
+                    </p>
+
+                    <p>
+                        <mat-form-field>
+                            <mat-label>Damage Received Overlay</mat-label>
+                            <mat-select [(ngModel)]="damageTakenOverlayId" name="ddlDamageReceivedOverlay" (selectionChange)="onChangeReceivedFctOverylays()">
+                                <mat-option *ngFor="let option of fctOverlays" [value]="option.overlayId">{{option.name}}</mat-option>
+                            </mat-select>
+                        </mat-form-field>
+                    </p>
+                    
+                </fieldset>
+
+            </div>
+        </mat-tab>
         <mat-tab label="Settings">
                 <mat-toolbar>
                     <span>Settings</span>
@@ -129,32 +165,6 @@
                         <mat-select [(ngModel)]="voiceIndex" (selectionChange)="onChangeVoice()">
                             <mat-option *ngFor="let option of voiceOptions; let i = index" [value]="i">{{option.name}}</mat-option>
                         </mat-select>
-                    </fieldset>
-
-                    <fieldset>
-                        <legend><span>Floating Combat Text</span></legend>
-                        <p>
-                            <mat-checkbox [(ngModel)]="enableFct" (change)="onEnableFctChange()">Enable</mat-checkbox>
-                        </p>
-                        
-                        <p>
-                            <mat-form-field>
-                                <mat-label>Damage Dealt Overlay</mat-label>
-                                <mat-select [(ngModel)]="damageDealtOverlayId" name="ddlDamageDealtOverlay" (selectionChange)="onChangeDealtFctOverylays()">
-                                    <mat-option *ngFor="let option of fctOverlays" [value]="option.overlayId">{{option.name}}</mat-option>
-                                </mat-select>
-                            </mat-form-field>
-                        </p>
-
-                        <p>
-                            <mat-form-field>
-                                <mat-label>Damage Received Overlay</mat-label>
-                                <mat-select [(ngModel)]="damageTakenOverlayId" name="ddlDamageReceivedOverlay" (selectionChange)="onChangeReceivedFctOverylays()">
-                                    <mat-option *ngFor="let option of fctOverlays" [value]="option.overlayId">{{option.name}}</mat-option>
-                                </mat-select>
-                            </mat-form-field>
-                        </p>
-                        
                     </fieldset>
 
                 </div>
