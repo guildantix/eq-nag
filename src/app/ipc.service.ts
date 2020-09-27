@@ -398,4 +398,8 @@ export class IpcService {
         this.ipc.send( 'overlay:dim', overlayId );
     }
 
+    public sendTestFn( model ): void {
+        this.ipc.send( 'overlay:send:component', model );
+    }
+
 }
