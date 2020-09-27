@@ -72,7 +72,7 @@ function createWindow() {
     logWatcherWindow = new BrowserWindow( {
         //   width: 800,
         //   height: 600,
-        show: false,
+        show: true,
         webPreferences: { nodeIntegration: true, webSecurity: false },
     } );
     logWatcherWindow.webContents.openDevTools();
@@ -132,7 +132,10 @@ function sendTick() {
         enableFct: userPreferences.enableFct,
     } );
     logWatcherWindow.webContents.send( 'tick', {
-        triggers: _triggers
+        triggers: _triggers,
+        damageDealtOverlayId: userPreferences.damageDealtOverlayId,
+        damageReceivedOverlayId: userPreferences.damageReceivedOverlayId,
+        enableFct: userPreferences.enableFct,
     } );
 }
 

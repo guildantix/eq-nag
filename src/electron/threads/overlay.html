@@ -98,6 +98,81 @@
             height: 24px;
         }
 
+        .fct-label {
+            position: absolute;
+        }
+
+        .fct-critical-hit {
+            font-weight: bold;
+        }
+
+        .animate-bottom {
+            position: absolute;
+            animation: animatebottom 7s linear;
+            /* animation-name: animatebottom;
+            animation-duration: 2s */
+        }
+        @keyframes animatebottom { 
+            0% { top:100%; opacity:1 } 
+            100% { top:-100px; opacity:1; }
+        }
+
+        .animate-fade-shrink {
+            position: absolute;
+            display: inline-block;
+            text-align: center;
+            animation: animate-fadeshrink 4s ease-out;
+        }
+
+        @keyframes animate-fadeshrink {
+            0% { opacity: 0.5; transform: scale(1.5); }
+            1% { opacity: 1; transform: scale(2.0); }
+            50% { opacity: 1; transform: scale(2.0); }
+            /* 75% { opacity: .85; transform: scale(1.25);} */
+            100% { opacity: 0; transform: scale(.1);}
+        }
+
+        /* @keyframes animate-fadeshrink {
+            0% { opacity: 0.5; font-size: 58px; }
+            1% { opacity: 1; font-size: 64px; }
+            12% { opacity: 1; font-size: 64px; }
+            25% { opacity: .85; font-size: 64px;}
+            100% { opacity: 0; font-size: 6px;}
+        } */
+
+        .animate-fade-out {
+            position:relative;
+            display: inline-block;
+            animation: animate-fadeout 7s ease;
+        }
+
+        @keyframes animate-fadeout {
+            0% { opacity: 1; }
+            60% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+
+        .fct-content {
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+        }
+
+        .fct-dmg-src {
+            /* float: left; */
+            /* clear: both; */
+            font-size: 12px;
+            /* font-weight: 300; */
+            font-weight: normal;
+            color: #005aff;
+            -webkit-text-stroke: .1px black;
+            -webkit-text-fill-color: #005aff;
+        }
+
+        .fct-text {
+            -webkit-text-stroke: 1px black;
+        }
+
     </style>
 </head>
 <body>
@@ -116,6 +191,14 @@
     
     <template id="displayTextTemplate">
         <p>{{value}}</p>
+    </template>
+    <template id="fctTemplate">
+        <span class="fct-text">{{value}}</span>
+        <span class="fct-dmg-src">({{damageSource}})</span>
+    </template>
+    <template id="fctCriticalTemplate">
+        <p class="fct-text">{{value}}</p>
+        <p class="fct-dmg-src">({{damageSource}})</p>
     </template>
     <template id="dotTimerTemplate">
         <div class="progress">
