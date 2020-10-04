@@ -228,8 +228,8 @@ let fctRegExs = [
     /(.*) tries to ([a-zA-Z0-9_]*) YOU, but ([a-zA-Z0-9_\s]*)/gi,
     // 7: rgxTakeSpellDmg
     /(.*) hit you for ([0-9]*) points of ([a-zA-Z0-9_]*) damage by (.*)\./gi,
-    // 8: rgxPhysicalSpellDmg
-    /You ([a-zA-Z0-9_]*) (.*) for ([0-9]*) points of physical damage by (.*)\./gi, 
+    // 8: rgxSpellDmg
+    /You ([a-zA-Z0-9_]*) (.*) for ([0-9]*) points of (.*) damage by (.*)\./gi, 
 ]
 // You hit an ikaav binder pet for 12827 points of physical damage by Ferocious Kick X.
 function parseLogEntries( raw ) {
@@ -334,7 +334,7 @@ function parseLogEntries( raw ) {
                     // My spell hits
                     let target = results[ 2 ];
                     let dmg = NumberUtilities.toShorthandString( results[ 3 ] );
-                    let spell = results[ 4 ];
+                    let spell = results[ 5 ];
 
                     model.text = `${dmg}`;
                     model.attack = spell;

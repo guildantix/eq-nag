@@ -172,3 +172,23 @@ winManager.attachIpcEvents( mainWindowRef, sendTick, overlayDatabase );
 dkpDatabase.attachIpcEvents( mainWindowRef, sendTick );
 triggerDatabase.attachIpcEvents( mainWindowRef, sendTick );
 overlayDatabase.attachIpcEvents( mainWindowRef, sendTick );
+
+// Pulls the spell name
+// document.querySelector('meta[property="og:title"]').getAttribute('content')
+
+// Pulls the duration text
+// document.evaluate("//strong[contains(., 'Duration:')]", document, null, XPathResult.ANY_TYPE, null ).iterateNext().nextSibling.nextSibling
+
+// spell class, replace NEC with current character's class.
+// document.evaluate("//div[contains(@class, 'db-infobox')]/table/tbody/tr/td/strong[contains(., 'NEC')]", document, null, XPathResult.ANY_TYPE, null ).iterateNext().textContent
+
+// spell level, used to calculate duration based on current dur ext focus.
+// +document.evaluate("//div[contains(@class, 'db-infobox')]/table/tbody/tr/td/strong[contains(., 'NEC')]", document, null, XPathResult.ANY_TYPE, null ).iterateNext().parentNode.nextSibling.textContent
+
+// Get landing text
+// document.evaluate("//blockquote[contains(., 'Cast on other')]", document, null, XPathResult.ANY_TYPE, null ).iterateNext().textContent.split('Cast on other: ')[1].split('Effect Fades: ')[0]
+
+// https://forums.daybreakgames.com/eq/index.php?threads/focus-degradation-math.247916/#post-3642649
+// Math.round(48/6*1.15)*6;
+// Math.round(baseDuration/6 * (1 + extBonus/100))*6
+// things needed: Name, Duration, spell level, current extended affliction amount and decay level
