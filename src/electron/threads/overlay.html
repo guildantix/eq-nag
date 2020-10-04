@@ -95,7 +95,8 @@
         }
 
         .content-area .progress {
-            height: 24px;
+            height: auto;
+            /* height: 24px; */
         }
 
         .fct-label {
@@ -171,6 +172,16 @@
 
         .fct-text {
             -webkit-text-stroke: 1px black;
+            text-shadow: 0px 0px 10px black;
+        }
+
+        .dot-text {
+            position: absolute;
+            z-index: 1;
+            padding: 4px;
+            /* -webkit-text-stroke: 1px white; */
+            /* color: #0000007a; */
+            /* margin: 6px; */
         }
 
     </style>
@@ -201,8 +212,9 @@
         <p class="fct-dmg-src">({{damageSource}})</p>
     </template>
     <template id="dotTimerTemplate">
-        <div class="progress">
-            <div class="determinate" style="width: 100%">{{value}}</div>
+        <p class="dot-text">{{value}}</p>
+        <div class="progress"><p style="margin: 4px;">&nbsp;</p>
+            <div class="determinate" style="width: 0%"></div>
         </div>
     </template>
 </body>

@@ -29,6 +29,14 @@ export class MainComponent implements OnInit {
     public _testDealtOverlayId: string = 'wT8389KxT5zlsaiE';
     public _testTakenOverlayId: string = 'wT8389KxT5zlsaiE';
     public _testId: number;
+    public _testIndex: number = 0;
+    public _testdata = [
+        '[Sat Mar 14 13:45:08 2020] You hit an ikaav binder pet for 12827 points of physical damage by Ferocious Kick X.',
+        '[Sat Mar 14 13:46:08 2020] You kick an ikaav binder pet for 1299 points of damage. (Riposte Strikethrough)',
+        '[Sat Mar 14 13:47:08 2020] You crush a kyv hunter for 5361 points of damage. (Riposte)',
+        '[Sat Mar 14 13:48:08 2020] You slash an aneuk fleshthreader for 10742 points of damage.',
+        '[Sat Mar 14 13:49:08 2020] You slash a kyv hunter for 29027 points of damage. (Lucky Critical)',
+    ];
 
     @ViewChild( 'fileSelector' ) private fileSelector: ElementRef<HTMLInputElement>;
 
@@ -182,24 +190,39 @@ export class MainComponent implements OnInit {
     }
 
     public testFn(): void {
-        if ( this._testId > 0 ) {
-            window.clearInterval( this._testId );
-            this._testId = null;
+        // this.ipcService.sendTestModel( `Target Name --== Dot Name ==--` );
+        this.ipcService.sendTestFn( '[Fri Oct 02 09:34:19 2020] You begin casting Funeral Pyre of Kelador.' );
+        window.setTimeout( () => { this.ipcService.sendTestFn( '[Fri Oct 02 09:34:25 2020] A carrion beetle hatchling has taken 350 damage from your Funeral Pyre of Kelador.' ); }, 1000 );
+        // A carrion beetle hatchling has taken 350 damage from your Funeral Pyre of Kelador.
+        window.setTimeout( () => { this.ipcService.sendTestFn( '[Fri Oct 02 09:34:21 2020] a carrion beetle hatchling is enveloped in a funeral pyre.' ); }, 2000 );
+        window.setTimeout( () => { this.ipcService.sendTestFn( '[Fri Oct 02 09:34:25 2020] A carrion beetle hatchling has taken 350 damage from your Funeral Pyre of Kelador.' ); }, 6000 );
+        window.setTimeout( () => { this.ipcService.sendTestFn( '[Fri Oct 02 09:34:25 2020] You have slain a carrion beetle hatchling!' ); }, 6000 );
 
-        } else {
-            this.ipcService.sendTestFn( { overlayId: this._testDealtOverlayId, dealt: true, text: '' + Math.floor(Math.random() * 999 + 1) } );
-            this.ipcService.sendTestFn( { overlayId: this._testDealtOverlayId, dealt: true, text: '' + Math.floor(Math.random() * 999 + 1) } );
-            this.ipcService.sendTestFn( { overlayId: this._testDealtOverlayId, dealt: true, text: '' + Math.floor(Math.random() * 999 + 1), critical: true } );
-            // this.ipcService.sendTestFn( { overlayId: this._testDealtOverlayId, dealt: true, text: '' + Math.floor(Math.random() * 999 + 1), critical: true } );
-            // this.ipcService.sendTestFn( { overlayId: this._testDealtOverlayId, dealt: true, text: '' + Math.floor(Math.random() * 999 + 1), critical: true } );
-            // this.ipcService.sendTestFn( { overlayId: this._testDealtOverlayId, dealt: true, text: '' + Math.floor(Math.random() * 999 + 1), critical: true } );
-            // this.ipcService.sendTestFn( { overlayId: this._testDealtOverlayId, dealt: true, text: '' + Math.floor(Math.random() * 999 + 1), critical: true } );
-            // this.ipcService.sendTestFn( { overlayId: this._testDealtOverlayId, dealt: true, text: '' + Math.floor(Math.random() * 999 + 1), critical: true } );
-            // this.ipcService.sendTestFn( { overlayId: this._testDealtOverlayId, dealt: true, text: '' + Math.floor(Math.random() * 999 + 1), critical: true } );
-            this._testId = window.setInterval( () => {
-                this.ipcService.sendTestFn( { overlayId: this._testDealtOverlayId, dealt: true, text: '' + Math.floor(Math.random() * 999 + 1) } );
-            }, 1000 );
-        }
+        // if ( this._testId > 0 ) {
+        //     window.clearInterval( this._testId );
+        //     this._testId = null;
+        //     this._testIndex = 0;
+        // } else {
+        //     for ( var i = 0; i < this._testdata.length; i++ ){
+        //         let _i = i;
+        //         window.setTimeout( () => {
+        //             console.log( 'sending', _i, this._testdata[ _i ] );
+        //             this.ipcService.sendTestFn( this._testdata[ _i ] )
+        //         }, i * 1000 );
+        //     }
+        //     // this.ipcService.sendTestFn( { overlayId: this._testDealtOverlayId, dealt: true, text: '' + Math.floor(Math.random() * 999 + 1) } );
+        //     // this.ipcService.sendTestFn( { overlayId: this._testDealtOverlayId, dealt: true, text: '' + Math.floor(Math.random() * 999 + 1) } );
+        //     // this.ipcService.sendTestFn( { overlayId: this._testDealtOverlayId, dealt: true, text: '' + Math.floor(Math.random() * 999 + 1), critical: true } );
+        //     // this.ipcService.sendTestFn( { overlayId: this._testDealtOverlayId, dealt: true, text: '' + Math.floor(Math.random() * 999 + 1), critical: true } );
+        //     // this.ipcService.sendTestFn( { overlayId: this._testDealtOverlayId, dealt: true, text: '' + Math.floor(Math.random() * 999 + 1), critical: true } );
+        //     // this.ipcService.sendTestFn( { overlayId: this._testDealtOverlayId, dealt: true, text: '' + Math.floor(Math.random() * 999 + 1), critical: true } );
+        //     // this.ipcService.sendTestFn( { overlayId: this._testDealtOverlayId, dealt: true, text: '' + Math.floor(Math.random() * 999 + 1), critical: true } );
+        //     // this.ipcService.sendTestFn( { overlayId: this._testDealtOverlayId, dealt: true, text: '' + Math.floor(Math.random() * 999 + 1), critical: true } );
+        //     // this.ipcService.sendTestFn( { overlayId: this._testDealtOverlayId, dealt: true, text: '' + Math.floor(Math.random() * 999 + 1), critical: true } );
+        //     // this._testId = window.setInterval( () => {
+        //     //     // this.ipcService.sendTestFn( { overlayId: this._testDealtOverlayId, dealt: true, text: '' + Math.floor(Math.random() * 999 + 1) } );
+        //     // }, 1000 );
+        // }
         
     }
 

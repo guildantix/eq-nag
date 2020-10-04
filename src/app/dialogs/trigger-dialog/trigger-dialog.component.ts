@@ -26,7 +26,7 @@ const nanoid = customAlphabet( alphabet, 16 );
 export class TriggerDialogComponent implements OnInit {
 
     public model: TriggerModel;
-    public phraseTableColumns = [ 'number', 'phrase', 'regEx', 'delete' ];
+    public phraseTableColumns = [ 'moveIndex', 'number', 'phrase', 'regEx', 'delete' ];
     public actionTableColumns = [ 'number', 'actionType', 'delete' ];
     public conditionTableColumns = [ 'variable', 'operator', 'value', 'delete' ];
     public triggerId: string = null;
@@ -147,4 +147,19 @@ export class TriggerDialogComponent implements OnInit {
             this.closeModal();
         }
     }
+
+    public movePhraseUp( index: number ): void {
+        if ( index > 0 ) {
+            this.model.capturePhrases.splice( index - 1, 0, this.model.capturePhrases.splice( index, 1 )[ 0 ] );
+            this.capturePhrasesTable?.renderRows();
+        }
+    }
+
+    public movePhraseDown( index: number ): void {
+        if ( index < this.model.capturePhrases.length - 1 ) {
+            this.model.capturePhrases.splice( index + 1, 0, this.model.capturePhrases.splice( index, 1 )[ 0 ] );
+            this.capturePhrasesTable?.renderRows();
+        }
+    }
+
 }

@@ -100,13 +100,21 @@
                                 <mat-label>Capture Method</mat-label>
                                 <mat-select [(ngModel)]="model.captureMethod" name="ddlCaptureMethod">
                                     <mat-option value="Any match" matTooltip="Execute this trigger if any phrase matches a single log entry" matTooltipPosition="right">Any match</mat-option>
-                                    <mat-option value="Sequential" disabled matTooltip="Execute this trigger if all phrases match sequentially across multiple log entries" matTooltipPosition="right">Sequential</mat-option>
+                                    <mat-option value="Sequential" matTooltip="Execute this trigger if all phrases match sequentially across multiple log entries" matTooltipPosition="right">Sequential</mat-option>
                                     <mat-option value="Concurrent" disabled matTooltip="Execute this trigger if all phrases match in a single log entry" matTooltipPosition="right">Concurrent</mat-option>
                                 </mat-select>
                             </mat-form-field>
                             <table mat-table #capturePhrasesTable="matTable"
                                 [dataSource]="model.capturePhrases"
                                 class="capture-phrases">
+
+                                <ng-container matColumnDef="moveIndex">
+                                    <th mat-header-cell *matHeaderCellDef style="width: 50px;"></th>
+                                    <td mat-cell *matCellDef="let element; let i = index">
+                                        <span class="material-icons" style="display: block; cursor: pointer;" (click)="movePhraseUp(i)">keyboard_arrow_up</span>
+                                        <span class="material-icons" style="display: block; cursor: pointer;" (click)="movePhraseDown(i)">keyboard_arrow_down</span>
+                                    </td>
+                                </ng-container>
     
                                 <ng-container matColumnDef="number">
                                     <th mat-header-cell *matHeaderCellDef style="width: 50px;"> No. </th>

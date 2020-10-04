@@ -19,7 +19,6 @@ const Handlebars = require("handlebars");
 var overlayComponents = [];
 var displayTextTemplate;
 var dotTimerTemplate;
-var fct = false;
 const fctFps = 1000 / 60;
 var fctRenderQueue = [];
 var fctRenderInterval = 250;
@@ -74,8 +73,6 @@ function Overlay() {
          */
         function ( event, model ) {
             
-            fct = model.overlayType === 'FCT';
-            
             document.querySelector( '#overlay-title' ).textContent = model.name ? model.name : 'Overlay';
             let contentArea = document.querySelector( '.content-area' );
             contentArea.style.fontFamily = `"${model.fontFamily}"`;
@@ -101,10 +98,6 @@ function Overlay() {
                 contentArea.style.border = null;
             }
 
-            if ( fct ) {
-                contentArea.classList.add( 'fct-content' );
-            }
-
             width = contentArea.clientWidth;
             height = contentArea.clientHeight;
             fontSize = model.fontSize;
@@ -112,84 +105,44 @@ function Overlay() {
         } );
 }
 
-var lastFctWidth = 0;
-var lastFctLeft = 0;
-var fctWidth = 100;
-
 /**
  * Renders the overlayComponents to the overlay window.
  * 
  * @param {OverlayComponent} comp Tells the renderer to forcefully redraw the overlayComponents.
  */
 function render( comp ) {
-    
-    if ( fct === true ) {
-        // fctRenderQueue.push( comp );
-        let contentArea = document.querySelector( '.content-area' );
+    let contentArea = document.querySelector( '.content-area' );
+    let now = new Date();
+    if ( comp.action.actionType === ActionTypes.DisplayText ) {
+        comp.removeAt = new Date( now.setSeconds( comp.action.duration ) );
+        let content = displayTextTemplate( { value: StringUtilities.format( comp.action.displayText, comp.matches ) } );
         let div = document.createElement( 'div' );
-
-        if ( comp.critical ) {
-            let content = fctCriticalTemplate( { value: comp.text, damageSource: 'Backstab' } );
-            div.innerHTML = content;
-
-            div.classList.add( 'animate-fade-shrink' );
-
-            comp.dom = div;
-            contentArea.appendChild( div );
-
-            div.style.left = NumberUtilities.randomBounded( fctWidth + ( div.clientWidth / 2 ), width - ( div.clientWidth * 1.5 ) ) + 'px';
-            // div.style.left = (width - ( div.clientWidth * 1.50 )) + 'px'; 
-            div.style.top = NumberUtilities.randomBounded( div.clientHeight / 2, height - ( div.clientHeight * 1.25 ) ) + 'px';
-            // div.style.top = ( div.clientHeight / 2 ) + 'px';
-            // div.style.top = ( height - ( div.clientHeight * 1.25 ) ) + 'px';
-            
-            comp.intervalId = window.setTimeout( () => {
-                comp.dom.parentNode.removeChild( comp.dom );
-            }, 4000 );
-
-        } else {
-            let content = fctTemplate( { value: comp.text, damageSource: 'Melee' } );
-            div.innerHTML = content;
-
-            div.classList.add( 'animate-fade-out' );
-
-            comp.dom = div;
-            contentArea.appendChild( div );
-            comp.intervalId = window.setTimeout( () => {
-                comp.dom.parentNode.removeChild( comp.dom );
-            }, 7000 );
-
-        }
-        
-    } else {
-        let contentArea = document.querySelector( '.content-area' );
-        let now = new Date();
-        if ( comp.action.actionType === ActionTypes.DisplayText ) {
-            comp.removeAt = new Date( now.setSeconds( comp.action.duration ) );
-            let content = displayTextTemplate( { value: StringUtilities.format( comp.action.displayText, comp.matches ) } );
-            let div = document.createElement( 'div' );
-            div.innerHTML = content;
-            comp.dom = div;
-            contentArea.appendChild( comp.dom );
-            comp.intervalId = window.setTimeout( () => {
-                comp.dom.parentNode.removeChild( comp.dom );
-            }, comp.action.duration * 1000 );
-        } if ( comp.action.actionType === ActionTypes.DotTimer ) {
-            let content = dotTimerTemplate( { value: StringUtilities.format( comp.action.displayText, comp.matches ) } );
-            let div = document.createElement( 'div' );
-            div.innerHTML = content;
-            comp.dom = div;
-            contentArea.appendChild( comp.dom );
-            comp.start = new Date();
-            comp.intervalId = window.setInterval( () => {
-                let perc = ( Math.abs( ( new Date() ) - comp.start ) / 1000 ) / comp.action.duration;
-                // console.log( 'testing', comp.dom );
-                comp.dom.querySelector( 'div.determinate' ).style.width = `${perc * 100}%`;
-                if ( perc >= 1 ) {
+        div.innerHTML = content;
+        comp.dom = div;
+        contentArea.appendChild( comp.dom );
+        comp.intervalId = window.setTimeout( () => {
+            comp.dom.parentNode.removeChild( comp.dom );
+        }, comp.action.duration * 1000 );
+    } if ( comp.action.actionType === ActionTypes.DotTimer ) {
+        let content = dotTimerTemplate( { value: StringUtilities.format( comp.action.displayText, comp.matches ) } );
+        let div = document.createElement( 'div' );
+        div.innerHTML = content;
+        comp.dom = div;
+        contentArea.appendChild( comp.dom );
+        // div.querySelector( '.progress' ).style.height = contentArea.style.fontSize;
+        // div.querySelector( '.progress' ).style.height = '24px';
+        comp.start = new Date();
+        comp.intervalId = window.setInterval( () => {
+            let perc = ( Math.abs( ( new Date() ) - comp.start ) / 1000 ) / comp.action.duration;
+            // console.log( 'testing', comp.dom );
+            comp.dom.querySelector( 'div.determinate' ).style.width = `${perc * 100}%`;
+            if ( perc >= 1 ) {
+                window.setTimeout( () => {
                     comp.dom.parentNode.removeChild( comp.dom );
-                }
-            }, 250 );
-        }
+                    window.clearInterval( comp.intervalId );
+                }, 1000 );
+            }
+        }, 250 );
     }
 }
 
@@ -197,22 +150,5 @@ function componentToHex( c ) {
     var hex = c.toString( 16 );
     return hex.length == 1 ? "0" + hex : hex;
 }
-
-// window.setInterval( () => {
-//     let comp = fctRenderQueue.pop();
-//     let contentArea = document.querySelector( '.content-area' );
-//     let div = document.createElement( 'div' );
-//     let content = displayTextTemplate( { value: comp.text } );
-//     div.innerHTML = content;
-//     div.classList.add( 'animate-bottom' );
-//     if ( comp.critical ) {
-//         div.classList.add( 'fct-critical-hit' );
-//     }
-//     comp.dom = div;
-//     contentArea.appendChild( div );
-//     comp.intervalId = window.setTimeout( () => {
-//         comp.dom.parentNode.removeChild( comp.dom );
-//     }, 7000 );
-// }, fctRenderInterval );
 
 module.exports = Overlay;
