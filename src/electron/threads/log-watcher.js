@@ -343,6 +343,7 @@ function parseLogEntries( raw ) {
 
                 rgxFctCritical.lastIndex = 0;
                 model.critical = raw.match( rgxFctCritical );
+                model.timestamp = timestamp;
 
                 // console.log( 'sending', model );
                 ipcRenderer.send( 'overlay:send:component', model );
@@ -366,6 +367,7 @@ function parseLogEntries( raw ) {
                         comp.action.displayText = StringUtilities.parseStoredVariablesToLiteral( action.displayText, storedVariables );
                         comp.overlayId = action.overlayId;
                         comp.matches = res.result;
+                        comp.timestamp = timestamp;
                         ipcRenderer.send( 'overlay:send:component', comp );
                     } else if ( action.actionType === ActionTypes.StoreVariable ) {
                         if ( res.result.length === 1 ) {
@@ -381,6 +383,7 @@ function parseLogEntries( raw ) {
                         comp.action.displayText = `${f.name} --== {1} ==--`;
                         comp.overlayId = action.overlayId;
                         comp.matches = res.result;
+                        comp.timestamp = timestamp;
                         ipcRenderer.send( 'overlay:send:component', comp );
                     }
                 }

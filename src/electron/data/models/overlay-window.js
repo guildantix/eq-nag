@@ -35,6 +35,8 @@ class OverlayComponent {
     intervalId = -1;
     /** @type {Date} */
     start;
+    /** @type {Date} */
+    timestamp;
 }
 
 module.exports = { OverlayWindow, OverlayComponent };

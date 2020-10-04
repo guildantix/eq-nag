@@ -131,7 +131,8 @@ function render( comp ) {
         contentArea.appendChild( comp.dom );
         // div.querySelector( '.progress' ).style.height = contentArea.style.fontSize;
         // div.querySelector( '.progress' ).style.height = '24px';
-        comp.start = new Date();
+        // comp.start = new Date();
+        comp.start = comp.timestamp;
         comp.intervalId = window.setInterval( () => {
             let perc = ( Math.abs( ( new Date() ) - comp.start ) / 1000 ) / comp.action.duration;
             // console.log( 'testing', comp.dom );
