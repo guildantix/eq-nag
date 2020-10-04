@@ -4,6 +4,8 @@ class FctModel {
     text = '';
     critical = false;
     attack = '';
+    /** @type {Date} */
+    timestamp = null;
 }
 
 module.exports = FctModel;

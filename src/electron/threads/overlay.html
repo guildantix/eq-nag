@@ -179,6 +179,21 @@
             position: absolute;
             z-index: 1;
             padding: 4px;
+            /* font-size: 12px !important; */
+            /* font-weight: 300; */
+            /* font-weight: normal !important; */
+            /* font-kerning: none; */
+            /* font-weight: normal !important; */
+            letter-spacing: 1px;
+            /* color: #000000; */
+            /* text-shadow: -1px -1px 0 #ffffff, 1px -1px 0 #ffffff, -1px 1px 0 #ffffff, 1px 1px 0 #ffffff; */
+            color: white;
+            font-weight: 400 !important;
+            /* font-family: 'Roboto' !important; */
+            /* font-weight: 300 !important; */
+            /* color: #005aff; */
+            text-shadow: -1px -1px 2px #000, 1px -1px 2px #000, -1px 1px 2px #000, 1px 1px 2px #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
+            /* text-shadow: 0px 0px 10px #000000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000; */
             /* -webkit-text-stroke: 1px white; */
             /* color: #0000007a; */
             /* margin: 6px; */
@@ -213,8 +228,9 @@
     </template>
     <template id="dotTimerTemplate">
         <p class="dot-text">{{value}}</p>
-        <div class="progress"><p style="margin: 4px;">&nbsp;</p>
-            <div class="determinate" style="width: 0%"></div>
+        <!-- Background color of .progress is 13% of the .determinate color. -->
+        <div class="progress" style="background-color: rgba(0,33,0,.75)"><p style="margin: 4px;">&nbsp;</p>
+            <div class="determinate" style="width: 0%; background-color: green;"></div>
         </div>
     </template>
 </body>
