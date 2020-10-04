@@ -159,6 +159,11 @@ ipcMain.on( 'clipboard:writeText', ( event, value ) => {
     clipboard.writeText( value );
 } );
 
+ipcMain.on( 'log:send:raw', function ( event, data ) {
+    console.log( 'received', data );
+    logWatcherWindow.webContents.send( 'log:parse:raw', data );
+} );
+
 var mainWindowRef = new ForwardRef( () => mainWindow ? mainWindow : null );
 var logWatcherRef = new ForwardRef( () => logWatcherWindow ? logWatcherWindow : null );
 

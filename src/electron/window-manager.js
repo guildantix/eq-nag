@@ -243,7 +243,11 @@ function loadOverlay( model, overlayDatabase, enableEdit ) {
         },
         skipTaskbar: true,
     } );
-    overlay.loadFile( "./src/electron/threads/overlay.html" );
+    if ( model.overlayType === 'FCT' ) {
+        overlay.loadFile( "./src/electron/threads/overlay-fct.html" );
+    } else {
+        overlay.loadFile( "./src/electron/threads/overlay.html" );
+    }
     overlay.setIgnoreMouseEvents( true );
     overlay.setAlwaysOnTop( true, "screen" );
 

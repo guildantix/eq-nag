@@ -2,7 +2,7 @@ import { Injectable, NgZone } from '@angular/core';
 import { IpcRenderer } from 'electron';
 import { Observable, Observer } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
-import { DataTickModel, DkpEntryModel, TriggerModel, OverlayWindowModel } from './core.model';
+import { DataTickModel, DkpEntryModel, TriggerModel, OverlayWindowModel, ActionTypes } from './core.model';
 
 @Injectable()
 export class IpcService {
@@ -398,8 +398,28 @@ export class IpcService {
         this.ipc.send( 'overlay:dim', overlayId );
     }
 
-    public sendTestFn( model ): void {
-        this.ipc.send( 'overlay:send:component', model );
+    public sendTestFn( rawLogLine: string ): void {
+        this.ipc.send( 'log:send:raw', rawLogLine );
+    }
+
+    public sendTestModel( displayText: string ): void {
+        // let comp = new OverlayComponent();
+        // let comp: any = {
+        //     action: Object.assign( new TriggerAction(), action ),
+        //     action.displayText : `${f.name} --== {1} ==--`,
+        //     overlayId : action.overlayId,
+        //     matches : res.result,
+        // };
+        this.ipc.send( 'overlay:send:component', {
+            action: {
+                displayText: displayText, // `Target Name --== Dot Name ==--`,
+                actionType: ActionTypes.DotTimer,
+                duration: 2 * 6,
+            },
+            // action: { displayText: `Dot Name --== {1} ==--` },
+            overlayId : 'L3Yrmot0B5F4P0Pa',
+            matches : [],
+        } );
     }
 
 }

@@ -3,6 +3,7 @@ class FctModel {
     dealt = false;
     text = '';
     critical = false;
+    attack = '';
 }
 
 module.exports = FctModel;

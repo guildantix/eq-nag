@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Overlay Testing</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans+Condensed:ital,wght@0,300;0,700;1,300&family=Oswald:wght@200;300;400;500;600;700&family=Press+Start+2P&family=Ranchers&family=Red+Rose:wght@300;400;700&family=Roboto+Mono:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;1,100;1,200;1,300;1,400;1,500;1,600;1,700&family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap" rel="stylesheet">
+
+    <!-- Compiled and minified CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+
+    <!-- Compiled and minified JavaScript -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+
+    <style>
+        body {
+            color: #ffffff;
+        }
+
+        body.show-border {
+            border: 6px solid rgba(0,0,0,0.5);
+            display:block;
+            position: fixed;
+            left: 0;
+            right: 0;
+            top: 0;
+            bottom: 0;
+        }
+
+        body.highlight-border {
+            border: 6px solid #00d4ff59;
+            display:block;
+            position: fixed;
+            left: 0;
+            right: 0;
+            top: 0;
+            bottom: 0;
+        }
+
+        body.highlight-border .overlay-name-watermark {
+            display: block;
+        }
+
+        .drag {
+            /* -webkit-user-select: none;
+            -webkit-app-region: drag; */
+            background-color: rgba(0,0,0,0.15);
+            /* border: 6px solid black; */
+        }
+
+        .drag .overlay-name-watermark {
+            display: block;
+        }
+
+        section.body {
+            -webkit-user-select: none;
+            -webkit-app-region: drag;
+            /* position: relative;
+            display: inline-block;
+            width: 500px;
+            height: 50px; */
+            position: fixed;
+            left: 6px;
+            right: 6px;
+            top: 6px;
+            bottom: 6px;
+        }
+
+        .overlay-name-watermark {
+            text-align: center;
+            color: rgba(255,255,255,0.15);
+            display: none;
+            z-index: 0;
+        }
+        
+        .content-area {
+            z-index: 1;
+            position: fixed;
+            left: 6px;
+            right: 6px;
+            top: 6px;
+            bottom: 6px;
+            padding: 5px;
+        }
+
+        .content-area p {
+            margin: 0;
+            /* line-height: 0.9em; */
+            /* font-family: Roboto, sans-serif;
+            font-style: italic;
+            font-weight: 300; */
+            /* -webkit-text-stroke: 1px black; */
+            /* -webkit-text-stroke: 2px black; */
+        }
+
+        .content-area .progress {
+            height: 24px;
+        }
+
+        .fct-label {
+            position: absolute;
+        }
+
+        .fct-critical-hit {
+            font-weight: bold;
+        }
+
+        .animate-bottom {
+            position: absolute;
+            animation: animatebottom 7s linear;
+            /* animation-name: animatebottom;
+            animation-duration: 2s */
+        }
+        @keyframes animatebottom { 
+            0% { top:100%; opacity:1 } 
+            100% { top:-100px; opacity:1; }
+        }
+
+        .animate-fade-shrink {
+            position: absolute;
+            display: inline-block;
+            text-align: center;
+            animation: animate-fadeshrink 4s ease-out;
+        }
+
+        @keyframes animate-fadeshrink {
+            0% { opacity: 0.5; transform: scale(1.5); }
+            1% { opacity: 1; transform: scale(2.0); }
+            50% { opacity: 1; transform: scale(2.0); }
+            /* 75% { opacity: .85; transform: scale(1.25);} */
+            100% { opacity: 0; transform: scale(.1);}
+        }
+
+        /* @keyframes animate-fadeshrink {
+            0% { opacity: 0.5; font-size: 58px; }
+            1% { opacity: 1; font-size: 64px; }
+            12% { opacity: 1; font-size: 64px; }
+            25% { opacity: .85; font-size: 64px;}
+            100% { opacity: 0; font-size: 6px;}
+        } */
+
+        .animate-fade-out {
+            position:relative;
+            display: inline-block;
+            animation: animate-fadeout 7s ease;
+        }
+
+        @keyframes animate-fadeout {
+            0% { opacity: 1; }
+            60% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+
+        .fct-content {
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+        }
+
+        .fct-dmg-src {
+            /* float: left; */
+            /* clear: both; */
+            font-size: 12px;
+            /* font-weight: 300; */
+            font-weight: normal;
+            color: #005aff;
+            -webkit-text-stroke: .1px black;
+            -webkit-text-fill-color: #005aff;
+        }
+
+        .fct-text {
+            -webkit-text-stroke: 1px black;
+            text-shadow: 0px 0px 10px black;
+        }
+
+    </style>
+</head>
+<body>
+    <script type="text/javascript">
+        var OverlayFct = require('./overlay-fct');
+        OverlayFct();
+    </script>
+    <section class="body">
+        <div class="overlay-name-watermark"><h1 id="overlay-title">Overlay Title</h1></div>
+        <div class="content-area">
+            <!-- <div class="progress">
+                <div class="determinate" style="width: 70%">Arch Shielding</div>
+            </div> -->
+        </div>
+    </section>
+    
+    <template id="displayTextTemplate">
+        <p>{{value}}</p>
+    </template>
+    <template id="fctTemplate">
+        <span class="fct-text">{{value}}</span>
+        <span class="fct-dmg-src">({{damageSource}})</span>
+    </template>
+    <template id="fctCriticalTemplate">
+        <p class="fct-text">{{value}}</p>
+        <p class="fct-dmg-src">({{damageSource}})</p>
+    </template>
+    <template id="dotTimerTemplate">
+        <div class="progress">
+            <div class="determinate" style="width: 100%">{{value}}</div>
+        </div>
+    </template>
+</body>
+</html>
