@@ -84,6 +84,14 @@ class UserPreferencesStore extends Store {
         this.storeDataFile( this.#data );
     }
 
+    get hasExtendedDotFocus() {
+        return this.#data.hasExtendedDotFocus;
+    }
+    set hasExtendedDotFocus( val ) {
+        this.#data.hasExtendedDotFocus = val;
+        this.storeDataFile( this.#data );
+    }
+
     constructor() {
         super( {
             // We'll call our data file 'user-preferences'

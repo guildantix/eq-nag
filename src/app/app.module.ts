@@ -8,6 +8,8 @@ import { FormsModule } from '@angular/forms';
 import { MainComponent } from './main.component';
 import { RouterModule, Routes } from '@angular/router';
 import { appRoutes } from './ng.routes';
+import { HttpClientModule } from '@angular/common/http';
+import { ScraperService } from './scraper.service';
 
 @NgModule( {
     imports: [
@@ -17,13 +19,14 @@ import { appRoutes } from './ng.routes';
         DialogModule,
         BrowserAnimationsModule,
         RouterModule.forRoot( appRoutes, { enableTracing: false, useHash: true } ),
+        HttpClientModule,
     ],
     declarations: [
         AppComponent,
         MainComponent,
     ],
     providers: [
-        
+        ScraperService,
     ],
     bootstrap: [ AppComponent ],
 } )

@@ -10,6 +10,8 @@ export class TriggerModel {
     public captureMethod: string = 'Any match';
     public conditions: TriggerCondition[] = [];
 
+    public version: number;
+
 }
 
 export enum TriggerConditionTypes {
@@ -119,5 +121,15 @@ export class TriggerAction {
     public displayText: string;
     public duration: number;
     public variableName: string;
+
+}
+
+export class ScrapedSpell {
+    
+    public name: string;
+    public duration: number;
+    // public class: string;
+    public level: number;
+    public castOnOther: string;
 
 }

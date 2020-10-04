@@ -29,6 +29,23 @@
                     <span>Triggers</span>
                     <span class="spacer"></span>
                     <button mat-button color="accent" (click)="showNewTriggerDialog()">New Trigger</button>
+                    <button mat-icon-button [matMenuTriggerFor]="menu" aria-label="Example icon-button with a menu">
+                        <mat-icon>more_vert</mat-icon>
+                    </button>
+                    <mat-menu #menu="matMenu">
+                        <button mat-menu-item (click)="showNewDotTimerDialog()">
+                            <!-- <mat-icon>dialpad</mat-icon> -->
+                            <span>DoT Timer (Allakhazam)</span>
+                        </button>
+                        <!-- <button mat-menu-item disabled>
+                            <mat-icon>voicemail</mat-icon>
+                            <span>Check voice mail</span>
+                        </button>
+                        <button mat-menu-item>
+                            <mat-icon>notifications_off</mat-icon>
+                            <span>Disable alerts</span>
+                        </button> -->
+                    </mat-menu>
                 </mat-toolbar>
                 <div class="tab-content">
                     <table mat-table #capturePhrasesTable="matTable" style="width: 100%;"

@@ -11,6 +11,7 @@ import { OverlayDetailsDialogComponent } from './overlay-details-dialog/overlay-
 import { OverlayEditorDialogComponent } from './overlay-editor-dialog/overlay-editor-dialog.component';
 import { FormInputModule } from '../form-inputs/form-inputs.module';
 import { TriggerActionWizardModalComponent } from './trigger-action-wizard-modal/trigger-action-wizard-modal.component';
+import { NewTriggerDialogComponent } from './new-trigger-dialog/new-trigger-dialog.component';
 
 @NgModule( {
     imports: [
@@ -27,6 +28,7 @@ import { TriggerActionWizardModalComponent } from './trigger-action-wizard-modal
         OverlayDetailsDialogComponent,
         OverlayEditorDialogComponent,
         TriggerActionWizardModalComponent,
+        NewTriggerDialogComponent,
     ],
     declarations: [
         TriggerDialogComponent,
@@ -34,6 +36,7 @@ import { TriggerActionWizardModalComponent } from './trigger-action-wizard-modal
         OverlayDetailsDialogComponent,
         OverlayEditorDialogComponent,
         TriggerActionWizardModalComponent,
+        NewTriggerDialogComponent,
     ],
     providers: [
         DialogService,

@@ -1,10 +1,11 @@
 import { Injectable } from '@angular/core';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { ConfirmDialogComponent } from './confirm-dialog/confirm-dialog.component';
-import { OverlayWindowModel, TriggerAction } from '../core.model';
+import { OverlayWindowModel, ScrapedSpell, TriggerAction } from '../core.model';
 import { Observable } from 'rxjs';
 import { OverlayDetailsDialogComponent } from './overlay-details-dialog/overlay-details-dialog.component';
 import { TriggerActionWizardModalComponent } from './trigger-action-wizard-modal/trigger-action-wizard-modal.component';
+import { NewTriggerDialogComponent } from './new-trigger-dialog/new-trigger-dialog.component';
 
 @Injectable()
 export class DialogService {
@@ -87,6 +88,24 @@ export class DialogService {
         return this.dialog.open( OverlayDetailsDialogComponent, {
             width: '550px',
             data: model
+        } ).afterClosed();
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Opens the new dot timer trigger dialog.
+     */
+    public showNewDotTimerDialog(): void {
+        this.dialog.open( NewTriggerDialogComponent, {
+            width: '750px'
         } ).afterClosed();
     }
     
