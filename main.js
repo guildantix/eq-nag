@@ -72,7 +72,7 @@ function createWindow() {
     logWatcherWindow = new BrowserWindow( {
         //   width: 800,
         //   height: 600,
-        show: true,
+        show: app.isDev() === true,
         webPreferences: { nodeIntegration: true, webSecurity: false },
     } );
     logWatcherWindow.webContents.openDevTools();
