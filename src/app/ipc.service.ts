@@ -127,6 +127,22 @@ export class IpcService {
         return obs;
     }
 
+    public getAppIsDev(): Observable<boolean> {
+        let obs: Observable<boolean> = new Observable<boolean>( ( observer: Observer<boolean> ) => {
+            
+            this.ipc.once( 'app:isDev', ( e, isDev ) => {
+                this.ngZone.run( () => {
+                    observer.next( isDev );
+                    observer.complete();
+                } );
+            } );
+            this.ipc.send( 'app:isDev' );
+
+        } );
+
+        return obs;
+    }
+
     public consoleLogRequested(): Observable<any> {
         let obs: Observable<any> = new Observable<any>( ( observer: Observer<any> ) => {
             this._consoleLogRequestObservers.push( observer );

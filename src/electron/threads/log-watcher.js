@@ -29,7 +29,7 @@ var extDotFocusDecayLevel = 0;
 var voiceOptions = [];
 var voiceIndex = -1;
 var logParseTimeoutId = null;
-var logParseTimer = 100;
+var logParseTimer = 50;
 var changingLogFile = false;
 
 function LogWatcher() {

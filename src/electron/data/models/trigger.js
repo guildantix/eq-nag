@@ -101,6 +101,7 @@ class Trigger {
     /** @type TriggerCondition[] */
     conditions = [];
     spellLevel = 0;
+    predefined = false;
 
 }
 

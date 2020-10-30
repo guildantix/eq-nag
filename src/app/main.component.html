@@ -13,7 +13,7 @@
                 <mat-toolbar>
                     <span>DKP Tracker</span>
                     <span class="spacer"></span>
-                    <button mat-button color="accent" (click)="testFn()">Test Fn</button>
+                    <button mat-button color="accent" (click)="testFn()" *ngIf="isDev">Test Fn</button>
                 </mat-toolbar>
                 <div class="tab-content">
 

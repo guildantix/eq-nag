@@ -7,6 +7,7 @@ import { MatTableDataSource, MatTable } from '@angular/material/table';
 import { ActivatedRoute } from '@angular/router';
 import { DialogService } from '../dialog.service';
 import { customAlphabet } from 'nanoid';
+import { MatSnackBar } from '@angular/material/snack-bar';
 // import { NgForm } from '@angular/forms';
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const nanoid = customAlphabet( alphabet, 16 );
@@ -35,6 +36,7 @@ export class TriggerDialogComponent implements OnInit {
     public overlays: OverlayWindowModel[] = [];
     public storedVariables: string[] = [];
     public Math: typeof Math = Math;
+    public isDev: boolean = false;
 
     public get logOverlays(): OverlayWindowModel[] {
         return this.overlays.filter( f => f.overlayType === 'Log' );
@@ -47,7 +49,7 @@ export class TriggerDialogComponent implements OnInit {
     @ViewChild( 'capturePhrasesTable' ) capturePhrasesTable: MatTable<any>;
     @ViewChild( 'conditionsTable' ) conditionsTable: MatTable<any>;
 
-    constructor( private ipcService: IpcService, private route: ActivatedRoute, private dialogService: DialogService ) { }
+    constructor( private ipcService: IpcService, private route: ActivatedRoute, private dialogService: DialogService, private snackBar: MatSnackBar ) { }
 
     ngOnInit() {
         this.model = new TriggerModel();
@@ -68,6 +70,7 @@ export class TriggerDialogComponent implements OnInit {
             // In a real app: dispatch action to load the details here.
         } );
         this.addNewCapturePhrase();
+        this.ipcService.getAppIsDev().subscribe( isDev => this.isDev = isDev );
     }
 
     public closeModal(): void {
@@ -160,6 +163,11 @@ export class TriggerDialogComponent implements OnInit {
             this.model.capturePhrases.splice( index + 1, 0, this.model.capturePhrases.splice( index, 1 )[ 0 ] );
             this.capturePhrasesTable?.renderRows();
         }
+    }
+
+    public copyJson(): void {
+        this.ipcService.sendTextToClipboard( JSON.stringify( this.model ) );
+        this.snackBar.open( 'Trigger details copied!', 'Dismiss', { duration: 5000 } );
     }
 
 }

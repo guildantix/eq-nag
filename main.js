@@ -11,6 +11,7 @@ const ForwardRef = require( './src/electron/forward-ref' );
 const WindowManager = require( './src/electron/window-manager' );
 
 var mainWindow, logWatcherWindow, testWindow;
+var enableDevMode = false;
 const winManager = new WindowManager(__dirname);
 const userPreferences = new UserPreferencesStore( {} );
 const dkpDatabase = new DkpDatabaseStore();
@@ -103,7 +104,7 @@ function createWindow() {
     
 };
 
-app.isDev = () => process.defaultApp === true;
+app.isDev = () => enableDevMode === true && process.defaultApp === true;
 
 app.commandLine.appendSwitch( 'enable-speech-dispatcher' );
 
@@ -158,6 +159,10 @@ autoUpdater.on( 'update-available', () => {
 
 ipcMain.on( 'app:restart', () => {
     autoUpdater.quitAndInstall();
+} );
+
+ipcMain.on( 'app:isDev', ( event ) => {
+    event.sender.send( 'app:isDev', app.isDev() );
 } );
 
 ipcMain.on( 'app:version', ( event ) => {
