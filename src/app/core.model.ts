@@ -9,8 +9,7 @@ export class TriggerModel {
     public actions: any[] = [];
     public captureMethod: string = 'Any match';
     public conditions: TriggerCondition[] = [];
-
-    public version: number;
+    public spellLevel: number = 0;
 
 }
 
@@ -96,6 +95,9 @@ export class DataTickModel {
     public enableFct: boolean = false;
     public damageDealtOverlayId: string;
     public damageReceivedOverlayId: string;
+    public hasExtendedDotFocus: boolean = false;
+    public extendedDotFocusPercent: number = 0;
+    public extendedDotFocusDecayLevel: number = 1;
 
 }
 
@@ -132,4 +134,10 @@ export class ScrapedSpell {
     public level: number;
     public castOnOther: string;
 
+}
+
+export class FocusEffectSettings {
+    public hasExtendedDotFocus: boolean = false;
+    public extendedDotFocusPercent: number = 0;
+    public extendedDotFocusDecayLevel: number = 1;
 }
