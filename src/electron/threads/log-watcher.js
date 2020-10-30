@@ -29,10 +29,12 @@ var logParserInterval = null;
 var logParseTimer = 100;
 
 function LogWatcher() {
+
     ipcRenderer.on( 'log:changed', function ( event, data ) {
 
         function startParsingLogFile() {
             fs.open( data, 'r', function ( err, fd ) {
+
                 if ( fd ) {
                     var file = fd;
                     currentPosition = currentPosition === null ? fs.fstatSync( file ).size : currentPosition;
@@ -42,8 +44,13 @@ function LogWatcher() {
         
                         // When another application deletes the file (Gina/GamParse).
                         if ( currentPosition > stats.size || !fs.existsSync( data ) ) {
+                            
+                            // Reset the current position.
                             currentPosition = null;
+
+                            // Start over after logParseTimer milliseconds.
                             logParserInterval = window.setTimeout( startParsingLogFile, logParseTimer );
+                            
                             return;
                         }
                             
@@ -60,11 +67,16 @@ function LogWatcher() {
                             } );
 
                         } );
-        
+
+                        // Wait logParseTimer milliseconds and poll again.
                         logParserInterval = window.setTimeout( parseLogFile, logParseTimer );
                     }
+
+                    // Start polling the log file every logParseTimer milliseconds.
                     logParserInterval = window.setTimeout( parseLogFile, logParseTimer );
+
                 } else {
+                    // If the log file was not found, then start over.
                     logParserInterval = window.setTimeout( startParsingLogFile, logParseTimer );
                 }
             } );
