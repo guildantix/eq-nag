@@ -190,7 +190,7 @@
                                             <mat-option [value]="actionTypes.DisplayText">Display Text</mat-option>
                                             <mat-option [value]="actionTypes.DotTimer">DoT Timer</mat-option>
                                             <!-- <mat-option [value]="actionTypes.PlayAudio">Play Audio</mat-option> -->
-                                            <!-- <mat-option [value]="actionTypes.Speak">Speak</mat-option> -->
+                                            <mat-option [value]="actionTypes.Speak">Speak</mat-option>
                                             <!-- <mat-option [value]="actionTypes.Timer">Timer</mat-option> -->
                                             <!-- <mat-option [value]="actionTypes.Countdown">Countdown</mat-option> -->
                                             <mat-option [value]="actionTypes.StoreVariable">Store Variable</mat-option>
@@ -264,9 +264,23 @@
                                             </mat-select>
                                         </mat-form-field>
 
+                                        <mat-form-field>
+                                            <mat-label>Spell Level</mat-label>
+                                            <input matInput name="txtSpellLevel_{{i}}" type="number" [(ngModel)]="model.spellLevel" />
+                                        </mat-form-field>
+
                                         <p>Please enter the duration of the DoT. ({{Math.floor((action.duration > 0 ? action.duration : 0) / 6)}} ticks)</p>
 
                                         <app-duration [(ngModel)]="action.duration" name="durActionDuration_{{i}}"></app-duration>
+
+                                    </div>
+
+                                    <div *ngIf="action.actionType === actionTypes.Speak">
+
+                                        <mat-form-field>
+                                            <mat-label>Display Text</mat-label>
+                                            <input matInput [(ngModel)]="action.displayText" name="txtSpeakText_{{i}}" />
+                                        </mat-form-field>
 
                                     </div>
         
