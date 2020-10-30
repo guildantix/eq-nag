@@ -50,7 +50,7 @@ function LogWatcher() {
 
                             // Start over after logParseTimer milliseconds.
                             logParserInterval = window.setTimeout( startParsingLogFile, logParseTimer );
-                            
+
                             return;
                         }
                             
@@ -423,26 +423,35 @@ function parseLogEntries( raw, simulating ) {
             f.actions.forEach( action => {
                 if ( action.phrases == null || action.phrases?.length === 0 || action.phrases?.indexOf( res.phraseId ) > -1 ) {
                     if ( action.actionType === ActionTypes.DisplayText ) {
+                    /* --== Display Text ==-- */
                         let comp = new OverlayComponent();
+
                         comp.action = Object.assign( new TriggerAction(), action );
                         comp.action.displayText = StringUtilities.parseStoredVariablesToLiteral( action.displayText, storedVariables );
                         comp.overlayId = action.overlayId;
                         comp.matches = res.result;
                         comp.timestamp = timestamp;
+
                         if ( !simulating )
                             ipcRenderer.send( 'overlay:send:component', comp );
                         else
                             console.log( 'overlay:send:component', comp );
+                        
                     } else if ( action.actionType === ActionTypes.StoreVariable ) {
+                    /* --== Store Variable ==-- */
+                        
                         if ( res.result.length === 1 ) {
                             storedVariables[ action.variableName ] = res.result[ 0 ];
                         } else {
                             storedVariables[ action.variableName ] = res.result[ 1 ];
                         }
-                    } else if ( action.actionType === ActionTypes.ClearVariable ) {
-                        storedVariables[ action.variableName ] = null;
-                    } else if ( action.actionType === ActionTypes.DotTimer ) {
 
+                    } else if ( action.actionType === ActionTypes.ClearVariable ) {
+                    /* --== Clear Variable ==-- */
+                        storedVariables[ action.variableName ] = null;
+
+                    } else if ( action.actionType === ActionTypes.DotTimer ) {
+                    /* --== DOT Timers ==-- */
                         let comp = new OverlayComponent();
 
                         comp.action = Object.assign( new TriggerAction(), action );
@@ -472,15 +481,19 @@ function parseLogEntries( raw, simulating ) {
                         ipcRenderer.send( 'overlay:send:component', comp );
 
                     } else if ( action.actionType === ActionTypes.Speak ) {
-
+                    /* --== TTS Speak ==-- */
+                        
                         if ( !simulating && action.displayText && voiceIndex > -1 ) {
                             var utter = new SpeechSynthesisUtterance();
+
                             utter.text = action.displayText;
                             utter.voice = voiceOptions[ voiceIndex ];
                             utter.onend = function ( event ) { }
                             speechSynthesis.speak( utter );
+
                         } else {
                             console.log( 'speaking', action.displayText );
+
                         }
                         
                     }
