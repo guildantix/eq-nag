@@ -23,6 +23,11 @@ class OverlayWindow {
 }
 
 class OverlayComponent {
+
+    /** @type {string} */
+    instanceId;
+    /** @type {string} */
+    description;
     /** @type {TriggerAction} */
     action;
     /** @type {string[]} */

@@ -119,6 +119,8 @@ app.on( 'activate', function () {
 
 ipcMain.on( 'app:quit', ( event, data ) => { app.quit(); } );
 
+ipcMain.on( 'main:console:log', ( event, data ) => { mainWindow.webContents.send( 'console:log', data ); } );
+
 function sendTick() {
     let _triggers = triggerDatabase.getAll();
     mainWindow.webContents.send( 'tick', {
@@ -167,7 +169,6 @@ ipcMain.on( 'clipboard:writeText', ( event, value ) => {
 } );
 
 ipcMain.on( 'log:send:raw', function ( event, data ) {
-    console.log( 'received', data );
     logWatcherWindow.webContents.send( 'log:parse:raw', data );
 } );
 
