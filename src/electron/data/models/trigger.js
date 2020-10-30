@@ -98,6 +98,7 @@ class Trigger {
     captureMethod = 'Any match';
     /** @type TriggerCondition[] */
     conditions = [];
+    spellLevel = 0;
 
 }
 
