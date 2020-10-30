@@ -89,7 +89,23 @@ class UserPreferencesStore extends Store {
     }
     set hasExtendedDotFocus( val ) {
         this.#data.hasExtendedDotFocus = val;
-        this.storeDataFile( this.#data );
+        // this.storeDataFile( this.#data );
+    }
+
+    get extendedDotFocusPercent() {
+        return this.#data.extendedDotFocusPercent;
+    }
+    set extendedDotFocusPercent( val ) {
+        this.#data.extendedDotFocusPercent = val;
+        // this.storeDataFile( this.#data );
+    }
+
+    get extendedDotFocusDecayLevel() {
+        return this.#data.extendedDotFocusDecayLevel;
+    }
+    set extendedDotFocusDecayLevel( val ) {
+        this.#data.extendedDotFocusDecayLevel = val;
+        // this.storeDataFile( this.#data );
     }
 
     constructor() {
@@ -134,6 +150,16 @@ class UserPreferencesStore extends Store {
         
         ipcMain.on( 'settings:set:fct', ( event, arg ) => {
             this.enableFct = arg;
+        } );
+        
+        ipcMain.on( 'settings:set:focus-effects', ( event, arg ) => {
+            
+            this.hasExtendedDotFocus = arg.hasExtendedDotFocus;
+            this.extendedDotFocusPercent = arg.extendedDotFocusPercent;
+            this.extendedDotFocusDecayLevel = arg.extendedDotFocusDecayLevel;
+
+            this.storeDataFile( this.#data );
+
         } );
         
         ipcMain.on( 'settings:set:damageDealtOverlayId', ( event, arg ) => {
