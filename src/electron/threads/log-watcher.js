@@ -12,7 +12,7 @@ const StringUtilities = require( '../utilities/string' );
 const NumberUtilities = require( '../utilities/numbers' );
 const FctModel = require( '../data/models/fct' );
 // const UserPreferencesStore = require( '../data/user-preferences' );
-var currentPosition = 0;
+var currentPosition = null;
 
 var watcher = null;
 /** @type {Trigger[]} */
@@ -21,33 +21,134 @@ var storedVariables = {};
 var enableFct = false;
 var damageDealtOverlayId = null;
 var damageReceivedOverlayId = null;
-// const userPreferences = new UserPreferencesStore( {} );
+var hasExtDotFocus = false;
+var extDotFocusPercent = 0;
+var extDotFocusDecayLevel = 0;
+var voiceOptions = [];
+var voiceIndex = -1;
+var logParserInterval = null;
+var logParseTimer = 100;
 
 function LogWatcher() {
     ipcRenderer.on( 'log:changed', function ( event, data ) {
-        fs.open( data, 'r', function ( err, fd ) {
-            var file = fd;
-            currentPosition = fs.fstatSync( file ).size;
-        } );
+
+        function startParsingLogFile() {
+            fs.open( data, 'r', function ( err, fd ) {
+                if ( fd ) {
+                    var file = fd;
+                    currentPosition = currentPosition === null ? fs.fstatSync( file ).size : currentPosition;
+                    function parseLogFile() {
+                        var stats = fs.fstatSync( fd );
+                        var file = fd;
+        
+                        // When another application deletes the file (Gina/GamParse).
+                        if ( currentPosition > stats.size || !fs.existsSync( data ) ) {
+                            currentPosition = null;
+                            logParserInterval = window.setTimeout( startParsingLogFile, logParseTimer );
+                            return;
+                        }
+                            
+                        fs.read( file, Buffer.alloc( stats.size - currentPosition ), 0, stats.size - currentPosition, currentPosition, ( err, bytecount, buff ) => {
+                            
+                            currentPosition += bytecount;
+                            let read = buff.toString( 'utf-8', 0, bytecount );
+                            let lines = read.split( /\r\n|\r|\n/gmi );
+                            
+                            lines.forEach( f => {
+                                if ( f && f.length > 0 ) {
+                                    parseLogEntries( f );
+                                }
+                            } );
+
+                        } );
+        
+                        logParserInterval = window.setTimeout( parseLogFile, logParseTimer );
+                    }
+                    logParserInterval = window.setTimeout( parseLogFile, logParseTimer );
+                } else {
+                    logParserInterval = window.setTimeout( startParsingLogFile, logParseTimer );
+                }
+            } );
+        }
+
+        startParsingLogFile();
+
         if ( watcher != null ) {
             watcher.close();
         }
-        watcher = chokidar.watch( data ).on( "all", ( event, path ) => {
-            fs.open( data, 'r', function ( err, fd ) {
-                var stats = fs.fstatSync( fd );
-                var file = fd;
+
+        // function parseLogFile() {
+        //     // console.log( 'testing', data );
+        //     fs.open( data, 'r', function ( err, fd ) {
+        //         // console.log( 'testing', fd );
+        //         var stats = fs.fstatSync( fd );
+        //         var file = fd;
+                    
+        //         fs.read( file, Buffer.alloc( stats.size - currentPosition ), 0, stats.size - currentPosition, currentPosition, ( err, bytecount, buff ) => {
+        //             currentPosition += bytecount;
+        //             let read = buff.toString( 'utf-8', 0, bytecount );
+        //             let lines = read.split( /\r\n|\r|\n/gmi );
+        //             // if ( lines?.length > 1 )
+        //             //     console.log( 'read', lines );
+        //             lines.forEach( f => {
+        //                 if ( f && f.length > 0 ) {
+        //                     parseLogEntries( f );
+        //                 }
+        //             } );
+        //         } );
+        //     } );
+            
+        //     logParserInterval = window.setTimeout( parseLogFile, logParseTimer );
+        // }
+        // logParserInterval = window.setTimeout( parseLogFile, logParseTimer );
+        // watcher = chokidar.watch( data ).on( "all", ( event, path ) => {
+        //     fs.open( data, 'r', function ( err, fd ) {
+        //         var stats = fs.fstatSync( fd );
+        //         var file = fd;
                 
-                fs.read( file, new Buffer( stats.size - currentPosition ), 0, stats.size - currentPosition, currentPosition, ( err, bytecount, buff ) => {
-                    currentPosition += bytecount;
+        //         fs.read( file, new Buffer( stats.size - currentPosition ), 0, stats.size - currentPosition, currentPosition, ( err, bytecount, buff ) => {
+        //             currentPosition += bytecount;
+        //             let read = buff.toString( 'utf-8', 0, bytecount );
+        //             let lines = read.split( /\r\n|\r|\n/gmi );
+        //             lines.forEach( f => {
+        //                 if ( f && f.length > 0 ) {
+        //                     parseLogEntries( f );
+        //                 }
+        //             } );
+        //         } );
+        //     } );
+        // } );
+    } );
+
+    ipcRenderer.on( 'log:simulate:file', function ( event, data ) {
+        console.log( 'simulating log file', data );
+        fs.open( data, 'r', function ( err, fd ) {
+            var file = fd;
+            // currentPosition = fs.fstatSync( file ).size;
+            // function parseLogFile() {
+            //     // console.log( 'testing', fd );
+            var stats = fs.fstatSync( fd );
+            //     var file = fd;
+                    
+                fs.read( file, Buffer.alloc( stats.size ), 0, stats.size, 0, ( err, bytecount, buff ) => {
+                    // currentPosition += bytecount;
                     let read = buff.toString( 'utf-8', 0, bytecount );
                     let lines = read.split( /\r\n|\r|\n/gmi );
+                    // if ( lines?.length > 1 )
+                    //     console.log( 'read', lines );
+                    // let count = 0;
                     lines.forEach( f => {
                         if ( f && f.length > 0 ) {
-                            parseLogEntries( f );
+                            parseLogEntries( f, true );
                         }
+                        // console.log( 'read' );
                     } );
+                    console.log( 'lines done' );
                 } );
-            } );
+
+            //     logParserInterval = window.setTimeout( parseLogFile, logParseTimer );
+            // }
+            // logParserInterval = window.setTimeout( parseLogFile, logParseTimer );
         } );
     } );
 
@@ -60,8 +161,16 @@ function LogWatcher() {
         enableFct = data.enableFct;
         damageDealtOverlayId = data.damageDealtOverlayId;
         damageReceivedOverlayId = data.damageReceivedOverlayId;
+        hasExtDotFocus = data.hasExtendedDotFocus;
+        extDotFocusPercent = data.extendedDotFocusPercent;
+        extDotFocusDecayLevel = data.extendedDotFocusDecayLevel;
+        voiceIndex = data.voiceIndex;
         generateTriggerFns();
     } );
+
+    speechSynthesis.onvoiceschanged = () => {
+        voiceOptions = speechSynthesis.getVoices();
+    };
 }
 
 function generateTriggerFns() {
@@ -202,60 +311,68 @@ function generateTriggerFns() {
         }
     } );
 }
-
-let rgxTrigger = /grats;/gi;
-let rgxTimestamp = /^\[(.*?)\]\s*/gi;
-let rgxGrabText = /\'(.*?)\'$/gi;
-let rgxDelimiter = /;/gi;
-let rgxNum = /(\d+)/gi;
-let rgxCombatText = /hit|damage|miss|dodge|riposte|parry|become better|backstab|stun|attack/gi;
-let rgxFctCritical = /\. \(.*(Critical).*\)/gi;
-
-let fctRegExs = [
-    // 0: rgxMelee
-    /You ([a-zA-Z0-9_]*) (.*) for ([0-9]*) points of damage\./gi, 
-    // 1: rgxMeleeMiss
-    /You try to ([a-zA-Z0-9_]*) (.*),/gi, 
-    // 2: rgxSpellDmg
-    /(.*) has taken ([0-9]*) damage from your (.*)\./gi,
-    // 3: rgxThorns
-    /(.*) is pierced by YOUR thorns for ([0-9]*) points of non-melee damage\./gi,
-    // 4: rgxSkillUp
-    /You have become better at ([a-zA-Z0-9_]*)! \(([0-9]*)\)/gi,
-    // 5: rgxTakeMeleeDmg
-    /(.*) ([a-zA-Z0-9_]*) YOU for ([0-9]*) points of damage\./gi,
-    // 6: rgxAvoidMeleeDmg
-    /(.*) tries to ([a-zA-Z0-9_]*) YOU, but ([a-zA-Z0-9_\s]*)/gi,
-    // 7: rgxTakeSpellDmg
-    /(.*) hit you for ([0-9]*) points of ([a-zA-Z0-9_]*) damage by (.*)\./gi,
-    // 8: rgxSpellDmg
-    /You ([a-zA-Z0-9_]*) (.*) for ([0-9]*) points of (.*) damage by (.*)\./gi, 
-]
 // You hit an ikaav binder pet for 12827 points of physical damage by Ferocious Kick X.
-function parseLogEntries( raw ) {
-    rgxTimestamp.lastIndex = 0;
-    rgxTrigger.lastIndex = 0;
-    rgxCombatText.lastIndex = 0;
+function parseLogEntries( raw, simulating ) {
+    
+    simulating = simulating === true ? true : false;
+
+    let rgxTrigger = /grats;/gi;
+    let rgxTimestamp = /^\[(.*?)\]\s*/gi;
+    let rgxGrabText = /\'(.*?)\'$/gi;
+    let rgxDelimiter = /;/gi;
+    let rgxNum = /(\d+)/gi;
+    let rgxCombatText = /hit|damage|miss|dodge|riposte|parry|become better|backstab|stun|attack/gi;
+    let rgxFctCritical = /\. \(.*(Critical).*\)/gi;
+    
+    let fctRegExs = [
+        // 0: rgxMelee
+        /You ([a-zA-Z0-9_]*) (.*) for ([0-9]*) points of damage\./gi,
+        // 1: rgxMeleeMiss
+        /You try to ([a-zA-Z0-9_]*) (.*),/gi,
+        // 2: rgxSpellDmg
+        /(.*) has taken ([0-9]*) damage from your (.*)\./gi,
+        // 3: rgxThorns
+        /(.*) is pierced by YOUR thorns for ([0-9]*) points of non-melee damage\./gi,
+        // 4: rgxSkillUp
+        /You have become better at ([a-zA-Z0-9_]*)! \(([0-9]*)\)/gi,
+        // 5: rgxTakeMeleeDmg
+        /(.*) ([a-zA-Z0-9_]*) YOU for ([0-9]*) points of damage\./gi,
+        // 6: rgxAvoidMeleeDmg
+        /(.*) tries to ([a-zA-Z0-9_]*) YOU, but ([a-zA-Z0-9_\s]*)/gi,
+        // 7: rgxTakeSpellDmg
+        /(.*) hit you for ([0-9]*) points of ([a-zA-Z0-9_]*) damage by (.*)\./gi,
+        // 8: rgxSpellDmg
+        /You ([a-zA-Z0-9_]*) (.*) for ([0-9]*) points of (.*) damage by (.*)\./gi,
+    ];
+
+    // rgxTimestamp.lastIndex = 0;
+    // rgxTrigger.lastIndex = 0;
+    // rgxCombatText.lastIndex = 0;
 
     let timestamp = new Date( rgxTimestamp.exec( raw )[ 1 ] );
-
+    if ( !timestamp || timestamp.length === 0 || timestamp.length === 1 )
+        console.log( 'failed parse', raw );
+    
     if ( raw.match( rgxTrigger ) ) {
         
-        rgxGrabText.lastIndex = 0;
-        rgxDelimiter.lastIndex = 0;
-        rgxNum.lastIndex = 0;
+        // rgxGrabText.lastIndex = 0;
+        // rgxDelimiter.lastIndex = 0;
+        // rgxNum.lastIndex = 0;
 
         let text = rgxGrabText.exec( raw )[ 1 ].split( rgxDelimiter );
         let item = text[ 2 ];
         let character = text[ 1 ];
         let dkp = rgxNum.exec( text[ 3 ] )[ 0 ];
         
-        ipcRenderer.send( 'dkp:add', new DkpEntryModel( timestamp, character, item, +dkp ) );
+        if ( !simulating )
+            ipcRenderer.send( 'dkp:add', new DkpEntryModel( timestamp, character, item, +dkp ) );
+        else
+            console.log( 'dkp:add', new DkpEntryModel( timestamp, character, item, +dkp ) );
     }
     if ( enableFct && raw.match( rgxCombatText )?.length > 0 ) {
         // console.log( 'FCT log captured' );
         for ( let i = 0; i < fctRegExs.length; i++ ) {
-            fctRegExs[ i ].lastIndex = 0;
+            // fctRegExs[ i ].lastIndex = 0;
             let results = fctRegExs[ i ].exec( raw );
             
             if ( results && results.length > 1 ) {
@@ -341,12 +458,15 @@ function parseLogEntries( raw ) {
 
                 }
 
-                rgxFctCritical.lastIndex = 0;
+                // rgxFctCritical.lastIndex = 0;
                 model.critical = raw.match( rgxFctCritical );
                 model.timestamp = timestamp;
 
                 // console.log( 'sending', model );
-                ipcRenderer.send( 'overlay:send:component', model );
+                // if ( !simulating )
+                    ipcRenderer.send( 'overlay:send:component', model );
+                // else
+                    // console.log( 'overlay:send:component', model );
 
                 // leave the loop, we found the correct FCT type.
                 break;
@@ -368,7 +488,10 @@ function parseLogEntries( raw ) {
                         comp.overlayId = action.overlayId;
                         comp.matches = res.result;
                         comp.timestamp = timestamp;
-                        ipcRenderer.send( 'overlay:send:component', comp );
+                        if ( !simulating )
+                            ipcRenderer.send( 'overlay:send:component', comp );
+                        else
+                            console.log( 'overlay:send:component', comp );
                     } else if ( action.actionType === ActionTypes.StoreVariable ) {
                         if ( res.result.length === 1 ) {
                             storedVariables[ action.variableName ] = res.result[ 0 ];
@@ -378,13 +501,51 @@ function parseLogEntries( raw ) {
                     } else if ( action.actionType === ActionTypes.ClearVariable ) {
                         storedVariables[ action.variableName ] = null;
                     } else if ( action.actionType === ActionTypes.DotTimer ) {
+
                         let comp = new OverlayComponent();
+
                         comp.action = Object.assign( new TriggerAction(), action );
                         comp.action.displayText = `${f.name} --== {1} ==--`;
                         comp.overlayId = action.overlayId;
                         comp.matches = res.result;
                         comp.timestamp = timestamp;
-                        ipcRenderer.send( 'overlay:send:component', comp );
+
+                        if ( hasExtDotFocus ) {
+                            let percent = extDotFocusPercent;
+
+                            if ( f.spellLevel > extDotFocusDecayLevel ) {
+                                let decayPercent = ( f.spellLevel - extDotFocusDecayLevel ) * 5;
+                                percent = percent * ( 1 - decayPercent / 100 );
+                            }
+
+                            let baseTicks = comp.action.duration / 6;
+                            let addTicks = baseTicks * percent / 100;
+                            if ( addTicks < 1 )
+                                addTicks = Math.round( addTicks );
+                            else
+                                addTicks = Math.floor( addTicks );
+                            // comp.action.duration = Math.round( comp.action.duration / 6 * ( 1 + percent / 100 ) ) * 6;
+                            comp.action.duration += addTicks * 6;
+                            console.log( 'modified duration', comp.action.duration );
+                        }
+
+                        // if ( !simulating )
+                            ipcRenderer.send( 'overlay:send:component', comp );
+                        // else
+                        //     console.log( 'overlay:send:component', comp );
+                    } else if ( action.actionType === ActionTypes.Speak ) {
+                        // console.log( 'action', action, voiceIndex );
+
+                        if ( !simulating && action.displayText && voiceIndex > -1 ) {
+                            var utter = new SpeechSynthesisUtterance();
+                            utter.text = action.displayText;
+                            utter.voice = voiceOptions[ voiceIndex ];
+                            utter.onend = function ( event ) { }
+                            speechSynthesis.speak( utter );
+                        } else {
+                            console.log( 'speaking', action.displayText );
+                        }
+                        
                     }
                 }
             } );
