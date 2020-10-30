@@ -67,6 +67,8 @@ class TriggerAction {
     ticks = null;
     /** @type string[] */
     phrases;
+    /** @type boolean */
+    restartOnDuplicate = false;
 
 }
 

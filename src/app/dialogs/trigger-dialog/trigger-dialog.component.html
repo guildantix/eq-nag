@@ -273,6 +273,7 @@
 
                                         <app-duration [(ngModel)]="action.duration" name="durActionDuration_{{i}}"></app-duration>
 
+                                        <mat-checkbox [(ngModel)]="action.restartOnDuplicate" name="cbxRestartOnDuplicate_{{i}}">Restart if the name matches</mat-checkbox>
                                     </div>
 
                                     <div *ngIf="action.actionType === actionTypes.Speak">

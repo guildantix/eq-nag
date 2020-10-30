@@ -123,7 +123,8 @@ export class TriggerAction {
     public displayText: string;
     public duration: number;
     public variableName: string;
-
+    public restartOnDuplicate: boolean;
+    
 }
 
 export class ScrapedSpell {
