@@ -45,6 +45,14 @@ class TriggerDatabaseStore extends Store {
             this.#data.version = 5;
             this.storeDataFile( this.#data );
         }
+        if ( this.#data.version < 6 ) {
+            // Added spell level to dot timer triggers.
+            this.#data?.triggers?.forEach( trigger => {
+                trigger.spellLevel = 0;
+            } );
+            this.#data.version = 6;
+            this.storeDataFile( this.#data );
+        }
     }
 
 
