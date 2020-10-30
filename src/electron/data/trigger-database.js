@@ -53,6 +53,14 @@ class TriggerDatabaseStore extends Store {
             this.#data.version = 6;
             this.storeDataFile( this.#data );
         }
+        if ( this.#data.version === 6 ) {
+            this.#data?.triggers?.forEach( trigger => {
+                trigger.spellLevel = 0;
+                trigger.actions?.forEach( action => action.restartOnDuplicate = action.actionType === ActionTypes.DotTimer );
+            } );
+            this.#data.version = 7;
+            this.storeDataFile( this.#data );
+        }
     }
 
 
