@@ -184,6 +184,25 @@
                         </mat-select>
                     </fieldset>
 
+                    <fieldset>
+                        <legend>Focus Effects</legend>
+                        <mat-checkbox [(ngModel)]="focusEffectSettings.hasExtendedDotFocus" (change)="updateFocusEffectSettings()"> Extended DOT Focus?</mat-checkbox>
+                        <div *ngIf="focusEffectSettings.hasExtendedDotFocus">
+                            <h2>Extended dot focus details</h2>
+
+                            <mat-form-field>
+                                <mat-label>Percent increase</mat-label>
+                                <input matInput [(ngModel)]="focusEffectSettings.extendedDotFocusPercent" name="txtExtDotFocusPercent" type="number" (change)="updateFocusEffectSettings()" />
+                            </mat-form-field>
+                            
+                            <mat-form-field>
+                                <mat-label>Level at which decay begins</mat-label>
+                                <input matInput [(ngModel)]="focusEffectSettings.extendedDotFocusDecayLevel" name="txtExtDotFocusDecayLevel" type="number" (change)="updateFocusEffectSettings()" />
+                            </mat-form-field>
+
+                        </div>
+                    </fieldset>
+
                 </div>
 
         </mat-tab>

@@ -2,7 +2,7 @@ import { Component, ViewChild, ElementRef, OnInit } from '@angular/core';
 import * as _ from 'lodash';
 import { MatSnackBar, MatSnackBarRef, SimpleSnackBar } from '@angular/material/snack-bar';
 import { IpcService } from './ipc.service';
-import { DkpEntryModel, TriggerModel, OverlayWindowModel } from './core.model';
+import { DkpEntryModel, TriggerModel, OverlayWindowModel, FocusEffectSettings } from './core.model';
 import { VirtualTimeScheduler } from 'rxjs';
 import { DialogService } from './dialogs/dialog.service';
 import { monitorEventLoopDelay } from 'perf_hooks';
@@ -27,6 +27,7 @@ export class MainComponent implements OnInit {
     public overlays: OverlayWindowModel[] = [];
     public damageDealtOverlayId: string;
     public damageTakenOverlayId: string;
+    public focusEffectSettings: FocusEffectSettings = new FocusEffectSettings();
 
     public _testDealtOverlayId: string = 'wT8389KxT5zlsaiE';
     public _testTakenOverlayId: string = 'wT8389KxT5zlsaiE';
@@ -62,6 +63,10 @@ export class MainComponent implements OnInit {
             this.enableFct = data.enableFct;
             this.damageDealtOverlayId = data.damageDealtOverlayId;
             this.damageTakenOverlayId = data.damageReceivedOverlayId;
+            this.focusEffectSettings.hasExtendedDotFocus = data.hasExtendedDotFocus;
+            this.focusEffectSettings.extendedDotFocusPercent = data.extendedDotFocusPercent;
+            this.focusEffectSettings.extendedDotFocusDecayLevel = data.extendedDotFocusDecayLevel;
+            console.log( 'data', data );
         } );
 
         this.ipcService.dkpEntryAdded().subscribe( model => {
@@ -195,9 +200,14 @@ export class MainComponent implements OnInit {
         this.dialogService.showNewDotTimerDialog();
     }
 
+    public updateFocusEffectSettings(): void {
+        this.ipcService.updateFocusEffectSettings( this.focusEffectSettings );
+    }
+
     public testFn(): void {
-        let url: string = 'https://everquest.allakhazam.com/db/spell.html?spell=5423';
-        let charClass: string = 'NEC';
+        this.ipcService.simulateLogParse( 'E:\\everquest\\Logs\\Backup\\eqlog_Ryvn_mangler_20201024_204401.txt' );
+        // let url: string = 'https://everquest.allakhazam.com/db/spell.html?spell=5423';
+        // let charClass: string = 'NEC';
 
         // this.scraper.ScrapeAllakhazamSpell( 'https://everquest.allakhazam.com/db/spell.html?spell=5423', charClass ).subscribe( spell => console.log( 'spell', spell ) );
         // this.scraper.ScrapeAllakhazamSpell( 'https://everquest.allakhazam.com/db/spell.html?spell=2885', charClass ).subscribe( spell => console.log( 'spell', spell ) );

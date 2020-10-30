@@ -2,7 +2,7 @@ import { Injectable, NgZone } from '@angular/core';
 import { IpcRenderer } from 'electron';
 import { Observable, Observer } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
-import { DataTickModel, DkpEntryModel, TriggerModel, OverlayWindowModel, ActionTypes } from './core.model';
+import { DataTickModel, DkpEntryModel, TriggerModel, OverlayWindowModel, ActionTypes, FocusEffectSettings } from './core.model';
 
 @Injectable()
 export class IpcService {
@@ -151,6 +151,10 @@ export class IpcService {
         this.ipc.send( 'voice:select', index );
     }
 
+    public updateFocusEffectSettings( model: FocusEffectSettings ): void {
+        this.ipc.send( 'settings:set:focus-effects', model );
+    }
+
     public updateEnableFct( enabled: boolean ): void {
         this.ipc.send( 'settings:set:fct', enabled );
     }
@@ -189,6 +193,10 @@ export class IpcService {
 
     public resizeTriggerWindow( width: number = null, height: number = null ): void {
         this.ipc.send( 'trigger:dialog:resize', { width: width, height: height } );
+    }
+
+    public simulateLogParse( file: string ): void {
+        this.ipc.send( 'log:simulate:file', file );
     }
 
     public createNewTrigger( model: TriggerModel ): Observable<string> {

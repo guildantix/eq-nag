@@ -130,12 +130,19 @@ function sendTick() {
         damageDealtOverlayId: userPreferences.damageDealtOverlayId,
         damageReceivedOverlayId: userPreferences.damageReceivedOverlayId,
         enableFct: userPreferences.enableFct,
+        hasExtendedDotFocus: userPreferences.hasExtendedDotFocus,
+        extendedDotFocusPercent: userPreferences.extendedDotFocusPercent,
+        extendedDotFocusDecayLevel: userPreferences.extendedDotFocusDecayLevel,
     } );
     logWatcherWindow.webContents.send( 'tick', {
         triggers: _triggers,
         damageDealtOverlayId: userPreferences.damageDealtOverlayId,
         damageReceivedOverlayId: userPreferences.damageReceivedOverlayId,
         enableFct: userPreferences.enableFct,
+        hasExtendedDotFocus: userPreferences.hasExtendedDotFocus,
+        extendedDotFocusPercent: userPreferences.extendedDotFocusPercent,
+        extendedDotFocusDecayLevel: userPreferences.extendedDotFocusDecayLevel,
+        voiceIndex: userPreferences.voiceIndex,
     } );
 }
 
@@ -162,6 +169,10 @@ ipcMain.on( 'clipboard:writeText', ( event, value ) => {
 ipcMain.on( 'log:send:raw', function ( event, data ) {
     console.log( 'received', data );
     logWatcherWindow.webContents.send( 'log:parse:raw', data );
+} );
+
+ipcMain.on( 'log:simulate:file', function ( event, data ) {
+    logWatcherWindow.webContents.send( 'log:simulate:file', data );
 } );
 
 var mainWindowRef = new ForwardRef( () => mainWindow ? mainWindow : null );
