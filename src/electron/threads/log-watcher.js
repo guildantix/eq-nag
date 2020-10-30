@@ -11,7 +11,6 @@ const chokidar = require( "chokidar" );
 const StringUtilities = require( '../utilities/string' );
 const NumberUtilities = require( '../utilities/numbers' );
 const FctModel = require( '../data/models/fct' );
-// const UserPreferencesStore = require( '../data/user-preferences' );
 var currentPosition = null;
 
 var watcher = null;
@@ -76,79 +75,26 @@ function LogWatcher() {
         if ( watcher != null ) {
             watcher.close();
         }
-
-        // function parseLogFile() {
-        //     // console.log( 'testing', data );
-        //     fs.open( data, 'r', function ( err, fd ) {
-        //         // console.log( 'testing', fd );
-        //         var stats = fs.fstatSync( fd );
-        //         var file = fd;
-                    
-        //         fs.read( file, Buffer.alloc( stats.size - currentPosition ), 0, stats.size - currentPosition, currentPosition, ( err, bytecount, buff ) => {
-        //             currentPosition += bytecount;
-        //             let read = buff.toString( 'utf-8', 0, bytecount );
-        //             let lines = read.split( /\r\n|\r|\n/gmi );
-        //             // if ( lines?.length > 1 )
-        //             //     console.log( 'read', lines );
-        //             lines.forEach( f => {
-        //                 if ( f && f.length > 0 ) {
-        //                     parseLogEntries( f );
-        //                 }
-        //             } );
-        //         } );
-        //     } );
-            
-        //     logParserInterval = window.setTimeout( parseLogFile, logParseTimer );
-        // }
-        // logParserInterval = window.setTimeout( parseLogFile, logParseTimer );
-        // watcher = chokidar.watch( data ).on( "all", ( event, path ) => {
-        //     fs.open( data, 'r', function ( err, fd ) {
-        //         var stats = fs.fstatSync( fd );
-        //         var file = fd;
-                
-        //         fs.read( file, new Buffer( stats.size - currentPosition ), 0, stats.size - currentPosition, currentPosition, ( err, bytecount, buff ) => {
-        //             currentPosition += bytecount;
-        //             let read = buff.toString( 'utf-8', 0, bytecount );
-        //             let lines = read.split( /\r\n|\r|\n/gmi );
-        //             lines.forEach( f => {
-        //                 if ( f && f.length > 0 ) {
-        //                     parseLogEntries( f );
-        //                 }
-        //             } );
-        //         } );
-        //     } );
-        // } );
+        
     } );
 
     ipcRenderer.on( 'log:simulate:file', function ( event, data ) {
         console.log( 'simulating log file', data );
         fs.open( data, 'r', function ( err, fd ) {
             var file = fd;
-            // currentPosition = fs.fstatSync( file ).size;
-            // function parseLogFile() {
-            //     // console.log( 'testing', fd );
             var stats = fs.fstatSync( fd );
-            //     var file = fd;
                     
                 fs.read( file, Buffer.alloc( stats.size ), 0, stats.size, 0, ( err, bytecount, buff ) => {
-                    // currentPosition += bytecount;
                     let read = buff.toString( 'utf-8', 0, bytecount );
                     let lines = read.split( /\r\n|\r|\n/gmi );
-                    // if ( lines?.length > 1 )
-                    //     console.log( 'read', lines );
-                    // let count = 0;
                     lines.forEach( f => {
                         if ( f && f.length > 0 ) {
                             parseLogEntries( f, true );
                         }
-                        // console.log( 'read' );
                     } );
                     console.log( 'lines done' );
                 } );
 
-            //     logParserInterval = window.setTimeout( parseLogFile, logParseTimer );
-            // }
-            // logParserInterval = window.setTimeout( parseLogFile, logParseTimer );
         } );
     } );
 
@@ -185,10 +131,8 @@ function generateTriggerFns() {
                 if ( phrase.phrase?.length > 0 ) {
                     if ( phrase.useRegEx ) {
                         // Use different parse functions for regex vs normal.
-                        // let _reg = new RegExp( StringUtilities.parseStoredVariablesToRegex( phrase.phrase, storedVariables ), 'gi' );
                         _phraseParsers.push( value => {
                             let _res = new RegExp( StringUtilities.parseStoredVariablesToRegex( phrase.phrase, storedVariables ), 'gi' ).exec( value );
-                            // _reg.lastIndex = 0;
                             return {
                                 phraseId: phrase.phraseId,
                                 match: _res?.length > 0,
@@ -311,7 +255,7 @@ function generateTriggerFns() {
         }
     } );
 }
-// You hit an ikaav binder pet for 12827 points of physical damage by Ferocious Kick X.
+
 function parseLogEntries( raw, simulating ) {
     
     simulating = simulating === true ? true : false;
@@ -345,20 +289,13 @@ function parseLogEntries( raw, simulating ) {
         /You ([a-zA-Z0-9_]*) (.*) for ([0-9]*) points of (.*) damage by (.*)\./gi,
     ];
 
-    // rgxTimestamp.lastIndex = 0;
-    // rgxTrigger.lastIndex = 0;
-    // rgxCombatText.lastIndex = 0;
-
     let timestamp = new Date( rgxTimestamp.exec( raw )[ 1 ] );
+
     if ( !timestamp || timestamp.length === 0 || timestamp.length === 1 )
         console.log( 'failed parse', raw );
     
     if ( raw.match( rgxTrigger ) ) {
         
-        // rgxGrabText.lastIndex = 0;
-        // rgxDelimiter.lastIndex = 0;
-        // rgxNum.lastIndex = 0;
-
         let text = rgxGrabText.exec( raw )[ 1 ].split( rgxDelimiter );
         let item = text[ 2 ];
         let character = text[ 1 ];
@@ -370,13 +307,10 @@ function parseLogEntries( raw, simulating ) {
             console.log( 'dkp:add', new DkpEntryModel( timestamp, character, item, +dkp ) );
     }
     if ( enableFct && raw.match( rgxCombatText )?.length > 0 ) {
-        // console.log( 'FCT log captured' );
         for ( let i = 0; i < fctRegExs.length; i++ ) {
-            // fctRegExs[ i ].lastIndex = 0;
             let results = fctRegExs[ i ].exec( raw );
             
             if ( results && results.length > 1 ) {
-                // console.log( 'results found', results );
                 let model = new FctModel();
                 model.dealt = ( i >= 0 && i <= 4 ) || i === 8 ? true : false;
                 model.overlayId = model.dealt ? damageDealtOverlayId : damageReceivedOverlayId;
@@ -458,15 +392,10 @@ function parseLogEntries( raw, simulating ) {
 
                 }
 
-                // rgxFctCritical.lastIndex = 0;
                 model.critical = raw.match( rgxFctCritical );
                 model.timestamp = timestamp;
 
-                // console.log( 'sending', model );
-                // if ( !simulating )
-                    ipcRenderer.send( 'overlay:send:component', model );
-                // else
-                    // console.log( 'overlay:send:component', model );
+                ipcRenderer.send( 'overlay:send:component', model );
 
                 // leave the loop, we found the correct FCT type.
                 break;
@@ -524,17 +453,13 @@ function parseLogEntries( raw, simulating ) {
                                 addTicks = Math.round( addTicks );
                             else
                                 addTicks = Math.floor( addTicks );
-                            // comp.action.duration = Math.round( comp.action.duration / 6 * ( 1 + percent / 100 ) ) * 6;
                             comp.action.duration += addTicks * 6;
-                            console.log( 'modified duration', comp.action.duration );
+                            
                         }
 
-                        // if ( !simulating )
-                            ipcRenderer.send( 'overlay:send:component', comp );
-                        // else
-                        //     console.log( 'overlay:send:component', comp );
+                        ipcRenderer.send( 'overlay:send:component', comp );
+
                     } else if ( action.actionType === ActionTypes.Speak ) {
-                        // console.log( 'action', action, voiceIndex );
 
                         if ( !simulating && action.displayText && voiceIndex > -1 ) {
                             var utter = new SpeechSynthesisUtterance();
