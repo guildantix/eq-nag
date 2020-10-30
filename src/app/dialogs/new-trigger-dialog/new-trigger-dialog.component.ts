@@ -42,6 +42,7 @@ export class NewTriggerDialogComponent implements OnInit {
             let trigger: TriggerModel = new TriggerModel();
             trigger.name = spell.name;
             trigger.triggerId = nanoid();
+            trigger.spellLevel = spell.level;
             trigger.capturePhrases.push( <CapturePhrase>{
                 phraseId: nanoid(),
                 useRegEx: true,
@@ -78,7 +79,6 @@ export class NewTriggerDialogComponent implements OnInit {
                 operatorType: OperatorTypes.Equals,
                 variableValue: spell.name,
             } );
-            trigger.version = 5;
 
             this.ipcService.createNewTrigger( trigger ).subscribe( triggerId => { trigger.triggerId = triggerId; } );
             this.dialogRef.close();
