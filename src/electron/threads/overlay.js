@@ -1,10 +1,12 @@
 const DomUtilities = require( '../utilities/dom' );
 const StringUtilities = require( '../utilities/string' );
 const NumberUtilities = require( '../utilities/numbers' );
+const ArrayUtilities = require( '../utilities/arrays' );
 const { OverlayWindow, OverlayComponent } = require( '../data/models/overlay-window' );
 const { ActionTypes, TriggerAction } = require( '../data/models/trigger' );
 const { ipcRenderer } = require( 'electron' );
-const Handlebars = require("handlebars");
+const Handlebars = require( "handlebars" );
+
 
 // <!-- Roboto(i): 100, 300, 400, 500, 700, 900 -->
 // <!-- Red Rose: 300, 400, 700 -->
@@ -43,7 +45,6 @@ function Overlay() {
          */
         function ( event, model ) {
             model.added = new Date();
-            overlayComponents.push( model );
             render( model );
         } );
 
@@ -122,28 +123,46 @@ function render( comp ) {
         contentArea.appendChild( comp.dom );
         comp.intervalId = window.setTimeout( () => {
             comp.dom.parentNode.removeChild( comp.dom );
+            ArrayUtilities.remove( overlayComponents, f => f.instanceId == comp.instanceId );
         }, comp.action.duration * 1000 );
+        overlayComponents.push( comp );
+
     } if ( comp.action.actionType === ActionTypes.DotTimer ) {
-        let content = dotTimerTemplate( { value: StringUtilities.format( comp.action.displayText, comp.matches ) } );
+        
+        let displayText = StringUtilities.format( comp.action.displayText, comp.matches );
+        let content = dotTimerTemplate( { value: displayText } );
+
+        if ( comp.action.restartOnDuplicate === true ) {
+            // If this component needs to restart on duplicate names, then find the index of the first match, and if found reset the start.
+            let index = ArrayUtilities.findIndex( overlayComponents, f => f?.description == displayText );
+            if ( index > -1 ) {
+                overlayComponents[ index ].start = comp.timestamp;
+                return;
+            }
+        }
+
         let div = document.createElement( 'div' );
         div.innerHTML = content;
         comp.dom = div;
         contentArea.appendChild( comp.dom );
-        // div.querySelector( '.progress' ).style.height = contentArea.style.fontSize;
-        // div.querySelector( '.progress' ).style.height = '24px';
-        // comp.start = new Date();
         comp.start = comp.timestamp;
+        comp.description = displayText;
         comp.intervalId = window.setInterval( () => {
             let perc = ( Math.abs( ( new Date() ) - comp.start ) / 1000 ) / comp.action.duration;
-            // console.log( 'testing', comp.dom );
+    
             comp.dom.querySelector( 'div.determinate' ).style.width = `${perc * 100}%`;
+            
             if ( perc >= 1 ) {
                 window.setTimeout( () => {
                     comp.dom.parentNode.removeChild( comp.dom );
                     window.clearInterval( comp.intervalId );
+                    ArrayUtilities.remove( overlayComponents, f => f.instanceId == comp.instanceId );
                 }, 1000 );
             }
+
         }, 250 );
+        overlayComponents.push( comp );
+        
     }
 }
 

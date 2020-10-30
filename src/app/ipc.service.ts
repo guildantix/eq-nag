@@ -61,7 +61,7 @@ export class IpcService {
                 } );
 
                 this.ipc.on( 'console:log', ( event: any, data: any ) => {
-                    console.log( 'log', data );
+                    console.log( data );
                 } );
             } catch ( e ) {
                 throw e;

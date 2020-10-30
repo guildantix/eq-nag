@@ -6,6 +6,9 @@ const fs = require( 'fs' );
 const DkpEntryModel = require( '../data/models/dkp-entry' );
 const { Trigger, TriggerAction, ActionTypes, TriggerConditionTypes, OperatorTypes } = require( '../data/models/trigger' );
 const { OverlayComponent } = require( '../data/models/overlay-window' );
+const customAlphabet = require( 'nanoid' ).customAlphabet;
+const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+const nanoid = customAlphabet( alphabet, 16 );
 
 const chokidar = require( "chokidar" );
 const StringUtilities = require( '../utilities/string' );
@@ -25,8 +28,9 @@ var extDotFocusPercent = 0;
 var extDotFocusDecayLevel = 0;
 var voiceOptions = [];
 var voiceIndex = -1;
-var logParserInterval = null;
+var logParseTimeoutId = null;
 var logParseTimer = 100;
+var changingLogFile = false;
 
 function LogWatcher() {
 
@@ -49,7 +53,7 @@ function LogWatcher() {
                             currentPosition = null;
 
                             // Start over after logParseTimer milliseconds.
-                            logParserInterval = window.setTimeout( startParsingLogFile, logParseTimer );
+                            logParseTimeoutId = window.setTimeout( startParsingLogFile, logParseTimer );
 
                             return;
                         }
@@ -69,20 +73,34 @@ function LogWatcher() {
                         } );
 
                         // Wait logParseTimer milliseconds and poll again.
-                        logParserInterval = window.setTimeout( parseLogFile, logParseTimer );
+                        if ( !changingLogFile ) {
+                            logParseTimeoutId = window.setTimeout( parseLogFile, logParseTimer );
+                        }
                     }
 
                     // Start polling the log file every logParseTimer milliseconds.
-                    logParserInterval = window.setTimeout( parseLogFile, logParseTimer );
+                    logParseTimeoutId = window.setTimeout( parseLogFile, logParseTimer );
 
                 } else {
                     // If the log file was not found, then start over.
-                    logParserInterval = window.setTimeout( startParsingLogFile, logParseTimer );
+                    logParseTimeoutId = window.setTimeout( startParsingLogFile, logParseTimer );
                 }
             } );
         }
 
-        startParsingLogFile();
+
+        if ( logParseTimeoutId > 0 ) {
+            window.clearTimeout( logParseTimeoutId );
+            currentPosition = null;
+            startParsingLogFile();
+        } else {
+            changingLogFile = true;
+            window.setTimeout( () => { 
+                changingLogFile = false;
+                currentPosition = null;
+                startParsingLogFile();
+            }, logParseTimer );
+        }
 
         if ( watcher != null ) {
             watcher.close();
@@ -422,7 +440,7 @@ function parseLogEntries( raw, simulating ) {
                 break;
 
             } // if ( results && results.length > 1 )
-            
+
         } // for ( let i = 0; i < fctRegExs.length; i++ )
         
     }
@@ -437,6 +455,7 @@ function parseLogEntries( raw, simulating ) {
                         /* --== Display Text ==-- */
                         let comp = new OverlayComponent();
 
+                        comp.instanceId = nanoid();
                         comp.action = Object.assign( new TriggerAction(), action );
                         comp.action.displayText = StringUtilities.parseStoredVariablesToLiteral( action.displayText, storedVariables );
                         comp.overlayId = action.overlayId;
@@ -465,6 +484,7 @@ function parseLogEntries( raw, simulating ) {
                         /* --== DOT Timers ==-- */
                         let comp = new OverlayComponent();
 
+                        comp.instanceId = nanoid();
                         comp.action = Object.assign( new TriggerAction(), action );
                         comp.action.displayText = `${f.name} --== {1} ==--`;
                         comp.overlayId = action.overlayId;
@@ -489,6 +509,7 @@ function parseLogEntries( raw, simulating ) {
                             
                         }
 
+                        console.log( 'sending dot timer', comp );
                         ipcRenderer.send( 'overlay:send:component', comp );
 
                     } else if ( action.actionType === ActionTypes.Speak ) {
