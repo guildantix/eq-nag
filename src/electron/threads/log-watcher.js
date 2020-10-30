@@ -328,7 +328,8 @@ function parseLogEntries( raw, simulating ) {
                 model.overlayId = model.dealt ? damageDealtOverlayId : damageReceivedOverlayId;
 
                 if ( i === 0 ) {
-                    // My melee damage.
+                    /* --== My melee damage ==-- */
+                    
                     let type = results[ 1 ];
                     let target = results[ 2 ];
                     let dmg = NumberUtilities.toShorthandString( results[ 3 ] );
@@ -337,14 +338,16 @@ function parseLogEntries( raw, simulating ) {
                     model.attack = type;
 
                 } else if ( i === 1 ) {
-                    // My melee misses.
+                    /* --== My melee misses ==-- */
+                    
                     let dmg = 'miss';
 
                     model.attack = 'Melee';
                     break;
 
                 } else if ( i === 2 ) {
-                    // My spell hits
+                    /* --== My spell hits ==-- */
+                    
                     let target = results[ 1 ];
                     let dmg = NumberUtilities.toShorthandString( results[ 2 ] );
                     let spell = results[ 3 ];
@@ -353,7 +356,8 @@ function parseLogEntries( raw, simulating ) {
                     model.attack = spell;
 
                 } else if ( i === 3 ) {
-                    // My thorns dmg
+                    /* --== My thorns dmg ==-- */
+                    
                     let target = results[ 1 ];
                     let dmg = NumberUtilities.toShorthandString( results[ 2 ] );
 
@@ -361,12 +365,14 @@ function parseLogEntries( raw, simulating ) {
                     model.attack = 'Thorns';
 
                 } else if ( i === 4 ) {
-                    // My skill up
+                    /* --== My skill up ==-- */
+                    
                     let skill = results[ 1 ];
                     let level = results[ 2 ];
 
                 } else if ( i === 5 ) {
-                    // Melee damage taken
+                    /* --== Melee damage taken ==-- */
+                    
                     let attacker = results[ 1 ];
                     let type = results[ 2 ];
                     let dmg = NumberUtilities.toShorthandString( results[ 3 ] );
@@ -375,7 +381,8 @@ function parseLogEntries( raw, simulating ) {
                     model.attack = type;
 
                 } else if ( i === 6 ) {
-                    // Me avoiding melee
+                    /* --== Me avoiding melee ==-- */
+                    
                     let attacker = results[ 1 ];
                     let type = results[ 2 ];
                     let miss = results[ 3 ];
@@ -384,7 +391,8 @@ function parseLogEntries( raw, simulating ) {
                     break;
 
                 } else if ( i === 7 ) {
-                    // Me taking spell damage
+                    /* --== Me taking spell damage ==-- */
+                    
                     let attacker = results[ 1 ];
                     let dmg = NumberUtilities.toShorthandString( results[ 2 ] );
                     let resist = results[ 3 ];
@@ -394,7 +402,8 @@ function parseLogEntries( raw, simulating ) {
                     model.attack = spell;
 
                 } else if ( i === 8 ) {
-                    // My spell hits
+                    /* --== My spell hits ==-- */
+                    
                     let target = results[ 2 ];
                     let dmg = NumberUtilities.toShorthandString( results[ 3 ] );
                     let spell = results[ 5 ];
@@ -411,8 +420,10 @@ function parseLogEntries( raw, simulating ) {
 
                 // leave the loop, we found the correct FCT type.
                 break;
-            }
-        }
+
+            } // if ( results && results.length > 1 )
+            
+        } // for ( let i = 0; i < fctRegExs.length; i++ )
         
     }
     
@@ -423,7 +434,7 @@ function parseLogEntries( raw, simulating ) {
             f.actions.forEach( action => {
                 if ( action.phrases == null || action.phrases?.length === 0 || action.phrases?.indexOf( res.phraseId ) > -1 ) {
                     if ( action.actionType === ActionTypes.DisplayText ) {
-                    /* --== Display Text ==-- */
+                        /* --== Display Text ==-- */
                         let comp = new OverlayComponent();
 
                         comp.action = Object.assign( new TriggerAction(), action );
@@ -438,7 +449,7 @@ function parseLogEntries( raw, simulating ) {
                             console.log( 'overlay:send:component', comp );
                         
                     } else if ( action.actionType === ActionTypes.StoreVariable ) {
-                    /* --== Store Variable ==-- */
+                        /* --== Store Variable ==-- */
                         
                         if ( res.result.length === 1 ) {
                             storedVariables[ action.variableName ] = res.result[ 0 ];
@@ -447,11 +458,11 @@ function parseLogEntries( raw, simulating ) {
                         }
 
                     } else if ( action.actionType === ActionTypes.ClearVariable ) {
-                    /* --== Clear Variable ==-- */
+                        /* --== Clear Variable ==-- */
                         storedVariables[ action.variableName ] = null;
 
                     } else if ( action.actionType === ActionTypes.DotTimer ) {
-                    /* --== DOT Timers ==-- */
+                        /* --== DOT Timers ==-- */
                         let comp = new OverlayComponent();
 
                         comp.action = Object.assign( new TriggerAction(), action );
@@ -481,7 +492,7 @@ function parseLogEntries( raw, simulating ) {
                         ipcRenderer.send( 'overlay:send:component', comp );
 
                     } else if ( action.actionType === ActionTypes.Speak ) {
-                    /* --== TTS Speak ==-- */
+                        /* --== TTS Speak ==-- */
                         
                         if ( !simulating && action.displayText && voiceIndex > -1 ) {
                             var utter = new SpeechSynthesisUtterance();
