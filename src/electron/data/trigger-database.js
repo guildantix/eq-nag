@@ -7,6 +7,7 @@ const customAlphabet = require( 'nanoid' ).customAlphabet;
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const idLen = 16;
 const nanoid = customAlphabet( alphabet, 16 );
+const ArrayUtilities = require( '../utilities/arrays' );
 
 class TriggerDatabaseStore extends Store {
 
@@ -22,8 +23,10 @@ class TriggerDatabaseStore extends Store {
             configName: "trigger-database",
             defaults: { triggers: [] },
         } );
-
+        
         this.#data = this.parseDataFile();
+        this.processPredefinedTriggers();
+
         if ( !this.#data.version || this.#data.version < 3 ) {
             this.#data?.triggers?.forEach( f => {
                 f.capturePhrases?.forEach( p => p.phraseId = p.phraseId == null ? nanoid() : p.phraseId );
@@ -53,13 +56,46 @@ class TriggerDatabaseStore extends Store {
             this.#data.version = 6;
             this.storeDataFile( this.#data );
         }
-        if ( this.#data.version === 6 ) {
+        if ( this.#data.version < 7 ) {
             this.#data?.triggers?.forEach( trigger => {
-                trigger.spellLevel = 0;
                 trigger.actions?.forEach( action => action.restartOnDuplicate = action.actionType === ActionTypes.DotTimer );
             } );
             this.#data.version = 7;
             this.storeDataFile( this.#data );
+        }
+        if ( this.#data.version < 8 ) {
+            this.#data?.triggers?.forEach( trigger => {
+                trigger.predefined = false;
+            } );
+            this.#data.version = 8;
+            this.storeDataFile( this.#data );
+        }
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Loads predefined triggers and replaces any changes made by the user with the predfined value.
+     */
+    processPredefinedTriggers() {
+        let captureCastingTrigger = { "triggerId": "trGkfio6z2xs6hAh", "name": "Capture spell casting", "capturePhrases": [ { "useRegEx": true, "requirePreviousPhrase": false, "duration": null, "phrase": "^You begin casting (.*)\\.", "phraseId": "v7GDFrDCcFwhTAOP" }, { "useRegEx": true, "requirePreviousPhrase": false, "duration": null, "phraseId": "SmZAE0oEzuhq1cqh", "phrase": "^Your ${SpellBeingCast} spell is interrupted\\." }, { "useRegEx": true, "requirePreviousPhrase": false, "duration": null, "phraseId": "iNy1LoUUFcXnaHws", "phrase": "^(.*) resisted your (${SpellBeingCast})" }, { "useRegEx": true, "requirePreviousPhrase": false, "duration": null, "phraseId": "CC31CtgDiqwi8xV4", "phrase": "^Your (${SpellBeingCast}) spell did not take hold\\. \\(Blocked by (.*)\\.\\)" } ], "comments": "This trigger will capture the spell casting of the caster and store the spell being cast into a variable for use with other triggers.", "actions": [ { "actionType": 0, "actionId": "gUj3jfz2M3PDd0o7", "overlayId": "gx4ySJU9Cj35xR1n", "displayText": "Storing {1} into SpellBeingCast.", "duration": 15, "phraseId": "v7GDFrDCcFwhTAOP", "phrases": [ "v7GDFrDCcFwhTAOP" ], "restartOnDuplicate": false }, { "actionType": 5, "variableName": "SpellBeingCast", "actionId": "xygXKRSFpi3vYQ4D", "phraseId": "v7GDFrDCcFwhTAOP", "phrases": [ "v7GDFrDCcFwhTAOP" ], "restartOnDuplicate": false }, { "actionType": 7, "phraseId": "SmZAE0oEzuhq1cqh", "overlayId": "gx4ySJU9Cj35xR1n", "duration": 15, "displayText": "Spell ${SpellBeingCast} was interrupted.", "actionId": "2779yyKWjlmJvIhn", "phrases": [ "SmZAE0oEzuhq1cqh", "iNy1LoUUFcXnaHws", "CC31CtgDiqwi8xV4" ], "variableName": "SpellBeingCast", "restartOnDuplicate": false }, { "phrases": [ "CC31CtgDiqwi8xV4" ], "actionType": 0, "overlayId": "gx4ySJU9Cj35xR1n", "displayText": "{1} failed, blocked by {2}.", "duration": 15, "actionId": "ODKkRbroUUtHPf6n", "restartOnDuplicate": false } ], "captureMethod": "Any match", "conditions": [], "spellLevel": 0, "predefined": true };
+
+        let castingIndex = ArrayUtilities.findIndex( this.#data?.triggers, f => f.triggerId === captureCastingTrigger.triggerId );
+        if ( castingIndex > -1 ) {
+            this.#data.triggers[ castingIndex ] = captureCastingTrigger;
+        }
+
+        let displaySpellBeingCast = { "triggerId": "hzOXzyXsZANWGcJq", "name": "Display Variable SpellBeingCast", "capturePhrases": [ { "useRegEx": true, "requirePreviousPhrase": false, "duration": null, "phraseId": "bi8mXZAgB7zGnSAc", "phrase": "^Eryndhel requests an update." } ], "comments": "", "actions": [ { "phrases": [ "bi8mXZAgB7zGnSAc" ], "actionType": 0, "overlayId": "gx4ySJU9Cj35xR1n", "displayText": "SpellBeingCast == ${SpellBeingCast}", "duration": 15, "actionId": "n95VfakBr8TbCKnE", "restartOnDuplicate": false } ], "captureMethod": "Any match", "conditions": [ { "conditionId": "It3bUfInYVi4aGYB", "conditionType": 1, "variableName": "SpellBeingCast", "operatorType": 2 } ], "spellLevel": 0, "predefined": true };
+        let displaySpellIndex = ArrayUtilities.findIndex( this.#data?.triggers, f => f.triggerId === displaySpellBeingCast.triggerId );
+        if ( displaySpellIndex > -1 ) {
+            this.#data.triggers[ displaySpellIndex ] = displaySpellBeingCast;
         }
     }
 
@@ -142,6 +178,7 @@ class TriggerDatabaseStore extends Store {
         this.#data.triggers.push( trigger );
 
         // Save changes to the data.
+        this.processPredefinedTriggers();
         this.storeDataFile( this.#data );
 
         return trigger.triggerId;
@@ -220,6 +257,7 @@ class TriggerDatabaseStore extends Store {
             let removed = this.#data.triggers.splice( i, 1 );
 
             // Save the changes to the data.
+            this.processPredefinedTriggers();
             this.storeDataFile( this.#data );
 
             // Return true if at least 1 item was removed.
@@ -282,6 +320,7 @@ class TriggerDatabaseStore extends Store {
             this.#data.triggers[ i ] = trigger;
 
             // Save changes to the data.
+            this.processPredefinedTriggers();
             this.storeDataFile( this.#data );
 
             return true;
@@ -373,6 +412,7 @@ class TriggerDatabaseStore extends Store {
             } );
 
             // Save the changes to the data.
+            this.processPredefinedTriggers();
             this.storeDataFile( this.#data );
         }
     }

@@ -28,6 +28,7 @@ export class MainComponent implements OnInit {
     public damageDealtOverlayId: string;
     public damageTakenOverlayId: string;
     public focusEffectSettings: FocusEffectSettings = new FocusEffectSettings();
+    public isDev: boolean = false;
 
     public _testDealtOverlayId: string = 'wT8389KxT5zlsaiE';
     public _testTakenOverlayId: string = 'wT8389KxT5zlsaiE';
@@ -58,7 +59,7 @@ export class MainComponent implements OnInit {
             this.dkpEntries = data.dkpEntries;
             this.logFile = data.logFile;
             this.voiceIndex = data.voiceIndex;
-            this.triggers = data.triggers;
+            this.triggers = _.filter( data.triggers, f => this.isDev || !f.predefined );
             this.overlays = data.overlays;
             this.enableFct = data.enableFct;
             this.damageDealtOverlayId = data.damageDealtOverlayId;
@@ -66,7 +67,7 @@ export class MainComponent implements OnInit {
             this.focusEffectSettings.hasExtendedDotFocus = data.hasExtendedDotFocus;
             this.focusEffectSettings.extendedDotFocusPercent = data.extendedDotFocusPercent;
             this.focusEffectSettings.extendedDotFocusDecayLevel = data.extendedDotFocusDecayLevel;
-            console.log( 'data', data );
+            // console.log( 'data', data );
         } );
 
         this.ipcService.dkpEntryAdded().subscribe( model => {
@@ -88,6 +89,7 @@ export class MainComponent implements OnInit {
         this.ipcService.logFileChanged().subscribe( data => this.logFile = data );
         this.ipcService.getAppVersion().subscribe( version => this.version = version );
         this.ipcService.consoleLogRequested().subscribe( data => console.log( 'from main', data ) );
+        this.ipcService.getAppIsDev().subscribe( isDev => this.isDev = isDev );
     }
 
     removeEntry( entry: any ): void {

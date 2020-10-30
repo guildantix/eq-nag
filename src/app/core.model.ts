@@ -10,6 +10,7 @@ export class TriggerModel {
     public captureMethod: string = 'Any match';
     public conditions: TriggerCondition[] = [];
     public spellLevel: number = 0;
+    public predefined: boolean = false;
 
 }
 
@@ -124,7 +125,7 @@ export class TriggerAction {
     public duration: number;
     public variableName: string;
     public restartOnDuplicate: boolean;
-    
+
 }
 
 export class ScrapedSpell {
