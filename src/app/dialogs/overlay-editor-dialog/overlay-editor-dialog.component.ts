@@ -158,18 +158,18 @@ export class OverlayEditorDialogComponent implements OnInit {
             this.closeModal();
         }
     }
-
+    
     public sendDisplayTextTest(): void {
         if ( this.model.overlayType === 'Timer' ) {
             let timers: any[] = [
-                { name: 'Dot 01', duration: 48, target: 'Mob 01', delay: 0 * 1000 },
-                { name: 'Dot 02', duration: 30, target: 'Mob 02', delay: 4 * 1000 },
-                { name: 'Dot 03', duration: 54, target: 'Mob 03', delay: 8 * 1000 },
-                { name: 'Dot 04', duration: 60, target: 'Mob 04', delay: 12 * 1000 },
-                { name: 'Dot 05', duration: 48, target: 'Mob 05', delay: 16 * 1000 },
-                { name: 'Dot 06', duration: 42, target: 'Mob 06', delay: 18 * 1000 },
-                { name: 'Dot 07', duration: 36, target: 'Mob 07', delay: 20 * 1000 },
-                { name: 'Dot 08', duration: 30, target: 'Mob 08', delay: 22 * 1000 },
+                { name: 'Dot 01', duration: 48, target: 'Mob 01', delay: 0 * 1000, overrideTimerColor: '#CC5500', timerBackgroundColor: ColorUtility.FromHex( '#CC5500' ).darken( 0.93 ).toString( 0.75 ) },
+                { name: 'Dot 02', duration: 30, target: 'Mob 02', delay: 4 * 1000, overrideTimerColor: '#008000', timerBackgroundColor: ColorUtility.FromHex( '#008000' ).darken( 0.93 ).toString( 0.75 ) },
+                { name: 'Dot 03', duration: 54, target: 'Mob 03', delay: 8 * 1000, overrideTimerColor: null, timerBackgroundColor: null },
+                { name: 'Dot 04', duration: 60, target: 'Mob 04', delay: 12 * 1000, overrideTimerColor: null, timerBackgroundColor: null },
+                { name: 'Dot 05', duration: 48, target: 'Mob 05', delay: 16 * 1000, overrideTimerColor: null, timerBackgroundColor: null },
+                { name: 'Dot 06', duration: 42, target: 'Mob 06', delay: 18 * 1000, overrideTimerColor: null, timerBackgroundColor: null },
+                { name: 'Dot 07', duration: 36, target: 'Mob 07', delay: 20 * 1000, overrideTimerColor: null, timerBackgroundColor: null },
+                { name: 'Dot 08', duration: 30, target: 'Mob 08', delay: 22 * 1000, overrideTimerColor: null, timerBackgroundColor: null },
             ];
             timers.forEach( f => {
                 let comp = {
@@ -178,7 +178,9 @@ export class OverlayEditorDialogComponent implements OnInit {
                         displayText: `${f.name} --== {1} ==--`,
                         restartOnDuplicate: true,
                         duration: f.duration,
-                        actionType: ActionTypes.DotTimer
+                        actionType: ActionTypes.DotTimer,
+                        overrideTimerColor: f.overrideTimerColor,
+                        timerBackgroundColor: f.timerBackgroundColor,
                     },
                     overlayId: this.overlayId,
                     matches: [ '', f.target ],

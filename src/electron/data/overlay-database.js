@@ -31,6 +31,13 @@ class OverlayDatabaseStore extends Store {
             this.#data.version = 3;
             this.storeDataFile( this.#data );
         }
+        if ( !this.#data.version || this.#data.version < 4 ) {
+            this.#data?.overlays?.forEach( f => {
+                f.timerColor = '#008000';
+            } );
+            this.#data.version = 4;
+            this.storeDataFile( this.#data );
+        }
     }
     
     /**

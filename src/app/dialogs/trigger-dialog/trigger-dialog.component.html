@@ -277,6 +277,27 @@
 
                                         <mat-checkbox [(ngModel)]="action.restartOnDuplicate" name="cbxRestartOnDuplicate_{{i}}">Restart if the name matches</mat-checkbox>
 
+                                        <div>
+                                            <mat-checkbox [(ngModel)]="action.useCustomColor" name="cbxUseCustomColor_{{i}}">Use color</mat-checkbox><br />
+                                            <app-color-picker [(ngModel)]="action.overrideTimerColor" name="acpOverrideTimerColor{{i}}" *ngIf="action.useCustomColor"></app-color-picker>
+                                        </div>
+
+                                        <!-- <div>
+                                            <h3>When ending soon</h3>
+                                            
+                                            <mat-checkbox>When timer has ? seconds remaining</mat-checkbox>
+                                            <app-duration [(ngModel)]="action.duration" name="durActionDuration2_{{i}}"></app-duration>
+
+                                        </div> -->
+
+                                        <!-- <div>
+                                            <h3>After timer ends</h3>
+                                            
+                                            <mat-checkbox>Remain for</mat-checkbox>
+                                            <app-duration [(ngModel)]="action.duration" name="durActionDuration2_{{i}}"></app-duration>
+
+                                        </div> -->
+
                                     </div>
 
                                     <div *ngIf="action.actionType === actionTypes.Speak">

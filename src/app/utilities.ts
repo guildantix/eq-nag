@@ -83,14 +83,26 @@ export class Color {
         this.a = _a;
     }
 
-    public lighten( percent: number ) {
+    public lighten( percent: number ): Color {
         let q: Color = hexToRgba( pSBC( percent, this.toHex(), undefined, undefined ) );
         this.r = q.r;
         this.g = q.g;
         this.b = q.b;
+
+        return q;
     }
 
-    public toString(): string {
+    public darken( percent: number ): Color {
+        let q: Color = hexToRgba( pSBC( -1 * percent, this.toHex(), undefined, undefined ) );
+        this.r = q.r;
+        this.g = q.g;
+        this.b = q.b;
+
+        return q;
+    }
+
+    public toString( alpha?: number ): string {
+        this.a = alpha > 0 ? alpha : this.a;
         return `rgba(${this.r},${this.g},${this.b},${this.a})`;
     }
 
