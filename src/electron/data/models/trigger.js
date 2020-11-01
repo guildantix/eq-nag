@@ -69,6 +69,8 @@ class TriggerAction {
     phrases;
     /** @type boolean */
     restartOnDuplicate = false;
+    /** @type boolean */
+    onlyExecuteInDev = false;
 
 }
 
@@ -102,6 +104,8 @@ class Trigger {
     conditions = [];
     spellLevel = 0;
     predefined = false;
+    /** @type boolean */
+    onlyExecuteInDev = false;
 
 }
 

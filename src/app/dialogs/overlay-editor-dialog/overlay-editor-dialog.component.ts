@@ -1,10 +1,13 @@
 import { Component, OnInit, HostListener } from '@angular/core';
 import { IpcService } from 'src/app/ipc.service';
-import { OverlayWindowModel, ActionTypes } from 'src/app/core.model';
+import { OverlayWindowModel, ActionTypes, TriggerAction, TimerSortTypes } from 'src/app/core.model';
 import { ActivatedRoute } from '@angular/router';
 import { ThemePalette } from '@angular/material/core';
 import { AbstractControl, FormControl } from '@angular/forms';
 import { ColorUtility, Color } from '../../utilities';
+import { customAlphabet } from 'nanoid';
+const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+const nanoid = customAlphabet( alphabet, 16 );
 // import { Color } from '@angular-material-components/color-picker';
 // import { NgForm } from '@angular/forms';
 
@@ -42,6 +45,7 @@ export class OverlayEditorDialogComponent implements OnInit {
     public backgroundTransparency: number = 0;
     public borderTransparency: number = 0;
     public _noChangesModel: OverlayWindowModel;
+    public timerSortTypes: typeof TimerSortTypes = TimerSortTypes;
     
     public get maxFontWeightIndex(): number {
         if ( this.model?.fontFamily != null ) {
@@ -156,23 +160,55 @@ export class OverlayEditorDialogComponent implements OnInit {
     }
 
     public sendDisplayTextTest(): void {
-        let phrases: string[] = [
-            'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
-            'Vivamus viverra luctus nibh, porta consequat neque mattis a.',
-            'Etiam mollis justo felis, non suscipit velit commodo sed.',
-            'Maecenas lobortis mi sed felis scelerisque viverra.',
-            'Phasellus nec nibh a nulla porttitor gravida.',
-        ];
-        phrases.forEach( phrase => {
-            let comp: any = {
-                overlayId: this.overlayId,
-                action: {
-                    actionType: ActionTypes.DisplayText,
-                    duration: Math.floor(Math.random() * 5) + 1,
-                    displayText: phrase,
+        if ( this.model.overlayType === 'Timer' ) {
+            let timers: any[] = [
+                { name: 'Dot 01', duration: 48, target: 'Mob 01', delay: 0 * 1000 },
+                { name: 'Dot 02', duration: 30, target: 'Mob 02', delay: 4 * 1000 },
+                { name: 'Dot 03', duration: 54, target: 'Mob 03', delay: 8 * 1000 },
+                { name: 'Dot 04', duration: 60, target: 'Mob 04', delay: 12 * 1000 },
+                { name: 'Dot 05', duration: 48, target: 'Mob 05', delay: 16 * 1000 },
+                { name: 'Dot 06', duration: 42, target: 'Mob 06', delay: 18 * 1000 },
+                { name: 'Dot 07', duration: 36, target: 'Mob 07', delay: 20 * 1000 },
+                { name: 'Dot 08', duration: 30, target: 'Mob 08', delay: 22 * 1000 },
+            ];
+            timers.forEach( f => {
+                let comp = {
+                    instanceId: nanoid(),
+                    action: {
+                        displayText: `${f.name} --== {1} ==--`,
+                        restartOnDuplicate: true,
+                        duration: f.duration,
+                        actionType: ActionTypes.DotTimer
+                    },
+                    overlayId: this.overlayId,
+                    matches: [ '', f.target ],
+                    timestamp: new Date(),
+                };
+                // console.log( 'sent component', comp );
+                window.setTimeout( () => {
+                    comp.timestamp = new Date();
+                    this.ipcService.sendOverlayComponent( comp );
+                }, f.delay );
+            } );
+        } else {
+            let phrases: string[] = [
+                'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+                'Vivamus viverra luctus nibh, porta consequat neque mattis a.',
+                'Etiam mollis justo felis, non suscipit velit commodo sed.',
+                'Maecenas lobortis mi sed felis scelerisque viverra.',
+                'Phasellus nec nibh a nulla porttitor gravida.',
+            ];
+            phrases.forEach( phrase => {
+                let comp: any = {
+                    overlayId: this.overlayId,
+                    action: {
+                        actionType: ActionTypes.DisplayText,
+                        duration: Math.floor(Math.random() * 5) + 1,
+                        displayText: phrase,
+                    }
                 }
-            }
-            this.ipcService.sendOverlayComponent( comp );
-        } );
+                this.ipcService.sendOverlayComponent( comp );
+            } );
+        }
     }
 }

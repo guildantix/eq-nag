@@ -17,6 +17,7 @@
                         <fieldset class="margin-t-50">
                             <legend class="full-width">General</legend>
                             <mat-checkbox [(ngModel)]="model.predefined" name="cbxPredefined" *ngIf="isDev">Predefined</mat-checkbox>
+                            <mat-checkbox [(ngModel)]="model.onlyExecuteInDev" name="cbxOnlyShowInDev" *ngIf="isDev && model.predefined">Only execute in dev</mat-checkbox>
                             <mat-form-field appearance="fill">
                                 <mat-label>Trigger Name</mat-label>
                                 <input matInput name="txtTriggerName" type="text" [(ngModel)]="model.name" required />
@@ -275,6 +276,7 @@
                                         <app-duration [(ngModel)]="action.duration" name="durActionDuration_{{i}}"></app-duration>
 
                                         <mat-checkbox [(ngModel)]="action.restartOnDuplicate" name="cbxRestartOnDuplicate_{{i}}">Restart if the name matches</mat-checkbox>
+
                                     </div>
 
                                     <div *ngIf="action.actionType === actionTypes.Speak">
@@ -284,6 +286,10 @@
                                             <input matInput [(ngModel)]="action.displayText" name="txtSpeakText_{{i}}" />
                                         </mat-form-field>
 
+                                    </div>
+
+                                    <div>
+                                        <mat-checkbox [(ngModel)]="action.onlyExecuteInDev" name="cbxOnlyShowInDev" *ngIf="isDev && model.predefined">Only execute in dev</mat-checkbox>
                                     </div>
         
                                 </mat-card-content>

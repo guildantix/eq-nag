@@ -1,7 +1,6 @@
 const { ipcMain } = require( "electron" );
 const Store = require( './store' );
 const ForwardRef = require( '../forward-ref' );
-const { consoleTestResultHandler } = require( "tslint/lib/test" );
 
 class UserPreferencesStore extends Store {
 

@@ -59,6 +59,19 @@
                             <div class="f-sm-4"><mat-slider thumbLabel tickInterval="1" min="0" max="100" style="width: 100%;" [(ngModel)]="backgroundTransparency" name="sldrFontSize" (change)="onChangeBackgroundTransparency()"></mat-slider></div>
                             <div class="f-sm-4"><mat-slider thumbLabel tickInterval="1" min="0" max="100" style="width: 100%;" [(ngModel)]="borderTransparency" name="sldrFontSize" (change)="onChangeBorderTransparency()"></mat-slider></div>
                         </div>
+                                   
+                        <div class="f-row">
+                            <div class="f-sm-6 al-center">
+                                <mat-form-field *ngIf="model.overlayType === 'Timer'">
+                                    <mat-label>Timer Sort Type</mat-label>
+                                    <mat-select [(ngModel)]="model.timerSortType" name="ddlTimerSortType">
+                                        <mat-option [value]="timerSortTypes.None">First in on top.</mat-option>
+                                        <mat-option [value]="timerSortTypes.Ascending">Shortest time remaining on top.</mat-option>
+                                        <mat-option [value]="timerSortTypes.Descending">Longest time remaining on top.</mat-option>
+                                    </mat-select>
+                                </mat-form-field>
+                            </div>
+                        </div>
 
                     </fieldset>
 
