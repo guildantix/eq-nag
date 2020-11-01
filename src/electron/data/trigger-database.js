@@ -84,6 +84,13 @@ class TriggerDatabaseStore extends Store {
             this.#data.version = 10;
             this.storeDataFile( this.#data );
         }
+        if ( this.#data.version < 11 ) {
+            this.#data?.triggers?.forEach( trigger => {
+                trigger.actions?.forEach( action => action.overrideTimerColor = null );
+            } );
+            this.#data.version = 11;
+            this.storeDataFile( this.#data );
+        }
     }
 
 

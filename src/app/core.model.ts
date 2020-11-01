@@ -81,6 +81,7 @@ export class OverlayWindowModel {
     public borderColor: string = '#000000';
     public borderTransparency: number = 0.0;
     public timerSortType: TimerSortTypes = TimerSortTypes.Ascending;
+    public timerColor: string = '#008000';
 
     public isValid (): boolean {
         return name != null && this.overlayType != null;
@@ -136,6 +137,9 @@ export class TriggerAction {
     public variableName: string;
     public restartOnDuplicate: boolean;
     public onlyExecuteInDev: boolean = false;
+    public overrideTimerColor: string = null;
+    public timerBackgroundColor: string = null;
+    public useCustomColor: boolean = false;
 
 }
 

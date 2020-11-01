@@ -153,6 +153,10 @@ function render( comp ) {
         comp.dom = div;
         contentArea.appendChild( comp.dom );
         comp.dom.querySelector( '.progress' ).style.marginBottom = contentArea.style.lineHeight;
+        if ( comp.action.overrideTimerColor ) {
+            comp.dom.querySelector( '.determinate' ).style.backgroundColor = comp.action.overrideTimerColor;
+            comp.dom.querySelector( '.progress' ).style.backgroundColor = comp.action.timerBackgroundColor;
+        }
         comp.start = comp.timestamp;
         comp.description = displayText;
         comp.timeRemaining = comp.action.duration;

@@ -8,6 +8,7 @@ import { ActivatedRoute } from '@angular/router';
 import { DialogService } from '../dialog.service';
 import { customAlphabet } from 'nanoid';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { ColorUtility } from 'src/app/utilities';
 // import { NgForm } from '@angular/forms';
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const nanoid = customAlphabet( alphabet, 16 );
@@ -142,6 +143,15 @@ export class TriggerDialogComponent implements OnInit {
     }
 
     public save(): void {
+        this.model.actions?.forEach( ( action: TriggerAction ) => {
+            if ( action.useCustomColor === true ) {
+                action.overrideTimerColor = action.overrideTimerColor;
+                action.timerBackgroundColor = ColorUtility.FromHex( action.overrideTimerColor ).darken( 0.93 ).toString( 0.75 );
+            } else {
+                action.overrideTimerColor = null;
+                action.timerBackgroundColor = null;
+            }
+        } );
         if ( this.triggerId == null ) {
             this.ipcService.createNewTrigger( this.model ).subscribe( triggerId => { } );
             this.closeModal();
