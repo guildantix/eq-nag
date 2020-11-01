@@ -24,6 +24,13 @@ class OverlayDatabaseStore extends Store {
         } );
 
         this.#data = this.parseDataFile();
+        if ( !this.#data.version || this.#data.version < 3 ) {
+            this.#data?.overlays?.forEach( f => {
+                f.timerSortType = f.overlayType === 'Timer' ? 1 : 0;
+            } );
+            this.#data.version = 3;
+            this.storeDataFile( this.#data );
+        }
     }
     
     /**

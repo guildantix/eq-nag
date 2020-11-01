@@ -1,6 +1,6 @@
 import { Component, OnInit, Inject } from '@angular/core';
 import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
-import { ActionTypes, CapturePhrase, OperatorTypes, OverlayWindowModel, TriggerAction, TriggerCondition, TriggerConditionTypes, TriggerModel } from 'src/app/core.model';
+import { ActionTypes, CapturePhrase, OperatorTypes, OverlayWindowModel, TimerSortTypes, TriggerAction, TriggerCondition, TriggerConditionTypes, TriggerModel } from 'src/app/core.model';
 import { IpcService } from 'src/app/ipc.service';
 import { ScraperService } from 'src/app/scraper.service';
 import { customAlphabet } from 'nanoid';
@@ -64,6 +64,7 @@ export class NewTriggerDialogComponent implements OnInit {
                 overlayId: this.overlayId,
                 duration: spell.duration,
                 actionId: nanoid(),
+                restartOnDuplicate: true,
             } );
             trigger.actions.push( <TriggerAction>{
                 phrases: [ trigger.capturePhrases[ 1 ].phraseId ],

@@ -1,5 +1,14 @@
 const { ActionTypes, TriggerAction } = require( './trigger' );
 
+var TimerSortTypes = {
+    '0': 'None',
+    '1': 'Ascending',
+    '2': 'Descending',
+    None: 0,
+    Ascending: 1,
+    Descending: 2,
+}
+
 class OverlayWindow {
 
     overlayId = null;
@@ -19,6 +28,7 @@ class OverlayWindow {
     backgroundTransparency = 1.0;
     borderColor = '#000000';
     borderTransparency = 1.0;
+    timerSortType = TimerSortTypes.None;
 
 }
 
@@ -42,6 +52,9 @@ class OverlayComponent {
     start;
     /** @type {Date} */
     timestamp;
+    /** @type {number} */
+    percentRemaining;
+
 }
 
-module.exports = { OverlayWindow, OverlayComponent };
+module.exports = { OverlayWindow, OverlayComponent, TimerSortTypes };

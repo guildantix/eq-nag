@@ -1,6 +1,6 @@
 {
   "name": "electron-angular-eq-parse",
-  "version": "0.0.20",
+  "version": "0.0.24",
   "main": "main.js",
   "scripts": {
     "tsc": "tsc",

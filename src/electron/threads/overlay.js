@@ -2,10 +2,11 @@ const DomUtilities = require( '../utilities/dom' );
 const StringUtilities = require( '../utilities/string' );
 const NumberUtilities = require( '../utilities/numbers' );
 const ArrayUtilities = require( '../utilities/arrays' );
-const { OverlayWindow, OverlayComponent } = require( '../data/models/overlay-window' );
+const { OverlayWindow, OverlayComponent, TimerSortTypes } = require( '../data/models/overlay-window' );
 const { ActionTypes, TriggerAction } = require( '../data/models/trigger' );
 const { ipcRenderer } = require( 'electron' );
 const Handlebars = require( "handlebars" );
+const _ = require( 'lodash' );
 
 
 // <!-- Roboto(i): 100, 300, 400, 500, 700, 900 -->
@@ -27,6 +28,7 @@ var fctRenderInterval = 250;
 var width = 1;
 var height = 1;
 var fontSize = 1;
+var sortDirection = TimerSortTypes.None;
 
 function Overlay() {
 
@@ -81,6 +83,10 @@ function Overlay() {
             contentArea.style.lineHeight = `${( model.lineHeight > 10 ? model.lineHeight : 90 ) / 100}em`;
             contentArea.style.fontWeight = model.fontWeight > 0 ? model.fontWeight : 300;
 
+            contentArea.querySelectorAll( '.progress' ).forEach( f => f.style.marginBottom = contentArea.style.lineHeight );
+            // lineHeight = model.lineHeight;
+            // console.log( 'testing', contentArea.querySelectorAll( '> div' ) );
+
             if ( model.fontColor ) {
                 if ( model.fontTransparency < 1 ) {
                     contentArea.style.color = `${model.fontColor}${componentToHex( Math.round( model.fontTransparency * 255 ) )}`;
@@ -102,6 +108,7 @@ function Overlay() {
             width = contentArea.clientWidth;
             height = contentArea.clientHeight;
             fontSize = model.fontSize;
+            sortDirection = model.timerSortType;
 
         } );
 }
@@ -145,11 +152,14 @@ function render( comp ) {
         div.innerHTML = content;
         comp.dom = div;
         contentArea.appendChild( comp.dom );
+        comp.dom.querySelector( '.progress' ).style.marginBottom = contentArea.style.lineHeight;
         comp.start = comp.timestamp;
         comp.description = displayText;
+        comp.timeRemaining = comp.action.duration;
         comp.intervalId = window.setInterval( () => {
             let perc = ( Math.abs( ( new Date() ) - comp.start ) / 1000 ) / comp.action.duration;
-    
+            comp.timeRemaining = comp.action.duration - ( comp.action.duration * perc );
+
             comp.dom.querySelector( 'div.determinate' ).style.width = `${perc * 100}%`;
             
             if ( perc >= 1 ) {
@@ -163,6 +173,13 @@ function render( comp ) {
         }, 250 );
         overlayComponents.push( comp );
         
+        if ( sortDirection > 0 ) {
+            let dir = sortDirection === TimerSortTypes.Ascending ? -1 : 1;
+            let sorted = _.sortBy( overlayComponents, [ c => dir * c.timeRemaining ] );
+            for ( let i = 0; i < sorted.length; i++ ) {
+                sorted[ i ].dom.parentNode.prepend( sorted[ i ].dom );
+            }
+        }
     }
 }
 

@@ -11,6 +11,7 @@ export class TriggerModel {
     public conditions: TriggerCondition[] = [];
     public spellLevel: number = 0;
     public predefined: boolean = false;
+    public onlyExecuteInDev: boolean = false;
 
 }
 
@@ -79,6 +80,7 @@ export class OverlayWindowModel {
     public backgroundTransparency: number = 0.0;
     public borderColor: string = '#000000';
     public borderTransparency: number = 0.0;
+    public timerSortType: TimerSortTypes = TimerSortTypes.Ascending;
 
     public isValid (): boolean {
         return name != null && this.overlayType != null;
@@ -115,6 +117,14 @@ export enum ActionTypes {
     
 }
 
+export enum TimerSortTypes {
+
+    None = 0,
+    Ascending = 1,
+    Descending = 2,
+
+}
+
 export class TriggerAction {
 
     public actionId: string;
@@ -125,6 +135,7 @@ export class TriggerAction {
     public duration: number;
     public variableName: string;
     public restartOnDuplicate: boolean;
+    public onlyExecuteInDev: boolean = false;
 
 }
 

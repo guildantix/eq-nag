@@ -31,6 +31,7 @@ var voiceIndex = -1;
 var logParseTimeoutId = null;
 var logParseTimer = 50;
 var changingLogFile = false;
+var isDev = false;
 
 function LogWatcher() {
 
@@ -141,6 +142,8 @@ function LogWatcher() {
         extDotFocusPercent = data.extendedDotFocusPercent;
         extDotFocusDecayLevel = data.extendedDotFocusDecayLevel;
         voiceIndex = data.voiceIndex;
+        isDev = data.isDev;
+        // isDev = false;
         generateTriggerFns();
     } );
 
@@ -151,7 +154,7 @@ function LogWatcher() {
 
 function generateTriggerFns() {
     triggers?.forEach( trigger => {
-        if ( trigger.capturePhrases?.length > 0 ) {
+        if ( ( isDev || !trigger.onlyExecuteInDev ) && trigger.capturePhrases?.length > 0 ) {
 
             // First we generate parse functions for each capture phrase in the trigger.
             let _phraseParsers = [];
@@ -450,7 +453,7 @@ function parseLogEntries( raw, simulating ) {
         let res = f._parse( log );
         if ( res.match ) {
             f.actions.forEach( action => {
-                if ( action.phrases == null || action.phrases?.length === 0 || action.phrases?.indexOf( res.phraseId ) > -1 ) {
+                if ( ( isDev || !action.onlyExecuteInDev ) && ( action.phrases == null || action.phrases?.length === 0 || action.phrases?.indexOf( res.phraseId ) > -1 ) ) {
                     if ( action.actionType === ActionTypes.DisplayText ) {
                         /* --== Display Text ==-- */
                         let comp = new OverlayComponent();
@@ -509,7 +512,7 @@ function parseLogEntries( raw, simulating ) {
                             
                         }
 
-                        console.log( 'sending dot timer', comp );
+                        // console.log( 'sending dot timer', comp );
                         ipcRenderer.send( 'overlay:send:component', comp );
 
                     } else if ( action.actionType === ActionTypes.Speak ) {

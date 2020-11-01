@@ -11,7 +11,7 @@ const ForwardRef = require( './src/electron/forward-ref' );
 const WindowManager = require( './src/electron/window-manager' );
 
 var mainWindow, logWatcherWindow, testWindow;
-var enableDevMode = false;
+var enableDevMode = true;
 const winManager = new WindowManager(__dirname);
 const userPreferences = new UserPreferencesStore( {} );
 const dkpDatabase = new DkpDatabaseStore();
@@ -146,6 +146,7 @@ function sendTick() {
         extendedDotFocusPercent: userPreferences.extendedDotFocusPercent,
         extendedDotFocusDecayLevel: userPreferences.extendedDotFocusDecayLevel,
         voiceIndex: userPreferences.voiceIndex,
+        isDev: app.isDev(),
     } );
 }
 
