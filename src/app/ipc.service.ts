@@ -159,6 +159,10 @@ export class IpcService {
         this.ipc.send( 'app:quit' );
     }
 
+    public minimizeApp(): void {
+        this.ipc.send( 'app:minimize' );
+    }
+
     public updateLogFile( logFile: string ): void {
         this.ipc.send( 'log:select', logFile );
     }
