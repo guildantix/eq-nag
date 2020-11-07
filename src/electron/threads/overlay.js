@@ -7,6 +7,9 @@ const { ActionTypes, TriggerAction } = require( '../data/models/trigger' );
 const { ipcRenderer } = require( 'electron' );
 const Handlebars = require( "handlebars" );
 const _ = require( 'lodash' );
+const customAlphabet = require( 'nanoid' ).customAlphabet;
+const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+const nanoid = customAlphabet( alphabet, 16 );
 
 
 // <!-- Roboto(i): 100, 300, 400, 500, 700, 900 -->
@@ -29,6 +32,7 @@ var width = 1;
 var height = 1;
 var fontSize = 1;
 var sortDirection = TimerSortTypes.None;
+var voiceOptions = [];
 
 function Overlay() {
 
@@ -111,6 +115,10 @@ function Overlay() {
             sortDirection = model.timerSortType;
 
         } );
+
+    speechSynthesis.onvoiceschanged = () => {
+        voiceOptions = speechSynthesis.getVoices();
+    };
 }
 
 /**
@@ -143,7 +151,23 @@ function render( comp ) {
             // If this component needs to restart on duplicate names, then find the index of the first match, and if found reset the start.
             let index = ArrayUtilities.findIndex( overlayComponents, f => f?.description == displayText );
             if ( index > -1 ) {
+                // Reset the start duration
                 overlayComponents[ index ].start = comp.timestamp;
+
+                // Reset the ending conditions
+                overlayComponents[ index ].endingSoonSpoken = false;
+                overlayComponents[ index ].endingSoonTextDisplayed = false;
+                overlayComponents[ index ].endedSpoken = false;
+                overlayComponents[ index ].endedTextDisplayed = false;
+
+                // Reset the background color
+                if ( overlayComponents[ index ].action.overrideTimerColor ) {
+                    overlayComponents[ index ].dom.querySelector( '.determinate' ).style.backgroundColor = overlayComponents[ index ].action.overrideTimerColor;
+                    overlayComponents[ index ].dom.querySelector( '.progress' ).style.backgroundColor = overlayComponents[ index ].action.timerBackgroundColor;
+                } else {
+                    overlayComponents[ index ].dom.querySelector( '.determinate' ).style.backgroundColor = '#008000';
+                    overlayComponents[ index ].dom.querySelector( '.progress' ).style.backgroundColor = 'rgba(0,33,0,.75)';
+                }
                 return;
             }
         }
@@ -162,23 +186,51 @@ function render( comp ) {
         comp.timeRemaining = comp.action.duration;
         comp.intervalId = window.setInterval( () => {
             let perc = ( Math.abs( ( new Date() ) - comp.start ) / 1000 ) / comp.action.duration;
+
             comp.timeRemaining = comp.action.duration - ( comp.action.duration * perc );
 
             comp.dom.querySelector( 'div.determinate' ).style.width = `${perc * 100}%`;
 
-            if ( comp.action.ifEndingSoon && comp.action.endingDuration > 0 && comp.timeRemaining <= comp.action.endingDuration ) {
+            if ( comp.action.ifEndingSoon && comp.action.endingDuration > 0 && comp.timeRemaining > 0 && comp.timeRemaining <= comp.action.endingDuration ) {
                 if ( comp.action.endingSoonChangeColor ) {
                     comp.dom.querySelector( 'div.determinate' ).style.backgroundColor = comp.action.endingSoonColor;
                     comp.dom.querySelector( 'div.progress' ).style.backgroundColor = comp.action.endingSoonBackgroundColor;
                 }
+
+                if ( !comp.endingSoonSpoken && comp.action.endingSoonSpeak ) {
+                    comp.endingSoonSpoken = true;
+                    speakPhrase( comp.voiceIndex, comp.action.endingSoonSpeakPhrase );
+                }
+
+                if ( !comp.endingSoonTextDisplayed && comp.action.endingSoonDisplayText ) {
+                    comp.endingSoonTextDisplayed = true;
+                    sendDisplayTextToOverlay( comp.action.endingSoonTextOverlayId, comp.action.endingSoonText, comp.action.endingSoonTextDuration );
+                }
+
             }
             
-            if ( perc >= 1 ) {
+            if ( ( comp.timeRemaining <= 0 && !comp.action.remainAfterEnded ) || ( comp.timeRemaining <= -1 * comp.action.remainDuration ) ) {
                 window.setTimeout( () => {
                     comp.dom.parentNode && comp.dom.parentNode.removeChild( comp.dom );
                     window.clearInterval( comp.intervalId );
                     ArrayUtilities.remove( overlayComponents, f => f.instanceId == comp.instanceId );
                 }, 1000 );
+            } else if ( comp.timeRemaining <= 0 && comp.action.remainAfterEnded ) {
+
+                if ( comp.action.endedChangeColor ) {
+                    comp.dom.querySelector( 'div.determinate' ).style.backgroundColor = comp.action.endedColor;
+                    comp.dom.querySelector( 'div.progress' ).style.backgroundColor = comp.action.endedBackgroundColor;
+                }
+
+                if ( !comp.endedSpoken && comp.action.endedSpeak ) {
+                    comp.endedSpoken = true;
+                    speakPhrase( comp.voiceIndex, comp.action.endedSpeakPhrase );
+                }
+
+                if ( !comp.endedTextDisplayed && comp.action.endedDisplayText ) {
+                    comp.endedTextDisplayed = true;
+                    sendDisplayTextToOverlay( comp.action.endedTextOverlayId, comp.action.endedText, comp.action.endedTextDuration );
+                }
             }
 
         }, 250 );
@@ -197,6 +249,29 @@ function render( comp ) {
 function componentToHex( c ) {
     var hex = c.toString( 16 );
     return hex.length == 1 ? "0" + hex : hex;
+}
+
+function sendDisplayTextToOverlay( overlayId, text, duration ) {
+    let comp = new OverlayComponent();
+
+    comp.instanceId = nanoid();
+    comp.action = new TriggerAction();
+    comp.action.displayText = text;
+    comp.action.duration = duration;
+    comp.overlayId = overlayId;
+    comp.matches = [];
+    comp.timestamp = new Date();
+
+    ipcRenderer.send( 'overlay:send:component', comp );
+}
+
+function speakPhrase( voiceIndex, phrase ) {
+    var utter = new SpeechSynthesisUtterance();
+
+    utter.text = phrase;
+    utter.voice = voiceOptions[ voiceIndex ];
+    utter.onend = function ( event ) { }
+    speechSynthesis.speak( utter );
 }
 
 module.exports = Overlay;
