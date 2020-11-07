@@ -55,7 +55,12 @@ class OverlayComponent {
     timestamp;
     /** @type {number} */
     percentRemaining;
-
+    /** @type {boolean} */
+    endingSoonSpoken = false;
+    /** @type {boolean} */
+    endingSoonTextDisplayed = false;
+    /** @type {number} */
+    voiceIndex = -1;
 }
 
 module.exports = { OverlayWindow, OverlayComponent, TimerSortTypes };

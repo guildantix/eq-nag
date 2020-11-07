@@ -118,6 +118,13 @@ class TriggerAction {
     endedSpeak = false;
     /** @type string */
     endedSpeakPhrase = null;
+
+    /** @type boolean */
+    endedChangeColor = false;
+    /** @type string */
+    endedColor = null;
+    /** @type string */
+    endedBackgroundColor = null;
 }
 
 class TriggerCondition {

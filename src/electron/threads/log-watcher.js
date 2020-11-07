@@ -499,6 +499,23 @@ function parseLogEntries( raw, simulating ) {
                         comp.overlayId = action.overlayId;
                         comp.matches = res.result;
                         comp.timestamp = timestamp;
+                        comp.voiceIndex = voiceIndex;
+
+                        if ( comp.action.endingSoonDisplayText ) {
+                            comp.action.endingSoonText = StringUtilities.parseStoredVariablesToLiteral( action.endingSoonText, storedVariables );
+                        }
+
+                        if ( comp.action.endingSoonSpeak ) {
+                            comp.action.endingSoonSpeakPhrase = StringUtilities.parseStoredVariablesToLiteral( action.endingSoonSpeakPhrase, storedVariables );
+                        }
+
+                        if ( comp.action.endedDisplayText ) {
+                            comp.action.endedText = StringUtilities.parseStoredVariablesToLiteral( action.endedText, storedVariables );
+                        }
+
+                        if ( comp.action.endedSpeak ) {
+                            comp.action.endedSpeakPhrase = StringUtilities.parseStoredVariablesToLiteral( action.endedSpeakPhrase, storedVariables );
+                        }
 
                         if ( hasExtDotFocus ) {
                             let percent = extDotFocusPercent;
