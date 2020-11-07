@@ -186,7 +186,7 @@ var mainWindowRef = new ForwardRef( () => mainWindow ? mainWindow : null );
 var logWatcherRef = new ForwardRef( () => logWatcherWindow ? logWatcherWindow : null );
 
 userPreferences.attachIpcEvents( mainWindowRef, logWatcherRef, sendTick );
-winManager.attachIpcEvents( mainWindowRef, sendTick, overlayDatabase );
+winManager.attachIpcEvents( mainWindowRef, sendTick, overlayDatabase, userPreferences );
 dkpDatabase.attachIpcEvents( mainWindowRef, sendTick );
 triggerDatabase.attachIpcEvents( mainWindowRef, sendTick );
 overlayDatabase.attachIpcEvents( mainWindowRef, sendTick );

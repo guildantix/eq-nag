@@ -1,6 +1,7 @@
 const { app, BrowserWindow, ipcMain, screen } = require( "electron" );
 const ForwardRef = require( './forward-ref' );
 const OverlayDatabaseStore = require( "./data/overlay-database" );
+const UserPreferencesStore = require( "./data/user-preferences" );
 
 var overlayDictionary = {};
 
@@ -27,8 +28,9 @@ class WindowManager {
      * @param {ForwardRef} mainWindowRef The main window of the application.
      * @param {function} sendTick The send tick method.
      * @param {OverlayDatabaseStore} overlayDatabase The overlay database.
+     * @param {UserPreferencesStore} userPreferencesDatabase The user pref database.
      */
-    attachIpcEvents( mainWindowRef, sendTick, overlayDatabase ) {
+    attachIpcEvents( mainWindowRef, sendTick, overlayDatabase, userPreferencesDatabase ) {
 
         ipcMain.on( 'trigger:dialog:new', ( event, arg ) => {
             let triggerWindow = new BrowserWindow( {
@@ -128,6 +130,8 @@ class WindowManager {
         } );
         
         ipcMain.on( 'overlay:dialog:edit', ( event, overlayId ) => {
+            let posData = userPreferencesDatabase.getOverlayEditorPosition( overlayId );
+            console.log( 'loaded pos', posData );
             let overlayEditorDialog = new BrowserWindow( {
                 parent: mainWindowRef.reference,
                 modal: false,
@@ -135,6 +139,8 @@ class WindowManager {
                 width: 700,
                 height: 870,
                 frame: false,
+                x: posData == null ? null : posData.x,
+                y: posData == null ? null : posData.y,
                 webPreferences: {
                     nodeIntegration: true,
                     devTools: app.isDev(),
@@ -146,6 +152,10 @@ class WindowManager {
             } );
             overlayEditorDialog.once( "ready-to-show", () => {
                 overlayEditorDialog.show();
+            } );
+            overlayEditorDialog.on( 'move', function () {
+                let bounds = overlayEditorDialog.webContents.getOwnerBrowserWindow().getBounds();
+                userPreferencesDatabase.setOverlayeEditorPosition( overlayId, bounds.x, bounds.y );
             } );
         } );
         
@@ -176,6 +186,7 @@ class WindowManager {
      * Loads all overlays.
      * 
      * @param {OverlayDatabaseStore} overlayDatabase The overlay database.
+     * @param {UserPreferencesStore} overlayDatabase The user preferences database.
      */
     loadOverlays( overlayDatabase ) {
 

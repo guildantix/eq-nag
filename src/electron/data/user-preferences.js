@@ -104,7 +104,6 @@ class UserPreferencesStore extends Store {
     }
     set extendedDotFocusDecayLevel( val ) {
         this.#data.extendedDotFocusDecayLevel = val;
-        // this.storeDataFile( this.#data );
     }
 
     constructor() {
@@ -117,6 +116,48 @@ class UserPreferencesStore extends Store {
         
         this.#data = this.parseDataFile();
         
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Returns the x and y position of the overlay editor window.
+     * 
+     * @param {string} overlayId The id of the overlay.
+     */
+    getOverlayEditorPosition( overlayId ) {
+        this.#data.overlayEditorPositions = this.#data.overlayEditorPositions != null ? this.#data.overlayEditorPositions : {};
+
+        return this.#data.overlayEditorPositions[ overlayId ];
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Stores the x and y positions of the specified overlay window.
+     * 
+     * @param {string} overlayId The id of the overlay
+     * @param {number} x The x position of the window.
+     * @param {number} y The y position of the window.
+     */
+    setOverlayeEditorPosition( overlayId, x, y ) {
+        this.#data.overlayEditorPositions = this.#data.overlayEditorPositions != null ? this.#data.overlayEditorPositions : {};
+        this.#data.overlayEditorPositions[ overlayId ] = { x: x, y: y };
+        this.storeDataFile( this.#data );
     }
 
 
