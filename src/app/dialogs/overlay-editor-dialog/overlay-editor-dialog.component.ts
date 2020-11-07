@@ -163,7 +163,7 @@ export class OverlayEditorDialogComponent implements OnInit {
         if ( this.model.overlayType === 'Timer' ) {
             let timers: any[] = [
                 { name: 'Dot 01', duration: 48, target: 'Mob 01', delay: 0 * 1000, overrideTimerColor: '#CC5500', timerBackgroundColor: ColorUtility.FromHex( '#CC5500' ).darken( 0.93 ).toString( 0.75 ) },
-                { name: 'Dot 02', duration: 30, target: 'Mob 02', delay: 4 * 1000, overrideTimerColor: '#008000', timerBackgroundColor: ColorUtility.FromHex( '#008000' ).darken( 0.93 ).toString( 0.75 ) },
+                { name: 'Dot 02', duration: 30, target: 'Mob 02', delay: 4 * 1000, ifEndingSoon: true, endingDuration: 24, endingSoonChangeColor: true, endingSoonColor: '#800000', endingSoonBackgroundColor: ColorUtility.FromHex( '#800000' ).darken( 0.93 ).toString( 0.75 ) },
                 { name: 'Dot 03', duration: 54, target: 'Mob 03', delay: 8 * 1000, overrideTimerColor: null, timerBackgroundColor: null },
                 { name: 'Dot 04', duration: 60, target: 'Mob 04', delay: 12 * 1000, overrideTimerColor: null, timerBackgroundColor: null },
                 { name: 'Dot 05', duration: 48, target: 'Mob 05', delay: 16 * 1000, overrideTimerColor: null, timerBackgroundColor: null },
@@ -181,6 +181,11 @@ export class OverlayEditorDialogComponent implements OnInit {
                         actionType: ActionTypes.DotTimer,
                         overrideTimerColor: f.overrideTimerColor,
                         timerBackgroundColor: f.timerBackgroundColor,
+                        ifEndingSoon: f.ifEndingSoon,
+                        endingDuration: f.endingDuration,
+                        endingSoonChangeColor: f.endingSoonChangeColor,
+                        endingSoonColor: f.endingSoonColor,
+                        endingSoonBackgroundColor: f.endingSoonBackgroundColor,
                     },
                     overlayId: this.overlayId,
                     matches: [ '', f.target ],
