@@ -1,5 +1,5 @@
 
-<div class="color-picker" #colorInput (click)="toggle()" [style.background-color]="value.toHex()">
+<div class="color-picker" [ngClass]="{'color-inline': inline, 'color-stretch': !inline}" #colorInput (click)="toggle()" [style.background-color]="value.toHex()">
     
 </div>
 

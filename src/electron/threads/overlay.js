@@ -165,10 +165,17 @@ function render( comp ) {
             comp.timeRemaining = comp.action.duration - ( comp.action.duration * perc );
 
             comp.dom.querySelector( 'div.determinate' ).style.width = `${perc * 100}%`;
+
+            if ( comp.action.ifEndingSoon && comp.action.endingDuration > 0 && comp.timeRemaining <= comp.action.endingDuration ) {
+                if ( comp.action.endingSoonChangeColor ) {
+                    comp.dom.querySelector( 'div.determinate' ).style.backgroundColor = comp.action.endingSoonColor;
+                    comp.dom.querySelector( 'div.progress' ).style.backgroundColor = comp.action.endingSoonBackgroundColor;
+                }
+            }
             
             if ( perc >= 1 ) {
                 window.setTimeout( () => {
-                    comp.dom.parentNode.removeChild( comp.dom );
+                    comp.dom.parentNode && comp.dom.parentNode.removeChild( comp.dom );
                     window.clearInterval( comp.intervalId );
                     ArrayUtilities.remove( overlayComponents, f => f.instanceId == comp.instanceId );
                 }, 1000 );

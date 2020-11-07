@@ -39,6 +39,10 @@ export class TriggerDialogComponent implements OnInit {
     public Math: typeof Math = Math;
     public isDev: boolean = false;
 
+    public get alertOverlays(): OverlayWindowModel[] {
+        return this.overlays.filter( f => f.overlayType === 'Alert' );
+    }
+
     public get logOverlays(): OverlayWindowModel[] {
         return this.overlays.filter( f => f.overlayType === 'Log' );
     }
@@ -151,6 +155,31 @@ export class TriggerDialogComponent implements OnInit {
                 action.overrideTimerColor = null;
                 action.timerBackgroundColor = null;
             }
+
+            if ( action.ifEndingSoon === true && action.endingDuration > 0 ) {
+                if ( action.endingSoonChangeColor === true ) {
+                    action.endingSoonBackgroundColor = ColorUtility.FromHex( action.endingSoonColor ).darken( 0.93 ).toString( 0.75 );
+                } else {
+                    action.endingSoonBackgroundColor = null;
+                }
+            } else {
+                action.endingDuration = null;
+                action.endingSoonColor = null;
+            }
+
+            if ( action.remainAfterEnded === true && action.remainDuration > 0 ) {
+                if ( action.endedChangeColor === true ) {
+                    action.endedBackgroundColor = ColorUtility.FromHex( action.endedColor ).darken( 0.93 ).toString( 0.75 );
+                } else {
+                    action.endedBackgroundColor = null;
+                }
+            } else {
+                action.remainAfterEnded = false;
+                action.remainDuration = null;
+                action.endedColor = null;
+                action.endedBackgroundColor = null;
+            }
+
         } );
         if ( this.triggerId == null ) {
             this.ipcService.createNewTrigger( this.model ).subscribe( triggerId => { } );

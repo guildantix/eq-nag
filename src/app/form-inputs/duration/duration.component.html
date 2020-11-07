@@ -1,4 +1,4 @@
-<div class="duration-wrapper">
+<div class="duration-wrapper" [ngClass]="{'duration-inline': inline, 'duration-stretch': !inline}">
     <mat-form-field>
         <mat-label>Hrs</mat-label>
         <input matInput type="number" [(ngModel)]="hours" [disabled]="disabled" (change)="valueChanged($event)" />

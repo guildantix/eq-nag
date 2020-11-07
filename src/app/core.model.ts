@@ -140,7 +140,34 @@ export class TriggerAction {
     public overrideTimerColor: string = null;
     public timerBackgroundColor: string = null;
     public useCustomColor: boolean = false;
+    public ifEndingSoon: boolean = false;
+    public endingDuration: number = null;
+    public endingSoonChangeColor: boolean = false;
+    public endingSoonColor: string = null;
+    public endingSoonBackgroundColor: string = null;
+    
+    public endingSoonDisplayText: boolean = false;
+    public endingSoonTextOverlayId: string = null;
+    public endingSoonText: string = null;
+    public endingSoonTextDuration: number = null;
 
+    public endingSoonSpeak: boolean = false;
+    public endingSoonSpeakPhrase: string = null;
+
+    public remainAfterEnded: boolean = false;
+    public remainDuration: number = null;
+    
+    public endedDisplayText: boolean = false;
+    public endedTextOverlayId: string = null;
+    public endedText: string = null;
+    public endedTextDuration: number = null;
+
+    public endedSpeak: boolean = false;
+    public endedSpeakPhrase: string = null;
+
+    public endedChangeColor: boolean = false;
+    public endedColor: string = null;
+    public endedBackgroundColor: string = null;
 }
 
 export class ScrapedSpell {

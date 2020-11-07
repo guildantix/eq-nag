@@ -1,7 +1,21 @@
-.duration-wrapper {
+.duration-wrapper.duration-stretch {
     display: flex;
     >mat-form-field {
         width: 30%;
+    }
+    >label {
+        width: 5%;
+        display: inline-block;
+        line-height: 48px;
+        font-size: 20px;
+        font-weight: bold;
+        text-align: center;
+    }
+}
+.duration-wrapper.duration-inline {
+    display: inline;
+    >mat-form-field {
+        width: 50px;
     }
     >label {
         width: 5%;
