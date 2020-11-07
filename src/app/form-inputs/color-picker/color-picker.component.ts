@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild, ElementRef, forwardRef, HostListener, EventEmitter, Output } from '@angular/core';
+import { Component, OnInit, ViewChild, ElementRef, forwardRef, HostListener, EventEmitter, Output, Input } from '@angular/core';
 import { Color, ColorUtility } from 'src/app/utilities';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
@@ -35,6 +35,8 @@ export class ColorPickerComponent implements OnInit, ControlValueAccessor {
     public colorPalette: Color[][] = [];
     public showPopup: boolean = false;
     private _value: Color;
+
+    @Input() public inline: boolean = false;
 
     public set value( val: Color ) {
         if ( val !== undefined && this._value !== val ) {

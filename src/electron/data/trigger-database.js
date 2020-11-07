@@ -91,6 +91,59 @@ class TriggerDatabaseStore extends Store {
             this.#data.version = 11;
             this.storeDataFile( this.#data );
         }
+        if ( this.#data.version < 14 ) {
+            // 12-13 were iterations on this update.
+            this.#data?.triggers?.forEach( trigger => {
+                trigger.actions?.forEach( action => {
+                    action.ifEndingSoon = false;
+                    action.endingDuration = null;
+                    action.endingSoonChangeColor = false;
+                    action.endingSoonColor = null;
+                    action.endingSoonBackgroundColor = null;
+                } );
+            } );
+            this.#data.version = 14;
+            this.storeDataFile( this.#data );
+        }
+        if ( this.#data.version < 15 ) {
+            this.#data?.triggers?.forEach( trigger => {
+                trigger.actions?.forEach( action => {
+
+                    action.endingSoonDisplayText = false;
+                    action.endingSoonTextOverlayId = null;
+                    action.endingSoonText = null;
+                    action.endingSoonTextDuration = null;
+
+                    action.endingSoonSpeak = false;
+                    action.endingSoonSpeakPhrase = null;
+                    
+                    action.remainAfterEnded = false;
+                    action.remainDuration = null;
+
+                    action.endedDisplayText = false;
+                    action.endedTextOverlayId = null;
+                    action.endedText = null;
+                    action.endedTextDuration = null;
+                    
+                    action.endedSpeak = false;
+                    action.endedSpeakPhrase = null;
+                } );
+            } );
+            this.#data.version = 15;
+            this.storeDataFile( this.#data );
+        }
+        if ( this.#data.version < 16 ) {
+            // 12-13 were iterations on this update.
+            this.#data?.triggers?.forEach( trigger => {
+                trigger.actions?.forEach( action => {
+                    action.endedChangeColor = false;
+                    action.endedColor = null;
+                    action.endedBackgroundColor = null;
+                } );
+            } );
+            this.#data.version = 16;
+            this.storeDataFile( this.#data );
+        }
     }
 
 

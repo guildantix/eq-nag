@@ -1,4 +1,4 @@
-import { Component, OnInit, forwardRef } from '@angular/core';
+import { Component, OnInit, forwardRef, Input } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
 @Component( {
@@ -23,6 +23,8 @@ export class DurationComponent implements OnInit, ControlValueAccessor {
     public seconds: number;
     public duration: number;
     public disabled: boolean = false;
+
+    @Input() inline: boolean = false;
 
     constructor() { }
 

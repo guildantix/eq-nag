@@ -583,3 +583,6 @@ module.exports = LogWatcher;
 // [Fri Oct 02 09:34:25 2020] A carrion beetle hatchling has taken 350 damage from your Funeral Pyre of Kelador.
 // ***
 // [Fri Oct 02 09:34:25 2020] You have slain a carrion beetle hatchling!
+
+// [Thu Jun 06 23:22:28 2019] Azryl has fallen to the ground.
+// [Thu Nov 05 00:31:50 2020] You are no longer feigning death, because a spell hit you.

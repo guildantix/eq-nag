@@ -75,7 +75,49 @@ class TriggerAction {
     overrideTimerColor = null;
     /** @type string */
     timerBackgroundColor = null;
+    /** @type boolean */
+    ifEndingSoon = false;
+    /** @type number */
+    endingDuration = null;
+    /** @type boolean */
+    endingSoonChangeColor = false;
+    /** @type string */
+    endingSoonColor = null;
+    /** @type string */
+    endingSoonBackgroundColor = null;
+    
+    /** @type boolean */
+    endingSoonDisplayText = false;
+    /** @type string */
+    endingSoonTextOverlayId = null;
+    /** @type string */
+    endingSoonText = null;
+    /** @type number */
+    endingSoonTextDuration = null;
 
+    /** @type boolean */
+    endingSoonSpeak = false;
+    /** @type string */
+    endingSoonSpeakPhrase = null;
+
+    /** @type boolean */
+    remainAfterEnded = false;
+    /** @type number */
+    remainDuration = null;
+    
+    /** @type boolean */
+    endedDisplayText = false;
+    /** @type string */
+    endedTextOverlayId = null;
+    /** @type string */
+    endedText = null;
+    /** @type number */
+    endedTextDuration = null;
+
+    /** @type boolean */
+    endedSpeak = false;
+    /** @type string */
+    endedSpeakPhrase = null;
 }
 
 class TriggerCondition {
