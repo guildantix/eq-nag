@@ -65,9 +65,9 @@ function LogWatcher() {
                             let read = buff.toString( 'utf-8', 0, bytecount );
                             let lines = read.split( /\r\n|\r|\n/gmi );
                             
-                            lines.forEach( f => {
-                                if ( f && f.length > 0 ) {
-                                    parseLogEntries( f );
+                            lines.forEach( line => {
+                                if ( line && line.length > 0 ) {
+                                    parseLogEntries( line );
                                 }
                             } );
 
@@ -118,9 +118,9 @@ function LogWatcher() {
                 fs.read( file, Buffer.alloc( stats.size ), 0, stats.size, 0, ( err, bytecount, buff ) => {
                     let read = buff.toString( 'utf-8', 0, bytecount );
                     let lines = read.split( /\r\n|\r|\n/gmi );
-                    lines.forEach( f => {
-                        if ( f && f.length > 0 ) {
-                            parseLogEntries( f, true );
+                    lines.forEach( line => {
+                        if ( line && line.length > 0 ) {
+                            parseLogEntries( line, true );
                         }
                     } );
                     console.log( 'lines done' );
@@ -203,7 +203,7 @@ function generateTriggerFns() {
                 // First, the trigger must pass each condition.
                 trigger.conditions?.forEach( condition => {
                     if ( condition.conditionType === TriggerConditionTypes.VariableValue ) {
-                        if ( condition.operatorType === OperatorTypes.Equal ) {
+                        if ( condition.operatorType === OperatorTypes.Equals ) {
                             if ( condition.variableValue && storedVariables[ condition.variableName ] !== condition.variableValue ) {
                                 conditionsPassed = false;
                             }
@@ -226,7 +226,8 @@ function generateTriggerFns() {
             
             // Any match.
             if ( trigger.captureMethod === 'Any match' ) {
-                
+
+                trigger._reset = () => { };
                 trigger._parse = value => {
 
                     // If all conditions passed, then parse the phrase.
@@ -246,7 +247,9 @@ function generateTriggerFns() {
                 };
             } else if ( trigger.captureMethod === 'Sequential' ) {
                 trigger._captureIndex = 0;
-                
+                trigger._reset = () => {
+                    trigger._captureIndex = 0;
+                };
                 trigger._parse = value => {
                 
                     // If all conditions passed, then parse the phrase.
@@ -258,7 +261,8 @@ function generateTriggerFns() {
                         }
                     } else {
                         // Otherwise reset the parse.
-                        trigger._captureIndex = 0;
+                        trigger._reset();
+                        // trigger._captureIndex = 0;
                     }
 
                     return {
@@ -269,6 +273,7 @@ function generateTriggerFns() {
 
             } else {
                 // Currently, the only supported match method is 'Any match'.
+                trigger._reset = () => { };
                 trigger._parse = value => {
                     return {
                         match: false,
@@ -279,6 +284,7 @@ function generateTriggerFns() {
 
         } else {
             // if the trigger is missing capture phrases, then do nothing.
+            trigger._reset = () => { };
             trigger._parse = value => {
                 return {
                     match: false,
@@ -449,10 +455,10 @@ function parseLogEntries( raw, simulating ) {
     }
     
     let log = raw.replace( rgxTimestamp, '' );
-    triggers.forEach( f => {
-        let res = f._parse( log );
+    triggers.forEach( trigger => {
+        let res = trigger._parse( log );
         if ( res.match ) {
-            f.actions.forEach( action => {
+            trigger.actions.forEach( action => {
                 if ( ( isDev || !action.onlyExecuteInDev ) && ( action.phrases == null || action.phrases?.length === 0 || action.phrases?.indexOf( res.phraseId ) > -1 ) ) {
                     if ( action.actionType === ActionTypes.DisplayText ) {
                         /* --== Display Text ==-- */
@@ -489,7 +495,7 @@ function parseLogEntries( raw, simulating ) {
 
                         comp.instanceId = nanoid();
                         comp.action = Object.assign( new TriggerAction(), action );
-                        comp.action.displayText = `${f.name} --== {1} ==--`;
+                        comp.action.displayText = `${trigger.name} --== {1} ==--`;
                         comp.overlayId = action.overlayId;
                         comp.matches = res.result;
                         comp.timestamp = timestamp;
@@ -497,8 +503,8 @@ function parseLogEntries( raw, simulating ) {
                         if ( hasExtDotFocus ) {
                             let percent = extDotFocusPercent;
 
-                            if ( f.spellLevel > extDotFocusDecayLevel ) {
-                                let decayPercent = ( f.spellLevel - extDotFocusDecayLevel ) * 5;
+                            if ( trigger.spellLevel > extDotFocusDecayLevel ) {
+                                let decayPercent = ( trigger.spellLevel - extDotFocusDecayLevel ) * 5;
                                 percent = percent * ( 1 - decayPercent / 100 );
                             }
 
@@ -511,6 +517,10 @@ function parseLogEntries( raw, simulating ) {
                             comp.action.duration += addTicks * 6;
                             
                         }
+
+                        // reset the trigger.
+                        trigger._reset();
+                        // trigger._captureIndex = 0;
 
                         // console.log( 'sending dot timer', comp );
                         ipcRenderer.send( 'overlay:send:component', comp );
