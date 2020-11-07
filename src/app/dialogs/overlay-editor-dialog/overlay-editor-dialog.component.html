@@ -62,6 +62,47 @@
 
                     </fieldset>
 
+                    <fieldset class="margin-t-25" *ngIf="model.overlayType === 'Alert'">
+                        <legend>Alert Options</legend>
+
+                        <div class="f-row">
+                            <div class="f-sm-4 al-center"><mat-checkbox [(ngModel)]="model.showTextBorder" name="cbxShowTextBorder" (change)="broadcastModel()">Text Border</mat-checkbox></div>
+                            <div class="f-sm-4 al-center"><mat-checkbox [(ngModel)]="model.showTextGlow" name="cbxShowTextBorder" (change)="broadcastModel()">Text Glow</mat-checkbox></div>
+                            <div class="f-sm-4 al-center"></div>
+                        </div>
+                        <div class="f-row">
+                            <div class="f-sm-4 al-center"><mat-label *ngIf="model.showTextBorder">Color</mat-label></div>
+                            <div class="f-sm-4 al-center"><mat-label *ngIf="model.showTextGlow">Color</mat-label></div>
+                            <div class="f-sm-4 al-center"></div>
+                        </div>
+                        <div class="f-row">
+                            <div class="f-sm-4 al-center"><app-color-picker [(ngModel)]="textBorderColor" (change)="broadcastModel()" *ngIf="model.showTextBorder"></app-color-picker></div>
+                            <div class="f-sm-4 al-center"><app-color-picker [(ngModel)]="textGlowColor" (change)="broadcastModel()" *ngIf="model.showTextGlow"></app-color-picker></div>
+                            <div class="f-sm-4 al-center"></div>
+                        </div>
+                        <div class="f-row">
+                            <div class="f-sm-4 al-center"><mat-label *ngIf="model.showTextBorder">Intensity</mat-label></div>
+                            <div class="f-sm-4 al-center"><mat-label *ngIf="model.showTextGlow">Intensity</mat-label></div>
+                            <div class="f-sm-4 al-center"></div>
+                        </div>
+                        <div class="f-row">
+                            <div class="f-sm-4"><mat-slider thumbLabel tickInterval="1" min="0" max="100" style="width: 100%;" [(ngModel)]="textBorderIntensity" name="sldrTextBorderIntensity" (change)="onChangeTextBorderIntensity()" *ngIf="model.showTextBorder"></mat-slider></div>
+                            <div class="f-sm-4"><mat-slider thumbLabel tickInterval="1" min="0" max="100" style="width: 100%;" [(ngModel)]="textGlowIntensity" name="sldrTextGlowIntensity" (change)="onChangeTextGlowIntensity()" *ngIf="model.showTextGlow"></mat-slider></div>
+                            <div class="f-sm-4"></div>
+                        </div>
+                        <div class="f-row">
+                            <div class="f-sm-4 al-center"></div>
+                            <div class="f-sm-4 al-center"><mat-label *ngIf="model.showTextGlow">Size</mat-label></div>
+                            <div class="f-sm-4 al-center"></div>
+                        </div>
+                        <div class="f-row">
+                            <div class="f-sm-4 al-center"></div>
+                            <div class="f-sm-4 al-center"><mat-slider thumbLabel tickInterval="1" min="0" max="10" style="width: 100%;" [(ngModel)]="model.textGlowSize" name="sldrTextGlowSize" (change)="broadcastModel()" *ngIf="model.showTextGlow"></mat-slider></div>
+                            <div class="f-sm-4 al-center"></div>
+                        </div>
+
+                    </fieldset>
+
                     <fieldset class="margin-t-25" *ngIf="model.overlayType === 'Timer'">
                         <legend>Timer Options</legend>
                                    

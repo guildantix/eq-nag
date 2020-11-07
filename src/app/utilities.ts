@@ -60,9 +60,11 @@ function hexToRgba( hex: string ): Color {
 }
 
 function rgbaToHex( r: number | string, g: number | string, b: number | string, a: number | string ) {
+
     r = r.toString( 16 );
     g = g.toString( 16 );
     b = b.toString( 16 );
+    a = +a >= 0 && +a <= 1 ? Math.round( +a * 255 ).toString( 16 ) : a.toString( 16 );
   
     if ( r.length == 1 )
         r = "0" + r;
@@ -70,8 +72,13 @@ function rgbaToHex( r: number | string, g: number | string, b: number | string, 
         g = "0" + g;
     if ( b.length == 1 )
         b = "0" + b;
-  
-    return "#" + r + g + b;
+    if ( a.length == 1 )
+        a = "0" + a;
+    
+    if ( a == "ff" )
+        return "#" + r + g + b;
+    else
+        return "#" + r + g + b + a;
 }
 
 export class Color {
@@ -104,6 +111,11 @@ export class Color {
     public toString( alpha?: number ): string {
         this.a = alpha > 0 ? alpha : this.a;
         return `rgba(${this.r},${this.g},${this.b},${this.a})`;
+    }
+
+    public toHexString( alpha?: number ): string {
+        this.a = alpha > 0 ? alpha : this.a;
+        return rgbaToHex( this.r, this.g, this.b, this.a );
     }
 
     public toRgb(): string {
