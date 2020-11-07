@@ -82,6 +82,15 @@ export class OverlayWindowModel {
     public borderTransparency: number = 0.0;
     public timerSortType: TimerSortTypes = TimerSortTypes.Ascending;
     public timerColor: string = '#008000';
+    
+    public showTextBorder: boolean = false;
+    public textBorderColor: string = '#000000';
+    public textBorderIntensity: number = 1;
+
+    public showTextGlow: boolean = false;
+    public textGlowColor: string = '#000000';
+    public textGlowIntensity: number = 1;
+    public textGlowSize: number = 10;
 
     public isValid (): boolean {
         return name != null && this.overlayType != null;

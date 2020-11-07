@@ -31,6 +31,22 @@ class OverlayWindow {
     timerSortType = TimerSortTypes.None;
     /** @type string */
     timerColor = '#008000';
+    
+    /** @type {boolean} */
+    showTextBorder = false;
+    /** @type string */
+    textBorderColor = '#000000';
+    /** @type {number} */
+    textBorderIntensity = 1;
+    
+    /** @type {boolean} */
+    showTextGlow = false;
+    /** @type {string} */
+    textGlowColor = '#000000';
+    /** @type {number} */
+    textGlowIntensity = 1;
+    /** @type {number} */
+    textGlowSize = 10;
 }
 
 class OverlayComponent {

@@ -46,6 +46,10 @@ export class OverlayEditorDialogComponent implements OnInit {
     public borderTransparency: number = 0;
     public _noChangesModel: OverlayWindowModel;
     public timerSortTypes: typeof TimerSortTypes = TimerSortTypes;
+    public textBorderIntensity: number = 100;
+    public textBorderColor: string = '#000000';
+    public textGlowIntensity: number = 100;
+    public textGlowColor: string = '#000000';
     
     public get maxFontWeightIndex(): number {
         if ( this.model?.fontFamily != null ) {
@@ -82,7 +86,10 @@ export class OverlayEditorDialogComponent implements OnInit {
                     this.fontTransparency = Math.round( this.model.fontTransparency * 100 );
                     this.backgroundTransparency = Math.round( this.model.backgroundTransparency * 100 );
                     this.borderTransparency = Math.round( this.model.borderTransparency * 100 );
-
+                    this.textBorderColor = ColorUtility.FromHex( this.model.textBorderColor ).toHexString( 1 );
+                    this.textGlowColor = ColorUtility.FromHex( this.model.textGlowColor ).toHexString( 1 );
+                    this.textBorderIntensity = ColorUtility.FromHex( this.model.textBorderColor ).a * 100;
+                    this.textGlowIntensity = ColorUtility.FromHex( this.model.textGlowColor ).a * 100;
                 } );
             }
      
@@ -116,6 +123,16 @@ export class OverlayEditorDialogComponent implements OnInit {
         this.broadcastModel();
     }
 
+    public onChangeTextBorderIntensity(): void {
+        this.model.textBorderIntensity = this.textBorderIntensity / 100;
+        this.broadcastModel();
+    }
+
+    public onChangeTextGlowIntensity(): void {
+        this.model.textGlowIntensity = this.textGlowIntensity / 100;
+        this.broadcastModel();
+    }
+
     public onChangeFontTransparency(): void {
         this.model.fontTransparency = this.fontTransparency / 100;
         this.broadcastModel();
@@ -138,6 +155,8 @@ export class OverlayEditorDialogComponent implements OnInit {
 
     public broadcastModel(): void {
         this.model.fontWeight = availableFonts[ this.model.fontFamily ][ this.fontWeightIndex ];
+        this.model.textBorderColor = ColorUtility.FromHex( this.textBorderColor ).toHexString( this.model.textBorderIntensity );
+        this.model.textGlowColor = ColorUtility.FromHex( this.textGlowColor ).toHexString( this.model.textGlowIntensity );
         this.ipcService.broadcastOverlayModel( this.model );
     }
 
@@ -191,7 +210,7 @@ export class OverlayEditorDialogComponent implements OnInit {
                     matches: [ '', f.target ],
                     timestamp: new Date(),
                 };
-                // console.log( 'sent component', comp );
+                
                 window.setTimeout( () => {
                     comp.timestamp = new Date();
                     this.ipcService.sendOverlayComponent( comp );

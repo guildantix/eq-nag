@@ -38,6 +38,22 @@ class OverlayDatabaseStore extends Store {
             this.#data.version = 4;
             this.storeDataFile( this.#data );
         }
+        if ( !this.#data.version || this.#data.version < 5 ) {
+            this.#data?.overlays?.forEach( f => {
+    
+                f.showTextBorder = false;
+                f.textBorderColor = '#000000';
+                f.textBorderIntensity = 1;
+            
+                f.showTextGlow = false;
+                f.textGlowColor = '#000000';
+                f.textGlowIntensity = 1;
+                f.textGlowSize = 10;
+                
+            } );
+            this.#data.version = 5;
+            this.storeDataFile( this.#data );
+        }
     }
     
     /**

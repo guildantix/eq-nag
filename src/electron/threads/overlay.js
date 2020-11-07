@@ -88,8 +88,6 @@ function Overlay() {
             contentArea.style.fontWeight = model.fontWeight > 0 ? model.fontWeight : 300;
 
             contentArea.querySelectorAll( '.progress' ).forEach( f => f.style.marginBottom = contentArea.style.lineHeight );
-            // lineHeight = model.lineHeight;
-            // console.log( 'testing', contentArea.querySelectorAll( '> div' ) );
 
             if ( model.fontColor ) {
                 if ( model.fontTransparency < 1 ) {
@@ -114,6 +112,23 @@ function Overlay() {
             fontSize = model.fontSize;
             sortDirection = model.timerSortType;
 
+            contentArea.style.textShadow = null;
+            let textShadow = null;
+
+            if ( model.showTextBorder === true ) {
+                textShadow = `0px 0px 1px ${model.textBorderColor}, -1px -1px 0 ${model.textBorderColor}, 1px -1px 0 ${model.textBorderColor}, -1px 1px 0 ${model.textBorderColor}, 1px 1px 0 ${model.textBorderColor}`;
+            }
+
+            if ( model.showTextGlow ) {
+                if ( textShadow?.length > 0 ) {
+                    textShadow += ',';
+                } else {
+                    textShadow = '';
+                }
+
+                textShadow += `0px 0px ${model.textGlowSize}px ${model.textGlowColor}, -1px -1px ${model.textGlowSize}px ${model.textGlowColor}, 1px -1px ${model.textGlowSize}px ${model.textGlowColor}, -1px 1px ${model.textGlowSize}px ${model.textGlowColor}, 1px 1px ${model.textGlowSize}px ${model.textGlowColor}`;
+            }
+            contentArea.style.textShadow = textShadow;
         } );
 
     speechSynthesis.onvoiceschanged = () => {
