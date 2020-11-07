@@ -10,6 +10,7 @@ const OverlayDatabaseStore = require( "./src/electron/data/overlay-database" );
 const ForwardRef = require( './src/electron/forward-ref' );
 const WindowManager = require( './src/electron/window-manager' );
 
+/** @type {BrowserWindow} */
 var mainWindow, logWatcherWindow, testWindow;
 var enableDevMode = true;
 const winManager = new WindowManager(__dirname);
@@ -119,6 +120,14 @@ app.on( 'activate', function () {
 } );
 
 ipcMain.on( 'app:quit', ( event, data ) => { app.quit(); } );
+
+ipcMain.on( 'app:minimize', ( event, data ) => {
+    mainWindow.minimize();
+} );
+
+ipcMain.on( 'app:minimize:tray', ( event, data ) => {
+    mainWindow.minimize();
+} );
 
 ipcMain.on( 'main:console:log', ( event, data ) => { mainWindow.webContents.send( 'console:log', data ); } );
 

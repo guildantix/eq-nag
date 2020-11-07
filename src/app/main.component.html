@@ -2,6 +2,13 @@
     <mat-toolbar class="titlebar" color="primary">
         <span>Antix Parse</span>
         <span class="spacer"></span>
+        <button mat-icon-button aria-label="Minimize to tray" (click)="minimizeTaskbar()">
+            <!-- style="transform: rotate(90deg);" -->
+            <mat-icon>south_east</mat-icon>
+        </button>
+        <button mat-icon-button aria-label="Minimize application" (click)="minimizeTaskbar()">
+            <mat-icon>minimize</mat-icon>
+        </button>
         <button mat-icon-button aria-label="Exit application" (click)="quitApp()">
             <mat-icon>clear</mat-icon>
         </button>

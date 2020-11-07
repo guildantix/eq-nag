@@ -100,6 +100,10 @@ export class MainComponent implements OnInit {
         this.ipcService.quitApp();
     }
 
+    minimizeTaskbar(): void {
+        this.ipcService.minimizeApp();
+    }
+
     openModal() {
         this.fileSelector.nativeElement.click();
     }
