@@ -134,6 +134,9 @@ function OverlayFct() {
 var lastFctWidth = 0;
 var lastFctLeft = 0;
 var fctWidth = 100;
+var delayBetweenCrits = 500;
+var delayVariance = 0.50;
+var delayAdd = 0;
 
 /**
  * Renders the overlayComponents to the overlay window.
@@ -152,17 +155,25 @@ function render( comp ) {
         div.classList.add( 'animate-fade-shrink' );
 
         comp.dom = div;
-        contentArea.appendChild( div );
+        comp.delayAmount = NumberUtilities.randomBounded( delayBetweenCrits - ( delayBetweenCrits * delayVariance ), delayBetweenCrits + ( delayBetweenCrits * delayVariance ) + 1 );
+        
+        window.setTimeout( () => {
+            contentArea.appendChild( div );
+    
+            comp.pos = getRandomLocation();
+            criticals[ comp.pos.x ][ comp.pos.y ] = true;
+            div.style.left = `${quadrants[ comp.pos.x ][ comp.pos.y ].x + ( div.clientWidth / 2 )}px`;
+            div.style.top = `${quadrants[ comp.pos.x ][ comp.pos.y ].y - ( div.clientHeight * 1.25 )}px`;
+                
+            comp.intervalId = window.setTimeout( () => {
+                comp.dom.parentNode.removeChild( comp.dom );
+                criticals[ comp.pos.x ][ comp.pos.y ] = false;
+            }, 4000 );
 
-        comp.pos = getRandomLocation();
-        criticals[ comp.pos.x ][ comp.pos.y ] = true;
-        div.style.left = `${quadrants[ comp.pos.x ][ comp.pos.y ].x + ( div.clientWidth / 2 )}px`;
-        div.style.top = `${quadrants[ comp.pos.x ][ comp.pos.y ].y - ( div.clientHeight * 1.25 )}px`;
-            
-        comp.intervalId = window.setTimeout( () => {
-            comp.dom.parentNode.removeChild( comp.dom );
-            criticals[ comp.pos.x ][ comp.pos.y ] = false;
-        }, 4000 );
+            delayAdd -= comp.delayAmount;
+        }, delayAdd );
+
+        delayAdd += comp.delayAmount;
 
     } else {
         let content = fctTemplate( { value: comp.text, damageSource: comp.attack } );
