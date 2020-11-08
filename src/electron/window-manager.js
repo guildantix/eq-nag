@@ -131,7 +131,7 @@ class WindowManager {
         
         ipcMain.on( 'overlay:dialog:edit', ( event, overlayId ) => {
             let posData = userPreferencesDatabase.getOverlayEditorPosition( overlayId );
-            console.log( 'loaded pos', posData );
+            
             let overlayEditorDialog = new BrowserWindow( {
                 parent: mainWindowRef.reference,
                 modal: false,
