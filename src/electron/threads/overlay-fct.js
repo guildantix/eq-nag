@@ -26,6 +26,9 @@ var fctRenderInterval = 250;
 var width = 1;
 var height = 1;
 var fontSize = 1;
+var quadrants = [];
+var criticals = [];
+var criticalPadding = 300;
 
 function OverlayFct() {
 
@@ -51,11 +54,13 @@ function OverlayFct() {
     ipcRenderer.on( 'overlay:window:enable-edit', function ( event ) {
         document.querySelector( 'section.body' ).classList.add( 'drag' );
         document.querySelector( 'body' ).classList.add( 'show-border' );
+        document.querySelector( '.content-area' ).style.margin = null;
     } );
 
     ipcRenderer.on( 'overlay:window:disable-edit', function ( event ) {
         document.querySelector( 'section.body' ).classList.remove( 'drag' );
         document.querySelector( 'body' ).classList.remove( 'show-border' );
+        document.querySelector( '.content-area' ).style.margin = `${criticalPadding}px`;
     } );
 
     ipcRenderer.on( 'overlay:window:highlight', function ( event ) {
@@ -100,11 +105,29 @@ function OverlayFct() {
             }
 
             contentArea.classList.add( 'fct-content' );
+            contentArea.style.margin = `${criticalPadding}px`;
 
             width = contentArea.clientWidth;
             height = contentArea.clientHeight;
             fontSize = model.fontSize;
 
+            quadrants = [];
+            criticals = [];
+
+            // we could calculate the specific size of critical fct, but it's 'good enough' to estimate.  A little overlapping is fine.
+            let qw = fontSize / 2 * 4.6875 * 2;
+            let qh = fontSize / 2 * 3.125 * 2;
+
+            for ( let x = 0; x < Math.floor( width / qw ); x++ ) {
+                quadrants[ x ] = [];
+                criticals[ x ] = [];
+                for ( let y = 0; y < Math.floor( height / qh ); y++ ) {
+                    quadrants[ x ][ y ] = { x: x * qw, y: y * qh };
+                    criticals[ x ][ y ] = false;
+                }
+            }
+
+            console.log( 'quadrants', fontSize, qw, qh, quadrants );
         } );
 }
 
@@ -131,11 +154,14 @@ function render( comp ) {
         comp.dom = div;
         contentArea.appendChild( div );
 
-        div.style.left = NumberUtilities.randomBounded( fctWidth + ( div.clientWidth / 2 ), width - ( div.clientWidth * 1.5 ) ) + 'px';
-        div.style.top = NumberUtilities.randomBounded( div.clientHeight / 2, height - ( div.clientHeight * 1.25 ) ) + 'px';
+        comp.pos = getRandomLocation();
+        criticals[ comp.pos.x ][ comp.pos.y ] = true;
+        div.style.left = `${quadrants[ comp.pos.x ][ comp.pos.y ].x + ( div.clientWidth / 2 )}px`;
+        div.style.top = `${quadrants[ comp.pos.x ][ comp.pos.y ].y - ( div.clientHeight * 1.25 )}px`;
             
         comp.intervalId = window.setTimeout( () => {
             comp.dom.parentNode.removeChild( comp.dom );
+            criticals[ comp.pos.x ][ comp.pos.y ] = false;
         }, 4000 );
 
     } else {
@@ -152,6 +178,56 @@ function render( comp ) {
 
     }
         
+}
+
+function getRandomLocation() {
+    let c = getCompCount();
+    let xs = Math.floor( c / criticals.length );
+    let yx = Math.floor( c / criticals[ 0 ].length );
+    let x = -1;
+    let y = -1;
+
+    let crazy = 0;
+    while ( x === -1 && crazy < criticals.length * criticals[ 0 ].length ) {
+        crazy++;
+
+        let t = NumberUtilities.randomBounded( 0, criticals.length );
+        if ( countCritX( t ) <= xs ) {
+            x = t;
+        }
+    }
+
+    if ( crazy === criticals.length * criticals[ 0 ].length ) {
+        return { x: NumberUtilities.randomBounded( 0, criticals.length ), y: NumberUtilities.randomBounded( 0, criticals[ 0 ].length ) };
+    }
+
+    crazy = 0;
+    while ( y === -1 && crazy < criticals[ x ].length ) {
+        crazy++;
+
+        let t = NumberUtilities.randomBounded( 0, criticals[ x ].length );
+        if ( !criticals[ x ][ t ] ) {
+            y = t;
+        }
+    }
+
+    return { x: x, y: y };
+}
+
+function getCompCount() {
+    let c = 0;
+    for ( let x = 0; x < criticals.length; x++ ) {
+        for ( let y = 0; y < criticals[ x ].length; y++ ) {
+            c += criticals[ x ][ y ] === true ? 1 : 0;
+        }
+    }
+    return c;
+}
+
+function countCritX( x ) {
+    let c = 0;
+    criticals[ x ].forEach( pos => c += pos ? 1 : 0 );
+    return c;
 }
 
 function componentToHex( c ) {
