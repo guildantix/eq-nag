@@ -115,7 +115,7 @@ function OverlayFct() {
             criticals = [];
 
             // we could calculate the specific size of critical fct, but it's 'good enough' to estimate.  A little overlapping is fine.
-            let qw = fontSize / 2 * 4.6875 * 2;
+            let qw = fontSize / 2 * 4.6875 * 2.5;
             let qh = fontSize / 2 * 3.125 * 2;
 
             for ( let x = 0; x < Math.floor( width / qw ); x++ ) {
