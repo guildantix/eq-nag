@@ -6,7 +6,7 @@ export class TriggerModel {
     public name: string = '';
     public capturePhrases: CapturePhrase[] = [];
     public comments: string = '';
-    public actions: any[] = [];
+    public actions: TriggerAction[] = [];
     public captureMethod: string = 'Any match';
     public conditions: TriggerCondition[] = [];
     public spellLevel: number = 0;

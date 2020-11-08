@@ -173,13 +173,24 @@ function generateTriggerFns() {
                             };
                         } );
                     } else {
-                        // We won't care about case sensitivity.
-                        let _phr = StringUtilities.parseStoredVariablesToLiteral( phrase.phrase, storedVariables ).toLowerCase();
                         _phraseParsers.push( value => {
-                            if ( value && value.length > 0 ) {
+                            if ( value?.length > 0 ) {
+                                // We won't care about case sensitivity.
+                                let _phrs = StringUtilities.parseStoredVariablesToLiteralArray( phrase.phrase, storedVariables );
+                                let matched = false;
+
+                                if ( _phrs?.length > 0 ) {
+                                    for ( let i = 0; i < _phrs.length; i++ ) {
+                                        if ( value.toLowerCase().indexOf( _phrs[ i ].toLowerCase() ) > -1 ) {
+                                            matched = true;
+                                            break;
+                                        }
+                                    }
+                                }
+
                                 return {
                                     phraseId: phrase.phraseId,
-                                    match: value.toLowerCase().indexOf( _phr ) > -1,
+                                    match: matched,
                                     result: [ value ]
                                 };
                             } else {
@@ -200,23 +211,42 @@ function generateTriggerFns() {
             trigger._checkConditions = function () {
                 let conditionsPassed = true;
 
+                trigger._conditionResults = {};
+
                 // First, the trigger must pass each condition.
                 trigger.conditions?.forEach( condition => {
                     if ( condition.conditionType === TriggerConditionTypes.VariableValue ) {
                         if ( condition.operatorType === OperatorTypes.Equals ) {
-                            if ( condition.variableValue && storedVariables[ condition.variableName ] !== condition.variableValue ) {
+
+                            if ( !storeHasValue( condition.variableName, condition.variableValue ) ) {
                                 conditionsPassed = false;
+                            } else {
+                                // Store what value passed.
+                                trigger._conditionResults[ condition.variableName ] = condition.variableValue;
                             }
+                            
                         } else if ( condition.operatorType === OperatorTypes.IsNull ) {
-                            if ( storedVariables[ condition.variableName ] != null ) {
+
+                            if ( storedVariables[ condition.variableName ]?.length > 0 ) {
                                 conditionsPassed = false;
+                            } else {
+                                // Store the condition result for this key as null.
+                                trigger._conditionResults[ condition.variableName ] = null;
                             }
+
                         } else if ( condition.operatorType === OperatorTypes.DoesNotEqual ) {
-                            if ( condition.variableValue && storedVariables[ condition.variableName ] === condition.variableValue ) {
+                            
+                            if ( condition.variableValue && storeHasValue( condition.variableName, condition.variableValue ) ) {
+                                // If the condition value is not null, then check if the store has that value.
                                 conditionsPassed = false;
-                            } else if ( !condition.variableValue && storedVariables[ condition.variableName ] == null ) {
+                            } else if ( !condition.variableValue && ( storedVariables[ condition.variableName ] == null || storedVariables[ condition.variableName ]?.length == 0 ) ) {
+                                // If the condition value is null, then check to make sure that the stored value(s) have at least 1 value;
                                 conditionsPassed = false;
+                            } else {
+                                // Store what value passed.
+                                trigger._conditionResults[ condition.variableName ] = condition.variableValue;
                             }
+
                         }
                     }
                 } );
@@ -477,19 +507,21 @@ function parseLogEntries( raw, simulating ) {
                             console.log( 'overlay:send:component', comp );
                         
                     } else if ( action.actionType === ActionTypes.StoreVariable ) {
-                        /* --== Store Variable ==-- */
+                    /* --== Store Variable ==-- */
                         
                         if ( res.result.length === 1 ) {
-                            storedVariables[ action.variableName ] = res.result[ 0 ];
+                            saveVariable( action.variableName, res.result[ 0 ] );
                         } else {
-                            storedVariables[ action.variableName ] = res.result[ 1 ];
+                            saveVariable( action.variableName, res.result[ 1 ] );
                         }
 
                     } else if ( action.actionType === ActionTypes.ClearVariable ) {
-                        /* --== Clear Variable ==-- */
-                        storedVariables[ action.variableName ] = null;
+                    /* --== Clear Variable ==-- */
+
+                        clearStoredVariable( action.variableName, res.result.groups != null ? res.result.groups[ action.variableName ] : trigger._conditionResults[ action.variableName ] );
 
                     } else if ( action.actionType === ActionTypes.DotTimer ) {
+                        
                         /* --== DOT Timers ==-- */
                         let comp = new OverlayComponent();
 
@@ -502,19 +534,19 @@ function parseLogEntries( raw, simulating ) {
                         comp.voiceIndex = voiceIndex;
 
                         if ( comp.action.endingSoonDisplayText ) {
-                            comp.action.endingSoonText = StringUtilities.parseStoredVariablesToLiteral( action.endingSoonText, storedVariables );
+                            comp.action.endingSoonText = StringUtilities.parseConditionResultsToLiteral( action.endingSoonText, trigger._conditionResults );
                         }
 
                         if ( comp.action.endingSoonSpeak ) {
-                            comp.action.endingSoonSpeakPhrase = StringUtilities.parseStoredVariablesToLiteral( action.endingSoonSpeakPhrase, storedVariables );
+                            comp.action.endingSoonSpeakPhrase = StringUtilities.parseConditionResultsToLiteral( action.endingSoonSpeakPhrase, trigger._conditionResults );
                         }
 
                         if ( comp.action.endedDisplayText ) {
-                            comp.action.endedText = StringUtilities.parseStoredVariablesToLiteral( action.endedText, storedVariables );
+                            comp.action.endedText = StringUtilities.parseConditionResultsToLiteral( action.endedText, trigger._conditionResults );
                         }
 
                         if ( comp.action.endedSpeak ) {
-                            comp.action.endedSpeakPhrase = StringUtilities.parseStoredVariablesToLiteral( action.endedSpeakPhrase, storedVariables );
+                            comp.action.endedSpeakPhrase = StringUtilities.parseConditionResultsToLiteral( action.endedSpeakPhrase, trigger._conditionResults );
                         }
 
                         if ( hasExtDotFocus ) {
@@ -539,7 +571,6 @@ function parseLogEntries( raw, simulating ) {
                         trigger._reset();
                         // trigger._captureIndex = 0;
 
-                        // console.log( 'sending dot timer', comp );
                         ipcRenderer.send( 'overlay:send:component', comp );
 
                     } else if ( action.actionType === ActionTypes.Speak ) {
@@ -564,6 +595,45 @@ function parseLogEntries( raw, simulating ) {
         }
     } );
 
+}
+
+/**
+ * Saves the given value in the store.
+ * 
+ * @param {string} key The key of the stored variable.
+ * @param {any} value The value to store.
+ */
+function saveVariable( key, value ) {
+    storedVariables[ key ] = storedVariables[ key ]?.length > 0 ? storedVariables[ key ] : [];
+    let index = storedVariables[ key ].indexOf( value );
+    if ( index === -1 ) {
+        storedVariables[ key ].push( value );
+    }
+}
+
+/**
+ * Returns true if the given key has the specified value in the store.
+ * 
+ * @param {string} key The key of the stored variable.
+ * @param {any} value The value to check.
+ */
+function storeHasValue( key, value ) {
+    return storedVariables[ key ]?.length > 0 ? storedVariables[ key ].indexOf( value ) > -1 : false;
+}
+
+/**
+ * Clears the given value from the store.
+ * 
+ * @param {string} key The key of the stored variable.
+ * @param {any} value The value to clear.
+ */
+function clearStoredVariable( key, value ) {
+    if ( storedVariables[ key ]?.length ) {
+        let index = storedVariables[ key ].indexOf( value );
+        if ( index > -1 ) {
+            storedVariables[ key ].splice( index, 1 );
+        }
+    }
 }
 
 module.exports = LogWatcher;
