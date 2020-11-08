@@ -187,6 +187,8 @@
                                     </mat-card-header>
                                     <mat-card-content>
 
+                                        <mat-label *ngIf="isDev">{{action.actionId}}</mat-label>
+
                                         <mat-form-field>
                                             <mat-label>Action Type</mat-label>
                                             <mat-select [(ngModel)]="action.actionType" name="ddlActionType_{{i}}">
@@ -420,7 +422,7 @@
                                         </div>
 
                                         <div>
-                                            <mat-checkbox [(ngModel)]="action.onlyExecuteInDev" name="cbxOnlyShowInDev" *ngIf="isDev && model.predefined">Only execute in dev</mat-checkbox>
+                                            <mat-checkbox [(ngModel)]="action.onlyExecuteInDev" name="cbxOnlyShowInDev_{{i}}" *ngIf="isDev && model.predefined">Only execute in dev</mat-checkbox>
                                         </div>
             
                                     </mat-card-content>
@@ -480,6 +482,6 @@
     <footer>
         <button mat-button [disabled]="triggerForm.invalid" (click)="save()">Save</button>
         <button mat-button color="warn" (click)="closeModal()">Cancel</button>
-        <button mat-button color="accent" (click)="copyJson()">Copy JSON</button>
+        <button mat-button color="accent" (click)="copyJson()" *ngIf="isDev">Copy JSON</button>
     </footer>
 </div>
