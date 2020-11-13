@@ -200,6 +200,8 @@ dkpDatabase.attachIpcEvents( mainWindowRef, sendTick );
 triggerDatabase.attachIpcEvents( mainWindowRef, sendTick );
 overlayDatabase.attachIpcEvents( mainWindowRef, sendTick );
 
+let x = userPreferences.everquestInstallFolder;
+
 // Pulls the spell name
 // document.querySelector('meta[property="og:title"]').getAttribute('content')
 

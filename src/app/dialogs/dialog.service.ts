@@ -6,6 +6,7 @@ import { Observable } from 'rxjs';
 import { OverlayDetailsDialogComponent } from './overlay-details-dialog/overlay-details-dialog.component';
 import { TriggerActionWizardModalComponent } from './trigger-action-wizard-modal/trigger-action-wizard-modal.component';
 import { NewTriggerDialogComponent } from './new-trigger-dialog/new-trigger-dialog.component';
+import { NewCharacterDialogComponent } from './new-character-dialog/new-character-dialog.component';
 
 @Injectable()
 export class DialogService {
@@ -105,6 +106,24 @@ export class DialogService {
      */
     public showNewDotTimerDialog(): void {
         this.dialog.open( NewTriggerDialogComponent, {
+            width: '750px'
+        } ).afterClosed();
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Opens the new character dialog.
+     */
+    public showNewCharacterDialog(): void {
+        this.dialog.open( NewCharacterDialogComponent, {
             width: '750px'
         } ).afterClosed();
     }

@@ -190,7 +190,22 @@ export class ScrapedSpell {
 }
 
 export class FocusEffectSettings {
+    
     public hasExtendedDotFocus: boolean = false;
     public extendedDotFocusPercent: number = 0;
     public extendedDotFocusDecayLevel: number = 1;
+
+}
+
+export class CharacterModel {
+
+    public characterId: string;
+    public name: string;
+    public class: string;
+    public hasExtendedDotFocus: boolean;
+    public extendedDotFocusPercent: number;
+    public extendedDotFocusDecayLevel: number;
+    public logFile: string;
+    public server: string;
+
 }

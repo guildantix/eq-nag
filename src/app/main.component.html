@@ -16,7 +16,7 @@
 </p>
 <section>
     <mat-tab-group animationDuration="0ms" (selectedIndexChange)="onChangeTabs($event)" [selectedIndex]="0">
-        <mat-tab label="DKP Tracker">
+        <!-- <mat-tab label="DKP Tracker">
                 <mat-toolbar>
                     <span>DKP Tracker</span>
                     <span class="spacer"></span>
@@ -29,6 +29,18 @@
                     <br />
 
                 </div>
+
+        </mat-tab> -->
+        <mat-tab label="Characters">
+            <mat-toolbar>
+                <span>Characters</span>
+                <span class="spacer"></span>
+                <button mat-button color="accent" (click)="characterList.newCharacter()">New Character</button>
+            </mat-toolbar>
+
+            <div class="tab-content">
+                <app-characters-list #characterList></app-characters-list>
+            </div>
 
         </mat-tab>
         <mat-tab label="Triggers">
@@ -216,12 +228,12 @@
     </mat-tab-group>
 
     <input type="file" #fileSelector style="display:none;" accept="*.txt" (change)="fileSelected($event)" />
-    <div class="console" *ngIf="showConsole">
+    <!-- <div class="console" *ngIf="showConsole">
         <ul>
             <li *ngFor="let item of dkpEntries">
                 <span class="inline-button warn" (click)="removeEntry(item)">delete</span> {{item.character}} [<span class="item-link">{{item.item}}</span>] for <span class="dkp credit">{{item.dkp}}</span> DKP {{item.timeStamp | date:'MMM dd'}}
             </li>
         </ul>
-    </div>
+    </div> -->
 
 </section>

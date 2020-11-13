@@ -21,6 +21,9 @@ class CharacterModel {
     /** @type {string} The full file location to this character's log file. */
     logFile = null;
 
+    /** @type {string} */
+    server = null;
+
 }
 
 module.exports = CharacterModel;

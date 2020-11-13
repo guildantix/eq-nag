@@ -2,7 +2,7 @@ import { Injectable, NgZone } from '@angular/core';
 import { IpcRenderer } from 'electron';
 import { Observable, Observer } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
-import { DataTickModel, DkpEntryModel, TriggerModel, OverlayWindowModel, ActionTypes, FocusEffectSettings } from './core.model';
+import { DataTickModel, DkpEntryModel, TriggerModel, OverlayWindowModel, ActionTypes, FocusEffectSettings, CharacterModel } from './core.model';
 
 @Injectable()
 export class IpcService {
@@ -392,6 +392,86 @@ export class IpcService {
                 } );
             } );
             this.ipc.send( 'overlay:delete', overlayId );
+
+        } );
+
+        return obs;
+    }
+
+    public getCharacters(): Observable<CharacterModel[]> {
+        let obs: Observable<CharacterModel[]> = new Observable<CharacterModel[]>( ( observer: Observer<CharacterModel[]> ) => {
+            
+            this.ipc.once( 'character:get', ( e, overlays: CharacterModel[] ) => {
+                this.ngZone.run( () => {
+                    observer.next( overlays );
+                    observer.complete();
+                } );
+            } );
+            this.ipc.send( 'character:get', null );
+
+        } );
+
+        return obs;
+    }
+
+    public getCharacter( characterId: string ): Observable<CharacterModel> {
+        let obs: Observable<CharacterModel> = new Observable<CharacterModel>( ( observer: Observer<CharacterModel> ) => {
+            
+            this.ipc.once( 'character:get', ( e, character: CharacterModel ) => {
+                this.ngZone.run( () => {
+                    observer.next( character );
+                    observer.complete();
+                } );
+            } );
+            this.ipc.send( 'character:get', characterId );
+
+        } );
+
+        return obs;
+    }
+
+    public updateCharacter( model: CharacterModel ): Observable<boolean> {
+        let obs: Observable<boolean> = new Observable<boolean>( ( observer: Observer<boolean> ) => {
+            
+            this.ipc.once( 'character:update', ( e, updated: boolean ) => {
+                this.ngZone.run( () => {
+                    observer.next( updated );
+                    observer.complete();
+                } );
+            } );
+            this.ipc.send( 'character:update', model );
+
+        } );
+
+        return obs;
+    }
+
+    public deleteCharacter( characterId: string ): Observable<boolean> {
+        let obs: Observable<boolean> = new Observable<boolean>( ( observer: Observer<boolean> ) => {
+            
+            this.ipc.once( 'character:delete', ( e, deleted: boolean ) => {
+                this.ngZone.run( () => {
+                    observer.next( deleted );
+                    observer.complete();
+                } );
+            } );
+            this.ipc.send( 'character:delete', characterId );
+
+        } );
+
+        return obs;
+    }
+
+    public getEqInstallFolder(): Observable<string> {
+        let obs: Observable<string> = new Observable<string>( ( observer: Observer<string> ) => {
+            
+            this.ipc.once( 'settings:get:everquest-folder', ( e, folder: string ) => {
+                this.ngZone.run( () => {
+                    observer.next( folder );
+                    observer.complete();
+                } );
+            } );
+            this.ipc.send( 'settings:get:everquest-folder', null );
 
         } );
 

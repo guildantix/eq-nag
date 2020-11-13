@@ -10,6 +10,7 @@ import { RouterModule, Routes } from '@angular/router';
 import { appRoutes } from './ng.routes';
 import { HttpClientModule } from '@angular/common/http';
 import { ScraperService } from './scraper.service';
+import { CharactersListComponent } from './characters-list/characters-list.component';
 
 @NgModule( {
     imports: [
@@ -24,6 +25,7 @@ import { ScraperService } from './scraper.service';
     declarations: [
         AppComponent,
         MainComponent,
+        CharactersListComponent,
     ],
     providers: [
         ScraperService,

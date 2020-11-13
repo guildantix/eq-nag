@@ -7,9 +7,7 @@ const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz
 const idLen = 16;
 const nanoid = customAlphabet( alphabet, 16 );
 const CharacterModel = require( "./models/character" );
-const CharacterModel = require( "./models/character" );
-const CharacterModel = require( "./models/character" );
-const CharacterModel = require( "./models/character" );
+
 
 class CharacterDatabaseStore extends Store {
 
