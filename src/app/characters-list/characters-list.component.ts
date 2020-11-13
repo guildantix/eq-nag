@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { CharacterModel } from '../core.model';
 import { DialogService } from '../dialogs/dialog.service';
@@ -14,6 +14,8 @@ export class CharactersListComponent implements OnInit {
 
     public characters: CharacterModel[] = [];
     public selectedTabIndex: number = -1;
+    
+    @ViewChild( 'fileSelector' ) private fileSelector: ElementRef<HTMLInputElement>;
 
     constructor( private dialogService: DialogService, private ipcService: IpcService, private snackBar: MatSnackBar ) { }
 
@@ -70,6 +72,29 @@ export class CharactersListComponent implements OnInit {
                         } );
                     }
                 } );
+    }
+
+    showFileSelector( characterId: string ) {
+        this.fileSelector.nativeElement.click();
+        this.fileSelector.nativeElement.setAttribute( 'character-id', characterId );
+    }
+
+    fileSelected( e: any ) {
+        let characterId: string = this.fileSelector.nativeElement.getAttribute( 'character-id' );
+
+        this.fileSelector.nativeElement.setAttribute( 'character-id', null );
+
+        if ( this.fileSelector.nativeElement.files?.length > 0 ) {
+            
+            let index: number = _.findIndex( this.characters, f => f.characterId === characterId );
+            this.characters[ index ].logFile = this.fileSelector.nativeElement.files[ 0 ].path;
+            this.ipcService.updateCharacter( this.characters[ index ] ).subscribe( updated => {
+                if ( updated ) {
+                    this.snackBar.open( 'Character updated!', 'Dismiss', { duration: 2500 } );
+                }
+            } );
+
+        }
     }
 
 }
