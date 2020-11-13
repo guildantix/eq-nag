@@ -208,7 +208,6 @@ export class CharacterModel {
     public logFile: string;
     public server: string;
     
-    public _added: boolean = false;
 }
 
 export class NewCharacterOptionModel {
