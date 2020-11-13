@@ -17,7 +17,7 @@
                         </mat-card-title>
                     </mat-card-header>
                     <mat-card-content>
-                        <button mat-button color="accent">Select Log File</button>
+                        <button mat-button color="accent" (click)="showFileSelector(character.characterId)">Select Log File</button>
                         <div><small>Current: {{character.logFile}}</small></div>
                     </mat-card-content>
                 </mat-card>
@@ -61,3 +61,5 @@
     </mat-expansion-panel>
   
   </mat-accordion>
+
+  <input type="file" #fileSelector style="display:none;" accept="*.txt" (change)="fileSelected($event)" />
