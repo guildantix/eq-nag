@@ -9,6 +9,7 @@ const TriggerDatabaseStore = require( './src/electron/data/trigger-database' );
 const OverlayDatabaseStore = require( "./src/electron/data/overlay-database" );
 const ForwardRef = require( './src/electron/forward-ref' );
 const WindowManager = require( './src/electron/window-manager' );
+const CharacterDatabaseStore = require( "./src/electron/data/character-database" );
 
 /** @type {BrowserWindow} */
 var mainWindow, logWatcherWindow, testWindow;
@@ -18,6 +19,7 @@ const userPreferences = new UserPreferencesStore( {} );
 const dkpDatabase = new DkpDatabaseStore();
 const triggerDatabase = new TriggerDatabaseStore();
 const overlayDatabase = new OverlayDatabaseStore();
+const characterDatabase = new CharacterDatabaseStore();
 // var overlayDictionary = {};
 
 GH_TOKEN = "e3460400ae1273a5cac83e1b86a5aceae7f8bab7";
@@ -199,6 +201,7 @@ winManager.attachIpcEvents( mainWindowRef, sendTick, overlayDatabase, userPrefer
 dkpDatabase.attachIpcEvents( mainWindowRef, sendTick );
 triggerDatabase.attachIpcEvents( mainWindowRef, sendTick );
 overlayDatabase.attachIpcEvents( mainWindowRef, sendTick );
+characterDatabase.attachIpcEvents( mainWindowRef, sendTick );
 
 let x = userPreferences.everquestInstallFolder;
 

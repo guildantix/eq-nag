@@ -9,9 +9,30 @@
         <button mat-button color="accent" (click)="showFileSelector()">Select Log File</button>
 
     </p>
-    <p *ngIf="eqFolder !== null && eqFolder !== undefined">
+    <ng-template [ngIf]="eqFolder !== null && eqFolder !== undefined">
+        
+        <p>Please select the server of the character you are adding.</p>
 
-    </p>
+        <p>
+            <mat-form-field style="width: 50%;">
+                <mat-label>Server</mat-label>
+                <mat-select (selectionChange)="selectServerModel($event)">
+                    <mat-option *ngFor="let server of serverOptions" [value]="server">{{server.server}}</mat-option>
+                </mat-select>
+            </mat-form-field>
+            
+            <mat-form-field style="width: 50%;">
+                <mat-label>Character</mat-label>
+                <mat-select (selectionChange)="selectModel($event)" [disabled]="server == null">
+                    <mat-option *ngFor="let chr of server?.options" [value]="chr" [disabled]="chr.characterId?.length > 0">{{chr.name}} <small *ngIf="chr.characterId?.length > 0">Added</small></mat-option>
+                </mat-select>
+            </mat-form-field>
+        </p>
+        
+        <p>If you don't see your character in the list you can select the charactr's log file instead.</p>
+        <button mat-button color="accent" (click)="showFileSelector()">Select Log File</button>
+
+    </ng-template>
 
     <input type="file" #fileSelector style="display:none;" accept="*.txt" (change)="fileSelected($event)" />
 </mat-dialog-content>
@@ -19,6 +40,6 @@
 <mat-dialog-actions>
 
   <button mat-button mat-dialog-close class="t-confirm-no" color="warn">Cancel</button>
-  <button mat-button (click)="create()" class="t-confirm-yes" color="accent">Create</button>
+  <button mat-button (click)="create()" class="t-confirm-yes" color="accent" [disabled]="model == null">Create</button>
 
 </mat-dialog-actions>

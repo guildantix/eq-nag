@@ -1,5 +1,7 @@
 import { Component, OnInit } from '@angular/core';
+import { CharacterModel } from '../core.model';
 import { DialogService } from '../dialogs/dialog.service';
+import { IpcService } from '../ipc.service';
 
 @Component( {
     selector: 'app-characters-list',
@@ -8,12 +10,20 @@ import { DialogService } from '../dialogs/dialog.service';
 } )
 export class CharactersListComponent implements OnInit {
 
-    constructor( private dialogService: DialogService ) { }
+    public characters: CharacterModel[] = [];
 
-    ngOnInit(): void { }
+    constructor( private dialogService: DialogService, private ipcService: IpcService ) { }
+
+    ngOnInit(): void {
+        this.loadCharacters();
+    }
 
     public newCharacter(): void {
-        this.dialogService.showNewCharacterDialog();
+        this.dialogService.showNewCharacterDialog( () => this.loadCharacters() );
+    }
+
+    public loadCharacters(): void {
+        this.ipcService.getCharacters().subscribe( data => this.characters = data );
     }
 
 }

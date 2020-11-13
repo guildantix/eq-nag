@@ -11,12 +11,14 @@ import { appRoutes } from './ng.routes';
 import { HttpClientModule } from '@angular/common/http';
 import { ScraperService } from './scraper.service';
 import { CharactersListComponent } from './characters-list/characters-list.component';
+import { NgxElectronModule } from 'ngx-electron';
 
 @NgModule( {
     imports: [
         BrowserModule,
         FormsModule,
         MaterialModule,
+        NgxElectronModule,
         DialogModule,
         BrowserAnimationsModule,
         RouterModule.forRoot( appRoutes, { enableTracing: false, useHash: true } ),

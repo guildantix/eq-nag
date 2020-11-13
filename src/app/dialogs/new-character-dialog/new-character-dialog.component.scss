@@ -3,3 +3,18 @@
     flex-direction: column;
     align-items: center;
 }
+
+mat-option {
+    small {
+        float:right;
+        color: lightslategrey;
+    }
+    text-transform: capitalize;
+    
+}
+
+:host ::ng-deep .mat-select-value-text {
+    span {
+        text-transform: capitalize;
+    }
+}

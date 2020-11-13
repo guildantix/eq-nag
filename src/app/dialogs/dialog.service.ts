@@ -122,10 +122,10 @@ export class DialogService {
     /**
      * Opens the new character dialog.
      */
-    public showNewCharacterDialog(): void {
+    public showNewCharacterDialog( afterClosed: () => void ): void {
         this.dialog.open( NewCharacterDialogComponent, {
             width: '750px'
-        } ).afterClosed();
+        } ).afterClosed().subscribe( afterClosed );
     }
     
 }

@@ -30,6 +30,7 @@
     "handlebars": "^4.7.6",
     "lodash": "^4.17.15",
     "nanoid": "^3.1.10",
+    "ngx-electron": "^2.2.0",
     "rxjs": "~6.5.5",
     "tslib": "^2.0.0",
     "uuid": "^8.2.0",
@@ -41,7 +42,7 @@
     "@angular/compiler-cli": "~10.0.2",
     "@types/jasmine": "~3.5.0",
     "@types/jasminewd2": "~2.0.3",
-    "@types/node": "^12.11.1",
+    "@types/node": "^12.19.4",
     "codelyzer": "^6.0.0-next.1",
     "electron": "^9.0.5",
     "electron-builder": "^22.7.0",
@@ -84,5 +85,10 @@
       "output": "electron/output",
       "buildResources": "electron/buildResources"
     }
+  },
+  "browser": {
+    "fs": false,
+    "os": false,
+    "path": false
   }
 }

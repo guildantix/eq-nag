@@ -207,5 +207,13 @@ export class CharacterModel {
     public extendedDotFocusDecayLevel: number;
     public logFile: string;
     public server: string;
+    
+    public _added: boolean = false;
+}
+
+export class NewCharacterOptionModel {
+    
+    public server: string;
+    public options: CharacterModel[] = [];
 
 }

@@ -398,6 +398,22 @@ export class IpcService {
         return obs;
     }
 
+    public createCharacter( model: CharacterModel ): Observable<boolean> {
+        let obs: Observable<boolean> = new Observable<boolean>( ( observer: Observer<boolean> ) => {
+            
+            this.ipc.once( 'character:create', ( e, created: boolean ) => {
+                this.ngZone.run( () => {
+                    observer.next( created );
+                    observer.complete();
+                } );
+            } );
+            this.ipc.send( 'character:create', model );
+
+        } );
+
+        return obs;
+    }
+
     public getCharacters(): Observable<CharacterModel[]> {
         let obs: Observable<CharacterModel[]> = new Observable<CharacterModel[]>( ( observer: Observer<CharacterModel[]> ) => {
             
@@ -476,6 +492,10 @@ export class IpcService {
         } );
 
         return obs;
+    }
+
+    public setEqInstallFolder( folder: string ): void {
+        this.ipc.send( 'settings:set:everquest-folder', folder );
     }
 
     public enableOverlayEditMode( overlayId: string ): void {

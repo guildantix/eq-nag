@@ -258,10 +258,15 @@ class UserPreferencesStore extends Store {
             this.damageReceivedOverlayId = arg;
         } );
 
+        ipcMain.on( 'settings:set:everquest-folder', ( event, folder ) => {
+            this.everquestInstallFolder = folder;
+            this.storeDataFile( this.#data );
+        } );
+
         ipcMain.on( 'settings:get:everquest-folder', ( event, arg ) => {
             if ( this.#data.everquestInstallFolder != null && fs.existsSync( this.#data.everquestInstallFolder ) ) {
                 // event.sender.webContents.send( 'settings:get:everquest-folder', this.#data.everquestInstallFolder );
-                event.sender.webContents.send( 'settings:get:everquest-folder', null );
+                event.sender.webContents.send( 'settings:get:everquest-folder', this.#data.everquestInstallFolder );
             } else {
                 get_win_drives( drives => {
                     this.#data.everquestInstallFolder = null;

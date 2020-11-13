@@ -145,7 +145,7 @@ class CharacterDatabaseStore extends Store {
      * @returns {CharacterModel[]} Returns the list of all character.
      */
     getAll() {
-        return this.#data.character;
+        return this.#data.characters;
     }
 
 
