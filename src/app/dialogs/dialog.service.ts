@@ -122,7 +122,7 @@ export class DialogService {
     /**
      * Opens the new character dialog.
      */
-    public showNewCharacterDialog( afterClosed: () => void ): void {
+    public showNewCharacterDialog( afterClosed: (characterId: string) => void ): void {
         this.dialog.open( NewCharacterDialogComponent, {
             width: '750px'
         } ).afterClosed().subscribe( afterClosed );

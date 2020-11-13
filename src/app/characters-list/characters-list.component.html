@@ -1,48 +1,46 @@
 
 <mat-accordion class="example-headers-align">
-    <mat-expansion-panel hideToggle>
+    <mat-expansion-panel hideToggle *ngFor="let character of characters; let i = index" [expanded]="selectedTabIndex === i">
       <mat-expansion-panel-header>
-        <mat-panel-title>Halivar</mat-panel-title>
-        <mat-panel-description>Firiona Vie<mat-icon style="margin-left:15px;" color="accent">cast_connected</mat-icon></mat-panel-description>
+        <mat-panel-title>{{character.name}}</mat-panel-title>
+        <mat-panel-description>{{character.server}}<mat-icon *ngIf="true" color="accent">cast_connected</mat-icon><mat-icon *ngIf="false">cast</mat-icon></mat-panel-description>
       </mat-expansion-panel-header>
 
       <mat-tab-group animationDuration="0ms" [selectedIndex]="0">
         <mat-tab label="Settings">
-            <div style="padding: 15px;display: flex;flex-direction: column;justify-content: center;flex: 1 1 0px;">
+            <div class="character-tab-content">
 
-                <mat-card style="background-color: #272727; margin: 7px;">
+                <mat-card>
                     <mat-card-header>
                         <mat-card-title>
                             Log file
                         </mat-card-title>
                     </mat-card-header>
                     <mat-card-content>
-                        characters: {{characters.length}}
                         <button mat-button color="accent">Select Log File</button>
-                        <div><small>Current: asdfasdfasdfasdfasddf</small></div>
+                        <div><small>Current: {{character.logFile}}</small></div>
                     </mat-card-content>
                 </mat-card>
                 
-                <mat-card style="background-color: #272727; margin: 7px;">
+                <mat-card>
 
                     <mat-card-header>
                         <mat-card-title>Focus Effects</mat-card-title>
                     </mat-card-header>
 
                     <mat-card-content>
-                        <mat-checkbox> Extended DOT Focus?</mat-checkbox>
-                        <!-- *ngIf="focusEffectSettings.hasExtendedDotFocus" -->
-                        <span >
+                        <mat-checkbox [(ngModel)]="character.hasExtendedDotFocus" (change)="updateCharacter(character)" name="hasExtendedDotFocus_{{i}}"> Extended DOT Focus?</mat-checkbox>
+                        <span *ngIf="character.hasExtendedDotFocus">
 
                             <mat-form-field style="width: 104px; margin-left: 15px;">
                                 <mat-label>%</mat-label>
-                                <input matInput name="txtExtDotFocusPercent" type="number" />
+                                <input matInput  [(ngModel)]="character.extendedDotFocusPercent" name="extDotFocusPercent_{{i}}" type="number" (change)="updateCharacter(character)" />
                                 <mat-hint>Percent increase</mat-hint>
                             </mat-form-field>
                             
                             <mat-form-field style="width: 192px; margin-left: 15px;">
                                 <mat-label>Level</mat-label>
-                                <input matInput name="txtExtDotFocusDecayLevel" type="number" />
+                                <input matInput [(ngModel)]="character.extendedDotFocusDecayLevel" name="extDotFocusDecayLevel_{{i}}" type="number" (change)="updateCharacter(character)" />
                                 <mat-hint>Level at which decay begins</mat-hint>
                             </mat-form-field>
 
@@ -56,74 +54,9 @@
 
         </mat-tab>
       </mat-tab-group>
-      <!-- <fieldset>
-          <legend><span>Log File</span><span class="spacer"></span><button mat-button color="accent">Select Log File</button></legend>
-          <small>Current: {{logFile}}</small>
-      </fieldset>
-
-      <fieldset>
-          <legend><span>Text to Speech</span></legend>
-          <mat-select>
-              <mat-option [value]="null">Default</mat-option>
-              <mat-option *ngFor="let option of voiceOptions; let i = index" [value]="i">{{option.name}}</mat-option>
-          </mat-select>
-      </fieldset>
-
-      <fieldset>
-          <legend>Focus Effects</legend>
-          <mat-checkbox> Extended DOT Focus?</mat-checkbox>
-          <span *ngIf="focusEffectSettings.hasExtendedDotFocus">
-
-              <mat-form-field style="width: 104px; margin-left: 15px;">
-                  <mat-label>%</mat-label>
-                  <input matInputname="txtExtDotFocusPercent" type="number" />
-                  <mat-hint>Percent increase</mat-hint>
-              </mat-form-field>
-              
-              <mat-form-field style="width: 192px; margin-left: 15px;">
-                  <mat-label>Level</mat-label>
-                  <input matInput name="txtExtDotFocusDecayLevel" type="number" />
-                  <mat-hint>Level at which decay begins</mat-hint>
-              </mat-form-field>
-
-          </span>
-      </fieldset> -->
 
       <mat-action-row>
-        
-      </mat-action-row>
-    </mat-expansion-panel>
-  
-    <mat-expansion-panel hideToggle>
-      <mat-expansion-panel-header>
-        <mat-panel-title>Ryvn</mat-panel-title>
-        <mat-panel-description>Mangler<mat-icon style="margin-left:15px;">cast</mat-icon></mat-panel-description>
-      </mat-expansion-panel-header>
-  
-      <!-- <mat-form-field>
-        <mat-label>Country</mat-label>
-        <input matInput>
-      </mat-form-field> -->
-  
-      <mat-action-row>
-        
-      </mat-action-row>
-    </mat-expansion-panel>
-  
-    <mat-expansion-panel hideToggle>
-      <mat-expansion-panel-header>
-        <mat-panel-title>Eryndhel</mat-panel-title>
-        <mat-panel-description>Aradune<mat-icon style="margin-left:15px;">cast</mat-icon></mat-panel-description>
-      </mat-expansion-panel-header>
-  
-      <!-- <mat-form-field>
-        <mat-label>Date</mat-label>
-        <input matInput [matDatepicker]="picker" (focus)="picker.open()" readonly>
-      </mat-form-field>
-      <mat-datepicker #picker></mat-datepicker> -->
-  
-      <mat-action-row>
-        
+        <button type="button" mat-button color="warn" (click)="deleteCharacter(character)">Remove character</button>
       </mat-action-row>
     </mat-expansion-panel>
   

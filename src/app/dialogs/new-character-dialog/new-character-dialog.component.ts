@@ -111,10 +111,10 @@ export class NewCharacterDialogComponent implements OnInit {
     }
 
     create(): void {
-        this.ipcService.createCharacter( this.model ).subscribe( created => {
-            if ( created ) {
+        this.ipcService.createCharacter( this.model ).subscribe( characterId => {
+            if ( characterId != null ) {
                 this.snackBar.open( 'Character added!', 'Dismiss', { duration: 2500 } );
-                this.dialogRef.close();
+                this.dialogRef.close( characterId );
             }
         } );
     }

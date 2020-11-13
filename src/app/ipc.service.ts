@@ -398,12 +398,12 @@ export class IpcService {
         return obs;
     }
 
-    public createCharacter( model: CharacterModel ): Observable<boolean> {
-        let obs: Observable<boolean> = new Observable<boolean>( ( observer: Observer<boolean> ) => {
+    public createCharacter( model: CharacterModel ): Observable<string> {
+        let obs: Observable<string> = new Observable<string>( ( observer: Observer<string> ) => {
             
-            this.ipc.once( 'character:create', ( e, created: boolean ) => {
+            this.ipc.once( 'character:create', ( e, characterId: string ) => {
                 this.ngZone.run( () => {
-                    observer.next( created );
+                    observer.next( characterId );
                     observer.complete();
                 } );
             } );
