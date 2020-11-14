@@ -90,49 +90,52 @@ class WindowManager {
         } );
 
         ipcMain.on( 'overlay:enable-edit', ( event, overlayId ) => {
+            let model = overlayDatabase.find( overlayId );
+
             if ( overlayDictionary && overlayDictionary[ overlayId ] ) {
                 overlayDictionary[ overlayId ].window.setIgnoreMouseEvents( false );
                 overlayDictionary[ overlayId ].window.webContents.send( 'overlay:window:enable-edit' );
-                let model = overlayDatabase.find( overlayId );
-                if ( model.overlayType === 'FCT' ) {
-                    overlayDictionary[ overlayId ].window.setBounds( {
-                        x: model.x,
-                        y: model.y,
-                        width: model.windowWidth,
-                        height: model.windowHeight
-                    } );
-                }
             } else {
-                let model = overlayDatabase.find( overlayId );
                 if ( model ) {
                     loadOverlay( model, overlayDatabase, true );
                 } else {
                     console.error( `Could not find over lay ${overlayId}` );
+                    return;
                 }
+            }
+            
+            if ( model?.overlayType === 'FCT' ) {
+                overlayDictionary[ overlayId ].window.setBounds( {
+                    x: model.x,
+                    y: model.y,
+                    width: model.windowWidth,
+                    height: model.windowHeight
+                } );
             }
         } );
         
         ipcMain.on( 'overlay:disable-edit', ( event, overlayId ) => {
+            let model = overlayDatabase.find( overlayId );
             
             if ( overlayDictionary && overlayDictionary[ overlayId ] ) {
                 overlayDictionary[ overlayId ].window.setIgnoreMouseEvents( true );
                 overlayDictionary[ overlayId ].window.webContents.send( 'overlay:window:disable-edit' );
-                let model = overlayDatabase.find( overlayId );
-                if ( model.overlayType === 'FCT' ) {
-                    overlayDictionary[ overlayId ].window.setBounds( {
-                        x: model.x - criticalPadding,
-                        y: model.y - criticalPadding,
-                        width: model.windowWidth + criticalPadding * 2,
-                        height: model.windowHeight + criticalPadding * 2
-                    } );
-                }
             } else {
-                let model = overlayDatabase.find( overlayId );
                 if ( model ) {
                     loadOverlay( model, overlayDatabase, false );
                 } else {
                     console.error( `Could not find over lay ${overlayId}` );
+                    return;
                 }
+            }
+            
+            if ( model?.overlayType === 'FCT' ) {
+                overlayDictionary[ overlayId ].window.setBounds( {
+                    x: model.x - criticalPadding,
+                    y: model.y - criticalPadding,
+                    width: model.windowWidth + criticalPadding * 2,
+                    height: model.windowHeight + criticalPadding * 2
+                } );
             }
         } );
 
@@ -296,10 +299,6 @@ function loadOverlay( model, overlayDatabase, enableEdit ) {
             overlay.webContents.send( 'overlay:window:enable-edit' );
             overlay.setIgnoreMouseEvents( false );
             overlay.webContents.send( 'overlay:window:model', model );
-            if ( model.overlayType === 'FCT' ) {
-                overlay.setSize( bounds.width - criticalPadding * 2, bounds.height - criticalPadding * 2 );
-                overlay.setPosition( bounds.x + criticalPadding, bounds.y + criticalPadding );
-            }
         } );
     } else {
         overlay.webContents.once( 'dom-ready', () => {

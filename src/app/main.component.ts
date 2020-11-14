@@ -176,12 +176,16 @@ export class MainComponent implements OnInit {
     }
 
     showNewOverlayDialog(): void {
-        this.dialogService.
-            showOverlayDetailsDialog( new OverlayWindowModel() )
+        this.dialogService
+            .showOverlayDetailsDialog( new OverlayWindowModel() )
             .subscribe( model => {
                 if ( model?.isValid() === true ) {
+                    model.x = 100;
+                    model.y = 100;
+                    model.windowWidth = 500;
+                    model.windowHeight = 400;
                     this.ipcService.createNewOverlayWindow( model ).subscribe( overlayId => {
-                        this.ipcService.showEditOverlayDialog( overlayId );
+                        window.setTimeout( () => this.ipcService.showEditOverlayDialog( overlayId ) );
                     } );
                 }
             } );
