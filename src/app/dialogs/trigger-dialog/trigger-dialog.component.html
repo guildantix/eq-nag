@@ -364,7 +364,7 @@
 
                                                         <!-- Ended text -->
                                                         <div *ngIf="action.remainAfterEnded && action.remainDuration > 0" style="margin-top:10px; clear: both;">
-                                                            <mat-checkbox [(ngModel)]="action.endedDisplayText" name="cbxEndedDisplayText_{{i}}" *ngIf="action.endingDuration > 0">Display text</mat-checkbox>
+                                                            <mat-checkbox [(ngModel)]="action.endedDisplayText" name="cbxEndedDisplayText_{{i}}" *ngIf="action.remainDuration > 0">Display text</mat-checkbox>
                 
                                                             <div style="display: inline; float: right; clear: right; width: 400px; margin-top: -10px;">
                                                                 <mat-form-field *ngIf="action.endedDisplayText">
@@ -389,7 +389,7 @@
 
                                                         <!-- Ended speach -->
                                                         <div *ngIf="action.remainAfterEnded && action.remainDuration > 0" style="margin-top:10px; clear: both;">
-                                                            <mat-checkbox [(ngModel)]="action.endedSpeak" name="cbxEndedSpeak_{{i}}" *ngIf="action.endingDuration > 0">Speak phrase</mat-checkbox>
+                                                            <mat-checkbox [(ngModel)]="action.endedSpeak" name="cbxEndedSpeak_{{i}}" *ngIf="action.remainDuration > 0">Speak phrase</mat-checkbox>
                 
                                                             <div style="display: inline; float: right; clear: right; width: 400px; margin-top: -10px;">
                                                                 <mat-form-field *ngIf="action.endedSpeak">
@@ -402,7 +402,7 @@
 
                                                         <!-- Change dot timer color -->
                                                         <div *ngIf="action.remainAfterEnded && action.remainDuration > 0">
-                                                            <mat-checkbox [(ngModel)]="action.endedChangeColor" name="cbxEndedChangeColor_{{i}}" *ngIf="action.endingDuration > 0">Change timer color</mat-checkbox>
+                                                            <mat-checkbox [(ngModel)]="action.endedChangeColor" name="cbxEndedChangeColor_{{i}}" *ngIf="action.remainDuration > 0">Change timer color</mat-checkbox>
                                                             <app-color-picker [(ngModel)]="action.endedColor" name="acpEndedColor{{i}}" *ngIf="action.endedChangeColor" [inline]="true"></app-color-picker>
                                                         </div>
 
