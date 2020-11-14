@@ -28,6 +28,7 @@ class LogBootstrapper {
         ipcMain.on( 'tick', ( event, tickData ) => {
             for ( let key in logWatchers ) {
                 if ( logWatchers.hasOwnProperty( key ) && logWatchers[ key ].window != null ) {
+                    tickData.characterModel = logWatchers[ key ].model;
                     logWatchers[ key ].window.webContents.send( 'tick', tickData );
                 }
             }
@@ -92,6 +93,7 @@ class LogBootstrapper {
             logFile: chr.logFile,
             logSize: startingStats == null ? 0 : startingStats.size,
             nullAttemptCount: 0,
+            model: chr,
         };
         
         logWatchers[ characterId ].intervalId = setInterval( () => {
@@ -149,6 +151,7 @@ class LogBootstrapper {
                 }
             }
             
+            logWatchers[ characterId ].model = _chr;
             logWatchers[ characterId ].logSize = _stats.size;
 
         }, checkInterval );
@@ -179,6 +182,7 @@ class LogBootstrapper {
     tick( tickData ) {
         for ( let key in logWatchers ) {
             if ( logWatchers.hasOwnProperty( key ) && logWatchers[ key ].window != null ) {
+                tickData.characterModel = logWatchers[ key ].model;
                 logWatchers[ key ].window.webContents.send( 'tick', tickData );
             }
         }
@@ -208,9 +212,7 @@ function startLogWatcherWindow( logFile, isDev, sendTick ) {
     } );
 
     logWatcherWindow.webContents.once( 'dom-ready', () => {
-        if ( logFile != null ) {
-            logWatcherWindow.webContents.send( 'log:changed', logFile );
-        }
+        logWatcherWindow.webContents.send( 'log:changed', logFile );
         sendTick();
     } );
     logWatcherWindow.setPosition( 100, 500 );

@@ -32,6 +32,7 @@ var logParseTimeoutId = null;
 var logParseTimer = 50;
 var changingLogFile = false;
 var isDev = false;
+var characterName = null;
 
 function LogWatcher() {
 
@@ -133,6 +134,8 @@ function LogWatcher() {
     } );
 
     ipcRenderer.on( 'tick', function ( event, data ) {
+        characterName = data.characterModel == null ? characterName : data.characterModel.name;
+        saveScalarVariable( "Character", characterName );
         triggers = data.triggers;
         enableFct = data.enableFct;
         damageDealtOverlayId = data.damageDealtOverlayId;
@@ -496,6 +499,10 @@ function parseLogEntries( raw, simulating ) {
                         comp.instanceId = nanoid();
                         comp.action = Object.assign( new TriggerAction(), action );
                         comp.action.displayText = StringUtilities.parseStoredVariablesToLiteral( action.displayText, storedVariables );
+                        comp.action.endingSoonText = StringUtilities.parseStoredVariablesToLiteral( action.endingSoonText, storedVariables );
+                        comp.action.endingSoonSpeakPhrase = StringUtilities.parseStoredVariablesToLiteral( action.endingSoonSpeakPhrase, storedVariables );
+                        comp.action.endedText = StringUtilities.parseStoredVariablesToLiteral( action.endedText, storedVariables );
+                        comp.action.endedSpeakPhrase = StringUtilities.parseStoredVariablesToLiteral( action.endedSpeakPhrase, storedVariables );
                         comp.overlayId = action.overlayId;
                         comp.matches = res.result;
                         comp.timestamp = timestamp;
@@ -527,25 +534,29 @@ function parseLogEntries( raw, simulating ) {
                         comp.instanceId = nanoid();
                         comp.action = Object.assign( new TriggerAction(), action );
                         comp.action.displayText = `${trigger.name} --== {1} ==--`;
+                        comp.action.endingSoonText = StringUtilities.parseStoredVariablesToLiteral( action.endingSoonText, storedVariables );
+                        comp.action.endingSoonSpeakPhrase = StringUtilities.parseStoredVariablesToLiteral( action.endingSoonSpeakPhrase, storedVariables );
+                        comp.action.endedText = StringUtilities.parseStoredVariablesToLiteral( action.endedText, storedVariables );
+                        comp.action.endedSpeakPhrase = StringUtilities.parseStoredVariablesToLiteral( action.endedSpeakPhrase, storedVariables );
                         comp.overlayId = action.overlayId;
                         comp.matches = res.result;
                         comp.timestamp = timestamp;
                         comp.voiceIndex = voiceIndex;
-
+                        
                         if ( comp.action.endingSoonDisplayText ) {
-                            comp.action.endingSoonText = StringUtilities.parseConditionResultsToLiteral( action.endingSoonText, trigger._conditionResults );
+                            comp.action.endingSoonText = StringUtilities.parseConditionResultsToLiteral( comp.action.endingSoonText, trigger._conditionResults );
                         }
 
                         if ( comp.action.endingSoonSpeak ) {
-                            comp.action.endingSoonSpeakPhrase = StringUtilities.parseConditionResultsToLiteral( action.endingSoonSpeakPhrase, trigger._conditionResults );
+                            comp.action.endingSoonSpeakPhrase = StringUtilities.parseConditionResultsToLiteral( comp.action.endingSoonSpeakPhrase, trigger._conditionResults );
                         }
 
                         if ( comp.action.endedDisplayText ) {
-                            comp.action.endedText = StringUtilities.parseConditionResultsToLiteral( action.endedText, trigger._conditionResults );
+                            comp.action.endedText = StringUtilities.parseConditionResultsToLiteral( comp.action.endedText, trigger._conditionResults );
                         }
 
                         if ( comp.action.endedSpeak ) {
-                            comp.action.endedSpeakPhrase = StringUtilities.parseConditionResultsToLiteral( action.endedSpeakPhrase, trigger._conditionResults );
+                            comp.action.endedSpeakPhrase = StringUtilities.parseConditionResultsToLiteral( comp.action.endedSpeakPhrase, trigger._conditionResults );
                         }
 
                         if ( hasExtDotFocus ) {
@@ -578,13 +589,13 @@ function parseLogEntries( raw, simulating ) {
                         if ( !simulating && action.displayText && voiceIndex > -1 ) {
                             var utter = new SpeechSynthesisUtterance();
 
-                            utter.text = action.displayText;
+                            utter.text = StringUtilities.parseStoredVariablesToLiteral( action.displayText, storedVariables );
                             utter.voice = voiceOptions[ voiceIndex ];
                             utter.onend = function ( event ) { }
                             speechSynthesis.speak( utter );
 
                         } else {
-                            console.log( 'speaking', action.displayText );
+                            console.log( 'speaking', StringUtilities.parseStoredVariablesToLiteral( action.displayText, storedVariables ) );
 
                         }
                         
@@ -608,6 +619,16 @@ function saveVariable( key, value ) {
     if ( index === -1 ) {
         storedVariables[ key ].push( value );
     }
+}
+
+/**
+ * Saves the given value in the store.
+ * 
+ * @param {string} key The key of the stored variable.
+ * @param {any} value The value to store.
+ */
+function saveScalarVariable( key, value ) {
+    storedVariables[ key ] = [ value ];
 }
 
 /**
