@@ -1,6 +1,7 @@
 const { app, BrowserWindow, ipcMain, screen } = require( "electron" );
 const fs = require( 'fs' );
 const CharacterDatabaseStore = require( './data/character-database' );
+const CharacterModel = require( './data/models/character' );
 
 // logWatcherRef.reference?.webContents.send( 'log:changed', arg );
 
@@ -28,6 +29,7 @@ class LogBootstrapper {
         ipcMain.on( 'tick', ( event, tickData ) => {
             for ( let key in logWatchers ) {
                 if ( logWatchers.hasOwnProperty( key ) && logWatchers[ key ].window != null ) {
+                    logWatchers[ key ].model = characterDatabase.find( key );
                     tickData.characterModel = logWatchers[ key ].model;
                     logWatchers[ key ].window.webContents.send( 'tick', tickData );
                 }
@@ -178,10 +180,12 @@ class LogBootstrapper {
      * Sends a tick to all log watcher windows.
      * 
      * @param {any} tickData The data for the tick
+     * @param {CharacterDatabaseStore} characterDatabase The character database.
      */
-    tick( tickData ) {
+    tick( tickData, characterDatabase ) {
         for ( let key in logWatchers ) {
             if ( logWatchers.hasOwnProperty( key ) && logWatchers[ key ].window != null ) {
+                logWatchers[ key ].model = characterDatabase.find( key );
                 tickData.characterModel = logWatchers[ key ].model;
                 logWatchers[ key ].window.webContents.send( 'tick', tickData );
             }
@@ -207,7 +211,7 @@ function startLogWatcherWindow( logFile, isDev, sendTick, character, logPosition
         webPreferences: { nodeIntegration: true, webSecurity: false },
     } );
     logWatcherWindow.webContents.openDevTools();
-    logWatcherWindow.loadURL( `file://${__dirname}/threads/log-watcher.html?character=${character.name}&logPosition=${logPosition}` );
+    logWatcherWindow.loadURL( `file://${__dirname}/threads/log-watcher.html?character=${encodeURI(JSON.stringify(character))}&logPosition=${logPosition}` );
 
     logWatcherWindow.on( 'closed', function () {
         logWatcherWindow = null;

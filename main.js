@@ -128,7 +128,7 @@ function sendTick() {
         isDev: app.isDev(),
     };
     mainWindow.webContents.send( 'tick', tickData );
-    logBootstrap.tick( tickData );
+    logBootstrap.tick( tickData, characterDatabase );
 }
 
 autoUpdater.signals.updateDownloaded( () => {

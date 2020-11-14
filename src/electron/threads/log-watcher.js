@@ -6,6 +6,7 @@ const fs = require( 'fs' );
 const DkpEntryModel = require( '../data/models/dkp-entry' );
 const { Trigger, TriggerAction, ActionTypes, TriggerConditionTypes, OperatorTypes } = require( '../data/models/trigger' );
 const { OverlayComponent } = require( '../data/models/overlay-window' );
+const CharacterModel = require( '../data/models/character' );
 const customAlphabet = require( 'nanoid' ).customAlphabet;
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const nanoid = customAlphabet( alphabet, 16 );
@@ -35,9 +36,20 @@ var changingLogFile = false;
 var isDev = false;
 var characterName = null;
 
-function LogWatcher(chrName, logPosition) {
+/**
+ * Initializes the log watcher.
+ * 
+ * @param {CharacterModel} character The character details.
+ * @param {number} logPosition The starting log position.
+ */
+function LogWatcher(character, logPosition) {
     
-    characterName = chrName;
+    if ( character ) {
+        characterName = character.name;
+        hasExtDotFocus = character.hasExtendedDotFocus;
+        extDotFocusPercent = character.extendedDotFocusPercent;
+        extDotFocusDecayLevel = character.extendedDotFocusDecayLevel;
+    }
     saveScalarVariable( "Character", characterName );
 
     if ( logPosition >= 0 ) {
@@ -150,9 +162,9 @@ function LogWatcher(chrName, logPosition) {
         enableFct = data.enableFct;
         damageDealtOverlayId = data.damageDealtOverlayId;
         damageReceivedOverlayId = data.damageReceivedOverlayId;
-        hasExtDotFocus = data.hasExtendedDotFocus;
-        extDotFocusPercent = data.extendedDotFocusPercent;
-        extDotFocusDecayLevel = data.extendedDotFocusDecayLevel;
+        hasExtDotFocus = data.characterModel?.hasExtendedDotFocus;
+        extDotFocusPercent = data.characterModel?.extendedDotFocusPercent;
+        extDotFocusDecayLevel = data.characterModel?.extendedDotFocusDecayLevel;
         voiceIndex = data.voiceIndex;
         isDev = data.isDev;
         // isDev = false;
