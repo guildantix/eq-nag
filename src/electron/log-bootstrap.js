@@ -8,10 +8,10 @@ const CharacterDatabaseStore = require( './data/character-database' );
 var logWatchers = {};
 
 /** @type {number} The duration to wait between checking for activity on a log file. */
-const checkInterval = 15 * 1000;
+const checkInterval = 5 * 1000;
 
 /** @type {number} If the log file has no updates in the given number of checks, then kill the log watcher window. */
-const killAfterNAttempts = 5;
+const killAfterNAttempts = 60 * 1000 / checkInterval;
 
 class LogBootstrapper {
 
@@ -53,11 +53,11 @@ class LogBootstrapper {
         
         let characters = characterDatabase.getAll();
         characters.forEach( chr => {
-            this.startWatcher( chr, isDev, characterDatabase, sendTick );
+            this.startWatcher( mainWindowRef, chr, isDev, characterDatabase, sendTick );
         } );
 
         characterDatabase.onCharacterCreated( chr => {
-            this.startWatcher( chr, isDev, characterDatabase, sendTick );
+            this.startWatcher( mainWindowRef, chr, isDev, characterDatabase, sendTick );
         } );
 
         characterDatabase.onCharacterRemoved( chr => {
@@ -77,12 +77,13 @@ class LogBootstrapper {
     /**
      *  Starts watching for changes in the given character data.
      * 
+     * @param {ForwardRef} mainWindowRef The main window of the application.
      * @param {CharacterModel} chr The character to watch.
      * @param {boolean} isDev Sets up the log watcher window for development environment if true.
      * @param {CharacterDatabaseStore} characterDatabase The character database.
      * @param {function} sendTick The send tick method.
      */
-    startWatcher( chr, isDev, characterDatabase, sendTick ) {
+    startWatcher( mainWindowRef, chr, isDev, characterDatabase, sendTick ) {
         let characterId = chr.characterId;
         let startingStats = fs.statSync( chr.logFile );
         logWatchers[ characterId ] = {
@@ -121,8 +122,13 @@ class LogBootstrapper {
                 logWatchers[ characterId ].nullAttemptCount = 0;
 
                 if ( logWatchers[ characterId ].window == null ) {
+
                     // If the window has not been engaged, then open it.
                     logWatchers[ characterId ].window = startLogWatcherWindow( _chr.logFile, isDev, sendTick );
+                    
+                    // Notify the main window.
+                    mainWindowRef.reference.webContents.send( 'log:character:activated', characterId );
+
                 }
                 
             } else if ( logWatchers[ characterId ].window != null ) {
@@ -132,6 +138,10 @@ class LogBootstrapper {
 
                 // If after # of attempts without seeing any changes in the log file, then kill the process.
                 if ( logWatchers[ characterId ].nullAttemptCount >= killAfterNAttempts ) {
+
+                    // Notify the main window.
+                    mainWindowRef.reference.webContents.send( 'log:character:deactivated', characterId );
+
                     if ( logWatchers[ characterId ].window != null && !logWatchers[ characterId ].window.isDestroyed() ) {
                         logWatchers[ characterId ].window.close();
                         logWatchers[ characterId ].window = null;

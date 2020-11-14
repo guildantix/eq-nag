@@ -14,6 +14,8 @@ export class IpcService {
     private _dkpAddedObservers: Observer<DkpEntryModel>[] = [];
     private _dkpRemovedObservers: Observer<string>[] = [];
     private _consoleLogRequestObservers: Observer<any>[] = [];
+    private _logActivatedObservers: Observer<any>[] = [];
+    private _logDeactivatedObservers: Observer<any>[] = [];
 
     constructor( private ngZone: NgZone ) {
         if ( ( <any>window ).require ) {
@@ -63,6 +65,23 @@ export class IpcService {
                 this.ipc.on( 'console:log', ( event: any, data: any ) => {
                     console.log( data );
                 } );
+
+                this.ipc.on( 'log:character:activated', ( event: any, data: any ) => {
+                    ngZone.run( () => {
+                        this._logActivatedObservers?.forEach( f => {
+                            f.next( data );
+                        } );
+                    } );
+                } );
+
+                this.ipc.on( 'log:character:deactivated', ( event: any, data: any ) => {
+                    ngZone.run( () => {
+                        this._logDeactivatedObservers?.forEach( f => {
+                            f.next( data );
+                        } );
+                    } );
+                } );
+
             } catch ( e ) {
                 throw e;
             }
@@ -106,6 +125,22 @@ export class IpcService {
     public dkpEntryRemoved(): Observable<string> {
         let obs: Observable<string> = new Observable<string>( ( observer: Observer<string> ) => {
             this._dkpRemovedObservers.push( observer );
+        } );
+
+        return obs;
+    }
+
+    public characterLogActivated(): Observable<string> {
+        let obs: Observable<string> = new Observable<string>( ( observer: Observer<string> ) => {
+            this._logActivatedObservers.push( observer );
+        } );
+
+        return obs;
+    }
+
+    public characterLogDeactivated(): Observable<string> {
+        let obs: Observable<string> = new Observable<string>( ( observer: Observer<string> ) => {
+            this._logDeactivatedObservers.push( observer );
         } );
 
         return obs;

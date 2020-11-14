@@ -14,6 +14,7 @@ export class CharactersListComponent implements OnInit {
 
     public characters: CharacterModel[] = [];
     public selectedTabIndex: number = -1;
+    public activeLogFilesDictionary: any = {};
     
     @ViewChild( 'fileSelector' ) private fileSelector: ElementRef<HTMLInputElement>;
 
@@ -21,6 +22,8 @@ export class CharactersListComponent implements OnInit {
 
     ngOnInit(): void {
         this.loadCharacters();
+        this.ipcService.characterLogActivated().subscribe( chrId => this.activeLogFilesDictionary[ chrId ] = true );
+        this.ipcService.characterLogDeactivated().subscribe( chrId => this.activeLogFilesDictionary[ chrId ] = false );
     }
 
     public newCharacter(): void {
