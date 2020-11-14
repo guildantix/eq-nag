@@ -221,14 +221,12 @@ class UserPreferencesStore extends Store {
      * Attaches store events to ipc main and dispatches react events to the main window.
      * 
      * @param {ForwardRef} mainWindowRef The main window of the application.
-     * @param {ForwardRef} logWatcherRef The log watcher window of the application.
      * @param {function} sendTick The send tick method.
      */
-    attachIpcEvents( mainWindowRef, logWatcherRef, sendTick ) {
+    attachIpcEvents( mainWindowRef, sendTick ) {
 
         ipcMain.on( 'log:select', ( event, arg ) => {
             this.logFile = arg;
-            logWatcherRef.reference?.webContents.send( 'log:changed', arg );
             event.sender.send( 'log:changed', arg );
         } );
         

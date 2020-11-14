@@ -36,7 +36,6 @@ var isDev = false;
 function LogWatcher() {
 
     ipcRenderer.on( 'log:changed', function ( event, data ) {
-
         function startParsingLogFile() {
             fs.open( data, 'r', function ( err, fd ) {
 

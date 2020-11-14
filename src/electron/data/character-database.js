@@ -8,6 +8,10 @@ const idLen = 16;
 const nanoid = customAlphabet( alphabet, 16 );
 const CharacterModel = require( "./models/character" );
 
+/** @type {((character: CharacterModel) => void)[]} */
+var onCreatedHandlers = [];
+/** @type {((character: CharacterModel) => void)[]} */
+var onRemovedHandlers = [];
 
 class CharacterDatabaseStore extends Store {
 
@@ -56,6 +60,9 @@ class CharacterDatabaseStore extends Store {
         // Save changes to the data.
         this.storeDataFile( this.#data );
 
+        // Execute any callback functions for the on created event.
+        onCreatedHandlers.forEach( fn => fn( character ) );
+
         return character.characterId;
     }
     
@@ -69,10 +76,9 @@ class CharacterDatabaseStore extends Store {
 
             // Find the index of the character.
             let i = _.findIndex( this.#data.characters, ( e ) => e.characterId === characterId );
-
+            
             // Remove the character by index.
             return this.removeIndex( i );
-
         }
     }
     
@@ -89,6 +95,9 @@ class CharacterDatabaseStore extends Store {
 
             // Save the changes to the data.
             this.storeDataFile( this.#data );
+
+            // Execute any callback functions for the on removed event.
+            removed?.forEach( chr => onRemovedHandlers.forEach( fn => fn( chr ) ) );
 
             // Return true if at least 1 item was removed.
             return removed?.length > 0;
@@ -190,6 +199,34 @@ class CharacterDatabaseStore extends Store {
             sendTick();
         } );
 
+    }
+
+    /**
+     * Executes the given function, passing in the new character, when a new character is added.
+     * 
+     * @param {(character: CharacterModel) => void} fn The callback function.
+     */
+    onCharacterCreated( fn ) {
+        let i = onCreatedHandlers.indexOf( fn );
+        if ( i < 0 ) {
+            onCreatedHandlers.push( fn );
+        } else {
+            onCreatedHandlers[ i ] = fn;
+        }
+    }
+
+    /**
+     * Executes the given function, passing in the removed character, when a character is removed.
+     * 
+     * @param {(character: CharacterModel) => void} fn The callback function.
+     */
+    onCharacterRemoved( fn ) {
+        let i = onRemovedHandlers.indexOf( fn );
+        if ( i < 0 ) {
+            onRemovedHandlers.push( fn );
+        } else {
+            onRemovedHandlers[ i ] = fn;
+        }
     }
 
 }
