@@ -126,7 +126,7 @@ class LogBootstrapper {
                 if ( logWatchers[ characterId ].window == null ) {
 
                     // If the window has not been engaged, then open it.
-                    logWatchers[ characterId ].window = startLogWatcherWindow( _chr.logFile, isDev, sendTick );
+                    logWatchers[ characterId ].window = startLogWatcherWindow( _chr.logFile, isDev, sendTick, _chr, logWatchers[ characterId ].logSize > _stats.size ? 0 : logWatchers[ characterId ].logSize );
                     
                     // Notify the main window.
                     mainWindowRef.reference.webContents.send( 'log:character:activated', characterId );
@@ -196,8 +196,10 @@ class LogBootstrapper {
  * @param {string} logFile The full path to the log file.
  * @param {boolean} isDev Sets up the log watcher window for development environment if true.
  * @param {function} sendTick The send tick method.
+ * @param {CharacterModel} character The character to watch.
+ * @param {number} logPosition The position the log watcher should start processing log entries.
  */
-function startLogWatcherWindow( logFile, isDev, sendTick ) {
+function startLogWatcherWindow( logFile, isDev, sendTick, character, logPosition ) {
     let logWatcherWindow = new BrowserWindow( {
         //   width: 800,
         //   height: 600,
@@ -205,7 +207,7 @@ function startLogWatcherWindow( logFile, isDev, sendTick ) {
         webPreferences: { nodeIntegration: true, webSecurity: false },
     } );
     logWatcherWindow.webContents.openDevTools();
-    logWatcherWindow.loadFile("./src/electron/threads/log-watcher.html");
+    logWatcherWindow.loadURL( `file://${__dirname}/threads/log-watcher.html?character=${character.name}&logPosition=${logPosition}` );
 
     logWatcherWindow.on( 'closed', function () {
         logWatcherWindow = null;

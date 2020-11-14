@@ -15,6 +15,7 @@ const StringUtilities = require( '../utilities/string' );
 const NumberUtilities = require( '../utilities/numbers' );
 const FctModel = require( '../data/models/fct' );
 var currentPosition = null;
+var startLogPosition = null;
 
 var watcher = null;
 /** @type {Trigger[]} */
@@ -34,7 +35,14 @@ var changingLogFile = false;
 var isDev = false;
 var characterName = null;
 
-function LogWatcher() {
+function LogWatcher(chrName, logPosition) {
+    
+    characterName = chrName;
+    saveScalarVariable( "Character", characterName );
+
+    if ( logPosition >= 0 ) {
+        startLogPosition = logPosition;
+    }
 
     ipcRenderer.on( 'log:changed', function ( event, data ) {
         function startParsingLogFile() {
@@ -42,6 +50,10 @@ function LogWatcher() {
 
                 if ( fd ) {
                     var file = fd;
+                    if ( startLogPosition != null && startLogPosition >= 0 ) {
+                        currentPosition = startLogPosition;
+                        startLogPosition = null;
+                    }
                     currentPosition = currentPosition === null ? fs.fstatSync( file ).size : currentPosition;
                     function parseLogFile() {
                         var stats = fs.fstatSync( fd );
@@ -134,8 +146,6 @@ function LogWatcher() {
     } );
 
     ipcRenderer.on( 'tick', function ( event, data ) {
-        characterName = data.characterModel == null ? characterName : data.characterModel.name;
-        saveScalarVariable( "Character", characterName );
         triggers = data.triggers;
         enableFct = data.enableFct;
         damageDealtOverlayId = data.damageDealtOverlayId;
@@ -499,10 +509,10 @@ function parseLogEntries( raw, simulating ) {
                         comp.instanceId = nanoid();
                         comp.action = Object.assign( new TriggerAction(), action );
                         comp.action.displayText = StringUtilities.parseStoredVariablesToLiteral( action.displayText, storedVariables );
-                        comp.action.endingSoonText = StringUtilities.parseStoredVariablesToLiteral( action.endingSoonText, storedVariables );
-                        comp.action.endingSoonSpeakPhrase = StringUtilities.parseStoredVariablesToLiteral( action.endingSoonSpeakPhrase, storedVariables );
-                        comp.action.endedText = StringUtilities.parseStoredVariablesToLiteral( action.endedText, storedVariables );
-                        comp.action.endedSpeakPhrase = StringUtilities.parseStoredVariablesToLiteral( action.endedSpeakPhrase, storedVariables );
+                        // comp.action.endingSoonText = StringUtilities.parseStoredVariablesToLiteral( action.endingSoonText, storedVariables );
+                        // comp.action.endingSoonSpeakPhrase = StringUtilities.parseStoredVariablesToLiteral( action.endingSoonSpeakPhrase, storedVariables );
+                        // comp.action.endedText = StringUtilities.parseStoredVariablesToLiteral( action.endedText, storedVariables );
+                        // comp.action.endedSpeakPhrase = StringUtilities.parseStoredVariablesToLiteral( action.endedSpeakPhrase, storedVariables );
                         comp.overlayId = action.overlayId;
                         comp.matches = res.result;
                         comp.timestamp = timestamp;
