@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild } from '@angular/core';
+import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 
 import { IpcService } from 'src/app/ipc.service';
 import { TriggerModel, CapturePhrase, ActionTypes, TriggerAction, OverlayWindowModel, OperatorTypes, TriggerCondition, TriggerConditionTypes } from 'src/app/core.model';
@@ -8,7 +8,7 @@ import { ActivatedRoute } from '@angular/router';
 import { DialogService } from '../dialog.service';
 import { customAlphabet } from 'nanoid';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { ColorUtility } from 'src/app/utilities';
+import { ColorUtility, ImageUtility } from 'src/app/utilities';
 // import { NgForm } from '@angular/forms';
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const nanoid = customAlphabet( alphabet, 16 );
@@ -53,6 +53,9 @@ export class TriggerDialogComponent implements OnInit {
     
     @ViewChild( 'capturePhrasesTable' ) capturePhrasesTable: MatTable<any>;
     @ViewChild( 'conditionsTable' ) conditionsTable: MatTable<any>;
+    @ViewChild( 'iconFileSelector' ) private iconFileSelector: ElementRef<HTMLInputElement>;
+
+    private onIconFileSelected: ( e: any ) => void = null;
 
     constructor( private ipcService: IpcService, private route: ActivatedRoute, private dialogService: DialogService, private snackBar: MatSnackBar ) { }
 
@@ -207,6 +210,22 @@ export class TriggerDialogComponent implements OnInit {
     public copyJson(): void {
         this.ipcService.sendTextToClipboard( JSON.stringify( this.model ) );
         this.snackBar.open( 'Trigger details copied!', 'Dismiss', { duration: 5000 } );
+    }
+
+    openIconFileModal( action: TriggerAction ) {
+        this.onIconFileSelected = e => {
+            ImageUtility.toDataUrl( this.iconFileSelector.nativeElement.files[ 0 ] ).subscribe( dataUrl => action.timerIcon = dataUrl );
+            // console.log( 'found', action.actionId, this.iconFileSelector.nativeElement.files[ 0 ].path );
+            // action.timerIcon = this.iconFileSelector.nativeElement.files[ 0 ].path;
+        };
+        this.iconFileSelector.nativeElement.click();
+    }
+
+    iconFileSelected( e: any ) {
+        this.onIconFileSelected( e );
+        this.onIconFileSelected = null;
+        // console.log( 'testing', typeof e);
+        // this.ipcService.updateLogFile( this.iconFileSelector.nativeElement.files[ 0 ].path );
     }
 
 }

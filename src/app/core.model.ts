@@ -149,6 +149,8 @@ export class TriggerAction {
     public overrideTimerColor: string = null;
     public timerBackgroundColor: string = null;
     public useCustomColor: boolean = false;
+    public timerIcon: string = null;
+
     public ifEndingSoon: boolean = false;
     public endingDuration: number = null;
     public endingSoonChangeColor: boolean = false;

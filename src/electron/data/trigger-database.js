@@ -11,7 +11,10 @@ const ArrayUtilities = require( '../utilities/arrays' );
 
 class TriggerDatabaseStore extends Store {
 
-    /** The data store for this object. */
+    /** 
+     * The data store for this object.
+     * @type {{triggers: Trigger[]}}
+     * */
     #data;
 
     get count() {
@@ -142,6 +145,15 @@ class TriggerDatabaseStore extends Store {
                 } );
             } );
             this.#data.version = 16;
+            this.storeDataFile( this.#data );
+        }
+        if ( this.#data.version < 17 ) {
+            this.#data?.triggers?.forEach( trigger => {
+                trigger.actions?.forEach( action => {
+                    action.timerIcon = null;
+                } );
+            } );
+            this.#data.version = 17;
             this.storeDataFile( this.#data );
         }
     }

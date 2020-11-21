@@ -75,6 +75,9 @@ class TriggerAction {
     overrideTimerColor = null;
     /** @type string */
     timerBackgroundColor = null;
+    /** @type string */
+    timerIcon = null;
+
     /** @type boolean */
     ifEndingSoon = false;
     /** @type number */
