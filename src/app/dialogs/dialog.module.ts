@@ -13,6 +13,7 @@ import { FormInputModule } from '../form-inputs/form-inputs.module';
 import { TriggerActionWizardModalComponent } from './trigger-action-wizard-modal/trigger-action-wizard-modal.component';
 import { NewTriggerDialogComponent } from './new-trigger-dialog/new-trigger-dialog.component';
 import { NewCharacterDialogComponent } from './new-character-dialog/new-character-dialog.component';
+import { SelectIconDialogComponent } from './select-icon-dialog/select-icon-dialog.component';
 
 @NgModule( {
     imports: [
@@ -31,6 +32,7 @@ import { NewCharacterDialogComponent } from './new-character-dialog/new-characte
         TriggerActionWizardModalComponent,
         NewTriggerDialogComponent,
         NewCharacterDialogComponent,
+        SelectIconDialogComponent,
     ],
     declarations: [
         TriggerDialogComponent,
@@ -40,6 +42,7 @@ import { NewCharacterDialogComponent } from './new-character-dialog/new-characte
         TriggerActionWizardModalComponent,
         NewTriggerDialogComponent,
         NewCharacterDialogComponent,
+        SelectIconDialogComponent,
     ],
     providers: [
         DialogService,

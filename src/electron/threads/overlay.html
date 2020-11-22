@@ -212,7 +212,7 @@
     </script>
     <section class="body">
         <div class="overlay-name-watermark"><h1 id="overlay-title">Overlay Title</h1></div>
-        <div class="content-area">
+        <div class="content-area" style="padding-left: 20px;">
             <!-- <div class="progress">
                 <div class="determinate" style="width: 70%">Arch Shielding</div>
             </div> -->
@@ -231,6 +231,14 @@
         <p class="fct-dmg-src">({{damageSource}})</p>
     </template>
     <template id="dotTimerTemplate">
+        <p class="dot-text">{{value}}</p>
+        <!-- Background color of .progress is 13% of the .determinate color. -->
+        <div class="progress" style="background-color: rgba(0,33,0,.75)"><p style="margin: 4px;">&nbsp;</p>
+            <div class="determinate" style="width: 0%; background-color: #008000;"></div>
+        </div>
+    </template>
+    <template id="dotTimerIconTemplate">
+        <img src="{{icon}}" class="dot-icon" style="{{iconStyle}}"/>
         <p class="dot-text">{{value}}</p>
         <!-- Background color of .progress is 13% of the .determinate color. -->
         <div class="progress" style="background-color: rgba(0,33,0,.75)"><p style="margin: 4px;">&nbsp;</p>

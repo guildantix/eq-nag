@@ -128,7 +128,7 @@ export class NewCharacterDialogComponent implements OnInit {
             let characterLogPath: string = this.fileSelector.nativeElement.files[ 0 ].path;
             let eqInstallFolder: string = characterLogPath.split( '\\Logs' )[ 0 ];
 
-            this.ipcService.setEqInstallFolder( eqInstallFolder[ 0 ] );
+            this.ipcService.setEqInstallFolder( eqInstallFolder );
 
             let results = /eqlog_(?<Character>.*)_(?<Server>[a-z]*)\.txt$/gi.exec( characterLogPath );
             if ( results != null && results?.groups?.Character != null && results?.groups?.Server != null ) {

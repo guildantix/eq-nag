@@ -294,6 +294,7 @@
                                                             <mat-label>Timer Icon</mat-label>
                                                             <img *ngIf="action.timerIcon" [src]="action.timerIcon" (click)="openIconFileModal(action)" />
                                                             <button mat-button *ngIf="action.timerIcon == null" (click)="openIconFileModal(action)" color="accent">Select Icon File</button>
+                                                            <button mat-button *ngIf="action.timerIcon == null" (click)="selectEqSpellIcon(action)" color="accent">Select EverQuest Spell Icon</button>
                                                             <button mat-button *ngIf="action.timerIcon" (click)="action.timerIcon = null" color="warn">Reset Icon</button>
                                                         </div>
 

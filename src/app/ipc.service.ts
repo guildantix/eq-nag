@@ -2,7 +2,7 @@ import { Injectable, NgZone } from '@angular/core';
 import { IpcRenderer } from 'electron';
 import { Observable, Observer } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
-import { DataTickModel, DkpEntryModel, TriggerModel, OverlayWindowModel, ActionTypes, FocusEffectSettings, CharacterModel } from './core.model';
+import { DataTickModel, DkpEntryModel, TriggerModel, OverlayWindowModel, ActionTypes, FocusEffectSettings, CharacterModel, BasicError } from './core.model';
 
 @Injectable()
 export class IpcService {
@@ -523,6 +523,28 @@ export class IpcService {
                 } );
             } );
             this.ipc.send( 'settings:get:everquest-folder', null );
+
+        } );
+
+        return obs;
+    }
+
+    public getEqSpellIcons(): Observable<string[]> {
+        let obs: Observable<string[]> = new Observable<string[]>( ( observer: Observer<string[]> ) => {
+            
+            this.ipc.once( 'game-resources:get:eq:icons', ( e, icons: string[] ) => {
+                this.ngZone.run( () => {
+                    observer.next( icons );
+                    observer.complete();
+                } );
+            } );
+            this.ipc.once( 'game-resources:get:eq:icons:error', ( e, error: BasicError ) => {
+                this.ngZone.run( () => {
+                    observer.error( error );
+                    observer.complete();
+                } );
+            } );
+            this.ipc.send( 'game-resources:get:eq:icons', null );
 
         } );
 

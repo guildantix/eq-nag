@@ -77,6 +77,8 @@ class TriggerAction {
     timerBackgroundColor = null;
     /** @type string */
     timerIcon = null;
+    /** @type string */
+    timerIconDef = null;
 
     /** @type boolean */
     ifEndingSoon = false;

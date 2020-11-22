@@ -7,6 +7,7 @@ import { OverlayDetailsDialogComponent } from './overlay-details-dialog/overlay-
 import { TriggerActionWizardModalComponent } from './trigger-action-wizard-modal/trigger-action-wizard-modal.component';
 import { NewTriggerDialogComponent } from './new-trigger-dialog/new-trigger-dialog.component';
 import { NewCharacterDialogComponent } from './new-character-dialog/new-character-dialog.component';
+import { SelectIconDialogComponent } from './select-icon-dialog/select-icon-dialog.component';
 
 @Injectable()
 export class DialogService {
@@ -124,6 +125,24 @@ export class DialogService {
      */
     public showNewCharacterDialog( afterClosed: (characterId: string) => void ): void {
         this.dialog.open( NewCharacterDialogComponent, {
+            width: '750px'
+        } ).afterClosed().subscribe( afterClosed );
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Opens the new character dialog.
+     */
+    public showSelectIconDialog( afterClosed: ( icon: string ) => void ): void {
+        this.dialog.open( SelectIconDialogComponent, {
             width: '750px'
         } ).afterClosed().subscribe( afterClosed );
     }

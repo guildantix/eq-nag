@@ -1,5 +1,19 @@
 import { StringProtocolResponse } from 'electron';
 
+export const ErrorCodes = {
+    EqFolderNotFound: {
+        code: 'EQDIRNULL',
+        message: 'Could not locate your EverQuest folder.',
+    }
+};
+
+export class BasicError {
+    
+    public errorCode: string;
+    public message: string;
+
+}
+
 export class TriggerModel {
     
     public triggerId: string = null;
@@ -150,6 +164,7 @@ export class TriggerAction {
     public timerBackgroundColor: string = null;
     public useCustomColor: boolean = false;
     public timerIcon: string = null;
+    public timerIconDef: string = null;
 
     public ifEndingSoon: boolean = false;
     public endingDuration: number = null;

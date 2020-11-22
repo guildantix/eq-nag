@@ -25,6 +25,7 @@ const nanoid = customAlphabet( alphabet, 16 );
 var overlayComponents = [];
 var displayTextTemplate;
 var dotTimerTemplate;
+var dotTimerIconTemplate;
 const fctFps = 1000 / 60;
 var fctRenderQueue = [];
 var fctRenderInterval = 250;
@@ -33,12 +34,14 @@ var height = 1;
 var fontSize = 1;
 var sortDirection = TimerSortTypes.None;
 var voiceOptions = [];
+var dotTextHeight = 0;
 
 function Overlay() {
 
     DomUtilities.docReady( f => {
         displayTextTemplate = Handlebars.compile( document.querySelector( '#displayTextTemplate' ).innerHTML );
         dotTimerTemplate = Handlebars.compile( document.querySelector( '#dotTimerTemplate' ).innerHTML );
+        dotTimerIconTemplate = Handlebars.compile( document.querySelector( '#dotTimerIconTemplate' ).innerHTML );
         fctTemplate = Handlebars.compile( document.querySelector( '#fctTemplate' ).innerHTML );
         fctCriticalTemplate = Handlebars.compile( document.querySelector( '#fctCriticalTemplate' ).innerHTML );
     } );
@@ -129,6 +132,24 @@ function Overlay() {
                 textShadow += `0px 0px ${model.textGlowSize}px ${model.textGlowColor}, -1px -1px ${model.textGlowSize}px ${model.textGlowColor}, 1px -1px ${model.textGlowSize}px ${model.textGlowColor}, -1px 1px ${model.textGlowSize}px ${model.textGlowColor}, 1px 1px ${model.textGlowSize}px ${model.textGlowColor}`;
             }
             contentArea.style.textShadow = textShadow;
+
+            // Calculate the height of dot texts.
+            let pDot = document.createElement( 'p' );
+            pDot.classList.add( 'dot-text' );
+            pDot.style.visibility = 'hidden';
+            pDot.innerHTML = '&nbsp;';
+            contentArea.appendChild( pDot );
+            dotTextHeight = pDot.clientHeight;
+            console.log( 'dot text height', dotTextHeight );
+            contentArea.style.paddingLeft = `${dotTextHeight + 2}px`;
+            contentArea.removeChild( pDot );
+
+            // Update any active elements
+            document.querySelectorAll( '.content-area .dot-icon' ).forEach( icon => {
+                icon.style.marginLeft = `-${dotTextHeight + 2}px`;
+                icon.style.height = `${dotTextHeight}px`;
+            } );
+
         } );
 
     speechSynthesis.onvoiceschanged = () => {
@@ -160,7 +181,13 @@ function render( comp ) {
     } if ( comp.action.actionType === ActionTypes.DotTimer ) {
         
         let displayText = StringUtilities.format( comp.action.displayText, comp.matches );
-        let content = dotTimerTemplate( { value: displayText } );
+        let content;// = dotTimerTemplate( { value: displayText } );
+
+        if ( comp.action.timerIcon != null ) {
+            content = dotTimerIconTemplate( { value: displayText, icon: comp.action.timerIcon, iconStyle: `position: absolute; margin-left: -${dotTextHeight + 2}px;  height: ${dotTextHeight}px;` } );
+        } else {
+            content = dotTimerTemplate( { value: displayText } );
+        }
 
         if ( comp.action.restartOnDuplicate === true ) {
             // If this component needs to restart on duplicate names, then find the index of the first match, and if found reset the start.

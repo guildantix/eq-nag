@@ -257,6 +257,7 @@ class UserPreferencesStore extends Store {
         } );
 
         ipcMain.on( 'settings:set:everquest-folder', ( event, folder ) => {
+            console.log( 'saving eq folder', folder );
             this.everquestInstallFolder = folder;
             this.storeDataFile( this.#data );
         } );

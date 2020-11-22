@@ -11,6 +11,7 @@ const ForwardRef = require( './src/electron/forward-ref' );
 const WindowManager = require( './src/electron/window-manager' );
 const CharacterDatabaseStore = require( "./src/electron/data/character-database" );
 const LogBootstrapper = require( './src/electron/log-bootstrap' );
+const GameResources = require( './src/electron/data/game-resources' );
 
 /** @type {BrowserWindow} */
 var mainWindow, logWatcherWindow, testWindow;
@@ -22,6 +23,7 @@ const triggerDatabase = new TriggerDatabaseStore();
 const overlayDatabase = new OverlayDatabaseStore();
 const characterDatabase = new CharacterDatabaseStore();
 const logBootstrap = new LogBootstrapper();
+const gameResources = new GameResources();
 
 GH_TOKEN = "e3460400ae1273a5cac83e1b86a5aceae7f8bab7";
 
@@ -164,6 +166,7 @@ triggerDatabase.attachIpcEvents( mainWindowRef, sendTick );
 overlayDatabase.attachIpcEvents( mainWindowRef, sendTick );
 characterDatabase.attachIpcEvents( mainWindowRef, sendTick );
 logBootstrap.boostrapLogWatchers( mainWindowRef, app.isDev(), characterDatabase, sendTick );
+gameResources.attachIpcEvents( mainWindowRef, userPreferences );
 
 let x = userPreferences.everquestInstallFolder;
 

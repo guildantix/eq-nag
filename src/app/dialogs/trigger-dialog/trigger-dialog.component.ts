@@ -221,6 +221,14 @@ export class TriggerDialogComponent implements OnInit {
         this.iconFileSelector.nativeElement.click();
     }
 
+    public selectEqSpellIcon( action: TriggerAction ): void {
+        this.dialogService.showSelectIconDialog( icon => {
+            if ( icon != null ) {
+                action.timerIcon = icon;
+            }
+        } );
+    }
+
     iconFileSelected( e: any ) {
         this.onIconFileSelected( e );
         this.onIconFileSelected = null;

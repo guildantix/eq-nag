@@ -5,6 +5,17 @@ function format( format, args ) {
     } );
 }
 
+/**
+ * Returns true if the given value is null, undefined, or contains only whitespace.
+ * 
+ * @param {string} value The value to evaluate.
+ */
+function isNullOrWhitespace( value ) {
+    if ( value === null || value === undefined || value.replace( /\s+/gi, '' ).length === 0 ) {
+        return true;
+    }
+}
+
 function parseStoredVariablesToRegex(value, storedVariables) {
     // \${(.[^}]*)}     Your ${SpellBeingCast} spell is interrupted.
     //                      Full match	47-63	{SpellBeingCast}
@@ -125,6 +136,7 @@ function parseStoredVariablesToLiteralArray( value, storedVariables ) {
 
 let StringUtilities = {
     format: format,
+    isNullOrWhitespace: isNullOrWhitespace,
     parseStoredVariablesToRegex: parseStoredVariablesToRegex,
     parseStoredVariablesToLiteral: parseStoredVariablesToLiteral,
     parseStoredVariablesToLiteralArray: parseStoredVariablesToLiteralArray,
