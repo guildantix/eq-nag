@@ -179,15 +179,17 @@ function render( comp ) {
         overlayComponents.push( comp );
 
     } if ( comp.action.actionType === ActionTypes.DotTimer ) {
-        
+        // comp.action.duration *= 50;
         let displayText = StringUtilities.format( comp.action.displayText, comp.matches );
         let content;// = dotTimerTemplate( { value: displayText } );
 
         if ( comp.action.timerIcon != null ) {
-            content = dotTimerIconTemplate( { value: displayText, icon: comp.action.timerIcon, iconStyle: `position: absolute; margin-left: -${dotTextHeight + 2}px;  height: ${dotTextHeight}px;` } );
+            content = dotTimerIconTemplate( { value: displayText, icon: comp.action.timerIcon, iconStyle: `"style="position: absolute; margin-left: -${dotTextHeight + 2}px;  height: ${dotTextHeight}px;` } );
         } else {
             content = dotTimerTemplate( { value: displayText } );
         }
+
+        console.log( content );
 
         if ( comp.action.restartOnDuplicate === true ) {
             // If this component needs to restart on duplicate names, then find the index of the first match, and if found reset the start.
