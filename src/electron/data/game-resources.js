@@ -30,7 +30,6 @@ class GameResources {
                 let spellIcons = this.getEqSpellIcons( userPreferences.everquestInstallFolder );
                 event.sender.webContents.send( 'game-resources:get:eq:icons', spellIcons );
             } catch ( error ) {
-                console.error( error );
                 let model = new BasicError();
                 model.errorCode = error;
 
