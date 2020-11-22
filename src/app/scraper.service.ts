@@ -18,6 +18,7 @@ export class ScraperService {
     
                 let data = {
                     name: div.querySelector( 'meta[property="og:title"]' ).getAttribute( 'content' ),
+                    spellGem: div.querySelector( 'img[src*="spellicons"]' ),
                     duration: 0,
                     _duration: document.evaluate( "//strong[contains(., 'Duration:')]", document, null, XPathResult.ANY_TYPE, null ).iterateNext().nextSibling.nextSibling.textContent.trim(),
                     class: document.evaluate( "//div[contains(@class, 'db-infobox')]/table/tbody/tr/td/strong[contains(., '" + currentCharacterClass + "')]", document, null, XPathResult.ANY_TYPE, null ).iterateNext().textContent,
@@ -26,7 +27,7 @@ export class ScraperService {
                 };
     
                 if ( data._duration.indexOf( 'ticks' ) > -1 ) {
-                    data.duration = parseFloat( data._duration ) * 6;
+                    data.duration = parseFloat( /([0-9]\sticks)(?!.*([0-9]\sticks))/.exec( data._duration )[ 1 ] ) * 6;
                 } else {
                     data.duration = parseFloat( data._duration ) * 10 * 6;
                 }
@@ -44,6 +45,15 @@ export class ScraperService {
                 model.level = data.level;
                 model.castOnOther = data.castOnOther;
 
+                if ( data.spellGem != null ) {
+                    // let rgx = /.*gem_([0-9]*).*/;
+                    model.gemSrc = data.spellGem.getAttribute( 'src' );
+                    model.gemIndex = +/.*gem_([0-9]*).*/.exec( model.gemSrc )[ 1 ];
+                    // console.log( 'testing', rgx.exec( data.spellGem.getAttribute( 'src' ) ).groups[ 0 ] );
+                    // console.log( 'testing', +rgx.exec( data.spellGem.getAttribute( 'src' ) )[ 1 ] );
+                } else {
+                    model.gemIndex = -1;
+                }
                 observer.next( model );
                 observer.complete();
 

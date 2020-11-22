@@ -49,8 +49,12 @@ export class SelectIconDialogComponent implements OnInit {
             .getEqSpellIcons()
             .subscribe(
                 icons => {
-                    this.spellIcons = icons;
-                    this.changeDetectionRef.detectChanges();
+                    if ( this.data?.iconIndex >= 0 ) {
+                        this.dialogRef.close( icons[ this.data.iconIndex ] );
+                    } else {
+                        this.spellIcons = icons;
+                        this.changeDetectionRef.detectChanges();
+                    }
                 },
                 ( error: BasicError ) => {
                     if ( error.errorCode === ErrorCodes.EqFolderNotFound.code ) {

@@ -146,5 +146,26 @@ export class DialogService {
             width: '750px'
         } ).afterClosed().subscribe( afterClosed );
     }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Opens the new character dialog.
+     */
+    public showIconDialog( iconIndex: number, afterClosed: ( icon: string ) => void ): void {
+        this.dialog.open( SelectIconDialogComponent, {
+            width: '750px',
+            data: {
+                iconIndex: iconIndex,
+            }
+        } ).afterClosed().subscribe( afterClosed );
+    }
     
 }

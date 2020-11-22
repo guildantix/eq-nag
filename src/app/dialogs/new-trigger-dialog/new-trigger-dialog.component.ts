@@ -1,9 +1,11 @@
 import { Component, OnInit, Inject } from '@angular/core';
-import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
+import { MatDialog, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { ActionTypes, CapturePhrase, OperatorTypes, OverlayWindowModel, TimerSortTypes, TriggerAction, TriggerCondition, TriggerConditionTypes, TriggerModel } from 'src/app/core.model';
 import { IpcService } from 'src/app/ipc.service';
 import { ScraperService } from 'src/app/scraper.service';
 import { customAlphabet } from 'nanoid';
+import { DialogService } from '../dialog.service';
+import { SelectIconDialogComponent } from '../select-icon-dialog/select-icon-dialog.component';
 // import { NgForm } from '@angular/forms';
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const nanoid = customAlphabet( alphabet, 16 );
@@ -28,7 +30,8 @@ export class NewTriggerDialogComponent implements OnInit {
         public dialogRef: MatDialogRef<NewTriggerDialogComponent>,
         @Inject( MAT_DIALOG_DATA ) public data: any,
         public scraper: ScraperService,
-        public ipcService: IpcService ) { }
+        public ipcService: IpcService,
+        public dialog: MatDialog ) { }
 
     ngOnInit(): void {
         this.ipcService.getOverlayWindows().subscribe( overlays => this.overlays = overlays );
@@ -81,8 +84,23 @@ export class NewTriggerDialogComponent implements OnInit {
                 variableValue: spell.name,
             } );
 
-            this.ipcService.createNewTrigger( trigger ).subscribe( triggerId => { trigger.triggerId = triggerId; } );
-            this.dialogRef.close();
+            if ( spell.gemIndex > -1 ) {
+                
+                this.dialog.open( SelectIconDialogComponent, {
+                    width: '750px',
+                    data: {
+                        iconIndex: spell.gemIndex,
+                    }
+                } ).afterClosed().subscribe( icon => {
+                    trigger.actions[ 0 ].timerIcon = icon;
+                    this.ipcService.createNewTrigger( trigger ).subscribe( triggerId => { trigger.triggerId = triggerId; } );
+                    this.dialogRef.close();
+                } );
+
+            } else {
+                this.ipcService.createNewTrigger( trigger ).subscribe( triggerId => { trigger.triggerId = triggerId; } );
+                this.dialogRef.close();
+            }
         } );
     }
     

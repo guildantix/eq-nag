@@ -1,4 +1,4 @@
-<h2 mat-dialog-title>Select an Icon</h2>
+<h2 mat-dialog-title>{{data != null && data.iconIndex >= 0 ? 'Locating EverQuest assets' : 'Select an icon'}}</h2>
 
 <mat-dialog-content>
 
@@ -35,6 +35,6 @@
 <mat-dialog-actions>
 
   <button mat-button mat-dialog-close class="t-confirm-no" color="warn">Cancel</button>
-  <button mat-button (click)="selectIcon(0)" class="t-confirm-yes" color="accent">Select</button>
+  <!-- <button mat-button (click)="selectIcon(0)" class="t-confirm-yes" color="accent">Select</button> -->
 
 </mat-dialog-actions>

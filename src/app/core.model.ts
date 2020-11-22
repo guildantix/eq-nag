@@ -203,6 +203,8 @@ export class ScrapedSpell {
     // public class: string;
     public level: number;
     public castOnOther: string;
+    public gemIndex: number;
+    public gemSrc: string;
 
 }
 
