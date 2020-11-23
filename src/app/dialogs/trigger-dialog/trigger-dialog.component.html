@@ -283,7 +283,9 @@
                 
                                                         <app-duration [(ngModel)]="action.duration" name="durActionDuration_{{i}}"></app-duration>
                 
-                                                        <mat-checkbox [(ngModel)]="action.restartOnDuplicate" name="cbxRestartOnDuplicate_{{i}}">Restart if the name matches</mat-checkbox>
+                                                        <p><mat-checkbox [(ngModel)]="action.restartOnDuplicate" name="cbxRestartOnDuplicate_{{i}}">Restart if the name matches</mat-checkbox></p>
+                
+                                                        <p><mat-checkbox [(ngModel)]="action.showRemainingDuration" name="cbxShowTimeRemaining_{{i}}">Show the time remaining</mat-checkbox></p>
                 
                                                         <div>
                                                             <mat-checkbox [(ngModel)]="action.useCustomColor" name="cbxUseCustomColor_{{i}}">Use color</mat-checkbox>

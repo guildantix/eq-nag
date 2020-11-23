@@ -106,6 +106,10 @@ export class OverlayWindowModel {
     public textGlowIntensity: number = 1;
     public textGlowSize: number = 10;
 
+    public showOnlyDotIcons: boolean = false;
+    public dotIconSize: number = 40;
+    public showTimeRemaining: boolean = false;
+
     public isValid (): boolean {
         return name != null && this.overlayType != null;
     }
@@ -157,6 +161,7 @@ export class TriggerAction {
     public overlayId: string;
     public displayText: string;
     public duration: number;
+    public showRemainingDuration: boolean = false;
     public variableName: string;
     public restartOnDuplicate: boolean;
     public onlyExecuteInDev: boolean = false;

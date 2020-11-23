@@ -35,6 +35,7 @@ var fontSize = 1;
 var sortDirection = TimerSortTypes.None;
 var voiceOptions = [];
 var dotTextHeight = 0;
+var showRemainingDuration = false;
 
 function Overlay() {
 
@@ -150,6 +151,7 @@ function Overlay() {
                 icon.style.height = `${dotTextHeight}px`;
             } );
 
+            showRemainingDuration = model.showTimeRemaining === true;
         } );
 
     speechSynthesis.onvoiceschanged = () => {
@@ -189,8 +191,6 @@ function render( comp ) {
             content = dotTimerTemplate( { value: displayText } );
         }
 
-        console.log( content );
-
         if ( comp.action.restartOnDuplicate === true ) {
             // If this component needs to restart on duplicate names, then find the index of the first match, and if found reset the start.
             let index = ArrayUtilities.findIndex( overlayComponents, f => f?.description == displayText );
@@ -225,6 +225,11 @@ function render( comp ) {
             comp.dom.querySelector( '.determinate' ).style.backgroundColor = comp.action.overrideTimerColor;
             comp.dom.querySelector( '.progress' ).style.backgroundColor = comp.action.timerBackgroundColor;
         }
+        if ( showRemainingDuration || comp.action.showRemainingDuration ) {
+            comp.dom.querySelector( 'span.time-remaining' ).innerHTML = `(${comp.action.duration})&nbsp;`;
+        } else {
+            comp.dom.querySelector( 'span.time-remaining' ).innerHTML = ``;
+        }
         comp.start = comp.timestamp;
         comp.description = displayText;
         comp.timeRemaining = comp.action.duration;
@@ -234,6 +239,12 @@ function render( comp ) {
             comp.timeRemaining = comp.action.duration - ( comp.action.duration * perc );
 
             comp.dom.querySelector( 'div.determinate' ).style.width = `${perc * 100}%`;
+
+            if ( showRemainingDuration || comp.action.showRemainingDuration ) {
+                comp.dom.querySelector( 'span.time-remaining' ).innerHTML = `(${Math.ceil( comp.timeRemaining )})&nbsp;`;
+            } else {
+                comp.dom.querySelector( 'span.time-remaining' ).innerHTML = ``;
+            }
 
             if ( comp.action.ifEndingSoon && comp.action.endingDuration > 0 && comp.timeRemaining > 0 && comp.timeRemaining <= comp.action.endingDuration ) {
                 if ( comp.action.endingSoonChangeColor ) {

@@ -10,7 +10,10 @@ const { OverlayWindow } = require( './models/overlay-window' );
 
 class OverlayDatabaseStore extends Store {
 
-    /** The data store for this object. */
+    /** 
+     * The data store for this object.
+     * @type {{overlays: OverlayWindow[]}}
+     * */
     #data;
 
     get count() {
@@ -52,6 +55,15 @@ class OverlayDatabaseStore extends Store {
                 
             } );
             this.#data.version = 5;
+            this.storeDataFile( this.#data );
+        }
+        if ( !this.#data.version || this.#data.version < 6 ) {
+            this.#data?.overlays?.forEach( f => {
+                f.showOnlyDotIcons = false;
+                f.dotIconSize = 40;
+                f.showTimeRemaining = false;
+            } );
+            this.#data.version = 6;
             this.storeDataFile( this.#data );
         }
     }

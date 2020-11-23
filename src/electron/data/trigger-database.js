@@ -165,6 +165,15 @@ class TriggerDatabaseStore extends Store {
             this.#data.version = 18;
             this.storeDataFile( this.#data );
         }
+        if ( this.#data.version < 19 ) {
+            this.#data?.triggers?.forEach( trigger => {
+                trigger.actions?.forEach( action => {
+                    action.showRemainingDuration = false;
+                } );
+            } );
+            this.#data.version = 19;
+            this.storeDataFile( this.#data );
+        }
     }
 
 

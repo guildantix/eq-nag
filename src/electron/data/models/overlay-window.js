@@ -47,6 +47,15 @@ class OverlayWindow {
     textGlowIntensity = 1;
     /** @type {number} */
     textGlowSize = 10;
+
+    /** @type {boolean} */
+    showOnlyDotIcons = false;
+
+    /** @type {number} */
+    dotIconSize = 40;
+    
+    /** @type {boolean} */
+    showTimeRemaining = false;
 }
 
 class OverlayComponent {

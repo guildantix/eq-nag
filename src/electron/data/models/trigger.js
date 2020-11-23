@@ -61,6 +61,8 @@ class TriggerAction {
     displayText;
     /** @type number */
     duration = null;
+    /** @type boolean */
+    showRemainingDuration = false;
     /** @type string */
     variableName = null;
     /** @type number */
