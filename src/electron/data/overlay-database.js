@@ -90,6 +90,13 @@ class OverlayDatabaseStore extends Store {
             this.#data.version = 9;
             this.storeDataFile( this.#data );
         }
+        if ( !this.#data.version || this.#data.version < 10 ) {
+            this.#data?.overlays?.forEach( f => {
+                f.hideTargetLabel = false;
+            } );
+            this.#data.version = 10;
+            this.storeDataFile( this.#data );
+        }
     }
     
     /**

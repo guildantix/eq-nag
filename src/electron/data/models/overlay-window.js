@@ -62,6 +62,9 @@ class OverlayWindow {
     
     /** @type {boolean} */
     showTimeRemaining = false;
+    
+    /** @type {boolean} */
+    hideTargetLabel = false;
 }
 
 class OverlayComponent {

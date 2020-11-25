@@ -111,6 +111,7 @@ export class OverlayWindowModel {
     public groupHeaderWeight: number = 400;
     public groupHeaderColor: string = '#ffffff';
     public showTimeRemaining: boolean = false;
+    public hideTargetLabel: boolean = false;
 
     public isValid (): boolean {
         return name != null && this.overlayType != null;

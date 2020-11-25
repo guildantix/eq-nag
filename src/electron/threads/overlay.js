@@ -46,6 +46,7 @@ var groupByTarget = false;
 var groupHeaderSize = 12;
 var groupHeaderColor = '#ffffff';
 var groupHeaderWeight = 400;
+var hideTargetLabel = false;
 
 
 
@@ -186,6 +187,8 @@ function Overlay() {
             groupHeaderColor = !StringUtilities.isNullOrWhitespace( model.groupHeaderColor ) ? model.groupHeaderColor : '#ffffff';
             groupHeaderWeight = model.groupHeaderWeight > 0 ? model.groupHeaderWeight : 400;
 
+            hideTargetLabel = model.hideTargetLabel;
+
             for ( let key in overlayGroups ) {
                 if ( overlayGroups.hasOwnProperty( key ) ) {
                     
@@ -194,6 +197,12 @@ function Overlay() {
                     h6.style.fontSize = `${groupHeaderSize}px`;
                     h6.style.color = groupHeaderColor;
                     h6.style.fontWeight = groupHeaderWeight;
+
+                    if ( hideTargetLabel ) {
+                        h6.style.display = 'none';
+                    } else {
+                        h6.style.display = 'unset';
+                    }
                 }
             }
             
@@ -262,7 +271,13 @@ function render( comp ) {
             }
             
         } else {
-            let displayText = StringUtilities.format( comp.action.displayText, comp.matches );
+            let displayText = '';
+            
+            if ( hideTargetLabel ) {
+                displayText = comp.triggerName;
+            } else {
+                StringUtilities.format( comp.action.displayText, comp.matches );
+            }
 
             if ( comp.action.restartOnDuplicate === true && restartDotTimerComponent( comp, displayText, overlayComponents ) ) {
                 // Do nothing
@@ -371,6 +386,12 @@ function getDotGroup( contentArea, groupName ) {
     h6.style.fontSize = `${groupHeaderSize}px`;
     h6.style.color = groupHeaderColor;
     h6.style.fontWeight = groupHeaderWeight;
+
+    if ( hideTargetLabel ) {
+        h6.style.display = 'none';
+    } else {
+        h6.style.display = 'unset';
+    }
 
     contentArea.appendChild( div );
 
