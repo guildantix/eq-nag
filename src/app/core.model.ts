@@ -26,6 +26,7 @@ export class TriggerModel {
     public spellLevel: number = 0;
     public predefined: boolean = false;
     public onlyExecuteInDev: boolean = false;
+    public allakhazamUrl: string = null;
 
 }
 
@@ -61,6 +62,12 @@ export class CapturePhrase {
     public useRegEx: boolean = false;
     public requirePreviousPhrase: boolean = false;
     public duration: number = null;
+}
+
+export class ExclusionPhrase {
+    public phraseId: string;
+    public phrase: string;
+    public useRegEx: boolean;
 }
 
 export class DkpEntryModel {
@@ -202,6 +209,8 @@ export class TriggerAction {
     public endedChangeColor: boolean = false;
     public endedColor: string = null;
     public endedBackgroundColor: string = null;
+    
+    public excludeTargets: ExclusionPhrase[] = [];
 }
 
 export class ScrapedSpell {

@@ -549,6 +549,22 @@ function parseLogEntries( raw, simulating ) {
                         clearStoredVariable( action.variableName, res.result.groups != null ? res.result.groups[ action.variableName ] : trigger._conditionResults[ action.variableName ] );
 
                     } else if ( action.actionType === ActionTypes.DotTimer ) {
+
+                        if ( action.excludeTargets?.length > 0 ) {
+                            for ( let i = 0; i < action.excludeTargets.length; i++ ) {
+                                let exclude = false;
+
+                                if ( action.excludeTargets[ i ].useRegEx ) {
+                                    exclude = res.result[ 1 ].match( new RegExp( action.excludeTargets[ i ].phrase, 'g' ) )?.length > 0;
+                                } else {
+                                    exclude = action.excludeTargets[ i ].phrase === res.result[ 1 ];
+                                }
+
+                                if ( exclude ) {
+                                    return;
+                                }
+                            }
+                        }
                         
                         /* --== DOT Timers ==-- */
                         let comp = new OverlayComponent();

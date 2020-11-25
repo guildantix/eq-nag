@@ -1,6 +1,6 @@
 import { Component, OnInit, Inject } from '@angular/core';
 import { MatDialog, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
-import { ActionTypes, CapturePhrase, OperatorTypes, OverlayWindowModel, TimerSortTypes, TriggerAction, TriggerCondition, TriggerConditionTypes, TriggerModel } from 'src/app/core.model';
+import { ActionTypes, CapturePhrase, ExclusionPhrase, OperatorTypes, OverlayWindowModel, TimerSortTypes, TriggerAction, TriggerCondition, TriggerConditionTypes, TriggerModel } from 'src/app/core.model';
 import { IpcService } from 'src/app/ipc.service';
 import { ScraperService } from 'src/app/scraper.service';
 import { customAlphabet } from 'nanoid';
@@ -21,6 +21,7 @@ export class NewTriggerDialogComponent implements OnInit {
     public characterClass: string;
     public overlayId: string;
     public overlays: OverlayWindowModel[] = [];
+    public onlyExecuteForRareEqTargets: boolean = false;
 
     public get timerOverlays(): OverlayWindowModel[] {
         return this.overlays.filter( f => f.overlayType === 'Timer' );
@@ -46,6 +47,7 @@ export class NewTriggerDialogComponent implements OnInit {
             trigger.name = spell.name;
             trigger.triggerId = nanoid();
             trigger.spellLevel = spell.level;
+            trigger.allakhazamUrl = this.url;
             trigger.capturePhrases.push( <CapturePhrase>{
                 phraseId: nanoid(),
                 useRegEx: true,
@@ -58,17 +60,27 @@ export class NewTriggerDialogComponent implements OnInit {
                 useRegEx: true,
                 requirePreviousPhrase: false,
                 duration: null,
-                phrase: `^(.*) has taken ([0-9]*) ?damage from your ${spell.name}\\.`,
+                phrase: `^(?<target>.*) has taken (?<damage>[0-9]*) ?damage from your ${spell.name}\\.`,
             } );
             trigger.comments = `DoT timer for ${spell.name}.`;
-            trigger.actions.push( <TriggerAction>{
+            
+            let dotAction = <TriggerAction>{
                 phrases: [ trigger.capturePhrases[ 1 ].phraseId ],
                 actionType: ActionTypes.DotTimer,
                 overlayId: this.overlayId,
                 duration: spell.duration,
                 actionId: nanoid(),
                 restartOnDuplicate: true,
-            } );
+            };
+            if ( this.onlyExecuteForRareEqTargets ) {
+                dotAction.excludeTargets = [];
+                dotAction.excludeTargets.push( <ExclusionPhrase>{
+                    phraseId: nanoid(),
+                    phrase: '^(?:A\s|An\s|a\s|an\s|[a-z])',
+                    useRegEx: true,
+                } );
+            }
+            trigger.actions.push( dotAction );
             trigger.actions.push( <TriggerAction>{
                 phrases: [ trigger.capturePhrases[ 1 ].phraseId ],
                 actionType: ActionTypes.ClearVariable,

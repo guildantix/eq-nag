@@ -201,7 +201,7 @@ function Overlay() {
                     if ( hideTargetLabel ) {
                         h6.style.display = 'none';
                     } else {
-                        h6.style.display = 'unset';
+                        delete h6.style.display;
                     }
                 }
             }
@@ -244,6 +244,7 @@ function render( comp ) {
         overlayComponents.push( comp );
 
     } if ( comp.action.actionType === ActionTypes.DotTimer ) {
+        // comp.action.duration *= 50;
 
         if ( groupByTarget ) {
             let group = getDotGroup( contentArea, comp.matches[ 1 ] );
@@ -390,7 +391,7 @@ function getDotGroup( contentArea, groupName ) {
     if ( hideTargetLabel ) {
         h6.style.display = 'none';
     } else {
-        h6.style.display = 'unset';
+        delete h6.style.display;
     }
 
     contentArea.appendChild( div );

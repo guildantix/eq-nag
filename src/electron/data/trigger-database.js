@@ -174,6 +174,22 @@ class TriggerDatabaseStore extends Store {
             this.#data.version = 19;
             this.storeDataFile( this.#data );
         }
+        if ( this.#data.version < 20 ) {
+            this.#data?.triggers?.forEach( trigger => {
+                trigger.actions?.forEach( action => {
+                    action.excludeTargets = [];
+                } );
+            } );
+            this.#data.version = 20;
+            this.storeDataFile( this.#data );
+        }
+        if ( this.#data.version < 21 ) {
+            this.#data?.triggers?.forEach( trigger => {
+                trigger.allakhazamUrl = null;
+            } );
+            this.#data.version = 21;
+            this.storeDataFile( this.#data );
+        }
     }
 
 

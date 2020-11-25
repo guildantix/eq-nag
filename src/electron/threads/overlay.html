@@ -201,6 +201,9 @@
             /* -webkit-text-stroke: 1px white; */
             /* color: #0000007a; */
             /* margin: 6px; */
+        }
+
+        .dot-text.ungrouped {
             text-overflow: ellipsis;
             white-space: nowrap;
             /* width: 200px; */
@@ -386,7 +389,7 @@
         <p class="fct-dmg-src">({{damageSource}})</p>
     </template>
     <template id="dotTimerTemplate">
-        <p class="dot-text"><span class="time-remaining"></span>{{value}}</p>
+        <p class="dot-text ungrouped"><span class="time-remaining"></span>{{value}}</p>
         <!-- Background color of .progress is 13% of the .determinate color. -->
         <div class="progress" style="background-color: rgba(0,33,0,.75)"><p style="margin: 4px;">&nbsp;</p>
             <div class="determinate" style="width: 0%; background-color: #008000;"></div>

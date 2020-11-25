@@ -53,6 +53,17 @@ class CapturePhrase {
 
 }
 
+class ExclusionPhrase {
+
+    /** @type {string} */
+    phraseId;
+    /** @type {string} */
+    phrase;
+    /** @type {boolean} */
+    useRegEx;
+
+}
+
 class TriggerAction {
 
     actionId = null;
@@ -132,6 +143,10 @@ class TriggerAction {
     endedColor = null;
     /** @type string */
     endedBackgroundColor = null;
+
+    /** @type {ExclusionPhrase[]} */
+    excludeTargets = [];
+
 }
 
 class TriggerCondition {
@@ -166,7 +181,8 @@ class Trigger {
     predefined = false;
     /** @type boolean */
     onlyExecuteInDev = false;
-
+    /** @type {string} */
+    allakhazamUrl = null;
 }
 
-module.exports = { Trigger, TriggerAction, ActionTypes, CapturePhrase, TriggerConditionTypes, OperatorTypes };
+module.exports = { Trigger, TriggerAction, ActionTypes, CapturePhrase, TriggerConditionTypes, OperatorTypes, ExclusionPhrase };
