@@ -66,6 +66,14 @@ class OverlayDatabaseStore extends Store {
             this.#data.version = 6;
             this.storeDataFile( this.#data );
         }
+        if ( !this.#data.version || this.#data.version < 6 ) {
+            this.#data?.overlays?.forEach( f => {
+                f.groupByTarget = f.showOnlyDotIcons;
+                delete f.showOnlyDotIcons;
+            } );
+            this.#data.version = 6;
+            this.storeDataFile( this.#data );
+        }
     }
     
     /**

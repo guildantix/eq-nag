@@ -135,9 +135,9 @@
                         </div>
 
                         <div class="f-row">
-                            <div class="f-sm-4 al-left"><mat-checkbox [(ngModel)]="model.showOnlyDotIcons" name="showOnlyDotIcons" (change)="broadcastModel()">Only show icons for DoTs</mat-checkbox></div>
-                            <div class="f-sm-4 al-center"><mat-label *ngIf="model.showOnlyDotIcons">Size</mat-label></div>
-                            <div class="f-sm-4 al-center"><mat-slider thumbLabel tickInterval="1" min="0" max="250" style="width: 100%;" [(ngModel)]="model.dotIconSize" name="dotIconSize" (change)="broadcastModel()" *ngIf="model.showOnlyDotIcons"></mat-slider></div>
+                            <div class="f-sm-4 al-left"><mat-checkbox [(ngModel)]="model.groupByTarget" name="groupByTarget" (change)="broadcastModel()">Only show icons for DoTs</mat-checkbox></div>
+                            <div class="f-sm-4 al-center"><mat-label *ngIf="model.groupByTarget">Size</mat-label></div>
+                            <div class="f-sm-4 al-center"><mat-slider thumbLabel tickInterval="1" min="0" max="250" style="width: 100%;" [(ngModel)]="model.dotIconSize" name="dotIconSize" (change)="broadcastModel()" *ngIf="model.groupByTarget"></mat-slider></div>
                         </div>
 
                     </fieldset>

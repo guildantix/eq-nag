@@ -554,6 +554,7 @@ function parseLogEntries( raw, simulating ) {
                         let comp = new OverlayComponent();
 
                         comp.instanceId = nanoid();
+                        comp.triggerName = trigger.name;
                         comp.action = Object.assign( new TriggerAction(), action );
                         comp.action.displayText = `${trigger.name} --== {1} ==--`;
                         comp.action.endingSoonText = StringUtilities.parseStoredVariablesToLiteral( action.endingSoonText, storedVariables );

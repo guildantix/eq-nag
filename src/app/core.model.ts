@@ -106,7 +106,7 @@ export class OverlayWindowModel {
     public textGlowIntensity: number = 1;
     public textGlowSize: number = 10;
 
-    public showOnlyDotIcons: boolean = false;
+    public groupByTarget: boolean = false;
     public dotIconSize: number = 40;
     public showTimeRemaining: boolean = false;
 

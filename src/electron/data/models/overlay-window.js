@@ -49,7 +49,7 @@ class OverlayWindow {
     textGlowSize = 10;
 
     /** @type {boolean} */
-    showOnlyDotIcons = false;
+    groupByTarget = false;
 
     /** @type {number} */
     dotIconSize = 40;
@@ -64,6 +64,8 @@ class OverlayComponent {
     instanceId;
     /** @type {string} */
     description;
+    /** @type {string} */
+    triggerName;
     /** @type {TriggerAction} */
     action;
     /** @type {string[]} */
@@ -86,6 +88,8 @@ class OverlayComponent {
     endingSoonTextDisplayed = false;
     /** @type {number} */
     voiceIndex = -1;
+    /** @type {() => void} */
+    removeComponent;
 }
 
 module.exports = { OverlayWindow, OverlayComponent, TimerSortTypes };
