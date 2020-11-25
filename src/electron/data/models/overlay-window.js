@@ -52,7 +52,13 @@ class OverlayWindow {
     groupByTarget = false;
 
     /** @type {number} */
-    dotIconSize = 40;
+    groupHeaderSize = 40;
+
+    /** @type {number} */
+    groupHeaderWeight = 400;
+    
+    /** @type string */
+    groupHeaderColor = '#ffffff';
     
     /** @type {boolean} */
     showTimeRemaining = false;

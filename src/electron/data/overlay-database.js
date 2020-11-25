@@ -66,12 +66,28 @@ class OverlayDatabaseStore extends Store {
             this.#data.version = 6;
             this.storeDataFile( this.#data );
         }
-        if ( !this.#data.version || this.#data.version < 6 ) {
+        if ( !this.#data.version || this.#data.version < 7 ) {
             this.#data?.overlays?.forEach( f => {
                 f.groupByTarget = f.showOnlyDotIcons;
                 delete f.showOnlyDotIcons;
             } );
-            this.#data.version = 6;
+            this.#data.version = 7;
+            this.storeDataFile( this.#data );
+        }
+        if ( !this.#data.version || this.#data.version < 8 ) {
+            this.#data?.overlays?.forEach( f => {
+                f.groupHeaderSize = f.dotIconSize;
+                delete f.dotIconSize;
+            } );
+            this.#data.version = 8;
+            this.storeDataFile( this.#data );
+        }
+        if ( !this.#data.version || this.#data.version < 9 ) {
+            this.#data?.overlays?.forEach( f => {
+                f.groupHeaderWeight = 400;
+                f.groupHeaderColor = '#ffffff';
+            } );
+            this.#data.version = 9;
             this.storeDataFile( this.#data );
         }
     }

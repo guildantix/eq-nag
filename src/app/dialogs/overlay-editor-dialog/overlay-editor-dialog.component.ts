@@ -39,6 +39,7 @@ export class OverlayEditorDialogComponent implements OnInit {
     public phraseTableColumns = [ 'number', 'phrase', 'regEx', 'delete' ];
     public overlayId: string = null;
     public fontWeightIndex: number = 0;
+    public dotGroupHeaderWeightIndex: number = 0;
     public color: ThemePalette = 'primary';
     public fontColor: Color = new Color( 255, 255, 255, 1 );
     public fontTransparency: number = 100;
@@ -90,6 +91,7 @@ export class OverlayEditorDialogComponent implements OnInit {
                     this.textGlowColor = ColorUtility.FromHex( this.model.textGlowColor ).toHexString( 1 );
                     this.textBorderIntensity = ColorUtility.FromHex( this.model.textBorderColor ).a * 100;
                     this.textGlowIntensity = ColorUtility.FromHex( this.model.textGlowColor ).a * 100;
+                    this.dotGroupHeaderWeightIndex = availableFonts[ this.model.fontFamily ].indexOf( this.model.groupHeaderWeight );
                 } );
             }
      
@@ -100,9 +102,11 @@ export class OverlayEditorDialogComponent implements OnInit {
     public onChangeFontFamily(): void {
         let fi: number = availableFonts[ this.model.fontFamily ].indexOf( this.model.fontWeight );
         this.fontWeightIndex = -1;
+        this.dotGroupHeaderWeightIndex = -1;
 
         if ( fi > -1 ) {
             this.fontWeightIndex = fi;
+            this.dotGroupHeaderWeightIndex = fi;
         } else {
 
             for ( let i = 100; i < 500; i += 100 ) {
@@ -110,9 +114,11 @@ export class OverlayEditorDialogComponent implements OnInit {
                 let ufi: number = availableFonts[ this.model.fontFamily ].indexOf( this.model.fontWeight + i );
                 if ( lfi > -1 ) {
                     this.fontWeightIndex = lfi;
+                    this.dotGroupHeaderWeightIndex = lfi;
                     break;
                 } else if ( ufi > -1 ) {
                     this.fontWeightIndex = ufi;
+                    this.dotGroupHeaderWeightIndex = ufi;
                     break;
                 }
             }
@@ -120,6 +126,8 @@ export class OverlayEditorDialogComponent implements OnInit {
         }
 
         this.fontWeightIndex = this.fontWeightIndex > -1 ? this.fontWeightIndex : 0;
+        this.dotGroupHeaderWeightIndex = this.dotGroupHeaderWeightIndex > -1 ? this.dotGroupHeaderWeightIndex : 0;
+
         this.broadcastModel();
     }
 
@@ -155,6 +163,7 @@ export class OverlayEditorDialogComponent implements OnInit {
 
     public broadcastModel(): void {
         this.model.fontWeight = availableFonts[ this.model.fontFamily ][ this.fontWeightIndex ];
+        this.model.groupHeaderWeight = availableFonts[ this.model.fontFamily ][ this.dotGroupHeaderWeightIndex ];
         this.model.textBorderColor = ColorUtility.FromHex( this.textBorderColor ).toHexString( this.model.textBorderIntensity );
         this.model.textGlowColor = ColorUtility.FromHex( this.textGlowColor ).toHexString( this.model.textGlowIntensity );
         this.ipcService.broadcastOverlayModel( this.model );

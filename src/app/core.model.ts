@@ -107,7 +107,9 @@ export class OverlayWindowModel {
     public textGlowSize: number = 10;
 
     public groupByTarget: boolean = false;
-    public dotIconSize: number = 40;
+    public groupHeaderSize: number = 40;
+    public groupHeaderWeight: number = 400;
+    public groupHeaderColor: string = '#ffffff';
     public showTimeRemaining: boolean = false;
 
     public isValid (): boolean {

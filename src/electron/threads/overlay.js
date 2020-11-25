@@ -43,6 +43,9 @@ var voiceOptions = [];
 var dotTextHeight = 0;
 var showRemainingDuration = false;
 var groupByTarget = false;
+var groupHeaderSize = 12;
+var groupHeaderColor = '#ffffff';
+var groupHeaderWeight = 400;
 
 
 
@@ -177,6 +180,21 @@ function Overlay() {
             } else {
                 contentArea.classList.remove( 'grouped-mobs' );
                 groupByTarget = false;
+            }
+
+            groupHeaderSize = model.groupHeaderSize > 0 ? model.groupHeaderSize : 12;
+            groupHeaderColor = !StringUtilities.isNullOrWhitespace( model.groupHeaderColor ) ? model.groupHeaderColor : '#ffffff';
+            groupHeaderWeight = model.groupHeaderWeight > 0 ? model.groupHeaderWeight : 400;
+
+            for ( let key in overlayGroups ) {
+                if ( overlayGroups.hasOwnProperty( key ) ) {
+                    
+                    let h6 = overlayGroups[ key ].dom.querySelector( 'h6' );
+
+                    h6.style.fontSize = `${groupHeaderSize}px`;
+                    h6.style.color = groupHeaderColor;
+                    h6.style.fontWeight = groupHeaderWeight;
+                }
             }
             
         } );
@@ -348,6 +366,11 @@ function getDotGroup( contentArea, groupName ) {
     let div = document.createElement( 'div' );
     div.classList.add( 'mob-dot-group' );
     div.innerHTML = content;
+    let h6 = div.querySelector( 'h6' );
+
+    h6.style.fontSize = `${groupHeaderSize}px`;
+    h6.style.color = groupHeaderColor;
+    h6.style.fontWeight = groupHeaderWeight;
 
     contentArea.appendChild( div );
 
