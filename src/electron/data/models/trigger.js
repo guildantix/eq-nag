@@ -141,6 +141,9 @@ class TriggerAction {
     /** @type {Phrase[]} */
     excludeTargets = [];
 
+    /** @type {Phrase[]} */
+    endEarlyPhrases = [];
+
 }
 
 class TriggerCondition {

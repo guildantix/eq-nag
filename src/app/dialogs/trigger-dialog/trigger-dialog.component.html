@@ -147,8 +147,8 @@
                                     </td>
                                 </ng-container>
     
-                                <tr mat-header-row *matHeaderRowDef="phraseTableColumns"></tr>
-                                <tr mat-row *matRowDef="let element; columns: phraseTableColumns;"></tr>
+                                <tr mat-header-row *matHeaderRowDef="capturePhraseTableColumns"></tr>
+                                <tr mat-row *matRowDef="let element; columns: capturePhraseTableColumns;"></tr>
     
                             </table>
                         </fieldset>
@@ -420,32 +420,15 @@
                                                 </mat-tab>
                                                 <mat-tab label="Exclude Targets">
                                                     <div class="card-tab-content">
-                                                        <button mat-button (click)="addNewExclusionTarget(i, excludeTargetsTable)" color="accent" style="float: right; margin: 5px;"><mat-icon>add</mat-icon>New</button>
-                                                    <!-- <legend class="full-width"><span>Phrases</span><span class="spacer"></span><button mat-button (click)="addNewCapturePhrase()" color="accent"><mat-icon>add</mat-icon>New</button></legend> -->
-                                                    <!-- <mat-form-field style="width: 200px;">
-                                                        <mat-label>Capture Method</mat-label>
-                                                        <mat-select [(ngModel)]="model.captureMethod" name="ddlCaptureMethod">
-                                                            <mat-option value="Any match" matTooltip="Execute this trigger if any phrase matches a single log entry" matTooltipPosition="right">Any match</mat-option>
-                                                            <mat-option value="Sequential" matTooltip="Execute this trigger if all phrases match sequentially across multiple log entries" matTooltipPosition="right">Sequential</mat-option>
-                                                            <mat-option value="Concurrent" disabled matTooltip="Execute this trigger if all phrases match in a single log entry" matTooltipPosition="right">Concurrent</mat-option>
-                                                        </mat-select>
-                                                    </mat-form-field> -->
+                                                        
+                                                        <p>
+                                                            <button mat-button (click)="addNewExclusionTarget(i, excludeTargetsTable)" color="accent" style="float: right; margin: 5px;"><mat-icon>add</mat-icon>New</button>
+                                                            <span style="font-size: 12px; font-weight: 400; line-height: 10px;">If the matched capture phrase also matches any of the phrases below, the timer will not execute.</span>
+                                                        </p>
+                                                    
                                                     <table mat-table #excludeTargetsTable="matTable"
                                                         [dataSource]="action.excludeTargets"
                                                         class="capture-phrases">
-                        
-                                                        <!-- <ng-container matColumnDef="moveIndex">
-                                                            <th mat-header-cell *matHeaderCellDef style="width: 50px;"></th>
-                                                            <td mat-cell *matCellDef="let element; let i = index">
-                                                                <span class="material-icons" style="display: block; cursor: pointer;" (click)="movePhraseUp(i)">keyboard_arrow_up</span>
-                                                                <span class="material-icons" style="display: block; cursor: pointer;" (click)="movePhraseDown(i)">keyboard_arrow_down</span>
-                                                            </td>
-                                                        </ng-container> -->
-                            
-                                                        <!-- <ng-container matColumnDef="number">
-                                                            <th mat-header-cell *matHeaderCellDef style="width: 50px;"> No. </th>
-                                                            <td mat-cell *matCellDef="let element; let i = index"> {{i + 1}} </td>
-                                                        </ng-container> -->
                             
                                                         <ng-container matColumnDef="phrase">
                                                             <th mat-header-cell *matHeaderCellDef> Phrase </th>
@@ -471,8 +454,8 @@
                                                             </td>
                                                         </ng-container>
                             
-                                                        <tr mat-header-row *matHeaderRowDef="excludeTableColumns"></tr>
-                                                        <tr mat-row *matRowDef="let element; columns: excludeTableColumns;"></tr>
+                                                        <tr mat-header-row *matHeaderRowDef="phraseTableColumns"></tr>
+                                                        <tr mat-row *matRowDef="let element; columns: phraseTableColumns;"></tr>
                             
                                                     </table>
 

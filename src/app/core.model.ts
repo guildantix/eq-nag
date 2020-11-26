@@ -208,6 +208,7 @@ export class TriggerAction {
     public endedBackgroundColor: string = null;
     
     public excludeTargets: Phrase[] = [];
+    public endEarlyPhrases: Phrase[] = [];
 }
 
 export class ScrapedSpell {

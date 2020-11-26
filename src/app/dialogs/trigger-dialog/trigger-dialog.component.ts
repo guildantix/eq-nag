@@ -28,8 +28,8 @@ const nanoid = customAlphabet( alphabet, 16 );
 export class TriggerDialogComponent implements OnInit {
 
     public model: TriggerModel;
-    public phraseTableColumns = [ 'moveIndex', 'number', 'phrase', 'regEx', 'delete' ];
-    public excludeTableColumns = [ 'phrase', 'regEx', 'delete' ];
+    public capturePhraseTableColumns = [ 'moveIndex', 'number', 'phrase', 'regEx', 'delete' ];
+    public phraseTableColumns = [ 'phrase', 'regEx', 'delete' ];
     public actionTableColumns = [ 'number', 'actionType', 'delete' ];
     public conditionTableColumns = [ 'variable', 'operator', 'value', 'delete' ];
     public triggerId: string = null;
