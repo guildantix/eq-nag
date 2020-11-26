@@ -1,0 +1,37 @@
+.example-headers-align .mat-expansion-panel-header-title,
+.example-headers-align .mat-expansion-panel-header-description {
+  flex-basis: 0;
+}
+
+.example-headers-align .mat-expansion-panel-header-description {
+  justify-content: flex-end;
+  align-items: flex-end;
+}
+
+.example-headers-align .mat-form-field + .mat-form-field {
+  margin-left: 8px;
+}
+
+div.character-tab-content {
+
+    > mat-card {
+        background-color: #272727; 
+        margin: 7px;
+    }
+
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    flex: 1 1 0px;
+}
+
+mat-panel-description {
+    
+    mat-icon {
+        margin-left:15px;
+    }
+    
+    text-transform: capitalize;
+
+}

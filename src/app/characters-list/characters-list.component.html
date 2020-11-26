@@ -1,0 +1,96 @@
+
+<mat-accordion class="example-headers-align">
+    <mat-expansion-panel hideToggle *ngFor="let character of characters; let i = index" [expanded]="selectedTabIndex === i">
+      <mat-expansion-panel-header>
+        <mat-panel-title>{{character.name}}</mat-panel-title>
+        <mat-panel-description>{{character.server}}<mat-icon *ngIf="activeLogFilesDictionary[character.characterId] === true" color="accent">cast_connected</mat-icon><mat-icon *ngIf="activeLogFilesDictionary[character.characterId] !== true">cast</mat-icon></mat-panel-description>
+      </mat-expansion-panel-header>
+
+      <mat-tab-group animationDuration="0ms" [selectedIndex]="0">
+        <mat-tab label="Settings">
+            <div class="character-tab-content">
+
+                <mat-card>
+                    <mat-card-header>
+                        <mat-card-title>
+                            Log file
+                        </mat-card-title>
+                    </mat-card-header>
+                    <mat-card-content>
+                        <button mat-button color="accent" (click)="showFileSelector(character.characterId)">Select Log File</button>
+                        <div><small>Current: {{character.logFile}}</small></div>
+                    </mat-card-content>
+                </mat-card>
+
+                <mat-card>
+                    <mat-card-header>
+                        <mat-card-title>Character</mat-card-title>
+                    </mat-card-header>
+                    <mat-card-content>
+                        
+                        <mat-form-field style="width: 50%;">
+                            <mat-label>Character Class</mat-label>
+                            <mat-select [(ngModel)]="character.class" name="ddlCharacterClass_{{i}}" (selectionChange)="updateCharacter(character)">
+                                <mat-option value="BRD">Bard</mat-option>
+                                <mat-option value="BST">Beastlord</mat-option>
+                                <mat-option value="BER">Berserker</mat-option>
+                                <mat-option value="CLR">Cleric</mat-option>
+                                <mat-option value="DRU">Druid</mat-option>
+                                <mat-option value="ENC">Enchanter</mat-option>
+                                <mat-option value="MAG">Magician</mat-option>
+                                <mat-option value="MNK">Monk</mat-option>
+                                <mat-option value="NEC">Necromancer</mat-option>
+                                <mat-option value="PAL">Paladin</mat-option>
+                                <mat-option value="RNG">Ranger</mat-option>
+                                <mat-option value="ROG">Rogue</mat-option>
+                                <mat-option value="SHD">Shadowknight</mat-option>
+                                <mat-option value="SHM">Shaman</mat-option>
+                                <mat-option value="WAR">Warrior</mat-option>
+                                <mat-option value="WIZ">Wizard</mat-option>
+                            </mat-select>
+                        </mat-form-field>
+
+                    </mat-card-content>
+                </mat-card>
+                
+                <mat-card>
+
+                    <mat-card-header>
+                        <mat-card-title>Focus Effects</mat-card-title>
+                    </mat-card-header>
+
+                    <mat-card-content>
+                        <mat-checkbox [(ngModel)]="character.hasExtendedDotFocus" (change)="updateCharacter(character)" name="hasExtendedDotFocus_{{i}}"> Extended DOT Focus?</mat-checkbox>
+                        <span *ngIf="character.hasExtendedDotFocus">
+
+                            <mat-form-field style="width: 104px; margin-left: 15px;">
+                                <mat-label>%</mat-label>
+                                <input matInput  [(ngModel)]="character.extendedDotFocusPercent" name="extDotFocusPercent_{{i}}" type="number" (change)="updateCharacter(character)" />
+                                <mat-hint>Percent increase</mat-hint>
+                            </mat-form-field>
+                            
+                            <mat-form-field style="width: 192px; margin-left: 15px;">
+                                <mat-label>Level</mat-label>
+                                <input matInput [(ngModel)]="character.extendedDotFocusDecayLevel" name="extDotFocusDecayLevel_{{i}}" type="number" (change)="updateCharacter(character)" />
+                                <mat-hint>Level at which decay begins</mat-hint>
+                            </mat-form-field>
+
+                        </span>
+                    </mat-card-content>
+                </mat-card>
+
+            </div>
+        </mat-tab>
+        <mat-tab label="Triggers">
+
+        </mat-tab>
+      </mat-tab-group>
+
+      <mat-action-row>
+        <button type="button" mat-button color="warn" (click)="deleteCharacter(character)">Remove character</button>
+      </mat-action-row>
+    </mat-expansion-panel>
+  
+  </mat-accordion>
+
+  <input type="file" #fileSelector style="display:none;" accept="*.txt" (change)="fileSelected($event)" />

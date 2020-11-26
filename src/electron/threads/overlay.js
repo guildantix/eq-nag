@@ -23,8 +23,15 @@ const nanoid = customAlphabet( alphabet, 16 );
 
 /** @type {OverlayComponent[]} */
 var overlayComponents = [];
+/** @type {Object.<string, {name: string, dom: HTMLDivElement, components: OverlayComponent[]}>} */
+var overlayGroups = {};
+
+var mobGroups = [];
 var displayTextTemplate;
 var dotTimerTemplate;
+var dotTimerIconTemplate;
+var targetGroupTemplate;
+var targetGroupTimerTemplate;
 const fctFps = 1000 / 60;
 var fctRenderQueue = [];
 var fctRenderInterval = 250;
@@ -33,14 +40,33 @@ var height = 1;
 var fontSize = 1;
 var sortDirection = TimerSortTypes.None;
 var voiceOptions = [];
+var dotTextHeight = 0;
+var showRemainingDuration = false;
+var groupByTarget = false;
+var groupHeaderSize = 12;
+var groupHeaderColor = '#ffffff';
+var groupHeaderWeight = 400;
+var hideTargetLabel = false;
+
+
+
+
+
+
+
+
+
 
 function Overlay() {
-
+    
     DomUtilities.docReady( f => {
         displayTextTemplate = Handlebars.compile( document.querySelector( '#displayTextTemplate' ).innerHTML );
         dotTimerTemplate = Handlebars.compile( document.querySelector( '#dotTimerTemplate' ).innerHTML );
+        dotTimerIconTemplate = Handlebars.compile( document.querySelector( '#dotTimerIconTemplate' ).innerHTML );
         fctTemplate = Handlebars.compile( document.querySelector( '#fctTemplate' ).innerHTML );
         fctCriticalTemplate = Handlebars.compile( document.querySelector( '#fctCriticalTemplate' ).innerHTML );
+        targetGroupTemplate = Handlebars.compile( document.querySelector( '#targetGroupTemplate' ).innerHTML );
+        targetGroupTimerTemplate = Handlebars.compile( document.querySelector( '#targetGroupTimerTemplate' ).innerHTML );
     } );
 
     ipcRenderer.on( 'overlay:receive:component',
@@ -70,6 +96,25 @@ function Overlay() {
 
     ipcRenderer.on( 'overlay:window:dim', function ( event ) {
         document.querySelector( 'body' ).classList.remove( 'highlight-border' );
+    } );
+
+    ipcRenderer.on( 'component:destroy', function ( event, instanceId ) {
+
+        if ( groupByTarget ) {
+            for ( let key in overlayGroups ) {
+                if ( overlayGroups.hasOwnProperty( key ) ) {
+                    
+                    let i = _.findIndex( overlayGroups[ key ].components, comp => comp.instanceId === instanceId );
+                    overlayGroups[ key ].components[ i ].removeComponent();
+                    
+                }
+            }
+            
+        } else {
+            let i = _.findIndex( overlayComponents, comp => comp.instanceId === instanceId );
+            overlayComponents[ i ].removeComponent();
+        }
+
     } );
 
     ipcRenderer.on( 'overlay:window:model',
@@ -129,12 +174,72 @@ function Overlay() {
                 textShadow += `0px 0px ${model.textGlowSize}px ${model.textGlowColor}, -1px -1px ${model.textGlowSize}px ${model.textGlowColor}, 1px -1px ${model.textGlowSize}px ${model.textGlowColor}, -1px 1px ${model.textGlowSize}px ${model.textGlowColor}, 1px 1px ${model.textGlowSize}px ${model.textGlowColor}`;
             }
             contentArea.style.textShadow = textShadow;
+
+            // Calculate the height of dot texts.
+            let pDot = document.createElement( 'p' );
+            pDot.classList.add( 'dot-text' );
+            pDot.style.visibility = 'hidden';
+            pDot.innerHTML = '&nbsp;';
+            contentArea.appendChild( pDot );
+            dotTextHeight = pDot.clientHeight;
+            console.log( 'dot text height', dotTextHeight );
+            contentArea.style.paddingLeft = `${dotTextHeight + 2}px`;
+            contentArea.removeChild( pDot );
+
+            // Update any active elements
+            document.querySelectorAll( '.content-area .dot-icon' ).forEach( icon => {
+                icon.style.marginLeft = `-${dotTextHeight + 2}px`;
+                icon.style.height = `${dotTextHeight}px`;
+            } );
+
+            showRemainingDuration = model.showTimeRemaining === true;
+
+            if ( model.groupByTarget ) {
+                contentArea.classList.add( 'grouped-mobs' );
+                groupByTarget = true;
+            } else {
+                contentArea.classList.remove( 'grouped-mobs' );
+                groupByTarget = false;
+            }
+
+            groupHeaderSize = model.groupHeaderSize > 0 ? model.groupHeaderSize : 12;
+            groupHeaderColor = !StringUtilities.isNullOrWhitespace( model.groupHeaderColor ) ? model.groupHeaderColor : '#ffffff';
+            groupHeaderWeight = model.groupHeaderWeight > 0 ? model.groupHeaderWeight : 400;
+
+            hideTargetLabel = model.hideTargetLabel;
+
+            for ( let key in overlayGroups ) {
+                if ( overlayGroups.hasOwnProperty( key ) ) {
+                    
+                    let h6 = overlayGroups[ key ].dom.querySelector( 'h6' );
+
+                    h6.style.fontSize = `${groupHeaderSize}px`;
+                    h6.style.color = groupHeaderColor;
+                    h6.style.fontWeight = groupHeaderWeight;
+
+                    if ( hideTargetLabel ) {
+                        h6.style.display = 'none';
+                    } else {
+                        delete h6.style.display;
+                    }
+                }
+            }
+            
         } );
 
     speechSynthesis.onvoiceschanged = () => {
         voiceOptions = speechSynthesis.getVoices();
     };
 }
+
+
+
+
+
+
+
+
+
 
 /**
  * Renders the overlayComponents to the overlay window.
@@ -158,107 +263,363 @@ function render( comp ) {
         overlayComponents.push( comp );
 
     } if ( comp.action.actionType === ActionTypes.DotTimer ) {
-        
-        let displayText = StringUtilities.format( comp.action.displayText, comp.matches );
-        let content = dotTimerTemplate( { value: displayText } );
+        // comp.action.duration *= 50;
 
-        if ( comp.action.restartOnDuplicate === true ) {
-            // If this component needs to restart on duplicate names, then find the index of the first match, and if found reset the start.
-            let index = ArrayUtilities.findIndex( overlayComponents, f => f?.description == displayText );
-            if ( index > -1 ) {
-                // Reset the start duration
-                overlayComponents[ index ].start = comp.timestamp;
+        if ( groupByTarget ) {
+            let group = getDotGroup( contentArea, comp.matches[ 1 ] );
 
-                // Reset the ending conditions
-                overlayComponents[ index ].endingSoonSpoken = false;
-                overlayComponents[ index ].endingSoonTextDisplayed = false;
-                overlayComponents[ index ].endedSpoken = false;
-                overlayComponents[ index ].endedTextDisplayed = false;
-
-                // Reset the background color
-                if ( overlayComponents[ index ].action.overrideTimerColor ) {
-                    overlayComponents[ index ].dom.querySelector( '.determinate' ).style.backgroundColor = overlayComponents[ index ].action.overrideTimerColor;
-                    overlayComponents[ index ].dom.querySelector( '.progress' ).style.backgroundColor = overlayComponents[ index ].action.timerBackgroundColor;
-                } else {
-                    overlayComponents[ index ].dom.querySelector( '.determinate' ).style.backgroundColor = '#008000';
-                    overlayComponents[ index ].dom.querySelector( '.progress' ).style.backgroundColor = 'rgba(0,33,0,.75)';
-                }
-                return;
+            if ( comp.action.restartOnDuplicate === true && restartDotTimerComponent( comp, comp.triggerName, group.components ) ) {
+                // Do nothing
+            } else {
+                createGroupedDotTimer( contentArea, group, comp );
             }
-        }
 
-        let div = document.createElement( 'div' );
-        div.innerHTML = content;
-        comp.dom = div;
-        contentArea.appendChild( comp.dom );
-        comp.dom.querySelector( '.progress' ).style.marginBottom = contentArea.style.lineHeight;
-        if ( comp.action.overrideTimerColor ) {
-            comp.dom.querySelector( '.determinate' ).style.backgroundColor = comp.action.overrideTimerColor;
-            comp.dom.querySelector( '.progress' ).style.backgroundColor = comp.action.timerBackgroundColor;
-        }
-        comp.start = comp.timestamp;
-        comp.description = displayText;
-        comp.timeRemaining = comp.action.duration;
-        comp.intervalId = window.setInterval( () => {
-            let perc = ( Math.abs( ( new Date() ) - comp.start ) / 1000 ) / comp.action.duration;
-
-            comp.timeRemaining = comp.action.duration - ( comp.action.duration * perc );
-
-            comp.dom.querySelector( 'div.determinate' ).style.width = `${perc * 100}%`;
-
-            if ( comp.action.ifEndingSoon && comp.action.endingDuration > 0 && comp.timeRemaining > 0 && comp.timeRemaining <= comp.action.endingDuration ) {
-                if ( comp.action.endingSoonChangeColor ) {
-                    comp.dom.querySelector( 'div.determinate' ).style.backgroundColor = comp.action.endingSoonColor;
-                    comp.dom.querySelector( 'div.progress' ).style.backgroundColor = comp.action.endingSoonBackgroundColor;
+            // If the user has specified a sort direction.
+            if ( sortDirection > 0 ) {
+                // Every time a new timer is added, reorganize the timers so that the 
+                // timer ending first will appear in the order in which the user has
+                // specified.
+        
+                let dir = sortDirection === TimerSortTypes.Ascending ? -1 : 1;
+                let hdr = group.dom.querySelector( 'h6' );
+                group.components = _.sortBy( group.components, [ c => dir * c.timeRemaining ] );
+                group.components.forEach( c => console.log( 'testing', c.triggerName, c.timeRemaining ) );
+                for ( let i = 0; i < group.components.length; i++ ) {
+                    group.dom.insertBefore( group.components[ i ].dom, hdr.nextSibling );
                 }
-
-                if ( !comp.endingSoonSpoken && comp.action.endingSoonSpeak ) {
-                    comp.endingSoonSpoken = true;
-                    speakPhrase( comp.voiceIndex, comp.action.endingSoonSpeakPhrase );
-                }
-
-                if ( !comp.endingSoonTextDisplayed && comp.action.endingSoonDisplayText ) {
-                    comp.endingSoonTextDisplayed = true;
-                    sendDisplayTextToOverlay( comp.action.endingSoonTextOverlayId, comp.action.endingSoonText, comp.action.endingSoonTextDuration );
-                }
-
+        
             }
             
-            if ( ( comp.timeRemaining <= 0 && !comp.action.remainAfterEnded ) || ( comp.timeRemaining <= -1 * comp.action.remainDuration ) ) {
-                window.setTimeout( () => {
-                    comp.dom.parentNode && comp.dom.parentNode.removeChild( comp.dom );
-                    window.clearInterval( comp.intervalId );
-                    ArrayUtilities.remove( overlayComponents, f => f.instanceId == comp.instanceId );
-                }, 1000 );
-            } else if ( comp.timeRemaining <= 0 && comp.action.remainAfterEnded ) {
-
-                if ( comp.action.endedChangeColor ) {
-                    comp.dom.querySelector( 'div.determinate' ).style.backgroundColor = comp.action.endedColor;
-                    comp.dom.querySelector( 'div.progress' ).style.backgroundColor = comp.action.endedBackgroundColor;
-                }
-
-                if ( !comp.endedSpoken && comp.action.endedSpeak ) {
-                    comp.endedSpoken = true;
-                    speakPhrase( comp.voiceIndex, comp.action.endedSpeakPhrase );
-                }
-
-                if ( !comp.endedTextDisplayed && comp.action.endedDisplayText ) {
-                    comp.endedTextDisplayed = true;
-                    sendDisplayTextToOverlay( comp.action.endedTextOverlayId, comp.action.endedText, comp.action.endedTextDuration );
-                }
+        } else {
+            let displayText = '';
+            
+            if ( hideTargetLabel ) {
+                displayText = comp.triggerName;
+            } else {
+                displayText = StringUtilities.format( comp.action.displayText, comp.matches );
             }
 
-        }, 250 );
-        overlayComponents.push( comp );
+            if ( comp.action.restartOnDuplicate === true && restartDotTimerComponent( comp, displayText, overlayComponents ) ) {
+                // Do nothing
+            } else {
+                createUngroupedDotTimer( contentArea, comp, displayText );
+            }
+
+            // If the user has specified a sort direction.
+            if ( sortDirection > 0 ) {
+                // Every time a new timer is added, reorganize the timers so that the 
+                // timer ending first will appear in the order in which the user has
+                // specified.
         
-        if ( sortDirection > 0 ) {
-            let dir = sortDirection === TimerSortTypes.Ascending ? -1 : 1;
-            let sorted = _.sortBy( overlayComponents, [ c => dir * c.timeRemaining ] );
-            for ( let i = 0; i < sorted.length; i++ ) {
-                sorted[ i ].dom.parentNode.prepend( sorted[ i ].dom );
+                let dir = sortDirection === TimerSortTypes.Ascending ? -1 : 1;
+                let sorted = _.sortBy( overlayComponents, [ c => dir * c.timeRemaining ] );
+                for ( let i = 0; i < sorted.length; i++ ) {
+                    sorted[ i ].dom.parentNode.prepend( sorted[ i ].dom );
+                }
+        
             }
+
+        }
+
+    }
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Creates a new grouped overlay component.
+ * 
+ * @param {Node} contentArea The content area for dot timers.
+ * @param {{dom: HTMLDivElement, components: OverlayComponent[]}} group The component group.
+ * @param {OverlayComponent} comp The overlay component.
+ */
+function createGroupedDotTimer( contentArea, group, comp ) {
+    let content = targetGroupTimerTemplate( { value: comp.triggerName } );
+
+    let div = document.createElement( 'div' );
+    div.innerHTML = content;
+    comp.dom = div;
+    
+    if ( comp.action.timerIcon != null ) {
+        div.innerHTML = dotTimerIconTemplate( { icon: comp.action.timerIcon, iconStyle: `"style="position: absolute; margin-left: -${dotTextHeight + 2}px;  height: ${dotTextHeight}px;` } ) + div.innerHTML;
+    }
+
+    comp.dom = div;
+    comp.description = comp.triggerName;
+
+    // Create a method that will remove the component from the screen.
+    comp.removeComponent = () => {
+        comp.dom.parentNode && comp.dom.parentNode.removeChild( comp.dom );
+        window.clearInterval( comp.intervalId );
+        ArrayUtilities.remove( group.components, f => f.instanceId == comp.instanceId );
+
+        if ( group.components?.length === 0 ) {
+            group.dom.parentNode && group.dom.parentNode.removeChild( group.dom );
+            delete overlayGroups[ group.name ];
+        }
+    };
+    
+    applyTimerSettings( contentArea, comp );
+
+    group.dom.appendChild( comp.dom );
+    group.components.push( comp );
+
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Returns the dot group for the specified name.  If the group is not found, 
+ * then a new group is created.
+ * 
+ * @param {Node} contentArea The content area for dot timers.
+ * @param {string} groupName The name of the desired dot group.
+ */
+function getDotGroup( contentArea, groupName ) {
+
+    for ( let key in overlayGroups ) {
+        if ( key === groupName && overlayGroups.hasOwnProperty( key ) ) {
+            return overlayGroups[ key ];
         }
     }
+
+    let content = targetGroupTemplate( { name: groupName } );
+    let div = document.createElement( 'div' );
+    div.classList.add( 'mob-dot-group' );
+    div.innerHTML = content;
+    let h6 = div.querySelector( 'h6' );
+
+    h6.style.fontSize = `${groupHeaderSize}px`;
+    h6.style.color = groupHeaderColor;
+    h6.style.fontWeight = groupHeaderWeight;
+
+    if ( hideTargetLabel ) {
+        h6.style.display = 'none';
+    } else {
+        delete h6.style.display;
+    }
+
+    contentArea.appendChild( div );
+
+    overlayGroups[ groupName ] = {
+        name: groupName,
+        dom: div,
+        components: []
+    };
+    return overlayGroups[ groupName ];
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Creates a new dot timer and places it in the content area.
+ * 
+ * @param {Node} contentArea The content area for dot timers.
+ * @param {OverlayComponent} comp The dot timer component.
+ * @param {string} displayText The display text for the visible section of the dot timer.
+ */
+function createUngroupedDotTimer( contentArea, comp, displayText ) {
+    let content = dotTimerTemplate( { value: displayText } );
+
+    // Create the component's dom element and append it to the content area.
+    let div = document.createElement( 'div' );
+    div.innerHTML = content;
+    
+    if ( comp.action.timerIcon != null ) {
+        div.innerHTML = dotTimerIconTemplate( { icon: comp.action.timerIcon, iconStyle: `"style="position: absolute; margin-left: -${dotTextHeight + 2}px;  height: ${dotTextHeight}px;` } ) + div.innerHTML;
+    }
+
+    comp.dom = div;
+    comp.description = displayText;
+
+    // Create a method that will remove the component from the screen.
+    comp.removeComponent = () => {
+        comp.dom.parentNode && comp.dom.parentNode.removeChild( comp.dom );
+        window.clearInterval( comp.intervalId );
+        ArrayUtilities.remove( overlayComponents, f => f.instanceId == comp.instanceId );
+    };
+    
+    applyTimerSettings( contentArea, comp );
+    
+    contentArea.appendChild( comp.dom );
+    overlayComponents.push( comp );
+
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Applies the general dot timer settings to the given component.
+ * 
+ * @param {Node} contentArea The content area for dot timers.
+ * @param {OverlayComponent} comp Applies the general timer settings to the given dot timer component.
+ */
+function applyTimerSettings( contentArea, comp ) {
+    // Apply the styles required to make the progress bar height match the 
+    // specified number in the overlay settings.
+    comp.dom.querySelector( '.progress' ).style.marginBottom = contentArea.style.lineHeight;
+    if ( comp.action.overrideTimerColor ) {
+        comp.dom.querySelector( '.determinate' ).style.backgroundColor = comp.action.overrideTimerColor;
+        comp.dom.querySelector( '.progress' ).style.backgroundColor = comp.action.timerBackgroundColor;
+    }
+
+    if ( showRemainingDuration || comp.action.showRemainingDuration ) {
+        comp.dom.querySelector( 'span.time-remaining' ).innerHTML = `(${comp.action.duration})&nbsp;`;
+    } else {
+        comp.dom.querySelector( 'span.time-remaining' ).innerHTML = ``;
+    }
+
+    // Set the starting conditions for the timer.
+    comp.start = comp.timestamp;
+    comp.timeRemaining = comp.action.duration;
+
+    // Set the update method.
+    comp.intervalId = window.setInterval( () => {
+        let perc = ( Math.abs( ( new Date() ) - comp.start ) / 1000 ) / comp.action.duration;
+
+        comp.timeRemaining = comp.action.duration - ( comp.action.duration * perc );
+
+        comp.dom.querySelector( 'div.determinate' ).style.width = `${perc * 100}%`;
+
+        if ( showRemainingDuration || comp.action.showRemainingDuration ) {
+            comp.dom.querySelector( 'span.time-remaining' ).innerHTML = `(${Math.ceil( comp.timeRemaining )})&nbsp;`;
+        } else {
+            comp.dom.querySelector( 'span.time-remaining' ).innerHTML = ``;
+        }
+
+        if ( comp.action.ifEndingSoon && comp.action.endingDuration > 0 && comp.timeRemaining > 0 && comp.timeRemaining <= comp.action.endingDuration ) {
+            // Apply any ending soon condition effects.
+
+            if ( comp.action.endingSoonChangeColor ) {
+                comp.dom.querySelector( 'div.determinate' ).style.backgroundColor = comp.action.endingSoonColor;
+                comp.dom.querySelector( 'div.progress' ).style.backgroundColor = comp.action.endingSoonBackgroundColor;
+            }
+
+            if ( !comp.endingSoonSpoken && comp.action.endingSoonSpeak ) {
+                comp.endingSoonSpoken = true;
+                speakPhrase( comp.voiceIndex, comp.action.endingSoonSpeakPhrase );
+            }
+
+            if ( !comp.endingSoonTextDisplayed && comp.action.endingSoonDisplayText ) {
+                comp.endingSoonTextDisplayed = true;
+                sendDisplayTextToOverlay( comp.action.endingSoonTextOverlayId, comp.action.endingSoonText, comp.action.endingSoonTextDuration );
+            }
+
+        }
+        
+        if ( ( comp.timeRemaining <= 0 && !comp.action.remainAfterEnded ) || ( comp.timeRemaining <= -1 * comp.action.remainDuration ) ) {
+            // When conditions met that require the timer be removed from the 
+            // screen, then call the remove comonponent method.
+
+            window.setTimeout( () => {
+                comp.removeComponent();
+                ipcRenderer.send( 'log:destroy:component', comp.instanceId );
+            }, 1000 );
+
+        } else if ( comp.timeRemaining <= 0 && comp.action.remainAfterEnded ) {
+            // If the timer has ended, but is required to remain for a 
+            // duration, apply the ended conditions to the timer.
+
+            if ( comp.action.endedChangeColor ) {
+                comp.dom.querySelector( 'div.determinate' ).style.backgroundColor = comp.action.endedColor;
+                comp.dom.querySelector( 'div.progress' ).style.backgroundColor = comp.action.endedBackgroundColor;
+            }
+
+            if ( !comp.endedSpoken && comp.action.endedSpeak ) {
+                comp.endedSpoken = true;
+                speakPhrase( comp.voiceIndex, comp.action.endedSpeakPhrase );
+            }
+
+            if ( !comp.endedTextDisplayed && comp.action.endedDisplayText ) {
+                comp.endedTextDisplayed = true;
+                sendDisplayTextToOverlay( comp.action.endedTextOverlayId, comp.action.endedText, comp.action.endedTextDuration );
+            }
+        }
+
+    }, 250 );
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Restarts the given component, if found.
+ * 
+ * @returns {boolean} Returns true if the component was found and restarted.
+ * 
+ * @param {OverlayComponent} comp The overlay component to restart.
+ * @param {string} displayText The matching display text.
+ * @param {OverlayComponent[]} dictionary The dictionary that contains the desired component.
+ */
+function restartDotTimerComponent( comp, displayText, dictionary ) {
+    // If this component needs to restart on duplicate names, then find the index of the first match, and if found reset the start.
+    let index = ArrayUtilities.findIndex( dictionary, f => f?.description == displayText );
+    if ( index > -1 ) {
+
+        // Tell log watchers to remove any hooks they have for the old component.
+        ipcRenderer.send( 'log:destroy:component', dictionary[ index ].instanceId );
+
+        // Reset the start duration
+        dictionary[ index ].start = comp.timestamp;
+        // let perc = ( Math.abs( ( new Date() ) - dictionary[ index ].start ) / 1000 ) / comp.action.duration;
+
+        // dictionary[ index ].timeRemaining = comp.action.duration - ( comp.action.duration * perc );
+        dictionary[ index ].timeRemaining = comp.action.duration;
+
+        // Reset the ending conditions
+        dictionary[ index ].endingSoonSpoken = false;
+        dictionary[ index ].endingSoonTextDisplayed = false;
+        dictionary[ index ].endedSpoken = false;
+        dictionary[ index ].endedTextDisplayed = false;
+        dictionary[ index ].instanceId = comp.instanceId;
+
+        // Reset the background color
+        if ( dictionary[ index ].action.overrideTimerColor ) {
+            dictionary[ index ].dom.querySelector( '.determinate' ).style.backgroundColor = dictionary[ index ].action.overrideTimerColor;
+            dictionary[ index ].dom.querySelector( '.progress' ).style.backgroundColor = dictionary[ index ].action.timerBackgroundColor;
+        } else {
+            dictionary[ index ].dom.querySelector( '.determinate' ).style.backgroundColor = '#008000';
+            dictionary[ index ].dom.querySelector( '.progress' ).style.backgroundColor = 'rgba(0,33,0,.75)';
+        }
+
+        return true;
+    }
+
+    return false;
 }
 
 function componentToHex( c ) {

@@ -1,3 +1,37 @@
+import { Observable, Observer } from 'rxjs';
+
+export class ImageUtility {
+
+    public static toDataUrl( file: Blob ): Observable<string> {
+        let obs: Observable<string> = new Observable<string>( ( observer: Observer<string> ) => {
+            
+            let reader: FileReader = new FileReader();
+
+            reader.onload = () => {
+                observer.next( reader.result.toString() );
+                observer.complete();
+            };
+
+            reader.readAsDataURL( file );
+            
+            // let fileUrl: string = `file:\\\\${filePath}`;
+            // let img: HTMLImageElement = new Image();
+            // let canvas: HTMLCanvasElement = document.createElement( 'canvas' );
+            // let context = canvas.getContext( '2d' );
+
+            // img.onload = () => {
+            //     // context.drawImage( img, img.width, img.height );
+            // };
+            // img.src = fileUrl;
+
+        } );
+
+        return obs;
+    }
+
+    // https://stackoverflow.com/a/49093626
+    // public static fromUrlToDataUrl
+}
 
 export class ColorUtility {
     public static FromHex( hex: string ): Color {

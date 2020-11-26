@@ -38,14 +38,26 @@ var OperatorTypes = {
     GreaterThan: 8,
 }
 
-class CapturePhrase {
+class CharacterClassLevel {
+    /** @type {string} */
+    class;
+    /** @type {number} */
+    level;
+}
 
-    /** @type string */
+class Phrase {
+
+    /** @type {string} */
     phraseId;
-    /** @type string */
+    /** @type {string} */
     phrase;
-    /** @type boolean */
+    /** @type {boolean} */
     useRegEx;
+
+}
+
+class CapturePhrase extends Phrase {
+
     /** @type boolean */
     requirePreviousPhrase;
     /** @type number */
@@ -61,6 +73,8 @@ class TriggerAction {
     displayText;
     /** @type number */
     duration = null;
+    /** @type boolean */
+    showRemainingDuration = false;
     /** @type string */
     variableName = null;
     /** @type number */
@@ -75,6 +89,11 @@ class TriggerAction {
     overrideTimerColor = null;
     /** @type string */
     timerBackgroundColor = null;
+    /** @type string */
+    timerIcon = null;
+    /** @type string */
+    timerIconDef = null;
+
     /** @type boolean */
     ifEndingSoon = false;
     /** @type number */
@@ -125,6 +144,13 @@ class TriggerAction {
     endedColor = null;
     /** @type string */
     endedBackgroundColor = null;
+
+    /** @type {Phrase[]} */
+    excludeTargets = [];
+
+    /** @type {Phrase[]} */
+    endEarlyPhrases = [];
+
 }
 
 class TriggerCondition {
@@ -155,11 +181,13 @@ class Trigger {
     captureMethod = 'Any match';
     /** @type TriggerCondition[] */
     conditions = [];
-    spellLevel = 0;
+    /** @type {CharacterClassLevel[]} */
+    classLevels = [];
     predefined = false;
     /** @type boolean */
     onlyExecuteInDev = false;
-
+    /** @type {string} */
+    allakhazamUrl = null;
 }
 
-module.exports = { Trigger, TriggerAction, ActionTypes, CapturePhrase, TriggerConditionTypes, OperatorTypes };
+module.exports = { Trigger, TriggerAction, ActionTypes, CapturePhrase, TriggerConditionTypes, OperatorTypes, Phrase };

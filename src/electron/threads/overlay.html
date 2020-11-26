@@ -203,6 +203,64 @@
             /* margin: 6px; */
         }
 
+        .dot-text.ungrouped {
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            /* width: 200px; */
+            overflow: hidden;
+            width: 100%;
+            padding-right: 30px;
+        }
+
+        .grouped-mobs {
+            display: flex;
+            flex-wrap: wrap;
+            /* align-items: flex-start; */
+            align-content: flex-start;
+            /* vertical-align: top; */
+        }
+
+        .mob-dot-group {
+            display: inline-block;
+            width: 200px;
+            /* max-width: 63%; */
+        }
+
+        .mob-dot-group:nth-child(n+0) {
+            margin-left: 25px;;
+        }
+
+            .mob-dot-group > div {
+                width: 200px;
+            }
+
+                .mob-dot-group > div > p {
+                    text-overflow: ellipsis;
+                    white-space: nowrap;
+                    width: 200px;
+                    overflow: hidden;
+                }
+
+            .mob-dot-group h6 {
+                text-align: center;
+            }
+            
+            .mob-dot-group .dot-icons-grid {
+                display: flex;
+                /* justify-content: space-evenly; */
+                flex-wrap: wrap;
+            }
+
+            .mob-dot-icon {
+                display: inline-block;
+                /* flex: 1; */
+                margin: 4px;
+                width: 50px;
+            }
+
+                .mob-dot-icon span {
+                    display: block;
+                }
     </style>
 </head>
 <body>
@@ -212,10 +270,7 @@
     </script>
     <section class="body">
         <div class="overlay-name-watermark"><h1 id="overlay-title">Overlay Title</h1></div>
-        <div class="content-area">
-            <!-- <div class="progress">
-                <div class="determinate" style="width: 70%">Arch Shielding</div>
-            </div> -->
+        <div class="content-area" style="padding-left: 20px;">
         </div>
     </section>
     
@@ -231,10 +286,26 @@
         <p class="fct-dmg-src">({{damageSource}})</p>
     </template>
     <template id="dotTimerTemplate">
-        <p class="dot-text">{{value}}</p>
+        <p class="dot-text ungrouped"><span class="time-remaining"></span>{{value}}</p>
         <!-- Background color of .progress is 13% of the .determinate color. -->
         <div class="progress" style="background-color: rgba(0,33,0,.75)"><p style="margin: 4px;">&nbsp;</p>
             <div class="determinate" style="width: 0%; background-color: #008000;"></div>
+        </div>
+    </template>
+    <template id="dotTimerIconTemplate">
+        <!-- A convergeance of dumb has resulted in the derp -->
+        <img src="{{icon}}" class="dot-icon" derp="{{{iconStyle}}}" />
+    </template>
+    <template id="targetGroupTemplate">
+        <!-- <div class="mob-dot-group"> -->
+            <h6>{{name}}</h6>
+        <!-- </div> -->
+    </template>
+    <template id="targetGroupTimerTemplate">
+        <p class="dot-text"><span class="time-remaining"></span>{{value}}</p>
+        <!-- Background color of .progress is 13% of the .determinate color. -->
+        <div class="progress" style="background-color: rgba(0,33,0,.75)"><p style="margin: 4px;">&nbsp;</p>
+            <div class="determinate" style="width: 40%; background-color: #008000;"></div>
         </div>
     </template>
 </body>

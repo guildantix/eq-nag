@@ -2,7 +2,7 @@ import { Injectable, NgZone } from '@angular/core';
 import { IpcRenderer } from 'electron';
 import { Observable, Observer } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
-import { DataTickModel, DkpEntryModel, TriggerModel, OverlayWindowModel, ActionTypes, FocusEffectSettings } from './core.model';
+import { DataTickModel, DkpEntryModel, TriggerModel, OverlayWindowModel, ActionTypes, FocusEffectSettings, CharacterModel, BasicError } from './core.model';
 
 @Injectable()
 export class IpcService {
@@ -14,6 +14,8 @@ export class IpcService {
     private _dkpAddedObservers: Observer<DkpEntryModel>[] = [];
     private _dkpRemovedObservers: Observer<string>[] = [];
     private _consoleLogRequestObservers: Observer<any>[] = [];
+    private _logActivatedObservers: Observer<any>[] = [];
+    private _logDeactivatedObservers: Observer<any>[] = [];
 
     constructor( private ngZone: NgZone ) {
         if ( ( <any>window ).require ) {
@@ -63,6 +65,23 @@ export class IpcService {
                 this.ipc.on( 'console:log', ( event: any, data: any ) => {
                     console.log( data );
                 } );
+
+                this.ipc.on( 'log:character:activated', ( event: any, data: any ) => {
+                    ngZone.run( () => {
+                        this._logActivatedObservers?.forEach( f => {
+                            f.next( data );
+                        } );
+                    } );
+                } );
+
+                this.ipc.on( 'log:character:deactivated', ( event: any, data: any ) => {
+                    ngZone.run( () => {
+                        this._logDeactivatedObservers?.forEach( f => {
+                            f.next( data );
+                        } );
+                    } );
+                } );
+
             } catch ( e ) {
                 throw e;
             }
@@ -106,6 +125,22 @@ export class IpcService {
     public dkpEntryRemoved(): Observable<string> {
         let obs: Observable<string> = new Observable<string>( ( observer: Observer<string> ) => {
             this._dkpRemovedObservers.push( observer );
+        } );
+
+        return obs;
+    }
+
+    public characterLogActivated(): Observable<string> {
+        let obs: Observable<string> = new Observable<string>( ( observer: Observer<string> ) => {
+            this._logActivatedObservers.push( observer );
+        } );
+
+        return obs;
+    }
+
+    public characterLogDeactivated(): Observable<string> {
+        let obs: Observable<string> = new Observable<string>( ( observer: Observer<string> ) => {
+            this._logDeactivatedObservers.push( observer );
         } );
 
         return obs;
@@ -396,6 +431,128 @@ export class IpcService {
         } );
 
         return obs;
+    }
+
+    public createCharacter( model: CharacterModel ): Observable<string> {
+        let obs: Observable<string> = new Observable<string>( ( observer: Observer<string> ) => {
+            
+            this.ipc.once( 'character:create', ( e, characterId: string ) => {
+                this.ngZone.run( () => {
+                    observer.next( characterId );
+                    observer.complete();
+                } );
+            } );
+            this.ipc.send( 'character:create', model );
+
+        } );
+
+        return obs;
+    }
+
+    public getCharacters(): Observable<CharacterModel[]> {
+        let obs: Observable<CharacterModel[]> = new Observable<CharacterModel[]>( ( observer: Observer<CharacterModel[]> ) => {
+            
+            this.ipc.once( 'character:get', ( e, overlays: CharacterModel[] ) => {
+                this.ngZone.run( () => {
+                    observer.next( overlays );
+                    observer.complete();
+                } );
+            } );
+            this.ipc.send( 'character:get', null );
+
+        } );
+
+        return obs;
+    }
+
+    public getCharacter( characterId: string ): Observable<CharacterModel> {
+        let obs: Observable<CharacterModel> = new Observable<CharacterModel>( ( observer: Observer<CharacterModel> ) => {
+            
+            this.ipc.once( 'character:get', ( e, character: CharacterModel ) => {
+                this.ngZone.run( () => {
+                    observer.next( character );
+                    observer.complete();
+                } );
+            } );
+            this.ipc.send( 'character:get', characterId );
+
+        } );
+
+        return obs;
+    }
+
+    public updateCharacter( model: CharacterModel ): Observable<boolean> {
+        let obs: Observable<boolean> = new Observable<boolean>( ( observer: Observer<boolean> ) => {
+            
+            this.ipc.once( 'character:update', ( e, updated: boolean ) => {
+                this.ngZone.run( () => {
+                    observer.next( updated );
+                    observer.complete();
+                } );
+            } );
+            this.ipc.send( 'character:update', model );
+
+        } );
+
+        return obs;
+    }
+
+    public deleteCharacter( characterId: string ): Observable<boolean> {
+        let obs: Observable<boolean> = new Observable<boolean>( ( observer: Observer<boolean> ) => {
+            
+            this.ipc.once( 'character:delete', ( e, deleted: boolean ) => {
+                this.ngZone.run( () => {
+                    observer.next( deleted );
+                    observer.complete();
+                } );
+            } );
+            this.ipc.send( 'character:delete', characterId );
+
+        } );
+
+        return obs;
+    }
+
+    public getEqInstallFolder(): Observable<string> {
+        let obs: Observable<string> = new Observable<string>( ( observer: Observer<string> ) => {
+            
+            this.ipc.once( 'settings:get:everquest-folder', ( e, folder: string ) => {
+                this.ngZone.run( () => {
+                    observer.next( folder );
+                    observer.complete();
+                } );
+            } );
+            this.ipc.send( 'settings:get:everquest-folder', null );
+
+        } );
+
+        return obs;
+    }
+
+    public getEqSpellIcons(): Observable<string[]> {
+        let obs: Observable<string[]> = new Observable<string[]>( ( observer: Observer<string[]> ) => {
+            
+            this.ipc.once( 'game-resources:get:eq:icons', ( e, icons: string[] ) => {
+                this.ngZone.run( () => {
+                    observer.next( icons );
+                    observer.complete();
+                } );
+            } );
+            this.ipc.once( 'game-resources:get:eq:icons:error', ( e, error: BasicError ) => {
+                this.ngZone.run( () => {
+                    observer.error( error );
+                    observer.complete();
+                } );
+            } );
+            this.ipc.send( 'game-resources:get:eq:icons', null );
+
+        } );
+
+        return obs;
+    }
+
+    public setEqInstallFolder( folder: string ): void {
+        this.ipc.send( 'settings:set:everquest-folder', folder );
     }
 
     public enableOverlayEditMode( overlayId: string ): void {

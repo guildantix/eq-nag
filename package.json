@@ -1,6 +1,6 @@
 {
   "name": "electron-angular-eq-parse",
-  "version": "0.0.26",
+  "version": "0.0.29",
   "main": "main.js",
   "scripts": {
     "tsc": "tsc",
@@ -30,7 +30,9 @@
     "handlebars": "^4.7.6",
     "lodash": "^4.17.15",
     "nanoid": "^3.1.10",
+    "ngx-electron": "^2.2.0",
     "rxjs": "~6.5.5",
+    "tga2png": "^0.1.3",
     "tslib": "^2.0.0",
     "uuid": "^8.2.0",
     "zone.js": "~0.10.3"
@@ -41,7 +43,7 @@
     "@angular/compiler-cli": "~10.0.2",
     "@types/jasmine": "~3.5.0",
     "@types/jasminewd2": "~2.0.3",
-    "@types/node": "^12.11.1",
+    "@types/node": "^12.19.4",
     "codelyzer": "^6.0.0-next.1",
     "electron": "^9.0.5",
     "electron-builder": "^22.7.0",
@@ -84,5 +86,10 @@
       "output": "electron/output",
       "buildResources": "electron/buildResources"
     }
+  },
+  "browser": {
+    "fs": false,
+    "os": false,
+    "path": false
   }
 }

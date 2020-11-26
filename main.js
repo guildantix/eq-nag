@@ -9,6 +9,9 @@ const TriggerDatabaseStore = require( './src/electron/data/trigger-database' );
 const OverlayDatabaseStore = require( "./src/electron/data/overlay-database" );
 const ForwardRef = require( './src/electron/forward-ref' );
 const WindowManager = require( './src/electron/window-manager' );
+const CharacterDatabaseStore = require( "./src/electron/data/character-database" );
+const LogBootstrapper = require( './src/electron/log-bootstrap' );
+const GameResources = require( './src/electron/data/game-resources' );
 
 /** @type {BrowserWindow} */
 var mainWindow, logWatcherWindow, testWindow;
@@ -18,7 +21,9 @@ const userPreferences = new UserPreferencesStore( {} );
 const dkpDatabase = new DkpDatabaseStore();
 const triggerDatabase = new TriggerDatabaseStore();
 const overlayDatabase = new OverlayDatabaseStore();
-// var overlayDictionary = {};
+const characterDatabase = new CharacterDatabaseStore();
+const logBootstrap = new LogBootstrapper();
+const gameResources = new GameResources();
 
 GH_TOKEN = "e3460400ae1273a5cac83e1b86a5aceae7f8bab7";
 
@@ -50,12 +55,11 @@ function createWindow() {
 
     mainWindow.on( 'closed', function () {
         mainWindow = null
-        logWatcherWindow = null;
     } );
 
     mainWindow.on( 'close', function () {
-        logWatcherWindow?.close();
         winManager.unload();
+        logBootstrap.unload();
     } );
 
     mainWindow.on( 'resize', function ( e ) {
@@ -69,28 +73,6 @@ function createWindow() {
         userPreferences.windowX = bounds.x;
         userPreferences.windowY = bounds.y;
     } );
-
-    // create hidden worker window
-    logWatcherWindow = new BrowserWindow( {
-        //   width: 800,
-        //   height: 600,
-        show: app.isDev() === true,
-        webPreferences: { nodeIntegration: true, webSecurity: false },
-    } );
-    logWatcherWindow.webContents.openDevTools();
-    logWatcherWindow.loadFile("./src/electron/threads/log-watcher.html");
-
-    logWatcherWindow.on( 'closed', function () {
-        logWatcherWindow = null;
-    } );
-
-    logWatcherWindow.webContents.once( 'dom-ready', () => {
-        if ( userPreferences.logFile != null ) {
-            logWatcherWindow.webContents.send( 'log:changed', userPreferences.logFile );
-        }
-        sendTick();
-    } );
-    logWatcherWindow.setPosition( 100, 500 );
 
     mainWindow.webContents.once( 'dom-ready', () => {
         autoUpdater.checkForUpdatesAndNotify().then( result => {
@@ -133,7 +115,7 @@ ipcMain.on( 'main:console:log', ( event, data ) => { mainWindow.webContents.send
 
 function sendTick() {
     let _triggers = triggerDatabase.getAll();
-    mainWindow.webContents.send( 'tick', {
+    let tickData = {
         dkpEntries: dkpDatabase.getAllUnentered(),
         logFile: userPreferences.logFile,
         voiceIndex: userPreferences.voiceIndex,
@@ -145,18 +127,10 @@ function sendTick() {
         hasExtendedDotFocus: userPreferences.hasExtendedDotFocus,
         extendedDotFocusPercent: userPreferences.extendedDotFocusPercent,
         extendedDotFocusDecayLevel: userPreferences.extendedDotFocusDecayLevel,
-    } );
-    logWatcherWindow.webContents.send( 'tick', {
-        triggers: _triggers,
-        damageDealtOverlayId: userPreferences.damageDealtOverlayId,
-        damageReceivedOverlayId: userPreferences.damageReceivedOverlayId,
-        enableFct: userPreferences.enableFct,
-        hasExtendedDotFocus: userPreferences.hasExtendedDotFocus,
-        extendedDotFocusPercent: userPreferences.extendedDotFocusPercent,
-        extendedDotFocusDecayLevel: userPreferences.extendedDotFocusDecayLevel,
-        voiceIndex: userPreferences.voiceIndex,
         isDev: app.isDev(),
-    } );
+    };
+    mainWindow.webContents.send( 'tick', tickData );
+    logBootstrap.tick( tickData, characterDatabase );
 }
 
 autoUpdater.signals.updateDownloaded( () => {
@@ -183,22 +157,18 @@ ipcMain.on( 'clipboard:writeText', ( event, value ) => {
     clipboard.writeText( value );
 } );
 
-ipcMain.on( 'log:send:raw', function ( event, data ) {
-    logWatcherWindow.webContents.send( 'log:parse:raw', data );
-} );
-
-ipcMain.on( 'log:simulate:file', function ( event, data ) {
-    logWatcherWindow.webContents.send( 'log:simulate:file', data );
-} );
-
 var mainWindowRef = new ForwardRef( () => mainWindow ? mainWindow : null );
-var logWatcherRef = new ForwardRef( () => logWatcherWindow ? logWatcherWindow : null );
 
-userPreferences.attachIpcEvents( mainWindowRef, logWatcherRef, sendTick );
+userPreferences.attachIpcEvents( mainWindowRef, sendTick );
 winManager.attachIpcEvents( mainWindowRef, sendTick, overlayDatabase, userPreferences );
 dkpDatabase.attachIpcEvents( mainWindowRef, sendTick );
 triggerDatabase.attachIpcEvents( mainWindowRef, sendTick );
 overlayDatabase.attachIpcEvents( mainWindowRef, sendTick );
+characterDatabase.attachIpcEvents( mainWindowRef, sendTick );
+logBootstrap.boostrapLogWatchers( mainWindowRef, app.isDev(), characterDatabase, sendTick );
+gameResources.attachIpcEvents( mainWindowRef, userPreferences );
+
+let x = userPreferences.everquestInstallFolder;
 
 // Pulls the spell name
 // document.querySelector('meta[property="og:title"]').getAttribute('content')

@@ -1,6 +1,47 @@
 const { ipcMain } = require( "electron" );
 const Store = require( './store' );
 const ForwardRef = require( '../forward-ref' );
+const fs = require( 'fs' );
+
+const possibleEqFolders = [
+    '\\users\\public\\Everquest',
+    '\\Users\\Public\\Daybreak Game Company\\Installed Games\\Everquest',
+    '\\Daybreak Game Company\\Installed Games\\Everquest',
+    '\\Games\\Everquest',
+    '\\Everquest',
+];
+
+/**
+ * Get windows drives
+ * */
+function get_win_drives( success_cb, error_cb ) {
+    var stdout = '';
+    var spawn = require( 'child_process' ).spawn,
+        list = spawn( 'cmd' );
+
+    list.stdout.on( 'data', function ( data ) {
+        stdout += data;
+    } );
+
+    list.stderr.on( 'data', function ( data ) {
+        console.log( 'stderr: ' + data );
+    } );
+
+    list.on( 'exit', function ( code ) {
+        if ( code == 0 ) {
+            console.log( stdout );
+            var data = stdout.split( '\r\n' );
+            data = data.splice( 4, data.length - 7 );
+            data = data.map( Function.prototype.call, String.prototype.trim );
+            success_cb( data );
+        } else {
+            console.log( 'child process exited with code ' + code );
+            error_cb();
+        }
+    } );
+    list.stdin.write( 'wmic logicaldisk get caption\n' );
+    list.stdin.end();
+}
 
 class UserPreferencesStore extends Store {
 
@@ -106,6 +147,13 @@ class UserPreferencesStore extends Store {
         this.#data.extendedDotFocusDecayLevel = val;
     }
 
+    get everquestInstallFolder() {
+        return this.#data.everquestInstallFolder;
+    }
+    set everquestInstallFolder( val ) {
+        this.#data.everquestInstallFolder = val;
+    }
+
     constructor() {
         super( {
             // We'll call our data file 'user-preferences'
@@ -173,14 +221,12 @@ class UserPreferencesStore extends Store {
      * Attaches store events to ipc main and dispatches react events to the main window.
      * 
      * @param {ForwardRef} mainWindowRef The main window of the application.
-     * @param {ForwardRef} logWatcherRef The log watcher window of the application.
      * @param {function} sendTick The send tick method.
      */
-    attachIpcEvents( mainWindowRef, logWatcherRef, sendTick ) {
+    attachIpcEvents( mainWindowRef, sendTick ) {
 
         ipcMain.on( 'log:select', ( event, arg ) => {
             this.logFile = arg;
-            logWatcherRef.reference?.webContents.send( 'log:changed', arg );
             event.sender.send( 'log:changed', arg );
         } );
         
@@ -208,6 +254,34 @@ class UserPreferencesStore extends Store {
         
         ipcMain.on( 'settings:set:damageReceivedOverlayId', ( event, arg ) => {
             this.damageReceivedOverlayId = arg;
+        } );
+
+        ipcMain.on( 'settings:set:everquest-folder', ( event, folder ) => {
+            console.log( 'saving eq folder', folder );
+            this.everquestInstallFolder = folder;
+            this.storeDataFile( this.#data );
+        } );
+
+        ipcMain.on( 'settings:get:everquest-folder', ( event, arg ) => {
+            if ( this.#data.everquestInstallFolder != null && fs.existsSync( this.#data.everquestInstallFolder ) ) {
+                // event.sender.webContents.send( 'settings:get:everquest-folder', this.#data.everquestInstallFolder );
+                event.sender.webContents.send( 'settings:get:everquest-folder', this.#data.everquestInstallFolder );
+            } else {
+                get_win_drives( drives => {
+                    this.#data.everquestInstallFolder = null;
+
+                    drives.forEach( drive => {
+                        possibleEqFolders.forEach( eqFolder => {
+                            if ( fs.existsSync( drive + eqFolder + '\\LaunchPad.exe' ) ) {
+                                this.#data.everquestInstallFolder = drive + eqFolder;
+                            }
+                        } );
+                    } );
+
+                    this.storeDataFile( this.#data );
+                    event.sender.webContents.send( 'settings:get:everquest-folder', this.#data.everquestInstallFolder );
+                } );
+            }
         } );
 
     }

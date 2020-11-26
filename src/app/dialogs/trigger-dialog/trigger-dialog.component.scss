@@ -27,8 +27,25 @@ table.capture-phrases {
     }
 }
 
-.card.action-card {
+::ng-deep .card.action-card {
+    .mat-table tbody {
+        background-color: #ffffff08;
+    }
     mat-card-content {
         padding-top: 50px;
     }
+}
+
+.action-icon {
+    img {
+        max-width: 26px;
+        margin: 10px;
+        cursor: pointer;
+    }
+
+    display: flex;
+    flex-direction: row;
+    justify-items: flex-end;
+    align-items: center;
+
 }

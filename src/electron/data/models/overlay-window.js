@@ -47,6 +47,24 @@ class OverlayWindow {
     textGlowIntensity = 1;
     /** @type {number} */
     textGlowSize = 10;
+
+    /** @type {boolean} */
+    groupByTarget = false;
+
+    /** @type {number} */
+    groupHeaderSize = 40;
+
+    /** @type {number} */
+    groupHeaderWeight = 400;
+    
+    /** @type string */
+    groupHeaderColor = '#ffffff';
+    
+    /** @type {boolean} */
+    showTimeRemaining = false;
+    
+    /** @type {boolean} */
+    hideTargetLabel = false;
 }
 
 class OverlayComponent {
@@ -55,6 +73,8 @@ class OverlayComponent {
     instanceId;
     /** @type {string} */
     description;
+    /** @type {string} */
+    triggerName;
     /** @type {TriggerAction} */
     action;
     /** @type {string[]} */
@@ -77,6 +97,8 @@ class OverlayComponent {
     endingSoonTextDisplayed = false;
     /** @type {number} */
     voiceIndex = -1;
+    /** @type {() => void} */
+    removeComponent;
 }
 
 module.exports = { OverlayWindow, OverlayComponent, TimerSortTypes };

@@ -7,6 +7,46 @@ import { VirtualTimeScheduler } from 'rxjs';
 import { DialogService } from './dialogs/dialog.service';
 import { monitorEventLoopDelay } from 'perf_hooks';
 import { ScraperService } from './scraper.service';
+// import { NestedTreeControl } from '@angular/cdk/tree';
+// import { MatTreeNestedDataSource } from '@angular/material/tree';
+
+// interface FoodNode {
+//     name: string;
+//     active: boolean;
+//     children?: FoodNode[];
+// }
+
+// const TREE_DATA: FoodNode[] = [
+//     {
+//         name: 'Fruit',
+//         active: true,
+//         children: [
+//             { name: 'Apple', active: true },
+//             { name: 'Banana', active: false },
+//             { name: 'Fruit loops', active: true },
+//         ]
+//     }, {
+//         name: 'Vegetables',
+//         active: true,
+//         children: [
+//             {
+//                 name: 'Green',
+//                 active: true,
+//                 children: [
+//                     { name: 'Broccoli', active: true },
+//                     { name: 'Brussels sprouts', active: true },
+//                 ]
+//             }, {
+//                 name: 'Orange',
+//                 active: true,
+//                 children: [
+//                     { name: 'Pumpkins', active: true },
+//                     { name: 'Carrots', active: true },
+//                 ]
+//             },
+//         ]
+//     },
+// ];
 
 @Component( {
     selector: 'app-main',
@@ -15,6 +55,8 @@ import { ScraperService } from './scraper.service';
 } )
 export class MainComponent implements OnInit {
 
+    // public treeControl = new NestedTreeControl<FoodNode>( node => node.children );
+    // public dataSource = new MatTreeNestedDataSource<FoodNode>();
     public msg: string;
     public dkpEntries: DkpEntryModel[] = [];
     public version: string;
@@ -29,7 +71,7 @@ export class MainComponent implements OnInit {
     public damageTakenOverlayId: string;
     public focusEffectSettings: FocusEffectSettings = new FocusEffectSettings();
     public isDev: boolean = false;
-
+    // hasChild = (_: number, node: FoodNode) => !!node.children && node.children.length > 0;
     public _testDealtOverlayId: string = 'wT8389KxT5zlsaiE';
     public _testTakenOverlayId: string = 'wT8389KxT5zlsaiE';
     public _testId: number;
@@ -52,6 +94,7 @@ export class MainComponent implements OnInit {
         speechSynthesis.onvoiceschanged = () => {
             this.voiceOptions = speechSynthesis.getVoices();
         };
+        // this.dataSource.data = TREE_DATA;
     }
 
     ngOnInit(): void {
@@ -176,12 +219,16 @@ export class MainComponent implements OnInit {
     }
 
     showNewOverlayDialog(): void {
-        this.dialogService.
-            showOverlayDetailsDialog( new OverlayWindowModel() )
+        this.dialogService
+            .showOverlayDetailsDialog( new OverlayWindowModel() )
             .subscribe( model => {
                 if ( model?.isValid() === true ) {
+                    model.x = 100;
+                    model.y = 100;
+                    model.windowWidth = 500;
+                    model.windowHeight = 400;
                     this.ipcService.createNewOverlayWindow( model ).subscribe( overlayId => {
-                        this.ipcService.showEditOverlayDialog( overlayId );
+                        window.setTimeout( () => this.ipcService.showEditOverlayDialog( overlayId ) );
                     } );
                 }
             } );

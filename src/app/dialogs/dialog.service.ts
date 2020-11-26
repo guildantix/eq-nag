@@ -1,11 +1,13 @@
 import { Injectable } from '@angular/core';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { ConfirmDialogComponent } from './confirm-dialog/confirm-dialog.component';
-import { OverlayWindowModel, ScrapedSpell, TriggerAction } from '../core.model';
+import { OverlayWindowModel, ScrapedSpell, TriggerAction, TriggerModel } from '../core.model';
 import { Observable } from 'rxjs';
 import { OverlayDetailsDialogComponent } from './overlay-details-dialog/overlay-details-dialog.component';
 import { TriggerActionWizardModalComponent } from './trigger-action-wizard-modal/trigger-action-wizard-modal.component';
 import { NewTriggerDialogComponent } from './new-trigger-dialog/new-trigger-dialog.component';
+import { NewCharacterDialogComponent } from './new-character-dialog/new-character-dialog.component';
+import { SelectIconDialogComponent } from './select-icon-dialog/select-icon-dialog.component';
 
 @Injectable()
 export class DialogService {
@@ -107,6 +109,82 @@ export class DialogService {
         this.dialog.open( NewTriggerDialogComponent, {
             width: '750px'
         } ).afterClosed();
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Opens the new dot timer trigger dialog.
+     */
+    public showReimportDotTimerDialog( model: TriggerModel ): void {
+        this.dialog.open( NewTriggerDialogComponent, {
+            width: '750px',
+            data: model,
+        } ).afterClosed();
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Opens the new character dialog.
+     */
+    public showNewCharacterDialog( afterClosed: (characterId: string) => void ): void {
+        this.dialog.open( NewCharacterDialogComponent, {
+            width: '750px'
+        } ).afterClosed().subscribe( afterClosed );
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Opens the new character dialog.
+     */
+    public showSelectIconDialog( afterClosed: ( icon: string ) => void ): void {
+        this.dialog.open( SelectIconDialogComponent, {
+            width: '750px'
+        } ).afterClosed().subscribe( afterClosed );
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Opens the new character dialog.
+     */
+    public showIconDialog( iconIndex: number, afterClosed: ( icon: string ) => void ): void {
+        this.dialog.open( SelectIconDialogComponent, {
+            width: '750px',
+            data: {
+                iconIndex: iconIndex,
+            }
+        } ).afterClosed().subscribe( afterClosed );
     }
     
 }

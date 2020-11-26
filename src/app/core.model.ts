@@ -1,17 +1,56 @@
 import { StringProtocolResponse } from 'electron';
 
+export const ErrorCodes = {
+    EqFolderNotFound: {
+        code: 'EQDIRNULL',
+        message: 'Could not locate your EverQuest folder.',
+    }
+};
+
+export enum CharacterClasses {
+    Bard = 'BRD',
+    Beastlord = 'BST',
+    Berserker = 'BER',
+    Cleric = 'CLR',
+    Druid = 'DRU',
+    Enchanter = 'ENC',
+    Magician = 'MAG',
+    Monk = 'MNK',
+    Necromancer = 'NEC',
+    Paladin = 'PAL',
+    Ranger = 'RNG',
+    Rogue = 'ROG',
+    Shadowknight = 'SHD',
+    Shaman = 'SHM',
+    Warrior = 'WAR',
+    Wizard = 'WIZ',
+}
+
+export class CharacterClassLevel {
+    public class: string;
+    public level: number;
+}
+
+export class BasicError {
+    
+    public errorCode: string;
+    public message: string;
+
+}
+
 export class TriggerModel {
     
     public triggerId: string = null;
     public name: string = '';
     public capturePhrases: CapturePhrase[] = [];
     public comments: string = '';
-    public actions: any[] = [];
+    public actions: TriggerAction[] = [];
     public captureMethod: string = 'Any match';
     public conditions: TriggerCondition[] = [];
-    public spellLevel: number = 0;
+    public classLevels: CharacterClassLevel[] = [];
     public predefined: boolean = false;
     public onlyExecuteInDev: boolean = false;
+    public allakhazamUrl: string = null;
 
 }
 
@@ -41,10 +80,13 @@ export class TriggerCondition {
 
 }
 
-export class CapturePhrase {
+export class Phrase {
     public phraseId: string;
     public phrase: string;
-    public useRegEx: boolean = false;
+    public useRegEx: boolean;
+}
+
+export class CapturePhrase extends Phrase {
     public requirePreviousPhrase: boolean = false;
     public duration: number = null;
 }
@@ -91,6 +133,13 @@ export class OverlayWindowModel {
     public textGlowColor: string = '#000000';
     public textGlowIntensity: number = 1;
     public textGlowSize: number = 10;
+
+    public groupByTarget: boolean = false;
+    public groupHeaderSize: number = 40;
+    public groupHeaderWeight: number = 400;
+    public groupHeaderColor: string = '#ffffff';
+    public showTimeRemaining: boolean = false;
+    public hideTargetLabel: boolean = false;
 
     public isValid (): boolean {
         return name != null && this.overlayType != null;
@@ -143,12 +192,16 @@ export class TriggerAction {
     public overlayId: string;
     public displayText: string;
     public duration: number;
+    public showRemainingDuration: boolean = false;
     public variableName: string;
     public restartOnDuplicate: boolean;
     public onlyExecuteInDev: boolean = false;
     public overrideTimerColor: string = null;
     public timerBackgroundColor: string = null;
     public useCustomColor: boolean = false;
+    public timerIcon: string = null;
+    public timerIconDef: string = null;
+
     public ifEndingSoon: boolean = false;
     public endingDuration: number = null;
     public endingSoonChangeColor: boolean = false;
@@ -177,20 +230,46 @@ export class TriggerAction {
     public endedChangeColor: boolean = false;
     public endedColor: string = null;
     public endedBackgroundColor: string = null;
+    
+    public excludeTargets: Phrase[] = [];
+    public endEarlyPhrases: Phrase[] = [];
 }
 
 export class ScrapedSpell {
     
     public name: string;
     public duration: number;
-    // public class: string;
-    public level: number;
+    public classes: CharacterClassLevel[] = [];
     public castOnOther: string;
+    public gemIndex: number;
+    public gemSrc: string;
 
 }
 
 export class FocusEffectSettings {
+    
     public hasExtendedDotFocus: boolean = false;
     public extendedDotFocusPercent: number = 0;
     public extendedDotFocusDecayLevel: number = 1;
+
+}
+
+export class CharacterModel {
+
+    public characterId: string;
+    public name: string;
+    public class: string;
+    public hasExtendedDotFocus: boolean;
+    public extendedDotFocusPercent: number;
+    public extendedDotFocusDecayLevel: number;
+    public logFile: string;
+    public server: string;
+    
+}
+
+export class NewCharacterOptionModel {
+    
+    public server: string;
+    public options: CharacterModel[] = [];
+
 }

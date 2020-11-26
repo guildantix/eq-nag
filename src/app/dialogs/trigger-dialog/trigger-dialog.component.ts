@@ -1,17 +1,18 @@
-import { Component, OnInit, ViewChild } from '@angular/core';
+import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 
 import { IpcService } from 'src/app/ipc.service';
-import { TriggerModel, CapturePhrase, ActionTypes, TriggerAction, OverlayWindowModel, OperatorTypes, TriggerCondition, TriggerConditionTypes } from 'src/app/core.model';
+import { TriggerModel, CapturePhrase, ActionTypes, TriggerAction, OverlayWindowModel, OperatorTypes, TriggerCondition, TriggerConditionTypes, Phrase, CharacterClasses, CharacterClassLevel } from 'src/app/core.model';
 import { animate, state, style, transition, trigger } from '@angular/animations';
 import { MatTableDataSource, MatTable } from '@angular/material/table';
 import { ActivatedRoute } from '@angular/router';
 import { DialogService } from '../dialog.service';
 import { customAlphabet } from 'nanoid';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { ColorUtility } from 'src/app/utilities';
+import { ColorUtility, ImageUtility } from 'src/app/utilities';
 // import { NgForm } from '@angular/forms';
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const nanoid = customAlphabet( alphabet, 16 );
+import * as _ from 'lodash';
 
 @Component( {
     selector: 'app-trigger-dialog',
@@ -28,7 +29,8 @@ const nanoid = customAlphabet( alphabet, 16 );
 export class TriggerDialogComponent implements OnInit {
 
     public model: TriggerModel;
-    public phraseTableColumns = [ 'moveIndex', 'number', 'phrase', 'regEx', 'delete' ];
+    public capturePhraseTableColumns = [ 'moveIndex', 'number', 'phrase', 'regEx', 'delete' ];
+    public phraseTableColumns = [ 'phrase', 'regEx', 'delete' ];
     public actionTableColumns = [ 'number', 'actionType', 'delete' ];
     public conditionTableColumns = [ 'variable', 'operator', 'value', 'delete' ];
     public triggerId: string = null;
@@ -53,6 +55,9 @@ export class TriggerDialogComponent implements OnInit {
     
     @ViewChild( 'capturePhrasesTable' ) capturePhrasesTable: MatTable<any>;
     @ViewChild( 'conditionsTable' ) conditionsTable: MatTable<any>;
+    @ViewChild( 'iconFileSelector' ) private iconFileSelector: ElementRef<HTMLInputElement>;
+
+    private onIconFileSelected: ( e: any ) => void = null;
 
     constructor( private ipcService: IpcService, private route: ActivatedRoute, private dialogService: DialogService, private snackBar: MatSnackBar ) { }
 
@@ -78,6 +83,34 @@ export class TriggerDialogComponent implements OnInit {
         this.ipcService.getAppIsDev().subscribe( isDev => this.isDev = isDev );
     }
 
+    // public hasNamedCaptureGroups( phraseIds: string[] ): boolean {
+    //     // let rgx = /\(\?\<(.+?)\>.*?\)/gi;
+    //     // https://regex101.com/r/9yssac/1
+    //     // ^(?<target>.*) has taken (?<damage>[0-9]*) ?damage from your Funeral Pyre of Kelador\.
+    //     // 0: (2) ["?<target>", "target", index: 2, input: "^(?<target>.*) has taken (?<damage>[0-9]*) ?damage from your Funeral Pyre of Kelador\.", groups: undefined]
+    //     //    0: ...
+    //     //    1: target
+    //     // 1: (2) ["?<damage>", "damage", index: 26, input: "^(?<target>.*) has taken (?<damage>[0-9]*) ?damage from your Funeral Pyre of Kelador\.", groups: undefined]
+    //     //    0: ...
+    //     //    1: damage
+    //     let result = false;
+    //     phraseIds?.forEach( id => {
+    //         let index = this.model.capturePhrases.findIndex( f => f.phraseId === id );
+    //         let phrase = this.model.capturePhrases[ index ];
+    //         let allMatches = [ ...phrase.phrase.matchAll( /\(\?\<(.+?)\>.*?\)/gi ) ];
+            
+    //         if ( allMatches?.length > 0 ) {
+    //             result = true;
+    //         }
+
+    //     } );
+    //     return result;
+    // }
+
+    // public getNamedCaptureGroups( phraseIds: string[] ): void {
+        
+    // }
+
     public closeModal(): void {
         this.ipcService.closeThisChild();
     }
@@ -93,6 +126,20 @@ export class TriggerDialogComponent implements OnInit {
         this.capturePhrasesTable?.renderRows();
     }
 
+    public addNewExclusionTarget( actionIndex: number, table: MatTable<any> ): void {
+        let phrase: Phrase = new Phrase();
+        phrase.phraseId = nanoid();
+        this.model.actions[actionIndex].excludeTargets?.push( phrase );
+        table?.renderRows();
+    }
+
+    public addNewEndEarlyPhrase( actionIndex: number, table: MatTable<any> ): void {
+        let phrase: Phrase = new Phrase();
+        phrase.phraseId = nanoid();
+        this.model.actions[actionIndex].endEarlyPhrases?.push( phrase );
+        table?.renderRows();
+    }
+
     public deleteCapturePhrase( index: number ): void {
         this.dialogService.showConfirmDialog(
             'Are you certain you want to delete this capture phrase?',
@@ -102,6 +149,32 @@ export class TriggerDialogComponent implements OnInit {
                 if ( confirmed ) {
                     this.model.capturePhrases?.splice( index, 1 );
                     this.capturePhrasesTable?.renderRows();
+                }
+            } );
+    }
+
+    public deleteExcludePhrase( actionIndex: number, deleteIndex: number, table: MatTable<any> ): void {
+        this.dialogService.showConfirmDialog(
+            'Are you certain you want to delete this exclusion?',
+            'Click "Yes" to delete the exclusion.',
+            'Click "No" to cancel and close this dialog without deleting the exclusion.',
+            ( confirmed ) => {
+                if ( confirmed ) {
+                    this.model.actions[ actionIndex ].excludeTargets?.splice( deleteIndex, 1 );
+                    table?.renderRows();
+                }
+            } );
+    }
+
+    public deleteEndEarlyPhrase( actionIndex: number, deleteIndex: number, table: MatTable<any> ): void {
+        this.dialogService.showConfirmDialog(
+            'Are you certain you want to delete this phrase?',
+            'Click "Yes" to delete the phrase.',
+            'Click "No" to cancel and close this dialog without deleting the phrase.',
+            ( confirmed ) => {
+                if ( confirmed ) {
+                    this.model.actions[ actionIndex ].endEarlyPhrases?.splice( deleteIndex, 1 );
+                    table?.renderRows();
                 }
             } );
     }
@@ -207,6 +280,59 @@ export class TriggerDialogComponent implements OnInit {
     public copyJson(): void {
         this.ipcService.sendTextToClipboard( JSON.stringify( this.model ) );
         this.snackBar.open( 'Trigger details copied!', 'Dismiss', { duration: 5000 } );
+    }
+
+    public reimportDotTimerFromAllakhazam(): void {
+        this.dialogService.showReimportDotTimerDialog( this.model );
+    }
+
+    openIconFileModal( action: TriggerAction ) {
+        this.onIconFileSelected = e => {
+            ImageUtility.toDataUrl( this.iconFileSelector.nativeElement.files[ 0 ] ).subscribe( dataUrl => action.timerIcon = dataUrl );
+            // console.log( 'found', action.actionId, this.iconFileSelector.nativeElement.files[ 0 ].path );
+            // action.timerIcon = this.iconFileSelector.nativeElement.files[ 0 ].path;
+        };
+        this.iconFileSelector.nativeElement.click();
+    }
+
+    public selectEqSpellIcon( action: TriggerAction ): void {
+        this.dialogService.showSelectIconDialog( icon => {
+            if ( icon != null ) {
+                action.timerIcon = icon;
+            }
+        } );
+    }
+
+    iconFileSelected( e: any ) {
+        this.onIconFileSelected( e );
+        this.onIconFileSelected = null;
+        // console.log( 'testing', typeof e);
+        // this.ipcService.updateLogFile( this.iconFileSelector.nativeElement.files[ 0 ].path );
+    }
+
+    public addClassLevel(): void {
+        this.model.classLevels = this.model.classLevels ? this.model.classLevels : [];
+        this.model.classLevels.push( new CharacterClassLevel() );
+    }
+
+    public deleteClassLevel( index: number ): void {
+        let classLabel: string = _.find( Object.keys( CharacterClasses ), f => CharacterClasses[ f ] === this.model.classLevels[ index ].class );
+        let action = () => this.model.classLevels?.splice( index, 1 );
+
+        if ( classLabel ) {
+            this.dialogService.showConfirmDialog(
+                `Are you certain you want to remove ${classLabel} from this trigger?`,
+                'Click "Yes" to remove this class.',
+                'Click "No" to cancel and close this dialog without removing the class.',
+                ( confirmed ) => {
+                    if ( confirmed ) {
+                        action();
+                    }
+                } );
+        } else {
+            action();
+        }
+        
     }
 
 }

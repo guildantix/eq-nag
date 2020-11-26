@@ -11,7 +11,10 @@ const ArrayUtilities = require( '../utilities/arrays' );
 
 class TriggerDatabaseStore extends Store {
 
-    /** The data store for this object. */
+    /** 
+     * The data store for this object.
+     * @type {{triggers: Trigger[]}}
+     * */
     #data;
 
     get count() {
@@ -144,6 +147,66 @@ class TriggerDatabaseStore extends Store {
             this.#data.version = 16;
             this.storeDataFile( this.#data );
         }
+        if ( this.#data.version < 17 ) {
+            this.#data?.triggers?.forEach( trigger => {
+                trigger.actions?.forEach( action => {
+                    action.timerIcon = null;
+                } );
+            } );
+            this.#data.version = 17;
+            this.storeDataFile( this.#data );
+        }
+        if ( this.#data.version < 18 ) {
+            this.#data?.triggers?.forEach( trigger => {
+                trigger.actions?.forEach( action => {
+                    action.timerIconDef = null;
+                } );
+            } );
+            this.#data.version = 18;
+            this.storeDataFile( this.#data );
+        }
+        if ( this.#data.version < 19 ) {
+            this.#data?.triggers?.forEach( trigger => {
+                trigger.actions?.forEach( action => {
+                    action.showRemainingDuration = false;
+                } );
+            } );
+            this.#data.version = 19;
+            this.storeDataFile( this.#data );
+        }
+        if ( this.#data.version < 20 ) {
+            this.#data?.triggers?.forEach( trigger => {
+                trigger.actions?.forEach( action => {
+                    action.excludeTargets = [];
+                } );
+            } );
+            this.#data.version = 20;
+            this.storeDataFile( this.#data );
+        }
+        if ( this.#data.version < 21 ) {
+            this.#data?.triggers?.forEach( trigger => {
+                trigger.allakhazamUrl = null;
+            } );
+            this.#data.version = 21;
+            this.storeDataFile( this.#data );
+        }
+        if ( this.#data.version < 22 ) {
+            this.#data?.triggers?.forEach( trigger => {
+                trigger.actions?.forEach( action => {
+                    action.endEarlyPhrases = [];
+                } );
+            } );
+            this.#data.version = 22;
+            this.storeDataFile( this.#data );
+        }
+        if ( this.#data.version < 23 ) {
+            this.#data?.triggers?.forEach( trigger => {
+                delete trigger.spellLevel;
+                trigger.classLevels = [];
+            } );
+            this.#data.version = 23;
+            this.storeDataFile( this.#data );
+        }
     }
 
 
@@ -159,7 +222,7 @@ class TriggerDatabaseStore extends Store {
      * Loads predefined triggers and replaces any changes made by the user with the predfined value.
      */
     processPredefinedTriggers() {
-        let captureCastingTrigger = { "triggerId": "trGkfio6z2xs6hAh", "name": "Capture spell casting", "capturePhrases": [ { "useRegEx": true, "requirePreviousPhrase": false, "duration": null, "phrase": "^You begin casting (.*)\\.", "phraseId": "v7GDFrDCcFwhTAOP" }, { "useRegEx": true, "requirePreviousPhrase": false, "duration": null, "phraseId": "SmZAE0oEzuhq1cqh", "phrase": "^Your ${SpellBeingCast} spell is interrupted\\." }, { "useRegEx": true, "requirePreviousPhrase": false, "duration": null, "phraseId": "iNy1LoUUFcXnaHws", "phrase": "^(.*) resisted your (${SpellBeingCast})" }, { "useRegEx": true, "requirePreviousPhrase": false, "duration": null, "phraseId": "CC31CtgDiqwi8xV4", "phrase": "^Your (${SpellBeingCast}) spell did not take hold\\. \\(Blocked by (.*)\\.\\)" } ], "comments": "This trigger will capture the spell casting of the caster and store the spell being cast into a variable for use with other triggers.", "actions": [ { "actionType": 0, "actionId": "gUj3jfz2M3PDd0o7", "overlayId": "gx4ySJU9Cj35xR1n", "displayText": "Storing {1} into SpellBeingCast.", "duration": 15, "phraseId": "v7GDFrDCcFwhTAOP", "phrases": [ "v7GDFrDCcFwhTAOP" ], "restartOnDuplicate": false, "onlyExecuteInDev": true }, { "actionType": 5, "variableName": "SpellBeingCast", "actionId": "xygXKRSFpi3vYQ4D", "phraseId": "v7GDFrDCcFwhTAOP", "phrases": [ "v7GDFrDCcFwhTAOP" ], "restartOnDuplicate": false, "onlyExecuteInDev": false }, { "actionType": 7, "phraseId": "SmZAE0oEzuhq1cqh", "overlayId": "gx4ySJU9Cj35xR1n", "duration": 15, "displayText": "Spell ${SpellBeingCast} was interrupted.", "actionId": "2779yyKWjlmJvIhn", "phrases": [ "SmZAE0oEzuhq1cqh", "iNy1LoUUFcXnaHws", "CC31CtgDiqwi8xV4" ], "variableName": "SpellBeingCast", "restartOnDuplicate": false, "onlyExecuteInDev": false }, { "phrases": [ "CC31CtgDiqwi8xV4" ], "actionType": 0, "overlayId": "gx4ySJU9Cj35xR1n", "displayText": "{1} failed, blocked by {2}.", "duration": 15, "actionId": "ODKkRbroUUtHPf6n", "restartOnDuplicate": false, "onlyExecuteInDev": true } ], "captureMethod": "Any match", "conditions": [], "spellLevel": 0, "predefined": true, "onlyExecuteInDev": false };
+        let captureCastingTrigger = { "triggerId": "trGkfio6z2xs6hAh", "name": "Capture spell casting", "capturePhrases": [ { "useRegEx": true, "requirePreviousPhrase": false, "duration": null, "phrase": "^You begin casting (.*)\\.", "phraseId": "v7GDFrDCcFwhTAOP" }, { "useRegEx": true, "requirePreviousPhrase": false, "duration": null, "phraseId": "SmZAE0oEzuhq1cqh", "phrase": "^Your ${SpellBeingCast} spell is interrupted\\." }, { "useRegEx": true, "requirePreviousPhrase": false, "duration": null, "phraseId": "iNy1LoUUFcXnaHws", "phrase": "^(.*) resisted your ${SpellBeingCast}" }, { "useRegEx": true, "requirePreviousPhrase": false, "duration": null, "phraseId": "CC31CtgDiqwi8xV4", "phrase": "^Your ${SpellBeingCast} spell did not take hold\\. \\(Blocked by (.*)\\.\\)" } ], "comments": "This trigger will capture the spell casting of the caster and store the spell being cast into a variable for use with other triggers.", "actions": [ { "actionType": 0, "actionId": "gUj3jfz2M3PDd0o7", "overlayId": "gx4ySJU9Cj35xR1n", "displayText": "Storing {1} into SpellBeingCast.", "duration": 15, "phraseId": "v7GDFrDCcFwhTAOP", "phrases": [ "v7GDFrDCcFwhTAOP" ], "restartOnDuplicate": false, "onlyExecuteInDev": true }, { "actionType": 5, "variableName": "SpellBeingCast", "actionId": "xygXKRSFpi3vYQ4D", "phraseId": "v7GDFrDCcFwhTAOP", "phrases": [ "v7GDFrDCcFwhTAOP" ], "restartOnDuplicate": false, "onlyExecuteInDev": false }, { "phrases": [ "SmZAE0oEzuhq1cqh", "CC31CtgDiqwi8xV4", "iNy1LoUUFcXnaHws" ], "actionType": 0, "overlayId": "gx4ySJU9Cj35xR1n", "displayText": "${SpellBeingCast} failed.", "duration": 15, "actionId": "ODKkRbroUUtHPf6n", "restartOnDuplicate": false, "onlyExecuteInDev": true }, { "actionType": 7, "phraseId": "SmZAE0oEzuhq1cqh", "overlayId": "gx4ySJU9Cj35xR1n", "duration": 15, "displayText": "Spell ${SpellBeingCast} was interrupted.", "actionId": "2779yyKWjlmJvIhn", "phrases": [ "SmZAE0oEzuhq1cqh", "iNy1LoUUFcXnaHws", "CC31CtgDiqwi8xV4" ], "variableName": "SpellBeingCast", "restartOnDuplicate": false, "onlyExecuteInDev": false } ], "captureMethod": "Any match", "conditions": [], "classLevels": [], "predefined": true, "onlyExecuteInDev": false };
 
         let castingIndex = ArrayUtilities.findIndex( this.#data?.triggers, f => f.triggerId === captureCastingTrigger.triggerId );
         if ( castingIndex > -1 ) {
@@ -169,7 +232,7 @@ class TriggerDatabaseStore extends Store {
             this.storeDataFile( this.#data );
         }
 
-        let displaySpellBeingCast = { "triggerId": "hzOXzyXsZANWGcJq", "name": "Display Variable SpellBeingCast", "capturePhrases": [ { "useRegEx": true, "requirePreviousPhrase": false, "duration": null, "phraseId": "bi8mXZAgB7zGnSAc", "phrase": "^Eryndhel requests an update." } ], "comments": "", "actions": [ { "phrases": [ "bi8mXZAgB7zGnSAc" ], "actionType": 0, "overlayId": "gx4ySJU9Cj35xR1n", "displayText": "SpellBeingCast == ${SpellBeingCast}", "duration": 15, "actionId": "n95VfakBr8TbCKnE", "restartOnDuplicate": false } ], "captureMethod": "Any match", "conditions": [ { "conditionId": "It3bUfInYVi4aGYB", "conditionType": 1, "variableName": "SpellBeingCast", "operatorType": 2 } ], "spellLevel": 0, "predefined": true, "onlyExecuteInDev": true };
+        let displaySpellBeingCast = { "triggerId": "hzOXzyXsZANWGcJq", "name": "Display Variable SpellBeingCast", "capturePhrases": [ { "useRegEx": true, "requirePreviousPhrase": false, "duration": null, "phraseId": "bi8mXZAgB7zGnSAc", "phrase": "^Eryndhel requests an update." } ], "comments": "", "actions": [ { "phrases": [ "bi8mXZAgB7zGnSAc" ], "actionType": 0, "overlayId": "gx4ySJU9Cj35xR1n", "displayText": "SpellBeingCast == ${SpellBeingCast}", "duration": 15, "actionId": "n95VfakBr8TbCKnE", "restartOnDuplicate": false } ], "captureMethod": "Any match", "conditions": [ { "conditionId": "It3bUfInYVi4aGYB", "conditionType": 1, "variableName": "SpellBeingCast", "operatorType": 2 } ], "classLevels": [], "predefined": true, "onlyExecuteInDev": true };
         let displaySpellIndex = ArrayUtilities.findIndex( this.#data?.triggers, f => f.triggerId === displaySpellBeingCast.triggerId );
         if ( displaySpellIndex > -1 ) {
             this.#data.triggers[ displaySpellIndex ] = displaySpellBeingCast;
