@@ -36,15 +36,7 @@ function parseStoredVariablesToRegex(value, storedVariables) {
                 
                 value = value.replace( RegExp( `\\\${${result[ i ]}}`, 'g' ), captureGroupRgx );
             }
-            // value = value.replace( RegExp( `\\\${${result[ i ]}}`, 'g' ), storedVariables[ result[ i ] ] );
-            // let _reg = new RegExp( `{\\$${result[ i ]}}`, 'g' );
-            // value = value.replace( _reg, storedVariables[ result[ i ] ] );
         }
-        // for ( let key in storedVariables ) {
-        //     if ( storedVariables.hasOwnProperty( key ) ) {
-        //         let _reg = new RegExp( `{${storedVariables[ matches[ 1 ] ]}}`, 'g' );
-        //     }
-        // }
     }
     return value;
 }
@@ -58,13 +50,14 @@ function parseStoredVariablesToLiteral( value, storedVariables ) {
     if ( result?.length > 1 ) {
         for ( let i = 1; i < result.length; i++ ) {
             let values = storedVariables[ result[ i ] ];
-            let text = values[ 0 ];
-            for ( let i = 1; i < values.length; i++ ) {
-                text += ',' + values[ i ];
-            }
-            
             //value = value.replace(/\${SpellBeingCast}/g, 'Envenomed Bolt, Pyre of Mori');
             if ( values?.length > 0 ) {
+                let text = values[ 0 ];
+                
+                for ( let i = 1; i < values.length; i++ ) {
+                    text += ',' + values[ i ];
+                }
+            
                 value = value.replace( RegExp( `\\\${${result[ i ]}}`, 'g' ), text );
             }
             // value = value.replace( RegExp( `\\\${${result[ i ]}}`, 'g' ), storedVariables[ result[ i ] ] );
@@ -92,6 +85,62 @@ function parseConditionResultsToLiteral( value, conditionResults ) {
             //value = value.replace(/\${SpellBeingCast}/g, 'Envenomed Bolt');
             if ( conditionResults[ result[ i ] ] ) {
                 value = value.replace( RegExp( `\\\${${result[ i ]}}`, 'g' ), conditionResults[ result[ i ] ] );
+            }
+        }
+    }
+
+    return value;
+}
+
+function parseMatchesToLiteral( value, matches ) {
+    // \${(.[^}]*)}     Your ${SpellBeingCast} spell is interrupted.
+    //                      Full match	47-63	{SpellBeingCast}
+    //                      Group 1.	n/a	SpellBeingCast
+    let namedResults = [ ...value.matchAll( /\${(.[^}]*)}/g ) ];// /\${(.[^}]*)}/g.exec( value );
+    
+    if ( namedResults?.length > 0 && matches?.groups != null ) {
+        for ( let m = 0; m < namedResults.length; m++ ) {
+            // ex: matches.groups.player == 'Soandso'
+            //  when given the phrase
+            //      ${target} has been slain by ${player}!
+            //  matches the log entry
+            //      Mob Name A has been slain by Soandso!
+            let key = namedResults[ m ][ 1 ];
+
+            if ( matches.groups[ key ] != null ) {
+                value = value.replace( RegExp( `\\\${${key}}`, 'g' ), matches.groups[ key ] );
+            }
+        }
+        // for ( let i = 1; i < result.length; i++ ) {
+        //     //value = value.replace(/\${target}/g, 'A Slimy Weasel');
+        //     //value = value.replace(/\{1}/g, 'A Slimy Weasel');
+        //     if ( conditionResults[ result[ i ] ] ) {
+        //         value = value.replace( RegExp( `\\\${${result[ i ]}}`, 'g' ), conditionResults[ result[ i ] ] );
+        //     }
+        // }
+    }
+
+    // #{([0-9]+?)}     This is a test #{1} so that testing can #{2}.
+    //
+    //                      Match 1
+    //                      Full match	15-19	#{1}
+    //                      Group 1.	17-18	1
+    //
+    //                      Match 2
+    //                      Full match	40-44	#{2}
+    //                      Group 1.	42-43	2
+    let indexedResults = [ ...value.matchAll( /#{([0-9]+?)}/g ) ];
+
+    if ( indexedResults?.length > 0 ) {
+        for ( let i = 0; i < indexedResults.length; i++ ) {
+            // ex: matches[2] == 'Soandso'
+            //  when given the phrase
+            //      (.+?) has been slain by (.+?)!
+            //  matches the log entry
+            //      Mob Name A has been slain by Soandso!
+            let index = +indexedResults[ i ][ 1 ];
+            if ( matches[ index ] != null ) {
+                value = value.replace( RegExp( `#{${index}}`, 'g' ), matches[ index ] );
             }
         }
     }
@@ -141,6 +190,7 @@ let StringUtilities = {
     parseStoredVariablesToLiteral: parseStoredVariablesToLiteral,
     parseStoredVariablesToLiteralArray: parseStoredVariablesToLiteralArray,
     parseConditionResultsToLiteral: parseConditionResultsToLiteral,
+    parseMatchesToLiteral: parseMatchesToLiteral,
 };
 
 module.exports = StringUtilities;

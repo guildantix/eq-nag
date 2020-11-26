@@ -10,6 +10,7 @@ const CharacterModel = require( '../data/models/character' );
 const customAlphabet = require( 'nanoid' ).customAlphabet;
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const nanoid = customAlphabet( alphabet, 16 );
+const _ = require( 'lodash' );
 
 const chokidar = require( "chokidar" );
 const StringUtilities = require( '../utilities/string' );
@@ -22,6 +23,8 @@ var watcher = null;
 /** @type {Trigger[]} */
 var triggers = [];
 var storedVariables = {};
+/** @type {{_parse: (logEntry: string) => boolean, instanceId: string}} */
+var cancellableComponents = [];
 var enableFct = false;
 var damageDealtOverlayId = null;
 var damageReceivedOverlayId = null;
@@ -549,6 +552,7 @@ function parseLogEntries( raw, simulating ) {
                         clearStoredVariable( action.variableName, res.result.groups != null ? res.result.groups[ action.variableName ] : trigger._conditionResults[ action.variableName ] );
 
                     } else if ( action.actionType === ActionTypes.DotTimer ) {
+                    /* --== DOT Timers ==-- */
 
                         if ( action.excludeTargets?.length > 0 ) {
                             for ( let i = 0; i < action.excludeTargets.length; i++ ) {
@@ -557,7 +561,8 @@ function parseLogEntries( raw, simulating ) {
                                 if ( action.excludeTargets[ i ].useRegEx ) {
                                     exclude = res.result[ 1 ].match( new RegExp( action.excludeTargets[ i ].phrase, 'g' ) )?.length > 0;
                                 } else {
-                                    exclude = action.excludeTargets[ i ].phrase === res.result[ 1 ];
+                                    let _rgx = new RegExp( '^' + action.excludeTargets[ i ].phrase.replace( /[.*+?^${}()|[\]\\]/g, '\\$&' ) + '$', 'gi' );
+                                    exclude = res.result[ 1 ].match( _rgx )?.length > 0;
                                 }
 
                                 if ( exclude ) {
@@ -566,7 +571,7 @@ function parseLogEntries( raw, simulating ) {
                             }
                         }
                         
-                        /* --== DOT Timers ==-- */
+                        // ${target} has been slain by (.+?)!
                         let comp = new OverlayComponent();
 
                         comp.instanceId = nanoid();
@@ -622,6 +627,44 @@ function parseLogEntries( raw, simulating ) {
 
                         ipcRenderer.send( 'overlay:send:component', comp );
 
+                        if ( comp.action.endEarlyPhrases?.length > 0 ) {
+                            let renderedPhrases = [];
+
+                            for ( let phraseIndex = 0; phraseIndex < comp.action.endEarlyPhrases.length; phraseIndex++ ) {
+                                let renderedPhrase = comp.action.endEarlyPhrases[ phraseIndex ].phrase;
+
+                                renderedPhrase = StringUtilities.parseStoredVariablesToLiteral( renderedPhrase, storedVariables );
+                                renderedPhrase = StringUtilities.parseConditionResultsToLiteral( renderedPhrase, trigger._conditionResults );
+                                renderedPhrase = StringUtilities.parseMatchesToLiteral( renderedPhrase, res.result );
+
+                                if ( comp.action.endEarlyPhrases[ phraseIndex ].useRegEx ) {
+                                    renderedPhrases.push( renderedPhrase );
+                                } else {
+                                    renderedPhrases.push( '^' + renderedPhrase.replace( /[.*+?^${}()|[\]\\]/g, '\\$&' ) + '$' );
+                                }
+                            }
+
+                            cancellableComponents.push( {
+                                _parse: ( logEntry ) => { 
+                                    let matched = false;
+                                    
+                                    renderedPhrases.forEach( phrase => {
+                                        let _res = new RegExp( phrase, 'g' ).exec( logEntry );
+                                        if ( _res?.length > 0 ) {
+                                            matched = true;
+                                        }
+                                    } );
+
+                                    if ( matched ) {
+                                        console.log( 'has been matched!!!!!!!' );
+                                    }
+
+                                    return matched;
+                                 },
+                                instanceId: comp.instanceId
+                            } );
+                        }
+
                     } else if ( action.actionType === ActionTypes.Speak ) {
                         /* --== TTS Speak ==-- */
                         
@@ -643,6 +686,20 @@ function parseLogEntries( raw, simulating ) {
             } );
         }
     } );
+
+    // If there are any cancellable actions, evaluate them here.
+    if ( cancellableComponents?.length > 0 ) {
+        let tokenIds = [];
+        cancellableComponents.forEach( token => {
+            if ( token._parse( log ) ) {
+                // Broadcast the remove action.
+                tokenIds.push( token.instanceId );
+            }
+        } );
+
+        // Remove the cancelled items.
+        _.remove( cancellableComponents, token => tokenIds.indexOf( token.instanceId ) > -1 );
+    }
 
 }
 
