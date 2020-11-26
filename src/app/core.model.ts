@@ -56,18 +56,15 @@ export class TriggerCondition {
 
 }
 
-export class CapturePhrase {
-    public phraseId: string;
-    public phrase: string;
-    public useRegEx: boolean = false;
-    public requirePreviousPhrase: boolean = false;
-    public duration: number = null;
-}
-
-export class ExclusionPhrase {
+export class Phrase {
     public phraseId: string;
     public phrase: string;
     public useRegEx: boolean;
+}
+
+export class CapturePhrase extends Phrase {
+    public requirePreviousPhrase: boolean = false;
+    public duration: number = null;
 }
 
 export class DkpEntryModel {
@@ -210,7 +207,7 @@ export class TriggerAction {
     public endedColor: string = null;
     public endedBackgroundColor: string = null;
     
-    public excludeTargets: ExclusionPhrase[] = [];
+    public excludeTargets: Phrase[] = [];
 }
 
 export class ScrapedSpell {

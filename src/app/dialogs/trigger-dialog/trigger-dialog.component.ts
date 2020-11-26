@@ -1,7 +1,7 @@
 import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 
 import { IpcService } from 'src/app/ipc.service';
-import { TriggerModel, CapturePhrase, ActionTypes, TriggerAction, OverlayWindowModel, OperatorTypes, TriggerCondition, TriggerConditionTypes, ExclusionPhrase } from 'src/app/core.model';
+import { TriggerModel, CapturePhrase, ActionTypes, TriggerAction, OverlayWindowModel, OperatorTypes, TriggerCondition, TriggerConditionTypes, Phrase } from 'src/app/core.model';
 import { animate, state, style, transition, trigger } from '@angular/animations';
 import { MatTableDataSource, MatTable } from '@angular/material/table';
 import { ActivatedRoute } from '@angular/router';
@@ -126,7 +126,7 @@ export class TriggerDialogComponent implements OnInit {
     }
 
     public addNewExclusionTarget( actionIndex: number, table: MatTable<any> ): void {
-        let phrase: ExclusionPhrase = new ExclusionPhrase();
+        let phrase: Phrase = new Phrase();
         phrase.phraseId = nanoid();
         this.model.actions[actionIndex].excludeTargets?.push( phrase );
         table?.renderRows();

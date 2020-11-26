@@ -27,7 +27,10 @@ table.capture-phrases {
     }
 }
 
-.card.action-card {
+::ng-deep .card.action-card {
+    .mat-table tbody {
+        background-color: #ffffff08;
+    }
     mat-card-content {
         padding-top: 50px;
     }

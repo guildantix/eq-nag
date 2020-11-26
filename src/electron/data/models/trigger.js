@@ -38,22 +38,7 @@ var OperatorTypes = {
     GreaterThan: 8,
 }
 
-class CapturePhrase {
-
-    /** @type string */
-    phraseId;
-    /** @type string */
-    phrase;
-    /** @type boolean */
-    useRegEx;
-    /** @type boolean */
-    requirePreviousPhrase;
-    /** @type number */
-    duration;
-
-}
-
-class ExclusionPhrase {
+class Phrase {
 
     /** @type {string} */
     phraseId;
@@ -61,6 +46,15 @@ class ExclusionPhrase {
     phrase;
     /** @type {boolean} */
     useRegEx;
+
+}
+
+class CapturePhrase extends Phrase {
+
+    /** @type boolean */
+    requirePreviousPhrase;
+    /** @type number */
+    duration;
 
 }
 
@@ -144,7 +138,7 @@ class TriggerAction {
     /** @type string */
     endedBackgroundColor = null;
 
-    /** @type {ExclusionPhrase[]} */
+    /** @type {Phrase[]} */
     excludeTargets = [];
 
 }
@@ -185,4 +179,4 @@ class Trigger {
     allakhazamUrl = null;
 }
 
-module.exports = { Trigger, TriggerAction, ActionTypes, CapturePhrase, TriggerConditionTypes, OperatorTypes, ExclusionPhrase };
+module.exports = { Trigger, TriggerAction, ActionTypes, CapturePhrase, TriggerConditionTypes, OperatorTypes, Phrase };

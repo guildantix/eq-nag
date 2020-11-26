@@ -1,6 +1,6 @@
 import { Component, OnInit, Inject } from '@angular/core';
 import { MatDialog, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
-import { ActionTypes, CapturePhrase, ExclusionPhrase, OperatorTypes, OverlayWindowModel, TimerSortTypes, TriggerAction, TriggerCondition, TriggerConditionTypes, TriggerModel } from 'src/app/core.model';
+import { ActionTypes, CapturePhrase, Phrase, OperatorTypes, OverlayWindowModel, TimerSortTypes, TriggerAction, TriggerCondition, TriggerConditionTypes, TriggerModel } from 'src/app/core.model';
 import { IpcService } from 'src/app/ipc.service';
 import { ScraperService } from 'src/app/scraper.service';
 import { customAlphabet } from 'nanoid';
@@ -74,7 +74,7 @@ export class NewTriggerDialogComponent implements OnInit {
             };
             if ( this.onlyExecuteForRareEqTargets ) {
                 dotAction.excludeTargets = [];
-                dotAction.excludeTargets.push( <ExclusionPhrase>{
+                dotAction.excludeTargets.push( <Phrase>{
                     phraseId: nanoid(),
                     phrase: '^(?:A\s|An\s|a\s|an\s|[a-z])',
                     useRegEx: true,
