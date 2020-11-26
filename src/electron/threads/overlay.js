@@ -296,7 +296,7 @@ function render( comp ) {
             if ( hideTargetLabel ) {
                 displayText = comp.triggerName;
             } else {
-                StringUtilities.format( comp.action.displayText, comp.matches );
+                displayText = StringUtilities.format( comp.action.displayText, comp.matches );
             }
 
             if ( comp.action.restartOnDuplicate === true && restartDotTimerComponent( comp, displayText, overlayComponents ) ) {
