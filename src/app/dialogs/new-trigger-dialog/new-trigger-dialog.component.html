@@ -1,6 +1,8 @@
 <h2 mat-dialog-title>Confirm</h2>
 
 <mat-dialog-content>
+    
+    <p *ngIf="data?.triggerId != null">WARNING: This may overwright any custom setting you have applied to this trigger.  Are you sure you want to continue?</p>
 
     <p>
         <mat-form-field style="width: 50%;">
@@ -40,6 +42,9 @@
     </p>
     <p>
         <mat-checkbox [(ngModel)]="onlyExecuteForRareEqTargets" name="onlyExecuteForRareEqTargets">Only execute for rare and raid targets.</mat-checkbox>
+    </p>
+    <p>
+        <mat-checkbox [(ngModel)]="cancelTimerIfTargetDies" name="cancelTimerIfTargetDies">End timer early if your target dies.</mat-checkbox>
     </p>
 </mat-dialog-content>
 

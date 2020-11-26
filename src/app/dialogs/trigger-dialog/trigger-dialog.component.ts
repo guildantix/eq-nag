@@ -281,6 +281,10 @@ export class TriggerDialogComponent implements OnInit {
         this.snackBar.open( 'Trigger details copied!', 'Dismiss', { duration: 5000 } );
     }
 
+    public reimportDotTimerFromAllakhazam(): void {
+        this.dialogService.showReimportDotTimerDialog( this.model );
+    }
+
     openIconFileModal( action: TriggerAction ) {
         this.onIconFileSelected = e => {
             ImageUtility.toDataUrl( this.iconFileSelector.nativeElement.files[ 0 ] ).subscribe( dataUrl => action.timerIcon = dataUrl );
