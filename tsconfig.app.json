@@ -5,8 +5,7 @@
     "outDir": "./out-tsc/app",
     "types": [],
     "experimentalDecorators": true,
-    "allowJs": true,
-    "target": "ES2020"
+    "allowJs": true
   },
   "files": [
     "src/main.ts",
