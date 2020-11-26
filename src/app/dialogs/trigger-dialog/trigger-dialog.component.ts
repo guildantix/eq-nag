@@ -317,17 +317,22 @@ export class TriggerDialogComponent implements OnInit {
 
     public deleteClassLevel( index: number ): void {
         let classLabel: string = _.find( Object.keys( CharacterClasses ), f => CharacterClasses[ f ] === this.model.classLevels[ index ].class );
-        // console.log( 'testing', CharacterClasses, this.model.classLevels[index].class );
-        // console.log( 'testing', _.find( Object.keys( CharacterClasses ), f => CharacterClasses[ f ] === this.model.classLevels[ index ].class ) );
-        this.dialogService.showConfirmDialog(
-            `Are you certain you want to remove ${classLabel} from this trigger?`,
-            'Click "Yes" to remove this class.',
-            'Click "No" to cancel and close this dialog without removing the class.',
-            ( confirmed ) => {
-                if ( confirmed ) {
-                    this.model.classLevels?.splice( index, 1 );
-                }
-            } );
+        let action = () => this.model.classLevels?.splice( index, 1 );
+
+        if ( classLabel ) {
+            this.dialogService.showConfirmDialog(
+                `Are you certain you want to remove ${classLabel} from this trigger?`,
+                'Click "Yes" to remove this class.',
+                'Click "No" to cancel and close this dialog without removing the class.',
+                ( confirmed ) => {
+                    if ( confirmed ) {
+                        action();
+                    }
+                } );
+        } else {
+            action();
+        }
+        
     }
 
 }
