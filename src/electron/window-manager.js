@@ -191,6 +191,14 @@ class WindowManager {
                 overlayDictionary[ component.overlayId ].window.send( 'overlay:receive:component', component );
             }
         } );
+        
+        ipcMain.on( 'overlay:destroy:component', ( event, instanceId ) => {
+            for ( var overlayId in overlayDictionary ) {
+                if ( overlayDictionary.hasOwnProperty( overlayId ) ) {
+                    overlayDictionary[ overlayId ].window.send( 'component:destroy', instanceId );
+                }
+            }
+        } );
 
     }
 

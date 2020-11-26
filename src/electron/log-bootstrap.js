@@ -53,6 +53,14 @@ class LogBootstrapper {
                 }
             }
         } );
+
+        ipcMain.on( 'log:destroy:component', function ( event, instanceId ) {
+            for ( let key in logWatchers ) {
+                if ( logWatchers.hasOwnProperty( key ) && logWatchers[ key ].window != null ) {
+                    logWatchers[ key ].window.webContents.send( 'component:destroy', instanceId );
+                }
+            }
+        } );
         
         let characters = characterDatabase.getAll();
         characters.forEach( chr => {

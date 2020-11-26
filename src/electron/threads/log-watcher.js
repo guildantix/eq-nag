@@ -174,6 +174,15 @@ function LogWatcher(character, logPosition) {
         generateTriggerFns();
     } );
 
+    ipcRenderer.on( 'component:destroy', function ( event, instanceId ) {
+
+        if ( cancellableComponents?.length > 0 ) {
+            // Remove the cancelled items.
+            _.remove( cancellableComponents, token => token.instanceId === instanceId );
+        }
+
+    } );
+
     speechSynthesis.onvoiceschanged = () => {
         voiceOptions = speechSynthesis.getVoices();
     };
@@ -655,10 +664,6 @@ function parseLogEntries( raw, simulating ) {
                                         }
                                     } );
 
-                                    if ( matched ) {
-                                        console.log( 'has been matched!!!!!!!' );
-                                    }
-
                                     return matched;
                                  },
                                 instanceId: comp.instanceId
@@ -693,6 +698,9 @@ function parseLogEntries( raw, simulating ) {
         cancellableComponents.forEach( token => {
             if ( token._parse( log ) ) {
                 // Broadcast the remove action.
+                ipcRenderer.send( 'overlay:destroy:component', token.instanceId );
+
+                // Mark the item for removal.
                 tokenIds.push( token.instanceId );
             }
         } );

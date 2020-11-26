@@ -98,6 +98,25 @@ function Overlay() {
         document.querySelector( 'body' ).classList.remove( 'highlight-border' );
     } );
 
+    ipcRenderer.on( 'component:destroy', function ( event, instanceId ) {
+
+        if ( groupByTarget ) {
+            for ( let key in overlayGroups ) {
+                if ( overlayGroups.hasOwnProperty( key ) ) {
+                    
+                    let i = _.findIndex( overlayGroups[ key ].components, comp => comp.instanceId === instanceId );
+                    overlayGroups[ key ].components[ i ].removeComponent();
+                    
+                }
+            }
+            
+        } else {
+            let i = _.findIndex( overlayComponents, comp => comp.instanceId === instanceId );
+            overlayComponents[ i ].removeComponent();
+        }
+
+    } );
+
     ipcRenderer.on( 'overlay:window:model',
         /**
          * Changes the window properties based on the given model.
@@ -522,6 +541,7 @@ function applyTimerSettings( contentArea, comp ) {
 
             window.setTimeout( () => {
                 comp.removeComponent();
+                ipcRenderer.send( 'log:destroy:component', comp.instanceId );
             }, 1000 );
 
         } else if ( comp.timeRemaining <= 0 && comp.action.remainAfterEnded ) {
@@ -569,6 +589,10 @@ function restartDotTimerComponent( comp, displayText, dictionary ) {
     // If this component needs to restart on duplicate names, then find the index of the first match, and if found reset the start.
     let index = ArrayUtilities.findIndex( dictionary, f => f?.description == displayText );
     if ( index > -1 ) {
+
+        // Tell log watchers to remove any hooks they have for the old component.
+        ipcRenderer.send( 'log:destroy:component', dictionary[ index ].instanceId );
+
         // Reset the start duration
         dictionary[ index ].start = comp.timestamp;
         // let perc = ( Math.abs( ( new Date() ) - dictionary[ index ].start ) / 1000 ) / comp.action.duration;
@@ -581,6 +605,7 @@ function restartDotTimerComponent( comp, displayText, dictionary ) {
         dictionary[ index ].endingSoonTextDisplayed = false;
         dictionary[ index ].endedSpoken = false;
         dictionary[ index ].endedTextDisplayed = false;
+        dictionary[ index ].instanceId = comp.instanceId;
 
         // Reset the background color
         if ( dictionary[ index ].action.overrideTimerColor ) {
