@@ -132,6 +132,13 @@ export class TriggerDialogComponent implements OnInit {
         table?.renderRows();
     }
 
+    public addNewEndEarlyPhrase( actionIndex: number, table: MatTable<any> ): void {
+        let phrase: Phrase = new Phrase();
+        phrase.phraseId = nanoid();
+        this.model.actions[actionIndex].endEarlyPhrases?.push( phrase );
+        table?.renderRows();
+    }
+
     public deleteCapturePhrase( index: number ): void {
         this.dialogService.showConfirmDialog(
             'Are you certain you want to delete this capture phrase?',
@@ -153,6 +160,19 @@ export class TriggerDialogComponent implements OnInit {
             ( confirmed ) => {
                 if ( confirmed ) {
                     this.model.actions[ actionIndex ].excludeTargets?.splice( deleteIndex, 1 );
+                    table?.renderRows();
+                }
+            } );
+    }
+
+    public deleteEndEarlyPhrase( actionIndex: number, deleteIndex: number, table: MatTable<any> ): void {
+        this.dialogService.showConfirmDialog(
+            'Are you certain you want to delete this phrase?',
+            'Click "Yes" to delete the phrase.',
+            'Click "No" to cancel and close this dialog without deleting the phrase.',
+            ( confirmed ) => {
+                if ( confirmed ) {
+                    this.model.actions[ actionIndex ].endEarlyPhrases?.splice( deleteIndex, 1 );
                     table?.renderRows();
                 }
             } );
