@@ -1,7 +1,7 @@
 import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 
 import { IpcService } from 'src/app/ipc.service';
-import { TriggerModel, CapturePhrase, ActionTypes, TriggerAction, OverlayWindowModel, OperatorTypes, TriggerCondition, TriggerConditionTypes, Phrase } from 'src/app/core.model';
+import { TriggerModel, CapturePhrase, ActionTypes, TriggerAction, OverlayWindowModel, OperatorTypes, TriggerCondition, TriggerConditionTypes, Phrase, CharacterClasses, CharacterClassLevel } from 'src/app/core.model';
 import { animate, state, style, transition, trigger } from '@angular/animations';
 import { MatTableDataSource, MatTable } from '@angular/material/table';
 import { ActivatedRoute } from '@angular/router';
@@ -12,6 +12,7 @@ import { ColorUtility, ImageUtility } from 'src/app/utilities';
 // import { NgForm } from '@angular/forms';
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const nanoid = customAlphabet( alphabet, 16 );
+import * as _ from 'lodash';
 
 @Component( {
     selector: 'app-trigger-dialog',
@@ -307,6 +308,26 @@ export class TriggerDialogComponent implements OnInit {
         this.onIconFileSelected = null;
         // console.log( 'testing', typeof e);
         // this.ipcService.updateLogFile( this.iconFileSelector.nativeElement.files[ 0 ].path );
+    }
+
+    public addClassLevel(): void {
+        this.model.classLevels = this.model.classLevels ? this.model.classLevels : [];
+        this.model.classLevels.push( new CharacterClassLevel() );
+    }
+
+    public deleteClassLevel( index: number ): void {
+        let classLabel: string = _.find( Object.keys( CharacterClasses ), f => CharacterClasses[ f ] === this.model.classLevels[ index ].class );
+        // console.log( 'testing', CharacterClasses, this.model.classLevels[index].class );
+        // console.log( 'testing', _.find( Object.keys( CharacterClasses ), f => CharacterClasses[ f ] === this.model.classLevels[ index ].class ) );
+        this.dialogService.showConfirmDialog(
+            `Are you certain you want to remove ${classLabel} from this trigger?`,
+            'Click "Yes" to remove this class.',
+            'Click "No" to cancel and close this dialog without removing the class.',
+            ( confirmed ) => {
+                if ( confirmed ) {
+                    this.model.classLevels?.splice( index, 1 );
+                }
+            } );
     }
 
 }

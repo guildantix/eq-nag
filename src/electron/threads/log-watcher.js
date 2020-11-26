@@ -16,6 +16,7 @@ const chokidar = require( "chokidar" );
 const StringUtilities = require( '../utilities/string' );
 const NumberUtilities = require( '../utilities/numbers' );
 const FctModel = require( '../data/models/fct' );
+
 var currentPosition = null;
 var startLogPosition = null;
 
@@ -37,6 +38,8 @@ var logParseTimeoutId = null;
 var logParseTimer = 50;
 var changingLogFile = false;
 var isDev = false;
+/** @type {CharacterModel} */
+var charModel = null;
 var characterName = null;
 
 /**
@@ -52,6 +55,7 @@ function LogWatcher(character, logPosition) {
         hasExtDotFocus = character.hasExtendedDotFocus;
         extDotFocusPercent = character.extendedDotFocusPercent;
         extDotFocusDecayLevel = character.extendedDotFocusDecayLevel;
+        charModel = character;
     }
     saveScalarVariable( "Character", characterName );
 
@@ -614,9 +618,10 @@ function parseLogEntries( raw, simulating ) {
 
                         if ( hasExtDotFocus ) {
                             let percent = extDotFocusPercent;
+                            let charClassData = _.find( trigger.classLevels, ccl => ccl.class === charModel.class );
 
-                            if ( trigger.spellLevel > extDotFocusDecayLevel ) {
-                                let decayPercent = ( trigger.spellLevel - extDotFocusDecayLevel ) * 5;
+                            if ( charClassData != null && charClassData.level > extDotFocusDecayLevel ) {
+                                let decayPercent = ( charClassData.level - extDotFocusDecayLevel ) * 5;
                                 percent = percent * ( 1 - decayPercent / 100 );
                             }
 

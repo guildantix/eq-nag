@@ -7,6 +7,30 @@ export const ErrorCodes = {
     }
 };
 
+export enum CharacterClasses {
+    Bard = 'BRD',
+    Beastlord = 'BST',
+    Berserker = 'BER',
+    Cleric = 'CLR',
+    Druid = 'DRU',
+    Enchanter = 'ENC',
+    Magician = 'MAG',
+    Monk = 'MNK',
+    Necromancer = 'NEC',
+    Paladin = 'PAL',
+    Ranger = 'RNG',
+    Rogue = 'ROG',
+    Shadowknight = 'SHD',
+    Shaman = 'SHM',
+    Warrior = 'WAR',
+    Wizard = 'WIZ',
+}
+
+export class CharacterClassLevel {
+    public class: string;
+    public level: number;
+}
+
 export class BasicError {
     
     public errorCode: string;
@@ -23,7 +47,7 @@ export class TriggerModel {
     public actions: TriggerAction[] = [];
     public captureMethod: string = 'Any match';
     public conditions: TriggerCondition[] = [];
-    public spellLevel: number = 0;
+    public classLevels: CharacterClassLevel[] = [];
     public predefined: boolean = false;
     public onlyExecuteInDev: boolean = false;
     public allakhazamUrl: string = null;
@@ -215,8 +239,7 @@ export class ScrapedSpell {
     
     public name: string;
     public duration: number;
-    // public class: string;
-    public level: number;
+    public classes: CharacterClassLevel[] = [];
     public castOnOther: string;
     public gemIndex: number;
     public gemSrc: string;

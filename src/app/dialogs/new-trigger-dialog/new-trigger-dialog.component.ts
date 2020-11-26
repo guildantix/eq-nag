@@ -46,7 +46,7 @@ export class NewTriggerDialogComponent implements OnInit {
     }
 
     public scrape(): void {
-        this.scraper.ScrapeAllakhazamSpell( this.url, this.characterClass ).subscribe( spell => {
+        this.scraper.ScrapeAllakhazamSpell( this.url ).subscribe( spell => {
 
             let trigger: TriggerModel;
 
@@ -58,7 +58,7 @@ export class NewTriggerDialogComponent implements OnInit {
             }
 
             trigger.name = spell.name;
-            trigger.spellLevel = spell.level;
+            trigger.classLevels = spell.classes;
             trigger.allakhazamUrl = this.url;
             trigger.captureMethod = 'Sequential';
 

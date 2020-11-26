@@ -1,12 +1,12 @@
 import { Injectable } from '@angular/core';
 import { Observable, Observer } from 'rxjs';
-import { ScrapedSpell } from './core.model';
+import { CharacterClasses, CharacterClassLevel, ScrapedSpell } from './core.model';
 
 @Injectable()
 export class ScraperService {
     constructor() { }
 
-    public ScrapeAllakhazamSpell( url: string, currentCharacterClass: string ): Observable<ScrapedSpell> {
+    public ScrapeAllakhazamSpell( url: string ): Observable<ScrapedSpell> {
         let obs: Observable<ScrapedSpell> = new Observable<ScrapedSpell>( ( observer: Observer<ScrapedSpell> ) => {
             
             var oReq = new XMLHttpRequest();
@@ -21,10 +21,28 @@ export class ScraperService {
                     spellGem: div.querySelector( 'img[src*="spellicons"]' ),
                     duration: 0,
                     _duration: document.evaluate( "//strong[contains(., 'Duration:')]", document, null, XPathResult.ANY_TYPE, null ).iterateNext().nextSibling.nextSibling.textContent.trim(),
-                    class: document.evaluate( "//div[contains(@class, 'db-infobox')]/table/tbody/tr/td/strong[contains(., '" + currentCharacterClass + "')]", document, null, XPathResult.ANY_TYPE, null ).iterateNext().textContent,
-                    level: +document.evaluate( "//div[contains(@class, 'db-infobox')]/table/tbody/tr/td/strong[contains(., '" + currentCharacterClass + "')]", document, null, XPathResult.ANY_TYPE, null ).iterateNext().parentNode.nextSibling.textContent,
+                    // class: document.evaluate( "//div[contains(@class, 'db-infobox')]/table/tbody/tr/td/strong[contains(., '" + currentCharacterClass + "')]", document, null, XPathResult.ANY_TYPE, null ).iterateNext().textContent,
+                    // level: +document.evaluate( "//div[contains(@class, 'db-infobox')]/table/tbody/tr/td/strong[contains(., '" + currentCharacterClass + "')]", document, null, XPathResult.ANY_TYPE, null ).iterateNext().parentNode.nextSibling.textContent,
                     castOnOther: document.evaluate( "//blockquote[contains(., 'Cast on other')]", document, null, XPathResult.ANY_TYPE, null ).iterateNext().textContent.split( 'Cast on other: ' )[ 1 ].split( 'Effect Fades: ' )[ 0 ],
                 };
+
+                let classes: CharacterClassLevel[] = [];
+                for ( const key of Object.keys( CharacterClasses ) ) {
+                    let classContainer = document.evaluate( "//div[contains(@class, 'db-infobox')]/table/tbody/tr/td/strong[contains(., '" + CharacterClasses[ key ] + "')]", document, null, XPathResult.ANY_TYPE, null ).iterateNext();
+                    if ( classContainer != null ) {
+                        let characterClass: string = classContainer.textContent;
+                        let level: number = +document.evaluate( "//div[contains(@class, 'db-infobox')]/table/tbody/tr/td/strong[contains(., '" + CharacterClasses[ key ] + "')]", document, null, XPathResult.ANY_TYPE, null ).iterateNext().parentNode.nextSibling.textContent;
+                        
+                        if ( level > 0 ) {
+                            let classLevel = new CharacterClassLevel();
+                            classLevel.class = characterClass;
+                            classLevel.level = level;
+    
+                            classes.push( classLevel );
+                        }
+                    }
+
+                }
     
                 if ( data._duration.indexOf( 'ticks' ) > -1 ) {
                     data.duration = parseFloat( /([0-9]\sticks)(?!.*([0-9]\sticks))/.exec( data._duration )[ 1 ] ) * 6;
@@ -42,7 +60,8 @@ export class ScraperService {
                 model.name = data.name;
                 model.duration = data.duration;
                 // model.class = data.class;
-                model.level = data.level;
+                // model.level = data.level;
+                model.classes = classes;
                 model.castOnOther = data.castOnOther;
 
                 if ( data.spellGem != null ) {

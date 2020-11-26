@@ -38,6 +38,13 @@ var OperatorTypes = {
     GreaterThan: 8,
 }
 
+class CharacterClassLevel {
+    /** @type {string} */
+    class;
+    /** @type {number} */
+    level;
+}
+
 class Phrase {
 
     /** @type {string} */
@@ -174,7 +181,8 @@ class Trigger {
     captureMethod = 'Any match';
     /** @type TriggerCondition[] */
     conditions = [];
-    spellLevel = 0;
+    /** @type {CharacterClassLevel[]} */
+    classLevels = [];
     predefined = false;
     /** @type boolean */
     onlyExecuteInDev = false;
