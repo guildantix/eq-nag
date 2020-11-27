@@ -67,10 +67,90 @@
                     </mat-menu>
                 </mat-toolbar>
                 <div class="tab-content">
-                    <!-- <mat-tree [dataSource]="dataSource" [treeControl]="treeControl" class="example-tree">
+                    
+
+                    <div class="ft-row">
+                        <div class="ft-item" style="margin: 3px; width: 32%;">
+                            <div class="ft-content">
+                                <div class="trigger-categories-header">
+                                    <span>Trigger folders</span>
+                                    <span class="spacer"></span>
+                                    <button mat-icon-button class="small"><mat-icon [inline]="true">create_new_folder</mat-icon></button>
+                                    <button mat-icon-button class="small" (click)="toggleTree()"><mat-icon *ngIf="!allExpanded" [inline]="true">library_add</mat-icon><mat-icon *ngIf="allExpanded" [inline]="true">filter_none</mat-icon></button>
+                                    <!-- <button mat-icon-button class="small" *ngIf="!allExpanded" (click)="expandAll()"><mat-icon [inline]="true">unfold_more</mat-icon></button> -->
+                                    <!-- <button mat-icon-button class="small" *ngIf="allExpanded" (click)="collapseAll()"><mat-icon [inline]="true">unfold_less</mat-icon></button> -->
+                                </div>
+                                <div class="instructions" *ngIf="dataSource.data?.length === 0">
+                                    <span>You have no trigger folders. Click on the <mat-icon [inline]="true">create_new_folder</mat-icon> to start adding folders.</span>
+                                </div>
+                                <mat-tree [dataSource]="dataSource" [treeControl]="treeControl">
+                                    <!-- This is the tree node template for leaf nodes -->
+                                    <mat-tree-node *matTreeNodeDef="let node" matTreeNodePadding matTreeNodePaddingIndent="20" [ngClass]="{selected: node.selected}">
+                                        <button mat-icon-button><mat-icon [inline]="true" class="material-icons">{{node.selected === true ? 'folder_open' : 'folder'}}</mat-icon></button>
+                                        <span class="spacer">{{node.name}}</span>
+                                        <button mat-icon-button color="warn" class="small delete-button"><mat-icon [inline]="true">cancel</mat-icon></button>
+                                        <button mat-icon-button class="small"><mat-icon [inline]="true">unfold_more</mat-icon></button>
+                                    </mat-tree-node>
+                                    <!-- This is the tree node template for expandable nodes -->
+                                    <mat-tree-node *matTreeNodeDef="let node;when: hasChild" matTreeNodePadding matTreeNodePaddingIndent="20" [ngClass]="{selected: node.selected}">
+                                        <button mat-icon-button matTreeNodeToggle [attr.aria-label]="'Toggle ' + node.name" (toggle)="updateExpandStatus()">
+                                            <mat-icon [inline]="true" class="mat-icon-rtl-mirror">
+                                                {{treeControl.isExpanded(node) ? 'folder_open' : 'folder'}}
+                                            </mat-icon>
+                                        </button>
+                                        <span class="spacer">{{node.name}}</span>
+                                        <button mat-icon-button color="warn" class="small delete-button"><mat-icon [inline]="true">cancel</mat-icon></button>
+                                        <button mat-icon-button class="small"><mat-icon [inline]="true">unfold_more</mat-icon></button>
+                                    </mat-tree-node>
+                                </mat-tree>
+                            </div>
+
+                        </div>
+                        <div class="ft-item" style="margin: 3px; width: 66%;">
+                            <div class="ft-content">
+                                <table mat-table #capturePhrasesTable="matTable" style="width: 100%; min-width: 600px;"
+                                    [dataSource]="triggers"
+                                    class="capture-phrases">
+        
+                                    <ng-container matColumnDef="edit">
+                                        <th mat-header-cell *matHeaderCellDef style="text-align: center; width: 50px;">  </th>
+                                        <td mat-cell *matCellDef="let element; let i = index" style="text-align: center; width: 50px;">
+                                            <button mat-button color="accent" aria-label="Edit this trigger" (click)="showEditTriggerDialog(element.triggerId)">Edit</button>
+                                        </td>
+                                    </ng-container>
+            
+                                    <ng-container matColumnDef="id">
+                                        <th mat-header-cell *matHeaderCellDef style="width: 100px; padding-left: 15px;"> Id </th>
+                                        <td mat-cell *matCellDef="let element; let i = index" style="width: 100px; padding-left: 15px;"> {{element.triggerId}} </td>
+                                    </ng-container>
+            
+                                    <ng-container matColumnDef="name">
+                                        <th mat-header-cell *matHeaderCellDef style="padding-left: 15px;"> Name </th>
+                                        <td mat-cell *matCellDef="let element; let i = index" style="padding-left: 15px;"> {{element.name}} </td>
+                                    </ng-container>
+            
+                                    <ng-container matColumnDef="delete">
+                                        <th mat-header-cell *matHeaderCellDef style="text-align: center; width: 50px; padding-left: 15px;">  </th>
+                                        <td mat-cell *matCellDef="let element; let i = index" style="text-align: center; width: 50px; padding-left: 15px;">
+                                            <button mat-icon-button color="warn" aria-label="Delete this trigger" (click)="deleteTrigger(i)">
+                                                <mat-icon>clear</mat-icon>
+                                            </button>
+                                        </td>
+                                    </ng-container>
+            
+                                    <tr mat-header-row *matHeaderRowDef="['edit', 'name', 'delete']"></tr>
+                                    <tr mat-row *matRowDef="let element; columns: ['edit', 'name', 'delete'];"></tr>
+            
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <!-- <mat-tree [dataSource]="dataSource" [treeControl]="treeControl" class="example-tree" style="font-size:10px;">
                         <mat-tree-node *matTreeNodeDef="let node" matTreeNodeToggle>
                           <li class="mat-tree-node">
-                            <button mat-icon-button><mat-icon class="{{node.active ? 'material-icons' : 'material-icons-outlined'}}">{{node.active ? 'notifications' : 'notifications_off'}}</mat-icon></button>
+                            <button mat-icon-button><mat-icon [inline]="true" class="{{node.active ? 'material-icons' : 'material-icons-outlined'}}">{{node.active ? 'notifications' : 'notifications_off'}}</mat-icon></button>
                             {{node.name}}
                           </li>
                         </mat-tree-node>
@@ -78,7 +158,7 @@
                           <li>
                             <div class="mat-tree-node">
                               <button mat-icon-button matTreeNodeToggle [attr.aria-label]="'Toggle ' + node.name">
-                                <mat-icon class="mat-icon-rtl-mirror">{{treeControl.isExpanded(node) ? 'folder_open' : 'folder'}}</mat-icon>
+                                <mat-icon [inline]="true" class="mat-icon-rtl-mirror">{{treeControl.isExpanded(node) ? 'folder_open' : 'folder'}}</mat-icon>
                               </button>
                               {{node.name}}
                             </div>
@@ -88,40 +168,7 @@
                           </li>
                         </mat-nested-tree-node>
                       </mat-tree> -->
-                    <table mat-table #capturePhrasesTable="matTable" style="width: 100%;"
-                        [dataSource]="triggers"
-                        class="capture-phrases">
-
-                        <ng-container matColumnDef="edit">
-                            <th mat-header-cell *matHeaderCellDef style="text-align: center; width: 50px;">  </th>
-                            <td mat-cell *matCellDef="let element; let i = index" style="text-align: center; width: 50px;">
-                                <button mat-button color="accent" aria-label="Edit this trigger" (click)="showEditTriggerDialog(element.triggerId)">Edit</button>
-                            </td>
-                        </ng-container>
-
-                        <ng-container matColumnDef="id">
-                            <th mat-header-cell *matHeaderCellDef style="width: 100px; padding-left: 15px;"> Id </th>
-                            <td mat-cell *matCellDef="let element; let i = index" style="width: 100px; padding-left: 15px;"> {{element.triggerId}} </td>
-                        </ng-container>
-
-                        <ng-container matColumnDef="name">
-                            <th mat-header-cell *matHeaderCellDef style="padding-left: 15px;"> Name </th>
-                            <td mat-cell *matCellDef="let element; let i = index" style="padding-left: 15px;"> {{element.name}} </td>
-                        </ng-container>
-
-                        <ng-container matColumnDef="delete">
-                            <th mat-header-cell *matHeaderCellDef style="text-align: center; width: 50px; padding-left: 15px;">  </th>
-                            <td mat-cell *matCellDef="let element; let i = index" style="text-align: center; width: 50px; padding-left: 15px;">
-                                <button mat-icon-button color="warn" aria-label="Delete this trigger" (click)="deleteTrigger(i)">
-                                    <mat-icon>clear</mat-icon>
-                                </button>
-                            </td>
-                        </ng-container>
-
-                        <tr mat-header-row *matHeaderRowDef="['edit', 'id', 'name', 'delete']"></tr>
-                        <tr mat-row *matRowDef="let element; columns: ['edit', 'id', 'name', 'delete'];"></tr>
-
-                    </table>
+                    
                 </div>
 
         </mat-tab>

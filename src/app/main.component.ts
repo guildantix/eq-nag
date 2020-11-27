@@ -7,46 +7,59 @@ import { VirtualTimeScheduler } from 'rxjs';
 import { DialogService } from './dialogs/dialog.service';
 import { monitorEventLoopDelay } from 'perf_hooks';
 import { ScraperService } from './scraper.service';
-// import { NestedTreeControl } from '@angular/cdk/tree';
-// import { MatTreeNestedDataSource } from '@angular/material/tree';
 
-// interface FoodNode {
-//     name: string;
-//     active: boolean;
-//     children?: FoodNode[];
-// }
+import { FlatTreeControl, NestedTreeControl } from '@angular/cdk/tree';
+import { MatTreeFlatDataSource, MatTreeFlattener, MatTreeNestedDataSource } from '@angular/material/tree';
 
-// const TREE_DATA: FoodNode[] = [
-//     {
-//         name: 'Fruit',
-//         active: true,
-//         children: [
-//             { name: 'Apple', active: true },
-//             { name: 'Banana', active: false },
-//             { name: 'Fruit loops', active: true },
-//         ]
-//     }, {
-//         name: 'Vegetables',
-//         active: true,
-//         children: [
-//             {
-//                 name: 'Green',
-//                 active: true,
-//                 children: [
-//                     { name: 'Broccoli', active: true },
-//                     { name: 'Brussels sprouts', active: true },
-//                 ]
-//             }, {
-//                 name: 'Orange',
-//                 active: true,
-//                 children: [
-//                     { name: 'Pumpkins', active: true },
-//                     { name: 'Carrots', active: true },
-//                 ]
-//             },
-//         ]
-//     },
-// ];
+interface FoodNode {
+    name: string;
+    active: boolean;
+    selected: boolean;
+    children?: FoodNode[];
+}
+
+interface ExampleFlatNode {
+  expandable: boolean;
+  name: string;
+  level: number;
+}
+
+const TREE_DATA: FoodNode[] = [
+    {
+        name: 'Raids',
+        selected: false,
+        active: true,
+        children: [
+            { name: 'Gates of Discord', selected: false, active: true },
+            { name: 'Omens of War', selected: false, active: false },
+            { name: 'Dragons of Norrath', selected: false, active: true },
+        ]
+    }, {
+        name: 'Spells',
+        selected: false,
+        active: true,
+        children: [
+            {
+                name: 'Detrimental',
+                selected: false,
+                active: true,
+                children: [
+                    { name: 'Nukes', selected: false, active: true },
+                    { name: 'DoTs', selected: true, active: true },
+                    { name: 'Debuffs', selected: false, active: true },
+                ]
+            }, {
+                name: 'Beneficial',
+                selected: false,
+                active: true,
+                children: [
+                    { name: 'Buffs', selected: false, active: true },
+                    { name: 'Heals', selected: false, active: true },
+                ]
+            },
+        ]
+    },
+];
 
 @Component( {
     selector: 'app-main',
@@ -55,8 +68,20 @@ import { ScraperService } from './scraper.service';
 } )
 export class MainComponent implements OnInit {
 
-    // public treeControl = new NestedTreeControl<FoodNode>( node => node.children );
-    // public dataSource = new MatTreeNestedDataSource<FoodNode>();
+    private _transformer = ( node: FoodNode, level: number ) => {
+        return {
+            expandable: !!node.children && node.children.length > 0,
+            name: node.name,
+            level: level,
+            active: node.active,
+            selected: node.selected,
+        };
+    }
+    public treeControl = new FlatTreeControl<ExampleFlatNode>( node => node.level, node => node.expandable );
+    public treeFlattener = new MatTreeFlattener(this._transformer, node => node.level, node => node.expandable, node => node.children);
+    public dataSource = new MatTreeFlatDataSource(this.treeControl, this.treeFlattener);
+    hasChild = (_: number, node: ExampleFlatNode) => node.expandable;
+    
     public msg: string;
     public dkpEntries: DkpEntryModel[] = [];
     public version: string;
@@ -71,7 +96,6 @@ export class MainComponent implements OnInit {
     public damageTakenOverlayId: string;
     public focusEffectSettings: FocusEffectSettings = new FocusEffectSettings();
     public isDev: boolean = false;
-    // hasChild = (_: number, node: FoodNode) => !!node.children && node.children.length > 0;
     public _testDealtOverlayId: string = 'wT8389KxT5zlsaiE';
     public _testTakenOverlayId: string = 'wT8389KxT5zlsaiE';
     public _testId: number;
@@ -90,11 +114,20 @@ export class MainComponent implements OnInit {
         return this.overlays.filter( f => f.overlayType === 'FCT' );
     }
 
+    public get allExpanded(): boolean {
+        let allExpanded: boolean = true;
+        this.treeControl.dataNodes.forEach( f => allExpanded = !this.treeControl.isExpanded( f ) ? false : allExpanded );
+        return allExpanded;
+    }
+
+    private _treeExpanded: boolean = false;
+
     constructor( private snackBar: MatSnackBar, private ipcService: IpcService, private dialogService: DialogService, private scraper: ScraperService ) {
         speechSynthesis.onvoiceschanged = () => {
             this.voiceOptions = speechSynthesis.getVoices();
         };
-        // this.dataSource.data = TREE_DATA;
+        this.dataSource.data = TREE_DATA;
+        // this.dataSource.data = [];
     }
 
     ngOnInit(): void {
@@ -133,6 +166,34 @@ export class MainComponent implements OnInit {
         this.ipcService.getAppVersion().subscribe( version => this.version = version );
         this.ipcService.consoleLogRequested().subscribe( data => console.log( 'from main', data ) );
         this.ipcService.getAppIsDev().subscribe( isDev => this.isDev = isDev );
+    }
+
+    public toggleTree(): void {
+        let allExpanded: boolean = true;
+        this.treeControl.dataNodes.forEach( f => allExpanded = !this.treeControl.isExpanded( f ) ? false : allExpanded );
+
+        if ( allExpanded ) {
+            this.treeControl.collapseAll();
+        } else {
+            this.treeControl.expandAll();
+        }
+    }
+
+    public expandAll(): void {
+        this.treeControl.expandAll();
+        window.setTimeout( () => this._treeExpanded = true, 500 );
+    }
+
+    public collapseAll(): void {
+        this.treeControl.collapseAll();
+        window.setTimeout( () => this._treeExpanded = false, 500 );
+    }
+
+    public updateExpandStatus(): void {
+        let allExpanded: boolean = true;
+        this.treeControl.dataNodes.forEach( f => allExpanded = !this.treeControl.isExpanded( f ) ? false : allExpanded );
+
+        this._treeExpanded = allExpanded;
     }
 
     removeEntry( entry: any ): void {
