@@ -1,19 +1,20 @@
 const { app, BrowserWindow, ipcMain } = require( "electron" );
 const Store = require( './store' );
 const _ = require( 'lodash' );
-const { Trigger, TriggerAction, ActionTypes } = require( './models/trigger' );
+const { Trigger, TriggerFolder, TriggerAction, ActionTypes } = require( './models/trigger' );
 const ForwardRef = require( '../forward-ref' );
 const customAlphabet = require( 'nanoid' ).customAlphabet;
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const idLen = 16;
 const nanoid = customAlphabet( alphabet, 16 );
 const ArrayUtilities = require( '../utilities/arrays' );
+const { FormControlDirective } = require( "@angular/forms" );
 
 class TriggerDatabaseStore extends Store {
 
     /** 
      * The data store for this object.
-     * @type {{triggers: Trigger[]}}
+     * @type {{triggers: Trigger[], folders: TriggerFolder[]}}
      * */
     #data;
 
@@ -207,6 +208,11 @@ class TriggerDatabaseStore extends Store {
             this.#data.version = 23;
             this.storeDataFile( this.#data );
         }
+        if ( this.#data.version < 24 ) {
+            this.#data?.folders = [];
+            this.#data.version = 24;
+            this.storeDataFile( this.#data );
+        }
     }
 
 
@@ -259,6 +265,7 @@ class TriggerDatabaseStore extends Store {
      * @param {function} sendTick The send tick method.
      */
     attachIpcEvents( mainWindowRef, sendTick ) {
+
         ipcMain.on( 'trigger:create', ( event, trigger ) => {
             let triggerId = this.add( trigger );
             event.sender.webContents.send( 'trigger:create', triggerId );
@@ -288,7 +295,51 @@ class TriggerDatabaseStore extends Store {
         ipcMain.on( 'trigger:get:stored-variables', ( event, data ) => {
             event.sender.webContents.send( 'trigger:get:stored-variables', this.getVariableNames() );
         } );
+        
+        // Folder methods.
+        ipcMain.on( 'folders:get', ( event, args ) => {
+            event.sender.webContents.send( 'folders:get', this.getFolders() );
+        } );
 
+        ipcMain.on( 'folders:update', ( event, folders ) => {
+            event.sender.webContents.send( 'folders:update', this.updateFolders( folders ) );
+        } );
+
+    }
+
+    /**
+     * Returns a list of all folders.
+     * 
+     * @returns {TriggerFolder[]}
+     */
+    getFolders() {
+        return this.#data?.folders?.length > 0 ? this.#data.folders : [];
+    }
+
+    /**
+     * Updates the store of trigger folders.
+     * 
+     * @param {TriggerFolder[]} folders The updated folders hierarchy.
+     */
+    updateFolders( folders ) {
+        this.#applyFolderIds( folders );
+        this.#data.folders = folders;
+        return folders;
+    }
+
+    /**
+     * Applies folder ids to all folders in the given heirarchy.
+     * 
+     * @param {TriggerFolder[]} folders The folder hierarchy.
+     */
+    #applyFolderIds( folders ) {
+        for ( let i = 0; i < folders?.length; i++ ) {
+            if ( folders[ i ].children?.length > 0 ) {
+                this.#applyFolderIds( folders[ i ].children );
+            }
+
+            folders[ i ].folderId = folders[ i ].folderId == null ? nanoid() : folders[ i ].folderId;
+        }
     }
 
 
@@ -335,6 +386,46 @@ class TriggerDatabaseStore extends Store {
 
 
 
+
+    // /**
+    //  * Adds the given folder to the store.
+    //  * 
+    //  * @returns {string} Returns the generated folder id.
+    //  * 
+    //  * @param {TriggerFolder} folder The folder to add to the store.
+    //  * @param {string} parentId The folderId of the parent folder.
+    //  */
+    // addFolder( folder, parentId ) {
+    //     // Init the folders array.
+    //     this.#data.folders = this.#data.folders ? this.#data.folders : [];
+
+    //     // Generate a new id for the folder.
+    //     folder.folderId = nanoid();
+
+    //     if ( parentId == null ) {
+    //         // Add it to the store.
+    //         this.#data.folders.push( folder );
+    //     } else {
+    //         // Find the index of the parent folder.
+    //         let i = _.findIndex( this.#data.folders, ( e ) => e.folderId === parentId );
+    //         this.#data.folders[i]
+    //     }
+
+    //     // Save changes to the data.
+    //     this.processPredefinedTriggers();
+    //     this.storeDataFile( this.#data );
+
+    //     return folder.folderId;
+    // }
+
+
+
+
+
+
+
+
+
     
     /**
      * Removes the given trigger.
@@ -362,6 +453,46 @@ class TriggerDatabaseStore extends Store {
 
 
     
+    // /**
+    //  * Removes the given folder.
+    //  * 
+    //  * @param {TriggerFolder} folder The folder to remove.
+    //  */
+    // removeFolder( folder ) {
+    //     if ( this.#data?.folders?.length > 0 ) {
+    //         let folderId = folder.folderId;
+
+    //         // Find the index of the trigger.
+    //         let i = _.findIndex( this.#data.folders, ( e ) => e.folderId === folder.folderId );
+
+    //         // Remove the folder by index.
+    //         let removed = this.removeFolderIndex( i );
+
+    //         if ( removed ) {
+    //             this.#data.triggers?.forEach( trigger => {
+    //                 if ( trigger.folderId === folderId ) {
+    //                     trigger.folderId = null;
+    //                 }
+    //             } );
+    
+    //             // Save changes to the data.
+    //             this.processPredefinedTriggers();
+    //             this.storeDataFile( this.#data );
+    //         }
+
+    //         return removed;
+    //     }
+    // }
+
+
+
+
+
+
+
+
+
+    
     /**
      * Removes the specified trigger.
      * 
@@ -378,6 +509,45 @@ class TriggerDatabaseStore extends Store {
 
         }
     }
+
+
+
+
+
+
+
+
+
+    
+    // /**
+    //  * Removes the specified folder.
+    //  * 
+    //  * @param {string} folderId The folder to remove.
+    //  */
+    // remove( folderId ) {
+    //     if ( this.#data?.folders?.length > 0 ) {
+
+    //         // Find the index of the folder.
+    //         let i = _.findIndex( this.#data.folders, ( e ) => e.folderId === folderId );
+
+    //         // Remove the trigger by index.
+    //         let removed = this.removeFolderIndex( i );
+
+    //         if ( removed ) {
+    //             this.#data.triggers?.forEach( trigger => {
+    //                 if ( trigger.folderId === folderId ) {
+    //                     trigger.folderId = null;
+    //                 }
+    //             } );
+
+    //             // Save changes to the data.
+    //             this.processPredefinedTriggers();
+    //             this.storeDataFile( this.#data );
+    //         }
+
+    //         return removed;
+    //     }
+    // }
     
 
 
@@ -417,6 +587,35 @@ class TriggerDatabaseStore extends Store {
 
 
     
+    // /**
+    //  * Removes the folder at the specified index.
+    //  * 
+    //  * @param {number} i The index of the folder to remove.
+    //  */
+    // removeFolderIndex( i ) {
+    //     if ( this.#data?.folders?.length > i ) {
+
+    //         // Remove the folder by index.
+    //         let removed = this.#data.folders.splice( i, 1 );
+
+    //         // Save the changes to the data.
+    //         this.processPredefinedTriggers();
+    //         this.storeDataFile( this.#data );
+
+    //         // Return true if at least 1 item was removed.
+    //         return removed?.length > 0;
+    //     }
+    // }
+    
+
+
+
+
+
+
+
+
+    
     /**
      * Returns the trigger with the given id.
      * 
@@ -432,6 +631,31 @@ class TriggerDatabaseStore extends Store {
             return this.#data.triggers[ i ];
         }
     }
+    
+
+
+
+
+
+
+
+
+    
+    // /**
+    //  * Returns the folder with the given id.
+    //  * 
+    //  * @param {string} folderId The folder id of the desired folder.
+    //  */
+    // findFolder( folderId ) {
+
+    //     // Find the index of the folder by Id.
+    //     let i = _.findIndex( this.#data.folders, ( e ) => e.folderId === folderId );
+
+    //     // If the index is valid, then return the found trigger.
+    //     if ( i > -1 && i < this.#data?.folders?.length ) {
+    //         return this.#data.folders[ i ];
+    //     }
+    // }
 
 
 
@@ -482,6 +706,42 @@ class TriggerDatabaseStore extends Store {
 
 
 
+    // /**
+    //  * Updates the given folder in the store.
+    //  * 
+    //  * @returns {boolean} Returns true if the folder was updated.
+    //  * 
+    //  * @param {TriggerFolder} folder The folder to update.
+    //  */
+    // update( folder ) {
+
+    //     // Find the index of the folder by Id.
+    //     let i = _.findIndex( this.#data.folders, ( e ) => e.folderId === folder.folderId );
+
+    //     // If the index is valid, then update the found folder.
+    //     if ( i > -1 && i < this.#data?.folders?.length ) {
+    //         this.#data.folders[ i ] = folder;
+
+    //         // Save changes to the data.
+    //         this.processPredefinedTriggers();
+    //         this.storeDataFile( this.#data );
+
+    //         return true;
+    //     } else {
+    //         return false;
+    //     }
+        
+    // }
+
+
+
+
+
+
+
+
+
+
     /**
      * Returns a list of triggers predicate returns truthy for.
      * 
@@ -506,6 +766,22 @@ class TriggerDatabaseStore extends Store {
     getAll() {
         return this.#data.triggers;
     }
+
+
+
+
+
+
+
+
+
+    
+    // /**
+    //  * Returns all folders.
+    //  */
+    // getFolders() {
+    //     return this.#data.folders;
+    // }
 
 
 
@@ -559,6 +835,22 @@ class TriggerDatabaseStore extends Store {
             this.storeDataFile( this.#data );
         }
     }
+
+    // /**
+    //  * Adds the given folder to the specified parent folder.
+    //  * 
+    //  * @param {TriggerFolder[]} folders The list of available folders.
+    //  * @param {string} parentId The id of the parent folder.
+    //  * @param {TriggerFolder} folder The child folder to add to the parent's children.
+    //  */
+    // addChildFolder( folders, parentId, folder ) {
+    //     for ( let i = 0; i < folders?.length; i++ ) {
+    //         if ( folders[ i ].folderId === parentId ) {
+    //             folders[ i ].children = folders[ i ].children?.length > 0 ? folders[ i ].children : [];
+    //             folders[ i ].children.push( child );
+    //         }
+    //     }
+    // }
 }
 
 module.exports = TriggerDatabaseStore;

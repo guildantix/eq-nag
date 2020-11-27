@@ -2,7 +2,7 @@ import { Injectable, NgZone } from '@angular/core';
 import { IpcRenderer } from 'electron';
 import { Observable, Observer } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
-import { DataTickModel, DkpEntryModel, TriggerModel, OverlayWindowModel, ActionTypes, FocusEffectSettings, CharacterModel, BasicError } from './core.model';
+import { DataTickModel, DkpEntryModel, TriggerModel, OverlayWindowModel, ActionTypes, FocusEffectSettings, CharacterModel, BasicError, TriggerFolder } from './core.model';
 
 @Injectable()
 export class IpcService {
@@ -328,6 +328,38 @@ export class IpcService {
                 } );
             } );
             this.ipc.send( 'trigger:delete', triggerId );
+
+        } );
+
+        return obs;
+    }
+
+    public getTriggerFolders(): Observable<TriggerFolder[]> {
+        let obs: Observable<TriggerFolder[]> = new Observable<TriggerFolder[]>( ( observer: Observer<TriggerFolder[]> ) => {
+            
+            this.ipc.once( 'folders:get', ( e, folders: TriggerFolder[] ) => {
+                this.ngZone.run( () => {
+                    observer.next( folders );
+                    observer.complete();
+                } );
+            } );
+            this.ipc.send( 'folders:get', null );
+
+        } );
+
+        return obs;
+    }
+
+    public updateTriggerFolders( folders: TriggerFolder[] ): Observable<TriggerFolder[]> {
+        let obs: Observable<TriggerFolder[]> = new Observable<TriggerFolder[]>( ( observer: Observer<TriggerFolder[]> ) => {
+            
+            this.ipc.once( 'folders:update', ( e, updatedFolders: TriggerFolder[] ) => {
+                this.ngZone.run( () => {
+                    observer.next( updatedFolders );
+                    observer.complete();
+                } );
+            } );
+            this.ipc.send( 'folders:update', folders );
 
         } );
 
