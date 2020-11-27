@@ -14,6 +14,7 @@ import { TriggerActionWizardModalComponent } from './trigger-action-wizard-modal
 import { NewTriggerDialogComponent } from './new-trigger-dialog/new-trigger-dialog.component';
 import { NewCharacterDialogComponent } from './new-character-dialog/new-character-dialog.component';
 import { SelectIconDialogComponent } from './select-icon-dialog/select-icon-dialog.component';
+import { NewTriggerFolderDialogComponent } from './new-trigger-folder-dialog/new-trigger-folder-dialog.component';
 
 @NgModule( {
     imports: [
@@ -33,6 +34,7 @@ import { SelectIconDialogComponent } from './select-icon-dialog/select-icon-dial
         NewTriggerDialogComponent,
         NewCharacterDialogComponent,
         SelectIconDialogComponent,
+        NewTriggerFolderDialogComponent,
     ],
     declarations: [
         TriggerDialogComponent,
@@ -43,6 +45,7 @@ import { SelectIconDialogComponent } from './select-icon-dialog/select-icon-dial
         NewTriggerDialogComponent,
         NewCharacterDialogComponent,
         SelectIconDialogComponent,
+        NewTriggerFolderDialogComponent,
     ],
     providers: [
         DialogService,

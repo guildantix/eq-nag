@@ -1,13 +1,14 @@
 import { Injectable } from '@angular/core';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { ConfirmDialogComponent } from './confirm-dialog/confirm-dialog.component';
-import { OverlayWindowModel, ScrapedSpell, TriggerAction, TriggerModel } from '../core.model';
+import { OverlayWindowModel, ScrapedSpell, TriggerAction, TriggerFolder, TriggerModel } from '../core.model';
 import { Observable } from 'rxjs';
 import { OverlayDetailsDialogComponent } from './overlay-details-dialog/overlay-details-dialog.component';
 import { TriggerActionWizardModalComponent } from './trigger-action-wizard-modal/trigger-action-wizard-modal.component';
 import { NewTriggerDialogComponent } from './new-trigger-dialog/new-trigger-dialog.component';
 import { NewCharacterDialogComponent } from './new-character-dialog/new-character-dialog.component';
 import { SelectIconDialogComponent } from './select-icon-dialog/select-icon-dialog.component';
+import { NewTriggerFolderDialogComponent } from './new-trigger-folder-dialog/new-trigger-folder-dialog.component';
 
 @Injectable()
 export class DialogService {
@@ -146,6 +147,24 @@ export class DialogService {
         this.dialog.open( NewCharacterDialogComponent, {
             width: '750px'
         } ).afterClosed().subscribe( afterClosed );
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Opens the new character dialog.
+     */
+    public showNewTriggerFolderDialog(): Observable<TriggerFolder> {
+        return this.dialog.open<NewTriggerFolderDialogComponent, any, TriggerFolder>( NewTriggerFolderDialogComponent, {
+            width: '750px'
+        } ).afterClosed();
     }
 
 

@@ -1,0 +1,26 @@
+<h2 mat-dialog-title>New Trigger Folder</h2>
+
+<mat-dialog-content>
+    
+    <p>
+
+        <mat-form-field appearance="fill" style="width: 100%;">
+            <mat-label>Folder Name</mat-label>
+            <input matInput type="text" [(ngModel)]="model.name" name="txtName" />
+        </mat-form-field>
+        
+        <mat-form-field appearance="fill" style="width:100%;">
+            <mat-label>Comments</mat-label>
+            <textarea matInput [(ngModel)]="model.comments" name="txtComments" rows="5"></textarea>
+        </mat-form-field>
+
+    </p>
+
+</mat-dialog-content>
+
+<mat-dialog-actions>
+
+  <button mat-button mat-dialog-close class="t-confirm-no" color="warn">Cancel</button>
+  <button mat-button [mat-dialog-close]="model" class="t-confirm-yes" color="accent">Create Folder</button>
+
+</mat-dialog-actions>

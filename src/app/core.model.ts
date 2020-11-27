@@ -29,8 +29,9 @@ export enum CharacterClasses {
 export class TriggerFolder {
     public folderId: string;
     public name: string;
-    public expanded: boolean;
-    public active: boolean;
+    public expanded: boolean = false;
+    public active: boolean = true;
+    public comments: string;
     public children: TriggerFolder[] = [];
 }
 

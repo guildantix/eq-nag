@@ -2,7 +2,7 @@ import { Component, ViewChild, ElementRef, OnInit } from '@angular/core';
 import * as _ from 'lodash';
 import { MatSnackBar, MatSnackBarRef, SimpleSnackBar } from '@angular/material/snack-bar';
 import { IpcService } from './ipc.service';
-import { DkpEntryModel, TriggerModel, OverlayWindowModel, FocusEffectSettings } from './core.model';
+import { DkpEntryModel, TriggerModel, OverlayWindowModel, FocusEffectSettings, TriggerFolder } from './core.model';
 import { VirtualTimeScheduler } from 'rxjs';
 import { DialogService } from './dialogs/dialog.service';
 import { monitorEventLoopDelay } from 'perf_hooks';
@@ -68,13 +68,14 @@ const TREE_DATA: FoodNode[] = [
 } )
 export class MainComponent implements OnInit {
 
-    private _transformer = ( node: FoodNode, level: number ) => {
+    private _transformer = ( node: TriggerFolder, level: number ) => {
         return {
             expandable: !!node.children && node.children.length > 0,
             name: node.name,
             level: level,
             active: node.active,
-            selected: node.selected,
+            // selected: node.selected,
+            selected: false,
         };
     }
     public treeControl = new FlatTreeControl<ExampleFlatNode>( node => node.level, node => node.expandable );
@@ -121,13 +122,14 @@ export class MainComponent implements OnInit {
     }
 
     private _treeExpanded: boolean = false;
+    private triggerFolders: TriggerFolder[] = [];
 
     constructor( private snackBar: MatSnackBar, private ipcService: IpcService, private dialogService: DialogService, private scraper: ScraperService ) {
         speechSynthesis.onvoiceschanged = () => {
             this.voiceOptions = speechSynthesis.getVoices();
         };
-        this.dataSource.data = TREE_DATA;
-        // this.dataSource.data = [];
+        // this.dataSource.data = TREE_DATA;
+        this.dataSource.data = [];
     }
 
     ngOnInit(): void {
@@ -143,7 +145,6 @@ export class MainComponent implements OnInit {
             this.focusEffectSettings.hasExtendedDotFocus = data.hasExtendedDotFocus;
             this.focusEffectSettings.extendedDotFocusPercent = data.extendedDotFocusPercent;
             this.focusEffectSettings.extendedDotFocusDecayLevel = data.extendedDotFocusDecayLevel;
-            // console.log( 'data', data );
         } );
 
         this.ipcService.dkpEntryAdded().subscribe( model => {
@@ -166,6 +167,10 @@ export class MainComponent implements OnInit {
         this.ipcService.getAppVersion().subscribe( version => this.version = version );
         this.ipcService.consoleLogRequested().subscribe( data => console.log( 'from main', data ) );
         this.ipcService.getAppIsDev().subscribe( isDev => this.isDev = isDev );
+        this.ipcService.getTriggerFolders().subscribe( folders => {
+            this.triggerFolders = folders;
+            this.dataSource.data = folders;
+        } );
     }
 
     public toggleTree(): void {
@@ -316,6 +321,27 @@ export class MainComponent implements OnInit {
 
     public updateFocusEffectSettings(): void {
         this.ipcService.updateFocusEffectSettings( this.focusEffectSettings );
+    }
+
+    public addTriggerFolderDialog(): void {
+        this.dialogService
+            .showNewTriggerFolderDialog()
+            .subscribe( folder => {
+                if ( folder != null ) {
+                    
+                    let _folders = this.triggerFolders?.length > 0 ? this.triggerFolders : [];
+                    
+                    _folders.push( folder );
+
+                    this.ipcService
+                        .updateTriggerFolders( _folders )
+                        .subscribe( folders => {
+                            this.triggerFolders = folders;
+                            this.dataSource.data = folders;
+                        } );
+                    
+                }
+            } );
     }
 
     public testFn(): void {

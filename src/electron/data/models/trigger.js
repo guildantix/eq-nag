@@ -47,6 +47,8 @@ class TriggerFolder {
     expanded;
     /** @type {boolean} */
     active;
+    /** @type {string} */
+    comments;
     /** @type {TriggerFolder[]} */
     children = [];
 }

@@ -209,7 +209,7 @@ class TriggerDatabaseStore extends Store {
             this.storeDataFile( this.#data );
         }
         if ( this.#data.version < 24 ) {
-            this.#data?.folders = [];
+            this.#data.folders = [];
             this.#data.version = 24;
             this.storeDataFile( this.#data );
         }
@@ -322,8 +322,13 @@ class TriggerDatabaseStore extends Store {
      * @param {TriggerFolder[]} folders The updated folders hierarchy.
      */
     updateFolders( folders ) {
-        this.#applyFolderIds( folders );
+        this.applyFolderIds( folders );
         this.#data.folders = folders;
+
+        // Save changes to the data.
+        this.processPredefinedTriggers();
+        this.storeDataFile( this.#data );
+        
         return folders;
     }
 
@@ -332,10 +337,10 @@ class TriggerDatabaseStore extends Store {
      * 
      * @param {TriggerFolder[]} folders The folder hierarchy.
      */
-    #applyFolderIds( folders ) {
+    applyFolderIds( folders ) {
         for ( let i = 0; i < folders?.length; i++ ) {
             if ( folders[ i ].children?.length > 0 ) {
-                this.#applyFolderIds( folders[ i ].children );
+                this.applyFolderIds( folders[ i ].children );
             }
 
             folders[ i ].folderId = folders[ i ].folderId == null ? nanoid() : folders[ i ].folderId;
