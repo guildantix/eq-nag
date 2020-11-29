@@ -356,48 +356,6 @@ export class MainComponent implements OnInit {
         this.dialogService.showSelectTriggerFolderDialog().subscribe( folderId => console.log( 'folderId', folderId ) );
     }
 
-    public contextMenuItems: ContextMenuModel[] = [ <ContextMenuModel>{
-        label: 'Click Me Now',
-        action: () => this.click(),
-        disabled: () => false,
-        hide: () => false,
-        matIcon: 'content_copy',
-    }, <ContextMenuModel>{
-        label: 'Paste',
-        action: () => this.click(),
-        disabled: () => false,
-        hide: () => false,
-        matIcon: 'content_paste',
-    }, <ContextMenuModel>{
-        label: '-',
-        action: () => { },
-        disabled: () => false,
-        hide: () => false,
-        // matIcon: 'content_paste',
-    }, <ContextMenuModel>{
-        label: 'Other',
-        action: () => this.click(),
-        disabled: () => false,
-        hide: () => false,
-        // matIcon: 'content_paste',
-    }, <ContextMenuModel>{
-        label: 'Other',
-        action: () => this.click(),
-        disabled: () => false,
-        hide: () => false,
-        // matIcon: 'content_paste',
-    }, <ContextMenuModel>{
-        label: 'Other',
-        action: () => this.click(),
-        disabled: () => false,
-        hide: () => false,
-        // matIcon: 'content_paste',
-    }];
-
-    public click(): void {
-        console.log( 'clicked!' );
-    }
-
     public testFn(): void {
         this.ipcService.simulateLogParse( 'E:\\everquest\\Logs\\Backup\\eqlog_Ryvn_mangler_20201024_204401.txt' );
         // let url: string = 'https://everquest.allakhazam.com/db/spell.html?spell=5423';
