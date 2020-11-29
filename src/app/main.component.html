@@ -71,8 +71,9 @@
 
                     <div class="ft-row">
                         <div class="ft-item" style="margin: 3px; width: 32%;">
+
                             <div class="ft-content">
-                                <div class="trigger-categories-header">
+                                <div class="trigger-categories-header" [ngClass]="{dim: movingFolderSource != null}">
                                     <span>Trigger folders</span>
                                     <span class="spacer"></span>
                                     <button mat-icon-button class="small" (click)="addTriggerFolderDialog()"><mat-icon [inline]="true">create_new_folder</mat-icon></button>
@@ -80,27 +81,29 @@
                                     <!-- <button mat-icon-button class="small" *ngIf="!allExpanded" (click)="expandAll()"><mat-icon [inline]="true">unfold_more</mat-icon></button> -->
                                     <!-- <button mat-icon-button class="small" *ngIf="allExpanded" (click)="collapseAll()"><mat-icon [inline]="true">unfold_less</mat-icon></button> -->
                                 </div>
+                                <div [appContextMenu]="contextMenuItems">herp derp</div>
                                 <div class="instructions" *ngIf="dataSource.data?.length === 0">
                                     <span>You have no trigger folders. Click on the <mat-icon [inline]="true">create_new_folder</mat-icon> to start adding folders.</span>
                                 </div>
                                 <mat-tree [dataSource]="dataSource" [treeControl]="treeControl">
                                     <!-- This is the tree node template for leaf nodes -->
-                                    <mat-tree-node *matTreeNodeDef="let node" matTreeNodePadding matTreeNodePaddingIndent="20" [ngClass]="{selected: node.selected}">
+                                    <mat-tree-node *matTreeNodeDef="let node" matTreeNodePadding matTreeNodePaddingIndent="20" [ngClass]="{selected: node.selected, dim: movingFolderSource != null && movingFolderSource == node.folderId}">
                                         <button mat-icon-button><mat-icon [inline]="true" class="material-icons">{{node.selected === true ? 'folder_open' : 'folder'}}</mat-icon></button>
                                         <span class="spacer">{{node.name}}</span>
                                         <button mat-icon-button color="warn" class="small delete-button"><mat-icon [inline]="true">cancel</mat-icon></button>
-                                        <button mat-icon-button class="small"><mat-icon [inline]="true">unfold_more</mat-icon></button>
+                                        <!-- class="material-icons-outlined" -->
+                                        <button mat-icon-button class="small" (click)="selectParentFoolder()"><mat-icon [inline]="true">sort</mat-icon></button>
                                     </mat-tree-node>
                                     <!-- This is the tree node template for expandable nodes -->
-                                    <mat-tree-node *matTreeNodeDef="let node;when: hasChild" matTreeNodePadding matTreeNodePaddingIndent="20" [ngClass]="{selected: node.selected}">
-                                        <button mat-icon-button matTreeNodeToggle [attr.aria-label]="'Toggle ' + node.name" (toggle)="updateExpandStatus()">
+                                    <mat-tree-node *matTreeNodeDef="let node;when: hasChild" matTreeNodePadding matTreeNodePaddingIndent="20" [ngClass]="{selected: node.selected, dim: movingFolderSource != null && movingFolderSource == node.folderId}">
+                                        <button mat-icon-button matTreeNodeToggle [attr.aria-label]="'Toggle ' + node.name">
                                             <mat-icon [inline]="true" class="mat-icon-rtl-mirror">
                                                 {{treeControl.isExpanded(node) ? 'folder_open' : 'folder'}}
                                             </mat-icon>
                                         </button>
                                         <span class="spacer">{{node.name}}</span>
                                         <button mat-icon-button color="warn" class="small delete-button"><mat-icon [inline]="true">cancel</mat-icon></button>
-                                        <button mat-icon-button class="small"><mat-icon [inline]="true">unfold_more</mat-icon></button>
+                                        <button mat-icon-button class="small" (click)="selectParentFoolder()"><mat-icon [inline]="true">sort</mat-icon></button>
                                     </mat-tree-node>
                                 </mat-tree>
                             </div>
@@ -108,7 +111,7 @@
                         </div>
                         <div class="ft-item" style="margin: 3px; width: 66%;">
                             <div class="ft-content">
-                                <table mat-table #capturePhrasesTable="matTable" style="width: 100%; min-width: 600px;"
+                                <table mat-table #capturePhrasesTable="matTable" style="width: 100%; min-width: 600px;" [ngClass]="{dim: movingFolderSource != null}"
                                     [dataSource]="triggers"
                                     class="capture-phrases">
         

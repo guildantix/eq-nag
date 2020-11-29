@@ -10,6 +10,7 @@ import { ScraperService } from './scraper.service';
 
 import { FlatTreeControl, NestedTreeControl } from '@angular/cdk/tree';
 import { MatTreeFlatDataSource, MatTreeFlattener, MatTreeNestedDataSource } from '@angular/material/tree';
+import { ContextMenuModel } from './context-menu/context-menu.model';
 
 interface FoodNode {
     name: string;
@@ -76,6 +77,7 @@ export class MainComponent implements OnInit {
             active: node.active,
             // selected: node.selected,
             selected: false,
+            folderId: node.folderId,
         };
     }
     public treeControl = new FlatTreeControl<ExampleFlatNode>( node => node.level, node => node.expandable );
@@ -108,6 +110,7 @@ export class MainComponent implements OnInit {
         '[Sat Mar 14 13:48:08 2020] You slash an aneuk fleshthreader for 10742 points of damage.',
         '[Sat Mar 14 13:49:08 2020] You slash a kyv hunter for 29027 points of damage. (Lucky Critical)',
     ];
+    public movingFolderSource: string = null;
 
     @ViewChild( 'fileSelector' ) private fileSelector: ElementRef<HTMLInputElement>;
 
@@ -342,6 +345,57 @@ export class MainComponent implements OnInit {
                     
                 }
             } );
+    }
+
+    public selectMoveSourceFolder( target: any ): void {
+        console.log( 'folder source', target );
+        this.movingFolderSource = target;
+    }
+
+    public selectParentFoolder(): void {
+        this.dialogService.showSelectTriggerFolderDialog().subscribe( folderId => console.log( 'folderId', folderId ) );
+    }
+
+    public contextMenuItems: ContextMenuModel[] = [ <ContextMenuModel>{
+        label: 'Click Me Now',
+        action: () => this.click(),
+        disabled: () => false,
+        hide: () => false,
+        matIcon: 'content_copy',
+    }, <ContextMenuModel>{
+        label: 'Paste',
+        action: () => this.click(),
+        disabled: () => false,
+        hide: () => false,
+        matIcon: 'content_paste',
+    }, <ContextMenuModel>{
+        label: '-',
+        action: () => { },
+        disabled: () => false,
+        hide: () => false,
+        // matIcon: 'content_paste',
+    }, <ContextMenuModel>{
+        label: 'Other',
+        action: () => this.click(),
+        disabled: () => false,
+        hide: () => false,
+        // matIcon: 'content_paste',
+    }, <ContextMenuModel>{
+        label: 'Other',
+        action: () => this.click(),
+        disabled: () => false,
+        hide: () => false,
+        // matIcon: 'content_paste',
+    }, <ContextMenuModel>{
+        label: 'Other',
+        action: () => this.click(),
+        disabled: () => false,
+        hide: () => false,
+        // matIcon: 'content_paste',
+    }];
+
+    public click(): void {
+        console.log( 'clicked!' );
     }
 
     public testFn(): void {
