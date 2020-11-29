@@ -16,6 +16,7 @@ import { NewCharacterDialogComponent } from './new-character-dialog/new-characte
 import { SelectIconDialogComponent } from './select-icon-dialog/select-icon-dialog.component';
 import { NewTriggerFolderDialogComponent } from './new-trigger-folder-dialog/new-trigger-folder-dialog.component';
 import { SelectTriggerFolderDialogComponent } from './select-trigger-folder-dialog/select-trigger-folder-dialog.component';
+import { ContextMenuModule } from '../context-menu/context-menu.module';
 
 @NgModule( {
     imports: [
@@ -25,6 +26,7 @@ import { SelectTriggerFolderDialogComponent } from './select-trigger-folder-dial
         MaterialModule,
         BrowserAnimationsModule,
         FormInputModule,
+        ContextMenuModule,
     ],
     exports: [
         TriggerDialogComponent,

@@ -6,6 +6,7 @@ import { CommonModule } from '@angular/common';
 
 import { ContextMenuComponent } from './context-menu.component';
 import { ContextMenuDirective } from './context-menu.directive';
+import { ContextService } from './context.service';
 
 @NgModule({
     imports: [
@@ -22,6 +23,8 @@ import { ContextMenuDirective } from './context-menu.directive';
         ContextMenuComponent,
         ContextMenuDirective,
     ],
-    providers: [],
+    providers: [
+        ContextService
+    ],
 })
 export class ContextMenuModule { }

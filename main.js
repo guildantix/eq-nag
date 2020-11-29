@@ -157,6 +157,16 @@ ipcMain.on( 'clipboard:writeText', ( event, value ) => {
     clipboard.writeText( value );
 } );
 
+var pseudoClipboard = {};
+ipcMain.on( 'context:store:pseudo-clipboard', ( event, model ) => {
+    if ( model && model.key ) {
+        pseudoClipboard[ model.key ] = model.value;
+    }
+} );
+ipcMain.on( 'context:get:pseudo-clipboard', ( event, key ) => {
+    event.sender.send( 'context:get:pseudo-clipboard', pseudoClipboard[ key ] );
+} );
+
 var mainWindowRef = new ForwardRef( () => mainWindow ? mainWindow : null );
 
 userPreferences.attachIpcEvents( mainWindowRef, sendTick );
