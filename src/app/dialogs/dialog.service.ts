@@ -9,6 +9,7 @@ import { NewTriggerDialogComponent } from './new-trigger-dialog/new-trigger-dial
 import { NewCharacterDialogComponent } from './new-character-dialog/new-character-dialog.component';
 import { SelectIconDialogComponent } from './select-icon-dialog/select-icon-dialog.component';
 import { NewTriggerFolderDialogComponent } from './new-trigger-folder-dialog/new-trigger-folder-dialog.component';
+import { SelectTriggerFolderDialogComponent } from './select-trigger-folder-dialog/select-trigger-folder-dialog.component';
 
 @Injectable()
 export class DialogService {
@@ -164,6 +165,24 @@ export class DialogService {
     public showNewTriggerFolderDialog(): Observable<TriggerFolder> {
         return this.dialog.open<NewTriggerFolderDialogComponent, any, TriggerFolder>( NewTriggerFolderDialogComponent, {
             width: '750px'
+        } ).afterClosed();
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Opens the select trigger folder dialog.
+     */
+    public showSelectTriggerFolderDialog(): Observable<string> {
+        return this.dialog.open<SelectTriggerFolderDialogComponent, any, string>( SelectTriggerFolderDialogComponent, {
+            width: '450px'
         } ).afterClosed();
     }
 
