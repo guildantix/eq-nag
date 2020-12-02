@@ -20,7 +20,7 @@
 
 <mat-dialog-actions>
 
-  <button mat-button mat-dialog-close class="t-confirm-no" color="warn">Cancel</button>
+  <button mat-button [mat-dialog-close]="null" class="t-confirm-no" color="warn">Cancel</button>
   <button mat-button [mat-dialog-close]="model" class="t-confirm-yes" color="accent">Create Folder</button>
 
 </mat-dialog-actions>

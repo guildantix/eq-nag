@@ -1,66 +1,10 @@
 import { Component, ViewChild, ElementRef, OnInit } from '@angular/core';
 import * as _ from 'lodash';
-import { MatSnackBar, MatSnackBarRef, SimpleSnackBar } from '@angular/material/snack-bar';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { IpcService } from './ipc.service';
-import { DkpEntryModel, TriggerModel, OverlayWindowModel, FocusEffectSettings, TriggerFolder } from './core.model';
-import { VirtualTimeScheduler } from 'rxjs';
+import { DkpEntryModel, OverlayWindowModel, FocusEffectSettings } from './core.model';
 import { DialogService } from './dialogs/dialog.service';
-import { monitorEventLoopDelay } from 'perf_hooks';
 import { ScraperService } from './scraper.service';
-
-import { FlatTreeControl, NestedTreeControl } from '@angular/cdk/tree';
-import { MatTreeFlatDataSource, MatTreeFlattener, MatTreeNestedDataSource } from '@angular/material/tree';
-import { ContextMenuModel } from './context-menu/context-menu.model';
-
-interface FoodNode {
-    name: string;
-    active: boolean;
-    selected: boolean;
-    children?: FoodNode[];
-}
-
-interface ExampleFlatNode {
-  expandable: boolean;
-  name: string;
-  level: number;
-}
-
-const TREE_DATA: FoodNode[] = [
-    {
-        name: 'Raids',
-        selected: false,
-        active: true,
-        children: [
-            { name: 'Gates of Discord', selected: false, active: true },
-            { name: 'Omens of War', selected: false, active: false },
-            { name: 'Dragons of Norrath', selected: false, active: true },
-        ]
-    }, {
-        name: 'Spells',
-        selected: false,
-        active: true,
-        children: [
-            {
-                name: 'Detrimental',
-                selected: false,
-                active: true,
-                children: [
-                    { name: 'Nukes', selected: false, active: true },
-                    { name: 'DoTs', selected: true, active: true },
-                    { name: 'Debuffs', selected: false, active: true },
-                ]
-            }, {
-                name: 'Beneficial',
-                selected: false,
-                active: true,
-                children: [
-                    { name: 'Buffs', selected: false, active: true },
-                    { name: 'Heals', selected: false, active: true },
-                ]
-            },
-        ]
-    },
-];
 
 @Component( {
     selector: 'app-main',
@@ -69,22 +13,6 @@ const TREE_DATA: FoodNode[] = [
 } )
 export class MainComponent implements OnInit {
 
-    private _transformer = ( node: TriggerFolder, level: number ) => {
-        return {
-            expandable: !!node.children && node.children.length > 0,
-            name: node.name,
-            level: level,
-            active: node.active,
-            // selected: node.selected,
-            selected: false,
-            folderId: node.folderId,
-            expanded: node.expanded,
-        };
-    }
-    public treeControl = new FlatTreeControl<ExampleFlatNode>( node => node.level, node => node.expandable );
-    public treeFlattener = new MatTreeFlattener(this._transformer, node => node.level, node => node.expandable, node => node.children);
-    public dataSource = new MatTreeFlatDataSource(this.treeControl, this.treeFlattener);
-    hasChild = (_: number, node: ExampleFlatNode) => node.expandable;
     
     public msg: string;
     public dkpEntries: DkpEntryModel[] = [];
@@ -94,7 +22,6 @@ export class MainComponent implements OnInit {
     public voiceIndex: number = null;
     public enableFct: boolean = false;
     public voiceOptions: SpeechSynthesisVoice[] = [];
-    public triggers: TriggerModel[] = [];
     public overlays: OverlayWindowModel[] = [];
     public damageDealtOverlayId: string;
     public damageTakenOverlayId: string;
@@ -119,19 +46,10 @@ export class MainComponent implements OnInit {
         return this.overlays.filter( f => f.overlayType === 'FCT' );
     }
 
-    public get allExpanded(): boolean {
-        return this._treeExpanded;
-    }
-
-    private _treeExpanded: boolean = false;
-    private triggerFolders: TriggerFolder[] = [];
-
     constructor( private snackBar: MatSnackBar, private ipcService: IpcService, private dialogService: DialogService, private scraper: ScraperService ) {
         speechSynthesis.onvoiceschanged = () => {
             this.voiceOptions = speechSynthesis.getVoices();
         };
-        // this.dataSource.data = TREE_DATA;
-        this.dataSource.data = [];
     }
 
     ngOnInit(): void {
@@ -139,7 +57,6 @@ export class MainComponent implements OnInit {
             this.dkpEntries = data.dkpEntries;
             this.logFile = data.logFile;
             this.voiceIndex = data.voiceIndex;
-            this.triggers = _.filter( data.triggers, f => this.isDev || !f.predefined );
             this.overlays = data.overlays;
             this.enableFct = data.enableFct;
             this.damageDealtOverlayId = data.damageDealtOverlayId;
@@ -169,31 +86,6 @@ export class MainComponent implements OnInit {
         this.ipcService.getAppVersion().subscribe( version => this.version = version );
         this.ipcService.consoleLogRequested().subscribe( data => console.log( 'from main', data ) );
         this.ipcService.getAppIsDev().subscribe( isDev => this.isDev = isDev );
-        this.ipcService.getTriggerFolders().subscribe( folders => {
-            this.triggerFolders = folders;
-            this.dataSource.data = folders;
-            this.expandFolders( folders );
-            this.updateExpandStatus();
-        } );
-    }
-
-    public toggleTree(): void {
-        if ( this._treeExpanded ) {
-            this.treeControl.collapseAll();
-            this._treeExpanded = false;
-        } else {
-            this.treeControl.expandAll();
-            this._treeExpanded = true;
-        }
-    }
-
-    public updateExpandStatus(): void {
-        let allExpanded: boolean = true;
-        this.treeControl.dataNodes.forEach( f => {
-            allExpanded = !f.expandable || this.treeControl.isExpanded( f ) ? allExpanded : false;
-        } );
-
-        this._treeExpanded = allExpanded;
     }
 
     removeEntry( entry: any ): void {
@@ -260,25 +152,6 @@ export class MainComponent implements OnInit {
         this.ipcService.clearDkpLog();
     }
 
-    showNewTriggerDialog(): void {
-        this.ipcService.showNewTriggerDialog();
-    }
-
-    showEditTriggerDialog( triggerId: string ): void {
-        this.ipcService.showEditTriggerDialog( triggerId );
-    }
-
-    deleteTrigger( index: number ): void {
-        this.dialogService.showConfirmDialog(
-            `Are you sure you want to delete ${this.triggers[ index ].name}?`,
-            'Click "Yes" to delete this trigger.', 'Click "No" to close this dialog without deleting this trigger.',
-            confirmed => {
-                if ( confirmed === true ) {
-                    this.ipcService.deleteTrigger( this.triggers[ index ].triggerId ).subscribe();
-                }
-            } );
-    }
-
     showNewOverlayDialog(): void {
         this.dialogService
             .showOverlayDetailsDialog( new OverlayWindowModel() )
@@ -310,130 +183,13 @@ export class MainComponent implements OnInit {
             } );
     }
 
-    public showNewDotTimerDialog(): void {
-        this.dialogService.showNewDotTimerDialog();
-    }
-
     public updateFocusEffectSettings(): void {
         this.ipcService.updateFocusEffectSettings( this.focusEffectSettings );
-    }
-
-    public addTriggerFolderDialog(): void {
-        this.dialogService
-            .showNewTriggerFolderDialog()
-            .subscribe( folder => {
-                if ( folder != null ) {
-                    
-                    let _folders = this.triggerFolders?.length > 0 ? this.triggerFolders : [];
-                    
-                    _folders.push( folder );
-
-                    this.updateExpandedState( _folders );
-                    this.ipcService
-                        .updateTriggerFolders( _folders )
-                        .subscribe( folders => {
-                            this.triggerFolders = folders;
-                            this.dataSource.data = folders;
-                            this.expandFolders( folders );
-                            this.updateExpandStatus();
-                        } );
-                    
-                }
-            } );
     }
 
     public selectMoveSourceFolder( target: any ): void {
         console.log( 'folder source', target );
         this.movingFolderSource = target;
-    }
-
-    public selectParentFolder( sourceFolderId?: string ): void {
-        this.dialogService.showSelectTriggerFolderDialog( sourceFolderId ).subscribe( targetFolderId => {
-            if ( sourceFolderId && targetFolderId && sourceFolderId != targetFolderId ) {
-                let node = _.find( this.treeControl.dataNodes, f => f.folderId === targetFolderId );
-                this.treeControl.expand( node );
-                this.moveFolder( sourceFolderId, targetFolderId );
-            } else if ( sourceFolderId && targetFolderId && sourceFolderId === targetFolderId ) {
-                let folder = this.detatchFolder( this.triggerFolders, sourceFolderId );
-                this.triggerFolders.push( folder );
-                this.updateTriggerFolders();
-            }
-        } );
-    }
-
-    public moveFolder( sourceFolderId: string, targetFolderId: string ) {
-        let folder = this.detatchFolder( this.triggerFolders, sourceFolderId );
-        this.attachFolder( this.triggerFolders, folder, targetFolderId );
-        this.updateTriggerFolders();
-    }
-
-    private attachFolder( folders: TriggerFolder[], sourceFolder: TriggerFolder, targetFolderId: string ): void {
-        let index = -1;
-        for ( let i = 0; i < folders.length; i++ ) {
-            if ( folders[ i ].folderId === targetFolderId ) {
-                index = i;
-                break;
-            } else if ( folders[ i ].children != null && folders[ i ].children.length > 0 ) {
-                this.attachFolder( folders[ i ].children, sourceFolder, targetFolderId );
-            }
-        }
-
-        if ( index > -1 ) {
-            folders[ index ].children = folders[ index ].children?.length > 0 ? folders[ index ].children : [];
-            folders[ index ].children.push( sourceFolder );
-        }
-    }
-
-    private detatchFolder( folders: TriggerFolder[], folderId: string ): TriggerFolder {
-        let index = -1;
-        for ( let i = 0; i < folders.length; i++ ) {
-            if ( folders[ i ].folderId === folderId ) {
-                index = i;
-                break;
-            } else if ( folders[ i ].children != null && folders[ i ].children.length > 0 ) {
-                let folder = this.detatchFolder( folders[ i ].children, folderId );
-                if ( folder )
-                    return folder;
-            }
-        }
-
-        if ( index > -1 ) {
-            return folders.splice( index, 1 )[ 0 ];
-        }
-    }
-
-    public updateTriggerFolders(): void {
-        this.updateExpandedState( this.triggerFolders );
-        this.ipcService.updateTriggerFolders( this.triggerFolders ).subscribe( folders => {
-            this.dataSource.data = folders;
-            this.triggerFolders = folders;
-            this.expandFolders( folders );
-            this.updateExpandStatus();
-        } );
-    }
-
-    public onExpand(): void {
-        this.updateExpandStatus();
-        // this.updateExpandedState( this.triggerFolders );
-        this.updateTriggerFolders();
-    }
-
-    public updateExpandedState( folders: TriggerFolder[] ): void {
-        for ( let i = 0; i < folders?.length; i++ ) {
-            let node = _.find( this.treeControl.dataNodes, f => f.folderId === folders[i].folderId );
-            folders[ i ].expanded = this.treeControl.isExpanded( node );
-            this.updateExpandedState( folders[ i ].children );
-        }
-    }
-
-    public expandFolders(folders: TriggerFolder[]): void {
-        for ( let i = 0; i < folders?.length; i++ ) {
-            if ( folders[ i ].expanded ) {
-                let node = _.find( this.treeControl.dataNodes, f => f.folderId === folders[ i ].folderId );
-                this.treeControl.expand( node );
-                this.expandFolders( folders[ i ].children );
-            }
-        }
     }
 
     public testFn(): void {

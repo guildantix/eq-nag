@@ -13,6 +13,7 @@ import { ScraperService } from './scraper.service';
 import { CharactersListComponent } from './characters-list/characters-list.component';
 import { NgxElectronModule } from 'ngx-electron';
 import { ContextMenuModule } from './context-menu/context-menu.module';
+import { TriggersComponent } from './triggers/triggers.component';
 
 @NgModule( {
     imports: [
@@ -28,6 +29,7 @@ import { ContextMenuModule } from './context-menu/context-menu.module';
     ],
     declarations: [
         AppComponent,
+        TriggersComponent,
         MainComponent,
         CharactersListComponent,
     ],
