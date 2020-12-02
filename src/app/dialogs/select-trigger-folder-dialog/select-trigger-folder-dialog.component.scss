@@ -2,6 +2,13 @@
     display: none;
 }
 
+.well {
+    background-color: #333333;
+    padding: 25px 15px;
+    display: flex;
+    align-items: center;
+}
+
 .mat-tree-node {
     &:nth-child(odd) {
         background-color: #00000014;
@@ -45,5 +52,5 @@
 mat-tree {
     
     margin-top: 15px;
-    
+
 }
