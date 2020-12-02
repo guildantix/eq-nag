@@ -37,14 +37,16 @@ export class SelectTriggerFolderDialogComponent implements OnInit {
 
     constructor(
         public dialogRef: MatDialogRef<SelectTriggerFolderDialogComponent>,
-        @Inject( MAT_DIALOG_DATA ) public data: any,
+        @Inject( MAT_DIALOG_DATA ) public data: { folderId: string },
         public dialog: MatDialog,
         private ipcService: IpcService ) {
         
         this.dataSource.data = [];
         
         this.ipcService.getTriggerFolders().subscribe( folders => {
-            // this.triggerFolders = folders;
+            if ( this.data?.folderId ) {
+                this.removeFolder( folders, this.data.folderId );
+            }
             this.dataSource.data = folders;
             this.treeControl.expandAll();
         } );
@@ -54,6 +56,22 @@ export class SelectTriggerFolderDialogComponent implements OnInit {
 
         // this.model = new TriggerFolder();
 
+    }
+
+    private removeFolder( folders: TriggerFolder[], folderId: string ): void {
+        let index = -1;
+        for ( let i = 0; i < folders.length; i++ ) {
+            if ( folders[ i ].folderId === folderId ) {
+                index = i;
+                break;
+            } else if ( folders[ i ].children != null && folders[ i ].children.length > 0 ) {
+                this.removeFolder( folders[ i ].children, folderId );
+            }
+        }
+
+        if ( index > -1 ) {
+            folders.splice( index, 1 );
+        }
     }
     
 }

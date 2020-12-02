@@ -78,6 +78,7 @@ export class MainComponent implements OnInit {
             // selected: node.selected,
             selected: false,
             folderId: node.folderId,
+            expanded: node.expanded,
         };
     }
     public treeControl = new FlatTreeControl<ExampleFlatNode>( node => node.level, node => node.expandable );
@@ -119,9 +120,7 @@ export class MainComponent implements OnInit {
     }
 
     public get allExpanded(): boolean {
-        let allExpanded: boolean = true;
-        this.treeControl.dataNodes.forEach( f => allExpanded = !this.treeControl.isExpanded( f ) ? false : allExpanded );
-        return allExpanded;
+        return this._treeExpanded;
     }
 
     private _treeExpanded: boolean = false;
@@ -173,33 +172,26 @@ export class MainComponent implements OnInit {
         this.ipcService.getTriggerFolders().subscribe( folders => {
             this.triggerFolders = folders;
             this.dataSource.data = folders;
+            this.expandFolders( folders );
+            this.updateExpandStatus();
         } );
     }
 
     public toggleTree(): void {
-        let allExpanded: boolean = true;
-        this.treeControl.dataNodes.forEach( f => allExpanded = !this.treeControl.isExpanded( f ) ? false : allExpanded );
-
-        if ( allExpanded ) {
+        if ( this._treeExpanded ) {
             this.treeControl.collapseAll();
+            this._treeExpanded = false;
         } else {
             this.treeControl.expandAll();
+            this._treeExpanded = true;
         }
-    }
-
-    public expandAll(): void {
-        this.treeControl.expandAll();
-        window.setTimeout( () => this._treeExpanded = true, 500 );
-    }
-
-    public collapseAll(): void {
-        this.treeControl.collapseAll();
-        window.setTimeout( () => this._treeExpanded = false, 500 );
     }
 
     public updateExpandStatus(): void {
         let allExpanded: boolean = true;
-        this.treeControl.dataNodes.forEach( f => allExpanded = !this.treeControl.isExpanded( f ) ? false : allExpanded );
+        this.treeControl.dataNodes.forEach( f => {
+            allExpanded = !f.expandable || this.treeControl.isExpanded( f ) ? allExpanded : false;
+        } );
 
         this._treeExpanded = allExpanded;
     }
@@ -336,11 +328,14 @@ export class MainComponent implements OnInit {
                     
                     _folders.push( folder );
 
+                    this.updateExpandedState( _folders );
                     this.ipcService
                         .updateTriggerFolders( _folders )
                         .subscribe( folders => {
                             this.triggerFolders = folders;
                             this.dataSource.data = folders;
+                            this.expandFolders( folders );
+                            this.updateExpandStatus();
                         } );
                     
                 }
@@ -352,8 +347,93 @@ export class MainComponent implements OnInit {
         this.movingFolderSource = target;
     }
 
-    public selectParentFoolder(): void {
-        this.dialogService.showSelectTriggerFolderDialog().subscribe( folderId => console.log( 'folderId', folderId ) );
+    public selectParentFolder( sourceFolderId?: string ): void {
+        this.dialogService.showSelectTriggerFolderDialog( sourceFolderId ).subscribe( targetFolderId => {
+            if ( sourceFolderId && targetFolderId && sourceFolderId != targetFolderId ) {
+                let node = _.find( this.treeControl.dataNodes, f => f.folderId === targetFolderId );
+                this.treeControl.expand( node );
+                this.moveFolder( sourceFolderId, targetFolderId );
+            } else if ( sourceFolderId && targetFolderId && sourceFolderId === targetFolderId ) {
+                let folder = this.detatchFolder( this.triggerFolders, sourceFolderId );
+                this.triggerFolders.push( folder );
+                this.updateTriggerFolders();
+            }
+        } );
+    }
+
+    public moveFolder( sourceFolderId: string, targetFolderId: string ) {
+        let folder = this.detatchFolder( this.triggerFolders, sourceFolderId );
+        this.attachFolder( this.triggerFolders, folder, targetFolderId );
+        this.updateTriggerFolders();
+    }
+
+    private attachFolder( folders: TriggerFolder[], sourceFolder: TriggerFolder, targetFolderId: string ): void {
+        let index = -1;
+        for ( let i = 0; i < folders.length; i++ ) {
+            if ( folders[ i ].folderId === targetFolderId ) {
+                index = i;
+                break;
+            } else if ( folders[ i ].children != null && folders[ i ].children.length > 0 ) {
+                this.attachFolder( folders[ i ].children, sourceFolder, targetFolderId );
+            }
+        }
+
+        if ( index > -1 ) {
+            folders[ index ].children = folders[ index ].children?.length > 0 ? folders[ index ].children : [];
+            folders[ index ].children.push( sourceFolder );
+        }
+    }
+
+    private detatchFolder( folders: TriggerFolder[], folderId: string ): TriggerFolder {
+        let index = -1;
+        for ( let i = 0; i < folders.length; i++ ) {
+            if ( folders[ i ].folderId === folderId ) {
+                index = i;
+                break;
+            } else if ( folders[ i ].children != null && folders[ i ].children.length > 0 ) {
+                let folder = this.detatchFolder( folders[ i ].children, folderId );
+                if ( folder )
+                    return folder;
+            }
+        }
+
+        if ( index > -1 ) {
+            return folders.splice( index, 1 )[ 0 ];
+        }
+    }
+
+    public updateTriggerFolders(): void {
+        this.updateExpandedState( this.triggerFolders );
+        this.ipcService.updateTriggerFolders( this.triggerFolders ).subscribe( folders => {
+            this.dataSource.data = folders;
+            this.triggerFolders = folders;
+            this.expandFolders( folders );
+            this.updateExpandStatus();
+        } );
+    }
+
+    public onExpand(): void {
+        this.updateExpandStatus();
+        // this.updateExpandedState( this.triggerFolders );
+        this.updateTriggerFolders();
+    }
+
+    public updateExpandedState( folders: TriggerFolder[] ): void {
+        for ( let i = 0; i < folders?.length; i++ ) {
+            let node = _.find( this.treeControl.dataNodes, f => f.folderId === folders[i].folderId );
+            folders[ i ].expanded = this.treeControl.isExpanded( node );
+            this.updateExpandedState( folders[ i ].children );
+        }
+    }
+
+    public expandFolders(folders: TriggerFolder[]): void {
+        for ( let i = 0; i < folders?.length; i++ ) {
+            if ( folders[ i ].expanded ) {
+                let node = _.find( this.treeControl.dataNodes, f => f.folderId === folders[ i ].folderId );
+                this.treeControl.expand( node );
+                this.expandFolders( folders[ i ].children );
+            }
+        }
     }
 
     public testFn(): void {
@@ -407,7 +487,7 @@ export class MainComponent implements OnInit {
         // oReq.open( "GET", url );
         // oReq.send();
         // this.httpClient.get( url ).subscribe( f => { 
-        //     console.log( 'testing' );
+        //     console.log( 'testingasdf' );
         //  } );
         // // this.ipcService.sendTestModel( `Target Name --== Dot Name ==--` );
         // this.ipcService.sendTestFn( '[Fri Oct 02 09:34:19 2020] You begin casting Funeral Pyre of Kelador.' );

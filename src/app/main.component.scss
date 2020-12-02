@@ -85,6 +85,12 @@ fieldset p mat-form-field {
         display: flex;
         flex: 1 0 auto;
     }
+    button {
+        mat-icon {
+            font-size: 18px;
+        }
+        margin-left: 5px;
+    }
     min-height: unset !important;
     height: 27px !important;
     cursor: pointer;

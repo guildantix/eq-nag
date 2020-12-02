@@ -329,7 +329,7 @@ class TriggerDatabaseStore extends Store {
         this.processPredefinedTriggers();
         this.storeDataFile( this.#data );
         
-        return folders;
+        return this.#data.folders;
     }
 
     /**
