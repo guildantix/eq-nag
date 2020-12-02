@@ -2,10 +2,11 @@
 
 <mat-dialog-content>
 
-    <p>{{this.data.message}}</p>
-    <p *ngIf="data.yesMessage != null">{{data.yesMessage}}</p>
-    <p *ngIf="data.noMessage != null">{{data.noMessage}}</p>
-    
+    <p *ngFor="let msg of messages">{{msg}}</p>
+    <div class="btn-info">
+        <small *ngIf="data.yesMessage != null">{{data.yesMessage}}</small>
+        <small *ngIf="data.noMessage != null">{{data.noMessage}}</small>    
+    </div>
 </mat-dialog-content>
 
 <mat-dialog-actions>

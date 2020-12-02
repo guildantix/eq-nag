@@ -516,7 +516,7 @@ export class TriggersComponent implements OnInit {
      */
     public deleteFolder( folderId: string, name: string ): void {
         this.dialogService.showConfirmDialog(
-            `Are you sure you want to delete ${name}?`,
+            [ `Are you sure you want to delete ${name}?`, `This will remove all triggers from this folder and all descendants, leaving those triggers ungrouped.` ],
             `Click "Yes" to delete ${name}.`, 'Click "No" to close this dialog without deleting the folder.',
             confirmed => {
                 if ( confirmed === true ) {
@@ -568,7 +568,7 @@ export class TriggersComponent implements OnInit {
 
 
 
-    
+
     /**
      * Removes all triggers from the given folder and all descendant folders.
      * 

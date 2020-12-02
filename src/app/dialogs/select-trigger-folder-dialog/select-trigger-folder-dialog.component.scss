@@ -1,12 +1,18 @@
+mat-dialog-content {
+    background-color: #333333;
+    padding-bottom: 15px;
+}
+
 .mat-icon-button ::ng-deep .mat-button-focus-overlay {
     display: none;
 }
 
 .well {
-    background-color: #333333;
+    background-color: #2d2d2d;
     padding: 25px 15px;
     display: flex;
     align-items: center;
+    margin-top: 14px;
 }
 
 .mat-tree-node {
