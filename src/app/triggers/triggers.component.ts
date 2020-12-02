@@ -6,6 +6,7 @@ import { TriggerFolder, TriggerModel } from '../core.model';
 import { DialogService } from '../dialogs/dialog.service';
 import { IpcService } from '../ipc.service';
 import * as _ from 'lodash';
+import { ContextMenuModel } from '../context-menu/context-menu.model';
 
 interface FolderTreeNode {
   expandable: boolean;
@@ -443,5 +444,33 @@ export class TriggersComponent implements OnInit {
         this.expandFolders( folders );
         this.updateExpandStatus();
 
+    }
+
+    public getContextMenu( folderId: string ): ContextMenuModel[] {
+        return [ <ContextMenuModel>{
+            label: 'Rename',
+            action: () => { },
+            disabled: () => false,
+            hide: () => false,
+            matIcon: 'label',
+        }, {
+            label: 'Change parent',
+            action: () => this.selectParentFolder( folderId ),
+            disabled: () => false,
+            hide: () => false,
+            matIcon: 'folder_open',
+        }, <ContextMenuModel>{
+            label: '-',
+            action: () => { },
+            disabled: () => false,
+            hide: () => false,
+            // matIcon: 'content_paste',
+        }, <ContextMenuModel>{
+            label: 'Delete Folder',
+            action: () => { },
+            disabled: () => false,
+            hide: () => false,
+            matIcon: 'clear',
+        } ];
     }
 }

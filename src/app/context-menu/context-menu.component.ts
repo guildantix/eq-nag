@@ -4,6 +4,7 @@ import { Component, Input, OnInit, TemplateRef, ViewChild, ViewContainerRef } fr
 import { fromEvent, Subscription } from 'rxjs';
 import { filter, take } from 'rxjs/operators';
 import { ContextMenuModel } from './context-menu.model';
+import { ContextService } from './context.service';
 
 @Component( {
     selector: 'app-context-menu',
@@ -37,7 +38,7 @@ export class ContextMenuComponent implements OnInit {
         this._menu = value;
     }
 
-    constructor(public overlay: Overlay, public viewContainerRef: ViewContainerRef) { }
+    constructor(public overlay: Overlay, public viewContainerRef: ViewContainerRef, private contextService: ContextService) { }
 
     ngOnInit() {
         
@@ -92,11 +93,13 @@ export class ContextMenuComponent implements OnInit {
             .subscribe( () => this.close() );
         
         this.isOpen = true;
+        this.contextService.closeAllButThis( this );
     }
 
     public close(): void {
         this.clickSub && this.clickSub.unsubscribe();
         this.scrollSub && this.scrollSub.unsubscribe();
+        this.isOpen = false;
         if ( this.overlayRef ) {
             this.overlayRef.dispose();
             this.overlayRef = null;

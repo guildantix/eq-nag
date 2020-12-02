@@ -58,12 +58,12 @@ fieldset p mat-form-field {
     margin-bottom: 0;
     list-style-type: none;
   }
-
+  
 .mat-tree-node {
-    &:nth-child(odd) {
+    &:nth-of-type(odd) {
         background-color: #00000014;
     }
-    &:nth-last-child(1) {
+    &:nth-last-child(2) {
         border-bottom: 1px solid rgba(255, 255, 255, 0.12);
     }
     &:hover {
