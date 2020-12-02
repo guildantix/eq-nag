@@ -11,16 +11,24 @@
     <mat-tree [dataSource]="dataSource" [treeControl]="treeControl">
 
         <!-- This is the tree node template for leaf nodes -->
-        <mat-tree-node *matTreeNodeDef="let node" matTreeNodePadding matTreeNodePaddingIndent="20">
+        <mat-tree-node *matTreeNodeDef="let node" matTreeNodePadding matTreeNodePaddingIndent="20" [mat-dialog-close]="node.folderId">
             <!-- <mat-icon [inline]="true" class="material-icons">{{node.selected === true ? 'folder_open' : 'folder'}}</mat-icon> -->
-            <button mat-icon-button [mat-dialog-close]="node.folderId"><mat-icon [inline]="true" class="material-icons">{{node.selected === true ? 'folder_open' : 'folder'}}</mat-icon></button>
+            <!-- <button mat-icon-button [mat-dialog-close]="node.folderId"><mat-icon [inline]="true" class="material-icons">{{node.selected === true ? 'folder_open' : 'folder'}}</mat-icon></button> -->
+            <button mat-icon-button [disabled]="true">
+                <span style="display:inline-block;width:18px;">&nbsp;</span>
+            </button>
             <span class="spacer">{{node.name}}</span>
         </mat-tree-node>
 
         <!-- This is the tree node template for expandable nodes -->
-        <mat-tree-node *matTreeNodeDef="let node;when: hasChild" matTreeNodePadding matTreeNodePaddingIndent="20">
+        <mat-tree-node *matTreeNodeDef="let node;when: hasChild" matTreeNodePadding matTreeNodePaddingIndent="20" [mat-dialog-close]="node.folderId">
             <!-- <mat-icon [inline]="true" class="mat-icon-rtl-mirror">{{treeControl.isExpanded(node) ? 'folder_open' : 'folder'}}</mat-icon> -->
-            <button mat-icon-button matTreeNodeToggle [attr.aria-label]="'Toggle ' + node.name" [mat-dialog-close]="node.folderId"><mat-icon [inline]="true" class="mat-icon-rtl-mirror">{{treeControl.isExpanded(node) ? 'folder_open' : 'folder'}}</mat-icon></button>
+            <!-- <button mat-icon-button matTreeNodeToggle [attr.aria-label]="'Toggle ' + node.name" [mat-dialog-close]="node.folderId"><mat-icon [inline]="true" class="mat-icon-rtl-mirror">{{treeControl.isExpanded(node) ? 'folder_open' : 'folder'}}</mat-icon></button> -->
+            <button mat-icon-button matTreeNodeToggle [attr.aria-label]="'Toggle ' + node.name">
+                <mat-icon [inline]="true" class="mat-icon-rtl-mirror">
+                    {{treeControl.isExpanded(node) ? 'expand_more' : 'chevron_right'}}
+                </mat-icon>
+            </button>
             <span class="spacer">{{node.name}}</span>
         </mat-tree-node>
 
