@@ -17,6 +17,7 @@ import { SelectIconDialogComponent } from './select-icon-dialog/select-icon-dial
 import { NewTriggerFolderDialogComponent } from './new-trigger-folder-dialog/new-trigger-folder-dialog.component';
 import { SelectTriggerFolderDialogComponent } from './select-trigger-folder-dialog/select-trigger-folder-dialog.component';
 import { ContextMenuModule } from '../context-menu/context-menu.module';
+import { InputDialogComponent } from './input-dialog/input-dialog.component'
 
 @NgModule( {
     imports: [
@@ -39,6 +40,7 @@ import { ContextMenuModule } from '../context-menu/context-menu.module';
         SelectIconDialogComponent,
         NewTriggerFolderDialogComponent,
         SelectTriggerFolderDialogComponent,
+        InputDialogComponent,
     ],
     declarations: [
         TriggerDialogComponent,
@@ -51,6 +53,7 @@ import { ContextMenuModule } from '../context-menu/context-menu.module';
         SelectIconDialogComponent,
         NewTriggerFolderDialogComponent,
         SelectTriggerFolderDialogComponent,
+        InputDialogComponent,
     ],
     providers: [
         DialogService,

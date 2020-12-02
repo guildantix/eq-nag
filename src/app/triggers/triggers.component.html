@@ -44,7 +44,7 @@
                 <mat-tree [dataSource]="dataSource" [treeControl]="treeControl">
 
                     <!-- This is the tree node template for leaf nodes -->
-                    <mat-tree-node *matTreeNodeDef="let node" matTreeNodePadding matTreeNodePaddingIndent="20" [ngClass]="{selected: node.selected}" [appContextMenu]="getContextMenu(node.folderId)">
+                    <mat-tree-node *matTreeNodeDef="let node" matTreeNodePadding matTreeNodePaddingIndent="20" [ngClass]="{selected: node.selected}" [appContextMenu]="getContextMenu(node.folderId, node.name)">
                         <button mat-icon-button [disabled]="true">
                             <span style="display:inline-block;width:18px;">&nbsp;</span>
                         </button>
@@ -55,7 +55,7 @@
                     </mat-tree-node>
 
                     <!-- This is the tree node template for expandable nodes -->
-                    <mat-tree-node *matTreeNodeDef="let node;when: hasChild" matTreeNodePadding matTreeNodePaddingIndent="20" [ngClass]="{selected: node.selected}" [appContextMenu]="getContextMenu(node.folderId)">
+                    <mat-tree-node *matTreeNodeDef="let node;when: hasChild" matTreeNodePadding matTreeNodePaddingIndent="20" [ngClass]="{selected: node.selected}" [appContextMenu]="getContextMenu(node.folderId, node.name)">
                         <button mat-icon-button matTreeNodeToggle [attr.aria-label]="'Toggle ' + node.name" (click)="onExpand()">
                             <mat-icon [inline]="true" class="mat-icon-rtl-mirror">
                                 {{treeControl.isExpanded(node) ? 'expand_more' : 'chevron_right'}}

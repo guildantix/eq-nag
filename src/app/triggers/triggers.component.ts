@@ -446,10 +446,174 @@ export class TriggersComponent implements OnInit {
 
     }
 
-    public getContextMenu( folderId: string ): ContextMenuModel[] {
+
+
+
+
+
+
+
+
+    
+    /**
+     * Opens the input dialog to allow the user to input a new name for the 
+     * specified folder.
+     * 
+     * @param folderId The id of the desired folder.
+     * @param name The current name of the folder.
+     */
+    public renameFolder( folderId: string, name: string ): void {
+        this.dialogService.showInputDialog( 'Rename folder', [ `Please enter a new name for the ${name} folder.` ], 'Folder name' ).subscribe( name => {
+            if ( name ) {
+                this._renameFolder( this.triggerFolders, folderId, name, );
+                this.updateTriggerFolders();
+            }
+        } );
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Updates the specified folder with the given name.
+     * 
+     * @param folders The list of folders to search.
+     * @param folderId The id of the desired folder.
+     * @param name The new name for the folder.
+     */
+    private _renameFolder( folders: TriggerFolder[], folderId: string, name: string ): void {
+        for ( let i = 0; i < folders.length; i++ ) {
+            if ( folders[ i ].folderId === folderId ) {
+                folders[ i ].name = name;
+                break;
+            } else if ( folders[ i ].children?.length > 0 ) {
+                this._renameFolder( folders[ i ].children, folderId, name );
+            }
+        }
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Shows the delete folder dialog allowing the user to delete the trigger 
+     * folder.
+     * 
+     * @param folderId The id of the desired folder.
+     * @param name The name of the folder.
+     */
+    public deleteFolder( folderId: string, name: string ): void {
+        this.dialogService.showConfirmDialog(
+            `Are you sure you want to delete ${name}?`,
+            `Click "Yes" to delete ${name}.`, 'Click "No" to close this dialog without deleting the folder.',
+            confirmed => {
+                if ( confirmed === true ) {
+                    this._deleteFolder( this.triggerFolders, folderId );
+                    this.updateTriggerFolders();
+                }
+            } );
+    }
+    
+
+
+
+
+
+
+
+
+
+    /**
+     * Deletes the specified folder.
+     * 
+     * @param folders The list of folders to search.
+     * @param folderId The id of the folder to delete.
+     */
+    private _deleteFolder( folders: TriggerFolder[], folderId: string ): void {
+        for ( let i = 0; i < folders.length; i++ ) {
+            if ( folders[ i ].folderId === folderId ) {
+                
+                // Remove the folder from the list.
+                folders.splice( i, 1 );
+                
+                // Remove any existing folders.
+                this._removeFolderTriggers( this.triggerFolders, folderId );
+
+                // We're done here.
+                break;
+
+            } else if ( folders[ i ].children?.length > 0 ) {
+                this._deleteFolder( folders[ i ].children, folderId );
+            }
+        }
+    }
+
+
+
+
+
+
+
+
+
+    
+    /**
+     * Removes all triggers from the given folder and all descendant folders.
+     * 
+     * @param folders The list of folders to search.
+     * @param folderId The id of the folder to evacuate triggers out of.
+     */
+    private _removeFolderTriggers( folders: TriggerFolder[], folderId: string ): void {
+
+        this.triggers.forEach( trigger => trigger.folderId = trigger.folderId === folderId ? null : trigger.folderId );
+
+        // Find the folder and if the folder has children, then remove the 
+        // triggers from all descendants.
+        for ( let i = 0; i < folders.length; i++ ) {
+            if ( folders[ i ].folderId === folderId ) {
+
+                if ( folders[ i ].children?.length > 0 ) {
+                    folders[ i ].children.forEach( child => this._removeFolderTriggers( folders[ i ].children, child.folderId ) );
+                }
+
+                // We're done here.
+                break;
+
+            }
+        }
+        
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Returns a context menu definition for the specified folder.
+     * 
+     * @param folderId The id of the folder.
+     */
+    public getContextMenu( folderId: string, name: string ): ContextMenuModel[] {
         return [ <ContextMenuModel>{
             label: 'Rename',
-            action: () => { },
+            action: () => this.renameFolder( folderId, name ),
             disabled: () => false,
             hide: () => false,
             matIcon: 'label',
@@ -467,7 +631,7 @@ export class TriggersComponent implements OnInit {
             // matIcon: 'content_paste',
         }, <ContextMenuModel>{
             label: 'Delete Folder',
-            action: () => { },
+            action: () => this.deleteFolder( folderId, name ),
             disabled: () => false,
             hide: () => false,
             matIcon: 'clear',
