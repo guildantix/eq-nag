@@ -44,25 +44,25 @@
                 <mat-tree [dataSource]="dataSource" [treeControl]="treeControl">
 
                     <!-- This is the tree node template for leaf nodes -->
-                    <mat-tree-node *matTreeNodeDef="let node" matTreeNodePadding matTreeNodePaddingIndent="20" [ngClass]="{selected: node.selected}" [appContextMenu]="getContextMenu(node.folderId, node.name)">
+                    <mat-tree-node *matTreeNodeDef="let node" matTreeNodePadding matTreeNodePaddingIndent="20" [ngClass]="{selected: node.folderId === selectedFolderId}" [appContextMenu]="getFolderContextMenu(node.folderId, node.name)">
                         <button mat-icon-button [disabled]="true">
                             <span style="display:inline-block;width:18px;">&nbsp;</span>
                         </button>
-                        <span class="spacer">{{node.name}}</span>
-                        <button mat-icon-button color="warn" class="small delete-button"><mat-icon [inline]="true">cancel</mat-icon></button>
+                        <span class="spacer tree-click-target" (click)="toggleSelectedFolder(node.folderId)">{{node.name}}</span>
+                        <!-- <button mat-icon-button color="warn" class="small delete-button"><mat-icon [inline]="true">cancel</mat-icon></button> -->
                         <!-- class="material-icons-outlined" -->
                         <button mat-icon-button class="small" (click)="selectParentFolder(node.folderId)"><mat-icon [inline]="true">sort</mat-icon></button>
                     </mat-tree-node>
 
                     <!-- This is the tree node template for expandable nodes -->
-                    <mat-tree-node *matTreeNodeDef="let node;when: hasChild" matTreeNodePadding matTreeNodePaddingIndent="20" [ngClass]="{selected: node.selected}" [appContextMenu]="getContextMenu(node.folderId, node.name)">
+                    <mat-tree-node *matTreeNodeDef="let node;when: hasChild" matTreeNodePadding matTreeNodePaddingIndent="20" [ngClass]="{selected: node.folderId === selectedFolderId}" [appContextMenu]="getFolderContextMenu(node.folderId, node.name)">
                         <button mat-icon-button matTreeNodeToggle [attr.aria-label]="'Toggle ' + node.name" (click)="onExpand()">
                             <mat-icon [inline]="true" class="mat-icon-rtl-mirror">
                                 {{treeControl.isExpanded(node) ? 'expand_more' : 'chevron_right'}}
                             </mat-icon>
                         </button>
-                        <span class="spacer">{{node.name}}</span>
-                        <button mat-icon-button color="warn" class="small delete-button"><mat-icon [inline]="true">cancel</mat-icon></button>
+                        <span class="spacer tree-click-target" (click)="toggleSelectedFolder(node.folderId)">{{node.name}}</span>
+                        <!-- <button mat-icon-button color="warn" class="small delete-button"><mat-icon [inline]="true">cancel</mat-icon></button> -->
                         <button mat-icon-button class="small" (click)="selectParentFolder(node.folderId)"><mat-icon [inline]="true">sort</mat-icon></button>
                     </mat-tree-node>
                 </mat-tree>
@@ -72,14 +72,15 @@
         <div class="ft-item" style="margin: 3px; width: 66%;">
             <div class="ft-content">
                 <!-- [ngClass]="{dim: movingFolderSource != null}" -->
-                <table mat-table #capturePhrasesTable="matTable" style="width: 100%; min-width: 600px;" 
-                    [dataSource]="triggers"
+                <table mat-table #triggersTable="matTable" style="width: 100%; min-width: 600px;" 
+                    [dataSource]="filteredTriggers"
                     class="capture-phrases">
 
                     <ng-container matColumnDef="edit">
                         <th mat-header-cell *matHeaderCellDef style="text-align: center; width: 50px;">  </th>
                         <td mat-cell *matCellDef="let element; let i = index" style="text-align: center; width: 50px;">
                             <button mat-button color="accent" aria-label="Edit this trigger" (click)="showEditTriggerDialog(element.triggerId)">Edit</button>
+                            <!-- <button mat-icon-button><mat-icon>more_vert</mat-icon></button> -->
                         </td>
                     </ng-container>
 
@@ -96,14 +97,14 @@
                     <ng-container matColumnDef="delete">
                         <th mat-header-cell *matHeaderCellDef style="text-align: center; width: 50px; padding-left: 15px;">  </th>
                         <td mat-cell *matCellDef="let element; let i = index" style="text-align: center; width: 50px; padding-left: 15px;">
-                            <button mat-icon-button color="warn" aria-label="Delete this trigger" (click)="deleteTrigger(i)">
+                            <button mat-icon-button color="warn" aria-label="Delete this trigger" (click)="deleteTrigger(element.triggerId)">
                                 <mat-icon>clear</mat-icon>
                             </button>
                         </td>
                     </ng-container>
 
                     <tr mat-header-row *matHeaderRowDef="['edit', 'name', 'delete']"></tr>
-                    <tr mat-row *matRowDef="let element; columns: ['edit', 'name', 'delete'];"></tr>
+                    <tr mat-row *matRowDef="let element; let i = index; columns: ['edit', 'name', 'delete'];" [appContextMenu]="getTriggerContextMenu(element, i)"></tr>
 
                 </table>
             </div>

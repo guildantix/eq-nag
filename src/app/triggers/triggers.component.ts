@@ -1,5 +1,5 @@
 import { FlatTreeControl } from '@angular/cdk/tree';
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTreeFlatDataSource, MatTreeFlattener } from '@angular/material/tree';
 import { TriggerFolder, TriggerModel } from '../core.model';
@@ -7,6 +7,7 @@ import { DialogService } from '../dialogs/dialog.service';
 import { IpcService } from '../ipc.service';
 import * as _ from 'lodash';
 import { ContextMenuModel } from '../context-menu/context-menu.model';
+import { MatTable } from '@angular/material/table';
 
 interface FolderTreeNode {
   expandable: boolean;
@@ -21,24 +22,25 @@ interface FolderTreeNode {
 } )
 export class TriggersComponent implements OnInit {
 
-    private _transformer = ( node: TriggerFolder, level: number ) => {
+    private _transformer = ( folder: TriggerFolder, level: number ) => {
         return {
-            expandable: !!node.children && node.children.length > 0,
-            name: node.name,
+            expandable: !!folder.children && folder.children.length > 0,
+            name: folder.name,
             level: level,
-            active: node.active,
-            // selected: node.selected,
-            selected: false,
-            folderId: node.folderId,
-            expanded: node.expanded,
+            active: folder.active,
+            folderId: folder.folderId,
+            expanded: folder.expanded,
         };
     }
     public treeControl = new FlatTreeControl<FolderTreeNode>( node => node.level, node => node.expandable );
     public treeFlattener = new MatTreeFlattener(this._transformer, node => node.level, node => node.expandable, node => node.children);
     public dataSource = new MatTreeFlatDataSource(this.treeControl, this.treeFlattener);
-    hasChild = ( _: number, node: FolderTreeNode ) => node.expandable;
+    public hasChild = ( _: number, node: FolderTreeNode ) => node.expandable;
+    public selectedFolderId: string;
     public triggers: TriggerModel[] = [];
+    public filteredTriggers: TriggerModel[] = [];
     public isDev: boolean = false;
+    @ViewChild( 'triggersTable' ) triggersTable: MatTable<TriggerModel>;
 
     public get allExpanded(): boolean {
         return this._treeExpanded;
@@ -59,7 +61,8 @@ export class TriggersComponent implements OnInit {
     ngOnInit() {
 
         this.ipcService.tickReceived().subscribe( tick => {
-            this.triggers = _.filter( tick.triggers, f => this.isDev || !f.predefined );
+            this.triggers = tick.triggers.filter( f => this.isDev || !f.predefined );
+            this.filteredTriggers = this.triggers.filter( trigger => this.selectedFolderId == null || this.selectedFolderId === trigger.folderId );
         } );
 
         this.ipcService.getAppIsDev().subscribe( isDev => this.isDev = isDev );
@@ -117,6 +120,26 @@ export class TriggersComponent implements OnInit {
      */
     public showEditTriggerDialog( triggerId: string ): void {
         this.ipcService.showEditTriggerDialog( triggerId );
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Toggles the selection state of the folder for the specified folder.
+     * 
+     * @param folderId The id of the folder to toggle.
+     */
+    public toggleSelectedFolder( folderId: string ): void {
+        this.selectedFolderId = this.selectedFolderId === folderId ? null : folderId;
+        // this.triggersTable?.renderRows();
+        this.filteredTriggers = this.triggers.filter( trigger => this.selectedFolderId == null || this.selectedFolderId === trigger.folderId );
     }
 
 
@@ -320,6 +343,37 @@ export class TriggersComponent implements OnInit {
 
     
     /**
+     * Allows the user to select a new folder for the given trigger.
+     * 
+     * @param trigger The trigger to parent.
+     */
+    public selectTriggerFolder( trigger: TriggerModel ): void {
+        this.dialogService.showSelectTriggerFolderDialog().subscribe( targetFolderId => {
+            if ( targetFolderId ) {
+                let oldFolderId = trigger.folderId;
+                trigger.folderId = targetFolderId;
+                this.ipcService.updateTrigger( trigger ).subscribe( updated => {
+                    if ( updated ) {
+                        // We're done here.
+                    } else {
+                        trigger.folderId = oldFolderId;
+                        this.snackBar.open( 'Could not update trigger!', 'Dismiss', { duration: 5000 } );
+                    }
+                } );
+            }
+        } );
+    }
+
+
+
+
+
+
+
+
+
+    
+    /**
      * Moves the specified folder to the specified parent.
      * 
      * @param sourceFolderId The id of the folder to move.
@@ -410,9 +464,12 @@ export class TriggersComponent implements OnInit {
     /**
      * Shows the delete trigger dialog allowing the user to delete the trigger.
      * 
-     * @param index The index of the trigger in the list.
+     * @param triggerId The id of the desired trigger.
      */
-    public deleteTrigger( index: number ): void {
+    public deleteTrigger( triggerId: string ): void {
+        
+        let index: number = this.triggers.findIndex( trigger => trigger.triggerId === triggerId );
+
         this.dialogService.showConfirmDialog(
             `Are you sure you want to delete ${this.triggers[ index ].name}?`,
             'Click "Yes" to delete this trigger.', 'Click "No" to close this dialog without deleting this trigger.',
@@ -578,6 +635,7 @@ export class TriggersComponent implements OnInit {
     private _removeFolderTriggers( folders: TriggerFolder[], folderId: string ): void {
 
         this.triggers.forEach( trigger => trigger.folderId = trigger.folderId === folderId ? null : trigger.folderId );
+        this.filteredTriggers = this.triggers.filter( trigger => this.selectedFolderId == null || this.selectedFolderId === trigger.folderId );
 
         // Find the folder and if the folder has children, then remove the 
         // triggers from all descendants.
@@ -610,7 +668,7 @@ export class TriggersComponent implements OnInit {
      * 
      * @param folderId The id of the folder.
      */
-    public getContextMenu( folderId: string, name: string ): ContextMenuModel[] {
+    public getFolderContextMenu( folderId: string, name: string ): ContextMenuModel[] {
         return [ <ContextMenuModel>{
             label: 'Rename',
             action: () => this.renameFolder( folderId, name ),
@@ -632,6 +690,48 @@ export class TriggersComponent implements OnInit {
         }, <ContextMenuModel>{
             label: 'Delete Folder',
             action: () => this.deleteFolder( folderId, name ),
+            disabled: () => false,
+            hide: () => false,
+            matIcon: 'clear',
+        } ];
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Returns a context menu definition for the specified folder.
+     * 
+     * @param folderId The id of the folder.
+     */
+    public getTriggerContextMenu( trigger: TriggerModel, index: number ): ContextMenuModel[] {
+        return [ <ContextMenuModel>{
+            label: 'Edit',
+            action: () => this.showEditTriggerDialog( trigger.triggerId ),
+            disabled: () => false,
+            hide: () => false,
+            matIcon: 'edit',
+        }, {
+            label: 'Change parent',
+            action: () => this.selectTriggerFolder( trigger ),
+            disabled: () => false,
+            hide: () => false,
+            matIcon: 'folder_open',
+        }, <ContextMenuModel>{
+            label: '-',
+            action: () => { },
+            disabled: () => false,
+            hide: () => false,
+            // matIcon: 'content_paste',
+        }, <ContextMenuModel>{
+            label: 'Delete Trigger',
+            action: () => this.deleteTrigger( trigger.triggerId ),
             disabled: () => false,
             hide: () => false,
             matIcon: 'clear',

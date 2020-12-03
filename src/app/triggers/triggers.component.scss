@@ -85,6 +85,10 @@ fieldset p mat-form-field {
         display: flex;
         flex: 1 0 auto;
     }
+    .tree-click-target {
+        height: 100%;
+        align-items: center;
+    }
     button {
         mat-icon {
             font-size: 18px;
