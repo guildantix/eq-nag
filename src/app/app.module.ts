@@ -14,6 +14,7 @@ import { CharactersListComponent } from './characters-list/characters-list.compo
 import { NgxElectronModule } from 'ngx-electron';
 import { ContextMenuModule } from './context-menu/context-menu.module';
 import { TriggersComponent } from './triggers/triggers.component';
+import { ClassNamePipe } from './pipes/class-name.pipe';
 
 @NgModule( {
     imports: [
@@ -29,6 +30,7 @@ import { TriggersComponent } from './triggers/triggers.component';
     ],
     declarations: [
         AppComponent,
+        ClassNamePipe,
         TriggersComponent,
         MainComponent,
         CharactersListComponent,
