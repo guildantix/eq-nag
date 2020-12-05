@@ -30,9 +30,10 @@ const fuseOptions_tags = {
         { name: 'name', weight: 1.0 },
         { name: 'comments', weight: 0.9 },
         { name: 'allakhazamUrl', weight: 0.9 },
-        { name: 'triggerId', weight: 0.9 },
-        { name: 'folderId', weight: 0.9 },
         { name: 'capturePhrases.phrase', weight: 0.9 },
+        // We provide low weights on the id fields to enforce an exact match.
+        { name: 'triggerId', weight: 0.01 },
+        { name: 'folderId', weight: 0.01 },
     ]
 };
 
