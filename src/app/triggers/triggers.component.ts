@@ -40,6 +40,8 @@ export class TriggersComponent implements OnInit {
     public triggers: TriggerModel[] = [];
     public filteredTriggers: TriggerModel[] = [];
     public isDev: boolean = false;
+    public triggerSearchResults: TriggerModel[] = [];
+    public searchTerm: string = null;
     @ViewChild( 'triggersTable' ) triggersTable: MatTable<TriggerModel>;
 
     public get allExpanded(): boolean {
@@ -62,7 +64,8 @@ export class TriggersComponent implements OnInit {
 
         this.ipcService.tickReceived().subscribe( tick => {
             this.triggers = tick.triggers.filter( f => this.isDev || !f.predefined );
-            this.filteredTriggers = this.triggers.filter( trigger => this.selectedFolderId == null || this.selectedFolderId === trigger.folderId );
+            this.filteredTriggers = _.sortBy( this.triggers.filter( trigger => this.selectedFolderId == null || this.selectedFolderId === trigger.folderId ), trigger => trigger.name );
+            this.searchTerm = null;
         } );
 
         this.ipcService.getAppIsDev().subscribe( isDev => this.isDev = isDev );
@@ -138,8 +141,8 @@ export class TriggersComponent implements OnInit {
      */
     public toggleSelectedFolder( folderId: string ): void {
         this.selectedFolderId = this.selectedFolderId === folderId ? null : folderId;
-        // this.triggersTable?.renderRows();
-        this.filteredTriggers = this.triggers.filter( trigger => this.selectedFolderId == null || this.selectedFolderId === trigger.folderId );
+        this.filteredTriggers = _.sortBy( this.triggers.filter( trigger => this.selectedFolderId == null || this.selectedFolderId === trigger.folderId ), trigger => trigger.name );
+        this.searchTerm = null;
     }
 
 
@@ -635,7 +638,8 @@ export class TriggersComponent implements OnInit {
     private _removeFolderTriggers( folders: TriggerFolder[], folderId: string ): void {
 
         this.triggers.forEach( trigger => trigger.folderId = trigger.folderId === folderId ? null : trigger.folderId );
-        this.filteredTriggers = this.triggers.filter( trigger => this.selectedFolderId == null || this.selectedFolderId === trigger.folderId );
+        this.filteredTriggers = _.sortBy( this.triggers.filter( trigger => this.selectedFolderId == null || this.selectedFolderId === trigger.folderId ), trigger => trigger.name );
+        this.searchTerm = null;
 
         // Find the folder and if the folder has children, then remove the 
         // triggers from all descendants.
@@ -670,6 +674,20 @@ export class TriggersComponent implements OnInit {
         //             } );
         //     }
         // } );
+    }
+
+    public searchTriggers(): void {
+        if ( this.searchTerm ) {
+            this.selectedFolderId = null;
+            this.ipcService
+                .searchTriggers( this.searchTerm )
+                .subscribe( results => {
+                    this.triggerSearchResults = results;
+                    this.filteredTriggers = results;
+                } );
+        } else {
+            this.filteredTriggers = _.sortBy( this.triggers.filter( trigger => this.selectedFolderId == null || this.selectedFolderId === trigger.folderId ), trigger => trigger.name );
+        }
     }
 
 

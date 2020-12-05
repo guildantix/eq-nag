@@ -10,7 +10,9 @@ const nanoid = customAlphabet( alphabet, 16 );
 const ArrayUtilities = require( '../utilities/arrays' );
 const { FormControlDirective } = require( "@angular/forms" );
 const StringUtilities = require( "../utilities/string" );
+const Fuse = require( 'fuse.js' );
 
+/** @type {Fuse.fuseOptions_tags} */
 const fuseOptions_tags = {
     // isCaseSensitive: false,
     includeScore: true,
@@ -25,31 +27,14 @@ const fuseOptions_tags = {
     // ignoreLocation: false,
     // ignoreFieldNorm: false,
     keys: [
-        // "title",
-        // "author.firstName"
+        { name: 'name', weight: 1.0 },
+        { name: 'comments', weight: 0.9 },
+        { name: 'allakhazamUrl', weight: 0.9 },
+        { name: 'triggerId', weight: 0.9 },
+        { name: 'folderId', weight: 0.9 },
+        { name: 'capturePhrases.phrase', weight: 0.9 },
     ]
 };
-
-// const fuse = new Fuse(list, options);
-
-// // Change the pattern
-// const pattern = ""
-
-// fuse.search(pattern)
-
-// Output:
-// [
-//   {
-//     item: {
-//       title: "Old Man's War",
-//       author: {
-//         firstName: 'John',
-//         lastName: 'Scalzi'
-//       }
-//     },
-//     refIndex: 0
-//   }
-// ]
 
 class TriggerDatabaseStore extends Store {
 
@@ -350,6 +335,10 @@ class TriggerDatabaseStore extends Store {
 
         ipcMain.on( 'folders:update', ( event, folders ) => {
             event.sender.webContents.send( 'folders:update', this.updateFolders( folders ) );
+        } );
+
+        ipcMain.on( 'trigger:search', ( event, term ) => {
+            event.sender.webContents.send( 'trigger:search', this.searchTriggers( term ) );
         } );
 
     }
@@ -926,6 +915,51 @@ class TriggerDatabaseStore extends Store {
             // Save the changes to the data.
             this.processPredefinedTriggers();
             this.storeDataFile( this.#data );
+        }
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Searches through all triggers trying to find any match.  This is a fuzzy 
+     * search and the results are given in order of best match on top.
+     * 
+     * @param {string} term The search term to query.
+     */
+    searchTriggers( term ) {
+        let fuse = new Fuse( this.#data.triggers, fuseOptions_tags );
+
+        let results = fuse.search( term );
+
+
+        if ( results && results.length > 0 ) {
+
+            let scoreLimit = 0.85;
+            let scores = _.map( results, item => item.score );
+            let minScore = _.min( scores );
+
+            if ( minScore < 0.25 ) {
+                scoreLimit = 0.25;
+            } else if ( minScore < 0.50 ) {
+                scoreLimit = 0.50;
+            }
+
+            return _.map( results, fuseResult => {
+                let item = fuseResult.item;
+                item.score = fuseResult.score;
+                item.refIndex = fuseResult.refIndex;
+                return item;
+            } ).filter( item => item.score <= scoreLimit );
+
+        } else {
+            return [];
         }
     }
 

@@ -1,6 +1,11 @@
 <mat-toolbar>
     <span>Triggers</span>
     <span class="spacer"></span>
+    <mat-form-field style="width: 226px;">
+        <mat-label>Search</mat-label>
+        <input matInput [(ngModel)]="searchTerm" (ngModelChange)="searchTriggers()" />
+        <mat-hint>Query for triggers by name, description, phrase, etc...</mat-hint>
+    </mat-form-field>
     <button mat-button color="accent" (click)="showNewTriggerDialog()">New Trigger</button>
     <button mat-icon-button [matMenuTriggerFor]="menu" aria-label="Example icon-button with a menu">
         <mat-icon>more_vert</mat-icon>

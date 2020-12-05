@@ -302,6 +302,22 @@ export class IpcService {
         return obs;
     }
 
+    public searchTriggers( term: string ): Observable<TriggerModel[]> {
+        let obs: Observable<TriggerModel[]> = new Observable<TriggerModel[]>( ( observer: Observer<TriggerModel[]> ) => {
+            
+            this.ipc.once( 'trigger:search', ( e, triggers: TriggerModel[] ) => {
+                this.ngZone.run( () => {
+                    observer.next( triggers );
+                    observer.complete();
+                } );
+            } );
+            this.ipc.send( 'trigger:search', term );
+
+        } );
+
+        return obs;
+    }
+
     public updateTrigger( model: TriggerModel ): Observable<boolean> {
         let obs: Observable<boolean> = new Observable<boolean>( ( observer: Observer<boolean> ) => {
             
