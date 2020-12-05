@@ -394,7 +394,7 @@
 
                                                 </mat-tab>
                                                 <mat-tab label="Timer Ended">
-                                                    <div class="card-tab-content">
+                                                    <div class="card-tab-content" [appContextMenu]="getActionEndedCtxMenu(action)">
                                                         <mat-checkbox [(ngModel)]="action.remainAfterEnded" name="cbxRemainAfterEnded_{{i}}">Keep timer up</mat-checkbox>
                                                         <span *ngIf="action.remainAfterEnded">
                                                             for&nbsp;

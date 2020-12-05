@@ -40,6 +40,10 @@ export class NewTriggerDialogComponent implements OnInit {
 
         if ( this.data?.triggerId != null ) {
             this.url = this.data.allakhazamUrl;
+            let dotAction: TriggerAction = _.find( this.data.actions, ( action: TriggerAction ) => action.actionType === ActionTypes.DotTimer );
+            if ( dotAction ) {
+                this.overlayId = dotAction.overlayId;
+            }
         }
 
         this.ipcService.getOverlayWindows().subscribe( overlays => this.overlays = overlays );

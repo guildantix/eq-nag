@@ -1,52 +1,10 @@
 import { Component, ViewChild, ElementRef, OnInit } from '@angular/core';
 import * as _ from 'lodash';
-import { MatSnackBar, MatSnackBarRef, SimpleSnackBar } from '@angular/material/snack-bar';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { IpcService } from './ipc.service';
-import { DkpEntryModel, TriggerModel, OverlayWindowModel, FocusEffectSettings } from './core.model';
-import { VirtualTimeScheduler } from 'rxjs';
+import { DkpEntryModel, OverlayWindowModel, FocusEffectSettings } from './core.model';
 import { DialogService } from './dialogs/dialog.service';
-import { monitorEventLoopDelay } from 'perf_hooks';
 import { ScraperService } from './scraper.service';
-// import { NestedTreeControl } from '@angular/cdk/tree';
-// import { MatTreeNestedDataSource } from '@angular/material/tree';
-
-// interface FoodNode {
-//     name: string;
-//     active: boolean;
-//     children?: FoodNode[];
-// }
-
-// const TREE_DATA: FoodNode[] = [
-//     {
-//         name: 'Fruit',
-//         active: true,
-//         children: [
-//             { name: 'Apple', active: true },
-//             { name: 'Banana', active: false },
-//             { name: 'Fruit loops', active: true },
-//         ]
-//     }, {
-//         name: 'Vegetables',
-//         active: true,
-//         children: [
-//             {
-//                 name: 'Green',
-//                 active: true,
-//                 children: [
-//                     { name: 'Broccoli', active: true },
-//                     { name: 'Brussels sprouts', active: true },
-//                 ]
-//             }, {
-//                 name: 'Orange',
-//                 active: true,
-//                 children: [
-//                     { name: 'Pumpkins', active: true },
-//                     { name: 'Carrots', active: true },
-//                 ]
-//             },
-//         ]
-//     },
-// ];
 
 @Component( {
     selector: 'app-main',
@@ -55,8 +13,7 @@ import { ScraperService } from './scraper.service';
 } )
 export class MainComponent implements OnInit {
 
-    // public treeControl = new NestedTreeControl<FoodNode>( node => node.children );
-    // public dataSource = new MatTreeNestedDataSource<FoodNode>();
+    
     public msg: string;
     public dkpEntries: DkpEntryModel[] = [];
     public version: string;
@@ -65,13 +22,11 @@ export class MainComponent implements OnInit {
     public voiceIndex: number = null;
     public enableFct: boolean = false;
     public voiceOptions: SpeechSynthesisVoice[] = [];
-    public triggers: TriggerModel[] = [];
     public overlays: OverlayWindowModel[] = [];
     public damageDealtOverlayId: string;
     public damageTakenOverlayId: string;
     public focusEffectSettings: FocusEffectSettings = new FocusEffectSettings();
     public isDev: boolean = false;
-    // hasChild = (_: number, node: FoodNode) => !!node.children && node.children.length > 0;
     public _testDealtOverlayId: string = 'wT8389KxT5zlsaiE';
     public _testTakenOverlayId: string = 'wT8389KxT5zlsaiE';
     public _testId: number;
@@ -83,6 +38,7 @@ export class MainComponent implements OnInit {
         '[Sat Mar 14 13:48:08 2020] You slash an aneuk fleshthreader for 10742 points of damage.',
         '[Sat Mar 14 13:49:08 2020] You slash a kyv hunter for 29027 points of damage. (Lucky Critical)',
     ];
+    public movingFolderSource: string = null;
 
     @ViewChild( 'fileSelector' ) private fileSelector: ElementRef<HTMLInputElement>;
 
@@ -94,7 +50,6 @@ export class MainComponent implements OnInit {
         speechSynthesis.onvoiceschanged = () => {
             this.voiceOptions = speechSynthesis.getVoices();
         };
-        // this.dataSource.data = TREE_DATA;
     }
 
     ngOnInit(): void {
@@ -102,7 +57,6 @@ export class MainComponent implements OnInit {
             this.dkpEntries = data.dkpEntries;
             this.logFile = data.logFile;
             this.voiceIndex = data.voiceIndex;
-            this.triggers = _.filter( data.triggers, f => this.isDev || !f.predefined );
             this.overlays = data.overlays;
             this.enableFct = data.enableFct;
             this.damageDealtOverlayId = data.damageDealtOverlayId;
@@ -110,7 +64,6 @@ export class MainComponent implements OnInit {
             this.focusEffectSettings.hasExtendedDotFocus = data.hasExtendedDotFocus;
             this.focusEffectSettings.extendedDotFocusPercent = data.extendedDotFocusPercent;
             this.focusEffectSettings.extendedDotFocusDecayLevel = data.extendedDotFocusDecayLevel;
-            // console.log( 'data', data );
         } );
 
         this.ipcService.dkpEntryAdded().subscribe( model => {
@@ -199,25 +152,6 @@ export class MainComponent implements OnInit {
         this.ipcService.clearDkpLog();
     }
 
-    showNewTriggerDialog(): void {
-        this.ipcService.showNewTriggerDialog();
-    }
-
-    showEditTriggerDialog( triggerId: string ): void {
-        this.ipcService.showEditTriggerDialog( triggerId );
-    }
-
-    deleteTrigger( index: number ): void {
-        this.dialogService.showConfirmDialog(
-            `Are you sure you want to delete ${this.triggers[ index ].name}?`,
-            'Click "Yes" to delete this trigger.', 'Click "No" to close this dialog without deleting this trigger.',
-            confirmed => {
-                if ( confirmed === true ) {
-                    this.ipcService.deleteTrigger( this.triggers[ index ].triggerId ).subscribe();
-                }
-            } );
-    }
-
     showNewOverlayDialog(): void {
         this.dialogService
             .showOverlayDetailsDialog( new OverlayWindowModel() )
@@ -249,12 +183,13 @@ export class MainComponent implements OnInit {
             } );
     }
 
-    public showNewDotTimerDialog(): void {
-        this.dialogService.showNewDotTimerDialog();
-    }
-
     public updateFocusEffectSettings(): void {
         this.ipcService.updateFocusEffectSettings( this.focusEffectSettings );
+    }
+
+    public selectMoveSourceFolder( target: any ): void {
+        console.log( 'folder source', target );
+        this.movingFolderSource = target;
     }
 
     public testFn(): void {
@@ -308,7 +243,7 @@ export class MainComponent implements OnInit {
         // oReq.open( "GET", url );
         // oReq.send();
         // this.httpClient.get( url ).subscribe( f => { 
-        //     console.log( 'testing' );
+        //     console.log( 'testingasdf' );
         //  } );
         // // this.ipcService.sendTestModel( `Target Name --== Dot Name ==--` );
         // this.ipcService.sendTestFn( '[Fri Oct 02 09:34:19 2020] You begin casting Funeral Pyre of Kelador.' );

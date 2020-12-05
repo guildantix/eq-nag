@@ -26,6 +26,15 @@ export enum CharacterClasses {
     Wizard = 'WIZ',
 }
 
+export class TriggerFolder {
+    public folderId: string;
+    public name: string;
+    public expanded: boolean = false;
+    public active: boolean = true;
+    public comments: string;
+    public children: TriggerFolder[] = [];
+}
+
 export class CharacterClassLevel {
     public class: string;
     public level: number;
@@ -41,6 +50,7 @@ export class BasicError {
 export class TriggerModel {
     
     public triggerId: string = null;
+    public folderId: string = null;
     public name: string = '';
     public capturePhrases: CapturePhrase[] = [];
     public comments: string = '';

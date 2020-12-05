@@ -2,7 +2,7 @@
 <mat-accordion class="example-headers-align">
     <mat-expansion-panel hideToggle *ngFor="let character of characters; let i = index" [expanded]="selectedTabIndex === i">
       <mat-expansion-panel-header>
-        <mat-panel-title>{{character.name}}</mat-panel-title>
+        <mat-panel-title>{{character.name}}<small>{{character.class | className}}</small></mat-panel-title>
         <mat-panel-description>{{character.server}}<mat-icon *ngIf="activeLogFilesDictionary[character.characterId] === true" color="accent">cast_connected</mat-icon><mat-icon *ngIf="activeLogFilesDictionary[character.characterId] !== true">cast</mat-icon></mat-panel-description>
       </mat-expansion-panel-header>
 

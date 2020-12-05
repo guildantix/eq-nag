@@ -12,6 +12,9 @@ import { HttpClientModule } from '@angular/common/http';
 import { ScraperService } from './scraper.service';
 import { CharactersListComponent } from './characters-list/characters-list.component';
 import { NgxElectronModule } from 'ngx-electron';
+import { ContextMenuModule } from './context-menu/context-menu.module';
+import { TriggersComponent } from './triggers/triggers.component';
+import { ClassNamePipe } from './pipes/class-name.pipe';
 
 @NgModule( {
     imports: [
@@ -23,9 +26,12 @@ import { NgxElectronModule } from 'ngx-electron';
         BrowserAnimationsModule,
         RouterModule.forRoot( appRoutes, { enableTracing: false, useHash: true } ),
         HttpClientModule,
+        ContextMenuModule,
     ],
     declarations: [
         AppComponent,
+        ClassNamePipe,
+        TriggersComponent,
         MainComponent,
         CharactersListComponent,
     ],

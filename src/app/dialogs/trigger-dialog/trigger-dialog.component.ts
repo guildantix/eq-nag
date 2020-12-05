@@ -13,6 +13,8 @@ import { ColorUtility, ImageUtility } from 'src/app/utilities';
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const nanoid = customAlphabet( alphabet, 16 );
 import * as _ from 'lodash';
+import { ContextMenuModel } from 'src/app/context-menu/context-menu.model';
+import { ContextService } from 'src/app/context-menu/context.service';
 
 @Component( {
     selector: 'app-trigger-dialog',
@@ -41,6 +43,44 @@ export class TriggerDialogComponent implements OnInit {
     public Math: typeof Math = Math;
     public isDev: boolean = false;
 
+    // public actionEndedCtxMenu: ContextMenuModel[] = [ <ContextMenuModel>{
+    //     label: 'Click Me Now',
+    //     action: () => this.click(),
+    //     disabled: () => false,
+    //     hide: () => false,
+    //     matIcon: 'content_copy',
+    // }, <ContextMenuModel>{
+    //     label: 'Paste',
+    //     action: () => this.click(),
+    //     disabled: () => false,
+    //     hide: () => false,
+    //     matIcon: 'content_paste',
+    // }, <ContextMenuModel>{
+    //     label: '-',
+    //     action: () => { },
+    //     disabled: () => false,
+    //     hide: () => false,
+    //     // matIcon: 'content_paste',
+    // }, <ContextMenuModel>{
+    //     label: 'Other',
+    //     action: () => this.click(),
+    //     disabled: () => false,
+    //     hide: () => false,
+    //     // matIcon: 'content_paste',
+    // }, <ContextMenuModel>{
+    //     label: 'Other',
+    //     action: () => this.click(),
+    //     disabled: () => false,
+    //     hide: () => false,
+    //     // matIcon: 'content_paste',
+    // }, <ContextMenuModel>{
+    //     label: 'Other',
+    //     action: () => this.click(),
+    //     disabled: () => false,
+    //     hide: () => false,
+    //     // matIcon: 'content_paste',
+    // }];
+
     public get alertOverlays(): OverlayWindowModel[] {
         return this.overlays.filter( f => f.overlayType === 'Alert' );
     }
@@ -59,7 +99,7 @@ export class TriggerDialogComponent implements OnInit {
 
     private onIconFileSelected: ( e: any ) => void = null;
 
-    constructor( private ipcService: IpcService, private route: ActivatedRoute, private dialogService: DialogService, private snackBar: MatSnackBar ) { }
+    constructor( private ipcService: IpcService, private route: ActivatedRoute, private dialogService: DialogService, private snackBar: MatSnackBar, private contextService: ContextService ) { }
 
     ngOnInit() {
         this.model = new TriggerModel();
@@ -333,6 +373,30 @@ export class TriggerDialogComponent implements OnInit {
             action();
         }
         
+    }
+
+    public getActionEndedCtxMenu( action: TriggerAction ): ContextMenuModel[] {
+        return [ <ContextMenuModel>{
+            label: 'Copy Timer Ended Properties',
+            action: () => this.contextService.copyActionEndedProperties( action ),
+            disabled: () => false,
+            hide: () => false,
+            matIcon: 'content_copy',
+        }, <ContextMenuModel>{
+            label: 'Paste Timer Ended Properties',
+            action: () => this.contextService.pasteActionEndedProperties( action ),
+            disabled: () => !this.contextService.hasActionEnded,
+            hide: () => false,
+            matIcon: 'content_paste',
+        } ];
+    }
+
+    public copyActionEndedProperties( action: TriggerAction ): void {
+        this.contextService.copyActionEndedProperties( action );
+    }
+
+    public pasteActionEndedProperties( action: TriggerAction ): void {
+        this.contextService.pasteActionEndedProperties( action );
     }
 
 }

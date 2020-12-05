@@ -22,6 +22,18 @@ mat-toolbar {
     small {
         font-size: small;
     }
+    mat-form-field {
+        mat-hint {
+            color: #808080;
+        }
+        input {
+            color: white;
+        }
+        // mat-label {
+            color: #808080;
+        // }
+        font-size: 12px;
+    }
 }
 
 div.tab-content {

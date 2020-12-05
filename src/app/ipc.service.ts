@@ -2,7 +2,7 @@ import { Injectable, NgZone } from '@angular/core';
 import { IpcRenderer } from 'electron';
 import { Observable, Observer } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
-import { DataTickModel, DkpEntryModel, TriggerModel, OverlayWindowModel, ActionTypes, FocusEffectSettings, CharacterModel, BasicError } from './core.model';
+import { DataTickModel, DkpEntryModel, TriggerModel, OverlayWindowModel, ActionTypes, FocusEffectSettings, CharacterModel, BasicError, TriggerFolder } from './core.model';
 
 @Injectable()
 export class IpcService {
@@ -302,6 +302,22 @@ export class IpcService {
         return obs;
     }
 
+    public searchTriggers( term: string ): Observable<TriggerModel[]> {
+        let obs: Observable<TriggerModel[]> = new Observable<TriggerModel[]>( ( observer: Observer<TriggerModel[]> ) => {
+            
+            this.ipc.once( 'trigger:search', ( e, triggers: TriggerModel[] ) => {
+                this.ngZone.run( () => {
+                    observer.next( triggers );
+                    observer.complete();
+                } );
+            } );
+            this.ipc.send( 'trigger:search', term );
+
+        } );
+
+        return obs;
+    }
+
     public updateTrigger( model: TriggerModel ): Observable<boolean> {
         let obs: Observable<boolean> = new Observable<boolean>( ( observer: Observer<boolean> ) => {
             
@@ -318,6 +334,29 @@ export class IpcService {
         return obs;
     }
 
+    /**
+     * Updates all given triggers.
+     * 
+     * @returns Returns a list of triggers that failed to update.
+     * 
+     * @param triggers The list of triggers to update.
+     */
+    public updateTriggers( triggers: TriggerModel[] ): Observable<TriggerModel[]> {
+        let obs: Observable<TriggerModel[]> = new Observable<TriggerModel[]>( ( observer: Observer<TriggerModel[]> ) => {
+            
+            this.ipc.once( 'trigger:update:batch', ( e, failed: TriggerModel[] ) => {
+                this.ngZone.run( () => {
+                    observer.next( failed );
+                    observer.complete();
+                } );
+            } );
+            this.ipc.send( 'trigger:update:batch', triggers );
+
+        } );
+
+        return obs;
+    }
+
     public deleteTrigger( triggerId: string ): Observable<boolean> {
         let obs: Observable<boolean> = new Observable<boolean>( ( observer: Observer<boolean> ) => {
             
@@ -328,6 +367,38 @@ export class IpcService {
                 } );
             } );
             this.ipc.send( 'trigger:delete', triggerId );
+
+        } );
+
+        return obs;
+    }
+
+    public getTriggerFolders(): Observable<TriggerFolder[]> {
+        let obs: Observable<TriggerFolder[]> = new Observable<TriggerFolder[]>( ( observer: Observer<TriggerFolder[]> ) => {
+            
+            this.ipc.once( 'folders:get', ( e, folders: TriggerFolder[] ) => {
+                this.ngZone.run( () => {
+                    observer.next( folders );
+                    observer.complete();
+                } );
+            } );
+            this.ipc.send( 'folders:get', null );
+
+        } );
+
+        return obs;
+    }
+
+    public updateTriggerFolders( folders: TriggerFolder[] ): Observable<TriggerFolder[]> {
+        let obs: Observable<TriggerFolder[]> = new Observable<TriggerFolder[]>( ( observer: Observer<TriggerFolder[]> ) => {
+            
+            this.ipc.once( 'folders:update', ( e, updatedFolders: TriggerFolder[] ) => {
+                this.ngZone.run( () => {
+                    observer.next( updatedFolders );
+                    observer.complete();
+                } );
+            } );
+            this.ipc.send( 'folders:update', folders );
 
         } );
 

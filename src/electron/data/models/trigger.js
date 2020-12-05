@@ -38,6 +38,21 @@ var OperatorTypes = {
     GreaterThan: 8,
 }
 
+class TriggerFolder {
+    /** @type {string} */
+    folderId;
+    /** @type {string} */
+    name;
+    /** @type {boolean} */
+    expanded;
+    /** @type {boolean} */
+    active;
+    /** @type {string} */
+    comments;
+    /** @type {TriggerFolder[]} */
+    children = [];
+}
+
 class CharacterClassLevel {
     /** @type {string} */
     class;
@@ -171,6 +186,7 @@ class TriggerCondition {
 class Trigger {
     
     triggerId = null;
+    folderId = null;
     name = '';
     /** @type CapturePhrase[] */
     capturePhrases = [];
@@ -190,4 +206,4 @@ class Trigger {
     allakhazamUrl = null;
 }
 
-module.exports = { Trigger, TriggerAction, ActionTypes, CapturePhrase, TriggerConditionTypes, OperatorTypes, Phrase };
+module.exports = { Trigger, TriggerAction, ActionTypes, CapturePhrase, TriggerConditionTypes, OperatorTypes, Phrase, TriggerFolder };

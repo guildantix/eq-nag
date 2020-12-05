@@ -35,3 +35,19 @@ mat-panel-description {
     text-transform: capitalize;
 
 }
+
+mat-panel-title {
+    small {
+        margin-left: 15px;
+        font-size: 18px;
+        font-weight: 100;
+        color: #ffffff3b;
+        font-family: 'Open Sans Condensed';
+        margin-top: -5px;
+        float: right;
+        margin-right: 115px;
+        margin-left: auto;
+        margin-top: -5px;
+        width: 95px;
+    }
+}
