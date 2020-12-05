@@ -12,6 +12,8 @@ import { NewTriggerFolderDialogComponent } from './new-trigger-folder-dialog/new
 import { SelectTriggerFolderDialogComponent } from './select-trigger-folder-dialog/select-trigger-folder-dialog.component';
 import { InputDialogComponent } from './input-dialog/input-dialog.component';
 import { InputDialogModel } from './input-dialog/input-dialog.model';
+import { NotificationDialogModel, NotificationTypes } from './notification-dialog/notification-dialog.model';
+import { NotificationDialogComponent } from './notification-dialog/notification-dialog.component';
 
 @Injectable()
 export class DialogService {
@@ -263,6 +265,19 @@ export class DialogService {
             width: '450px',
             data: data
         } ).afterClosed();
+    }
+    
+    public showWarningDialog( title: string, message: string | string[] ): void {
+        let data: NotificationDialogModel = new NotificationDialogModel();
+        
+        data.title = title;
+        data.message = message;
+        data.notificationType = NotificationTypes.Warning;
+
+        this.dialog.open( NotificationDialogComponent, {
+            width: '450px',
+            data: data
+        } ).afterClosed().subscribe();
     }
     
 }
