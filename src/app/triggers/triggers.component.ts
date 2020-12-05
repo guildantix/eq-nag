@@ -659,21 +659,24 @@ export class TriggersComponent implements OnInit {
     }
 
     public moveAllTriggersInFolder( folderId: string ): void {
-        this.dialogService.showWarningDialog( 'Warning!', [ 'Here is some warning texts.', 'Here is some more warning text!', 'Here is some more warning text!', 'Here is some more warning text!', 'Here is some more warning text!', 'Here is some more warning text!' ] );
-        // this.dialogService.showSelectTriggerFolderDialog( folderId ).subscribe( targetFolderId => {
-        //     if ( targetFolderId ) {
-        //         this.triggers.forEach( trigger => {
-        //             if ( trigger.folderId === folderId ) {
-        //                 trigger.folderId = targetFolderId;
-        //             }
-        //         } );
-        //         this.ipcService
-        //             .updateTriggers( this.triggers )
-        //             .subscribe( failed => {
-                    
-        //             } );
-        //     }
-        // } );
+        this.dialogService.showSelectTriggerFolderDialog().subscribe( targetFolderId => {
+            if ( targetFolderId ) {
+                this.triggers.forEach( trigger => {
+                    if ( trigger.folderId === folderId ) {
+                        trigger.folderId = targetFolderId;
+                    }
+                } );
+                this.ipcService
+                    .updateTriggers( this.triggers )
+                    .subscribe( failed => {
+                        if ( failed?.length > 0 ) {
+                            let failedNames: string[] = _.map( failed, trigger => trigger.name );
+                            failedNames.unshift( 'The following triggers failed to update.', '' );
+                            this.dialogService.showWarningDialog( 'Warning!', failedNames );
+                        }
+                    } );
+            }
+        } );
     }
 
 
@@ -684,7 +687,7 @@ export class TriggersComponent implements OnInit {
 
 
 
-    
+
     /**
      * Searches the trigger store for triggers that match the current search 
      * query.
