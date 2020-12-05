@@ -676,6 +676,19 @@ export class TriggersComponent implements OnInit {
         // } );
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Searches the trigger store for triggers that match the current search 
+     * query.
+     */
     public searchTriggers(): void {
         if ( this.searchTerm ) {
             this.selectedFolderId = null;
