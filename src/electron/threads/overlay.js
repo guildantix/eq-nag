@@ -105,7 +105,9 @@ function Overlay() {
                 if ( overlayGroups.hasOwnProperty( key ) ) {
                     
                     let i = _.findIndex( overlayGroups[ key ].components, comp => comp.instanceId === instanceId );
-                    overlayGroups[ key ].components[ i ].removeComponent();
+                    if ( i > -1 ) {
+                        overlayGroups[ key ].components[ i ].removeComponent();
+                    }
                     
                 }
             }
