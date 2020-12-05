@@ -9,6 +9,47 @@ const idLen = 16;
 const nanoid = customAlphabet( alphabet, 16 );
 const ArrayUtilities = require( '../utilities/arrays' );
 const { FormControlDirective } = require( "@angular/forms" );
+const StringUtilities = require( "../utilities/string" );
+
+const fuseOptions_tags = {
+    // isCaseSensitive: false,
+    includeScore: true,
+    // shouldSort: true,
+    // includeMatches: false,
+    // findAllMatches: false,
+    // minMatchCharLength: 1,
+    // location: 0,
+    // threshold: 0.6,
+    // distance: 100,
+    // useExtendedSearch: false,
+    // ignoreLocation: false,
+    // ignoreFieldNorm: false,
+    keys: [
+        // "title",
+        // "author.firstName"
+    ]
+};
+
+// const fuse = new Fuse(list, options);
+
+// // Change the pattern
+// const pattern = ""
+
+// fuse.search(pattern)
+
+// Output:
+// [
+//   {
+//     item: {
+//       title: "Old Man's War",
+//       author: {
+//         firstName: 'John',
+//         lastName: 'Scalzi'
+//       }
+//     },
+//     refIndex: 0
+//   }
+// ]
 
 class TriggerDatabaseStore extends Store {
 
@@ -283,6 +324,12 @@ class TriggerDatabaseStore extends Store {
         ipcMain.on( 'trigger:update', ( event, trigger ) => {
             let updated = this.update( trigger );
             event.sender.webContents.send( 'trigger:update', updated );
+            sendTick();
+        } );
+
+        ipcMain.on( 'trigger:update:batch', ( event, triggers ) => {
+            let failed = this.updateAll( triggers );
+            event.sender.webContents.send( 'trigger:update:batch', failed );
             sendTick();
         } );
 
@@ -700,6 +747,47 @@ class TriggerDatabaseStore extends Store {
             return false;
         }
         
+    }
+    
+
+
+
+
+
+
+
+
+
+    /**
+     * Updates the list of given triggers.
+     * 
+     * @returns {TriggerModel[]} Returns a list of triggers that failed to update.
+     * 
+     * @param {TriggerModel[]} triggers The triggers to update.
+     */
+    updateAll( triggers ) {
+
+        /** @type {TriggerModel[]} */
+        let failed = [];
+
+        triggers.forEach( trigger => {
+            if ( StringUtilities.isNullOrWhitespace( trigger.triggerId ) ) {
+                let newId = this.add( trigger );
+                
+                if ( StringUtilities.isNullOrWhitespace( newId ) ) {
+                    failed.push( trigger );
+                } else {
+                    trigger.triggerId = newId;
+                }
+
+            } else {
+                if ( !this.update( trigger ) ) {
+                    failed.push( trigger );
+                }
+            }
+        } );
+        
+        return failed;
     }
 
 

@@ -318,6 +318,29 @@ export class IpcService {
         return obs;
     }
 
+    /**
+     * Updates all given triggers.
+     * 
+     * @returns Returns a list of triggers that failed to update.
+     * 
+     * @param triggers The list of triggers to update.
+     */
+    public updateTriggers( triggers: TriggerModel[] ): Observable<TriggerModel[]> {
+        let obs: Observable<TriggerModel[]> = new Observable<TriggerModel[]>( ( observer: Observer<TriggerModel[]> ) => {
+            
+            this.ipc.once( 'trigger:update:batch', ( e, failed: TriggerModel[] ) => {
+                this.ngZone.run( () => {
+                    observer.next( failed );
+                    observer.complete();
+                } );
+            } );
+            this.ipc.send( 'trigger:update:batch', triggers );
+
+        } );
+
+        return obs;
+    }
+
     public deleteTrigger( triggerId: string ): Observable<boolean> {
         let obs: Observable<boolean> = new Observable<boolean>( ( observer: Observer<boolean> ) => {
             

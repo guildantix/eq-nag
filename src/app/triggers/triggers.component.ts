@@ -654,6 +654,24 @@ export class TriggersComponent implements OnInit {
         
     }
 
+    public moveAllTriggersInFolder( folderId: string ): void {
+        this.dialogService.showWarningDialog( 'Warning!', [ 'Here is some warning texts.', 'Here is some more warning text!', 'Here is some more warning text!', 'Here is some more warning text!', 'Here is some more warning text!', 'Here is some more warning text!' ] );
+        // this.dialogService.showSelectTriggerFolderDialog( folderId ).subscribe( targetFolderId => {
+        //     if ( targetFolderId ) {
+        //         this.triggers.forEach( trigger => {
+        //             if ( trigger.folderId === folderId ) {
+        //                 trigger.folderId = targetFolderId;
+        //             }
+        //         } );
+        //         this.ipcService
+        //             .updateTriggers( this.triggers )
+        //             .subscribe( failed => {
+                    
+        //             } );
+        //     }
+        // } );
+    }
+
 
 
 
@@ -678,6 +696,12 @@ export class TriggersComponent implements OnInit {
         }, {
             label: 'Change parent',
             action: () => this.selectParentFolder( folderId ),
+            disabled: () => false,
+            hide: () => false,
+            matIcon: 'folder_open',
+        }, {
+            label: 'Move all triggers',
+            action: () => this.moveAllTriggersInFolder( folderId ),
             disabled: () => false,
             hide: () => false,
             matIcon: 'folder_open',
