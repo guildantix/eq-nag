@@ -234,8 +234,8 @@ export class IpcService {
         this.ipc.send( 'dkp:reset' );
     }
 
-    public showNewTriggerDialog(): void {
-        this.ipc.send( 'trigger:dialog:new' );
+    public showNewTriggerDialog( folderId?: string ): void {
+        this.ipc.send( 'trigger:dialog:new', folderId );
     }
 
     public showEditTriggerDialog( triggerId: string ): void {

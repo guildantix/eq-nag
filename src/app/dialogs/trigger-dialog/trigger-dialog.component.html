@@ -283,22 +283,12 @@
                                         <div *ngIf="action.actionType === actionTypes.Timer">
 
                                             <app-trigger-action-timer [action]="action" [overlayOptions]="timerOverlays" [alertOverlays]="alertOverlays"></app-trigger-action-timer>
-                                            <!-- <mat-form-field>
-                                                <mat-label>Overlay Window</mat-label>
-                                                <mat-select [(ngModel)]="action.overlayId" name="ddlLogOverlay_{{i}}">
-                                                    <mat-option *ngFor="let option of timerOverlays" [value]="option.overlayId">{{option.name}}</mat-option>
-                                                </mat-select>
-                                            </mat-form-field>
 
-                                            <mat-form-field>
-                                                <mat-label>Timer Name</mat-label>
-                                                <input matInput [(ngModel)]="action.displayText" name="txtDisplayText_{{i}}" />
-                                            </mat-form-field>
+                                        </div>
 
-                                            <mat-form-field>
-                                                <mat-label>Duration (in seconds)</mat-label>
-                                                <input matInput [(ngModel)]="action.duration" name="txtDisplayText_Duration_{{i}}" type="number" />
-                                            </mat-form-field> -->
+                                        <div *ngIf="action.actionType === actionTypes.Countdown">
+
+                                            <app-trigger-action-timer [action]="action" [overlayOptions]="timerOverlays" [alertOverlays]="alertOverlays"></app-trigger-action-timer>
 
                                         </div>
 

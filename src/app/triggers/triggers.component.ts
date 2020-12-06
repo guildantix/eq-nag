@@ -88,7 +88,7 @@ export class TriggersComponent implements OnInit {
      * Displays the new trigger dialog.
      */
     public showNewTriggerDialog(): void {
-        this.ipcService.showNewTriggerDialog();
+        this.ipcService.showNewTriggerDialog( this.selectedFolderId );
     }
 
 

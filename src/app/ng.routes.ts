@@ -69,6 +69,7 @@ import { OverlayEditorDialogComponent } from './dialogs/overlay-editor-dialog/ov
 let _routes: Routes = [
     { path: 'dashboard', component: MainComponent },
     { path: 'trigger/new', component: TriggerDialogComponent },
+    { path: 'trigger/new/:folderId', component: TriggerDialogComponent },
     { path: 'trigger/:id', component: TriggerDialogComponent },
     { path: 'overlay/:id', component: OverlayEditorDialogComponent },
     // { path: '', redirectTo: '/users', pathMatch: 'full', canActivate: [ Guard ] }, // If the user is logged in, the Guard will allow the navigation and the user will be redirected to the user list.

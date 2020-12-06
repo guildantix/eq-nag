@@ -36,50 +36,13 @@ export class TriggerDialogComponent implements OnInit {
     public actionTableColumns = [ 'number', 'actionType', 'delete' ];
     public conditionTableColumns = [ 'variable', 'operator', 'value', 'delete' ];
     public triggerId: string = null;
+    public folderId: string = null;
     public actionTypes: typeof ActionTypes = ActionTypes;
     public operatorTypes: typeof OperatorTypes = OperatorTypes;
     public overlays: OverlayWindowModel[] = [];
     public storedVariables: string[] = [];
     public Math: typeof Math = Math;
     public isDev: boolean = false;
-
-    // public actionEndedCtxMenu: ContextMenuModel[] = [ <ContextMenuModel>{
-    //     label: 'Click Me Now',
-    //     action: () => this.click(),
-    //     disabled: () => false,
-    //     hide: () => false,
-    //     matIcon: 'content_copy',
-    // }, <ContextMenuModel>{
-    //     label: 'Paste',
-    //     action: () => this.click(),
-    //     disabled: () => false,
-    //     hide: () => false,
-    //     matIcon: 'content_paste',
-    // }, <ContextMenuModel>{
-    //     label: '-',
-    //     action: () => { },
-    //     disabled: () => false,
-    //     hide: () => false,
-    //     // matIcon: 'content_paste',
-    // }, <ContextMenuModel>{
-    //     label: 'Other',
-    //     action: () => this.click(),
-    //     disabled: () => false,
-    //     hide: () => false,
-    //     // matIcon: 'content_paste',
-    // }, <ContextMenuModel>{
-    //     label: 'Other',
-    //     action: () => this.click(),
-    //     disabled: () => false,
-    //     hide: () => false,
-    //     // matIcon: 'content_paste',
-    // }, <ContextMenuModel>{
-    //     label: 'Other',
-    //     action: () => this.click(),
-    //     disabled: () => false,
-    //     hide: () => false,
-    //     // matIcon: 'content_paste',
-    // }];
 
     public get alertOverlays(): OverlayWindowModel[] {
         return this.overlays.filter( f => f.overlayType === 'Alert' );
@@ -104,6 +67,7 @@ export class TriggerDialogComponent implements OnInit {
         this.route.params.subscribe( params => {
             
             this.triggerId = params[ 'id' ];
+            this.folderId = params[ 'folderId' ];
 
             if ( this.triggerId != null ) {
                 this.ipcService.getTrigger( this.triggerId ).subscribe( trigger => {
@@ -252,6 +216,7 @@ export class TriggerDialogComponent implements OnInit {
 
         } );
         if ( this.triggerId == null ) {
+            this.model.folderId = this.folderId?.length > 0 ? this.folderId : null;
             this.ipcService.createNewTrigger( this.model ).subscribe( triggerId => { } );
             this.closeModal();
         } else {

@@ -46,7 +46,11 @@ class WindowManager {
                     devTools: app.isDev(),
                 }
             } );
-            triggerWindow.loadURL( `file://${this.#dirname}/dist/index.html#/trigger/new` );
+            let url = `file://${this.#dirname}/dist/index.html#/trigger/new`;
+            if ( arg ) {
+                url += `/${arg}`;
+            }
+            triggerWindow.loadURL( url );
             triggerWindow.once( "ready-to-show", () => {
                 triggerWindow.show();
             } );
