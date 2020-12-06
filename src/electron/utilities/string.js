@@ -93,6 +93,9 @@ function parseConditionResultsToLiteral( value, conditionResults ) {
 }
 
 function parseMatchesToLiteral( value, matches ) {
+    if ( isNullOrWhitespace( value ) ) {
+        return value;
+    }
     // \${(.[^}]*)}     Your ${SpellBeingCast} spell is interrupted.
     //                      Full match	47-63	{SpellBeingCast}
     //                      Group 1.	n/a	SpellBeingCast

@@ -564,8 +564,8 @@ function parseLogEntries( raw, simulating ) {
 
                         clearStoredVariable( action.variableName, res.result.groups != null ? res.result.groups[ action.variableName ] : trigger._conditionResults[ action.variableName ] );
 
-                    } else if ( action.actionType === ActionTypes.Timer ) {
-                    /* --== Start a Timer ==-- */
+                    } else if ( action.actionType === ActionTypes.Timer || action.actionType === ActionTypes.Countdown ) {
+                    /* --== Start a Timer/Countdown ==-- */
                         
                         // ${target} has been slain by (.+?)!
                         let comp = new OverlayComponent();

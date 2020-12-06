@@ -264,7 +264,7 @@ function render( comp ) {
         }, comp.action.duration * 1000 );
         overlayComponents.push( comp );
 
-    } else if ( comp.action.actionType === ActionTypes.Timer ) {
+    } else if ( comp.action.actionType === ActionTypes.Timer || comp.action.actionType === ActionTypes.Countdown ) {
         if ( groupByTarget ) {
             let group = getTimerGroup( contentArea, 'General' );
 
@@ -641,7 +641,11 @@ function applyTimerSettings( contentArea, comp ) {
 
         comp.timeRemaining = comp.action.duration - ( comp.action.duration * perc );
 
-        comp.dom.querySelector( 'div.determinate' ).style.width = `${perc * 100}%`;
+        if ( comp.action.actionType === ActionTypes.Countdown ) {
+            comp.dom.querySelector( 'div.determinate' ).style.width = `${100 - ( perc * 100 )}%`;
+        } else {
+            comp.dom.querySelector( 'div.determinate' ).style.width = `${perc * 100}%`;
+        }
 
         if ( showRemainingDuration || comp.action.showRemainingDuration ) {
             comp.dom.querySelector( 'span.time-remaining' ).innerHTML = `(${Math.ceil( comp.timeRemaining )})&nbsp;`;
