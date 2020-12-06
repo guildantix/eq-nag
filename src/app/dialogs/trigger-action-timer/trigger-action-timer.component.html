@@ -23,6 +23,16 @@
 
             <p><mat-checkbox [(ngModel)]="action.showRemainingDuration" name="cbxShowTimeRemaining">Show the time remaining</mat-checkbox></p>
 
+            <p><mat-checkbox [(ngModel)]="action.repeatTimer" name="cbxRepeatTimer">Repeat timer</mat-checkbox></p>
+
+            <div style="padding-left: 60px;margin-bottom: 30px;" *ngIf="action.repeatTimer">
+                <mat-form-field>
+                    <mat-label>Repeat count</mat-label>
+                    <input matInput type="number" [(ngModel)]="action.repeatCount" name="txtRepeatCount" />
+                    <mat-hint>Leave blank to repeat indefinitely</mat-hint>
+                </mat-form-field>
+            </div>
+
             <div>
                 <mat-checkbox [(ngModel)]="action.useCustomColor" name="cbxUseCustomColor">Use color</mat-checkbox>
                 <app-color-picker [(ngModel)]="action.overrideTimerColor" name="acpOverrideTimerColor" *ngIf="action.useCustomColor" [inline]="true"></app-color-picker>

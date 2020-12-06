@@ -673,7 +673,7 @@ function applyTimerSettings( contentArea, comp ) {
 
         }
         
-        if ( comp.timeRemaining <= 0 && ( comp.action.remainAfterEnded || comp.action.notifyWhenEnded ) ) {
+        if ( comp.timeRemaining <= 0 && !comp.action.repeatTimer && ( comp.action.remainAfterEnded || comp.action.notifyWhenEnded ) ) {
             // If the timer has ended, but is required to remain for a 
             // duration, apply the ended conditions to the timer.
 
@@ -693,18 +693,92 @@ function applyTimerSettings( contentArea, comp ) {
             }
         }
 
-        if ( ( comp.timeRemaining <= 0 && !comp.action.remainAfterEnded ) || ( comp.timeRemaining <= -1 * comp.action.remainDuration ) ) {
+        if ( ( comp.timeRemaining <= 0 && !comp.action.remainAfterEnded && !comp.action.repeatTimer ) || ( comp.timeRemaining <= -1 * comp.action.remainDuration && !comp.action.repeatTimer ) ) {
             // When conditions met that require the timer be removed from the 
             // screen, then call the remove comonponent method.
+            
+            delayRemoveComponent( comp );
 
-            window.setTimeout( () => {
-                comp.removeComponent();
-                ipcRenderer.send( 'log:destroy:component', comp.instanceId );
-            }, 1000 );
-
+        } else if ( comp.timeRemaining <= 0 && comp.action.repeatTimer ) {
+            
+            comp.repeatCount = comp.repeatCount > 0 ? comp.repeatCount + 1 : 1;
+            
+            if ( comp.action.repeatCount == null || comp.repeatCount <= comp.action.repeatCount ) {
+                comp = resetTimerComponentClock( comp, comp.repeatCount );
+            } else {
+                delayRemoveComponent( comp );
+            }
         }
 
     }, 250 );
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Removes the given component after the specified number of milliseconds have 
+ * passed.
+ * 
+ * @param {OverlayComponent} comp The component to remove.
+ * @param {number} delay The number of milliseconds to delay removal.
+ */
+function delayRemoveComponent( comp, delay ) {
+    
+    delay = delay > 0 ? delay : 1000;
+
+    window.setTimeout( () => {
+        comp.removeComponent();
+        ipcRenderer.send( 'log:destroy:component', comp.instanceId );
+    }, delay );
+
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Resets the timer clock and styles on the give overlay component.
+ * 
+ * @param {OverlayComponent} comp The overlay component to reset the clock.
+ */
+function resetTimerComponentClock(comp, repeatCount) {
+    
+    repeatCount = repeatCount > 0 ? repeatCount : 1;
+
+    // Reset the start duration
+    comp.start = new Date( comp.timestamp.getTime() + ( repeatCount * comp.action.duration ) * 1000 );
+    comp.timeRemaining = comp.action.duration;
+
+    // Reset the ending conditions
+    comp.endingSoonSpoken = false;
+    comp.endingSoonTextDisplayed = false;
+    comp.endedSpoken = false;
+    comp.endedTextDisplayed = false;
+    comp.instanceId = comp.instanceId;
+
+    // Reset the background color
+    if ( comp.action.overrideTimerColor ) {
+        comp.dom.querySelector( '.determinate' ).style.backgroundColor = comp.action.overrideTimerColor;
+        comp.dom.querySelector( '.progress' ).style.backgroundColor = comp.action.timerBackgroundColor;
+    } else {
+        comp.dom.querySelector( '.determinate' ).style.backgroundColor = '#008000';
+        comp.dom.querySelector( '.progress' ).style.backgroundColor = 'rgba(0,33,0,.75)';
+    }
+
+    return comp;
 }
 
 
@@ -733,6 +807,7 @@ function restartTimerComponent( comp, displayText, dictionary ) {
         // Tell log watchers to remove any hooks they have for the old component.
         ipcRenderer.send( 'log:destroy:component', dictionary[ index ].instanceId );
 
+        // dictionary[ index ] = resetTimerComponentClock( dictionary[ index ] );
         // Reset the start duration
         dictionary[ index ].start = comp.timestamp;
         // let perc = ( Math.abs( ( new Date() ) - dictionary[ index ].start ) / 1000 ) / comp.action.duration;

@@ -205,6 +205,8 @@ export class TriggerAction {
     public displayText: string;
     public duration: number;
     public showRemainingDuration: boolean = false;
+    public repeatTimer: boolean = false;
+    public repeatCount: number = null;
     public variableName: string;
     public restartOnDuplicate: boolean;
     public onlyExecuteInDev: boolean = false;

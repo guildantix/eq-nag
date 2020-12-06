@@ -94,6 +94,10 @@ class TriggerAction {
     duration = null;
     /** @type boolean */
     showRemainingDuration = false;
+    /** @type boolean */
+    repeatTimer = false;
+    /** @type number */
+    repeatCount = null;
     /** @type string */
     variableName = null;
     /** @type number */
