@@ -20,6 +20,7 @@ import { ContextMenuModule } from '../context-menu/context-menu.module';
 import { InputDialogComponent } from './input-dialog/input-dialog.component';
 import { NotificationDialogComponent } from './notification-dialog/notification-dialog.component';
 import { TriggerActionDotTimerComponent } from './trigger-action-dotTimer/trigger-action-dotTimer.component';
+import { TriggerActionTimerComponent } from './trigger-action-timer/trigger-action-timer.component';
 
 @NgModule( {
     imports: [
@@ -59,6 +60,7 @@ import { TriggerActionDotTimerComponent } from './trigger-action-dotTimer/trigge
         InputDialogComponent,
         NotificationDialogComponent,
         TriggerActionDotTimerComponent,
+        TriggerActionTimerComponent,
     ],
     providers: [
         DialogService,

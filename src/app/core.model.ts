@@ -228,6 +228,7 @@ export class TriggerAction {
     public endingSoonSpeakPhrase: string = null;
 
     public remainAfterEnded: boolean = false;
+    public notifyWhenEnded: boolean = false;
     public remainDuration: number = null;
     
     public endedDisplayText: boolean = false;
