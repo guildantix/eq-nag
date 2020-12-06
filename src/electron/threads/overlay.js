@@ -666,6 +666,11 @@ function applyTimerSettings( contentArea, comp ) {
                 speakPhrase( comp.voiceIndex, comp.action.endingSoonSpeakPhrase );
             }
 
+            if ( !comp.endingCopied && comp.action.endingClipboard ) {
+                comp.endingCopied = true;
+                ipcRenderer.send( 'clipboard:writeText', comp.action.endingClipboardText );
+            }
+
             if ( !comp.endingSoonTextDisplayed && comp.action.endingSoonDisplayText ) {
                 comp.endingSoonTextDisplayed = true;
                 sendDisplayTextToOverlay( comp.action.endingSoonTextOverlayId, comp.action.endingSoonText, comp.action.endingSoonTextDuration );
@@ -685,6 +690,11 @@ function applyTimerSettings( contentArea, comp ) {
             if ( !comp.endedSpoken && comp.action.endedSpeak ) {
                 comp.endedSpoken = true;
                 speakPhrase( comp.voiceIndex, comp.action.endedSpeakPhrase );
+            }
+
+            if ( !comp.endedCopied && comp.action.endedClipboard ) {
+                comp.endedCopied = true;
+                ipcRenderer.send( 'clipboard:writeText', comp.action.endedClipboardText );
             }
 
             if ( !comp.endedTextDisplayed && comp.action.endedDisplayText ) {

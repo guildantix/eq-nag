@@ -9,6 +9,7 @@ var ActionTypes = {
     '6': 'DotTimer',
     '7': 'ClearVariable',
     '8': 'Counter',
+    '9': 'Clipboard',
     DisplayText: 0,
     PlayAudio: 1,
     Speak: 2,
@@ -18,6 +19,7 @@ var ActionTypes = {
     DotTimer: 6,
     ClearVariable: 7,
     Counter: 8,
+    Clipboard: 9,
 }
 
 var TriggerConditionTypes = {
@@ -136,6 +138,11 @@ class TriggerAction {
     endingSoonText = null;
     /** @type number */
     endingSoonTextDuration = null;
+    
+    /** @type boolean */
+    endingClipboard = false;
+    /** @type string */
+    endingClipboardText = null;
 
     /** @type boolean */
     endingSoonSpeak = false;
@@ -162,6 +169,11 @@ class TriggerAction {
     endedSpeak = false;
     /** @type string */
     endedSpeakPhrase = null;
+    
+    /** @type boolean */
+    endedClipboard = false;
+    /** @type string */
+    endedClipboardText = null;
 
     /** @type boolean */
     endedChangeColor = false;

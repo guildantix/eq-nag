@@ -1,5 +1,5 @@
 // const ipc = require( 'electron' ).ipcMain;
-const { ipcRenderer } = require( 'electron' );
+const { ipcRenderer, ipcMain } = require( 'electron' );
 const path = require( 'path' );
 const process = require( 'process' );
 const fs = require( 'fs' );
@@ -582,7 +582,7 @@ function parseLogEntries( raw, simulating ) {
         // Remove the cancelled items.
         _.remove( cancellableComponents, token => tokenIds.indexOf( token.instanceId ) > -1 );
     }
-    
+
     if ( counters ) {
         for ( let key of Object.keys( counters ) ) {
 
@@ -630,6 +630,16 @@ function parseLogEntries( raw, simulating ) {
                             ipcRenderer.send( 'overlay:send:component', comp );
                         else
                             console.log( 'overlay:send:component', comp );
+                        
+                    } else if ( action.actionType === ActionTypes.Clipboard ) {
+                        let clipboardText = action.displayText;
+
+                        clipboardText = StringUtilities.parseStoredVariablesToLiteral( clipboardText, storedVariables );
+                        clipboardText = StringUtilities.parseConditionResultsToLiteral( clipboardText, trigger._conditionResults );
+                        clipboardText = StringUtilities.parseMatchesToLiteral( clipboardText, res.result );
+                        clipboardText = StringUtilities.parseCountersToLiteral( clipboardText, counters );
+
+                        ipcRenderer.send( 'clipboard:writeText', clipboardText );
                         
                     } else if ( action.actionType === ActionTypes.StoreVariable ) {
                     /* --== Store Variable ==-- */
@@ -683,6 +693,12 @@ function parseLogEntries( raw, simulating ) {
                             comp.action.endingSoonSpeakPhrase = StringUtilities.parseCountersToLiteral( comp.action.endingSoonSpeakPhrase, counters );
                         }
 
+                        if ( comp.action.endingClipboard ) {
+                            comp.action.endingClipboardText = StringUtilities.parseStoredVariablesToLiteral( action.endingClipboardText, storedVariables );
+                            comp.action.endingClipboardText = StringUtilities.parseConditionResultsToLiteral( comp.action.endingClipboardText, trigger._conditionResults );
+                            comp.action.endingClipboardText = StringUtilities.parseCountersToLiteral( comp.action.endingClipboardText, counters );
+                        }
+
                         if ( comp.action.endedDisplayText ) {
                             comp.action.endedText = StringUtilities.parseStoredVariablesToLiteral( action.endedText, storedVariables );
                             comp.action.endedText = StringUtilities.parseConditionResultsToLiteral( comp.action.endedText, trigger._conditionResults );
@@ -693,6 +709,12 @@ function parseLogEntries( raw, simulating ) {
                             comp.action.endedSpeakPhrase = StringUtilities.parseStoredVariablesToLiteral( action.endedSpeakPhrase, storedVariables );
                             comp.action.endedSpeakPhrase = StringUtilities.parseConditionResultsToLiteral( comp.action.endedSpeakPhrase, trigger._conditionResults );
                             comp.action.endedSpeakPhrase = StringUtilities.parseCountersToLiteral( comp.action.endedSpeakPhrase, counters );
+                        }
+
+                        if ( comp.action.endedClipboard ) {
+                            comp.action.endedClipboardText = StringUtilities.parseStoredVariablesToLiteral( action.endedClipboardText, storedVariables );
+                            comp.action.endedClipboardText = StringUtilities.parseConditionResultsToLiteral( comp.action.endedClipboardText, trigger._conditionResults );
+                            comp.action.endedClipboardText = StringUtilities.parseCountersToLiteral( comp.action.endedClipboardText, counters );
                         }
 
                         // reset the trigger.

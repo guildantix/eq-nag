@@ -123,6 +123,18 @@
                 
             </div>
 
+            <div *ngIf="action.ifEndingSoon && action.endingDuration > 0" style="margin-top:10px; clear: both;">
+                <mat-checkbox [(ngModel)]="action.endingClipboard" name="cbxEndingClipboard">Send text to clipboard</mat-checkbox>
+
+                <div style="display: inline; float: right; clear: right; width: 350px; margin-top: -10px;">
+                    <mat-form-field *ngIf="action.endingClipboard">
+                        <mat-label>Clipboard text</mat-label>
+                        <input matInput [(ngModel)]="action.endingClipboardText" name="txtEndingClipboardText" />
+                    </mat-form-field>
+                </div>
+                
+            </div>
+
         </div>
 
     </mat-tab>
@@ -166,6 +178,18 @@
                     <mat-form-field *ngIf="action.endedSpeak">
                         <mat-label>Phrase</mat-label>
                         <input matInput [(ngModel)]="action.endedSpeakPhrase" name="txtEndedSpeakPhrase" />
+                    </mat-form-field>
+                </div>
+                
+            </div>
+
+            <div *ngIf="action.remainAfterEnded && action.remainDuration > 0" style="margin-top:10px; clear: both;">
+                <mat-checkbox [(ngModel)]="action.endedClipboard" name="cbxEndedClipboard">Send text to clipboard</mat-checkbox>
+
+                <div style="display: inline; float: right; clear: right; width: 350px; margin-top: -10px;">
+                    <mat-form-field *ngIf="action.endedClipboard">
+                        <mat-label>Clipboard text</mat-label>
+                        <input matInput [(ngModel)]="action.endedClipboardText" name="txtEndedClipboardText" />
                     </mat-form-field>
                 </div>
                 

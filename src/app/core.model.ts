@@ -18,6 +18,7 @@ export enum ActionTypes {
     DotTimer = 6,
     ClearVariable = 7,
     Counter = 8,
+    Clipboard = 9,
     
 }
 
@@ -229,6 +230,9 @@ export class TriggerAction {
 
     public endingSoonSpeak: boolean = false;
     public endingSoonSpeakPhrase: string = null;
+    
+    public endingClipboard: boolean = false;
+    public endingClipboardText: string = null;
 
     public remainAfterEnded: boolean = false;
     public notifyWhenEnded: boolean = false;
@@ -238,6 +242,9 @@ export class TriggerAction {
     public endedTextOverlayId: string = null;
     public endedText: string = null;
     public endedTextDuration: number = null;
+    
+    public endedClipboard: boolean = false;
+    public endedClipboardText: string = null;
 
     public endedSpeak: boolean = false;
     public endedSpeakPhrase: string = null;

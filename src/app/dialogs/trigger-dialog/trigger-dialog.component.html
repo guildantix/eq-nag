@@ -173,6 +173,7 @@
                                             <span class="material-icons" *ngIf="action.actionType === actionTypes.ClearVariable">sd_storage</span>
                                             <span class="material-icons" *ngIf="action.actionType === actionTypes.DotTimer">watch_later</span>
                                             <span class="material-icons" *ngIf="action.actionType === actionTypes.Counter">exposure_plus_1</span>
+                                            <span class="material-icons" *ngIf="action.actionType === actionTypes.Clipboard">content_copy</span>
                                         </div>
                                         <mat-card-title>{{action.actionType == null ? 'Unset Action' : actionTypes[action.actionType]}}</mat-card-title>
                                         <mat-card-subtitle>
@@ -185,6 +186,7 @@
                                             <span *ngIf="action.actionType === actionTypes.StoreVariable">Store a value in a variable.</span>
                                             <span *ngIf="action.actionType === actionTypes.ClearVariable">Empties the value in a variable.</span>
                                             <span *ngIf="action.actionType === actionTypes.Counter">Track the number of times an event occurs.</span>
+                                            <span *ngIf="action.actionType === actionTypes.Clipboard">Put text into the clipboard.</span>
                                         </mat-card-subtitle>
                                     </mat-card-header>
                                     <mat-card-content>
@@ -203,6 +205,7 @@
                                                 <mat-option [value]="actionTypes.StoreVariable">Store Variable</mat-option>
                                                 <mat-option [value]="actionTypes.ClearVariable">Clear Variable</mat-option>
                                                 <mat-option [value]="actionTypes.Counter">Counter</mat-option>
+                                                <mat-option [value]="actionTypes.Clipboard">Clipboard</mat-option>
                                             </mat-select>
                                         </mat-form-field>
 
@@ -225,6 +228,15 @@
                                         <div *ngIf="action.actionType === actionTypes.Counter">
 
                                             <app-trigger-action-counter [action]="action" [overlayOptions]="alertOverlays"></app-trigger-action-counter>
+
+                                        </div>
+
+                                        <div *ngIf="action.actionType === actionTypes.Clipboard">
+
+                                            <mat-form-field>
+                                                <mat-label>Clipboard text</mat-label>
+                                                <input matInput [(ngModel)]="action.displayText" name="txtClipboardText_{{i}}" />
+                                            </mat-form-field>
 
                                         </div>
 
