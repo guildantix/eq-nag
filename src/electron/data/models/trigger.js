@@ -8,6 +8,7 @@ var ActionTypes = {
     '5': 'StoreVariable',
     '6': 'DotTimer',
     '7': 'ClearVariable',
+    '8': 'Counter',
     DisplayText: 0,
     PlayAudio: 1,
     Speak: 2,
@@ -16,6 +17,7 @@ var ActionTypes = {
     StoreVariable: 5,
     DotTimer: 6,
     ClearVariable: 7,
+    Counter: 8,
 }
 
 var TriggerConditionTypes = {
@@ -169,6 +171,9 @@ class TriggerAction {
 
     /** @type {Phrase[]} */
     endEarlyPhrases = [];
+
+    /** @type {Phrase[]} */
+    resetCounterPhrases = [];
 
 }
 

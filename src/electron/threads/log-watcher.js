@@ -24,6 +24,8 @@ var watcher = null;
 /** @type {Trigger[]} */
 var triggers = [];
 var storedVariables = {};
+/** @type {Record<string, {value: number, lastUpdate: Date, resetDelay: number, _parse: (logEntry: string) => boolean}>} */
+var counters = {};
 /** @type {{_parse: (logEntry: string) => boolean, instanceId: string}} */
 var cancellableComponents = [];
 var enableFct = false;
@@ -176,6 +178,7 @@ function LogWatcher(character, logPosition) {
         isDev = data.isDev;
         // isDev = false;
         generateTriggerFns();
+        initCounters();
     } );
 
     ipcRenderer.on( 'component:destroy', function ( event, instanceId ) {
@@ -190,6 +193,42 @@ function LogWatcher(character, logPosition) {
     speechSynthesis.onvoiceschanged = () => {
         voiceOptions = speechSynthesis.getVoices();
     };
+}
+
+function initCounters() {
+    counters = {};
+    triggers?.forEach( trigger => {
+        if ( ( isDev || !trigger.onlyExecuteInDev ) && trigger.capturePhrases?.length > 0 ) {
+            trigger.actions?.forEach( action => {
+                if ( action.actionType === ActionTypes.Counter ) {
+                    let resetsOnPhrases = action.resetCounterPhrases?.length > 0;
+                    let renderedPhrases = resetsOnPhrases ? renderPhrases( action.resetCounterPhrases ) : [];
+                    counters[ action.displayText ] = {
+                        value: 0,
+                        lastUpdate: new Date(),
+                        resetDelay: action.duration,
+                        _parse: logEntry => {
+                            if ( resetsOnPhrases ) {
+                                let matched = false;
+                                
+                                renderedPhrases.forEach( phrase => {
+                                    let _res = new RegExp( phrase, 'g' ).exec( logEntry );
+                                    if ( _res?.length > 0 ) {
+                                        matched = true;
+                                    }
+                                } );
+    
+                                return matched;
+                            } else {
+                                return false;
+                            }
+                        }
+                    };
+                }
+            } );
+        }
+    } );
+    console.log( 'initCounters', counters );
 }
 
 function generateTriggerFns() {
@@ -251,6 +290,7 @@ function generateTriggerFns() {
             trigger._checkConditions = function () {
                 let conditionsPassed = true;
 
+                /** @type {Record<string, any>} */
                 trigger._conditionResults = {};
 
                 // First, the trigger must pass each condition.
@@ -525,6 +565,50 @@ function parseLogEntries( raw, simulating ) {
     }
     
     let log = raw.replace( rgxTimestamp, '' );
+
+    // If there are any cancellable actions, evaluate them here.
+    if ( cancellableComponents?.length > 0 ) {
+        let tokenIds = [];
+        cancellableComponents.forEach( token => {
+            if ( token._parse( log ) ) {
+                // Broadcast the remove action.
+                ipcRenderer.send( 'overlay:destroy:component', token.instanceId );
+
+                // Mark the item for removal.
+                tokenIds.push( token.instanceId );
+            }
+        } );
+
+        // Remove the cancelled items.
+        _.remove( cancellableComponents, token => tokenIds.indexOf( token.instanceId ) > -1 );
+    }
+    
+    if ( counters ) {
+        for ( let key of Object.keys( counters ) ) {
+
+            // Skip counter reset conditions if the counter is at 0.
+            if ( counters[ key ].value > 0 ) {
+
+                // check how long the value has existed and reset it if that 
+                // duration is greater than the reset delay specified by the 
+                // user.
+                let timeSinceLastUpdate = Math.abs( ( new Date() ) - counters[ key ].lastUpdate ) / 1000;
+                if ( timeSinceLastUpdate >= counters[ key ].resetDelay ) {
+                    counters[ key ].value = 0;
+                    // If the timer is reset, no need to check the reset 
+                    // phrases.
+                    continue;
+                }
+
+                // Parse the current log entry for any reset phrase matches.
+                if ( counters[ key ]._parse( log ) ) {
+                    counters[ key ].value = 0;
+                }
+            }
+
+        }
+    }
+
     triggers.forEach( trigger => {
         let res = trigger._parse( log );
         if ( res.match ) {
@@ -537,10 +621,7 @@ function parseLogEntries( raw, simulating ) {
                         comp.instanceId = nanoid();
                         comp.action = Object.assign( new TriggerAction(), action );
                         comp.action.displayText = StringUtilities.parseStoredVariablesToLiteral( action.displayText, storedVariables );
-                        // comp.action.endingSoonText = StringUtilities.parseStoredVariablesToLiteral( action.endingSoonText, storedVariables );
-                        // comp.action.endingSoonSpeakPhrase = StringUtilities.parseStoredVariablesToLiteral( action.endingSoonSpeakPhrase, storedVariables );
-                        // comp.action.endedText = StringUtilities.parseStoredVariablesToLiteral( action.endedText, storedVariables );
-                        // comp.action.endedSpeakPhrase = StringUtilities.parseStoredVariablesToLiteral( action.endedSpeakPhrase, storedVariables );
+                        comp.action.displayText = StringUtilities.parseCountersToLiteral( comp.action.displayText, counters );
                         comp.overlayId = action.overlayId;
                         comp.matches = res.result;
                         comp.timestamp = timestamp;
@@ -564,6 +645,11 @@ function parseLogEntries( raw, simulating ) {
 
                         clearStoredVariable( action.variableName, res.result.groups != null ? res.result.groups[ action.variableName ] : trigger._conditionResults[ action.variableName ] );
 
+                    } else if ( action.actionType === ActionTypes.Counter ) {
+                    /* --== Clear Variable ==-- */
+
+                        incrementCounter( action.displayText );
+    
                     } else if ( action.actionType === ActionTypes.Timer || action.actionType === ActionTypes.Countdown ) {
                     /* --== Start a Timer/Countdown ==-- */
                         
@@ -577,6 +663,7 @@ function parseLogEntries( raw, simulating ) {
                         comp.action.displayText = StringUtilities.parseStoredVariablesToLiteral( comp.action.displayText, storedVariables );
                         comp.action.displayText = StringUtilities.parseConditionResultsToLiteral( comp.action.displayText, trigger._conditionResults );
                         comp.action.displayText = StringUtilities.parseMatchesToLiteral( comp.action.displayText, res.result );
+                        comp.action.displayText = StringUtilities.parseCountersToLiteral( comp.action.displayText, counters );
                         comp.action.duration = +action.duration;
 
                         comp.overlayId = action.overlayId;
@@ -587,21 +674,25 @@ function parseLogEntries( raw, simulating ) {
                         if ( comp.action.endingSoonDisplayText ) {
                             comp.action.endingSoonText = StringUtilities.parseStoredVariablesToLiteral( action.endingSoonText, storedVariables );
                             comp.action.endingSoonText = StringUtilities.parseConditionResultsToLiteral( comp.action.endingSoonText, trigger._conditionResults );
+                            comp.action.endingSoonText = StringUtilities.parseCountersToLiteral( comp.action.endingSoonText, counters );
                         }
 
                         if ( comp.action.endingSoonSpeak ) {
                             comp.action.endingSoonSpeakPhrase = StringUtilities.parseStoredVariablesToLiteral( action.endingSoonSpeakPhrase, storedVariables );
                             comp.action.endingSoonSpeakPhrase = StringUtilities.parseConditionResultsToLiteral( comp.action.endingSoonSpeakPhrase, trigger._conditionResults );
+                            comp.action.endingSoonSpeakPhrase = StringUtilities.parseCountersToLiteral( comp.action.endingSoonSpeakPhrase, counters );
                         }
 
                         if ( comp.action.endedDisplayText ) {
                             comp.action.endedText = StringUtilities.parseStoredVariablesToLiteral( action.endedText, storedVariables );
                             comp.action.endedText = StringUtilities.parseConditionResultsToLiteral( comp.action.endedText, trigger._conditionResults );
+                            comp.action.endedText = StringUtilities.parseCountersToLiteral( comp.action.endedText, counters );
                         }
 
                         if ( comp.action.endedSpeak ) {
                             comp.action.endedSpeakPhrase = StringUtilities.parseStoredVariablesToLiteral( action.endedSpeakPhrase, storedVariables );
                             comp.action.endedSpeakPhrase = StringUtilities.parseConditionResultsToLiteral( comp.action.endedSpeakPhrase, trigger._conditionResults );
+                            comp.action.endedSpeakPhrase = StringUtilities.parseCountersToLiteral( comp.action.endedSpeakPhrase, counters );
                         }
 
                         // reset the trigger.
@@ -610,21 +701,21 @@ function parseLogEntries( raw, simulating ) {
                         ipcRenderer.send( 'overlay:send:component', comp );
 
                         if ( comp.action.endEarlyPhrases?.length > 0 ) {
-                            let renderedPhrases = [];
+                            let renderedPhrases = renderPhrases( comp.action.endEarlyPhrases, trigger._conditionResults, res.result );
 
-                            for ( let phraseIndex = 0; phraseIndex < comp.action.endEarlyPhrases.length; phraseIndex++ ) {
-                                let renderedPhrase = comp.action.endEarlyPhrases[ phraseIndex ].phrase;
+                            // for ( let phraseIndex = 0; phraseIndex < comp.action.endEarlyPhrases.length; phraseIndex++ ) {
+                            //     let renderedPhrase = comp.action.endEarlyPhrases[ phraseIndex ].phrase;
 
-                                renderedPhrase = StringUtilities.parseStoredVariablesToLiteral( renderedPhrase, storedVariables );
-                                renderedPhrase = StringUtilities.parseConditionResultsToLiteral( renderedPhrase, trigger._conditionResults );
-                                renderedPhrase = StringUtilities.parseMatchesToLiteral( renderedPhrase, res.result );
+                            //     renderedPhrase = StringUtilities.parseStoredVariablesToLiteral( renderedPhrase, storedVariables );
+                            //     renderedPhrase = StringUtilities.parseConditionResultsToLiteral( renderedPhrase, trigger._conditionResults );
+                            //     renderedPhrase = StringUtilities.parseMatchesToLiteral( renderedPhrase, res.result );
 
-                                if ( comp.action.endEarlyPhrases[ phraseIndex ].useRegEx ) {
-                                    renderedPhrases.push( renderedPhrase );
-                                } else {
-                                    renderedPhrases.push( '^' + renderedPhrase.replace( /[.*+?^${}()|[\]\\]/g, '\\$&' ) + '$' );
-                                }
-                            }
+                            //     if ( comp.action.endEarlyPhrases[ phraseIndex ].useRegEx ) {
+                            //         renderedPhrases.push( renderedPhrase );
+                            //     } else {
+                            //         renderedPhrases.push( '^' + renderedPhrase.replace( /[.*+?^${}()|[\]\\]/g, '\\$&' ) + '$' );
+                            //     }
+                            // }
 
                             cancellableComponents.push( {
                                 _parse: ( logEntry ) => { 
@@ -678,21 +769,25 @@ function parseLogEntries( raw, simulating ) {
                         if ( comp.action.endingSoonDisplayText ) {
                             comp.action.endingSoonText = StringUtilities.parseStoredVariablesToLiteral( action.endingSoonText, storedVariables );
                             comp.action.endingSoonText = StringUtilities.parseConditionResultsToLiteral( comp.action.endingSoonText, trigger._conditionResults );
+                            comp.action.endingSoonText = StringUtilities.parseCountersToLiteral( comp.action.endingSoonText, counters );
                         }
 
                         if ( comp.action.endingSoonSpeak ) {
                             comp.action.endingSoonSpeakPhrase = StringUtilities.parseStoredVariablesToLiteral( action.endingSoonSpeakPhrase, storedVariables );
                             comp.action.endingSoonSpeakPhrase = StringUtilities.parseConditionResultsToLiteral( comp.action.endingSoonSpeakPhrase, trigger._conditionResults );
+                            comp.action.endingSoonSpeakPhrase = StringUtilities.parseCountersToLiteral( comp.action.endingSoonSpeakPhrase, counters );
                         }
 
                         if ( comp.action.endedDisplayText ) {
                             comp.action.endedText = StringUtilities.parseStoredVariablesToLiteral( action.endedText, storedVariables );
                             comp.action.endedText = StringUtilities.parseConditionResultsToLiteral( comp.action.endedText, trigger._conditionResults );
+                            comp.action.endedText = StringUtilities.parseCountersToLiteral( comp.action.endedText, counters );
                         }
 
                         if ( comp.action.endedSpeak ) {
                             comp.action.endedSpeakPhrase = StringUtilities.parseStoredVariablesToLiteral( action.endedSpeakPhrase, storedVariables );
                             comp.action.endedSpeakPhrase = StringUtilities.parseConditionResultsToLiteral( comp.action.endedSpeakPhrase, trigger._conditionResults );
+                            comp.action.endedSpeakPhrase = StringUtilities.parseCountersToLiteral( comp.action.endedSpeakPhrase, counters );
                         }
 
                         if ( hasExtDotFocus ) {
@@ -721,21 +816,21 @@ function parseLogEntries( raw, simulating ) {
                         ipcRenderer.send( 'overlay:send:component', comp );
 
                         if ( comp.action.endEarlyPhrases?.length > 0 ) {
-                            let renderedPhrases = [];
+                            let renderedPhrases = renderPhrases( comp.action.endEarlyPhrases, trigger._conditionResults, res.result );
 
-                            for ( let phraseIndex = 0; phraseIndex < comp.action.endEarlyPhrases.length; phraseIndex++ ) {
-                                let renderedPhrase = comp.action.endEarlyPhrases[ phraseIndex ].phrase;
+                            // for ( let phraseIndex = 0; phraseIndex < comp.action.endEarlyPhrases.length; phraseIndex++ ) {
+                            //     let renderedPhrase = comp.action.endEarlyPhrases[ phraseIndex ].phrase;
 
-                                renderedPhrase = StringUtilities.parseStoredVariablesToLiteral( renderedPhrase, storedVariables );
-                                renderedPhrase = StringUtilities.parseConditionResultsToLiteral( renderedPhrase, trigger._conditionResults );
-                                renderedPhrase = StringUtilities.parseMatchesToLiteral( renderedPhrase, res.result );
+                            //     renderedPhrase = StringUtilities.parseStoredVariablesToLiteral( renderedPhrase, storedVariables );
+                            //     renderedPhrase = StringUtilities.parseConditionResultsToLiteral( renderedPhrase, trigger._conditionResults );
+                            //     renderedPhrase = StringUtilities.parseMatchesToLiteral( renderedPhrase, res.result );
 
-                                if ( comp.action.endEarlyPhrases[ phraseIndex ].useRegEx ) {
-                                    renderedPhrases.push( renderedPhrase );
-                                } else {
-                                    renderedPhrases.push( '^' + renderedPhrase.replace( /[.*+?^${}()|[\]\\]/g, '\\$&' ) + '$' );
-                                }
-                            }
+                            //     if ( comp.action.endEarlyPhrases[ phraseIndex ].useRegEx ) {
+                            //         renderedPhrases.push( renderedPhrase );
+                            //     } else {
+                            //         renderedPhrases.push( '^' + renderedPhrase.replace( /[.*+?^${}()|[\]\\]/g, '\\$&' ) + '$' );
+                            //     }
+                            // }
 
                             cancellableComponents.push( {
                                 _parse: ( logEntry ) => { 
@@ -761,6 +856,7 @@ function parseLogEntries( raw, simulating ) {
                             var utter = new SpeechSynthesisUtterance();
 
                             utter.text = StringUtilities.parseStoredVariablesToLiteral( action.displayText, storedVariables );
+                            utter.text = StringUtilities.parseCountersToLiteral( utter.text, counters );
                             utter.voice = voiceOptions[ voiceIndex ];
                             utter.onend = function ( event ) { }
                             speechSynthesis.speak( utter );
@@ -776,23 +872,6 @@ function parseLogEntries( raw, simulating ) {
         }
     } );
 
-    // If there are any cancellable actions, evaluate them here.
-    if ( cancellableComponents?.length > 0 ) {
-        let tokenIds = [];
-        cancellableComponents.forEach( token => {
-            if ( token._parse( log ) ) {
-                // Broadcast the remove action.
-                ipcRenderer.send( 'overlay:destroy:component', token.instanceId );
-
-                // Mark the item for removal.
-                tokenIds.push( token.instanceId );
-            }
-        } );
-
-        // Remove the cancelled items.
-        _.remove( cancellableComponents, token => tokenIds.indexOf( token.instanceId ) > -1 );
-    }
-
 }
 
 /**
@@ -806,6 +885,21 @@ function saveVariable( key, value ) {
     let index = storedVariables[ key ].indexOf( value );
     if ( index === -1 ) {
         storedVariables[ key ].push( value );
+    }
+}
+
+/**
+ * Increments the specified counter by 1.
+ * 
+ * @param {string} key The counter name/key.
+ */
+function incrementCounter( key ) {
+    if ( counters[ key ] == null ) {
+        // Do not fail.
+        console.error( 'No counter found for ', key );
+    } else {
+        counters[ key ].value += 1;
+        counters[ key ].lastUpdate = new Date();
     }
 }
 
@@ -842,6 +936,34 @@ function clearStoredVariable( key, value ) {
             storedVariables[ key ].splice( index, 1 );
         }
     }
+}
+
+/**
+ * Renders the given list of phrases into regular expressions.
+ * 
+ * @param {Phrase} phrases The list of phrases to render.
+ * @param {Record<string,any>} conditionResults The value of condition checks for the executed trigger.
+ * @param {RegExpExecArray} parseResult The regexp exec array of the parsed log entry.
+ */
+function renderPhrases( phrases, conditionResults, parseResult ) {
+    let renderedPhrases = [];
+
+    for ( let phraseIndex = 0; phraseIndex < phrases?.length; phraseIndex++ ) {
+        let renderedPhrase = phrases[ phraseIndex ].phrase;
+
+        renderedPhrase = StringUtilities.parseStoredVariablesToLiteral( renderedPhrase, storedVariables );
+        renderedPhrase = conditionResults?.length > 0 ? StringUtilities.parseConditionResultsToLiteral( renderedPhrase, conditionResults ) : renderedPhrase;
+        renderedPhrase = parseResult?.length > 0 ? StringUtilities.parseMatchesToLiteral( renderedPhrase, parseResult ) : renderedPhrase;
+        renderedPhrase = StringUtilities.parseCountersToLiteral( renderedPhrase, counters );
+
+        if ( phrases[ phraseIndex ].useRegEx ) {
+            renderedPhrases.push( renderedPhrase );
+        } else {
+            renderedPhrases.push( '^' + renderedPhrase.replace( /[.*+?^${}()|[\]\\]/g, '\\$&' ) + '$' );
+        }
+    }
+
+    return renderedPhrases;
 }
 
 module.exports = LogWatcher;

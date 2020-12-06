@@ -12,7 +12,7 @@ const nanoid = customAlphabet( alphabet, 16 );
 @Component( {
     selector: 'app-trigger-action-timer',
     templateUrl: 'trigger-action-timer.component.html',
-    styleUrls: [ 'trigger-action-timer.component.scss' ]
+    styleUrls: [ 'trigger-action-timer.component.scss', '../../core.scss', '../../modal.scss' ]
 } )
 export class TriggerActionTimerComponent implements OnInit {
     

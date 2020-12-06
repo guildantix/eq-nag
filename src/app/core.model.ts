@@ -7,6 +7,28 @@ export const ErrorCodes = {
     }
 };
 
+export enum ActionTypes {
+    
+    DisplayText = 0,
+    PlayAudio = 1,
+    Speak = 2,
+    Timer = 3,
+    Countdown = 4,
+    StoreVariable = 5,
+    DotTimer = 6,
+    ClearVariable = 7,
+    Counter = 8,
+    
+}
+
+export enum TimerSortTypes {
+
+    None = 0,
+    Ascending = 1,
+    Descending = 2,
+
+}
+
 export enum CharacterClasses {
     Bard = 'BRD',
     Beastlord = 'BST',
@@ -173,27 +195,6 @@ export class DataTickModel {
 
 }
 
-export enum ActionTypes {
-    
-    DisplayText = 0,
-    PlayAudio = 1,
-    Speak = 2,
-    Timer = 3,
-    Countdown = 4,
-    StoreVariable = 5,
-    DotTimer = 6,
-    ClearVariable = 7,
-    
-}
-
-export enum TimerSortTypes {
-
-    None = 0,
-    Ascending = 1,
-    Descending = 2,
-
-}
-
 export class TriggerAction {
 
     public actionId: string;
@@ -245,6 +246,7 @@ export class TriggerAction {
     
     public excludeTargets: Phrase[] = [];
     public endEarlyPhrases: Phrase[] = [];
+    public resetCounterPhrases: Phrase[] = [];
 }
 
 export class ScrapedSpell {

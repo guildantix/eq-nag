@@ -258,6 +258,15 @@ class TriggerDatabaseStore extends Store {
             this.#data.version = 35;
             this.storeDataFile( this.#data );
         }
+        if ( this.#data.version < 36 ) {
+            this.#data?.triggers?.forEach( trigger => {
+                trigger.actions?.forEach( action => {
+                    action.resetCounterPhrases = [];
+                } );
+            } );
+            this.#data.version = 36;
+            this.storeDataFile( this.#data );
+        }
     }
 
 

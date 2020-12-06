@@ -92,6 +92,36 @@ function parseConditionResultsToLiteral( value, conditionResults ) {
     return value;
 }
 
+/**
+ * Parses counter values to the given display text.
+ * 
+ * @param {string} value The original string value
+ * @param {Record<string, {value: number, lastUpdate: Date, resetDelay: number, _parse: (logEntry: string) => boolean}>} counters The counters object.
+ */
+function parseCountersToLiteral( value, counters ) {
+    if ( isNullOrWhitespace( value ) ) {
+        return value;
+    }
+
+    let indexedResults = [ ...value.matchAll( /\+{(.[^}]*)}/g ) ];
+
+    if ( indexedResults?.length > 0 ) {
+        for ( let i = 0; i < indexedResults.length; i++ ) {
+            // ex: counters['Total Count'] = {..., value: 12, ...}
+            //  when given the phrase
+            //      Total count: +{Total Count}!
+            //  the result will be
+            //      Total count: 12
+            let key = indexedResults[ i ][ 1 ];
+            if ( counters[ key ] != null ) {
+                value = value.replace( RegExp( `\\\+{${key}}`, 'g' ), counters[ key ].value );
+            }
+        }
+    }
+    
+    return value;
+}
+
 function parseMatchesToLiteral( value, matches ) {
     if ( isNullOrWhitespace( value ) ) {
         return value;
@@ -194,6 +224,7 @@ let StringUtilities = {
     parseStoredVariablesToLiteralArray: parseStoredVariablesToLiteralArray,
     parseConditionResultsToLiteral: parseConditionResultsToLiteral,
     parseMatchesToLiteral: parseMatchesToLiteral,
+    parseCountersToLiteral: parseCountersToLiteral,
 };
 
 module.exports = StringUtilities;

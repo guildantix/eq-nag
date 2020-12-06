@@ -21,6 +21,7 @@ import { InputDialogComponent } from './input-dialog/input-dialog.component';
 import { NotificationDialogComponent } from './notification-dialog/notification-dialog.component';
 import { TriggerActionDotTimerComponent } from './trigger-action-dotTimer/trigger-action-dotTimer.component';
 import { TriggerActionTimerComponent } from './trigger-action-timer/trigger-action-timer.component';
+import { TriggerActionCounterComponent } from './trigger-action-counter/trigger-action-counter.component';
 
 @NgModule( {
     imports: [
@@ -61,6 +62,7 @@ import { TriggerActionTimerComponent } from './trigger-action-timer/trigger-acti
         NotificationDialogComponent,
         TriggerActionDotTimerComponent,
         TriggerActionTimerComponent,
+        TriggerActionCounterComponent,
     ],
     providers: [
         DialogService,
