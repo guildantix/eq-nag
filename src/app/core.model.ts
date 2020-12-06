@@ -200,6 +200,7 @@ export class TriggerAction {
     public actionType: ActionTypes;
     public phrases: string[] = [];
     public overlayId: string;
+    public name: string;
     public displayText: string;
     public duration: number;
     public showRemainingDuration: boolean = false;

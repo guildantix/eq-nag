@@ -85,6 +85,8 @@ class TriggerAction {
     actionId = null;
     actionType = ActionTypes.DisplayText;
     overlayId;
+    /** @type {string} */
+    name;
     displayText;
     /** @type number */
     duration = null;

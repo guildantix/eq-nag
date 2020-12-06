@@ -285,14 +285,14 @@
         <p class="fct-text">{{value}}</p>
         <p class="fct-dmg-src">({{damageSource}})</p>
     </template>
-    <template id="dotTimerTemplate">
+    <template id="timerTemplate">
         <p class="dot-text ungrouped"><span class="time-remaining"></span>{{value}}</p>
         <!-- Background color of .progress is 13% of the .determinate color. -->
         <div class="progress" style="background-color: rgba(0,33,0,.75)"><p style="margin: 4px;">&nbsp;</p>
             <div class="determinate" style="width: 0%; background-color: #008000;"></div>
         </div>
     </template>
-    <template id="dotTimerIconTemplate">
+    <template id="timerIconTemplate">
         <!-- A convergeance of dumb has resulted in the derp -->
         <img src="{{icon}}" class="dot-icon" derp="{{{iconStyle}}}" />
     </template>

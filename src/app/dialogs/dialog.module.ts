@@ -19,6 +19,7 @@ import { SelectTriggerFolderDialogComponent } from './select-trigger-folder-dial
 import { ContextMenuModule } from '../context-menu/context-menu.module';
 import { InputDialogComponent } from './input-dialog/input-dialog.component';
 import { NotificationDialogComponent } from './notification-dialog/notification-dialog.component';
+import { TriggerActionDotTimerComponent } from './trigger-action-dotTimer/trigger-action-dotTimer.component';
 
 @NgModule( {
     imports: [
@@ -57,6 +58,7 @@ import { NotificationDialogComponent } from './notification-dialog/notification-
         SelectTriggerFolderDialogComponent,
         InputDialogComponent,
         NotificationDialogComponent,
+        TriggerActionDotTimerComponent,
     ],
     providers: [
         DialogService,

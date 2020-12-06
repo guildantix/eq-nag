@@ -95,9 +95,6 @@ export class TriggerDialogComponent implements OnInit {
     
     @ViewChild( 'capturePhrasesTable' ) capturePhrasesTable: MatTable<any>;
     @ViewChild( 'conditionsTable' ) conditionsTable: MatTable<any>;
-    @ViewChild( 'iconFileSelector' ) private iconFileSelector: ElementRef<HTMLInputElement>;
-
-    private onIconFileSelected: ( e: any ) => void = null;
 
     constructor( private ipcService: IpcService, private route: ActivatedRoute, private dialogService: DialogService, private snackBar: MatSnackBar, private contextService: ContextService ) { }
 
@@ -166,20 +163,6 @@ export class TriggerDialogComponent implements OnInit {
         this.capturePhrasesTable?.renderRows();
     }
 
-    public addNewExclusionTarget( actionIndex: number, table: MatTable<any> ): void {
-        let phrase: Phrase = new Phrase();
-        phrase.phraseId = nanoid();
-        this.model.actions[actionIndex].excludeTargets?.push( phrase );
-        table?.renderRows();
-    }
-
-    public addNewEndEarlyPhrase( actionIndex: number, table: MatTable<any> ): void {
-        let phrase: Phrase = new Phrase();
-        phrase.phraseId = nanoid();
-        this.model.actions[actionIndex].endEarlyPhrases?.push( phrase );
-        table?.renderRows();
-    }
-
     public deleteCapturePhrase( index: number ): void {
         this.dialogService.showConfirmDialog(
             'Are you certain you want to delete this capture phrase?',
@@ -189,32 +172,6 @@ export class TriggerDialogComponent implements OnInit {
                 if ( confirmed ) {
                     this.model.capturePhrases?.splice( index, 1 );
                     this.capturePhrasesTable?.renderRows();
-                }
-            } );
-    }
-
-    public deleteExcludePhrase( actionIndex: number, deleteIndex: number, table: MatTable<any> ): void {
-        this.dialogService.showConfirmDialog(
-            'Are you certain you want to delete this exclusion?',
-            'Click "Yes" to delete the exclusion.',
-            'Click "No" to cancel and close this dialog without deleting the exclusion.',
-            ( confirmed ) => {
-                if ( confirmed ) {
-                    this.model.actions[ actionIndex ].excludeTargets?.splice( deleteIndex, 1 );
-                    table?.renderRows();
-                }
-            } );
-    }
-
-    public deleteEndEarlyPhrase( actionIndex: number, deleteIndex: number, table: MatTable<any> ): void {
-        this.dialogService.showConfirmDialog(
-            'Are you certain you want to delete this phrase?',
-            'Click "Yes" to delete the phrase.',
-            'Click "No" to cancel and close this dialog without deleting the phrase.',
-            ( confirmed ) => {
-                if ( confirmed ) {
-                    this.model.actions[ actionIndex ].endEarlyPhrases?.splice( deleteIndex, 1 );
-                    table?.renderRows();
                 }
             } );
     }
@@ -324,79 +281,6 @@ export class TriggerDialogComponent implements OnInit {
 
     public reimportDotTimerFromAllakhazam(): void {
         this.dialogService.showReimportDotTimerDialog( this.model );
-    }
-
-    openIconFileModal( action: TriggerAction ) {
-        this.onIconFileSelected = e => {
-            ImageUtility.toDataUrl( this.iconFileSelector.nativeElement.files[ 0 ] ).subscribe( dataUrl => action.timerIcon = dataUrl );
-            // console.log( 'found', action.actionId, this.iconFileSelector.nativeElement.files[ 0 ].path );
-            // action.timerIcon = this.iconFileSelector.nativeElement.files[ 0 ].path;
-        };
-        this.iconFileSelector.nativeElement.click();
-    }
-
-    public selectEqSpellIcon( action: TriggerAction ): void {
-        this.dialogService.showSelectIconDialog( icon => {
-            if ( icon != null ) {
-                action.timerIcon = icon;
-            }
-        } );
-    }
-
-    iconFileSelected( e: any ) {
-        this.onIconFileSelected( e );
-        this.onIconFileSelected = null;
-        // console.log( 'testing', typeof e);
-        // this.ipcService.updateLogFile( this.iconFileSelector.nativeElement.files[ 0 ].path );
-    }
-
-    public addClassLevel(): void {
-        this.model.classLevels = this.model.classLevels ? this.model.classLevels : [];
-        this.model.classLevels.push( new CharacterClassLevel() );
-    }
-
-    public deleteClassLevel( index: number ): void {
-        let classLabel: string = _.find( Object.keys( CharacterClasses ), f => CharacterClasses[ f ] === this.model.classLevels[ index ].class );
-        let action = () => this.model.classLevels?.splice( index, 1 );
-
-        if ( classLabel ) {
-            this.dialogService.showConfirmDialog(
-                `Are you certain you want to remove ${classLabel} from this trigger?`,
-                'Click "Yes" to remove this class.',
-                'Click "No" to cancel and close this dialog without removing the class.',
-                ( confirmed ) => {
-                    if ( confirmed ) {
-                        action();
-                    }
-                } );
-        } else {
-            action();
-        }
-        
-    }
-
-    public getActionEndedCtxMenu( action: TriggerAction ): ContextMenuModel[] {
-        return [ <ContextMenuModel>{
-            label: 'Copy Timer Ended Properties',
-            action: () => this.contextService.copyActionEndedProperties( action ),
-            disabled: () => false,
-            hide: () => false,
-            matIcon: 'content_copy',
-        }, <ContextMenuModel>{
-            label: 'Paste Timer Ended Properties',
-            action: () => this.contextService.pasteActionEndedProperties( action ),
-            disabled: () => !this.contextService.hasActionEnded,
-            hide: () => false,
-            matIcon: 'content_paste',
-        } ];
-    }
-
-    public copyActionEndedProperties( action: TriggerAction ): void {
-        this.contextService.copyActionEndedProperties( action );
-    }
-
-    public pasteActionEndedProperties( action: TriggerAction ): void {
-        this.contextService.pasteActionEndedProperties( action );
     }
 
 }

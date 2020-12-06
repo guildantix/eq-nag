@@ -564,6 +564,36 @@ function parseLogEntries( raw, simulating ) {
 
                         clearStoredVariable( action.variableName, res.result.groups != null ? res.result.groups[ action.variableName ] : trigger._conditionResults[ action.variableName ] );
 
+                    } else if ( action.actionType === ActionTypes.Timer ) {
+                    /* --== Start a Timer ==-- */
+                        
+                        // ${target} has been slain by (.+?)!
+                        let comp = new OverlayComponent();
+
+                        comp.instanceId = nanoid();
+                        comp.triggerName = trigger.name;
+                        comp.action = Object.assign( new TriggerAction(), action );
+                        
+                        comp.action.displayText = StringUtilities.parseStoredVariablesToLiteral( comp.action.displayText, storedVariables );
+                        comp.action.displayText = StringUtilities.parseConditionResultsToLiteral( comp.action.displayText, trigger._conditionResults );
+                        comp.action.displayText = StringUtilities.parseMatchesToLiteral( comp.action.displayText, res.result );
+                        comp.action.duration = +action.duration;
+
+                        // comp.action.endingSoonText = StringUtilities.parseStoredVariablesToLiteral( action.endingSoonText, storedVariables );
+                        // comp.action.endingSoonSpeakPhrase = StringUtilities.parseStoredVariablesToLiteral( action.endingSoonSpeakPhrase, storedVariables );
+                        // comp.action.endedText = StringUtilities.parseStoredVariablesToLiteral( action.endedText, storedVariables );
+                        // comp.action.endedSpeakPhrase = StringUtilities.parseStoredVariablesToLiteral( action.endedSpeakPhrase, storedVariables );
+                        comp.overlayId = action.overlayId;
+                        comp.matches = res.result;
+                        comp.timestamp = timestamp;
+                        comp.voiceIndex = voiceIndex;
+
+                        // reset the trigger.
+                        trigger._reset();
+
+                        ipcRenderer.send( 'overlay:send:component', comp );
+                        console.log( 'timer caught', comp );
+
                     } else if ( action.actionType === ActionTypes.DotTimer ) {
                     /* --== DOT Timers ==-- */
 

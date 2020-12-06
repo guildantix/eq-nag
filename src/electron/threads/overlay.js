@@ -28,8 +28,8 @@ var overlayGroups = {};
 
 var mobGroups = [];
 var displayTextTemplate;
-var dotTimerTemplate;
-var dotTimerIconTemplate;
+var timerTemplate;
+var timerIconTemplate;
 var targetGroupTemplate;
 var targetGroupTimerTemplate;
 const fctFps = 1000 / 60;
@@ -61,8 +61,8 @@ function Overlay() {
     
     DomUtilities.docReady( f => {
         displayTextTemplate = Handlebars.compile( document.querySelector( '#displayTextTemplate' ).innerHTML );
-        dotTimerTemplate = Handlebars.compile( document.querySelector( '#dotTimerTemplate' ).innerHTML );
-        dotTimerIconTemplate = Handlebars.compile( document.querySelector( '#dotTimerIconTemplate' ).innerHTML );
+        timerTemplate = Handlebars.compile( document.querySelector( '#timerTemplate' ).innerHTML );
+        timerIconTemplate = Handlebars.compile( document.querySelector( '#timerIconTemplate' ).innerHTML );
         fctTemplate = Handlebars.compile( document.querySelector( '#fctTemplate' ).innerHTML );
         fctCriticalTemplate = Handlebars.compile( document.querySelector( '#fctCriticalTemplate' ).innerHTML );
         targetGroupTemplate = Handlebars.compile( document.querySelector( '#targetGroupTemplate' ).innerHTML );
@@ -264,7 +264,36 @@ function render( comp ) {
         }, comp.action.duration * 1000 );
         overlayComponents.push( comp );
 
-    } if ( comp.action.actionType === ActionTypes.DotTimer ) {
+    } else if ( comp.action.actionType === ActionTypes.Timer ) {
+        if ( groupByTarget ) {
+            let group = 'General';
+
+        } else {
+
+            // if ( comp.action.restartOnDuplicate === true && restartDotTimerComponent( comp, displayText, overlayComponents ) ) {
+            //     // Do nothing
+            // } else {
+            //     createUngroupedDotTimer( contentArea, comp, displayText );
+            // }
+
+            createUngroupedTimer( contentArea, comp );
+
+            // If the user has specified a sort direction.
+            if ( sortDirection > 0 ) {
+                // Every time a new timer is added, reorganize the timers so that the 
+                // timer ending first will appear in the order in which the user has
+                // specified.
+        
+                let dir = sortDirection === TimerSortTypes.Ascending ? -1 : 1;
+                let sorted = _.sortBy( overlayComponents, [ c => dir * c.timeRemaining ] );
+                for ( let i = 0; i < sorted.length; i++ ) {
+                    sorted[ i ].dom.parentNode.prepend( sorted[ i ].dom );
+                }
+        
+            }
+            
+        }
+    } else if ( comp.action.actionType === ActionTypes.DotTimer ) {
         // comp.action.duration *= 50;
 
         if ( groupByTarget ) {
@@ -350,7 +379,7 @@ function createGroupedDotTimer( contentArea, group, comp ) {
     comp.dom = div;
     
     if ( comp.action.timerIcon != null ) {
-        div.innerHTML = dotTimerIconTemplate( { icon: comp.action.timerIcon, iconStyle: `"style="position: absolute; margin-left: -${dotTextHeight + 2}px;  height: ${dotTextHeight}px;` } ) + div.innerHTML;
+        div.innerHTML = timerIconTemplate( { icon: comp.action.timerIcon, iconStyle: `"style="position: absolute; margin-left: -${dotTextHeight + 2}px;  height: ${dotTextHeight}px;` } ) + div.innerHTML;
     }
 
     comp.dom = div;
@@ -442,18 +471,52 @@ function getDotGroup( contentArea, groupName ) {
  * @param {string} displayText The display text for the visible section of the dot timer.
  */
 function createUngroupedDotTimer( contentArea, comp, displayText ) {
-    let content = dotTimerTemplate( { value: displayText } );
+    let content = timerTemplate( { value: displayText } );
 
     // Create the component's dom element and append it to the content area.
     let div = document.createElement( 'div' );
     div.innerHTML = content;
     
     if ( comp.action.timerIcon != null ) {
-        div.innerHTML = dotTimerIconTemplate( { icon: comp.action.timerIcon, iconStyle: `"style="position: absolute; margin-left: -${dotTextHeight + 2}px;  height: ${dotTextHeight}px;` } ) + div.innerHTML;
+        div.innerHTML = timerIconTemplate( { icon: comp.action.timerIcon, iconStyle: `"style="position: absolute; margin-left: -${dotTextHeight + 2}px;  height: ${dotTextHeight}px;` } ) + div.innerHTML;
     }
 
     comp.dom = div;
     comp.description = displayText;
+
+    // Create a method that will remove the component from the screen.
+    comp.removeComponent = () => {
+        comp.dom.parentNode && comp.dom.parentNode.removeChild( comp.dom );
+        window.clearInterval( comp.intervalId );
+        ArrayUtilities.remove( overlayComponents, f => f.instanceId == comp.instanceId );
+    };
+    
+    applyTimerSettings( contentArea, comp );
+    
+    contentArea.appendChild( comp.dom );
+    overlayComponents.push( comp );
+
+}
+
+/**
+ * Creates a new timer and places it in the content area.
+ * 
+ * @param {Node} contentArea The content area for dot timers.
+ * @param {OverlayComponent} comp The dot timer component.
+ */
+function createUngroupedTimer( contentArea, comp ) {
+    let content = timerTemplate( { value: comp.action.displayText } );
+
+    // Create the component's dom element and append it to the content area.
+    let div = document.createElement( 'div' );
+    div.innerHTML = content;
+    
+    if ( comp.action.timerIcon != null ) {
+        div.innerHTML = timerIconTemplate( { icon: comp.action.timerIcon, iconStyle: `"style="position: absolute; margin-left: -${dotTextHeight + 2}px;  height: ${dotTextHeight}px;` } ) + div.innerHTML;
+    }
+
+    comp.dom = div;
+    comp.description = comp.action.displayText;
 
     // Create a method that will remove the component from the screen.
     comp.removeComponent = () => {
@@ -479,10 +542,10 @@ function createUngroupedDotTimer( contentArea, comp, displayText ) {
 
 
 /**
- * Applies the general dot timer settings to the given component.
+ * Applies the general timer settings to the given component.
  * 
- * @param {Node} contentArea The content area for dot timers.
- * @param {OverlayComponent} comp Applies the general timer settings to the given dot timer component.
+ * @param {Node} contentArea The content area for timers.
+ * @param {OverlayComponent} comp Applies the general timer settings to the given timer component.
  */
 function applyTimerSettings( contentArea, comp ) {
     // Apply the styles required to make the progress bar height match the 
