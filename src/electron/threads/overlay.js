@@ -266,17 +266,37 @@ function render( comp ) {
 
     } else if ( comp.action.actionType === ActionTypes.Timer ) {
         if ( groupByTarget ) {
-            let group = 'General';
+            let group = getTimerGroup( contentArea, 'General' );
+
+            if ( comp.action.restartOnDuplicate === true && restartTimerComponent( comp, comp.triggerName, group.components ) ) {
+                // Do nothing
+            } else {
+                createGroupedTimer( contentArea, group, comp );
+            }
+
+            // If the user has specified a sort direction.
+            if ( sortDirection > 0 ) {
+                // Every time a new timer is added, reorganize the timers so that the 
+                // timer ending first will appear in the order in which the user has
+                // specified.
+        
+                let dir = sortDirection === TimerSortTypes.Ascending ? -1 : 1;
+                let hdr = group.dom.querySelector( 'h6' );
+                group.components = _.sortBy( group.components, [ c => dir * c.timeRemaining ] );
+                group.components.forEach( c => console.log( 'testing', c.triggerName, c.timeRemaining ) );
+                for ( let i = 0; i < group.components.length; i++ ) {
+                    group.dom.insertBefore( group.components[ i ].dom, hdr.nextSibling );
+                }
+        
+            }
 
         } else {
 
-            // if ( comp.action.restartOnDuplicate === true && restartDotTimerComponent( comp, displayText, overlayComponents ) ) {
-            //     // Do nothing
-            // } else {
-            //     createUngroupedDotTimer( contentArea, comp, displayText );
-            // }
-
-            createUngroupedTimer( contentArea, comp );
+            if ( comp.action.restartOnDuplicate === true && restartTimerComponent( comp, comp.action.displayText, overlayComponents ) ) {
+                // Do nothing
+            } else {
+                createUngroupedTimer( contentArea, comp );
+            }
 
             // If the user has specified a sort direction.
             if ( sortDirection > 0 ) {
@@ -297,9 +317,9 @@ function render( comp ) {
         // comp.action.duration *= 50;
 
         if ( groupByTarget ) {
-            let group = getDotGroup( contentArea, comp.matches[ 1 ] );
+            let group = getTimerGroup( contentArea, comp.matches[ 1 ] );
 
-            if ( comp.action.restartOnDuplicate === true && restartDotTimerComponent( comp, comp.triggerName, group.components ) ) {
+            if ( comp.action.restartOnDuplicate === true && restartTimerComponent( comp, comp.triggerName, group.components ) ) {
                 // Do nothing
             } else {
                 createGroupedDotTimer( contentArea, group, comp );
@@ -330,7 +350,7 @@ function render( comp ) {
                 displayText = StringUtilities.format( comp.action.displayText, comp.matches );
             }
 
-            if ( comp.action.restartOnDuplicate === true && restartDotTimerComponent( comp, displayText, overlayComponents ) ) {
+            if ( comp.action.restartOnDuplicate === true && restartTimerComponent( comp, displayText, overlayComponents ) ) {
                 // Do nothing
             } else {
                 createUngroupedDotTimer( contentArea, comp, displayText );
@@ -414,13 +434,62 @@ function createGroupedDotTimer( contentArea, group, comp ) {
 
 
 /**
- * Returns the dot group for the specified name.  If the group is not found, 
- * then a new group is created.
+ * Creates a new grouped timer component.
  * 
  * @param {Node} contentArea The content area for dot timers.
- * @param {string} groupName The name of the desired dot group.
+ * @param {{dom: HTMLDivElement, components: OverlayComponent[]}} group The component group.
+ * @param {OverlayComponent} comp The overlay component.
  */
-function getDotGroup( contentArea, groupName ) {
+function createGroupedTimer( contentArea, group, comp ) {
+    let content = targetGroupTimerTemplate( { value: comp.triggerName } );
+
+    let div = document.createElement( 'div' );
+    div.innerHTML = content;
+    comp.dom = div;
+    
+    if ( comp.action.timerIcon != null ) {
+        div.innerHTML = timerIconTemplate( { icon: comp.action.timerIcon, iconStyle: `"style="position: absolute; margin-left: -${dotTextHeight + 2}px;  height: ${dotTextHeight}px;` } ) + div.innerHTML;
+    }
+
+    comp.dom = div;
+    comp.description = comp.triggerName;
+
+    // Create a method that will remove the component from the screen.
+    comp.removeComponent = () => {
+        comp.dom.parentNode && comp.dom.parentNode.removeChild( comp.dom );
+        window.clearInterval( comp.intervalId );
+        ArrayUtilities.remove( group.components, f => f.instanceId == comp.instanceId );
+
+        if ( group.components?.length === 0 ) {
+            group.dom.parentNode && group.dom.parentNode.removeChild( group.dom );
+            delete overlayGroups[ group.name ];
+        }
+    };
+    
+    applyTimerSettings( contentArea, comp );
+
+    group.dom.appendChild( comp.dom );
+    group.components.push( comp );
+
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Returns the group for the specified name.  If the group is not found, 
+ * then a new group is created.
+ * 
+ * @param {Node} contentArea The content area for timers.
+ * @param {string} groupName The name of the desired group.
+ */
+function getTimerGroup( contentArea, groupName ) {
 
     for ( let key in overlayGroups ) {
         if ( key === groupName && overlayGroups.hasOwnProperty( key ) ) {
@@ -600,16 +669,7 @@ function applyTimerSettings( contentArea, comp ) {
 
         }
         
-        if ( ( comp.timeRemaining <= 0 && !comp.action.remainAfterEnded ) || ( comp.timeRemaining <= -1 * comp.action.remainDuration ) ) {
-            // When conditions met that require the timer be removed from the 
-            // screen, then call the remove comonponent method.
-
-            window.setTimeout( () => {
-                comp.removeComponent();
-                ipcRenderer.send( 'log:destroy:component', comp.instanceId );
-            }, 1000 );
-
-        } else if ( comp.timeRemaining <= 0 && comp.action.remainAfterEnded ) {
+        if ( comp.timeRemaining <= 0 && ( comp.action.remainAfterEnded || comp.action.notifyWhenEnded ) ) {
             // If the timer has ended, but is required to remain for a 
             // duration, apply the ended conditions to the timer.
 
@@ -627,6 +687,17 @@ function applyTimerSettings( contentArea, comp ) {
                 comp.endedTextDisplayed = true;
                 sendDisplayTextToOverlay( comp.action.endedTextOverlayId, comp.action.endedText, comp.action.endedTextDuration );
             }
+        }
+
+        if ( ( comp.timeRemaining <= 0 && !comp.action.remainAfterEnded ) || ( comp.timeRemaining <= -1 * comp.action.remainDuration ) ) {
+            // When conditions met that require the timer be removed from the 
+            // screen, then call the remove comonponent method.
+
+            window.setTimeout( () => {
+                comp.removeComponent();
+                ipcRenderer.send( 'log:destroy:component', comp.instanceId );
+            }, 1000 );
+
         }
 
     }, 250 );
@@ -650,7 +721,7 @@ function applyTimerSettings( contentArea, comp ) {
  * @param {string} displayText The matching display text.
  * @param {OverlayComponent[]} dictionary The dictionary that contains the desired component.
  */
-function restartDotTimerComponent( comp, displayText, dictionary ) {
+function restartTimerComponent( comp, displayText, dictionary ) {
     // If this component needs to restart on duplicate names, then find the index of the first match, and if found reset the start.
     let index = ArrayUtilities.findIndex( dictionary, f => f?.description == displayText );
     if ( index > -1 ) {

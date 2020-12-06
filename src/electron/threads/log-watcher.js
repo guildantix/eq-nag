@@ -579,20 +579,69 @@ function parseLogEntries( raw, simulating ) {
                         comp.action.displayText = StringUtilities.parseMatchesToLiteral( comp.action.displayText, res.result );
                         comp.action.duration = +action.duration;
 
-                        // comp.action.endingSoonText = StringUtilities.parseStoredVariablesToLiteral( action.endingSoonText, storedVariables );
-                        // comp.action.endingSoonSpeakPhrase = StringUtilities.parseStoredVariablesToLiteral( action.endingSoonSpeakPhrase, storedVariables );
-                        // comp.action.endedText = StringUtilities.parseStoredVariablesToLiteral( action.endedText, storedVariables );
-                        // comp.action.endedSpeakPhrase = StringUtilities.parseStoredVariablesToLiteral( action.endedSpeakPhrase, storedVariables );
                         comp.overlayId = action.overlayId;
                         comp.matches = res.result;
                         comp.timestamp = timestamp;
                         comp.voiceIndex = voiceIndex;
+                        
+                        if ( comp.action.endingSoonDisplayText ) {
+                            comp.action.endingSoonText = StringUtilities.parseStoredVariablesToLiteral( action.endingSoonText, storedVariables );
+                            comp.action.endingSoonText = StringUtilities.parseConditionResultsToLiteral( comp.action.endingSoonText, trigger._conditionResults );
+                        }
+
+                        if ( comp.action.endingSoonSpeak ) {
+                            comp.action.endingSoonSpeakPhrase = StringUtilities.parseStoredVariablesToLiteral( action.endingSoonSpeakPhrase, storedVariables );
+                            comp.action.endingSoonSpeakPhrase = StringUtilities.parseConditionResultsToLiteral( comp.action.endingSoonSpeakPhrase, trigger._conditionResults );
+                        }
+
+                        if ( comp.action.endedDisplayText ) {
+                            comp.action.endedText = StringUtilities.parseStoredVariablesToLiteral( action.endedText, storedVariables );
+                            comp.action.endedText = StringUtilities.parseConditionResultsToLiteral( comp.action.endedText, trigger._conditionResults );
+                        }
+
+                        if ( comp.action.endedSpeak ) {
+                            comp.action.endedSpeakPhrase = StringUtilities.parseStoredVariablesToLiteral( action.endedSpeakPhrase, storedVariables );
+                            comp.action.endedSpeakPhrase = StringUtilities.parseConditionResultsToLiteral( comp.action.endedSpeakPhrase, trigger._conditionResults );
+                        }
 
                         // reset the trigger.
                         trigger._reset();
 
                         ipcRenderer.send( 'overlay:send:component', comp );
-                        console.log( 'timer caught', comp );
+
+                        if ( comp.action.endEarlyPhrases?.length > 0 ) {
+                            let renderedPhrases = [];
+
+                            for ( let phraseIndex = 0; phraseIndex < comp.action.endEarlyPhrases.length; phraseIndex++ ) {
+                                let renderedPhrase = comp.action.endEarlyPhrases[ phraseIndex ].phrase;
+
+                                renderedPhrase = StringUtilities.parseStoredVariablesToLiteral( renderedPhrase, storedVariables );
+                                renderedPhrase = StringUtilities.parseConditionResultsToLiteral( renderedPhrase, trigger._conditionResults );
+                                renderedPhrase = StringUtilities.parseMatchesToLiteral( renderedPhrase, res.result );
+
+                                if ( comp.action.endEarlyPhrases[ phraseIndex ].useRegEx ) {
+                                    renderedPhrases.push( renderedPhrase );
+                                } else {
+                                    renderedPhrases.push( '^' + renderedPhrase.replace( /[.*+?^${}()|[\]\\]/g, '\\$&' ) + '$' );
+                                }
+                            }
+
+                            cancellableComponents.push( {
+                                _parse: ( logEntry ) => { 
+                                    let matched = false;
+                                    
+                                    renderedPhrases.forEach( phrase => {
+                                        let _res = new RegExp( phrase, 'g' ).exec( logEntry );
+                                        if ( _res?.length > 0 ) {
+                                            matched = true;
+                                        }
+                                    } );
+
+                                    return matched;
+                                 },
+                                instanceId: comp.instanceId
+                            } );
+                        }
 
                     } else if ( action.actionType === ActionTypes.DotTimer ) {
                     /* --== DOT Timers ==-- */
@@ -621,28 +670,28 @@ function parseLogEntries( raw, simulating ) {
                         comp.triggerName = trigger.name;
                         comp.action = Object.assign( new TriggerAction(), action );
                         comp.action.displayText = `${trigger.name} --== {1} ==--`;
-                        comp.action.endingSoonText = StringUtilities.parseStoredVariablesToLiteral( action.endingSoonText, storedVariables );
-                        comp.action.endingSoonSpeakPhrase = StringUtilities.parseStoredVariablesToLiteral( action.endingSoonSpeakPhrase, storedVariables );
-                        comp.action.endedText = StringUtilities.parseStoredVariablesToLiteral( action.endedText, storedVariables );
-                        comp.action.endedSpeakPhrase = StringUtilities.parseStoredVariablesToLiteral( action.endedSpeakPhrase, storedVariables );
                         comp.overlayId = action.overlayId;
                         comp.matches = res.result;
                         comp.timestamp = timestamp;
                         comp.voiceIndex = voiceIndex;
                         
                         if ( comp.action.endingSoonDisplayText ) {
+                            comp.action.endingSoonText = StringUtilities.parseStoredVariablesToLiteral( action.endingSoonText, storedVariables );
                             comp.action.endingSoonText = StringUtilities.parseConditionResultsToLiteral( comp.action.endingSoonText, trigger._conditionResults );
                         }
 
                         if ( comp.action.endingSoonSpeak ) {
+                            comp.action.endingSoonSpeakPhrase = StringUtilities.parseStoredVariablesToLiteral( action.endingSoonSpeakPhrase, storedVariables );
                             comp.action.endingSoonSpeakPhrase = StringUtilities.parseConditionResultsToLiteral( comp.action.endingSoonSpeakPhrase, trigger._conditionResults );
                         }
 
                         if ( comp.action.endedDisplayText ) {
+                            comp.action.endedText = StringUtilities.parseStoredVariablesToLiteral( action.endedText, storedVariables );
                             comp.action.endedText = StringUtilities.parseConditionResultsToLiteral( comp.action.endedText, trigger._conditionResults );
                         }
 
                         if ( comp.action.endedSpeak ) {
+                            comp.action.endedSpeakPhrase = StringUtilities.parseStoredVariablesToLiteral( action.endedSpeakPhrase, storedVariables );
                             comp.action.endedSpeakPhrase = StringUtilities.parseConditionResultsToLiteral( comp.action.endedSpeakPhrase, trigger._conditionResults );
                         }
 
