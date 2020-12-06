@@ -138,6 +138,8 @@ class TriggerAction {
 
     /** @type boolean */
     remainAfterEnded = false;
+    /** @type boolean */
+    notifyWhenEnded = false;
     /** @type number */
     remainDuration = null;
     
