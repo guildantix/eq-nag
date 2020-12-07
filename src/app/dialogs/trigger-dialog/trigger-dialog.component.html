@@ -198,7 +198,7 @@
                                             <mat-select [(ngModel)]="action.actionType" name="ddlActionType_{{i}}">
                                                 <mat-option [value]="actionTypes.DisplayText">Display Text</mat-option>
                                                 <mat-option [value]="actionTypes.DotTimer">DoT Timer</mat-option>
-                                                <!-- <mat-option [value]="actionTypes.PlayAudio">Play Audio</mat-option> -->
+                                                <mat-option [value]="actionTypes.PlayAudio">Play Audio</mat-option>
                                                 <mat-option [value]="actionTypes.Speak">Speak</mat-option>
                                                 <mat-option [value]="actionTypes.Timer">Timer</mat-option>
                                                 <mat-option [value]="actionTypes.Countdown">Countdown</mat-option>
@@ -222,6 +222,12 @@
                                                 <mat-label>Action Label</mat-label>
                                                 <input matInput [(ngModel)]="action.name" name="txtActionName_{{i}}" />
                                             </mat-form-field> -->
+
+                                        </div>
+
+                                        <div *ngIf="action.actionType === actionTypes.PlayAudio">
+
+                                            <app-trigger-action-audio [action]="action"></app-trigger-action-audio>
 
                                         </div>
 

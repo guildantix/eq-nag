@@ -615,7 +615,7 @@ function parseLogEntries( raw, simulating ) {
             trigger.actions.forEach( action => {
                 if ( ( isDev || !action.onlyExecuteInDev ) && ( action.phrases == null || action.phrases?.length === 0 || action.phrases?.indexOf( res.phraseId ) > -1 ) ) {
                     if ( action.actionType === ActionTypes.DisplayText ) {
-                        /* --== Display Text ==-- */
+                    /* --== Display Text ==-- */
                         let comp = new OverlayComponent();
 
                         comp.instanceId = nanoid();
@@ -631,6 +631,11 @@ function parseLogEntries( raw, simulating ) {
                         else
                             console.log( 'overlay:send:component', comp );
                         
+                    } else if ( action.actionType === ActionTypes.PlayAudio ) {
+                    /* --== Play Audio ==-- */
+                        
+                        playAudioFile( action.audioFileId );
+
                     } else if ( action.actionType === ActionTypes.Clipboard ) {
                         let clipboardText = action.displayText;
 
@@ -986,6 +991,21 @@ function renderPhrases( phrases, conditionResults, parseResult ) {
     }
 
     return renderedPhrases;
+}
+
+/**
+ * Plays the specified audio file.
+ * 
+ * @param {string} fileId The id of the desired file.
+ */
+function playAudioFile( fileId ) {
+    ipcRenderer.once( 'audio-file:get:url', ( e, url ) => {
+        if ( url ) {
+            let player = new Audio( url );
+            player.play();
+        }
+    } );
+    ipcRenderer.send( 'audio-file:get:url', fileId );
 }
 
 module.exports = LogWatcher;

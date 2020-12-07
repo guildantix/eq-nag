@@ -666,6 +666,11 @@ function applyTimerSettings( contentArea, comp ) {
                 speakPhrase( comp.voiceIndex, comp.action.endingSoonSpeakPhrase );
             }
 
+            if ( !comp.endingAudioPlayed && comp.action.endingPlayAudio ) {
+                comp.endingAudioPlayed = true;
+                playAudioFile( comp.action.endingPlayAudioFileId );
+            }
+
             if ( !comp.endingCopied && comp.action.endingClipboard ) {
                 comp.endingCopied = true;
                 ipcRenderer.send( 'clipboard:writeText', comp.action.endingClipboardText );
@@ -690,6 +695,11 @@ function applyTimerSettings( contentArea, comp ) {
             if ( !comp.endedSpoken && comp.action.endedSpeak ) {
                 comp.endedSpoken = true;
                 speakPhrase( comp.voiceIndex, comp.action.endedSpeakPhrase );
+            }
+
+            if ( !comp.endedAudioPlayed && comp.action.endedPlayAudio ) {
+                comp.endedAudioPlayed = true;
+                playAudioFile( comp.action.endedPlayAudioFileId );
             }
 
             if ( !comp.endedCopied && comp.action.endedClipboard ) {
@@ -873,6 +883,21 @@ function speakPhrase( voiceIndex, phrase ) {
     utter.voice = voiceOptions[ voiceIndex ];
     utter.onend = function ( event ) { }
     speechSynthesis.speak( utter );
+}
+
+/**
+ * Plays the specified audio file.
+ * 
+ * @param {string} fileId The id of the desired file.
+ */
+function playAudioFile( fileId ) {
+    ipcRenderer.once( 'audio-file:get:url', ( e, url ) => {
+        if ( url ) {
+            let player = new Audio( url );
+            player.play();
+        }
+    } );
+    ipcRenderer.send( 'audio-file:get:url', fileId );
 }
 
 module.exports = Overlay;

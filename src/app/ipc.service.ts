@@ -2,7 +2,7 @@ import { Injectable, NgZone } from '@angular/core';
 import { IpcRenderer } from 'electron';
 import { Observable, Observer } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
-import { DataTickModel, DkpEntryModel, TriggerModel, OverlayWindowModel, ActionTypes, FocusEffectSettings, CharacterModel, BasicError, TriggerFolder } from './core.model';
+import { DataTickModel, DkpEntryModel, TriggerModel, OverlayWindowModel, ActionTypes, FocusEffectSettings, CharacterModel, BasicError, TriggerFolder, FileModel } from './core.model';
 
 @Injectable()
 export class IpcService {
@@ -656,6 +656,63 @@ export class IpcService {
 
     public sendTestFn( rawLogLine: string ): void {
         this.ipc.send( 'log:send:raw', rawLogLine );
+    }
+
+    public getAudioFiles(): Observable<FileModel[]> {
+        let obs: Observable<FileModel[]> = new Observable<FileModel[]>( ( observer: Observer<FileModel[]> ) => {
+            
+            this.ipc.once( 'audio-file:get', ( e, audioFiles: FileModel[] ) => {
+                this.ngZone.run( () => {
+                    observer.next( audioFiles );
+                    observer.complete();
+                } );
+            } );
+            this.ipc.send( 'audio-file:get', null );
+
+        } );
+
+        return obs;
+    }
+
+    public getAudioFileUrl( fileId: string ): Observable<string> {
+        let obs: Observable<string> = new Observable<string>( ( observer: Observer<string> ) => {
+            
+            this.ipc.once( 'audio-file:get:url', ( e, fileUrl: string ) => {
+                this.ngZone.run( () => {
+                    observer.next( fileUrl );
+                    observer.complete();
+                } );
+            } );
+            this.ipc.send( 'audio-file:get:url', fileId );
+
+        } );
+
+        return obs;
+    }
+
+    public saveAudioFile( file: File ): Observable<string> {
+        let obs: Observable<string> = new Observable<string>( ( observer: Observer<string> ) => {
+            let name = file.name;
+
+            let reader = new FileReader();
+            reader.onload = () => {
+                if ( reader.readyState === 2 ) {
+                    let buffer = Buffer.from( reader.result );
+                    this.ipc.send( 'audio-file:save', { name: name, buffer: buffer } );
+                }
+            };
+            reader.readAsArrayBuffer( file );
+
+            this.ipc.once( 'audio-file:save', ( e, fileId: string ) => {
+                this.ngZone.run( () => {
+                    observer.next( fileId );
+                    observer.complete();
+                } );
+            } );
+
+        } );
+
+        return obs;
     }
 
     public sendTestModel( displayText: string ): void {

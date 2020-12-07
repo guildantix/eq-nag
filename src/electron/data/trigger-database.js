@@ -289,6 +289,27 @@ class TriggerDatabaseStore extends Store {
             this.#data.version = 38;
             this.storeDataFile( this.#data );
         }
+        if ( this.#data.version < 39 ) {
+            this.#data?.triggers?.forEach( trigger => {
+                trigger.actions?.forEach( action => {
+                    action.audioFileId = null;
+                } );
+            } );
+            this.#data.version = 39;
+            this.storeDataFile( this.#data );
+        }
+        if ( this.#data.version < 40 ) {
+            this.#data?.triggers?.forEach( trigger => {
+                trigger.actions?.forEach( action => {
+                    action.endingPlayAudio = false;
+                    action.endingPlayAudioFileId = null;
+                    action.endedPlayAudio = false;
+                    action.endedPlayAudioFileId = null;
+                } );
+            } );
+            this.#data.version = 40;
+            this.storeDataFile( this.#data );
+        }
     }
 
 

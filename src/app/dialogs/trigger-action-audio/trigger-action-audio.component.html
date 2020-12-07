@@ -1,0 +1,25 @@
+<mat-tab-group animationDuration="0ms" [selectedIndex]="0">
+    <mat-tab label="Audio File">
+        
+        <div class="card-tab-content">
+
+            <p>Select an audio file from the list or upload a new file.</p>
+
+            <mat-form-field>
+                <mat-label>Existing audio files</mat-label>
+                <mat-select [(ngModel)]="action.audioFileId" name="ddlAudioFileId" (selectionChange)="this.onChange.emit(action.audioFileId)">
+                    <mat-option *ngFor="let option of audioFiles" [value]="option.fileId">{{option.fileName}}</mat-option>
+                </mat-select>
+            </mat-form-field>
+
+            <button mat-icon-button *ngIf="action.audioFileId != null" (click)="playSelectedAudioFile()"><mat-icon>play_circle_outline</mat-icon></button>
+
+            <div>
+                <button mat-button (click)="openAudioFileModal()">Select new audio file.</button>
+            </div>
+
+        </div>
+
+    </mat-tab>
+</mat-tab-group>
+<input type="file" #audioFileSelector style="display:none;" accept="audio/*" (change)="onAudioFileSelected($event)" />

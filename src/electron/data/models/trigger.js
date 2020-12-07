@@ -29,6 +29,17 @@ var TriggerConditionTypes = {
     VariableValue: 1,
 }
 
+var MediaTypes = {
+    '0': 'Unknown',
+    '1': 'Image',
+    '2': 'Audio',
+    '3': 'Text',
+    Unknown: 0,
+    Image: 1,
+    Audio: 2,
+    Text: 3,
+}
+
 var OperatorTypes = {
     '0': 'IsNull',
     '1': 'Equals',
@@ -145,6 +156,11 @@ class TriggerAction {
     endingClipboardText = null;
 
     /** @type boolean */
+    endingPlayAudio = false;
+    /** @type string */
+    endingPlayAudioFileId = null;
+
+    /** @type boolean */
     endingSoonSpeak = false;
     /** @type string */
     endingSoonSpeakPhrase = null;
@@ -176,6 +192,11 @@ class TriggerAction {
     endedClipboardText = null;
 
     /** @type boolean */
+    endedPlayAudio = false;
+    /** @type string */
+    endedPlayAudioFileId = null;
+
+    /** @type boolean */
     endedChangeColor = false;
     /** @type string */
     endedColor = null;
@@ -191,6 +212,8 @@ class TriggerAction {
     /** @type {Phrase[]} */
     resetCounterPhrases = [];
 
+    /** @type string */
+    audioFileId = null;
 }
 
 class TriggerCondition {
@@ -231,4 +254,17 @@ class Trigger {
     allakhazamUrl = null;
 }
 
-module.exports = { Trigger, TriggerAction, ActionTypes, CapturePhrase, TriggerConditionTypes, OperatorTypes, Phrase, TriggerFolder };
+class FileModel {
+    
+    /** @type {string} */
+    fileId = null;
+    /** @type {MediaTypes} */
+    mediaType = MediaTypes.Unknown;
+    /** @type {string} */
+    fileName = null;
+    /** @type {string} */
+    physicalName = null;
+
+}
+
+module.exports = { Trigger, TriggerAction, ActionTypes, CapturePhrase, TriggerConditionTypes, OperatorTypes, Phrase, TriggerFolder, MediaTypes, FileModel };

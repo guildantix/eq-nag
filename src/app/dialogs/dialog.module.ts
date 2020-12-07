@@ -22,6 +22,7 @@ import { NotificationDialogComponent } from './notification-dialog/notification-
 import { TriggerActionDotTimerComponent } from './trigger-action-dotTimer/trigger-action-dotTimer.component';
 import { TriggerActionTimerComponent } from './trigger-action-timer/trigger-action-timer.component';
 import { TriggerActionCounterComponent } from './trigger-action-counter/trigger-action-counter.component';
+import { TriggerActionAudioComponent } from './trigger-action-audio/trigger-action-audio.component';
 
 @NgModule( {
     imports: [
@@ -63,6 +64,7 @@ import { TriggerActionCounterComponent } from './trigger-action-counter/trigger-
         TriggerActionDotTimerComponent,
         TriggerActionTimerComponent,
         TriggerActionCounterComponent,
+        TriggerActionAudioComponent,
     ],
     providers: [
         DialogService,

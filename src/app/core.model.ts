@@ -22,6 +22,15 @@ export enum ActionTypes {
     
 }
 
+export enum MediaTypes {
+    
+    Unknown = 0,
+    Image = 1,
+    Audio = 2,
+    Text = 3,
+
+}
+
 export enum TimerSortTypes {
 
     None = 0,
@@ -234,6 +243,9 @@ export class TriggerAction {
     public endingClipboard: boolean = false;
     public endingClipboardText: string = null;
 
+    public endingPlayAudio: boolean = false;
+    public endingPlayAudioFileId: string = null;
+
     public remainAfterEnded: boolean = false;
     public notifyWhenEnded: boolean = false;
     public remainDuration: number = null;
@@ -249,6 +261,9 @@ export class TriggerAction {
     public endedSpeak: boolean = false;
     public endedSpeakPhrase: string = null;
 
+    public endedPlayAudio: boolean = false;
+    public endedPlayAudioFileId: string = null;
+
     public endedChangeColor: boolean = false;
     public endedColor: string = null;
     public endedBackgroundColor: string = null;
@@ -256,6 +271,8 @@ export class TriggerAction {
     public excludeTargets: Phrase[] = [];
     public endEarlyPhrases: Phrase[] = [];
     public resetCounterPhrases: Phrase[] = [];
+
+    public audioFileId: string;
 }
 
 export class ScrapedSpell {
@@ -294,5 +311,14 @@ export class NewCharacterOptionModel {
     
     public server: string;
     public options: CharacterModel[] = [];
+
+}
+
+export class FileModel {
+    
+    public fileId: string = null;
+    public mediaType: MediaTypes = MediaTypes.Unknown;
+    public fileName: string = null;
+    public physicalName: string = null;
 
 }
