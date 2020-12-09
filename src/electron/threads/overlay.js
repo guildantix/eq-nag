@@ -184,7 +184,6 @@ function Overlay() {
             pDot.innerHTML = '&nbsp;';
             contentArea.appendChild( pDot );
             dotTextHeight = pDot.clientHeight;
-            console.log( 'dot text height', dotTextHeight );
             contentArea.style.paddingLeft = `${dotTextHeight + 2}px`;
             contentArea.removeChild( pDot );
 
@@ -283,7 +282,6 @@ function render( comp ) {
                 let dir = sortDirection === TimerSortTypes.Ascending ? -1 : 1;
                 let hdr = group.dom.querySelector( 'h6' );
                 group.components = _.sortBy( group.components, [ c => dir * c.timeRemaining ] );
-                group.components.forEach( c => console.log( 'testing', c.triggerName, c.timeRemaining ) );
                 for ( let i = 0; i < group.components.length; i++ ) {
                     group.dom.insertBefore( group.components[ i ].dom, hdr.nextSibling );
                 }
@@ -334,7 +332,6 @@ function render( comp ) {
                 let dir = sortDirection === TimerSortTypes.Ascending ? -1 : 1;
                 let hdr = group.dom.querySelector( 'h6' );
                 group.components = _.sortBy( group.components, [ c => dir * c.timeRemaining ] );
-                group.components.forEach( c => console.log( 'testing', c.triggerName, c.timeRemaining ) );
                 for ( let i = 0; i < group.components.length; i++ ) {
                     group.dom.insertBefore( group.components[ i ].dom, hdr.nextSibling );
                 }

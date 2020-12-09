@@ -812,7 +812,6 @@ function parseLogEntries( raw, simulating ) {
                                 let exclude = false;
 
                                 if ( action.excludeTargets[ i ].useRegEx ) {
-                                    console.log( 'exclude targets', i, res );
                                     exclude = res.result[ 1 ].match( new RegExp( action.excludeTargets[ i ].phrase, 'g' ) )?.length > 0;
                                 } else {
                                     let _rgx = new RegExp( '^' + action.excludeTargets[ i ].phrase.replace( /[.*+?^${}()|[\]\\]/g, '\\$&' ) + '$', 'gi' );
@@ -834,7 +833,6 @@ function parseLogEntries( raw, simulating ) {
                         comp.action.displayText = `${trigger.name} --== ${res.result.groups.target} ==--`;
                         comp.overlayId = action.overlayId;
                         comp.matches = res.result;
-                        console.log( 'comp.matches', comp.matches );
                         comp.timestamp = timestamp;
                         comp.voiceIndex = voiceIndex;
                         
