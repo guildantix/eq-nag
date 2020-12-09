@@ -43,6 +43,10 @@ var isDev = false;
 /** @type {CharacterModel} */
 var charModel = null;
 var characterName = null;
+/** @type {SpeechSynthesisUtterance[]} */
+var utterances = [];
+/** @type {Record<string, string>} */
+var phoneticTransforms = {};
 
 /**
  * Initializes the log watcher.
@@ -166,6 +170,10 @@ function LogWatcher(character, logPosition) {
         parseLogEntries( data );
     } );
 
+    ipcRenderer.on( 'log:speak:phrase', function ( event, data ) {
+        speakPhrase( data.phrase, data.interruptSpeech );
+    } );
+
     ipcRenderer.on( 'tick', function ( event, data ) {
         triggers = data.triggers;
         enableFct = data.enableFct;
@@ -176,6 +184,7 @@ function LogWatcher(character, logPosition) {
         extDotFocusDecayLevel = data.characterModel?.extendedDotFocusDecayLevel;
         voiceIndex = data.voiceIndex;
         isDev = data.isDev;
+        phoneticTransforms = data.phoneticTransforms;
         // isDev = false;
         generateTriggerFns();
         initCounters();
@@ -298,7 +307,15 @@ function generateTriggerFns() {
             trigger._checkConditions = function () {
                 let conditionsPassed = true;
 
-                /** @type {Record<string, any>} */
+                /**
+                 * @type {Record<string, string>}
+                 * @descripotion 
+                 *  For a dot timer, the SpellBeingCast variable may have the 
+                 *  value of 'Envenomed Bolt'.  That value may not exist in the 
+                 *  saved variables any longer, but that was the value of that 
+                 *  variable at the time the trigger was executed and that 
+                 *  value is stored in the conditionResults dictionary.
+                 */
                 trigger._conditionResults = {};
 
                 // First, the trigger must pass each condition.
@@ -430,11 +447,11 @@ function parseLogEntries( raw, simulating ) {
     
     simulating = simulating === true ? true : false;
 
-    let rgxTrigger = /grats;/gi;
+    // let rgxTrigger = /grats;/gi;
     let rgxTimestamp = /^\[(.*?)\]\s*/gi;
-    let rgxGrabText = /\'(.*?)\'$/gi;
-    let rgxDelimiter = /;/gi;
-    let rgxNum = /(\d+)/gi;
+    // let rgxGrabText = /\'(.*?)\'$/gi;
+    // let rgxDelimiter = /;/gi;
+    // let rgxNum = /(\d+)/gi;
     let rgxCombatText = /hit|damage|miss|dodge|riposte|parry|become better|backstab|stun|attack/gi;
     let rgxFctCritical = /\. \(.*(Critical).*\)/gi;
     
@@ -464,18 +481,18 @@ function parseLogEntries( raw, simulating ) {
     if ( !timestamp || timestamp.length === 0 || timestamp.length === 1 )
         console.log( 'failed parse', raw );
     
-    if ( raw.match( rgxTrigger ) ) {
+    // if ( raw.match( rgxTrigger ) ) {
         
-        let text = rgxGrabText.exec( raw )[ 1 ].split( rgxDelimiter );
-        let item = text[ 2 ];
-        let character = text[ 1 ];
-        let dkp = rgxNum.exec( text[ 3 ] )[ 0 ];
+    //     let text = rgxGrabText.exec( raw )[ 1 ].split( rgxDelimiter );
+    //     let item = text[ 2 ];
+    //     let character = text[ 1 ];
+    //     let dkp = rgxNum.exec( text[ 3 ] )[ 0 ];
         
-        if ( !simulating )
-            ipcRenderer.send( 'dkp:add', new DkpEntryModel( timestamp, character, item, +dkp ) );
-        else
-            console.log( 'dkp:add', new DkpEntryModel( timestamp, character, item, +dkp ) );
-    }
+    //     if ( !simulating )
+    //         ipcRenderer.send( 'dkp:add', new DkpEntryModel( timestamp, character, item, +dkp ) );
+    //     else
+    //         console.log( 'dkp:add', new DkpEntryModel( timestamp, character, item, +dkp ) );
+    // }
     if ( enableFct && raw.match( rgxCombatText )?.length > 0 ) {
         for ( let i = 0; i < fctRegExs.length; i++ ) {
             let results = fctRegExs[ i ].exec( raw );
@@ -679,7 +696,12 @@ function parseLogEntries( raw, simulating ) {
                     } else if ( action.actionType === ActionTypes.ClearVariable ) {
                     /* --== Clear Variable ==-- */
 
-                        clearStoredVariable( action.variableName, res.result.groups != null ? res.result.groups[ action.variableName ] : trigger._conditionResults[ action.variableName ] );
+                        if ( res.result.groups && res.result.groups[ action.variableName ] ) {
+                            clearStoredVariable( action.variableName, res.result.groups[ action.variableName ] );
+                        } else {
+                            clearStoredVariable( action.variableName, trigger._conditionResults[ action.variableName ] );
+                        }
+                        // clearStoredVariable( action.variableName, res.result.groups != null && res.result.groups[ action.variableName ] != null ? res.result.groups[ action.variableName ] : trigger._conditionResults[ action.variableName ] );
 
                     } else if ( action.actionType === ActionTypes.Counter ) {
                     /* --== Clear Variable ==-- */
@@ -809,9 +831,10 @@ function parseLogEntries( raw, simulating ) {
                         comp.instanceId = nanoid();
                         comp.triggerName = trigger.name;
                         comp.action = Object.assign( new TriggerAction(), action );
-                        comp.action.displayText = `${trigger.name} --== {1} ==--`;
+                        comp.action.displayText = `${trigger.name} --== ${res.result.groups.target} ==--`;
                         comp.overlayId = action.overlayId;
                         comp.matches = res.result;
+                        console.log( 'comp.matches', comp.matches );
                         comp.timestamp = timestamp;
                         comp.voiceIndex = voiceIndex;
                         
@@ -902,13 +925,7 @@ function parseLogEntries( raw, simulating ) {
                         /* --== TTS Speak ==-- */
                         
                         if ( !simulating && action.displayText && voiceIndex > -1 ) {
-                            var utter = new SpeechSynthesisUtterance();
-
-                            utter.text = StringUtilities.parseStoredVariablesToLiteral( action.displayText, storedVariables );
-                            utter.text = StringUtilities.parseCountersToLiteral( utter.text, counters );
-                            utter.voice = voiceOptions[ voiceIndex ];
-                            utter.onend = function ( event ) { }
-                            speechSynthesis.speak( utter );
+                            speakPhrase( action.displayText, action.interruptSpeech, trigger._conditionResults );
 
                         } else {
                             console.log( 'speaking', StringUtilities.parseStoredVariablesToLiteral( action.displayText, storedVariables ) );
@@ -1013,6 +1030,58 @@ function renderPhrases( phrases, conditionResults, parseResult ) {
     }
 
     return renderedPhrases;
+}
+
+/**
+ * Tells speech synthisis engine to speak the given phrase.
+ * 
+ * @param {string} phrase The phrase to speak.
+ * @param {boolean} interrupt If true, interrupts the current utterance if the speech engine is speaking.
+ * @param {Record<string, string>} conditionResults The condition results.
+ */
+function speakPhrase( phrase, interrupt, conditionResults ) {
+
+    let utter = new SpeechSynthesisUtterance();
+
+    utter.text = StringUtilities.parseStoredVariablesToLiteral( phrase, storedVariables );
+    if ( conditionResults ) {
+        utter.text = StringUtilities.parseConditionResultsToLiteral( utter.text, conditionResults );
+    }
+    utter.text = StringUtilities.parseCountersToLiteral( utter.text, counters );
+    utter.text = StringUtilities.parsePhoneticTransformsToLiteral( utter.text, phoneticTransforms );
+    utter.voice = voiceOptions[ voiceIndex ];
+
+    utter.onend = function ( event ) {
+        let i = utterances.indexOf( this );
+        if ( i > -1 ) {
+            utterances.splice( i, 1 );
+        }
+        if ( utterances?.length > 0 ) {
+            speechSynthesis.speak( utterances[ 0 ] );
+        }
+    }
+
+    if ( interrupt && speechSynthesis.speaking ) {
+        
+        // Stop any current speech.
+        speechSynthesis.cancel();
+        
+        // Put this speech at the top of the list.
+        utterances.unshift( utter );
+        
+        // Tell the engine to start talking.
+        speechSynthesis.speak( utterances[ 0 ] );
+
+    } else {
+        
+        // Put the utterance at the end of the queue.
+        utterances.push( utter );
+
+        // If the engine is not talking, tell it to start talking.
+        !speechSynthesis.speaking && speechSynthesis.speak( utterances[ 0 ] );
+
+    }
+    
 }
 
 /**

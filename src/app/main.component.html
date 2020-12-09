@@ -147,6 +147,74 @@
                         </mat-select>
                     </fieldset>
 
+                    <fieldset>
+                        <legend>Import from GINA</legend>
+                        <button mat-button color="accent" (click)="openImportGinaDialog()" [disabled]="loadingGinaConfig">
+                            <span *ngIf="!loadingGinaConfig" style="display: flex; align-items: center; justify-content: center;"><mat-icon>input</mat-icon><span>&nbsp;Import</span></span>
+                            <span *ngIf="loadingGinaConfig"  style="display: flex; align-items: center; justify-content: center;"><mat-spinner [diameter]="20" color="accent"></mat-spinner><span>&nbsp;Loading ...</span></span>
+                        </button>
+                    </fieldset>
+
+                    <fieldset>
+                        <legend><span>Phonetic Transforms</span><span class="spacer"></span><button mat-button (click)="addPhoneticTransform(phoneticTransformsTable)" color="accent"><mat-icon>add</mat-icon>New</button></legend>
+
+                        <table mat-table #phoneticTransformsTable="matTable" style="width: 100%;"
+                            [dataSource]="phoneticTransforms"
+                            class="capture-phrases">
+    
+                            <ng-container matColumnDef="original">
+                                <th mat-header-cell *matHeaderCellDef style="text-align: left;">Original</th>
+                                <td mat-cell *matCellDef="let element; let i = index" style="text-align: left;">
+
+                                    <mat-form-field style="width: 95%;margin-top: 10px;">
+                                        <mat-label>Original text</mat-label>
+                                        <input matInput [(ngModel)]="element.originalText" name="txtOriginalText_{{i}}" type="text" (change)="phoneticTransformsModified = true" />
+                                    </mat-form-field>
+
+                                </td>
+                            </ng-container>
+    
+                            <ng-container matColumnDef="phonetic">
+                                <th mat-header-cell *matHeaderCellDef style="text-align: left;">Phonetic</th>
+                                <td mat-cell *matCellDef="let element; let i = index" style="text-align: left;">
+
+                                    <mat-form-field style="width: 95%;margin-top: 10px;">
+                                        <mat-label>Phonetic text</mat-label>
+                                        <input matInput [(ngModel)]="element.phoneticText" name="txtPhoneticText_{{i}}" type="text" (change)="phoneticTransformsModified = true" />
+                                    </mat-form-field>
+                                    
+                                </td>
+                            </ng-container>
+    
+                            <ng-container matColumnDef="play">
+                                <th mat-header-cell *matHeaderCellDef style="text-align: center; width: 50px; padding-left: 15px;">  </th>
+                                <td mat-cell *matCellDef="let element; let i = index" style="text-align: center; width: 50px; padding-left: 15px;">
+                                    <button mat-icon-button aria-label="Delete this overlay" (click)="speakPhrase(element.phoneticText)">
+                                        <mat-icon>play_circle_outline</mat-icon>
+                                    </button>
+                                </td>
+                            </ng-container>
+    
+                            <ng-container matColumnDef="delete">
+                                <th mat-header-cell *matHeaderCellDef style="text-align: center; width: 50px; padding-left: 15px;">  </th>
+                                <td mat-cell *matCellDef="let element; let i = index" style="text-align: center; width: 50px; padding-left: 15px;">
+                                    <button mat-icon-button color="warn" aria-label="Delete this overlay" (click)="deletePhoneticTransform(i, phoneticTransformsTable)">
+                                        <mat-icon>clear</mat-icon>
+                                    </button>
+                                </td>
+                            </ng-container>
+    
+                            <tr mat-header-row *matHeaderRowDef="['original', 'phonetic', 'play', 'delete']"></tr>
+                            <tr mat-row *matRowDef="let element; columns: ['original', 'phonetic', 'play', 'delete'];"></tr>
+    
+                        </table>
+
+                        <button mat-button *ngIf="phoneticTransformsModified" (click)="savePhoneticTransforms()" color="accent">Save Changes</button>
+                        <!-- <ol>
+                            <li *ngFor="let key of objectKeys(phoneticTransforms)"></li>
+                        </ol> -->
+                    </fieldset>
+
                     <!-- <fieldset>
                         <legend>Focus Effects</legend>
                         <mat-checkbox [(ngModel)]="focusEffectSettings.hasExtendedDotFocus" (change)="updateFocusEffectSettings()"> Extended DOT Focus?</mat-checkbox>

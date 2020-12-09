@@ -72,14 +72,16 @@ export class NewTriggerDialogComponent implements OnInit {
                 useRegEx: true,
                 requirePreviousPhrase: false,
                 duration: null,
-                phrase: spell.castOnOther.replace( /soandso's|soandso\s's|soandso/gmi, '^(.*)' ),
+                ///^(?<target>.+?)\s?'s has been poisoned\.
+                phrase: spell.castOnOther.replace(/\.$/, '\\.$').replace( /soandso's|soandso\s's|soandso/gmi, '^(?<target>.+?)\'?s?' ),
             } );
             trigger.capturePhrases.push( <CapturePhrase>{
                 phraseId: nanoid(),
                 useRegEx: true,
                 requirePreviousPhrase: false,
                 duration: null,
-                phrase: `^(?<target>.*) has taken (?<damage>[0-9]*) ?damage from your ${spell.name}\\.`,
+                // ^?{target} has taken (?<damage>[0-9]*) ?damage from your Poison Bolt\.
+                phrase: `^?{target} has taken (?<damage>[0-9]*) ?damage from your ${spell.name}\\.`,
             } );
 
             let originalDotAction: TriggerAction;
@@ -130,7 +132,7 @@ export class NewTriggerDialogComponent implements OnInit {
                 dotAction.excludeTargets = [];
                 dotAction.excludeTargets.push( <Phrase>{
                     phraseId: nanoid(),
-                    phrase: '^(?:A\s|An\s|a\s|an\s|[a-z])',
+                    phrase: '^(?:A\\s|An\\s|a\\s|an\\s|[a-z])',
                     useRegEx: true,
                 } );
             }

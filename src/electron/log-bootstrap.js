@@ -61,6 +61,16 @@ class LogBootstrapper {
                 }
             }
         } );
+
+        ipcMain.on( 'log:speak:phrase', function ( event, data ) {
+            for ( let key in logWatchers ) {
+                if ( logWatchers.hasOwnProperty( key ) && logWatchers[ key ].window != null ) {
+                    logWatchers[ key ].window.webContents.send( 'log:speak:phrase', data );
+                    // We only need to send this to one log watcher window. It's not hacky!
+                    break;
+                }
+            }
+        } );
         
         let characters = characterDatabase.getAll();
         characters.forEach( chr => {

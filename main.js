@@ -13,6 +13,7 @@ const CharacterDatabaseStore = require( "./src/electron/data/character-database"
 const LogBootstrapper = require( './src/electron/log-bootstrap' );
 const GameResources = require( './src/electron/data/game-resources' );
 const FilesDatabaseStore = require( './src/electron/data/files-database' );
+const GinaImporter = require( "./src/electron/gina-importer" );
 
 /** @type {BrowserWindow} */
 var mainWindow, logWatcherWindow, testWindow;
@@ -26,6 +27,7 @@ const characterDatabase = new CharacterDatabaseStore();
 const logBootstrap = new LogBootstrapper();
 const gameResources = new GameResources();
 const fileDatabase = new FilesDatabaseStore();
+const ginaImporter = new GinaImporter();
 
 GH_TOKEN = "e3460400ae1273a5cac83e1b86a5aceae7f8bab7";
 
@@ -130,6 +132,7 @@ function sendTick() {
         extendedDotFocusPercent: userPreferences.extendedDotFocusPercent,
         extendedDotFocusDecayLevel: userPreferences.extendedDotFocusDecayLevel,
         isDev: app.isDev(),
+        phoneticTransforms: userPreferences.phoneticTransforms,
     };
     mainWindow.webContents.send( 'tick', tickData );
     logBootstrap.tick( tickData, characterDatabase );
@@ -180,6 +183,7 @@ characterDatabase.attachIpcEvents( mainWindowRef, sendTick );
 logBootstrap.boostrapLogWatchers( mainWindowRef, app.isDev(), characterDatabase, sendTick );
 gameResources.attachIpcEvents( mainWindowRef, userPreferences );
 fileDatabase.attachIpcEvents( mainWindowRef );
+ginaImporter.initGinaImporter( mainWindowRef, app.isDev() );
 
 let x = userPreferences.everquestInstallFolder;
 

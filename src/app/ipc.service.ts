@@ -3,6 +3,7 @@ import { IpcRenderer } from 'electron';
 import { Observable, Observer } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
 import { DataTickModel, DkpEntryModel, TriggerModel, OverlayWindowModel, ActionTypes, FocusEffectSettings, CharacterModel, BasicError, TriggerFolder, FileModel } from './core.model';
+import { GinaConfiguration } from './gina.model';
 
 @Injectable()
 export class IpcService {
@@ -709,6 +710,45 @@ export class IpcService {
                     observer.complete();
                 } );
             } );
+
+        } );
+
+        return obs;
+    }
+
+    public getPhoneticTransforms(): Observable<Record<string, string>> {
+        let obs: Observable<Record<string, string>> = new Observable<Record<string, string>>( ( observer: Observer<Record<string, string>> ) => {
+            
+            this.ipc.once( 'settings:get:phonetic-transforms', ( e, phoneticTransforms: Record<string, string> ) => {
+                this.ngZone.run( () => {
+                    observer.next( phoneticTransforms );
+                    observer.complete();
+                } );
+            } );
+            this.ipc.send( 'settings:get:phonetic-transforms', null );
+
+        } );
+
+        return obs;
+    }
+
+    public savePhoneticTransforms( transforms: Record<string, string> ): void {
+        this.ipc.send( 'settings:set:phonetic-transforms', transforms );
+    }
+
+    /**
+     * Returns the GINA configuration file if the GINA data folder was found.
+     */
+    public getGinaConfiguration(): Observable<GinaConfiguration> {
+        let obs: Observable<GinaConfiguration> = new Observable<GinaConfiguration>( ( observer: Observer<GinaConfiguration> ) => {
+            
+            this.ipc.once( 'gina:get:configuration', ( e, ginaConfig: GinaConfiguration ) => {
+                this.ngZone.run( () => {
+                    observer.next( ginaConfig );
+                    observer.complete();
+                } );
+            } );
+            this.ipc.send( 'gina:get:configuration', null );
 
         } );
 

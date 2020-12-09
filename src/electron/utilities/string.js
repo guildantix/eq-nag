@@ -74,6 +74,18 @@ function parseStoredVariablesToLiteral( value, storedVariables ) {
     return value;
 }
 
+/**
+ * Transforms the given phrase, replacing matching named conditions to the values those conditions matched when the trigger was executed.
+ * 
+ * @description 
+ *  For a dot timer, the SpellBeingCast variable may have the value of 
+ *  'Envenomed Bolt'.  That value may not exist in the saved variables any 
+ *  longer, but that was the value of that variable at the time the trigger was 
+ *  executed and that value is stored in the conditionResults dictionary.
+ * 
+ * @param {string} value The phrase to transform.
+ * @param {Record<string, string>} conditionResults The values of conditions(s) when the trigger condition(s) were passed.
+ */
 function parseConditionResultsToLiteral( value, conditionResults ) {
     // \${(.[^}]*)}     Your ${SpellBeingCast} spell is interrupted.
     //                      Full match	47-63	{SpellBeingCast}
@@ -120,6 +132,22 @@ function parseCountersToLiteral( value, counters ) {
     }
     
     return value;
+}
+
+/**
+ * Transforms values in the given string based on the given phonetic transforms.
+ * 
+ * @param {string} value The phrase to transform.
+ * @param {Record<string, string>} phoneticTransforms The phonetic transforms.
+ */
+function parsePhoneticTransformsToLiteral( value, phoneticTransforms ) {
+    if ( phoneticTransforms ) {
+        for ( let key of Object.keys( phoneticTransforms ) ) {
+            // Escape the regex values in the key
+            let rgx = new RegExp( key.replace( /[.*+?^${}()|[\]\\]/g, '\\$&' ), 'gi' );
+            value = value.replace( rgx, phoneticTransforms[ key ] );
+        }
+    }
 }
 
 /**
@@ -259,6 +287,7 @@ let StringUtilities = {
     parseMatchesToLiteral: parseMatchesToLiteral,
     parseCountersToLiteral: parseCountersToLiteral,
     parseSequentialGroups: parseSequentialGroups,
+    parsePhoneticTransformsToLiteral: parsePhoneticTransformsToLiteral,
 };
 
 module.exports = StringUtilities;

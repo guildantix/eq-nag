@@ -5,6 +5,14 @@ import { IpcService } from './ipc.service';
 import { DkpEntryModel, OverlayWindowModel, FocusEffectSettings } from './core.model';
 import { DialogService } from './dialogs/dialog.service';
 import { ScraperService } from './scraper.service';
+import { nanoid } from 'nanoid';
+import { MatTable } from '@angular/material/table';
+
+interface IPhoneticTransform {
+    id: string;
+    originalText?: string;
+    phoneticText?: string;
+}
 
 @Component( {
     selector: 'app-main',
@@ -13,7 +21,8 @@ import { ScraperService } from './scraper.service';
 } )
 export class MainComponent implements OnInit {
 
-    
+    public phoneticTransforms: IPhoneticTransform[] = [];
+    public phoneticTransformsModified: boolean = false;
     public msg: string;
     public dkpEntries: DkpEntryModel[] = [];
     public version: string;
@@ -38,6 +47,7 @@ export class MainComponent implements OnInit {
         '[Sat Mar 14 13:48:08 2020] You slash an aneuk fleshthreader for 10742 points of damage.',
         '[Sat Mar 14 13:49:08 2020] You slash a kyv hunter for 29027 points of damage. (Lucky Critical)',
     ];
+    public loadingGinaConfig: boolean = false;
     public movingFolderSource: string = null;
 
     @ViewChild( 'fileSelector' ) private fileSelector: ElementRef<HTMLInputElement>;
@@ -86,6 +96,33 @@ export class MainComponent implements OnInit {
         this.ipcService.getAppVersion().subscribe( version => this.version = version );
         this.ipcService.consoleLogRequested().subscribe( data => console.log( 'from main', data ) );
         this.ipcService.getAppIsDev().subscribe( isDev => this.isDev = isDev );
+        this.ipcService.getPhoneticTransforms().subscribe( transforms => {
+            this.phoneticTransforms = [];
+            if ( transforms ) {
+                for ( let key of Object.keys( transforms ) ) {
+                    this.phoneticTransforms.push( { id: nanoid(), originalText: key, phoneticText: transforms[ key ] } );
+                }
+            }
+        } );
+    }
+
+    getPhoneticTransformsRecord(): Record<string, string> {
+        let transforms: Record<string, string> = {};
+        let duplicates: string[] = [];
+
+        this.phoneticTransforms.forEach( t => {
+            if ( !transforms.hasOwnProperty( t.originalText ) ) {
+                transforms[ t.originalText ] = t.phoneticText;
+            } else {
+                duplicates.push( t.originalText );
+            }
+        } );
+
+        if ( duplicates.length > 0 ) {
+            this.dialogService.showWarningDialog( 'Phonetics removed', [ 'Some of the phonetics in the list had duplicate original texts and were not saved.  Please review the list: ' ].concat( duplicates ) );
+        }
+
+        return transforms;
     }
 
     removeEntry( entry: any ): void {
@@ -188,8 +225,60 @@ export class MainComponent implements OnInit {
     }
 
     public selectMoveSourceFolder( target: any ): void {
-        console.log( 'folder source', target );
         this.movingFolderSource = target;
+    }
+
+    public addPhoneticTransform( table: MatTable<IPhoneticTransform> ): void {
+        this.phoneticTransforms.push( { id: nanoid() } );
+        table?.renderRows();
+        this.phoneticTransformsModified = true;
+    }
+
+    public deletePhoneticTransform( index: number, table: MatTable<IPhoneticTransform> ): void {
+        this.dialogService.showConfirmDialog(
+            `Are you sure you want to delete ${this.phoneticTransforms[ index ].originalText}?`,
+            'Click "Yes" to delete this transform.', 'Click "No" to close this dialog without deleting the transform.',
+            confirmed => {
+                if ( confirmed === true ) {
+                    this.phoneticTransforms.splice( index, 1 );
+                    this.ipcService.savePhoneticTransforms( this.getPhoneticTransformsRecord() );
+                    table?.renderRows();
+                    this.phoneticTransformsModified = true;
+                }
+            } );
+    }
+
+    public savePhoneticTransforms(): void {
+        this.ipcService.savePhoneticTransforms( this.getPhoneticTransformsRecord() );
+        this.phoneticTransformsModified = false;
+    }
+
+    public speakPhrase( phrase: string ): void {
+        var utter = new SpeechSynthesisUtterance();
+        utter.text = phrase;
+        utter.voice = this.voiceOptions[ this.voiceIndex ];
+        utter.onend = function ( event ) { }
+        speechSynthesis.speak( utter );
+    }
+
+    public openImportGinaDialog(): void {
+        this.loadingGinaConfig = true;
+        this.ipcService
+            .getGinaConfiguration()
+            .subscribe( ginaConfig => {
+                this.loadingGinaConfig = false;
+                if ( ginaConfig == null ) {
+                    this.dialogService.showWarningDialog( 'GINA failure', 'Could not find the GINA data directory' );
+                } else {
+                    // ginaConfig.Settings.PhoneticTransforms.Transform[ 0 ].ActualWord
+                    console.log( 'testing', ginaConfig.Settings.PhoneticTransforms.Transform[ 0 ].ActualWord );
+                    console.log( 'testing', ginaConfig.BehaviorGroups.Behavior[ 0 ].WindowLayout.WINDOWPLACEMENT.normalPosition.Left );
+                    console.log( 'testing', ginaConfig.TriggerGroups.TriggerGroup[ 0 ].Triggers.Trigger[ 4 ].Name );
+                    console.log( 'testing', ginaConfig.TriggerGroups.TriggerGroup[ 0 ].Triggers.Trigger[ 4 ].TimerEndingTrigger.DisplayText );
+                    let earlye = ginaConfig.TriggerGroups.TriggerGroup[ 0 ].Triggers.Trigger[ 4 ].TimerEarlyEnders.EarlyEnder;
+                    console.log( 'testing', (earlye instanceof Array) ? earlye[1].EarlyEndText : earlye.EarlyEndText );
+                }
+            } );
     }
 
     public testFn(): void {

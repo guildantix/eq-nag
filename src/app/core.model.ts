@@ -225,6 +225,7 @@ export class TriggerAction {
     public useCustomColor: boolean = false;
     public timerIcon: string = null;
     public timerIconDef: string = null;
+    public interruptSpeech: boolean = false;
 
     public ifEndingSoon: boolean = false;
     public endingDuration: number = null;
@@ -239,7 +240,8 @@ export class TriggerAction {
 
     public endingSoonSpeak: boolean = false;
     public endingSoonSpeakPhrase: string = null;
-    
+    public endingSoonInterruptSpeech: boolean = false;
+
     public endingClipboard: boolean = false;
     public endingClipboardText: string = null;
 
@@ -260,6 +262,7 @@ export class TriggerAction {
 
     public endedSpeak: boolean = false;
     public endedSpeakPhrase: string = null;
+    public endedInterruptSpeech: boolean = false;
 
     public endedPlayAudio: boolean = false;
     public endedPlayAudioFileId: string = null;

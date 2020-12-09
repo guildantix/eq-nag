@@ -663,7 +663,7 @@ function applyTimerSettings( contentArea, comp ) {
 
             if ( !comp.endingSoonSpoken && comp.action.endingSoonSpeak ) {
                 comp.endingSoonSpoken = true;
-                speakPhrase( comp.voiceIndex, comp.action.endingSoonSpeakPhrase );
+                speakPhrase( comp.action.endingSoonSpeakPhrase, comp.action.endingSoonInterruptSpeech );
             }
 
             if ( !comp.endingAudioPlayed && comp.action.endingPlayAudio ) {
@@ -694,7 +694,7 @@ function applyTimerSettings( contentArea, comp ) {
 
             if ( !comp.endedSpoken && comp.action.endedSpeak ) {
                 comp.endedSpoken = true;
-                speakPhrase( comp.voiceIndex, comp.action.endedSpeakPhrase );
+                speakPhrase( comp.action.endedSpeakPhrase, comp.action.endedInterruptSpeech );
             }
 
             if ( !comp.endedAudioPlayed && comp.action.endedPlayAudio ) {
@@ -876,13 +876,8 @@ function sendDisplayTextToOverlay( overlayId, text, duration ) {
     ipcRenderer.send( 'overlay:send:component', comp );
 }
 
-function speakPhrase( voiceIndex, phrase ) {
-    var utter = new SpeechSynthesisUtterance();
-
-    utter.text = phrase;
-    utter.voice = voiceOptions[ voiceIndex ];
-    utter.onend = function ( event ) { }
-    speechSynthesis.speak( utter );
+function speakPhrase( phrase, interruptSpeech ) {
+    ipcRenderer.send( 'log:speak:phrase', { phrase: phrase, interruptSpeech: interruptSpeech } );
 }
 
 /**

@@ -129,6 +129,8 @@ class TriggerAction {
     timerIcon = null;
     /** @type string */
     timerIconDef = null;
+    /** @type boolean */
+    interruptSpeech = false;
 
     /** @type boolean */
     ifEndingSoon = false;
@@ -164,6 +166,8 @@ class TriggerAction {
     endingSoonSpeak = false;
     /** @type string */
     endingSoonSpeakPhrase = null;
+    /** @type boolean */
+    endingSoonInterruptSpeech = false;
 
     /** @type boolean */
     remainAfterEnded = false;
@@ -185,6 +189,8 @@ class TriggerAction {
     endedSpeak = false;
     /** @type string */
     endedSpeakPhrase = null;
+    /** @type boolean */
+    endedInterruptSpeech = false;
     
     /** @type boolean */
     endedClipboard = false;

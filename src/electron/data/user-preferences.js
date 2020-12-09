@@ -45,7 +45,11 @@ function get_win_drives( success_cb, error_cb ) {
 
 class UserPreferencesStore extends Store {
 
-    /** The data store for this object. */
+    /** The data store for this object.
+     * @type {{
+     * phoneticTransforms: Record<string, string>
+     * }}
+     */
     #data;
 
     get windowHeight() {
@@ -152,6 +156,14 @@ class UserPreferencesStore extends Store {
     }
     set everquestInstallFolder( val ) {
         this.#data.everquestInstallFolder = val;
+    }
+
+    /** @type {Record<string, string>} */
+    get phoneticTransforms() {
+        return this.#data.phoneticTransforms;
+    }
+    set phoneticTransforms( val ) {
+        this.#data.phoneticTransforms = val;
     }
 
     constructor() {
@@ -283,6 +295,20 @@ class UserPreferencesStore extends Store {
                 } );
             }
         } );
+
+        ipcMain.on( 'settings:get:phonetic-transforms', ( event ) => {
+            event.sender.webContents.send( 'settings:get:phonetic-transforms', this.#data.phoneticTransforms );
+        } );
+
+        ipcMain.on( 'settings:set:phonetic-transforms',
+            /**
+             * @param {Record<string, string>} transforms
+             */
+            ( event, transforms ) => {
+                this.#data.phoneticTransforms = transforms;
+                this.storeDataFile( this.#data );
+                sendTick();
+            } );
 
     }
 
