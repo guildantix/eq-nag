@@ -228,7 +228,6 @@ function initCounters() {
             } );
         }
     } );
-    console.log( 'initCounters', counters );
 }
 
 function generateTriggerFns() {
@@ -236,7 +235,12 @@ function generateTriggerFns() {
         if ( ( isDev || !trigger.onlyExecuteInDev ) && trigger.capturePhrases?.length > 0 ) {
 
             // First we generate parse functions for each capture phrase in the trigger.
+            /** @type {(value: string) => {phraseId: string, match: boolean, result: any}} */
             let _phraseParsers = [];
+            /** @type {Record<string, string>} */
+            let _sequentialMatchGroups = {};
+            /** @type {boolean} */
+            let _hasSequentialMatchGroups = false;
             trigger.capturePhrases?.forEach( phrase => {
 
                 // Only create parse functions for phrases that have content.
@@ -244,7 +248,11 @@ function generateTriggerFns() {
                     if ( phrase.useRegEx ) {
                         // Use different parse functions for regex vs normal.
                         _phraseParsers.push( value => {
-                            let _res = new RegExp( StringUtilities.parseStoredVariablesToRegex( phrase.phrase, storedVariables ), 'gi' ).exec( value );
+                            let rgxValue = StringUtilities.parseStoredVariablesToRegex( phrase.phrase, storedVariables );
+                            if ( _hasSequentialMatchGroups ) {
+                                rgxValue = StringUtilities.parseSequentialGroups( rgxValue, _sequentialMatchGroups );
+                            }
+                            let _res = new RegExp( rgxValue, 'gi' ).exec( value );
                             return {
                                 phraseId: phrase.phraseId,
                                 match: _res?.length > 0,
@@ -359,14 +367,27 @@ function generateTriggerFns() {
                 trigger._captureIndex = 0;
                 trigger._reset = () => {
                     trigger._captureIndex = 0;
+                    _sequentialMatchGroups = {};
+                    _hasSequentialMatchGroups = false;
                 };
                 trigger._parse = value => {
                 
                     // If all conditions passed, then parse the phrase.
                     if ( trigger._captureIndex < _phraseParsers?.length && trigger._checkConditions() ) {
                         let _res = _phraseParsers[ trigger._captureIndex ]( value );
+                        
                         if ( _res?.match ) {
                             trigger._captureIndex += 1;
+                            
+                            let groupKeys = _res.result?.groups ? Object.keys( _res.result.groups ) : [];
+                            if ( groupKeys.length > 0 ) {
+                                for ( let key of groupKeys ) {
+                                    _sequentialMatchGroups[ key ] = _res.result.groups[ key ];
+                                }
+                            }
+
+                            _hasSequentialMatchGroups = _hasSequentialMatchGroups || groupKeys.length > 0;
+
                             return _res;
                         }
                     } else {
@@ -769,6 +790,7 @@ function parseLogEntries( raw, simulating ) {
                                 let exclude = false;
 
                                 if ( action.excludeTargets[ i ].useRegEx ) {
+                                    console.log( 'exclude targets', i, res );
                                     exclude = res.result[ 1 ].match( new RegExp( action.excludeTargets[ i ].phrase, 'g' ) )?.length > 0;
                                 } else {
                                     let _rgx = new RegExp( '^' + action.excludeTargets[ i ].phrase.replace( /[.*+?^${}()|[\]\\]/g, '\\$&' ) + '$', 'gi' );

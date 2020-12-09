@@ -122,6 +122,39 @@ function parseCountersToLiteral( value, counters ) {
     return value;
 }
 
+/**
+ * Replaces named group matches in the given string from the dictionary.
+ * 
+ * @param {string} value The value that may contain references to regex named groups.
+ * @param {Record<string, string>} groups The named groups dictionary.
+ */
+function parseSequentialGroups( value, groups ) {
+    if ( isNullOrWhitespace( value ) ) {
+        return value;
+    }
+    // \${(.[^}]*)}     Your ${SpellBeingCast} spell is interrupted.
+    //                      Full match	47-63	{SpellBeingCast}
+    //                      Group 1.	n/a	SpellBeingCast
+    let namedResults = [ ...value.matchAll( /\?{(.[^}]*)}/g ) ];
+    
+    if ( namedResults?.length > 0 && groups != null ) {
+        for ( let m = 0; m < namedResults.length; m++ ) {
+            // ex: groups.player == 'Soandso'
+            //  when given the phrase
+            //      ${target} has been slain by ${player}!
+            //  matches the log entry
+            //      (?<target>Mob Name A) has been slain by (?<player>Soandso)!
+            let key = namedResults[ m ][ 1 ];
+
+            if ( groups[ key ] != null ) {
+                value = value.replace( RegExp( `\\\?{${key}}`, 'g' ), `(?<${key}>${groups[ key ]})` );
+            }
+        }
+    }
+    
+    return value;
+}
+
 function parseMatchesToLiteral( value, matches ) {
     if ( isNullOrWhitespace( value ) ) {
         return value;
@@ -225,6 +258,7 @@ let StringUtilities = {
     parseConditionResultsToLiteral: parseConditionResultsToLiteral,
     parseMatchesToLiteral: parseMatchesToLiteral,
     parseCountersToLiteral: parseCountersToLiteral,
+    parseSequentialGroups: parseSequentialGroups,
 };
 
 module.exports = StringUtilities;
