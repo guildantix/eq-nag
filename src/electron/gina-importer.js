@@ -33,11 +33,11 @@ class GinaImporter {
      * @param {boolean} isDev Sets up the log watcher window for development environment if true.
      */
     initGinaImporter( mainWindowRef, isDev ) {
-
+        
         mainWindowRef.whenReady( () => {
             
             mainWindowRef.reference.webContents.once( 'did-finish-load', () => {
-                queryGina( process.env.HOME, ginaPath => {
+                queryGina( app.getPath( 'home' ), ginaPath => {
                     ginaDataPath = ginaPath;
                     // getGinaConfig( jsonData => {
                     //     if ( jsonData ) {
@@ -60,6 +60,7 @@ class GinaImporter {
                 }
             } );
         } );
+        
     }
     
 
