@@ -148,6 +148,7 @@ function parsePhoneticTransformsToLiteral( value, phoneticTransforms ) {
             value = value.replace( rgx, phoneticTransforms[ key ] );
         }
     }
+    return value;
 }
 
 /**
