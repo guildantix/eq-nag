@@ -4,7 +4,8 @@ const path = require( 'path' );
 const process = require( 'process' );
 const fs = require( 'fs' );
 const DkpEntryModel = require( '../data/models/dkp-entry' );
-const { Trigger, TriggerAction, ActionTypes, TriggerConditionTypes, OperatorTypes } = require( '../data/models/trigger' );
+const { TriggerAction, ActionTypes, TriggerConditionTypes, OperatorTypes } = require( '../data/models/trigger' );
+const { PhraseParse, LogTrigger } = require( './log.model' );
 const { OverlayComponent } = require( '../data/models/overlay-window' );
 const CharacterModel = require( '../data/models/character' );
 const customAlphabet = require( 'nanoid' ).customAlphabet;
@@ -21,7 +22,7 @@ var currentPosition = null;
 var startLogPosition = null;
 
 var watcher = null;
-/** @type {Trigger[]} */
+/** @type {LogTrigger[]} */
 var triggers = [];
 /** @type {Record<string, string[]>} */
 var storedVariables = {};
@@ -48,6 +49,15 @@ var characterName = null;
 var utterances = [];
 /** @type {Record<string, string>} */
 var phoneticTransforms = {};
+
+
+
+
+
+
+
+
+
 
 /**
  * Initializes the log watcher.
@@ -205,6 +215,18 @@ function LogWatcher(character, logPosition) {
     };
 }
 
+
+
+
+
+
+
+
+
+
+/**
+ * Initializes all counter trigger actions.
+ */
 function initCounters() {
     counters = {};
     triggers?.forEach( trigger => {
@@ -240,12 +262,24 @@ function initCounters() {
     } );
 }
 
+
+
+
+
+
+
+
+
+
+/**
+ * Pre-generate parse functions for each trigger.
+ */
 function generateTriggerFns() {
     triggers?.forEach( trigger => {
         if ( ( isDev || !trigger.onlyExecuteInDev ) && trigger.capturePhrases?.length > 0 ) {
 
             // First we generate parse functions for each capture phrase in the trigger.
-            /** @type {(value: string) => {phraseId: string, match: boolean, result: any}} */
+            /** @type {((value: string, hasGroups: boolean, matchGroups: Record<string, string>) => PhraseParse)[]} */
             let _phraseParsers = [];
 
             /** @type {{groups: Record<string, string>, hasGroups: boolean, captureIndex: number}[]} */
@@ -257,7 +291,7 @@ function generateTriggerFns() {
                 if ( phrase.phrase?.length > 0 ) {
                     if ( phrase.useRegEx ) {
                         // Use different parse functions for regex vs normal.
-                        _phraseParsers.push( (value, hasGroups, matchGroups) => {
+                        _phraseParsers.push( ( value, hasGroups, matchGroups ) => {
                             let rgxValue = StringUtilities.parseStoredVariablesToRegex( phrase.phrase, storedVariables );
                             if ( hasGroups === true ) {
                                 rgxValue = StringUtilities.parseSequentialGroups( rgxValue, matchGroups );
@@ -270,7 +304,7 @@ function generateTriggerFns() {
                             };
                         } );
                     } else {
-                        _phraseParsers.push( value => {
+                        _phraseParsers.push( ( value, hasGroups, matchGroups ) => {
                             if ( value?.length > 0 ) {
                                 // We won't care about case sensitivity.
                                 let _phrs = StringUtilities.parseStoredVariablesToLiteralArray( phrase.phrase, storedVariables );
@@ -307,16 +341,7 @@ function generateTriggerFns() {
              */
             trigger._checkConditions = function () {
                 let conditionsPassed = true;
-
-                /**
-                 * @type {Record<string, string>}
-                 * @descripotion 
-                 *  For a dot timer, the SpellBeingCast variable may have the 
-                 *  value of 'Envenomed Bolt'.  That value may not exist in the 
-                 *  saved variables any longer, but that was the value of that 
-                 *  variable at the time the trigger was executed and that 
-                 *  value is stored in the conditionResults dictionary.
-                 */
+                
                 trigger._conditionResults = {};
 
                 // First, the trigger must pass each condition.
@@ -364,31 +389,40 @@ function generateTriggerFns() {
             if ( trigger.captureMethod === 'Any match' ) {
 
                 trigger._reset = () => { };
-                trigger._parse = value => {
+                /**
+                 * Parses the given log entry and executes a callback when a match is found.
+                 * 
+                 * @param {string} value The full log entry sans timestamp.
+                 * @param {(match: PhraseParse) => void} onMatch This callback is executed when a match is identified.
+                 */
+                trigger._parse = ( value, onMatch ) => {
 
                     // If all conditions passed, then parse the phrase.
                     if ( trigger._checkConditions() ) {
                         for ( let i = 0; i < _phraseParsers?.length; i++ ) {
                             let _res = _phraseParsers[ i ]( value );
                             if ( _res?.match ) {
-                                return _res;
+                                onMatch( _res );
                             }
                         }
                     }
-
-                    return {
-                        match: false,
-                        result: []
-                    };
+                    
                 };
+
             } else if ( trigger.captureMethod === 'Sequential' ) {
                 
-                trigger._reset = ( forceReset ) => {
+                trigger._reset = forceReset => {
                     forceReset = forceReset === true ? true : false;
                     _.remove( _sequentialMatchs, m => forceReset || m.captureIndex >= _phraseParsers?.length );
                 };
 
-                trigger._parse = value => {
+                /**
+                 * Parses the given log entry and executes a callback when a match is found.
+                 * 
+                 * @param {string} value The full log entry sans timestamp.
+                 * @param {(match: PhraseParse) => void} onMatch This callback is executed when a match is identified.
+                 */
+                trigger._parse = ( value, onMatch ) => {
 
                     if ( trigger._checkConditions() ) {
 
@@ -412,29 +446,29 @@ function generateTriggerFns() {
 
                             _sequentialMatchs.push( _newSeqMatch );
 
-                            // What if we pass in a handler function that is executed when a match is found?  Would even be a teensy bit fast as we're already evaluating _res.match twice.
-                            return _res;
-                        } else {
+                            onMatch( _res );
+
+                        }
                             
-                            if ( _sequentialMatchs?.length > 0 ) {
-                                for ( let i = 0; i < _sequentialMatchs.length; i++ ) {
-                                    if ( _sequentialMatchs[ i ].captureIndex < _phraseParsers?.length ) {
-                                        let _res = _phraseParsers[ _sequentialMatchs[ i ].captureIndex ]( value, _sequentialMatchs[ i ].hasGroups, _sequentialMatchs[ i ].groups );
+                        if ( _sequentialMatchs?.length > 0 ) {
+                            for ( let i = 0; i < _sequentialMatchs.length; i++ ) {
+                                if ( _sequentialMatchs[ i ].captureIndex < _phraseParsers?.length ) {
+                                    let _res = _phraseParsers[ _sequentialMatchs[ i ].captureIndex ]( value, _sequentialMatchs[ i ].hasGroups, _sequentialMatchs[ i ].groups );
                                         
-                                        if ( _res?.match ) {
-                                            _sequentialMatchs[ i ].captureIndex += 1;
+                                    if ( _res?.match ) {
+                                        _sequentialMatchs[ i ].captureIndex += 1;
                                             
-                                            let groupKeys = _res.result?.groups ? Object.keys( _res.result.groups ) : [];
-                                            if ( groupKeys.length > 0 ) {
-                                                for ( let key of groupKeys ) {
-                                                    _sequentialMatchs[ i ].groups[ key ] = _res.result.groups[ key ];
-                                                }
+                                        let groupKeys = _res.result?.groups ? Object.keys( _res.result.groups ) : [];
+                                        if ( groupKeys.length > 0 ) {
+                                            for ( let key of groupKeys ) {
+                                                _sequentialMatchs[ i ].groups[ key ] = _res.result.groups[ key ];
                                             }
-                
-                                            _sequentialMatchs[ i ].hasGroups = _sequentialMatchs[ i ].hasGroups || groupKeys.length > 0;
-                
-                                            return _res;    
                                         }
+                
+                                        _sequentialMatchs[ i ].hasGroups = _sequentialMatchs[ i ].hasGroups || groupKeys.length > 0;
+                
+                                        onMatch( _res );
+                                        
                                     }
                                 }
                             }
@@ -446,36 +480,37 @@ function generateTriggerFns() {
                         
                     }
 
-                    return {
-                        match: false,
-                        result: []
-                    };
                 };
 
             } else {
-                // Currently, the only supported match method is 'Any match'.
+                // Currently, 'Concurrent' is not supported/implemented.
                 trigger._reset = () => { };
-                trigger._parse = value => {
-                    return {
-                        match: false,
-                        result: []
-                    };
-                };
+                trigger._parse = ( value, onMatch ) => { };
             }
 
         } else {
             // if the trigger is missing capture phrases, then do nothing.
             trigger._reset = () => { };
-            trigger._parse = value => {
-                return {
-                    match: false,
-                    result: []
-                };
-            };
+            trigger._parse = ( value, onMatch ) => { };
         }
     } );
 }
 
+
+
+
+
+
+
+
+
+
+/**
+ * Parses the given log entry.
+ * 
+ * @param {string} raw The raw log entry.
+ * @param {boolean} simulating If true, only simulates executing triggers via a consol.log call.
+ */
 function parseLogEntries( raw, simulating ) {
     
     simulating = simulating === true ? true : false;
@@ -669,8 +704,7 @@ function parseLogEntries( raw, simulating ) {
     }
 
     triggers.forEach( trigger => {
-        let res = trigger._parse( log );
-        if ( res.match ) {
+        trigger._parse( log, res => {
             trigger.actions.forEach( action => {
                 if ( ( isDev || !action.onlyExecuteInDev ) && ( action.phrases == null || action.phrases?.length === 0 || action.phrases?.indexOf( res.phraseId ) > -1 ) ) {
                     if ( action.actionType === ActionTypes.DisplayText ) {
@@ -938,10 +972,19 @@ function parseLogEntries( raw, simulating ) {
                     }
                 }
             } );
-        }
+        } );
     } );
 
 }
+
+
+
+
+
+
+
+
+
 
 /**
  * Saves the given value in the store.
@@ -953,6 +996,15 @@ function saveVariable( key, value ) {
     storedVariables[ key ] = storedVariables[ key ]?.length > 0 ? storedVariables[ key ] : [];
     storedVariables[ key ].push( value );
 }
+
+
+
+
+
+
+
+
+
 
 /**
  * Increments the specified counter by 1.
@@ -969,6 +1021,15 @@ function incrementCounter( key ) {
     }
 }
 
+
+
+
+
+
+
+
+
+
 /**
  * Saves the given value in the store.
  * 
@@ -979,6 +1040,15 @@ function saveScalarVariable( key, value ) {
     storedVariables[ key ] = [ value ];
 }
 
+
+
+
+
+
+
+
+
+
 /**
  * Returns true if the given key has the specified value in the store.
  * 
@@ -988,6 +1058,15 @@ function saveScalarVariable( key, value ) {
 function storeHasValue( key, value ) {
     return storedVariables[ key ]?.length > 0 ? storedVariables[ key ].indexOf( value ) > -1 : false;
 }
+
+
+
+
+
+
+
+
+
 
 /**
  * Clears the given value from the store.
@@ -1003,6 +1082,15 @@ function clearStoredVariable( key, value ) {
         }
     }
 }
+
+
+
+
+
+
+
+
+
 
 /**
  * Renders the given list of phrases into regular expressions.
@@ -1031,6 +1119,15 @@ function renderPhrases( phrases, conditionResults, parseResult ) {
 
     return renderedPhrases;
 }
+
+
+
+
+
+
+
+
+
 
 /**
  * Tells speech synthisis engine to speak the given phrase.
@@ -1083,6 +1180,15 @@ function speakPhrase( phrase, interrupt, conditionResults ) {
     }
     
 }
+
+
+
+
+
+
+
+
+
 
 /**
  * Plays the specified audio file.

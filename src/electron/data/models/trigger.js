@@ -1,4 +1,3 @@
-
 var ActionTypes = {
     '0': 'DisplayText',
     '1': 'PlayAudio',
