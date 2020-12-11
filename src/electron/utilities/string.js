@@ -41,6 +41,12 @@ function parseStoredVariablesToRegex(value, storedVariables) {
     return value;
 }
 
+/**
+ * Parses the given string, inserting stored variables where matched with ${name_of_var}.
+ * 
+ * @param {string} value The string value to parse.
+ * @param {Record<string, string[]>} storedVariables The dictionary of stored variables.
+ */
 function parseStoredVariablesToLiteral( value, storedVariables ) {
     // \${(.[^}]*)}     Your ${SpellBeingCast} spell is interrupted.
     //                      Full match	47-63	{SpellBeingCast}
@@ -184,6 +190,17 @@ function parseSequentialGroups( value, groups ) {
     return value;
 }
 
+/**
+ * Parses the given string, inserting values according to the provided regular 
+ * expression exec array.
+ * 
+ * @description
+ *  Named groups will match against ${name_of_group} and indexed results will 
+ *  match against #{index}
+ * 
+ * @param {string} value The string value to parse.
+ * @param {RegExpExecArray} matches The regular expression results.
+ */
 function parseMatchesToLiteral( value, matches ) {
     if ( isNullOrWhitespace( value ) ) {
         return value;

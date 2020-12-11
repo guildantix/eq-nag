@@ -341,7 +341,7 @@ function generateTriggerFns() {
              */
             trigger._checkConditions = function () {
                 let conditionsPassed = true;
-                
+
                 trigger._conditionResults = {};
 
                 // First, the trigger must pass each condition.
@@ -709,20 +709,8 @@ function parseLogEntries( raw, simulating ) {
                 if ( ( isDev || !action.onlyExecuteInDev ) && ( action.phrases == null || action.phrases?.length === 0 || action.phrases?.indexOf( res.phraseId ) > -1 ) ) {
                     if ( action.actionType === ActionTypes.DisplayText ) {
                     /* --== Display Text ==-- */
-                        let comp = new OverlayComponent();
-
-                        comp.instanceId = nanoid();
-                        comp.action = Object.assign( new TriggerAction(), action );
-                        comp.action.displayText = StringUtilities.parseStoredVariablesToLiteral( action.displayText, storedVariables );
-                        comp.action.displayText = StringUtilities.parseCountersToLiteral( comp.action.displayText, counters );
-                        comp.overlayId = action.overlayId;
-                        comp.matches = res.result;
-                        comp.timestamp = timestamp;
-
-                        if ( !simulating )
-                            ipcRenderer.send( 'overlay:send:component', comp );
-                        else
-                            console.log( 'overlay:send:component', comp );
+                        
+                        displayTextComponent( res, timestamp, action );
                         
                     } else if ( action.actionType === ActionTypes.PlayAudio ) {
                     /* --== Play Audio ==-- */
@@ -730,14 +718,9 @@ function parseLogEntries( raw, simulating ) {
                         playAudioFile( action.audioFileId );
 
                     } else if ( action.actionType === ActionTypes.Clipboard ) {
-                        let clipboardText = action.displayText;
-
-                        clipboardText = StringUtilities.parseStoredVariablesToLiteral( clipboardText, storedVariables );
-                        clipboardText = StringUtilities.parseConditionResultsToLiteral( clipboardText, trigger._conditionResults );
-                        clipboardText = StringUtilities.parseMatchesToLiteral( clipboardText, res.result );
-                        clipboardText = StringUtilities.parseCountersToLiteral( clipboardText, counters );
-
-                        ipcRenderer.send( 'clipboard:writeText', clipboardText );
+                    /* --== Copy text to clipboard ==-- */
+                            
+                        sendToClipboard( res, action, trigger._conditionResults );
                         
                     } else if ( action.actionType === ActionTypes.StoreVariable ) {
                     /* --== Store Variable ==-- */
@@ -765,209 +748,17 @@ function parseLogEntries( raw, simulating ) {
                     } else if ( action.actionType === ActionTypes.Timer || action.actionType === ActionTypes.Countdown ) {
                     /* --== Start a Timer/Countdown ==-- */
                         
-                        // ${target} has been slain by (.+?)!
-                        let comp = new OverlayComponent();
-
-                        comp.instanceId = nanoid();
-                        comp.triggerName = trigger.name;
-                        comp.action = Object.assign( new TriggerAction(), action );
-                        
-                        comp.action.displayText = StringUtilities.parseStoredVariablesToLiteral( comp.action.displayText, storedVariables );
-                        comp.action.displayText = StringUtilities.parseConditionResultsToLiteral( comp.action.displayText, trigger._conditionResults );
-                        comp.action.displayText = StringUtilities.parseMatchesToLiteral( comp.action.displayText, res.result );
-                        comp.action.displayText = StringUtilities.parseCountersToLiteral( comp.action.displayText, counters );
-                        comp.action.duration = +action.duration;
-
-                        comp.overlayId = action.overlayId;
-                        comp.matches = res.result;
-                        comp.timestamp = timestamp;
-                        comp.voiceIndex = voiceIndex;
-                        
-                        if ( comp.action.endingSoonDisplayText ) {
-                            comp.action.endingSoonText = StringUtilities.parseStoredVariablesToLiteral( action.endingSoonText, storedVariables );
-                            comp.action.endingSoonText = StringUtilities.parseConditionResultsToLiteral( comp.action.endingSoonText, trigger._conditionResults );
-                            comp.action.endingSoonText = StringUtilities.parseCountersToLiteral( comp.action.endingSoonText, counters );
-                        }
-
-                        if ( comp.action.endingSoonSpeak ) {
-                            comp.action.endingSoonSpeakPhrase = StringUtilities.parseStoredVariablesToLiteral( action.endingSoonSpeakPhrase, storedVariables );
-                            comp.action.endingSoonSpeakPhrase = StringUtilities.parseConditionResultsToLiteral( comp.action.endingSoonSpeakPhrase, trigger._conditionResults );
-                            comp.action.endingSoonSpeakPhrase = StringUtilities.parseCountersToLiteral( comp.action.endingSoonSpeakPhrase, counters );
-                        }
-
-                        if ( comp.action.endingClipboard ) {
-                            comp.action.endingClipboardText = StringUtilities.parseStoredVariablesToLiteral( action.endingClipboardText, storedVariables );
-                            comp.action.endingClipboardText = StringUtilities.parseConditionResultsToLiteral( comp.action.endingClipboardText, trigger._conditionResults );
-                            comp.action.endingClipboardText = StringUtilities.parseCountersToLiteral( comp.action.endingClipboardText, counters );
-                        }
-
-                        if ( comp.action.endedDisplayText ) {
-                            comp.action.endedText = StringUtilities.parseStoredVariablesToLiteral( action.endedText, storedVariables );
-                            comp.action.endedText = StringUtilities.parseConditionResultsToLiteral( comp.action.endedText, trigger._conditionResults );
-                            comp.action.endedText = StringUtilities.parseCountersToLiteral( comp.action.endedText, counters );
-                        }
-
-                        if ( comp.action.endedSpeak ) {
-                            comp.action.endedSpeakPhrase = StringUtilities.parseStoredVariablesToLiteral( action.endedSpeakPhrase, storedVariables );
-                            comp.action.endedSpeakPhrase = StringUtilities.parseConditionResultsToLiteral( comp.action.endedSpeakPhrase, trigger._conditionResults );
-                            comp.action.endedSpeakPhrase = StringUtilities.parseCountersToLiteral( comp.action.endedSpeakPhrase, counters );
-                        }
-
-                        if ( comp.action.endedClipboard ) {
-                            comp.action.endedClipboardText = StringUtilities.parseStoredVariablesToLiteral( action.endedClipboardText, storedVariables );
-                            comp.action.endedClipboardText = StringUtilities.parseConditionResultsToLiteral( comp.action.endedClipboardText, trigger._conditionResults );
-                            comp.action.endedClipboardText = StringUtilities.parseCountersToLiteral( comp.action.endedClipboardText, counters );
-                        }
-
-                        // reset the trigger.
-                        trigger._reset();
-
-                        ipcRenderer.send( 'overlay:send:component', comp );
-
-                        if ( comp.action.endEarlyPhrases?.length > 0 ) {
-                            let renderedPhrases = renderPhrases( comp.action.endEarlyPhrases, trigger._conditionResults, res.result );
-
-                            // for ( let phraseIndex = 0; phraseIndex < comp.action.endEarlyPhrases.length; phraseIndex++ ) {
-                            //     let renderedPhrase = comp.action.endEarlyPhrases[ phraseIndex ].phrase;
-
-                            //     renderedPhrase = StringUtilities.parseStoredVariablesToLiteral( renderedPhrase, storedVariables );
-                            //     renderedPhrase = StringUtilities.parseConditionResultsToLiteral( renderedPhrase, trigger._conditionResults );
-                            //     renderedPhrase = StringUtilities.parseMatchesToLiteral( renderedPhrase, res.result );
-
-                            //     if ( comp.action.endEarlyPhrases[ phraseIndex ].useRegEx ) {
-                            //         renderedPhrases.push( renderedPhrase );
-                            //     } else {
-                            //         renderedPhrases.push( '^' + renderedPhrase.replace( /[.*+?^${}()|[\]\\]/g, '\\$&' ) + '$' );
-                            //     }
-                            // }
-
-                            cancellableComponents.push( {
-                                _parse: ( logEntry ) => { 
-                                    let matched = false;
-                                    
-                                    renderedPhrases.forEach( phrase => {
-                                        let _res = new RegExp( phrase, 'g' ).exec( logEntry );
-                                        if ( _res?.length > 0 ) {
-                                            matched = true;
-                                        }
-                                    } );
-
-                                    return matched;
-                                 },
-                                instanceId: comp.instanceId
-                            } );
-                        }
+                        displayTimerCountdownComponent( res, timestamp, action, trigger );
 
                     } else if ( action.actionType === ActionTypes.DotTimer ) {
                     /* --== DOT Timers ==-- */
                         
-                        if ( action.excludeTargets?.length > 0 ) {
-                            for ( let i = 0; i < action.excludeTargets.length; i++ ) {
-                                let exclude = false;
-
-                                if ( action.excludeTargets[ i ].useRegEx ) {
-                                    exclude = res.result[ 1 ].match( new RegExp( action.excludeTargets[ i ].phrase, 'g' ) )?.length > 0;
-                                } else {
-                                    let _rgx = new RegExp( '^' + action.excludeTargets[ i ].phrase.replace( /[.*+?^${}()|[\]\\]/g, '\\$&' ) + '$', 'gi' );
-                                    exclude = res.result[ 1 ].match( _rgx )?.length > 0;
-                                }
-
-                                if ( exclude ) {
-                                    return;
-                                }
-                            }
-                        }
-                        
-                        // ${target} has been slain by (.+?)!
-                        let comp = new OverlayComponent();
-
-                        comp.instanceId = nanoid();
-                        comp.triggerName = trigger.name;
-                        comp.action = Object.assign( new TriggerAction(), action );
-                        comp.action.displayText = `${trigger.name} --== ${res.result.groups.target} ==--`;
-                        comp.overlayId = action.overlayId;
-                        comp.matches = res.result;
-                        comp.timestamp = timestamp;
-                        comp.voiceIndex = voiceIndex;
-                        
-                        if ( comp.action.endingSoonDisplayText ) {
-                            comp.action.endingSoonText = StringUtilities.parseStoredVariablesToLiteral( action.endingSoonText, storedVariables );
-                            comp.action.endingSoonText = StringUtilities.parseConditionResultsToLiteral( comp.action.endingSoonText, trigger._conditionResults );
-                            comp.action.endingSoonText = StringUtilities.parseCountersToLiteral( comp.action.endingSoonText, counters );
-                        }
-
-                        if ( comp.action.endingSoonSpeak ) {
-                            comp.action.endingSoonSpeakPhrase = StringUtilities.parseStoredVariablesToLiteral( action.endingSoonSpeakPhrase, storedVariables );
-                            comp.action.endingSoonSpeakPhrase = StringUtilities.parseConditionResultsToLiteral( comp.action.endingSoonSpeakPhrase, trigger._conditionResults );
-                            comp.action.endingSoonSpeakPhrase = StringUtilities.parseCountersToLiteral( comp.action.endingSoonSpeakPhrase, counters );
-                        }
-
-                        if ( comp.action.endedDisplayText ) {
-                            comp.action.endedText = StringUtilities.parseStoredVariablesToLiteral( action.endedText, storedVariables );
-                            comp.action.endedText = StringUtilities.parseConditionResultsToLiteral( comp.action.endedText, trigger._conditionResults );
-                            comp.action.endedText = StringUtilities.parseCountersToLiteral( comp.action.endedText, counters );
-                        }
-
-                        if ( comp.action.endedSpeak ) {
-                            comp.action.endedSpeakPhrase = StringUtilities.parseStoredVariablesToLiteral( action.endedSpeakPhrase, storedVariables );
-                            comp.action.endedSpeakPhrase = StringUtilities.parseConditionResultsToLiteral( comp.action.endedSpeakPhrase, trigger._conditionResults );
-                            comp.action.endedSpeakPhrase = StringUtilities.parseCountersToLiteral( comp.action.endedSpeakPhrase, counters );
-                        }
-
-                        if ( hasExtDotFocus ) {
-                            let percent = extDotFocusPercent;
-                            let charClassData = _.find( trigger.classLevels, ccl => ccl.class === charModel.class );
-
-                            if ( charClassData != null && charClassData.level > extDotFocusDecayLevel ) {
-                                let decayPercent = ( charClassData.level - extDotFocusDecayLevel ) * 5;
-                                percent = percent * ( 1 - decayPercent / 100 );
-                            }
-
-                            let baseTicks = comp.action.duration / 6;
-                            let addTicks = baseTicks * percent / 100;
-                            if ( addTicks < 1 )
-                                addTicks = Math.round( addTicks );
-                            else
-                                addTicks = Math.floor( addTicks );
-                            comp.action.duration += addTicks * 6;
-                            
-                        }
-
-                        // reset the trigger.
-                        trigger._reset();
-
-                        ipcRenderer.send( 'overlay:send:component', comp );
-
-                        if ( comp.action.endEarlyPhrases?.length > 0 ) {
-                            let renderedPhrases = renderPhrases( comp.action.endEarlyPhrases, trigger._conditionResults, res.result );
-
-                            cancellableComponents.push( {
-                                _parse: ( logEntry ) => { 
-                                    let matched = false;
-                                    
-                                    renderedPhrases.forEach( phrase => {
-                                        let _res = new RegExp( phrase, 'g' ).exec( logEntry );
-                                        if ( _res?.length > 0 ) {
-                                            matched = true;
-                                        }
-                                    } );
-
-                                    return matched;
-                                 },
-                                instanceId: comp.instanceId
-                            } );
-                        }
+                        displayDotTimerComponent( res, timestamp, action, trigger );
 
                     } else if ( action.actionType === ActionTypes.Speak ) {
-                        /* --== TTS Speak ==-- */
+                    /* --== TTS Speak ==-- */
                         
-                        if ( !simulating && action.displayText && voiceIndex > -1 ) {
-                            speakPhrase( action.displayText, action.interruptSpeech, trigger._conditionResults );
-
-                        } else {
-                            console.log( 'speaking', StringUtilities.parseStoredVariablesToLiteral( action.displayText, storedVariables ) );
-
-                        }
+                        speakPhrase( action.displayText, action.interruptSpeech, trigger._conditionResults, simulating );
                         
                     }
                 }
@@ -975,6 +766,287 @@ function parseLogEntries( raw, simulating ) {
         } );
     } );
 
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Builds and sends a dot timer overlay component.
+ * 
+ * @param {PhraseParse} res The information from the parsed phrase.
+ * @param {Date} timestamp The timestamp of the log entry.
+ * @param {TriggerAction} action The trigger's display text action.
+ * @param {LogTrigger} trigger If true the component is written to the console instead of sent to the overlay window.
+ */
+function displayDotTimerComponent( res, timestamp, action, trigger ) {
+                        
+    if ( action.excludeTargets?.length > 0 ) {
+        for ( let i = 0; i < action.excludeTargets.length; i++ ) {
+            let exclude = false;
+
+            if ( action.excludeTargets[ i ].useRegEx ) {
+                exclude = res.result[ 1 ].match( new RegExp( action.excludeTargets[ i ].phrase, 'g' ) )?.length > 0;
+            } else {
+                let _rgx = new RegExp( '^' + action.excludeTargets[ i ].phrase.replace( /[.*+?^${}()|[\]\\]/g, '\\$&' ) + '$', 'gi' );
+                exclude = res.result[ 1 ].match( _rgx )?.length > 0;
+            }
+
+            if ( exclude ) {
+                return;
+            }
+        }
+    }
+    
+    // ${target} has been slain by (.+?)!
+    let comp = new OverlayComponent();
+
+    comp.instanceId = nanoid();
+    comp.triggerName = trigger.name;
+    comp.action = Object.assign( new TriggerAction(), action );
+    comp.action.displayText = `${trigger.name} --== ${res.result.groups.target} ==--`;
+    comp.overlayId = action.overlayId;
+    comp.matches = res.result;
+    comp.timestamp = timestamp;
+    comp.voiceIndex = voiceIndex;
+    
+    if ( comp.action.endingSoonDisplayText ) {
+        comp.action.endingSoonText = StringUtilities.parseStoredVariablesToLiteral( action.endingSoonText, storedVariables );
+        comp.action.endingSoonText = StringUtilities.parseConditionResultsToLiteral( comp.action.endingSoonText, trigger._conditionResults );
+        comp.action.endingSoonText = StringUtilities.parseCountersToLiteral( comp.action.endingSoonText, counters );
+    }
+
+    if ( comp.action.endingSoonSpeak ) {
+        comp.action.endingSoonSpeakPhrase = StringUtilities.parseStoredVariablesToLiteral( action.endingSoonSpeakPhrase, storedVariables );
+        comp.action.endingSoonSpeakPhrase = StringUtilities.parseConditionResultsToLiteral( comp.action.endingSoonSpeakPhrase, trigger._conditionResults );
+        comp.action.endingSoonSpeakPhrase = StringUtilities.parseCountersToLiteral( comp.action.endingSoonSpeakPhrase, counters );
+    }
+
+    if ( comp.action.endedDisplayText ) {
+        comp.action.endedText = StringUtilities.parseStoredVariablesToLiteral( action.endedText, storedVariables );
+        comp.action.endedText = StringUtilities.parseConditionResultsToLiteral( comp.action.endedText, trigger._conditionResults );
+        comp.action.endedText = StringUtilities.parseCountersToLiteral( comp.action.endedText, counters );
+    }
+
+    if ( comp.action.endedSpeak ) {
+        comp.action.endedSpeakPhrase = StringUtilities.parseStoredVariablesToLiteral( action.endedSpeakPhrase, storedVariables );
+        comp.action.endedSpeakPhrase = StringUtilities.parseConditionResultsToLiteral( comp.action.endedSpeakPhrase, trigger._conditionResults );
+        comp.action.endedSpeakPhrase = StringUtilities.parseCountersToLiteral( comp.action.endedSpeakPhrase, counters );
+    }
+
+    if ( hasExtDotFocus ) {
+        let percent = extDotFocusPercent;
+        let charClassData = _.find( trigger.classLevels, ccl => ccl.class === charModel.class );
+
+        if ( charClassData != null && charClassData.level > extDotFocusDecayLevel ) {
+            let decayPercent = ( charClassData.level - extDotFocusDecayLevel ) * 5;
+            percent = percent * ( 1 - decayPercent / 100 );
+        }
+
+        let baseTicks = comp.action.duration / 6;
+        let addTicks = baseTicks * percent / 100;
+        if ( addTicks < 1 )
+            addTicks = Math.round( addTicks );
+        else
+            addTicks = Math.floor( addTicks );
+        comp.action.duration += addTicks * 6;
+        
+    }
+
+    // reset the trigger.
+    trigger._reset();
+
+    ipcRenderer.send( 'overlay:send:component', comp );
+
+    if ( comp.action.endEarlyPhrases?.length > 0 ) {
+        let renderedPhrases = renderPhrases( comp.action.endEarlyPhrases, trigger._conditionResults, res.result );
+
+        cancellableComponents.push( {
+            _parse: ( logEntry ) => {
+                let matched = false;
+                
+                renderedPhrases.forEach( phrase => {
+                    let _res = new RegExp( phrase, 'g' ).exec( logEntry );
+                    if ( _res?.length > 0 ) {
+                        matched = true;
+                    }
+                } );
+
+                return matched;
+            },
+            instanceId: comp.instanceId
+        } );
+    }
+
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Builds and sends a timer/countdown overlay component.
+ * 
+ * @param {PhraseParse} res The information from the parsed phrase.
+ * @param {Date} timestamp The timestamp of the log entry.
+ * @param {TriggerAction} action The trigger's display text action.
+ * @param {LogTrigger} trigger If true the component is written to the console instead of sent to the overlay window.
+ */
+function displayTimerCountdownComponent(res, timestamp, action, trigger) {
+      
+    // ${target} has been slain by (.+?)!
+    let comp = new OverlayComponent();
+
+    comp.instanceId = nanoid();
+    comp.triggerName = trigger.name;
+    comp.action = Object.assign( new TriggerAction(), action );
+                        
+    comp.action.displayText = StringUtilities.parseStoredVariablesToLiteral( comp.action.displayText, storedVariables );
+    comp.action.displayText = StringUtilities.parseConditionResultsToLiteral( comp.action.displayText, trigger._conditionResults );
+    comp.action.displayText = StringUtilities.parseMatchesToLiteral( comp.action.displayText, res.result );
+    comp.action.displayText = StringUtilities.parseCountersToLiteral( comp.action.displayText, counters );
+    comp.action.duration = +action.duration;
+
+    comp.overlayId = action.overlayId;
+    comp.matches = res.result;
+    comp.timestamp = timestamp;
+    comp.voiceIndex = voiceIndex;
+                        
+    if ( comp.action.endingSoonDisplayText ) {
+        comp.action.endingSoonText = StringUtilities.parseStoredVariablesToLiteral( action.endingSoonText, storedVariables );
+        comp.action.endingSoonText = StringUtilities.parseConditionResultsToLiteral( comp.action.endingSoonText, trigger._conditionResults );
+        comp.action.endingSoonText = StringUtilities.parseCountersToLiteral( comp.action.endingSoonText, counters );
+    }
+
+    if ( comp.action.endingSoonSpeak ) {
+        comp.action.endingSoonSpeakPhrase = StringUtilities.parseStoredVariablesToLiteral( action.endingSoonSpeakPhrase, storedVariables );
+        comp.action.endingSoonSpeakPhrase = StringUtilities.parseConditionResultsToLiteral( comp.action.endingSoonSpeakPhrase, trigger._conditionResults );
+        comp.action.endingSoonSpeakPhrase = StringUtilities.parseCountersToLiteral( comp.action.endingSoonSpeakPhrase, counters );
+    }
+
+    if ( comp.action.endingClipboard ) {
+        comp.action.endingClipboardText = StringUtilities.parseStoredVariablesToLiteral( action.endingClipboardText, storedVariables );
+        comp.action.endingClipboardText = StringUtilities.parseConditionResultsToLiteral( comp.action.endingClipboardText, trigger._conditionResults );
+        comp.action.endingClipboardText = StringUtilities.parseCountersToLiteral( comp.action.endingClipboardText, counters );
+    }
+
+    if ( comp.action.endedDisplayText ) {
+        comp.action.endedText = StringUtilities.parseStoredVariablesToLiteral( action.endedText, storedVariables );
+        comp.action.endedText = StringUtilities.parseConditionResultsToLiteral( comp.action.endedText, trigger._conditionResults );
+        comp.action.endedText = StringUtilities.parseCountersToLiteral( comp.action.endedText, counters );
+    }
+
+    if ( comp.action.endedSpeak ) {
+        comp.action.endedSpeakPhrase = StringUtilities.parseStoredVariablesToLiteral( action.endedSpeakPhrase, storedVariables );
+        comp.action.endedSpeakPhrase = StringUtilities.parseConditionResultsToLiteral( comp.action.endedSpeakPhrase, trigger._conditionResults );
+        comp.action.endedSpeakPhrase = StringUtilities.parseCountersToLiteral( comp.action.endedSpeakPhrase, counters );
+    }
+
+    if ( comp.action.endedClipboard ) {
+        comp.action.endedClipboardText = StringUtilities.parseStoredVariablesToLiteral( action.endedClipboardText, storedVariables );
+        comp.action.endedClipboardText = StringUtilities.parseConditionResultsToLiteral( comp.action.endedClipboardText, trigger._conditionResults );
+        comp.action.endedClipboardText = StringUtilities.parseCountersToLiteral( comp.action.endedClipboardText, counters );
+    }
+
+    // reset the trigger.
+    trigger._reset();
+
+    ipcRenderer.send( 'overlay:send:component', comp );
+
+    if ( comp.action.endEarlyPhrases?.length > 0 ) {
+        let renderedPhrases = renderPhrases( comp.action.endEarlyPhrases, trigger._conditionResults, res.result );
+
+        cancellableComponents.push( {
+            _parse: ( logEntry ) => {
+                let matched = false;
+                                    
+                renderedPhrases.forEach( phrase => {
+                    let _res = new RegExp( phrase, 'g' ).exec( logEntry );
+                    if ( _res?.length > 0 ) {
+                        matched = true;
+                    }
+                } );
+
+                return matched;
+            },
+            instanceId: comp.instanceId
+        } );
+    }
+    
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Builds and sends a display text overlay component.
+ * 
+ * @param {PhraseParse} res The information from the parsed phrase.
+ * @param {TriggerAction} action The trigger's display text action.
+ * @param {Record<string, string>} conditionResults The values of the conditions when the trigger was parsed.
+ */
+function sendToClipboard( res, action, conditionResults ) {
+    let clipboardText = action.displayText;
+
+    clipboardText = StringUtilities.parseStoredVariablesToLiteral( clipboardText, storedVariables );
+    clipboardText = StringUtilities.parseConditionResultsToLiteral( clipboardText, conditionResults );
+    clipboardText = StringUtilities.parseMatchesToLiteral( clipboardText, res.result );
+    clipboardText = StringUtilities.parseCountersToLiteral( clipboardText, counters );
+
+    ipcRenderer.send( 'clipboard:writeText', clipboardText );
+
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Builds and sends a display text overlay component.
+ * 
+ * @param {PhraseParse} res The information from the parsed phrase.
+ * @param {TriggerAction} action The trigger's display text action.
+ * @param {Date} timestamp The timestamp of the log entry.
+ * @param {boolean} simulating If true the component is written to the console instead of sent to the overlay window.
+ */
+function displayTextComponent( res, timestamp, action, simulating ) {
+    let comp = new OverlayComponent();
+
+    comp.instanceId = nanoid();
+    comp.action = Object.assign( new TriggerAction(), action );
+    comp.action.displayText = StringUtilities.parseStoredVariablesToLiteral( action.displayText, storedVariables );
+    comp.action.displayText = StringUtilities.parseCountersToLiteral( comp.action.displayText, counters );
+    comp.overlayId = action.overlayId;
+    comp.matches = res.result;
+    comp.timestamp = timestamp;
+
+    if ( !simulating )
+        ipcRenderer.send( 'overlay:send:component', comp );
+    else
+        console.log( 'overlay:send:component', comp );
+    
 }
 
 
@@ -1135,47 +1207,55 @@ function renderPhrases( phrases, conditionResults, parseResult ) {
  * @param {string} phrase The phrase to speak.
  * @param {boolean} interrupt If true, interrupts the current utterance if the speech engine is speaking.
  * @param {Record<string, string>} conditionResults The condition results.
+ * @param {boolean} simulating If true the phrase is written to the log instead of spoken.
  */
-function speakPhrase( phrase, interrupt, conditionResults ) {
+function speakPhrase( phrase, interrupt, conditionResults, simulating ) {
 
-    let utter = new SpeechSynthesisUtterance();
+    if ( !simulating && phrase && voiceIndex > -1 ) {
 
-    utter.text = StringUtilities.parseStoredVariablesToLiteral( phrase, storedVariables );
-    if ( conditionResults ) {
-        utter.text = StringUtilities.parseConditionResultsToLiteral( utter.text, conditionResults );
-    }
-    utter.text = StringUtilities.parseCountersToLiteral( utter.text, counters );
-    utter.text = StringUtilities.parsePhoneticTransformsToLiteral( utter.text, phoneticTransforms );
-    utter.voice = voiceOptions[ voiceIndex ];
+        let utter = new SpeechSynthesisUtterance();
     
-    utter.onend = function ( event ) {
-        let i = utterances.indexOf( this );
-        if ( i > -1 ) {
-            utterances.splice( i, 1 );
+        utter.text = StringUtilities.parseStoredVariablesToLiteral( phrase, storedVariables );
+        if ( conditionResults ) {
+            utter.text = StringUtilities.parseConditionResultsToLiteral( utter.text, conditionResults );
         }
-        if ( utterances?.length > 0 ) {
+        utter.text = StringUtilities.parseCountersToLiteral( utter.text, counters );
+        utter.text = StringUtilities.parsePhoneticTransformsToLiteral( utter.text, phoneticTransforms );
+        utter.voice = voiceOptions[ voiceIndex ];
+        
+        utter.onend = function ( event ) {
+            let i = utterances.indexOf( this );
+            if ( i > -1 ) {
+                utterances.splice( i, 1 );
+            }
+            if ( utterances?.length > 0 ) {
+                speechSynthesis.speak( utterances[ 0 ] );
+            }
+        }
+    
+        if ( interrupt && speechSynthesis.speaking ) {
+            
+            // Stop any current speech.
+            speechSynthesis.cancel();
+            
+            // Put this speech at the top of the list.
+            utterances.unshift( utter );
+            
+            // Tell the engine to start talking.
             speechSynthesis.speak( utterances[ 0 ] );
+    
+        } else {
+            
+            // Put the utterance at the end of the queue.
+            utterances.push( utter );
+    
+            // If the engine is not talking, tell it to start talking.
+            !speechSynthesis.speaking && speechSynthesis.speak( utterances[ 0 ] );
+    
         }
-    }
-
-    if ( interrupt && speechSynthesis.speaking ) {
         
-        // Stop any current speech.
-        speechSynthesis.cancel();
-        
-        // Put this speech at the top of the list.
-        utterances.unshift( utter );
-        
-        // Tell the engine to start talking.
-        speechSynthesis.speak( utterances[ 0 ] );
-
     } else {
-        
-        // Put the utterance at the end of the queue.
-        utterances.push( utter );
-
-        // If the engine is not talking, tell it to start talking.
-        !speechSynthesis.speaking && speechSynthesis.speak( utterances[ 0 ] );
+        console.log( 'speaking', StringUtilities.parseStoredVariablesToLiteral( action.displayText, storedVariables ) );
 
     }
     
