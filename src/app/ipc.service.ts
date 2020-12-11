@@ -3,7 +3,7 @@ import { IpcRenderer } from 'electron';
 import { Observable, Observer } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
 import { DataTickModel, DkpEntryModel, TriggerModel, OverlayWindowModel, ActionTypes, FocusEffectSettings, CharacterModel, BasicError, TriggerFolder, FileModel } from './core.model';
-import { GinaConfiguration } from './gina.model';
+import { GinaConfiguration, GinaTriggerGroups } from './gina.model';
 
 @Injectable()
 export class IpcService {
@@ -760,8 +760,21 @@ export class IpcService {
             
             this.ipc.once( 'gina:get:configuration', ( e, ginaConfig: GinaConfiguration ) => {
                 this.ngZone.run( () => {
+
+                    // Because the source is XML, we need to process all arrays so that even if an array has a single element it's still an array.  I just don't want a bunch of "if property is array" statements in other areas of the code.
+                    if ( !( ginaConfig.BehaviorGroups.Behavior instanceof Array ) ) {
+                        ginaConfig.BehaviorGroups.Behavior = [ ginaConfig.BehaviorGroups.Behavior ];
+                    }
+
+                    if ( !( ginaConfig.Settings.PhoneticTransforms.Transform instanceof Array ) ) {
+                        ginaConfig.Settings.PhoneticTransforms.Transform = [ ginaConfig.Settings.PhoneticTransforms.Transform ];
+                    }
+
+                    this.processGinaTriggerGroup( ginaConfig.TriggerGroups );
+                    
                     observer.next( ginaConfig );
                     observer.complete();
+
                 } );
             } );
             this.ipc.send( 'gina:get:configuration', null );
@@ -769,6 +782,34 @@ export class IpcService {
         } );
 
         return obs;
+    }
+
+    private processGinaTriggerGroup( groups: GinaTriggerGroups ): void {
+
+        if ( !( groups.TriggerGroup instanceof Array ) ) {
+            groups.TriggerGroup = [ groups.TriggerGroup ];
+        }
+
+        groups.TriggerGroup.forEach( group => {
+
+            if ( group.Triggers != null && !( group.Triggers.Trigger instanceof Array ) ) {
+                group.Triggers.Trigger = [ group.Triggers.Trigger ];
+            }
+
+            group.Triggers?.Trigger.forEach( trigger => {
+
+                if ( trigger.TimerEarlyEnders?.EarlyEnder != null && !( trigger.TimerEarlyEnders.EarlyEnder instanceof Array ) ) {
+                    trigger.TimerEarlyEnders.EarlyEnder = [ trigger.TimerEarlyEnders.EarlyEnder ];
+                }
+
+            } );
+
+            if ( group.TriggerGroups?.TriggerGroup != null ) {
+                this.processGinaTriggerGroup( group.TriggerGroups );
+            }
+
+        } );
+
     }
 
     public sendTestModel( displayText: string ): void {

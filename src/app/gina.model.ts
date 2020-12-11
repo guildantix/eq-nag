@@ -4,7 +4,7 @@ export interface GinaPhoneticTransform {
 }
 
 export interface GinaPhoneticTransforms {
-    Transform: GinaPhoneticTransform | GinaPhoneticTransform[];
+    Transform: GinaPhoneticTransform[];
 }
 
 export interface GinaSettings {
@@ -27,7 +27,7 @@ export interface GinaTimerEarlyEnder {
 }
 
 export interface GinaTimerEarlyEnders {
-    EarlyEnder: GinaTimerEarlyEnder | GinaTimerEarlyEnder[];
+    EarlyEnder: GinaTimerEarlyEnder[];
 }
 
 export enum GinaTimerTypes {
@@ -78,7 +78,7 @@ export interface GinaTrigger {
 }
 
 export interface GinaTriggers {
-    Trigger: GinaTrigger | GinaTrigger[];
+    Trigger: GinaTrigger[];
 }
 
 export interface GinaTriggerGroup {
@@ -92,7 +92,7 @@ export interface GinaTriggerGroup {
 }
 
 export interface GinaTriggerGroups {
-    TriggerGroup: GinaTriggerGroup | GinaTriggerGroup[];
+    TriggerGroup: GinaTriggerGroup[];
 }
 
 export interface GinaNormalPosition {
@@ -146,7 +146,7 @@ export interface GinaBehavior {
 }
 
 export interface GinaBehaviors {
-    Behavior: GinaBehavior | GinaBehavior[];
+    Behavior: GinaBehavior[];
 }
 
 export interface GinaConfiguration {
