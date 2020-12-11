@@ -218,6 +218,7 @@ export class TriggerAction {
     public repeatTimer: boolean = false;
     public repeatCount: number = null;
     public variableName: string;
+    public onlyStoreUsedValues: boolean = false;
     public restartOnDuplicate: boolean;
     public onlyExecuteInDev: boolean = false;
     public overrideTimerColor: string = null;

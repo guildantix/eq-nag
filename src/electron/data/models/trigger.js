@@ -112,6 +112,8 @@ class TriggerAction {
     repeatCount = null;
     /** @type string */
     variableName = null;
+    /** @type boolean */
+    onlyStoreUsedValues = false;
     /** @type number */
     ticks = null;
     /** @type string[] */

@@ -276,6 +276,9 @@
                                                 <mat-label>Variable Name</mat-label>
                                                 <input matInput [(ngModel)]="action.variableName" name="txtVariableName_{{i}}" />
                                             </mat-form-field>
+                                            
+                                            <mat-checkbox [(ngModel)]="action.onlyStoreUsedValues" name="cbxOnlyStoreUsedValues_{{i}}">Check if value is used?</mat-checkbox>
+                                            <div class="checkbox-hint"><small>If this box is checked, the value is checked against active triggers to ensure that it is used as a condition before being saved.</small></div>
 
                                         </div>
 

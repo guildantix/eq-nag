@@ -30,6 +30,8 @@ var storedVariables = {};
 var counters = {};
 /** @type {{_parse: (logEntry: string) => boolean, instanceId: string}} */
 var cancellableComponents = [];
+/** @type {Record<string, string[]>} */
+var usedConditionValues = {};
 var enableFct = false;
 var damageDealtOverlayId = null;
 var damageReceivedOverlayId = null;
@@ -384,6 +386,16 @@ function generateTriggerFns() {
 
                 return conditionsPassed;
             }
+
+            // Grab condition values and store them
+            trigger.conditions.forEach( condition => {
+                if ( !StringUtilities.isNullOrWhitespace( condition.variableValue ) ) {
+                    usedConditionValues[ condition.variableName ] = usedConditionValues[ condition.variableName ] ? usedConditionValues[ condition.variableName ] : [];
+                    if ( usedConditionValues[ condition.variableName ].indexOf( condition.variableValue ) == -1 ) {
+                        usedConditionValues[ condition.variableName ].push( condition.variableValue );
+                    }
+                }
+            } );
             
             // Any match.
             if ( trigger.captureMethod === 'Any match' ) {
@@ -726,9 +738,9 @@ function parseLogEntries( raw, simulating ) {
                     /* --== Store Variable ==-- */
                         
                         if ( res.result.length === 1 ) {
-                            saveVariable( action.variableName, res.result[ 0 ] );
+                            saveVariable( action.variableName, res.result[ 0 ], action.onlyStoreUsedValues );
                         } else {
-                            saveVariable( action.variableName, res.result[ 1 ] );
+                            saveVariable( action.variableName, res.result[ 1 ], action.onlyStoreUsedValues );
                         }
 
                     } else if ( action.actionType === ActionTypes.ClearVariable ) {
@@ -1041,6 +1053,7 @@ function displayTextComponent( res, timestamp, action, simulating ) {
     comp.overlayId = action.overlayId;
     comp.matches = res.result;
     comp.timestamp = timestamp;
+    console.log( 'display text', comp.action.displayText );
 
     if ( !simulating )
         ipcRenderer.send( 'overlay:send:component', comp );
@@ -1063,10 +1076,22 @@ function displayTextComponent( res, timestamp, action, simulating ) {
  * 
  * @param {string} key The key of the stored variable.
  * @param {any} value The value to store.
+ * @param {boolean} restricted If true, the value must be used as a condition in a trigger before being saved.
  */
-function saveVariable( key, value ) {
-    storedVariables[ key ] = storedVariables[ key ]?.length > 0 ? storedVariables[ key ] : [];
-    storedVariables[ key ].push( value );
+function saveVariable( key, value, restricted ) {
+    let storeValue = true;
+    
+    if ( restricted ) {
+        if ( usedConditionValues == null || usedConditionValues[ key ] == null || usedConditionValues[ key ].length == 0 || usedConditionValues[ key ].indexOf( value ) === -1 ) {
+            storeValue = false;
+        }
+    }
+
+    if ( storeValue ) {
+        storedVariables[ key ] = storedVariables[ key ]?.length > 0 ? storedVariables[ key ] : [];
+        storedVariables[ key ].push( value );
+    }
+
 }
 
 
