@@ -259,6 +259,8 @@ class Trigger {
     onlyExecuteInDev = false;
     /** @type {string} */
     allakhazamUrl = null;
+    /** @type {string} */
+    importIdentifier = null;
 }
 
 class FileModel {

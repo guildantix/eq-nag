@@ -93,6 +93,7 @@ export class TriggerModel {
     public predefined: boolean = false;
     public onlyExecuteInDev: boolean = false;
     public allakhazamUrl: string = null;
+    public importIdentifier: string = null;
 
 }
 

@@ -307,6 +307,14 @@ class TriggerDatabaseStore extends Store {
             this.#data.version = 40;
             this.storeDataFile( this.#data );
         }
+        if ( this.#data.version < 42 ) {
+            this.#data?.triggers?.forEach( trigger => {
+                trigger.ginaTriggerName = null;
+                trigger.importIdentifier = null;
+            } );
+            this.#data.version = 42;
+            this.storeDataFile( this.#data );
+        }
     }
 
 
