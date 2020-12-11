@@ -23,6 +23,7 @@ var startLogPosition = null;
 var watcher = null;
 /** @type {Trigger[]} */
 var triggers = [];
+/** @type {Record<string, string[]>} */
 var storedVariables = {};
 /** @type {Record<string, {value: number, lastUpdate: Date, resetDelay: number, _parse: (logEntry: string) => boolean}>} */
 var counters = {};
@@ -246,20 +247,20 @@ function generateTriggerFns() {
             // First we generate parse functions for each capture phrase in the trigger.
             /** @type {(value: string) => {phraseId: string, match: boolean, result: any}} */
             let _phraseParsers = [];
-            /** @type {Record<string, string>} */
-            let _sequentialMatchGroups = {};
-            /** @type {boolean} */
-            let _hasSequentialMatchGroups = false;
+
+            /** @type {{groups: Record<string, string>, hasGroups: boolean, captureIndex: number}[]} */
+            let _sequentialMatchs = [];
+
             trigger.capturePhrases?.forEach( phrase => {
 
                 // Only create parse functions for phrases that have content.
                 if ( phrase.phrase?.length > 0 ) {
                     if ( phrase.useRegEx ) {
                         // Use different parse functions for regex vs normal.
-                        _phraseParsers.push( value => {
+                        _phraseParsers.push( (value, hasGroups, matchGroups) => {
                             let rgxValue = StringUtilities.parseStoredVariablesToRegex( phrase.phrase, storedVariables );
-                            if ( _hasSequentialMatchGroups ) {
-                                rgxValue = StringUtilities.parseSequentialGroups( rgxValue, _sequentialMatchGroups );
+                            if ( hasGroups === true ) {
+                                rgxValue = StringUtilities.parseSequentialGroups( rgxValue, matchGroups );
                             }
                             let _res = new RegExp( rgxValue, 'gi' ).exec( value );
                             return {
@@ -381,36 +382,68 @@ function generateTriggerFns() {
                     };
                 };
             } else if ( trigger.captureMethod === 'Sequential' ) {
-                trigger._captureIndex = 0;
-                trigger._reset = () => {
-                    trigger._captureIndex = 0;
-                    _sequentialMatchGroups = {};
-                    _hasSequentialMatchGroups = false;
-                };
-                trigger._parse = value => {
                 
-                    // If all conditions passed, then parse the phrase.
-                    if ( trigger._captureIndex < _phraseParsers?.length && trigger._checkConditions() ) {
-                        let _res = _phraseParsers[ trigger._captureIndex ]( value );
-                        
+                trigger._reset = ( forceReset ) => {
+                    forceReset = forceReset === true ? true : false;
+                    _.remove( _sequentialMatchs, m => forceReset || m.captureIndex >= _phraseParsers?.length );
+                };
+
+                trigger._parse = value => {
+
+                    if ( trigger._checkConditions() ) {
+
+                        let _res = _phraseParsers[ 0 ]( value );
+
                         if ( _res?.match ) {
-                            trigger._captureIndex += 1;
-                            
+                            let _newSeqMatch = {
+                                groups: {},
+                                hasGroups: false,
+                                captureIndex: 1,
+                            };
+
                             let groupKeys = _res.result?.groups ? Object.keys( _res.result.groups ) : [];
                             if ( groupKeys.length > 0 ) {
                                 for ( let key of groupKeys ) {
-                                    _sequentialMatchGroups[ key ] = _res.result.groups[ key ];
+                                    _newSeqMatch.groups[ key ] = _res.result.groups[ key ];
                                 }
                             }
 
-                            _hasSequentialMatchGroups = _hasSequentialMatchGroups || groupKeys.length > 0;
+                            _newSeqMatch.hasGroups = groupKeys?.length > 0;
 
+                            _sequentialMatchs.push( _newSeqMatch );
+
+                            // What if we pass in a handler function that is executed when a match is found?  Would even be a teensy bit fast as we're already evaluating _res.match twice.
                             return _res;
+                        } else {
+                            
+                            if ( _sequentialMatchs?.length > 0 ) {
+                                for ( let i = 0; i < _sequentialMatchs.length; i++ ) {
+                                    if ( _sequentialMatchs[ i ].captureIndex < _phraseParsers?.length ) {
+                                        let _res = _phraseParsers[ _sequentialMatchs[ i ].captureIndex ]( value, _sequentialMatchs[ i ].hasGroups, _sequentialMatchs[ i ].groups );
+                                        
+                                        if ( _res?.match ) {
+                                            _sequentialMatchs[ i ].captureIndex += 1;
+                                            
+                                            let groupKeys = _res.result?.groups ? Object.keys( _res.result.groups ) : [];
+                                            if ( groupKeys.length > 0 ) {
+                                                for ( let key of groupKeys ) {
+                                                    _sequentialMatchs[ i ].groups[ key ] = _res.result.groups[ key ];
+                                                }
+                                            }
+                
+                                            _sequentialMatchs[ i ].hasGroups = _sequentialMatchs[ i ].hasGroups || groupKeys.length > 0;
+                
+                                            return _res;    
+                                        }
+                                    }
+                                }
+                            }
                         }
+                        
                     } else {
-                        // Otherwise reset the parse.
-                        trigger._reset();
-                        // trigger._captureIndex = 0;
+                        // If the conditions are no longer met, then forcefully reset all possible match groups.
+                        trigger._reset( true );
+                        
                     }
 
                     return {
@@ -481,18 +514,6 @@ function parseLogEntries( raw, simulating ) {
     if ( !timestamp || timestamp.length === 0 || timestamp.length === 1 )
         console.log( 'failed parse', raw );
     
-    // if ( raw.match( rgxTrigger ) ) {
-        
-    //     let text = rgxGrabText.exec( raw )[ 1 ].split( rgxDelimiter );
-    //     let item = text[ 2 ];
-    //     let character = text[ 1 ];
-    //     let dkp = rgxNum.exec( text[ 3 ] )[ 0 ];
-        
-    //     if ( !simulating )
-    //         ipcRenderer.send( 'dkp:add', new DkpEntryModel( timestamp, character, item, +dkp ) );
-    //     else
-    //         console.log( 'dkp:add', new DkpEntryModel( timestamp, character, item, +dkp ) );
-    // }
     if ( enableFct && raw.match( rgxCombatText )?.length > 0 ) {
         for ( let i = 0; i < fctRegExs.length; i++ ) {
             let results = fctRegExs[ i ].exec( raw );
@@ -701,7 +722,6 @@ function parseLogEntries( raw, simulating ) {
                         } else {
                             clearStoredVariable( action.variableName, trigger._conditionResults[ action.variableName ] );
                         }
-                        // clearStoredVariable( action.variableName, res.result.groups != null && res.result.groups[ action.variableName ] != null ? res.result.groups[ action.variableName ] : trigger._conditionResults[ action.variableName ] );
 
                     } else if ( action.actionType === ActionTypes.Counter ) {
                     /* --== Clear Variable ==-- */
@@ -806,7 +826,7 @@ function parseLogEntries( raw, simulating ) {
 
                     } else if ( action.actionType === ActionTypes.DotTimer ) {
                     /* --== DOT Timers ==-- */
-
+                        
                         if ( action.excludeTargets?.length > 0 ) {
                             for ( let i = 0; i < action.excludeTargets.length; i++ ) {
                                 let exclude = false;
@@ -881,26 +901,11 @@ function parseLogEntries( raw, simulating ) {
 
                         // reset the trigger.
                         trigger._reset();
-                        // trigger._captureIndex = 0;
 
                         ipcRenderer.send( 'overlay:send:component', comp );
 
                         if ( comp.action.endEarlyPhrases?.length > 0 ) {
                             let renderedPhrases = renderPhrases( comp.action.endEarlyPhrases, trigger._conditionResults, res.result );
-
-                            // for ( let phraseIndex = 0; phraseIndex < comp.action.endEarlyPhrases.length; phraseIndex++ ) {
-                            //     let renderedPhrase = comp.action.endEarlyPhrases[ phraseIndex ].phrase;
-
-                            //     renderedPhrase = StringUtilities.parseStoredVariablesToLiteral( renderedPhrase, storedVariables );
-                            //     renderedPhrase = StringUtilities.parseConditionResultsToLiteral( renderedPhrase, trigger._conditionResults );
-                            //     renderedPhrase = StringUtilities.parseMatchesToLiteral( renderedPhrase, res.result );
-
-                            //     if ( comp.action.endEarlyPhrases[ phraseIndex ].useRegEx ) {
-                            //         renderedPhrases.push( renderedPhrase );
-                            //     } else {
-                            //         renderedPhrases.push( '^' + renderedPhrase.replace( /[.*+?^${}()|[\]\\]/g, '\\$&' ) + '$' );
-                            //     }
-                            // }
 
                             cancellableComponents.push( {
                                 _parse: ( logEntry ) => { 
@@ -946,10 +951,7 @@ function parseLogEntries( raw, simulating ) {
  */
 function saveVariable( key, value ) {
     storedVariables[ key ] = storedVariables[ key ]?.length > 0 ? storedVariables[ key ] : [];
-    let index = storedVariables[ key ].indexOf( value );
-    if ( index === -1 ) {
-        storedVariables[ key ].push( value );
-    }
+    storedVariables[ key ].push( value );
 }
 
 /**
@@ -1048,7 +1050,7 @@ function speakPhrase( phrase, interrupt, conditionResults ) {
     utter.text = StringUtilities.parseCountersToLiteral( utter.text, counters );
     utter.text = StringUtilities.parsePhoneticTransformsToLiteral( utter.text, phoneticTransforms );
     utter.voice = voiceOptions[ voiceIndex ];
-
+    
     utter.onend = function ( event ) {
         let i = utterances.indexOf( this );
         if ( i > -1 ) {
