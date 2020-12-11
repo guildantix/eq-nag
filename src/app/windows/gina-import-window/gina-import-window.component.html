@@ -1,0 +1,25 @@
+<div class="modal">
+    <header>
+        <mat-toolbar class="titlebar" color="default">
+            <span>GINA Import</span>
+            <span class="spacer"></span>
+            <button mat-icon-button aria-label="Exit GINA import" (click)="closeModal()">
+                <mat-icon>clear</mat-icon>
+            </button>
+        </mat-toolbar>
+    </header>
+    <section>
+        <form #ginaImportForm="ngForm">
+            <div *ngIf="loadingGinaConfig" class="loading-gina">
+                <p>Loading ...</p>
+                <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+            </div>
+        </form>
+    </section>
+    <footer>
+        <!-- <button mat-button [disabled]="ginaImportForm.invalid" (click)="save()">Save</button> -->
+        <button mat-button color="warn" (click)="closeModal()">Cancel</button>
+        <!-- <button mat-button color="accent" (click)="copyJson()" *ngIf="isDev">Copy JSON</button> -->
+        <!-- <button mat-button color="default" (click)="reimportDotTimerFromAllakhazam()" *ngIf="model.allakhazamUrl != null && model.allakhazamUrl.indexOf('spell.html') > -1">Re-import from Allakhazam</button> -->
+    </footer>
+</div>

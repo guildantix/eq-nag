@@ -263,22 +263,12 @@ export class MainComponent implements OnInit {
 
     public openImportGinaDialog(): void {
         this.loadingGinaConfig = true;
-        this.ipcService
-            .getGinaConfiguration()
-            .subscribe( ginaConfig => {
-                this.loadingGinaConfig = false;
-                if ( ginaConfig == null ) {
-                    this.dialogService.showWarningDialog( 'GINA failure', 'Could not find the GINA data directory' );
-                } else {
-                    // ginaConfig.Settings.PhoneticTransforms.Transform[ 0 ].ActualWord
-                    console.log( 'testing', ginaConfig.Settings.PhoneticTransforms.Transform[ 0 ].ActualWord );
-                    console.log( 'testing', ginaConfig.BehaviorGroups.Behavior[ 0 ].WindowLayout.WINDOWPLACEMENT.normalPosition.Left );
-                    console.log( 'testing', ginaConfig.TriggerGroups.TriggerGroup[ 0 ].Triggers.Trigger[ 4 ].Name );
-                    console.log( 'testing', ginaConfig.TriggerGroups.TriggerGroup[ 0 ].Triggers.Trigger[ 4 ].TimerEndingTrigger.DisplayText );
-                    let earlye = ginaConfig.TriggerGroups.TriggerGroup[ 0 ].Triggers.Trigger[ 4 ].TimerEarlyEnders.EarlyEnder;
-                    console.log( 'testing', (earlye instanceof Array) ? earlye[1].EarlyEndText : earlye.EarlyEndText );
-                }
-            } );
+        this.ipcService.showGinaImportWindow().subscribe( loaded => {
+            this.loadingGinaConfig = false;
+            if ( !loaded ) {
+                this.dialogService.showErrorDialog( 'GINA Import', 'Could not load GINA data.' );
+            }
+        } );
     }
 
     public testFn(): void {

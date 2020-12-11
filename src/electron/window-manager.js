@@ -204,6 +204,30 @@ class WindowManager {
             }
         } );
 
+        ipcMain.on( 'gina:dialog:import', ( event, arg ) => {
+            let ginaImportWindow = new BrowserWindow( {
+                parent: mainWindowRef.reference,
+                modal: false,
+                show: false,
+                width: 1000,
+                height: 800,
+                frame: false,
+                webPreferences: {
+                    nodeIntegration: true,
+                    devTools: app.isDev(),
+                }
+            } );
+            let url = `file://${this.#dirname}/dist/index.html#/gina/import`;
+            if ( arg ) {
+                url += `/${arg}`;
+            }
+            ginaImportWindow.loadURL( url );
+            ginaImportWindow.once( "ready-to-show", () => {
+                ginaImportWindow.show();
+                event.sender.webContents.send( 'gina:dialog:import', true );
+            } );
+        } );
+
     }
 
 

@@ -1,7 +1,7 @@
 import { Component, Inject, OnInit } from '@angular/core';
 import { MatDialog, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 // import { IpcService } from 'src/app/ipc.service';
-import { NotificationDialogModel } from './notification-dialog.model';
+import { NotificationDialogModel, NotificationTypes } from './notification-dialog.model';
 
 @Component( {
     selector: 'app-notification-dialog',
@@ -12,6 +12,7 @@ export class NotificationDialogComponent implements OnInit {
 
     public model: string;
     public messages: string[] = [];
+    public notificationTypes: typeof NotificationTypes = NotificationTypes;
 
     constructor(
         public dialogRef: MatDialogRef<NotificationDialogComponent>,

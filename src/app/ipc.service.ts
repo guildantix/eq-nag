@@ -251,6 +251,22 @@ export class IpcService {
         this.ipc.send( 'trigger:dialog:resize', { width: width, height: height } );
     }
 
+    public showGinaImportWindow(): Observable<boolean> {
+        let obs: Observable<boolean> = new Observable<boolean>( ( observer: Observer<boolean> ) => {
+            
+            this.ipc.once( 'gina:dialog:import', ( e, loaded ) => {
+                this.ngZone.run( () => {
+                    observer.next( loaded );
+                    observer.complete();
+                } );
+            } );
+            this.ipc.send( 'gina:dialog:import', null );
+
+        } );
+
+        return obs;
+    }
+
     public simulateLogParse( file: string ): void {
         this.ipc.send( 'log:simulate:file', file );
     }

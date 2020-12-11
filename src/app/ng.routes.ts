@@ -2,6 +2,7 @@ import { TriggerDialogComponent } from './dialogs/trigger-dialog/trigger-dialog.
 import { Routes } from '@angular/router';
 import { MainComponent } from './main.component';
 import { OverlayEditorDialogComponent } from './dialogs/overlay-editor-dialog/overlay-editor-dialog.component';
+import { GinaImportWindowComponent } from './windows/gina-import-window/gina-import-window.component';
 
 
 // let secureRoutes: Routes = [
@@ -72,6 +73,7 @@ let _routes: Routes = [
     { path: 'trigger/new/:folderId', component: TriggerDialogComponent },
     { path: 'trigger/:id', component: TriggerDialogComponent },
     { path: 'overlay/:id', component: OverlayEditorDialogComponent },
+    { path: 'gina/import', component: GinaImportWindowComponent },
     // { path: '', redirectTo: '/users', pathMatch: 'full', canActivate: [ Guard ] }, // If the user is logged in, the Guard will allow the navigation and the user will be redirected to the user list.
     { path: '', redirectTo: '/dashboard', pathMatch: 'full' }, // If the user is not logged in, then the guard will not allow access (theoretically it should redirect the user, but) and this will redirect to the login page.
     // { path: '', component: SecureComponent, canActivate: [ Guard ], children: secureRoutes },

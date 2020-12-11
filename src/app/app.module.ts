@@ -15,6 +15,7 @@ import { NgxElectronModule } from 'ngx-electron';
 import { ContextMenuModule } from './context-menu/context-menu.module';
 import { TriggersComponent } from './triggers/triggers.component';
 import { ClassNamePipe } from './pipes/class-name.pipe';
+import { WindowsModule } from './windows/windows.module';
 
 @NgModule( {
     imports: [
@@ -27,6 +28,7 @@ import { ClassNamePipe } from './pipes/class-name.pipe';
         RouterModule.forRoot( appRoutes, { enableTracing: false, useHash: true } ),
         HttpClientModule,
         ContextMenuModule,
+        WindowsModule,
     ],
     declarations: [
         AppComponent,

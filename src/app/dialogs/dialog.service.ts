@@ -280,4 +280,30 @@ export class DialogService {
         } ).afterClosed().subscribe();
     }
     
+    public showInfoDialog( title: string, message: string | string[] ): void {
+        let data: NotificationDialogModel = new NotificationDialogModel();
+        
+        data.title = title;
+        data.message = message;
+        data.notificationType = NotificationTypes.Information;
+
+        this.dialog.open( NotificationDialogComponent, {
+            width: '450px',
+            data: data
+        } ).afterClosed().subscribe();
+    }
+    
+    public showErrorDialog( title: string, message: string | string[] ): void {
+        let data: NotificationDialogModel = new NotificationDialogModel();
+        
+        data.title = title;
+        data.message = message;
+        data.notificationType = NotificationTypes.Error;
+
+        this.dialog.open( NotificationDialogComponent, {
+            width: '450px',
+            data: data
+        } ).afterClosed().subscribe();
+    }
+    
 }

@@ -1,0 +1,64 @@
+.flex-layout {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+mat-form-field {
+    font-size: 12px;
+}
+
+.margin-t-50 {
+    margin-top: 50px;
+}
+
+legend.full-width {
+    min-width: 100%;
+}
+
+table.capture-phrases {
+    width: 100%;
+}
+
+.example-header-image {
+    .material-icons {
+        font-size: 50px;
+    }
+}
+
+::ng-deep .card.action-card {
+    .mat-table tbody {
+        background-color: #ffffff08;
+    }
+    mat-card-content {
+        padding-top: 50px;
+    }
+}
+
+.action-icon {
+    img {
+        max-width: 26px;
+        margin: 10px;
+        cursor: pointer;
+    }
+
+    display: flex;
+    flex-direction: row;
+    justify-items: flex-end;
+    align-items: center;
+
+}
+
+.checkbox-hint {
+    color: #ffffffa1;
+    padding-left: 30px;
+    margin-bottom: 15px;
+}
+
+div.loading-gina {
+    display: flex;
+    flex-direction: column;
+    padding: 10px 20%;
+    align-items: center;
+}
