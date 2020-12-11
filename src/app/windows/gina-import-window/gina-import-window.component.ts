@@ -36,17 +36,7 @@ export class GinaImportWindowComponent implements OnInit {
                 if ( ginaConfig == null ) {
                     this.dialogService.showWarningDialog( 'GINA failure', 'Could not find the GINA data directory' );
                 } else {
-                    // this.dialogService.showInfoDialog( 'GINA loaded', 'Data loaded' );
                     console.log( 'derp', ginaConfig );
-                    // ginaConfig.TriggerGroups.TriggerGroup
-                    // ginaConfig.TriggerGroups.TriggerGroup[ 0 ].Triggers.Trigger[ 4 ].TimerEarlyEnders.EarlyEnder;
-                    // // ginaConfig.Settings.PhoneticTransforms.Transform[ 0 ].ActualWord
-                    // console.log( 'testing', ginaConfig.Settings.PhoneticTransforms.Transform[ 0 ].ActualWord );
-                    // console.log( 'testing', ginaConfig.BehaviorGroups.Behavior[ 0 ].WindowLayout.WINDOWPLACEMENT.normalPosition.Left );
-                    // console.log( 'testing', ginaConfig.TriggerGroups.TriggerGroup[ 0 ].Triggers.Trigger[ 4 ].Name );
-                    // console.log( 'testing', ginaConfig.TriggerGroups.TriggerGroup[ 0 ].Triggers.Trigger[ 4 ].TimerEndingTrigger.DisplayText );
-                    // let earlye = ginaConfig.TriggerGroups.TriggerGroup[ 0 ].Triggers.Trigger[ 4 ].TimerEarlyEnders.EarlyEnder;
-                    // console.log( 'testing', (earlye instanceof Array) ? earlye[1].EarlyEndText : earlye.EarlyEndText );
                 }
             } );
 
