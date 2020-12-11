@@ -24,8 +24,8 @@
                             <div class="trigger-categories-header">
                                 <span>GINA Components</span>
                                 <span class="spacer"></span>
-                                <button mat-icon-button [title]="(showImported ? 'Hide items have have already been imported.' : 'Show items that have already been imported.')">
-                                    <mat-icon [ngClass]="{'material-icons-outlined': !showImported}" [inline]="true" (click)="showImported = !showImported">check_circle</mat-icon>
+                                <button mat-icon-button [title]="(showImported ? 'Hide items have have already been imported.' : 'Show items that have already been imported.')" (click)="showImported = !showImported">
+                                    <mat-icon [ngClass]="{'material-icons-outlined': !showImported}" [inline]="true">check_circle</mat-icon>
                                 </button>
                                 <!-- <button mat-icon-button class="small" (click)="addTriggerFolderDialog()"><mat-icon [inline]="true">add</mat-icon></button> -->
                                 <!-- <button mat-icon-button class="small" (click)="toggleTree()"><mat-icon *ngIf="!allExpanded" [inline]="true">unfold_more</mat-icon><mat-icon *ngIf="allExpanded" [inline]="true">unfold_less</mat-icon></button> -->
@@ -35,8 +35,7 @@
             
                                 <!-- This is the tree node template for leaf nodes -->
                                 <!-- [ngClass]="{selected: node.folderId === selectedFolderId}" [appContextMenu]="getFolderContextMenu(node.folderId, node.name)" -->
-                                <!-- [ngClass]="{'display-none': !showChild(node)}" -->
-                                <mat-tree-node *matTreeNodeDef="let node" matTreeNodePadding matTreeNodePaddingIndent="20"[style.display]="(!showChild(node) ? 'none' : null )" >
+                                <mat-tree-node *matTreeNodeDef="let node" matTreeNodePadding matTreeNodePaddingIndent="20" (click)="selectForImport(node.item)" >
                                     <button mat-icon-button [disabled]="true">
                                         <span style="display:inline-block;width:18px;">&nbsp;</span>
                                     </button>
@@ -46,7 +45,7 @@
                                 <!-- This is the tree node template for expandable nodes -->
                                 <!-- [ngClass]="{selected: node.folderId === selectedFolderId}" [appContextMenu]="getFolderContextMenu(node.folderId, node.name)" -->
                                 <mat-tree-node *matTreeNodeDef="let node;when: hasChild" matTreeNodePadding matTreeNodePaddingIndent="20">
-                                    <button mat-icon-button matTreeNodeToggle [attr.aria-label]="'Toggle ' + node.name">
+                                    <button mat-icon-button matTreeNodeToggle [attr.aria-label]="'Toggle ' + node.name" (click)="onExpand(node)">
                                         <mat-icon [inline]="true" class="mat-icon-rtl-mirror">
                                             {{treeControl.isExpanded(node) ? 'expand_more' : 'chevron_right'}}
                                         </mat-icon>
@@ -60,7 +59,33 @@
                     
                     <div class="ft-item" style="margin: 3px; width: 66%;">
                         <div class="ft-content" style="min-height: 500px;">
-                            
+                            <div *ngIf="selectedPhoneticTransform != null">
+                                <mat-tab-group animationDuration="0ms" [selectedIndex]="0">
+                                    <mat-tab label="Phonetic Transform">
+                                        <p>Import phonetic transform?</p>
+                                        <table>
+                                            <tr>
+                                                <th>Original</th>
+                                                <th>Phonetic text</th>
+                                                <th></th>
+                                            </tr>
+                                            <tr>
+                                                <td>{{selectedPhoneticTransform.ActualWord}}</td>
+                                                <td>{{selectedPhoneticTransform.PhoneticWord}}</td>
+                                                <td style="width: 40px;">
+                                                    <button mat-icon-button aria-label="Delete this overlay" (click)="speakPhrase(selectedPhoneticTransform.PhoneticWord)">
+                                                        <mat-icon>play_circle_outline</mat-icon>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                        <div class="import-actions">
+                                            <span class="spacer"></span>
+                                            <button mat-button color="accent" (click)="importPhoneticTransform(selectedPhoneticTransform)">Import <mat-icon>double_arrow</mat-icon></button>
+                                        </div>
+                                    </mat-tab>
+                                </mat-tab-group>
+                            </div>
                         </div>
                     </div>
                 </div>

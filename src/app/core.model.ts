@@ -203,6 +203,7 @@ export class DataTickModel {
     public hasExtendedDotFocus: boolean = false;
     public extendedDotFocusPercent: number = 0;
     public extendedDotFocusDecayLevel: number = 1;
+    public phoneticTransforms: Record<string, string> = {};
 
 }
 

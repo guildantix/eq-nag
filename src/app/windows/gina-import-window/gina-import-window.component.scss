@@ -92,7 +92,7 @@ div.tab-content {
     &:nth-of-type(odd) {
         background-color: #00000014;
     }
-    &:nth-last-child(2) {
+    &:nth-last-child(1) {
         border-bottom: 1px solid rgba(255, 255, 255, 0.12);
     }
     &:hover {
@@ -200,4 +200,43 @@ button.mat-icon-button.small {
     padding: 25px;
     // color: #69f0aea6;
     color: #ffffffa6;
+}
+
+table {
+    tr {
+        th {
+            border: none;
+            background-color: #2b2b2b;
+            padding: 10px;
+            padding-left: 20px;
+            text-align: left;
+            font-size: 12px;
+            letter-spacing: .2px;
+            color: #a5a5a5;
+            font-weight: 400;
+        }
+        td {
+            border: none;
+            padding-left: 20px;
+        }
+        &:nth-of-type(even) {
+            background-color: #3a3a3a;
+        }
+        &:nth-of-type(odd) {
+            background-color: #3c3c3c;
+        }
+    }
+
+    border-collapse: collapse;
+    width: 100%;
+}
+
+.import-actions {
+    .spacer {
+        display: flex;
+        flex: 1 0 auto;
+    }
+    display:flex;
+    flex-direction: row;
+    padding:15px;
 }

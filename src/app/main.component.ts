@@ -74,6 +74,14 @@ export class MainComponent implements OnInit {
             this.focusEffectSettings.hasExtendedDotFocus = data.hasExtendedDotFocus;
             this.focusEffectSettings.extendedDotFocusPercent = data.extendedDotFocusPercent;
             this.focusEffectSettings.extendedDotFocusDecayLevel = data.extendedDotFocusDecayLevel;
+
+            this.phoneticTransforms = [];
+            if ( data.phoneticTransforms ) {
+                for ( let key of Object.keys( data.phoneticTransforms ) ) {
+                    this.phoneticTransforms.push( { id: nanoid(), originalText: key, phoneticText: data.phoneticTransforms[ key ] } );
+                }
+            }
+
         } );
 
         this.ipcService.dkpEntryAdded().subscribe( model => {

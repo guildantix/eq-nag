@@ -671,6 +671,10 @@ export class IpcService {
         this.ipc.send( 'overlay:dim', overlayId );
     }
 
+    public requestTick(): void {
+        this.ipc.send( 'app:request:tick', null );
+    }
+
     public sendTestFn( rawLogLine: string ): void {
         this.ipc.send( 'log:send:raw', rawLogLine );
     }

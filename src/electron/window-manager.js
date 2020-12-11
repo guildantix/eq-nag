@@ -8,6 +8,9 @@ var criticalPadding = 300;
 
 class WindowManager {
 
+    /** @type {BrowserWindow} */
+    ginaImportWindow;
+
     #dirname;
 
     constructor(dirname) {
@@ -205,7 +208,7 @@ class WindowManager {
         } );
 
         ipcMain.on( 'gina:dialog:import', ( event, arg ) => {
-            let ginaImportWindow = new BrowserWindow( {
+            this.ginaImportWindow = new BrowserWindow( {
                 parent: mainWindowRef.reference,
                 modal: false,
                 show: false,
@@ -221,11 +224,15 @@ class WindowManager {
             if ( arg ) {
                 url += `/${arg}`;
             }
-            ginaImportWindow.loadURL( url );
-            ginaImportWindow.once( "ready-to-show", () => {
-                ginaImportWindow.show();
+            this.ginaImportWindow.loadURL( url );
+            this.ginaImportWindow.once( "ready-to-show", () => {
+                this.ginaImportWindow.show();
                 event.sender.webContents.send( 'gina:dialog:import', true );
             } );
+            this.ginaImportWindow.on( 'closed', () => {
+                this.ginaImportWindow = null;
+            } );
+
         } );
 
     }

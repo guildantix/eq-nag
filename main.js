@@ -115,6 +115,10 @@ ipcMain.on( 'app:minimize:tray', ( event, data ) => {
     mainWindow.minimize();
 } );
 
+ipcMain.on( 'app:request:tick', ( event, data ) => {
+    sendTick();
+} );
+
 ipcMain.on( 'main:console:log', ( event, data ) => { mainWindow.webContents.send( 'console:log', data ); } );
 
 function sendTick() {
@@ -136,6 +140,11 @@ function sendTick() {
     };
     mainWindow.webContents.send( 'tick', tickData );
     logBootstrap.tick( tickData, characterDatabase );
+    
+    if ( winManager.ginaImportWindow != null ) {
+        winManager.ginaImportWindow.send( 'tick', tickData );
+    }
+
 }
 
 autoUpdater.signals.updateDownloaded( () => {
