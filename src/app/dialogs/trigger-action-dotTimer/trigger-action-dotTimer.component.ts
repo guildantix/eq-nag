@@ -19,7 +19,6 @@ const nanoid = customAlphabet( alphabet, 16 );
 export class TriggerActionDotTimerComponent implements OnInit {
 
     public Math: typeof Math = Math;
-    public phraseTableColumns = [ 'phrase', 'regEx', 'delete' ];
     public audioFiles: FileModel[] = [];
     @Input( 'action' ) public action: TriggerAction;
     @Input( 'trigger' ) public model: TriggerModel;
@@ -33,7 +32,7 @@ export class TriggerActionDotTimerComponent implements OnInit {
 
     private onIconFileSelected: ( e: any ) => void = null;
 
-    constructor( private dialogService: DialogService, private contextService: ContextService, private ipcService: IpcService ) { }
+    constructor( public dialogService: DialogService, private contextService: ContextService, private ipcService: IpcService ) { }
 
     ngOnInit() {
         this.ipcService.getAudioFiles().subscribe( files => this.audioFiles = files );
@@ -110,46 +109,6 @@ export class TriggerActionDotTimerComponent implements OnInit {
 
     public pasteActionEndedProperties( action: TriggerAction ): void {
         this.contextService.pasteActionEndedProperties( action );
-    }
-
-    public addNewExclusionTarget( table: MatTable<any> ): void {
-        let phrase: Phrase = new Phrase();
-        phrase.phraseId = nanoid();
-        this.action.excludeTargets?.push( phrase );
-        table?.renderRows();
-    }
-
-    public addNewEndEarlyPhrase( table: MatTable<any> ): void {
-        let phrase: Phrase = new Phrase();
-        phrase.phraseId = nanoid();
-        this.action.endEarlyPhrases?.push( phrase );
-        table?.renderRows();
-    }
-
-    public deleteExcludePhrase( deleteIndex: number, table: MatTable<any> ): void {
-        this.dialogService.showConfirmDialog(
-            'Are you certain you want to delete this exclusion?',
-            'Click "Yes" to delete the exclusion.',
-            'Click "No" to cancel and close this dialog without deleting the exclusion.',
-            ( confirmed ) => {
-                if ( confirmed ) {
-                    this.action.excludeTargets?.splice( deleteIndex, 1 );
-                    table?.renderRows();
-                }
-            } );
-    }
-
-    public deleteEndEarlyPhrase( deleteIndex: number, table: MatTable<any> ): void {
-        this.dialogService.showConfirmDialog(
-            'Are you certain you want to delete this phrase?',
-            'Click "Yes" to delete the phrase.',
-            'Click "No" to cancel and close this dialog without deleting the phrase.',
-            ( confirmed ) => {
-                if ( confirmed ) {
-                    this.action.endEarlyPhrases?.splice( deleteIndex, 1 );
-                    table?.renderRows();
-                }
-            } );
     }
 
     public openEndingAudioFileModal() {

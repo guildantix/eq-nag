@@ -5,9 +5,14 @@ import { MaterialModule } from '../material.module';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { FormInputModule } from '../form-inputs/form-inputs.module';
 import { ContextMenuModule } from '../context-menu/context-menu.module';
-import { ConditionsComponent } from './conditions/conditions.component';
+
+// Services imports
 import { EditorsService } from './editors.service';
+
+// Component imports
+import { ConditionsComponent } from './conditions/conditions.component';
 import { CapturePhrasesComponent } from './capture-phrases/capture-phrases.component';
+import { PhrasesComponent } from './phrases/phrases.component';
 
 @NgModule({
     imports: [
@@ -22,10 +27,12 @@ import { CapturePhrasesComponent } from './capture-phrases/capture-phrases.compo
     exports: [
         ConditionsComponent,
         CapturePhrasesComponent,
+        PhrasesComponent,
     ],
     declarations: [
         ConditionsComponent,
         CapturePhrasesComponent,
+        PhrasesComponent,
     ],
     providers: [
         EditorsService,
