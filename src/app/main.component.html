@@ -56,8 +56,7 @@
                 </mat-toolbar>
                 <div class="tab-content">
                     <table mat-table #overlaysTable="matTable" style="width: 100%;"
-                        [dataSource]="overlays"
-                        class="capture-phrases">
+                        [dataSource]="overlays">
 
                         <ng-container matColumnDef="edit">
                             <th mat-header-cell *matHeaderCellDef style="text-align: center; width: 50px;">  </th>
@@ -159,8 +158,7 @@
                         <legend><span>Phonetic Transforms</span><span class="spacer"></span><button mat-button (click)="addPhoneticTransform(phoneticTransformsTable)" color="accent"><mat-icon>add</mat-icon>New</button></legend>
 
                         <table mat-table #phoneticTransformsTable="matTable" style="width: 100%;"
-                            [dataSource]="phoneticTransforms"
-                            class="capture-phrases">
+                            [dataSource]="phoneticTransforms">
     
                             <ng-container matColumnDef="original">
                                 <th mat-header-cell *matHeaderCellDef style="text-align: left;">Original</th>
