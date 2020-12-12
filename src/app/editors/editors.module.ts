@@ -18,6 +18,7 @@ import { TriggerActionTimerComponent } from './trigger-action-timer/trigger-acti
 import { TriggerActionDotTimerComponent } from './trigger-action-dotTimer/trigger-action-dotTimer.component';
 import { TriggerActionAudioComponent } from './trigger-action-audio/trigger-action-audio.component';
 import { TriggerActionClipboardComponent } from './trigger-action-clipboard/trigger-action-clipboard.component';
+import { TriggerActionDisplayTextComponent } from './trigger-action-displayText/trigger-action-displayText.component';
 
 @NgModule({
     imports: [
@@ -38,6 +39,7 @@ import { TriggerActionClipboardComponent } from './trigger-action-clipboard/trig
         TriggerActionDotTimerComponent,
         TriggerActionAudioComponent,
         TriggerActionClipboardComponent,
+        TriggerActionDisplayTextComponent,
     ],
     declarations: [
         ConditionsComponent,
@@ -48,6 +50,7 @@ import { TriggerActionClipboardComponent } from './trigger-action-clipboard/trig
         TriggerActionDotTimerComponent,
         TriggerActionAudioComponent,
         TriggerActionClipboardComponent,
+        TriggerActionDisplayTextComponent,
     ],
     providers: [],
 })
