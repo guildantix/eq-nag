@@ -23,6 +23,7 @@ import { TriggerActionDotTimerComponent } from './trigger-action-dotTimer/trigge
 import { TriggerActionTimerComponent } from './trigger-action-timer/trigger-action-timer.component';
 import { TriggerActionCounterComponent } from './trigger-action-counter/trigger-action-counter.component';
 import { TriggerActionAudioComponent } from './trigger-action-audio/trigger-action-audio.component';
+import { EditorsModule } from '../editors/editors.module';
 
 @NgModule( {
     imports: [
@@ -33,6 +34,7 @@ import { TriggerActionAudioComponent } from './trigger-action-audio/trigger-acti
         BrowserAnimationsModule,
         FormInputModule,
         ContextMenuModule,
+        EditorsModule,
     ],
     exports: [
         TriggerDialogComponent,

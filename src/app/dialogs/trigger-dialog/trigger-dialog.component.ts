@@ -34,7 +34,6 @@ export class TriggerDialogComponent implements OnInit {
     public capturePhraseTableColumns = [ 'moveIndex', 'number', 'phrase', 'regEx', 'delete' ];
     public phraseTableColumns = [ 'phrase', 'regEx', 'delete' ];
     public actionTableColumns = [ 'number', 'actionType', 'delete' ];
-    public conditionTableColumns = [ 'variable', 'operator', 'value', 'delete' ];
     public triggerId: string = null;
     public folderId: string = null;
     public actionTypes: typeof ActionTypes = ActionTypes;
@@ -59,7 +58,7 @@ export class TriggerDialogComponent implements OnInit {
     @ViewChild( 'capturePhrasesTable' ) capturePhrasesTable: MatTable<any>;
     @ViewChild( 'conditionsTable' ) conditionsTable: MatTable<any>;
 
-    constructor( private ipcService: IpcService, private route: ActivatedRoute, private dialogService: DialogService, private snackBar: MatSnackBar, private contextService: ContextService ) { }
+    constructor( private ipcService: IpcService, private route: ActivatedRoute, public dialogService: DialogService, private snackBar: MatSnackBar, private contextService: ContextService ) { }
 
     ngOnInit() {
         this.model = new TriggerModel();
@@ -128,26 +127,6 @@ export class TriggerDialogComponent implements OnInit {
             ( confirmed ) => {
                 if ( confirmed ) {
                     this.model.actions?.splice( index, 1 );
-                }
-            } );
-    }
-
-    public addNewCondition(): void {
-        let condition: TriggerCondition = new TriggerCondition();
-        condition.conditionType = TriggerConditionTypes.VariableValue;
-        this.model.conditions.push( condition );
-        this.conditionsTable?.renderRows();
-    }
-
-    public deleteCondition( index: number ): void {
-        this.dialogService.showConfirmDialog(
-            'Are you certain you want to delete this condition?',
-            'Click "Yes" to delete the condition.',
-            'Click "No" to cancel and close this dialog without deleting the condition.',
-            ( confirmed ) => {
-                if ( confirmed ) {
-                    this.model.conditions?.splice( index, 1 );
-                    this.conditionsTable?.renderRows();
                 }
             } );
     }
