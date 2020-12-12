@@ -21,6 +21,7 @@ import { TriggerActionClipboardComponent } from './trigger-action-clipboard/trig
 import { TriggerActionDisplayTextComponent } from './trigger-action-displayText/trigger-action-displayText.component';
 import { TriggerActionStoreVariableComponent } from './trigger-action-storeVariable/trigger-action-storeVariable.component';
 import { TriggerActionClearVariableComponent } from './trigger-action-clearVariable/trigger-action-clearVariable.component';
+import { TriggerActionSpeakComponent } from './trigger-action-speak/trigger-action-speak.component';
 
 @NgModule({
     imports: [
@@ -44,6 +45,7 @@ import { TriggerActionClearVariableComponent } from './trigger-action-clearVaria
         TriggerActionDisplayTextComponent,
         TriggerActionStoreVariableComponent,
         TriggerActionClearVariableComponent,
+        TriggerActionSpeakComponent,
     ],
     declarations: [
         ConditionsComponent,
@@ -57,6 +59,7 @@ import { TriggerActionClearVariableComponent } from './trigger-action-clearVaria
         TriggerActionDisplayTextComponent,
         TriggerActionStoreVariableComponent,
         TriggerActionClearVariableComponent,
+        TriggerActionSpeakComponent,
     ],
     providers: [],
 })
