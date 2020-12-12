@@ -1,0 +1,30 @@
+<button mat-button (click)="addClassLevel()" style="float: right; clear: none; margin-top: -43px;">Add Class</button>
+
+<div *ngFor="let cls of classLevels; let cli = index">
+    <mat-form-field style="width: 317px; margin-right: 10px;">
+        <mat-label>Character Class</mat-label>
+        <mat-select [(ngModel)]="cls.class" name="ddlCharacterClass_{{cli}}">
+            <mat-option value="BRD">Bard</mat-option>
+            <mat-option value="BST">Beastlord</mat-option>
+            <mat-option value="BER">Berserker</mat-option>
+            <mat-option value="CLR">Cleric</mat-option>
+            <mat-option value="DRU">Druid</mat-option>
+            <mat-option value="ENC">Enchanter</mat-option>
+            <mat-option value="MAG">Magician</mat-option>
+            <mat-option value="MNK">Monk</mat-option>
+            <mat-option value="NEC">Necromancer</mat-option>
+            <mat-option value="PAL">Paladin</mat-option>
+            <mat-option value="RNG">Ranger</mat-option>
+            <mat-option value="ROG">Rogue</mat-option>
+            <mat-option value="SHD">Shadowknight</mat-option>
+            <mat-option value="SHM">Shaman</mat-option>
+            <mat-option value="WAR">Warrior</mat-option>
+            <mat-option value="WIZ">Wizard</mat-option>
+        </mat-select>
+    </mat-form-field>
+    <mat-form-field style="width: 124px;">
+        <mat-label>Spell Level</mat-label>
+        <input matInput name="txtSpellLevel_{{cli}}" type="number" [(ngModel)]="cls.level" />
+    </mat-form-field>
+    <button mat-icon-button color="warn" aria-label="Delete this class" (click)="deleteClassLevel(cli)"><mat-icon>clear</mat-icon></button>
+</div>

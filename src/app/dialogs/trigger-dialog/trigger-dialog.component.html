@@ -38,6 +38,7 @@
                 <mat-tab label="Actions">
                     <ng-template matTabContent>
                         <div class="tab-content">
+                            <!-- <app-trigger-actions [(actions)]="model.actions"></app-trigger-actions> -->
                             <div style="height: 36px;"><button mat-button color="accent" style="float: right; margin-right: 50px;" (click)="addNewAction()"><mat-icon>add</mat-icon>New</button></div>
                             <div class="flex-layout">
                                 <mat-card class="card action-card" *ngFor="let action of model.actions; let i = index" style="margin: 20px; width: 550px;">
@@ -96,11 +97,6 @@
                                                     <mat-option *ngFor="let phrase of model.capturePhrases" [value]="phrase.phraseId">{{phrase.phrase}}</mat-option>
                                                 </mat-select>
                                             </mat-form-field>
-
-                                            <!-- <mat-form-field>
-                                                <mat-label>Action Label</mat-label>
-                                                <input matInput [(ngModel)]="action.name" name="txtActionName_{{i}}" />
-                                            </mat-form-field> -->
 
                                         </div>
 

@@ -62,31 +62,6 @@ export class TriggerActionDotTimerComponent implements OnInit {
         // this.ipcService.updateLogFile( this.iconFileSelector.nativeElement.files[ 0 ].path );
     }
 
-    public addClassLevel(): void {
-        this.model.classLevels = this.model.classLevels ? this.model.classLevels : [];
-        this.model.classLevels.push( new CharacterClassLevel() );
-    }
-
-    public deleteClassLevel( index: number ): void {
-        let classLabel: string = _.find( Object.keys( CharacterClasses ), f => CharacterClasses[ f ] === this.model.classLevels[ index ].class );
-        let action = () => this.model.classLevels?.splice( index, 1 );
-
-        if ( classLabel ) {
-            this.dialogService.showConfirmDialog(
-                `Are you certain you want to remove ${classLabel} from this trigger?`,
-                'Click "Yes" to remove this class.',
-                'Click "No" to cancel and close this dialog without removing the class.',
-                ( confirmed ) => {
-                    if ( confirmed ) {
-                        action();
-                    }
-                } );
-        } else {
-            action();
-        }
-        
-    }
-
     public getActionEndedCtxMenu( action: TriggerAction ): ContextMenuModel[] {
         return [ <ContextMenuModel>{
             label: 'Copy Timer Ended Properties',

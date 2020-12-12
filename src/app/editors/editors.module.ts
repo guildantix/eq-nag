@@ -22,6 +22,8 @@ import { TriggerActionDisplayTextComponent } from './trigger-action-displayText/
 import { TriggerActionStoreVariableComponent } from './trigger-action-storeVariable/trigger-action-storeVariable.component';
 import { TriggerActionClearVariableComponent } from './trigger-action-clearVariable/trigger-action-clearVariable.component';
 import { TriggerActionSpeakComponent } from './trigger-action-speak/trigger-action-speak.component';
+import { TriggerActionsComponent } from './trigger-actions/trigger-actions.component';
+import { TriggerClassesComponent } from './trigger-classes/trigger-classes.component';
 
 @NgModule({
     imports: [
@@ -37,6 +39,7 @@ import { TriggerActionSpeakComponent } from './trigger-action-speak/trigger-acti
         ConditionsComponent,
         CapturePhrasesComponent,
         PhrasesComponent,
+        TriggerClassesComponent,
         TriggerActionCounterComponent,
         TriggerActionTimerComponent,
         TriggerActionDotTimerComponent,
@@ -46,11 +49,13 @@ import { TriggerActionSpeakComponent } from './trigger-action-speak/trigger-acti
         TriggerActionStoreVariableComponent,
         TriggerActionClearVariableComponent,
         TriggerActionSpeakComponent,
+        TriggerActionsComponent,
     ],
     declarations: [
         ConditionsComponent,
         CapturePhrasesComponent,
         PhrasesComponent,
+        TriggerClassesComponent,
         TriggerActionCounterComponent,
         TriggerActionTimerComponent,
         TriggerActionDotTimerComponent,
@@ -60,6 +65,7 @@ import { TriggerActionSpeakComponent } from './trigger-action-speak/trigger-acti
         TriggerActionStoreVariableComponent,
         TriggerActionClearVariableComponent,
         TriggerActionSpeakComponent,
+        TriggerActionsComponent,
     ],
     providers: [],
 })
