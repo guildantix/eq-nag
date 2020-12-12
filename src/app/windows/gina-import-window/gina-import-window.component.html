@@ -35,7 +35,7 @@
             
                                 <!-- This is the tree node template for leaf nodes -->
                                 <!-- [ngClass]="{selected: node.folderId === selectedFolderId}" [appContextMenu]="getFolderContextMenu(node.folderId, node.name)" -->
-                                <mat-tree-node *matTreeNodeDef="let node" matTreeNodePadding matTreeNodePaddingIndent="20" (click)="selectForImport(node.item)" >
+                                <mat-tree-node *matTreeNodeDef="let node" matTreeNodePadding matTreeNodePaddingIndent="20" (click)="selectForImport(node.item, node.ginaName)" [ngClass]="{selected: node.ginaName == selectedGinaName}" >
                                     <button mat-icon-button [disabled]="true">
                                         <span style="display: inline-block;width: 18px;">&nbsp;</span>
                                     </button>
@@ -85,6 +85,107 @@
                                         </div>
                                     </mat-tab>
                                 </mat-tab-group>
+                            </div>
+                            <div *ngIf="selectedTrigger != null">
+                                <mat-tab-group animationDuration="0ms" [selectedIndex]="0">
+                                    <mat-tab label="GINA Trigger" style="background-color: #00000014;">
+                                        <div style="padding-top:15px;">
+                                            
+                                            <mat-form-field appearance="fill">
+                                                <mat-label>Trigger Name</mat-label>
+                                                <input matInput [(ngModel)]="selectedTrigger.Name" name="txtTriggerName" [readOnly]="true" />
+                                            </mat-form-field>
+                                            
+                                            <mat-form-field appearance="fill">
+                                                <mat-label>Search Text</mat-label>
+                                                <input matInput [(ngModel)]="selectedTrigger.TriggerText" name="txtTriggerText" [readOnly]="true" />
+                                                <mat-hint *ngIf="selectedTrigger.EnableRegex == 'True'">Uses regex</mat-hint>
+                                            </mat-form-field>
+
+                                            <!-- <mat-checkbox [checked]="selectedTrigger.EnableRegex == 'True'" (click)="$event.preventDefault()">Use Regex</mat-checkbox> -->
+
+                                            <mat-form-field appearance="fill" [style.marginTop]="(selectedTrigger.EnableRegex == 'True' ? '10px' : null)">
+                                                <mat-label>Comments</mat-label>
+                                                <textarea matInput [(ngModel)]="selectedTrigger.Comments" name="txtTriggerComments" style="height: 85px;" [readOnly]="true"></textarea>
+                                            </mat-form-field>
+
+                                            <fieldset class="trigger-property-group">
+                                                <legend>Basic settings</legend>
+                                            
+                                                <div class="field-list">
+                                                    <div class="field-line" *ngIf="selectedTrigger.UseText == 'True'"><label>Display Text</label><span>{{selectedTrigger.DisplayText}}</span></div>
+                                                    <div class="field-line" *ngIf="selectedTrigger.CopyToClipboard == 'True'"><label>Clipboard Text</label><span>{{selectedTrigger.ClipboardText}}</span></div>
+                                                    <div class="field-line" *ngIf="selectedTrigger.UseTextToVoice == 'True'"><label>Text to Speech</label><span>{{selectedTrigger.TextToVoiceText}}</span><button mat-icon-button (click)="speakPhrase(selectedTrigger.TextToVoiceText)"><mat-icon [inline]="true">play_arrow</mat-icon></button></div>
+                                                    <div class="field-line" *ngIf="selectedTrigger.PlayMediaFile == 'True'"><label>Play Audio</label><span>{{selectedTrigger.MediaFileName}}</span><button mat-icon-button (click)="playAudioFile(selectedTrigger.MediaFileName)"><mat-icon [inline]="true">play_arrow</mat-icon></button></div>
+                                                </div>
+
+                                            </fieldset>
+                                            
+                                            <fieldset *ngIf="selectedTrigger.TimerType != ginaTimerTypes.NoTimer" class="trigger-property-group">
+                                                <legend>Timer settings</legend>
+
+                                                <div class="field-list">
+                                                    <div class="field-line"><label>Timer Type</label>
+                                                        <span *ngIf="selectedTrigger.TimerType == ginaTimerTypes.Timer">Timer (Count Down)</span>
+                                                        <span *ngIf="selectedTrigger.TimerType == ginaTimerTypes.Stopwatch">Stopwatch (Count Up)</span>
+                                                        <span *ngIf="selectedTrigger.TimerType == ginaTimerTypes.RepeatingTimer">Repeating Timer</span>
+                                                    </div>
+                                                    <div class="field-line"><label>Timer Name</label><span>{{selectedTrigger.TimerName}}</span></div>
+                                                    <div class="field-line"><label>Timer Duration</label><span>{{getDurationLabel(+selectedTrigger.TimerDuration)}}</span></div>
+                                                    <div class="field-line" *ngIf="selectedTrigger.RestartBasedOnTimerName == 'True'"><label>Restart</label><span>Only if timer name matches.</span></div>
+                                                    <div class="field-line" *ngIf="selectedTrigger.RestartBasedOnTimerName != 'True' && selectedTrigger.TimerStartBehavior == 'RestartTimer'"><label>Restart</label><span>Restart regardless of timer name.</span></div>
+                                                    <div class="field-line" *ngFor="let endEarly of selectedTrigger.TimerEarlyEnders?.EarlyEnder"><label>End early condition<ng-container *ngIf="endEarly.EnableRegex">&nbsp;(regex)</ng-container></label><span>{{endEarly.EarlyEndText}}</span></div>
+                                                </div>
+
+                                            </fieldset>
+                                            
+                                            <fieldset *ngIf="selectedTrigger.UseTimerEnding == 'True'" class="trigger-property-group">
+                                                <legend>Timer ending settings</legend>
+
+                                                <div class="field-list">
+                                                    <div class="field-line" *ngIf="selectedTrigger.UseTimerEnding == 'True'"><label>Notify when timer is ending</label><span>{{getDurationLabel(selectedTrigger.TimerEndingTime)}}</span></div>
+                                                    <div class="field-line" *ngIf="selectedTrigger.TimerEndingTrigger?.UseText == 'True'"><label>Display Text</label><span>{{selectedTrigger.TimerEndingTrigger.DisplayText}}</span></div>
+                                                    <div class="field-line" *ngIf="selectedTrigger.TimerEndingTrigger?.UseTextToVoice == 'True'"><label>Text to Speech</label><span>{{selectedTrigger.TimerEndingTrigger.TextToVoiceText}}</span><button mat-icon-button (click)="speakPhrase(selectedTrigger.TimerEndingTrigger.TextToVoiceText)"><mat-icon [inline]="true">play_arrow</mat-icon></button></div>
+                                                    <div class="field-line" *ngIf="selectedTrigger.TimerEndingTrigger?.PlayMediaFile == 'True'"><label>Play Audio</label><span>{{selectedTrigger.TimerEndingTrigger.MediaFileName}}</span><button mat-icon-button (click)="playAudioFile(selectedTrigger.TimerEndingTrigger.MediaFileName)"><mat-icon [inline]="true">play_arrow</mat-icon></button></div>
+                                                </div>
+
+                                            </fieldset>
+                                            
+                                            <fieldset *ngIf="selectedTrigger.UseTimerEnded == 'True'" class="trigger-property-group">
+                                                <legend>Timer ended settings</legend>
+
+                                                <div class="field-list">
+                                                    <div class="field-line" *ngIf="selectedTrigger.UseTimerEnded == 'True'"><label>Notify when timer ends</label><span>Yes</span></div>
+                                                    <div class="field-line" *ngIf="selectedTrigger.TimerEndedTrigger?.UseText == 'True'"><label>Display Text</label><span>{{selectedTrigger.TimerEndedTrigger.DisplayText}}</span></div>
+                                                    <div class="field-line" *ngIf="selectedTrigger.TimerEndedTrigger?.UseTextToVoice == 'True'"><label>Text to Speech</label><span>{{selectedTrigger.TimerEndedTrigger.TextToVoiceText}}</span><button mat-icon-button (click)="speakPhrase(selectedTrigger.TimerEndedTrigger.TextToVoiceText)"><mat-icon [inline]="true">play_arrow</mat-icon></button></div>
+                                                    <div class="field-line" *ngIf="selectedTrigger.TimerEndedTrigger?.PlayMediaFile == 'True'"><label>Play Audio</label><span>{{selectedTrigger.TimerEndedTrigger.MediaFileName}}</span><button mat-icon-button (click)="playAudioFile(selectedTrigger.TimerEndedTrigger.MediaFileName)"><mat-icon [inline]="true">play_arrow</mat-icon></button></div>
+                                                </div>
+
+                                            </fieldset>
+                                            
+                                            <fieldset *ngIf="selectedTrigger.UseCounterResetTimer == 'True'" class="trigger-property-group">
+                                                <legend>Counter settings</legend>
+
+                                                <div class="field-list">
+                                                    <div class="field-line" *ngIf="selectedTrigger.UseCounterResetTimer == 'True'"><label>Use counter</label><span>Yes</span></div>
+                                                    <div class="field-line" *ngIf="selectedTrigger.UseCounterResetTimer == 'True'"><label>Reset counter after</label><span>{{getDurationLabel(+selectedTrigger.CounterResetDuration)}}</span></div>
+
+                                                </div>
+
+                                            </fieldset>
+                                        </div>
+                                    </mat-tab>
+                                    <!-- <mat-tab label="Display Text" *ngIf="selectedTrigger.DisplayText == 'True'">
+
+                                    </mat-tab>
+                                    <mat-tab label="Clipboard" *ngIf="selectedTrigger.CopyToClipboard == 'True'">
+
+                                    </mat-tab> -->
+                                </mat-tab-group>
+                                <div class="import-actions">
+                                    <span class="spacer"></span>
+                                    <button mat-button color="accent">Import <mat-icon>double_arrow</mat-icon></button>
+                                </div>
                             </div>
                         </div>
                     </div>

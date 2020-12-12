@@ -4,7 +4,7 @@ import { Component, OnInit } from '@angular/core';
 import { MatTreeFlatDataSource, MatTreeFlattener } from '@angular/material/tree';
 import { forkJoin } from 'rxjs';
 import { DialogService } from 'src/app/dialogs/dialog.service';
-import { GinaPhoneticTransform, GinaTrigger, GinaTriggerGroup } from 'src/app/gina.model';
+import { GinaPhoneticTransform, GinaTimerTypes, GinaTrigger, GinaTriggerGroup } from 'src/app/gina.model';
 import { IpcService } from 'src/app/ipc.service';
 import * as _ from 'lodash';
 
@@ -60,9 +60,14 @@ export class GinaImportWindowComponent implements OnInit {
     public showImported: boolean = false;
     public importedTriggerNames: string[] = [];
     public importedPhoneticTransforms: string[] = [];
+
     public selectedPhoneticTransform: GinaPhoneticTransform = null;
+    public selectedTrigger: GinaTrigger = null;
+    public selectedGinaName: string = null;
+
     public voiceOptions: SpeechSynthesisVoice[] = [];
     public voiceIndex: number;
+    public ginaTimerTypes: typeof GinaTimerTypes = GinaTimerTypes;
 
     constructor( private ipcService: IpcService, private dialogService: DialogService ) {
         speechSynthesis.onvoiceschanged = () => {
@@ -185,9 +190,14 @@ export class GinaImportWindowComponent implements OnInit {
         return nodes;
     }
 
-    public selectForImport( item: GinaTrigger | GinaPhoneticTransform ): void {
+    public selectForImport( item: GinaTrigger | GinaPhoneticTransform, ginaName: string ): void {
+
+        this.selectedGinaName = ginaName;
+
         if ( 'ActualWord' in item ) {
             this.selectedPhoneticTransform = item;
+        } else {
+            this.selectedTrigger = item;
         }
     }
 
@@ -204,6 +214,7 @@ export class GinaImportWindowComponent implements OnInit {
             transforms[ transform.ActualWord ] = transform.PhoneticWord;
             this.ipcService.savePhoneticTransforms( transforms );
             this.selectedPhoneticTransform = null;
+            this.selectedGinaName = null;
         } );
     }
 
@@ -250,6 +261,39 @@ export class GinaImportWindowComponent implements OnInit {
         } else {
             _.remove( this.expandedNodes, n => n === node.ginaName );
         }
+    }
+
+    public playAudioFile( path: string ): void {
+        let player = new Audio( `file://${path}` );
+        player.play();
+    }
+
+    public getDurationLabel( seconds: number ): string {
+
+        if ( seconds > 0 ) {
+            let hours = Math.floor( seconds / 3600 );
+            let mins = Math.floor( ( seconds % 3600 ) / 60 );
+            let secs = seconds % 3600 % 60;
+    
+            let label = '';
+    
+            if ( hours > 0 ) {
+                label += `${hours}h `;
+            }
+            if ( mins > 0 ) {
+                label +=  `${mins}m`;
+            }
+            if ( secs > 0 ) {
+                label +=  `${secs}s`;
+            }
+
+            return label;
+
+        } else {
+            return `${seconds}s`;
+
+        }
+
     }
 
     public closeModal(): void {

@@ -248,3 +248,67 @@ table {
     flex-direction: row;
     padding:15px;
 }
+
+::ng-deep .mat-tab-body-content {
+    > div {
+        padding: 0 15px;
+    }
+}
+
+fieldset.trigger-property-group {
+
+    legend {
+        font-size: 16px;
+        font-weight: 400;
+    }
+
+    .field-list {
+        .field-line{
+            &:nth-of-type(even) {
+                > label {
+                    background-color: #00000021;
+                }
+                > span {
+                    background-color: #00000059;
+                }
+            }
+            &:nth-of-type(odd) {
+                > label {
+                    background-color: #00000014;
+                }
+                > span {
+                    background-color: #0000004f;
+                }
+            }
+            > label {
+                padding: 5px;
+                letter-spacing: 0.5px;
+                min-width: 200px;
+                display: flex;
+                // flex: 1 0 auto;
+            }
+            > span {
+                padding: 5px;
+                font-weight: 100;
+                font-size: 14px;
+                display: flex;
+                flex: 1;
+            }
+            > button {
+                mat-icon {
+                    font-size: 22px;
+                }
+                width: 27px;
+                height: 27px;
+                line-height: 27px;
+                margin-left: -27px;
+            }
+
+            display: flex;
+            min-width: 0;
+        }
+
+    }
+
+    font-size: 12px;
+}
