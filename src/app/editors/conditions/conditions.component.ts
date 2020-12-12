@@ -34,6 +34,7 @@ export class ConditionsComponent implements OnInit {
         let condition: TriggerCondition = new TriggerCondition();
         condition.conditionType = TriggerConditionTypes.VariableValue;
         this.conditions.push( condition );
+        this.conditionsChange.emit( this.conditions );
         this.conditionsTable?.renderRows();
     }
 
