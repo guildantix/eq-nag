@@ -7,6 +7,7 @@ import { FormInputModule } from '../form-inputs/form-inputs.module';
 import { ContextMenuModule } from '../context-menu/context-menu.module';
 import { ConditionsComponent } from './conditions/conditions.component';
 import { EditorsService } from './editors.service';
+import { CapturePhrasesComponent } from './capture-phrases/capture-phrases.component';
 
 @NgModule({
     imports: [
@@ -20,9 +21,11 @@ import { EditorsService } from './editors.service';
     ],
     exports: [
         ConditionsComponent,
+        CapturePhrasesComponent,
     ],
     declarations: [
         ConditionsComponent,
+        CapturePhrasesComponent,
     ],
     providers: [
         EditorsService,

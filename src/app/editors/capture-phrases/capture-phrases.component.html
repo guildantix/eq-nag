@@ -1,0 +1,56 @@
+<fieldset>
+    <legend class="full-width"><span>Phrases</span><span class="spacer"></span><button mat-button (click)="addNewCapturePhrase()" color="accent"><mat-icon>add</mat-icon>New</button></legend>
+    <mat-form-field style="width: 200px;">
+        <mat-label>Capture Method</mat-label>
+        <mat-select [(ngModel)]="captureMethod" name="ddlCaptureMethod" (ngModelChange)="captureMethodChange.emit(captureMethod)">
+            <mat-option value="Any match" matTooltip="Execute this trigger if any phrase matches a single log entry" matTooltipPosition="right">Any match</mat-option>
+            <mat-option value="Sequential" matTooltip="Execute this trigger if all phrases match sequentially across multiple log entries" matTooltipPosition="right">Sequential</mat-option>
+            <mat-option value="Concurrent" disabled matTooltip="Execute this trigger if all phrases match in a single log entry" matTooltipPosition="right">Concurrent</mat-option>
+        </mat-select>
+    </mat-form-field>
+    <table mat-table #capturePhrasesTable="matTable"
+        [dataSource]="capturePhrases"
+        class="capture-phrases">
+
+        <ng-container matColumnDef="moveIndex">
+            <th mat-header-cell *matHeaderCellDef style="width: 50px;"></th>
+            <td mat-cell *matCellDef="let element; let i = index">
+                <span class="material-icons" style="display: block; cursor: pointer;" (click)="movePhraseUp(i)">keyboard_arrow_up</span>
+                <span class="material-icons" style="display: block; cursor: pointer;" (click)="movePhraseDown(i)">keyboard_arrow_down</span>
+            </td>
+        </ng-container>
+
+        <ng-container matColumnDef="number">
+            <th mat-header-cell *matHeaderCellDef style="width: 50px;"> No. </th>
+            <td mat-cell *matCellDef="let element; let i = index" style="padding-bottom: 3px;"> {{i + 1}} </td>
+        </ng-container>
+
+        <ng-container matColumnDef="phrase">
+            <th mat-header-cell *matHeaderCellDef> Phrase </th>
+            <td mat-cell *matCellDef="let element; let i = index">
+                <mat-form-field>
+                    <mat-label *ngIf="element.phrase == null || element.phrase == ''">Capture Phrase</mat-label>
+                    <input matInput name="txtPhrase_{{i}}" type="text" [(ngModel)]="element.phrase" (ngModelChange)="capturePhrasesChange.emit(capturePhrases)" />
+                </mat-form-field>
+            </td>
+        </ng-container>
+
+        <ng-container matColumnDef="regEx">
+            <th mat-header-cell *matHeaderCellDef style="text-align: center; width: 50px;"> RegEx </th>
+            <td mat-cell *matCellDef="let element; let i = index"> <div style="text-align: center; padding: 20px;"><mat-checkbox name="cbxUseRegEx_{{i}}" [(ngModel)]="element.useRegEx" (ngModelChange)="capturePhrasesChange.emit(capturePhrases)"></mat-checkbox></div> </td>
+        </ng-container>
+
+        <ng-container matColumnDef="delete">
+            <th mat-header-cell *matHeaderCellDef style="text-align: center; width: 50px;">  </th>
+            <td mat-cell *matCellDef="let element; let i = index">
+                <button mat-icon-button color="warn" aria-label="Delete this capture phrase" (click)="deleteCapturePhrase(i)">
+                    <mat-icon>clear</mat-icon>
+                </button>
+            </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="capturePhraseTableColumns"></tr>
+        <tr mat-row *matRowDef="let element; columns: capturePhraseTableColumns;"></tr>
+
+    </table>
+</fieldset>

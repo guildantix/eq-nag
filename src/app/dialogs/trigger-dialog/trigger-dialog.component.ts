@@ -31,7 +31,6 @@ import { ContextService } from 'src/app/context-menu/context.service';
 export class TriggerDialogComponent implements OnInit {
 
     public model: TriggerModel;
-    public capturePhraseTableColumns = [ 'moveIndex', 'number', 'phrase', 'regEx', 'delete' ];
     public phraseTableColumns = [ 'phrase', 'regEx', 'delete' ];
     public actionTableColumns = [ 'number', 'actionType', 'delete' ];
     public triggerId: string = null;
@@ -55,8 +54,6 @@ export class TriggerDialogComponent implements OnInit {
         return this.overlays.filter( f => f.overlayType === 'Timer' );
     }
     
-    @ViewChild( 'capturePhrasesTable' ) capturePhrasesTable: MatTable<any>;
-    @ViewChild( 'conditionsTable' ) conditionsTable: MatTable<any>;
 
     constructor( private ipcService: IpcService, private route: ActivatedRoute, public dialogService: DialogService, private snackBar: MatSnackBar, private contextService: ContextService ) { }
 
@@ -79,7 +76,7 @@ export class TriggerDialogComponent implements OnInit {
      
             // In a real app: dispatch action to load the details here.
         } );
-        this.addNewCapturePhrase();
+        
         this.ipcService.getAppIsDev().subscribe( isDev => this.isDev = isDev );
     }
 
@@ -89,26 +86,6 @@ export class TriggerDialogComponent implements OnInit {
 
     public onChangeTabs( index: number ): void {
         
-    }
-
-    public addNewCapturePhrase(): void {
-        let phrase: CapturePhrase = new CapturePhrase();
-        phrase.phraseId = nanoid();
-        this.model.capturePhrases.push( phrase );
-        this.capturePhrasesTable?.renderRows();
-    }
-
-    public deleteCapturePhrase( index: number ): void {
-        this.dialogService.showConfirmDialog(
-            'Are you certain you want to delete this capture phrase?',
-            'Click "Yes" to delete the capture phrase.',
-            'Click "No" to cancel and close this dialog without deleting the capture phrase.',
-            ( confirmed ) => {
-                if ( confirmed ) {
-                    this.model.capturePhrases?.splice( index, 1 );
-                    this.capturePhrasesTable?.renderRows();
-                }
-            } );
     }
 
     public addNewAction(): void {
@@ -173,20 +150,6 @@ export class TriggerDialogComponent implements OnInit {
         } else {
             this.ipcService.updateTrigger( this.model ).subscribe( success => { } );
             this.closeModal();
-        }
-    }
-
-    public movePhraseUp( index: number ): void {
-        if ( index > 0 ) {
-            this.model.capturePhrases.splice( index - 1, 0, this.model.capturePhrases.splice( index, 1 )[ 0 ] );
-            this.capturePhrasesTable?.renderRows();
-        }
-    }
-
-    public movePhraseDown( index: number ): void {
-        if ( index < this.model.capturePhrases.length - 1 ) {
-            this.model.capturePhrases.splice( index + 1, 0, this.model.capturePhrases.splice( index, 1 )[ 0 ] );
-            this.capturePhrasesTable?.renderRows();
         }
     }
 
