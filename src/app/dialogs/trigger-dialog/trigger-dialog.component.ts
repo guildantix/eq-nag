@@ -31,15 +31,12 @@ import { ContextService } from 'src/app/context-menu/context.service';
 export class TriggerDialogComponent implements OnInit {
 
     public model: TriggerModel;
-    public phraseTableColumns = [ 'phrase', 'regEx', 'delete' ];
-    public actionTableColumns = [ 'number', 'actionType', 'delete' ];
     public triggerId: string = null;
     public folderId: string = null;
     public actionTypes: typeof ActionTypes = ActionTypes;
     public operatorTypes: typeof OperatorTypes = OperatorTypes;
     public overlays: OverlayWindowModel[] = [];
     public storedVariables: string[] = [];
-    public Math: typeof Math = Math;
     public isDev: boolean = false;
 
     public get alertOverlays(): OverlayWindowModel[] {
