@@ -204,7 +204,8 @@ export class DataTickModel {
     public extendedDotFocusPercent: number = 0;
     public extendedDotFocusDecayLevel: number = 1;
     public phoneticTransforms: Record<string, string> = {};
-
+    public ignoredGinaObjects: string[] = [];
+    
 }
 
 export class TriggerAction {

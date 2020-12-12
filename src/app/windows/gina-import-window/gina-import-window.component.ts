@@ -7,6 +7,7 @@ import { DialogService } from 'src/app/dialogs/dialog.service';
 import { GinaPhoneticTransform, GinaTimerTypes, GinaTrigger, GinaTriggerGroup } from 'src/app/gina.model';
 import { IpcService } from 'src/app/ipc.service';
 import * as _ from 'lodash';
+import { ContextMenuModel } from 'src/app/context-menu/context-menu.model';
 
 interface GinaTreeNode {
     expandable: boolean;
@@ -60,6 +61,7 @@ export class GinaImportWindowComponent implements OnInit {
     public showImported: boolean = false;
     public importedTriggerNames: string[] = [];
     public importedPhoneticTransforms: string[] = [];
+    public ignoredGinaObjects: string[] = [];
 
     public selectedPhoneticTransform: GinaPhoneticTransform = null;
     public selectedTrigger: GinaTrigger = null;
@@ -81,6 +83,7 @@ export class GinaImportWindowComponent implements OnInit {
             // this.dkpEntries = data.dkpEntries;
             // this.logFile = data.logFile;
             this.voiceIndex = data.voiceIndex;
+            this.ignoredGinaObjects = data.ignoredGinaObjects?.length > 0 ? data.ignoredGinaObjects : [];
             // this.overlays = data.overlays;
             // this.enableFct = data.enableFct;
             // this.damageDealtOverlayId = data.damageDealtOverlayId;
@@ -122,7 +125,7 @@ export class GinaImportWindowComponent implements OnInit {
                             trigger: null,
                             phoneticTransform: transform,
                             ginaName: `${transform.ActualWord}`,
-                            imported: this.importedPhoneticTransforms.indexOf( transform.ActualWord ) > -1,
+                            imported: this.ignoredGinaObjects.indexOf( transform.ActualWord ) > -1 || this.importedPhoneticTransforms.indexOf( transform.ActualWord ) > -1,
                         } );
                     } );
 
@@ -176,8 +179,8 @@ export class GinaImportWindowComponent implements OnInit {
                     children: [],
                     trigger: trigger,
                     phoneticTransform: null,
-                    ginaName: `${ginaName}/${trigger.Name}`,
-                    imported: this.importedTriggerNames.indexOf( trigger.Name ) > -1,
+                    ginaName: `${groupNode.ginaName}/${trigger.Name}`,
+                    imported: this.ignoredGinaObjects.indexOf( `${groupNode.ginaName}/${trigger.Name}` ) > -1 || this.importedTriggerNames.indexOf( `${groupNode.ginaName}/${trigger.Name}` ) > -1,
                 } );
             } );
             
@@ -236,25 +239,6 @@ export class GinaImportWindowComponent implements OnInit {
         }
     }
 
-    public hasImportedAllChildren( group: GinaTreeObject ): boolean {
-
-        for ( let i = 0; i < group.children?.length; i++ ) {
-            
-            if ( group.children[ i ].phoneticTransform != null ) {
-                if ( this.importedPhoneticTransforms.indexOf( group.children[ i ].ginaName ) == -1 ) {
-                    return true;
-                }
-            } else if ( group.children[ i ].trigger != null ) {
-                if ( this.importedTriggerNames.indexOf( group.children[ i ].ginaName ) == -1 ) {
-                    return true;
-                }
-            }
-
-        }
-
-        return false;
-    }
-
     public onExpand( node: GinaTreeNode ): void {
         if ( this.treeControl.isExpanded( node ) ) {
             this.expandedNodes.push( node.ginaName );
@@ -281,10 +265,10 @@ export class GinaImportWindowComponent implements OnInit {
                 label += `${hours}h `;
             }
             if ( mins > 0 ) {
-                label +=  `${mins}m`;
+                label +=  `${mins}m `;
             }
             if ( secs > 0 ) {
-                label +=  `${secs}s`;
+                label +=  `${secs}s `;
             }
 
             return label;
@@ -294,6 +278,90 @@ export class GinaImportWindowComponent implements OnInit {
 
         }
 
+    }
+
+    /**
+     * Returns a context menu definition for the specified gina object.
+     * 
+     * @param node The gina tree node.
+     */
+    public getObjectContextMenu( node: GinaTreeNode ): ContextMenuModel[] {
+        let context = '';
+        if ( 'ActualWord' in node.item ) {
+            context = 'transform';
+        } else {
+            context = 'trigger';
+        }
+        return [ <ContextMenuModel>{
+            label: `Ignore this ${context}`,
+            action: () => this.ignoreThisGinaObject( node ),
+            disabled: () => false,
+            hide: () => false,
+            matIcon: 'remove_circle',
+        } ];
+    }
+
+    public getGroupContextMenu( node: GinaTreeNode ): ContextMenuModel[] {
+
+        return [ <ContextMenuModel>{
+            label: `Ignore this group`,
+            action: () => this.ignoreThisGinaGroup( node ),
+            disabled: () => false,
+            hide: () => false,
+            matIcon: 'remove_circle',
+        } ];
+
+    }
+
+    public ignoreThisGinaGroup( node: GinaTreeNode ): void {
+        
+        this.dialogService
+            .showConfirmDialog( [`Are you sure you want to ignore ${node.name}?`,`This action will ignore all triggers in this group and all triggers in all sub-groups.`],
+                `Click "Yes" to remove all triggers and sub-groups from ${node.name} and never see them again.`,
+                `Click "No" to cancel and close this dialog without ignoring this ${node.name}.`,
+                ( confirmed ) => {
+                    if ( confirmed ) {
+                        let obj = this.getGinaTreeObject( node.ginaName, this.dataSource.data );
+                        this.addAllToIgnoredObjects( obj );
+                        this.ipcService.saveIgnoredGinaObjects( this.ignoredGinaObjects );
+                    }
+                } );
+        
+    }
+
+    public addAllToIgnoredObjects( group: GinaTreeObject ): void {
+        if ( group.children?.length > 0 ) {
+            group.children.forEach( child => this.addAllToIgnoredObjects( child ) );
+        } else {
+            if ( this.selectedGinaName == group.ginaName ) {
+                this.selectedGinaName = null;
+                this.selectedTrigger = null;
+            }
+            this.ignoredGinaObjects.push( group.ginaName );
+        }
+    }
+
+    public ignoreThisGinaObject( node: GinaTreeNode ): void {
+        let context = '';
+        if ( 'ActualWord' in node.item ) {
+            context = 'transform';
+        } else {
+            context = 'trigger';
+        }
+        this.dialogService
+            .showConfirmDialog( `Are you sure you want to ignore ${node.name}?`,
+                `Click "Yes" to remove this ${context} from the list and never see it again.`,
+                `Click "No" to cancel and close this dialog without ignoring this ${context}.`,
+                ( confirmed ) => {
+                    if ( confirmed ) {
+                        if ( this.selectedGinaName == node.ginaName ) {
+                            this.selectedGinaName = null;
+                            this.selectedTrigger = null;
+                        }
+                        this.ignoredGinaObjects.push( node.ginaName );
+                        this.ipcService.saveIgnoredGinaObjects( this.ignoredGinaObjects );
+                    }
+                } );
     }
 
     public closeModal(): void {

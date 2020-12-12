@@ -31,20 +31,20 @@
                                 <!-- <button mat-icon-button class="small" (click)="toggleTree()"><mat-icon *ngIf="!allExpanded" [inline]="true">unfold_more</mat-icon><mat-icon *ngIf="allExpanded" [inline]="true">unfold_less</mat-icon></button> -->
                             </div>
     
-                            <mat-tree [dataSource]="dataSource" [treeControl]="treeControl">
+                            <mat-tree [dataSource]="dataSource" [treeControl]="treeControl" style="overflow-y: scroll; max-height: 575px;">
             
                                 <!-- This is the tree node template for leaf nodes -->
                                 <!-- [ngClass]="{selected: node.folderId === selectedFolderId}" [appContextMenu]="getFolderContextMenu(node.folderId, node.name)" -->
-                                <mat-tree-node *matTreeNodeDef="let node" matTreeNodePadding matTreeNodePaddingIndent="20" (click)="selectForImport(node.item, node.ginaName)" [ngClass]="{selected: node.ginaName == selectedGinaName}" >
+                                <mat-tree-node *matTreeNodeDef="let node" matTreeNodePadding matTreeNodePaddingIndent="20" (click)="selectForImport(node.item, node.ginaName)" [ngClass]="{selected: node.ginaName == selectedGinaName}" [appContextMenu]="getObjectContextMenu(node)" >
                                     <button mat-icon-button [disabled]="true">
                                         <span style="display: inline-block;width: 18px;">&nbsp;</span>
                                     </button>
-                                    <div class="tree-click-target" title="{{node.name}}"><span>{{node.name}}</span></div>
+                                    <div class="tree-click-target" title="{{node.ginaName}}"><span>{{node.name}}</span></div>
                                 </mat-tree-node>
             
                                 <!-- This is the tree node template for expandable nodes -->
                                 <!-- [ngClass]="{selected: node.folderId === selectedFolderId}" [appContextMenu]="getFolderContextMenu(node.folderId, node.name)" -->
-                                <mat-tree-node *matTreeNodeDef="let node;when: hasChild" matTreeNodePadding matTreeNodePaddingIndent="20">
+                                <mat-tree-node *matTreeNodeDef="let node;when: hasChild" matTreeNodePadding matTreeNodePaddingIndent="20" [appContextMenu]="getGroupContextMenu(node)">
                                     <button mat-icon-button matTreeNodeToggle [attr.aria-label]="'Toggle ' + node.name" (click)="onExpand(node)">
                                         <mat-icon [inline]="true" class="mat-icon-rtl-mirror">
                                             {{treeControl.isExpanded(node) ? 'expand_more' : 'chevron_right'}}

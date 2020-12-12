@@ -756,6 +756,26 @@ export class IpcService {
         this.ipc.send( 'settings:set:phonetic-transforms', transforms );
     }
 
+    public getIgnoredGinaObjects(): Observable<string[]> {
+        let obs: Observable<string[]> = new Observable<string[]>( ( observer: Observer<string[]> ) => {
+            
+            this.ipc.once( 'settings:get:ignore-gina-objects', ( e, ignoredGinaObjects: string[] ) => {
+                this.ngZone.run( () => {
+                    observer.next( ignoredGinaObjects );
+                    observer.complete();
+                } );
+            } );
+            this.ipc.send( 'settings:get:ignoredGinaObjects', null );
+
+        } );
+
+        return obs;
+    }
+
+    public saveIgnoredGinaObjects( ignoredGinaObjects: string[] ): void {
+        this.ipc.send( 'settings:set:ignore-gina-objects', ignoredGinaObjects );
+    }
+
     /**
      * Returns the GINA configuration file if the GINA data folder was found.
      */

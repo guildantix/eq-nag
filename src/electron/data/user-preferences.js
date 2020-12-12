@@ -47,7 +47,8 @@ class UserPreferencesStore extends Store {
 
     /** The data store for this object.
      * @type {{
-     * phoneticTransforms: Record<string, string>
+     * phoneticTransforms: Record<string, string>,
+     * ignoreGinaObjects: string[],
      * }}
      */
     #data;
@@ -164,6 +165,14 @@ class UserPreferencesStore extends Store {
     }
     set phoneticTransforms( val ) {
         this.#data.phoneticTransforms = val;
+    }
+
+    /** @type {string[]} */
+    get ignoreGinaObjects() {
+        return this.#data.ignoreGinaObjects;
+    }
+    set ignoreGinaObjects( val ) {
+        this.#data.ignoreGinaObjects = val;
     }
 
     constructor() {
@@ -306,6 +315,20 @@ class UserPreferencesStore extends Store {
              */
             ( event, transforms ) => {
                 this.#data.phoneticTransforms = transforms;
+                this.storeDataFile( this.#data );
+                sendTick();
+            } );
+
+        ipcMain.on( 'settings:get:ignore-gina-objects', ( event ) => {
+            event.sender.webContents.send( 'settings:get:ignore-gina-objects', this.#data.ignoreGinaObjects );
+        } );
+
+        ipcMain.on( 'settings:set:ignore-gina-objects',
+            /**
+             * @param {string[]} ignoredObjects
+             */
+            ( event, ignoredObjects ) => {
+                this.#data.ignoreGinaObjects = ignoredObjects;
                 this.storeDataFile( this.#data );
                 sendTick();
             } );

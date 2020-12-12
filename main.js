@@ -137,6 +137,7 @@ function sendTick() {
         extendedDotFocusDecayLevel: userPreferences.extendedDotFocusDecayLevel,
         isDev: app.isDev(),
         phoneticTransforms: userPreferences.phoneticTransforms,
+        ignoredGinaObjects: userPreferences.ignoreGinaObjects,
     };
     mainWindow.webContents.send( 'tick', tickData );
     logBootstrap.tick( tickData, characterDatabase );
