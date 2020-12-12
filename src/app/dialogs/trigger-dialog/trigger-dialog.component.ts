@@ -84,34 +84,6 @@ export class TriggerDialogComponent implements OnInit {
         this.ipcService.getAppIsDev().subscribe( isDev => this.isDev = isDev );
     }
 
-    // public hasNamedCaptureGroups( phraseIds: string[] ): boolean {
-    //     // let rgx = /\(\?\<(.+?)\>.*?\)/gi;
-    //     // https://regex101.com/r/9yssac/1
-    //     // ^(?<target>.*) has taken (?<damage>[0-9]*) ?damage from your Funeral Pyre of Kelador\.
-    //     // 0: (2) ["?<target>", "target", index: 2, input: "^(?<target>.*) has taken (?<damage>[0-9]*) ?damage from your Funeral Pyre of Kelador\.", groups: undefined]
-    //     //    0: ...
-    //     //    1: target
-    //     // 1: (2) ["?<damage>", "damage", index: 26, input: "^(?<target>.*) has taken (?<damage>[0-9]*) ?damage from your Funeral Pyre of Kelador\.", groups: undefined]
-    //     //    0: ...
-    //     //    1: damage
-    //     let result = false;
-    //     phraseIds?.forEach( id => {
-    //         let index = this.model.capturePhrases.findIndex( f => f.phraseId === id );
-    //         let phrase = this.model.capturePhrases[ index ];
-    //         let allMatches = [ ...phrase.phrase.matchAll( /\(\?\<(.+?)\>.*?\)/gi ) ];
-            
-    //         if ( allMatches?.length > 0 ) {
-    //             result = true;
-    //         }
-
-    //     } );
-    //     return result;
-    // }
-
-    // public getNamedCaptureGroups( phraseIds: string[] ): void {
-        
-    // }
-
     public closeModal(): void {
         this.ipcService.closeThisChild();
     }
