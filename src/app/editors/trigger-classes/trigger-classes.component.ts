@@ -1,18 +1,23 @@
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output, ViewChild } from '@angular/core';
 import { CharacterClasses, CharacterClassLevel } from 'src/app/core.model';
 import * as _ from 'lodash';
 import { DialogService } from 'src/app/dialogs/dialog.service';
+import { MatTable } from '@angular/material/table';
 // import { TriggerAction } from 'src/app/core.model';
 
 @Component( {
     selector: 'app-trigger-classes',
     templateUrl: 'trigger-classes.component.html',
-    styleUrls: ['trigger-classes.component.scss']
+    styleUrls: ['trigger-classes.component.scss', '../../core.scss']
 } )
 export class TriggerClassesComponent implements OnInit {
 
     @Input() public classLevels: CharacterClassLevel[];
     @Output() public classLevelsChange: EventEmitter<CharacterClassLevel[]> = new EventEmitter<CharacterClassLevel[]>();
+
+    public classesTableColumns: string[] = [ 'class', 'level', 'delete' ];
+
+    @ViewChild( 'classesTable' ) private classesTable: MatTable<CharacterClassLevel>;
 
     constructor( private dialogService: DialogService ) { }
 
@@ -22,6 +27,7 @@ export class TriggerClassesComponent implements OnInit {
         this.classLevels = this.classLevels ? this.classLevels : [];
         this.classLevels.push( new CharacterClassLevel() );
         this.classLevelsChange.emit( this.classLevels );
+        this.classesTable?.renderRows();
     }
 
     public deleteClassLevel( index: number ): void {
@@ -29,6 +35,7 @@ export class TriggerClassesComponent implements OnInit {
         let action = () => {
             this.classLevels?.splice( index, 1 );
             this.classLevelsChange.emit( this.classLevels );
+            this.classesTable?.renderRows();
         };
 
         if ( classLabel ) {

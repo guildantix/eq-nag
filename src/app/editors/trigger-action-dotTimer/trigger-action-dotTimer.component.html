@@ -31,12 +31,6 @@
                 <button mat-button *ngIf="action.timerIcon" (click)="action.timerIcon = null" color="warn">Reset Icon</button>
             </div>
 
-            <fieldset style="margin-top: 20px; padding: 0;">
-                <legend style="color: #69f0ae;">Class & Level</legend>
-                
-                <app-trigger-classes [(classLevels)]="model.classLevels"></app-trigger-classes>
-            </fieldset>
-
         </div>
 
     </mat-tab>

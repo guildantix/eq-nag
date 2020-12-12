@@ -1,15 +1,11 @@
 import { Component, ElementRef, Input, OnInit, ViewChild } from '@angular/core';
-import { CharacterClasses, CharacterClassLevel, FileModel, OverlayWindowModel, Phrase, TriggerAction, TriggerModel } from 'src/app/core.model';
+import { FileModel, OverlayWindowModel, TriggerAction } from 'src/app/core.model';
 import { ImageUtility } from 'src/app/utilities';
 import * as _ from 'lodash';
 import { ContextMenuModel } from 'src/app/context-menu/context-menu.model';
 import { ContextService } from 'src/app/context-menu/context.service';
-import { MatTable } from '@angular/material/table';
-import { customAlphabet } from 'nanoid';
 import { IpcService } from 'src/app/ipc.service';
 import { DialogService } from 'src/app/dialogs/dialog.service';
-const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
-const nanoid = customAlphabet( alphabet, 16 );
 
 @Component( {
     selector: 'app-trigger-action-dotTimer',
@@ -21,7 +17,6 @@ export class TriggerActionDotTimerComponent implements OnInit {
     public Math: typeof Math = Math;
     public audioFiles: FileModel[] = [];
     @Input( 'action' ) public action: TriggerAction;
-    @Input( 'trigger' ) public model: TriggerModel;
     @Input( 'overlayOptions' ) public timerOverlays: OverlayWindowModel[] = [];
     @Input( 'alertOverlays' ) public alertOverlays: OverlayWindowModel[] = [];
 

@@ -138,7 +138,7 @@
 
                                         <div *ngIf="action.actionType === actionTypes.DotTimer">
 
-                                            <app-trigger-action-dotTimer [action]="action" [trigger]="model" [overlayOptions]="timerOverlays" [alertOverlays]="alertOverlays"></app-trigger-action-dotTimer>
+                                            <app-trigger-action-dotTimer [action]="action" [overlayOptions]="timerOverlays" [alertOverlays]="alertOverlays"></app-trigger-action-dotTimer>
 
                                         </div>
 
@@ -168,6 +168,15 @@
                                 </mat-card>
                             </div>
                             
+                        </div>
+                    </ng-template>
+                </mat-tab>
+                <mat-tab label="Character Classes">
+                    <ng-template matTabContent>
+                        <div class="tab-content">
+
+                            <app-trigger-classes [(classLevels)]="model.classLevels" style="margin-top: 20px; display: block;"></app-trigger-classes>
+
                         </div>
                     </ng-template>
                 </mat-tab>
