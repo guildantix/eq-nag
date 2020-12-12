@@ -67,12 +67,11 @@
                                             <span *ngIf="action.actionType === actionTypes.ClearVariable">Empties the value in a variable.</span>
                                             <span *ngIf="action.actionType === actionTypes.Counter">Track the number of times an event occurs.</span>
                                             <span *ngIf="action.actionType === actionTypes.Clipboard">Put text into the clipboard.</span>
+                                            <mat-label *ngIf="isDev" style="color:#00000059;">&nbsp;{{action.actionId}}</mat-label>
                                         </mat-card-subtitle>
                                     </mat-card-header>
                                     <mat-card-content>
-
-                                        <mat-label *ngIf="isDev">{{action.actionId}}</mat-label>
-
+                                        
                                         <mat-form-field appearance="fill">
                                             <mat-label>Action Type</mat-label>
                                             <mat-select [(ngModel)]="action.actionType" name="ddlActionType_{{i}}">
@@ -131,16 +130,7 @@
 
                                         <div *ngIf="action.actionType === actionTypes.StoreVariable">
 
-                                            <p>When using a regular expression capture phrase, the first capture group will be stored in a variable for use in other triggers.</p>
-                                            <p>Choose a name for that variable</p>
-
-                                            <mat-form-field>
-                                                <mat-label>Variable Name</mat-label>
-                                                <input matInput [(ngModel)]="action.variableName" name="txtVariableName_{{i}}" />
-                                            </mat-form-field>
-                                            
-                                            <mat-checkbox [(ngModel)]="action.onlyStoreUsedValues" name="cbxOnlyStoreUsedValues_{{i}}">Check if value is used?</mat-checkbox>
-                                            <div class="checkbox-hint"><small>If this box is checked, the value is checked against active triggers to ensure that it is used as a condition before being saved.</small></div>
+                                            <app-trigger-action-store-variable [action]="action"></app-trigger-action-store-variable>
 
                                         </div>
 
@@ -187,12 +177,13 @@
                                         </div>
 
                                         <div>
-                                            <mat-checkbox [(ngModel)]="action.onlyExecuteInDev" name="cbxOnlyShowInDev_{{i}}" *ngIf="isDev && model.predefined">Only execute in dev</mat-checkbox>
+                                            
                                         </div>
             
                                     </mat-card-content>
                                     <mat-card-actions>
                                         <button mat-button color="warn" (click)="deleteAction(i)">Delete</button>
+                                        <mat-checkbox [(ngModel)]="action.onlyExecuteInDev" name="cbxOnlyShowInDev_{{i}}" *ngIf="isDev && model.predefined">Only execute in dev</mat-checkbox>
                                     </mat-card-actions>
                                 </mat-card>
                             </div>

@@ -1,0 +1,22 @@
+
+
+<p>When using a regular expression capture phrase, the first capture group will be stored in a variable for use in other triggers.</p>
+
+<mat-tab-group animationDuration="0ms" [selectedIndex]="0">
+    <mat-tab label="Variable name">
+        
+        <div class="card-tab-content">
+
+            <p>The name chosen can be used in conditions for other triggers or parsed into any text with $&#123;VariableName&#125;.</p>
+
+            <mat-form-field>
+                <mat-label>Variable Name</mat-label>
+                <input matInput [(ngModel)]="action.variableName" name="txtVariableName" />
+            </mat-form-field>
+            
+            <mat-checkbox [(ngModel)]="action.onlyStoreUsedValues" name="cbxOnlyStoreUsedValues">Check if value is used?</mat-checkbox>
+            <div class="checkbox-hint"><small>If this box is checked, the value is checked against active triggers to ensure that the value is used as a condition before being saved.</small></div>
+            
+        </div>
+    </mat-tab>
+</mat-tab-group>
