@@ -37,9 +37,9 @@
                                 <!-- [ngClass]="{selected: node.folderId === selectedFolderId}" [appContextMenu]="getFolderContextMenu(node.folderId, node.name)" -->
                                 <mat-tree-node *matTreeNodeDef="let node" matTreeNodePadding matTreeNodePaddingIndent="20" (click)="selectForImport(node.item)" >
                                     <button mat-icon-button [disabled]="true">
-                                        <span style="display:inline-block;width:18px;">&nbsp;</span>
+                                        <span style="display: inline-block;width: 18px;">&nbsp;</span>
                                     </button>
-                                    <span class="spacer tree-click-target">{{node.name}}</span>
+                                    <div class="tree-click-target" title="{{node.name}}"><span>{{node.name}}</span></div>
                                 </mat-tree-node>
             
                                 <!-- This is the tree node template for expandable nodes -->
@@ -50,7 +50,7 @@
                                             {{treeControl.isExpanded(node) ? 'expand_more' : 'chevron_right'}}
                                         </mat-icon>
                                     </button>
-                                    <span class="spacer tree-click-target">{{node.name}}</span>
+                                    <div class="tree-click-target"><span>{{node.name}}</span></div>
                                 </mat-tree-node>
                             </mat-tree>
     

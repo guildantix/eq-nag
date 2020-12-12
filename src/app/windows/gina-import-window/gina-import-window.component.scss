@@ -115,8 +115,16 @@ div.tab-content {
         flex: 1 0 auto;
     }
     .tree-click-target {
+        span {
+            // width: 100%;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+            overflow: hidden;
+        }
+        display: flex;
         height: 100%;
         align-items: center;
+        min-width: 0;
     }
     button {
         mat-icon {
@@ -129,7 +137,7 @@ div.tab-content {
     cursor: pointer;
     display: flex;
     flex-direction: row;
-    padding-right: 15px;
+    padding-right: 7px;
 }
 
 tr.mat-row {
