@@ -748,8 +748,10 @@ function parseLogEntries( raw, simulating ) {
 
                         if ( res.result.groups && res.result.groups[ action.variableName ] ) {
                             clearStoredVariable( action.variableName, res.result.groups[ action.variableName ] );
-                        } else {
+                        } else if ( trigger._conditionResults && trigger._conditionResults[ action.variableName ] ) {
                             clearStoredVariable( action.variableName, trigger._conditionResults[ action.variableName ] );
+                        } else {
+                            clearAllStoredValuesInVariable( action.variableName );
                         }
 
                     } else if ( action.actionType === ActionTypes.Counter ) {
@@ -1178,6 +1180,24 @@ function clearStoredVariable( key, value ) {
             storedVariables[ key ].splice( index, 1 );
         }
     }
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Clears all values from the store.
+ * 
+ * @param {string} key The key of the stored variable.
+ */
+function clearAllStoredValuesInVariable( key ) {
+    storedVariables[ key ] = [];
 }
 
 
