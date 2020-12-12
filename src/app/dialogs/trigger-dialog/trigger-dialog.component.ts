@@ -1,20 +1,12 @@
-import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
+import { animate, state, style, transition, trigger } from '@angular/animations';
+import { ActivatedRoute } from '@angular/router';
+import { MatSnackBar } from '@angular/material/snack-bar';
 
 import { IpcService } from 'src/app/ipc.service';
-import { TriggerModel, CapturePhrase, ActionTypes, TriggerAction, OverlayWindowModel, OperatorTypes, TriggerCondition, TriggerConditionTypes, Phrase, CharacterClasses, CharacterClassLevel } from 'src/app/core.model';
-import { animate, state, style, transition, trigger } from '@angular/animations';
-import { MatTableDataSource, MatTable } from '@angular/material/table';
-import { ActivatedRoute } from '@angular/router';
 import { DialogService } from '../dialog.service';
-import { customAlphabet } from 'nanoid';
-import { MatSnackBar } from '@angular/material/snack-bar';
-import { ColorUtility, ImageUtility } from 'src/app/utilities';
-// import { NgForm } from '@angular/forms';
-const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
-const nanoid = customAlphabet( alphabet, 16 );
-import * as _ from 'lodash';
-import { ContextMenuModel } from 'src/app/context-menu/context-menu.model';
-import { ContextService } from 'src/app/context-menu/context.service';
+import { ColorUtility } from 'src/app/utilities';
+import { TriggerModel, ActionTypes, TriggerAction, OverlayWindowModel, OperatorTypes } from 'src/app/core.model';
 
 @Component( {
     selector: 'app-trigger-dialog',
@@ -52,7 +44,7 @@ export class TriggerDialogComponent implements OnInit {
     }
     
 
-    constructor( private ipcService: IpcService, private route: ActivatedRoute, public dialogService: DialogService, private snackBar: MatSnackBar, private contextService: ContextService ) { }
+    constructor( private ipcService: IpcService, private route: ActivatedRoute, public dialogService: DialogService, private snackBar: MatSnackBar ) { }
 
     ngOnInit() {
         this.model = new TriggerModel();
