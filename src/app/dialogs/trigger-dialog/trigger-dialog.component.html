@@ -73,7 +73,7 @@
 
                                         <mat-label *ngIf="isDev">{{action.actionId}}</mat-label>
 
-                                        <mat-form-field>
+                                        <mat-form-field appearance="fill">
                                             <mat-label>Action Type</mat-label>
                                             <mat-select [(ngModel)]="action.actionType" name="ddlActionType_{{i}}">
                                                 <mat-option [value]="actionTypes.DisplayText">Display Text</mat-option>
@@ -91,7 +91,7 @@
 
                                         <div *ngIf="action.actionType != null">
 
-                                            <mat-form-field>
+                                            <mat-form-field appearance="fill">
                                                 <mat-label>Trigger on phrase</mat-label>
                                                 <mat-select [(ngModel)]="action.phrases" name="ddlActionPhrase_{{i}}" multiple>
                                                     <mat-option *ngFor="let phrase of model.capturePhrases" [value]="phrase.phraseId">{{phrase.phrase}}</mat-option>
@@ -119,10 +119,7 @@
 
                                         <div *ngIf="action.actionType === actionTypes.Clipboard">
 
-                                            <mat-form-field>
-                                                <mat-label>Clipboard text</mat-label>
-                                                <input matInput [(ngModel)]="action.displayText" name="txtClipboardText_{{i}}" />
-                                            </mat-form-field>
+                                            <app-trigger-action-clipboard [action]="action"></app-trigger-action-clipboard>
 
                                         </div>
 

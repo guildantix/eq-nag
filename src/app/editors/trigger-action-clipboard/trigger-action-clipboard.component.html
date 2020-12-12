@@ -1,0 +1,13 @@
+<mat-tab-group animationDuration="0ms" [selectedIndex]="0">
+    <mat-tab label="Clipboard">
+        
+        <div class="card-tab-content">
+
+            <mat-form-field>
+                <mat-label>Clipboard text</mat-label>
+                <input matInput [(ngModel)]="action.displayText" name="txtClipboardText" />
+            </mat-form-field>
+            
+        </div>
+    </mat-tab>
+</mat-tab-group>
