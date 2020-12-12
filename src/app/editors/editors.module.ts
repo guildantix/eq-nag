@@ -20,6 +20,7 @@ import { TriggerActionAudioComponent } from './trigger-action-audio/trigger-acti
 import { TriggerActionClipboardComponent } from './trigger-action-clipboard/trigger-action-clipboard.component';
 import { TriggerActionDisplayTextComponent } from './trigger-action-displayText/trigger-action-displayText.component';
 import { TriggerActionStoreVariableComponent } from './trigger-action-storeVariable/trigger-action-storeVariable.component';
+import { TriggerActionClearVariableComponent } from './trigger-action-clearVariable/trigger-action-clearVariable.component';
 
 @NgModule({
     imports: [
@@ -42,6 +43,7 @@ import { TriggerActionStoreVariableComponent } from './trigger-action-storeVaria
         TriggerActionClipboardComponent,
         TriggerActionDisplayTextComponent,
         TriggerActionStoreVariableComponent,
+        TriggerActionClearVariableComponent,
     ],
     declarations: [
         ConditionsComponent,
@@ -54,6 +56,7 @@ import { TriggerActionStoreVariableComponent } from './trigger-action-storeVaria
         TriggerActionClipboardComponent,
         TriggerActionDisplayTextComponent,
         TriggerActionStoreVariableComponent,
+        TriggerActionClearVariableComponent,
     ],
     providers: [],
 })

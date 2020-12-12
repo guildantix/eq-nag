@@ -136,14 +136,7 @@
 
                                         <div *ngIf="action.actionType === actionTypes.ClearVariable">
 
-                                            <p>Choose a variable to clear.</p>
-
-                                            <mat-form-field>
-                                                <mat-label>Variable Name</mat-label>
-                                                <mat-select [(ngModel)]="action.variableName" name="ddlVariableName_{{i}}">
-                                                    <mat-option *ngFor="let variable of storedVariables" [value]="variable">{{variable}}</mat-option>
-                                                </mat-select>
-                                            </mat-form-field>
+                                            <app-trigger-action-clear-variable [action]="action"></app-trigger-action-clear-variable>
 
                                         </div>
 
