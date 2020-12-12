@@ -249,7 +249,7 @@
     <mat-tab label="Exclude Targets">
         <div class="card-tab-content">
             
-            <app-phrases [(phrases)]="action.excludeTargets" [dialogService]="dialogService">
+            <app-phrases [(phrases)]="action.excludeTargets">
                 <span style="font-size: 12px; font-weight: 400; line-height: 10px;">If the matched capture phrase also matches any of the phrases below, the timer will not execute.</span>
             </app-phrases>
 
@@ -258,7 +258,7 @@
     <mat-tab label="End Early">
         <div class="card-tab-content">
             
-            <app-phrases [(phrases)]="action.endEarlyPhrases" [dialogService]="dialogService">
+            <app-phrases [(phrases)]="action.endEarlyPhrases">
                 <span style="font-size: 12px; font-weight: 400; line-height: 10px;">If any of the below phrases match a new log entry, the timer will end early.</span>
             </app-phrases>
 

@@ -18,13 +18,11 @@ export class PhrasesComponent implements OnInit {
     @Input() public phrases: Phrase[];
     @Output() public phrasesChange: EventEmitter<Phrase[]> = new EventEmitter<Phrase[]>();
 
-    @Input() public dialogService: DialogService;
-
     @ViewChild( 'phrasesTable' ) private phrasesTable: MatTable<any>;
 
     public phraseTableColumns = [ 'phrase', 'regEx', 'delete' ];
 
-    constructor() { }
+    constructor( private dialogService: DialogService ) { }
 
     ngOnInit() { }
 
@@ -37,19 +35,15 @@ export class PhrasesComponent implements OnInit {
     }
 
     public deletePhrase( deleteIndex: number ): void {
-        if ( this.dialogService ) {
-            this.dialogService.showConfirmDialog(
-                'Are you certain you want to delete this phrase?',
-                'Click "Yes" to delete the phrase.',
-                'Click "No" to cancel and close this dialog without deleting the phrase.',
-                ( confirmed ) => {
-                    if ( confirmed ) {
-                        this.doDelete( deleteIndex );
-                    }
-                } );
-        } else {
-            this.doDelete( deleteIndex );
-        }
+        this.dialogService.showConfirmDialog(
+            'Are you certain you want to delete this phrase?',
+            'Click "Yes" to delete the phrase.',
+            'Click "No" to cancel and close this dialog without deleting the phrase.',
+            ( confirmed ) => {
+                if ( confirmed ) {
+                    this.doDelete( deleteIndex );
+                }
+            } );
     }
 
     private doDelete( index: number ): void {

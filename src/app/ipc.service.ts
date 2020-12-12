@@ -5,7 +5,7 @@ import { map, catchError } from 'rxjs/operators';
 import { DataTickModel, DkpEntryModel, TriggerModel, OverlayWindowModel, ActionTypes, FocusEffectSettings, CharacterModel, BasicError, TriggerFolder, FileModel } from './core.model';
 import { GinaConfiguration, GinaTriggerGroups } from './gina.model';
 
-@Injectable()
+@Injectable( { providedIn: 'root' })
 export class IpcService {
     
     private ipc: IpcRenderer;

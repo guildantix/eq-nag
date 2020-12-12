@@ -5,7 +5,6 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { MaterialModule } from '../material.module';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { TriggerDialogComponent } from './trigger-dialog/trigger-dialog.component';
-import { IpcService } from '../ipc.service';
 import { ConfirmDialogComponent } from './confirm-dialog/confirm-dialog.component';
 import { OverlayDetailsDialogComponent } from './overlay-details-dialog/overlay-details-dialog.component';
 import { OverlayEditorDialogComponent } from './overlay-editor-dialog/overlay-editor-dialog.component';
@@ -19,10 +18,6 @@ import { SelectTriggerFolderDialogComponent } from './select-trigger-folder-dial
 import { ContextMenuModule } from '../context-menu/context-menu.module';
 import { InputDialogComponent } from './input-dialog/input-dialog.component';
 import { NotificationDialogComponent } from './notification-dialog/notification-dialog.component';
-import { TriggerActionDotTimerComponent } from './trigger-action-dotTimer/trigger-action-dotTimer.component';
-import { TriggerActionTimerComponent } from './trigger-action-timer/trigger-action-timer.component';
-import { TriggerActionCounterComponent } from './trigger-action-counter/trigger-action-counter.component';
-import { TriggerActionAudioComponent } from './trigger-action-audio/trigger-action-audio.component';
 import { EditorsModule } from '../editors/editors.module';
 
 @NgModule( {
@@ -63,14 +58,9 @@ import { EditorsModule } from '../editors/editors.module';
         SelectTriggerFolderDialogComponent,
         InputDialogComponent,
         NotificationDialogComponent,
-        TriggerActionDotTimerComponent,
-        TriggerActionTimerComponent,
-        TriggerActionCounterComponent,
-        TriggerActionAudioComponent,
     ],
     providers: [
         DialogService,
-        IpcService,
     ],
 } )
 export class DialogModule { }

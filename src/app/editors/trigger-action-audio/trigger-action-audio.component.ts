@@ -2,9 +2,9 @@ import { Component, ElementRef, EventEmitter, Input, OnInit, Output, ViewChild }
 import { MatTable } from '@angular/material/table';
 import { ContextService } from 'src/app/context-menu/context.service';
 import { FileModel, OverlayWindowModel, Phrase, TriggerAction } from 'src/app/core.model';
-import { DialogService } from '../dialog.service';
 import { customAlphabet } from 'nanoid';
 import { IpcService } from 'src/app/ipc.service';
+import { DialogService } from 'src/app/dialogs/dialog.service';
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const nanoid = customAlphabet( alphabet, 16 );
 

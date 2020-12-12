@@ -13,6 +13,10 @@ import { EditorsService } from './editors.service';
 import { ConditionsComponent } from './conditions/conditions.component';
 import { CapturePhrasesComponent } from './capture-phrases/capture-phrases.component';
 import { PhrasesComponent } from './phrases/phrases.component';
+import { TriggerActionCounterComponent } from './trigger-action-counter/trigger-action-counter.component';
+import { TriggerActionTimerComponent } from './trigger-action-timer/trigger-action-timer.component';
+import { TriggerActionDotTimerComponent } from './trigger-action-dotTimer/trigger-action-dotTimer.component';
+import { TriggerActionAudioComponent } from './trigger-action-audio/trigger-action-audio.component';
 
 @NgModule({
     imports: [
@@ -28,14 +32,20 @@ import { PhrasesComponent } from './phrases/phrases.component';
         ConditionsComponent,
         CapturePhrasesComponent,
         PhrasesComponent,
+        TriggerActionCounterComponent,
+        TriggerActionTimerComponent,
+        TriggerActionDotTimerComponent,
+        TriggerActionAudioComponent,
     ],
     declarations: [
         ConditionsComponent,
         CapturePhrasesComponent,
         PhrasesComponent,
+        TriggerActionCounterComponent,
+        TriggerActionTimerComponent,
+        TriggerActionDotTimerComponent,
+        TriggerActionAudioComponent,
     ],
-    providers: [
-        EditorsService,
-    ],
+    providers: [],
 })
 export class EditorsModule { }

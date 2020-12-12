@@ -16,6 +16,7 @@ import { ContextMenuModule } from './context-menu/context-menu.module';
 import { TriggersComponent } from './triggers/triggers.component';
 import { ClassNamePipe } from './pipes/class-name.pipe';
 import { WindowsModule } from './windows/windows.module';
+import { IpcService } from './ipc.service';
 
 @NgModule( {
     imports: [
@@ -39,6 +40,7 @@ import { WindowsModule } from './windows/windows.module';
     ],
     providers: [
         ScraperService,
+        IpcService,
     ],
     bootstrap: [ AppComponent ],
 } )
