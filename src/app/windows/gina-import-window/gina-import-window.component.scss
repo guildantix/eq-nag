@@ -59,23 +59,13 @@ div.tab-content {
     }
 }
 
-.example-tree-invisible {
-    display: none;
-  }
-  
-  .example-tree ul,
-  .example-tree li {
-    margin-top: 0;
-    margin-bottom: 0;
-    list-style-type: none;
-  }
-  
+.mat-tree {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+
 .mat-tree-node {
     &:nth-of-type(odd) {
         background-color: #00000014;
-    }
-    &:nth-last-child(1) {
-        border-bottom: 1px solid rgba(255, 255, 255, 0.12);
     }
     &:hover {
         background-color: #a2a2a229;
