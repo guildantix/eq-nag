@@ -312,9 +312,6 @@ function generateTriggerFns() {
                             }
                             
                             let _res = new RegExp( rgxValue, 'gi' ).exec( value );
-                            if ( _res?.length > 0 ) {
-                                console.log( 'phrase matched', rgxValue );
-                            }
                             return {
                                 phraseId: phrase.phraseId,
                                 match: _res?.length > 0,
@@ -1086,7 +1083,7 @@ function sendToClipboard( res, action, conditionResults ) {
  * @param {boolean} simulating If true the component is written to the console instead of sent to the overlay window.
  */
 function displayTextComponent( res, timestamp, action, simulating ) {
-    console.log( 'display text res', res );
+    
     let comp = new OverlayComponent();
 
     comp.instanceId = nanoid();
