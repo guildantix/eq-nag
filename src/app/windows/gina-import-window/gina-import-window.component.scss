@@ -50,6 +50,15 @@ div.tab-content {
 }
 
 .mat-tree-node {
+    button {
+        &.trigger-button {
+            color: #ffffffcc;
+        }
+        mat-icon {
+            font-size: 18px;
+        }
+        margin-left: 5px;
+    }
     &:nth-of-type(odd) {
         background-color: #00000014;
     }
@@ -61,6 +70,9 @@ div.tab-content {
             .delete-button {
                 display:unset !important;
             }
+        }
+        button {
+            color: #69f0aecc;
         }
         color: #69f0ae;
         background-color: #69f0ae24;
@@ -83,12 +95,6 @@ div.tab-content {
         height: 100%;
         align-items: center;
         min-width: 0;
-    }
-    button {
-        mat-icon {
-            font-size: 18px;
-        }
-        margin-left: 5px;
     }
     min-height: unset !important;
     height: 27px !important;
