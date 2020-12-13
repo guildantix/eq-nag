@@ -27,22 +27,7 @@ export class TriggerDialogComponent implements OnInit {
     public folderId: string = null;
     public actionTypes: typeof ActionTypes = ActionTypes;
     public operatorTypes: typeof OperatorTypes = OperatorTypes;
-    public overlays: OverlayWindowModel[] = [];
-    public storedVariables: string[] = [];
     public isDev: boolean = false;
-
-    public get alertOverlays(): OverlayWindowModel[] {
-        return this.overlays.filter( f => f.overlayType === 'Alert' );
-    }
-
-    public get logOverlays(): OverlayWindowModel[] {
-        return this.overlays.filter( f => f.overlayType === 'Log' );
-    }
-
-    public get timerOverlays(): OverlayWindowModel[] {
-        return this.overlays.filter( f => f.overlayType === 'Timer' );
-    }
-    
 
     constructor( private ipcService: IpcService, private route: ActivatedRoute, public dialogService: DialogService, private snackBar: MatSnackBar ) { }
 
@@ -60,9 +45,6 @@ export class TriggerDialogComponent implements OnInit {
                 } );
             }
 
-            this.ipcService.getOverlayWindows().subscribe( overlays => this.overlays = overlays );
-            this.ipcService.getStoredVariables().subscribe( variables => this.storedVariables = variables );
-     
             // In a real app: dispatch action to load the details here.
         } );
         
@@ -75,26 +57,6 @@ export class TriggerDialogComponent implements OnInit {
 
     public onChangeTabs( index: number ): void {
         
-    }
-
-    public addNewAction(): void {
-        this.model.actions.push( new TriggerAction() );
-    }
-
-    public showActionWizard( action: TriggerAction ): void {
-        this.dialogService.showTriggerActionWizardDialog( action, model => console.log( 'model', model ) );
-    }
-
-    public deleteAction( index: number ): void {
-        this.dialogService.showConfirmDialog(
-            'Are you certain you want to delete this action?',
-            'Click "Yes" to delete the action.',
-            'Click "No" to cancel and close this dialog without deleting the action.',
-            ( confirmed ) => {
-                if ( confirmed ) {
-                    this.model.actions?.splice( index, 1 );
-                }
-            } );
     }
 
     public save(): void {
