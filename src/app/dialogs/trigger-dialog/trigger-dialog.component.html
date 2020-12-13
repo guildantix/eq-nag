@@ -13,9 +13,9 @@
             <mat-tab-group class="modal-menu" animationDuration="0ms" (selectedIndexChange)="onChangeTabs($event)" [selectedIndex]="0">
                 <mat-tab label="Capture">
                     <div class="tab-content">
-    
+                        
                         <fieldset class="margin-t-50">
-                            <legend class="full-width">General</legend>
+                            <legend class="full-width">General<span style="color: #00000057; padding-left: 25px;" *ngIf="isDev">{{model.triggerId}}</span></legend>
                             <mat-checkbox [(ngModel)]="model.predefined" name="cbxPredefined" *ngIf="isDev">Predefined</mat-checkbox>
                             <mat-checkbox [(ngModel)]="model.onlyExecuteInDev" name="cbxOnlyShowInDev" *ngIf="isDev && model.predefined">Only execute in dev</mat-checkbox>
                             <mat-form-field appearance="fill">

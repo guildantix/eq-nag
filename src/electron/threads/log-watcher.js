@@ -52,6 +52,14 @@ var utterances = [];
 /** @type {Record<string, string>} */
 var phoneticTransforms = {};
 
+// Common errors: 
+//  ${C} instead of {C}
+//  ${CharacterName} isntead of ${Character}
+//  ending with a '.' in regex instead of a '\.'
+//  Forgetting to check the box for regex.
+//  Choosing the wrong phrase for an action.
+//      If the display text has {C} or {TS} in it, but the trigger phrase selected doesn't contain either option.
+
 
 
 
@@ -184,7 +192,7 @@ function LogWatcher(character, logPosition) {
     } );
 
     ipcRenderer.on( 'log:speak:phrase', function ( event, data ) {
-        speakPhrase( data.phrase, data.interruptSpeech );
+        speakPhrase( data.phrase, data.interruptSpeech, null, false, data.parseResult, data.timerDuration );
     } );
 
     ipcRenderer.on( 'tick', function ( event, data ) {
@@ -294,11 +302,19 @@ function generateTriggerFns() {
                     if ( phrase.useRegEx ) {
                         // Use different parse functions for regex vs normal.
                         _phraseParsers.push( ( value, hasGroups, matchGroups ) => {
-                            let rgxValue = StringUtilities.parseStoredVariablesToRegex( phrase.phrase, storedVariables );
+                            let rgxValue = phrase.phrase;
+
+                            rgxValue = StringUtilities.parseShortCodesToRegex( rgxValue, characterName );
+                            rgxValue = StringUtilities.parseStoredVariablesToRegex( rgxValue, storedVariables );
+
                             if ( hasGroups === true ) {
                                 rgxValue = StringUtilities.parseSequentialGroups( rgxValue, matchGroups );
                             }
+                            
                             let _res = new RegExp( rgxValue, 'gi' ).exec( value );
+                            if ( _res?.length > 0 ) {
+                                console.log( 'phrase matched', rgxValue );
+                            }
                             return {
                                 phraseId: phrase.phraseId,
                                 match: _res?.length > 0,
@@ -771,8 +787,15 @@ function parseLogEntries( raw, simulating ) {
 
                     } else if ( action.actionType === ActionTypes.Speak ) {
                     /* --== TTS Speak ==-- */
-                        
-                        speakPhrase( action.displayText, action.interruptSpeech, trigger._conditionResults, simulating );
+                        let duration = null;
+
+                        if ( res.result?.groups?.timerDuration ) {
+                            duration = StringUtilities.getDurationFromLabel( res.result?.groups?.timerDuration );
+                        } else if ( action.duration ) {
+                            duration = +action.duration;
+                        }
+
+                        speakPhrase( action.displayText, action.interruptSpeech, trigger._conditionResults, simulating, res.result, duration );
                         
                     }
                 }
@@ -831,25 +854,29 @@ function displayDotTimerComponent( res, timestamp, action, trigger ) {
     comp.voiceIndex = voiceIndex;
     
     if ( comp.action.endingSoonDisplayText ) {
-        comp.action.endingSoonText = StringUtilities.parseStoredVariablesToLiteral( action.endingSoonText, storedVariables );
+        comp.action.endingSoonText = StringUtilities.parseShortCodeValuesToLiteral( action.endingSoonText, characterName, comp.action.duration, res.result?.groups, res.result ? res.result[ 0 ] : null );
+        comp.action.endingSoonText = StringUtilities.parseStoredVariablesToLiteral( comp.action.endingSoonText, storedVariables );
         comp.action.endingSoonText = StringUtilities.parseConditionResultsToLiteral( comp.action.endingSoonText, trigger._conditionResults );
         comp.action.endingSoonText = StringUtilities.parseCountersToLiteral( comp.action.endingSoonText, counters );
     }
 
     if ( comp.action.endingSoonSpeak ) {
-        comp.action.endingSoonSpeakPhrase = StringUtilities.parseStoredVariablesToLiteral( action.endingSoonSpeakPhrase, storedVariables );
+        comp.action.endingSoonSpeakPhrase = StringUtilities.parseShortCodeValuesToLiteral( action.endingSoonSpeakPhrase, characterName, comp.action.duration, res.result?.groups, res.result ? res.result[ 0 ] : null );
+        comp.action.endingSoonSpeakPhrase = StringUtilities.parseStoredVariablesToLiteral( comp.action.endingSoonSpeakPhrase, storedVariables );
         comp.action.endingSoonSpeakPhrase = StringUtilities.parseConditionResultsToLiteral( comp.action.endingSoonSpeakPhrase, trigger._conditionResults );
         comp.action.endingSoonSpeakPhrase = StringUtilities.parseCountersToLiteral( comp.action.endingSoonSpeakPhrase, counters );
     }
 
     if ( comp.action.endedDisplayText ) {
-        comp.action.endedText = StringUtilities.parseStoredVariablesToLiteral( action.endedText, storedVariables );
+        comp.action.endedText = StringUtilities.parseShortCodeValuesToLiteral( action.endedText, characterName, comp.action.duration, res.result?.groups, res.result ? res.result[ 0 ] : null );
+        comp.action.endedText = StringUtilities.parseStoredVariablesToLiteral( comp.action.endedText, storedVariables );
         comp.action.endedText = StringUtilities.parseConditionResultsToLiteral( comp.action.endedText, trigger._conditionResults );
         comp.action.endedText = StringUtilities.parseCountersToLiteral( comp.action.endedText, counters );
     }
 
     if ( comp.action.endedSpeak ) {
-        comp.action.endedSpeakPhrase = StringUtilities.parseStoredVariablesToLiteral( action.endedSpeakPhrase, storedVariables );
+        comp.action.endedSpeakPhrase = StringUtilities.parseShortCodeValuesToLiteral( action.endedSpeakPhrase, characterName, comp.action.duration, res.result?.groups, res.result ? res.result[ 0 ] : null );
+        comp.action.endedSpeakPhrase = StringUtilities.parseStoredVariablesToLiteral( comp.action.endedSpeakPhrase, storedVariables );
         comp.action.endedSpeakPhrase = StringUtilities.parseConditionResultsToLiteral( comp.action.endedSpeakPhrase, trigger._conditionResults );
         comp.action.endedSpeakPhrase = StringUtilities.parseCountersToLiteral( comp.action.endedSpeakPhrase, counters );
     }
@@ -925,12 +952,18 @@ function displayTimerCountdownComponent(res, timestamp, action, trigger) {
     comp.instanceId = nanoid();
     comp.triggerName = trigger.name;
     comp.action = Object.assign( new TriggerAction(), action );
-                        
+
+    if ( res.result?.groups?.timerDuration ) {
+        comp.action.duration = StringUtilities.getDurationFromLabel( res.result?.groups?.timerDuration );
+    } else {
+        comp.action.duration = +action.duration;
+    }
+    
+    comp.action.displayText = StringUtilities.parseShortCodeValuesToLiteral( comp.action.displayText, characterName, comp.action.duration, res.result?.groups, res.result ? res.result[ 0 ] : null );
     comp.action.displayText = StringUtilities.parseStoredVariablesToLiteral( comp.action.displayText, storedVariables );
     comp.action.displayText = StringUtilities.parseConditionResultsToLiteral( comp.action.displayText, trigger._conditionResults );
     comp.action.displayText = StringUtilities.parseMatchesToLiteral( comp.action.displayText, res.result );
     comp.action.displayText = StringUtilities.parseCountersToLiteral( comp.action.displayText, counters );
-    comp.action.duration = +action.duration;
 
     comp.overlayId = action.overlayId;
     comp.matches = res.result;
@@ -938,37 +971,43 @@ function displayTimerCountdownComponent(res, timestamp, action, trigger) {
     comp.voiceIndex = voiceIndex;
                         
     if ( comp.action.endingSoonDisplayText ) {
-        comp.action.endingSoonText = StringUtilities.parseStoredVariablesToLiteral( action.endingSoonText, storedVariables );
+        comp.action.endingSoonText = StringUtilities.parseShortCodeValuesToLiteral( action.endingSoonText, characterName, comp.action.duration, res.result?.groups, res.result ? res.result[ 0 ] : null );
+        comp.action.endingSoonText = StringUtilities.parseStoredVariablesToLiteral( comp.action.endingSoonText, storedVariables );
         comp.action.endingSoonText = StringUtilities.parseConditionResultsToLiteral( comp.action.endingSoonText, trigger._conditionResults );
         comp.action.endingSoonText = StringUtilities.parseCountersToLiteral( comp.action.endingSoonText, counters );
     }
 
     if ( comp.action.endingSoonSpeak ) {
-        comp.action.endingSoonSpeakPhrase = StringUtilities.parseStoredVariablesToLiteral( action.endingSoonSpeakPhrase, storedVariables );
+        comp.action.endingSoonSpeakPhrase = StringUtilities.parseShortCodeValuesToLiteral( action.endingSoonSpeakPhrase, characterName, comp.action.duration, res.result?.groups, res.result ? res.result[ 0 ] : null );
+        comp.action.endingSoonSpeakPhrase = StringUtilities.parseStoredVariablesToLiteral( comp.action.endingSoonSpeakPhrase, storedVariables );
         comp.action.endingSoonSpeakPhrase = StringUtilities.parseConditionResultsToLiteral( comp.action.endingSoonSpeakPhrase, trigger._conditionResults );
         comp.action.endingSoonSpeakPhrase = StringUtilities.parseCountersToLiteral( comp.action.endingSoonSpeakPhrase, counters );
     }
 
     if ( comp.action.endingClipboard ) {
-        comp.action.endingClipboardText = StringUtilities.parseStoredVariablesToLiteral( action.endingClipboardText, storedVariables );
+        comp.action.endingClipboardText = StringUtilities.parseShortCodeValuesToLiteral( action.endingClipboardText, characterName, comp.action.duration, res.result?.groups, res.result ? res.result[ 0 ] : null );
+        comp.action.endingClipboardText = StringUtilities.parseStoredVariablesToLiteral( comp.action.endingClipboardText, storedVariables );
         comp.action.endingClipboardText = StringUtilities.parseConditionResultsToLiteral( comp.action.endingClipboardText, trigger._conditionResults );
         comp.action.endingClipboardText = StringUtilities.parseCountersToLiteral( comp.action.endingClipboardText, counters );
     }
 
     if ( comp.action.endedDisplayText ) {
-        comp.action.endedText = StringUtilities.parseStoredVariablesToLiteral( action.endedText, storedVariables );
+        comp.action.endedText = StringUtilities.parseShortCodeValuesToLiteral( action.endedText, characterName, comp.action.duration, res.result?.groups, res.result ? res.result[ 0 ] : null );
+        comp.action.endedText = StringUtilities.parseStoredVariablesToLiteral( comp.action.endedText, storedVariables );
         comp.action.endedText = StringUtilities.parseConditionResultsToLiteral( comp.action.endedText, trigger._conditionResults );
         comp.action.endedText = StringUtilities.parseCountersToLiteral( comp.action.endedText, counters );
     }
 
     if ( comp.action.endedSpeak ) {
-        comp.action.endedSpeakPhrase = StringUtilities.parseStoredVariablesToLiteral( action.endedSpeakPhrase, storedVariables );
+        comp.action.endedSpeakPhrase = StringUtilities.parseShortCodeValuesToLiteral( action.endedSpeakPhrase, characterName, comp.action.duration, res.result?.groups, res.result ? res.result[ 0 ] : null );
+        comp.action.endedSpeakPhrase = StringUtilities.parseStoredVariablesToLiteral( comp.action.endedSpeakPhrase, storedVariables );
         comp.action.endedSpeakPhrase = StringUtilities.parseConditionResultsToLiteral( comp.action.endedSpeakPhrase, trigger._conditionResults );
         comp.action.endedSpeakPhrase = StringUtilities.parseCountersToLiteral( comp.action.endedSpeakPhrase, counters );
     }
 
     if ( comp.action.endedClipboard ) {
-        comp.action.endedClipboardText = StringUtilities.parseStoredVariablesToLiteral( action.endedClipboardText, storedVariables );
+        comp.action.endedClipboardText = StringUtilities.parseShortCodeValuesToLiteral( action.endedClipboardText, characterName, comp.action.duration, res.result?.groups, res.result ? res.result[ 0 ] : null );
+        comp.action.endedClipboardText = StringUtilities.parseStoredVariablesToLiteral( comp.action.endedClipboardText, storedVariables );
         comp.action.endedClipboardText = StringUtilities.parseConditionResultsToLiteral( comp.action.endedClipboardText, trigger._conditionResults );
         comp.action.endedClipboardText = StringUtilities.parseCountersToLiteral( comp.action.endedClipboardText, counters );
     }
@@ -1019,6 +1058,7 @@ function displayTimerCountdownComponent(res, timestamp, action, trigger) {
 function sendToClipboard( res, action, conditionResults ) {
     let clipboardText = action.displayText;
 
+    clipboardText = StringUtilities.parseShortCodeValuesToLiteral( clipboardText, characterName, action.duration, res.result?.groups, res.result ? res.result[ 0 ] : null );
     clipboardText = StringUtilities.parseStoredVariablesToLiteral( clipboardText, storedVariables );
     clipboardText = StringUtilities.parseConditionResultsToLiteral( clipboardText, conditionResults );
     clipboardText = StringUtilities.parseMatchesToLiteral( clipboardText, res.result );
@@ -1046,16 +1086,17 @@ function sendToClipboard( res, action, conditionResults ) {
  * @param {boolean} simulating If true the component is written to the console instead of sent to the overlay window.
  */
 function displayTextComponent( res, timestamp, action, simulating ) {
+    console.log( 'display text res', res );
     let comp = new OverlayComponent();
 
     comp.instanceId = nanoid();
     comp.action = Object.assign( new TriggerAction(), action );
-    comp.action.displayText = StringUtilities.parseStoredVariablesToLiteral( action.displayText, storedVariables );
+    comp.action.displayText = StringUtilities.parseShortCodeValuesToLiteral( comp.action.displayText, characterName, comp.action.duration, res.result?.groups, res.result ? res.result[ 0 ] : null );
+    comp.action.displayText = StringUtilities.parseStoredVariablesToLiteral( comp.action.displayText, storedVariables );
     comp.action.displayText = StringUtilities.parseCountersToLiteral( comp.action.displayText, counters );
     comp.overlayId = action.overlayId;
     comp.matches = res.result;
     comp.timestamp = timestamp;
-    console.log( 'display text', comp.action.displayText );
 
     if ( !simulating )
         ipcRenderer.send( 'overlay:send:component', comp );
@@ -1222,6 +1263,7 @@ function renderPhrases( phrases, conditionResults, parseResult ) {
     for ( let phraseIndex = 0; phraseIndex < phrases?.length; phraseIndex++ ) {
         let renderedPhrase = phrases[ phraseIndex ].phrase;
 
+        renderedPhrase = StringUtilities.parseShortCodeValuesToLiteral( renderedPhrase, characterName, 0, parseResult?.groups, parseResult ? parseResult[ 0 ] : null );
         renderedPhrase = StringUtilities.parseStoredVariablesToLiteral( renderedPhrase, storedVariables );
         renderedPhrase = conditionResults?.length > 0 ? StringUtilities.parseConditionResultsToLiteral( renderedPhrase, conditionResults ) : renderedPhrase;
         renderedPhrase = parseResult?.length > 0 ? StringUtilities.parseMatchesToLiteral( renderedPhrase, parseResult ) : renderedPhrase;
@@ -1253,16 +1295,22 @@ function renderPhrases( phrases, conditionResults, parseResult ) {
  * @param {boolean} interrupt If true, interrupts the current utterance if the speech engine is speaking.
  * @param {Record<string, string>} conditionResults The condition results.
  * @param {boolean} simulating If true the phrase is written to the log instead of spoken.
+ * @param {RegExpExecArray} parseResult The regexp exec array of the parsed log entry.
+ * @param {number} timerDuration The duration in seconds of the timer, if applicable.
  */
-function speakPhrase( phrase, interrupt, conditionResults, simulating ) {
-
+function speakPhrase( phrase, interrupt, conditionResults, simulating, parseResult, timerDuration ) {
+    
     if ( !simulating && phrase && voiceIndex > -1 ) {
 
         let utter = new SpeechSynthesisUtterance();
     
-        utter.text = StringUtilities.parseStoredVariablesToLiteral( phrase, storedVariables );
+        utter.text = StringUtilities.parseShortCodeValuesToLiteral( phrase, characterName, timerDuration, parseResult?.groups, parseResult ? parseResult[ 0 ] : null );
+        utter.text = StringUtilities.parseStoredVariablesToLiteral( utter.text, storedVariables );
         if ( conditionResults ) {
             utter.text = StringUtilities.parseConditionResultsToLiteral( utter.text, conditionResults );
+        }
+        if ( parseResult ) {
+            utter.text = StringUtilities.parseMatchesToLiteral( utter.text, parseResult );
         }
         utter.text = StringUtilities.parseCountersToLiteral( utter.text, counters );
         utter.text = StringUtilities.parsePhoneticTransformsToLiteral( utter.text, phoneticTransforms );

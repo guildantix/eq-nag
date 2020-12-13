@@ -1,3 +1,4 @@
+const { result } = require( "lodash" );
 
 function format( format, args ) {
     return format.replace( /{(\d+)}/g, function ( match, number ) {
@@ -295,6 +296,323 @@ function parseStoredVariablesToLiteralArray( value, storedVariables ) {
     return literals;
 }
 
+/**
+ * Transforms the given string so that the matched short code values are rendered into the string.
+ * 
+ * @param {string} value The string literal.
+ * @param {string} characterName The name of the current character.
+ * @param {number} duration The duration in seconds.
+ * @param {Record<string, string>} groups The named groups dictionary.
+ * @param {string} logEntry The unmodified log entry.
+ */
+function parseShortCodeValuesToLiteral( value, characterName, duration, groups, logEntry ) {
+    if ( value ) {
+        value = value.replace( /{TS}/gi, getDurationLabel( duration ) );
+        value = value.replace( /{C}/gi, characterName );
+        value = value.replace( /{L}/gi, logEntry );
+        // value = value.replace( /{COUNTER}/gi, counterValue ); // These will have to be converted if pulled from gina.  A single trigger could have multiple counters which necessitates that the counter name be used in nag format: +{CounterName}
+        if ( groups ) {
+            for ( let key of Object.keys( groups ) ) {
+                if ( key.match( /^[N|S][0-9]{0,}$/gi ) ) {
+                    let rgx = new RegExp( `{${key}}`, 'gi' );
+                    value = value.replace( rgx, groups[ key ] );
+                }
+            }
+        }
+    }
+
+    return value;
+}
+
+// /**
+//  * Transforms the given string so that the matched short code values are rendered into the string.
+//  * 
+//  * @param {string} value The string literal.
+//  * @param {string} characterName The name of the current character.
+//  * @param {number} counterValue The counter value.
+//  * @param {number} duration The duration in seconds.
+//  * @param {string[]} nValues Matched {N#} values, having {N} # == 0.
+//  * @param {string[]} sValues Matched {S#} values, having {S} # == 0.
+//  */
+// function parseShortCodeValuesToLiteral( value, characterName, counterValue, duration, nValues, sValues ) {
+//     if ( value ) {
+//         value = value.replace( /{TS}/gi, getDurationLabel( duration ) );
+//         value = value.replace( /{C}/gi, characterName );
+//         value = value.replace( /{COUNTER}/gi, counterValue );
+//         nValues?.forEach( n, i => {
+//             let rgx = new RegExp( `{N${i == 0 ? '0{0,1}' : i}}`, 'gi' );
+//             value = value.replace( rgx, n );
+//         } );
+//         sValues?.forEach( s, i => {
+//             let rgx = new RegExp( `{S${i == 0 ? '0{0,1}' : i}}`, 'gi' );
+//             value = value.replace( rgx, n );
+//         } );
+//     }
+// }
+
+/**
+ * Returns the given duration as a human readable number.
+ * 
+ * @example
+ *  123 => '2m 3s'
+ * 
+ * @param {number} seconds The duration in seconds.
+ */
+function getDurationLabel( seconds ) {
+
+    if ( seconds > 0 ) {
+        let hours = Math.floor( seconds / 3600 );
+        let mins = Math.floor( ( seconds % 3600 ) / 60 );
+        let secs = seconds % 3600 % 60;
+
+        let label = '';
+
+        if ( hours > 0 ) {
+            label += `${hours}h `;
+        }
+        if ( mins > 0 ) {
+            label += `${mins}m `;
+        }
+        if ( secs > 0 ) {
+            label += `${secs}s `;
+        }
+
+        return label;
+
+    } else if (seconds) {
+        return `${seconds}s`;
+
+    } else {
+        return 'unknown';
+    }
+
+}
+
+/**
+ * Returns the number of seconds in the given duration label.
+ * 
+ * @example
+ *  '1m 2s' => 62
+ * 
+ * @param {string} label The duration label.
+ */
+function getDurationFromLabel( label ) {
+    if ( label ) {
+        let matches = [ ...label.matchAll( /(?<hours>[0-9]+?h)|(?<minutes>[0-9]+?m)|(?<seconds>[0-9]+?s)/gi ) ];
+        if ( matches?.length > 0 ) {
+            let duration = 0;
+
+            matches.forEach( m => {
+                if ( m.groups.hours ) {
+                    duration += parseInt( m.groups.hours ) * 3600;
+                } else if ( m.groups.minutes ) {
+                    duration += parseInt( m.groups.minutes ) * 60;
+                } else if ( m.groups.seconds ) {
+                    duration += parseInt( m.groups.seconds );
+                }
+            } );
+
+            return duration;
+        }
+    }
+
+    return parseInt( label );
+}
+
+function parseShortCodesToRegex( value, characterName ) {
+    // https://regex101.com/r/g9QIL1/1
+    // (?<timerDuration>[0-9]+?[h|hour|hours|hrs]+\s[0-9]*?[m|min|mins|minute|minutes]*?\s?[0-9]+?[s|sec|secs|seconds|second]+?|[0-9]*?[m|min|mins|minute|minutes]*?\s?[0-9]+?[s|sec|secs|seconds|second]+?|[0-9]+)
+
+    if ( value ) {
+        value = value.replace( /{TS}/i, '(?<timerDuration>[0-9]+?[h|hour|hours|hrs]+\\s?[0-9]*?[m|min|mins|minute|minutes]*?\\s?[0-9]+?[s|sec|secs|seconds|second]+?|[0-9]*?[m|min|mins|minute|minutes]*?\\s?[0-9]+?[s|sec|secs|seconds|second]+?|[0-9]+)' );
+        value = value.replace( /{C}/gi, characterName );
+        // value = value.replace( /{COUNTER}/gi, '' ); // We may add this in the future, just not sure how to accomplish this.  WE use counter names instead of just {COUNTER} however.
+        // value = value.replace( /{N}/gi, '(?<N>[0-9]+?)' );
+        value = value.replace( /{S([0-9]*?)}/gi, '(?<S$1>.+?)' );
+        value = value.replace( /{N([0-9]*?)}/gi, '(?<N$1>[0-9]+?)' );
+        value = parseNConditionalCodesToRegex( value );
+        // https://regex101.com/r/k4eq0f/1
+    }
+
+    return value;
+    // let result = /{(.[^}]+?)}/g.exec( value );
+    // let indexedResults = [ ...value.matchAll( /{([^}]+?)}/g ) ];
+
+    // if ( results?.length > 0 ) {
+    //     // for ( let i = 0; i < results.length; i++ ) {
+            
+    //     // }
+    // }
+}
+
+/**
+ * Parses any gina conditional n values to regex.
+ * 
+ * @param {string} value The input value.
+ */
+function parseNConditionalCodesToRegex( value ) {
+    let allMatches = [ ...value.matchAll( /{N([0-9]*?)(>|>=|<|<=|=|!=)([0-9]*?)}/gi ) ];
+
+    if ( allMatches?.length > 0 ) {
+        for ( let i = allMatches.length - 1; i >= 0; i-- ) {
+            let m = allMatches[ i ];
+            let opVal = +m[ 3 ];
+            let n = 'cN' + m[ 1 ];
+            let rgx = '';
+
+            if ( m[ 2 ] === '>' ) {
+                rgx = _getGreaterThanRegex( opVal.toString() );
+            } else if ( m[ 2 ] === '>=' ) {
+                rgx = _getGreaterThanRegex( ( opVal - 1 ).toString() );
+            } else if ( m[ 2 ] === '<' ) {
+                rgx = _getLessThanRegex( opVal.toString() );
+            } else if ( m[ 2 ] === '<=' ) {
+                rgx = _getLessThanRegex( ( opVal + 1 ).toString() );
+            } else if ( m[ 2 ] === '=' ) {
+                rgx = opVal.toString();
+            } else if ( m[ 2 ] === '!=' ) {
+                rgx = `${_getLessThanRegex( opVal.toString() )}|${_getGreaterThanRegex( opVal.toString() )}`;
+            }
+            
+            if ( rgx != '' ) {
+                value = `${value.substring( 0, m.index )}(?<N${m[ 1 ]}>${rgx})${value.substring( m.index + m[ 0 ].length )}`;
+            } else {
+                throw `Invalid conditional n format: [${m[ 2 ]}]. Found in phrase: ${value}`;
+            }
+        }
+    }
+
+    return value;
+}
+
+// greater than: https://regex101.com/r/cs0xI3/1
+// less than: https://regex101.com/r/pWPL4Y/1, https://regex101.com/r/pWPL4Y/2 
+
+/**
+ * Returns a regular expression to evaluate numbers greater than the given value.
+ * 
+ * @param {string} nval The value.
+ */
+function _getGreaterThanRegex( nval ) {
+    let rgx = '';
+    if ( nval?.length > 0 ) {
+        let len = nval.length;
+        rgx = `\\d{${len + 1},}`;
+        for ( let i = 0; i < len; i++ ) {
+            let str = nval.substring( 0, i );
+            let block = `[${+nval[ i ] + 1}-9]`;
+            let remain = len - i - 1;
+            if ( remain > 0 ) {
+                block += '\\d';
+                block += `{${remain},${remain}}`;
+            }
+            rgx = rgx + '|' + str + block;
+        }
+    }
+    return rgx;
+}
+
+/**
+ * Returns a regular express to evaluate numbers less than the given value.
+ * 
+ * @param {string} nval The value.
+ */
+function _getLessThanRegex( nval ) {
+    let rgx = '';
+    if ( nval?.length > 1 ) {
+        let len = nval.length;
+        rgx = `[0-9]{1,${len - 1}}|`;
+        for ( let i = 0; i < len - 1; i++ ) {
+            rgx += `[0-${nval[ i ]}]`;
+        }
+        rgx += `[0-${+( nval[ len - 1 ] ) - 1}]`;
+    } else if ( nval?.length === 1 ) {
+        rgx = `[0-${+nval - 1}]`;
+    }
+    return rgx;
+}
+
+// /**
+//  * Parses any gina conditional n values to regex and returns eval functions for each n-value.
+//  * 
+//  * @param {string} value The input value.
+//  */
+// function parseNConditionalCodesToRegex( value ) {
+//     let allMatches = [ ...value.matchAll( /{N([0-9]*?)(>|>=|<|<=|=)([0-9]*?)}/gi ) ];
+//     let result = {
+//         value: value,
+//         operations: {}
+//     };
+
+//     if ( allMatches?.length > 0 ) {
+//         for ( let i = allMatches.length - 1; i >= 0; i-- ) {
+//             let m = allMatches[ i ];
+//             let opVal = +m[ 3 ];
+//             let n = 'cN' + m[ 1 ];
+
+//             if ( m[ 2 ] === '>' ) {
+//                 result.operations[ n ] = ( nValue ) => {
+//                     return +nValue > opVal;
+//                 };
+//             } else if ( m[ 2 ] === '>=' ) {
+//                 result.operations[ n ] = ( nValue ) => {
+//                     return +nValue >= opVal;
+//                 };
+//             } else if ( m[ 2 ] === '<' ) {
+//                 result.operations[ n ] = ( nValue ) => {
+//                     return +nValue < opVal;
+//                 };
+//             } else if ( m[ 2 ] === '<=' ) {
+//                 result.operations[ n ] = ( nValue ) => {
+//                     return +nValue <= opVal;
+//                 };
+//             } else if ( m[ 2 ] === '=' ) {
+//                 result.operations[ n ] = ( nValue ) => {
+//                     return +nValue == opVal;
+//                 };
+//             }
+
+
+//             // let op = {
+//             //     name: 'cN' + m[ 1 ],
+//             //     value: +m[ 3 ],
+//             // };
+
+//             // if ( m[ 2 ] === '>' ) {
+//             //     op._eval = ( nValue, opValue ) => {
+//             //         return +nValue > opValue;
+//             //     };
+//             // } else if ( m[ 2 ] === '>=' ) {
+//             //     op._eval = ( nValue, opValue ) => {
+//             //         return +nValue >= opValue;
+//             //     };
+//             // } else if ( m[ 2 ] === '<' ) {
+//             //     op._eval = ( nValue, opValue ) => {
+//             //         return +nValue < opValue;
+//             //     };
+//             // } else if ( m[ 2 ] === '<=' ) {
+//             //     op._eval = ( nValue, opValue ) => {
+//             //         return +nValue <= opValue;
+//             //     };
+//             // } else if ( m[ 2 ] === '=' ) {
+//             //     op._eval = ( nValue, opValue ) => {
+//             //         return +nValue == opValue;
+//             //     };
+//             // }
+
+//             // // Because we're moving backwards through the matches, we use 
+//             // // unshift to put them in the logical order.  This really isn't 
+//             // // necessary but will be easier if we're tracking down issues in 
+//             // // other areas of the application.
+//             // result.operations.unshift( op );
+
+//             result.value = `${result.value.substring( 0, m.index )}(?<cN${m[ 1 ]}>[0-9]+?)${result.value.substring( m.index + m[ 0 ].length )}`;
+//         }
+//     }
+
+//     return result;
+// }
+
 let StringUtilities = {
     format: format,
     isNullOrWhitespace: isNullOrWhitespace,
@@ -306,6 +624,10 @@ let StringUtilities = {
     parseCountersToLiteral: parseCountersToLiteral,
     parseSequentialGroups: parseSequentialGroups,
     parsePhoneticTransformsToLiteral: parsePhoneticTransformsToLiteral,
+    parseShortCodeValuesToLiteral: parseShortCodeValuesToLiteral,
+    parseNConditionalCodesToRegex: parseNConditionalCodesToRegex,
+    parseShortCodesToRegex: parseShortCodesToRegex,
+    getDurationFromLabel: getDurationFromLabel,
 };
 
 module.exports = StringUtilities;

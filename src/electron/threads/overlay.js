@@ -438,7 +438,7 @@ function createGroupedDotTimer( contentArea, group, comp ) {
  * @param {OverlayComponent} comp The overlay component.
  */
 function createGroupedTimer( contentArea, group, comp ) {
-    let content = targetGroupTimerTemplate( { value: comp.triggerName } );
+    let content = targetGroupTimerTemplate( { value: comp.action.displayText || comp.triggerName } );
 
     let div = document.createElement( 'div' );
     div.innerHTML = content;
@@ -449,7 +449,7 @@ function createGroupedTimer( contentArea, group, comp ) {
     }
 
     comp.dom = div;
-    comp.description = comp.triggerName;
+    comp.description = comp.action.displayText || comp.triggerName;
 
     // Create a method that will remove the component from the screen.
     comp.removeComponent = () => {
@@ -660,7 +660,7 @@ function applyTimerSettings( contentArea, comp ) {
 
             if ( !comp.endingSoonSpoken && comp.action.endingSoonSpeak ) {
                 comp.endingSoonSpoken = true;
-                speakPhrase( comp.action.endingSoonSpeakPhrase, comp.action.endingSoonInterruptSpeech );
+                speakPhrase( comp.action.endingSoonSpeakPhrase, comp.action.endingSoonInterruptSpeech, comp.matches, comp.action.duration );
             }
 
             if ( !comp.endingAudioPlayed && comp.action.endingPlayAudio ) {
@@ -691,7 +691,7 @@ function applyTimerSettings( contentArea, comp ) {
 
             if ( !comp.endedSpoken && comp.action.endedSpeak ) {
                 comp.endedSpoken = true;
-                speakPhrase( comp.action.endedSpeakPhrase, comp.action.endedInterruptSpeech );
+                speakPhrase( comp.action.endedSpeakPhrase, comp.action.endedInterruptSpeech, comp.matches, comp.action.duration );
             }
 
             if ( !comp.endedAudioPlayed && comp.action.endedPlayAudio ) {
@@ -873,8 +873,8 @@ function sendDisplayTextToOverlay( overlayId, text, duration ) {
     ipcRenderer.send( 'overlay:send:component', comp );
 }
 
-function speakPhrase( phrase, interruptSpeech ) {
-    ipcRenderer.send( 'log:speak:phrase', { phrase: phrase, interruptSpeech: interruptSpeech } );
+function speakPhrase( phrase, interruptSpeech, parseResult, timerDuration ) {
+    ipcRenderer.send( 'log:speak:phrase', { phrase: phrase, interruptSpeech: interruptSpeech, parseResult: parseResult, timerDuration: timerDuration } );
 }
 
 /**
