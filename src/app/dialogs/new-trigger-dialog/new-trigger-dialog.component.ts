@@ -143,6 +143,26 @@ export class NewTriggerDialogComponent implements OnInit {
                     phrase: '^${target} has been slain by (.+?)!',
                     useRegEx: true,
                 } );
+                dotAction.endEarlyPhrases.push( <Phrase>{
+                    phraseId: nanoid(),
+                    phrase: '^You have slain ${target}\.',
+                    useRegEx: true,
+                } );
+                dotAction.endEarlyPhrases.push( <Phrase>{
+                    phraseId: nanoid(),
+                    phrase: '^${target} dies\.',
+                    useRegEx: true,
+                } );
+                dotAction.endEarlyPhrases.push( <Phrase>{
+                    phraseId: nanoid(),
+                    phrase: '^You died\.',
+                    useRegEx: true,
+                } );
+                dotAction.endEarlyPhrases.push( <Phrase>{
+                    phraseId: nanoid(),
+                    phrase: '^${target} died\.',
+                    useRegEx: true,
+                } );
             }
             trigger.actions.push( dotAction );
             trigger.actions.push( <TriggerAction>{
