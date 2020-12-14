@@ -94,6 +94,17 @@ class CapturePhrase extends Phrase {
 
 }
 
+class Tag {
+    
+    /** @type {string} */
+    tagId;
+    /** @type {string} */
+    name;
+    /** @type {string} */
+    description;
+
+}
+
 class TriggerAction {
 
     actionId = null;
@@ -261,6 +272,8 @@ class Trigger {
     allakhazamUrl = null;
     /** @type {string} */
     importIdentifier = null;
+    /** @type {string[]} */
+    tagIds = [];
 }
 
 class FileModel {
@@ -276,4 +289,4 @@ class FileModel {
 
 }
 
-module.exports = { Trigger, TriggerAction, ActionTypes, CapturePhrase, TriggerConditionTypes, OperatorTypes, Phrase, TriggerFolder, MediaTypes, FileModel };
+module.exports = { Trigger, TriggerAction, ActionTypes, CapturePhrase, TriggerConditionTypes, OperatorTypes, Phrase, TriggerFolder, MediaTypes, FileModel, Tag };

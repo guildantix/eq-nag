@@ -1,7 +1,7 @@
 const { app, BrowserWindow, ipcMain } = require( "electron" );
 const Store = require( './store' );
 const _ = require( 'lodash' );
-const { Trigger, TriggerFolder, TriggerAction, ActionTypes } = require( './models/trigger' );
+const { Trigger, TriggerFolder, TriggerAction, ActionTypes, Tag } = require( './models/trigger' );
 const ForwardRef = require( '../forward-ref' );
 const customAlphabet = require( 'nanoid' ).customAlphabet;
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
@@ -41,7 +41,7 @@ class TriggerDatabaseStore extends Store {
 
     /** 
      * The data store for this object.
-     * @type {{triggers: Trigger[], folders: TriggerFolder[]}}
+     * @type {{triggers: Trigger[], folders: TriggerFolder[], tags: Tag[]}}
      * */
     #data;
 
@@ -52,7 +52,7 @@ class TriggerDatabaseStore extends Store {
     constructor() {
         super( {
             configName: "trigger-database",
-            defaults: { triggers: [] },
+            defaults: { triggers: [], folders: [], tags: [] },
         } );
         
         this.#data = this.parseDataFile();
@@ -315,6 +315,77 @@ class TriggerDatabaseStore extends Store {
             this.#data.version = 42;
             this.storeDataFile( this.#data );
         }
+        if ( this.#data.version < 43 ) {
+
+            /** @type {Record<string, {parent: TriggerFolder, tag: Tag}>} */
+            let tagParents = {};
+            
+            /**
+             * Processes the children of each folder and adds them to the tags.
+             * 
+             * @param {TriggerFolder} folder The current folder to process.
+             * @param {TriggerFolder} parent The parent folder id.
+             */
+            let _pf = ( folder, parent ) => {
+
+                let tag = _.find( this.#data.tags, f => f.name === folder.name );
+
+                if ( tag == undefined ) {
+                    tag = new Tag();
+                    
+                    tag.tagId = nanoid();
+                    tag.name = folder.name;
+                    tag.description = folder.comments;
+    
+                    this.#data?.tags.push( tag );
+                }
+
+                tagParents[ folder.folderId ] = { parent: parent?.folderId, tag: tag?.tagId };
+    
+                if ( folder.children?.length > 0 ) {
+                    folder.children.forEach( child => _pf( child, folder ) );
+                }
+                
+            };
+
+            /**
+             * Processes the given trigger, adding tags based on the folder(s) they belong to.
+             * 
+             * @param {Trigger} trigger The trigger.
+             */
+            let _pt = ( trigger ) => {
+
+                let folderId = trigger.folderId;
+                /** @type {string[]} */
+                let tagIds = [];
+
+                while ( folderId != null ) {
+                    tagIds.push( tagParents[ folderId ].tag );
+                    folderId = tagParents[ folderId ].parent;
+                }
+
+                trigger.tagIds = _.uniq( tagIds );
+
+            };
+
+            if ( this.#data ) {
+                this.#data.tags = [];
+
+                this.#data?.folders?.forEach( folder => {
+                    _pf( folder, null );
+                } );
+
+                console.log( 'tagParents', tagParents );
+
+                this.#data?.triggers.forEach( trigger => {
+                    _pt( trigger );
+                } );
+
+                this.#data.version = 43;
+                this.storeDataFile( this.#data );
+            }
+            
+        }
     }
 
 
@@ -416,8 +487,117 @@ class TriggerDatabaseStore extends Store {
         ipcMain.on( 'trigger:search', ( event, term ) => {
             event.sender.webContents.send( 'trigger:search', this.searchTriggers( term ) );
         } );
+        
+        // Tag methods.
+        ipcMain.on( 'tags:get', ( event, args ) => {
+            event.sender.webContents.send( 'tags:get', this.getTags() );
+        } );
+        ipcMain.on( 'tags:create', ( event, tag ) => {
+            event.sender.webContents.send( 'tags:create', this.createTag( tag ) );
+            sendTick();
+        } );
+        ipcMain.on( 'tags:update', ( event, tag ) => {
+            this.updateTag( tag );
+            sendTick();
+        } );
+        ipcMain.on( 'tags:delete', ( event, tagId ) => {
+            this.deleteTag( tagId );
+            sendTick();
+        } );
 
     }
+
+    /**
+     * Returns a list of all tags.
+     * 
+     * @returns {Tag[]}
+     */
+    getTags() {
+        return this.#data?.tags?.length > 0 ? this.#data.tags : [];
+    }
+
+    /**
+     * Creates a new tag.
+     * 
+     * @returns {string} Returns the id of the new tag.
+     * 
+     * @param {Tag} tag The new tag.
+     */
+    createTag( tag ) {
+
+        if ( StringUtilities.isNullOrWhitespace( tag?.name ) ) {
+            throw 'Argument Invalid: Name required.';
+        }
+
+        tag.tagId = tag.tagId ? tag.tagId : nanoid();
+
+        this.#data?.tags.push( tag );
+        this.storeDataFile( this.#data );
+        
+        return tag.tagId;
+    }
+
+    /**
+     * Updates an existing tag.
+     * 
+     * @param {Tag} tag The tag.
+     */
+    updateTag( tag ) {
+
+        if ( StringUtilities.isNullOrWhitespace( tag?.name ) ) {
+            throw 'Argument Invalid: Name required.';
+        }
+
+        if ( this.#data?.tags?.length > 0 ) {
+            let i = _.findIndex( this.#data.tags, t => t.tagId === tag.tagId );
+    
+            this.#data.tags[ i ].name = tag.name;
+            this.#data.tags[ i ].description = tag.description;
+        }
+
+        this.storeDataFile( this.#data );
+    }
+
+    /**
+     * Removes the specified tag.
+     * 
+     * @param {string} tagId The id of the desired tag.
+     */
+    deleteTag( tagId ) {
+
+        if ( StringUtilities.isNullOrWhitespace( tagId ) ) {
+            throw 'Argument Invalid: Tag Id required.';
+        }
+
+        if ( this.#data?.tags?.length > 0 ) {
+            let tagIndex = _.findIndex( this.#data.tags, t => t.tagId === tagId );
+            
+            if ( this.#data.triggers?.length > 0 ) {
+                
+                for ( let trigIndex = 0; trigIndex < this.#data.triggers.length; trigIndex++ ) {
+                    let trigTagIndex = this.#data.triggers[ trigIndex ].tagIds.indexOf( tagId );
+
+                    if ( trigTagIndex > -1 ) {
+                        this.#data.triggers[ trigIndex ].tagIds.splice( trigTagIndex, 0 );
+                    }
+
+                }
+
+            }
+
+            this.#data.tags.splice( tagIndex, 0 );
+            this.storeDataFile( this.#data );
+        }
+    }
+
+
+
+
+
+
+
+
+
 
     /**
      * Returns a list of all folders.

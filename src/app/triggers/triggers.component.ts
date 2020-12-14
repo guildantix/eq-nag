@@ -2,7 +2,7 @@ import { FlatTreeControl } from '@angular/cdk/tree';
 import { Component, OnInit, ViewChild } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTreeFlatDataSource, MatTreeFlattener } from '@angular/material/tree';
-import { TriggerFolder, TriggerModel } from '../core.model';
+import { Tag, TriggerFolder, TriggerModel } from '../core.model';
 import { DialogService } from '../dialogs/dialog.service';
 import { IpcService } from '../ipc.service';
 import * as _ from 'lodash';
@@ -42,6 +42,8 @@ export class TriggersComponent implements OnInit {
     public isDev: boolean = false;
     public triggerSearchResults: TriggerModel[] = [];
     public searchTerm: string = null;
+    public tags: Tag[] = [];
+    public tagDictionary: Record<string, Tag> = {};
     @ViewChild( 'triggersTable' ) triggersTable: MatTable<TriggerModel>;
 
     public get allExpanded(): boolean {
@@ -69,6 +71,12 @@ export class TriggersComponent implements OnInit {
         } );
 
         this.ipcService.getAppIsDev().subscribe( isDev => this.isDev = isDev );
+        this.ipcService.getTags().subscribe( tags => {
+            if ( tags?.length > 0 ) {
+                this.tags = tags;
+                tags.forEach( t => this.tagDictionary[ t.tagId ] = t );
+            }
+        } );
         this.ipcService.getTriggerFolders().subscribe( folders => {
             this.updateViewTriggerData( folders );
         } );

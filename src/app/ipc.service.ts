@@ -2,7 +2,7 @@ import { Injectable, NgZone } from '@angular/core';
 import { IpcRenderer } from 'electron';
 import { Observable, Observer } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
-import { DataTickModel, DkpEntryModel, TriggerModel, OverlayWindowModel, ActionTypes, FocusEffectSettings, CharacterModel, BasicError, TriggerFolder, FileModel } from './core.model';
+import { DataTickModel, DkpEntryModel, TriggerModel, OverlayWindowModel, ActionTypes, FocusEffectSettings, CharacterModel, BasicError, TriggerFolder, FileModel, Tag } from './core.model';
 import { GinaConfiguration, GinaTriggerGroups } from './gina.model';
 
 @Injectable( { providedIn: 'root' })
@@ -834,6 +834,46 @@ export class IpcService {
 
         } );
 
+    }
+
+    public getTags(): Observable<Tag[]> {
+        let obs: Observable<Tag[]> = new Observable<Tag[]>( ( observer: Observer<Tag[]> ) => {
+            
+            this.ipc.once( 'tags:get', ( e, tags: Tag[] ) => {
+                this.ngZone.run( () => {
+                    observer.next( tags );
+                    observer.complete();
+                } );
+            } );
+            this.ipc.send( 'tags:get', null );
+
+        } );
+
+        return obs;
+    }
+
+    public createTag( model: Tag ): Observable<string> {
+        let obs: Observable<string> = new Observable<string>( ( observer: Observer<string> ) => {
+            
+            this.ipc.once( 'tags:create', ( e, tagId: string ) => {
+                this.ngZone.run( () => {
+                    observer.next( tagId );
+                    observer.complete();
+                } );
+            } );
+            this.ipc.send( 'tags:create', model );
+
+        } );
+
+        return obs;
+    }
+
+    public updateTag( model: Tag ): void {
+        this.ipc.send( 'tags:update', model );
+    }
+
+    public deleteTag( tagId: string ): void {
+        this.ipc.send( 'tags:delete', tagId );
     }
 
     public sendTestModel( displayText: string ): void {

@@ -94,6 +94,7 @@ export class TriggerModel {
     public onlyExecuteInDev: boolean = false;
     public allakhazamUrl: string = null;
     public importIdentifier: string = null;
+    public tagIds: string[] = [];
 
 }
 
@@ -132,6 +133,12 @@ export class Phrase {
 export class CapturePhrase extends Phrase {
     public requirePreviousPhrase: boolean = false;
     public duration: number = null;
+}
+
+export class Tag {
+    public tagId: string;
+    public name: string;
+    public description: string;
 }
 
 export class DkpEntryModel {
