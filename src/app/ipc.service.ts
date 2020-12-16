@@ -836,12 +836,16 @@ export class IpcService {
 
     }
 
-    public getTags(): Observable<Tag[]> {
-        let obs: Observable<Tag[]> = new Observable<Tag[]>( ( observer: Observer<Tag[]> ) => {
+    public getTags(): Observable<Record<string, Tag>> {
+        let obs: Observable<Record<string, Tag>> = new Observable<Record<string, Tag>>( ( observer: Observer<Record<string, Tag>> ) => {
             
             this.ipc.once( 'tags:get', ( e, tags: Tag[] ) => {
                 this.ngZone.run( () => {
-                    observer.next( tags );
+
+                    let tagDictionary: Record<string, Tag> = {};
+                    tags.forEach( t => tagDictionary[ t.tagId ] = t );
+
+                    observer.next( tagDictionary );
                     observer.complete();
                 } );
             } );
