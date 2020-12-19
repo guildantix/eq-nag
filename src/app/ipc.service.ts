@@ -319,7 +319,7 @@ export class IpcService {
         return obs;
     }
 
-    public searchTriggers( term: string ): Observable<TriggerModel[]> {
+    public searchTriggers( term: string, restrictByFolderIds?: string[] ): Observable<TriggerModel[]> {
         let obs: Observable<TriggerModel[]> = new Observable<TriggerModel[]>( ( observer: Observer<TriggerModel[]> ) => {
             
             this.ipc.once( 'trigger:search', ( e, triggers: TriggerModel[] ) => {
@@ -328,7 +328,7 @@ export class IpcService {
                     observer.complete();
                 } );
             } );
-            this.ipc.send( 'trigger:search', term );
+            this.ipc.send( 'trigger:search', { term: term, folderIds: restrictByFolderIds } );
 
         } );
 

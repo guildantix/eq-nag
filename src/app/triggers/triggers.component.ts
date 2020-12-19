@@ -692,10 +692,10 @@ export class TriggersComponent implements OnInit {
      * query.
      */
     public searchTriggers(): void {
+        let folderIds = this.selectedFolderId == null ? null : this.getFolderLineageIds( this.selectedFolderId, this.triggerFolders );
         if ( this.searchTerm ) {
-            this.selectedFolderId = null;
             this.ipcService
-                .searchTriggers( this.searchTerm )
+                .searchTriggers( this.searchTerm, folderIds )
                 .subscribe( results => {
                     this.triggerSearchResults = results;
                     this.filteredTriggers = results;

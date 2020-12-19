@@ -419,8 +419,8 @@ class TriggerDatabaseStore extends Store {
             event.sender.webContents.send( 'folders:update', this.updateFolders( folders ) );
         } );
 
-        ipcMain.on( 'trigger:search', ( event, term ) => {
-            event.sender.webContents.send( 'trigger:search', this.searchTriggers( term ) );
+        ipcMain.on( 'trigger:search', ( event, args ) => {
+            event.sender.webContents.send( 'trigger:search', this.searchTriggers( args.term, args.folderIds ) );
         } );
         
         // Tag methods.
@@ -1123,8 +1123,9 @@ class TriggerDatabaseStore extends Store {
      * search and the results are given in order of best match on top.
      * 
      * @param {string} term The search term to query.
+     * @param {string[]} folderIds If provided, only returns triggers that exist in a folder in this list.
      */
-    searchTriggers( term ) {
+    searchTriggers( term, folderIds ) {
         let fuse = new Fuse( this.#data.triggers, fuseOptions_tags );
 
         let results = fuse.search( term );
@@ -1147,7 +1148,13 @@ class TriggerDatabaseStore extends Store {
                 item.score = fuseResult.score;
                 item.refIndex = fuseResult.refIndex;
                 return item;
-            } ).filter( item => item.score <= scoreLimit );
+            } ).filter( item => {
+                if ( folderIds == null || folderIds.length == 0 ) {
+                    return item.score <= scoreLimit;
+                } else {
+                    return folderIds.indexOf( item.folderId ) > -1 && item.score <= scoreLimit;
+                }
+            } );
 
         } else {
             return [];
