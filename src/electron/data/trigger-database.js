@@ -315,76 +315,11 @@ class TriggerDatabaseStore extends Store {
             this.#data.version = 42;
             this.storeDataFile( this.#data );
         }
-        if ( this.#data.version < 43 ) {
-
-            /** @type {Record<string, {parent: TriggerFolder, tag: Tag}>} */
-            let tagParents = {};
-            
-            /**
-             * Processes the children of each folder and adds them to the tags.
-             * 
-             * @param {TriggerFolder} folder The current folder to process.
-             * @param {TriggerFolder} parent The parent folder id.
-             */
-            let _pf = ( folder, parent ) => {
-
-                let tag = _.find( this.#data.tags, f => f.name === folder.name );
-
-                if ( tag == undefined ) {
-                    tag = new Tag();
-                    
-                    tag.tagId = nanoid();
-                    tag.name = folder.name;
-                    tag.description = folder.comments;
-    
-                    this.#data?.tags.push( tag );
-                }
-
-                tagParents[ folder.folderId ] = { parent: parent?.folderId, tag: tag?.tagId };
-    
-                if ( folder.children?.length > 0 ) {
-                    folder.children.forEach( child => _pf( child, folder ) );
-                }
-                
-            };
-
-            /**
-             * Processes the given trigger, adding tags based on the folder(s) they belong to.
-             * 
-             * @param {Trigger} trigger The trigger.
-             */
-            let _pt = ( trigger ) => {
-
-                let folderId = trigger.folderId;
-                /** @type {string[]} */
-                let tagIds = [];
-
-                while ( folderId != null ) {
-                    tagIds.push( tagParents[ folderId ].tag );
-                    folderId = tagParents[ folderId ].parent;
-                }
-
-                trigger.tagIds = _.uniq( tagIds );
-
-            };
-
-            if ( this.#data ) {
-                this.#data.tags = [];
-
-                this.#data?.folders?.forEach( folder => {
-                    _pf( folder, null );
-                } );
-
-                console.log( 'tagParents', tagParents );
-
-                this.#data?.triggers.forEach( trigger => {
-                    _pt( trigger );
-                } );
-
-                this.#data.version = 43;
-                this.storeDataFile( this.#data );
-            }
-            
+        if ( this.#data.version < 44 ) {
+            this.#data.tags = [];
+            this.#data.triggers.forEach( f => f.tagIds = null );
+            this.#data.version = 44;
+            this.storeDataFile( this.#data );
         }
     }
 

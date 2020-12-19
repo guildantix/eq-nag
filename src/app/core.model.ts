@@ -94,7 +94,6 @@ export class TriggerModel {
     public onlyExecuteInDev: boolean = false;
     public allakhazamUrl: string = null;
     public importIdentifier: string = null;
-    public tagIds: string[] = [];
 
 }
 

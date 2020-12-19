@@ -42,7 +42,6 @@ export class TriggersComponent implements OnInit {
     public isDev: boolean = false;
     public triggerSearchResults: TriggerModel[] = [];
     public searchTerm: string = null;
-    public tags: Record<string, Tag> = {};
     @ViewChild( 'triggersTable' ) triggersTable: MatTable<TriggerModel>;
 
     public get allExpanded(): boolean {
@@ -70,7 +69,6 @@ export class TriggersComponent implements OnInit {
         } );
 
         this.ipcService.getAppIsDev().subscribe( isDev => this.isDev = isDev );
-        this.ipcService.getTags().subscribe( tags => this.tags = tags );
         this.ipcService.getTriggerFolders().subscribe( folders => {
             this.updateViewTriggerData( folders );
         } );

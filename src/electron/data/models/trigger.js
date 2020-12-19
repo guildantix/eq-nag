@@ -272,8 +272,6 @@ class Trigger {
     allakhazamUrl = null;
     /** @type {string} */
     importIdentifier = null;
-    /** @type {string[]} */
-    tagIds = [];
 }
 
 class FileModel {
