@@ -17,6 +17,7 @@ import { TriggersComponent } from './triggers/triggers.component';
 import { ClassNamePipe } from './pipes/class-name.pipe';
 import { WindowsModule } from './windows/windows.module';
 import { IpcService } from './ipc.service';
+import { CoreModule } from './core/core.module';
 
 @NgModule( {
     imports: [
@@ -28,6 +29,7 @@ import { IpcService } from './ipc.service';
         BrowserAnimationsModule,
         RouterModule.forRoot( appRoutes, { enableTracing: false, useHash: true } ),
         HttpClientModule,
+        CoreModule,
         ContextMenuModule,
         WindowsModule,
     ],
