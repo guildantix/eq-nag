@@ -132,6 +132,8 @@ class TriggerAction {
     /** @type boolean */
     restartOnDuplicate = false;
     /** @type boolean */
+    restartTimerAlways = false;
+    /** @type boolean */
     onlyExecuteInDev = false;
     /** @type string */
     overrideTimerColor = null;

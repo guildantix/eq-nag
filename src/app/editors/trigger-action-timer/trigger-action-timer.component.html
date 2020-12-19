@@ -19,7 +19,11 @@
                 <input matInput [(ngModel)]="action.displayText" name="txtDisplayText" />
             </mat-form-field>
 
-            <p><mat-checkbox [(ngModel)]="action.restartOnDuplicate" name="cbxRestartOnDuplicate">Restart if the name matches</mat-checkbox></p>
+            <mat-radio-group [(ngModel)]="restartBehavior" name="rdoRestartBehavior">
+                <mat-radio-button value="0">Never restart</mat-radio-button>
+                <mat-radio-button value="1">Restart only if the name matches</mat-radio-button>
+                <mat-radio-button value="2">Restart timer regardless of the name</mat-radio-button>
+            </mat-radio-group>
 
             <p><mat-checkbox [(ngModel)]="action.showRemainingDuration" name="cbxShowTimeRemaining">Show the time remaining</mat-checkbox></p>
 

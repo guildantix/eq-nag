@@ -19,6 +19,17 @@ export class TriggerActionTimerComponent implements OnInit {
     
     public Math: typeof Math = Math;
     public audioFiles: FileModel[] = [];
+
+    public get restartBehavior(): string {
+        return this.action.restartOnDuplicate ? "1" :
+               this.action.restartTimerAlways ? "2" :
+               "0";
+    }
+    public set restartBehavior( value: string ) {
+        this.action.restartOnDuplicate = value === "1";
+        this.action.restartTimerAlways = value === "2";
+    }
+
     @Input( 'action' ) public action: TriggerAction;
     @Input( 'overlayOptions' ) public timerOverlays: OverlayWindowModel[] = [];
     @Input( 'alertOverlays' ) public alertOverlays: OverlayWindowModel[] = [];
