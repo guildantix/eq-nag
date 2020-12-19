@@ -64,7 +64,7 @@ export class TriggersComponent implements OnInit {
 
         this.ipcService.tickReceived().subscribe( tick => {
             this.triggers = tick.triggers.filter( f => this.isDev || !f.predefined );
-            this.filteredTriggers = _.sortBy( this.triggers.filter( trigger => this.selectedFolderId == null || this.selectedFolderId === trigger.folderId ), trigger => trigger.name );
+            this.filterTriggers();
             this.searchTerm = null;
         } );
 
@@ -141,7 +141,7 @@ export class TriggersComponent implements OnInit {
      */
     public toggleSelectedFolder( folderId: string ): void {
         this.selectedFolderId = this.selectedFolderId === folderId ? null : folderId;
-        this.filteredTriggers = _.sortBy( this.triggers.filter( trigger => this.selectedFolderId == null || this.selectedFolderId === trigger.folderId ), trigger => trigger.name );
+        this.filterTriggers();
         this.searchTerm = null;
     }
 
@@ -161,7 +161,6 @@ export class TriggersComponent implements OnInit {
         this.dialogService
             .showNewTriggerFolderDialog()
             .subscribe( folder => {
-                console.log( 'folder', folder );
                 if ( folder != null ) {
                     
                     let _folders = this.triggerFolders?.length > 0 ? this.triggerFolders : [];
@@ -638,7 +637,7 @@ export class TriggersComponent implements OnInit {
     private _removeFolderTriggers( folders: TriggerFolder[], folderId: string ): void {
 
         this.triggers.forEach( trigger => trigger.folderId = trigger.folderId === folderId ? null : trigger.folderId );
-        this.filteredTriggers = _.sortBy( this.triggers.filter( trigger => this.selectedFolderId == null || this.selectedFolderId === trigger.folderId ), trigger => trigger.name );
+        this.filterTriggers();
         this.searchTerm = null;
 
         // Find the folder and if the folder has children, then remove the 
@@ -702,7 +701,119 @@ export class TriggersComponent implements OnInit {
                     this.filteredTriggers = results;
                 } );
         } else {
-            this.filteredTriggers = _.sortBy( this.triggers.filter( trigger => this.selectedFolderId == null || this.selectedFolderId === trigger.folderId ), trigger => trigger.name );
+            this.filterTriggers();
+        }
+    }
+
+
+
+
+
+
+
+
+
+
+    /** 
+     * Filters the triggers by selected folder.
+     */
+    private filterTriggers(): void {
+        if ( this.selectedFolderId ) {
+            let folderIds = this.getFolderLineageIds( this.selectedFolderId, this.triggerFolders );
+            this.filteredTriggers = _.sortBy( this.triggers.filter( trigger => folderIds.indexOf( trigger.folderId ) > -1 ), trigger => trigger.name );
+            
+        } else {
+            this.filteredTriggers = this.triggers.slice();
+        }
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Returns a flat array of the specified folder id and all descendent folder ids.
+     * 
+     * @param folderId The id of the desired folder ancestor.
+     * @param folders The list of folders to query.
+     */
+    private getFolderLineageIds( folderId: string, folders: TriggerFolder[] ): string[] {
+        
+        for ( let i = 0; i < folders?.length; i++ ) {
+
+            if ( folders[ i ].folderId === folderId ) {
+                return this.getAllFolderIds( folders[ i ] );
+                
+            } else if ( folders[ i ]?.children?.length > 0 ) {
+                let d = this.getFolderLineageIds( folderId, folders[ i ].children );
+                
+                if ( d?.length > 0 ) {
+                    return d;
+                }
+
+            }
+
+        }
+
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Returns a flat array of the given folder and all descendent folder ids.
+     * 
+     * @param folder The parent folder.
+     */
+    private getAllFolderIds( folder: TriggerFolder ): string[] {
+        let ids = [ folder.folderId ];
+
+        for ( let i = 0; i < folder.children?.length; i++ ) {
+            ids = ids.concat( this.getAllFolderIds( folder.children[ i ] ) );
+        }
+
+        return ids;
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Returns a flat list of folders, starting with the child, and moving up 
+     * the heirarchy to return the entire line of folders.
+     * 
+     * @param folderId The desired child folder id.
+     * @param folders The list of folders to query.
+     * @param ids The current list of folder ids.
+     */
+    private getFolderFamilyIds( folderId: string, folders: TriggerFolder[], ids: string[] ): string[] {
+        
+        for ( let i = 0; i < folders?.length; i++ ) {
+            if ( folders[ i ].folderId === folderId ) {
+                return ids.concat( [ folders[ i ].folderId ] );
+            } else if ( folders[ i ]?.children?.length > 0 ) {
+                let d = this.getFolderFamilyIds( folderId, folders[ i ].children, ids.concat( [ folders[ i ].folderId ] ) );
+                if ( d?.length > 0 ) {
+                    return d;
+                }
+            }
         }
     }
 

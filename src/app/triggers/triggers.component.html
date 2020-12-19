@@ -53,7 +53,7 @@
                         <button mat-icon-button [disabled]="true">
                             <span style="display:inline-block;width:18px;">&nbsp;</span>
                         </button>
-                        <span class="spacer tree-click-target" (click)="toggleSelectedFolder(node.folderId)">{{node.name}}</span>
+                        <span class="spacer tree-click-target" (click)="toggleSelectedFolder(node.folderId)">{{node.folderId}}</span>
                         <!-- <button mat-icon-button color="warn" class="small delete-button"><mat-icon [inline]="true">cancel</mat-icon></button> -->
                         <!-- class="material-icons-outlined" -->
                         <button mat-icon-button class="small" (click)="selectParentFolder(node.folderId)"><mat-icon [inline]="true">sort</mat-icon></button>
@@ -66,7 +66,7 @@
                                 {{treeControl.isExpanded(node) ? 'expand_more' : 'chevron_right'}}
                             </mat-icon>
                         </button>
-                        <span class="spacer tree-click-target" (click)="toggleSelectedFolder(node.folderId)">{{node.name}}</span>
+                        <span class="spacer tree-click-target" (click)="toggleSelectedFolder(node.folderId)">{{node.folderId}}</span>
                         <!-- <button mat-icon-button color="warn" class="small delete-button"><mat-icon [inline]="true">cancel</mat-icon></button> -->
                         <button mat-icon-button class="small" (click)="selectParentFolder(node.folderId)"><mat-icon [inline]="true">sort</mat-icon></button>
                     </mat-tree-node>
