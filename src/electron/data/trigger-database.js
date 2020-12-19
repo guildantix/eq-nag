@@ -1137,8 +1137,8 @@ class TriggerDatabaseStore extends Store {
             let scores = _.map( results, item => item.score );
             let minScore = _.min( scores );
 
-            if ( minScore < 0.25 ) {
-                scoreLimit = 0.25;
+            if ( minScore < 0.35 ) {
+                scoreLimit = 0.35;
             } else if ( minScore < 0.50 ) {
                 scoreLimit = 0.50;
             }
