@@ -14,6 +14,8 @@ import { InputDialogComponent } from './input-dialog/input-dialog.component';
 import { InputDialogModel } from './input-dialog/input-dialog.model';
 import { NotificationDialogModel, NotificationTypes } from './notification-dialog/notification-dialog.model';
 import { NotificationDialogComponent } from './notification-dialog/notification-dialog.component';
+import { AutocompleteDialogModel } from './autocomplete-dialog/autocomplete-dialog.model';
+import { AutoCompleteDialogComponent } from './autocomplete-dialog/autocomplete-dialog.component';
 
 @Injectable()
 export class DialogService {
@@ -266,7 +268,50 @@ export class DialogService {
             data: data
         } ).afterClosed();
     }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Shows a simple dialog with an input with an autocomplete.
+     * 
+     * @param title The title for the dialog.
+     * @param message Instructions to the user.
+     * @param options The available options.
+     * @param label Placeholder/label for the input.
+     * @param hint Any additional information related to the request and how to fulfill it.
+     */
+    public showAutocompleteDialog( title: string, message: string | string[], options: string[], label?: string, hint?: string, ): Observable<string> {
+        let data: AutocompleteDialogModel = new AutocompleteDialogModel();
+        
+        data.title = title;
+        data.message = message;
+        data.label = label;
+        data.hint = hint;
+        data.options = options;
+
+        return this.dialog.open<AutoCompleteDialogComponent, any, string>( AutoCompleteDialogComponent, {
+            width: '450px',
+            data: data
+        } ).afterClosed();
+        
+    }
     
+
+
+
+
+
+
+
+
+
     public showWarningDialog( title: string, message: string | string[] ): void {
         let data: NotificationDialogModel = new NotificationDialogModel();
         

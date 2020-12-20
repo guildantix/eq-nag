@@ -19,6 +19,7 @@ import { ContextMenuModule } from '../context-menu/context-menu.module';
 import { InputDialogComponent } from './input-dialog/input-dialog.component';
 import { NotificationDialogComponent } from './notification-dialog/notification-dialog.component';
 import { EditorsModule } from '../editors/editors.module';
+import { AutoCompleteDialogComponent } from './autocomplete-dialog/autocomplete-dialog.component';
 
 @NgModule( {
     imports: [
@@ -44,6 +45,7 @@ import { EditorsModule } from '../editors/editors.module';
         SelectTriggerFolderDialogComponent,
         InputDialogComponent,
         NotificationDialogComponent,
+        AutoCompleteDialogComponent,
     ],
     declarations: [
         TriggerDialogComponent,
@@ -58,6 +60,7 @@ import { EditorsModule } from '../editors/editors.module';
         SelectTriggerFolderDialogComponent,
         InputDialogComponent,
         NotificationDialogComponent,
+        AutoCompleteDialogComponent,
     ],
     providers: [
         DialogService,
