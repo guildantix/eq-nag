@@ -1,0 +1,66 @@
+
+<mat-horizontal-stepper [linear]="true" #stepper>
+    <mat-step [stepControl]="stepOneForm" label="Overlay Windows" *ngIf="showMissingOverlays">
+        <form #stepOneForm="ngForm">
+
+            <div style="margin-bottom: 20px;">Overlay windows are used to display information in-game.  When a trigger calls for showing text or timers, that information is rendered in an overlay window.</div>
+            <div class="small-text" style="margin-bottom: 25px;"><span class="color-green">You can select missing overlays here, or choose the auto-assign option and move on to the next step.</span></div>
+            <div *ngFor="let action of model.actions;let i = index">
+
+                <mat-form-field *ngIf="action.overlayId == null && action.actionType == actionTypes.DisplayText">
+                    <mat-label>{{action.displayText}}</mat-label>
+                    <mat-select [(ngModel)]="action.overlayId" name="ddlAlertOverlay_{{i}}">
+                        <mat-option *ngFor="let option of alertOverlays" [value]="option.overlayId">{{option.name}}</mat-option>
+                    </mat-select>
+                </mat-form-field>
+
+                <ng-template [ngIf]="action.actionType == actionTypes.Countdown || action.actionType == actionTypes.DotTimer || action.actionType == actionTypes.Timer">
+
+                    <mat-form-field *ngIf="action.overlayId == null">
+                        <mat-label>{{action.displayText}}</mat-label>
+                        <mat-select [(ngModel)]="action.overlayId" name="ddlTimerOverlay_{{i}}">
+                            <mat-option *ngFor="let option of timerOverlays" [value]="option.overlayId">{{option.name}}</mat-option>
+                        </mat-select>
+                        <mat-hint>This is the timer overlay</mat-hint>
+                    </mat-form-field>
+
+                    <mat-form-field *ngIf="action.ifEndingSoon && action.endingSoonDisplayText && action.endingSoonTextOverlayId == null">
+                        <mat-label>{{action.displayText}} ending soon.</mat-label>
+                        <mat-select [(ngModel)]="action.endingSoonTextOverlayId" name="ddlEndingSoonOverlay_{{i}}">
+                            <mat-option *ngFor="let option of alertOverlays" [value]="option.overlayId">{{option.name}}</mat-option>
+                        </mat-select>
+                    </mat-form-field>
+
+                    <mat-form-field *ngIf="action.notifyWhenEnded && action.endedDisplayText && action.endedTextOverlayId == null">
+                        <mat-label>{{action.displayText}} ended.</mat-label>
+                        <mat-select [(ngModel)]="action.endedTextOverlayId" name="ddlEndedOverlay_{{i}}">
+                            <mat-option *ngFor="let option of alertOverlays" [value]="option.overlayId">{{option.name}}</mat-option>
+                        </mat-select>
+                    </mat-form-field>
+
+                </ng-template>
+            </div>
+            
+            <div>
+                <button mat-button (click)="autoAssignOverlays()">Auto-Assign</button>
+                <button mat-button matStepperNext>Next</button>
+            </div>
+        </form>
+    </mat-step>
+    <mat-step label="Last Name">
+        <form #stepTwoForm="ngForm">
+            
+            <div>
+                <button mat-button matStepperNext>Next</button>
+            </div>
+        </form>
+    </mat-step>
+    <mat-step label="Review">
+        <form #stepThreeForm="ngForm">
+            
+            <div>
+                <button mat-button matStepperNext>Next</button>
+            </div>
+        </form>
+    </mat-step>
+</mat-horizontal-stepper>

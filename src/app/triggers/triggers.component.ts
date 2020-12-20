@@ -64,6 +64,7 @@ export class TriggersComponent implements OnInit {
 
         this.ipcService.tickReceived().subscribe( tick => {
             this.triggers = tick.triggers.filter( f => this.isDev || !f.predefined );
+            this.updateViewTriggerData( tick.folders );
             this.filterTriggers();
             this.searchTerm = null;
         } );

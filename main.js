@@ -123,6 +123,7 @@ ipcMain.on( 'main:console:log', ( event, data ) => { mainWindow.webContents.send
 
 function sendTick() {
     let _triggers = triggerDatabase.getAll();
+    let _folders = triggerDatabase.getFolders();
     let tickData = {
         dkpEntries: dkpDatabase.getAllUnentered(),
         logFile: userPreferences.logFile,
@@ -138,6 +139,7 @@ function sendTick() {
         isDev: app.isDev(),
         phoneticTransforms: userPreferences.phoneticTransforms,
         ignoredGinaObjects: userPreferences.ignoreGinaObjects,
+        folders: _folders,
     };
     mainWindow.webContents.send( 'tick', tickData );
     logBootstrap.tick( tickData, characterDatabase );

@@ -9,7 +9,7 @@ import { ContextMenuModule } from '../context-menu/context-menu.module';
 import { GinaImportWindowComponent } from './gina-import-window/gina-import-window.component';
 import { DialogModule } from '../dialogs/dialog.module';
 import { EditorsModule } from '../editors/editors.module';
-
+import { GinaImportStepperComponent } from './gina-import-window/gina-import-stepper.component';
 
 @NgModule({
     imports: [
@@ -24,9 +24,11 @@ import { EditorsModule } from '../editors/editors.module';
         EditorsModule,
     ],
     exports: [
+        GinaImportStepperComponent,
         GinaImportWindowComponent,
     ],
     declarations: [
+        GinaImportStepperComponent,
         GinaImportWindowComponent,
     ],
     providers: [],

@@ -9,7 +9,7 @@ import { IpcService } from 'src/app/ipc.service';
 import * as _ from 'lodash';
 import { ContextMenuModel } from 'src/app/context-menu/context-menu.model';
 import { GinaImporter } from '../../utilities/gina.import';
-import { ActionTypes, CapturePhrase, OperatorTypes, OverlayWindowModel, TriggerAction, TriggerCondition, TriggerConditionTypes, TriggerModel } from 'src/app/core.model';
+import { ActionTypes, CapturePhrase, OperatorTypes, OverlayWindowModel, TriggerAction, TriggerCondition, TriggerConditionTypes, TriggerFolder, TriggerModel } from 'src/app/core.model';
 import { MatTabGroup } from '@angular/material/tabs';
 import { nanoid } from 'nanoid';
 
@@ -20,6 +20,7 @@ interface GinaTreeNode {
     item: GinaTrigger | GinaPhoneticTransform;
     ginaName: string;
     imported: boolean;
+    folders: string[];
 }
 
 class GinaTreeObject {
@@ -29,6 +30,7 @@ class GinaTreeObject {
     phoneticTransform: GinaPhoneticTransform;
     ginaName: string;
     imported: boolean;
+    folders: string[] = [];
 }
 
 @Component( {
@@ -53,6 +55,7 @@ export class GinaImportWindowComponent implements OnInit {
             item: node.phoneticTransform ? node.phoneticTransform : node.trigger,
             ginaName: node.ginaName,
             imported: node.imported,
+            folders: node.folders,
         };
     }
     public treeControl = new FlatTreeControl<GinaTreeNode>( node => node ? node.level : 1, node => node.expandable );
@@ -70,6 +73,7 @@ export class GinaImportWindowComponent implements OnInit {
     public selectedPhoneticTransform: GinaPhoneticTransform = null;
     public selectedTrigger: GinaTrigger = null;
     public selectedGinaName: string = null;
+    public selectedGinaFolders: string[] = null;
 
     public voiceOptions: SpeechSynthesisVoice[] = [];
     public voiceIndex: number;
@@ -78,6 +82,7 @@ export class GinaImportWindowComponent implements OnInit {
     public actionTypes: typeof ActionTypes = ActionTypes;
     public overlays: OverlayWindowModel[] = [];
     public eqZones: string[] = [];
+    public triggerFolders: TriggerFolder[] = [];
     
     public get alertOverlays(): OverlayWindowModel[] {
         return this.overlays.filter( f => f.overlayType === 'Alert' );
@@ -153,6 +158,7 @@ export class GinaImportWindowComponent implements OnInit {
             this.voiceIndex = data.voiceIndex;
             this.ignoredGinaObjects = data.ignoredGinaObjects?.length > 0 ? data.ignoredGinaObjects : [];
             this.overlays = data.overlays;
+            
             // this.enableFct = data.enableFct;
             // this.damageDealtOverlayId = data.damageDealtOverlayId;
             // this.damageTakenOverlayId = data.damageReceivedOverlayId;
@@ -172,6 +178,9 @@ export class GinaImportWindowComponent implements OnInit {
         
         this.ipcService.requestTick();
         this.ipcService.getEverquestZones().subscribe( zones => this.eqZones = zones );
+        this.ipcService.getTriggerFolders().subscribe( folders => {
+            this.triggerFolders = folders;
+        } );
 
     }
 
@@ -196,6 +205,7 @@ export class GinaImportWindowComponent implements OnInit {
                             phoneticTransform: transform,
                             ginaName: `${transform.ActualWord}`,
                             imported: this.ignoredGinaObjects.indexOf( transform.ActualWord ) > -1 || this.importedPhoneticTransforms.indexOf( transform.ActualWord ) > -1,
+                            folders: [ 'Phonetic Transforms' ],
                         } );
                     } );
 
@@ -204,7 +214,7 @@ export class GinaImportWindowComponent implements OnInit {
                         data.push( transformsNode );
                     }
 
-                    data = data.concat( this.getGinaTriggerGroupNodes( ginaConfig.TriggerGroups.TriggerGroup, 'GINA:' ) );
+                    data = data.concat( this.getGinaTriggerGroupNodes( ginaConfig.TriggerGroups.TriggerGroup, 'GINA:', [] ) );
                     
                     this.trimGroups( data );
                     this.dataSource.data = data;
@@ -230,7 +240,7 @@ export class GinaImportWindowComponent implements OnInit {
         } );
     }
 
-    private getGinaTriggerGroupNodes( groups: GinaTriggerGroup[], ginaName: string ): GinaTreeObject[] {
+    private getGinaTriggerGroupNodes( groups: GinaTriggerGroup[], ginaName: string, ginaFolders: string[] ): GinaTreeObject[] {
         let nodes: GinaTreeObject[] = [];
 
         groups?.forEach( group => {
@@ -238,9 +248,10 @@ export class GinaImportWindowComponent implements OnInit {
 
             groupNode.name = group.Name;
             groupNode.ginaName = `${ginaName}/${group.Name}`;
+            groupNode.folders = ginaFolders.concat( [ group.Name ] );
 
             if ( group.TriggerGroups?.TriggerGroup?.length > 0 ) {
-                groupNode.children = this.getGinaTriggerGroupNodes( group.TriggerGroups.TriggerGroup, groupNode.ginaName );
+                groupNode.children = this.getGinaTriggerGroupNodes( group.TriggerGroups.TriggerGroup, groupNode.ginaName, groupNode.folders );
             }
 
             group.Triggers?.Trigger?.forEach( trigger => {
@@ -251,6 +262,7 @@ export class GinaImportWindowComponent implements OnInit {
                     phoneticTransform: null,
                     ginaName: `${groupNode.ginaName}/${trigger.Name}`,
                     imported: this.ignoredGinaObjects.indexOf( `${groupNode.ginaName}/${trigger.Name}` ) > -1 || this.importedTriggerNames.indexOf( `${groupNode.ginaName}/${trigger.Name}` ) > -1,
+                    folders: groupNode.folders,
                 } );
             } );
             
@@ -263,9 +275,10 @@ export class GinaImportWindowComponent implements OnInit {
         return nodes;
     }
 
-    public selectForImport( item: GinaTrigger | GinaPhoneticTransform, ginaName: string ): void {
+    public selectForImport( item: GinaTrigger | GinaPhoneticTransform, ginaName: string, ginaFolders: string[] ): void {
 
         this.selectedGinaName = ginaName;
+        this.selectedGinaFolders = ginaFolders;
         this.nTrigger = null;
 
         if ( 'ActualWord' in item ) {
@@ -289,6 +302,7 @@ export class GinaImportWindowComponent implements OnInit {
             this.ipcService.savePhoneticTransforms( transforms );
             this.selectedPhoneticTransform = null;
             this.selectedGinaName = null;
+            this.selectedGinaFolders = null;
         } );
     }
 
@@ -408,6 +422,7 @@ export class GinaImportWindowComponent implements OnInit {
                 this.selectedGinaName = null;
                 this.selectedTrigger = null;
                 this.nTrigger = null;
+                this.selectedGinaFolders = null;
             }
             this.ignoredGinaObjects.push( group.ginaName );
         }
@@ -430,6 +445,7 @@ export class GinaImportWindowComponent implements OnInit {
                             this.selectedGinaName = null;
                             this.selectedTrigger = null;
                             this.nTrigger = null;
+                            this.selectedGinaFolders = null;
                         }
                         this.ignoredGinaObjects.push( node.ginaName );
                         this.ipcService.saveIgnoredGinaObjects( this.ignoredGinaObjects );
@@ -513,7 +529,7 @@ export class GinaImportWindowComponent implements OnInit {
      * Starts the actual import process, gathering and verifying data.
      */
     public importTrigger(): void {
-
+        
         if ( this.showZoneNameDialog ) {
             
             this.dialogService
@@ -533,10 +549,7 @@ export class GinaImportWindowComponent implements OnInit {
                         }
                     } );
 
-            return;
-        }
-
-        if ( this.showMissingOverlays ) {
+        } else if ( this.showMissingOverlays ) {
             this.dialogService
                 .showConfirmDialog(
                     [ `Not all triggers have an overlay.`, `Would you like to auto-select appropriate overlays?` ],
@@ -598,7 +611,6 @@ export class GinaImportWindowComponent implements OnInit {
                         }
                     } );
         } else if ( !this.skipDuplicateTriggerCheck ) {
-            // console.log( 'do the import' );
             let phrases = [];
             let speakText = [];
             let displayText = [];
@@ -649,9 +661,106 @@ export class GinaImportWindowComponent implements OnInit {
                         this.importTrigger();
                     }
                 } );
+        } else if ( this.nTrigger.folderId == null ) {
+            let autoFolder = this.getTriggerFolder();
+            if ( autoFolder == null ) {
+                this.dialogService.showConfirmDialog(
+                    [ `An existing trigger folder could not be found.`, `Would you like to auto-generate the folder structure?` ],
+                    `Click "Yes" to auto-generate the missing folders.`,
+                    `Click "No" to select an existing folder.`,
+                    ( confirmed ) => {
+                        if ( confirmed ) {
+                            this.createTriggerFolder( folder => {
+                                this.nTrigger.folderId = folder.folderId;
+                                this.importTrigger();
+                            } );
+                        } else {
+                            this.selectExistingFolder();
+                        }
+                    } );
+            } else {
+                this.nTrigger.folderId = autoFolder.folderId;
+                this.importTrigger();
+            }
         } else {
-            console.log( 'do the import' );
+            console.log( 'do the import', this.nTrigger.folderId );
         }
+    }
+
+    private selectExistingFolder(): void {
+        this.dialogService
+            .showSelectTriggerFolderDialog()
+            .subscribe( folderId => {
+                this.nTrigger.folderId = folderId;
+                this.importTrigger();
+            } );
+    }
+
+    private createTriggerFolder( onSelected: ( folder: TriggerFolder ) => void ): void {
+        let ginaFolders = this.selectedGinaFolders.slice();
+        let folders = this.triggerFolders;
+
+        for ( let i = 0; i < ginaFolders?.length; i++ ){
+            let found = false;
+
+            for ( let f = 0; f < folders.length; f++ ) {
+                if ( folders[ f ].name?.trim() === ginaFolders[ i ]?.trim() ) {
+                    folders[ f ].children = folders[ f ].children?.length > 0 ? folders[ f ].children : [];
+                    folders = folders[ f ].children;
+                    found = true;
+                    break;
+                }
+            }
+
+            if ( found ) {
+                continue;
+            } else {
+                let newFolder = new TriggerFolder();
+
+                newFolder.folderId = nanoid();
+                newFolder.name = ginaFolders[ i ]?.trim();
+                newFolder.expanded = false;
+                newFolder.active = true;
+                newFolder.comments = null;
+                newFolder.children = [];
+
+                folders.push( newFolder );
+                folders = newFolder.children;
+            }
+        }
+
+        this.ipcService
+            .updateTriggerFolders( this.triggerFolders )
+            .subscribe( folders => {
+                this.triggerFolders = folders;
+                onSelected( this.getTriggerFolder() );
+            } );
+
+        return null;
+    }
+
+    private getTriggerFolder(): TriggerFolder {
+        // GINA:/Raids/Omens of War (critical)/Asylum of Anguish/Overlord Mata Muram/Mata Muram's Gaze
+        let ginaFolders = this.selectedGinaFolders.slice();
+        
+        let folder: TriggerFolder = null;
+        let folders = this.triggerFolders;
+        for ( let i = 0; i < ginaFolders?.length - 1; i++ ) {
+            for ( let x = 0; x < folders?.length; x++ ) {
+                if ( folders[ x ].name?.trim() === ginaFolders[ i ]?.trim() ) {
+                    folders = folders[ x ].children;
+                    break;
+                }
+            }
+        }
+
+        for ( let x = 0; x < folders?.length; x++ ) {
+            if ( folders[ x ].name === ginaFolders[ ginaFolders?.length - 1 ] ) {
+                folder = folders[ x ];
+            }
+        }
+
+        return folder;
     }
 
     public closeModal(): void {

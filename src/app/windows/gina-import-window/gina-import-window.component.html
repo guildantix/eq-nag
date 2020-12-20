@@ -35,7 +35,7 @@
             
                                 <!-- This is the tree node template for leaf nodes -->
                                 <!-- [ngClass]="{selected: node.folderId === selectedFolderId}" [appContextMenu]="getFolderContextMenu(node.folderId, node.name)" -->
-                                <mat-tree-node *matTreeNodeDef="let node" matTreeNodePadding matTreeNodePaddingIndent="20" (click)="selectForImport(node.item, node.ginaName)" [ngClass]="{selected: node.ginaName == selectedGinaName}" [appContextMenu]="getObjectContextMenu(node)" >
+                                <mat-tree-node *matTreeNodeDef="let node" matTreeNodePadding matTreeNodePaddingIndent="20" (click)="selectForImport(node.item, node.ginaName, node.folders)" [ngClass]="{selected: node.ginaName == selectedGinaName}" [appContextMenu]="getObjectContextMenu(node)" >
                                     <button mat-icon-button class="trigger-button">
                                         <!-- <span style="display: inline-block;width: 18px;">&nbsp;</span> -->
                                         <!-- <mat-icon>article</mat-icon> -->

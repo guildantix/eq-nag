@@ -495,6 +495,7 @@ class TriggerDatabaseStore extends Store {
 
         ipcMain.on( 'folders:update', ( event, folders ) => {
             event.sender.webContents.send( 'folders:update', this.updateFolders( folders ) );
+            sendTick();
         } );
 
         ipcMain.on( 'trigger:search', ( event, args ) => {

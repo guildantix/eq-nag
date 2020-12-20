@@ -211,6 +211,7 @@ export class DataTickModel {
     public extendedDotFocusDecayLevel: number = 1;
     public phoneticTransforms: Record<string, string> = {};
     public ignoredGinaObjects: string[] = [];
+    public folders: TriggerFolder[] = [];
     
 }
 
