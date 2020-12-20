@@ -23,11 +23,13 @@ export class TriggerActionTimerComponent implements OnInit {
     public get restartBehavior(): string {
         return this.action.restartOnDuplicate ? "1" :
                this.action.restartTimerAlways ? "2" :
+               this.action.restartTimerNever ? "3" :
                "0";
     }
     public set restartBehavior( value: string ) {
         this.action.restartOnDuplicate = value === "1";
         this.action.restartTimerAlways = value === "2";
+        this.action.restartTimerNever = value === "3";
     }
 
     @Input( 'action' ) public action: TriggerAction;

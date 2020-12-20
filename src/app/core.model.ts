@@ -229,6 +229,8 @@ export class TriggerAction {
     public variableName: string;
     public onlyStoreUsedValues: boolean = false;
     public restartOnDuplicate: boolean;
+    public restartTimerAlways: boolean = false;
+    public restartTimerNever: boolean = false;
     public onlyExecuteInDev: boolean = false;
     public overrideTimerColor: string = null;
     public timerBackgroundColor: string = null;
