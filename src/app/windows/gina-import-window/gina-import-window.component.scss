@@ -208,6 +208,11 @@ table {
         display: flex;
         flex: 1 0 auto;
     }
+    button {
+        mat-icon {
+            margin-top: -4px;
+        }
+    }
     display:flex;
     flex-direction: row;
     padding:15px;
@@ -217,6 +222,10 @@ table {
     > div {
         padding: 0 15px;
     }
+    .mat-tab-body-content {
+        background-color: unset;
+    }
+    background-color: #0000005e;
 }
 
 fieldset.trigger-property-group {
@@ -275,4 +284,14 @@ fieldset.trigger-property-group {
     }
 
     font-size: 12px;
+}
+
+.div-list-item {
+    &:nth-of-type(even) {
+        background-color: #0000005e;
+    }
+    &:nth-of-type(odd) {
+        background-color: #0000003d;
+    }
+    padding: 5px;
 }

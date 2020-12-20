@@ -28,12 +28,71 @@ const fuseOptions_tags = {
     // ignoreFieldNorm: false,
     keys: [
         { name: 'name', weight: 1.0 },
+        { name: 'actions.displayText', weight: 1.0 },
+        { name: 'actions.endingSoonText', weight: 1.0 },
+        { name: 'actions.endingSoonSpeakPhrase', weight: 1.0 },
+        { name: 'actions.endingClipboardText', weight: 1.0 },
+        { name: 'actions.endedText', weight: 1.0 },
+        { name: 'actions.endedClipboardText', weight: 1.0 },
+        { name: 'actions.endedSpeakPhrase', weight: 1.0 },
         { name: 'comments', weight: 0.9 },
         { name: 'allakhazamUrl', weight: 0.9 },
         { name: 'capturePhrases.phrase', weight: 0.9 },
         // We provide low weights on the id fields to enforce an exact match.
         { name: 'triggerId', weight: 0.01 },
         { name: 'folderId', weight: 0.01 },
+    ]
+};
+
+/** @type {Fuse.fuseOptions_tags} */
+const fuseOptions_names = {
+    includeScore: true,
+    keys: [
+        { name: 'name', weight: 1.0 },
+    ]
+};
+
+/** @type {Fuse.fuseOptions_tags} */
+const fuseOptions_comments = {
+    includeScore: true,
+    keys: [
+        { name: 'comments', weight: 1.0 },
+    ]
+};
+
+/** @type {Fuse.fuseOptions_tags} */
+const fuseOptions_phrases = {
+    includeScore: true,
+    keys: [
+        { name: 'capturePhrases.phrase', weight: 1.0 },
+    ]
+};
+
+/** @type {Fuse.fuseOptions_tags} */
+const fuseOptions_speak = {
+    includeScore: true,
+    keys: [
+        { name: 'actions.endingSoonSpeakPhrase', weight: 1.0 },
+        { name: 'actions.endedSpeakPhrase', weight: 1.0 },
+    ]
+};
+
+/** @type {Fuse.fuseOptions_tags} */
+const fuseOptions_displayText = {
+    includeScore: true,
+    keys: [
+        { name: 'actions.displayText', weight: 1.0 },
+        { name: 'actions.endingSoonText', weight: 1.0 },
+        { name: 'actions.endedText', weight: 1.0 },
+    ]
+};
+
+/** @type {Fuse.fuseOptions_tags} */
+const fuseOptions_clipboard = {
+    includeScore: true,
+    keys: [
+        { name: 'actions.endingClipboardText', weight: 1.0 },
+        { name: 'actions.endedClipboardText', weight: 1.0 },
     ]
 };
 
@@ -439,6 +498,10 @@ class TriggerDatabaseStore extends Store {
 
         ipcMain.on( 'trigger:search', ( event, args ) => {
             event.sender.webContents.send( 'trigger:search', this.searchTriggers( args.term, args.folderIds ) );
+        } );
+
+        ipcMain.on( 'trigger:search:properties', ( event, args ) => {
+            event.sender.webContents.send( 'trigger:search:properties', this.searchTriggerProperties( args.phrase, args.speakText, args.displayText, args.clipboardText, args.name, args.comment ) );
         } );
         
         // Tag methods.
@@ -1140,6 +1203,8 @@ class TriggerDatabaseStore extends Store {
      * Searches through all triggers trying to find any match.  This is a fuzzy 
      * search and the results are given in order of best match on top.
      * 
+     * @returns {TriggerModel[]} Returns a list of matched triggers.
+     * 
      * @param {string} term The search term to query.
      * @param {string[]} folderIds If provided, only returns triggers that exist in a folder in this list.
      */
@@ -1173,6 +1238,72 @@ class TriggerDatabaseStore extends Store {
                     return folderIds.indexOf( item.folderId ) > -1 && item.score <= scoreLimit;
                 }
             } );
+
+        } else {
+            return [];
+        }
+    }
+
+    /**
+     * Searches through all triggers trying to find any match.  This is a fuzzy 
+     * search and the results are given in order of best match on top.
+     * 
+     * @returns {TriggerModel[]} Returns a list of matched triggers.
+     * 
+     * @param {string | string[]} phrase The phrase text to query.
+     * @param {string | string[]} speakText The TTS text to query.
+     * @param {string | string[]} displayText The display text to query.
+     * @param {string | string[]} clipboardText The clipboard text to query.
+     * @param {string} name The clipboard text to query.
+     * @param {string} comments The clipboard text to query.
+     */
+    searchTriggerProperties( phrase, speakText, displayText, clipboardText, name, comments ) {
+
+        let fuse_name = new Fuse( this.#data.triggers, fuseOptions_names );
+        let fuse_comment = new Fuse( this.#data.triggers, fuseOptions_comments );
+        let fuse_phrase = new Fuse( this.#data.triggers, fuseOptions_phrases );
+        let fuse_speak = new Fuse( this.#data.triggers, fuseOptions_speak );
+        let fuse_displayText = new Fuse( this.#data.triggers, fuseOptions_displayText );
+        let fuse_clipboard = new Fuse( this.#data.triggers, fuseOptions_clipboard );
+        
+        /**
+         * @type {{item: TriggerModel, refIndex: number, score?: number, matches?: ReadonlyArray<any>}[]}
+         */
+        let results = [];
+
+        results = results.concat( fuse_name.search( name ) );
+        results = results.concat( fuse_comment.search( comments ) );
+
+        phrase = phrase instanceof Array ? phrase : [ phrase ];
+        phrase.forEach( p => results = results.concat( fuse_phrase.search( p ) ) );
+
+        speakText = speakText instanceof Array ? speakText : [ speakText ];
+        speakText.forEach( p => results = results.concat( fuse_speak.search( p ) ) );
+
+        displayText = displayText instanceof Array ? displayText : [ displayText ];
+        displayText.forEach( p => results = results.concat( fuse_displayText.search( p ) ) );
+
+        clipboardText = clipboardText instanceof Array ? clipboardText : [ clipboardText ];
+        clipboardText.forEach( p => results = results.concat( fuse_clipboard.search( p ) ) );
+
+        if ( results && results.length > 0 ) {
+
+            let scoreLimit = 0.85;
+            let scores = _.map( results, item => item.score );
+            let minScore = _.min( scores );
+
+            // if ( minScore < 0.35 ) {
+            //     scoreLimit = 0.35;
+            // } else if ( minScore < 0.50 ) {
+            //     scoreLimit = 0.50;
+            // }
+
+            return _.uniq( _.map( results, fuseResult => {
+                let item = fuseResult.item;
+                item.score = fuseResult.score;
+                item.refIndex = fuseResult.refIndex;
+                return item;
+            } ).filter( item => item.score <= scoreLimit ), t => t.triggerId );
 
         } else {
             return [];

@@ -14,7 +14,7 @@
                 <p>Loading ...</p>
                 <mat-progress-bar mode="indeterminate"></mat-progress-bar>
             </div>
-            <div class="tab-content" *ngIf="!loadingGinaConfig">
+            <div class="tab-content" *ngIf="!loadingGinaConfig" #scrollingElement>
 
                 <div class="ft-row">
                     <div class="ft-item" style="margin: 3px; width: 32%;">
@@ -88,7 +88,7 @@
                                     </mat-tab>
                                 </mat-tab-group>
                             </div>
-                            <div *ngIf="selectedTrigger != null">
+                            <div *ngIf="selectedTrigger != null && nTrigger == null">
                                 <mat-tab-group animationDuration="0ms" [selectedIndex]="0">
                                     <mat-tab label="GINA Trigger" style="background-color: #00000014;">
                                         <div style="padding-top:15px;">
@@ -177,16 +177,130 @@
                                             </fieldset>
                                         </div>
                                     </mat-tab>
-                                    <!-- <mat-tab label="Display Text" *ngIf="selectedTrigger.DisplayText == 'True'">
-
-                                    </mat-tab>
-                                    <mat-tab label="Clipboard" *ngIf="selectedTrigger.CopyToClipboard == 'True'">
-
-                                    </mat-tab> -->
                                 </mat-tab-group>
                                 <div class="import-actions">
                                     <span class="spacer"></span>
-                                    <button mat-button color="accent">Import <mat-icon>double_arrow</mat-icon></button>
+                                    <button mat-button color="accent" (click)="createTriggerModel()">Generate <mat-icon>double_arrow</mat-icon></button>
+                                </div>
+                            </div>
+                            <div *ngIf="nTrigger != null">
+                                <mat-tab-group animationDuration="0ms" [selectedIndex]="0" #nTriggerTabs>
+                                    <mat-tab label="Capture">
+                                        <div>
+                                            
+                                            <fieldset style="margin-top: 20px;">
+                                                <legend class="full-width">General</legend>
+                                                <mat-form-field appearance="fill">
+                                                    <mat-label>Trigger Name</mat-label>
+                                                    <input matInput name="txtTriggerName" type="text" [(ngModel)]="nTrigger.name" required />
+                                                </mat-form-field>
+                            
+                                                <mat-form-field appearance="fill">
+                                                    <mat-label>Comments</mat-label>
+                                                    <textarea matInput name="txtComments" [(ngModel)]="nTrigger.comments" rows="5"></textarea>
+                                                </mat-form-field>
+                                            </fieldset>
+                                            
+                                            <app-conditions [(conditions)]="nTrigger.conditions"></app-conditions>
+                                            
+                                            <app-capture-phrases [(capturePhrases)]="nTrigger.capturePhrases" [(captureMethod)]="nTrigger.captureMethod" [startWithNewPhrase]="false"></app-capture-phrases>
+                        
+                                        </div>
+                                    </mat-tab>
+                                    <mat-tab label="Actions">
+                                        <ng-template matTabContent>
+                                            <div>
+                    
+                                                <app-trigger-actions [(actions)]="nTrigger.actions" [isDev]="false" [predefined]="nTrigger.predefined" [capturePhrases]="nTrigger.capturePhrases"></app-trigger-actions>
+                                                
+                                            </div>
+                                        </ng-template>
+                                    </mat-tab>
+                                    <mat-tab label="Character Classes">
+                                        <ng-template matTabContent>
+                                            <div>
+                    
+                                                <app-trigger-classes [(classLevels)]="nTrigger.classLevels" style="margin-top: 20px; display: block;"></app-trigger-classes>
+                    
+                                            </div>
+                                        </ng-template>
+                                    </mat-tab>
+                                    <mat-tab label="Suggestions" *ngIf="showCapturePhraseSuggestion || showMissingOverlays || showDuplicateTriggers">
+                                        <ng-template matTabContent>
+                                            <div style="padding: 25px;" *ngIf="showDuplicateTriggers" class="fade-out-green-background">
+                                                <h3>Duplicate Triggers</h3>
+                                                <div style="margin-bottom: 25px;">There may be duplicate triggers, please review the list.  You can click on the edit button to view the details of any trigger.</div>
+                                                <div *ngFor="let trigger of duplicateTriggers" class="div-list-item">
+                                                    <button mat-button color="accent" aria-label="Edit this trigger" (click)="showEditTriggerDialog(trigger.triggerId)">Edit</button>
+                                                    <span>{{trigger.name}}</span>
+                                                </div>
+                                                <div class="small-text" style="margin-top: 25px;">If this is a duplicate trigger or you have added this trigger's action to an existing trigger, you can right-click on the name of the trigger in the navigation panel and tell the importer to <span class="color-red">Ignore this trigger</span> in the future.</div>
+                                                <div class="small-text">This list is using a best-guess method to query existing triggers.  There may be triggers found that don't have anything to do with the one you're importing.  You can click on <span class="color-green">Import</span> again to ignore any possible duplicates and perform the import.</div>
+                                            </div>
+                                            <div style="padding: 25px;" *ngIf="showCapturePhraseSuggestion">
+                                                <h3>Capture Phrases</h3>
+                                                <div>It is recommended to use full line regular expressions.</div>
+                                                <!-- <div>For example, it is better to use</div> -->
+                                                <p class="code-block">
+                                                    <span class="color-green">// Given the search text</span>
+                                                    <span class="color-light">You feel a gaze of deadly power focusing on you.</span>
+                                                    <span class="color-green">// A good expression might look like</span>
+                                                    <span class="color-blue">^You feel a gaze of deadly power focusing on you\.$</span>
+                                                </p>
+                                                <div>Instead of the following options</div>
+                                                <p class="code-block">
+                                                    <span class="color-light">gaze of deadly power</span>
+                                                    <span class="color-green">// Or even the full emote without using full-line regular expressions.</span>
+                                                    <span class="color-light">You feel a gaze of deadly power focusing on you.</span>
+                                                </p>
+                                                
+                                            </div>
+                                            <div style="padding: 25px;" *ngIf="showMissingOverlays">
+                                                <h3>Overlay windows</h3>
+                                                <div style="margin-bottom: 20px;">Overlay windows are used to display information in-game.  When a trigger calls for showing text or timers, that information is rendered in an overlay window.</div>
+                                                <div class="small-text" style="margin-bottom: 25px;"><span class="color-green">You can select missing overlays here, or view the Actions tab.</span></div>
+                                                <div *ngFor="let action of nTrigger.actions;let i = index">
+
+                                                    <mat-form-field *ngIf="action.overlayId == null && action.actionType == actionTypes.DisplayText">
+                                                        <mat-label>{{action.displayText}}</mat-label>
+                                                        <mat-select [(ngModel)]="action.overlayId" name="ddlAlertOverlay_{{i}}">
+                                                            <mat-option *ngFor="let option of alertOverlays" [value]="option.overlayId">{{option.name}}</mat-option>
+                                                        </mat-select>
+                                                    </mat-form-field>
+
+                                                    <ng-template [ngIf]="action.actionType == actionTypes.Countdown || action.actionType == actionTypes.DotTimer || action.actionType == actionTypes.Timer">
+
+                                                        <mat-form-field *ngIf="action.overlayId == null">
+                                                            <mat-label>{{action.displayText}}</mat-label>
+                                                            <mat-select [(ngModel)]="action.overlayId" name="ddlTimerOverlay_{{i}}">
+                                                                <mat-option *ngFor="let option of timerOverlays" [value]="option.overlayId">{{option.name}}</mat-option>
+                                                            </mat-select>
+                                                            <mat-hint>This is the timer overlay</mat-hint>
+                                                        </mat-form-field>
+
+                                                        <mat-form-field *ngIf="action.ifEndingSoon && action.endingSoonDisplayText && action.endingSoonTextOverlayId == null">
+                                                            <mat-label>{{action.displayText}} ending soon.</mat-label>
+                                                            <mat-select [(ngModel)]="action.endingSoonTextOverlayId" name="ddlEndingSoonOverlay_{{i}}">
+                                                                <mat-option *ngFor="let option of alertOverlays" [value]="option.overlayId">{{option.name}}</mat-option>
+                                                            </mat-select>
+                                                        </mat-form-field>
+
+                                                        <mat-form-field *ngIf="action.notifyWhenEnded && action.endedDisplayText && action.endedTextOverlayId == null">
+                                                            <mat-label>{{action.displayText}} ended.</mat-label>
+                                                            <mat-select [(ngModel)]="action.endedTextOverlayId" name="ddlEndedOverlay_{{i}}">
+                                                                <mat-option *ngFor="let option of alertOverlays" [value]="option.overlayId">{{option.name}}</mat-option>
+                                                            </mat-select>
+                                                        </mat-form-field>
+
+                                                    </ng-template>
+                                                </div>
+                                            </div>
+                                        </ng-template>
+                                    </mat-tab>
+                                </mat-tab-group>
+                                <div class="import-actions">
+                                    <span class="spacer"></span>
+                                    <button mat-button color="accent" (click)="importTrigger()">Import <mat-icon>double_arrow</mat-icon></button>
                                 </div>
                             </div>
                         </div>

@@ -8,6 +8,7 @@ import { ContextMenuModule } from '../context-menu/context-menu.module';
 
 import { GinaImportWindowComponent } from './gina-import-window/gina-import-window.component';
 import { DialogModule } from '../dialogs/dialog.module';
+import { EditorsModule } from '../editors/editors.module';
 
 
 @NgModule({
@@ -20,6 +21,7 @@ import { DialogModule } from '../dialogs/dialog.module';
         FormInputModule,
         ContextMenuModule,
         DialogModule,
+        EditorsModule,
     ],
     exports: [
         GinaImportWindowComponent,

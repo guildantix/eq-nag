@@ -58,6 +58,11 @@ class FilesDatabaseStore extends Store {
             event.sender.webContents.send( 'audio-file:save', fileId );
         } );
 
+        ipcMain.on( 'audio-file:import', ( event, filename ) => {
+            let fileId = this.storeFileByName( filename );
+            event.sender.webContents.send( 'audio-file:import', fileId );
+        } );
+
         ipcMain.on( 'audio-file:get:url', ( event, fileId ) => {
             let url = this.getAudioFileUrl( fileId );
             event.sender.webContents.send( 'audio-file:get:url', url );
@@ -104,6 +109,33 @@ class FilesDatabaseStore extends Store {
         this.storeDataFile( this.#data );
 
         return id;
+    }
+
+    storeFileByName( filename ) {
+
+        let name = path.basename( filename );
+        let existing = _.find( this.#data.files, f => f.fileName === name );
+
+        if ( existing ) {
+            return existing.fileId;
+
+        } else {
+            let id = nanoid();
+            let model = new FileModel();
+            
+            model.fileId = id;
+            model.mediaType = MediaTypes.Audio;
+            model.fileName = name;
+            model.physicalName = path.join( this.#filePath, `${id}${path.extname( name )}` );
+    
+            fs.copyFile( filename, model.physicalName, () => { } );
+    
+            this.#data.files.push( model );
+            this.storeDataFile( this.#data );
+    
+            return id;
+
+        }
     }
 
     getAudioFiles() {

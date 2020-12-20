@@ -102,3 +102,85 @@ fieldset {
 .al-center {
     text-align: center;
 }
+
+::ng-deep .mat-select-panel {
+    mat-option:nth-of-type(odd) {
+        background-color: #0000000f;
+    }
+}
+
+::ng-deep .color-light {
+    color: #ffffffde;
+}
+
+::ng-deep .color-blue {
+    color: #69ddf0;
+}
+
+::ng-deep .color-green {
+    color: #69f0ae;
+}
+
+::ng-deep .color-orange {
+    color: #f0c669;
+}
+
+::ng-deep .color-red {
+    color: #f06969;
+}
+
+::ng-deep .color-purple {
+    color: #c269f0;
+}
+
+::ng-deep .color-magenta {
+    color: #f0698e;
+}
+
+p.code-block {
+    span {
+        display: block;
+        padding: 0;
+        margin: 0;
+        line-height: 20px;
+    }
+    background-color: #0000006b;
+    padding: 15px 20px;
+    border-radius: 3px;
+    border: 2px solid #ffffff2b;
+    font-family: Consolas,sans-serif;
+    font-size: 12px;
+}
+
+div.small-text {
+    font-size: 13px;
+    padding: 5px 0;
+    color: #ffffffbf;
+}
+
+.fade-out-white-background {
+    animation: fadeOutWhtBg 1s ease-out;
+}
+
+.fade-out-green-background {
+    animation: fadeOutGrnBg 1s ease-out;
+}
+
+.fade-out-blue-background {
+    animation: fadeOutBluBg 1s ease-out;
+}
+
+@keyframes fadeOutWhtBg {
+    0% { background-color: rgba(255,255,255,.25); } 
+    100% { background-color: rgba(255,255,255,.0); }
+}
+
+@keyframes fadeOutGrnBg {
+    0% { background-color: rgba(105,240,174,.25); } 
+    100% { background-color: rgba(105,240,174,.0); }
+}
+
+@keyframes fadeOutBluBg {
+    0% { background-color: rgba(105,221,240,.25); } 
+    100% { background-color: rgba(105,221,240,.0); }
+}

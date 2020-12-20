@@ -19,6 +19,8 @@ export class CapturePhrasesComponent implements OnInit {
     @Input() public captureMethod: string;
     @Output() public captureMethodChange: EventEmitter<string> = new EventEmitter<string>();
 
+    @Input() public startWithNewPhrase: boolean = true;
+
     public capturePhraseTableColumns = [ 'moveIndex', 'number', 'phrase', 'regEx', 'delete' ];
 
     @ViewChild( 'capturePhrasesTable' ) private capturePhrasesTable: MatTable<any>;
@@ -26,7 +28,9 @@ export class CapturePhrasesComponent implements OnInit {
     constructor( private dialogService: DialogService ) { }
 
     ngOnInit() {
-        this.addNewCapturePhrase();
+        if ( this.startWithNewPhrase ) {
+            this.addNewCapturePhrase();
+        }
     }
 
     public addNewCapturePhrase(): void {

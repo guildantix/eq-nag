@@ -1,6 +1,6 @@
 import { animate, state, style, transition, trigger } from '@angular/animations';
 import { FlatTreeControl } from '@angular/cdk/tree';
-import { Component, OnInit } from '@angular/core';
+import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { MatTreeFlatDataSource, MatTreeFlattener } from '@angular/material/tree';
 import { forkJoin } from 'rxjs';
 import { DialogService } from 'src/app/dialogs/dialog.service';
@@ -8,6 +8,9 @@ import { GinaPhoneticTransform, GinaTimerTypes, GinaTrigger, GinaTriggerGroup } 
 import { IpcService } from 'src/app/ipc.service';
 import * as _ from 'lodash';
 import { ContextMenuModel } from 'src/app/context-menu/context-menu.model';
+import { GinaImporter } from '../../utilities/gina.import';
+import { ActionTypes, CapturePhrase, OverlayWindowModel, TriggerAction, TriggerModel } from 'src/app/core.model';
+import { MatTabGroup } from '@angular/material/tabs';
 
 interface GinaTreeNode {
     expandable: boolean;
@@ -70,6 +73,69 @@ export class GinaImportWindowComponent implements OnInit {
     public voiceOptions: SpeechSynthesisVoice[] = [];
     public voiceIndex: number;
     public ginaTimerTypes: typeof GinaTimerTypes = GinaTimerTypes;
+    
+    public actionTypes: typeof ActionTypes = ActionTypes;
+    public overlays: OverlayWindowModel[] = [];
+    
+    public get alertOverlays(): OverlayWindowModel[] {
+        return this.overlays.filter( f => f.overlayType === 'Alert' );
+    }
+
+    public get logOverlays(): OverlayWindowModel[] {
+        return this.overlays.filter( f => f.overlayType === 'Log' );
+    }
+
+    public get timerOverlays(): OverlayWindowModel[] {
+        return this.overlays.filter( f => f.overlayType === 'Timer' );
+    }
+
+    public nTrigger: TriggerModel;
+    public duplicateTriggers: TriggerModel[] = [];
+    public skipDuplicateTriggerCheck: boolean = false;
+    public get showCapturePhraseSuggestion(): boolean {
+        if ( this.nTrigger == null ) {
+            return false;
+        } else {
+            let bad = _.some( this.nTrigger.capturePhrases, ( cp: CapturePhrase ) => {
+                if ( cp.phrase ) {
+                    if ( !cp.useRegEx ) {
+                        return true;
+                    } else if ( !cp.phrase.startsWith( '^' ) ) {
+                        return true;
+                    } else if ( !cp.phrase.endsWith( '$' ) ) {
+                        return true;
+                    } else if ( cp.phrase.endsWith( '.$' ) && !cp.phrase.endsWith( '\\.$' ) ) {
+                        return true;
+                    }
+                } else {
+                    return true;
+                }
+
+                return false;
+            } );
+            return bad;
+        }
+    }
+    public get showMissingOverlays(): boolean {
+        if ( this.nTrigger == null ) {
+            return false;
+        } else {
+            let bad = _.some( this.nTrigger.actions, ( ac: TriggerAction ) => {
+                if ( ac.actionType === ActionTypes.DisplayText ) {
+                    return ac.overlayId == null;
+                } else if ( ac.actionType === ActionTypes.Countdown || ac.actionType === ActionTypes.DotTimer || ac.actionType === ActionTypes.Timer ) {
+                    return ( ac.overlayId == null || (ac.ifEndingSoon && ac.endingSoonDisplayText && ac.endingSoonTextOverlayId == null) || (ac.notifyWhenEnded && ac.endedDisplayText && ac.endedTextOverlayId == null) )
+                }
+            } );
+            return bad;
+        }
+    }
+    public get showDuplicateTriggers(): boolean {
+        return this.duplicateTriggers?.length > 0;
+    }
+
+    @ViewChild( 'nTriggerTabs', { static: false, read: MatTabGroup } ) public nTriggerTabs: MatTabGroup;
+    @ViewChild( 'scrollingElement' ) public scrollingElement: ElementRef<HTMLDivElement>;
 
     constructor( private ipcService: IpcService, private dialogService: DialogService ) {
         speechSynthesis.onvoiceschanged = () => {
@@ -84,7 +150,7 @@ export class GinaImportWindowComponent implements OnInit {
             // this.logFile = data.logFile;
             this.voiceIndex = data.voiceIndex;
             this.ignoredGinaObjects = data.ignoredGinaObjects?.length > 0 ? data.ignoredGinaObjects : [];
-            // this.overlays = data.overlays;
+            this.overlays = data.overlays;
             // this.enableFct = data.enableFct;
             // this.damageDealtOverlayId = data.damageDealtOverlayId;
             // this.damageTakenOverlayId = data.damageReceivedOverlayId;
@@ -103,6 +169,7 @@ export class GinaImportWindowComponent implements OnInit {
         } );
         
         this.ipcService.requestTick();
+        // this.ipcService.getOverlayWindows().subscribe( overlays => this.overlays = overlays );
     }
 
     public loadGinaConfig(): void {
@@ -196,6 +263,7 @@ export class GinaImportWindowComponent implements OnInit {
     public selectForImport( item: GinaTrigger | GinaPhoneticTransform, ginaName: string ): void {
 
         this.selectedGinaName = ginaName;
+        this.nTrigger = null;
 
         if ( 'ActualWord' in item ) {
             this.selectedPhoneticTransform = item;
@@ -336,6 +404,7 @@ export class GinaImportWindowComponent implements OnInit {
             if ( this.selectedGinaName == group.ginaName ) {
                 this.selectedGinaName = null;
                 this.selectedTrigger = null;
+                this.nTrigger = null;
             }
             this.ignoredGinaObjects.push( group.ginaName );
         }
@@ -357,11 +426,148 @@ export class GinaImportWindowComponent implements OnInit {
                         if ( this.selectedGinaName == node.ginaName ) {
                             this.selectedGinaName = null;
                             this.selectedTrigger = null;
+                            this.nTrigger = null;
                         }
                         this.ignoredGinaObjects.push( node.ginaName );
                         this.ipcService.saveIgnoredGinaObjects( this.ignoredGinaObjects );
                     }
                 } );
+    }
+
+    public createTriggerModel(): void {
+        GinaImporter.GetTrigger( this.selectedTrigger, this.ipcService ).subscribe( n => this.nTrigger = n );
+    }
+
+    public alertMissingOverlays( overlayType: string ): void {
+        this.dialogService.showErrorDialog( `Missing Overlays`, `Could not find an overlay of type [${overlayType}].` );
+    }
+
+    /**
+     * Shows the edit trigger dialog for the specified trigger.
+     * 
+     * @param triggerId The id of the desired trigger.
+     */
+    public showEditTriggerDialog( triggerId: string ): void {
+        this.ipcService.showEditTriggerDialog( triggerId );
+    }
+
+    public importTrigger(): void {
+        if ( this.showMissingOverlays ) {
+            this.dialogService
+                .showConfirmDialog(
+                    [ `Not all triggers have an overlay.`, `Would you like to auto-select appropriate overlays?` ],
+                    `Click "Yes" to auto-select an appropriate overlay for all actions.`,
+                    `Click "No" to cancel and close this dialog.`,
+                    confirmed => {
+                        if ( confirmed ) {
+                            let allSelected = true;
+
+                            this.nTrigger?.actions?.forEach( ac => {
+                                if ( ac.overlayId == null && ac.actionType === ActionTypes.DisplayText ) {
+                                    
+                                    if ( this.alertOverlays?.length > 0 ) {
+                                        ac.overlayId = this.alertOverlays[ 0 ]?.overlayId;
+                                    } else {
+                                        this.alertMissingOverlays( 'Alert Overlay' );
+                                        allSelected = false;
+                                        return;
+                                    }
+
+                                } else if ( ac.actionType === ActionTypes.Countdown || ac.actionType === ActionTypes.DotTimer || ac.actionType === ActionTypes.Timer ) {
+                                    
+                                    if ( ac.overlayId == null ) {
+                                        if ( this.timerOverlays?.length > 0 ) {
+                                            ac.overlayId = this.timerOverlays[ 0 ]?.overlayId;
+                                        } else {
+                                            this.alertMissingOverlays( 'Timer Overlay' );
+                                            allSelected = false;
+                                            return;
+                                        }
+                                    }
+
+                                    if ( ac.ifEndingSoon && ac.endingSoonDisplayText && ac.endingSoonTextOverlayId == null ) {
+                                        if ( this.alertOverlays?.length > 0 ) {
+                                            ac.endingSoonTextOverlayId = this.alertOverlays[ 0 ]?.overlayId;
+                                        } else {
+                                            this.alertMissingOverlays( 'Alert Overlay' );
+                                            allSelected = false;
+                                            return;
+                                        }
+                                    }
+
+                                    if ( ac.notifyWhenEnded && ac.endedDisplayText && ac.endedTextOverlayId == null ) {
+                                        if ( this.alertOverlays?.length > 0 ) {
+                                            ac.endedTextOverlayId = this.alertOverlays[ 0 ]?.overlayId;
+                                        } else {
+                                            this.alertMissingOverlays( 'Alert Overlay' );
+                                            allSelected = false;
+                                            return;
+                                        }
+                                    }
+                                    
+                                }
+                            } );
+
+                            if ( allSelected ) {
+                                this.importTrigger();
+                            }
+                        }
+                    } );
+        } else if ( !this.skipDuplicateTriggerCheck ) {
+            // console.log( 'do the import' );
+            let phrases = [];
+            let speakText = [];
+            let displayText = [];
+            let clipboardText = [];
+
+            this.nTrigger.capturePhrases.forEach( p => phrases.push( p.phrase ) );
+            this.nTrigger.actions.forEach( action => {
+                
+                if ( action.actionType === ActionTypes.Speak ) {
+                    speakText.push( action.displayText );
+                } else if ( action.actionType === ActionTypes.DisplayText ) {
+                    displayText.push( action.displayText );
+                } else if ( action.actionType === ActionTypes.Clipboard ) {
+                    clipboardText.push( action.displayText );
+                } else if ( action.actionType === ActionTypes.Countdown || action.actionType === ActionTypes.Timer || action.actionType === ActionTypes.DotTimer ) {
+                    displayText.push( action.displayText );
+                    if ( action.endingSoonDisplayText ) {
+                        displayText.push( action.endingSoonText );
+                    }
+                    if ( action.endedDisplayText ) {
+                        displayText.push( action.endedText );
+                    }
+                    if ( action.endingClipboard ) {
+                        clipboardText.push( action.endingClipboardText );
+                    }
+                    if ( action.endedClipboard ) {
+                        clipboardText.push( action.endedClipboardText );
+                    }
+                    if ( action.endingSoonSpeak ) {
+                        speakText.push( action.endingSoonSpeakPhrase );
+                    }
+                    if ( action.endedSpeak ) {
+                        speakText.push( action.endedSpeakPhrase );
+                    }
+                }
+
+            } );
+
+            this.ipcService
+                .searchTriggerProperties( phrases, speakText, displayText, clipboardText, this.nTrigger.name, this.nTrigger.comments )
+                .subscribe( matches => {
+                    this.skipDuplicateTriggerCheck = true;
+                    if ( matches?.length > 0 ) {
+                        this.duplicateTriggers = matches;
+                        this.scrollingElement.nativeElement.scrollTop = 0;
+                        this.nTriggerTabs.selectedIndex = 3;
+                    } else {
+                        this.importTrigger();
+                    }
+                } );
+        } else {
+            console.log( 'do the import' );
+        }
     }
 
     public closeModal(): void {

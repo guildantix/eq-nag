@@ -11,7 +11,7 @@
                     <hr />
                 </ng-template>
                 <ng-template #buttonMenuItem>
-                    <button mat-button (click)="menuItem.action()" [disabled]="menuItem.disabled()">
+                    <button mat-button (click)="menuItem.action()" [disabled]="menuItem.disabled()" [class]="menuItem.cssClass">
                         <mat-icon *ngIf="menuItem.matIcon != null; else iconSpacer" [inline]="true">{{menuItem.matIcon}}</mat-icon>
                         <ng-template #iconSpacer><span class="icon-spacer"></span></ng-template>
                         {{menuItem.label}}

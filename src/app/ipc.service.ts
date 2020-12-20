@@ -335,6 +335,22 @@ export class IpcService {
         return obs;
     }
 
+    public searchTriggerProperties( phrase: string[], speakText: string[], displayText: string[], clipboardText: string[], name: string, comment: string ): Observable<TriggerModel[]> {
+        let obs: Observable<TriggerModel[]> = new Observable<TriggerModel[]>( ( observer: Observer<TriggerModel[]> ) => {
+            
+            this.ipc.once( 'trigger:search:properties', ( e, triggers: TriggerModel[] ) => {
+                this.ngZone.run( () => {
+                    observer.next( triggers );
+                    observer.complete();
+                } );
+            } );
+            this.ipc.send( 'trigger:search:properties', { phrase: phrase, speakText: speakText, displayText: displayText, clipboardText: clipboardText, name: name, comment: comment } );
+
+        } );
+
+        return obs;
+    }
+
     public updateTrigger( model: TriggerModel ): Observable<boolean> {
         let obs: Observable<boolean> = new Observable<boolean>( ( observer: Observer<boolean> ) => {
             
@@ -730,6 +746,22 @@ export class IpcService {
                     observer.complete();
                 } );
             } );
+
+        } );
+
+        return obs;
+    }
+
+    public importAudioFile( filename: string ): Observable<string> {
+        let obs: Observable<string> = new Observable<string>( ( observer: Observer<string> ) => {
+
+            this.ipc.once( 'audio-file:import', ( e, fileId: string ) => {
+                this.ngZone.run( () => {
+                    observer.next( fileId );
+                    observer.complete();
+                } );
+            } );
+            this.ipc.send( 'audio-file:import', filename );
 
         } );
 
