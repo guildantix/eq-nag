@@ -9,8 +9,9 @@ import { IpcService } from 'src/app/ipc.service';
 import * as _ from 'lodash';
 import { ContextMenuModel } from 'src/app/context-menu/context-menu.model';
 import { GinaImporter } from '../../utilities/gina.import';
-import { ActionTypes, CapturePhrase, OverlayWindowModel, TriggerAction, TriggerModel } from 'src/app/core.model';
+import { ActionTypes, CapturePhrase, OperatorTypes, OverlayWindowModel, TriggerAction, TriggerCondition, TriggerConditionTypes, TriggerModel } from 'src/app/core.model';
 import { MatTabGroup } from '@angular/material/tabs';
+import { nanoid } from 'nanoid';
 
 interface GinaTreeNode {
     expandable: boolean;
@@ -453,33 +454,79 @@ export class GinaImportWindowComponent implements OnInit {
         this.ipcService.showEditTriggerDialog( triggerId );
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Asks the user for a zone name, and adds that to the trigger as a 
+     * condition for CurrentZone.
+     * 
+     * @param onZoneAdded Callback executed when the user enters in a zone name.
+     */
+    public requestZoneName( onZoneAdded: () => void ): void {
+        this.dialogService
+            .showAutocompleteDialog(
+                'Restrict by zone',
+                [ 'Enter the name of the zone as it appears in the log.' ],
+                this.eqZones,
+                'EverQuest Zone Name',
+                'You can enter any value you want, or choose from the list.' )
+            .subscribe( zone => {
+                if ( zone ) {
+                    this.zoneName = zone;
+                                    
+                    this.nTrigger.conditions = this.nTrigger.conditions?.length > 0 ? this.nTrigger.conditions : [];
+                    let zoneCondition = new TriggerCondition();
+                    zoneCondition.conditionId = nanoid();
+                    zoneCondition.conditionType = TriggerConditionTypes.VariableValue;
+                    zoneCondition.operatorType = OperatorTypes.Equals;
+                    zoneCondition.variableName = 'CurrentZone';
+                    zoneCondition.variableValue = zone;
+                    this.nTrigger.conditions.push( zoneCondition );
+
+                    if ( onZoneAdded ) {
+                        onZoneAdded();
+                    }
+                }
+            } );
+    }
+
+
+
+
+
+
+
+
+
+
     private showZoneNameDialog: boolean = true;
     private zoneName: string = null;
 
+    /**
+     * Starts the actual import process, gathering and verifying data.
+     */
     public importTrigger(): void {
 
         if ( this.showZoneNameDialog ) {
             
             this.dialogService
                 .showConfirmDialog(
-                    [ `Should this trigger only be enabled for a single zone?` ],
+                    [ `Should this trigger only be enabled for a single zone?`, `You can change your selection in the general tab under Conditions.` ],
                     `Click "Yes" to add a zone restriction to this trigger.`,
                     `Click "No" to continue without adding a zone restriction.`,
                     ( confirmed ) => {
                         if ( confirmed ) {
-                            this.dialogService
-                                .showAutocompleteDialog(
-                                    'Restrict by zone',
-                                    [ 'Enter the name of the zone as it appears in the log.' ],
-                                    this.eqZones,
-                                    'EverQuest Zone Name',
-                                    'You can enter any value you want, or choose from the list.' )
-                                .subscribe( zone => {
-                                    this.showZoneNameDialog = false;
-                                    this.zoneName = zone;
-                                    this.importTrigger();
-                                } );
-                            
+                            this.requestZoneName( () => {
+                                this.showZoneNameDialog = false;
+                                this.importTrigger();
+                            } );
                         } else {
                             this.showZoneNameDialog = false;
                             this.importTrigger();
