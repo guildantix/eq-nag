@@ -20,7 +20,7 @@
             </mat-form-field>
 
             <p>When triggered again, how do you want the timer to behave?</p>
-            <mat-radio-group [(ngModel)]="restartBehavior" name="rdoRestartBehavior">
+            <mat-radio-group [(ngModel)]="restartBehavior" name="rdoRestartBehavior_{{action.actionId}}">
                 <mat-radio-button value="0">Always start new timer</mat-radio-button>
                 <mat-radio-button value="1">Restart only if the name matches</mat-radio-button>
                 <mat-radio-button value="2">Restart timer regardless of the name</mat-radio-button>

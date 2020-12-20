@@ -282,6 +282,9 @@ export class GinaImportWindowComponent implements OnInit {
 
         this.selectedGinaName = ginaName;
         this.selectedGinaFolders = ginaFolders;
+        this.showZoneNameDialog = true;
+        this.skipDuplicateTriggerCheck = false;
+        this.duplicateTriggers = null;
         this.nTrigger = null;
 
         if ( 'ActualWord' in item ) {
@@ -424,6 +427,9 @@ export class GinaImportWindowComponent implements OnInit {
             if ( this.selectedGinaName == group.ginaName ) {
                 this.selectedGinaName = null;
                 this.selectedTrigger = null;
+                this.showZoneNameDialog = true;
+                this.skipDuplicateTriggerCheck = false;
+                this.duplicateTriggers = null;
                 this.nTrigger = null;
                 this.selectedGinaFolders = null;
             }
@@ -447,6 +453,9 @@ export class GinaImportWindowComponent implements OnInit {
                         if ( this.selectedGinaName == node.ginaName ) {
                             this.selectedGinaName = null;
                             this.selectedTrigger = null;
+                            this.showZoneNameDialog = true;
+                            this.skipDuplicateTriggerCheck = false;
+                            this.duplicateTriggers = null;
                             this.nTrigger = null;
                             this.selectedGinaFolders = null;
                         }
@@ -682,8 +691,9 @@ export class GinaImportWindowComponent implements OnInit {
                         }
                     } );
             } else {
-                this.nTrigger.folderId = autoFolder.folderId;
-                this.importTrigger();
+                this.selectExistingFolder();
+                // this.nTrigger.folderId = autoFolder.folderId;
+                // this.importTrigger();
             }
         } else {
 
