@@ -12,6 +12,7 @@ import { GinaImporter } from '../../utilities/gina.import';
 import { ActionTypes, CapturePhrase, OperatorTypes, OverlayWindowModel, TriggerAction, TriggerCondition, TriggerConditionTypes, TriggerFolder, TriggerModel } from 'src/app/core.model';
 import { MatTabGroup } from '@angular/material/tabs';
 import { nanoid } from 'nanoid';
+import { MatSnackBar } from '@angular/material/snack-bar';
 
 interface GinaTreeNode {
     expandable: boolean;
@@ -144,7 +145,7 @@ export class GinaImportWindowComponent implements OnInit {
     @ViewChild( 'nTriggerTabs', { static: false, read: MatTabGroup } ) public nTriggerTabs: MatTabGroup;
     @ViewChild( 'scrollingElement' ) public scrollingElement: ElementRef<HTMLDivElement>;
 
-    constructor( private ipcService: IpcService, private dialogService: DialogService ) {
+    constructor( private ipcService: IpcService, private dialogService: DialogService, private snackBar: MatSnackBar ) {
         speechSynthesis.onvoiceschanged = () => {
             this.voiceOptions = speechSynthesis.getVoices();
         };
@@ -683,7 +684,22 @@ export class GinaImportWindowComponent implements OnInit {
                 this.importTrigger();
             }
         } else {
-            console.log( 'do the import', this.nTrigger.folderId );
+
+            this.nTrigger.importIdentifier = this.selectedGinaName;
+
+            this.ipcService
+                .createNewTrigger( this.nTrigger )
+                .subscribe( triggerId => {
+                    if ( triggerId ) {
+                        this.showZoneNameDialog = true;
+                        this.skipDuplicateTriggerCheck = false;
+                        this.duplicateTriggers = null;
+                        this.nTrigger = null;
+                        this.snackBar.open( 'Trigger created.', 'Dismiss', { duration: 1500 } );
+                    } else {
+                        this.snackBar.open( 'Could not create trigger!', 'Dismiss', { duration: 5000 } );
+                    }
+                } );
         }
     }
 
