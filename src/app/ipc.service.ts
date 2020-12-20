@@ -912,6 +912,22 @@ export class IpcService {
         this.ipc.send( 'tags:delete', tagId );
     }
 
+    public getEverquestZones(): Observable<string[]> {
+        let obs: Observable<string[]> = new Observable<string[]>( ( observer: Observer<string[]> ) => {
+            
+            this.ipc.once( 'zones:get:everquest', ( e, zones: string[] ) => {
+                this.ngZone.run( () => {
+                    observer.next( zones );
+                    observer.complete();
+                } );
+            } );
+            this.ipc.send( 'zones:get:everquest', null );
+
+        } );
+
+        return obs;
+    }
+
     public sendTestModel( displayText: string ): void {
         // let comp = new OverlayComponent();
         // let comp: any = {

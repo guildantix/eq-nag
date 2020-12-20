@@ -76,6 +76,7 @@ export class GinaImportWindowComponent implements OnInit {
     
     public actionTypes: typeof ActionTypes = ActionTypes;
     public overlays: OverlayWindowModel[] = [];
+    public eqZones: string[] = [];
     
     public get alertOverlays(): OverlayWindowModel[] {
         return this.overlays.filter( f => f.overlayType === 'Alert' );
@@ -169,7 +170,8 @@ export class GinaImportWindowComponent implements OnInit {
         } );
         
         this.ipcService.requestTick();
-        // this.ipcService.getOverlayWindows().subscribe( overlays => this.overlays = overlays );
+        this.ipcService.getEverquestZones().subscribe( zones => this.eqZones = zones );
+
     }
 
     public loadGinaConfig(): void {
@@ -451,7 +453,42 @@ export class GinaImportWindowComponent implements OnInit {
         this.ipcService.showEditTriggerDialog( triggerId );
     }
 
+    private showZoneNameDialog: boolean = true;
+    private zoneName: string = null;
+
     public importTrigger(): void {
+
+        if ( this.showZoneNameDialog ) {
+            
+            this.dialogService
+                .showConfirmDialog(
+                    [ `Should this trigger only be enabled for a single zone?` ],
+                    `Click "Yes" to add a zone restriction to this trigger.`,
+                    `Click "No" to continue without adding a zone restriction.`,
+                    ( confirmed ) => {
+                        if ( confirmed ) {
+                            this.dialogService
+                                .showAutocompleteDialog(
+                                    'Restrict by zone',
+                                    [ 'Enter the name of the zone as it appears in the log.' ],
+                                    this.eqZones,
+                                    'EverQuest Zone Name',
+                                    'You can enter any value you want, or choose from the list.' )
+                                .subscribe( zone => {
+                                    this.showZoneNameDialog = false;
+                                    this.zoneName = zone;
+                                    this.importTrigger();
+                                } );
+                            
+                        } else {
+                            this.showZoneNameDialog = false;
+                            this.importTrigger();
+                        }
+                    } );
+
+            return;
+        }
+
         if ( this.showMissingOverlays ) {
             this.dialogService
                 .showConfirmDialog(
