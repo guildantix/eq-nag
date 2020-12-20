@@ -137,6 +137,11 @@ fieldset {
     color: #f0698e;
 }
 
+::ng-deep .text-depress {
+    color: #ffffff7d;
+    font-weight: 100;
+}
+
 p.code-block {
     span {
         display: block;

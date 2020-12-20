@@ -759,6 +759,112 @@ export class TriggersComponent implements OnInit {
 
 
     /**
+     * Returns the family name of the given trigger.  If the trigger's folder is the currently selected folder, returns null.
+     * 
+     * @example May return "\Raids\OoW\Anguish\OMM"
+     * 
+     * @param trigger The trigger.
+     */
+    public getTriggerFamily( trigger: TriggerModel ): string {
+        if ( this.selectedFolderId == null || trigger.folderId === this.selectedFolderId ) {
+            return '';
+        } else {
+            let folders = this.getTriggerFolder( this.selectedFolderId, this.triggerFolders ).children;
+            let folderFamilyNames = this.getFolderFamilyNames( trigger.folderId, folders, [] );
+            if ( folderFamilyNames?.length > 0 ) {
+                let name = `\\${folderFamilyNames[ 0 ]}`;
+                for ( let i = 1; i < folderFamilyNames.length; i++ ) {
+                    name += `\\${folderFamilyNames[i]}`;
+                }
+                return name;
+            } else {
+                return null;
+            }
+        }
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Finds and returns the specified folder in the given folder hierarchy.
+     * 
+     * @param folderId The id of the desired folder.
+     * @param folders The hierarchy of folders containing the desired folder.
+     */
+    private getTriggerFolder( folderId: string, folders: TriggerFolder[] ): TriggerFolder {
+
+        for ( let i = 0; i < folders?.length; i++ ) {
+
+            if ( folders[ i ].folderId === folderId ) {
+                return folders[ i ];
+
+            } else {
+                let d = this.getTriggerFolder( folderId, folders[ i ].children );
+
+                if ( d ) {
+                    return d;
+                }
+
+            }
+        }
+
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Returns an array of names, starting from root to specified child, of folder names.
+     * 
+     * @example This may return ["Omens of War","Asylum of Anguish","Overlord Mata Muram"], if you have the Omens of war selected and the target folder is OMM.
+     * 
+     * @param folderId The desired descendent folder id.
+     * @param folders The hierarchy of folders that contains the desired descendent.
+     * @param names The array of names.
+     */
+    private getFolderFamilyNames( folderId: string, folders: TriggerFolder[], names: string[] ): string[] {
+        
+        for ( let i = 0; i < folders?.length; i++ ) {
+
+            if ( folders[ i ].folderId === folderId ) {
+                return names.concat( [ folders[ i ].name ] );
+
+            } else if ( folders[ i ]?.children?.length > 0 ) {
+                
+                let d = this.getFolderFamilyNames( folderId, folders[ i ].children, names.concat( [ folders[ i ].name ] ) );
+
+                if ( d?.length > 0 ) {
+                    return d;
+                }
+
+            }
+
+        }
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
      * Returns a flat array of the specified folder id and all descendent folder ids.
      * 
      * @param folderId The id of the desired folder ancestor.
