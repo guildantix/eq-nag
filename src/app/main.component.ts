@@ -5,7 +5,9 @@ import { IpcService } from './ipc.service';
 import { DkpEntryModel, OverlayWindowModel, FocusEffectSettings } from './core.model';
 import { DialogService } from './dialogs/dialog.service';
 import { ScraperService } from './scraper.service';
-import { nanoid } from 'nanoid';
+import { customAlphabet } from 'nanoid';
+const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+const nanoid = customAlphabet( alphabet, 16 );
 import { MatTable } from '@angular/material/table';
 
 interface IPhoneticTransform {

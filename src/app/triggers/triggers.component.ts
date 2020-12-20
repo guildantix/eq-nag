@@ -8,6 +8,9 @@ import { IpcService } from '../ipc.service';
 import * as _ from 'lodash';
 import { ContextMenuModel } from '../context-menu/context-menu.model';
 import { MatTable } from '@angular/material/table';
+import { customAlphabet } from 'nanoid';
+const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+const nanoid = customAlphabet( alphabet, 16 );
 
 interface FolderTreeNode {
   expandable: boolean;
@@ -157,22 +160,37 @@ export class TriggersComponent implements OnInit {
     
     /**
      * Displays the new trigger folder dialog.
+     * 
+     * 
+     * @param parentFolderId If provided, this is the id of the parent folder.
      */
-    public addTriggerFolderDialog(): void {
+    public addTriggerFolderDialog( parentFolderId?: string ): void {
+        
+        parentFolderId = parentFolderId ? parentFolderId : this.selectedFolderId;
+
         this.dialogService
             .showNewTriggerFolderDialog()
             .subscribe( folder => {
                 if ( folder != null ) {
+                    let folderId = nanoid();
                     
                     let _folders = this.triggerFolders?.length > 0 ? this.triggerFolders : [];
-                    
+                    folder.folderId = folderId;
                     _folders.push( folder );
 
                     this.updateTriggerExpandedState( _folders );
                     this.ipcService
                         .updateTriggerFolders( _folders )
                         .subscribe( folders => {
+
                             this.updateViewTriggerData( folders );
+
+                            if ( parentFolderId ) {
+                                let node = _.find( this.treeControl.dataNodes, f => f.folderId === parentFolderId );
+                                this.treeControl.expand( node );
+                                this.moveFolder( folderId, parentFolderId );
+                            }
+
                         } );
                     
                 }
@@ -580,6 +598,9 @@ export class TriggersComponent implements OnInit {
             `Click "Yes" to delete ${name}.`, 'Click "No" to close this dialog without deleting the folder.',
             confirmed => {
                 if ( confirmed === true ) {
+                    if ( this.selectedFolderId === folderId ) {
+                        this.selectedFolderId = null;
+                    }
                     this._deleteFolder( this.triggerFolders, folderId );
                     this.updateTriggerFolders();
                 }
@@ -844,13 +865,19 @@ export class TriggersComponent implements OnInit {
             action: () => this.selectParentFolder( folderId ),
             disabled: () => false,
             hide: () => false,
-            matIcon: 'folder_open',
+            matIcon: 'sort',
+        }, {
+            label: 'New sub-folder',
+            action: () => this.addTriggerFolderDialog( folderId ),
+            disabled: () => false,
+            hide: () => false,
+            matIcon: 'add',
         }, {
             label: 'Move all triggers',
             action: () => this.moveAllTriggersInFolder( folderId ),
             disabled: () => false,
             hide: () => false,
-            matIcon: 'folder_open',
+            matIcon: 'label_important',
         }, <ContextMenuModel>{
             label: '-',
             action: () => { },
@@ -892,7 +919,7 @@ export class TriggersComponent implements OnInit {
             action: () => this.selectTriggerFolder( trigger ),
             disabled: () => false,
             hide: () => false,
-            matIcon: 'folder_open',
+            matIcon: 'sort',
         }, <ContextMenuModel>{
             label: '-',
             action: () => { },

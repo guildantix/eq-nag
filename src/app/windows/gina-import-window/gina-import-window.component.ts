@@ -11,7 +11,9 @@ import { ContextMenuModel } from 'src/app/context-menu/context-menu.model';
 import { GinaImporter } from '../../utilities/gina.import';
 import { ActionTypes, CapturePhrase, OperatorTypes, OverlayWindowModel, TriggerAction, TriggerCondition, TriggerConditionTypes, TriggerFolder, TriggerModel } from 'src/app/core.model';
 import { MatTabGroup } from '@angular/material/tabs';
-import { nanoid } from 'nanoid';
+import { customAlphabet } from 'nanoid';
+const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+const nanoid = customAlphabet( alphabet, 16 );
 import { MatSnackBar } from '@angular/material/snack-bar';
 
 interface GinaTreeNode {
