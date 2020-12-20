@@ -11,6 +11,7 @@ const ArrayUtilities = require( '../utilities/arrays' );
 const { FormControlDirective } = require( "@angular/forms" );
 const StringUtilities = require( "../utilities/string" );
 const Fuse = require( 'fuse.js' );
+const eqZones = require( './models/everquest-zones' );
 
 /** @type {Fuse.fuseOptions_tags} */
 const fuseOptions_tags = {
@@ -502,6 +503,10 @@ class TriggerDatabaseStore extends Store {
 
         ipcMain.on( 'trigger:search:properties', ( event, args ) => {
             event.sender.webContents.send( 'trigger:search:properties', this.searchTriggerProperties( args.phrase, args.speakText, args.displayText, args.clipboardText, args.name, args.comment ) );
+        } );
+        
+        ipcMain.on( 'zones:get:everquest', ( event, args ) => {
+            event.sender.webContents.send( 'zones:get:everquest', _.uniq( eqZones ) );
         } );
         
         // Tag methods.
