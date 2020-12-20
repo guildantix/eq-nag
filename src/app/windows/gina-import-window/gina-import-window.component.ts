@@ -692,8 +692,6 @@ export class GinaImportWindowComponent implements OnInit {
                     } );
             } else {
                 this.selectExistingFolder();
-                // this.nTrigger.folderId = autoFolder.folderId;
-                // this.importTrigger();
             }
         } else {
 
