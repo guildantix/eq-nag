@@ -4,7 +4,7 @@ const path = require( 'path' );
 const process = require( 'process' );
 const fs = require( 'fs' );
 const DkpEntryModel = require( '../data/models/dkp-entry' );
-const { TriggerAction, ActionTypes, TriggerConditionTypes, OperatorTypes } = require( '../data/models/trigger' );
+const { TriggerAction, ActionTypes, TriggerConditionTypes, OperatorTypes, CharacterClassLevel } = require( '../data/models/trigger' );
 const { PhraseParse, LogTrigger } = require( './log.model' );
 const { OverlayComponent } = require( '../data/models/overlay-window' );
 const CharacterModel = require( '../data/models/character' );
@@ -206,6 +206,7 @@ function LogWatcher(character, logPosition) {
         voiceIndex = data.voiceIndex;
         isDev = data.isDev;
         phoneticTransforms = data.phoneticTransforms;
+        charModel = data.characterModel ? data.characterModel : charModel;
         // isDev = false;
         generateTriggerFns();
         initCounters();
@@ -782,6 +783,11 @@ function parseLogEntries( raw, simulating ) {
                         
                         displayDotTimerComponent( res, timestamp, action, trigger );
 
+                    } else if ( action.actionType === ActionTypes.BeneficialTimer ) {
+                    /* --== Buff Timers ==-- */
+                        
+                        displayBeneficialTimerComponent( res, timestamp, action, trigger );
+
                     } else if ( action.actionType === ActionTypes.Speak ) {
                     /* --== TTS Speak ==-- */
                         let duration = null;
@@ -799,6 +805,95 @@ function parseLogEntries( raw, simulating ) {
             } );
         } );
     } );
+
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Builds and sends a dot timer overlay component.
+ * 
+ * @param {PhraseParse} res The information from the parsed phrase.
+ * @param {Date} timestamp The timestamp of the log entry.
+ * @param {TriggerAction} action The trigger's display text action.
+ * @param {LogTrigger} trigger If true the component is written to the console instead of sent to the overlay window.
+ */
+function displayBeneficialTimerComponent( res, timestamp, action, trigger ) {
+    
+    let comp = new OverlayComponent();
+
+    comp.instanceId = nanoid();
+    comp.triggerName = trigger.name;
+    comp.action = Object.assign( new TriggerAction(), action );
+    comp.action.displayText = `${trigger.name} --== ${res.result.groups.target} ==--`;
+    comp.overlayId = action.overlayId;
+    comp.matches = res.result;
+    comp.timestamp = timestamp;
+    comp.voiceIndex = voiceIndex;
+    
+    if ( comp.action.endingSoonDisplayText ) {
+        comp.action.endingSoonText = StringUtilities.parseShortCodeValuesToLiteral( action.endingSoonText, characterName, comp.action.duration, res.result?.groups, res.result ? res.result[ 0 ] : null );
+        comp.action.endingSoonText = StringUtilities.parseStoredVariablesToLiteral( comp.action.endingSoonText, storedVariables );
+        comp.action.endingSoonText = StringUtilities.parseConditionResultsToLiteral( comp.action.endingSoonText, trigger._conditionResults );
+        comp.action.endingSoonText = StringUtilities.parseCountersToLiteral( comp.action.endingSoonText, counters );
+    }
+
+    if ( comp.action.endingSoonSpeak ) {
+        comp.action.endingSoonSpeakPhrase = StringUtilities.parseShortCodeValuesToLiteral( action.endingSoonSpeakPhrase, characterName, comp.action.duration, res.result?.groups, res.result ? res.result[ 0 ] : null );
+        comp.action.endingSoonSpeakPhrase = StringUtilities.parseStoredVariablesToLiteral( comp.action.endingSoonSpeakPhrase, storedVariables );
+        comp.action.endingSoonSpeakPhrase = StringUtilities.parseConditionResultsToLiteral( comp.action.endingSoonSpeakPhrase, trigger._conditionResults );
+        comp.action.endingSoonSpeakPhrase = StringUtilities.parseCountersToLiteral( comp.action.endingSoonSpeakPhrase, counters );
+    }
+
+    if ( comp.action.endedDisplayText ) {
+        comp.action.endedText = StringUtilities.parseShortCodeValuesToLiteral( action.endedText, characterName, comp.action.duration, res.result?.groups, res.result ? res.result[ 0 ] : null );
+        comp.action.endedText = StringUtilities.parseStoredVariablesToLiteral( comp.action.endedText, storedVariables );
+        comp.action.endedText = StringUtilities.parseConditionResultsToLiteral( comp.action.endedText, trigger._conditionResults );
+        comp.action.endedText = StringUtilities.parseCountersToLiteral( comp.action.endedText, counters );
+    }
+
+    if ( comp.action.endedSpeak ) {
+        comp.action.endedSpeakPhrase = StringUtilities.parseShortCodeValuesToLiteral( action.endedSpeakPhrase, characterName, comp.action.duration, res.result?.groups, res.result ? res.result[ 0 ] : null );
+        comp.action.endedSpeakPhrase = StringUtilities.parseStoredVariablesToLiteral( comp.action.endedSpeakPhrase, storedVariables );
+        comp.action.endedSpeakPhrase = StringUtilities.parseConditionResultsToLiteral( comp.action.endedSpeakPhrase, trigger._conditionResults );
+        comp.action.endedSpeakPhrase = StringUtilities.parseCountersToLiteral( comp.action.endedSpeakPhrase, counters );
+    }
+
+    if ( charModel.hasExtendedBeneficialFocus ) {
+        comp.action.duration += calculateAdditionalTicks( comp.action.duration, trigger.classLevels, charModel.extendedBeneficialFocusPercent, charModel.extendedBeneficialFocusDecayLevel ) * 6;
+    }
+
+    // reset the trigger.
+    trigger._reset();
+
+    ipcRenderer.send( 'overlay:send:component', comp );
+
+    if ( comp.action.endEarlyPhrases?.length > 0 ) {
+        let renderedPhrases = renderPhrases( comp.action.endEarlyPhrases, trigger._conditionResults, res.result );
+
+        cancellableComponents.push( {
+            _parse: ( logEntry ) => {
+                let matched = false;
+                
+                renderedPhrases.forEach( phrase => {
+                    let _res = new RegExp( phrase, 'g' ).exec( logEntry );
+                    if ( _res?.length > 0 ) {
+                        matched = true;
+                    }
+                } );
+
+                return matched;
+            },
+            instanceId: comp.instanceId
+        } );
+    }
 
 }
 
@@ -1349,6 +1444,43 @@ function speakPhrase( phrase, interrupt, conditionResults, simulating, parseResu
 
     }
     
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Calculates the number of additional ticks from focus effects.
+ * 
+ * @param {number} duration The base duration.
+ * @param {CharacterClassLevel[]} triggerClasses The base duration.
+ * @param {number} extFocusPercent The total percent increase.
+ * @param {number} extFocusDecayLevel The level in which the focus begins to fade.
+ */
+function calculateAdditionalTicks( duration, triggerClasses, extFocusPercent, extFocusDecayLevel ) {
+    
+    let percent = extFocusPercent;
+    let charClassData = _.find( triggerClasses, ccl => ccl.class === charModel.class );
+
+    if ( charClassData != null && charClassData.level > extFocusDecayLevel ) {
+        let decayPercent = ( charClassData.level - extFocusDecayLevel ) * 5;
+        percent = percent * ( 1 - decayPercent / 100 );
+    }
+
+    let baseTicks = duration / 6;
+    let addTicks = baseTicks * percent / 100;
+    if ( addTicks < 1 )
+        addTicks = Math.round( addTicks );
+    else
+        addTicks = Math.floor( addTicks );
+    
+    return addTicks;
 }
 
 

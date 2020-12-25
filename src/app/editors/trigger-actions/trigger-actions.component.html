@@ -15,6 +15,7 @@
                 <span class="material-icons" *ngIf="action.actionType === actionTypes.DotTimer">watch_later</span>
                 <span class="material-icons" *ngIf="action.actionType === actionTypes.Counter">exposure_plus_1</span>
                 <span class="material-icons" *ngIf="action.actionType === actionTypes.Clipboard">content_copy</span>
+                <span class="material-icons" *ngIf="action.actionType === actionTypes.BeneficialTimer">watch_later</span>
             </div>
             <mat-card-title>{{action.actionType == null ? 'Unset Action' : actionTypes[action.actionType]}}</mat-card-title>
             <mat-card-subtitle>
@@ -28,6 +29,7 @@
                 <span *ngIf="action.actionType === actionTypes.ClearVariable">Empties the value in a variable.</span>
                 <span *ngIf="action.actionType === actionTypes.Counter">Track the number of times an event occurs.</span>
                 <span *ngIf="action.actionType === actionTypes.Clipboard">Put text into the clipboard.</span>
+                <span *ngIf="action.actionType === actionTypes.BeneficialTimer">Creates a countdown until the buff expires.</span>
                 <mat-label *ngIf="isDev" style="color:#00000059;">&nbsp;{{action.actionId}}</mat-label>
             </mat-card-subtitle>
         </mat-card-header>
@@ -46,6 +48,7 @@
                     <mat-option [value]="actionTypes.ClearVariable">Clear Variable</mat-option>
                     <mat-option [value]="actionTypes.Counter">Counter</mat-option>
                     <mat-option [value]="actionTypes.Clipboard">Clipboard</mat-option>
+                    <mat-option [value]="actionTypes.BeneficialTimer">Beneficial Timer</mat-option>
                 </mat-select>
             </mat-form-field>
 
@@ -115,6 +118,12 @@
             </div>
 
             <div *ngIf="action.actionType === actionTypes.Countdown">
+
+                <app-trigger-action-timer [action]="action" [overlayOptions]="timerOverlays" [alertOverlays]="alertOverlays"></app-trigger-action-timer>
+
+            </div>
+
+            <div *ngIf="action.actionType === actionTypes.BeneficialTimer">
 
                 <app-trigger-action-timer [action]="action" [overlayOptions]="timerOverlays" [alertOverlays]="alertOverlays"></app-trigger-action-timer>
 

@@ -19,6 +19,7 @@ export enum ActionTypes {
     ClearVariable = 7,
     Counter = 8,
     Clipboard = 9,
+    BeneficialTimer = 10,
     
 }
 

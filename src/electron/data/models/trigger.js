@@ -9,6 +9,7 @@ var ActionTypes = {
     '7': 'ClearVariable',
     '8': 'Counter',
     '9': 'Clipboard',
+    '10': 'BeneficialTimer',
     DisplayText: 0,
     PlayAudio: 1,
     Speak: 2,
@@ -19,6 +20,7 @@ var ActionTypes = {
     ClearVariable: 7,
     Counter: 8,
     Clipboard: 9,
+    BeneficialTimer: 10,
 }
 
 var TriggerConditionTypes = {
@@ -304,4 +306,4 @@ class FileModel {
 
 }
 
-module.exports = { Trigger, TriggerAction, ActionTypes, CapturePhrase, TriggerConditionTypes, OperatorTypes, Phrase, TriggerFolder, MediaTypes, FileModel, Tag, ImportTypes };
+module.exports = { Trigger, TriggerAction, ActionTypes, CapturePhrase, TriggerConditionTypes, OperatorTypes, Phrase, TriggerFolder, MediaTypes, FileModel, Tag, ImportTypes, CharacterClassLevel };

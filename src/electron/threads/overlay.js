@@ -311,7 +311,7 @@ function render( comp ) {
             }
             
         }
-    } else if ( comp.action.actionType === ActionTypes.DotTimer ) {
+    } else if ( comp.action.actionType === ActionTypes.DotTimer || comp.action.actionType === ActionTypes.BeneficialTimer ) {
         // comp.action.duration *= 50;
 
         if ( groupByTarget ) {
@@ -638,7 +638,7 @@ function applyTimerSettings( contentArea, comp ) {
 
         comp.timeRemaining = comp.action.duration - ( comp.action.duration * perc );
 
-        if ( comp.action.actionType === ActionTypes.Countdown ) {
+        if ( comp.action.actionType === ActionTypes.Countdown || comp.action.actionType === ActionTypes.BeneficialTimer ) {
             comp.dom.querySelector( 'div.determinate' ).style.width = `${100 - ( perc * 100 )}%`;
         } else {
             comp.dom.querySelector( 'div.determinate' ).style.width = `${perc * 100}%`;
