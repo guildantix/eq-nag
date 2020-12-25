@@ -35,9 +35,6 @@ var usedConditionValues = {};
 var enableFct = false;
 var damageDealtOverlayId = null;
 var damageReceivedOverlayId = null;
-var hasExtDotFocus = false;
-var extDotFocusPercent = 0;
-var extDotFocusDecayLevel = 0;
 var voiceOptions = [];
 var voiceIndex = -1;
 var logParseTimeoutId = null;
@@ -79,9 +76,6 @@ function LogWatcher(character, logPosition) {
     
     if ( character ) {
         characterName = character.name;
-        hasExtDotFocus = character.hasExtendedDotFocus;
-        extDotFocusPercent = character.extendedDotFocusPercent;
-        extDotFocusDecayLevel = character.extendedDotFocusDecayLevel;
         charModel = character;
     }
     saveScalarVariable( "Character", characterName );
@@ -200,9 +194,6 @@ function LogWatcher(character, logPosition) {
         enableFct = data.enableFct;
         damageDealtOverlayId = data.damageDealtOverlayId;
         damageReceivedOverlayId = data.damageReceivedOverlayId;
-        hasExtDotFocus = data.characterModel?.hasExtendedDotFocus;
-        extDotFocusPercent = data.characterModel?.extendedDotFocusPercent;
-        extDotFocusDecayLevel = data.characterModel?.extendedDotFocusDecayLevel;
         voiceIndex = data.voiceIndex;
         isDev = data.isDev;
         phoneticTransforms = data.phoneticTransforms;
@@ -973,12 +964,12 @@ function displayDotTimerComponent( res, timestamp, action, trigger ) {
         comp.action.endedSpeakPhrase = StringUtilities.parseCountersToLiteral( comp.action.endedSpeakPhrase, counters );
     }
 
-    if ( hasExtDotFocus ) {
-        let percent = extDotFocusPercent;
+    if ( charModel.hasExtendedDotFocus ) {
+        let percent = charModel.extendedDotFocusPercent;
         let charClassData = _.find( trigger.classLevels, ccl => ccl.class === charModel.class );
 
-        if ( charClassData != null && charClassData.level > extDotFocusDecayLevel ) {
-            let decayPercent = ( charClassData.level - extDotFocusDecayLevel ) * 5;
+        if ( charClassData != null && charClassData.level > charModel.extendedDotFocusDecayLevel ) {
+            let decayPercent = ( charClassData.level - charModel.extendedDotFocusDecayLevel ) * 5;
             percent = percent * ( 1 - decayPercent / 100 );
         }
 
