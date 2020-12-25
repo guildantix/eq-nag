@@ -189,3 +189,34 @@ div.small-text {
     0% { background-color: rgba(105,221,240,.25); } 
     100% { background-color: rgba(105,221,240,.0); }
 }
+
+.div-list-item {
+    &:nth-of-type(even) {
+        background-color: #0000005e;
+    }
+    &:nth-of-type(odd) {
+        background-color: #0000003d;
+    }
+    padding: 5px;
+}
+
+tr.row-list-item {
+    &:nth-of-type(even) {
+        background-color: #0000005e;
+    }
+    &:nth-of-type(odd) {
+        background-color: #0000003d;
+    }
+    padding: 5px;
+}
+
+table {
+    tr {
+        td {
+            &.right {
+                text-align: right;
+            }
+            padding: 1px 25px;
+        }
+    }
+}

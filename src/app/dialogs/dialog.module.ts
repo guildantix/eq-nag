@@ -20,6 +20,7 @@ import { InputDialogComponent } from './input-dialog/input-dialog.component';
 import { NotificationDialogComponent } from './notification-dialog/notification-dialog.component';
 import { EditorsModule } from '../editors/editors.module';
 import { AutoCompleteDialogComponent } from './autocomplete-dialog/autocomplete-dialog.component';
+import { NewTriggerRaidAbilityComponent } from './new-trigger-raid-ability/new-trigger-raid-ability.component';
 
 @NgModule( {
     imports: [
@@ -46,6 +47,7 @@ import { AutoCompleteDialogComponent } from './autocomplete-dialog/autocomplete-
         InputDialogComponent,
         NotificationDialogComponent,
         AutoCompleteDialogComponent,
+        NewTriggerRaidAbilityComponent,
     ],
     declarations: [
         TriggerDialogComponent,
@@ -61,6 +63,7 @@ import { AutoCompleteDialogComponent } from './autocomplete-dialog/autocomplete-
         InputDialogComponent,
         NotificationDialogComponent,
         AutoCompleteDialogComponent,
+        NewTriggerRaidAbilityComponent,
     ],
     providers: [
         DialogService,

@@ -52,6 +52,17 @@ var OperatorTypes = {
     GreaterThan: 8,
 }
 
+var ImportTypes = {
+    '0': 'None',
+    '1': 'DotTimer',
+    '2': 'Ability',
+    '3': 'Npc',
+    None: 0,
+    DotTimer: 1,
+    Ability: 2,
+    Npc: 3,
+}
+
 class TriggerFolder {
     /** @type {string} */
     folderId;
@@ -276,6 +287,8 @@ class Trigger {
     allakhazamUrl = null;
     /** @type {string} */
     importIdentifier = null;
+    /** @type {ImportTypes} */
+    importType = null;
 }
 
 class FileModel {
@@ -291,4 +304,4 @@ class FileModel {
 
 }
 
-module.exports = { Trigger, TriggerAction, ActionTypes, CapturePhrase, TriggerConditionTypes, OperatorTypes, Phrase, TriggerFolder, MediaTypes, FileModel, Tag };
+module.exports = { Trigger, TriggerAction, ActionTypes, CapturePhrase, TriggerConditionTypes, OperatorTypes, Phrase, TriggerFolder, MediaTypes, FileModel, Tag, ImportTypes };

@@ -16,6 +16,8 @@ import { NotificationDialogModel, NotificationTypes } from './notification-dialo
 import { NotificationDialogComponent } from './notification-dialog/notification-dialog.component';
 import { AutocompleteDialogModel } from './autocomplete-dialog/autocomplete-dialog.model';
 import { AutoCompleteDialogComponent } from './autocomplete-dialog/autocomplete-dialog.component';
+import { NewTriggerRaidAbilityComponent } from './new-trigger-raid-ability/new-trigger-raid-ability.component';
+import { NewTriggerDialogModel } from './dialog.model';
 
 @Injectable()
 export class DialogService {
@@ -116,6 +118,25 @@ export class DialogService {
     public showNewDotTimerDialog(): void {
         this.dialog.open( NewTriggerDialogComponent, {
             width: '750px'
+        } ).afterClosed();
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Opens the new dot timer trigger dialog.
+     */
+    public showNewRaidAbilityDialog( folderId?: string ): void {
+        this.dialog.open( NewTriggerRaidAbilityComponent, {
+            width: '750px',
+            data: <NewTriggerDialogModel>{ selectedFolderId: folderId, trigger: null }
         } ).afterClosed();
     }
 

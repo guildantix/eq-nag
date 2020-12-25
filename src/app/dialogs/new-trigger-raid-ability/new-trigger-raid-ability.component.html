@@ -1,0 +1,108 @@
+<h2 mat-dialog-title>Raid Ability Tracker (Allakhazam)</h2>
+
+<mat-dialog-content>
+    
+    <p *ngIf="data?.trigger?.triggerId != null">WARNING: This may overwright any custom setting you have applied to this trigger.  Are you sure you want to continue?</p>
+
+    <!-- <p>
+        
+        <mat-form-field appearance="fill" style="width: 50%;">
+            <mat-label>Overlay Window</mat-label>
+            <mat-select [(ngModel)]="overlayId" name="ddlDotTimerOverlay">
+                <mat-option *ngFor="let option of timerOverlays" [value]="option.overlayId">{{option.name}}</mat-option>
+            </mat-select>
+        </mat-form-field>
+    </p> -->
+    <p *ngIf="getUrl">
+        <mat-form-field appearance="fill" style="width: 100%;">
+            <mat-label>Allakhazam URL</mat-label>
+            <input matInput type="text" [(ngModel)]="url" />
+        </mat-form-field>
+
+        <button mat-button (click)="scrape()" class="t-confirm-yes" color="accent">Scrape Information</button>
+    </p>
+    <div *ngIf="getRecastInfo">
+        <ng-template [ngIf]="this.ability?.npcsWithAbility?.length > 1" [ngIfElse]="singleRecast">
+
+            <p>Enter the recast duration for each NPC that uses this ability.</p>
+            <table>
+                <tr *ngFor="let npc of ability.npcsWithAbility;let i = index" class="row-list-item">
+                    <td>{{npc.name}}</td>
+                    <td class="right"><app-duration [(ngModel)]="npc.recast" name="durNpcRecast_{{i}}" [inline]="true"></app-duration></td>
+                </tr>
+            </table>
+            <p>Alternatively, you can enter a recast timer for all NPCs.</p>
+            <app-duration [(ngModel)]="recastDelay" name="durRecastDelay"></app-duration>
+
+        </ng-template>
+        <ng-template #singleRecast>
+            <p>Enter the recast timer for this ability.</p>
+            <app-duration [(ngModel)]="recastDelay" name="durSingleRecastDelay"></app-duration>
+        </ng-template>
+        
+        <button mat-button (click)="nextStep()" class="t-confirm-yes" color="accent">Next</button>
+    </div>
+    <div *ngIf="getIsDeathTouch">
+        <p>Is this a death touch ability?</p>
+        <button mat-button (click)="yesIsDeathTouch()" class="t-confirm-yes" color="accent">Yes</button>
+        <button mat-button (click)="noIsDeathTouch()" class="t-confirm-yes" color="accent">No</button>
+    </div>
+    <div *ngIf="getDeathTouchInfo">
+        <p><mat-slide-toggle [(ngModel)]="deathTouchDispellable" name="togDtDispellable">Dispellable</mat-slide-toggle></p>
+        <p>How long does the player have?</p>
+        <app-duration [(ngModel)]="deathTouchDuration" name="durDeathTouchDuration"></app-duration>
+        <button mat-button (click)="nextStep()" class="t-confirm-yes" color="accent">Next</button>
+    </div>
+    <div *ngIf="getNotificationInfo">
+        <p><mat-slide-toggle [(ngModel)]="recastNotify" name="togRecastNotify">Notify when recast is imminent?</mat-slide-toggle></p>
+        
+        <ng-template [ngIf]="recastNotify">
+            <p>When do you want to be notified?</p>
+            <app-duration [(ngModel)]="recastNotifyDuration" name="durRecastNotifyDuration"></app-duration>
+            <p>How do you want to be notified?</p>
+            <p><mat-slide-toggle [(ngModel)]="recastNotifySpeak" name="togRecastNotifySpeak">Use text-to-speech</mat-slide-toggle></p>
+            <p><mat-slide-toggle [(ngModel)]="recastNotifyDisplayText" name="togRecastNotifyDisplayText">Use alert text</mat-slide-toggle></p>
+        </ng-template>
+
+        <button mat-button (click)="nextStep()" class="t-confirm-yes" color="accent">Next</button>
+    </div>
+    <div *ngIf="readyForImport">
+        <p>Select the overlays for the different action groups.</p>
+        
+        <mat-form-field appearance="fill" style="width: 100%;">
+            <mat-label>Recast timer overlay</mat-label>
+            <mat-select [(ngModel)]="recastTimerOverlayId" name="ddlRecastTimerOverlay">
+                <mat-option *ngFor="let option of timerOverlays" [value]="option.overlayId">{{option.name}}</mat-option>
+            </mat-select>
+        </mat-form-field>
+        
+        <mat-form-field appearance="fill" style="width: 100%;">
+            <mat-label>Effect timer overlay</mat-label>
+            <mat-select [(ngModel)]="effectTimerOverlayId" name="ddlEffectTimerOverlay">
+                <mat-option *ngFor="let option of timerOverlays" [value]="option.overlayId">{{option.name}}</mat-option>
+            </mat-select>
+            <mat-hint>This is the timer that display how long until the DT hits, or the duration of the silence effect.</mat-hint>
+        </mat-form-field>
+        
+        <mat-form-field appearance="fill" style="width: 100%;">
+            <mat-label>Display text overlay</mat-label>
+            <mat-select [(ngModel)]="alertOverlayId" name="ddlAlertOverlay">
+                <mat-option *ngFor="let option of alertOverlays" [value]="option.overlayId">{{option.name}}</mat-option>
+            </mat-select>
+        </mat-form-field>
+
+    </div>
+    <!-- <p>
+        <mat-checkbox [(ngModel)]="onlyExecuteForRareEqTargets" name="onlyExecuteForRareEqTargets">Only execute for rare and raid targets.</mat-checkbox>
+    </p>
+    <p>
+        <mat-checkbox [(ngModel)]="cancelTimerIfTargetDies" name="cancelTimerIfTargetDies">End timer early if your target dies.</mat-checkbox>
+    </p> -->
+</mat-dialog-content>
+
+<mat-dialog-actions>
+
+  <button mat-button mat-dialog-close class="t-confirm-no" color="warn">Cancel</button>
+        <button mat-button (click)="import()" class="t-confirm-yes" color="accent" [disabled]="!readyForImport">Import</button>
+
+</mat-dialog-actions>

@@ -60,6 +60,6 @@
         <button mat-button [disabled]="triggerForm.invalid" (click)="save()">Save</button>
         <button mat-button color="warn" (click)="closeModal()">Cancel</button>
         <button mat-button color="accent" (click)="copyJson()" *ngIf="isDev">Copy JSON</button>
-        <button mat-button color="default" (click)="reimportDotTimerFromAllakhazam()" *ngIf="model.allakhazamUrl != null && model.allakhazamUrl.indexOf('spell.html') > -1">Re-import from Allakhazam</button>
+        <button mat-button color="default" (click)="reimportFromAllakhazam()" *ngIf="showReimportFromAlla">Re-import from Allakhazam</button>
     </footer>
 </div>

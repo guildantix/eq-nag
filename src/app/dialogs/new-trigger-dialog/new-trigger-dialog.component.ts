@@ -1,6 +1,6 @@
 import { Component, OnInit, Inject } from '@angular/core';
 import { MatDialog, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
-import { ActionTypes, CapturePhrase, Phrase, OperatorTypes, OverlayWindowModel, TimerSortTypes, TriggerAction, TriggerCondition, TriggerConditionTypes, TriggerModel } from 'src/app/core.model';
+import { ActionTypes, CapturePhrase, Phrase, OperatorTypes, OverlayWindowModel, TimerSortTypes, TriggerAction, TriggerCondition, TriggerConditionTypes, TriggerModel, ImportTypes } from 'src/app/core.model';
 import { IpcService } from 'src/app/ipc.service';
 import { ScraperService } from 'src/app/scraper.service';
 import { customAlphabet } from 'nanoid';
@@ -65,6 +65,7 @@ export class NewTriggerDialogComponent implements OnInit {
             trigger.classLevels = spell.classes;
             trigger.allakhazamUrl = this.url;
             trigger.captureMethod = 'Sequential';
+            trigger.importType = ImportTypes.DotTimer;
 
             trigger.capturePhrases = [];
             trigger.capturePhrases.push( <CapturePhrase>{
@@ -150,17 +151,18 @@ export class NewTriggerDialogComponent implements OnInit {
                 } );
                 dotAction.endEarlyPhrases.push( <Phrase>{
                     phraseId: nanoid(),
-                    phrase: '^${target} dies\.',
+                    phrase: '^${target} dies\\.$',
                     useRegEx: true,
                 } );
                 dotAction.endEarlyPhrases.push( <Phrase>{
                     phraseId: nanoid(),
-                    phrase: '^You died\.',
+                    // You have been slain by a lightning warrior staticfist!
+                    phrase: '^You have been slain by (.+?)!',
                     useRegEx: true,
                 } );
                 dotAction.endEarlyPhrases.push( <Phrase>{
                     phraseId: nanoid(),
-                    phrase: '^${target} died\.',
+                    phrase: '^${target} died\\.$',
                     useRegEx: true,
                 } );
             }

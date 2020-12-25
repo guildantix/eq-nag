@@ -6,7 +6,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { IpcService } from 'src/app/ipc.service';
 import { DialogService } from '../dialog.service';
 import { ColorUtility } from 'src/app/utilities';
-import { TriggerModel, ActionTypes, TriggerAction, OverlayWindowModel, OperatorTypes } from 'src/app/core.model';
+import { TriggerModel, ActionTypes, TriggerAction, OverlayWindowModel, OperatorTypes, ImportTypes } from 'src/app/core.model';
 
 @Component( {
     selector: 'app-trigger-dialog',
@@ -28,6 +28,10 @@ export class TriggerDialogComponent implements OnInit {
     public actionTypes: typeof ActionTypes = ActionTypes;
     public operatorTypes: typeof OperatorTypes = OperatorTypes;
     public isDev: boolean = false;
+
+    public get showReimportFromAlla(): boolean {
+        return this.model.importType != ImportTypes.None && this.model.allakhazamUrl != null;
+    }
 
     constructor( private ipcService: IpcService, private route: ActivatedRoute, public dialogService: DialogService, private snackBar: MatSnackBar ) { }
 
@@ -109,8 +113,20 @@ export class TriggerDialogComponent implements OnInit {
         this.snackBar.open( 'Trigger details copied!', 'Dismiss', { duration: 5000 } );
     }
 
-    public reimportDotTimerFromAllakhazam(): void {
+    public reimportFromAllakhazam(): void {
+        if ( this.model.importType === ImportTypes.DotTimer ) {
+            this.reimportDotTimerFromAllakhazam();
+        } else if ( this.model.importType === ImportTypes.Ability ) {
+            this.reimportAbilityFromAllakhazam();
+        }
+    }
+
+    private reimportDotTimerFromAllakhazam(): void {
         this.dialogService.showReimportDotTimerDialog( this.model );
+    }
+
+    private reimportAbilityFromAllakhazam(): void {
+        this.snackBar.open( 'This feature is not enabled for Ability types.', 'Dismiss', { duration: 5000 } );
     }
 
 }

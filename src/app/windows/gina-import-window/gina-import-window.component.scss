@@ -285,13 +285,3 @@ fieldset.trigger-property-group {
 
     font-size: 12px;
 }
-
-.div-list-item {
-    &:nth-of-type(even) {
-        background-color: #0000005e;
-    }
-    &:nth-of-type(odd) {
-        background-color: #0000003d;
-    }
-    padding: 5px;
-}

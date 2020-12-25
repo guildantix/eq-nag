@@ -1,7 +1,7 @@
 const { app, BrowserWindow, ipcMain } = require( "electron" );
 const Store = require( './store' );
 const _ = require( 'lodash' );
-const { Trigger, TriggerFolder, TriggerAction, ActionTypes, Tag } = require( './models/trigger' );
+const { Trigger, TriggerFolder, TriggerAction, ActionTypes, Tag, ImportTypes } = require( './models/trigger' );
 const ForwardRef = require( '../forward-ref' );
 const customAlphabet = require( 'nanoid' ).customAlphabet;
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
@@ -397,6 +397,17 @@ class TriggerDatabaseStore extends Store {
                 } );
             } );
             this.#data.version = 46;
+            this.storeDataFile( this.#data );
+        }
+        if ( this.#data.version < 48 ) {
+            this.#data?.triggers?.forEach( trigger => {
+                if ( trigger.allakhazamUrl ) {
+                    trigger.importType = ImportTypes.DotTimer;
+                } else {
+                    trigger.importType = ImportTypes.None;
+                }
+            } );
+            this.#data.version = 48;
             this.storeDataFile( this.#data );
         }
     }

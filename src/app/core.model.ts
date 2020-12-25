@@ -58,6 +58,13 @@ export enum CharacterClasses {
     Wizard = 'WIZ',
 }
 
+export enum ImportTypes {
+    None = 0,
+    DotTimer = 1,
+    Ability = 2,
+    Npc = 3,
+}
+
 export class TriggerFolder {
     public folderId: string;
     public name: string;
@@ -94,6 +101,7 @@ export class TriggerModel {
     public onlyExecuteInDev: boolean = false;
     public allakhazamUrl: string = null;
     public importIdentifier: string = null;
+    public importType: ImportTypes;
 
 }
 
@@ -299,6 +307,36 @@ export class ScrapedSpell {
     public castOnOther: string;
     public gemIndex: number;
     public gemSrc: string;
+
+}
+
+export class ScrapedAbility {
+    
+    public name: string;
+    public duration: number;
+    public castOnOther: string;
+    public castOnYou: string;
+    public gemIndex: number;
+    public gemSrc: string;
+    public cureType: string;
+    public counters: number;
+    public resistType: string;
+    public resistMod: number;
+    public stun: boolean;
+    public manaDrain: boolean;
+    public silence: boolean;
+    public deathTouch: boolean;
+    public deathTouchDuration: number;
+    public npcsWithAbility: ScrapedNpc[] = [];
+
+}
+
+export class ScrapedNpc {
+    
+    public name: string;
+    public url: string;
+    public zones: string[];
+    public recast: number;
 
 }
 
