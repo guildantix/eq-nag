@@ -25,7 +25,7 @@
         <ng-template [ngIf]="this.ability?.npcsWithAbility?.length > 1" [ngIfElse]="singleRecast">
 
             <p>Enter the recast duration for each NPC that uses this ability.</p>
-            <table>
+            <table class="padded">
                 <tr *ngFor="let npc of ability.npcsWithAbility;let i = index" class="row-list-item">
                     <td>{{npc.name}}</td>
                     <td class="right"><app-duration [(ngModel)]="npc.recast" name="durNpcRecast_{{i}}" [inline]="true"></app-duration></td>

@@ -211,12 +211,19 @@ tr.row-list-item {
 }
 
 table {
+    &.padded {
+        tr{
+            td{
+                padding: 1px 25px;
+            }
+        }
+    }
     tr {
         td {
             &.right {
                 text-align: right;
             }
-            padding: 1px 25px;
+            
         }
     }
 }
