@@ -67,18 +67,13 @@ export class NewTriggerRaidAbilityComponent implements OnInit {
         // Overlord Mata Muram begins casting Mark of Death.
         // Needed from the user: recast per NPC, is this a death touch ability?, When does it DT?
         this.scraper.ScrapeAllakhazamAbility( this.url ).subscribe( ability => {
-            console.log( 'ability', ability );
+            
             this.ability = ability;
 
             this.nextStep();
-            // this.getRecastInfo = true;
+            
         } );
     }
-
-    // private resetSteps(): void {
-    //     this.getUrl = false;
-    //     this.getRecastInfo = false;
-    // }
 
     public nextStep(): void {
         if ( this.getUrl ) {
