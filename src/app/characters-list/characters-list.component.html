@@ -60,24 +60,46 @@
                     </mat-card-header>
 
                     <mat-card-content>
-                        <mat-checkbox [(ngModel)]="character.hasExtendedDotFocus" (change)="updateCharacter(character)" name="hasExtendedDotFocus_{{i}}"> Extended DOT Focus?</mat-checkbox>
-                        <span *ngIf="character.hasExtendedDotFocus">
-
-                            <mat-form-field style="width: 104px; margin-left: 15px;">
-                                <mat-label>%</mat-label>
-                                <input matInput  [(ngModel)]="character.extendedDotFocusPercent" name="extDotFocusPercent_{{i}}" type="number" (change)="updateCharacter(character)" />
-                                <mat-hint>Percent increase</mat-hint>
-                            </mat-form-field>
-                            
-                            <mat-form-field style="width: 192px; margin-left: 15px;">
-                                <mat-label>Level</mat-label>
-                                <input matInput [(ngModel)]="character.extendedDotFocusDecayLevel" name="extDotFocusDecayLevel_{{i}}" type="number" (change)="updateCharacter(character)" />
-                                <mat-hint>Level at which decay begins</mat-hint>
-                            </mat-form-field>
-
-                        </span>
+                        <p>
+                            <mat-slide-toggle [(ngModel)]="character.hasExtendedDotFocus" (change)="updateCharacter(character)" name="hasExtendedDotFocus_{{i}}"> Extended DOT Focus?</mat-slide-toggle>
+                            <span *ngIf="character.hasExtendedDotFocus">
+    
+                                <mat-form-field style="width: 104px; margin-left: 15px;">
+                                    <mat-label>%</mat-label>
+                                    <input matInput  [(ngModel)]="character.extendedDotFocusPercent" name="extDotFocusPercent_{{i}}" type="number" (change)="updateCharacter(character)" />
+                                    <mat-hint>Percent increase</mat-hint>
+                                </mat-form-field>
+                                
+                                <mat-form-field style="width: 192px; margin-left: 15px;">
+                                    <mat-label>Level</mat-label>
+                                    <input matInput [(ngModel)]="character.extendedDotFocusDecayLevel" name="extDotFocusDecayLevel_{{i}}" type="number" (change)="updateCharacter(character)" />
+                                    <mat-hint>Level at which decay begins</mat-hint>
+                                </mat-form-field>
+    
+                            </span>
+                        </p>
+                        
+                        <p>
+                            <mat-slide-toggle [(ngModel)]="character.hasExtendedBeneficialFocus" (change)="updateCharacter(character)" name="hasExtendedBeneficialFocus_{{i}}"> Extended Beneficial Focus?</mat-slide-toggle>
+                            <span *ngIf="character.hasExtendedBeneficialFocus">
+    
+                                <mat-form-field style="width: 104px; margin-left: 15px;">
+                                    <mat-label>%</mat-label>
+                                    <input matInput  [(ngModel)]="character.extendedBeneficialFocusPercent" name="extBeneficialFocusPercent_{{i}}" type="number" (change)="updateCharacter(character)" />
+                                    <mat-hint>Percent increase</mat-hint>
+                                </mat-form-field>
+                                
+                                <mat-form-field style="width: 192px; margin-left: 15px;">
+                                    <mat-label>Level</mat-label>
+                                    <input matInput [(ngModel)]="character.extendedBeneficialFocusDecayLevel" name="extBeneficialFocusDecayLevel_{{i}}" type="number" (change)="updateCharacter(character)" />
+                                    <mat-hint>Level at which decay begins</mat-hint>
+                                </mat-form-field>
+    
+                            </span>
+                        </p>
                     </mat-card-content>
                 </mat-card>
+                <div class="saved-label" #savedLabel>Saved!</div>
 
             </div>
         </mat-tab>

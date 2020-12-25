@@ -358,6 +358,9 @@ export class CharacterModel {
     public extendedDotFocusDecayLevel: number;
     public logFile: string;
     public server: string;
+    public hasExtendedBeneficialFocus: boolean;
+    public extendedBeneficialFocusPercent: number;
+    public extendedBeneficialFocusDecayLevel: number;
     
 }
 

@@ -17,6 +17,9 @@ export class CharactersListComponent implements OnInit {
     public activeLogFilesDictionary: any = {};
     
     @ViewChild( 'fileSelector' ) private fileSelector: ElementRef<HTMLInputElement>;
+    @ViewChild( 'savedLabel' ) private savedLabel: ElementRef<HTMLDivElement>;
+
+    private snackBarTimeoutId: number = null;
 
     constructor( private dialogService: DialogService, private ipcService: IpcService, private snackBar: MatSnackBar ) { }
 
@@ -43,7 +46,20 @@ export class CharactersListComponent implements OnInit {
     public updateCharacter( character: CharacterModel ): void {
         this.ipcService.updateCharacter( character ).subscribe( updated => {
             if ( updated ) {
-                this.snackBar.open( 'Character updated!', 'Dismiss', { duration: 2500 } );
+
+                if ( this.snackBarTimeoutId != null ) {
+                    this.savedLabel.nativeElement.style.display = 'none';
+                    window.clearTimeout( this.snackBarTimeoutId );
+                    this.snackBarTimeoutId = window.setTimeout( () => {
+                        this.savedLabel.nativeElement.style.display = 'block';
+                        this.snackBarTimeoutId = window.setTimeout( () => this.savedLabel.nativeElement.style.display = 'none', 5000 );
+                    }, 250 );
+                } else {
+                    this.savedLabel.nativeElement.style.display = 'block';
+                    this.snackBarTimeoutId = window.setTimeout( () => this.savedLabel.nativeElement.style.display = 'none', 5000 );
+                }
+
+                
             }
         } );
     }

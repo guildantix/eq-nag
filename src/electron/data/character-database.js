@@ -15,7 +15,9 @@ var onRemovedHandlers = [];
 
 class CharacterDatabaseStore extends Store {
 
-    /** The data store for this object. */
+    /** The data store for this object.
+     * @type {{characters: CharacterModel[]}}
+     * */
     #data;
 
     get count() {
@@ -29,13 +31,15 @@ class CharacterDatabaseStore extends Store {
         } );
 
         this.#data = this.parseDataFile();
-        // if ( !this.#data.version || this.#data.version < 3 ) {
-        //     this.#data?.characters?.forEach( f => {
-        //         // Set properties.
-        //     } );
-        //     this.#data.version = 3;
-        //     this.storeDataFile( this.#data );
-        // }
+        if ( !this.#data.version || this.#data.version < 3 ) {
+            this.#data?.characters?.forEach( f => {
+                f.hasExtendedBeneficialFocus = false;
+                f.extendedBeneficialFocusDecayLevel = null;
+                f.extendedBeneficialFocusPercent = null;
+            } );
+            this.#data.version = 3;
+            this.storeDataFile( this.#data );
+        }
         
     }
     

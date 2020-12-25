@@ -51,3 +51,15 @@ mat-panel-title {
         width: 95px;
     }
 }
+
+.saved-label {
+    position: fixed;
+    // display: block;
+    display: none;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background-color: #33423b;
+    color: #69f0ae;
+    padding: 1px 25px;
+}

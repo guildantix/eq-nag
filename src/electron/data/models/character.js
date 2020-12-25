@@ -24,6 +24,15 @@ class CharacterModel {
     /** @type {string} */
     server = null;
 
+    /** @type {boolean} True if the character has an extended dot focus item. */
+    hasExtendedBeneficialFocus = false;
+
+    /** @type {number} The amount of bonus from the extended dot focus effect. */
+    extendedBeneficialFocusPercent = null;
+
+    /** @type {number} The level at which the extended dot focus effect will begin to decay. */
+    extendedBeneficialFocusDecayLevel = null;
+
 }
 
 module.exports = CharacterModel;
