@@ -270,9 +270,10 @@ export class NewTriggerRaidAbilityComponent implements OnInit {
         let hitTimer: TriggerAction;
         if ( this.deathTouch || this.ability.silence || this.ability.duration > 0 ) {
             
-            let msg = this.deathTouch ? `Death Touch` :
-                this.ability.silence ? `Silence`
-                : `${this.ability.name}`;
+            let msg = this.deathTouch ? `Death Touch (${this.ability.name})` :
+                this.ability.manaDrain ? `Mana Drain (${this.ability.name})` :
+                this.ability.silence ? `Silence (${this.ability.name})` :
+                `${this.ability.name}`;
 
             if ( ( this.deathTouch && this.deathTouchDispellable ) || ( !this.deathTouch && this.ability.cureType ) ) {
                 msg += `, Cure ${this.ability.cureType}`;
@@ -292,6 +293,29 @@ export class NewTriggerRaidAbilityComponent implements OnInit {
                 restartTimerAlways: true,
             };
 
+        }
+
+        if ( this.deathTouch ) {
+            trigger.actions.push( <TriggerAction>{
+                phrases: [ hitPhraseId ],
+                actionType: ActionTypes.Speak,
+                displayText: `Death Touch! cure ${this.ability.cureType}`,
+                interruptSpeech: true,
+            } );
+        } else if ( this.ability.manaDrain ) {
+            trigger.actions.push( <TriggerAction>{
+                phrases: [ hitPhraseId ],
+                actionType: ActionTypes.Speak,
+                displayText: `Mana Drain! cure ${this.ability.cureType}`,
+                interruptSpeech: true,
+            } );
+        } else if ( this.ability.silence ) {
+            trigger.actions.push( <TriggerAction>{
+                phrases: [ hitPhraseId ],
+                actionType: ActionTypes.Speak,
+                displayText: `Silenced! cure ${this.ability.cureType}`,
+                interruptSpeech: true,
+            } );
         }
 
         trigger.conditions = [];
