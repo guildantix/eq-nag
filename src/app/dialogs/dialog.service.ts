@@ -169,6 +169,25 @@ export class DialogService {
 
 
     /**
+     * Opens the new dot timer trigger dialog.
+     */
+    public showReimportRaidAbilityDialog( model: TriggerModel ): void {
+        this.dialog.open( NewTriggerRaidAbilityComponent, {
+            width: '750px',
+            data: <NewTriggerDialogModel>{ selectedFolderId: null, trigger: model }
+        } ).afterClosed();
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
      * Opens the new character dialog.
      */
     public showNewCharacterDialog( afterClosed: (characterId: string) => void ): void {

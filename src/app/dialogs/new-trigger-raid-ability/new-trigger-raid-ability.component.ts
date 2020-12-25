@@ -55,6 +55,20 @@ export class NewTriggerRaidAbilityComponent implements OnInit {
         public dialog: MatDialog ) { }
 
     ngOnInit() {
+
+        if ( this.data?.trigger?.triggerId != null ) {
+            this.url = this.data.trigger.allakhazamUrl;
+            let countdownAction: TriggerAction = _.find( this.data.trigger.actions, ( action: TriggerAction ) => action.actionType === ActionTypes.Countdown );
+            let timerAction: TriggerAction = _.find( this.data.trigger.actions, ( action: TriggerAction ) => action.actionType === ActionTypes.Timer );
+            if ( countdownAction ) {
+                this.recastTimerOverlayId = countdownAction.overlayId;
+                this.alertOverlayId = countdownAction.endingSoonTextOverlayId;
+            }
+            if ( timerAction ) {
+                this.effectTimerOverlayId = timerAction.overlayId;
+                this.alertOverlayId = timerAction.endingSoonTextOverlayId ? timerAction.endingSoonTextOverlayId : this.alertOverlayId;
+            }
+        }
         
         this.ipcService.getOverlayWindows().subscribe( overlays => this.overlays = overlays );
 
@@ -121,6 +135,7 @@ export class NewTriggerRaidAbilityComponent implements OnInit {
         } else {
             trigger = new TriggerModel();
             trigger.comments = `${this.ability.name}.`;
+            trigger.folderId = this.data?.selectedFolderId;
         }
 
         trigger.name = this.ability.name;
@@ -128,7 +143,6 @@ export class NewTriggerRaidAbilityComponent implements OnInit {
         trigger.allakhazamUrl = this.url;
         trigger.captureMethod = 'Any match';
         trigger.importType = ImportTypes.Ability;
-        trigger.folderId = this.data?.selectedFolderId;
 
         // ^You resist (?<caster>.+?)['s]* Void of Suppression!$
         // ^Warden Hanvar has been slain by (?<player>.+?)!$
@@ -182,8 +196,15 @@ export class NewTriggerRaidAbilityComponent implements OnInit {
             };
 
             act.endEarlyPhrases = [];
+            act.endEarlyPhrases.push( <Phrase>{
+                phraseId: nanoid(),
+                // You have been slain by a lightning warrior staticfist!
+                phrase: '^You have been slain by (.+?)!',
+                useRegEx: true,
+            } );
             this.ability.npcsWithAbility?.forEach( npc => {
-                act.endEarlyPhrases = act.endEarlyPhrases.concat( this.getRecastTimerEndEarlyPhrases( npc.name, act.endEarlyPhrases ) );
+                let phrases = this.getRecastTimerEndEarlyPhrases( npc.name );
+                act.endEarlyPhrases = act.endEarlyPhrases.concat( phrases );
             } );
 
             recastCountdowns.push( act );
@@ -209,12 +230,19 @@ export class NewTriggerRaidAbilityComponent implements OnInit {
                         duration: npc.recast,
                         actionId: nanoid(),
                         displayText: `${this.ability.name} Recast.`,
-                        endEarlyPhrases: this.getRecastTimerEndEarlyPhrases( npc.name, [] ),
+                        endEarlyPhrases: this.getRecastTimerEndEarlyPhrases( npc.name ),
                         useCustomColor: true,
                         overrideTimerColor: '#f57f17',
                         restartTimerAlways: true,
                     };
                     
+                    act.endEarlyPhrases.unshift( <Phrase>{
+                        phraseId: nanoid(),
+                        // You have been slain by a lightning warrior staticfist!
+                        phrase: '^You have been slain by (.+?)!',
+                        useRegEx: true,
+                    } );
+
                     recastCountdowns.push( act );
                 }
 
@@ -328,9 +356,9 @@ export class NewTriggerRaidAbilityComponent implements OnInit {
         
     }
 
-    public getRecastTimerEndEarlyPhrases(target: string, phrases?: Phrase[]): Phrase[] {
+    public getRecastTimerEndEarlyPhrases( target: string ): Phrase[] {
         
-        phrases = phrases == null ? [] : phrases;
+        let phrases: Phrase[] = [];
 
         phrases.push( <Phrase>{
             phraseId: nanoid(),
@@ -349,17 +377,11 @@ export class NewTriggerRaidAbilityComponent implements OnInit {
         } );
         phrases.push( <Phrase>{
             phraseId: nanoid(),
-            // You have been slain by a lightning warrior staticfist!
-            phrase: '^You have been slain by (.+?)!',
-            useRegEx: true,
-        } );
-        phrases.push( <Phrase>{
-            phraseId: nanoid(),
             phrase: `^${target} died\\.$`,
             useRegEx: true,
         } );
 
-        return _.uniqBy( phrases, f => f.phrase );
+        return phrases;
     }
 
 }

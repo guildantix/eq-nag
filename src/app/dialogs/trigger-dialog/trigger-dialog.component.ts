@@ -126,7 +126,7 @@ export class TriggerDialogComponent implements OnInit {
     }
 
     private reimportAbilityFromAllakhazam(): void {
-        this.snackBar.open( 'This feature is not enabled for Ability types.', 'Dismiss', { duration: 5000 } );
+        this.dialogService.showReimportRaidAbilityDialog( this.model );
     }
 
 }
