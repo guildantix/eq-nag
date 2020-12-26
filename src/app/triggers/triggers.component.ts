@@ -137,6 +137,22 @@ export class TriggersComponent implements OnInit {
 
     
     /**
+     * Displays the new dot timer wizard dialog.
+     */
+    public showNewBuffTimerDialog(): void {
+        this.dialogService.showNewBuffTimerDialog( this.selectedFolderId );
+    }
+
+
+
+
+
+
+
+
+
+    
+    /**
      * Shows the edit trigger dialog for the specified trigger.
      * 
      * @param triggerId The id of the desired trigger.
