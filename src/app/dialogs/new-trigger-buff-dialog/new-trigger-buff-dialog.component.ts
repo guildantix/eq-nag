@@ -51,6 +51,12 @@ export class NewTriggerBuffDialogComponent implements OnInit {
         this.scraper.ScrapeAllakhazamSpell( this.url ).subscribe( spell => {
             console.log( 'spell', spell );
             this.spell = spell;
+
+            this.endingSoonDuration = this.spell.duration <= 120 ? 12 :
+                this.spell.duration > 120 && this.spell.duration <= 600 ? 60 :
+                this.spell.duration > 600 && this.spell.duration < 900 ? 120 :
+                600;
+
             this.stepper.next();
         } );
     }
@@ -87,7 +93,7 @@ export class NewTriggerBuffDialogComponent implements OnInit {
 
         let castOnYouPhraseId: string = null;
         let iconTimerIds: string[] = [];
-        if ( this.spell.targetType === 'Self' && this.useTimer ) {
+        if ( this.spell.targetType === 'Self' ) {
             trigger.captureMethod = 'Any match';
 
             castOnYouPhraseId = nanoid();
@@ -111,6 +117,7 @@ export class NewTriggerBuffDialogComponent implements OnInit {
                 useCustomColor: true,
                 overrideTimerColor: '#0288d1',
                 endEarlyPhrases: [],
+                hideTimer: !this.useTimer
             };
 
             trigger.actions.push( buffTimer );
@@ -130,13 +137,28 @@ export class NewTriggerBuffDialogComponent implements OnInit {
                     phrase: '^You have been slain by (.+?)!',
                     useRegEx: true,
                 } );
-                buffTimer.endEarlyPhrases.push( <Phrase>{
-                    phraseId: nanoid(),
-                    // You have been slain by a lightning warrior staticfist!
-                    phrase: '^' + this.spell.effectFades.replace(/\.$/, '\\.$'),
-                    useRegEx: true,
-                } );
             }
+            
+            buffTimer.endEarlyPhrases.push( <Phrase>{
+                phraseId: nanoid(),
+                // You have been slain by a lightning warrior staticfist!
+                phrase: '^' + this.spell.effectFades.replace(/\.$/, '\\.$'),
+                useRegEx: true,
+            } );
+
+            if ( this.alertWhenBuffFades ) {
+                buffTimer.notifyWhenEnded = true;
+                buffTimer.endedSpeak = true;
+                buffTimer.endedSpeakPhrase = `Your ${this.spell.name} faded.`;
+            }
+
+            if ( this.alertEndingSoon ) {
+                buffTimer.ifEndingSoon = true;
+                buffTimer.endingDuration = this.endingSoonDuration;
+            }
+
+        } else {
+
         }
 
         // if ( this.alertWhenBuffFades && !this.useTimer ) {
