@@ -33,6 +33,16 @@ class CharacterModel {
     /** @type {number} The level at which the extended dot focus effect will begin to decay. */
     extendedBeneficialFocusDecayLevel = null;
 
+    /** @type {boolean} True if the character has an extended dot focus item. */
+    hasBeneficialCastingSpeedFocus = false;
+
+    /** @type {number} The amount of bonus from the extended dot focus effect. */
+    beneficialCastingSpeedFocusPercent = null;
+
+    /** @type {number} The level at which the extended dot focus effect will begin to decay. */
+    beneficialCastingSpeedFocusDecayLevel = null;
+
+
 }
 
 module.exports = CharacterModel;

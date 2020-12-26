@@ -44,9 +44,39 @@ export class CharactersListComponent implements OnInit {
     }
 
     public updateCharacter( character: CharacterModel ): void {
+
+        character.extendedDotFocusPercent = this.calculateFocusPercent( character.extendedDotFocusPercent );
+        character.extendedBeneficialFocusPercent = this.calculateFocusPercent( character.extendedBeneficialFocusPercent );
+        character.beneficialCastingSpeedFocusPercent = this.calculateFocusPercent( character.beneficialCastingSpeedFocusPercent );
+        // let dotExtFocusPct = /([0-9]*)\+([0-9]*)/gi.exec( character.extendedDotFocusPercent?.toString() );
+        // if ( dotExtFocusPct?.length > 0 ) {
+        //     character.extendedDotFocusPercent = +dotExtFocusPct[ 1 ] + +dotExtFocusPct[ 2 ];
+        // } else if ( character.extendedDotFocusPercent ) {
+        //     character.extendedDotFocusPercent = +character.extendedDotFocusPercent;
+        // } else {
+        //     character.extendedDotFocusPercent = null;
+        // }
+
+        // let benExtFocusPct = /([0-9]*)\+([0-9]*)/gi.exec( character.extendedBeneficialFocusPercent?.toString() );
+        // if ( benExtFocusPct?.length > 0 ) {
+        //     character.extendedBeneficialFocusPercent = +benExtFocusPct[ 1 ] + +benExtFocusPct[ 2 ];
+        // } else if ( character.extendedBeneficialFocusPercent ) {
+        //     character.extendedBeneficialFocusPercent = +character.extendedBeneficialFocusPercent;
+        // } else {
+        //     character.extendedBeneficialFocusPercent = null;
+        // }
+
+        // let benHasteFocusPct = /([0-9]*)\+([0-9]*)/gi.exec( character.beneficialCastingSpeedFocusPercent?.toString() );
+        // if ( benHasteFocusPct?.length > 0 ) {
+        //     character.beneficialCastingSpeedFocusPercent = +benHasteFocusPct[ 1 ] + +benHasteFocusPct[ 2 ];
+        // } else if ( character.beneficialCastingSpeedFocusPercent ) {
+        //     character.beneficialCastingSpeedFocusPercent = +character.beneficialCastingSpeedFocusPercent;
+        // } else {
+        //     character.beneficialCastingSpeedFocusPercent = null;
+        // }
+
         this.ipcService.updateCharacter( character ).subscribe( updated => {
             if ( updated ) {
-
                 if ( this.snackBarTimeoutId != null ) {
                     this.savedLabel.nativeElement.style.display = 'none';
                     window.clearTimeout( this.snackBarTimeoutId );
@@ -62,6 +92,20 @@ export class CharactersListComponent implements OnInit {
                 
             }
         } );
+    }
+
+    private calculateFocusPercent( value: string | number ): number {
+
+        let exMatch = /([0-9]*)\+([0-9]*)/gi.exec( value?.toString() );
+        let percent: number = null;
+        
+        if ( exMatch?.length > 0 ) {
+            percent = +exMatch[ 1 ] + +exMatch[ 2 ];
+        } else if ( value ) {
+            percent = +value;
+        }
+
+        return isNaN( percent ) ? null : percent;
     }
 
     public deleteCharacter(character: CharacterModel): void {

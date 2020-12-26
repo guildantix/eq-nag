@@ -367,6 +367,9 @@ export class CharacterModel {
     public hasExtendedBeneficialFocus: boolean;
     public extendedBeneficialFocusPercent: number;
     public extendedBeneficialFocusDecayLevel: number;
+    public hasBeneficialCastingSpeedFocus: boolean;
+    public beneficialCastingSpeedFocusPercent: number;
+    public beneficialCastingSpeedFocusDecayLevel: number;
     
 }
 
