@@ -212,6 +212,7 @@ export class ScraperService {
                     // class: document.evaluate( "//div[contains(@class, 'db-infobox')]/table/tbody/tr/td/strong[contains(., '" + currentCharacterClass + "')]", document, null, XPathResult.ANY_TYPE, null ).iterateNext().textContent,
                     // level: +document.evaluate( "//div[contains(@class, 'db-infobox')]/table/tbody/tr/td/strong[contains(., '" + currentCharacterClass + "')]", document, null, XPathResult.ANY_TYPE, null ).iterateNext().parentNode.nextSibling.textContent,
                     castOnOther: document.evaluate( "//blockquote[contains(., 'Cast on other')]", document, null, XPathResult.ANY_TYPE, null ).iterateNext().textContent.split( 'Cast on other: ' )[ 1 ].split( 'Effect Fades: ' )[ 0 ],
+                    castOnYou: document.evaluate( "//blockquote[contains(., 'Cast on you')]", document, null, XPathResult.ANY_TYPE, null ).iterateNext().textContent.split( 'Cast on you: ' )[ 1 ].split( 'Cast on other: ' )[ 0 ],
                 };
 
                 let classes: CharacterClassLevel[] = [];
@@ -232,13 +233,17 @@ export class ScraperService {
 
                 }
     
-                if ( data._duration.indexOf( 'ticks' ) > -1 ) {
+                let durRange = /^(?<minDuration>\d*\.?\d*) mins @L\d{1,3} to (?<duration>\d*\.?\d*) mins @L\d{1,3}$/gi.exec( data._duration );
+                if ( durRange?.length > 0 ) {
+                    data.duration = parseFloat( durRange.groups.duration ) * 10 * 6;
+                } else if ( data._duration.indexOf( 'ticks' ) > -1 ) {
                     data.duration = parseFloat( /([0-9]\sticks)(?!.*([0-9]\sticks))/.exec( data._duration )[ 1 ] ) * 6;
                 } else {
                     data.duration = parseFloat( data._duration ) * 10 * 6;
                 }
-    
-                // console.log( 'found', model );
+
+                let targetTypeCheck = document.evaluate( "//td[./strong = 'Target Type:']/following-sibling::td[1]", document, null, XPathResult.ANY_TYPE, null ).iterateNext();
+                let castingTimeCheck = document.evaluate( "//td[./strong = 'Casting Time:']/following-sibling::td[1]", document, null, XPathResult.ANY_TYPE, null ).iterateNext();
     
                 document.body.removeChild( div );
                 div = null;
@@ -251,6 +256,15 @@ export class ScraperService {
                 // model.level = data.level;
                 model.classes = classes;
                 model.castOnOther = data.castOnOther;
+                model.castOnYou = data.castOnYou;
+
+                if ( targetTypeCheck ) {
+                    model.targetType = targetTypeCheck.textContent?.trim();
+                }
+
+                if ( castingTimeCheck ) {
+                    model.castTime = parseFloat( castingTimeCheck.textContent ) * 1000;
+                }
 
                 if ( data.spellGem != null ) {
                     // let rgx = /.*gem_([0-9]*).*/;

@@ -59,10 +59,12 @@ var ImportTypes = {
     '1': 'DotTimer',
     '2': 'Ability',
     '3': 'Npc',
+    '4': 'Buff',
     None: 0,
     DotTimer: 1,
     Ability: 2,
     Npc: 3,
+    Buff: 4,
 }
 
 class TriggerFolder {

@@ -64,6 +64,7 @@ export enum ImportTypes {
     DotTimer = 1,
     Ability = 2,
     Npc = 3,
+    Buff = 4,
 }
 
 export class TriggerFolder {
@@ -306,8 +307,12 @@ export class ScrapedSpell {
     public duration: number;
     public classes: CharacterClassLevel[] = [];
     public castOnOther: string;
+    public castOnYou: string;
     public gemIndex: number;
     public gemSrc: string;
+    public targetType: string;
+    /** The cast time, in milliseconds. */
+    public castTime: number;
 
 }
 
