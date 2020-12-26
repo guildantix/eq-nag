@@ -1,0 +1,88 @@
+<h2 mat-dialog-title>Import Buff Timer (Allakhazam)</h2>
+
+<mat-dialog-content>
+    
+    <p *ngIf="data?.trigger?.triggerId != null">WARNING: This may overwright any custom setting you have applied to this trigger.  Are you sure you want to continue?</p>
+
+    <mat-horizontal-stepper [linear]="true" #stepper>
+        <mat-step [stepControl]="stepOneForm" label="Scrape">
+            <form #stepOneForm="ngForm">
+                <p>
+                    <mat-form-field appearance="fill" style="width: 100%;">
+                        <mat-label>Allakhazam URL</mat-label>
+                        <input matInput type="text" [(ngModel)]="url" name="txtUrl" required />
+                    </mat-form-field>
+                </p>
+                
+                <div>
+                    <button mat-button (click)="scrape()">Next</button>
+                </div>
+            </form>
+        </mat-step>
+        <mat-step [stepControl]="stepTwoForm" label="Tracking">
+            <form #stepTwoForm="ngForm">
+
+                <p><mat-slide-toggle [(ngModel)]="useTimer" name="togUseTimer">Track the buff duration with a countdown.</mat-slide-toggle></p>
+                <p><mat-slide-toggle [(ngModel)]="alertWhenBuffFades" name="togAlertWhenBuffFades">Notify me when the buff fades.</mat-slide-toggle></p>
+                <p><mat-slide-toggle [(ngModel)]="alertWhenBuffOverwritten" name="togAlertWhenBuffOverwritten">Notify me when the buff is overwritten.</mat-slide-toggle></p>
+                
+                <div>
+                    <button mat-button matStepperPrevious>Next</button>
+                    <button mat-button matStepperNext [disabled]="!useTimer && !alertWhenBuffFades && !alertWhenBuffOverwritten">Next</button>
+                </div>
+            </form>
+        </mat-step>
+        <mat-step [stepControl]="stepThreeForm" label="Timer Settings" *ngIf="useTimer">
+            <form #stepThreeForm="ngForm">
+
+                <p>
+                    <mat-form-field appearance="fill" style="width: 100%;">
+                        <mat-label>Timer Overlay Window</mat-label>
+                        <mat-select [(ngModel)]="timerOverlayId" name="ddlTimerOverlay">
+                            <mat-option *ngFor="let option of timerOverlays" [value]="option.overlayId">{{option.name}}</mat-option>
+                        </mat-select>
+                    </mat-form-field>
+                </p>
+
+                <p><mat-checkbox [(ngModel)]="cancelTimerIfTargetDies" name="cancelTimerIfTargetDies">End timer early if your target dies.</mat-checkbox></p>
+
+                <p><mat-slide-toggle [(ngModel)]="alertEndingSoon" name="togAlertEndingSoon">Notify me when the buff is down to </mat-slide-toggle><app-duration [(ngModel)]="endingSoonDuration" name="durEndingSoon" [inline]="true" *ngIf="alertEndingSoon"></app-duration></p>
+
+            </form>
+        </mat-step>
+
+        <!-- If this is a group buff, track everyone or just your target? -->
+        <!-- If this is a self only buff, do we need more options? -->
+        <!-- If this is a single target buff, do we need more options? -->
+
+        <!-- <mat-step [stepControl]="stepFourForm" label="Notification Settings" *ngIf="alertWhenBuffFades || alertWhenBuffOverwritten">
+            <form #stepFourForm="ngForm">
+            </form>
+        </mat-step> -->
+    </mat-horizontal-stepper>
+
+    <!-- <p>
+        <mat-form-field appearance="fill" style="width: 50%;">
+            <mat-label>Overlay Window</mat-label>
+            <mat-select [(ngModel)]="overlayId" name="ddlDotTimerOverlay">
+                <mat-option *ngFor="let option of timerOverlays" [value]="option.overlayId">{{option.name}}</mat-option>
+            </mat-select>
+        </mat-form-field>
+    </p> -->
+    <!-- <p>
+        <mat-form-field appearance="fill" style="width: 100%;">
+            <mat-label>Allakhazam URL</mat-label>
+            <input matInput type="text" [(ngModel)]="url" />
+        </mat-form-field>
+    </p> -->
+    <!-- <p>
+        <mat-checkbox [(ngModel)]="cancelTimerIfTargetDies" name="cancelTimerIfTargetDies">End timer early if your target dies.</mat-checkbox>
+    </p> -->
+</mat-dialog-content>
+
+<mat-dialog-actions>
+
+  <button mat-button mat-dialog-close class="t-confirm-no" color="warn">Cancel</button>
+  <button mat-button (click)="import()" class="t-confirm-yes" color="accent" [disabled]="stepOneForm.invalid">Import</button>
+
+</mat-dialog-actions>

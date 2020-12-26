@@ -18,6 +18,7 @@ import { AutocompleteDialogModel } from './autocomplete-dialog/autocomplete-dial
 import { AutoCompleteDialogComponent } from './autocomplete-dialog/autocomplete-dialog.component';
 import { NewTriggerRaidAbilityComponent } from './new-trigger-raid-ability/new-trigger-raid-ability.component';
 import { NewTriggerDialogModel } from './dialog.model';
+import { NewTriggerBuffDialogComponent } from './new-trigger-buff-dialog/new-trigger-buff-dialog.component';
 
 @Injectable()
 export class DialogService {
@@ -135,6 +136,25 @@ export class DialogService {
      */
     public showNewRaidAbilityDialog( folderId?: string ): void {
         this.dialog.open( NewTriggerRaidAbilityComponent, {
+            width: '750px',
+            data: <NewTriggerDialogModel>{ selectedFolderId: folderId, trigger: null }
+        } ).afterClosed();
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Opens the new dot timer trigger dialog.
+     */
+    public showNewBuffTimerDialog( folderId?: string ): void {
+        this.dialog.open( NewTriggerBuffDialogComponent, {
             width: '750px',
             data: <NewTriggerDialogModel>{ selectedFolderId: folderId, trigger: null }
         } ).afterClosed();

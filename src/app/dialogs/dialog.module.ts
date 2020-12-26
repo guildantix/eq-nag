@@ -21,6 +21,7 @@ import { NotificationDialogComponent } from './notification-dialog/notification-
 import { EditorsModule } from '../editors/editors.module';
 import { AutoCompleteDialogComponent } from './autocomplete-dialog/autocomplete-dialog.component';
 import { NewTriggerRaidAbilityComponent } from './new-trigger-raid-ability/new-trigger-raid-ability.component';
+import { NewTriggerBuffDialogComponent } from './new-trigger-buff-dialog/new-trigger-buff-dialog.component';
 
 @NgModule( {
     imports: [
@@ -48,6 +49,7 @@ import { NewTriggerRaidAbilityComponent } from './new-trigger-raid-ability/new-t
         NotificationDialogComponent,
         AutoCompleteDialogComponent,
         NewTriggerRaidAbilityComponent,
+        NewTriggerBuffDialogComponent,
     ],
     declarations: [
         TriggerDialogComponent,
@@ -64,6 +66,7 @@ import { NewTriggerRaidAbilityComponent } from './new-trigger-raid-ability/new-t
         NotificationDialogComponent,
         AutoCompleteDialogComponent,
         NewTriggerRaidAbilityComponent,
+        NewTriggerBuffDialogComponent,
     ],
     providers: [
         DialogService,
