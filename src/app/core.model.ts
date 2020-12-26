@@ -313,7 +313,8 @@ export class ScrapedSpell {
     public targetType: string;
     /** The cast time, in milliseconds. */
     public castTime: number;
-
+    public effectFades: string;
+    
 }
 
 export class ScrapedAbility {

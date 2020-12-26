@@ -213,6 +213,7 @@ export class ScraperService {
                     // level: +document.evaluate( "//div[contains(@class, 'db-infobox')]/table/tbody/tr/td/strong[contains(., '" + currentCharacterClass + "')]", document, null, XPathResult.ANY_TYPE, null ).iterateNext().parentNode.nextSibling.textContent,
                     castOnOther: document.evaluate( "//blockquote[contains(., 'Cast on other')]", document, null, XPathResult.ANY_TYPE, null ).iterateNext().textContent.split( 'Cast on other: ' )[ 1 ].split( 'Effect Fades: ' )[ 0 ],
                     castOnYou: document.evaluate( "//blockquote[contains(., 'Cast on you')]", document, null, XPathResult.ANY_TYPE, null ).iterateNext().textContent.split( 'Cast on you: ' )[ 1 ].split( 'Cast on other: ' )[ 0 ],
+                    effectFades: document.evaluate( "//blockquote[contains(., 'Effect Fades')]", document, null, XPathResult.ANY_TYPE, null ).iterateNext().textContent?.split( 'Effect Fades: ' )[ 1 ],
                 };
 
                 let classes: CharacterClassLevel[] = [];
@@ -257,6 +258,7 @@ export class ScraperService {
                 model.classes = classes;
                 model.castOnOther = data.castOnOther;
                 model.castOnYou = data.castOnYou;
+                model.effectFades = data.effectFades;
 
                 if ( targetTypeCheck ) {
                     model.targetType = targetTypeCheck.textContent?.trim();
