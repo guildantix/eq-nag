@@ -19,6 +19,8 @@
                 <input matInput [(ngModel)]="action.displayText" name="txtDisplayText" />
             </mat-form-field>
 
+            <p><mat-checkbox [(ngModel)]="action.hideTimer" name="cbxHideTimer" title="Use this option if you want to keep track of a duration but don't need to see the progress.">Hide Timer?</mat-checkbox></p>
+
             <p>When triggered again, how do you want the timer to behave?</p>
             <mat-radio-group [(ngModel)]="restartBehavior" name="rdoRestartBehavior_{{action.actionId}}">
                 <mat-radio-button value="0">Always start new timer</mat-radio-button>
@@ -67,6 +69,10 @@
             </span>
 
             <br />
+
+            <div *ngIf="action.hideTimer && action.ifEndingSoon && action.endingDuration > 0" style="margin-top:10px; clear: both;">
+                <mat-checkbox [(ngModel)]="action.endingSoonShowTimer" name="cbxEndingShowTimer">Show Timer</mat-checkbox>
+            </div>
 
             <div *ngIf="action.ifEndingSoon && action.endingDuration > 0">
                 <mat-checkbox [(ngModel)]="action.endingSoonChangeColor" name="cbxEndingSoonChangeColor" *ngIf="action.endingDuration > 0">Change timer color</mat-checkbox>

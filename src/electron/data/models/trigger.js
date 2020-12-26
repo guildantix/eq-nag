@@ -162,9 +162,13 @@ class TriggerAction {
     timerIconDef = null;
     /** @type boolean */
     interruptSpeech = false;
+    /** @type boolean */
+    hideTimer = false;
 
     /** @type boolean */
     ifEndingSoon = false;
+    /** @type boolean */
+    endingSoonShowTimer = false;
     /** @type number */
     endingDuration = null;
     /** @type boolean */

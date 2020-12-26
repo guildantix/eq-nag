@@ -97,6 +97,8 @@ class OverlayComponent {
     endingSoonTextDisplayed = false;
     /** @type {number} */
     voiceIndex = -1;
+    /** @type {boolean} */
+    hidden = false;
     /** @type {() => void} */
     removeComponent;
 }

@@ -20,10 +20,23 @@ const nanoid = customAlphabet( alphabet, 16 );
 // <!-- Ranchers: 400 -->
 // <!-- Press Start 2P: 400 -->
 
+class TimerGroup {
+    /** @type {boolean} */
+    visible;
+    /** @type {string} */
+    name;
+    /** @type {HTMLDivElement} */
+    dom;
+    /** @type {OverlayComponent[]} */
+    components;
+    /** @type {() => void} */
+    updateVisibility;
+}
+
 
 /** @type {OverlayComponent[]} */
 var overlayComponents = [];
-/** @type {Object.<string, {name: string, dom: HTMLDivElement, components: OverlayComponent[]}>} */
+/** @type {Object.<string, TimerGroup>} */
 var overlayGroups = {};
 
 var mobGroups = [];
@@ -287,6 +300,8 @@ function render( comp ) {
                 }
         
             }
+            
+            group.updateVisibility();
 
         } else {
 
@@ -337,6 +352,8 @@ function render( comp ) {
                 }
         
             }
+
+            group.updateVisibility();
             
         } else {
             let displayText = '';
@@ -414,7 +431,7 @@ function createGroupedDotTimer( contentArea, group, comp ) {
         }
     };
     
-    applyTimerSettings( contentArea, comp );
+    applyTimerSettings( contentArea, comp, group );
 
     group.dom.appendChild( comp.dom );
     group.components.push( comp );
@@ -463,7 +480,7 @@ function createGroupedTimer( contentArea, group, comp ) {
         }
     };
     
-    applyTimerSettings( contentArea, comp );
+    applyTimerSettings( contentArea, comp, group );
 
     group.dom.appendChild( comp.dom );
     group.components.push( comp );
@@ -513,9 +530,33 @@ function getTimerGroup( contentArea, groupName ) {
     contentArea.appendChild( div );
 
     overlayGroups[ groupName ] = {
+        visible: true,
         name: groupName,
         dom: div,
-        components: []
+        components: [],
+        updateVisibility: () => {
+            let g = overlayGroups[ groupName ];
+
+            if ( g.components?.length > 0 ) {
+                let visible = _.some( g.components, c => !c.hidden );
+
+                if ( visible && !g.visible ) {
+                    contentArea.appendChild( g.dom );
+                    g.visible = true;
+
+                } else if ( !visible && g.visible ) {
+                    contentArea.removeChild( g.dom );
+                    g.visible = false;
+
+                }
+
+            } else {
+                contentArea.removeChild( g.dom );
+                g.visible = false;
+
+            }
+
+        }
     };
     return overlayGroups[ groupName ];
 }
@@ -612,8 +653,9 @@ function createUngroupedTimer( contentArea, comp ) {
  * 
  * @param {Node} contentArea The content area for timers.
  * @param {OverlayComponent} comp Applies the general timer settings to the given timer component.
+ * @param {TimerGroup} group The containing group, if available.
  */
-function applyTimerSettings( contentArea, comp ) {
+function applyTimerSettings( contentArea, comp, group ) {
     // Apply the styles required to make the progress bar height match the 
     // specified number in the overlay settings.
     comp.dom.querySelector( '.progress' ).style.marginBottom = contentArea.style.lineHeight;
@@ -631,6 +673,12 @@ function applyTimerSettings( contentArea, comp ) {
     // Set the starting conditions for the timer.
     comp.start = comp.timestamp;
     comp.timeRemaining = comp.action.duration;
+
+    // Update visibility
+    comp.hidden = comp.action.hideTimer;
+    if ( comp.hidden ) {
+        comp.dom.style.display = 'none';
+    }
 
     // Set the update method.
     comp.intervalId = window.setInterval( () => {
@@ -656,6 +704,14 @@ function applyTimerSettings( contentArea, comp ) {
             if ( comp.action.endingSoonChangeColor ) {
                 comp.dom.querySelector( 'div.determinate' ).style.backgroundColor = comp.action.endingSoonColor;
                 comp.dom.querySelector( 'div.progress' ).style.backgroundColor = comp.action.endingSoonBackgroundColor;
+            }
+
+            if ( comp.hidden && comp.action.endingSoonShowTimer ) {
+                comp.hidden = false;
+                comp.dom.style.display = null;
+                if ( groupByTarget && group ) {
+                    group.updateVisibility();
+                }
             }
 
             if ( !comp.endingSoonSpoken && comp.action.endingSoonSpeak ) {
@@ -687,6 +743,14 @@ function applyTimerSettings( contentArea, comp ) {
             if ( comp.action.endedChangeColor ) {
                 comp.dom.querySelector( 'div.determinate' ).style.backgroundColor = comp.action.endedColor;
                 comp.dom.querySelector( 'div.progress' ).style.backgroundColor = comp.action.endedBackgroundColor;
+            }
+
+            if ( comp.hidden && comp.action.remainAfterEnded ) {
+                comp.hidden = false;
+                comp.dom.style.display = null;
+                if ( groupByTarget && group ) {
+                    group.updateVisibility();
+                }
             }
 
             if ( !comp.endedSpoken && comp.action.endedSpeak ) {

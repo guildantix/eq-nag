@@ -249,8 +249,10 @@ export class TriggerAction {
     public timerIcon: string = null;
     public timerIconDef: string = null;
     public interruptSpeech: boolean = false;
+    public hideTimer: boolean = false;
 
     public ifEndingSoon: boolean = false;
+    public endingSoonShowTimer: boolean = false;
     public endingDuration: number = null;
     public endingSoonChangeColor: boolean = false;
     public endingSoonColor: string = null;
