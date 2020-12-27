@@ -25,6 +25,7 @@ export class NewTriggerBuffDialogComponent implements OnInit {
     public alertWhenBuffFades: boolean = false;
     public alertWhenBuffOverwritten: boolean = false;
     public alertEndingSoon: boolean = false;
+    public showTimerWhenEndingSoon: boolean = false;
     public timerOverlayId: string;
     public endingSoonDuration: number = null;
     public readyForImport: boolean = false;
@@ -99,18 +100,17 @@ export class NewTriggerBuffDialogComponent implements OnInit {
         // if ( this.spell.targetType === 'Self' ) {
         trigger.captureMethod = 'Any match';
 
-        if ( this.useSelfTimer ) {
-            castOnYouPhraseId = nanoid();
-            trigger.capturePhrases.push( <CapturePhrase>{
-                phraseId: castOnYouPhraseId,
-                useRegEx: true,
-                requirePreviousPhrase: false,
-                duration: null,
-                // /^(?<target>You) feel armored\.$/
-                phrase: this.spell.castOnYou.replace( /\.$/, '\\.$' ).replace( /you/gmi, '^(?<target>You)' ),
-            } );
-            buffTimerPhrases.push( castOnYouPhraseId );
-        }
+        castOnYouPhraseId = nanoid();
+        trigger.capturePhrases.push( <CapturePhrase>{
+            phraseId: castOnYouPhraseId,
+            useRegEx: true,
+            requirePreviousPhrase: false,
+            duration: null,
+            // /^(?<target>You) feel armored\.$/
+            phrase: this.spell.castOnYou.replace( /\.$/, '\\.$' ).replace( /you/gmi, '^(?<target>You)' ),
+        } );
+        buffTimerPhrases.push( castOnYouPhraseId );
+        
         if ( this.useTargetTimer ) {
             castOnOtherPhraseId = nanoid();
             trigger.capturePhrases.push( <CapturePhrase>{
@@ -135,7 +135,7 @@ export class NewTriggerBuffDialogComponent implements OnInit {
             useCustomColor: true,
             overrideTimerColor: '#0288d1',
             endEarlyPhrases: [],
-            hideTimer: !this.useSelfTimer,
+            hideTimer: !this.useSelfTimer && !this.useTargetTimer,
             castTime: this.spell.castTime,
         };
 
@@ -236,6 +236,7 @@ export class NewTriggerBuffDialogComponent implements OnInit {
             buffTimer.endingDuration = this.endingSoonDuration;
             buffTimer.endingSoonSpeak = true;
             buffTimer.endingSoonSpeakPhrase = `Your ${this.spell.name} is ending soon.`;
+            buffTimer.endingSoonShowTimer = this.showTimerWhenEndingSoon;
         }
 
         // } else {
