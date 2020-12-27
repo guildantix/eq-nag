@@ -46,6 +46,14 @@
                 <app-color-picker [(ngModel)]="action.overrideTimerColor" name="acpOverrideTimerColor" *ngIf="action.useCustomColor" [inline]="true"></app-color-picker>
             </div>
 
+            <div *ngIf="action.actionType === actionTypes.BeneficialTimer">
+                <mat-form-field style="width: 100%;">
+                    <mat-label>Cast time (milliseconds)</mat-label>
+                    <input matInput type="number" [(ngModel)]="action.castTime" name="txtCastTime" required />
+                    <mat-hint>Enter the base Casting Time in milliseconds. (ex: 2.5 is 2500)</mat-hint>
+                </mat-form-field>
+            </div>
+
             <div class="action-icon">
                 <mat-label>Timer Icon</mat-label>
                 <img *ngIf="action.timerIcon" [src]="action.timerIcon" (click)="openIconFileModal(action)" />

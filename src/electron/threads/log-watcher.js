@@ -48,6 +48,8 @@ var characterName = null;
 var utterances = [];
 /** @type {Record<string, string>} */
 var phoneticTransforms = {};
+/** @type {Record<number, string[]>} */
+var parsedLogEntries = {};
 
 // Common errors: 
 //  ${C} instead of {C}
@@ -720,6 +722,7 @@ function parseLogEntries( raw, simulating ) {
         }
     }
 
+    let entryMatched = false;
     triggers.forEach( trigger => {
         trigger._parse( log, res => {
             trigger.actions.forEach( action => {
@@ -777,7 +780,24 @@ function parseLogEntries( raw, simulating ) {
                     } else if ( action.actionType === ActionTypes.BeneficialTimer ) {
                     /* --== Buff Timers ==-- */
                         
-                        displayBeneficialTimerComponent( res, timestamp, action, trigger );
+                        let rgx = new RegExp( `^You begin casting ${trigger?._conditionResults?.SpellBeingCast}\.$`, 'gmi' );
+                        let time = timestamp.getTime();
+                        let _t = timestamp.getTime();
+                        // console.log( 'starting time', time );
+                        if ( action.castTime >= 3000 && charModel.hasBeneficialCastingSpeedFocus ) {
+                            let tMod = calculateCastingMilliseconds( action.castTime, trigger.classLevels, charModel.beneficialCastingSpeedFocusPercent, charModel.beneficialCastingSpeedFocusDecayLevel );
+                            // console.log( 'time mod', tMod );
+                            time -= tMod;
+                            // console.log( 'resulting time', time );
+                        } else {
+                            time -= action.castTime;
+                        }
+
+                        console.log( 'checking', _t, time, time + 1000 );
+                        let m = checkParseHistory( rgx, { time: [ time, time + 1000 ] } );
+                        if ( m?.length > 0 ) {
+                            displayBeneficialTimerComponent( res, timestamp, action, trigger );
+                        }
 
                     } else if ( action.actionType === ActionTypes.Speak ) {
                     /* --== TTS Speak ==-- */
@@ -794,8 +814,15 @@ function parseLogEntries( raw, simulating ) {
                     }
                 }
             } );
+            entryMatched = true;
         } );
     } );
+
+    if ( entryMatched ) {
+        let t = timestamp.getTime();
+        parsedLogEntries[ t ] = parsedLogEntries[ t ]?.length > 0 ? parsedLogEntries[ t ] : [];
+        parsedLogEntries[ t ].push( log );
+    }
 
 }
 
@@ -1484,6 +1511,37 @@ function calculateAdditionalTicks( duration, triggerClasses, extFocusPercent, ex
 
 
 /**
+ * Calculates the number of additional ticks from focus effects.
+ * 
+ * @param {number} duration The base duration, in milliseconds.
+ * @param {CharacterClassLevel[]} triggerClasses The base duration.
+ * @param {number} extFocusPercent The total percent increase.
+ * @param {number} extFocusDecayLevel The level in which the focus begins to fade.
+ */
+function calculateCastingMilliseconds( duration, triggerClasses, extFocusPercent, extFocusDecayLevel ) {
+    
+    let percent = extFocusPercent;
+    let charClassData = _.find( triggerClasses, ccl => ccl.class === charModel.class );
+
+    if ( charClassData != null && charClassData.level > extFocusDecayLevel ) {
+        let decayPercent = ( charClassData.level - extFocusDecayLevel ) * 5;
+        percent = percent * ( 1 - decayPercent / 100 );
+    }
+
+    let reduction = 1 - percent / 100;
+    return duration * reduction;
+}
+
+
+
+
+
+
+
+
+
+
+/**
  * Plays the specified audio file.
  * 
  * @param {string} fileId The id of the desired file.
@@ -1497,6 +1555,122 @@ function playAudioFile( fileId ) {
     } );
     ipcRenderer.send( 'audio-file:get:url', fileId );
 }
+
+
+
+
+
+
+
+
+
+
+/**
+ * Checks previously captured log entries for the given phrase.
+ * 
+ * @param {RegExp} phrase The phrase to query.
+ * @param {{time: number[]}} options Changes the behavior of the search pattern.
+ */
+function checkParseHistory( phrase, options ) {
+    
+    if ( options.time?.length > 0 ) {
+        for ( let i = 0; i < options.time.length; i++ ) {
+            let t = Math.floor( options.time[ i ] / 1000 ) * 1000;
+            let m = _findFirstMatch( parsedLogEntries[ t ] );
+
+            if ( m ) {
+                return m;
+            }
+        }
+        // options.time = Math.round( options.time / 1000 ) * 1000;
+        // console.log( 'checkParseHistory', parsedLogEntries, options.time );
+        // return _findFirstMatch( parsedLogEntries[ options.time ] );
+
+    } else {
+        for ( let key in Object.keys( parsedLogEntries ) ) {
+
+            let m = _findFirstMatch( parsedLogEntries[ +key ] );
+
+            if ( m ) {
+                return m;
+            }
+        
+        }
+    }
+
+    function _findFirstMatch( logEntries ) {
+        
+        if ( logEntries?.length > 0 ) {
+            for ( let i = 0; i < logEntries.length; i++ ) {
+                let m = phrase.exec( logEntries[ i ] );
+                if ( m?.length > 0 ) {
+                    return m;
+                }
+            }
+        }
+
+    }
+
+}
+
+// /**
+//  * Parses backwards in the log file to find a match.  If found, returns the matched results.
+//  * 
+//  * @param {string} phrase The phrase to query.
+//  * @param {{timestamp: Date}} options Changes the behavior of the search pattern.
+//  */
+// function backfind( phrase, options ) {
+//     let position = currentPosition;
+//     let chunkSize = 1000000;
+
+//     function startParsingLogFile() {
+//         fs.open( data, 'r', function ( err, fd ) {
+
+//             if ( fd ) {
+//                 var file = fd;
+//                 let danglyBits = null;
+
+//                 function parseLogFile() {
+//                     var stats = fs.fstatSync( fd );
+//                     var file = fd;
+//                     let size = position < chunkSize ? position : chunkSize;
+                        
+//                     fs.read( file, Buffer.alloc( size ), 0, stats.size - currentPosition, currentPosition, ( err, bytecount, buff ) => {
+                        
+//                         position -= chunkSize;
+//                         let read = buff.toString( 'utf-8', 0, bytecount );
+//                         let lines = read.split( /\r\n|\r|\n/gmi );
+                        
+//                         // lines.forEach( line => {
+//                         //     if ( line && line.length > 0 ) {
+//                         //         parseLogEntries( line );
+//                         //     }
+//                         // } );
+
+                        
+//                         if ( position < 0 ) {
+//                             // we're done after this bunch.
+//                             return null;
+//                         }
+                        
+//                     } );
+
+//                     // Wait logParseTimer milliseconds and poll again.
+//                     if ( !changingLogFile ) {
+//                         logParseTimeoutId = window.setTimeout( parseLogFile, logParseTimer );
+//                     }
+//                 }
+
+//                 // Start polling the log file every logParseTimer milliseconds.
+//                 logParseTimeoutId = window.setTimeout( parseLogFile, logParseTimer );
+
+//             } else {
+//                 // If the log file was not found, then start over.
+//                 logParseTimeoutId = window.setTimeout( startParsingLogFile, logParseTimer );
+//             }
+//         } );
+//     }
+// }
 
 module.exports = LogWatcher;
 

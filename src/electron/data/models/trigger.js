@@ -164,6 +164,8 @@ class TriggerAction {
     interruptSpeech = false;
     /** @type boolean */
     hideTimer = false;
+    /** @type number */
+    castTime = null;
 
     /** @type boolean */
     ifEndingSoon = false;
