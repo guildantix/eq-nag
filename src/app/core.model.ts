@@ -250,7 +250,8 @@ export class TriggerAction {
     public timerIconDef: string = null;
     public interruptSpeech: boolean = false;
     public hideTimer: boolean = false;
-
+    public castTime: number = null;
+    
     public ifEndingSoon: boolean = false;
     public endingSoonShowTimer: boolean = false;
     public endingDuration: number = null;
