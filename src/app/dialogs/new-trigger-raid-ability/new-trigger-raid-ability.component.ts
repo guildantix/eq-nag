@@ -199,7 +199,7 @@ export class NewTriggerRaidAbilityComponent implements OnInit {
             act.endEarlyPhrases.push( <Phrase>{
                 phraseId: nanoid(),
                 // You have been slain by a lightning warrior staticfist!
-                phrase: '^You have been slain by (.+?)!',
+                phrase: '^You have been slain by [^!]*!$',
                 useRegEx: true,
             } );
             this.ability.npcsWithAbility?.forEach( npc => {
@@ -386,7 +386,7 @@ export class NewTriggerRaidAbilityComponent implements OnInit {
 
         phrases.push( <Phrase>{
             phraseId: nanoid(),
-            phrase: `^${target} has been slain by (.+?)!`,
+            phrase: `^${target} has been slain by [^!]*!$`,
             useRegEx: true,
         } );
         phrases.push( <Phrase>{

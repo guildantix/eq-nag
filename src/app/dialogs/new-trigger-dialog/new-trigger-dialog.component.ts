@@ -141,12 +141,12 @@ export class NewTriggerDialogComponent implements OnInit {
                 dotAction.endEarlyPhrases = [];
                 dotAction.endEarlyPhrases.push( <Phrase>{
                     phraseId: nanoid(),
-                    phrase: '^${target} has been slain by (.+?)!',
+                    phrase: '^${target} has been slain by [^!]*!$',
                     useRegEx: true,
                 } );
                 dotAction.endEarlyPhrases.push( <Phrase>{
                     phraseId: nanoid(),
-                    phrase: '^You have slain ${target}\.',
+                    phrase: '^You have slain ${target}!$',
                     useRegEx: true,
                 } );
                 dotAction.endEarlyPhrases.push( <Phrase>{
@@ -157,7 +157,7 @@ export class NewTriggerDialogComponent implements OnInit {
                 dotAction.endEarlyPhrases.push( <Phrase>{
                     phraseId: nanoid(),
                     // You have been slain by a lightning warrior staticfist!
-                    phrase: '^You have been slain by (.+?)!',
+                    phrase: '^You have been slain by [^!]*!$',
                     useRegEx: true,
                 } );
                 dotAction.endEarlyPhrases.push( <Phrase>{
