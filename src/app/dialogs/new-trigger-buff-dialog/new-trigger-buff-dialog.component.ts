@@ -20,7 +20,8 @@ export class NewTriggerBuffDialogComponent implements OnInit {
     public url: string;
     public overlays: OverlayWindowModel[] = [];
     public cancelTimerIfTargetDies: boolean = false;
-    public useTimer: boolean = false;
+    public useSelfTimer: boolean = false;
+    public useTargetTimer: boolean = false;
     public alertWhenBuffFades: boolean = false;
     public alertWhenBuffOverwritten: boolean = false;
     public alertEndingSoon: boolean = false;
@@ -34,7 +35,7 @@ export class NewTriggerBuffDialogComponent implements OnInit {
     
     @ViewChild( 'stepper', { static: false, read: MatHorizontalStepper } ) public stepper: MatHorizontalStepper;
 
-    private spell: ScrapedSpell;
+    public spell: ScrapedSpell;
     
     constructor(
         public dialogRef: MatDialogRef<NewTriggerBuffDialogComponent>,
@@ -54,8 +55,8 @@ export class NewTriggerBuffDialogComponent implements OnInit {
 
             this.endingSoonDuration = this.spell.duration <= 120 ? 12 :
                 this.spell.duration > 120 && this.spell.duration <= 600 ? 60 :
-                this.spell.duration > 600 && this.spell.duration < 900 ? 120 :
-                600;
+                    this.spell.duration > 600 && this.spell.duration < 900 ? 120 :
+                        600;
 
             this.stepper.next();
         } );
@@ -92,10 +93,13 @@ export class NewTriggerBuffDialogComponent implements OnInit {
 
 
         let castOnYouPhraseId: string = null;
+        let castOnOtherPhraseId: string = null;
+        let buffTimerPhrases: string[] = [];
         let iconTimerIds: string[] = [];
-        if ( this.spell.targetType === 'Self' ) {
-            trigger.captureMethod = 'Any match';
+        // if ( this.spell.targetType === 'Self' ) {
+        trigger.captureMethod = 'Any match';
 
+        if ( this.useSelfTimer ) {
             castOnYouPhraseId = nanoid();
             trigger.capturePhrases.push( <CapturePhrase>{
                 phraseId: castOnYouPhraseId,
@@ -105,61 +109,153 @@ export class NewTriggerBuffDialogComponent implements OnInit {
                 // /^(?<target>You) feel armored\.$/
                 phrase: this.spell.castOnYou.replace( /\.$/, '\\.$' ).replace( /you/gmi, '^(?<target>You)' ),
             } );
-            
-            let buffTimer = <TriggerAction>{
-                phrases: [ castOnYouPhraseId ],
-                actionType: ActionTypes.BeneficialTimer,
-                overlayId: this.timerOverlayId,
-                duration: this.spell.duration,
-                actionId: nanoid(),
-                restartTimerAlways: true,
-                displayText: this.spell.name,
-                useCustomColor: true,
-                overrideTimerColor: '#0288d1',
-                endEarlyPhrases: [],
-                hideTimer: !this.useTimer
-            };
-
-            trigger.actions.push( buffTimer );
-            iconTimerIds.push( buffTimer.actionId );
-
-            trigger.actions.push( <TriggerAction>{
-                phrases: [ castOnYouPhraseId ],
-                actionType: ActionTypes.ClearVariable,
-                variableName: 'SpellBeingCast',
-                actionId: nanoid(),
+            buffTimerPhrases.push( castOnYouPhraseId );
+        }
+        if ( this.useTargetTimer ) {
+            castOnOtherPhraseId = nanoid();
+            trigger.capturePhrases.push( <CapturePhrase>{
+                phraseId: castOnOtherPhraseId,
+                useRegEx: true,
+                requirePreviousPhrase: false,
+                duration: null,
+                // /^(?<target>.+?)'?s? is covered in slithering black glyphs\.$/
+                phrase: this.spell.castOnYou.replace( /\.$/, '\\.$' ).replace( /soandso's|soandso\s's|soandso/gmi, '^(?<target>.+?)\'?s?' ),
             } );
-
-            if ( this.cancelTimerIfTargetDies ) {
-                buffTimer.endEarlyPhrases.push( <Phrase>{
-                    phraseId: nanoid(),
-                    // You have been slain by a lightning warrior staticfist!
-                    phrase: '^You have been slain by (.+?)!',
-                    useRegEx: true,
-                } );
-            }
+            buffTimerPhrases.push( castOnOtherPhraseId );
+        }
             
+        let buffTimer = <TriggerAction>{
+            phrases: [].concat( buffTimerPhrases ),
+            actionType: ActionTypes.BeneficialTimer,
+            overlayId: this.timerOverlayId,
+            duration: this.spell.duration,
+            actionId: nanoid(),
+            restartTimerAlways: true,
+            displayText: this.spell.name,
+            useCustomColor: true,
+            overrideTimerColor: '#0288d1',
+            endEarlyPhrases: [],
+            hideTimer: !this.useSelfTimer,
+            castTime: this.spell.castTime,
+        };
+
+        trigger.actions.push( buffTimer );
+        iconTimerIds.push( buffTimer.actionId );
+
+        trigger.actions.push( <TriggerAction>{
+            phrases: [ castOnYouPhraseId ],
+            actionType: ActionTypes.ClearVariable,
+            variableName: 'SpellBeingCast',
+            actionId: nanoid(),
+        } );
+
+        if ( this.useSelfTimer && this.cancelTimerIfTargetDies ) {
+                
             buffTimer.endEarlyPhrases.push( <Phrase>{
                 phraseId: nanoid(),
                 // You have been slain by a lightning warrior staticfist!
-                phrase: '^' + this.spell.effectFades.replace(/\.$/, '\\.$'),
+                phrase: '^You have been slain by [^!]*!$',
                 useRegEx: true,
             } );
 
-            if ( this.alertWhenBuffFades ) {
-                buffTimer.notifyWhenEnded = true;
-                buffTimer.endedSpeak = true;
-                buffTimer.endedSpeakPhrase = `Your ${this.spell.name} faded.`;
-            }
+        }
 
-            if ( this.alertEndingSoon ) {
-                buffTimer.ifEndingSoon = true;
-                buffTimer.endingDuration = this.endingSoonDuration;
-            }
-
-        } else {
+        if ( this.useTargetTimer && this.cancelTimerIfTargetDies ) {
+            
+            buffTimer.endEarlyPhrases.push( <Phrase>{
+                phraseId: nanoid(),
+                phrase: '^${target} has been slain by [^!]*!$',
+                useRegEx: true,
+            } );
+            buffTimer.endEarlyPhrases.push( <Phrase>{
+                phraseId: nanoid(),
+                phrase: '^You have slain ${target}!$',
+                useRegEx: true,
+            } );
+            // This is apparently just for players
+            buffTimer.endEarlyPhrases.push( <Phrase>{
+                phraseId: nanoid(),
+                // Jhinx dies.
+                phrase: '^${target} dies\\.$',
+                useRegEx: true,
+            } );
+            buffTimer.endEarlyPhrases.push( <Phrase>{
+                phraseId: nanoid(),
+                // A Valorian Guardian died.
+                phrase: '^${target} died\\.$',
+                useRegEx: true,
+            } );
 
         }
+
+        // End when the buff ends early.
+        buffTimer.endEarlyPhrases.push( <Phrase>{
+            phraseId: nanoid(),
+            phrase: '^' + this.spell.effectFades.replace( /\.$/, '\\.$' ),
+            useRegEx: true,
+        } );
+
+        if ( this.spell.targetType !== 'Self' ) {
+            // End when the buff is overwritten.
+            buffTimer.endEarlyPhrases.push( <Phrase>{
+                phraseId: nanoid(),
+                // Your Dead Men Floating spell on Xeraphine has been overwritten.
+                phrase: `Your ${this.spell.name} spell on \${target} has been overwritten\\.$`,
+                useRegEx: true,
+            } );
+
+            // End when the buff fades
+            buffTimer.endEarlyPhrases.push( <Phrase>{
+                phraseId: nanoid(),
+                // Your Dead Men Floating spell has worn off of Rodus.
+                phrase: `Your ${this.spell.name} spell has worn off of \${target}\\.$`,
+                useRegEx: true,
+            } );
+        }
+
+        if ( this.spell.targetType === 'Pet' || this.spell.targetType === 'Undead' ) {
+
+            // End when the buff fades
+            buffTimer.endEarlyPhrases.push( <Phrase>{
+                phraseId: nanoid(),
+                // Your pet's Sigil of Decay spell has worn off.
+                phrase: `Your pet's ${this.spell.name} spell has worn off\\.$`,
+                useRegEx: true,
+            } );
+
+        }
+
+        if ( this.alertWhenBuffFades ) {
+            buffTimer.notifyWhenEnded = true;
+            buffTimer.endedSpeak = true;
+            buffTimer.endedSpeakPhrase = `Your ${this.spell.name} faded.`;
+        }
+
+        if ( this.alertEndingSoon ) {
+            buffTimer.ifEndingSoon = true;
+            buffTimer.endingDuration = this.endingSoonDuration;
+            buffTimer.endingSoonSpeak = true;
+            buffTimer.endingSoonSpeakPhrase = `Your ${this.spell.name} is ending soon.`;
+        }
+
+        // } else {
+        //     trigger.captureMethod = 'Sequential';
+
+        //     // [Sat Dec 26 11:14:00 2020] You begin casting Sigil of Decay.
+        //     // [Sat Dec 26 11:14:02 2020] Your Ring of Radiant Wisdom flickers with a pale light.
+        //     // [Sat Dec 26 11:14:02 2020] Vonaner is covered in slithering black glyphs.
+
+        //     let beginCastingPhrase = nanoid();
+        //     trigger.capturePhrases.push( <CapturePhrase>{
+        //         phraseId: beginCastingPhrase,
+        //         useRegEx: true,
+        //         requirePreviousPhrase: false,
+        //         duration: this.spell.castTime,
+        //         // /^(?<target>You) feel armored\.$/
+        //         phrase: this.spell.castOnYou.replace( /\.$/, '\\.$' ).replace( /you/gmi, '^(?<target>You)' ),
+        //     } );
+
+        // }
 
         // if ( this.alertWhenBuffFades && !this.useTimer ) {
             

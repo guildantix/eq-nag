@@ -4,3 +4,25 @@ mat-dialog-content {
     }
     background-color: #333333;
 }
+p.note {
+    small {
+        font-size: 12px;
+    }
+    > strong {
+        &:first-child {
+            margin-top: -2px;
+        }
+        &:not(:first-child) {
+            margin-top: 5px;
+        }
+        display: block;
+    }
+    color: #c6c6c6;
+    background-color: #252525;
+    padding: 15px 25px;
+    font-size: 11px;
+    line-height: 1;
+    margin: 5px 25px;
+    text-align: justify;
+    border-radius: 3px;
+}
