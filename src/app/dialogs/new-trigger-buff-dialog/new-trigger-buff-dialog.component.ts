@@ -107,6 +107,7 @@ export class NewTriggerBuffDialogComponent implements OnInit {
             requirePreviousPhrase: false,
             duration: null,
             // /^(?<target>You) feel armored\.$/
+            // /^(?<target>You)r balls feel armored\.$/
             phrase: this.spell.castOnYou.replace( /\.$/, '\\.$' ).replace( /you/gmi, '^(?<target>You)' ),
         } );
         buffTimerPhrases.push( castOnYouPhraseId );
@@ -135,9 +136,33 @@ export class NewTriggerBuffDialogComponent implements OnInit {
             useCustomColor: true,
             overrideTimerColor: '#0288d1',
             endEarlyPhrases: [],
-            hideTimer: !this.useSelfTimer && !this.useTargetTimer,
+            hideTimer: !this.useSelfTimer || !this.useTargetTimer,
+            hideConditions: [],
             castTime: this.spell.castTime,
         };
+
+        // Add hide timer conditions.  I'm being overly verbose here so that it 
+        // works when adding other options that may hide/show the timer in the 
+        // future.
+        if ( buffTimer.hideTimer && this.useSelfTimer && !this.useTargetTimer ) {
+            // Hide the timer when the target !== 'You'
+            buffTimer.hideConditions.push( <TriggerCondition>{
+                conditionId: nanoid(),
+                conditionType: TriggerConditionTypes.NamedGroupValue,
+                operatorType: OperatorTypes.DoesNotEqual,
+                variableName: 'target',
+                variableValue: 'You',
+            } );
+        } else if ( buffTimer.hideTimer && this.useTargetTimer && !this.useSelfTimer ) {
+            // Hide the timer when the target === 'You'
+            buffTimer.hideConditions.push( <TriggerCondition>{
+                conditionId: nanoid(),
+                conditionType: TriggerConditionTypes.NamedGroupValue,
+                operatorType: OperatorTypes.Equals,
+                variableName: 'target',
+                variableValue: 'You',
+            } );
+        }
 
         trigger.actions.push( buffTimer );
         iconTimerIds.push( buffTimer.actionId );
