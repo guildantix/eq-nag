@@ -121,7 +121,7 @@ function Overlay() {
                     if ( i > -1 ) {
                         let comp = overlayGroups[ key ].components[ i ];
                         
-                        if ( comp.action.remainAfterEnded || comp.action.notifyWhenEnded ) {
+                        if ( comp.action.actionType === ActionTypes.BeneficialTimer && ( comp.action.remainAfterEnded || comp.action.notifyWhenEnded ) ) {
                             comp.start = new Date( new Date().getTime() - comp.action.duration * 1000 );
                         } else {
                             comp.removeComponent();
@@ -134,7 +134,7 @@ function Overlay() {
             
         } else {
             let i = _.findIndex( overlayComponents, comp => comp.instanceId === instanceId );
-            if ( overlayComponents[ i ].action.remainAfterEnded ) {
+            if ( overlayComponents[ i ].action.actionType === ActionTypes.BeneficialTimer && ( overlayComponents[ i ].action.remainAfterEnded || overlayComponents[ i ].action.notifyWhenEnded ) ) {
                 overlayComponents[ i ].start = new Date( new Date().getTime() - overlayComponents[ i ].action.duration * 1000 );
             } else {
                 overlayComponents[ i ].removeComponent();
