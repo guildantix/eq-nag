@@ -74,7 +74,7 @@ export class NewTriggerDialogComponent implements OnInit {
                 requirePreviousPhrase: false,
                 duration: null,
                 ///^(?<target>.+?)\s?'s has been poisoned\.
-                phrase: spell.castOnOther.replace(/\.$/, '\\.$').replace( /soandso's|soandso\s's|soandso/gmi, '^(?<target>.+?)\'?s?' ),
+                phrase: spell.castOnOther.replace( /\.$/, '\\.$' ).replace( /soandso's|soandso\s's|soandso/gmi, '^(?<target>.+?)\\b\\s{0,1}\'{0,1}s{0,1}\\b' ),
             } );
             trigger.capturePhrases.push( <CapturePhrase>{
                 phraseId: nanoid(),

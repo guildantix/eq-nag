@@ -75,7 +75,7 @@ export class NewTriggerRaidAbilityComponent implements OnInit {
     }
 
     public scrape(): void {
-        // ^You resist (?<caster>.+?)['s]* Void of Suppression!$
+        // ^You resist (?<caster>.+?)\b\s{0,1}'{0,1}s{0,1}\b Void of Suppression!$
         // ^Warden Hanvar has been slain by (?<player>.+?)!$
         // ^The air stops moving around you\.$
         // Overlord Mata Muram begins casting Mark of Death.
@@ -144,7 +144,7 @@ export class NewTriggerRaidAbilityComponent implements OnInit {
         trigger.captureMethod = 'Any match';
         trigger.importType = ImportTypes.Ability;
 
-        // ^You resist (?<caster>.+?)['s]* Void of Suppression!$
+        // ^You resist (?<caster>.+?)\b\s{0,1}'{0,1}s{0,1}\b Void of Suppression!$
         // ^Warden Hanvar has been slain by (?<player>.+?)!$
         // ^The air stops moving around you\.$
         // Overlord Mata Muram begins casting Mark of Death.
@@ -155,8 +155,9 @@ export class NewTriggerRaidAbilityComponent implements OnInit {
             useRegEx: true,
             requirePreviousPhrase: false,
             duration: null,
-            // /^Your eardrums begin to bleed\.$/
-            phrase: '^' + this.ability.castOnYou.replace(/\.$/, '\\.$').replace( /soandso's|soandso\s's|soandso/gmi, '^(?<target>.+?)\'?s?' ),
+            // Your eardrums begin to bleed.
+            // /^(?<target>You)r eardrums begin to bleed\.$/
+            phrase: '^' + this.ability.castOnYou.replace(/\.$/, '\\.$').replace( /(You)/gmi, '^(?<target>$1)' ),
         } );
         let resistPhraseId = nanoid();
         trigger.capturePhrases.push( <CapturePhrase>{
@@ -164,8 +165,8 @@ export class NewTriggerRaidAbilityComponent implements OnInit {
             useRegEx: true,
             requirePreviousPhrase: false,
             duration: null,
-            // /^You resist (?<caster>.+?)['s]* Void of Suppression!$/
-            phrase: `^You resist (?<caster>.+?)['s]* ${this.ability.name}!$`,
+            // /^You resist (?<caster>.+?)\b\s{0,1}'{0,1}s{0,1}\b Void of Suppression!$/
+            phrase: `^You resist (?<caster>.+?)\\b\\s{0,1}'{0,1}s{0,1}\\b ${this.ability.name}!$`,
         } );
         let hitOtherPhraseId = nanoid();
         trigger.capturePhrases.push( <CapturePhrase>{
@@ -174,7 +175,7 @@ export class NewTriggerRaidAbilityComponent implements OnInit {
             requirePreviousPhrase: false,
             duration: null,
             // /^Your eardrums begin to bleed\.$/
-            phrase: this.ability.castOnOther.replace(/\.$/, '\\.$').replace( /soandso's|soandso\s's|soandso/gmi, '^(?<target>.+?)\'?s?' ),
+            phrase: this.ability.castOnOther.replace( /\.$/, '\\.$' ).replace( /soandso's|soandso\s's|soandso/gmi, '^(?<target>.+?)\\b\\s{0,1}\'{0,1}s{0,1}\\b' ),
         } );
 
         trigger.actions = [];

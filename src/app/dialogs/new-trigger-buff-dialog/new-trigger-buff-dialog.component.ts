@@ -110,7 +110,7 @@ export class NewTriggerBuffDialogComponent implements OnInit {
             phrase: this.spell.castOnYou.replace( /\.$/, '\\.$' ).replace( /you/gmi, '^(?<target>You)' ),
         } );
         buffTimerPhrases.push( castOnYouPhraseId );
-        
+
         if ( this.useTargetTimer ) {
             castOnOtherPhraseId = nanoid();
             trigger.capturePhrases.push( <CapturePhrase>{
@@ -118,8 +118,8 @@ export class NewTriggerBuffDialogComponent implements OnInit {
                 useRegEx: true,
                 requirePreviousPhrase: false,
                 duration: null,
-                // /^(?<target>.+?)'?s? is covered in slithering black glyphs\.$/
-                phrase: this.spell.castOnYou.replace( /\.$/, '\\.$' ).replace( /soandso's|soandso\s's|soandso/gmi, '^(?<target>.+?)\'?s?' ),
+                // /^(?<target>.+?)\b\s{0,1}'{0,1}s{0,1}\b is covered in necrotic sores\.$/
+                phrase: this.spell.castOnOther.replace( /\.$/, '\\.$' ).replace( /soandso's|soandso\s's|soandso/gmi, '^(?<target>.+?)\\b\\s{0,1}\'{0,1}s{0,1}\\b' ),
             } );
             buffTimerPhrases.push( castOnOtherPhraseId );
         }
@@ -188,12 +188,14 @@ export class NewTriggerBuffDialogComponent implements OnInit {
 
         }
 
-        // End when the buff ends early.
-        buffTimer.endEarlyPhrases.push( <Phrase>{
-            phraseId: nanoid(),
-            phrase: '^' + this.spell.effectFades.replace( /\.$/, '\\.$' ),
-            useRegEx: true,
-        } );
+        if ( this.spell.effectFades ) {
+            // End when the buff ends early.
+            buffTimer.endEarlyPhrases.push( <Phrase>{
+                phraseId: nanoid(),
+                phrase: '^' + this.spell.effectFades.replace( /\.$/, '\\.$' ),
+                useRegEx: true,
+            } );
+        }
 
         if ( this.spell.targetType !== 'Self' ) {
             // End when the buff is overwritten.
@@ -316,7 +318,7 @@ export class NewTriggerBuffDialogComponent implements OnInit {
         //     requirePreviousPhrase: false,
         //     duration: null,
         //     ///^(?<target>.+?)\s?'s has been poisoned\.
-        //     phrase: this.spell.castOnOther.replace(/\.$/, '\\.$').replace( /soandso's|soandso\s's|soandso/gmi, '^(?<target>.+?)\'?s?' ),
+        //     phrase: this.spell.castOnOther.replace( /\.$/, '\\.$' ).replace( /soandso's|soandso\s's|soandso/gmi, '^(?<target>.+?)\\b\\s{0,1}\'{0,1}s{0,1}\\b' ),
         // } );
         // trigger.capturePhrases.push( <CapturePhrase>{
         //     phraseId: nanoid(),
