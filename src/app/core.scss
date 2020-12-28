@@ -210,6 +210,14 @@ tr.row-list-item {
     padding: 5px;
 }
 
+tr.row-header {
+    th {
+        padding: 18px 0;
+    }
+    background-color: #0000003d;
+    font-weight: bolder;
+}
+
 table {
     &.padded {
         tr{
