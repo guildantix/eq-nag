@@ -3,7 +3,7 @@ const StringUtilities = require( '../utilities/string' );
 const NumberUtilities = require( '../utilities/numbers' );
 const ArrayUtilities = require( '../utilities/arrays' );
 const { OverlayWindow, OverlayComponent, TimerSortTypes } = require( '../data/models/overlay-window' );
-const { ActionTypes, TriggerAction } = require( '../data/models/trigger' );
+const { ActionTypes, TriggerAction, TriggerConditionTypes, OperatorTypes } = require( '../data/models/trigger' );
 const { ipcRenderer } = require( 'electron' );
 const Handlebars = require( "handlebars" );
 const _ = require( 'lodash' );
@@ -686,9 +686,39 @@ function applyTimerSettings( contentArea, comp, group ) {
     comp.timeRemaining = comp.action.duration;
 
     // Update visibility
-    comp.hidden = comp.action.hideTimer;
-    if ( comp.hidden ) {
-        comp.dom.style.display = 'none';
+    if ( comp.action.hideTimer ) {
+        let doHide = true;
+
+        if ( comp.action.hideConditions?.length > 0 ) {
+            let namedGroups = Object.keys( comp.matches?.groups );
+
+            for ( let i = 0; i < comp.action.hideConditions.length; i++ ) {
+                let hc = comp.action.hideConditions[ i ];
+
+                if ( hc.operatorType === OperatorTypes.Equals ) {
+                    // If it does not exist or the values do not match, then bad.
+                    if ( namedGroups.indexOf( hc.variableName ) === -1 || !StringUtilities.compare( hc.variableValue, comp.matches.groups[ hc.variableName ] ) ) {
+                        doHide = false;
+                        break;
+                    }
+
+                } else if ( hc.operatorType === OperatorTypes.DoesNotEqual ) {
+                    // If it exists and the value matches, then bad.
+                    if ( namedGroups.indexOf( hc.variableName ) > -1 && StringUtilities.compare( hc.variableValue, comp.matches.groups[ hc.variableName ] ) ) {
+                        doHide = false;
+                        break;
+                    }
+
+                }
+
+            }
+
+        }
+
+        if ( doHide ) {
+            comp.hidden = comp.action.hideTimer;
+            comp.dom.style.display = 'none';
+        }
     }
 
     // Set the update method.
