@@ -110,7 +110,8 @@ export class TriggerModel {
 export enum TriggerConditionTypes {
     
     VariableValue = 1,
-
+    NamedGroupValue = 2,
+    
 }
 
 export enum OperatorTypes {
@@ -251,7 +252,7 @@ export class TriggerAction {
     public interruptSpeech: boolean = false;
     public hideTimer: boolean = false;
     public castTime: number = null;
-    
+
     public ifEndingSoon: boolean = false;
     public endingSoonShowTimer: boolean = false;
     public endingDuration: number = null;

@@ -13,6 +13,7 @@ import { IpcService } from 'src/app/ipc.service';
 export class ConditionsComponent implements OnInit {
 
     @Input() public conditions: TriggerCondition[];
+    @Input() public conditionType: TriggerConditionTypes = TriggerConditionTypes.VariableValue;
     @Output() public conditionsChange: EventEmitter<TriggerCondition[]> = new EventEmitter<TriggerCondition[]>();
 
     public triggerConditionTypes: typeof TriggerConditionTypes = TriggerConditionTypes;
@@ -30,7 +31,7 @@ export class ConditionsComponent implements OnInit {
 
     public addNewCondition(): void {
         let condition: TriggerCondition = new TriggerCondition();
-        condition.conditionType = TriggerConditionTypes.VariableValue;
+        condition.conditionType = this.conditionType;
         this.conditions.push( condition );
         this.conditionsChange.emit( this.conditions );
         this.conditionsTable?.renderRows();
