@@ -160,14 +160,22 @@ class LogBootstrapper {
 
                 // If after # of attempts without seeing any changes in the log file, then kill the process.
                 if ( logWatchers[ characterId ].nullAttemptCount >= killAfterNAttempts ) {
+                    
+                    logWatchers[ characterId ].window.send( 'log:check:pulse', null );
+                    ipcMain.once( 'log:pulse', function ( e, alive ) {
+                        if ( !alive ) {
+                            
+                            // Notify the main window.
+                            mainWindowRef.reference.webContents.send( 'log:character:deactivated', characterId );
+        
+                            if ( logWatchers[ characterId ].window != null && !logWatchers[ characterId ].window.isDestroyed() ) {
+                                logWatchers[ characterId ].window.close();
+                                logWatchers[ characterId ].window = null;
+                            }
 
-                    // Notify the main window.
-                    mainWindowRef.reference.webContents.send( 'log:character:deactivated', characterId );
+                        }
+                    } );
 
-                    if ( logWatchers[ characterId ].window != null && !logWatchers[ characterId ].window.isDestroyed() ) {
-                        logWatchers[ characterId ].window.close();
-                        logWatchers[ characterId ].window = null;
-                    }
                 }
             }
             

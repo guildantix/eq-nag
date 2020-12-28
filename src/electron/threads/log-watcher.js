@@ -214,6 +214,28 @@ function LogWatcher(character, logPosition) {
 
     } );
 
+    ipcRenderer.on( 'log:check:pulse', function ( e ) {
+        let activeCounters = false;
+
+        if ( counters ) {
+            for ( let key of Object.keys( counters ) ) {
+                if ( counters[ key ].value > 0 ) {
+                    activeCounters = true;
+                    break;
+                }
+            }
+        }
+
+        if ( activeCounters || cancellableComponents?.length > 0 ) {
+            // We're still alive, don't kill us!
+            e.sender.send( 'log:pulse', true );
+        } else {
+            // Flatline
+            e.sender.send( 'log:pulse', false );
+        }
+
+    } );
+
     speechSynthesis.onvoiceschanged = () => {
         voiceOptions = speechSynthesis.getVoices();
     };
