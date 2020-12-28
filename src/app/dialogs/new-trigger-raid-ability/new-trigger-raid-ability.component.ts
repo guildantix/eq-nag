@@ -8,6 +8,7 @@ import { NewTriggerDialogModel } from '../dialog.model';
 import * as _ from 'lodash';
 import { customAlphabet } from 'nanoid';
 import { SelectIconDialogComponent } from '../select-icon-dialog/select-icon-dialog.component';
+import { ColorUtility } from 'src/app/utilities';
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const nanoid = customAlphabet( alphabet, 16 );
 
@@ -193,6 +194,7 @@ export class NewTriggerRaidAbilityComponent implements OnInit {
                 displayText: `${this.ability.name} Recast.`,
                 useCustomColor: true,
                 overrideTimerColor: '#f57f17',
+                timerBackgroundColor: ColorUtility.FromHex( '#f57f17' ).darken( 0.93 ).toString( 0.75 ),
                 restartTimerAlways: true,
             };
 
@@ -234,6 +236,7 @@ export class NewTriggerRaidAbilityComponent implements OnInit {
                         endEarlyPhrases: this.getRecastTimerEndEarlyPhrases( npc.name ),
                         useCustomColor: true,
                         overrideTimerColor: '#f57f17',
+                        timerBackgroundColor: ColorUtility.FromHex( '#f57f17' ).darken( 0.93 ).toString( 0.75 ),
                         restartTimerAlways: true,
                     };
                     
@@ -291,6 +294,7 @@ export class NewTriggerRaidAbilityComponent implements OnInit {
                 displayText: msg,
                 useCustomColor: true,
                 overrideTimerColor: '#b71c1c',
+                timerBackgroundColor: ColorUtility.FromHex( '#b71c1c' ).darken( 0.93 ).toString( 0.75 ),
                 restartTimerAlways: true,
             };
 

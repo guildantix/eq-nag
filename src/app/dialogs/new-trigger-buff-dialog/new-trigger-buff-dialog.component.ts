@@ -7,6 +7,7 @@ import { ScraperService } from 'src/app/scraper.service';
 import { NewTriggerDialogModel } from '../dialog.model';
 import { customAlphabet } from 'nanoid';
 import { SelectIconDialogComponent } from '../select-icon-dialog/select-icon-dialog.component';
+import { ColorUtility } from 'src/app/utilities';
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const nanoid = customAlphabet( alphabet, 16 );
 
@@ -135,8 +136,9 @@ export class NewTriggerBuffDialogComponent implements OnInit {
             displayText: this.spell.name,
             useCustomColor: true,
             overrideTimerColor: '#0288d1',
+            timerBackgroundColor: ColorUtility.FromHex( '#0288d1' ).darken( 0.93 ).toString( 0.75 ),
             endEarlyPhrases: [],
-            hideTimer: !this.useSelfTimer || !this.useTargetTimer,
+            hideTimer: !this.useSelfTimer || (this.spell?.targetType !== 'Self' && !this.useTargetTimer),
             hideConditions: [],
             castTime: this.spell.castTime,
         };
@@ -144,7 +146,7 @@ export class NewTriggerBuffDialogComponent implements OnInit {
         // Add hide timer conditions.  I'm being overly verbose here so that it 
         // works when adding other options that may hide/show the timer in the 
         // future.
-        if ( buffTimer.hideTimer && this.useSelfTimer && !this.useTargetTimer ) {
+        if ( buffTimer.hideTimer && this.useSelfTimer && ( this.spell?.targetType !== 'Self' && !this.useTargetTimer ) ) {
             // Hide the timer when the target !== 'You'
             buffTimer.hideConditions.push( <TriggerCondition>{
                 conditionId: nanoid(),
@@ -153,7 +155,7 @@ export class NewTriggerBuffDialogComponent implements OnInit {
                 variableName: 'target',
                 variableValue: 'You',
             } );
-        } else if ( buffTimer.hideTimer && this.useTargetTimer && !this.useSelfTimer ) {
+        } else if ( buffTimer.hideTimer && this.useTargetTimer && ( !this.useSelfTimer && this.spell?.targetType === 'Self' ) ) {
             // Hide the timer when the target === 'You'
             buffTimer.hideConditions.push( <TriggerCondition>{
                 conditionId: nanoid(),
@@ -307,6 +309,7 @@ export class NewTriggerBuffDialogComponent implements OnInit {
             // displayText: this.spell.name,
             // useCustomColor: true,
             // overrideTimerColor: '#0288d1',
+            // timerBackgroundColor: ColorUtility.FromHex( '#0288d1' ).darken( 0.93 ).toString( 0.75 ),
             // endEarlyPhrases: [],
             // hideTimer: !this.useSelfTimer && !this.useTargetTimer,
             // castTime: this.spell.castTime,

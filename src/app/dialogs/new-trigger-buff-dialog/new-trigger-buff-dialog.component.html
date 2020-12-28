@@ -51,7 +51,7 @@
                     </mat-form-field>
                 </p>
 
-                <p><mat-checkbox [(ngModel)]="showTimerWhenEndingSoon" name="showTimerWhenEndingSoon" *ngIf="(!useSelfTimer || !useTargetTimer) && alertEndingSoon">Show a timer when ending soon.</mat-checkbox></p>
+                <p><mat-checkbox [(ngModel)]="showTimerWhenEndingSoon" name="showTimerWhenEndingSoon" *ngIf="(!useSelfTimer || (spell?.targetType !== 'Self' && !useTargetTimer)) && alertEndingSoon">Show a timer when ending soon.</mat-checkbox></p>
 
                 <p><mat-checkbox [(ngModel)]="cancelTimerIfTargetDies" name="cancelTimerIfTargetDies">End timer early if your target dies.</mat-checkbox></p>
                 
