@@ -352,10 +352,10 @@ export class DialogService {
         
         data.title = title;
         data.message = message;
-        data.conditions = conditions.slice();
+        data.conditions = conditions;
 
         return this.dialog.open<NamedGroupConditionsDialogComponent, any, TriggerCondition[]>( NamedGroupConditionsDialogComponent, {
-            width: '450px',
+            width: '650px',
             data: data
         } ).afterClosed();
     }
