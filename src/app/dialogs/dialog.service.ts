@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { ConfirmDialogComponent } from './confirm-dialog/confirm-dialog.component';
-import { OverlayWindowModel, ScrapedSpell, TriggerAction, TriggerFolder, TriggerModel } from '../core.model';
+import { OverlayWindowModel, ScrapedSpell, TriggerAction, TriggerCondition, TriggerFolder, TriggerModel } from '../core.model';
 import { Observable } from 'rxjs';
 import { OverlayDetailsDialogComponent } from './overlay-details-dialog/overlay-details-dialog.component';
 import { TriggerActionWizardModalComponent } from './trigger-action-wizard-modal/trigger-action-wizard-modal.component';
@@ -19,6 +19,8 @@ import { AutoCompleteDialogComponent } from './autocomplete-dialog/autocomplete-
 import { NewTriggerRaidAbilityComponent } from './new-trigger-raid-ability/new-trigger-raid-ability.component';
 import { NewTriggerDialogModel } from './dialog.model';
 import { NewTriggerBuffDialogComponent } from './new-trigger-buff-dialog/new-trigger-buff-dialog.component';
+import { NamedGroupConditionsModel } from './named-group-conditions-dialog/named-group-conditions.model';
+import { NamedGroupConditionsDialogComponent } from './named-group-conditions-dialog/named-group-conditions-dialog.component';
 
 @Injectable()
 export class DialogService {
@@ -324,6 +326,35 @@ export class DialogService {
         data.hint = hint;
 
         return this.dialog.open<InputDialogComponent, any, string>( InputDialogComponent, {
+            width: '450px',
+            data: data
+        } ).afterClosed();
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Shows a simple dialog with an input.
+     * 
+     * @param title The title for the dialog.
+     * @param message Instructions to the user.
+     * @param conditions The conditions to edit.
+     */
+    public showNamedGroupConditionsDialog( title: string, message: string | string[], conditions: TriggerCondition[] ): Observable<TriggerCondition[]> {
+        let data: NamedGroupConditionsModel = new NamedGroupConditionsModel();
+        
+        data.title = title;
+        data.message = message;
+        data.conditions = conditions.slice();
+
+        return this.dialog.open<NamedGroupConditionsDialogComponent, any, TriggerCondition[]>( NamedGroupConditionsDialogComponent, {
             width: '450px',
             data: data
         } ).afterClosed();

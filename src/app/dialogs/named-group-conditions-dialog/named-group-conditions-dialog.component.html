@@ -1,0 +1,16 @@
+<h2 mat-dialog-title>{{(data.title == null ? 'Conditions' : data.title)}}</h2>
+
+<mat-dialog-content>
+
+    <p *ngFor="let msg of messages">{{msg}}</p>
+
+    <app-conditions [(conditions)]="data.conditions" [conditionType]="conditionType"></app-conditions>
+
+</mat-dialog-content>
+
+<mat-dialog-actions>
+    
+    <button mat-button [mat-dialog-close]="null" class="t-confirm-no" color="warn">Cancel</button>
+    <button mat-button [mat-dialog-close]="data.conditions" class="t-confirm-no">OK</button>
+
+</mat-dialog-actions>

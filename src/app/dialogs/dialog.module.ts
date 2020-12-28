@@ -22,6 +22,7 @@ import { EditorsModule } from '../editors/editors.module';
 import { AutoCompleteDialogComponent } from './autocomplete-dialog/autocomplete-dialog.component';
 import { NewTriggerRaidAbilityComponent } from './new-trigger-raid-ability/new-trigger-raid-ability.component';
 import { NewTriggerBuffDialogComponent } from './new-trigger-buff-dialog/new-trigger-buff-dialog.component';
+import { NamedGroupConditionsDialogComponent } from './named-group-conditions-dialog/named-group-conditions-dialog.component';
 
 @NgModule( {
     imports: [
@@ -50,6 +51,7 @@ import { NewTriggerBuffDialogComponent } from './new-trigger-buff-dialog/new-tri
         AutoCompleteDialogComponent,
         NewTriggerRaidAbilityComponent,
         NewTriggerBuffDialogComponent,
+        NamedGroupConditionsDialogComponent,
     ],
     declarations: [
         TriggerDialogComponent,
@@ -67,6 +69,7 @@ import { NewTriggerBuffDialogComponent } from './new-trigger-buff-dialog/new-tri
         AutoCompleteDialogComponent,
         NewTriggerRaidAbilityComponent,
         NewTriggerBuffDialogComponent,
+        NamedGroupConditionsDialogComponent,
     ],
     providers: [
         DialogService,
