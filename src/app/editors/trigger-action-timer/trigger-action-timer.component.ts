@@ -144,4 +144,8 @@ export class TriggerActionTimerComponent implements OnInit {
         }
     }
 
+    public editHideTimerConditions(): void {
+        this.dialogService.showNamedGroupConditionsDialog( 'Edit hide conditions', [ 'If you only want to hide the timer under specific conditions, you can enter them here.', 'These conditions evaluate based on the named groups in the capture phrase regular expression.' ], this.action.hideConditions ).subscribe( conditions => this.action.hideConditions = conditions );
+    }
+
 }

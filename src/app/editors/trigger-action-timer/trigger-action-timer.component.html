@@ -19,7 +19,7 @@
                 <input matInput [(ngModel)]="action.displayText" name="txtDisplayText" />
             </mat-form-field>
 
-            <p><mat-checkbox [(ngModel)]="action.hideTimer" name="cbxHideTimer" title="Use this option if you want to keep track of a duration but don't need to see the progress.">Hide Timer?</mat-checkbox></p>
+            <p><mat-checkbox [(ngModel)]="action.hideTimer" name="cbxHideTimer" title="Use this option if you want to keep track of a duration but don't need to see the progress.">Hide Timer?</mat-checkbox><a *ngIf="action.hideTimer" (click)="editHideTimerConditions()" href="javascript:void(0);" class="color-blue">Conditions</a></p>
 
             <p>When triggered again, how do you want the timer to behave?</p>
             <mat-radio-group [(ngModel)]="restartBehavior" name="rdoRestartBehavior_{{action.actionId}}">
