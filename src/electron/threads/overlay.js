@@ -60,6 +60,8 @@ var groupHeaderSize = 12;
 var groupHeaderColor = '#ffffff';
 var groupHeaderWeight = 400;
 var hideTargetLabel = false;
+/** @type {Record<number, number>} */
+var destroySchedule = {};
 
 
 
@@ -431,14 +433,15 @@ function createGroupedDotTimer( contentArea, group, comp ) {
     comp.description = comp.triggerName;
 
     // Create a method that will remove the component from the screen.
+    let groupKey = group.name;
     comp.removeComponent = () => {
         comp.dom.parentNode && comp.dom.parentNode.removeChild( comp.dom );
         window.clearInterval( comp.intervalId );
-        ArrayUtilities.remove( group.components, f => f.instanceId == comp.instanceId );
+        ArrayUtilities.remove( overlayGroups[ groupKey ].components, f => f.instanceId == comp.instanceId );
 
-        if ( group.components?.length === 0 ) {
-            group.dom.parentNode && group.dom.parentNode.removeChild( group.dom );
-            delete overlayGroups[ group.name ];
+        if ( overlayGroups[ groupKey ].components?.length === 0 ) {
+            overlayGroups[ groupKey ].dom.parentNode && overlayGroups[ groupKey ].dom.parentNode.removeChild( overlayGroups[ groupKey ].dom );
+            delete overlayGroups[ groupKey ];
         }
     };
     
@@ -480,14 +483,15 @@ function createGroupedTimer( contentArea, group, comp ) {
     comp.description = comp.action.displayText || comp.triggerName;
 
     // Create a method that will remove the component from the screen.
+    let groupKey = group.name;
     comp.removeComponent = () => {
         comp.dom.parentNode && comp.dom.parentNode.removeChild( comp.dom );
         window.clearInterval( comp.intervalId );
-        ArrayUtilities.remove( group.components, f => f.instanceId == comp.instanceId );
+        ArrayUtilities.remove( overlayGroups[ groupKey ].components, f => f.instanceId == comp.instanceId );
 
-        if ( group.components?.length === 0 ) {
-            group.dom.parentNode && group.dom.parentNode.removeChild( group.dom );
-            delete overlayGroups[ group.name ];
+        if ( overlayGroups[ groupKey ].components?.length === 0 ) {
+            overlayGroups[ groupKey ].dom.parentNode && overlayGroups[ groupKey ].dom.parentNode.removeChild( overlayGroups[ groupKey ].dom );
+            delete overlayGroups[ groupKey ];
         }
     };
     
@@ -852,14 +856,20 @@ function applyTimerSettings( contentArea, comp, group ) {
  * @param {number} delay The number of milliseconds to delay removal.
  */
 function delayRemoveComponent( comp, delay ) {
+
+    if ( destroySchedule[ comp.instanceId ] == null ) {
     
-    delay = delay > 0 ? delay : 1000;
+        delay = delay > 0 ? delay : 1000;
+    
+        let timeoutId = window.setTimeout( () => {
+            comp.removeComponent();
+            ipcRenderer.send( 'log:destroy:component', comp.instanceId );
+            destroySchedule[ comp.instanceId ] = null;
+        }, delay );
 
-    window.setTimeout( () => {
-        comp.removeComponent();
-        ipcRenderer.send( 'log:destroy:component', comp.instanceId );
-    }, delay );
-
+        destroySchedule[ comp.instanceId ] = timeoutId;
+    }
+    
 }
 
 
