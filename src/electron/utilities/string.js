@@ -7,6 +7,32 @@ function format( format, args ) {
 }
 
 /**
+ * Compares the two strings.
+ * 
+ * @param {string} a 
+ * @param {string} b 
+ * @param {boolean} caseSensitive If false, ignores case. (default: true)
+ */
+function compare( a, b, caseSensitive ) {
+    let aNil = isNullOrWhitespace( a );
+    let bNil = isNullOrWhitespace( b );
+    
+    if ( ( aNil && bNil ) ) {
+        return true;
+    } else if ( ( !aNil && bNil ) || ( aNil && !bNil ) ) {
+        return false;
+    }
+
+    caseSensitive = caseSensitive === false ? false : true;
+
+    if ( caseSensitive ) {
+        return a === b;
+    } else {
+        return a.toLowerCase() === b.toLowerCase();
+    }
+}
+
+/**
  * Returns true if the given value is null, undefined, or contains only whitespace.
  * 
  * @param {string} value The value to evaluate.
@@ -628,6 +654,7 @@ let StringUtilities = {
     parseNConditionalCodesToRegex: parseNConditionalCodesToRegex,
     parseShortCodesToRegex: parseShortCodesToRegex,
     getDurationFromLabel: getDurationFromLabel,
+    compare: compare,
 };
 
 module.exports = StringUtilities;
