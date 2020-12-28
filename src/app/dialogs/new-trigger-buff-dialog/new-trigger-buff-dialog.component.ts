@@ -230,14 +230,14 @@ export class NewTriggerBuffDialogComponent implements OnInit {
         if ( this.alertWhenBuffFades ) {
             buffTimer.notifyWhenEnded = true;
             buffTimer.endedSpeak = true;
-            buffTimer.endedSpeakPhrase = `Your ${this.spell.name} faded.`;
+            buffTimer.endedSpeakPhrase = `Your ${this.spell.name} on \${target} has ended.`;
         }
 
         if ( this.alertEndingSoon ) {
             buffTimer.ifEndingSoon = true;
             buffTimer.endingDuration = this.endingSoonDuration;
             buffTimer.endingSoonSpeak = true;
-            buffTimer.endingSoonSpeakPhrase = `Your ${this.spell.name} is ending soon.`;
+            buffTimer.endingSoonSpeakPhrase = `Your ${this.spell.name} on \${target} is ending soon.`;
             buffTimer.endingSoonShowTimer = this.showTimerWhenEndingSoon;
         }
 

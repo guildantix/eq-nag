@@ -112,14 +112,21 @@ function Overlay() {
     } );
 
     ipcRenderer.on( 'component:destroy', function ( event, instanceId ) {
-
+        
         if ( groupByTarget ) {
             for ( let key in overlayGroups ) {
                 if ( overlayGroups.hasOwnProperty( key ) ) {
                     
                     let i = _.findIndex( overlayGroups[ key ].components, comp => comp.instanceId === instanceId );
                     if ( i > -1 ) {
-                        overlayGroups[ key ].components[ i ].removeComponent();
+                        let comp = overlayGroups[ key ].components[ i ];
+                        
+                        if ( comp.action.remainAfterEnded || comp.action.notifyWhenEnded ) {
+                            comp.start = new Date( new Date().getTime() - comp.action.duration * 1000 );
+                        } else {
+                            comp.removeComponent();
+                        }
+
                     }
                     
                 }
@@ -127,7 +134,11 @@ function Overlay() {
             
         } else {
             let i = _.findIndex( overlayComponents, comp => comp.instanceId === instanceId );
-            overlayComponents[ i ].removeComponent();
+            if ( overlayComponents[ i ].action.remainAfterEnded ) {
+                overlayComponents[ i ].start = new Date( new Date().getTime() - overlayComponents[ i ].action.duration * 1000 );
+            } else {
+                overlayComponents[ i ].removeComponent();
+            }
         }
 
     } );
