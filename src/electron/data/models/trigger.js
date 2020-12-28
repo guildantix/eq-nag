@@ -164,6 +164,8 @@ class TriggerAction {
     interruptSpeech = false;
     /** @type boolean */
     hideTimer = false;
+    /** @type {TriggerCondition[]} */
+    hideConditions = [];
     /** @type number */
     castTime = null;
 

@@ -111,7 +111,7 @@ export enum TriggerConditionTypes {
     
     VariableValue = 1,
     NamedGroupValue = 2,
-    
+
 }
 
 export enum OperatorTypes {
@@ -251,6 +251,7 @@ export class TriggerAction {
     public timerIconDef: string = null;
     public interruptSpeech: boolean = false;
     public hideTimer: boolean = false;
+    public hideConditions: TriggerCondition[] = [];
     public castTime: number = null;
 
     public ifEndingSoon: boolean = false;
