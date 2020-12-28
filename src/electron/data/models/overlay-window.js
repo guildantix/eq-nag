@@ -77,7 +77,7 @@ class OverlayComponent {
     triggerName;
     /** @type {TriggerAction} */
     action;
-    /** @type {string[]} */
+    /** @type {RegExpExecArray} */
     matches = [];
     /** @type {Date} */
     removeAt;
