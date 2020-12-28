@@ -123,7 +123,7 @@ export class NewTriggerBuffDialogComponent implements OnInit {
             } );
             buffTimerPhrases.push( castOnOtherPhraseId );
         }
-            
+        
         let buffTimer = <TriggerAction>{
             phrases: [].concat( buffTimerPhrases ),
             actionType: ActionTypes.BeneficialTimer,
@@ -228,9 +228,77 @@ export class NewTriggerBuffDialogComponent implements OnInit {
         }
 
         if ( this.alertWhenBuffFades ) {
+
+            // Using the timer method until I come up with a way to allow the simple capture of the faded msg to work alongside the condition that the spell is currently being cast.
             buffTimer.notifyWhenEnded = true;
             buffTimer.endedSpeak = true;
             buffTimer.endedSpeakPhrase = `Your ${this.spell.name} on \${target} has ended.`;
+
+            // let fadedOnOtherPhraseId = nanoid();
+            // trigger.capturePhrases.push( <CapturePhrase>{
+            //     phraseId: fadedOnOtherPhraseId,
+            //     useRegEx: true,
+            //     requirePreviousPhrase: false,
+            //     duration: null,
+            //     // Your Necrotic Cysts spell has worn off of Rodus.
+            //     // /^Your Necrotic Cysts spell has worn off of (?<target>[^\.]*)\.$/
+            //     phrase: `^Your ${this.spell.name} spell has worn off of (?<target>[^\\.]*)\\.$`,
+            // } );
+
+            // trigger.actions.push( <TriggerAction>{
+            //     phrases: [ fadedOnOtherPhraseId ],
+            //     actionType: ActionTypes.Speak,
+            //     actionId: nanoid(),
+            //     interruptSpeech: false,
+            //     displayText: `Your ${this.spell.name} on \${target} has ended.`,
+            // } );
+            
+            // if ( this.spell.effectFades ) {
+            //     let fadeOnSelfPhraseId = nanoid();
+            //     trigger.capturePhrases.push( <CapturePhrase>{
+            //         phraseId: fadeOnSelfPhraseId,
+            //         useRegEx: true,
+            //         requirePreviousPhrase: false,
+            //         duration: null,
+            //         phrase: '^' + this.spell.effectFades.replace( /\.$/, '\\.$' ),
+            //     } );
+
+            //     trigger.actions.push( <TriggerAction>{
+            //         phrases: [ fadedOnOtherPhraseId ],
+            //         actionType: ActionTypes.Speak,
+            //         actionId: nanoid(),
+            //         interruptSpeech: false,
+            //         displayText: `Your ${this.spell.name} has ended.`,
+            //     } );
+
+            // }
+
+            // phrases: [].concat( buffTimerPhrases ),
+            // actionType: ActionTypes.BeneficialTimer,
+            // overlayId: this.timerOverlayId,
+            // duration: this.spell.duration,
+            // actionId: nanoid(),
+            // restartTimerAlways: true,
+            // displayText: this.spell.name,
+            // useCustomColor: true,
+            // overrideTimerColor: '#0288d1',
+            // endEarlyPhrases: [],
+            // hideTimer: !this.useSelfTimer && !this.useTargetTimer,
+            // castTime: this.spell.castTime,
+
+            // buffTimer.notifyWhenEnded = true;
+            // buffTimer.endedSpeak = true;
+            // buffTimer.endedSpeakPhrase = `Your ${this.spell.name} on \${target} has ended.`;
+            
+            // if ( this.spell.effectFades ) {
+            //     // End when the buff ends early.
+            //     buffTimer.endEarlyPhrases.push( <Phrase>{
+            //         phraseId: nanoid(),
+            //         phrase: '^' + this.spell.effectFades.replace( /\.$/, '\\.$' ),
+            //         useRegEx: true,
+            //     } );
+            // }
+            
         }
 
         if ( this.alertEndingSoon ) {
@@ -241,37 +309,9 @@ export class NewTriggerBuffDialogComponent implements OnInit {
             buffTimer.endingSoonShowTimer = this.showTimerWhenEndingSoon;
         }
 
-        // } else {
-        //     trigger.captureMethod = 'Sequential';
-
-        //     // [Sat Dec 26 11:14:00 2020] You begin casting Sigil of Decay.
-        //     // [Sat Dec 26 11:14:02 2020] Your Ring of Radiant Wisdom flickers with a pale light.
-        //     // [Sat Dec 26 11:14:02 2020] Vonaner is covered in slithering black glyphs.
-
-        //     let beginCastingPhrase = nanoid();
-        //     trigger.capturePhrases.push( <CapturePhrase>{
-        //         phraseId: beginCastingPhrase,
-        //         useRegEx: true,
-        //         requirePreviousPhrase: false,
-        //         duration: this.spell.castTime,
-        //         // /^(?<target>You) feel armored\.$/
-        //         phrase: this.spell.castOnYou.replace( /\.$/, '\\.$' ).replace( /you/gmi, '^(?<target>You)' ),
-        //     } );
-
-        // }
-
-        // if ( this.alertWhenBuffFades && !this.useTimer ) {
-            
-        //     let fadeFromYou = nanoid();
-        //     trigger.capturePhrases.push( <CapturePhrase>{
-        //         phraseId: fadeFromYou,
-        //         useRegEx: true,
-        //         requirePreviousPhrase: false,
-        //         duration: null,
-        //         // /^(?<target>You) feel armored\.$/
-        //         phrase: '^' + this.spell.effectFades.replace( /\.$/, '\\.$' ),
-        //     } );
-
+        // Leaving this here to enable it when the alert when ended is decoupled from the timer.
+        // if ( this.showTimerWhenEndingSoon || this.useSelfTimer || this.useTargetTimer || this.alertEndingSoon ) {
+        //     trigger.actions.push( buffTimer );
         // }
 
         if ( this.spell.gemIndex > -1 ) {
