@@ -27,9 +27,11 @@
                 <p><mat-slide-toggle [(ngModel)]="alertEndingSoon" name="togAlertEndingSoon">Notify me when the buff is ending in </mat-slide-toggle><app-duration [(ngModel)]="endingSoonDuration" name="durEndingSoon" [inline]="true" *ngIf="alertEndingSoon" required></app-duration></p>
                 <p><mat-slide-toggle [(ngModel)]="alertWhenBuffFades" name="togAlertWhenBuffFades">Notify me when the buff fades.</mat-slide-toggle></p>
 
-                <p class="note" *ngIf="useTargetTimer || (alertWhenBuffFades && spell?.effectFades == null)">
-                    <ng-template [ngIf]="useTargetTimer"><strong class="color-green">Note: </strong><small>The log file does not include targeting information when you cast a buff on another entity (player / pet / npc / etc).  We try to use the casting time (automatically accounting for your beneficial casting speed focus) of the buff to approximate your target, however there is still room for error if another player casts the same spell on a different target at the same second as you have.</small></ng-template>
-                    <ng-template [ngIf]="alertWhenBuffFades && spell?.effectFades == null"><strong class="color-green">Note: </strong><small>Some buffs do not have a log entry when the effect fades, namely buffs with charges.  This only applies to buffs cast on <strong>self</strong>, because there is still a log entry when your effect fades on other.</small></ng-template>
+                <p class="notice border-green" *ngIf="useTargetTimer">
+                    <mat-icon class="material-icons-outlined color-green">info</mat-icon><span>The log file does not include targeting information when you cast a buff on another entity (player / pet / npc / etc).  We try to use the casting time (automatically accounting for your beneficial casting speed focus) of the buff to approximate your target, however there is still room for error if another player casts the same spell on a different target at the same second as you have.</span>
+                </p>
+                <p class="notice border-green" *ngIf="alertWhenBuffFades && spell?.effectFades == null">
+                    <mat-icon class="material-icons-outlined color-green">info</mat-icon><span>Some buffs do not have a log entry when the effect fades, namely buffs with charges.  This only applies to buffs cast on <strong>self</strong>, because there is still a log entry when your effect fades on other.</span>
                 </p>
                 
                 <div>

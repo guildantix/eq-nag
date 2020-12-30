@@ -137,6 +137,34 @@ fieldset {
     color: #f0698e;
 }
 
+::ng-deep .border-light {
+    border-color: #ffffffde;
+}
+
+::ng-deep .border-blue {
+    border-color: #69ddf0cc; // a: 0.80
+}
+
+::ng-deep .border-green {
+    border-color: #69f0aecc; // a: 0.80
+}
+
+::ng-deep .border-orange {
+    border-color: #f0c669cc; // a: 0.80
+}
+
+::ng-deep .border-red {
+    border-color: #f06969cc; // a: 0.80
+}
+
+::ng-deep .border-purple {
+    border-color: #c269f0cc; // a: 0.80
+}
+
+::ng-deep .border-magenta {
+    border-color: #f0698ecc; // a: 0.80
+}
+
 ::ng-deep .text-depress {
     color: #ffffff7d;
     font-weight: 100;
