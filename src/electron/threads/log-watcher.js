@@ -366,6 +366,17 @@ function generateTriggerFns() {
                 }
             } );
 
+            /** @type {Record<string, string[]>} */
+            let _conditionValues = {};
+            trigger.conditions?.forEach( condition => {
+                if ( condition.variableValue ) {
+                    _conditionValues[ condition.variableName ] = condition.variableValue.split( /\|/gi ) ?? [];
+                    _conditionValues[ condition.variableName ].forEach( v => v = v?.trim() );
+                } else {
+                    _conditionValues[ condition.variableName ] = null;
+                }
+            } );
+
             /**
              * Returns true if all conditions are passed.
              * @returns {boolean}
@@ -375,16 +386,18 @@ function generateTriggerFns() {
 
                 trigger._conditionResults = {};
 
-                // First, the trigger must pass each condition.
+                // The trigger must pass each condition.
                 trigger.conditions?.forEach( condition => {
                     if ( condition.conditionType === TriggerConditionTypes.VariableValue ) {
                         if ( condition.operatorType === OperatorTypes.Equals ) {
+                            
+                            let storedValue = storeHasValue( condition.variableName, _conditionValues[ condition.variableName ] );
 
-                            if ( !storeHasValue( condition.variableName, condition.variableValue ) ) {
+                            if ( !storedValue.exists ) {
                                 conditionsPassed = false;
                             } else {
                                 // Store what value passed.
-                                trigger._conditionResults[ condition.variableName ] = condition.variableValue;
+                                trigger._conditionResults[ condition.variableName ] = storedValue.value;
                             }
                             
                         } else if ( condition.operatorType === OperatorTypes.IsNull ) {
@@ -397,16 +410,19 @@ function generateTriggerFns() {
                             }
 
                         } else if ( condition.operatorType === OperatorTypes.DoesNotEqual ) {
+
+                            let storedValue = storeHasValue( condition.variableName, _conditionValues[ condition.variableName ] );
                             
-                            if ( condition.variableValue && storeHasValue( condition.variableName, condition.variableValue ) ) {
+                            if ( _conditionValues[ condition.variableName ] && storedValue.exists ) {
                                 // If the condition value is not null, then check if the store has that value.
                                 conditionsPassed = false;
-                            } else if ( !condition.variableValue && ( storedVariables[ condition.variableName ] == null || storedVariables[ condition.variableName ]?.length == 0 ) ) {
+                            } else if ( _conditionValues[ condition.variableName ] == null && ( storedVariables[ condition.variableName ] == null || storedVariables[ condition.variableName ]?.length == 0 ) ) {
                                 // If the condition value is null, then check to make sure that the stored value(s) have at least 1 value;
+                                //  ex: If CurrentZone == null and the condition requires that CurrentZone DoesNotEqual Null
                                 conditionsPassed = false;
                             } else {
                                 // Store what value passed.
-                                trigger._conditionResults[ condition.variableName ] = condition.variableValue;
+                                trigger._conditionResults[ condition.variableName ] = storedValue.value;
                             }
 
                         }
@@ -1324,11 +1340,29 @@ function saveScalarVariable( key, value ) {
 /**
  * Returns true if the given key has the specified value in the store.
  * 
+ * @returns {{exists: boolean, value: any}}
+ * 
  * @param {string} key The key of the stored variable.
- * @param {any} value The value to check.
+ * @param {any|any[]} value The value to check.
  */
 function storeHasValue( key, value ) {
-    return storedVariables[ key ]?.length > 0 ? storedVariables[ key ].indexOf( value ) > -1 : false;
+    
+    if ( storedVariables[ key ]?.length > 0 ) {
+        if ( value instanceof Array ) {
+            for ( let i = 0; i < value.length; i++ ) {
+                let index = storedVariables[ key ].indexOf( value[ i ] ) > -1;
+                if ( index > -1 ) {
+                    return { exists: true, value: storedVariables[ key[ index ] ] };
+                }
+            }
+        } else {
+            let index = storedVariables[ key ].indexOf( value ) > -1;
+            return index > -1 ? { exists: true, value: storedVariables[ key[ index ] ] } : { exists: false };
+        }
+    }
+
+    return { exists: false };
+    
 }
 
 
