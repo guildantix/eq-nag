@@ -1350,13 +1350,13 @@ function storeHasValue( key, value ) {
     if ( storedVariables[ key ]?.length > 0 ) {
         if ( value instanceof Array ) {
             for ( let i = 0; i < value.length; i++ ) {
-                let index = storedVariables[ key ].indexOf( value[ i ] ) > -1;
+                let index = storedVariables[ key ].indexOf( value[ i ] );
                 if ( index > -1 ) {
                     return { exists: true, value: storedVariables[ key[ index ] ] };
                 }
             }
         } else {
-            let index = storedVariables[ key ].indexOf( value ) > -1;
+            let index = storedVariables[ key ].indexOf( value );
             return index > -1 ? { exists: true, value: storedVariables[ key[ index ] ] } : { exists: false };
         }
     }
