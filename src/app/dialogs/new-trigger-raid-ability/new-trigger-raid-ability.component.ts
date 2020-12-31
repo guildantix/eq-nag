@@ -1,6 +1,6 @@
 import { Component, Inject, OnInit } from '@angular/core';
 import { MatDialogRef, MAT_DIALOG_DATA, MatDialog } from '@angular/material/dialog';
-import { ActionTypes, CapturePhrase, ImportTypes, OperatorTypes, OverlayWindowModel, Phrase, ScrapedAbility, ScrapedNpc, TriggerAction, TriggerCondition, TriggerConditionTypes, TriggerModel } from 'src/app/core.model';
+import { ActionTypes, CapturePhrase, ImportTypes, OperatorTypes, OverlayWindowModel, Phrase, ScrapedAbility, ScrapedNpc, TimerRestartBehaviors, TriggerAction, TriggerCondition, TriggerConditionTypes, TriggerModel } from 'src/app/core.model';
 import { IpcService } from 'src/app/ipc.service';
 import { ScraperService } from 'src/app/scraper.service';
 import { NewTriggerDialogComponent } from '../new-trigger-dialog/new-trigger-dialog.component';
@@ -195,7 +195,7 @@ export class NewTriggerRaidAbilityComponent implements OnInit {
                 useCustomColor: true,
                 overrideTimerColor: '#f57f17',
                 timerBackgroundColor: ColorUtility.FromHex( '#f57f17' ).darken( 0.93 ).toString( 0.75 ),
-                restartTimerAlways: true,
+                restartBehavior: TimerRestartBehaviors.RestartTimer,
             };
 
             act.endEarlyPhrases = [];
@@ -237,7 +237,7 @@ export class NewTriggerRaidAbilityComponent implements OnInit {
                         useCustomColor: true,
                         overrideTimerColor: '#f57f17',
                         timerBackgroundColor: ColorUtility.FromHex( '#f57f17' ).darken( 0.93 ).toString( 0.75 ),
-                        restartTimerAlways: true,
+                        restartBehavior: TimerRestartBehaviors.RestartTimer,
                     };
                     
                     act.endEarlyPhrases.unshift( <Phrase>{
@@ -295,7 +295,7 @@ export class NewTriggerRaidAbilityComponent implements OnInit {
                 useCustomColor: true,
                 overrideTimerColor: '#b71c1c',
                 timerBackgroundColor: ColorUtility.FromHex( '#b71c1c' ).darken( 0.93 ).toString( 0.75 ),
-                restartTimerAlways: true,
+                restartBehavior: TimerRestartBehaviors.RestartTimer,
             };
 
         }

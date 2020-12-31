@@ -1,7 +1,7 @@
 import { Component, Inject, OnInit, ViewChild } from '@angular/core';
 import { MatDialog, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { MatHorizontalStepper } from '@angular/material/stepper';
-import { ActionTypes, CapturePhrase, ImportTypes, OperatorTypes, OverlayWindowModel, Phrase, ScrapedSpell, TriggerAction, TriggerCondition, TriggerConditionTypes, TriggerModel } from 'src/app/core.model';
+import { ActionTypes, CapturePhrase, ImportTypes, OperatorTypes, OverlayWindowModel, Phrase, ScrapedSpell, TimerRestartBehaviors, TriggerAction, TriggerCondition, TriggerConditionTypes, TriggerModel } from 'src/app/core.model';
 import { IpcService } from 'src/app/ipc.service';
 import { ScraperService } from 'src/app/scraper.service';
 import { NewTriggerDialogModel } from '../dialog.model';
@@ -132,7 +132,7 @@ export class NewTriggerBuffDialogComponent implements OnInit {
             overlayId: this.timerOverlayId,
             duration: this.spell.duration,
             actionId: nanoid(),
-            restartTimerAlways: true,
+            restartBehavior: TimerRestartBehaviors.RestartTimer,
             displayText: this.spell.name,
             useCustomColor: true,
             overrideTimerColor: '#0288d1',
@@ -305,7 +305,7 @@ export class NewTriggerBuffDialogComponent implements OnInit {
             // overlayId: this.timerOverlayId,
             // duration: this.spell.duration,
             // actionId: nanoid(),
-            // restartTimerAlways: true,
+            // restartBehavior: TimerRestartBehaviors.RestartTimer,
             // displayText: this.spell.name,
             // useCustomColor: true,
             // overrideTimerColor: '#0288d1',

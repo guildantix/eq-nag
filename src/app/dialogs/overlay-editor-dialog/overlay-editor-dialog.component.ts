@@ -1,6 +1,6 @@
 import { Component, OnInit, HostListener } from '@angular/core';
 import { IpcService } from 'src/app/ipc.service';
-import { OverlayWindowModel, ActionTypes, TriggerAction, TimerSortTypes } from 'src/app/core.model';
+import { OverlayWindowModel, ActionTypes, TriggerAction, TimerSortTypes, TimerRestartBehaviors } from 'src/app/core.model';
 import { ActivatedRoute } from '@angular/router';
 import { ThemePalette } from '@angular/material/core';
 import { AbstractControl, FormControl } from '@angular/forms';
@@ -205,7 +205,7 @@ export class OverlayEditorDialogComponent implements OnInit {
                     triggerName: f.triggerName,
                     action: {
                         displayText: `${f.name} --== {1} ==--`,
-                        restartOnDuplicate: true,
+                        restartBehavior: TimerRestartBehaviors.RestartOnDuplicate,
                         duration: f.duration,
                         actionType: ActionTypes.DotTimer,
                         overrideTimerColor: f.overrideTimerColor,

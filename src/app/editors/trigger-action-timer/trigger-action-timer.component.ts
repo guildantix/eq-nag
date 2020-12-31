@@ -2,7 +2,7 @@ import { Component, ElementRef, Input, OnInit, ViewChild } from '@angular/core';
 import { MatTable } from '@angular/material/table';
 import { ContextMenuModel } from 'src/app/context-menu/context-menu.model';
 import { ContextService } from 'src/app/context-menu/context.service';
-import { ActionTypes, FileModel, OverlayWindowModel, Phrase, TriggerAction } from 'src/app/core.model';
+import { ActionTypes, FileModel, OverlayWindowModel, Phrase, TimerRestartBehaviors, TriggerAction } from 'src/app/core.model';
 import { ImageUtility } from 'src/app/utilities';
 import { IpcService } from 'src/app/ipc.service';
 import { DialogService } from 'src/app/dialogs/dialog.service';
@@ -20,18 +20,7 @@ export class TriggerActionTimerComponent implements OnInit {
     public Math: typeof Math = Math;
     public audioFiles: FileModel[] = [];
     public actionTypes: typeof ActionTypes = ActionTypes;
-
-    public get restartBehavior(): string {
-        return this.action.restartOnDuplicate ? "1" :
-               this.action.restartTimerAlways ? "2" :
-               this.action.restartTimerNever ? "3" :
-               "0";
-    }
-    public set restartBehavior( value: string ) {
-        this.action.restartOnDuplicate = value === "1";
-        this.action.restartTimerAlways = value === "2";
-        this.action.restartTimerNever = value === "3";
-    }
+    public timerRestartBehaviors: typeof TimerRestartBehaviors = TimerRestartBehaviors;
 
     @Input( 'action' ) public action: TriggerAction;
     @Input( 'overlayOptions' ) public timerOverlays: OverlayWindowModel[] = [];

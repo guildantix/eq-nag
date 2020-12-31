@@ -1,5 +1,5 @@
 import { Component, ElementRef, Input, OnInit, ViewChild } from '@angular/core';
-import { FileModel, OverlayWindowModel, TriggerAction } from 'src/app/core.model';
+import { FileModel, OverlayWindowModel, TimerRestartBehaviors, TriggerAction } from 'src/app/core.model';
 import { ImageUtility } from 'src/app/utilities';
 import * as _ from 'lodash';
 import { ContextMenuModel } from 'src/app/context-menu/context-menu.model';
@@ -16,6 +16,7 @@ export class TriggerActionDotTimerComponent implements OnInit {
 
     public Math: typeof Math = Math;
     public audioFiles: FileModel[] = [];
+    public timerRestartBehaviors: typeof TimerRestartBehaviors = TimerRestartBehaviors;
     @Input( 'action' ) public action: TriggerAction;
     @Input( 'overlayOptions' ) public timerOverlays: OverlayWindowModel[] = [];
     @Input( 'alertOverlays' ) public alertOverlays: OverlayWindowModel[] = [];

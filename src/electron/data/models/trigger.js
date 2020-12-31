@@ -67,6 +67,17 @@ var ImportTypes = {
     Buff: 4,
 }
 
+var TimerRestartBehaviors = {
+    '0': 'StartNewTimer',
+    '1': 'RestartOnDuplicate',
+    '2': 'RestartTimer',
+    '3': 'DoNothing',
+    StartNewTimer: 0,
+    RestartOnDuplicate: 1,
+    RestartTimer: 2,
+    DoNothing: 3,
+}
+
 class TriggerFolder {
     /** @type {string} */
     folderId;
@@ -144,12 +155,8 @@ class TriggerAction {
     ticks = null;
     /** @type string[] */
     phrases;
-    /** @type boolean */
-    restartOnDuplicate = false;
-    /** @type boolean */
-    restartTimerAlways = false;
-    /** @type boolean */
-    restartTimerNever = false;
+    /** @type {number} */
+    restartBehavior = TimerRestartBehaviors.StartNewTimer;
     /** @type boolean */
     onlyExecuteInDev = false;
     /** @type string */
@@ -316,4 +323,4 @@ class FileModel {
 
 }
 
-module.exports = { Trigger, TriggerAction, ActionTypes, CapturePhrase, TriggerConditionTypes, OperatorTypes, Phrase, TriggerFolder, MediaTypes, FileModel, Tag, ImportTypes, CharacterClassLevel };
+module.exports = { Trigger, TriggerAction, ActionTypes, CapturePhrase, TriggerConditionTypes, OperatorTypes, Phrase, TriggerFolder, MediaTypes, FileModel, Tag, ImportTypes, CharacterClassLevel, TimerRestartBehaviors };

@@ -3,7 +3,7 @@ const StringUtilities = require( '../utilities/string' );
 const NumberUtilities = require( '../utilities/numbers' );
 const ArrayUtilities = require( '../utilities/arrays' );
 const { OverlayWindow, OverlayComponent, TimerSortTypes } = require( '../data/models/overlay-window' );
-const { ActionTypes, TriggerAction, TriggerConditionTypes, OperatorTypes } = require( '../data/models/trigger' );
+const { ActionTypes, TriggerAction, TriggerConditionTypes, OperatorTypes, TimerRestartBehaviors } = require( '../data/models/trigger' );
 const { ipcRenderer } = require( 'electron' );
 const Handlebars = require( "handlebars" );
 const _ = require( 'lodash' );
@@ -289,117 +289,137 @@ function render( comp ) {
         }, comp.action.duration * 1000 );
         overlayComponents.push( comp );
 
-    } else if ( comp.action.actionType === ActionTypes.Timer || comp.action.actionType === ActionTypes.Countdown ) {
+    } else if ( comp.action.actionType === ActionTypes.Timer
+        || comp.action.actionType === ActionTypes.Countdown
+        || comp.action.actionType === ActionTypes.DotTimer
+        || comp.action.actionType === ActionTypes.BeneficialTimer ) {
+        
+        if ( restartTimerComponent( comp ) ) {
+            return;
+        }
+        
         if ( groupByTarget ) {
-            let group = getTimerGroup( contentArea, 'General' );
+            
+            /** @type {TimerGroup} */
+            let group;
+            
+            if ( comp.action.actionType === ActionTypes.DotTimer || comp.action.actionType === ActionTypes.BeneficialTimer ) {
+                group = getTimerGroup( contentArea, comp.matches.groups.target );
+            
+                createGroupedDotTimer( contentArea, group, comp );
 
-            if ( comp.action.restartOnDuplicate === true && restartTimerComponent( comp, comp.triggerName, group.components ) ) {
-                // Do nothing
             } else {
+                group = getTimerGroup( contentArea, 'General' );
+                
                 createGroupedTimer( contentArea, group, comp );
-            }
-
-            // If the user has specified a sort direction.
-            if ( sortDirection > 0 ) {
-                // Every time a new timer is added, reorganize the timers so that the 
-                // timer ending first will appear in the order in which the user has
-                // specified.
-        
-                let dir = sortDirection === TimerSortTypes.Ascending ? -1 : 1;
-                let hdr = group.dom.querySelector( 'h6' );
-                group.components = _.sortBy( group.components, [ c => dir * c.timeRemaining ] );
-                for ( let i = 0; i < group.components.length; i++ ) {
-                    group.dom.insertBefore( group.components[ i ].dom, hdr.nextSibling );
-                }
-        
+                
             }
             
+            sortGroupComponents( group );
             group.updateVisibility();
-
+            
         } else {
 
-            if ( comp.action.restartOnDuplicate === true && restartTimerComponent( comp, comp.action.displayText, overlayComponents ) ) {
-                // Do nothing
+            if ( comp.action.actionType === ActionTypes.DotTimer || comp.action.actionType === ActionTypes.BeneficialTimer ) {
+                createUngroupedDotTimer( contentArea, comp );
             } else {
                 createUngroupedTimer( contentArea, comp );
             }
-
-            // If the user has specified a sort direction.
-            if ( sortDirection > 0 ) {
-                // Every time a new timer is added, reorganize the timers so that the 
-                // timer ending first will appear in the order in which the user has
-                // specified.
-        
-                let dir = sortDirection === TimerSortTypes.Ascending ? -1 : 1;
-                let sorted = _.sortBy( overlayComponents, [ c => dir * c.timeRemaining ] );
-                for ( let i = 0; i < sorted.length; i++ ) {
-                    sorted[ i ].dom.parentNode.prepend( sorted[ i ].dom );
-                }
-        
-            }
+            
+            sortOverlayComponents();
             
         }
-    } else if ( comp.action.actionType === ActionTypes.DotTimer || comp.action.actionType === ActionTypes.BeneficialTimer ) {
-        // comp.action.duration *= 50;
+    }
+}
 
-        if ( groupByTarget ) {
-            let group = getTimerGroup( contentArea, comp.matches[ 1 ] );
 
-            if ( comp.action.restartOnDuplicate === true && restartTimerComponent( comp, comp.triggerName, group.components ) ) {
-                // Do nothing
-            } else {
-                createGroupedDotTimer( contentArea, group, comp );
-            }
 
-            // If the user has specified a sort direction.
-            if ( sortDirection > 0 ) {
-                // Every time a new timer is added, reorganize the timers so that the 
-                // timer ending first will appear in the order in which the user has
-                // specified.
-        
-                let dir = sortDirection === TimerSortTypes.Ascending ? -1 : 1;
-                let hdr = group.dom.querySelector( 'h6' );
-                group.components = _.sortBy( group.components, [ c => dir * c.timeRemaining ] );
-                for ( let i = 0; i < group.components.length; i++ ) {
-                    group.dom.insertBefore( group.components[ i ].dom, hdr.nextSibling );
-                }
-        
-            }
 
-            group.updateVisibility();
-            
-        } else {
-            let displayText = '';
-            
-            if ( hideTargetLabel ) {
-                displayText = comp.triggerName;
-            } else {
-                displayText = StringUtilities.format( comp.action.displayText, comp.matches );
-            }
 
-            if ( comp.action.restartOnDuplicate === true && restartTimerComponent( comp, displayText, overlayComponents ) ) {
-                // Do nothing
-            } else {
-                createUngroupedDotTimer( contentArea, comp, displayText );
-            }
 
-            // If the user has specified a sort direction.
-            if ( sortDirection > 0 ) {
-                // Every time a new timer is added, reorganize the timers so that the 
-                // timer ending first will appear in the order in which the user has
-                // specified.
-        
-                let dir = sortDirection === TimerSortTypes.Ascending ? -1 : 1;
-                let sorted = _.sortBy( overlayComponents, [ c => dir * c.timeRemaining ] );
-                for ( let i = 0; i < sorted.length; i++ ) {
-                    sorted[ i ].dom.parentNode.prepend( sorted[ i ].dom );
-                }
-        
-            }
 
+
+
+
+/**
+ * Sorts the overlay components according to the user specified sort direction.
+ */
+function sortOverlayComponents() {
+    // If the user has specified a sort direction.
+    if ( sortDirection > 0 ) {
+        // Every time a new timer is added, reorganize the timers so that the 
+        // timer ending first will appear in the order in which the user has
+        // specified.
+
+        let dir = sortDirection === TimerSortTypes.Ascending ? -1 : 1;
+        let sorted = _.sortBy( overlayComponents, [ c => dir * c.timeRemaining ] );
+        for ( let i = 0; i < sorted.length; i++ ) {
+            sorted[ i ].dom.parentNode.prepend( sorted[ i ].dom );
         }
 
     }
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Sorts the given timer group's overlay components according to the user 
+ * specified sort direction.
+ * 
+ * @param {TimerGroup} group The overlay component group.
+ */
+function sortGroupComponents( group ) {
+    // If the user has specified a sort direction.
+    if ( sortDirection > 0 ) {
+        // Every time a new timer is added, reorganize the timers so that the 
+        // timer ending first will appear in the order in which the user has
+        // specified.
+
+        let dir = sortDirection === TimerSortTypes.Ascending ? -1 : 1;
+        let hdr = group.dom.querySelector( 'h6' );
+        group.components = _.sortBy( group.components, [ c => dir * c.timeRemaining ] );
+        for ( let i = 0; i < group.components.length; i++ ) {
+            group.dom.insertBefore( group.components[ i ].dom, hdr.nextSibling );
+        }
+
+    }
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Returns the label for the given timer overlay component.
+ * 
+ * @param {OverlayComponent} comp The overlay component of the timer.
+ */
+function getTimerLabel( comp ) {
+    let label = '';
+
+    if ( comp.action.actionType === ActionTypes.Timer || comp.action.actionType === ActionTypes.Countdown ) {
+        label = comp.action.displayText || comp.triggerName;
+    } else if ( comp.action.actionType === ActionTypes.DotTimer || comp.action.actionType === ActionTypes.BeneficialTimer ) {
+        if ( groupByTarget || hideTargetLabel ) {
+            label = comp.triggerName;
+        } else {
+            label = comp.action.displayText || comp.triggerName;
+        }
+    }
+
+    return label;
 }
 
 
@@ -419,7 +439,8 @@ function render( comp ) {
  * @param {OverlayComponent} comp The overlay component.
  */
 function createGroupedDotTimer( contentArea, group, comp ) {
-    let content = targetGroupTimerTemplate( { value: comp.triggerName } );
+    let displayText = getTimerLabel( comp );
+    let content = targetGroupTimerTemplate( { value: displayText } );
 
     let div = document.createElement( 'div' );
     div.innerHTML = content;
@@ -430,7 +451,7 @@ function createGroupedDotTimer( contentArea, group, comp ) {
     }
 
     comp.dom = div;
-    comp.description = comp.triggerName;
+    comp.description = displayText;
 
     // Create a method that will remove the component from the screen.
     let groupKey = group.name;
@@ -439,10 +460,14 @@ function createGroupedDotTimer( contentArea, group, comp ) {
         window.clearInterval( comp.intervalId );
         ArrayUtilities.remove( overlayGroups[ groupKey ].components, f => f.instanceId == comp.instanceId );
 
-        if ( overlayGroups[ groupKey ].components?.length === 0 ) {
-            overlayGroups[ groupKey ].dom.parentNode && overlayGroups[ groupKey ].dom.parentNode.removeChild( overlayGroups[ groupKey ].dom );
-            delete overlayGroups[ groupKey ];
-        }
+        window.setTimeout( () => {
+            // We delay execution of this code and move it to the end of the stack 
+            // because other overlay components may be added to this group.
+            if ( overlayGroups[ groupKey ].components?.length === 0 ) {
+                overlayGroups[ groupKey ].dom.parentNode && overlayGroups[ groupKey ].dom.parentNode.removeChild( overlayGroups[ groupKey ].dom );
+                delete overlayGroups[ groupKey ];
+            }
+        } );
     };
     
     applyTimerSettings( contentArea, comp, group );
@@ -469,7 +494,8 @@ function createGroupedDotTimer( contentArea, group, comp ) {
  * @param {OverlayComponent} comp The overlay component.
  */
 function createGroupedTimer( contentArea, group, comp ) {
-    let content = targetGroupTimerTemplate( { value: comp.action.displayText || comp.triggerName } );
+    let displayText = getTimerLabel( comp );
+    let content = targetGroupTimerTemplate( { value: displayText } );
 
     let div = document.createElement( 'div' );
     div.innerHTML = content;
@@ -480,7 +506,7 @@ function createGroupedTimer( contentArea, group, comp ) {
     }
 
     comp.dom = div;
-    comp.description = comp.action.displayText || comp.triggerName;
+    comp.description = displayText;
 
     // Create a method that will remove the component from the screen.
     let groupKey = group.name;
@@ -489,10 +515,14 @@ function createGroupedTimer( contentArea, group, comp ) {
         window.clearInterval( comp.intervalId );
         ArrayUtilities.remove( overlayGroups[ groupKey ].components, f => f.instanceId == comp.instanceId );
 
-        if ( overlayGroups[ groupKey ].components?.length === 0 ) {
-            overlayGroups[ groupKey ].dom.parentNode && overlayGroups[ groupKey ].dom.parentNode.removeChild( overlayGroups[ groupKey ].dom );
-            delete overlayGroups[ groupKey ];
-        }
+        window.setTimeout( () => {
+            // We delay execution of this code and move it to the end of the stack 
+            // because other overlay components may be added to this group.
+            if ( overlayGroups[ groupKey ].components?.length === 0 ) {
+                overlayGroups[ groupKey ].dom.parentNode && overlayGroups[ groupKey ].dom.parentNode.removeChild( overlayGroups[ groupKey ].dom );
+                delete overlayGroups[ groupKey ];
+            }
+        } );
     };
     
     applyTimerSettings( contentArea, comp, group );
@@ -590,9 +620,9 @@ function getTimerGroup( contentArea, groupName ) {
  * 
  * @param {Node} contentArea The content area for dot timers.
  * @param {OverlayComponent} comp The dot timer component.
- * @param {string} displayText The display text for the visible section of the dot timer.
  */
-function createUngroupedDotTimer( contentArea, comp, displayText ) {
+function createUngroupedDotTimer( contentArea, comp ) {
+    let displayText = getTimerLabel( comp );
     let content = timerTemplate( { value: displayText } );
 
     // Create the component's dom element and append it to the content area.
@@ -620,6 +650,15 @@ function createUngroupedDotTimer( contentArea, comp, displayText ) {
 
 }
 
+
+
+
+
+
+
+
+
+
 /**
  * Creates a new timer and places it in the content area.
  * 
@@ -627,7 +666,8 @@ function createUngroupedDotTimer( contentArea, comp, displayText ) {
  * @param {OverlayComponent} comp The dot timer component.
  */
 function createUngroupedTimer( contentArea, comp ) {
-    let content = timerTemplate( { value: comp.action.displayText } );
+    let displayText = getTimerLabel( comp );
+    let content = timerTemplate( { value: displayText } );
 
     // Create the component's dom element and append it to the content area.
     let div = document.createElement( 'div' );
@@ -638,7 +678,7 @@ function createUngroupedTimer( contentArea, comp ) {
     }
 
     comp.dom = div;
-    comp.description = comp.action.displayText;
+    comp.description = displayText;
 
     // Create a method that will remove the component from the screen.
     comp.removeComponent = () => {
@@ -723,6 +763,14 @@ function applyTimerSettings( contentArea, comp, group ) {
             comp.hidden = comp.action.hideTimer;
             comp.dom.style.display = 'none';
         }
+    }
+
+    // Setting the initial state of the determinate will prevent the progress 
+    // bar from jumping from the end to the beginning when shown.
+    if ( comp.action.actionType === ActionTypes.Countdown || comp.action.actionType === ActionTypes.BeneficialTimer ) {
+        comp.dom.querySelector( 'div.determinate' ).style.width = `100%`;
+    } else {
+        comp.dom.querySelector( 'div.determinate' ).style.width = `0%`;
     }
 
     // Set the update method.
@@ -923,57 +971,206 @@ function resetTimerComponentClock(comp, repeatCount) {
 
 
 /**
- * Restarts the given component, if found.
+ * Restarts a named timer component.  Using this method, only the description/text of the timer is considered when restarting.
  * 
- * @returns {boolean} Returns true if the component was found and restarted.
+ * @returns {boolean} Returns true if the given component should not be created.
  * 
  * @param {OverlayComponent} comp The overlay component to restart.
- * @param {string} displayText The matching display text.
- * @param {OverlayComponent[]} dictionary The dictionary that contains the desired component.
  */
-function restartTimerComponent( comp, displayText, dictionary ) {
-    // If this component needs to restart on duplicate names, then find the index of the first match, and if found reset the start.
-    let index = ArrayUtilities.findIndex( dictionary, f => f?.description == displayText );
-    if ( index > -1 ) {
+function restartTimerComponent( comp ) {
 
-        // Tell log watchers to remove any hooks they have for the old component.
-        ipcRenderer.send( 'log:destroy:component', dictionary[ index ].instanceId );
+    if ( comp.action.restartBehavior === TimerRestartBehaviors.RestartOnDuplicate ) {
+        
+        if ( comp.action.actionType === ActionTypes.BeneficialTimer || comp.action.actionType === ActionTypes.DotTimer ) {
+            destroyComponents( c => c.action.actionId == comp.action.actionId && c.matches.groups.target === comp.matches.groups.target );
 
-        // dictionary[ index ] = resetTimerComponentClock( dictionary[ index ] );
-        // Reset the start duration
-        dictionary[ index ].start = comp.timestamp;
-        // let perc = ( Math.abs( ( new Date() ) - dictionary[ index ].start ) / 1000 ) / comp.action.duration;
-
-        // dictionary[ index ].timeRemaining = comp.action.duration - ( comp.action.duration * perc );
-        dictionary[ index ].timeRemaining = comp.action.duration;
-
-        // Reset the ending conditions
-        dictionary[ index ].endingSoonSpoken = false;
-        dictionary[ index ].endingSoonTextDisplayed = false;
-        dictionary[ index ].endedSpoken = false;
-        dictionary[ index ].endedTextDisplayed = false;
-        dictionary[ index ].instanceId = comp.instanceId;
-
-        // Reset the background color
-        if ( dictionary[ index ].action.overrideTimerColor ) {
-            dictionary[ index ].dom.querySelector( '.determinate' ).style.backgroundColor = dictionary[ index ].action.overrideTimerColor;
-            dictionary[ index ].dom.querySelector( '.progress' ).style.backgroundColor = dictionary[ index ].action.timerBackgroundColor;
-        } else {
-            dictionary[ index ].dom.querySelector( '.determinate' ).style.backgroundColor = '#008000';
-            dictionary[ index ].dom.querySelector( '.progress' ).style.backgroundColor = 'rgba(0,33,0,.75)';
+        } else if ( comp.action.actionType === ActionTypes.Timer || comp.action.actionType === ActionTypes.Countdown ) {
+            // If a timer's displayText property was not supplied by the user, 
+            // then the description (which is the text that is rendered on the 
+            // progress bar) of a timer is set to the trigger's name.  If the 
+            // parameter component's display text is null, it would then match 
+            // the description (Trigger's Name, by default) of the same action 
+            // id.
+            destroyComponents( c => c.action.actionId == comp.action.actionId && ( comp.action.displayText == null || c.description === comp.action.displayText ) );
+            
         }
 
+    } else if ( comp.action.restartBehavior === TimerRestartBehaviors.RestartTimer ) {
+        destroyComponents( c => c.action.actionId == comp.action.actionId );
+        
+    } else if ( comp.action.restartBehavior === TimerRestartBehaviors.DoNothing ) {
+        // I realize this is bad practice, I'm tired, it's late, and it's documented.
         return true;
     }
 
     return false;
 }
 
+
+
+
+
+
+
+
+
+
+/**
+ * Finds all overlay components of the specified action.
+ * 
+ * @returns {OverlayComponent[]}
+ * 
+ * @param {(component: OverlayComponent) => boolean} predicate Invoked per iteration, if true the component is included in the results.
+ */
+function findComponents( predicate ) {
+    let ocs = [];
+
+    if ( groupByTarget ) {
+
+        for ( let key of Object.keys( overlayGroups ) ) {
+            overlayGroups[ key ].components?.forEach( c => {
+                if ( predicate( c ) ) {
+                    ocs.push( c );
+                }
+            } );
+        }
+
+    } else {
+
+        overlayComponents?.forEach( c => {
+            if ( predicate( c ) ) {
+                ocs.push( c );
+            }
+        } );
+
+    }
+
+    return ocs;
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Destroys all overlay components predicate returns truthy for.
+ * 
+ * @param {(component: OverlayComponent) => boolean} predicate Executed per iteration, passing in the overlay component as the first argument.
+ */
+function destroyComponents( predicate ) {
+    let ocs = [];
+
+    if ( groupByTarget ) {
+
+        for ( let key of Object.keys( overlayGroups ) ) {
+            overlayGroups[ key ].components?.forEach( c => {
+                if ( predicate( c ) ) {
+                    ocs.push( c );
+                }
+            } );
+        }
+
+    } else {
+
+        overlayComponents?.forEach( c => {
+            if ( predicate( c ) ) {
+                ocs.push( c );
+            }
+        } );
+
+    }
+
+    ocs.forEach( c => {
+        c.removeComponent();
+        ipcRenderer.send( 'log:destroy:component', c.instanceId );
+    } );
+    
+    ocs = null;
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Restarts the given overlay component.
+ * 
+ * @param {OverlayComponent} oldComp The overlay component to restart.
+ * @param {OverlayComponent} newComp The new overlay component.
+ */
+function _restartTimerComponent( oldComp, newComp ) {
+
+    // Tell log watchers to remove any hooks they have for the old component.
+    ipcRenderer.send( 'log:destroy:component', oldComp.instanceId );
+
+    // Reset the start duration
+    oldComp.start = newComp.timestamp;
+    oldComp.timeRemaining = newComp.action.duration;
+
+    // Reset the ending conditions
+    oldComp.endingSoonSpoken = false;
+    oldComp.endingSoonTextDisplayed = false;
+    oldComp.endedSpoken = false;
+    oldComp.endedTextDisplayed = false;
+    oldComp.instanceId = newComp.instanceId;
+
+    // Reset the background color
+    if ( oldComp.action.overrideTimerColor ) {
+        oldComp.dom.querySelector( '.determinate' ).style.backgroundColor = oldComp.action.overrideTimerColor;
+        oldComp.dom.querySelector( '.progress' ).style.backgroundColor = oldComp.action.timerBackgroundColor;
+    } else {
+        oldComp.dom.querySelector( '.determinate' ).style.backgroundColor = '#008000';
+        oldComp.dom.querySelector( '.progress' ).style.backgroundColor = 'rgba(0,33,0,.75)';
+    }
+
+    return true;
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Returns a hex number for the given value.
+ * 
+ * @param {number} c The value to convert.
+ */
 function componentToHex( c ) {
     var hex = c.toString( 16 );
     return hex.length == 1 ? "0" + hex : hex;
 }
 
+
+
+
+
+
+
+
+
+
+/**
+ * Sends the given text to the specified overlay.
+ * 
+ * @param {string} overlayId The id of the overlay.
+ * @param {string} text The text value to display.
+ * @param {number} duration The number of seconds to display text.
+ */
 function sendDisplayTextToOverlay( overlayId, text, duration ) {
     let comp = new OverlayComponent();
 
@@ -988,9 +1185,35 @@ function sendDisplayTextToOverlay( overlayId, text, duration ) {
     ipcRenderer.send( 'overlay:send:component', comp );
 }
 
+
+
+
+
+
+
+
+
+
+/**
+ * Sends the given message to a log watcher to speak.
+ * 
+ * @param {string} phrase The phrase to speak.
+ * @param {boolean} interruptSpeech If true, any speech will be interrupted.  If false, this text is added to the end of the queue.
+ * @param {RegExpExecArray} parseResult The results of the regular expression match.
+ * @param {number} timerDuration If this text is associated with a timer, this is the natural duration, in seconds, of the timer.
+ */
 function speakPhrase( phrase, interruptSpeech, parseResult, timerDuration ) {
     ipcRenderer.send( 'log:speak:phrase', { phrase: phrase, interruptSpeech: interruptSpeech, parseResult: parseResult, timerDuration: timerDuration } );
 }
+
+
+
+
+
+
+
+
+
 
 /**
  * Returns a label for the given duration.
@@ -1018,6 +1241,15 @@ function getDurationLabel( duration ) {
         return `${Math.ceil(duration)}s`;
     }
 }
+
+
+
+
+
+
+
+
+
 
 /**
  * Plays the specified audio file.

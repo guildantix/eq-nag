@@ -67,6 +67,15 @@ export enum ImportTypes {
     Buff = 4,
 }
 
+export enum TimerRestartBehaviors {
+    
+    StartNewTimer = 0,
+    RestartOnDuplicate = 1,
+    RestartTimer = 2,
+    DoNothing = 3,
+
+}
+
 export class TriggerFolder {
     public folderId: string;
     public name: string;
@@ -240,9 +249,7 @@ export class TriggerAction {
     public repeatCount: number = null;
     public variableName: string;
     public onlyStoreUsedValues: boolean = false;
-    public restartOnDuplicate: boolean;
-    public restartTimerAlways: boolean = false;
-    public restartTimerNever: boolean = false;
+    public restartBehavior: TimerRestartBehaviors = null;
     public onlyExecuteInDev: boolean = false;
     public overrideTimerColor: string = null;
     public timerBackgroundColor: string = null;

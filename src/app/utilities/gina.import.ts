@@ -1,4 +1,4 @@
-import { ActionTypes, CapturePhrase, Phrase, TriggerAction, TriggerModel } from '../core.model';
+import { ActionTypes, CapturePhrase, Phrase, TimerRestartBehaviors, TriggerAction, TriggerModel } from '../core.model';
 import { GinaTimerStartBehaviors, GinaTimerTypes, GinaTrigger } from '../gina.model';
 import { customAlphabet } from 'nanoid';
 // import * as _ from 'lodash';
@@ -48,7 +48,6 @@ export class GinaImporter {
                     overlayId: null,
                     duration: 6,
                     actionId: nanoid(),
-                    restartOnDuplicate: false,
                     displayText: gina.DisplayText,
                 } );
             }
@@ -59,7 +58,6 @@ export class GinaImporter {
                     overlayId: null,
                     duration: null,
                     actionId: nanoid(),
-                    restartOnDuplicate: false,
                     displayText: gina.ClipboardText,
                 } );
             }
@@ -70,7 +68,6 @@ export class GinaImporter {
                     overlayId: null,
                     duration: null,
                     actionId: nanoid(),
-                    restartOnDuplicate: false,
                     displayText: gina.TextToVoiceText,
                 } );
             }
@@ -78,14 +75,12 @@ export class GinaImporter {
                 let importObs = ipcService.importAudioFile( gina.MediaFileName );
                 tasks.push( importObs );
                 importObs.subscribe( fileId => {
-                    console.log( 'play audio file id', fileId );
                     trigger.actions.push( <TriggerAction>{
                         phrases: [ phraseId ],
                         actionType: ActionTypes.PlayAudio,
                         overlayId: null,
                         duration: null,
                         actionId: nanoid(),
-                        restartOnDuplicate: false,
                         displayText: null,
                         audioFileId: fileId,
                     } );
@@ -109,11 +104,14 @@ export class GinaImporter {
                     timerAction.actionType = ActionTypes.Countdown;
                 }
 
-                if ( gina.TimerStartBehavior === GinaTimerStartBehaviors.RestartTimer ) {
-                    timerAction.restartOnDuplicate = gina.RestartBasedOnTimerName === 'True';
-                    timerAction.restartTimerAlways = gina.RestartBasedOnTimerName !== 'True';
+                if ( gina.TimerStartBehavior === GinaTimerStartBehaviors.RestartTimer && gina.RestartBasedOnTimerName === 'True' ) {
+                    timerAction.restartBehavior = TimerRestartBehaviors.RestartOnDuplicate;
+                } else if ( gina.TimerStartBehavior === GinaTimerStartBehaviors.RestartTimer && gina.RestartBasedOnTimerName !== 'True' ) {
+                    timerAction.restartBehavior = TimerRestartBehaviors.RestartTimer;
                 } else if ( gina.TimerStartBehavior === GinaTimerStartBehaviors.IgnoreIfRunning ) {
-                    timerAction.restartTimerNever = true;
+                    timerAction.restartBehavior = TimerRestartBehaviors.DoNothing;
+                } else {
+                    timerAction.restartBehavior = TimerRestartBehaviors.StartNewTimer;
                 }
 
                 timerAction.endEarlyPhrases = [];
@@ -183,7 +181,6 @@ export class GinaImporter {
                     overlayId: null,
                     duration: +gina.CounterResetDuration,
                     actionId: nanoid(),
-                    restartOnDuplicate: false,
                     displayText: gina.Name,
                 } );
             }

@@ -22,11 +22,11 @@
             <p><mat-checkbox [(ngModel)]="action.hideTimer" name="cbxHideTimer" title="Use this option if you want to keep track of a duration but don't need to see the progress.">Hide Timer?</mat-checkbox><a *ngIf="action.hideTimer" (click)="editHideTimerConditions()" href="javascript:void(0);" class="color-blue">Conditions</a></p>
 
             <p>When triggered again, how do you want the timer to behave?</p>
-            <mat-radio-group [(ngModel)]="restartBehavior" name="rdoRestartBehavior_{{action.actionId}}">
-                <mat-radio-button value="0">Always start new timer</mat-radio-button>
-                <mat-radio-button value="1">Restart only if the name matches</mat-radio-button>
-                <mat-radio-button value="2">Restart timer regardless of the name</mat-radio-button>
-                <mat-radio-button value="3">Do nothing and ignore trigger</mat-radio-button>
+            <mat-radio-group [(ngModel)]="action.restartBehavior" name="rdoRestartBehavior_{{action.actionId}}">
+                <mat-radio-button [value]="timerRestartBehaviors.StartNewTimer">Always start new timer</mat-radio-button>
+                <mat-radio-button [value]="timerRestartBehaviors.RestartOnDuplicate">Restart only if the name matches</mat-radio-button>
+                <mat-radio-button [value]="timerRestartBehaviors.RestartTimer">Restart timer regardless of the name</mat-radio-button>
+                <mat-radio-button [value]="timerRestartBehaviors.DoNothing">Do nothing and ignore trigger</mat-radio-button>
             </mat-radio-group>
 
             <p><mat-checkbox [(ngModel)]="action.showRemainingDuration" name="cbxShowTimeRemaining">Show the time remaining</mat-checkbox></p>
