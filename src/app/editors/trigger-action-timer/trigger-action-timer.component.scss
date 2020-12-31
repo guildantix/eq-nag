@@ -43,3 +43,56 @@ p {
         font-size: 12px;
     }
 }
+
+.card-property {
+    &:nth-of-type(odd) {
+        background-color: #0000002e;
+    }
+    &:nth-of-type(even) {
+        background-color: #00000047;
+    }
+    >div {
+        .fill-width {
+            width: 100%;
+        }
+        .align-content-left {
+            text-align: left;
+        }
+        .align-content-justify {
+            >* {
+                flex: 1 0 auto;
+            }
+            display: flex;
+        }
+        flex: 1 0 auto;
+        display: block;
+        max-width: 50%;
+    }
+    >.content-middle {
+        align-self: center;
+    }
+    >.content-right {
+        text-align: right;
+    }
+    >.content-vertical {
+        >.align-left {
+            align-self: flex-start;
+        }
+        display: flex;
+        flex-direction: column;
+    }
+    >.content-top {
+        padding-top: 1em;
+        align-self: flex-start;
+    }
+    .head-room {
+        margin-top: 1em;
+    }
+    display: flex;
+    min-height: 60px;
+    // padding: 0 5px;
+    // background-color: #0000002e;
+    margin-left: -15px;
+    margin-right: -15px;
+    padding: 5px 20px;
+}
