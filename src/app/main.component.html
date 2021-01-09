@@ -106,19 +106,21 @@
                     
                     <p>
                         <mat-form-field>
-                            <mat-label>Damage Dealt Overlay</mat-label>
+                            <mat-label></mat-label>
                             <mat-select [(ngModel)]="damageDealtOverlayId" name="ddlDamageDealtOverlay" (selectionChange)="onChangeDealtFctOverylays()">
                                 <mat-option *ngFor="let option of fctOverlays" [value]="option.overlayId">{{option.name}}</mat-option>
                             </mat-select>
+                            <mat-hint>Damage Dealt Overlay</mat-hint>
                         </mat-form-field>
                     </p>
 
                     <p>
                         <mat-form-field>
-                            <mat-label>Damage Received Overlay</mat-label>
+                            <mat-label></mat-label>
                             <mat-select [(ngModel)]="damageTakenOverlayId" name="ddlDamageReceivedOverlay" (selectionChange)="onChangeReceivedFctOverylays()">
                                 <mat-option *ngFor="let option of fctOverlays" [value]="option.overlayId">{{option.name}}</mat-option>
                             </mat-select>
+                            <mat-hint>Damage Received Overlay</mat-hint>
                         </mat-form-field>
                     </p>
                     
@@ -141,9 +143,13 @@
         
                     <fieldset>
                         <legend><span>Text to Speech</span></legend>
-                        <mat-select [(ngModel)]="voiceIndex" (selectionChange)="onChangeVoice()">
-                            <mat-option *ngFor="let option of voiceOptions; let i = index" [value]="i">{{option.name}}</mat-option>
-                        </mat-select>
+                        <mat-form-field style="width: 50%;">
+                            <mat-label></mat-label>
+                            <mat-select [(ngModel)]="voiceIndex" (selectionChange)="onChangeVoice()">
+                                <mat-option *ngFor="let option of voiceOptions; let i = index" [value]="i">{{option.name}}</mat-option>
+                            </mat-select>
+                            <mat-hint>Select the text to speech voice</mat-hint>
+                        </mat-form-field>
                     </fieldset>
 
                     <fieldset>
@@ -165,8 +171,9 @@
                                 <td mat-cell *matCellDef="let element; let i = index" style="text-align: left;">
 
                                     <mat-form-field style="width: 95%;margin-top: 10px;">
-                                        <mat-label>Original text</mat-label>
+                                        <mat-label></mat-label>
                                         <input matInput [(ngModel)]="element.originalText" name="txtOriginalText_{{i}}" type="text" (change)="phoneticTransformsModified = true" />
+                                        <mat-hint>Original text</mat-hint>
                                     </mat-form-field>
 
                                 </td>
@@ -177,8 +184,9 @@
                                 <td mat-cell *matCellDef="let element; let i = index" style="text-align: left;">
 
                                     <mat-form-field style="width: 95%;margin-top: 10px;">
-                                        <mat-label>Phonetic text</mat-label>
+                                        <mat-label></mat-label>
                                         <input matInput [(ngModel)]="element.phoneticText" name="txtPhoneticText_{{i}}" type="text" (change)="phoneticTransformsModified = true" />
+                                        <mat-hint>Phonetic text</mat-hint>
                                     </mat-form-field>
                                     
                                 </td>

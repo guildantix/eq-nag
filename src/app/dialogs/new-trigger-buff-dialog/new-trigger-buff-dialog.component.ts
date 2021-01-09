@@ -14,7 +14,7 @@ const nanoid = customAlphabet( alphabet, 16 );
 @Component( {
     selector: 'app-new-trigger-buff-dialog',
     templateUrl: 'new-trigger-buff-dialog.component.html',
-    styleUrls: [ 'new-trigger-buff-dialog.component.scss', '../../core.scss', '../../modal.scss' ],
+    styleUrls: [ 'new-trigger-buff-dialog.component.scss', '../../modal.scss', '../../core.scss' ],
 } )
 export class NewTriggerBuffDialogComponent implements OnInit {
     

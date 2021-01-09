@@ -117,18 +117,6 @@ export class CharactersListComponent implements OnInit {
                         this.ipcService.deleteCharacter( character.characterId ).subscribe( deleted => {
                             if ( deleted ) {
                                 
-                                if ( document.activeElement instanceof HTMLElement ) {
-                                    // This is a workaround to prevent the error:
-                                    // 
-                                    //      ExpressionChangedAfterItHasBeenCheckedError: Expression has changed after it was checked. Previous value for 'mat-form-field-should-float': 'false'. Current value: 'true'.
-                                    //
-                                    // I'm sure there's some deeper meaning behind it, but for some 
-                                    // reason when the confirm dialog's `Yes` button is still the 
-                                    // active element at this point, that error is written to the 
-                                    // console.
-                                    document.activeElement.blur();
-                                }
-                                
                                 this.snackBar.open( 'Character deleted!', 'Dismiss', { duration: 2500 } );
                                 this.loadCharacters();
                             }

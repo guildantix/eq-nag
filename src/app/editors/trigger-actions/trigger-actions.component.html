@@ -35,31 +35,37 @@
         </mat-card-header>
         <mat-card-content>
             
-            <mat-form-field appearance="fill" style="width: 100%;">
-                <mat-label>Action Type</mat-label>
-                <mat-select [(ngModel)]="action.actionType" name="ddlActionType_{{i}}">
-                    <mat-option [value]="actionTypes.DisplayText">Display Text</mat-option>
-                    <mat-option [value]="actionTypes.DotTimer">DoT Timer</mat-option>
-                    <mat-option [value]="actionTypes.PlayAudio">Play Audio</mat-option>
-                    <mat-option [value]="actionTypes.Speak">Speak</mat-option>
-                    <mat-option [value]="actionTypes.Timer">Timer</mat-option>
-                    <mat-option [value]="actionTypes.Countdown">Countdown</mat-option>
-                    <mat-option [value]="actionTypes.StoreVariable">Store Variable</mat-option>
-                    <mat-option [value]="actionTypes.ClearVariable">Clear Variable</mat-option>
-                    <mat-option [value]="actionTypes.Counter">Counter</mat-option>
-                    <mat-option [value]="actionTypes.Clipboard">Clipboard</mat-option>
-                    <mat-option [value]="actionTypes.BeneficialTimer">Beneficial Timer</mat-option>
-                </mat-select>
-            </mat-form-field>
+            <div>
+                <mat-form-field style="width: 100%;">
+                    <mat-label></mat-label>
+                    <mat-select [(ngModel)]="action.actionType" name="ddlActionType_{{i}}">
+                        <mat-option [value]="actionTypes.DisplayText">Display Text</mat-option>
+                        <mat-option [value]="actionTypes.DotTimer">DoT Timer</mat-option>
+                        <mat-option [value]="actionTypes.PlayAudio">Play Audio</mat-option>
+                        <mat-option [value]="actionTypes.Speak">Speak</mat-option>
+                        <mat-option [value]="actionTypes.Timer">Timer</mat-option>
+                        <mat-option [value]="actionTypes.Countdown">Countdown</mat-option>
+                        <mat-option [value]="actionTypes.StoreVariable">Store Variable</mat-option>
+                        <mat-option [value]="actionTypes.ClearVariable">Clear Variable</mat-option>
+                        <mat-option [value]="actionTypes.Counter">Counter</mat-option>
+                        <mat-option [value]="actionTypes.Clipboard">Clipboard</mat-option>
+                        <mat-option [value]="actionTypes.BeneficialTimer">Beneficial Timer</mat-option>
+                    </mat-select>
+                    <mat-hint>Action Type</mat-hint>
+                </mat-form-field>
+            </div>
 
             <div *ngIf="action.actionType != null">
 
-                <mat-form-field appearance="fill" style="width: 100%;">
-                    <mat-label>Trigger on phrase</mat-label>
-                    <mat-select [(ngModel)]="action.phrases" name="ddlActionPhrase_{{i}}" multiple>
-                        <mat-option *ngFor="let phrase of capturePhrases" [value]="phrase.phraseId">{{phrase.phrase}}</mat-option>
-                    </mat-select>
-                </mat-form-field>
+                <div>
+                    <mat-form-field style="width: 100%;">
+                        <mat-label></mat-label>
+                        <mat-select [(ngModel)]="action.phrases" name="ddlActionPhrase_{{i}}" multiple>
+                            <mat-option *ngFor="let phrase of capturePhrases" [value]="phrase.phraseId">{{phrase.phrase}}</mat-option>
+                        </mat-select>
+                        <mat-hint>Trigger on phrase</mat-hint>
+                    </mat-form-field>
+                </div>
 
             </div>
 

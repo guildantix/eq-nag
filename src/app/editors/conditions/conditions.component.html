@@ -1,5 +1,5 @@
 <fieldset>
-    <legend class="full-width"><span>Conditions</span><span class="spacer"></span><button mat-button (click)="addNewCondition()" color="accent"><mat-icon>add</mat-icon>New</button></legend>
+    <legend class="full-width"><span>Conditions</span><span class="spacer"></span><button mat-button (click)="addNewCondition()" color="accent"><mat-icon>add</mat-icon>New</button><small>Testing description texts.</small></legend>
     <table mat-table #conditionsTable="matTable" *ngIf="conditions?.length > 0"
         [dataSource]="conditions"
         class="capture-phrases">
@@ -12,7 +12,7 @@
         <ng-container matColumnDef="variable">
             <th mat-header-cell *matHeaderCellDef> Variable Name </th>
             <td mat-cell *matCellDef="let element; let i = index">
-                <mat-form-field>
+                <mat-form-field style="width: 98%;">
                     <mat-label *ngIf="element.variableName == null">Variable Name</mat-label>
                     <mat-select [(ngModel)]="element.variableName" name="ddlConditionVariableName_{{i}}" (ngModelChange)="conditionsChange.emit(conditions)">
                         <mat-option *ngFor="let variable of storedVariables" [value]="variable">{{variable}}</mat-option>
@@ -22,9 +22,9 @@
         </ng-container>
 
         <ng-container matColumnDef="operator">
-            <th mat-header-cell *matHeaderCellDef> Operator </th>
-            <td mat-cell *matCellDef="let element; let i = index">
-                <mat-form-field>
+            <th mat-header-cell *matHeaderCellDef style="width: 130px;"> Operator </th>
+            <td mat-cell *matCellDef="let element; let i = index" style="width: 130px;">
+                <mat-form-field style="width: 130px;">
                     <mat-label *ngIf="element.operatorType == null">Operator</mat-label>
                     <mat-select [(ngModel)]="element.operatorType" name="ddlConditionOperatorType_{{i}}" (ngModelChange)="conditionsChange.emit(conditions)">
                         <mat-option [value]="operatorTypes.IsNull">Is empty</mat-option>
@@ -40,7 +40,7 @@
         <ng-container matColumnDef="value">
             <th mat-header-cell *matHeaderCellDef> Value </th>
             <td mat-cell *matCellDef="let element; let i = index">
-                <mat-form-field>
+                <mat-form-field style="width: 98%;">
                     <mat-label *ngIf="element.variableValue == null || element.variableValue == ''">Value</mat-label>
                     <input matInput [(ngModel)]="element.variableValue" name="txtConditionValue_{{i}}" (ngModelChange)="conditionsChange.emit(conditions)" />
                 </mat-form-field>

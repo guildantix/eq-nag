@@ -37,8 +37,9 @@
             <form #formDisplayText="ngForm">
                 <ng-template matStepLabel>Display Text</ng-template>
                 <mat-form-field style="width: 100%;">
-                    <mat-label>Display Text</mat-label>
+                    <mat-label></mat-label>
                     <input matInput [(ngModel)]="model.displayText" name="txtDisplayText" required>
+                    <mat-hint>Display Text</mat-hint>
                 </mat-form-field>
                 <div>
                     <button mat-button matStepperPrevious>Back</button>
@@ -51,8 +52,9 @@
                 <ng-template matStepLabel>Duration</ng-template>
                 <p>How long should this text stay on the screen?</p>
                 <mat-form-field>
-                    <mat-label>Duration</mat-label>
+                    <mat-label></mat-label>
                     <input matInput [(ngModel)]="model.duration" name="txtDuration" type="number" required>
+                    <mat-hint>Duration</mat-hint>
                 </mat-form-field>
                 <div>
                     <button mat-button matStepperPrevious>Back</button>

@@ -52,10 +52,29 @@ export class DialogService {
                 message: message,
                 yesMessage: yesText,
                 noMessage: noText
-            }
+            },
+            panelClass: 'app-dialog',
         } );
 
-        dialogRef.afterClosed().subscribe( onClose );
+        let af = dialogRef.afterClosed();
+
+        af.subscribe( onClose );
+        af.subscribe( e => {
+
+            if ( document.activeElement instanceof HTMLElement ) {
+                // This is a workaround to prevent the error:
+                // 
+                //      ExpressionChangedAfterItHasBeenCheckedError: Expression has changed after it was checked. Previous value for 'mat-form-field-should-float': 'false'. Current value: 'true'.
+                //
+                // I'm sure there's some deeper meaning behind it, but for some 
+                // reason when the confirm dialog's `Yes` button is still the 
+                // active element at this point, that error is written to the 
+                // console.
+                // This error only happens when a list is reloaded after.
+                document.activeElement.blur();
+            }
+
+        } );
         
     }
 
@@ -78,7 +97,8 @@ export class DialogService {
         
         let dialogRef: MatDialogRef<TriggerActionWizardModalComponent> = this.dialog.open( TriggerActionWizardModalComponent, {
             width: '750px',
-            data: model
+            data: model,
+            panelClass: 'app-dialog',
         } );
 
         dialogRef.afterClosed().subscribe( onClose );
@@ -120,7 +140,8 @@ export class DialogService {
      */
     public showNewDotTimerDialog(): void {
         this.dialog.open( NewTriggerDialogComponent, {
-            width: '750px'
+            width: '750px',
+            panelClass: 'app-dialog',
         } ).afterClosed();
     }
 
@@ -139,7 +160,8 @@ export class DialogService {
     public showNewRaidAbilityDialog( folderId?: string ): void {
         this.dialog.open( NewTriggerRaidAbilityComponent, {
             width: '750px',
-            data: <NewTriggerDialogModel>{ selectedFolderId: folderId, trigger: null }
+            data: <NewTriggerDialogModel>{ selectedFolderId: folderId, trigger: null },
+            panelClass: 'app-dialog',
         } ).afterClosed();
     }
 
@@ -158,7 +180,8 @@ export class DialogService {
     public showNewBuffTimerDialog( folderId?: string ): void {
         this.dialog.open( NewTriggerBuffDialogComponent, {
             width: '750px',
-            data: <NewTriggerDialogModel>{ selectedFolderId: folderId, trigger: null }
+            data: <NewTriggerDialogModel>{ selectedFolderId: folderId, trigger: null },
+            panelClass: 'app-dialog',
         } ).afterClosed();
     }
 
@@ -178,6 +201,7 @@ export class DialogService {
         this.dialog.open( NewTriggerDialogComponent, {
             width: '750px',
             data: model,
+            panelClass: 'app-dialog',
         } ).afterClosed();
     }
 
@@ -196,7 +220,8 @@ export class DialogService {
     public showReimportRaidAbilityDialog( model: TriggerModel ): void {
         this.dialog.open( NewTriggerRaidAbilityComponent, {
             width: '750px',
-            data: <NewTriggerDialogModel>{ selectedFolderId: null, trigger: model }
+            data: <NewTriggerDialogModel>{ selectedFolderId: null, trigger: model },
+            panelClass: 'app-dialog',
         } ).afterClosed();
     }
 
@@ -214,7 +239,8 @@ export class DialogService {
      */
     public showNewCharacterDialog( afterClosed: (characterId: string) => void ): void {
         this.dialog.open( NewCharacterDialogComponent, {
-            width: '750px'
+            width: '750px',
+            panelClass: 'app-dialog',
         } ).afterClosed().subscribe( afterClosed );
     }
 
@@ -232,7 +258,8 @@ export class DialogService {
      */
     public showNewTriggerFolderDialog(): Observable<TriggerFolder> {
         return this.dialog.open<NewTriggerFolderDialogComponent, any, TriggerFolder>( NewTriggerFolderDialogComponent, {
-            width: '750px'
+            width: '750px',
+            panelClass: 'app-dialog',
         } ).afterClosed();
     }
 
@@ -257,7 +284,8 @@ export class DialogService {
     public showSelectTriggerFolderDialog( folderId?: string ): Observable<string> {
         return this.dialog.open<SelectTriggerFolderDialogComponent, any, string>( SelectTriggerFolderDialogComponent, {
             width: '450px',
-            data: { folderId: folderId }
+            data: { folderId: folderId },
+            panelClass: 'app-dialog',
         } ).afterClosed();
     }
 
@@ -275,7 +303,8 @@ export class DialogService {
      */
     public showSelectIconDialog( afterClosed: ( icon: string ) => void ): void {
         this.dialog.open( SelectIconDialogComponent, {
-            width: '750px'
+            width: '750px',
+            panelClass: 'app-dialog',
         } ).afterClosed().subscribe( afterClosed );
     }
 
@@ -296,7 +325,8 @@ export class DialogService {
             width: '750px',
             data: {
                 iconIndex: iconIndex,
-            }
+            },
+            panelClass: 'app-dialog',
         } ).afterClosed().subscribe( afterClosed );
     }
 
@@ -327,7 +357,8 @@ export class DialogService {
 
         return this.dialog.open<InputDialogComponent, any, string>( InputDialogComponent, {
             width: '450px',
-            data: data
+            data: data,
+            panelClass: 'app-dialog',
         } ).afterClosed();
     }
 
@@ -356,7 +387,8 @@ export class DialogService {
 
         return this.dialog.open<NamedGroupConditionsDialogComponent, any, TriggerCondition[]>( NamedGroupConditionsDialogComponent, {
             width: '650px',
-            data: data
+            data: data,
+            panelClass: 'app-dialog',
         } ).afterClosed();
     }
 
@@ -389,7 +421,8 @@ export class DialogService {
 
         return this.dialog.open<AutoCompleteDialogComponent, any, string>( AutoCompleteDialogComponent, {
             width: '450px',
-            data: data
+            data: data,
+            panelClass: 'app-dialog',
         } ).afterClosed();
         
     }
@@ -412,7 +445,8 @@ export class DialogService {
 
         this.dialog.open( NotificationDialogComponent, {
             width: '450px',
-            data: data
+            data: data,
+            panelClass: 'app-dialog',
         } ).afterClosed().subscribe();
     }
     
@@ -425,7 +459,8 @@ export class DialogService {
 
         this.dialog.open( NotificationDialogComponent, {
             width: '450px',
-            data: data
+            data: data,
+            panelClass: 'app-dialog',
         } ).afterClosed().subscribe();
     }
     
@@ -438,7 +473,8 @@ export class DialogService {
 
         this.dialog.open( NotificationDialogComponent, {
             width: '450px',
-            data: data
+            data: data,
+            panelClass: 'app-dialog',
         } ).afterClosed().subscribe();
     }
     

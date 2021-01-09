@@ -15,17 +15,23 @@
                     <div class="tab-content">
                         
                         <fieldset class="margin-t-50">
-                            <legend class="full-width">General<span style="color: #00000057; padding-left: 25px;" *ngIf="isDev">{{model.triggerId}}</span></legend>
-                            <mat-checkbox [(ngModel)]="model.predefined" name="cbxPredefined" *ngIf="isDev">Predefined</mat-checkbox>
-                            <mat-checkbox [(ngModel)]="model.onlyExecuteInDev" name="cbxOnlyShowInDev" *ngIf="isDev && model.predefined">Only execute in dev</mat-checkbox>
-                            <mat-form-field appearance="fill">
-                                <mat-label>Trigger Name</mat-label>
+                            <legend>General
+                                <span style="color: #00000057; padding-left: 25px;" *ngIf="isDev">{{model.triggerId}}</span>
+                                <span class="spacer"></span>
+                                <mat-checkbox [(ngModel)]="model.predefined" name="cbxPredefined" *ngIf="isDev">Predefined</mat-checkbox>
+                                <mat-checkbox [(ngModel)]="model.onlyExecuteInDev" name="cbxOnlyShowInDev" *ngIf="isDev && model.predefined">Only execute in dev</mat-checkbox>
+                            </legend>
+                            
+                            <mat-form-field>
+                                <mat-label></mat-label>
                                 <input matInput name="txtTriggerName" type="text" [(ngModel)]="model.name" required />
+                                <mat-hint>Trigger Name</mat-hint>
                             </mat-form-field>
         
-                            <mat-form-field appearance="fill">
-                                <mat-label>Comments</mat-label>
+                            <mat-form-field>
+                                <mat-label></mat-label>
                                 <textarea matInput name="txtComments" [(ngModel)]="model.comments" rows="5"></textarea>
+                                <mat-hint>Comments</mat-hint>
                             </mat-form-field>
                         </fieldset>
                         

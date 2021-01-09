@@ -15,17 +15,19 @@
 
         <p>
             <mat-form-field style="width: 50%;">
-                <mat-label>Server</mat-label>
+                <mat-label></mat-label>
                 <mat-select (selectionChange)="selectServerModel($event)">
                     <mat-option *ngFor="let server of serverOptions" [value]="server">{{server.server}}</mat-option>
                 </mat-select>
+                <mat-hint>Server</mat-hint>
             </mat-form-field>
             
             <mat-form-field style="width: 50%;">
-                <mat-label>Character</mat-label>
+                <mat-label></mat-label>
                 <mat-select (selectionChange)="selectModel($event)" [disabled]="server == null">
                     <mat-option *ngFor="let chr of server?.options" [value]="chr" [disabled]="chr.characterId?.length > 0">{{chr.name}} <small *ngIf="chr.characterId?.length > 0">Added</small></mat-option>
                 </mat-select>
+                <mat-hint>Character</mat-hint>
             </mat-form-field>
         </p>
         

@@ -1,16 +1,24 @@
-<div class="duration-wrapper" [ngClass]="{'duration-inline': inline, 'duration-stretch': !inline}">
-    <mat-form-field>
-        <mat-label>Hrs</mat-label>
-        <input matInput type="number" [(ngModel)]="hours" [disabled]="disabled" (change)="valueChanged($event)" />
-    </mat-form-field>
-    <label>:</label>
-    <mat-form-field>
-        <mat-label>Mins</mat-label>
-        <input matInput type="number" [(ngModel)]="minutes" [disabled]="disabled" (change)="valueChanged($event)" />
-    </mat-form-field>
-    <label>:</label>
-    <mat-form-field>
-        <mat-label>Sec</mat-label>
-        <input matInput type="number" [(ngModel)]="seconds" [disabled]="disabled" (change)="valueChanged($event)" />
-    </mat-form-field>
+<!-- [ngClass]="{'duration-inline': inline, 'duration-stretch': !inline}" -->
+<div class="duration-wrapper">
+    <div class="time-element">
+        <input type="number" [(ngModel)]="hours" [disabled]="disabled" (change)="valueChanged($event)" />
+        <span>Hrs</span>
+        <button mat-icon-button class="spinner spinner-top" (click)="hours = add(hours)"><mat-icon [inline]="true">add</mat-icon></button>
+        <button mat-icon-button class="spinner spinner-btm" (click)="hours = subtract(hours)" [disabled]="hours == null"><mat-icon [inline]="true">remove</mat-icon></button>
+    </div>
+
+    <div class="time-element">
+        <input type="number" [(ngModel)]="minutes" [disabled]="disabled" (change)="valueChanged($event)" style="margin-right: 18px;" />
+        <span>Mins</span>
+        <button mat-icon-button class="spinner spinner-top" (click)="minutes = add(minutes)"><mat-icon [inline]="true">add</mat-icon></button>
+        <button mat-icon-button class="spinner spinner-btm" (click)="minutes = subtract(minutes)" [disabled]="minutes == null"><mat-icon [inline]="true">remove</mat-icon></button>
+    </div>
+    
+    <div class="time-element">
+        <input type="number" [(ngModel)]="seconds" [disabled]="disabled" (change)="valueChanged($event)" />
+        <span>Sec</span>
+        <button mat-icon-button class="spinner spinner-top" (click)="seconds = add(seconds)"><mat-icon [inline]="true">add</mat-icon></button>
+        <button mat-icon-button class="spinner spinner-btm" (click)="seconds = subtract(seconds)" [disabled]="seconds == null"><mat-icon [inline]="true">remove</mat-icon></button>
+    </div>
+
 </div>

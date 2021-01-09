@@ -8,9 +8,10 @@
         <mat-step [stepControl]="stepOneForm" label="Scrape">
             <form #stepOneForm="ngForm">
                 <p>
-                    <mat-form-field appearance="fill" style="width: 100%;">
-                        <mat-label>Allakhazam URL</mat-label>
+                    <mat-form-field style="width: 100%;">
+                        <mat-label></mat-label>
                         <input matInput type="text" [(ngModel)]="url" name="txtUrl" required />
+                        <mat-hint>Allakhazam URL</mat-hint>
                     </mat-form-field>
                 </p>
                 
@@ -45,11 +46,12 @@
             <form #stepThreeForm="ngForm">
 
                 <p>
-                    <mat-form-field appearance="fill" style="width: 100%;">
-                        <mat-label>Timer Overlay Window</mat-label>
+                    <mat-form-field style="width: 100%;">
+                        <mat-label></mat-label>
                         <mat-select [(ngModel)]="timerOverlayId" name="ddlTimerOverlay" required>
                             <mat-option *ngFor="let option of timerOverlays" [value]="option.overlayId">{{option.name}}</mat-option>
                         </mat-select>
+                        <mat-hint>Timer Overlay Window</mat-hint>
                     </mat-form-field>
                 </p>
 
@@ -88,23 +90,6 @@
         </mat-step> -->
     </mat-horizontal-stepper>
 
-    <!-- <p>
-        <mat-form-field appearance="fill" style="width: 50%;">
-            <mat-label>Overlay Window</mat-label>
-            <mat-select [(ngModel)]="overlayId" name="ddlDotTimerOverlay">
-                <mat-option *ngFor="let option of timerOverlays" [value]="option.overlayId">{{option.name}}</mat-option>
-            </mat-select>
-        </mat-form-field>
-    </p> -->
-    <!-- <p>
-        <mat-form-field appearance="fill" style="width: 100%;">
-            <mat-label>Allakhazam URL</mat-label>
-            <input matInput type="text" [(ngModel)]="url" />
-        </mat-form-field>
-    </p> -->
-    <!-- <p>
-        <mat-checkbox [(ngModel)]="cancelTimerIfTargetDies" name="cancelTimerIfTargetDies">End timer early if your target dies.</mat-checkbox>
-    </p> -->
 </mat-dialog-content>
 
 <mat-dialog-actions>

@@ -3,64 +3,111 @@
 
         <div class="card-tab-content">
 
-            <mat-form-field>
-                <mat-label>Overlay Window</mat-label>
-                <mat-select [(ngModel)]="action.overlayId" name="ddlDotTimerOverlay">
-                    <mat-option *ngFor="let option of timerOverlays" [value]="option.overlayId">{{option.name}}</mat-option>
-                </mat-select>
-            </mat-form-field>
+            <div class="card-property">
+                <div>
+                    <mat-form-field style="width: 100%;">
+                        <mat-label></mat-label>
+                        <mat-select [(ngModel)]="action.overlayId" name="ddlDotTimerOverlay">
+                            <mat-option *ngFor="let option of timerOverlays" [value]="option.overlayId">{{option.name}}</mat-option>
+                        </mat-select>
+                        <mat-hint>Overlay Window</mat-hint>
+                    </mat-form-field>
+                </div>
+                <div>
+                    <mat-form-field style="width: 100%;">
+                        <mat-label></mat-label>
+                        <input matInput [(ngModel)]="action.displayText" name="txtDisplayText" />
+                        <mat-hint>Timer name</mat-hint>
+                    </mat-form-field>
+                </div>
+            </div>
 
-            <div>Please enter the duration of the timer.</div>
+            <div class="card-property">
+                <div class="content-middle">Timer duration</div>
+                <div class="content-right"><app-duration [(ngModel)]="action.duration" name="durActionDuration" style="display: inline-block;" ></app-duration></div>
+            </div>
 
-            <app-duration [(ngModel)]="action.duration" name="durActionDuration"></app-duration>
+            <div class="card-property">
+                <div class="content-middle"><mat-checkbox [(ngModel)]="action.hideTimer" name="cbxHideTimer" title="Use this option if you want to keep track of a duration but don't need to see the progress.">Hide Timer?</mat-checkbox></div>
+                <div class="content-middle"><a *ngIf="action.hideTimer" (click)="editHideTimerConditions()" href="javascript:void(0);" class="color-blue">Conditions</a></div>
+            </div>
 
-            <mat-form-field style="width: 100%;">
-                <mat-label>Timer name</mat-label>
-                <input matInput [(ngModel)]="action.displayText" name="txtDisplayText" />
-            </mat-form-field>
+            <div class="card-property">
+                <div class="content-middle">When triggered again, how do you want the timer to behave?</div>
+                <div>
+                    <mat-form-field style="width: 100%;">
+                        <mat-label></mat-label>
+                        <mat-select [(ngModel)]="action.restartBehavior" name="rdoRestartBehavior_{{action.actionId}}">
+                            <mat-option [value]="timerRestartBehaviors.StartNewTimer">Always start new timer</mat-option>
+                            <mat-option [value]="timerRestartBehaviors.RestartOnDuplicate">Restart only if the name matches</mat-option>
+                            <mat-option [value]="timerRestartBehaviors.RestartTimer">Restart timer regardless of the name</mat-option>
+                            <mat-option [value]="timerRestartBehaviors.DoNothing">Do nothing and ignore trigger</mat-option>
+                        </mat-select>
+                        <mat-hint>Restart behavior</mat-hint>
+                    </mat-form-field>
+                </div>
+            </div>
 
-            <p><mat-checkbox [(ngModel)]="action.hideTimer" name="cbxHideTimer" title="Use this option if you want to keep track of a duration but don't need to see the progress.">Hide Timer?</mat-checkbox><a *ngIf="action.hideTimer" (click)="editHideTimerConditions()" href="javascript:void(0);" class="color-blue">Conditions</a></p>
+            <div class="card-property">
+                <div class="content-middle"><mat-checkbox [(ngModel)]="action.showRemainingDuration" name="cbxShowTimeRemaining">Show the time remaining</mat-checkbox></div>
+                <div></div>
+            </div>
 
-            <p>When triggered again, how do you want the timer to behave?</p>
-            <mat-radio-group [(ngModel)]="action.restartBehavior" name="rdoRestartBehavior_{{action.actionId}}">
+            <div class="card-property">
+                <div class="content-middle"><mat-checkbox [(ngModel)]="action.repeatTimer" name="cbxRepeatTimer">Repeat timer</mat-checkbox></div>
+                <div class="content-middle content-right">
+                    <mat-form-field *ngIf="action.repeatTimer">
+                        <mat-label></mat-label>
+                        <input matInput type="number" [(ngModel)]="action.repeatCount" name="txtRepeatCount" />
+                        <mat-hint>Leave blank to repeat indefinitely</mat-hint>
+                    </mat-form-field>
+                </div>
+            </div>
+
+            <div class="card-property">
+                <div class="content-middle"><mat-checkbox [(ngModel)]="action.useCustomColor" name="cbxUseCustomColor">Use color</mat-checkbox></div>
+                <div class="content-middle content-right"><app-color-picker [(ngModel)]="action.overrideTimerColor" name="acpOverrideTimerColor" *ngIf="action.useCustomColor" [inline]="true"></app-color-picker></div>
+            </div>
+
+            <div class="card-property" *ngIf="action.actionType === actionTypes.BeneficialTimer">
+                <div class="content-middle">Cast time</div>
+                <div class="content-middle">
+                    <mat-form-field style="width: 100%;">
+                        <mat-label></mat-label>
+                        <input matInput type="number" [(ngModel)]="action.castTime" name="txtCastTime" required />
+                        <mat-hint>Base casting time in milliseconds. (ex: 2.5 is 2500)</mat-hint>
+                    </mat-form-field>
+                </div>
+            </div>
+
+            <div class="card-property">
+                <div class="content-top">Timer Icon<div style="padding: 20px 15px;"><img *ngIf="action.timerIcon" [src]="action.timerIcon" (click)="openIconFileModal(action)" /></div></div>
+                <div class="content-vertical content-right content-top">
+                    
+                    <div class="align-left"><button mat-button *ngIf="action.timerIcon == null" (click)="openIconFileModal(action)" color="accent">Select Icon File</button></div>
+                    <div class="align-left"><button mat-button *ngIf="action.timerIcon == null" (click)="selectEqSpellIcon(action)" color="accent">Select EverQuest Spell Icon</button></div>
+                    <div class="align-left"><button mat-button *ngIf="action.timerIcon" (click)="action.timerIcon = null" color="warn">Reset Icon</button></div>
+                </div>
+            </div>
+
+            <!-- <div class="card-property">
+                <div></div>
+                <div></div>
+            </div> -->
+
+            <!-- <mat-radio-group [(ngModel)]="action.restartBehavior" name="rdoRestartBehavior_{{action.actionId}}">
                 <mat-radio-button [value]="timerRestartBehaviors.StartNewTimer">Always start new timer</mat-radio-button>
                 <mat-radio-button [value]="timerRestartBehaviors.RestartOnDuplicate">Restart only if the name matches</mat-radio-button>
                 <mat-radio-button [value]="timerRestartBehaviors.RestartTimer">Restart timer regardless of the name</mat-radio-button>
                 <mat-radio-button [value]="timerRestartBehaviors.DoNothing">Do nothing and ignore trigger</mat-radio-button>
-            </mat-radio-group>
+            </mat-radio-group> -->
 
-            <p><mat-checkbox [(ngModel)]="action.showRemainingDuration" name="cbxShowTimeRemaining">Show the time remaining</mat-checkbox></p>
+            <!-- <div style="padding-left: 60px;margin-bottom: 30px;"></div> -->
 
-            <p><mat-checkbox [(ngModel)]="action.repeatTimer" name="cbxRepeatTimer">Repeat timer</mat-checkbox></p>
-
-            <div style="padding-left: 60px;margin-bottom: 30px;" *ngIf="action.repeatTimer">
-                <mat-form-field>
-                    <mat-label>Repeat count</mat-label>
-                    <input matInput type="number" [(ngModel)]="action.repeatCount" name="txtRepeatCount" />
-                    <mat-hint>Leave blank to repeat indefinitely</mat-hint>
-                </mat-form-field>
-            </div>
-
-            <div>
-                <mat-checkbox [(ngModel)]="action.useCustomColor" name="cbxUseCustomColor">Use color</mat-checkbox>
-                <app-color-picker [(ngModel)]="action.overrideTimerColor" name="acpOverrideTimerColor" *ngIf="action.useCustomColor" [inline]="true"></app-color-picker>
-            </div>
-
-            <div *ngIf="action.actionType === actionTypes.BeneficialTimer">
-                <mat-form-field style="width: 100%;">
-                    <mat-label>Cast time (milliseconds)</mat-label>
-                    <input matInput type="number" [(ngModel)]="action.castTime" name="txtCastTime" required />
-                    <mat-hint>Enter the base Casting Time in milliseconds. (ex: 2.5 is 2500)</mat-hint>
-                </mat-form-field>
-            </div>
-
-            <div class="action-icon">
-                <mat-label>Timer Icon</mat-label>
-                <img *ngIf="action.timerIcon" [src]="action.timerIcon" (click)="openIconFileModal(action)" />
-                <button mat-button *ngIf="action.timerIcon == null" (click)="openIconFileModal(action)" color="accent">Select Icon File</button>
-                <button mat-button *ngIf="action.timerIcon == null" (click)="selectEqSpellIcon(action)" color="accent">Select EverQuest Spell Icon</button>
-                <button mat-button *ngIf="action.timerIcon" (click)="action.timerIcon = null" color="warn">Reset Icon</button>
-            </div>
+            <!-- <div class="action-icon">
+                <mat-label></mat-label>
+                
+            </div> -->
 
         </div>
 
@@ -167,7 +214,7 @@
                             <mat-hint>Saved audio clips</mat-hint>
                         </mat-form-field>
 
-                        <button mat-icon-button *ngIf="action.endingPlayAudioFileId != null" (click)="playAudioFile(action.endingPlayAudioFileId)"><mat-icon>play_circle_outline</mat-icon></button>
+                        <div class="self-center"><button mat-icon-button *ngIf="action.endingPlayAudioFileId != null" (click)="playAudioFile(action.endingPlayAudioFileId)"><mat-icon>play_circle_outline</mat-icon></button></div>
                     </div>
 
                     <div><button mat-button (click)="openEndingAudioFileModal()">Select new audio file.</button></div>

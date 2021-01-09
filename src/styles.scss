@@ -1,4 +1,14 @@
 
+
+app-main {
+    >p {
+        >.mat-toolbar.mat-primary {
+            // background: #652181 !important;
+            background: #4c0e67 !important;
+            color: #00000094 !important;
+        }
+    }
+}
 // form-submitted
 mat-radio-group {
     &.ng-dirty.ng-invalid,

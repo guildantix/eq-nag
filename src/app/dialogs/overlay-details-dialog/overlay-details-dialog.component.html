@@ -5,12 +5,13 @@
     <form #detailsForm="ngForm">
 
         <mat-form-field>
-            <mat-label>Name</mat-label>
+            <mat-label></mat-label>
             <input matInput [(ngModel)]="model.name" name="txtName" required />
+            <mat-hint>Name</mat-hint>
         </mat-form-field>
         
         <mat-form-field>
-            <mat-label>Overlay Type</mat-label>
+            <mat-label></mat-label>
             <mat-select [(ngModel)]="model.overlayType" name="ddlOverlayType" required>
                 <mat-option value="Log">Log</mat-option>
                 <mat-option value="Alert">Alert</mat-option>
@@ -18,6 +19,7 @@
                 <mat-option value="FCT">Combat Text</mat-option>
                 <mat-option value="Chart" disabled>Chart</mat-option>
             </mat-select>
+            <mat-hint>Overlay Type</mat-hint>
         </mat-form-field>
 
     </form>

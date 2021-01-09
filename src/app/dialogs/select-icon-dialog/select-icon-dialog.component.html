@@ -8,7 +8,7 @@
             [pageSize]="25"
             [pageSizeOptions]="[25, 50, 100]">
         </mat-paginator>
-        <div class="icon-container" [style.maxWidth]="(paginator.pageSize == 25 ? 200 : 400) + 'px'" *ngIf="pagedImages?.length > 0">
+        <div class="icon-container" [style.maxWidth]="(paginator.pageSize == 25 ? 230 : 460) + 'px'" *ngIf="pagedImages?.length > 0">
             <div class="icon-view" *ngFor="let icon of pagedImages; let i = index">
                 <img *ngIf="icon != null" style="width: 40px;" [src]="icon" (click)="selectIcon(i)" />
             </div>
