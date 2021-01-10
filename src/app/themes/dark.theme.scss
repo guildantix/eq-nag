@@ -324,4 +324,30 @@
         }
     }
 
+    .modal {
+
+        .titlebar {
+            color: white;
+        }
+    
+        footer {
+            background-color: rgb(33,33,33);
+        }
+
+        .modal-menu {
+            > .mat-tab-header {
+                > .mat-tab-label-container {
+                    background-color: rgb(49, 49, 49);
+                }
+            }
+        }
+
+        mat-card-content {
+            mat-tab-group {
+                background-color: #333333; 
+                color: #ccc; 
+            }
+        }
+        
+    }
 }
