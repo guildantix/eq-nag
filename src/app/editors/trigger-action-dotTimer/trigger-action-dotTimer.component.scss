@@ -1,26 +1,6 @@
-.flex-layout {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-}
 
 mat-form-field {
     font-size: 12px;
-}
-
-::ng-deep .card.action-card {
-    .mat-table tbody {
-        background-color: #ffffff08;
-    }
-    mat-card-content {
-        padding-top: 50px;
-    }
-}
-
-.mat-radio-button {
-    display: block;
-    margin: 10px 0;
 }
 
 .action-icon {

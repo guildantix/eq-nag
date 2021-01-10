@@ -1,6 +1,6 @@
 mat-dialog-content {
-    background-color: #333333;
     padding-bottom: 15px;
+    padding-top: 15px;
 }
 
 .mat-icon-button ::ng-deep .mat-button-focus-overlay {
@@ -8,55 +8,8 @@ mat-dialog-content {
 }
 
 .well {
-    background-color: #2d2d2d;
     padding: 25px 15px;
     display: flex;
     align-items: center;
     margin-top: 14px;
-}
-
-.mat-tree-node {
-    &:nth-child(odd) {
-        background-color: #00000014;
-    }
-    &:nth-last-child(1) {
-        border-bottom: 1px solid rgba(255, 255, 255, 0.12);
-    }
-    &:hover {
-        background-color: #a2a2a229;
-    }
-    &.selected {
-        &:hover {
-            .delete-button {
-                display:unset !important;
-            }
-        }
-        color: #69f0ae;
-        background-color: #69f0ae24;
-    }
-    .delete-button {
-        display: none;
-    }
-    .spacer {
-        display: flex;
-        flex: 1 0 auto;
-    }
-    button {
-        mat-icon {
-            font-size: 18px;
-        }
-        margin-left: 5px;
-    }
-    min-height: unset !important;
-    height: 27px !important;
-    cursor: pointer;
-    display: flex;
-    flex-direction: row;
-    padding-right: 15px;
-}
-
-mat-tree {
-    
-    margin-top: 15px;
-
 }

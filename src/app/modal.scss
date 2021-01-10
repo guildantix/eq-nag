@@ -78,3 +78,9 @@
         }
     }
 }
+
+::ng-deep .mat-tab-body-content {
+    > div {
+        padding: 0 15px;
+    }
+}

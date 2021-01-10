@@ -92,27 +92,34 @@
                                 <mat-tab-group animationDuration="0ms" [selectedIndex]="0">
                                     <mat-tab label="GINA Trigger" style="background-color: #00000014;">
                                         <div style="padding-top:15px;">
-                                            
-                                            <mat-form-field appearance="fill">
-                                                <mat-label>Trigger Name</mat-label>
-                                                <input matInput [(ngModel)]="selectedTrigger.Name" name="txtTriggerName" [readOnly]="true" />
-                                            </mat-form-field>
-                                            
-                                            <mat-form-field appearance="fill">
-                                                <mat-label>Search Text</mat-label>
-                                                <input matInput [(ngModel)]="selectedTrigger.TriggerText" name="txtTriggerText" [readOnly]="true" />
-                                                <mat-hint *ngIf="selectedTrigger.EnableRegex == 'True'">Uses regex</mat-hint>
-                                            </mat-form-field>
 
-                                            <!-- <mat-checkbox [checked]="selectedTrigger.EnableRegex == 'True'" (click)="$event.preventDefault()">Use Regex</mat-checkbox> -->
+                                            <fieldset>
+                                                <legend>Trigger Info</legend>
+                                            
+                                                <mat-form-field>
+                                                    <mat-label></mat-label>
+                                                    <input matInput [(ngModel)]="selectedTrigger.Name" name="txtTriggerName" [readOnly]="true" />
+                                                    <mat-hint>Trigger Name</mat-hint>
+                                                </mat-form-field>
+                                                
+                                                <mat-form-field>
+                                                    <mat-label></mat-label>
+                                                    <input matInput [(ngModel)]="selectedTrigger.TriggerText" name="txtTriggerText" [readOnly]="true" />
+                                                    <mat-hint *ngIf="selectedTrigger.EnableRegex == 'True'">Uses regex</mat-hint>
+                                                    <mat-hint>Search Text</mat-hint>
+                                                </mat-form-field>
 
-                                            <mat-form-field appearance="fill" [style.marginTop]="(selectedTrigger.EnableRegex == 'True' ? '10px' : null)">
-                                                <mat-label>Comments</mat-label>
-                                                <textarea matInput [(ngModel)]="selectedTrigger.Comments" name="txtTriggerComments" style="height: 85px;" [readOnly]="true"></textarea>
-                                            </mat-form-field>
+                                                <!-- <mat-checkbox [checked]="selectedTrigger.EnableRegex == 'True'" (click)="$event.preventDefault()">Use Regex</mat-checkbox> -->
+
+                                                <mat-form-field [style.marginTop]="(selectedTrigger.EnableRegex == 'True' ? '10px' : null)">
+                                                    <mat-label></mat-label>
+                                                    <textarea matInput [(ngModel)]="selectedTrigger.Comments" name="txtTriggerComments" style="height: 85px;" [readOnly]="true"></textarea>
+                                                    <mat-hint>Comments</mat-hint>
+                                                </mat-form-field>
+                                            </fieldset>
 
                                             <fieldset class="trigger-property-group">
-                                                <legend>Basic settings</legend>
+                                                <legend>Basic properties</legend>
                                             
                                                 <div class="field-list">
                                                     <div class="field-line" *ngIf="selectedTrigger.UseText == 'True'"><label>Display Text</label><span>{{selectedTrigger.DisplayText}}</span></div>
@@ -124,7 +131,7 @@
                                             </fieldset>
                                             
                                             <fieldset *ngIf="selectedTrigger.TimerType != ginaTimerTypes.NoTimer" class="trigger-property-group">
-                                                <legend>Timer settings</legend>
+                                                <legend>Timer properties</legend>
 
                                                 <div class="field-list">
                                                     <div class="field-line"><label>Timer Type</label>
@@ -142,7 +149,7 @@
                                             </fieldset>
                                             
                                             <fieldset *ngIf="selectedTrigger.UseTimerEnding == 'True'" class="trigger-property-group">
-                                                <legend>Timer ending settings</legend>
+                                                <legend>Timer ending properties</legend>
 
                                                 <div class="field-list">
                                                     <div class="field-line" *ngIf="selectedTrigger.UseTimerEnding == 'True'"><label>Notify when timer is ending</label><span>{{getDurationLabel(selectedTrigger.TimerEndingTime)}}</span></div>
@@ -154,7 +161,7 @@
                                             </fieldset>
                                             
                                             <fieldset *ngIf="selectedTrigger.UseTimerEnded == 'True'" class="trigger-property-group">
-                                                <legend>Timer ended settings</legend>
+                                                <legend>Timer ended properties</legend>
 
                                                 <div class="field-list">
                                                     <div class="field-line" *ngIf="selectedTrigger.UseTimerEnded == 'True'"><label>Notify when timer ends</label><span>Yes</span></div>
@@ -166,7 +173,7 @@
                                             </fieldset>
                                             
                                             <fieldset *ngIf="selectedTrigger.UseCounterResetTimer == 'True'" class="trigger-property-group">
-                                                <legend>Counter settings</legend>
+                                                <legend>Counter properties</legend>
 
                                                 <div class="field-list">
                                                     <div class="field-line" *ngIf="selectedTrigger.UseCounterResetTimer == 'True'"><label>Use counter</label><span>Yes</span></div>
@@ -190,14 +197,16 @@
                                             
                                             <fieldset style="margin-top: 20px;">
                                                 <legend class="full-width">General</legend>
-                                                <mat-form-field appearance="fill">
-                                                    <mat-label>Trigger Name</mat-label>
+                                                <mat-form-field>
+                                                    <mat-label></mat-label>
                                                     <input matInput name="txtTriggerName" type="text" [(ngModel)]="nTrigger.name" required />
+                                                    <mat-hint>Trigger Name</mat-hint>
                                                 </mat-form-field>
                             
-                                                <mat-form-field appearance="fill">
-                                                    <mat-label>Comments</mat-label>
+                                                <mat-form-field>
+                                                    <mat-label></mat-label>
                                                     <textarea matInput name="txtComments" [(ngModel)]="nTrigger.comments" rows="5"></textarea>
+                                                    <mat-hint>Comments</mat-hint>
                                                 </mat-form-field>
                                             </fieldset>
                                             
@@ -262,34 +271,37 @@
                                                 <div *ngFor="let action of nTrigger.actions;let i = index">
 
                                                     <mat-form-field *ngIf="action.overlayId == null && action.actionType == actionTypes.DisplayText">
-                                                        <mat-label>{{action.displayText}}</mat-label>
+                                                        <mat-label></mat-label>
                                                         <mat-select [(ngModel)]="action.overlayId" name="ddlAlertOverlay_{{i}}">
                                                             <mat-option *ngFor="let option of alertOverlays" [value]="option.overlayId">{{option.name}}</mat-option>
                                                         </mat-select>
+                                                        <mat-hint>{{action.displayText}} text overlay.</mat-hint>
                                                     </mat-form-field>
 
                                                     <ng-template [ngIf]="action.actionType == actionTypes.Countdown || action.actionType == actionTypes.DotTimer || action.actionType == actionTypes.Timer">
 
                                                         <mat-form-field *ngIf="action.overlayId == null">
-                                                            <mat-label>{{action.displayText}}</mat-label>
+                                                            <mat-label></mat-label>
                                                             <mat-select [(ngModel)]="action.overlayId" name="ddlTimerOverlay_{{i}}">
                                                                 <mat-option *ngFor="let option of timerOverlays" [value]="option.overlayId">{{option.name}}</mat-option>
                                                             </mat-select>
-                                                            <mat-hint>This is the timer overlay</mat-hint>
+                                                            <mat-hint>{{action.displayText}} timer overlay.</mat-hint>
                                                         </mat-form-field>
 
                                                         <mat-form-field *ngIf="action.ifEndingSoon && action.endingSoonDisplayText && action.endingSoonTextOverlayId == null">
-                                                            <mat-label>{{action.displayText}} ending soon.</mat-label>
+                                                            <mat-label></mat-label>
                                                             <mat-select [(ngModel)]="action.endingSoonTextOverlayId" name="ddlEndingSoonOverlay_{{i}}">
                                                                 <mat-option *ngFor="let option of alertOverlays" [value]="option.overlayId">{{option.name}}</mat-option>
                                                             </mat-select>
+                                                            <mat-hint>{{action.displayText}} ending soon text overlay.</mat-hint>
                                                         </mat-form-field>
 
                                                         <mat-form-field *ngIf="action.notifyWhenEnded && action.endedDisplayText && action.endedTextOverlayId == null">
-                                                            <mat-label>{{action.displayText}} ended.</mat-label>
+                                                            <mat-label></mat-label>
                                                             <mat-select [(ngModel)]="action.endedTextOverlayId" name="ddlEndedOverlay_{{i}}">
                                                                 <mat-option *ngFor="let option of alertOverlays" [value]="option.overlayId">{{option.name}}</mat-option>
                                                             </mat-select>
+                                                            <mat-hint>{{action.displayText}} ended text overlay.</mat-hint>
                                                         </mat-form-field>
 
                                                     </ng-template>

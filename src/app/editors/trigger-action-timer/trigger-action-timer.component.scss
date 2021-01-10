@@ -1,40 +1,5 @@
-.flex-layout {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-}
-
 mat-form-field {
     font-size: 12px;
-}
-
-::ng-deep .card.action-card {
-    .mat-table tbody {
-        background-color: #ffffff08;
-    }
-    mat-card-content {
-        padding-top: 50px;
-    }
-}
-
-.action-icon {
-    img {
-        max-width: 26px;
-        margin: 10px;
-        cursor: pointer;
-    }
-
-    display: flex;
-    flex-direction: row;
-    justify-items: flex-end;
-    align-items: center;
-
-}
-
-.mat-radio-button {
-    display: block;
-    margin: 10px 0;
 }
 
 p {

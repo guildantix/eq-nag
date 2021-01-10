@@ -118,14 +118,19 @@
     }
 
     .mat-select-panel {
-        mat-option:nth-of-type(odd) {
-            background-color: #202020 !important;
-        }
-        mat-option:nth-of-type(even) {
-            background-color: #1c1c1c !important;
-        }
-        mat-option:hover {
-            background-color: #272727 !important;
+        mat-option {
+            &:nth-of-type(odd) {
+                background-color: #202020 !important;
+            }
+            &:nth-of-type(even) {
+                background-color: #1c1c1c !important;
+            }
+            &:hover {
+                background-color: #272727 !important;
+            }
+            small {
+                color: lightslategrey;
+            }
         }
         .mat-option.mat-selected:not(.mat-option-multiple) {
             background-color: #242424 !important;
@@ -167,7 +172,7 @@
         small {
             color: #ffffff47;
         }
-        background-color: #333333;
+        background-color: #2a2a2a;
     }
 
     div.console {
@@ -186,7 +191,7 @@
         &:nth-of-type(odd) {
             background-color: #2a2a2a;
         }
-        &:nth-last-child(2) {
+        &:nth-last-of-type(1) {
             border-bottom: 2px solid #00000021;
         }
         &:hover {
@@ -215,9 +220,9 @@
     
     .mat-card {
         .mat-tab-group {
-            background-color: #2a2a2a;
+            background-color: #252525;
         }
-        background-color: #333333;
+        background-color: #2a2a2a;
     }
 
     .trigger-categories-header {
@@ -243,6 +248,20 @@
         border: 2px solid #ffffff2b;
     }
 
+    p.note {
+        color: #c6c6c6;
+        background-color: #191919;
+    }
+    
+    p.notice {
+        color: #c6c6c6;
+        background-color: #191919;
+    }
+
+    .well {
+        background-color: #252525;
+    }
+
     div.small-text {
         color: #ffffffbf;
     }
@@ -259,6 +278,21 @@
 
     tr.row-header {
         background-color: #0000003d;
+    }
+
+    table {
+        tr {
+            // th {
+            //     background-color: #252525;
+            //     color: #a5a5a5;
+            // }
+            &:nth-of-type(even) {
+                background-color: #252525;
+            }
+            &:nth-of-type(odd) {
+                background-color: #2a2a2a;
+            }
+        }
     }
 
     mat-form-field {
@@ -322,6 +356,9 @@
             }
             background-color: #252525;
         }
+        .well {
+            background-color: #191919;
+        }
     }
 
     .modal {
@@ -349,6 +386,34 @@
             }
         }
 
+        .card.action-card {
+            .mat-table tbody {
+                background-color: #ffffff08;
+            }
+        }
+
+        .checkbox-hint {
+            color: #ffffffa1;
+        }
+
+        .mat-tab-body-content {
+            .mat-tab-body-content {
+                background-color: unset;
+            }
+            background-color: #0000005e;
+        }
+
+        fieldset {
+            background-color: #333333;
+        }
+    
+        .mat-card {
+            .mat-tab-group {
+                background-color: #2a2a2a;
+            }
+            background-color: #333333;
+        }
+
     }
 
     .saved-label {
@@ -362,4 +427,64 @@
         }
         background-color: rgb(33, 33, 33);
     }
+}
+
+fieldset.trigger-property-group {
+
+    .field-list {
+        .field-line{
+            &:nth-of-type(even) {
+                > label {
+                    background-color: #00000033;
+                }
+                > span {
+                    background-color: #00000059;
+                }
+            }
+            &:nth-of-type(odd) {
+                > label {
+                    background-color: #00000021;
+                }
+                > span {
+                    background-color: #0000004f;
+                }
+            }
+        }
+
+    }
+
+}
+
+.duration-wrapper {
+
+    input[type=number] {
+        background-color: unset;
+        border: none;
+        color: #fff;
+    }
+
+    .time-element {
+        > span {
+            border-bottom-right-radius: 3px;
+            border-top-right-radius: 3px;
+            border-left: 2px solid transparent;
+            background-color: #00000052;
+            color: #cccccc;
+        }
+        border: 2px solid #0000006b;
+        border-radius: 3px;
+        background-color: #0000002e;
+    }
+}
+
+div.console {
+    background-color: #232323;
+}
+
+span.item-link {
+    color: #f00cf3;
+}
+
+.dkp.credit {
+    color: #ff4c4c;
 }
