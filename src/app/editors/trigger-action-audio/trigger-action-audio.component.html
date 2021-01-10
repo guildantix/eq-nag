@@ -3,7 +3,30 @@
         
         <div class="card-tab-content">
 
-            <p>Select an audio file from the list or upload a new file.</p>
+            <div class="card-property">
+                
+                <div class="content-top">Select an audio file from the list or upload a new file.</div>
+
+                <div class="content-vertical content-right">
+                    
+                    <div class="align-content-justify">
+                        <mat-form-field>
+                            <mat-label></mat-label>
+                            <mat-select [(ngModel)]="action.audioFileId" name="ddlAudioFileId">
+                                <mat-option *ngFor="let option of audioFiles" [value]="option.fileId">{{option.fileName}}</mat-option>
+                            </mat-select>
+                            <mat-hint>Saved audio clips</mat-hint>
+                        </mat-form-field>
+                        <div class="self-center"><button mat-icon-button *ngIf="action.audioFileId != null" (click)="playSelectedAudioFile()"><mat-icon>play_circle_outline</mat-icon></button></div>
+                    </div>
+
+                    <div><button mat-button (click)="openAudioFileModal()">Select new audio file.</button></div>
+
+                </div>
+                
+            </div>
+
+            <!-- <p>Select an audio file from the list or upload a new file.</p>
 
             <mat-form-field>
                 <mat-label>Existing audio files</mat-label>
@@ -16,7 +39,7 @@
 
             <div>
                 <button mat-button (click)="openAudioFileModal()">Select new audio file.</button>
-            </div>
+            </div> -->
 
         </div>
 
