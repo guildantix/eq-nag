@@ -1,7 +1,17 @@
+$color-light: #ffffffde;
+$color-green: #69f0ae;
+
+$option-odd: #202020;
+$option-even: #1c1c1c;
+$option-hover: #272727;
+$option-panel: #252525;
+$option-selected: #242424;
+$option-small: #c7e3ff7d;
+
 .dark-theme {
 
     .color-light {
-        color: #ffffffde;
+        color: $color-light;
     }
     
     .color-blue {
@@ -9,7 +19,7 @@
     }
     
     .color-green {
-        color: #69f0ae;
+        color: $color-green;
     }
     
     .color-orange {
@@ -29,7 +39,7 @@
     }
     
     .border-light {
-        border-color: #ffffffde;
+        border-color: $color-light;
     }
     
     .border-dark {
@@ -41,7 +51,7 @@
     }
     
     .border-green {
-        border-color: #69f0aecc; // a: 0.80
+        border-color: rgba($color-green, .8); // a: 0.80
     }
     
     .border-orange {
@@ -120,52 +130,37 @@
     .mat-select-panel {
         mat-option {
             &:nth-of-type(odd) {
-                background-color: #202020 !important;
+                background-color: $option-odd !important;
             }
             &:nth-of-type(even) {
-                background-color: #1c1c1c !important;
+                background-color: $option-even !important;
             }
             &:hover {
-                background-color: #272727 !important;
+                background-color: $option-hover !important;
             }
             small {
-                color: lightslategrey;
+                color: $option-small;
             }
         }
         .mat-option.mat-selected:not(.mat-option-multiple) {
-            background-color: #242424 !important;
-            color: #69f0ae;
+            background-color: $option-selected !important;
+            color: $color-green;
             font-weight: bolder;
         }
-        background-color: #252525;
+        background-color: $option-panel;
     }
 
     .mat-menu-panel {
         button:nth-of-type(odd) {
-            background-color: #202020 !important;
+            background-color: $option-odd !important;
         }
         button:nth-of-type(even) {
-            background-color: #1c1c1c !important;
+            background-color: $option-even !important;
         }
         button:hover {
-            background-color: #272727 !important;
+            background-color: $option-hover !important;
         }
-        background-color: #252525;
-    }
-
-    form.form-submitted {
-        mat-radio-group {
-            &.ng-invalid {
-                mat-radio-button {
-                    label {
-                        color: #f44336;
-                        .mat-radio-outer-circle {
-                            border-color: #f44336;
-                        }
-                    }
-                }
-            }
-        }
+        background-color: $option-panel;
     }
 
     fieldset {
@@ -198,8 +193,8 @@
             background-color: #a2a2a229;
         }
         &.selected {
-            color: #69f0ae;
-            background-color: #69f0ae24;
+            color: $color-green;
+            background-color: rgba($color-green, .24);
         }
         background-color: #252525;
     }
@@ -418,7 +413,7 @@
 
     .saved-label {
         background-color: #33423b;
-        color: #69f0ae;
+        color: $color-green;
     }
 
     .context-menu-background {
