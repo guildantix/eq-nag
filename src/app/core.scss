@@ -219,7 +219,7 @@ table {
     padding-right: 15px;
 }
 
-.card-property {
+::ng-deep .card-property {
     >div {
         .fill-width {
             width: 100%;

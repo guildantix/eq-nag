@@ -3,23 +3,29 @@
         
         <div class="card-tab-content">
 
-            <mat-form-field>
-                <mat-label>Overlay Window</mat-label>
-                <mat-select [(ngModel)]="action.overlayId" name="ddlLogOverlay">
-                    <mat-option *ngFor="let option of overlayOptions" [value]="option.overlayId">{{option.name}}</mat-option>
-                </mat-select>
-            </mat-form-field>
+            <div class="card-property">
+                <div class="full-width content-middle">
+                    <mat-form-field>
+                        <mat-label></mat-label>
+                        <input matInput [(ngModel)]="action.displayText" name="txtDisplayText" />
+                        <mat-hint>Display Text</mat-hint>
+                    </mat-form-field>
+                </div>
+            </div>
 
-            <mat-form-field>
-                <mat-label>Display Text</mat-label>
-                <input matInput [(ngModel)]="action.displayText" name="txtDisplayText" />
-            </mat-form-field>
+            <div class="card-property">
+                <div class="content-middle">
+                    <mat-form-field>
+                        <mat-label></mat-label>
+                        <mat-select [(ngModel)]="action.overlayId" name="ddlLogOverlay">
+                            <mat-option *ngFor="let option of overlayOptions" [value]="option.overlayId">{{option.name}}</mat-option>
+                        </mat-select>
+                        <mat-hint>Overlay Window</mat-hint>
+                    </mat-form-field>
+                </div>
+                <div class="content-middle"><app-duration [(ngModel)]="action.duration" name="durActionDuration"></app-duration></div>
+            </div>
 
-            <mat-form-field>
-                <mat-label>Display for seconds</mat-label>
-                <input matInput [(ngModel)]="action.duration" name="txtDisplayText_Duration" type="number" />
-            </mat-form-field>
-            
         </div>
     </mat-tab>
 </mat-tab-group>
