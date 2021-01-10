@@ -93,6 +93,7 @@
                 <div class="content-top"><mat-checkbox [(ngModel)]="action.endingSoonDisplayText" name="cbxEndingSoonDisplayText" *ngIf="action.endingDuration > 0">Display text</mat-checkbox></div>
 
                 <div class="content-vertical content-right">
+
                     <mat-form-field *ngIf="action.endingSoonDisplayText">
                         <mat-label></mat-label>
                         <input matInput [(ngModel)]="action.endingSoonText" name="txtEndingSoonText" placeholder="Enter the text to display" />
@@ -108,6 +109,7 @@
                     </mat-form-field>
 
                     <app-duration [(ngModel)]="action.endingSoonTextDuration" name="durEndingSoonTextDuration" *ngIf="action.endingSoonDisplayText"></app-duration>
+
                 </div>
                 
             </div>
@@ -175,81 +177,104 @@
     </mat-tab>
     <mat-tab label="Timer Ended">
         <div class="card-tab-content" [appContextMenu]="getActionEndedCtxMenu(action)">
-            <mat-checkbox [(ngModel)]="action.remainAfterEnded" name="cbxRemainAfterEnded">Keep timer up</mat-checkbox>
-            <span *ngIf="action.remainAfterEnded">
-                for&nbsp;
-                <app-duration [(ngModel)]="action.remainDuration" name="durRemainDuration" [inline]="true"></app-duration>
-                .
-            </span>
 
-            <div *ngIf="action.remainAfterEnded && action.remainDuration > 0" style="margin-top:10px; clear: both;">
-                <mat-checkbox [(ngModel)]="action.endedDisplayText" name="cbxEndedDisplayText" *ngIf="action.remainDuration > 0">Display text</mat-checkbox>
+            <!-- Notify when ending -->
+            <div class="card-property">
 
-                <div style="display: inline; float: right; clear: right; width: 400px; margin-top: -10px;">
+                <div class="content-middle"><mat-checkbox [(ngModel)]="action.remainAfterEnded" name="cbxRemainAfterEnded">Notify when ended</mat-checkbox></div>
+                <div class="content-right" *ngIf="action.remainAfterEnded"><app-duration [(ngModel)]="action.remainDuration" name="durRemainDuration"></app-duration></div>
+
+            </div>
+
+            <!-- Change timer color -->
+            <div class="card-property" *ngIf="action.remainAfterEnded && action.remainDuration > 0">
+                <div class="content-middle"><mat-checkbox [(ngModel)]="action.endedChangeColor" name="cbxEndedChangeColor" *ngIf="action.remainDuration > 0">Change timer color</mat-checkbox></div>
+                <div class="content-right content-middle"><app-color-picker [(ngModel)]="action.endedColor" name="acpEndedColor" *ngIf="action.endedChangeColor" [inline]="true"></app-color-picker></div>
+            </div>
+
+            <!-- Enable actions -->
+            <div class="card-property">
+                <div class="content-middle"><mat-checkbox [(ngModel)]="action.notifyWhenEnded" name="cbxNotifyWhenEnded">Execute actions when timer ends.</mat-checkbox></div>
+            </div>
+
+            <!-- Display text -->
+            <div class="card-property" *ngIf="action.notifyWhenEnded" style="margin-top:10px; clear: both;">
+                
+                <div class="content-top"><mat-checkbox [(ngModel)]="action.endedDisplayText" name="cbxEndedDisplayText">Display text</mat-checkbox></div>
+
+                <div class="content-vertical content-right">
+
                     <mat-form-field *ngIf="action.endedDisplayText">
-                        <mat-label>Display Text</mat-label>
-                        <input matInput [(ngModel)]="action.endedText" name="txtEndedText" />
+                        <mat-label></mat-label>
+                        <input matInput [(ngModel)]="action.endedText" name="txtEndedText" placeholder="Enter the text to display" />
+                        <mat-hint>Display Text</mat-hint>
                     </mat-form-field>
 
-                    <mat-form-field *ngIf="action.endedDisplayText && action.endedText?.length > 0" style="width: 280px; margin-right: 10px;">
-                        <mat-label>Overlay Window</mat-label>
+                    <mat-form-field *ngIf="action.endedDisplayText">
+                        <mat-label></mat-label>
                         <mat-select [(ngModel)]="action.endedTextOverlayId" name="ddlEndedTextOverlayId">
                             <mat-option *ngFor="let option of alertOverlays" [value]="option.overlayId">{{option.name}}</mat-option>
                         </mat-select>
+                        <mat-hint>Overlay Window</mat-hint>
                     </mat-form-field>
 
-                    <mat-form-field *ngIf="action.endedDisplayText && action.endedText?.length > 0 && action.endedTextOverlayId?.length > 0" style="width: 110px;">
-                        <mat-label>Duration (seconds)</mat-label>
-                        <input matInput [(ngModel)]="action.endedTextDuration" name="txtEndedTextDuration" type="number" />
-                    </mat-form-field>
+                    <app-duration [(ngModel)]="action.endedTextDuration" name="durEndedTextDuration" *ngIf="action.endedDisplayText"></app-duration>
+
                 </div>
                 
             </div>
 
-            <div *ngIf="action.remainAfterEnded && action.remainDuration > 0" style="margin-top:10px; clear: both;">
-                <mat-checkbox [(ngModel)]="action.endedSpeak" name="cbxEndedSpeak" *ngIf="action.remainDuration > 0">Speak phrase</mat-checkbox>
+            <!-- Speak a phrase -->
+            <div class="card-property" *ngIf="action.notifyWhenEnded">
+                
+                <div class="content-top"><mat-checkbox [(ngModel)]="action.endedSpeak" name="cbxEndedSpeak">Speak phrase</mat-checkbox></div>
 
-                <div style="display: inline; float: right; clear: right; width: 400px; margin-top: -10px;">
+                <div class="content-vertical content-right">
                     <mat-form-field *ngIf="action.endedSpeak">
-                        <mat-label>Phrase</mat-label>
-                        <input matInput [(ngModel)]="action.endedSpeakPhrase" name="txtEndedSpeakPhrase" />
+                        <mat-label></mat-label>
+                        <input matInput [(ngModel)]="action.endedSpeakPhrase" name="txtEndedSpeakPhrase" placeholder="Enter text to speak." />
+                        <mat-hint>Phrase</mat-hint>
+                    </mat-form-field>
+                    <mat-checkbox class="align-left head-room" [(ngModel)]="action.endedInterruptSpeech" name="cbxEndedInterruptSpeech" *ngIf="action.endedSpeak" title="If the TTS engine is currently speaking, that speech will be interrupted when this trigger action executes.">Interrupt speech</mat-checkbox>
+                </div>
+                
+            </div>
+
+            <!-- Send text to clipboard -->
+            <div class="card-property" *ngIf="action.notifyWhenEnded">
+                
+                <div class="content-middle"><mat-checkbox [(ngModel)]="action.endedClipboard" name="cbxEndedClipboard">Send text to clipboard</mat-checkbox></div>
+
+                <div class="content-right">
+                    <mat-form-field class="fill-width" *ngIf="action.endedClipboard">
+                        <mat-label></mat-label>
+                        <input matInput [(ngModel)]="action.endedClipboardText" name="txtEndedClipboardText" placeholder="Enter text to copy." />
+                        <mat-hint>Clipboard text</mat-hint>
                     </mat-form-field>
                 </div>
                 
             </div>
 
-            <div *ngIf="action.remainAfterEnded && action.remainDuration > 0" style="margin-top:10px; clear: both;">
-                <mat-checkbox [(ngModel)]="action.endedClipboard" name="cbxEndedClipboard">Send text to clipboard</mat-checkbox>
-
-                <div style="display: inline; float: right; clear: right; width: 350px; margin-top: -10px;">
-                    <mat-form-field *ngIf="action.endedClipboard">
-                        <mat-label>Clipboard text</mat-label>
-                        <input matInput [(ngModel)]="action.endedClipboardText" name="txtEndedClipboardText" />
-                    </mat-form-field>
-                </div>
+            <!-- Play an audio clip -->
+            <div class="card-property" *ngIf="action.notifyWhenEnded">
                 
-            </div>
+                <div class="content-top"><mat-checkbox [(ngModel)]="action.endedPlayAudio" name="cbxEndedPlayAudio">Play an audio clip</mat-checkbox></div>
 
-            <div *ngIf="action.remainAfterEnded && action.remainDuration > 0">
-                <mat-checkbox [(ngModel)]="action.endedChangeColor" name="cbxEndedChangeColor" *ngIf="action.remainDuration > 0">Change timer color</mat-checkbox>
-                <app-color-picker [(ngModel)]="action.endedColor" name="acpEndedColor" *ngIf="action.endedChangeColor" [inline]="true"></app-color-picker>
-            </div>
-
-            <div *ngIf="action.remainAfterEnded && action.remainDuration > 0" style="margin-top:10px; clear: both;">
-                <mat-checkbox [(ngModel)]="action.endedPlayAudio" name="cbxEndedPlayAudio">Play an audio clip</mat-checkbox>
-
-                <div *ngIf="action.endedPlayAudio">
+                <div class="content-vertical content-right" *ngIf="action.endedPlayAudio">
                     
-                    <p>Select an audio file from the list or upload a new file.</p>
+                    <p class="align-content-left">Select an audio file from the list or upload a new file.</p>
 
-                    <mat-form-field>
-                        <mat-label>Existing audio files</mat-label>
-                        <mat-select [(ngModel)]="action.endedPlayAudioFileId" name="ddlEndedPlayAudioFileId">
-                            <mat-option *ngFor="let option of audioFiles" [value]="option.fileId">{{option.fileName}}</mat-option>
-                        </mat-select>
-                    </mat-form-field>
+                    <div class="align-content-justify">
+                        <mat-form-field>
+                            <mat-label></mat-label>
+                            <mat-select [(ngModel)]="action.endedPlayAudioFileId" name="ddlEndedPlayAudioFileId">
+                                <mat-option *ngFor="let option of audioFiles" [value]="option.fileId">{{option.fileName}}</mat-option>
+                            </mat-select>
+                            <mat-hint>Saved audio clips</mat-hint>
+                        </mat-form-field>
 
-                    <button mat-icon-button *ngIf="action.endedPlayAudioFileId != null" (click)="playAudioFile(action.endedPlayAudioFileId)"><mat-icon>play_circle_outline</mat-icon></button>
+                        <div class="self-center"><button mat-icon-button *ngIf="action.endedPlayAudioFileId != null" (click)="playAudioFile(action.endedPlayAudioFileId)"><mat-icon>play_circle_outline</mat-icon></button></div>
+                    </div>
 
                     <div><button mat-button (click)="openEndedAudioFileModal()">Select new audio file.</button></div>
 
