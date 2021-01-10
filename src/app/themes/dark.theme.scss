@@ -1,5 +1,16 @@
+$color-grey-80: #808080;
+
 $color-light: #ffffffde;
+$color-dark: #373737de;
 $color-green: #69f0ae;
+$color-blue: #69b2f0;
+$color-orange: #f0c669;
+$color-red: #f06969;
+$color-purple: #c269f0;
+$color-magenta: #f0698e;
+$color-red-dark: #921f1f;
+$color-titlebar-bg: #4c0e67;
+$color-titlebar-txt: #00000094;
 
 $option-odd: #202020;
 $option-even: #1c1c1c;
@@ -8,6 +19,8 @@ $option-panel: #252525;
 $option-selected: #242424;
 $option-small: #c7e3ff7d;
 
+$bg-tab-content: #1a1a1a;
+
 .dark-theme {
 
     .color-light {
@@ -15,7 +28,7 @@ $option-small: #c7e3ff7d;
     }
     
     .color-blue {
-        color: #69b2f0;
+        color: $color-blue;
     }
     
     .color-green {
@@ -23,19 +36,19 @@ $option-small: #c7e3ff7d;
     }
     
     .color-orange {
-        color: #f0c669;
+        color: $color-orange;
     }
     
     .color-red {
-        color: #f06969;
+        color: $color-red;
     }
     
     .color-purple {
-        color: #c269f0;
+        color: $color-purple;
     }
     
     .color-magenta {
-        color: #f0698e;
+        color: $color-magenta;
     }
     
     .border-light {
@@ -43,11 +56,11 @@ $option-small: #c7e3ff7d;
     }
     
     .border-dark {
-        border-color: #373737de;
+        border-color: $color-dark;
     }
     
     .border-blue {
-        border-color: #69b2f0cc; // a: 0.80
+        border-color: rgba($color-blue, .8); // a: 0.80
     }
     
     .border-green {
@@ -55,57 +68,49 @@ $option-small: #c7e3ff7d;
     }
     
     .border-orange {
-        border-color: #f0c669cc; // a: 0.80
+        border-color: rgba($color-orange, .8); // a: 0.80
     }
     
     .border-red {
-        border-color: #f06969cc; // a: 0.80
+        border-color: rgba($color-red, .8); // a: 0.80
     }
     
     .border-purple {
-        border-color: #c269f0cc; // a: 0.80
+        border-color: rgba($color-purple, .8); // a: 0.80
     }
     
     .border-magenta {
-        border-color: #f0698ecc; // a: 0.80
-    }
-    
-    .text-depress {
-        color: #ffffff7d;
-        font-weight: 100;
+        border-color: rgba($color-magenta, .8); // a: 0.80
     }
 
     app-main {
         >p {
             >.mat-toolbar.mat-primary {
-                background: #4c0e67 !important;
-                color: #00000094 !important;
+                background: $color-titlebar-bg !important;
+                color: $color-titlebar-txt !important;
             }
         }
-    }
-    .titlebar {
-        color: #00000075;
     }
 
     section,
     div.tab-content {
-        background-color: #1a1a1a;
+        background-color: $bg-tab-content;
     }
 
     mat-toolbar {
         mat-form-field {
             mat-hint {
-                color: #808080;
+                color: $color-grey-80;
             }
             input {
                 color: white;
             }
-            color: #808080;
+            color: $color-grey-80;
         }
     }
 
     .inline-button {
-        background-color: #921f1f;
+        background-color: $color-red-dark;
     }
     
     .inline-button.warn {
