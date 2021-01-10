@@ -1,4 +1,5 @@
 $color-grey-80: #808080;
+$text: #ffffff;
 
 $color-light: #ffffffde;
 $color-dark: #373737de;
@@ -20,6 +21,7 @@ $option-selected: #242424;
 $option-small: #c7e3ff7d;
 
 $bg-tab-content: #1a1a1a;
+$bg-extreme-dark: #191919;
 
 .dark-theme {
 
@@ -114,7 +116,7 @@ $bg-tab-content: #1a1a1a;
     }
     
     .inline-button.warn {
-        color: #ffafaf;
+        color: $color-red;
     }
 
     // form-submitted
@@ -123,9 +125,9 @@ $bg-tab-content: #1a1a1a;
         &.ng-touched.ng-invalid {
             mat-radio-button {
                 label {
-                    color: #f44336;
+                    color: $color-red-dark;
                     .mat-radio-outer-circle {
-                        border-color: #f44336;
+                        border-color: $color-red-dark;
                     }
                 }
             }
@@ -170,7 +172,7 @@ $bg-tab-content: #1a1a1a;
 
     fieldset {
         small {
-            color: #ffffff47;
+            color: rgba($text, .25);
         }
         background-color: #2a2a2a;
     }
@@ -240,22 +242,22 @@ $bg-tab-content: #1a1a1a;
     }
 
     .instructions {
-        color: #ffffffa6;
+        color: rgba($text, .75);
     }
 
     p.code-block {
         background-color: #0000006b;
-        border: 2px solid #ffffff2b;
+        border: 2px solid rgba($text, .20);
     }
 
     p.note {
         color: #c6c6c6;
-        background-color: #191919;
+        background-color: $bg-extreme-dark;
     }
     
     p.notice {
         color: #c6c6c6;
-        background-color: #191919;
+        background-color: $bg-extreme-dark;
     }
 
     .well {
@@ -263,7 +265,7 @@ $bg-tab-content: #1a1a1a;
     }
 
     div.small-text {
-        color: #ffffffbf;
+        color: rgba($text, .75);
     }
 
     .div-list-item,
@@ -304,7 +306,7 @@ $bg-tab-content: #1a1a1a;
             border-top: 2px solid transparent !important;
         }
         input.mat-input-element {
-            color: #ffffff;
+            color: $text;
         }
         &.mat-form-field-disabled {
             .mat-form-field-underline {
@@ -357,7 +359,7 @@ $bg-tab-content: #1a1a1a;
             background-color: #252525;
         }
         .well {
-            background-color: #191919;
+            background-color: $bg-extreme-dark;
         }
     }
 
@@ -388,12 +390,12 @@ $bg-tab-content: #1a1a1a;
 
         .card.action-card {
             .mat-table tbody {
-                background-color: #ffffff08;
+                background-color: rgba($text, .03);
             }
         }
 
         .checkbox-hint {
-            color: #ffffffa1;
+            color: rgba($text, .60);
         }
 
         .mat-tab-body-content {
@@ -423,7 +425,7 @@ $bg-tab-content: #1a1a1a;
 
     .context-menu-background {
         hr {
-            border-color: #ffffff0d;
+            border-color: rgba($text, .05);
         }
         background-color: rgb(33, 33, 33);
     }
