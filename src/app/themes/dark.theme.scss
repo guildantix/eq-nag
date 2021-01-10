@@ -5,7 +5,7 @@
     }
     
     .color-blue {
-        color: #69ddf0;
+        color: #69b2f0;
     }
     
     .color-green {
@@ -37,7 +37,7 @@
     }
     
     .border-blue {
-        border-color: #69ddf0cc; // a: 0.80
+        border-color: #69b2f0cc; // a: 0.80
     }
     
     .border-green {
@@ -354,5 +354,12 @@
     .saved-label {
         background-color: #33423b;
         color: #69f0ae;
+    }
+
+    .context-menu-background {
+        hr {
+            border-color: #ffffff0d;
+        }
+        background-color: rgb(33, 33, 33);
     }
 }

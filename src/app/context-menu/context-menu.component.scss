@@ -1,14 +1,10 @@
 .context-menu-container {
-    // background-color: dark-grey;
     padding: 0px;
     min-width: 100px;
     box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 
                 0 6px 20px 0 rgba(0, 0, 0, 0.19)
 }
 .context-menu-background {
-    hr {
-        border-color: #ffffff0d;
-    }
     button {
         mat-icon {
             margin-right: 15px;
@@ -20,8 +16,5 @@
         text-align: left;
         width: 100%;
     }
-    background-color: rgb(33, 33, 33);
     padding: 5px 0;
 }
-
-// I like this blue: #69b2f030
