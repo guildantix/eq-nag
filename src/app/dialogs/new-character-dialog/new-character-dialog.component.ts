@@ -52,7 +52,10 @@ export class NewCharacterDialogComponent implements OnInit {
         private snackBar: MatSnackBar ) { }
 
     ngOnInit(): void {
-        this.ipcService.getCharacters().subscribe( characters => this.existingCharacters = characters );
+        this.ipcService.getCharacters().subscribe( characters => {
+            this.existingCharacters = characters;
+            console.log( 'characters', characters );
+        } );
         this.ipcService.getEqInstallFolder().subscribe( folder => {
             this.eqFolder = folder;
             this.populateCharacterOptions();
@@ -83,7 +86,7 @@ export class NewCharacterDialogComponent implements OnInit {
                         option.name = results.groups.Character;
                         option.server = results.groups.Server;
                         option.logFile = `${logsPath}\\${file}`;
-                        option.characterId = _.find( this.existingCharacters, f => f.logFile == option.logFile )?.characterId;
+                        option.characterId = this.findCharacterId( option.logFile );
                         
                         dictionary[ results.groups.Server ].push( option );
                     }
@@ -100,6 +103,24 @@ export class NewCharacterDialogComponent implements OnInit {
 
             } );
         }
+    }
+
+    /**
+     * Returns the character id of the character specified by their log file.
+     * 
+     * @param logFile The log file for the desired character.
+     */
+    findCharacterId( logFile: string ): string {
+        
+        if ( logFile ) {
+            for ( let i = 0; i < this.existingCharacters?.length; i++ ) {
+                if ( this.existingCharacters[ i ].logFile?.toLowerCase() === logFile?.toLowerCase() ) {
+                    return this.existingCharacters[ i ].characterId;
+                }
+            }
+        }
+
+        return null;
     }
 
     selectModel( e: MatSelectChange ): void {
