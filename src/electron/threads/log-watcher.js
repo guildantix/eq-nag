@@ -435,9 +435,12 @@ function generateTriggerFns() {
             // Grab condition values and store them
             trigger.conditions.forEach( condition => {
                 if ( !StringUtilities.isNullOrWhitespace( condition.variableValue ) ) {
+                    let values = condition.variableValue.split( /\|/gi ) ?? [];
                     usedConditionValues[ condition.variableName ] = usedConditionValues[ condition.variableName ] ? usedConditionValues[ condition.variableName ] : [];
-                    if ( usedConditionValues[ condition.variableName ].indexOf( condition.variableValue ) == -1 ) {
-                        usedConditionValues[ condition.variableName ].push( condition.variableValue );
+                    for ( let i = 0; i < values?.length; i++ ) {
+                        if ( usedConditionValues[ condition.variableName ].indexOf( values[ i ] ) == -1 ) {
+                            usedConditionValues[ condition.variableName ].push( values[ i ] );
+                        }
                     }
                 }
             } );

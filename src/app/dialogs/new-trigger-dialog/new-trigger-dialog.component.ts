@@ -82,7 +82,7 @@ export class NewTriggerDialogComponent implements OnInit {
                 requirePreviousPhrase: false,
                 duration: null,
                 // ^?{target} has taken (?<damage>[0-9]*) ?damage from your Poison Bolt\.
-                phrase: `^?{target} has taken (?<damage>[0-9]*) ?damage from your ${spell.name}\\.`,
+                phrase: `^?{target} has taken (?<damage>[0-9]*) ?damage from your ${spell.name}(?: Rk\\. II| Rk\\. III){0,1}\\.`,
             } );
 
             let originalDotAction: TriggerAction;
@@ -180,7 +180,8 @@ export class NewTriggerDialogComponent implements OnInit {
                 conditionType: TriggerConditionTypes.VariableValue,
                 variableName: 'SpellBeingCast',
                 operatorType: OperatorTypes.Equals,
-                variableValue: spell.name,
+                // Hoshkar's Swift Sickness|Hoshkar's Swift Sickness Rk. II|Hoshkar's Swift Sickness Rk. III
+                variableValue: `${spell.name}|${spell.name} Rk. II|${spell.name} Rk. III`,
             } );
 
             if ( spell.gemIndex > -1 ) {
