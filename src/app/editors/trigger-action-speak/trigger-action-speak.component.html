@@ -4,8 +4,9 @@
         <div class="card-tab-content">
 
             <mat-form-field>
-                <mat-label>Text to speak</mat-label>
+                <mat-label></mat-label>
                 <input matInput [(ngModel)]="action.displayText" name="txtSpeakText" />
+                <mat-hint>Text to speak</mat-hint>
             </mat-form-field>
 
             <mat-checkbox [(ngModel)]="action.interruptSpeech" name="cbxInterruptSpeech" title="If the TTS engine is currently speaking, that speech will be interrupted when this trigger action executes.">Interrupt speech</mat-checkbox>

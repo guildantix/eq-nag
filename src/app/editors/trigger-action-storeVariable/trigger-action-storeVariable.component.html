@@ -10,8 +10,9 @@
             <p>The name chosen can be used in conditions and capture phrases for other triggers or parsed into any text with $&#123;VariableName&#125;.</p>
 
             <mat-form-field>
-                <mat-label>Variable Name</mat-label>
+                <mat-label></mat-label>
                 <input matInput [(ngModel)]="action.variableName" name="txtVariableName" />
+                <mat-hint>Variable Name</mat-hint>
             </mat-form-field>
             
             <mat-checkbox [(ngModel)]="action.onlyStoreUsedValues" name="cbxOnlyStoreUsedValues">Check if value is used?</mat-checkbox>
