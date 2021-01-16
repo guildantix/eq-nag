@@ -235,6 +235,26 @@ export class DialogService {
 
 
     /**
+     * Opens the new dot timer trigger dialog.
+     */
+    public showReimportBuffDialog( model: TriggerModel ): void {
+        this.dialog.open( NewTriggerBuffDialogComponent, {
+            width: '750px',
+            data: <NewTriggerDialogModel>{ selectedFolderId: null, trigger: model },
+            panelClass: 'app-dialog',
+        } ).afterClosed();
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
      * Opens the new character dialog.
      */
     public showNewCharacterDialog( afterClosed: (characterId: string) => void ): void {

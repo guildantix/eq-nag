@@ -118,6 +118,8 @@ export class TriggerDialogComponent implements OnInit {
             this.reimportDotTimerFromAllakhazam();
         } else if ( this.model.importType === ImportTypes.Ability ) {
             this.reimportAbilityFromAllakhazam();
+        } else if ( this.model.importType === ImportTypes.Buff ) {
+            this.reimportBuffFromAllakhazam();
         }
     }
 
@@ -127,6 +129,10 @@ export class TriggerDialogComponent implements OnInit {
 
     private reimportAbilityFromAllakhazam(): void {
         this.dialogService.showReimportRaidAbilityDialog( this.model );
+    }
+
+    private reimportBuffFromAllakhazam(): void {
+        this.dialogService.showReimportBuffDialog( this.model );
     }
 
 }
