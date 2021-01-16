@@ -10,6 +10,7 @@ import { SelectIconDialogComponent } from '../select-icon-dialog/select-icon-dia
 import { ColorUtility } from 'src/app/utilities';
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const nanoid = customAlphabet( alphabet, 16 );
+import * as _ from 'lodash';
 
 @Component( {
     selector: 'app-new-trigger-buff-dialog',
@@ -47,6 +48,15 @@ export class NewTriggerBuffDialogComponent implements OnInit {
         public dialog: MatDialog ) { }
 
     ngOnInit() {
+
+        if ( this.data?.trigger?.triggerId != null ) {
+            this.url = this.data.trigger.allakhazamUrl;
+            let dotAction: TriggerAction = _.find( this.data.trigger.actions, ( action: TriggerAction ) => action.actionType === ActionTypes.BeneficialTimer );
+            if ( dotAction ) {
+                this.timerOverlayId = dotAction.overlayId;
+            }
+        }
+
         this.ipcService.getOverlayWindows().subscribe( overlays => this.overlays = overlays );
     }
 
@@ -90,7 +100,8 @@ export class NewTriggerBuffDialogComponent implements OnInit {
             conditionType: TriggerConditionTypes.VariableValue,
             variableName: 'SpellBeingCast',
             operatorType: OperatorTypes.Equals,
-            variableValue: this.spell.name,
+            // Gorgon Skin|Gorgon Skin Rk. II|Gorgon Skin Rk. III
+            variableValue: `${this.spell.name}|${this.spell.name} Rk\. II|${this.spell.name} Rk\. III`,
         } );
 
 
@@ -229,7 +240,7 @@ export class NewTriggerBuffDialogComponent implements OnInit {
             buffTimer.endEarlyPhrases.push( <Phrase>{
                 phraseId: nanoid(),
                 // Your Dead Men Floating spell on Xeraphine has been overwritten.
-                phrase: `Your ${this.spell.name} spell on \${target} has been overwritten\\.$`,
+                phrase: `^Your ${this.spell.name}(?: Rk\. II| Rk\. III){0,1} spell on \${target} has been overwritten\\.$`,
                 useRegEx: true,
             } );
 
@@ -237,7 +248,7 @@ export class NewTriggerBuffDialogComponent implements OnInit {
             buffTimer.endEarlyPhrases.push( <Phrase>{
                 phraseId: nanoid(),
                 // Your Dead Men Floating spell has worn off of Rodus.
-                phrase: `Your ${this.spell.name} spell has worn off of \${target}\\.$`,
+                phrase: `Your ${this.spell.name}(?: Rk\. II| Rk\. III){0,1} spell has worn off of \${target}\\.$`,
                 useRegEx: true,
             } );
         }
@@ -248,7 +259,7 @@ export class NewTriggerBuffDialogComponent implements OnInit {
             buffTimer.endEarlyPhrases.push( <Phrase>{
                 phraseId: nanoid(),
                 // Your pet's Sigil of Decay spell has worn off.
-                phrase: `Your pet's ${this.spell.name} spell has worn off\\.$`,
+                phrase: `Your pet's ${this.spell.name}(?: Rk\. II| Rk\. III){0,1} spell has worn off\\.$`,
                 useRegEx: true,
             } );
 
@@ -269,7 +280,7 @@ export class NewTriggerBuffDialogComponent implements OnInit {
             //     duration: null,
             //     // Your Necrotic Cysts spell has worn off of Rodus.
             //     // /^Your Necrotic Cysts spell has worn off of (?<target>[^\.]*)\.$/
-            //     phrase: `^Your ${this.spell.name} spell has worn off of (?<target>[^\\.]*)\\.$`,
+            //     phrase: `^Your ${this.spell.name}(?: Rk\. II| Rk\. III){0,1} spell has worn off of (?<target>[^\\.]*)\\.$`,
             // } );
 
             // trigger.actions.push( <TriggerAction>{
@@ -277,7 +288,7 @@ export class NewTriggerBuffDialogComponent implements OnInit {
             //     actionType: ActionTypes.Speak,
             //     actionId: nanoid(),
             //     interruptSpeech: false,
-            //     displayText: `Your ${this.spell.name} on \${target} has ended.`,
+            //     displayText: `Your ${this.spell.name}(?: Rk\. II| Rk\. III){0,1} on \${target} has ended.`,
             // } );
             
             // if ( this.spell.effectFades ) {
@@ -295,7 +306,7 @@ export class NewTriggerBuffDialogComponent implements OnInit {
             //         actionType: ActionTypes.Speak,
             //         actionId: nanoid(),
             //         interruptSpeech: false,
-            //         displayText: `Your ${this.spell.name} has ended.`,
+            //         displayText: `Your ${this.spell.name}(?: Rk\. II| Rk\. III){0,1} has ended.`,
             //     } );
 
             // }
@@ -316,7 +327,7 @@ export class NewTriggerBuffDialogComponent implements OnInit {
 
             // buffTimer.notifyWhenEnded = true;
             // buffTimer.endedSpeak = true;
-            // buffTimer.endedSpeakPhrase = `Your ${this.spell.name} on \${target} has ended.`;
+            // buffTimer.endedSpeakPhrase = `Your ${this.spell.name}(?: Rk\. II| Rk\. III){0,1} on \${target} has ended.`;
             
             // if ( this.spell.effectFades ) {
             //     // End when the buff ends early.
