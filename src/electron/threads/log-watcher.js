@@ -821,23 +821,21 @@ function parseLogEntries( raw, simulating ) {
                     } else if ( action.actionType === ActionTypes.BeneficialTimer ) {
                     /* --== Buff Timers ==-- */
                         
-                        let rgx = new RegExp( `^You begin casting ${trigger?._conditionResults?.SpellBeingCast}\.$`, 'gmi' );
+                        let spellName = trigger?._conditionResults?.SpellBeingCast;
+                        let rgx = new RegExp( `^You begin casting ${spellName}\\.$`, 'gmi' );
                         let time = timestamp.getTime();
                         let _t = timestamp.getTime();
-                        // console.log( 'starting time', time );
                         if ( action.castTime >= 3000 && charModel.hasBeneficialCastingSpeedFocus ) {
                             let tMod = calculateCastingMilliseconds( action.castTime, trigger.classLevels, charModel.beneficialCastingSpeedFocusPercent, charModel.beneficialCastingSpeedFocusDecayLevel );
-                            // console.log( 'time mod', tMod );
                             time -= tMod;
-                            // console.log( 'resulting time', time );
                         } else {
                             time -= action.castTime;
                         }
 
-                        console.log( 'checking', _t, time, time + 1000 );
                         let m = checkParseHistory( rgx, { time: [ time, time + 1000 ] } );
                         if ( m?.length > 0 ) {
-                            displayBeneficialTimerComponent( res, timestamp, action, trigger );
+                            action.displayText = spellName;
+                            displayBeneficialTimerComponent( res, timestamp, action, trigger, spellName );
                         }
 
                     } else if ( action.actionType === ActionTypes.Speak ) {
@@ -883,15 +881,16 @@ function parseLogEntries( raw, simulating ) {
  * @param {Date} timestamp The timestamp of the log entry.
  * @param {TriggerAction} action The trigger's display text action.
  * @param {LogTrigger} trigger If true the component is written to the console instead of sent to the overlay window.
+ * @param {string} spellName The literal name of the spell that was cast.  This will usually include what rank the spell was.
  */
-function displayBeneficialTimerComponent( res, timestamp, action, trigger ) {
+function displayBeneficialTimerComponent( res, timestamp, action, trigger, spellName ) {
     
     let comp = new OverlayComponent();
 
     comp.instanceId = nanoid();
-    comp.triggerName = trigger.name;
+    comp.triggerName = spellName;
     comp.action = Object.assign( new TriggerAction(), action );
-    comp.action.displayText = `${trigger.name} --== ${res.result.groups.target} ==--`;
+    comp.action.displayText = `${spellName} --== ${res.result.groups.target} ==--`;
     comp.overlayId = action.overlayId;
     comp.matches = res.result;
     comp.timestamp = timestamp;
@@ -1384,12 +1383,12 @@ function storeHasValue( key, value ) {
             for ( let i = 0; i < value.length; i++ ) {
                 let index = storedVariables[ key ].indexOf( value[ i ] );
                 if ( index > -1 ) {
-                    return { exists: true, value: storedVariables[ key[ index ] ] };
+                    return { exists: true, value: value[ i ] };
                 }
             }
         } else {
             let index = storedVariables[ key ].indexOf( value );
-            return index > -1 ? { exists: true, value: storedVariables[ key[ index ] ] } : { exists: false };
+            return index > -1 ? { exists: true, value: value } : { exists: false };
         }
     }
 
