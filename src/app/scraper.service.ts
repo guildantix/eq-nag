@@ -252,7 +252,7 @@ export class ScraperService {
 
                 let model = new ScrapedSpell();
 
-                model.name = data.name;
+                model.name = data.name.replace(/ Rk\. III| Rk\. II/gi, '');
                 model.duration = data.duration;
                 // model.class = data.class;
                 // model.level = data.level;
