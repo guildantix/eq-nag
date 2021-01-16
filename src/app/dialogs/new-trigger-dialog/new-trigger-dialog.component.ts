@@ -181,7 +181,7 @@ export class NewTriggerDialogComponent implements OnInit {
                 variableName: 'SpellBeingCast',
                 operatorType: OperatorTypes.Equals,
                 // Hoshkar's Swift Sickness|Hoshkar's Swift Sickness Rk. II|Hoshkar's Swift Sickness Rk. III
-                variableValue: `${spell.name}|${spell.name} Rk. II|${spell.name} Rk. III`,
+                variableValue: `${spell.name}|${spell.name} Rk\. II|${spell.name} Rk\. III`,
             } );
 
             if ( spell.gemIndex > -1 ) {
