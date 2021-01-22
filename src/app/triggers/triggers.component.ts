@@ -108,7 +108,7 @@ export class TriggersComponent implements OnInit {
      * Displays the new dot timer wizard dialog.
      */
     public showNewDotTimerDialog(): void {
-        this.dialogService.showNewDotTimerDialog();
+        this.dialogService.showNewDotTimerDialog( this.selectedFolderId );
     }
 
 

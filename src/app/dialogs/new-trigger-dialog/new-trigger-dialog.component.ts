@@ -7,6 +7,7 @@ import { customAlphabet } from 'nanoid';
 import { DialogService } from '../dialog.service';
 import { SelectIconDialogComponent } from '../select-icon-dialog/select-icon-dialog.component';
 import * as _ from 'lodash';
+import { NewTriggerDialogModel } from '../dialog.model';
 // import { NgForm } from '@angular/forms';
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const nanoid = customAlphabet( alphabet, 16 );
@@ -31,16 +32,16 @@ export class NewTriggerDialogComponent implements OnInit {
 
     constructor(
         public dialogRef: MatDialogRef<NewTriggerDialogComponent>,
-        @Inject( MAT_DIALOG_DATA ) public data: TriggerModel,
+        @Inject( MAT_DIALOG_DATA ) public data: NewTriggerDialogModel,
         public scraper: ScraperService,
         public ipcService: IpcService,
         public dialog: MatDialog ) { }
 
     ngOnInit(): void {
 
-        if ( this.data?.triggerId != null ) {
-            this.url = this.data.allakhazamUrl;
-            let dotAction: TriggerAction = _.find( this.data.actions, ( action: TriggerAction ) => action.actionType === ActionTypes.DotTimer );
+        if ( this.data?.trigger?.triggerId != null ) {
+            this.url = this.data.trigger.allakhazamUrl;
+            let dotAction: TriggerAction = _.find( this.data.trigger.actions, ( action: TriggerAction ) => action.actionType === ActionTypes.DotTimer );
             if ( dotAction ) {
                 this.overlayId = dotAction.overlayId;
             }
@@ -54,11 +55,12 @@ export class NewTriggerDialogComponent implements OnInit {
 
             let trigger: TriggerModel;
 
-            if ( this.data?.triggerId != null ) {
-                trigger = this.data;
+            if ( this.data?.trigger?.triggerId != null ) {
+                trigger = this.data.trigger;
             } else {
                 trigger = new TriggerModel();
                 trigger.comments = `DoT timer for ${spell.name}.`;
+                trigger.folderId = this.data?.selectedFolderId;
             }
 
             trigger.name = spell.name;

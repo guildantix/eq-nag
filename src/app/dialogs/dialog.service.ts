@@ -138,10 +138,11 @@ export class DialogService {
     /**
      * Opens the new dot timer trigger dialog.
      */
-    public showNewDotTimerDialog(): void {
+    public showNewDotTimerDialog( folderId?: string ): void {
         this.dialog.open( NewTriggerDialogComponent, {
             width: '750px',
             panelClass: 'app-dialog',
+            data: <NewTriggerDialogModel>{ selectedFolderId: folderId, trigger: null },
         } ).afterClosed();
     }
 
@@ -200,7 +201,7 @@ export class DialogService {
     public showReimportDotTimerDialog( model: TriggerModel ): void {
         this.dialog.open( NewTriggerDialogComponent, {
             width: '750px',
-            data: model,
+            data: <NewTriggerDialogModel>{ selectedFolderId: null, trigger: model },
             panelClass: 'app-dialog',
         } ).afterClosed();
     }
