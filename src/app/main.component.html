@@ -3,7 +3,6 @@
         <span>Antix Parse</span>
         <span class="spacer"></span>
         <button mat-icon-button aria-label="Minimize to tray" (click)="minimizeTaskbar()">
-            <!-- style="transform: rotate(90deg);" -->
             <mat-icon>south_east</mat-icon>
         </button>
         <button mat-icon-button aria-label="Minimize application" (click)="minimizeTaskbar()">
@@ -16,21 +15,7 @@
 </p>
 <section>
     <mat-tab-group animationDuration="0ms" (selectedIndexChange)="onChangeTabs($event)" [selectedIndex]="0">
-        <!-- <mat-tab label="DKP Tracker">
-                <mat-toolbar>
-                    <span>DKP Tracker</span>
-                    <span class="spacer"></span>
-                    <button mat-button color="accent" (click)="testFn()" *ngIf="isDev">Test Fn</button>
-                </mat-toolbar>
-                <div class="tab-content">
 
-                    <button mat-button color="accent" (click)="parseToBulkUpload()">Copy Bulk Upload String</button>
-                    <button mat-button color="warn" (click)="markAllDkpEntered()">All DKP Entries Completed</button>
-                    <br />
-
-                </div>
-
-        </mat-tab> -->
         <mat-tab label="Characters">
             <mat-toolbar>
                 <span>Characters</span>
@@ -136,11 +121,6 @@
                 </mat-toolbar>
                 <div class="tab-content">
 
-                    <!-- <fieldset>
-                        <legend><span>Log File</span><span class="spacer"></span><button mat-button (click)="openModal()" color="accent">Select Log File</button></legend>
-                        <small>Current: {{logFile}}</small>
-                    </fieldset> -->
-        
                     <fieldset>
                         <legend><span>Text to Speech</span></legend>
                         <mat-form-field style="width: 50%;">
@@ -216,29 +196,8 @@
                         </table>
 
                         <button mat-button *ngIf="phoneticTransformsModified" (click)="savePhoneticTransforms()" color="accent">Save Changes</button>
-                        <!-- <ol>
-                            <li *ngFor="let key of objectKeys(phoneticTransforms)"></li>
-                        </ol> -->
+                        
                     </fieldset>
-
-                    <!-- <fieldset>
-                        <legend>Focus Effects</legend>
-                        <mat-checkbox [(ngModel)]="focusEffectSettings.hasExtendedDotFocus" (change)="updateFocusEffectSettings()"> Extended DOT Focus?</mat-checkbox>
-                        <div *ngIf="focusEffectSettings.hasExtendedDotFocus">
-                            <h2>Extended dot focus details</h2>
-
-                            <mat-form-field>
-                                <mat-label>Percent increase</mat-label>
-                                <input matInput [(ngModel)]="focusEffectSettings.extendedDotFocusPercent" name="txtExtDotFocusPercent" type="number" (change)="updateFocusEffectSettings()" />
-                            </mat-form-field>
-                            
-                            <mat-form-field>
-                                <mat-label>Level at which decay begins</mat-label>
-                                <input matInput [(ngModel)]="focusEffectSettings.extendedDotFocusDecayLevel" name="txtExtDotFocusDecayLevel" type="number" (change)="updateFocusEffectSettings()" />
-                            </mat-form-field>
-
-                        </div>
-                    </fieldset> -->
 
                 </div>
 
@@ -246,12 +205,5 @@
     </mat-tab-group>
 
     <input type="file" #fileSelector style="display:none;" accept="*.txt" (change)="fileSelected($event)" />
-    <!-- <div class="console" *ngIf="showConsole">
-        <ul>
-            <li *ngFor="let item of dkpEntries">
-                <span class="inline-button warn" (click)="removeEntry(item)">delete</span> {{item.character}} [<span class="item-link">{{item.item}}</span>] for <span class="dkp credit">{{item.dkp}}</span> DKP {{item.timeStamp | date:'MMM dd'}}
-            </li>
-        </ul>
-    </div> -->
 
 </section>
