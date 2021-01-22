@@ -3,6 +3,9 @@ class ForwardRef {
     /** @type {() => any} */
     #refFn;
 
+    /** @type {number} */
+    #checkIntervalId;
+
     get reference() {
         return this.#refFn();
     }
@@ -13,6 +16,20 @@ class ForwardRef {
      */
     constructor( refFn ) {
         this.#refFn = refFn;
+    }
+
+    /**
+     * Executes the given function when the reference is loaded.
+     * 
+     * @param {() => void)} fn The callback function to execute.
+     */
+    whenReady( fn ) {
+        this.#checkIntervalId = setInterval( () => {
+            if ( this.reference ) {
+                clearInterval( this.#checkIntervalId );
+                fn();
+            }
+        } );
     }
 }
 

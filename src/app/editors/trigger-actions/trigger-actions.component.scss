@@ -1,0 +1,16 @@
+
+mat-form-field {
+    font-size: 12px;
+}
+
+.action-header-image {
+    .material-icons {
+        font-size: 50px;
+    }
+}
+
+::ng-deep .card.action-card {
+    mat-card-content {
+        padding-top: 50px;
+    }
+}

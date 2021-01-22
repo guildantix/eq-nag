@@ -61,6 +61,18 @@ export class DurationComponent implements OnInit, ControlValueAccessor {
         this.disabled = isDisabled;
     }
 
+    public add( value: number ): number {
+        value += 1;
+        window.setTimeout( () => this.valueChanged( {} ) );
+        return value > 0 ? value : null;
+    }
+
+    public subtract( value: number ): number {
+        value -= 1;
+        window.setTimeout( () => this.valueChanged( {} ) );
+        return value > 0 ? value : null;
+    }
+
     ngOnInit() { }
 
 }

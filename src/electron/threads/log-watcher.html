@@ -12,8 +12,9 @@
 
 <body>
     <script type="text/javascript">
+        const urlParams = new URLSearchParams(window.location.search);
         var LogWatcher = require('./log-watcher');
-        LogWatcher();
+        LogWatcher(JSON.parse(decodeURI(urlParams.get('character'))), +urlParams.get('logPosition'));
     </script>
     <h1>Header text</h1>
 </body>

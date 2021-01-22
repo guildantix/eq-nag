@@ -13,464 +13,49 @@
             <mat-tab-group class="modal-menu" animationDuration="0ms" (selectedIndexChange)="onChangeTabs($event)" [selectedIndex]="0">
                 <mat-tab label="Capture">
                     <div class="tab-content">
-    
+                        
                         <fieldset class="margin-t-50">
-                            <legend class="full-width">General</legend>
-                            <mat-checkbox [(ngModel)]="model.predefined" name="cbxPredefined" *ngIf="isDev">Predefined</mat-checkbox>
-                            <mat-checkbox [(ngModel)]="model.onlyExecuteInDev" name="cbxOnlyShowInDev" *ngIf="isDev && model.predefined">Only execute in dev</mat-checkbox>
-                            <mat-form-field appearance="fill">
-                                <mat-label>Trigger Name</mat-label>
+                            <legend>General
+                                <span style="color: #00000057; padding-left: 25px;" *ngIf="isDev">{{model.triggerId}}</span>
+                                <span class="spacer"></span>
+                                <mat-checkbox [(ngModel)]="model.predefined" name="cbxPredefined" *ngIf="isDev">Predefined</mat-checkbox>
+                                <mat-checkbox [(ngModel)]="model.onlyExecuteInDev" name="cbxOnlyShowInDev" *ngIf="isDev && model.predefined">Only execute in dev</mat-checkbox>
+                            </legend>
+                            
+                            <mat-form-field>
+                                <mat-label></mat-label>
                                 <input matInput name="txtTriggerName" type="text" [(ngModel)]="model.name" required />
+                                <mat-hint>Trigger Name</mat-hint>
                             </mat-form-field>
         
-                            <mat-form-field appearance="fill">
-                                <mat-label>Comments</mat-label>
+                            <mat-form-field>
+                                <mat-label></mat-label>
                                 <textarea matInput name="txtComments" [(ngModel)]="model.comments" rows="5"></textarea>
+                                <mat-hint>Comments</mat-hint>
                             </mat-form-field>
                         </fieldset>
-                        <fieldset>
-                            <legend class="full-width"><span>Conditions</span><span class="spacer"></span><button mat-button (click)="addNewCondition()" color="accent"><mat-icon>add</mat-icon>New</button></legend>
-                            <table mat-table #conditionsTable="matTable" *ngIf="model.conditions?.length > 0"
-                                [dataSource]="model.conditions"
-                                class="capture-phrases">
-    
-                                <ng-container matColumnDef="number">
-                                    <th mat-header-cell *matHeaderCellDef style="width: 50px;"> No. </th>
-                                    <td mat-cell *matCellDef="let element; let i = index"> {{i + 1}} </td>
-                                </ng-container>
-    
-                                <ng-container matColumnDef="variable">
-                                    <th mat-header-cell *matHeaderCellDef> Variable Name </th>
-                                    <td mat-cell *matCellDef="let element; let i = index">
-                                        <mat-form-field>
-                                            <mat-label>Variable Name</mat-label>
-                                            <mat-select [(ngModel)]="element.variableName" name="ddlConditionVariableName_{{i}}">
-                                                <mat-option *ngFor="let variable of storedVariables" [value]="variable">{{variable}}</mat-option>
-                                            </mat-select>
-                                        </mat-form-field>
-                                    </td>
-                                </ng-container>
-    
-                                <ng-container matColumnDef="operator">
-                                    <th mat-header-cell *matHeaderCellDef> Operator </th>
-                                    <td mat-cell *matCellDef="let element; let i = index">
-                                        <mat-form-field>
-                                            <mat-label>Operator</mat-label>
-                                            <mat-select [(ngModel)]="element.operatorType" name="ddlConditionOperatorType_{{i}}">
-                                                <mat-option [value]="operatorTypes.IsNull">Is empty</mat-option>
-                                                <mat-option [value]="operatorTypes.Equals">Equals</mat-option>
-                                                <mat-option [value]="operatorTypes.DoesNotEqual">Is not equal to</mat-option>
-                                                <!-- <mat-option [value]="operatorTypes.LessThan">Is less than</mat-option> -->
-                                                <!-- <mat-option [value]="operatorTypes.GreaterThan">Is greater than</mat-option> -->
-                                            </mat-select>
-                                        </mat-form-field>
-                                    </td>
-                                </ng-container>
-    
-                                <ng-container matColumnDef="value">
-                                    <th mat-header-cell *matHeaderCellDef> Value </th>
-                                    <td mat-cell *matCellDef="let element; let i = index">
-                                        <mat-form-field>
-                                            <mat-label>Value</mat-label>
-                                            <input matInput [(ngModel)]="element.variableValue" name="txtConditionValue_{{i}}" />
-                                        </mat-form-field>
-                                    </td>
-                                </ng-container>
-    
-                                <ng-container matColumnDef="regEx">
-                                    <th mat-header-cell *matHeaderCellDef style="text-align: center; width: 50px;"> RegEx </th>
-                                    <td mat-cell *matCellDef="let element; let i = index"> <div style="text-align: center; padding: 20px;"><mat-checkbox name="cbxUseRegEx_{{i}}" [(ngModel)]="element.useRegEx"></mat-checkbox></div> </td>
-                                </ng-container>
-    
-                                <ng-container matColumnDef="delete">
-                                    <th mat-header-cell *matHeaderCellDef style="text-align: center; width: 50px;">  </th>
-                                    <td mat-cell *matCellDef="let element; let i = index">
-                                        <button mat-icon-button color="warn" aria-label="Delete this condition." (click)="deleteCondition(i)">
-                                            <mat-icon>clear</mat-icon>
-                                        </button>
-                                    </td>
-                                </ng-container>
-    
-                                <tr mat-header-row *matHeaderRowDef="conditionTableColumns"></tr>
-                                <tr mat-row *matRowDef="let element; columns: conditionTableColumns;"></tr>
-    
-                            </table>
-                        </fieldset>
-                        <fieldset>
-                            <legend class="full-width"><span>Phrases</span><span class="spacer"></span><button mat-button (click)="addNewCapturePhrase()" color="accent"><mat-icon>add</mat-icon>New</button></legend>
-                            <mat-form-field style="width: 200px;">
-                                <mat-label>Capture Method</mat-label>
-                                <mat-select [(ngModel)]="model.captureMethod" name="ddlCaptureMethod">
-                                    <mat-option value="Any match" matTooltip="Execute this trigger if any phrase matches a single log entry" matTooltipPosition="right">Any match</mat-option>
-                                    <mat-option value="Sequential" matTooltip="Execute this trigger if all phrases match sequentially across multiple log entries" matTooltipPosition="right">Sequential</mat-option>
-                                    <mat-option value="Concurrent" disabled matTooltip="Execute this trigger if all phrases match in a single log entry" matTooltipPosition="right">Concurrent</mat-option>
-                                </mat-select>
-                            </mat-form-field>
-                            <table mat-table #capturePhrasesTable="matTable"
-                                [dataSource]="model.capturePhrases"
-                                class="capture-phrases">
-
-                                <ng-container matColumnDef="moveIndex">
-                                    <th mat-header-cell *matHeaderCellDef style="width: 50px;"></th>
-                                    <td mat-cell *matCellDef="let element; let i = index">
-                                        <span class="material-icons" style="display: block; cursor: pointer;" (click)="movePhraseUp(i)">keyboard_arrow_up</span>
-                                        <span class="material-icons" style="display: block; cursor: pointer;" (click)="movePhraseDown(i)">keyboard_arrow_down</span>
-                                    </td>
-                                </ng-container>
-    
-                                <ng-container matColumnDef="number">
-                                    <th mat-header-cell *matHeaderCellDef style="width: 50px;"> No. </th>
-                                    <td mat-cell *matCellDef="let element; let i = index"> {{i + 1}} </td>
-                                </ng-container>
-    
-                                <ng-container matColumnDef="phrase">
-                                    <th mat-header-cell *matHeaderCellDef> Phrase </th>
-                                    <td mat-cell *matCellDef="let element; let i = index">
-                                        <mat-form-field>
-                                            <mat-label>Capture Phrase</mat-label>
-                                            <input matInput name="txtPhrase_{{i}}" type="text" [(ngModel)]="element.phrase" />
-                                        </mat-form-field>
-                                    </td>
-                                </ng-container>
-    
-                                <ng-container matColumnDef="regEx">
-                                    <th mat-header-cell *matHeaderCellDef style="text-align: center; width: 50px;"> RegEx </th>
-                                    <td mat-cell *matCellDef="let element; let i = index"> <div style="text-align: center; padding: 20px;"><mat-checkbox name="cbxUseRegEx_{{i}}" [(ngModel)]="element.useRegEx"></mat-checkbox></div> </td>
-                                </ng-container>
-    
-                                <ng-container matColumnDef="delete">
-                                    <th mat-header-cell *matHeaderCellDef style="text-align: center; width: 50px;">  </th>
-                                    <td mat-cell *matCellDef="let element; let i = index">
-                                        <button mat-icon-button color="warn" aria-label="Delete this capture phrase" (click)="deleteCapturePhrase(i)">
-                                            <mat-icon>clear</mat-icon>
-                                        </button>
-                                    </td>
-                                </ng-container>
-    
-                                <tr mat-header-row *matHeaderRowDef="phraseTableColumns"></tr>
-                                <tr mat-row *matRowDef="let element; columns: phraseTableColumns;"></tr>
-    
-                            </table>
-                        </fieldset>
+                        
+                        <app-conditions [(conditions)]="model.conditions"></app-conditions>
+                        
+                        <app-capture-phrases [(capturePhrases)]="model.capturePhrases" [(captureMethod)]="model.captureMethod"></app-capture-phrases>
     
                     </div>
                 </mat-tab>
                 <mat-tab label="Actions">
                     <ng-template matTabContent>
                         <div class="tab-content">
-                            <div style="height: 36px;"><button mat-button color="accent" style="float: right; margin-right: 50px;" (click)="addNewAction()"><mat-icon>add</mat-icon>New</button></div>
-                            <div class="flex-layout">
-                                <mat-card class="card action-card" *ngFor="let action of model.actions; let i = index" style="margin: 20px; width: 550px;">
-                                    <mat-card-header>
-                                        <div mat-card-avatar class="example-header-image">
-                                            <span class="material-icons" *ngIf="action.actionType == null">block</span>
-                                            <span class="material-icons" *ngIf="action.actionType === actionTypes.DisplayText">text_format</span>
-                                            <span class="material-icons" *ngIf="action.actionType === actionTypes.PlayAudio">audiotrack</span>
-                                            <span class="material-icons" *ngIf="action.actionType === actionTypes.Speak">volume_up</span>
-                                            <span class="material-icons" *ngIf="action.actionType === actionTypes.Timer">timer</span>
-                                            <span class="material-icons" *ngIf="action.actionType === actionTypes.Countdown">watch</span>
-                                            <span class="material-icons" *ngIf="action.actionType === actionTypes.StoreVariable">sd_storage</span>
-                                            <span class="material-icons" *ngIf="action.actionType === actionTypes.ClearVariable">sd_storage</span>
-                                            <span class="material-icons" *ngIf="action.actionType === actionTypes.DotTimer">watch_later</span>
-                                        </div>
-                                        <mat-card-title>{{action.actionType == null ? 'Unset Action' : actionTypes[action.actionType]}}</mat-card-title>
-                                        <mat-card-subtitle>
-                                            <span *ngIf="action.actionType === actionTypes.DisplayText">Display text on an overlay.</span>
-                                            <span *ngIf="action.actionType === actionTypes.DotTimer">Creates a countdown until the dot expires.</span>
-                                            <span *ngIf="action.actionType === actionTypes.PlayAudio">Play an audio file.</span>
-                                            <span *ngIf="action.actionType === actionTypes.Speak">Speak a phrase.</span>
-                                            <span *ngIf="action.actionType === actionTypes.Timer">Start a timer.</span>
-                                            <span *ngIf="action.actionType === actionTypes.Countdown">Start a countdown.</span>
-                                            <span *ngIf="action.actionType === actionTypes.StoreVariable">Store a value in a variable.</span>
-                                            <span *ngIf="action.actionType === actionTypes.ClearVariable">Empties the value in a variable.</span>
-                                        </mat-card-subtitle>
-                                    </mat-card-header>
-                                    <mat-card-content>
 
-                                        <mat-form-field>
-                                            <mat-label>Action Type</mat-label>
-                                            <mat-select [(ngModel)]="action.actionType" name="ddlActionType_{{i}}">
-                                                <mat-option [value]="actionTypes.DisplayText">Display Text</mat-option>
-                                                <mat-option [value]="actionTypes.DotTimer">DoT Timer</mat-option>
-                                                <!-- <mat-option [value]="actionTypes.PlayAudio">Play Audio</mat-option> -->
-                                                <mat-option [value]="actionTypes.Speak">Speak</mat-option>
-                                                <!-- <mat-option [value]="actionTypes.Timer">Timer</mat-option> -->
-                                                <!-- <mat-option [value]="actionTypes.Countdown">Countdown</mat-option> -->
-                                                <mat-option [value]="actionTypes.StoreVariable">Store Variable</mat-option>
-                                                <mat-option [value]="actionTypes.ClearVariable">Clear Variable</mat-option>
-                                            </mat-select>
-                                        </mat-form-field>
+                            <app-trigger-actions [(actions)]="model.actions" [isDev]="isDev" [predefined]="model.predefined" [capturePhrases]="model.capturePhrases"></app-trigger-actions>
+                            
+                        </div>
+                    </ng-template>
+                </mat-tab>
+                <mat-tab label="Character Classes">
+                    <ng-template matTabContent>
+                        <div class="tab-content">
 
-                                        <div *ngIf="action.actionType != null">
+                            <app-trigger-classes [(classLevels)]="model.classLevels" style="margin-top: 20px; display: block;"></app-trigger-classes>
 
-                                            <mat-form-field>
-                                                <mat-label>Trigger on phrase</mat-label>
-                                                <mat-select [(ngModel)]="action.phrases" name="ddlActionPhrase_{{i}}" multiple>
-                                                    <mat-option *ngFor="let phrase of model.capturePhrases" [value]="phrase.phraseId">{{phrase.phrase}}</mat-option>
-                                                </mat-select>
-                                            </mat-form-field>
-
-                                        </div>
-
-                                        <div *ngIf="action.actionType === actionTypes.DisplayText">
-
-                                            <mat-form-field>
-                                                <mat-label>Overlay Window</mat-label>
-                                                <mat-select [(ngModel)]="action.overlayId" name="ddlLogOverlay_{{i}}">
-                                                    <mat-option *ngFor="let option of logOverlays" [value]="option.overlayId">{{option.name}}</mat-option>
-                                                </mat-select>
-                                            </mat-form-field>
-
-                                            <mat-form-field>
-                                                <mat-label>Display Text</mat-label>
-                                                <input matInput [(ngModel)]="action.displayText" name="txtDisplayText_{{i}}" />
-                                            </mat-form-field>
-
-                                            <mat-form-field>
-                                                <mat-label>Display for seconds</mat-label>
-                                                <input matInput [(ngModel)]="action.duration" name="txtDisplayText_Duration_{{i}}" type="number" />
-                                            </mat-form-field>
-
-                                        </div>
-
-                                        <div *ngIf="action.actionType === actionTypes.StoreVariable">
-
-                                            <p>When using a regular expression capture phrase, the first capture group will be stored in a variable for use in other triggers.</p>
-                                            <p>Choose a name for that variable</p>
-
-                                            <mat-form-field>
-                                                <mat-label>Variable Name</mat-label>
-                                                <input matInput [(ngModel)]="action.variableName" name="txtVariableName_{{i}}" />
-                                            </mat-form-field>
-
-                                        </div>
-
-                                        <div *ngIf="action.actionType === actionTypes.ClearVariable">
-
-                                            <p>Choose a variable to clear.</p>
-
-                                            <mat-form-field>
-                                                <mat-label>Variable Name</mat-label>
-                                                <mat-select [(ngModel)]="action.variableName" name="ddlVariableName_{{i}}">
-                                                    <mat-option *ngFor="let variable of storedVariables" [value]="variable">{{variable}}</mat-option>
-                                                </mat-select>
-                                            </mat-form-field>
-
-                                        </div>
-
-                                        <div *ngIf="action.actionType === actionTypes.DotTimer">
-
-                                            <mat-tab-group animationDuration="0ms" [selectedIndex]="0">
-                                                <mat-tab label="Timer">
-
-                                                    <div class="card-tab-content">
-
-                                                        <mat-form-field>
-                                                            <mat-label>Overlay Window</mat-label>
-                                                            <mat-select [(ngModel)]="action.overlayId" name="ddlDotTimerOverlay_{{i}}">
-                                                                <mat-option *ngFor="let option of timerOverlays" [value]="option.overlayId">{{option.name}}</mat-option>
-                                                            </mat-select>
-                                                        </mat-form-field>
-                
-                                                        <mat-form-field>
-                                                            <mat-label>Spell Level</mat-label>
-                                                            <input matInput name="txtSpellLevel_{{i}}" type="number" [(ngModel)]="model.spellLevel" />
-                                                        </mat-form-field>
-        
-                                                        <div>Please enter the duration of the DoT. ({{Math.floor((action.duration > 0 ? action.duration : 0) / 6)}} ticks)</div>
-                
-                                                        <app-duration [(ngModel)]="action.duration" name="durActionDuration_{{i}}"></app-duration>
-                
-                                                        <mat-checkbox [(ngModel)]="action.restartOnDuplicate" name="cbxRestartOnDuplicate_{{i}}">Restart if the name matches</mat-checkbox>
-                
-                                                        <div>
-                                                            <mat-checkbox [(ngModel)]="action.useCustomColor" name="cbxUseCustomColor_{{i}}">Use color</mat-checkbox>
-                                                            <app-color-picker [(ngModel)]="action.overrideTimerColor" name="acpOverrideTimerColor{{i}}" *ngIf="action.useCustomColor" [inline]="true"></app-color-picker>
-                                                        </div>
-
-                                                    </div>
-
-                                                </mat-tab>
-                                                <mat-tab label="Timer Ending">
-
-                                                    <div class="card-tab-content">
-            
-                                                        <mat-checkbox [(ngModel)]="action.ifEndingSoon" name="cbxIfEndingSoon_{{i}}">Execute actions when timer is ending</mat-checkbox>
-                                                        <span *ngIf="action.ifEndingSoon">
-                                                            in&nbsp;
-                                                            <app-duration [(ngModel)]="action.endingDuration" name="durActionDuration2_{{i}}" [inline]="true"></app-duration>
-                                                            .
-                                                        </span>
-
-                                                        <br />
-
-                                                        <!-- Change dot timer color -->
-                                                        <div *ngIf="action.ifEndingSoon && action.endingDuration > 0">
-                                                            <mat-checkbox [(ngModel)]="action.endingSoonChangeColor" name="cbxEndingSoonChangeColor_{{i}}" *ngIf="action.endingDuration > 0">Change timer color</mat-checkbox>
-                                                            <app-color-picker [(ngModel)]="action.endingSoonColor" name="acpEndingSoonColor{{i}}" *ngIf="action.endingSoonChangeColor" [inline]="true"></app-color-picker>
-                                                        </div>
-
-                                                        <!-- Ending soon text -->
-                                                        <div *ngIf="action.ifEndingSoon && action.endingDuration > 0" style="margin-top:10px; clear: both;">
-                                                            <mat-checkbox [(ngModel)]="action.endingSoonDisplayText" name="cbxEndingSoonDisplayText_{{i}}" *ngIf="action.endingDuration > 0">Display text</mat-checkbox>
-                
-                                                            <div style="display: inline; float: right; clear: right; width: 400px; margin-top: -10px;">
-                                                                <mat-form-field *ngIf="action.endingSoonDisplayText">
-                                                                    <mat-label>Display Text</mat-label>
-                                                                    <input matInput [(ngModel)]="action.endingSoonText" name="txtEndingSoonText_{{i}}" />
-                                                                </mat-form-field>
-    
-                                                                <mat-form-field *ngIf="action.endingSoonDisplayText && action.endingSoonText?.length > 0" style="width: 280px; margin-right: 10px;">
-                                                                    <mat-label>Overlay Window</mat-label>
-                                                                    <mat-select [(ngModel)]="action.endingSoonTextOverlayId" name="ddlEndingSoonTextOverlayId_{{i}}">
-                                                                        <mat-option *ngFor="let option of alertOverlays" [value]="option.overlayId">{{option.name}}</mat-option>
-                                                                    </mat-select>
-                                                                </mat-form-field>
-                    
-                                                                <mat-form-field *ngIf="action.endingSoonDisplayText && action.endingSoonText?.length > 0 && action.endingSoonTextOverlayId?.length > 0" style="width: 110px;">
-                                                                    <mat-label>Duration (seconds)</mat-label>
-                                                                    <input matInput [(ngModel)]="action.endingSoonTextDuration" name="txtEndingSoonTextDuration_{{i}}" type="number" />
-                                                                </mat-form-field>
-                                                            </div>
-                                                            
-                                                        </div>
-
-                                                        <!-- Ending soon speach -->
-                                                        <div *ngIf="action.ifEndingSoon && action.endingDuration > 0" style="margin-top:10px; clear: both;">
-                                                            <mat-checkbox [(ngModel)]="action.endingSoonSpeak" name="cbxEndingSoonSpeak_{{i}}" *ngIf="action.endingDuration > 0">Speak phrase</mat-checkbox>
-                
-                                                            <div style="display: inline; float: right; clear: right; width: 400px; margin-top: -10px;">
-                                                                <mat-form-field *ngIf="action.endingSoonSpeak">
-                                                                    <mat-label>Phrase</mat-label>
-                                                                    <input matInput [(ngModel)]="action.endingSoonSpeakPhrase" name="txtEndingSoonSpeakPhrase_{{i}}" />
-                                                                </mat-form-field>
-                                                            </div>
-                                                            
-                                                        </div>
-            
-                                                    </div>
-
-                                                </mat-tab>
-                                                <mat-tab label="Timer Ended">
-                                                    <div class="card-tab-content">
-                                                        <mat-checkbox [(ngModel)]="action.remainAfterEnded" name="cbxRemainAfterEnded_{{i}}">Keep timer up</mat-checkbox>
-                                                        <span *ngIf="action.remainAfterEnded">
-                                                            for&nbsp;
-                                                            <app-duration [(ngModel)]="action.remainDuration" name="durRemainDuration_{{i}}" [inline]="true"></app-duration>
-                                                            .
-                                                        </span>
-
-                                                        <!-- Ended text -->
-                                                        <div *ngIf="action.remainAfterEnded && action.remainDuration > 0" style="margin-top:10px; clear: both;">
-                                                            <mat-checkbox [(ngModel)]="action.endedDisplayText" name="cbxEndedDisplayText_{{i}}" *ngIf="action.endingDuration > 0">Display text</mat-checkbox>
-                
-                                                            <div style="display: inline; float: right; clear: right; width: 400px; margin-top: -10px;">
-                                                                <mat-form-field *ngIf="action.endedDisplayText">
-                                                                    <mat-label>Display Text</mat-label>
-                                                                    <input matInput [(ngModel)]="action.endedText" name="txtEndedText_{{i}}" />
-                                                                </mat-form-field>
-    
-                                                                <mat-form-field *ngIf="action.endedDisplayText && action.endedText?.length > 0" style="width: 280px; margin-right: 10px;">
-                                                                    <mat-label>Overlay Window</mat-label>
-                                                                    <mat-select [(ngModel)]="action.endedTextOverlayId" name="ddlEndedTextOverlayId_{{i}}">
-                                                                        <mat-option *ngFor="let option of alertOverlays" [value]="option.overlayId">{{option.name}}</mat-option>
-                                                                    </mat-select>
-                                                                </mat-form-field>
-                    
-                                                                <mat-form-field *ngIf="action.endedDisplayText && action.endedText?.length > 0 && action.endedTextOverlayId?.length > 0" style="width: 110px;">
-                                                                    <mat-label>Duration (seconds)</mat-label>
-                                                                    <input matInput [(ngModel)]="action.endedTextDuration" name="txtEndedTextDuration_{{i}}" type="number" />
-                                                                </mat-form-field>
-                                                            </div>
-                                                            
-                                                        </div>
-
-                                                        <!-- Ended speach -->
-                                                        <div *ngIf="action.remainAfterEnded && action.remainDuration > 0" style="margin-top:10px; clear: both;">
-                                                            <mat-checkbox [(ngModel)]="action.endedSpeak" name="cbxEndedSpeak_{{i}}" *ngIf="action.endingDuration > 0">Speak phrase</mat-checkbox>
-                
-                                                            <div style="display: inline; float: right; clear: right; width: 400px; margin-top: -10px;">
-                                                                <mat-form-field *ngIf="action.endedSpeak">
-                                                                    <mat-label>Phrase</mat-label>
-                                                                    <input matInput [(ngModel)]="action.endedSpeakPhrase" name="txtEndedSpeakPhrase_{{i}}" />
-                                                                </mat-form-field>
-                                                            </div>
-                                                            
-                                                        </div>
-
-                                                        <!-- Change dot timer color -->
-                                                        <div *ngIf="action.remainAfterEnded && action.remainDuration > 0">
-                                                            <mat-checkbox [(ngModel)]="action.endedChangeColor" name="cbxEndedChangeColor_{{i}}" *ngIf="action.endingDuration > 0">Change timer color</mat-checkbox>
-                                                            <app-color-picker [(ngModel)]="action.endedColor" name="acpEndedColor{{i}}" *ngIf="action.endedChangeColor" [inline]="true"></app-color-picker>
-                                                        </div>
-
-                                                    </div>
-                                                </mat-tab>
-                                            </mat-tab-group>
-
-                                        </div>
-
-                                        <div *ngIf="action.actionType === actionTypes.Speak">
-
-                                            <mat-form-field>
-                                                <mat-label>Display Text</mat-label>
-                                                <input matInput [(ngModel)]="action.displayText" name="txtSpeakText_{{i}}" />
-                                            </mat-form-field>
-
-                                        </div>
-
-                                        <div>
-                                            <mat-checkbox [(ngModel)]="action.onlyExecuteInDev" name="cbxOnlyShowInDev" *ngIf="isDev && model.predefined">Only execute in dev</mat-checkbox>
-                                        </div>
-            
-                                    </mat-card-content>
-                                    <mat-card-actions>
-                                        <!-- <button mat-button color="default" (click)="showActionWizard(action)">Edit</button> -->
-                                        <button mat-button color="warn" (click)="deleteAction(i)">Delete</button>
-                                    </mat-card-actions>
-                                </mat-card>
-                            </div>
-                            <!-- <div>
-                                <table mat-table #actionsTable="matTable"
-                                    [dataSource]="model.actions"
-                                    class="capture-phrases">
-        
-                                    <ng-container matColumnDef="number">
-                                        <th mat-header-cell *matHeaderCellDef style="width: 50px;"> No. </th>
-                                        <td mat-cell *matCellDef="let element; let i = index"> {{i + 1}} </td>
-                                    </ng-container>
-        
-                                    <ng-container matColumnDef="actionType">
-                                        <th mat-header-cell *matHeaderCellDef> Type </th>
-                                        <td mat-cell *matCellDef="let element; let i = index">
-                                            <mat-form-field>
-                                                <mat-label>Action Type</mat-label>
-                                                <mat-select [(ngModel)]="element.actionType">
-                                                    <mat-option [value]="actionTypes.DisplayText">Display Text</mat-option>
-                                                    <mat-option [value]="actionTypes.PlayAudio">Play Audio</mat-option>
-                                                    <mat-option [value]="actionTypes.Speak">Speak</mat-option>
-                                                    <mat-option [value]="actionTypes.Timer">Timer</mat-option>
-                                                    <mat-option [value]="actionTypes.Countdown">Countdown</mat-option>
-                                                    <mat-option [value]="actionTypes.StoreVariable">Store Variable</mat-option>
-                                                </mat-select>
-                                            </mat-form-field>
-                                        </td>
-                                    </ng-container>
-        
-                                    <ng-container matColumnDef="delete">
-                                        <th mat-header-cell *matHeaderCellDef style="text-align: center; width: 50px;">  </th>
-                                        <td mat-cell *matCellDef="let element; let i = index">
-                                            <button mat-icon-button color="warn" aria-label="Delete this trigger action" (click)="deleteAction(i)">
-                                                <mat-icon>clear</mat-icon>
-                                            </button>
-                                        </td>
-                                    </ng-container>
-        
-                                    <tr mat-header-row *matHeaderRowDef="actionTableColumns"></tr>
-                                    <tr mat-row *matRowDef="let element; columns: actionTableColumns;"></tr>
-
-                                </table>
-                            </div> -->
                         </div>
                     </ng-template>
                 </mat-tab>
@@ -480,6 +65,7 @@
     <footer>
         <button mat-button [disabled]="triggerForm.invalid" (click)="save()">Save</button>
         <button mat-button color="warn" (click)="closeModal()">Cancel</button>
-        <button mat-button color="accent" (click)="copyJson()">Copy JSON</button>
+        <button mat-button color="accent" (click)="copyJson()" *ngIf="isDev">Copy JSON</button>
+        <button mat-button color="default" (click)="reimportFromAllakhazam()" *ngIf="showReimportFromAlla">Re-import from Allakhazam</button>
     </footer>
 </div>

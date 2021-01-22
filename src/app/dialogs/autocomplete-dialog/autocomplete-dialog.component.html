@@ -1,0 +1,25 @@
+<h2 mat-dialog-title>{{(data.title == null ? 'Information required' : data.title)}}</h2>
+
+<mat-dialog-content>
+
+    <p *ngFor="let msg of messages">{{msg}}</p>
+
+    <mat-form-field>
+        <mat-label *ngIf="data.label != null">{{data.label}}</mat-label>
+        <input matInput [(ngModel)]="model" [formControl]="inputControl" [matAutocomplete]="auto" />
+        <mat-autocomplete autoActiveFirstOption #auto="matAutocomplete">
+            <mat-option *ngFor="let option of filteredOptions | async" [value]="option">
+              {{option}}
+            </mat-option>
+        </mat-autocomplete>
+        <mat-hint *ngIf="data.hint != null">{{data.hint}}</mat-hint>
+    </mat-form-field>
+
+</mat-dialog-content>
+
+<mat-dialog-actions>
+    
+    <button mat-button [mat-dialog-close]="null" class="t-confirm-no" color="warn">Cancel</button>
+    <button mat-button [mat-dialog-close]="model" class="t-confirm-no">OK</button>
+
+</mat-dialog-actions>

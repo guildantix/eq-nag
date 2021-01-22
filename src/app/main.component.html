@@ -16,7 +16,7 @@
 </p>
 <section>
     <mat-tab-group animationDuration="0ms" (selectedIndexChange)="onChangeTabs($event)" [selectedIndex]="0">
-        <mat-tab label="DKP Tracker">
+        <!-- <mat-tab label="DKP Tracker">
                 <mat-toolbar>
                     <span>DKP Tracker</span>
                     <span class="spacer"></span>
@@ -30,66 +30,22 @@
 
                 </div>
 
+        </mat-tab> -->
+        <mat-tab label="Characters">
+            <mat-toolbar>
+                <span>Characters</span>
+                <span class="spacer"></span>
+                <button mat-button color="accent" (click)="characterList.newCharacter()">New Character</button>
+            </mat-toolbar>
+
+            <div class="tab-content">
+                <app-characters-list #characterList></app-characters-list>
+            </div>
+
         </mat-tab>
         <mat-tab label="Triggers">
-                <mat-toolbar>
-                    <span>Triggers</span>
-                    <span class="spacer"></span>
-                    <button mat-button color="accent" (click)="showNewTriggerDialog()">New Trigger</button>
-                    <button mat-icon-button [matMenuTriggerFor]="menu" aria-label="Example icon-button with a menu">
-                        <mat-icon>more_vert</mat-icon>
-                    </button>
-                    <mat-menu #menu="matMenu">
-                        <button mat-menu-item (click)="showNewDotTimerDialog()">
-                            <!-- <mat-icon>dialpad</mat-icon> -->
-                            <span>DoT Timer (Allakhazam)</span>
-                        </button>
-                        <!-- <button mat-menu-item disabled>
-                            <mat-icon>voicemail</mat-icon>
-                            <span>Check voice mail</span>
-                        </button>
-                        <button mat-menu-item>
-                            <mat-icon>notifications_off</mat-icon>
-                            <span>Disable alerts</span>
-                        </button> -->
-                    </mat-menu>
-                </mat-toolbar>
-                <div class="tab-content">
-                    <table mat-table #capturePhrasesTable="matTable" style="width: 100%;"
-                        [dataSource]="triggers"
-                        class="capture-phrases">
-
-                        <ng-container matColumnDef="edit">
-                            <th mat-header-cell *matHeaderCellDef style="text-align: center; width: 50px;">  </th>
-                            <td mat-cell *matCellDef="let element; let i = index" style="text-align: center; width: 50px;">
-                                <button mat-button color="accent" aria-label="Edit this trigger" (click)="showEditTriggerDialog(element.triggerId)">Edit</button>
-                            </td>
-                        </ng-container>
-
-                        <ng-container matColumnDef="id">
-                            <th mat-header-cell *matHeaderCellDef style="width: 100px; padding-left: 15px;"> Id </th>
-                            <td mat-cell *matCellDef="let element; let i = index" style="width: 100px; padding-left: 15px;"> {{element.triggerId}} </td>
-                        </ng-container>
-
-                        <ng-container matColumnDef="name">
-                            <th mat-header-cell *matHeaderCellDef style="padding-left: 15px;"> Name </th>
-                            <td mat-cell *matCellDef="let element; let i = index" style="padding-left: 15px;"> {{element.name}} </td>
-                        </ng-container>
-
-                        <ng-container matColumnDef="delete">
-                            <th mat-header-cell *matHeaderCellDef style="text-align: center; width: 50px; padding-left: 15px;">  </th>
-                            <td mat-cell *matCellDef="let element; let i = index" style="text-align: center; width: 50px; padding-left: 15px;">
-                                <button mat-icon-button color="warn" aria-label="Delete this trigger" (click)="deleteTrigger(i)">
-                                    <mat-icon>clear</mat-icon>
-                                </button>
-                            </td>
-                        </ng-container>
-
-                        <tr mat-header-row *matHeaderRowDef="['edit', 'id', 'name', 'delete']"></tr>
-                        <tr mat-row *matRowDef="let element; columns: ['edit', 'id', 'name', 'delete'];"></tr>
-
-                    </table>
-                </div>
+                
+            <app-triggers></app-triggers>
 
         </mat-tab>
         <mat-tab label="Overlays">
@@ -100,8 +56,7 @@
                 </mat-toolbar>
                 <div class="tab-content">
                     <table mat-table #overlaysTable="matTable" style="width: 100%;"
-                        [dataSource]="overlays"
-                        class="capture-phrases">
+                        [dataSource]="overlays">
 
                         <ng-container matColumnDef="edit">
                             <th mat-header-cell *matHeaderCellDef style="text-align: center; width: 50px;">  </th>
@@ -151,19 +106,21 @@
                     
                     <p>
                         <mat-form-field>
-                            <mat-label>Damage Dealt Overlay</mat-label>
+                            <mat-label></mat-label>
                             <mat-select [(ngModel)]="damageDealtOverlayId" name="ddlDamageDealtOverlay" (selectionChange)="onChangeDealtFctOverylays()">
                                 <mat-option *ngFor="let option of fctOverlays" [value]="option.overlayId">{{option.name}}</mat-option>
                             </mat-select>
+                            <mat-hint>Damage Dealt Overlay</mat-hint>
                         </mat-form-field>
                     </p>
 
                     <p>
                         <mat-form-field>
-                            <mat-label>Damage Received Overlay</mat-label>
+                            <mat-label></mat-label>
                             <mat-select [(ngModel)]="damageTakenOverlayId" name="ddlDamageReceivedOverlay" (selectionChange)="onChangeReceivedFctOverylays()">
                                 <mat-option *ngFor="let option of fctOverlays" [value]="option.overlayId">{{option.name}}</mat-option>
                             </mat-select>
+                            <mat-hint>Damage Received Overlay</mat-hint>
                         </mat-form-field>
                     </p>
                     
@@ -179,19 +136,92 @@
                 </mat-toolbar>
                 <div class="tab-content">
 
-                    <fieldset>
+                    <!-- <fieldset>
                         <legend><span>Log File</span><span class="spacer"></span><button mat-button (click)="openModal()" color="accent">Select Log File</button></legend>
                         <small>Current: {{logFile}}</small>
-                    </fieldset>
+                    </fieldset> -->
         
                     <fieldset>
                         <legend><span>Text to Speech</span></legend>
-                        <mat-select [(ngModel)]="voiceIndex" (selectionChange)="onChangeVoice()">
-                            <mat-option *ngFor="let option of voiceOptions; let i = index" [value]="i">{{option.name}}</mat-option>
-                        </mat-select>
+                        <mat-form-field style="width: 50%;">
+                            <mat-label></mat-label>
+                            <mat-select [(ngModel)]="voiceIndex" (selectionChange)="onChangeVoice()">
+                                <mat-option *ngFor="let option of voiceOptions; let i = index" [value]="i">{{option.name}}</mat-option>
+                            </mat-select>
+                            <mat-hint>Select the text to speech voice</mat-hint>
+                        </mat-form-field>
                     </fieldset>
 
                     <fieldset>
+                        <legend>Import from GINA</legend>
+                        <button mat-button color="accent" (click)="openImportGinaDialog()" [disabled]="loadingGinaConfig">
+                            <span *ngIf="!loadingGinaConfig" style="display: flex; align-items: center; justify-content: center;"><mat-icon>input</mat-icon><span>&nbsp;Import</span></span>
+                            <span *ngIf="loadingGinaConfig"  style="display: flex; align-items: center; justify-content: center;"><mat-spinner [diameter]="20" color="accent"></mat-spinner><span>&nbsp;Loading ...</span></span>
+                        </button>
+                    </fieldset>
+
+                    <fieldset>
+                        <legend><span>Phonetic Transforms</span><span class="spacer"></span><button mat-button (click)="addPhoneticTransform(phoneticTransformsTable)" color="accent"><mat-icon>add</mat-icon>New</button></legend>
+
+                        <table mat-table #phoneticTransformsTable="matTable" style="width: 100%;"
+                            [dataSource]="phoneticTransforms">
+    
+                            <ng-container matColumnDef="original">
+                                <th mat-header-cell *matHeaderCellDef style="text-align: left;">Original</th>
+                                <td mat-cell *matCellDef="let element; let i = index" style="text-align: left;">
+
+                                    <mat-form-field style="width: 95%;margin-top: 10px;">
+                                        <mat-label></mat-label>
+                                        <input matInput [(ngModel)]="element.originalText" name="txtOriginalText_{{i}}" type="text" (change)="phoneticTransformsModified = true" />
+                                        <mat-hint>Original text</mat-hint>
+                                    </mat-form-field>
+
+                                </td>
+                            </ng-container>
+    
+                            <ng-container matColumnDef="phonetic">
+                                <th mat-header-cell *matHeaderCellDef style="text-align: left;">Phonetic</th>
+                                <td mat-cell *matCellDef="let element; let i = index" style="text-align: left;">
+
+                                    <mat-form-field style="width: 95%;margin-top: 10px;">
+                                        <mat-label></mat-label>
+                                        <input matInput [(ngModel)]="element.phoneticText" name="txtPhoneticText_{{i}}" type="text" (change)="phoneticTransformsModified = true" />
+                                        <mat-hint>Phonetic text</mat-hint>
+                                    </mat-form-field>
+                                    
+                                </td>
+                            </ng-container>
+    
+                            <ng-container matColumnDef="play">
+                                <th mat-header-cell *matHeaderCellDef style="text-align: center; width: 50px; padding-left: 15px;">  </th>
+                                <td mat-cell *matCellDef="let element; let i = index" style="text-align: center; width: 50px; padding-left: 15px;">
+                                    <button mat-icon-button aria-label="Delete this overlay" (click)="speakPhrase(element.phoneticText)">
+                                        <mat-icon>play_circle_outline</mat-icon>
+                                    </button>
+                                </td>
+                            </ng-container>
+    
+                            <ng-container matColumnDef="delete">
+                                <th mat-header-cell *matHeaderCellDef style="text-align: center; width: 50px; padding-left: 15px;">  </th>
+                                <td mat-cell *matCellDef="let element; let i = index" style="text-align: center; width: 50px; padding-left: 15px;">
+                                    <button mat-icon-button color="warn" aria-label="Delete this overlay" (click)="deletePhoneticTransform(i, phoneticTransformsTable)">
+                                        <mat-icon>clear</mat-icon>
+                                    </button>
+                                </td>
+                            </ng-container>
+    
+                            <tr mat-header-row *matHeaderRowDef="['original', 'phonetic', 'play', 'delete']"></tr>
+                            <tr mat-row *matRowDef="let element; columns: ['original', 'phonetic', 'play', 'delete'];"></tr>
+    
+                        </table>
+
+                        <button mat-button *ngIf="phoneticTransformsModified" (click)="savePhoneticTransforms()" color="accent">Save Changes</button>
+                        <!-- <ol>
+                            <li *ngFor="let key of objectKeys(phoneticTransforms)"></li>
+                        </ol> -->
+                    </fieldset>
+
+                    <!-- <fieldset>
                         <legend>Focus Effects</legend>
                         <mat-checkbox [(ngModel)]="focusEffectSettings.hasExtendedDotFocus" (change)="updateFocusEffectSettings()"> Extended DOT Focus?</mat-checkbox>
                         <div *ngIf="focusEffectSettings.hasExtendedDotFocus">
@@ -208,7 +238,7 @@
                             </mat-form-field>
 
                         </div>
-                    </fieldset>
+                    </fieldset> -->
 
                 </div>
 
@@ -216,12 +246,12 @@
     </mat-tab-group>
 
     <input type="file" #fileSelector style="display:none;" accept="*.txt" (change)="fileSelected($event)" />
-    <div class="console" *ngIf="showConsole">
+    <!-- <div class="console" *ngIf="showConsole">
         <ul>
             <li *ngFor="let item of dkpEntries">
                 <span class="inline-button warn" (click)="removeEntry(item)">delete</span> {{item.character}} [<span class="item-link">{{item.item}}</span>] for <span class="dkp credit">{{item.dkp}}</span> DKP {{item.timeStamp | date:'MMM dd'}}
             </li>
         </ul>
-    </div>
+    </div> -->
 
 </section>

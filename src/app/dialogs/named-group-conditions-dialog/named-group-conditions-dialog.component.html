@@ -1,0 +1,47 @@
+<h2 mat-dialog-title>{{(data.title == null ? 'Conditions' : data.title)}}</h2>
+
+<mat-dialog-content>
+
+    <p *ngFor="let msg of messages">{{msg}}</p>
+
+    <button mat-button (click)="addNewCondition()" color="accent"><mat-icon>add</mat-icon>New</button>
+
+    <table style="margin: 25px 0;">
+        <tr class="row-header">
+            <th style="text-align: left; padding-left: 18px;">Name</th>
+            <th style="text-align: center; padding-right: 14px;">Operator</th>
+            <th style="text-align: left; padding-left: 14px;">Value</th>
+        </tr>
+        <tr *ngFor="let condition of model;let i = index" class="row-list-item" [appContextMenu]="getCtxMenu(i)">
+            <td style="width: 150px; text-align: center; padding: 0 5px; padding-left: 10px;">
+                <mat-form-field style="width:150px;">
+                    <input matInput [(ngModel)]="condition.variableName" name="txtVariableName{{i}}" />
+                </mat-form-field>
+            </td>
+            <td style="width: 125px; padding: 0 5px; text-align: center;">
+                <mat-form-field style="width: 125px;">
+                    <mat-select [(ngModel)]="condition.operatorType" name="ddlConditionOperatorType_{{i}}">
+                        <!-- <mat-option [value]="operatorTypes.IsNull">Is empty</mat-option> -->
+                        <mat-option [value]="operatorTypes.Equals">Equals</mat-option>
+                        <mat-option [value]="operatorTypes.DoesNotEqual">Is not equal to</mat-option>
+                        <!-- <mat-option [value]="operatorTypes.LessThan">Is less than</mat-option> -->
+                        <!-- <mat-option [value]="operatorTypes.GreaterThan">Is greater than</mat-option> -->
+                    </mat-select>
+                </mat-form-field>
+            </td>
+            <td style="width: 150px; padding: 0 5px; text-align: center; padding-right: 10px;">
+                <mat-form-field style="width: 150px;">
+                    <input matInput [(ngModel)]="condition.variableValue" name="txtVariableValue{{i}}" />
+                </mat-form-field>
+            </td>
+        </tr>
+    </table>
+
+</mat-dialog-content>
+
+<mat-dialog-actions>
+    
+    <button mat-button [mat-dialog-close]="data.conditions" class="t-confirm-no" color="warn">Cancel</button>
+    <button mat-button [mat-dialog-close]="model" class="t-confirm-no">OK</button>
+
+</mat-dialog-actions>

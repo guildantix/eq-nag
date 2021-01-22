@@ -1,0 +1,64 @@
+.example-headers-align .mat-expansion-panel-header-title,
+.example-headers-align .mat-expansion-panel-header-description {
+  flex-basis: 0;
+}
+
+.example-headers-align .mat-expansion-panel-header-description {
+  justify-content: flex-end;
+  align-items: flex-end;
+}
+
+.example-headers-align .mat-form-field + .mat-form-field {
+  margin-left: 8px;
+}
+
+div.character-tab-content {
+
+    > mat-card {
+        background-color: #00000029;
+        margin: 7px;
+    }
+
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    flex: 1 1 0px;
+}
+
+mat-panel-description {
+    
+    mat-icon {
+        margin-left:15px;
+    }
+    
+    text-transform: capitalize;
+
+}
+
+mat-panel-title {
+    small {
+        margin-left: 15px;
+        font-size: 18px;
+        font-weight: 100;
+        color: #ffffff3b;
+        font-family: 'Open Sans Condensed';
+        margin-top: -5px;
+        float: right;
+        margin-right: 115px;
+        margin-left: auto;
+        margin-top: -5px;
+        width: 95px;
+    }
+}
+
+.saved-label {
+    position: fixed;
+    // display: block;
+    display: none;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 5px 25px;
+    z-index: 1;
+}

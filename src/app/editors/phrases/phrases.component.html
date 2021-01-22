@@ -1,0 +1,38 @@
+<p>
+    <button mat-button (click)="addPhrase()" color="accent" style="float: right; margin: 5px;"><mat-icon>add</mat-icon>New</button>
+    <ng-content></ng-content>
+</p>
+
+<table mat-table #phrasesTable="matTable"
+    [dataSource]="phrases"
+    class="capture-phrases">
+
+    <ng-container matColumnDef="phrase">
+        <th mat-header-cell *matHeaderCellDef> Phrase </th>
+        <td mat-cell *matCellDef="let element; let i = index">
+            <mat-form-field style="width: 100%;">
+                <mat-label></mat-label>
+                <input matInput name="txtEndEarlyPhrase" type="text" [(ngModel)]="element.phrase" />
+                <mat-hint>Capture Phrase</mat-hint>
+            </mat-form-field>
+        </td>
+    </ng-container>
+
+    <ng-container matColumnDef="regEx">
+        <th mat-header-cell *matHeaderCellDef style="text-align: center; width: 50px;"> RegEx </th>
+        <td mat-cell *matCellDef="let element; let i = index"> <div style="text-align: center; padding: 20px;"><mat-checkbox name="cbxEndEarlyUseRegEx" [(ngModel)]="element.useRegEx"></mat-checkbox></div> </td>
+    </ng-container>
+
+    <ng-container matColumnDef="delete">
+        <th mat-header-cell *matHeaderCellDef style="text-align: center; width: 50px;">  </th>
+        <td mat-cell *matCellDef="let element; let ei = index">
+            <button mat-icon-button color="warn" aria-label="Delete this capture phrase" (click)="deletePhrase(ei)">
+                <mat-icon>clear</mat-icon>
+            </button>
+        </td>
+    </ng-container>
+
+    <tr mat-header-row *matHeaderRowDef="phraseTableColumns"></tr>
+    <tr mat-row *matRowDef="let element; columns: phraseTableColumns;"></tr>
+
+</table>

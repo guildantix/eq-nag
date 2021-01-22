@@ -14,14 +14,15 @@
                 <div class="tab-content">
 
                     <fieldset class="margin-t-25">
-
-                        <mat-form-field appearance="fill">
-                            <mat-label>Name</mat-label>
+                        <legend>Properties<small>Description and styles for this overlay window.</small></legend>
+                        <mat-form-field>
+                            <mat-label></mat-label>
                             <input matInput type="text" [(ngModel)]="model.name" />
+                            <mat-hint>Name</mat-hint>
                         </mat-form-field>
 
                         <mat-form-field>
-                            <mat-label>Font</mat-label>
+                            <mat-label></mat-label>
                             <mat-select class="font-ddl" [(ngModel)]="model.fontFamily" name="ddlFontFamily" disableOptionCentering (selectionChange)="onChangeFontFamily()" style="max-width: unset;">
                                 <mat-option class="font-option" value="Roboto" style="font-family: Roboto, sans-serif; font-size: 16px;"><small>Roboto</small></mat-option>
                                 <mat-option class="font-option" value="Red Rose" style="font-family: 'Red Rose', sans-serif; font-size: 16px;"><small>Red Rose</small></mat-option>
@@ -31,6 +32,7 @@
                                 <mat-option class="font-option" value="Ranchers" style="font-family: Ranchers, sans-serif; font-size: 16px;"><small>Ranchers</small></mat-option>
                                 <mat-option class="font-option" value="Press Start 2P" style="font-family: 'Press Start 2P', sans-serif; font-size: 14px;"><small>Press Start 2P</small></mat-option>
                             </mat-select>
+                            <mat-hint>Font</mat-hint>
                         </mat-form-field>
 
                         <div class="f-row">
@@ -109,12 +111,13 @@
                         <div class="f-row">
                             <div class="f-sm-6 al-center">
                                 <mat-form-field>
-                                    <mat-label>Timer Sort Type</mat-label>
+                                    <mat-label></mat-label>
                                     <mat-select [(ngModel)]="model.timerSortType" name="ddlTimerSortType">
                                         <mat-option [value]="timerSortTypes.None">First in on top.</mat-option>
                                         <mat-option [value]="timerSortTypes.Ascending">Shortest time remaining on top.</mat-option>
                                         <mat-option [value]="timerSortTypes.Descending">Longest time remaining on top.</mat-option>
                                     </mat-select>
+                                    <mat-hint>Timer Sort Type</mat-hint>
                                 </mat-form-field>
                             </div>
                         </div>
@@ -128,6 +131,36 @@
                             <div class="f-sm-4 al-center"><app-color-picker [(ngModel)]="model.timerColor" (change)="broadcastModel()"></app-color-picker></div>
                             <div class="f-sm-4 al-center"></div>
                             <div class="f-sm-4 al-center"></div>
+                        </div>
+
+                        <div>
+                            <mat-checkbox [(ngModel)]="model.hideTargetLabel" name="hideTargetLabel" (change)="broadcastModel()">Hide target label</mat-checkbox>
+                        </div>
+
+                        <div>
+                            <mat-checkbox [(ngModel)]="model.showTimeRemaining" name="showTimeRemaining" (change)="broadcastModel()">Show the time remaining</mat-checkbox>
+                        </div>
+
+                        <div class="f-row">
+                            <div class="f-sm-4 al-left"><mat-checkbox [(ngModel)]="model.groupByTarget" name="groupByTarget" (change)="broadcastModel()">Group DoTs by target</mat-checkbox></div>
+                            <div class="f-sm-4 al-center"></div>
+                            <div class="f-sm-4 al-center"></div>
+                        </div>
+
+                        <div class="f-row">
+                            <div class="f-sm-4 al-left"><mat-label *ngIf="model.groupByTarget">Header</mat-label></div>
+                            <div class="f-sm-4 al-right"><mat-label *ngIf="model.groupByTarget">Size</mat-label></div>
+                            <div class="f-sm-4 al-center"><mat-slider thumbLabel tickInterval="1" min="1" max="64" style="width: 100%;" [(ngModel)]="model.groupHeaderSize" name="groupHeaderSize" (change)="broadcastModel()" *ngIf="model.groupByTarget"></mat-slider></div>
+                        </div>
+                        <div class="f-row">
+                            <div class="f-sm-4 al-left"></div>
+                            <div class="f-sm-4 al-right"><mat-label *ngIf="model.groupByTarget">Weight</mat-label></div>
+                            <div class="f-sm-4 al-left"><mat-slider thumbLabel tickInterval="1" step="1" min="0" [max]="maxFontWeightIndex" style="width: 100%;" [(ngModel)]="dotGroupHeaderWeightIndex" name="sldrFontWeight" (change)="broadcastModel()" *ngIf="model.groupByTarget"></mat-slider></div>
+                        </div>
+                        <div class="f-row">
+                            <div class="f-sm-4 al-center"></div>
+                            <div class="f-sm-4 al-right"><mat-label *ngIf="model.groupByTarget">Color</mat-label></div>
+                            <div class="f-sm-4 al-left"><app-color-picker [(ngModel)]="model.groupHeaderColor" (change)="broadcastModel()" *ngIf="model.groupByTarget"></app-color-picker></div>
                         </div>
 
                     </fieldset>

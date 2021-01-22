@@ -1,7 +1,6 @@
 .titlebar {
     -webkit-user-select: none;
     -webkit-app-region: drag;
-    color: #00000075;
 
     button {
         -webkit-app-region: no-drag;
@@ -22,6 +21,9 @@ mat-toolbar {
     small {
         font-size: small;
     }
+    mat-form-field {
+        font-size: 12px;
+    }
 }
 
 div.tab-content {
@@ -30,49 +32,57 @@ div.tab-content {
 
 .inline-button {
     border-radius: 5px;
-    background-color: #921f1f;
     padding: 1px 5px;
     margin: 6px 0;
     line-height: 18px;
     cursor: pointer;
 }
 
-.inline-button.warn {
-    color: #ffafaf;
-}
-
 fieldset {
 
-    legend,
-    mat-select {
-        max-width: 400px;
-    }
-
     legend {
-        border-bottom: 1px solid #ffffff47;
-        margin-bottom: 10px;
-        min-width: 400px;
-        font-weight: 300;
-        display: flex;
-        box-sizing: border-box;
-        padding: 0px 16px 4px 16px;
-        flex-direction: row;
-        align-items: center;
-        white-space: nowrap;
-
+        small {
+            flex-basis: 100%;
+        }
         .spacer {
             flex: 1 1 auto;
         }
+        button {
+            position: absolute;
+            right: 12px;
+            top: 0px;
+        }
+        mat-checkbox {
+            margin:0 5px;
+        }
+        flex-direction: row;
+        align-items: center;
+        white-space: nowrap;
+        flex-wrap: wrap;
+        display: flex;
+        position: absolute;
+        top: 10px;
+        font-weight: 400;
+        margin-bottom: 10px;
+        box-sizing: border-box;
+        padding: 0px 16px 4px 16px;
+        max-width: unset;
+        border: none;
+        width: 100%;
+        left: 0;
     }
 
     small {
         font-weight: 300;
         display: block;
-        color: #ffffff47;
     }
 
+    border-radius: 3px;
     border:none;
     margin-bottom: 20px;
+    display: block;
+    padding-top: 60px;
+    position: relative;
     
 }
 
@@ -89,4 +99,388 @@ fieldset {
 
 .al-center {
     text-align: center;
+}
+
+p.code-block {
+    span {
+        display: block;
+        padding: 0;
+        margin: 0;
+        line-height: 20px;
+    }
+    padding: 15px 20px;
+    border-radius: 3px;
+    font-family: Consolas,sans-serif;
+    font-size: 12px;
+}
+
+div.small-text {
+    font-size: 13px;
+    padding: 5px 0;
+}
+
+.fade-out-white-background {
+    animation: fadeOutWhtBg 1s ease-out;
+}
+
+.fade-out-green-background {
+    animation: fadeOutGrnBg 1s ease-out;
+}
+
+.fade-out-blue-background {
+    animation: fadeOutBluBg 1s ease-out;
+}
+
+@keyframes fadeOutWhtBg {
+    0% { background-color: rgba(255,255,255,.25); } 
+    100% { background-color: rgba(255,255,255,.0); }
+}
+
+@keyframes fadeOutGrnBg {
+    0% { background-color: rgba(105,240,174,.25); } 
+    100% { background-color: rgba(105,240,174,.0); }
+}
+
+@keyframes fadeOutBluBg {
+    0% { background-color: rgba(105,221,240,.25); } 
+    100% { background-color: rgba(105,221,240,.0); }
+}
+
+.div-list-item,
+tr.row-list-item {
+    padding: 5px;
+}
+
+tr.row-header {
+    th {
+        padding: 18px 0;
+    }
+    font-weight: bolder;
+}
+
+table {
+    &.padded {
+        tr{
+            td{
+                padding: 1px 25px;
+            }
+        }
+    }
+    tr {
+        td {
+            &.right {
+                text-align: right;
+            }
+            
+        }
+    }
+}
+
+.mat-tree-node {
+    &.selected {
+        &:hover {
+            .delete-button {
+                display:unset !important;
+            }
+        }
+    }
+    .delete-button {
+        display: none;
+    }
+    .spacer {
+        display: flex;
+        flex: 1 0 auto;
+    }
+    .tree-click-target {
+        span {
+            white-space: nowrap;
+            text-overflow: ellipsis;
+            overflow: hidden;
+        }
+        display: flex;
+        height: 100%;
+        align-items: center;
+        min-width: 0;
+    }
+    button {
+        &.trigger-button {
+            color: #ffffffcc;
+        }
+        mat-icon {
+            font-size: 18px;
+        }
+        margin-left: 5px;
+    }
+    min-height: unset !important;
+    height: 27px !important;
+    cursor: pointer;
+    display: flex;
+    flex-direction: row;
+    padding-right: 15px;
+}
+
+::ng-deep .card-property {
+    >div {
+        .fill-width {
+            width: 100%;
+        }
+        .align-content-left {
+            text-align: left;
+        }
+        .align-content-justify {
+            .self-center {
+                align-self: center;
+            }
+            >* {
+                flex: 1 0 auto;
+            }
+            display: flex;
+        }
+        flex: 1 0 auto;
+        display: block;
+        max-width: 50%;
+        padding: 0 5px;
+    }
+    >.full-width {
+        max-width:100%;
+        width:100%;
+    }
+    >.content-middle {
+        align-self: center;
+    }
+    >.content-right {
+        text-align: right;
+    }
+    >.content-vertical {
+        >.align-left {
+            align-self: flex-start;
+        }
+        display: flex;
+        flex-direction: column;
+    }
+    >.content-top {
+        padding-top: 1em;
+        align-self: flex-start;
+    }
+    .head-room {
+        margin-top: 1em;
+    }
+    display: flex;
+    min-height: 60px;
+    margin-left: -15px;
+    margin-right: -15px;
+    padding: 5px 15px;
+}
+
+// All styles
+::ng-deep mat-form-field {
+    .mat-hint {
+        font-weight: normal;
+        font-size: 10px;
+        padding-left: 5px;
+    }
+    .mat-form-field-label {
+        .mat-placeholder-required.mat-form-field-required-marker {
+            top: 10px;
+            position: absolute;
+            left: 3px;
+        }
+        overflow: unset !important;
+    }
+    .mat-form-field-infix {
+        padding-left: 5px !important;
+    }
+    .mat-form-field-underline {
+        .mat-form-field-ripple {
+            top: -2px;
+        }
+        height: 18px !important;
+        bottom: -6px !important;
+    }
+    border-radius: 3px;
+    padding: 5px 0;
+    margin: 5px 0;
+}
+
+.flex-layout {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+tr.mat-row {
+    height: 27px !important;
+}
+
+.ft-row {
+
+    .ft-item {
+
+        .ft-content {            
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+        }
+
+        display: flex;
+        margin: 3px;
+
+    }
+
+    display: flex;
+    flex-wrap: wrap;
+    flex-direction: row;
+
+}
+
+.trigger-categories-header {
+    .spacer {
+        display: flex;
+        flex: 1 0 auto;
+    }
+    button[mat-icon-button] {
+        font-size: 16px;
+    }
+    box-sizing: border-box;
+    height: 56px;
+    vertical-align: middle;
+    font-size: 12px;
+    font-weight: 500;
+    font-family: Roboto, "Helvetica Neue", sans-serif;
+    padding-left: 40px;
+    padding-top: 20px;
+    padding-bottom: 15px;
+    color: rgba(255,255,255,.7);
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    padding-right: 15px;
+}
+
+::ng-deep table {
+    tr {
+        th {
+            border: none;
+            padding: 10px;
+            padding-left: 20px;
+            text-align: left;
+            font-size: 12px;
+            letter-spacing: .2px;
+            font-weight: 400;
+        }
+        td {
+            border: none;
+            padding-left: 20px;
+        }
+    }
+
+    border-collapse: collapse;
+    width: 100%;
+}
+
+::ng-deep .mat-table {
+    tbody {
+        tr{
+            td {
+                padding: 0 5px;
+            }
+        }
+    }
+}
+
+fieldset.trigger-property-group {
+
+    legend {
+        font-size: 16px;
+        font-weight: 400;
+    }
+
+    .field-list {
+        .field-line{
+            > label {
+                padding: 5px;
+                letter-spacing: 0.5px;
+                min-width: 200px;
+                display: flex;
+            }
+            > span {
+                padding: 5px;
+                font-weight: 100;
+                font-size: 14px;
+                display: flex;
+                flex: 1;
+            }
+            > button {
+                mat-icon {
+                    font-size: 22px;
+                }
+                width: 27px;
+                height: 27px;
+                line-height: 27px;
+                margin-left: -27px;
+            }
+
+            display: flex;
+            min-width: 0;
+        }
+
+    }
+
+    font-size: 12px;
+}
+
+.mat-radio-button {
+    display: block;
+    margin: 10px 0;
+}
+
+::ng-deep .mat-form-field-subscript-wrapper {
+    mat-hint {
+        margin-top: .7em;
+    }
+    font-size: 10px;
+    margin-top: 0 !important;
+}
+
+::ng-deep .app-dialog {
+    .mat-dialog-content {
+        padding-bottom: 25px;
+    }
+}
+
+::ng-deep .mat-paginator-page-size-select {
+    .mat-form-field-wrapper {
+        padding-bottom: 0;
+    }
+    .mat-form-field-underline,
+    .mat-form-field-subscript-wrapper {
+        display: none;
+    }
+}
+
+button.mat-icon-button.small {
+    mat-icon {
+        margin-top: -16.5px;
+    }
+    font-size: 15px;
+    width: 25px;
+    height: 25px;
+}
+
+.instructions {
+    mat-icon {
+        font-weight: bold;
+    }
+    font-size: 12px;
+    padding: 25px;
+}
+
+.dim {
+    opacity: .1;
+}
+
+.checkbox-hint {
+    padding-left: 30px;
+    margin-bottom: 15px;
 }

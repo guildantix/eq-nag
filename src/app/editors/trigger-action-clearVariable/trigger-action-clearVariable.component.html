@@ -1,0 +1,21 @@
+
+<p>If the trigger phrase provides a named capture group (or uses the inline transforms) that matches the name of the specified variable, that value is cleared from memory.  Otherwise the value in the conditions for this trigger is used.  If no value is given, then all values under the specified variable are cleared from memory.</p>
+
+<mat-tab-group animationDuration="0ms" [selectedIndex]="0">
+    <mat-tab label="Variable">
+        
+        <div class="card-tab-content">
+
+            <p>Choose a variable to clear.</p>
+
+            <mat-form-field>
+                <mat-label></mat-label>
+                <mat-select [(ngModel)]="action.variableName" name="ddlVariableName">
+                    <mat-option *ngFor="let variable of storedVariables" [value]="variable">{{variable}}</mat-option>
+                </mat-select>
+                <mat-hint>Variable Name</mat-hint>
+            </mat-form-field>
+            
+        </div>
+    </mat-tab>
+</mat-tab-group>

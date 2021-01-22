@@ -1,0 +1,331 @@
+<div class="modal">
+    <header>
+        <mat-toolbar class="titlebar" color="default">
+            <span>GINA Import</span>
+            <span class="spacer"></span>
+            <button mat-icon-button aria-label="Exit GINA import" (click)="closeModal()">
+                <mat-icon>clear</mat-icon>
+            </button>
+        </mat-toolbar>
+    </header>
+    <section>
+        <form #ginaImportForm="ngForm">
+            <div *ngIf="loadingGinaConfig" class="loading-gina">
+                <p>Loading ...</p>
+                <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+            </div>
+            <div class="tab-content" *ngIf="!loadingGinaConfig" #scrollingElement>
+
+                <div class="ft-row">
+                    <div class="ft-item" style="margin: 3px; width: 32%;">
+                        <div class="ft-content">
+    
+                            <!-- This is the folder explorer header. -->
+                            <div class="trigger-categories-header">
+                                <span>GINA Components</span>
+                                <span class="spacer"></span>
+                                <button mat-icon-button [title]="(showImported ? 'Hide items have have already been imported.' : 'Show items that have already been imported.')" (click)="showImported = !showImported">
+                                    <mat-icon [ngClass]="{'material-icons-outlined': !showImported}" [inline]="true">check_circle</mat-icon>
+                                </button>
+                                <!-- <button mat-icon-button class="small" (click)="addTriggerFolderDialog()"><mat-icon [inline]="true">add</mat-icon></button> -->
+                                <!-- <button mat-icon-button class="small" (click)="toggleTree()"><mat-icon *ngIf="!allExpanded" [inline]="true">unfold_more</mat-icon><mat-icon *ngIf="allExpanded" [inline]="true">unfold_less</mat-icon></button> -->
+                            </div>
+    
+                            <mat-tree [dataSource]="dataSource" [treeControl]="treeControl" style="overflow-y: scroll; max-height: 575px;">
+            
+                                <!-- This is the tree node template for leaf nodes -->
+                                <!-- [ngClass]="{selected: node.folderId === selectedFolderId}" [appContextMenu]="getFolderContextMenu(node.folderId, node.name)" -->
+                                <mat-tree-node *matTreeNodeDef="let node" matTreeNodePadding matTreeNodePaddingIndent="20" (click)="selectForImport(node.item, node.ginaName, node.folders)" [ngClass]="{selected: node.ginaName == selectedGinaName}" [appContextMenu]="getObjectContextMenu(node)" >
+                                    <button mat-icon-button class="trigger-button">
+                                        <!-- <span style="display: inline-block;width: 18px;">&nbsp;</span> -->
+                                        <!-- <mat-icon>article</mat-icon> -->
+                                        <mat-icon>label</mat-icon>
+                                    </button>
+                                    <div class="tree-click-target" title="{{node.ginaName}}"><span>{{node.name}}</span></div>
+                                </mat-tree-node>
+            
+                                <!-- This is the tree node template for expandable nodes -->
+                                <!-- [ngClass]="{selected: node.folderId === selectedFolderId}" [appContextMenu]="getFolderContextMenu(node.folderId, node.name)" -->
+                                <mat-tree-node *matTreeNodeDef="let node;when: hasChild" matTreeNodePadding matTreeNodePaddingIndent="20" [appContextMenu]="getGroupContextMenu(node)">
+                                    <button mat-icon-button matTreeNodeToggle [attr.aria-label]="'Toggle ' + node.name" (click)="onExpand(node)">
+                                        <mat-icon [inline]="true" class="mat-icon-rtl-mirror">
+                                            {{treeControl.isExpanded(node) ? 'expand_more' : 'chevron_right'}}
+                                        </mat-icon>
+                                    </button>
+                                    <div class="tree-click-target"><span>{{node.name}}</span></div>
+                                </mat-tree-node>
+                            </mat-tree>
+    
+                        </div>
+                    </div>
+                    
+                    <div class="ft-item" style="margin: 3px; width: 66%;">
+                        <div class="ft-content" style="min-height: 500px;">
+                            <div *ngIf="selectedPhoneticTransform != null">
+                                <mat-tab-group animationDuration="0ms" [selectedIndex]="0">
+                                    <mat-tab label="Phonetic Transform">
+                                        <p>Import phonetic transform?</p>
+                                        <table>
+                                            <tr>
+                                                <th>Original</th>
+                                                <th>Phonetic text</th>
+                                                <th></th>
+                                            </tr>
+                                            <tr>
+                                                <td>{{selectedPhoneticTransform.ActualWord}}</td>
+                                                <td>{{selectedPhoneticTransform.PhoneticWord}}</td>
+                                                <td style="width: 40px;">
+                                                    <button mat-icon-button aria-label="Delete this overlay" (click)="speakPhrase(selectedPhoneticTransform.PhoneticWord)">
+                                                        <mat-icon>play_circle_outline</mat-icon>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                        <div class="import-actions">
+                                            <span class="spacer"></span>
+                                            <button mat-button color="accent" (click)="importPhoneticTransform(selectedPhoneticTransform)">Import <mat-icon>double_arrow</mat-icon></button>
+                                        </div>
+                                    </mat-tab>
+                                </mat-tab-group>
+                            </div>
+                            <div *ngIf="selectedTrigger != null && nTrigger == null">
+                                <mat-tab-group animationDuration="0ms" [selectedIndex]="0">
+                                    <mat-tab label="GINA Trigger" style="background-color: #00000014;">
+                                        <div style="padding-top:15px;">
+
+                                            <fieldset>
+                                                <legend>Trigger Info</legend>
+                                            
+                                                <mat-form-field>
+                                                    <mat-label></mat-label>
+                                                    <input matInput [(ngModel)]="selectedTrigger.Name" name="txtTriggerName" [readOnly]="true" />
+                                                    <mat-hint>Trigger Name</mat-hint>
+                                                </mat-form-field>
+                                                
+                                                <mat-form-field>
+                                                    <mat-label></mat-label>
+                                                    <input matInput [(ngModel)]="selectedTrigger.TriggerText" name="txtTriggerText" [readOnly]="true" />
+                                                    <mat-hint *ngIf="selectedTrigger.EnableRegex == 'True'">Uses regex</mat-hint>
+                                                    <mat-hint>Search Text</mat-hint>
+                                                </mat-form-field>
+
+                                                <!-- <mat-checkbox [checked]="selectedTrigger.EnableRegex == 'True'" (click)="$event.preventDefault()">Use Regex</mat-checkbox> -->
+
+                                                <mat-form-field [style.marginTop]="(selectedTrigger.EnableRegex == 'True' ? '10px' : null)">
+                                                    <mat-label></mat-label>
+                                                    <textarea matInput [(ngModel)]="selectedTrigger.Comments" name="txtTriggerComments" style="height: 85px;" [readOnly]="true"></textarea>
+                                                    <mat-hint>Comments</mat-hint>
+                                                </mat-form-field>
+                                            </fieldset>
+
+                                            <fieldset class="trigger-property-group">
+                                                <legend>Basic properties</legend>
+                                            
+                                                <div class="field-list">
+                                                    <div class="field-line" *ngIf="selectedTrigger.UseText == 'True'"><label>Display Text</label><span>{{selectedTrigger.DisplayText}}</span></div>
+                                                    <div class="field-line" *ngIf="selectedTrigger.CopyToClipboard == 'True'"><label>Clipboard Text</label><span>{{selectedTrigger.ClipboardText}}</span></div>
+                                                    <div class="field-line" *ngIf="selectedTrigger.UseTextToVoice == 'True'"><label>Text to Speech</label><span>{{selectedTrigger.TextToVoiceText}}</span><button mat-icon-button (click)="speakPhrase(selectedTrigger.TextToVoiceText)"><mat-icon [inline]="true">play_arrow</mat-icon></button></div>
+                                                    <div class="field-line" *ngIf="selectedTrigger.PlayMediaFile == 'True'"><label>Play Audio</label><span>{{selectedTrigger.MediaFileName}}</span><button mat-icon-button (click)="playAudioFile(selectedTrigger.MediaFileName)"><mat-icon [inline]="true">play_arrow</mat-icon></button></div>
+                                                </div>
+
+                                            </fieldset>
+                                            
+                                            <fieldset *ngIf="selectedTrigger.TimerType != ginaTimerTypes.NoTimer" class="trigger-property-group">
+                                                <legend>Timer properties</legend>
+
+                                                <div class="field-list">
+                                                    <div class="field-line"><label>Timer Type</label>
+                                                        <span *ngIf="selectedTrigger.TimerType == ginaTimerTypes.Timer">Timer (Count Down)</span>
+                                                        <span *ngIf="selectedTrigger.TimerType == ginaTimerTypes.Stopwatch">Stopwatch (Count Up)</span>
+                                                        <span *ngIf="selectedTrigger.TimerType == ginaTimerTypes.RepeatingTimer">Repeating Timer</span>
+                                                    </div>
+                                                    <div class="field-line"><label>Timer Name</label><span>{{selectedTrigger.TimerName}}</span></div>
+                                                    <div class="field-line"><label>Timer Duration</label><span>{{getDurationLabel(+selectedTrigger.TimerDuration)}}</span></div>
+                                                    <div class="field-line" *ngIf="selectedTrigger.RestartBasedOnTimerName == 'True'"><label>Restart</label><span>Only if timer name matches.</span></div>
+                                                    <div class="field-line" *ngIf="selectedTrigger.RestartBasedOnTimerName != 'True' && selectedTrigger.TimerStartBehavior == 'RestartTimer'"><label>Restart</label><span>Restart regardless of timer name.</span></div>
+                                                    <div class="field-line" *ngFor="let endEarly of selectedTrigger.TimerEarlyEnders?.EarlyEnder"><label>End early condition<ng-container *ngIf="endEarly.EnableRegex">&nbsp;(regex)</ng-container></label><span>{{endEarly.EarlyEndText}}</span></div>
+                                                </div>
+
+                                            </fieldset>
+                                            
+                                            <fieldset *ngIf="selectedTrigger.UseTimerEnding == 'True'" class="trigger-property-group">
+                                                <legend>Timer ending properties</legend>
+
+                                                <div class="field-list">
+                                                    <div class="field-line" *ngIf="selectedTrigger.UseTimerEnding == 'True'"><label>Notify when timer is ending</label><span>{{getDurationLabel(selectedTrigger.TimerEndingTime)}}</span></div>
+                                                    <div class="field-line" *ngIf="selectedTrigger.TimerEndingTrigger?.UseText == 'True'"><label>Display Text</label><span>{{selectedTrigger.TimerEndingTrigger.DisplayText}}</span></div>
+                                                    <div class="field-line" *ngIf="selectedTrigger.TimerEndingTrigger?.UseTextToVoice == 'True'"><label>Text to Speech</label><span>{{selectedTrigger.TimerEndingTrigger.TextToVoiceText}}</span><button mat-icon-button (click)="speakPhrase(selectedTrigger.TimerEndingTrigger.TextToVoiceText)"><mat-icon [inline]="true">play_arrow</mat-icon></button></div>
+                                                    <div class="field-line" *ngIf="selectedTrigger.TimerEndingTrigger?.PlayMediaFile == 'True'"><label>Play Audio</label><span>{{selectedTrigger.TimerEndingTrigger.MediaFileName}}</span><button mat-icon-button (click)="playAudioFile(selectedTrigger.TimerEndingTrigger.MediaFileName)"><mat-icon [inline]="true">play_arrow</mat-icon></button></div>
+                                                </div>
+
+                                            </fieldset>
+                                            
+                                            <fieldset *ngIf="selectedTrigger.UseTimerEnded == 'True'" class="trigger-property-group">
+                                                <legend>Timer ended properties</legend>
+
+                                                <div class="field-list">
+                                                    <div class="field-line" *ngIf="selectedTrigger.UseTimerEnded == 'True'"><label>Notify when timer ends</label><span>Yes</span></div>
+                                                    <div class="field-line" *ngIf="selectedTrigger.TimerEndedTrigger?.UseText == 'True'"><label>Display Text</label><span>{{selectedTrigger.TimerEndedTrigger.DisplayText}}</span></div>
+                                                    <div class="field-line" *ngIf="selectedTrigger.TimerEndedTrigger?.UseTextToVoice == 'True'"><label>Text to Speech</label><span>{{selectedTrigger.TimerEndedTrigger.TextToVoiceText}}</span><button mat-icon-button (click)="speakPhrase(selectedTrigger.TimerEndedTrigger.TextToVoiceText)"><mat-icon [inline]="true">play_arrow</mat-icon></button></div>
+                                                    <div class="field-line" *ngIf="selectedTrigger.TimerEndedTrigger?.PlayMediaFile == 'True'"><label>Play Audio</label><span>{{selectedTrigger.TimerEndedTrigger.MediaFileName}}</span><button mat-icon-button (click)="playAudioFile(selectedTrigger.TimerEndedTrigger.MediaFileName)"><mat-icon [inline]="true">play_arrow</mat-icon></button></div>
+                                                </div>
+
+                                            </fieldset>
+                                            
+                                            <fieldset *ngIf="selectedTrigger.UseCounterResetTimer == 'True'" class="trigger-property-group">
+                                                <legend>Counter properties</legend>
+
+                                                <div class="field-list">
+                                                    <div class="field-line" *ngIf="selectedTrigger.UseCounterResetTimer == 'True'"><label>Use counter</label><span>Yes</span></div>
+                                                    <div class="field-line" *ngIf="selectedTrigger.UseCounterResetTimer == 'True'"><label>Reset counter after</label><span>{{getDurationLabel(+selectedTrigger.CounterResetDuration)}}</span></div>
+
+                                                </div>
+
+                                            </fieldset>
+                                        </div>
+                                    </mat-tab>
+                                </mat-tab-group>
+                                <div class="import-actions">
+                                    <span class="spacer"></span>
+                                    <button mat-button color="accent" (click)="createTriggerModel()">Generate <mat-icon>double_arrow</mat-icon></button>
+                                </div>
+                            </div>
+                            <div *ngIf="nTrigger != null">
+                                <mat-tab-group animationDuration="0ms" [selectedIndex]="0" #nTriggerTabs>
+                                    <mat-tab label="Capture">
+                                        <div>
+                                            
+                                            <fieldset style="margin-top: 20px;">
+                                                <legend class="full-width">General</legend>
+                                                <mat-form-field>
+                                                    <mat-label></mat-label>
+                                                    <input matInput name="txtTriggerName" type="text" [(ngModel)]="nTrigger.name" required />
+                                                    <mat-hint>Trigger Name</mat-hint>
+                                                </mat-form-field>
+                            
+                                                <mat-form-field>
+                                                    <mat-label></mat-label>
+                                                    <textarea matInput name="txtComments" [(ngModel)]="nTrigger.comments" rows="5"></textarea>
+                                                    <mat-hint>Comments</mat-hint>
+                                                </mat-form-field>
+                                            </fieldset>
+                                            
+                                            <app-conditions [(conditions)]="nTrigger.conditions"></app-conditions>
+                                            
+                                            <app-capture-phrases [(capturePhrases)]="nTrigger.capturePhrases" [(captureMethod)]="nTrigger.captureMethod" [startWithNewPhrase]="false"></app-capture-phrases>
+                        
+                                        </div>
+                                    </mat-tab>
+                                    <mat-tab label="Actions">
+                                        <ng-template matTabContent>
+                                            <div>
+                    
+                                                <app-trigger-actions [(actions)]="nTrigger.actions" [isDev]="false" [predefined]="nTrigger.predefined" [capturePhrases]="nTrigger.capturePhrases"></app-trigger-actions>
+                                                
+                                            </div>
+                                        </ng-template>
+                                    </mat-tab>
+                                    <mat-tab label="Character Classes">
+                                        <ng-template matTabContent>
+                                            <div>
+                    
+                                                <app-trigger-classes [(classLevels)]="nTrigger.classLevels" style="margin-top: 20px; display: block;"></app-trigger-classes>
+                    
+                                            </div>
+                                        </ng-template>
+                                    </mat-tab>
+                                    <mat-tab label="Suggestions" *ngIf="showCapturePhraseSuggestion || showMissingOverlays || showDuplicateTriggers">
+                                        <ng-template matTabContent>
+                                            <div style="padding: 25px;" *ngIf="showDuplicateTriggers" class="fade-out-green-background">
+                                                <h3>Duplicate Triggers</h3>
+                                                <div style="margin-bottom: 25px;">There may be duplicate triggers, please review the list.  You can click on the edit button to view the details of any trigger.</div>
+                                                <div *ngFor="let trigger of duplicateTriggers" class="div-list-item">
+                                                    <button mat-button color="accent" aria-label="Edit this trigger" (click)="showEditTriggerDialog(trigger.triggerId)">Edit</button>
+                                                    <span>{{trigger.name}}</span>
+                                                </div>
+                                                <div class="small-text" style="margin-top: 25px;">If this is a duplicate trigger or you have added this trigger's action to an existing trigger, you can right-click on the name of the trigger in the navigation panel and tell the importer to <span class="color-red">Ignore this trigger</span> in the future.</div>
+                                                <div class="small-text">This list is using a best-guess method to query existing triggers.  There may be triggers found that don't have anything to do with the one you're importing.  You can click on <span class="color-green">Import</span> again to ignore any possible duplicates and perform the import.</div>
+                                            </div>
+                                            <div style="padding: 25px;" *ngIf="showCapturePhraseSuggestion">
+                                                <h3>Capture Phrases</h3>
+                                                <div>It is recommended to use full line regular expressions.</div>
+                                                <!-- <div>For example, it is better to use</div> -->
+                                                <p class="code-block">
+                                                    <span class="color-green">// Given the search text</span>
+                                                    <span class="color-light">You feel a gaze of deadly power focusing on you.</span>
+                                                    <span class="color-green">// A good expression might look like</span>
+                                                    <span class="color-blue">^You feel a gaze of deadly power focusing on you\.$</span>
+                                                </p>
+                                                <div>Instead of the following options</div>
+                                                <p class="code-block">
+                                                    <span class="color-light">gaze of deadly power</span>
+                                                    <span class="color-green">// Or even the full emote without using full-line regular expressions.</span>
+                                                    <span class="color-light">You feel a gaze of deadly power focusing on you.</span>
+                                                </p>
+                                                
+                                            </div>
+                                            <div style="padding: 25px;" *ngIf="showMissingOverlays">
+                                                <h3>Overlay windows</h3>
+                                                <div style="margin-bottom: 20px;">Overlay windows are used to display information in-game.  When a trigger calls for showing text or timers, that information is rendered in an overlay window.</div>
+                                                <div class="small-text" style="margin-bottom: 25px;"><span class="color-green">You can select missing overlays here, or view the Actions tab.</span></div>
+                                                <div *ngFor="let action of nTrigger.actions;let i = index">
+
+                                                    <mat-form-field *ngIf="action.overlayId == null && action.actionType == actionTypes.DisplayText">
+                                                        <mat-label></mat-label>
+                                                        <mat-select [(ngModel)]="action.overlayId" name="ddlAlertOverlay_{{i}}">
+                                                            <mat-option *ngFor="let option of alertOverlays" [value]="option.overlayId">{{option.name}}</mat-option>
+                                                        </mat-select>
+                                                        <mat-hint>{{action.displayText}} text overlay.</mat-hint>
+                                                    </mat-form-field>
+
+                                                    <ng-template [ngIf]="action.actionType == actionTypes.Countdown || action.actionType == actionTypes.DotTimer || action.actionType == actionTypes.Timer">
+
+                                                        <mat-form-field *ngIf="action.overlayId == null">
+                                                            <mat-label></mat-label>
+                                                            <mat-select [(ngModel)]="action.overlayId" name="ddlTimerOverlay_{{i}}">
+                                                                <mat-option *ngFor="let option of timerOverlays" [value]="option.overlayId">{{option.name}}</mat-option>
+                                                            </mat-select>
+                                                            <mat-hint>{{action.displayText}} timer overlay.</mat-hint>
+                                                        </mat-form-field>
+
+                                                        <mat-form-field *ngIf="action.ifEndingSoon && action.endingSoonDisplayText && action.endingSoonTextOverlayId == null">
+                                                            <mat-label></mat-label>
+                                                            <mat-select [(ngModel)]="action.endingSoonTextOverlayId" name="ddlEndingSoonOverlay_{{i}}">
+                                                                <mat-option *ngFor="let option of alertOverlays" [value]="option.overlayId">{{option.name}}</mat-option>
+                                                            </mat-select>
+                                                            <mat-hint>{{action.displayText}} ending soon text overlay.</mat-hint>
+                                                        </mat-form-field>
+
+                                                        <mat-form-field *ngIf="action.notifyWhenEnded && action.endedDisplayText && action.endedTextOverlayId == null">
+                                                            <mat-label></mat-label>
+                                                            <mat-select [(ngModel)]="action.endedTextOverlayId" name="ddlEndedOverlay_{{i}}">
+                                                                <mat-option *ngFor="let option of alertOverlays" [value]="option.overlayId">{{option.name}}</mat-option>
+                                                            </mat-select>
+                                                            <mat-hint>{{action.displayText}} ended text overlay.</mat-hint>
+                                                        </mat-form-field>
+
+                                                    </ng-template>
+                                                </div>
+                                            </div>
+                                        </ng-template>
+                                    </mat-tab>
+                                </mat-tab-group>
+                                <div class="import-actions">
+                                    <span class="spacer"></span>
+                                    <button mat-button color="accent" (click)="importTrigger()">Import <mat-icon>double_arrow</mat-icon></button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </form>
+    </section>
+    <footer>
+        <!-- <button mat-button [disabled]="ginaImportForm.invalid" (click)="save()">Save</button> -->
+        <button mat-button color="warn" (click)="closeModal()">Cancel</button>
+        <!-- <button mat-button color="accent" (click)="copyJson()" *ngIf="isDev">Copy JSON</button> -->
+        <!-- <button mat-button color="default" (click)="reimportDotTimerFromAllakhazam()" *ngIf="model.allakhazamUrl != null && model.allakhazamUrl.indexOf('spell.html') > -1">Re-import from Allakhazam</button> -->
+    </footer>
+</div>

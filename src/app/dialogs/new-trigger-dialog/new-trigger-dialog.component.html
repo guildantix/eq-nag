@@ -1,29 +1,31 @@
-<h2 mat-dialog-title>Confirm</h2>
+<h2 mat-dialog-title>Import DoT Timer (Allakhazam)</h2>
 
 <mat-dialog-content>
+    
+    <p *ngIf="data?.trigger?.triggerId != null">WARNING: This may overwright any custom setting you have applied to this trigger.  Are you sure you want to continue?</p>
 
     <p>
-        <mat-form-field style="width: 50%;">
-            <mat-label>Character Class</mat-label>
-            <mat-select [(ngModel)]="characterClass" name="ddlCharacterClass">
-                <mat-option value="NEC">Necromancer</mat-option>
-                <mat-option value="RNG">Ranger</mat-option>
-                <mat-option value="DRU">Druid</mat-option>
-            </mat-select>
-        </mat-form-field>
         
         <mat-form-field style="width: 50%;">
-            <mat-label>Overlay Window</mat-label>
+            <mat-label></mat-label>
             <mat-select [(ngModel)]="overlayId" name="ddlDotTimerOverlay">
                 <mat-option *ngFor="let option of timerOverlays" [value]="option.overlayId">{{option.name}}</mat-option>
             </mat-select>
+            <mat-hint>Overlay Window</mat-hint>
         </mat-form-field>
     </p>
     <p>
-        <mat-form-field appearance="fill" style="width: 100%;">
-            <mat-label>Allakhazam URL</mat-label>
+        <mat-form-field style="width: 100%;">
+            <mat-label></mat-label>
             <input matInput type="text" [(ngModel)]="url" />
+            <mat-hint>Allakhazam URL</mat-hint>
         </mat-form-field>
+    </p>
+    <p>
+        <mat-checkbox [(ngModel)]="onlyExecuteForRareEqTargets" name="onlyExecuteForRareEqTargets">Only execute for rare and raid targets.</mat-checkbox>
+    </p>
+    <p>
+        <mat-checkbox [(ngModel)]="cancelTimerIfTargetDies" name="cancelTimerIfTargetDies">End timer early if your target dies.</mat-checkbox>
     </p>
 </mat-dialog-content>
 

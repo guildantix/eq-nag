@@ -1,0 +1,40 @@
+<h2 mat-dialog-title>{{data != null && data.iconIndex >= 0 ? 'Locating EverQuest assets' : 'Select an icon'}}</h2>
+
+<mat-dialog-content>
+
+    <div *ngIf="!eqFolderNotFound && spellIcons?.length > 0">
+        <mat-paginator #paginator 
+            [length]="spellIcons.length"
+            [pageSize]="25"
+            [pageSizeOptions]="[25, 50, 100]">
+        </mat-paginator>
+        <div class="icon-container" [style.maxWidth]="(paginator.pageSize == 25 ? 230 : 460) + 'px'" *ngIf="pagedImages?.length > 0">
+            <div class="icon-view" *ngFor="let icon of pagedImages; let i = index">
+                <img *ngIf="icon != null" style="width: 40px;" [src]="icon" (click)="selectIcon(i)" />
+            </div>
+        </div>
+    </div>
+    <p *ngIf="!eqFolderNotFound && (spellIcons == null || spellIcons.length === 0)">
+        Processing game files ...
+        <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+    </p>
+    <p *ngIf="eqFolderNotFound">
+        Could not locate your EverQuest folder.
+    </p>
+    <p *ngIf="eqFolderNotFound && invalidFolderSelected">
+        Invalid file
+    </p>
+    <p *ngIf="eqFolderNotFound">
+        Please select the eqgame.exe file in your EverQuest folder.
+        <button mat-button (click)="showFileSelector()" color="accent">Select EverQuest Folder</button>
+    </p>
+    
+    <input type="file" #fileSelector style="display:none;" accept=".exe" (change)="fileSelected($event)" />
+</mat-dialog-content>
+
+<mat-dialog-actions>
+
+  <button mat-button [mat-dialog-close]="null" class="t-confirm-no" color="warn">Cancel</button>
+  <!-- <button mat-button (click)="selectIcon(0)" class="t-confirm-yes" color="accent">Select</button> -->
+
+</mat-dialog-actions>

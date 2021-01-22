@@ -1,0 +1,31 @@
+<mat-tab-group animationDuration="0ms" [selectedIndex]="0">
+    <mat-tab label="Notification text">
+        
+        <div class="card-tab-content">
+
+            <div class="card-property">
+                <div class="full-width content-middle">
+                    <mat-form-field>
+                        <mat-label></mat-label>
+                        <input matInput [(ngModel)]="action.displayText" name="txtDisplayText" />
+                        <mat-hint>Display Text</mat-hint>
+                    </mat-form-field>
+                </div>
+            </div>
+
+            <div class="card-property">
+                <div class="content-middle">
+                    <mat-form-field>
+                        <mat-label></mat-label>
+                        <mat-select [(ngModel)]="action.overlayId" name="ddlLogOverlay">
+                            <mat-option *ngFor="let option of overlayOptions" [value]="option.overlayId">{{option.name}}</mat-option>
+                        </mat-select>
+                        <mat-hint>Overlay Window</mat-hint>
+                    </mat-form-field>
+                </div>
+                <div class="content-middle"><app-duration [(ngModel)]="action.duration" name="durActionDuration"></app-duration></div>
+            </div>
+
+        </div>
+    </mat-tab>
+</mat-tab-group>

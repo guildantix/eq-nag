@@ -2,9 +2,10 @@ import { Injectable, NgZone } from '@angular/core';
 import { IpcRenderer } from 'electron';
 import { Observable, Observer } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
-import { DataTickModel, DkpEntryModel, TriggerModel, OverlayWindowModel, ActionTypes, FocusEffectSettings } from './core.model';
+import { DataTickModel, DkpEntryModel, TriggerModel, OverlayWindowModel, ActionTypes, FocusEffectSettings, CharacterModel, BasicError, TriggerFolder, FileModel, Tag } from './core.model';
+import { GinaConfiguration, GinaTriggerGroups } from './gina.model';
 
-@Injectable()
+@Injectable( { providedIn: 'root' })
 export class IpcService {
     
     private ipc: IpcRenderer;
@@ -14,6 +15,8 @@ export class IpcService {
     private _dkpAddedObservers: Observer<DkpEntryModel>[] = [];
     private _dkpRemovedObservers: Observer<string>[] = [];
     private _consoleLogRequestObservers: Observer<any>[] = [];
+    private _logActivatedObservers: Observer<any>[] = [];
+    private _logDeactivatedObservers: Observer<any>[] = [];
 
     constructor( private ngZone: NgZone ) {
         if ( ( <any>window ).require ) {
@@ -63,6 +66,23 @@ export class IpcService {
                 this.ipc.on( 'console:log', ( event: any, data: any ) => {
                     console.log( data );
                 } );
+
+                this.ipc.on( 'log:character:activated', ( event: any, data: any ) => {
+                    ngZone.run( () => {
+                        this._logActivatedObservers?.forEach( f => {
+                            f.next( data );
+                        } );
+                    } );
+                } );
+
+                this.ipc.on( 'log:character:deactivated', ( event: any, data: any ) => {
+                    ngZone.run( () => {
+                        this._logDeactivatedObservers?.forEach( f => {
+                            f.next( data );
+                        } );
+                    } );
+                } );
+
             } catch ( e ) {
                 throw e;
             }
@@ -106,6 +126,22 @@ export class IpcService {
     public dkpEntryRemoved(): Observable<string> {
         let obs: Observable<string> = new Observable<string>( ( observer: Observer<string> ) => {
             this._dkpRemovedObservers.push( observer );
+        } );
+
+        return obs;
+    }
+
+    public characterLogActivated(): Observable<string> {
+        let obs: Observable<string> = new Observable<string>( ( observer: Observer<string> ) => {
+            this._logActivatedObservers.push( observer );
+        } );
+
+        return obs;
+    }
+
+    public characterLogDeactivated(): Observable<string> {
+        let obs: Observable<string> = new Observable<string>( ( observer: Observer<string> ) => {
+            this._logDeactivatedObservers.push( observer );
         } );
 
         return obs;
@@ -199,8 +235,8 @@ export class IpcService {
         this.ipc.send( 'dkp:reset' );
     }
 
-    public showNewTriggerDialog(): void {
-        this.ipc.send( 'trigger:dialog:new' );
+    public showNewTriggerDialog( folderId?: string ): void {
+        this.ipc.send( 'trigger:dialog:new', folderId );
     }
 
     public showEditTriggerDialog( triggerId: string ): void {
@@ -213,6 +249,22 @@ export class IpcService {
 
     public resizeTriggerWindow( width: number = null, height: number = null ): void {
         this.ipc.send( 'trigger:dialog:resize', { width: width, height: height } );
+    }
+
+    public showGinaImportWindow(): Observable<boolean> {
+        let obs: Observable<boolean> = new Observable<boolean>( ( observer: Observer<boolean> ) => {
+            
+            this.ipc.once( 'gina:dialog:import', ( e, loaded ) => {
+                this.ngZone.run( () => {
+                    observer.next( loaded );
+                    observer.complete();
+                } );
+            } );
+            this.ipc.send( 'gina:dialog:import', null );
+
+        } );
+
+        return obs;
     }
 
     public simulateLogParse( file: string ): void {
@@ -267,6 +319,38 @@ export class IpcService {
         return obs;
     }
 
+    public searchTriggers( term: string, restrictByFolderIds?: string[] ): Observable<TriggerModel[]> {
+        let obs: Observable<TriggerModel[]> = new Observable<TriggerModel[]>( ( observer: Observer<TriggerModel[]> ) => {
+            
+            this.ipc.once( 'trigger:search', ( e, triggers: TriggerModel[] ) => {
+                this.ngZone.run( () => {
+                    observer.next( triggers );
+                    observer.complete();
+                } );
+            } );
+            this.ipc.send( 'trigger:search', { term: term, folderIds: restrictByFolderIds } );
+
+        } );
+
+        return obs;
+    }
+
+    public searchTriggerProperties( phrase: string[], speakText: string[], displayText: string[], clipboardText: string[], name: string, comment: string ): Observable<TriggerModel[]> {
+        let obs: Observable<TriggerModel[]> = new Observable<TriggerModel[]>( ( observer: Observer<TriggerModel[]> ) => {
+            
+            this.ipc.once( 'trigger:search:properties', ( e, triggers: TriggerModel[] ) => {
+                this.ngZone.run( () => {
+                    observer.next( triggers );
+                    observer.complete();
+                } );
+            } );
+            this.ipc.send( 'trigger:search:properties', { phrase: phrase, speakText: speakText, displayText: displayText, clipboardText: clipboardText, name: name, comment: comment } );
+
+        } );
+
+        return obs;
+    }
+
     public updateTrigger( model: TriggerModel ): Observable<boolean> {
         let obs: Observable<boolean> = new Observable<boolean>( ( observer: Observer<boolean> ) => {
             
@@ -283,6 +367,29 @@ export class IpcService {
         return obs;
     }
 
+    /**
+     * Updates all given triggers.
+     * 
+     * @returns Returns a list of triggers that failed to update.
+     * 
+     * @param triggers The list of triggers to update.
+     */
+    public updateTriggers( triggers: TriggerModel[] ): Observable<TriggerModel[]> {
+        let obs: Observable<TriggerModel[]> = new Observable<TriggerModel[]>( ( observer: Observer<TriggerModel[]> ) => {
+            
+            this.ipc.once( 'trigger:update:batch', ( e, failed: TriggerModel[] ) => {
+                this.ngZone.run( () => {
+                    observer.next( failed );
+                    observer.complete();
+                } );
+            } );
+            this.ipc.send( 'trigger:update:batch', triggers );
+
+        } );
+
+        return obs;
+    }
+
     public deleteTrigger( triggerId: string ): Observable<boolean> {
         let obs: Observable<boolean> = new Observable<boolean>( ( observer: Observer<boolean> ) => {
             
@@ -293,6 +400,38 @@ export class IpcService {
                 } );
             } );
             this.ipc.send( 'trigger:delete', triggerId );
+
+        } );
+
+        return obs;
+    }
+
+    public getTriggerFolders(): Observable<TriggerFolder[]> {
+        let obs: Observable<TriggerFolder[]> = new Observable<TriggerFolder[]>( ( observer: Observer<TriggerFolder[]> ) => {
+            
+            this.ipc.once( 'folders:get', ( e, folders: TriggerFolder[] ) => {
+                this.ngZone.run( () => {
+                    observer.next( folders );
+                    observer.complete();
+                } );
+            } );
+            this.ipc.send( 'folders:get', null );
+
+        } );
+
+        return obs;
+    }
+
+    public updateTriggerFolders( folders: TriggerFolder[] ): Observable<TriggerFolder[]> {
+        let obs: Observable<TriggerFolder[]> = new Observable<TriggerFolder[]>( ( observer: Observer<TriggerFolder[]> ) => {
+            
+            this.ipc.once( 'folders:update', ( e, updatedFolders: TriggerFolder[] ) => {
+                this.ngZone.run( () => {
+                    observer.next( updatedFolders );
+                    observer.complete();
+                } );
+            } );
+            this.ipc.send( 'folders:update', folders );
 
         } );
 
@@ -398,6 +537,128 @@ export class IpcService {
         return obs;
     }
 
+    public createCharacter( model: CharacterModel ): Observable<string> {
+        let obs: Observable<string> = new Observable<string>( ( observer: Observer<string> ) => {
+            
+            this.ipc.once( 'character:create', ( e, characterId: string ) => {
+                this.ngZone.run( () => {
+                    observer.next( characterId );
+                    observer.complete();
+                } );
+            } );
+            this.ipc.send( 'character:create', model );
+
+        } );
+
+        return obs;
+    }
+
+    public getCharacters(): Observable<CharacterModel[]> {
+        let obs: Observable<CharacterModel[]> = new Observable<CharacterModel[]>( ( observer: Observer<CharacterModel[]> ) => {
+            
+            this.ipc.once( 'character:get', ( e, overlays: CharacterModel[] ) => {
+                this.ngZone.run( () => {
+                    observer.next( overlays );
+                    observer.complete();
+                } );
+            } );
+            this.ipc.send( 'character:get', null );
+
+        } );
+
+        return obs;
+    }
+
+    public getCharacter( characterId: string ): Observable<CharacterModel> {
+        let obs: Observable<CharacterModel> = new Observable<CharacterModel>( ( observer: Observer<CharacterModel> ) => {
+            
+            this.ipc.once( 'character:get', ( e, character: CharacterModel ) => {
+                this.ngZone.run( () => {
+                    observer.next( character );
+                    observer.complete();
+                } );
+            } );
+            this.ipc.send( 'character:get', characterId );
+
+        } );
+
+        return obs;
+    }
+
+    public updateCharacter( model: CharacterModel ): Observable<boolean> {
+        let obs: Observable<boolean> = new Observable<boolean>( ( observer: Observer<boolean> ) => {
+            
+            this.ipc.once( 'character:update', ( e, updated: boolean ) => {
+                this.ngZone.run( () => {
+                    observer.next( updated );
+                    observer.complete();
+                } );
+            } );
+            this.ipc.send( 'character:update', model );
+
+        } );
+
+        return obs;
+    }
+
+    public deleteCharacter( characterId: string ): Observable<boolean> {
+        let obs: Observable<boolean> = new Observable<boolean>( ( observer: Observer<boolean> ) => {
+            
+            this.ipc.once( 'character:delete', ( e, deleted: boolean ) => {
+                this.ngZone.run( () => {
+                    observer.next( deleted );
+                    observer.complete();
+                } );
+            } );
+            this.ipc.send( 'character:delete', characterId );
+
+        } );
+
+        return obs;
+    }
+
+    public getEqInstallFolder(): Observable<string> {
+        let obs: Observable<string> = new Observable<string>( ( observer: Observer<string> ) => {
+            
+            this.ipc.once( 'settings:get:everquest-folder', ( e, folder: string ) => {
+                this.ngZone.run( () => {
+                    observer.next( folder );
+                    observer.complete();
+                } );
+            } );
+            this.ipc.send( 'settings:get:everquest-folder', null );
+
+        } );
+
+        return obs;
+    }
+
+    public getEqSpellIcons(): Observable<string[]> {
+        let obs: Observable<string[]> = new Observable<string[]>( ( observer: Observer<string[]> ) => {
+            
+            this.ipc.once( 'game-resources:get:eq:icons', ( e, icons: string[] ) => {
+                this.ngZone.run( () => {
+                    observer.next( icons );
+                    observer.complete();
+                } );
+            } );
+            this.ipc.once( 'game-resources:get:eq:icons:error', ( e, error: BasicError ) => {
+                this.ngZone.run( () => {
+                    observer.error( error );
+                    observer.complete();
+                } );
+            } );
+            this.ipc.send( 'game-resources:get:eq:icons', null );
+
+        } );
+
+        return obs;
+    }
+
+    public setEqInstallFolder( folder: string ): void {
+        this.ipc.send( 'settings:set:everquest-folder', folder );
+    }
+
     public enableOverlayEditMode( overlayId: string ): void {
         this.ipc.send( 'overlay:enable-edit', overlayId );
     }
@@ -426,8 +687,245 @@ export class IpcService {
         this.ipc.send( 'overlay:dim', overlayId );
     }
 
+    public requestTick(): void {
+        this.ipc.send( 'app:request:tick', null );
+    }
+
     public sendTestFn( rawLogLine: string ): void {
         this.ipc.send( 'log:send:raw', rawLogLine );
+    }
+
+    public getAudioFiles(): Observable<FileModel[]> {
+        let obs: Observable<FileModel[]> = new Observable<FileModel[]>( ( observer: Observer<FileModel[]> ) => {
+            
+            this.ipc.once( 'audio-file:get', ( e, audioFiles: FileModel[] ) => {
+                this.ngZone.run( () => {
+                    observer.next( audioFiles );
+                    observer.complete();
+                } );
+            } );
+            this.ipc.send( 'audio-file:get', null );
+
+        } );
+
+        return obs;
+    }
+
+    public getAudioFileUrl( fileId: string ): Observable<string> {
+        let obs: Observable<string> = new Observable<string>( ( observer: Observer<string> ) => {
+            
+            this.ipc.once( 'audio-file:get:url', ( e, fileUrl: string ) => {
+                this.ngZone.run( () => {
+                    observer.next( fileUrl );
+                    observer.complete();
+                } );
+            } );
+            this.ipc.send( 'audio-file:get:url', fileId );
+
+        } );
+
+        return obs;
+    }
+
+    public saveAudioFile( file: File ): Observable<string> {
+        let obs: Observable<string> = new Observable<string>( ( observer: Observer<string> ) => {
+            let name = file.name;
+
+            let reader = new FileReader();
+            reader.onload = () => {
+                if ( reader.readyState === 2 ) {
+                    let buffer = Buffer.from( reader.result );
+                    this.ipc.send( 'audio-file:save', { name: name, buffer: buffer } );
+                }
+            };
+            reader.readAsArrayBuffer( file );
+
+            this.ipc.once( 'audio-file:save', ( e, fileId: string ) => {
+                this.ngZone.run( () => {
+                    observer.next( fileId );
+                    observer.complete();
+                } );
+            } );
+
+        } );
+
+        return obs;
+    }
+
+    public importAudioFile( filename: string ): Observable<string> {
+        let obs: Observable<string> = new Observable<string>( ( observer: Observer<string> ) => {
+
+            this.ipc.once( 'audio-file:import', ( e, fileId: string ) => {
+                this.ngZone.run( () => {
+                    observer.next( fileId );
+                    observer.complete();
+                } );
+            } );
+            this.ipc.send( 'audio-file:import', filename );
+
+        } );
+
+        return obs;
+    }
+
+    public getPhoneticTransforms(): Observable<Record<string, string>> {
+        let obs: Observable<Record<string, string>> = new Observable<Record<string, string>>( ( observer: Observer<Record<string, string>> ) => {
+            
+            this.ipc.once( 'settings:get:phonetic-transforms', ( e, phoneticTransforms: Record<string, string> ) => {
+                this.ngZone.run( () => {
+                    observer.next( phoneticTransforms );
+                    observer.complete();
+                } );
+            } );
+            this.ipc.send( 'settings:get:phonetic-transforms', null );
+
+        } );
+
+        return obs;
+    }
+
+    public savePhoneticTransforms( transforms: Record<string, string> ): void {
+        this.ipc.send( 'settings:set:phonetic-transforms', transforms );
+    }
+
+    public getIgnoredGinaObjects(): Observable<string[]> {
+        let obs: Observable<string[]> = new Observable<string[]>( ( observer: Observer<string[]> ) => {
+            
+            this.ipc.once( 'settings:get:ignore-gina-objects', ( e, ignoredGinaObjects: string[] ) => {
+                this.ngZone.run( () => {
+                    observer.next( ignoredGinaObjects );
+                    observer.complete();
+                } );
+            } );
+            this.ipc.send( 'settings:get:ignoredGinaObjects', null );
+
+        } );
+
+        return obs;
+    }
+
+    public saveIgnoredGinaObjects( ignoredGinaObjects: string[] ): void {
+        this.ipc.send( 'settings:set:ignore-gina-objects', ignoredGinaObjects );
+    }
+
+    /**
+     * Returns the GINA configuration file if the GINA data folder was found.
+     */
+    public getGinaConfiguration(): Observable<GinaConfiguration> {
+        let obs: Observable<GinaConfiguration> = new Observable<GinaConfiguration>( ( observer: Observer<GinaConfiguration> ) => {
+            
+            this.ipc.once( 'gina:get:configuration', ( e, ginaConfig: GinaConfiguration ) => {
+                this.ngZone.run( () => {
+
+                    // Because the source is XML, we need to process all arrays so that even if an array has a single element it's still an array.  I just don't want a bunch of "if property is array" statements in other areas of the code.
+                    if ( !( ginaConfig.BehaviorGroups.Behavior instanceof Array ) ) {
+                        ginaConfig.BehaviorGroups.Behavior = [ ginaConfig.BehaviorGroups.Behavior ];
+                    }
+
+                    if ( !( ginaConfig.Settings.PhoneticTransforms.Transform instanceof Array ) ) {
+                        ginaConfig.Settings.PhoneticTransforms.Transform = [ ginaConfig.Settings.PhoneticTransforms.Transform ];
+                    }
+
+                    this.processGinaTriggerGroup( ginaConfig.TriggerGroups );
+                    
+                    observer.next( ginaConfig );
+                    observer.complete();
+
+                } );
+            } );
+            this.ipc.send( 'gina:get:configuration', null );
+
+        } );
+
+        return obs;
+    }
+
+    private processGinaTriggerGroup( groups: GinaTriggerGroups ): void {
+
+        if ( !( groups.TriggerGroup instanceof Array ) ) {
+            groups.TriggerGroup = [ groups.TriggerGroup ];
+        }
+
+        groups.TriggerGroup.forEach( group => {
+
+            if ( group.Triggers != null && !( group.Triggers.Trigger instanceof Array ) ) {
+                group.Triggers.Trigger = [ group.Triggers.Trigger ];
+            }
+
+            group.Triggers?.Trigger.forEach( trigger => {
+
+                if ( trigger.TimerEarlyEnders?.EarlyEnder != null && !( trigger.TimerEarlyEnders.EarlyEnder instanceof Array ) ) {
+                    trigger.TimerEarlyEnders.EarlyEnder = [ trigger.TimerEarlyEnders.EarlyEnder ];
+                }
+
+            } );
+
+            if ( group.TriggerGroups?.TriggerGroup != null ) {
+                this.processGinaTriggerGroup( group.TriggerGroups );
+            }
+
+        } );
+
+    }
+
+    public getTags(): Observable<Record<string, Tag>> {
+        let obs: Observable<Record<string, Tag>> = new Observable<Record<string, Tag>>( ( observer: Observer<Record<string, Tag>> ) => {
+            
+            this.ipc.once( 'tags:get', ( e, tags: Tag[] ) => {
+                this.ngZone.run( () => {
+
+                    let tagDictionary: Record<string, Tag> = {};
+                    tags.forEach( t => tagDictionary[ t.tagId ] = t );
+
+                    observer.next( tagDictionary );
+                    observer.complete();
+                } );
+            } );
+            this.ipc.send( 'tags:get', null );
+
+        } );
+
+        return obs;
+    }
+
+    public createTag( model: Tag ): Observable<string> {
+        let obs: Observable<string> = new Observable<string>( ( observer: Observer<string> ) => {
+            
+            this.ipc.once( 'tags:create', ( e, tagId: string ) => {
+                this.ngZone.run( () => {
+                    observer.next( tagId );
+                    observer.complete();
+                } );
+            } );
+            this.ipc.send( 'tags:create', model );
+
+        } );
+
+        return obs;
+    }
+
+    public updateTag( model: Tag ): void {
+        this.ipc.send( 'tags:update', model );
+    }
+
+    public deleteTag( tagId: string ): void {
+        this.ipc.send( 'tags:delete', tagId );
+    }
+
+    public getEverquestZones(): Observable<string[]> {
+        let obs: Observable<string[]> = new Observable<string[]>( ( observer: Observer<string[]> ) => {
+            
+            this.ipc.once( 'zones:get:everquest', ( e, zones: string[] ) => {
+                this.ngZone.run( () => {
+                    observer.next( zones );
+                    observer.complete();
+                } );
+            } );
+            this.ipc.send( 'zones:get:everquest', null );
+
+        } );
+
+        return obs;
     }
 
     public sendTestModel( displayText: string ): void {

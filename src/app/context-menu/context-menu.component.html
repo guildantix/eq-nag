@@ -1,0 +1,23 @@
+<ng-template #contextMenuTemplate>
+    <!-- <div class="context-menu-container">
+        <div class="context-menu-background">
+            <div *ngFor="let key of keys"><button mat-button (click)="menu[key]()">{{getKeyLabel(key)}}</button></div>
+        </div>
+    </div> -->
+    <div class="context-menu-container">
+        <div class="context-menu-background">
+            <div *ngFor="let menuItem of menu" [style.display]="menuItem.hide() ? 'none' : 'block'">
+                <ng-template [ngIf]="menuItem.label === '-'" [ngIfElse]="buttonMenuItem">
+                    <hr />
+                </ng-template>
+                <ng-template #buttonMenuItem>
+                    <button mat-button (click)="menuItem.action()" [disabled]="menuItem.disabled()" [class]="menuItem.cssClass">
+                        <mat-icon *ngIf="menuItem.matIcon != null; else iconSpacer" [inline]="true">{{menuItem.matIcon}}</mat-icon>
+                        <ng-template #iconSpacer><span class="icon-spacer"></span></ng-template>
+                        {{menuItem.label}}
+                    </button>
+                </ng-template>
+            </div>
+        </div>
+    </div>
+</ng-template>

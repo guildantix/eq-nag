@@ -1,0 +1,492 @@
+$color-grey-80: #808080;
+$text: #ffffff;
+
+$color-light: #ffffffde;
+$color-dark: #373737de;
+$color-green: #69f0ae;
+$color-blue: #69b2f0;
+$color-orange: #f0c669;
+$color-red: #f06969;
+$color-purple: #c269f0;
+$color-magenta: #f0698e;
+$color-red-dark: #921f1f;
+$color-titlebar-bg: #4c0e67;
+$color-titlebar-txt: #00000094;
+
+$option-odd: #202020;
+$option-even: #1c1c1c;
+$option-hover: #272727;
+$option-panel: #252525;
+$option-selected: #242424;
+$option-small: #c7e3ff7d;
+
+$bg-tab-content: #1a1a1a;
+$bg-extreme-dark: #191919;
+
+.dark-theme {
+
+    .color-light {
+        color: $color-light;
+    }
+    
+    .color-blue {
+        color: $color-blue;
+    }
+    
+    .color-green {
+        color: $color-green;
+    }
+    
+    .color-orange {
+        color: $color-orange;
+    }
+    
+    .color-red {
+        color: $color-red;
+    }
+    
+    .color-purple {
+        color: $color-purple;
+    }
+    
+    .color-magenta {
+        color: $color-magenta;
+    }
+    
+    .border-light {
+        border-color: $color-light;
+    }
+    
+    .border-dark {
+        border-color: $color-dark;
+    }
+    
+    .border-blue {
+        border-color: rgba($color-blue, .8); // a: 0.80
+    }
+    
+    .border-green {
+        border-color: rgba($color-green, .8); // a: 0.80
+    }
+    
+    .border-orange {
+        border-color: rgba($color-orange, .8); // a: 0.80
+    }
+    
+    .border-red {
+        border-color: rgba($color-red, .8); // a: 0.80
+    }
+    
+    .border-purple {
+        border-color: rgba($color-purple, .8); // a: 0.80
+    }
+    
+    .border-magenta {
+        border-color: rgba($color-magenta, .8); // a: 0.80
+    }
+
+    app-main {
+        >p {
+            >.mat-toolbar.mat-primary {
+                background: $color-titlebar-bg !important;
+                color: $color-titlebar-txt !important;
+            }
+        }
+    }
+
+    section,
+    div.tab-content {
+        background-color: $bg-tab-content;
+    }
+
+    mat-toolbar {
+        mat-form-field {
+            mat-hint {
+                color: $color-grey-80;
+            }
+            input {
+                color: white;
+            }
+            color: $color-grey-80;
+        }
+    }
+
+    .inline-button {
+        background-color: $color-red-dark;
+    }
+    
+    .inline-button.warn {
+        color: $color-red;
+    }
+
+    // form-submitted
+    mat-radio-group {
+        &.ng-dirty.ng-invalid,
+        &.ng-touched.ng-invalid {
+            mat-radio-button {
+                label {
+                    color: $color-red-dark;
+                    .mat-radio-outer-circle {
+                        border-color: $color-red-dark;
+                    }
+                }
+            }
+        }
+    }
+
+    .mat-select-panel {
+        mat-option {
+            &:nth-of-type(odd) {
+                background-color: $option-odd !important;
+            }
+            &:nth-of-type(even) {
+                background-color: $option-even !important;
+            }
+            &:hover {
+                background-color: $option-hover !important;
+            }
+            small {
+                color: $option-small;
+            }
+        }
+        .mat-option.mat-selected:not(.mat-option-multiple) {
+            background-color: $option-selected !important;
+            color: $color-green;
+            font-weight: bolder;
+        }
+        background-color: $option-panel;
+    }
+
+    .mat-menu-panel {
+        button:nth-of-type(odd) {
+            background-color: $option-odd !important;
+        }
+        button:nth-of-type(even) {
+            background-color: $option-even !important;
+        }
+        button:hover {
+            background-color: $option-hover !important;
+        }
+        background-color: $option-panel;
+    }
+
+    fieldset {
+        small {
+            color: rgba($text, .25);
+        }
+        background-color: #2a2a2a;
+    }
+
+    div.console {
+        background-color: #232323;
+    }
+
+    span.item-link {
+        color: #f00cf3;
+    }
+    
+    .dkp.credit {
+        color: #ff4c4c;
+    }
+
+    .mat-tree-node {
+        &:nth-of-type(odd) {
+            background-color: #2a2a2a;
+        }
+        &:nth-last-of-type(1) {
+            border-bottom: 2px solid #00000021;
+        }
+        &:hover {
+            background-color: #a2a2a229;
+        }
+        &.selected {
+            color: $color-green;
+            background-color: rgba($color-green, .24);
+        }
+        background-color: #252525;
+    }
+
+    .mat-expansion-panel {
+        background-color: #2d2d2d;
+    }
+
+    .ft-content {
+        background-color: #252525;
+    }
+
+    .ft-row {
+        .ft-item {
+            background-color: #424242;
+        }
+    }
+    
+    .mat-card {
+        .mat-tab-group {
+            background-color: #252525;
+        }
+        background-color: #2a2a2a;
+    }
+
+    .trigger-categories-header {
+        background-color: #252525;
+        border-bottom: 2px solid #00000021;
+    }
+
+    .card-property {
+        &:nth-of-type(odd) {
+            background-color: #252525;
+        }
+        &:nth-of-type(even) {
+            background-color: #2a2a2a;
+        }
+    }
+
+    .instructions {
+        color: rgba($text, .75);
+    }
+
+    p.code-block {
+        background-color: #0000006b;
+        border: 2px solid rgba($text, .20);
+    }
+
+    p.note {
+        color: #c6c6c6;
+        background-color: $bg-extreme-dark;
+    }
+    
+    p.notice {
+        color: #c6c6c6;
+        background-color: $bg-extreme-dark;
+    }
+
+    .well {
+        background-color: #252525;
+    }
+
+    div.small-text {
+        color: rgba($text, .75);
+    }
+
+    .div-list-item,
+    tr.row-list-item {
+        &:nth-of-type(even) {
+            background-color: #0000005e;
+        }
+        &:nth-of-type(odd) {
+            background-color: #0000003d;
+        }
+    }
+
+    tr.row-header {
+        background-color: #0000003d;
+    }
+
+    table {
+        tr {
+            // th {
+            //     background-color: #252525;
+            //     color: #a5a5a5;
+            // }
+            &:nth-of-type(even) {
+                background-color: #252525;
+            }
+            &:nth-of-type(odd) {
+                background-color: #2a2a2a;
+            }
+        }
+    }
+
+    mat-form-field {
+        .mat-form-field-infix {
+            border-top: none !important;
+        }
+        .mat-form-field-underline {
+            background-color: #00000052 !important;
+            border-top: 2px solid transparent !important;
+        }
+        input.mat-input-element {
+            color: $text;
+        }
+        &.mat-form-field-disabled {
+            .mat-form-field-underline {
+                background-color: #4a4a4a52 !important;
+                background-image: unset !important;
+            }
+            border-color: #4848486b;
+            background-color: #2222222e;
+        }
+        border: 2px solid #0000006b;
+        background-color: #0000002e;
+    }
+
+    .mat-table {
+        thead {
+            tr {
+                th {
+                    border-bottom: 2px solid #00000021 !important;
+                }
+                background-color: #252525 !important;
+            }
+        }
+        tbody {
+            tr{
+                td {
+                    border-bottom: none !important;
+                }
+                &:nth-of-type(odd) {
+                    background-color: #2a2a2a !important;
+                }
+                &:nth-of-type(even) {
+                    background-color: #252525 !important;
+                }
+            }
+        }
+        background: #252525;
+    }
+
+    .app-dialog {
+        .mat-dialog-container {
+            background-color: #353535;
+        }
+        .mat-dialog-content {
+            .mat-paginator-container {
+                background-color: #252525;
+            }
+            .mat-stepper-horizontal {
+                background-color: #252525;
+            }
+            background-color: #252525;
+        }
+        .well {
+            background-color: $bg-extreme-dark;
+        }
+    }
+
+    .modal {
+
+        .titlebar {
+            color: white;
+        }
+    
+        footer {
+            background-color: rgb(33,33,33);
+        }
+
+        .modal-menu {
+            > .mat-tab-header {
+                > .mat-tab-label-container {
+                    background-color: rgb(49, 49, 49);
+                }
+            }
+        }
+
+        mat-card-content {
+            mat-tab-group {
+                background-color: #333333; 
+                color: #ccc; 
+            }
+        }
+
+        .card.action-card {
+            .mat-table tbody {
+                background-color: rgba($text, .03);
+            }
+        }
+
+        .checkbox-hint {
+            color: rgba($text, .60);
+        }
+
+        .mat-tab-body-content {
+            .mat-tab-body-content {
+                background-color: unset;
+            }
+            background-color: #0000005e;
+        }
+
+        fieldset {
+            background-color: #333333;
+        }
+    
+        .mat-card {
+            .mat-tab-group {
+                background-color: #2a2a2a;
+            }
+            background-color: #333333;
+        }
+
+    }
+
+    .saved-label {
+        background-color: #33423b;
+        color: $color-green;
+    }
+
+    .context-menu-background {
+        hr {
+            border-color: rgba($text, .05);
+        }
+        background-color: rgb(33, 33, 33);
+    }
+}
+
+fieldset.trigger-property-group {
+
+    .field-list {
+        .field-line{
+            &:nth-of-type(even) {
+                > label {
+                    background-color: #00000033;
+                }
+                > span {
+                    background-color: #00000059;
+                }
+            }
+            &:nth-of-type(odd) {
+                > label {
+                    background-color: #00000021;
+                }
+                > span {
+                    background-color: #0000004f;
+                }
+            }
+        }
+
+    }
+
+}
+
+.duration-wrapper {
+
+    input[type=number] {
+        background-color: unset;
+        border: none;
+        color: #fff;
+    }
+
+    .time-element {
+        > span {
+            border-bottom-right-radius: 3px;
+            border-top-right-radius: 3px;
+            border-left: 2px solid transparent;
+            background-color: #00000052;
+            color: #cccccc;
+        }
+        border: 2px solid #0000006b;
+        border-radius: 3px;
+        background-color: #0000002e;
+    }
+}
+
+div.console {
+    background-color: #232323;
+}
+
+span.item-link {
+    color: #f00cf3;
+}
+
+.dkp.credit {
+    color: #ff4c4c;
+}

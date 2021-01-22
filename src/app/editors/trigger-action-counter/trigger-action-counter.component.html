@@ -1,0 +1,37 @@
+
+
+<mat-tab-group animationDuration="0ms" [selectedIndex]="0">
+    <mat-tab label="Counter">
+        
+        <div class="card-tab-content">
+
+            <div class="card-property">
+                <div class="full-width">
+                    <mat-form-field style="width: 100%;">
+                        <mat-label></mat-label>
+                        <input matInput [(ngModel)]="action.displayText" name="txtCounterName" />
+                        <mat-hint>Counter name</mat-hint>
+                    </mat-form-field>
+                </div>
+            </div>
+
+            <div class="card-property">
+
+                <div class="content-middle">Reset the counter after</div>
+                <div class="content-right"><app-duration [(ngModel)]="action.duration" name="durActionDuration"></app-duration></div>
+
+            </div>
+
+        </div>
+
+    </mat-tab>
+    <mat-tab label="Counter Reset">
+        <div class="card-tab-content">
+            
+            <app-phrases [(phrases)]="action.resetCounterPhrases">
+                <span style="font-size: 12px; font-weight: 400; line-height: 10px;">If any of the below phrases match a new log entry, the counter will be reset.</span>
+            </app-phrases>
+            
+        </div>
+    </mat-tab>
+</mat-tab-group>

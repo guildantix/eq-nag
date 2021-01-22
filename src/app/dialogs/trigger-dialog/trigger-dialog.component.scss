@@ -1,9 +1,3 @@
-.flex-layout {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-}
 
 mat-form-field {
     font-size: 12px;
@@ -15,20 +9,4 @@ mat-form-field {
 
 legend.full-width {
     min-width: 100%;
-}
-
-table.capture-phrases {
-    width: 100%;
-}
-
-.example-header-image {
-    .material-icons {
-        font-size: 50px;
-    }
-}
-
-.card.action-card {
-    mat-card-content {
-        padding-top: 50px;
-    }
 }

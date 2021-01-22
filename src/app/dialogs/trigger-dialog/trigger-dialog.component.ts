@@ -1,17 +1,12 @@
-import { Component, OnInit, ViewChild } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
+import { animate, state, style, transition, trigger } from '@angular/animations';
+import { ActivatedRoute } from '@angular/router';
+import { MatSnackBar } from '@angular/material/snack-bar';
 
 import { IpcService } from 'src/app/ipc.service';
-import { TriggerModel, CapturePhrase, ActionTypes, TriggerAction, OverlayWindowModel, OperatorTypes, TriggerCondition, TriggerConditionTypes } from 'src/app/core.model';
-import { animate, state, style, transition, trigger } from '@angular/animations';
-import { MatTableDataSource, MatTable } from '@angular/material/table';
-import { ActivatedRoute } from '@angular/router';
 import { DialogService } from '../dialog.service';
-import { customAlphabet } from 'nanoid';
-import { MatSnackBar } from '@angular/material/snack-bar';
 import { ColorUtility } from 'src/app/utilities';
-// import { NgForm } from '@angular/forms';
-const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
-const nanoid = customAlphabet( alphabet, 16 );
+import { TriggerModel, ActionTypes, TriggerAction, OverlayWindowModel, OperatorTypes, ImportTypes } from 'src/app/core.model';
 
 @Component( {
     selector: 'app-trigger-dialog',
@@ -28,33 +23,17 @@ const nanoid = customAlphabet( alphabet, 16 );
 export class TriggerDialogComponent implements OnInit {
 
     public model: TriggerModel;
-    public phraseTableColumns = [ 'moveIndex', 'number', 'phrase', 'regEx', 'delete' ];
-    public actionTableColumns = [ 'number', 'actionType', 'delete' ];
-    public conditionTableColumns = [ 'variable', 'operator', 'value', 'delete' ];
     public triggerId: string = null;
+    public folderId: string = null;
     public actionTypes: typeof ActionTypes = ActionTypes;
     public operatorTypes: typeof OperatorTypes = OperatorTypes;
-    public overlays: OverlayWindowModel[] = [];
-    public storedVariables: string[] = [];
-    public Math: typeof Math = Math;
     public isDev: boolean = false;
 
-    public get alertOverlays(): OverlayWindowModel[] {
-        return this.overlays.filter( f => f.overlayType === 'Alert' );
+    public get showReimportFromAlla(): boolean {
+        return this.model.importType != ImportTypes.None && this.model.allakhazamUrl != null;
     }
 
-    public get logOverlays(): OverlayWindowModel[] {
-        return this.overlays.filter( f => f.overlayType === 'Log' );
-    }
-
-    public get timerOverlays(): OverlayWindowModel[] {
-        return this.overlays.filter( f => f.overlayType === 'Timer' );
-    }
-    
-    @ViewChild( 'capturePhrasesTable' ) capturePhrasesTable: MatTable<any>;
-    @ViewChild( 'conditionsTable' ) conditionsTable: MatTable<any>;
-
-    constructor( private ipcService: IpcService, private route: ActivatedRoute, private dialogService: DialogService, private snackBar: MatSnackBar ) { }
+    constructor( private ipcService: IpcService, private route: ActivatedRoute, public dialogService: DialogService, private snackBar: MatSnackBar ) { }
 
     ngOnInit() {
         this.model = new TriggerModel();
@@ -62,6 +41,7 @@ export class TriggerDialogComponent implements OnInit {
         this.route.params.subscribe( params => {
             
             this.triggerId = params[ 'id' ];
+            this.folderId = params[ 'folderId' ];
 
             if ( this.triggerId != null ) {
                 this.ipcService.getTrigger( this.triggerId ).subscribe( trigger => {
@@ -69,12 +49,9 @@ export class TriggerDialogComponent implements OnInit {
                 } );
             }
 
-            this.ipcService.getOverlayWindows().subscribe( overlays => this.overlays = overlays );
-            this.ipcService.getStoredVariables().subscribe( variables => this.storedVariables = variables );
-     
             // In a real app: dispatch action to load the details here.
         } );
-        this.addNewCapturePhrase();
+        
         this.ipcService.getAppIsDev().subscribe( isDev => this.isDev = isDev );
     }
 
@@ -84,66 +61,6 @@ export class TriggerDialogComponent implements OnInit {
 
     public onChangeTabs( index: number ): void {
         
-    }
-
-    public addNewCapturePhrase(): void {
-        let phrase: CapturePhrase = new CapturePhrase();
-        phrase.phraseId = nanoid();
-        this.model.capturePhrases.push( phrase );
-        this.capturePhrasesTable?.renderRows();
-    }
-
-    public deleteCapturePhrase( index: number ): void {
-        this.dialogService.showConfirmDialog(
-            'Are you certain you want to delete this capture phrase?',
-            'Click "Yes" to delete the capture phrase.',
-            'Click "No" to cancel and close this dialog without deleting the capture phrase.',
-            ( confirmed ) => {
-                if ( confirmed ) {
-                    this.model.capturePhrases?.splice( index, 1 );
-                    this.capturePhrasesTable?.renderRows();
-                }
-            } );
-    }
-
-    public addNewAction(): void {
-        this.model.actions.push( new TriggerAction() );
-    }
-
-    public showActionWizard( action: TriggerAction ): void {
-        this.dialogService.showTriggerActionWizardDialog( action, model => console.log( 'model', model ) );
-    }
-
-    public deleteAction( index: number ): void {
-        this.dialogService.showConfirmDialog(
-            'Are you certain you want to delete this action?',
-            'Click "Yes" to delete the action.',
-            'Click "No" to cancel and close this dialog without deleting the action.',
-            ( confirmed ) => {
-                if ( confirmed ) {
-                    this.model.actions?.splice( index, 1 );
-                }
-            } );
-    }
-
-    public addNewCondition(): void {
-        let condition: TriggerCondition = new TriggerCondition();
-        condition.conditionType = TriggerConditionTypes.VariableValue;
-        this.model.conditions.push( condition );
-        this.conditionsTable?.renderRows();
-    }
-
-    public deleteCondition( index: number ): void {
-        this.dialogService.showConfirmDialog(
-            'Are you certain you want to delete this condition?',
-            'Click "Yes" to delete the condition.',
-            'Click "No" to cancel and close this dialog without deleting the condition.',
-            ( confirmed ) => {
-                if ( confirmed ) {
-                    this.model.conditions?.splice( index, 1 );
-                    this.conditionsTable?.renderRows();
-                }
-            } );
     }
 
     public save(): void {
@@ -182,6 +99,7 @@ export class TriggerDialogComponent implements OnInit {
 
         } );
         if ( this.triggerId == null ) {
+            this.model.folderId = this.folderId?.length > 0 ? this.folderId : null;
             this.ipcService.createNewTrigger( this.model ).subscribe( triggerId => { } );
             this.closeModal();
         } else {
@@ -190,23 +108,31 @@ export class TriggerDialogComponent implements OnInit {
         }
     }
 
-    public movePhraseUp( index: number ): void {
-        if ( index > 0 ) {
-            this.model.capturePhrases.splice( index - 1, 0, this.model.capturePhrases.splice( index, 1 )[ 0 ] );
-            this.capturePhrasesTable?.renderRows();
-        }
-    }
-
-    public movePhraseDown( index: number ): void {
-        if ( index < this.model.capturePhrases.length - 1 ) {
-            this.model.capturePhrases.splice( index + 1, 0, this.model.capturePhrases.splice( index, 1 )[ 0 ] );
-            this.capturePhrasesTable?.renderRows();
-        }
-    }
-
     public copyJson(): void {
         this.ipcService.sendTextToClipboard( JSON.stringify( this.model ) );
         this.snackBar.open( 'Trigger details copied!', 'Dismiss', { duration: 5000 } );
+    }
+
+    public reimportFromAllakhazam(): void {
+        if ( this.model.importType === ImportTypes.DotTimer ) {
+            this.reimportDotTimerFromAllakhazam();
+        } else if ( this.model.importType === ImportTypes.Ability ) {
+            this.reimportAbilityFromAllakhazam();
+        } else if ( this.model.importType === ImportTypes.Buff ) {
+            this.reimportBuffFromAllakhazam();
+        }
+    }
+
+    private reimportDotTimerFromAllakhazam(): void {
+        this.dialogService.showReimportDotTimerDialog( this.model );
+    }
+
+    private reimportAbilityFromAllakhazam(): void {
+        this.dialogService.showReimportRaidAbilityDialog( this.model );
+    }
+
+    private reimportBuffFromAllakhazam(): void {
+        this.dialogService.showReimportBuffDialog( this.model );
     }
 
 }

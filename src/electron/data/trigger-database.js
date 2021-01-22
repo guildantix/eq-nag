@@ -1,17 +1,108 @@
 const { app, BrowserWindow, ipcMain } = require( "electron" );
 const Store = require( './store' );
 const _ = require( 'lodash' );
-const { Trigger, TriggerAction, ActionTypes } = require( './models/trigger' );
+const { Trigger, TriggerFolder, TriggerAction, ActionTypes, Tag, ImportTypes, TimerRestartBehaviors } = require( './models/trigger' );
 const ForwardRef = require( '../forward-ref' );
 const customAlphabet = require( 'nanoid' ).customAlphabet;
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const idLen = 16;
 const nanoid = customAlphabet( alphabet, 16 );
 const ArrayUtilities = require( '../utilities/arrays' );
+const { FormControlDirective } = require( "@angular/forms" );
+const StringUtilities = require( "../utilities/string" );
+const Fuse = require( 'fuse.js' );
+const eqZones = require( './models/everquest-zones' );
+
+/** @type {Fuse.fuseOptions_tags} */
+const fuseOptions_tags = {
+    // isCaseSensitive: false,
+    includeScore: true,
+    // shouldSort: true,
+    // includeMatches: false,
+    // findAllMatches: false,
+    // minMatchCharLength: 1,
+    // location: 0,
+    // threshold: 0.6,
+    // distance: 100,
+    // useExtendedSearch: false,
+    // ignoreLocation: false,
+    // ignoreFieldNorm: false,
+    keys: [
+        { name: 'name', weight: 1.0 },
+        { name: 'actions.displayText', weight: 1.0 },
+        { name: 'actions.endingSoonText', weight: 1.0 },
+        { name: 'actions.endingSoonSpeakPhrase', weight: 1.0 },
+        { name: 'actions.endingClipboardText', weight: 1.0 },
+        { name: 'actions.endedText', weight: 1.0 },
+        { name: 'actions.endedClipboardText', weight: 1.0 },
+        { name: 'actions.endedSpeakPhrase', weight: 1.0 },
+        { name: 'comments', weight: 0.9 },
+        { name: 'allakhazamUrl', weight: 0.9 },
+        { name: 'capturePhrases.phrase', weight: 0.9 },
+        // We provide low weights on the id fields to enforce an exact match.
+        { name: 'triggerId', weight: 0.01 },
+        { name: 'folderId', weight: 0.01 },
+    ]
+};
+
+/** @type {Fuse.fuseOptions_tags} */
+const fuseOptions_names = {
+    includeScore: true,
+    keys: [
+        { name: 'name', weight: 1.0 },
+    ]
+};
+
+/** @type {Fuse.fuseOptions_tags} */
+const fuseOptions_comments = {
+    includeScore: true,
+    keys: [
+        { name: 'comments', weight: 1.0 },
+    ]
+};
+
+/** @type {Fuse.fuseOptions_tags} */
+const fuseOptions_phrases = {
+    includeScore: true,
+    keys: [
+        { name: 'capturePhrases.phrase', weight: 1.0 },
+    ]
+};
+
+/** @type {Fuse.fuseOptions_tags} */
+const fuseOptions_speak = {
+    includeScore: true,
+    keys: [
+        { name: 'actions.endingSoonSpeakPhrase', weight: 1.0 },
+        { name: 'actions.endedSpeakPhrase', weight: 1.0 },
+    ]
+};
+
+/** @type {Fuse.fuseOptions_tags} */
+const fuseOptions_displayText = {
+    includeScore: true,
+    keys: [
+        { name: 'actions.displayText', weight: 1.0 },
+        { name: 'actions.endingSoonText', weight: 1.0 },
+        { name: 'actions.endedText', weight: 1.0 },
+    ]
+};
+
+/** @type {Fuse.fuseOptions_tags} */
+const fuseOptions_clipboard = {
+    includeScore: true,
+    keys: [
+        { name: 'actions.endingClipboardText', weight: 1.0 },
+        { name: 'actions.endedClipboardText', weight: 1.0 },
+    ]
+};
 
 class TriggerDatabaseStore extends Store {
 
-    /** The data store for this object. */
+    /** 
+     * The data store for this object.
+     * @type {{triggers: Trigger[], folders: TriggerFolder[], tags: Tag[]}}
+     * */
     #data;
 
     get count() {
@@ -21,7 +112,7 @@ class TriggerDatabaseStore extends Store {
     constructor() {
         super( {
             configName: "trigger-database",
-            defaults: { triggers: [] },
+            defaults: { triggers: [], folders: [], tags: [] },
         } );
         
         this.#data = this.parseDataFile();
@@ -144,6 +235,236 @@ class TriggerDatabaseStore extends Store {
             this.#data.version = 16;
             this.storeDataFile( this.#data );
         }
+        if ( this.#data.version < 17 ) {
+            this.#data?.triggers?.forEach( trigger => {
+                trigger.actions?.forEach( action => {
+                    action.timerIcon = null;
+                } );
+            } );
+            this.#data.version = 17;
+            this.storeDataFile( this.#data );
+        }
+        if ( this.#data.version < 18 ) {
+            this.#data?.triggers?.forEach( trigger => {
+                trigger.actions?.forEach( action => {
+                    action.timerIconDef = null;
+                } );
+            } );
+            this.#data.version = 18;
+            this.storeDataFile( this.#data );
+        }
+        if ( this.#data.version < 19 ) {
+            this.#data?.triggers?.forEach( trigger => {
+                trigger.actions?.forEach( action => {
+                    action.showRemainingDuration = false;
+                } );
+            } );
+            this.#data.version = 19;
+            this.storeDataFile( this.#data );
+        }
+        if ( this.#data.version < 20 ) {
+            this.#data?.triggers?.forEach( trigger => {
+                trigger.actions?.forEach( action => {
+                    action.excludeTargets = [];
+                } );
+            } );
+            this.#data.version = 20;
+            this.storeDataFile( this.#data );
+        }
+        if ( this.#data.version < 21 ) {
+            this.#data?.triggers?.forEach( trigger => {
+                trigger.allakhazamUrl = null;
+            } );
+            this.#data.version = 21;
+            this.storeDataFile( this.#data );
+        }
+        if ( this.#data.version < 22 ) {
+            this.#data?.triggers?.forEach( trigger => {
+                trigger.actions?.forEach( action => {
+                    action.endEarlyPhrases = [];
+                } );
+            } );
+            this.#data.version = 22;
+            this.storeDataFile( this.#data );
+        }
+        if ( this.#data.version < 23 ) {
+            this.#data?.triggers?.forEach( trigger => {
+                delete trigger.spellLevel;
+                trigger.classLevels = [];
+            } );
+            this.#data.version = 23;
+            this.storeDataFile( this.#data );
+        }
+        if ( this.#data.version < 24 ) {
+            this.#data.folders = [];
+            this.#data.version = 24;
+            this.storeDataFile( this.#data );
+        }
+        if ( this.#data.version < 35 ) {
+            this.#data?.triggers?.forEach( trigger => {
+                trigger.actions?.forEach( action => {
+                    action.name = null;
+                } );
+            } );
+            this.#data.version = 35;
+            this.storeDataFile( this.#data );
+        }
+        if ( this.#data.version < 35 ) {
+            this.#data?.triggers?.forEach( trigger => {
+                trigger.actions?.forEach( action => {
+                    action.notifyWhenEnded = false;
+                } );
+            } );
+            this.#data.version = 35;
+            this.storeDataFile( this.#data );
+        }
+        if ( this.#data.version < 36 ) {
+            this.#data?.triggers?.forEach( trigger => {
+                trigger.actions?.forEach( action => {
+                    action.resetCounterPhrases = [];
+                } );
+            } );
+            this.#data.version = 36;
+            this.storeDataFile( this.#data );
+        }
+        if ( this.#data.version < 37 ) {
+            this.#data?.triggers?.forEach( trigger => {
+                trigger.actions?.forEach( action => {
+                    action.repeatTimer = false;
+                    action.repeatCount = null;
+                } );
+            } );
+            this.#data.version = 37;
+            this.storeDataFile( this.#data );
+        }
+        if ( this.#data.version < 38 ) {
+            this.#data?.triggers?.forEach( trigger => {
+                trigger.actions?.forEach( action => {
+                    action.endingClipboard = false;
+                    action.endingClipboardText = null;
+                    action.endedClipboard = false;
+                    action.endedClipboardText = null;
+                } );
+            } );
+            this.#data.version = 38;
+            this.storeDataFile( this.#data );
+        }
+        if ( this.#data.version < 39 ) {
+            this.#data?.triggers?.forEach( trigger => {
+                trigger.actions?.forEach( action => {
+                    action.audioFileId = null;
+                } );
+            } );
+            this.#data.version = 39;
+            this.storeDataFile( this.#data );
+        }
+        if ( this.#data.version < 40 ) {
+            this.#data?.triggers?.forEach( trigger => {
+                trigger.actions?.forEach( action => {
+                    action.onlyStoreUsedValues = false;
+                } );
+            } );
+            this.#data.version = 40;
+            this.storeDataFile( this.#data );
+        }
+        if ( this.#data.version < 42 ) {
+            this.#data?.triggers?.forEach( trigger => {
+                trigger.ginaTriggerName = null;
+                trigger.importIdentifier = null;
+            } );
+            this.#data.version = 42;
+            this.storeDataFile( this.#data );
+        }
+        if ( this.#data.version < 44 ) {
+            this.#data.tags = [];
+            this.#data.triggers.forEach( f => f.tagIds = null );
+            this.#data.version = 44;
+            this.storeDataFile( this.#data );
+        }
+        if ( this.#data.version < 45 ) {
+            this.#data?.triggers?.forEach( trigger => {
+                trigger.actions?.forEach( a => {
+                    a.restartTimerAlways = false;
+                } );
+            } );
+            this.#data.version = 45;
+            this.storeDataFile( this.#data );
+        }
+        if ( this.#data.version < 46 ) {
+            this.#data?.triggers?.forEach( trigger => {
+                trigger.actions?.forEach( a => {
+                    a.restartTimerNever = false;
+                } );
+            } );
+            this.#data.version = 46;
+            this.storeDataFile( this.#data );
+        }
+        if ( this.#data.version < 48 ) {
+            this.#data?.triggers?.forEach( trigger => {
+                if ( trigger.allakhazamUrl ) {
+                    trigger.importType = ImportTypes.DotTimer;
+                } else {
+                    trigger.importType = ImportTypes.None;
+                }
+            } );
+            this.#data.version = 48;
+            this.storeDataFile( this.#data );
+        }
+        if ( this.#data.version < 49 ) {
+            this.#data?.triggers?.forEach( trigger => {
+                trigger.actions?.forEach( a => {
+                    a.hideTimer = false;
+                    a.endingSoonShowTimer = false;
+                } );
+            } );
+            this.#data.version = 49;
+            this.storeDataFile( this.#data );
+        }
+        if ( this.#data.version < 50 ) {
+            this.#data?.triggers?.forEach( trigger => {
+                trigger.actions?.forEach( a => {
+                    a.castTime = null;
+                } );
+            } );
+            this.#data.version = 50;
+            this.storeDataFile( this.#data );
+        }
+        if ( this.#data.version < 51 ) {
+            this.#data?.triggers?.forEach( trigger => {
+                trigger.actions?.forEach( a => {
+                    a.hideConditions = [];
+                } );
+            } );
+            this.#data.version = 51;
+            this.storeDataFile( this.#data );
+        }
+        if ( this.#data.version < 52 ) {
+            this.#data?.triggers?.forEach( trigger => {
+                trigger.actions?.forEach( a => {
+
+                    if ( a.actionType === ActionTypes.Timer || a.actionType === ActionTypes.DotTimer || a.actionType === ActionTypes.Countdown || a.actionType === ActionTypes.BeneficialTimer ) {
+                        if ( a.restartOnDuplicate ) {
+                            a.restartBehavior = TimerRestartBehaviors.RestartOnDuplicate;
+                        } else if ( a.restartTimerAlways ) {
+                            a.restartBehavior = TimerRestartBehaviors.RestartTimer;
+                        } else if ( a.restartTimerNever ) {
+                            a.restartBehavior = TimerRestartBehaviors.DoNothing;
+                        } else {
+                            a.restartBehavior = TimerRestartBehaviors.StartNewTimer;
+                        }
+                    } else {
+                        a.restartBehavior = null;
+                    }
+
+                    delete a.restartOnDuplicate;
+                    delete a.restartTimerAlways;
+                    delete a.restartTimerNever;
+
+                } );
+            } );
+            this.#data.version = 52;
+            this.storeDataFile( this.#data );
+        }
     }
 
 
@@ -159,7 +480,7 @@ class TriggerDatabaseStore extends Store {
      * Loads predefined triggers and replaces any changes made by the user with the predfined value.
      */
     processPredefinedTriggers() {
-        let captureCastingTrigger = { "triggerId": "trGkfio6z2xs6hAh", "name": "Capture spell casting", "capturePhrases": [ { "useRegEx": true, "requirePreviousPhrase": false, "duration": null, "phrase": "^You begin casting (.*)\\.", "phraseId": "v7GDFrDCcFwhTAOP" }, { "useRegEx": true, "requirePreviousPhrase": false, "duration": null, "phraseId": "SmZAE0oEzuhq1cqh", "phrase": "^Your ${SpellBeingCast} spell is interrupted\\." }, { "useRegEx": true, "requirePreviousPhrase": false, "duration": null, "phraseId": "iNy1LoUUFcXnaHws", "phrase": "^(.*) resisted your (${SpellBeingCast})" }, { "useRegEx": true, "requirePreviousPhrase": false, "duration": null, "phraseId": "CC31CtgDiqwi8xV4", "phrase": "^Your (${SpellBeingCast}) spell did not take hold\\. \\(Blocked by (.*)\\.\\)" } ], "comments": "This trigger will capture the spell casting of the caster and store the spell being cast into a variable for use with other triggers.", "actions": [ { "actionType": 0, "actionId": "gUj3jfz2M3PDd0o7", "overlayId": "gx4ySJU9Cj35xR1n", "displayText": "Storing {1} into SpellBeingCast.", "duration": 15, "phraseId": "v7GDFrDCcFwhTAOP", "phrases": [ "v7GDFrDCcFwhTAOP" ], "restartOnDuplicate": false, "onlyExecuteInDev": true }, { "actionType": 5, "variableName": "SpellBeingCast", "actionId": "xygXKRSFpi3vYQ4D", "phraseId": "v7GDFrDCcFwhTAOP", "phrases": [ "v7GDFrDCcFwhTAOP" ], "restartOnDuplicate": false, "onlyExecuteInDev": false }, { "actionType": 7, "phraseId": "SmZAE0oEzuhq1cqh", "overlayId": "gx4ySJU9Cj35xR1n", "duration": 15, "displayText": "Spell ${SpellBeingCast} was interrupted.", "actionId": "2779yyKWjlmJvIhn", "phrases": [ "SmZAE0oEzuhq1cqh", "iNy1LoUUFcXnaHws", "CC31CtgDiqwi8xV4" ], "variableName": "SpellBeingCast", "restartOnDuplicate": false, "onlyExecuteInDev": false }, { "phrases": [ "CC31CtgDiqwi8xV4" ], "actionType": 0, "overlayId": "gx4ySJU9Cj35xR1n", "displayText": "{1} failed, blocked by {2}.", "duration": 15, "actionId": "ODKkRbroUUtHPf6n", "restartOnDuplicate": false, "onlyExecuteInDev": true } ], "captureMethod": "Any match", "conditions": [], "spellLevel": 0, "predefined": true, "onlyExecuteInDev": false };
+        let captureCastingTrigger = { "triggerId": "trGkfio6z2xs6hAh", "name": "Capture spell casting", "capturePhrases": [ { "useRegEx": true, "requirePreviousPhrase": false, "duration": null, "phrase": "^You begin casting (.*)\\.", "phraseId": "v7GDFrDCcFwhTAOP" }, { "useRegEx": true, "requirePreviousPhrase": false, "duration": null, "phraseId": "SmZAE0oEzuhq1cqh", "phrase": "^Your ${SpellBeingCast} spell is interrupted\\." }, { "useRegEx": true, "requirePreviousPhrase": false, "duration": null, "phraseId": "iNy1LoUUFcXnaHws", "phrase": "^(.*) resisted your ${SpellBeingCast}" }, { "useRegEx": true, "requirePreviousPhrase": false, "duration": null, "phraseId": "CC31CtgDiqwi8xV4", "phrase": "^Your ${SpellBeingCast} spell did not take hold\\. \\(Blocked by (.*)\\.\\)" }, { "requirePreviousPhrase": false, "duration": null, "phraseId": "9ccr5pJj08H9rEi7", "phrase": "^Your ${SpellBeingCast} spell fizzles!$", "useRegEx": true } ], "comments": "This trigger will capture the spell casting of the caster and store the spell being cast into a variable for use with other triggers.", "actions": [ { "actionType": 0, "actionId": "gUj3jfz2M3PDd0o7", "overlayId": "gx4ySJU9Cj35xR1n", "displayText": "Storing {1} into SpellBeingCast.", "duration": 15, "phraseId": "v7GDFrDCcFwhTAOP", "phrases": [ "v7GDFrDCcFwhTAOP" ], "restartBehavior": 0, "onlyExecuteInDev": true }, { "actionType": 5, "variableName": "SpellBeingCast", "actionId": "xygXKRSFpi3vYQ4D", "phraseId": "v7GDFrDCcFwhTAOP", "phrases": [ "v7GDFrDCcFwhTAOP" ], "restartBehavior": 0, "onlyExecuteInDev": false, "onlyStoreUsedValues": true }, { "phrases": [ "SmZAE0oEzuhq1cqh", "iNy1LoUUFcXnaHws", "CC31CtgDiqwi8xV4", "9ccr5pJj08H9rEi7" ], "actionType": 0, "overlayId": "gx4ySJU9Cj35xR1n", "displayText": "${SpellBeingCast} failed.", "duration": 15, "actionId": "ODKkRbroUUtHPf6n", "restartBehavior": 0, "onlyExecuteInDev": true }, { "actionType": 7, "phraseId": "SmZAE0oEzuhq1cqh", "overlayId": "gx4ySJU9Cj35xR1n", "duration": 15, "displayText": "Spell ${SpellBeingCast} was interrupted.", "actionId": "2779yyKWjlmJvIhn", "phrases": [ "SmZAE0oEzuhq1cqh", "iNy1LoUUFcXnaHws", "CC31CtgDiqwi8xV4", "9ccr5pJj08H9rEi7" ], "variableName": "SpellBeingCast", "restartBehavior": 0, "onlyExecuteInDev": false } ], "captureMethod": "Any match", "conditions": [], "classLevels": [], "predefined": true, "onlyExecuteInDev": false };
 
         let castingIndex = ArrayUtilities.findIndex( this.#data?.triggers, f => f.triggerId === captureCastingTrigger.triggerId );
         if ( castingIndex > -1 ) {
@@ -169,7 +490,7 @@ class TriggerDatabaseStore extends Store {
             this.storeDataFile( this.#data );
         }
 
-        let displaySpellBeingCast = { "triggerId": "hzOXzyXsZANWGcJq", "name": "Display Variable SpellBeingCast", "capturePhrases": [ { "useRegEx": true, "requirePreviousPhrase": false, "duration": null, "phraseId": "bi8mXZAgB7zGnSAc", "phrase": "^Eryndhel requests an update." } ], "comments": "", "actions": [ { "phrases": [ "bi8mXZAgB7zGnSAc" ], "actionType": 0, "overlayId": "gx4ySJU9Cj35xR1n", "displayText": "SpellBeingCast == ${SpellBeingCast}", "duration": 15, "actionId": "n95VfakBr8TbCKnE", "restartOnDuplicate": false } ], "captureMethod": "Any match", "conditions": [ { "conditionId": "It3bUfInYVi4aGYB", "conditionType": 1, "variableName": "SpellBeingCast", "operatorType": 2 } ], "spellLevel": 0, "predefined": true, "onlyExecuteInDev": true };
+        let displaySpellBeingCast = { "triggerId": "hzOXzyXsZANWGcJq", "name": "Display Variable SpellBeingCast", "capturePhrases": [ { "useRegEx": true, "requirePreviousPhrase": false, "duration": null, "phraseId": "bi8mXZAgB7zGnSAc", "phrase": "^Eryndhel requests an update." } ], "comments": "", "actions": [ { "phrases": [ "bi8mXZAgB7zGnSAc" ], "actionType": 0, "overlayId": "gx4ySJU9Cj35xR1n", "displayText": "SpellBeingCast == ${SpellBeingCast}", "duration": 15, "actionId": "n95VfakBr8TbCKnE", "restartBehavior": 0 } ], "captureMethod": "Any match", "conditions": [ { "conditionId": "It3bUfInYVi4aGYB", "conditionType": 1, "variableName": "SpellBeingCast", "operatorType": 2 } ], "classLevels": [], "predefined": true, "onlyExecuteInDev": true };
         let displaySpellIndex = ArrayUtilities.findIndex( this.#data?.triggers, f => f.triggerId === displaySpellBeingCast.triggerId );
         if ( displaySpellIndex > -1 ) {
             this.#data.triggers[ displaySpellIndex ] = displaySpellBeingCast;
@@ -196,6 +517,7 @@ class TriggerDatabaseStore extends Store {
      * @param {function} sendTick The send tick method.
      */
     attachIpcEvents( mainWindowRef, sendTick ) {
+
         ipcMain.on( 'trigger:create', ( event, trigger ) => {
             let triggerId = this.add( trigger );
             event.sender.webContents.send( 'trigger:create', triggerId );
@@ -216,6 +538,12 @@ class TriggerDatabaseStore extends Store {
             sendTick();
         } );
 
+        ipcMain.on( 'trigger:update:batch', ( event, triggers ) => {
+            let failed = this.updateAll( triggers );
+            event.sender.webContents.send( 'trigger:update:batch', failed );
+            sendTick();
+        } );
+
         ipcMain.on( 'trigger:delete', ( event, triggerId ) => {
             let deleted = this.remove( triggerId );
             event.sender.webContents.send( 'trigger:delete', deleted );
@@ -225,7 +553,178 @@ class TriggerDatabaseStore extends Store {
         ipcMain.on( 'trigger:get:stored-variables', ( event, data ) => {
             event.sender.webContents.send( 'trigger:get:stored-variables', this.getVariableNames() );
         } );
+        
+        // Folder methods.
+        ipcMain.on( 'folders:get', ( event, args ) => {
+            event.sender.webContents.send( 'folders:get', this.getFolders() );
+        } );
 
+        ipcMain.on( 'folders:update', ( event, folders ) => {
+            event.sender.webContents.send( 'folders:update', this.updateFolders( folders ) );
+            sendTick();
+        } );
+
+        ipcMain.on( 'trigger:search', ( event, args ) => {
+            event.sender.webContents.send( 'trigger:search', this.searchTriggers( args.term, args.folderIds ) );
+        } );
+
+        ipcMain.on( 'trigger:search:properties', ( event, args ) => {
+            event.sender.webContents.send( 'trigger:search:properties', this.searchTriggerProperties( args.phrase, args.speakText, args.displayText, args.clipboardText, args.name, args.comment ) );
+        } );
+        
+        ipcMain.on( 'zones:get:everquest', ( event, args ) => {
+            event.sender.webContents.send( 'zones:get:everquest', _.uniq( eqZones ) );
+        } );
+        
+        // Tag methods.
+        ipcMain.on( 'tags:get', ( event, args ) => {
+            event.sender.webContents.send( 'tags:get', this.getTags() );
+        } );
+        ipcMain.on( 'tags:create', ( event, tag ) => {
+            event.sender.webContents.send( 'tags:create', this.createTag( tag ) );
+            sendTick();
+        } );
+        ipcMain.on( 'tags:update', ( event, tag ) => {
+            this.updateTag( tag );
+            sendTick();
+        } );
+        ipcMain.on( 'tags:delete', ( event, tagId ) => {
+            this.deleteTag( tagId );
+            sendTick();
+        } );
+
+    }
+
+    /**
+     * Returns a list of all tags.
+     * 
+     * @returns {Tag[]}
+     */
+    getTags() {
+        return this.#data?.tags?.length > 0 ? this.#data.tags : [];
+    }
+
+    /**
+     * Creates a new tag.
+     * 
+     * @returns {string} Returns the id of the new tag.
+     * 
+     * @param {Tag} tag The new tag.
+     */
+    createTag( tag ) {
+
+        if ( StringUtilities.isNullOrWhitespace( tag?.name ) ) {
+            throw 'Argument Invalid: Name required.';
+        }
+
+        tag.tagId = tag.tagId ? tag.tagId : nanoid();
+
+        this.#data?.tags.push( tag );
+        this.storeDataFile( this.#data );
+        
+        return tag.tagId;
+    }
+
+    /**
+     * Updates an existing tag.
+     * 
+     * @param {Tag} tag The tag.
+     */
+    updateTag( tag ) {
+
+        if ( StringUtilities.isNullOrWhitespace( tag?.name ) ) {
+            throw 'Argument Invalid: Name required.';
+        }
+
+        if ( this.#data?.tags?.length > 0 ) {
+            let i = _.findIndex( this.#data.tags, t => t.tagId === tag.tagId );
+    
+            this.#data.tags[ i ].name = tag.name;
+            this.#data.tags[ i ].description = tag.description;
+        }
+
+        this.storeDataFile( this.#data );
+    }
+
+    /**
+     * Removes the specified tag.
+     * 
+     * @param {string} tagId The id of the desired tag.
+     */
+    deleteTag( tagId ) {
+
+        if ( StringUtilities.isNullOrWhitespace( tagId ) ) {
+            throw 'Argument Invalid: Tag Id required.';
+        }
+
+        if ( this.#data?.tags?.length > 0 ) {
+            let tagIndex = _.findIndex( this.#data.tags, t => t.tagId === tagId );
+            
+            if ( this.#data.triggers?.length > 0 ) {
+                
+                for ( let trigIndex = 0; trigIndex < this.#data.triggers.length; trigIndex++ ) {
+                    let trigTagIndex = this.#data.triggers[ trigIndex ].tagIds.indexOf( tagId );
+
+                    if ( trigTagIndex > -1 ) {
+                        this.#data.triggers[ trigIndex ].tagIds.splice( trigTagIndex, 0 );
+                    }
+
+                }
+
+            }
+
+            this.#data.tags.splice( tagIndex, 0 );
+            this.storeDataFile( this.#data );
+        }
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Returns a list of all folders.
+     * 
+     * @returns {TriggerFolder[]}
+     */
+    getFolders() {
+        return this.#data?.folders?.length > 0 ? this.#data.folders : [];
+    }
+
+    /**
+     * Updates the store of trigger folders.
+     * 
+     * @param {TriggerFolder[]} folders The updated folders hierarchy.
+     */
+    updateFolders( folders ) {
+        this.applyFolderIds( folders );
+        this.#data.folders = folders;
+
+        // Save changes to the data.
+        this.processPredefinedTriggers();
+        this.storeDataFile( this.#data );
+        
+        return this.#data.folders;
+    }
+
+    /**
+     * Applies folder ids to all folders in the given heirarchy.
+     * 
+     * @param {TriggerFolder[]} folders The folder hierarchy.
+     */
+    applyFolderIds( folders ) {
+        for ( let i = 0; i < folders?.length; i++ ) {
+            if ( folders[ i ].children?.length > 0 ) {
+                this.applyFolderIds( folders[ i ].children );
+            }
+
+            folders[ i ].folderId = folders[ i ].folderId == null ? nanoid() : folders[ i ].folderId;
+        }
     }
 
 
@@ -272,6 +771,46 @@ class TriggerDatabaseStore extends Store {
 
 
 
+
+    // /**
+    //  * Adds the given folder to the store.
+    //  * 
+    //  * @returns {string} Returns the generated folder id.
+    //  * 
+    //  * @param {TriggerFolder} folder The folder to add to the store.
+    //  * @param {string} parentId The folderId of the parent folder.
+    //  */
+    // addFolder( folder, parentId ) {
+    //     // Init the folders array.
+    //     this.#data.folders = this.#data.folders ? this.#data.folders : [];
+
+    //     // Generate a new id for the folder.
+    //     folder.folderId = nanoid();
+
+    //     if ( parentId == null ) {
+    //         // Add it to the store.
+    //         this.#data.folders.push( folder );
+    //     } else {
+    //         // Find the index of the parent folder.
+    //         let i = _.findIndex( this.#data.folders, ( e ) => e.folderId === parentId );
+    //         this.#data.folders[i]
+    //     }
+
+    //     // Save changes to the data.
+    //     this.processPredefinedTriggers();
+    //     this.storeDataFile( this.#data );
+
+    //     return folder.folderId;
+    // }
+
+
+
+
+
+
+
+
+
     
     /**
      * Removes the given trigger.
@@ -299,6 +838,46 @@ class TriggerDatabaseStore extends Store {
 
 
     
+    // /**
+    //  * Removes the given folder.
+    //  * 
+    //  * @param {TriggerFolder} folder The folder to remove.
+    //  */
+    // removeFolder( folder ) {
+    //     if ( this.#data?.folders?.length > 0 ) {
+    //         let folderId = folder.folderId;
+
+    //         // Find the index of the trigger.
+    //         let i = _.findIndex( this.#data.folders, ( e ) => e.folderId === folder.folderId );
+
+    //         // Remove the folder by index.
+    //         let removed = this.removeFolderIndex( i );
+
+    //         if ( removed ) {
+    //             this.#data.triggers?.forEach( trigger => {
+    //                 if ( trigger.folderId === folderId ) {
+    //                     trigger.folderId = null;
+    //                 }
+    //             } );
+    
+    //             // Save changes to the data.
+    //             this.processPredefinedTriggers();
+    //             this.storeDataFile( this.#data );
+    //         }
+
+    //         return removed;
+    //     }
+    // }
+
+
+
+
+
+
+
+
+
+    
     /**
      * Removes the specified trigger.
      * 
@@ -315,6 +894,45 @@ class TriggerDatabaseStore extends Store {
 
         }
     }
+
+
+
+
+
+
+
+
+
+    
+    // /**
+    //  * Removes the specified folder.
+    //  * 
+    //  * @param {string} folderId The folder to remove.
+    //  */
+    // remove( folderId ) {
+    //     if ( this.#data?.folders?.length > 0 ) {
+
+    //         // Find the index of the folder.
+    //         let i = _.findIndex( this.#data.folders, ( e ) => e.folderId === folderId );
+
+    //         // Remove the trigger by index.
+    //         let removed = this.removeFolderIndex( i );
+
+    //         if ( removed ) {
+    //             this.#data.triggers?.forEach( trigger => {
+    //                 if ( trigger.folderId === folderId ) {
+    //                     trigger.folderId = null;
+    //                 }
+    //             } );
+
+    //             // Save changes to the data.
+    //             this.processPredefinedTriggers();
+    //             this.storeDataFile( this.#data );
+    //         }
+
+    //         return removed;
+    //     }
+    // }
     
 
 
@@ -354,6 +972,35 @@ class TriggerDatabaseStore extends Store {
 
 
     
+    // /**
+    //  * Removes the folder at the specified index.
+    //  * 
+    //  * @param {number} i The index of the folder to remove.
+    //  */
+    // removeFolderIndex( i ) {
+    //     if ( this.#data?.folders?.length > i ) {
+
+    //         // Remove the folder by index.
+    //         let removed = this.#data.folders.splice( i, 1 );
+
+    //         // Save the changes to the data.
+    //         this.processPredefinedTriggers();
+    //         this.storeDataFile( this.#data );
+
+    //         // Return true if at least 1 item was removed.
+    //         return removed?.length > 0;
+    //     }
+    // }
+    
+
+
+
+
+
+
+
+
+    
     /**
      * Returns the trigger with the given id.
      * 
@@ -369,6 +1016,31 @@ class TriggerDatabaseStore extends Store {
             return this.#data.triggers[ i ];
         }
     }
+    
+
+
+
+
+
+
+
+
+    
+    // /**
+    //  * Returns the folder with the given id.
+    //  * 
+    //  * @param {string} folderId The folder id of the desired folder.
+    //  */
+    // findFolder( folderId ) {
+
+    //     // Find the index of the folder by Id.
+    //     let i = _.findIndex( this.#data.folders, ( e ) => e.folderId === folderId );
+
+    //     // If the index is valid, then return the found trigger.
+    //     if ( i > -1 && i < this.#data?.folders?.length ) {
+    //         return this.#data.folders[ i ];
+    //     }
+    // }
 
 
 
@@ -409,6 +1081,83 @@ class TriggerDatabaseStore extends Store {
         }
         
     }
+    
+
+
+
+
+
+
+
+
+
+    /**
+     * Updates the list of given triggers.
+     * 
+     * @returns {TriggerModel[]} Returns a list of triggers that failed to update.
+     * 
+     * @param {TriggerModel[]} triggers The triggers to update.
+     */
+    updateAll( triggers ) {
+
+        /** @type {TriggerModel[]} */
+        let failed = [];
+
+        triggers.forEach( trigger => {
+            if ( StringUtilities.isNullOrWhitespace( trigger.triggerId ) ) {
+                let newId = this.add( trigger );
+                
+                if ( StringUtilities.isNullOrWhitespace( newId ) ) {
+                    failed.push( trigger );
+                } else {
+                    trigger.triggerId = newId;
+                }
+
+            } else {
+                if ( !this.update( trigger ) ) {
+                    failed.push( trigger );
+                }
+            }
+        } );
+        
+        return failed;
+    }
+
+
+
+
+
+
+
+
+
+
+    // /**
+    //  * Updates the given folder in the store.
+    //  * 
+    //  * @returns {boolean} Returns true if the folder was updated.
+    //  * 
+    //  * @param {TriggerFolder} folder The folder to update.
+    //  */
+    // update( folder ) {
+
+    //     // Find the index of the folder by Id.
+    //     let i = _.findIndex( this.#data.folders, ( e ) => e.folderId === folder.folderId );
+
+    //     // If the index is valid, then update the found folder.
+    //     if ( i > -1 && i < this.#data?.folders?.length ) {
+    //         this.#data.folders[ i ] = folder;
+
+    //         // Save changes to the data.
+    //         this.processPredefinedTriggers();
+    //         this.storeDataFile( this.#data );
+
+    //         return true;
+    //     } else {
+    //         return false;
+    //     }
+        
+    // }
 
 
 
@@ -443,6 +1192,22 @@ class TriggerDatabaseStore extends Store {
     getAll() {
         return this.#data.triggers;
     }
+
+
+
+
+
+
+
+
+
+    
+    // /**
+    //  * Returns all folders.
+    //  */
+    // getFolders() {
+    //     return this.#data.folders;
+    // }
 
 
 
@@ -496,6 +1261,142 @@ class TriggerDatabaseStore extends Store {
             this.storeDataFile( this.#data );
         }
     }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Searches through all triggers trying to find any match.  This is a fuzzy 
+     * search and the results are given in order of best match on top.
+     * 
+     * @returns {TriggerModel[]} Returns a list of matched triggers.
+     * 
+     * @param {string} term The search term to query.
+     * @param {string[]} folderIds If provided, only returns triggers that exist in a folder in this list.
+     */
+    searchTriggers( term, folderIds ) {
+        let fuse = new Fuse( this.#data.triggers, fuseOptions_tags );
+
+        let results = fuse.search( term );
+
+
+        if ( results && results.length > 0 ) {
+
+            let scoreLimit = 0.85;
+            let scores = _.map( results, item => item.score );
+            let minScore = _.min( scores );
+
+            if ( minScore < 0.35 ) {
+                scoreLimit = 0.35;
+            } else if ( minScore < 0.50 ) {
+                scoreLimit = 0.50;
+            }
+
+            return _.map( results, fuseResult => {
+                let item = fuseResult.item;
+                item.score = fuseResult.score;
+                item.refIndex = fuseResult.refIndex;
+                return item;
+            } ).filter( item => {
+                if ( folderIds == null || folderIds.length == 0 ) {
+                    return item.score <= scoreLimit;
+                } else {
+                    return folderIds.indexOf( item.folderId ) > -1 && item.score <= scoreLimit;
+                }
+            } );
+
+        } else {
+            return [];
+        }
+    }
+
+    /**
+     * Searches through all triggers trying to find any match.  This is a fuzzy 
+     * search and the results are given in order of best match on top.
+     * 
+     * @returns {TriggerModel[]} Returns a list of matched triggers.
+     * 
+     * @param {string | string[]} phrase The phrase text to query.
+     * @param {string | string[]} speakText The TTS text to query.
+     * @param {string | string[]} displayText The display text to query.
+     * @param {string | string[]} clipboardText The clipboard text to query.
+     * @param {string} name The clipboard text to query.
+     * @param {string} comments The clipboard text to query.
+     */
+    searchTriggerProperties( phrase, speakText, displayText, clipboardText, name, comments ) {
+
+        let fuse_name = new Fuse( this.#data.triggers, fuseOptions_names );
+        let fuse_comment = new Fuse( this.#data.triggers, fuseOptions_comments );
+        let fuse_phrase = new Fuse( this.#data.triggers, fuseOptions_phrases );
+        let fuse_speak = new Fuse( this.#data.triggers, fuseOptions_speak );
+        let fuse_displayText = new Fuse( this.#data.triggers, fuseOptions_displayText );
+        let fuse_clipboard = new Fuse( this.#data.triggers, fuseOptions_clipboard );
+        
+        /**
+         * @type {{item: TriggerModel, refIndex: number, score?: number, matches?: ReadonlyArray<any>}[]}
+         */
+        let results = [];
+
+        results = results.concat( fuse_name.search( name ) );
+        results = results.concat( fuse_comment.search( comments ) );
+
+        phrase = phrase instanceof Array ? phrase : [ phrase ];
+        phrase.forEach( p => results = results.concat( fuse_phrase.search( p ) ) );
+
+        speakText = speakText instanceof Array ? speakText : [ speakText ];
+        speakText.forEach( p => results = results.concat( fuse_speak.search( p ) ) );
+
+        displayText = displayText instanceof Array ? displayText : [ displayText ];
+        displayText.forEach( p => results = results.concat( fuse_displayText.search( p ) ) );
+
+        clipboardText = clipboardText instanceof Array ? clipboardText : [ clipboardText ];
+        clipboardText.forEach( p => results = results.concat( fuse_clipboard.search( p ) ) );
+
+        if ( results && results.length > 0 ) {
+
+            let scoreLimit = 0.85;
+            let scores = _.map( results, item => item.score );
+            let minScore = _.min( scores );
+
+            // if ( minScore < 0.35 ) {
+            //     scoreLimit = 0.35;
+            // } else if ( minScore < 0.50 ) {
+            //     scoreLimit = 0.50;
+            // }
+
+            return _.uniq( _.map( results, fuseResult => {
+                let item = fuseResult.item;
+                item.score = fuseResult.score;
+                item.refIndex = fuseResult.refIndex;
+                return item;
+            } ).filter( item => item.score <= scoreLimit ), t => t.triggerId );
+
+        } else {
+            return [];
+        }
+    }
+
+    // /**
+    //  * Adds the given folder to the specified parent folder.
+    //  * 
+    //  * @param {TriggerFolder[]} folders The list of available folders.
+    //  * @param {string} parentId The id of the parent folder.
+    //  * @param {TriggerFolder} folder The child folder to add to the parent's children.
+    //  */
+    // addChildFolder( folders, parentId, folder ) {
+    //     for ( let i = 0; i < folders?.length; i++ ) {
+    //         if ( folders[ i ].folderId === parentId ) {
+    //             folders[ i ].children = folders[ i ].children?.length > 0 ? folders[ i ].children : [];
+    //             folders[ i ].children.push( child );
+    //         }
+    //     }
+    // }
 }
 
 module.exports = TriggerDatabaseStore;

@@ -1,0 +1,22 @@
+<h2 mat-dialog-title>{{(data.title == null ? 'Notification' : data.title)}}</h2>
+
+<mat-dialog-content>
+
+    <div style="display: flex;flex-direction: row;">
+        <div style="display: flex;padding: 20px 25px;">
+            <mat-icon class="material-icons-outlined" style="font-size: 48px;width: 48px;height: 48px;" *ngIf="data.notificationType == notificationTypes.Warning">warning</mat-icon>
+            <mat-icon style="font-size: 48px;width: 48px;height: 48px;" *ngIf="data.notificationType == notificationTypes.Error">error</mat-icon>
+            <mat-icon class="material-icons-outlined" style="font-size: 48px;width: 48px;height: 48px;" *ngIf="data.notificationType == notificationTypes.Information">info</mat-icon>
+        </div>
+        <div style="padding-top: 15px; padding-bottom: 15px;">
+            <p style="margin: 0;" *ngFor="let msg of messages">{{msg}}</p>
+        </div>
+    </div>
+
+</mat-dialog-content>
+
+<mat-dialog-actions>
+    
+    <button mat-button [mat-dialog-close]="model" class="t-confirm-no">Close</button>
+
+</mat-dialog-actions>

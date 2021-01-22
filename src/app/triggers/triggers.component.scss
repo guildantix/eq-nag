@@ -1,0 +1,44 @@
+div.tab-content {
+    overflow-y: scroll;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    top: 176px;
+
+    > fieldset:not(:first-child) {
+        margin-top: 50px;
+    }
+}
+div.console {
+    width: 100%;
+    overflow-y: auto;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow-x: hidden;
+    font-family: Consolas, monospace;
+    font-weight: normal;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 150px;
+
+    ul li {
+        font-size: 12px;
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        line-height: 12px;
+    }
+}
+
+fieldset p mat-form-field {
+    max-width: 400px;
+    width: 100%;
+}
+    
+.text-depress {
+    color: #ffffff7d;
+    font-weight: 100;
+}

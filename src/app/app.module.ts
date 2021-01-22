@@ -10,23 +10,39 @@ import { RouterModule, Routes } from '@angular/router';
 import { appRoutes } from './ng.routes';
 import { HttpClientModule } from '@angular/common/http';
 import { ScraperService } from './scraper.service';
+import { CharactersListComponent } from './characters-list/characters-list.component';
+import { NgxElectronModule } from 'ngx-electron';
+import { ContextMenuModule } from './context-menu/context-menu.module';
+import { TriggersComponent } from './triggers/triggers.component';
+import { ClassNamePipe } from './pipes/class-name.pipe';
+import { WindowsModule } from './windows/windows.module';
+import { IpcService } from './ipc.service';
+import { CoreModule } from './core/core.module';
 
 @NgModule( {
     imports: [
         BrowserModule,
         FormsModule,
         MaterialModule,
+        NgxElectronModule,
         DialogModule,
         BrowserAnimationsModule,
         RouterModule.forRoot( appRoutes, { enableTracing: false, useHash: true } ),
         HttpClientModule,
+        CoreModule,
+        ContextMenuModule,
+        WindowsModule,
     ],
     declarations: [
         AppComponent,
+        ClassNamePipe,
+        TriggersComponent,
         MainComponent,
+        CharactersListComponent,
     ],
     providers: [
         ScraperService,
+        IpcService,
     ],
     bootstrap: [ AppComponent ],
 } )

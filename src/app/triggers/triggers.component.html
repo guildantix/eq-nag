@@ -1,0 +1,127 @@
+<mat-toolbar>
+    <span>Triggers</span>
+    <span class="spacer"></span>
+    <mat-form-field style="width: 275px; color: #7b1fa2;">
+        <mat-label></mat-label>
+        <input matInput [(ngModel)]="searchTerm" (ngModelChange)="searchTriggers()" />
+        <mat-hint>Search for triggers by name, description, phrase, etc...</mat-hint>
+    </mat-form-field>
+    <button mat-button color="accent" (click)="showNewTriggerDialog()">New Trigger</button>
+    <button mat-icon-button [matMenuTriggerFor]="menu" aria-label="Example icon-button with a menu">
+        <mat-icon>more_vert</mat-icon>
+    </button>
+    <mat-menu #menu="matMenu">
+        <button mat-menu-item (click)="showNewDotTimerDialog()">
+            <!-- <mat-icon>system_update_alt</mat-icon> -->
+            <span>DoT Timer (Allakhazam)</span>
+        </button>
+        <button mat-menu-item (click)="showNewRaidAbilityDialog()">
+            <!-- <mat-icon>system_update_alt</mat-icon> -->
+            <span>Raid Ability (Allakhazam)</span>
+        </button>
+        <button mat-menu-item (click)="showNewBuffTimerDialog()">
+            <!-- <mat-icon>system_update_alt</mat-icon> -->
+            <span>Buff Timer (Allakhazam)</span>
+        </button>
+        <!-- <button mat-menu-item disabled>
+            <mat-icon>voicemail</mat-icon>
+            <span>Check voice mail</span>
+        </button>
+        <button mat-menu-item>
+            <mat-icon>notifications_off</mat-icon>
+            <span>Disable alerts</span>
+        </button> -->
+    </mat-menu>
+</mat-toolbar>
+<div class="tab-content">
+    
+
+    <div class="ft-row">
+        <div class="ft-item" style="margin: 3px; width: 32%;">
+
+            <div class="ft-content">
+
+                <!-- This is the folder explorer header. -->
+                <div class="trigger-categories-header">
+                    <span>Trigger folders</span>
+                    <span class="spacer"></span>
+                    <button mat-icon-button class="small" (click)="addTriggerFolderDialog()"><mat-icon [inline]="true">add</mat-icon></button>
+                    <button mat-icon-button class="small" (click)="toggleTree()"><mat-icon *ngIf="!allExpanded" [inline]="true">unfold_more</mat-icon><mat-icon *ngIf="allExpanded" [inline]="true">unfold_less</mat-icon></button>
+                </div>
+
+                <!-- This is the instructions on how to add folders if the user has no folders. -->
+                <div class="instructions" *ngIf="dataSource.data?.length === 0">
+                    <span>You have no trigger folders. Click on the <mat-icon [inline]="true">create_new_folder</mat-icon> to start adding folders.</span>
+                </div>
+
+                <mat-tree [dataSource]="dataSource" [treeControl]="treeControl">
+
+                    <!-- This is the tree node template for leaf nodes -->
+                    <mat-tree-node *matTreeNodeDef="let node" matTreeNodePadding matTreeNodePaddingIndent="20" [ngClass]="{selected: node.folderId === selectedFolderId}" [appContextMenu]="getFolderContextMenu(node.folderId, node.name)">
+                        <button mat-icon-button [disabled]="true">
+                            <span style="display:inline-block;width:18px;">&nbsp;</span>
+                        </button>
+                        <span class="spacer tree-click-target" (click)="toggleSelectedFolder(node.folderId)">{{node.name}}</span>
+                        <!-- <button mat-icon-button color="warn" class="small delete-button"><mat-icon [inline]="true">cancel</mat-icon></button> -->
+                        <!-- class="material-icons-outlined" -->
+                        <button mat-icon-button class="small" (click)="selectParentFolder(node.folderId)"><mat-icon [inline]="true">sort</mat-icon></button>
+                    </mat-tree-node>
+
+                    <!-- This is the tree node template for expandable nodes -->
+                    <mat-tree-node *matTreeNodeDef="let node;when: hasChild" matTreeNodePadding matTreeNodePaddingIndent="20" [ngClass]="{selected: node.folderId === selectedFolderId}" [appContextMenu]="getFolderContextMenu(node.folderId, node.name)">
+                        <button mat-icon-button matTreeNodeToggle [attr.aria-label]="'Toggle ' + node.name" (click)="onExpand()">
+                            <mat-icon [inline]="true" class="mat-icon-rtl-mirror">
+                                {{treeControl.isExpanded(node) ? 'expand_more' : 'chevron_right'}}
+                            </mat-icon>
+                        </button>
+                        <span class="spacer tree-click-target" (click)="toggleSelectedFolder(node.folderId)">{{node.name}}</span>
+                        <!-- <button mat-icon-button color="warn" class="small delete-button"><mat-icon [inline]="true">cancel</mat-icon></button> -->
+                        <button mat-icon-button class="small" (click)="selectParentFolder(node.folderId)"><mat-icon [inline]="true">sort</mat-icon></button>
+                    </mat-tree-node>
+                </mat-tree>
+            </div>
+
+        </div>
+        <div class="ft-item" style="margin: 3px; width: 66%;">
+            <div class="ft-content">
+                <!-- [ngClass]="{dim: movingFolderSource != null}" -->
+                <table mat-table #triggersTable="matTable" style="width: 100%; min-width: 600px;" 
+                    [dataSource]="filteredTriggers"
+                    class="capture-phrases">
+
+                    <ng-container matColumnDef="edit">
+                        <th mat-header-cell *matHeaderCellDef style="text-align: center; width: 50px;">  </th>
+                        <td mat-cell *matCellDef="let element; let i = index" style="text-align: center; width: 50px;">
+                            <button mat-button color="accent" aria-label="Edit this trigger" (click)="showEditTriggerDialog(element.triggerId)">Edit</button>
+                            <!-- <button mat-icon-button><mat-icon>more_vert</mat-icon></button> -->
+                        </td>
+                    </ng-container>
+
+                    <ng-container matColumnDef="id">
+                        <th mat-header-cell *matHeaderCellDef style="width: 100px; padding-left: 15px;"> Id </th>
+                        <td mat-cell *matCellDef="let element; let i = index" style="width: 100px; padding-left: 15px;"> {{element.triggerId}} </td>
+                    </ng-container>
+
+                    <ng-container matColumnDef="name">
+                        <th mat-header-cell *matHeaderCellDef style="padding-left: 15px;"> Name </th>
+                        <td mat-cell *matCellDef="let element; let i = index" style="padding-left: 15px;">{{element.name}} <span class="text-depress" style="float: right;">{{getTriggerFamily(element)}}</span></td>
+                    </ng-container>
+
+                    <ng-container matColumnDef="delete">
+                        <th mat-header-cell *matHeaderCellDef style="text-align: center; width: 50px; padding-left: 15px;">  </th>
+                        <td mat-cell *matCellDef="let element; let i = index" style="text-align: center; width: 50px; padding-left: 15px;">
+                            <button mat-icon-button color="warn" aria-label="Delete this trigger" (click)="deleteTrigger(element.triggerId)">
+                                <mat-icon>clear</mat-icon>
+                            </button>
+                        </td>
+                    </ng-container>
+
+                    <tr mat-header-row *matHeaderRowDef="['edit', 'name', 'delete']"></tr>
+                    <tr mat-row *matRowDef="let element; let i = index; columns: ['edit', 'name', 'delete'];" [appContextMenu]="getTriggerContextMenu(element, i)"></tr>
+
+                </table>
+            </div>
+        </div>
+    </div>
+    
+</div>

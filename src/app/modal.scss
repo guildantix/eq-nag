@@ -1,20 +1,15 @@
 :host ::ng-deep .modal .modal-menu > .mat-tab-header > .mat-tab-label-container {
     position: fixed;
     z-index: 2;
-    background-color: rgb(49, 49, 49);
     left: 0;
     right: 0;
 }
 
 .modal {
-
+    
     // .card {
     //     max-width: 400px;
     // }
-
-    .titlebar {
-        color: white;
-    }
 
     header {
         margin: 0;
@@ -39,7 +34,6 @@
         // bottom: 0;
         padding: 20px;
         width: 100%;
-        background-color: rgb(33,33,33);
     }
 
     .tab-content {
@@ -71,10 +65,8 @@
 }
 
 .modal ::ng-deep mat-card-content {
+    
     mat-tab-group {
-
-        background-color: #333333; 
-        color: #ccc; 
         border-radius: 3px;
     }
     
@@ -84,5 +76,11 @@
             margin-bottom: 15px !important;
             padding: 0 15px !important;
         }
+    }
+}
+
+::ng-deep .mat-tab-body-content {
+    > div {
+        padding: 0 15px;
     }
 }

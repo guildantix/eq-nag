@@ -1,23 +1,125 @@
 import { StringProtocolResponse } from 'electron';
 
+export const ErrorCodes = {
+    EqFolderNotFound: {
+        code: 'EQDIRNULL',
+        message: 'Could not locate your EverQuest folder.',
+    }
+};
+
+export enum ActionTypes {
+    
+    DisplayText = 0,
+    PlayAudio = 1,
+    Speak = 2,
+    Timer = 3,
+    Countdown = 4,
+    StoreVariable = 5,
+    DotTimer = 6,
+    ClearVariable = 7,
+    Counter = 8,
+    Clipboard = 9,
+    BeneficialTimer = 10,
+    
+}
+
+export enum MediaTypes {
+    
+    Unknown = 0,
+    Image = 1,
+    Audio = 2,
+    Text = 3,
+
+}
+
+export enum TimerSortTypes {
+
+    None = 0,
+    Ascending = 1,
+    Descending = 2,
+
+}
+
+export enum CharacterClasses {
+    Bard = 'BRD',
+    Beastlord = 'BST',
+    Berserker = 'BER',
+    Cleric = 'CLR',
+    Druid = 'DRU',
+    Enchanter = 'ENC',
+    Magician = 'MAG',
+    Monk = 'MNK',
+    Necromancer = 'NEC',
+    Paladin = 'PAL',
+    Ranger = 'RNG',
+    Rogue = 'ROG',
+    Shadowknight = 'SHD',
+    Shaman = 'SHM',
+    Warrior = 'WAR',
+    Wizard = 'WIZ',
+}
+
+export enum ImportTypes {
+    None = 0,
+    DotTimer = 1,
+    Ability = 2,
+    Npc = 3,
+    Buff = 4,
+}
+
+export enum TimerRestartBehaviors {
+    
+    StartNewTimer = 0,
+    RestartOnDuplicate = 1,
+    RestartTimer = 2,
+    DoNothing = 3,
+
+}
+
+export class TriggerFolder {
+    public folderId: string;
+    public name: string;
+    public expanded: boolean = false;
+    public active: boolean = true;
+    public comments: string;
+    public children: TriggerFolder[] = [];
+}
+
+export class CharacterClassLevel {
+    public class: string;
+    public level: number;
+}
+
+export class BasicError {
+    
+    public errorCode: string;
+    public message: string;
+
+}
+
 export class TriggerModel {
     
     public triggerId: string = null;
+    public folderId: string = null;
     public name: string = '';
     public capturePhrases: CapturePhrase[] = [];
     public comments: string = '';
-    public actions: any[] = [];
+    public actions: TriggerAction[] = [];
     public captureMethod: string = 'Any match';
     public conditions: TriggerCondition[] = [];
-    public spellLevel: number = 0;
+    public classLevels: CharacterClassLevel[] = [];
     public predefined: boolean = false;
     public onlyExecuteInDev: boolean = false;
+    public allakhazamUrl: string = null;
+    public importIdentifier: string = null;
+    public importType: ImportTypes;
 
 }
 
 export enum TriggerConditionTypes {
     
     VariableValue = 1,
+    NamedGroupValue = 2,
 
 }
 
@@ -41,12 +143,21 @@ export class TriggerCondition {
 
 }
 
-export class CapturePhrase {
+export class Phrase {
     public phraseId: string;
     public phrase: string;
-    public useRegEx: boolean = false;
+    public useRegEx: boolean;
+}
+
+export class CapturePhrase extends Phrase {
     public requirePreviousPhrase: boolean = false;
     public duration: number = null;
+}
+
+export class Tag {
+    public tagId: string;
+    public name: string;
+    public description: string;
 }
 
 export class DkpEntryModel {
@@ -92,6 +203,13 @@ export class OverlayWindowModel {
     public textGlowIntensity: number = 1;
     public textGlowSize: number = 10;
 
+    public groupByTarget: boolean = false;
+    public groupHeaderSize: number = 40;
+    public groupHeaderWeight: number = 400;
+    public groupHeaderColor: string = '#ffffff';
+    public showTimeRemaining: boolean = false;
+    public hideTargetLabel: boolean = false;
+
     public isValid (): boolean {
         return name != null && this.overlayType != null;
     }
@@ -111,28 +229,10 @@ export class DataTickModel {
     public hasExtendedDotFocus: boolean = false;
     public extendedDotFocusPercent: number = 0;
     public extendedDotFocusDecayLevel: number = 1;
-
-}
-
-export enum ActionTypes {
+    public phoneticTransforms: Record<string, string> = {};
+    public ignoredGinaObjects: string[] = [];
+    public folders: TriggerFolder[] = [];
     
-    DisplayText = 0,
-    PlayAudio = 1,
-    Speak = 2,
-    Timer = 3,
-    Countdown = 4,
-    StoreVariable = 5,
-    DotTimer = 6,
-    ClearVariable = 7,
-    
-}
-
-export enum TimerSortTypes {
-
-    None = 0,
-    Ascending = 1,
-    Descending = 2,
-
 }
 
 export class TriggerAction {
@@ -141,15 +241,28 @@ export class TriggerAction {
     public actionType: ActionTypes;
     public phrases: string[] = [];
     public overlayId: string;
+    public name: string;
     public displayText: string;
     public duration: number;
+    public showRemainingDuration: boolean = false;
+    public repeatTimer: boolean = false;
+    public repeatCount: number = null;
     public variableName: string;
-    public restartOnDuplicate: boolean;
+    public onlyStoreUsedValues: boolean = false;
+    public restartBehavior: TimerRestartBehaviors = null;
     public onlyExecuteInDev: boolean = false;
     public overrideTimerColor: string = null;
     public timerBackgroundColor: string = null;
     public useCustomColor: boolean = false;
+    public timerIcon: string = null;
+    public timerIconDef: string = null;
+    public interruptSpeech: boolean = false;
+    public hideTimer: boolean = false;
+    public hideConditions: TriggerCondition[] = [];
+    public castTime: number = null;
+
     public ifEndingSoon: boolean = false;
+    public endingSoonShowTimer: boolean = false;
     public endingDuration: number = null;
     public endingSoonChangeColor: boolean = false;
     public endingSoonColor: string = null;
@@ -162,35 +275,129 @@ export class TriggerAction {
 
     public endingSoonSpeak: boolean = false;
     public endingSoonSpeakPhrase: string = null;
+    public endingSoonInterruptSpeech: boolean = false;
+
+    public endingClipboard: boolean = false;
+    public endingClipboardText: string = null;
+
+    public endingPlayAudio: boolean = false;
+    public endingPlayAudioFileId: string = null;
 
     public remainAfterEnded: boolean = false;
+    public notifyWhenEnded: boolean = false;
     public remainDuration: number = null;
     
     public endedDisplayText: boolean = false;
     public endedTextOverlayId: string = null;
     public endedText: string = null;
     public endedTextDuration: number = null;
+    
+    public endedClipboard: boolean = false;
+    public endedClipboardText: string = null;
 
     public endedSpeak: boolean = false;
     public endedSpeakPhrase: string = null;
+    public endedInterruptSpeech: boolean = false;
+
+    public endedPlayAudio: boolean = false;
+    public endedPlayAudioFileId: string = null;
 
     public endedChangeColor: boolean = false;
     public endedColor: string = null;
     public endedBackgroundColor: string = null;
+    
+    public excludeTargets: Phrase[] = [];
+    public endEarlyPhrases: Phrase[] = [];
+    public resetCounterPhrases: Phrase[] = [];
+
+    public audioFileId: string;
 }
 
 export class ScrapedSpell {
     
     public name: string;
     public duration: number;
-    // public class: string;
-    public level: number;
+    public classes: CharacterClassLevel[] = [];
     public castOnOther: string;
+    public castOnYou: string;
+    public gemIndex: number;
+    public gemSrc: string;
+    public targetType: string;
+    /** The cast time, in milliseconds. */
+    public castTime: number;
+    public effectFades: string;
+    
+}
+
+export class ScrapedAbility {
+    
+    public name: string;
+    public duration: number;
+    public castOnOther: string;
+    public castOnYou: string;
+    public gemIndex: number;
+    public gemSrc: string;
+    public cureType: string;
+    public counters: number;
+    public resistType: string;
+    public resistMod: number;
+    public stun: boolean;
+    public manaDrain: boolean;
+    public silence: boolean;
+    public deathTouch: boolean;
+    public deathTouchDuration: number;
+    public npcsWithAbility: ScrapedNpc[] = [];
+
+}
+
+export class ScrapedNpc {
+    
+    public name: string;
+    public url: string;
+    public zones: string[];
+    public recast: number;
 
 }
 
 export class FocusEffectSettings {
+    
     public hasExtendedDotFocus: boolean = false;
     public extendedDotFocusPercent: number = 0;
     public extendedDotFocusDecayLevel: number = 1;
+
+}
+
+export class CharacterModel {
+
+    public characterId: string;
+    public name: string;
+    public class: string;
+    public hasExtendedDotFocus: boolean;
+    public extendedDotFocusPercent: number;
+    public extendedDotFocusDecayLevel: number;
+    public logFile: string;
+    public server: string;
+    public hasExtendedBeneficialFocus: boolean;
+    public extendedBeneficialFocusPercent: number;
+    public extendedBeneficialFocusDecayLevel: number;
+    public hasBeneficialCastingSpeedFocus: boolean;
+    public beneficialCastingSpeedFocusPercent: number;
+    public beneficialCastingSpeedFocusDecayLevel: number;
+    
+}
+
+export class NewCharacterOptionModel {
+    
+    public server: string;
+    public options: CharacterModel[] = [];
+
+}
+
+export class FileModel {
+    
+    public fileId: string = null;
+    public mediaType: MediaTypes = MediaTypes.Unknown;
+    public fileName: string = null;
+    public physicalName: string = null;
+
 }

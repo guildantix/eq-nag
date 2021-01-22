@@ -1,11 +1,26 @@
 import { Injectable } from '@angular/core';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { ConfirmDialogComponent } from './confirm-dialog/confirm-dialog.component';
-import { OverlayWindowModel, ScrapedSpell, TriggerAction } from '../core.model';
+import { OverlayWindowModel, ScrapedSpell, TriggerAction, TriggerCondition, TriggerFolder, TriggerModel } from '../core.model';
 import { Observable } from 'rxjs';
 import { OverlayDetailsDialogComponent } from './overlay-details-dialog/overlay-details-dialog.component';
 import { TriggerActionWizardModalComponent } from './trigger-action-wizard-modal/trigger-action-wizard-modal.component';
 import { NewTriggerDialogComponent } from './new-trigger-dialog/new-trigger-dialog.component';
+import { NewCharacterDialogComponent } from './new-character-dialog/new-character-dialog.component';
+import { SelectIconDialogComponent } from './select-icon-dialog/select-icon-dialog.component';
+import { NewTriggerFolderDialogComponent } from './new-trigger-folder-dialog/new-trigger-folder-dialog.component';
+import { SelectTriggerFolderDialogComponent } from './select-trigger-folder-dialog/select-trigger-folder-dialog.component';
+import { InputDialogComponent } from './input-dialog/input-dialog.component';
+import { InputDialogModel } from './input-dialog/input-dialog.model';
+import { NotificationDialogModel, NotificationTypes } from './notification-dialog/notification-dialog.model';
+import { NotificationDialogComponent } from './notification-dialog/notification-dialog.component';
+import { AutocompleteDialogModel } from './autocomplete-dialog/autocomplete-dialog.model';
+import { AutoCompleteDialogComponent } from './autocomplete-dialog/autocomplete-dialog.component';
+import { NewTriggerRaidAbilityComponent } from './new-trigger-raid-ability/new-trigger-raid-ability.component';
+import { NewTriggerDialogModel } from './dialog.model';
+import { NewTriggerBuffDialogComponent } from './new-trigger-buff-dialog/new-trigger-buff-dialog.component';
+import { NamedGroupConditionsModel } from './named-group-conditions-dialog/named-group-conditions.model';
+import { NamedGroupConditionsDialogComponent } from './named-group-conditions-dialog/named-group-conditions-dialog.component';
 
 @Injectable()
 export class DialogService {
@@ -29,7 +44,7 @@ export class DialogService {
      * @param noText The description of the action taken when the user declines the question.
      * @param onClose This function is executed after the user makes their decision and the decision is passed as the confirmed parameter.
      */
-    public showConfirmDialog( message: string, yesText: string, noText: string, onClose: ( confirmed: boolean ) => void ): void {
+    public showConfirmDialog( message: string | string[], yesText: string, noText: string, onClose: ( confirmed: boolean ) => void ): void {
         
         let dialogRef: MatDialogRef<ConfirmDialogComponent> = this.dialog.open( ConfirmDialogComponent, {
             width: '550px',
@@ -37,10 +52,29 @@ export class DialogService {
                 message: message,
                 yesMessage: yesText,
                 noMessage: noText
-            }
+            },
+            panelClass: 'app-dialog',
         } );
 
-        dialogRef.afterClosed().subscribe( onClose );
+        let af = dialogRef.afterClosed();
+
+        af.subscribe( onClose );
+        af.subscribe( e => {
+
+            if ( document.activeElement instanceof HTMLElement ) {
+                // This is a workaround to prevent the error:
+                // 
+                //      ExpressionChangedAfterItHasBeenCheckedError: Expression has changed after it was checked. Previous value for 'mat-form-field-should-float': 'false'. Current value: 'true'.
+                //
+                // I'm sure there's some deeper meaning behind it, but for some 
+                // reason when the confirm dialog's `Yes` button is still the 
+                // active element at this point, that error is written to the 
+                // console.
+                // This error only happens when a list is reloaded after.
+                document.activeElement.blur();
+            }
+
+        } );
         
     }
 
@@ -63,7 +97,8 @@ export class DialogService {
         
         let dialogRef: MatDialogRef<TriggerActionWizardModalComponent> = this.dialog.open( TriggerActionWizardModalComponent, {
             width: '750px',
-            data: model
+            data: model,
+            panelClass: 'app-dialog',
         } );
 
         dialogRef.afterClosed().subscribe( onClose );
@@ -103,10 +138,365 @@ export class DialogService {
     /**
      * Opens the new dot timer trigger dialog.
      */
-    public showNewDotTimerDialog(): void {
+    public showNewDotTimerDialog( folderId?: string ): void {
         this.dialog.open( NewTriggerDialogComponent, {
-            width: '750px'
+            width: '750px',
+            panelClass: 'app-dialog',
+            data: <NewTriggerDialogModel>{ selectedFolderId: folderId, trigger: null },
         } ).afterClosed();
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Opens the new dot timer trigger dialog.
+     */
+    public showNewRaidAbilityDialog( folderId?: string ): void {
+        this.dialog.open( NewTriggerRaidAbilityComponent, {
+            width: '750px',
+            data: <NewTriggerDialogModel>{ selectedFolderId: folderId, trigger: null },
+            panelClass: 'app-dialog',
+        } ).afterClosed();
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Opens the new dot timer trigger dialog.
+     */
+    public showNewBuffTimerDialog( folderId?: string ): void {
+        this.dialog.open( NewTriggerBuffDialogComponent, {
+            width: '750px',
+            data: <NewTriggerDialogModel>{ selectedFolderId: folderId, trigger: null },
+            panelClass: 'app-dialog',
+        } ).afterClosed();
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Opens the new dot timer trigger dialog.
+     */
+    public showReimportDotTimerDialog( model: TriggerModel ): void {
+        this.dialog.open( NewTriggerDialogComponent, {
+            width: '750px',
+            data: <NewTriggerDialogModel>{ selectedFolderId: null, trigger: model },
+            panelClass: 'app-dialog',
+        } ).afterClosed();
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Opens the new dot timer trigger dialog.
+     */
+    public showReimportRaidAbilityDialog( model: TriggerModel ): void {
+        this.dialog.open( NewTriggerRaidAbilityComponent, {
+            width: '750px',
+            data: <NewTriggerDialogModel>{ selectedFolderId: null, trigger: model },
+            panelClass: 'app-dialog',
+        } ).afterClosed();
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Opens the new dot timer trigger dialog.
+     */
+    public showReimportBuffDialog( model: TriggerModel ): void {
+        this.dialog.open( NewTriggerBuffDialogComponent, {
+            width: '750px',
+            data: <NewTriggerDialogModel>{ selectedFolderId: null, trigger: model },
+            panelClass: 'app-dialog',
+        } ).afterClosed();
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Opens the new character dialog.
+     */
+    public showNewCharacterDialog( afterClosed: (characterId: string) => void ): void {
+        this.dialog.open( NewCharacterDialogComponent, {
+            width: '750px',
+            panelClass: 'app-dialog',
+        } ).afterClosed().subscribe( afterClosed );
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Opens the new character dialog.
+     */
+    public showNewTriggerFolderDialog(): Observable<TriggerFolder> {
+        return this.dialog.open<NewTriggerFolderDialogComponent, any, TriggerFolder>( NewTriggerFolderDialogComponent, {
+            width: '750px',
+            panelClass: 'app-dialog',
+        } ).afterClosed();
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Opens the select trigger folder dialog.
+     * 
+     * @returns Returns the selected parent folder id.  If the selected parent 
+     *      folder id is the same as the given folder id, then the user has 
+     *      selected 'No parent' as their option.
+     * 
+     * @param folderId If moving a folder, this is the id of the folder to be moved.
+     */
+    public showSelectTriggerFolderDialog( folderId?: string ): Observable<string> {
+        return this.dialog.open<SelectTriggerFolderDialogComponent, any, string>( SelectTriggerFolderDialogComponent, {
+            width: '450px',
+            data: { folderId: folderId },
+            panelClass: 'app-dialog',
+        } ).afterClosed();
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Opens the new character dialog.
+     */
+    public showSelectIconDialog( afterClosed: ( icon: string ) => void ): void {
+        this.dialog.open( SelectIconDialogComponent, {
+            width: '750px',
+            panelClass: 'app-dialog',
+        } ).afterClosed().subscribe( afterClosed );
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Opens the new character dialog.
+     */
+    public showIconDialog( iconIndex: number, afterClosed: ( icon: string ) => void ): void {
+        this.dialog.open( SelectIconDialogComponent, {
+            width: '750px',
+            data: {
+                iconIndex: iconIndex,
+            },
+            panelClass: 'app-dialog',
+        } ).afterClosed().subscribe( afterClosed );
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Shows a simple dialog with an input.
+     * 
+     * @param title The title for the dialog.
+     * @param message Instructions to the user.
+     * @param label Placeholder/label for the input.
+     * @param hint Any additional information related to the request and how to fulfill it.
+     */
+    public showInputDialog( title: string, message: string | string[], label?: string, hint?: string, ): Observable<string> {
+        let data: InputDialogModel = new InputDialogModel();
+        
+        data.title = title;
+        data.message = message;
+        data.label = label;
+        data.hint = hint;
+
+        return this.dialog.open<InputDialogComponent, any, string>( InputDialogComponent, {
+            width: '450px',
+            data: data,
+            panelClass: 'app-dialog',
+        } ).afterClosed();
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Shows a simple dialog with an input.
+     * 
+     * @param title The title for the dialog.
+     * @param message Instructions to the user.
+     * @param conditions The conditions to edit.
+     */
+    public showNamedGroupConditionsDialog( title: string, message: string | string[], conditions: TriggerCondition[] ): Observable<TriggerCondition[]> {
+        let data: NamedGroupConditionsModel = new NamedGroupConditionsModel();
+        
+        data.title = title;
+        data.message = message;
+        data.conditions = conditions;
+
+        return this.dialog.open<NamedGroupConditionsDialogComponent, any, TriggerCondition[]>( NamedGroupConditionsDialogComponent, {
+            width: '650px',
+            data: data,
+            panelClass: 'app-dialog',
+        } ).afterClosed();
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Shows a simple dialog with an input with an autocomplete.
+     * 
+     * @param title The title for the dialog.
+     * @param message Instructions to the user.
+     * @param options The available options.
+     * @param label Placeholder/label for the input.
+     * @param hint Any additional information related to the request and how to fulfill it.
+     */
+    public showAutocompleteDialog( title: string, message: string | string[], options: string[], label?: string, hint?: string, ): Observable<string> {
+        let data: AutocompleteDialogModel = new AutocompleteDialogModel();
+        
+        data.title = title;
+        data.message = message;
+        data.label = label;
+        data.hint = hint;
+        data.options = options;
+
+        return this.dialog.open<AutoCompleteDialogComponent, any, string>( AutoCompleteDialogComponent, {
+            width: '450px',
+            data: data,
+            panelClass: 'app-dialog',
+        } ).afterClosed();
+        
+    }
+    
+
+
+
+
+
+
+
+
+
+    public showWarningDialog( title: string, message: string | string[] ): void {
+        let data: NotificationDialogModel = new NotificationDialogModel();
+        
+        data.title = title;
+        data.message = message;
+        data.notificationType = NotificationTypes.Warning;
+
+        this.dialog.open( NotificationDialogComponent, {
+            width: '450px',
+            data: data,
+            panelClass: 'app-dialog',
+        } ).afterClosed().subscribe();
+    }
+    
+    public showInfoDialog( title: string, message: string | string[] ): void {
+        let data: NotificationDialogModel = new NotificationDialogModel();
+        
+        data.title = title;
+        data.message = message;
+        data.notificationType = NotificationTypes.Information;
+
+        this.dialog.open( NotificationDialogComponent, {
+            width: '450px',
+            data: data,
+            panelClass: 'app-dialog',
+        } ).afterClosed().subscribe();
+    }
+    
+    public showErrorDialog( title: string, message: string | string[] ): void {
+        let data: NotificationDialogModel = new NotificationDialogModel();
+        
+        data.title = title;
+        data.message = message;
+        data.notificationType = NotificationTypes.Error;
+
+        this.dialog.open( NotificationDialogComponent, {
+            width: '450px',
+            data: data,
+            panelClass: 'app-dialog',
+        } ).afterClosed().subscribe();
     }
     
 }
