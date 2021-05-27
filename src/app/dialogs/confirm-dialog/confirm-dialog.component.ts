@@ -1,5 +1,6 @@
 import { Component, OnInit, Inject } from '@angular/core';
 import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
+import { ColoredString } from '../dialog.model';
 
 @Component( {
     selector: 'app-confirm-dialog',
@@ -8,7 +9,8 @@ import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 } )
 export class ConfirmDialogComponent implements OnInit {
 
-    public messages: string[] = [];
+
+    public messages: (string|ColoredString)[] = [];
 
     constructor(
         public dialogRef: MatDialogRef<ConfirmDialogComponent>,
@@ -22,6 +24,10 @@ export class ConfirmDialogComponent implements OnInit {
         } else {
             this.messages.push( 'Are you sure?' );
         }
+    }
+
+    isColoredString( msg: any ): boolean {
+        return msg instanceof ColoredString;
     }
     
 }

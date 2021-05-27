@@ -326,7 +326,7 @@ function generateTriggerFns() {
                             if ( hasGroups === true ) {
                                 rgxValue = StringUtilities.parseSequentialGroups( rgxValue, matchGroups );
                             }
-                            
+                            console.log( 'rgxValue', rgxValue );
                             let _res = new RegExp( rgxValue, 'gi' ).exec( value );
                             return {
                                 phraseId: phrase.phraseId,

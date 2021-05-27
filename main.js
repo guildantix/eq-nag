@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain } = require( "electron" );
+const { app, BrowserWindow, ipcMain, protocol } = require( "electron" );
 const { autoUpdater } = require('electron-updater');
 const url = require( "url" );
 const path = require( "path" );
@@ -95,7 +95,38 @@ app.isDev = () => enableDevMode === true && process.defaultApp === true;
 
 app.commandLine.appendSwitch( 'enable-speech-dispatcher' );
 
-app.on( 'ready', createWindow )
+app.on( 'ready', function () {
+    protocol.interceptFileProtocol( 'file', ( req, callback ) => {
+        let filePath = new url.URL( req.url ).pathname;
+        if ( process.platform === 'win32' ) {
+
+            if ( filePath.match( /^\/[A-Za-z]:/ ) ) {
+                // If it begins with a slash, remove it.
+                filePath = filePath.slice( 1 );
+            }
+
+            if ( filePath.match( /^[A-Za-z]:\/(css|img|js|fonts)/ ) ) {
+                filePath = path.join( app.getAppPath(), 'dist', filePath.slice( 3 ) );
+            } else if ( filePath.match( /^[A-Za-z]:\/[^/\\]+?\.(js|css|png|jpeg|jpg|ico|svg|woff|woff2|ttf)$/ ) ) {
+                // case of "vue-cli-service build --mode development"
+                filePath = path.join( app.getAppPath(), 'dist', filePath.slice( 3 ) );
+            }
+
+        } else {
+
+            if ( filePath.match( /^\/(css|img|js)/ ) ) {
+                filePath = path.join( app.getAppPath(), 'dist', filePath.slice( 1 ) );
+            } else if ( filePath.match( /^\/[^/\\]+?\.(js|css|png|jpeg|jpg|ico|svg)$/ ) ) {
+                // case of "vue-cli-service build --mode development"
+                filePath = path.join( app.getAppPath(), 'dist', filePath.slice( 1 ) );
+            }
+
+        }
+
+        callback( path.normalize( filePath ) );
+    } );
+    createWindow();
+} )
 
 app.on( 'window-all-closed', function () {
     if ( process.platform !== 'darwin' ) app.quit()

@@ -120,7 +120,7 @@ export class NewTriggerBuffDialogComponent implements OnInit {
             duration: null,
             // /^(?<target>You) feel armored\.$/
             // /^(?<target>You)r balls feel armored\.$/
-            phrase: this.spell.castOnYou.replace( /\.$/, '\\.$' ).replace( /you/gmi, '^(?<target>You)' ),
+            phrase: this.spell.castOnYou.replace( /\.$/, '\\.$' ).replace( /you/mi, '^(?<target>You)' ),
         } );
         buffTimerPhrases.push( castOnYouPhraseId );
 

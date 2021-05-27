@@ -17,7 +17,7 @@ import { NotificationDialogComponent } from './notification-dialog/notification-
 import { AutocompleteDialogModel } from './autocomplete-dialog/autocomplete-dialog.model';
 import { AutoCompleteDialogComponent } from './autocomplete-dialog/autocomplete-dialog.component';
 import { NewTriggerRaidAbilityComponent } from './new-trigger-raid-ability/new-trigger-raid-ability.component';
-import { NewTriggerDialogModel } from './dialog.model';
+import { ColoredString, NewTriggerDialogModel } from './dialog.model';
 import { NewTriggerBuffDialogComponent } from './new-trigger-buff-dialog/new-trigger-buff-dialog.component';
 import { NamedGroupConditionsModel } from './named-group-conditions-dialog/named-group-conditions.model';
 import { NamedGroupConditionsDialogComponent } from './named-group-conditions-dialog/named-group-conditions-dialog.component';
@@ -44,7 +44,7 @@ export class DialogService {
      * @param noText The description of the action taken when the user declines the question.
      * @param onClose This function is executed after the user makes their decision and the decision is passed as the confirmed parameter.
      */
-    public showConfirmDialog( message: string | string[], yesText: string, noText: string, onClose: ( confirmed: boolean ) => void ): void {
+    public showConfirmDialog( message: string | (string|ColoredString)[], yesText: string, noText: string, onClose: ( confirmed: boolean ) => void ): void {
         
         let dialogRef: MatDialogRef<ConfirmDialogComponent> = this.dialog.open( ConfirmDialogComponent, {
             width: '550px',
