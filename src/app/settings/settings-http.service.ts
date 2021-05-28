@@ -23,7 +23,7 @@ export class SettingsService {
     updateAuthor( model: AuthorModel ): Observable<boolean> {
         return this.httpClient.put( `${environment.shareServiceUrl}/authors`, model, { observe: 'response' } )
             .pipe(
-                map( value => value.status === 201 ),
+                map( value => value.status === 204 ),
                 catchError( this.handleError )
             );
     }
