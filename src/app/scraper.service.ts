@@ -257,9 +257,9 @@ export class ScraperService {
                 // model.class = data.class;
                 // model.level = data.level;
                 model.classes = classes;
-                model.castOnOther = data.castOnOther;
-                model.castOnYou = data.castOnYou;
-
+                model.castOnOther = data.castOnOther?.trim()?.replace( / +(?= )/g, '' );
+                model.castOnYou = data.castOnYou?.trim()?.replace( / +(?= )/g, '' );
+                
                 if ( targetTypeCheck ) {
                     model.targetType = targetTypeCheck.textContent?.trim();
                 }
