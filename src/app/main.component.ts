@@ -8,13 +8,6 @@ import { ScraperService } from './scraper.service';
 import { customAlphabet } from 'nanoid';
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const nanoid = customAlphabet( alphabet, 16 );
-import { MatTable } from '@angular/material/table';
-
-interface IPhoneticTransform {
-    id: string;
-    originalText?: string;
-    phoneticText?: string;
-}
 
 @Component( {
     selector: 'app-main',
@@ -23,16 +16,11 @@ interface IPhoneticTransform {
 } )
 export class MainComponent implements OnInit {
 
-    public phoneticTransforms: IPhoneticTransform[] = [];
-    public phoneticTransformsModified: boolean = false;
     public msg: string;
     public dkpEntries: DkpEntryModel[] = [];
-    public version: string;
     public logFile: string = 'Not Selected';
     public showConsole: boolean = true;
-    public voiceIndex: number = null;
     public enableFct: boolean = false;
-    public voiceOptions: SpeechSynthesisVoice[] = [];
     public overlays: OverlayWindowModel[] = [];
     public damageDealtOverlayId: string;
     public damageTakenOverlayId: string;
@@ -49,7 +37,6 @@ export class MainComponent implements OnInit {
         '[Sat Mar 14 13:48:08 2020] You slash an aneuk fleshthreader for 10742 points of damage.',
         '[Sat Mar 14 13:49:08 2020] You slash a kyv hunter for 29027 points of damage. (Lucky Critical)',
     ];
-    public loadingGinaConfig: boolean = false;
     public movingFolderSource: string = null;
 
     @ViewChild( 'fileSelector' ) private fileSelector: ElementRef<HTMLInputElement>;
@@ -59,16 +46,12 @@ export class MainComponent implements OnInit {
     }
 
     constructor( private snackBar: MatSnackBar, private ipcService: IpcService, private dialogService: DialogService, private scraper: ScraperService ) {
-        speechSynthesis.onvoiceschanged = () => {
-            this.voiceOptions = speechSynthesis.getVoices();
-        };
     }
 
     ngOnInit(): void {
         this.ipcService.tickReceived().subscribe( data => {
             this.dkpEntries = data.dkpEntries;
             this.logFile = data.logFile;
-            this.voiceIndex = data.voiceIndex;
             this.overlays = data.overlays;
             this.enableFct = data.enableFct;
             this.damageDealtOverlayId = data.damageDealtOverlayId;
@@ -77,62 +60,11 @@ export class MainComponent implements OnInit {
             this.focusEffectSettings.extendedDotFocusPercent = data.extendedDotFocusPercent;
             this.focusEffectSettings.extendedDotFocusDecayLevel = data.extendedDotFocusDecayLevel;
 
-            this.phoneticTransforms = [];
-            if ( data.phoneticTransforms ) {
-                for ( let key of Object.keys( data.phoneticTransforms ) ) {
-                    this.phoneticTransforms.push( { id: nanoid(), originalText: key, phoneticText: data.phoneticTransforms[ key ] } );
-                }
-            }
-
         } );
 
-        this.ipcService.dkpEntryAdded().subscribe( model => {
-            if ( model && this.voiceIndex > -1 ) {
-                var utter = new SpeechSynthesisUtterance();
-                utter.text = `${model.item} awarded to ${model.character} for ${model.dkp} DKP.`;
-                utter.voice = this.voiceOptions[ this.voiceIndex ];
-                utter.onend = function ( event ) { }
-                speechSynthesis.speak( utter );
-            }
-        } );
-
-        this.ipcService.dkpEntryRemoved().subscribe( entryId => {
-            let i = _.findIndex( this.dkpEntries, ( e: DkpEntryModel ) => e.entryId === entryId );
-            this.dkpEntries.splice( i, 1 );
-        } );
-
-        this.ipcService.receiveDkpDatabase().subscribe( data => this.dkpEntries = data );
         this.ipcService.logFileChanged().subscribe( data => this.logFile = data );
-        this.ipcService.getAppVersion().subscribe( version => this.version = version );
         this.ipcService.consoleLogRequested().subscribe( data => console.log( 'from main', data ) );
         this.ipcService.getAppIsDev().subscribe( isDev => this.isDev = isDev );
-        this.ipcService.getPhoneticTransforms().subscribe( transforms => {
-            this.phoneticTransforms = [];
-            if ( transforms ) {
-                for ( let key of Object.keys( transforms ) ) {
-                    this.phoneticTransforms.push( { id: nanoid(), originalText: key, phoneticText: transforms[ key ] } );
-                }
-            }
-        } );
-    }
-
-    getPhoneticTransformsRecord(): Record<string, string> {
-        let transforms: Record<string, string> = {};
-        let duplicates: string[] = [];
-
-        this.phoneticTransforms.forEach( t => {
-            if ( !transforms.hasOwnProperty( t.originalText ) ) {
-                transforms[ t.originalText ] = t.phoneticText;
-            } else {
-                duplicates.push( t.originalText );
-            }
-        } );
-
-        if ( duplicates.length > 0 ) {
-            this.dialogService.showWarningDialog( 'Phonetics removed', [ 'Some of the phonetics in the list had duplicate original texts and were not saved.  Please review the list: ' ].concat( duplicates ) );
-        }
-
-        return transforms;
     }
 
     removeEntry( entry: any ): void {
@@ -157,10 +89,6 @@ export class MainComponent implements OnInit {
 
     onChangeTabs( selectedIndex: number ): void {
         this.showConsole = selectedIndex === 0;
-    }
-
-    onChangeVoice(): void {
-        this.ipcService.updateVoiceIndex( this.voiceIndex );
     }
 
     onEnableFctChange(): void {
@@ -236,49 +164,6 @@ export class MainComponent implements OnInit {
 
     public selectMoveSourceFolder( target: any ): void {
         this.movingFolderSource = target;
-    }
-
-    public addPhoneticTransform( table: MatTable<IPhoneticTransform> ): void {
-        this.phoneticTransforms.push( { id: nanoid() } );
-        table?.renderRows();
-        this.phoneticTransformsModified = true;
-    }
-
-    public deletePhoneticTransform( index: number, table: MatTable<IPhoneticTransform> ): void {
-        this.dialogService.showConfirmDialog(
-            `Are you sure you want to delete ${this.phoneticTransforms[ index ].originalText}?`,
-            'Click "Yes" to delete this transform.', 'Click "No" to close this dialog without deleting the transform.',
-            confirmed => {
-                if ( confirmed === true ) {
-                    this.phoneticTransforms.splice( index, 1 );
-                    this.ipcService.savePhoneticTransforms( this.getPhoneticTransformsRecord() );
-                    table?.renderRows();
-                    this.phoneticTransformsModified = true;
-                }
-            } );
-    }
-
-    public savePhoneticTransforms(): void {
-        this.ipcService.savePhoneticTransforms( this.getPhoneticTransformsRecord() );
-        this.phoneticTransformsModified = false;
-    }
-
-    public speakPhrase( phrase: string ): void {
-        var utter = new SpeechSynthesisUtterance();
-        utter.text = phrase;
-        utter.voice = this.voiceOptions[ this.voiceIndex ];
-        utter.onend = function ( event ) { }
-        speechSynthesis.speak( utter );
-    }
-
-    public openImportGinaDialog(): void {
-        this.loadingGinaConfig = true;
-        this.ipcService.showGinaImportWindow().subscribe( loaded => {
-            this.loadingGinaConfig = false;
-            if ( !loaded ) {
-                this.dialogService.showErrorDialog( 'GINA Import', 'Could not load GINA data.' );
-            }
-        } );
     }
 
     public testFn(): void {

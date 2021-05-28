@@ -18,6 +18,7 @@ import { ClassNamePipe } from './pipes/class-name.pipe';
 import { WindowsModule } from './windows/windows.module';
 import { IpcService } from './ipc.service';
 import { CoreModule } from './core/core.module';
+import { SettingsComponent } from './settings/settings-component/settings.component';
 
 @NgModule( {
     imports: [
@@ -39,6 +40,7 @@ import { CoreModule } from './core/core.module';
         TriggersComponent,
         MainComponent,
         CharactersListComponent,
+        SettingsComponent,
     ],
     providers: [
         ScraperService,

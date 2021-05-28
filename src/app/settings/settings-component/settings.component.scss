@@ -1,0 +1,12 @@
+div.tab-content {
+    overflow-y: scroll;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    top: 176px;
+
+    > fieldset:not(:first-child) {
+        margin-top: 50px;
+    }
+}
