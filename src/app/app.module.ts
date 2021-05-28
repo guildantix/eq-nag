@@ -19,6 +19,7 @@ import { WindowsModule } from './windows/windows.module';
 import { IpcService } from './ipc.service';
 import { CoreModule } from './core/core.module';
 import { SettingsComponent } from './settings/settings-component/settings.component';
+import { SettingsService } from './settings/settings-http.service';
 
 @NgModule( {
     imports: [
@@ -45,6 +46,7 @@ import { SettingsComponent } from './settings/settings-component/settings.compon
     providers: [
         ScraperService,
         IpcService,
+        SettingsService,
     ],
     bootstrap: [ AppComponent ],
 } )

@@ -401,3 +401,9 @@ export class FileModel {
     public physicalName: string = null;
 
 }
+
+export class AuthorModel {
+    public authorId: string;
+    public name: string;
+    public discord: string;
+}
