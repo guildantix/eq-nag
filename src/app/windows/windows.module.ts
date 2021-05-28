@@ -10,6 +10,7 @@ import { GinaImportWindowComponent } from './gina-import-window/gina-import-wind
 import { DialogModule } from '../dialogs/dialog.module';
 import { EditorsModule } from '../editors/editors.module';
 import { GinaImportStepperComponent } from './gina-import-window/gina-import-stepper.component';
+import { TriggerLibraryWindowComponent } from './trigger-library-window/trigger-library-window.component';
 
 @NgModule({
     imports: [
@@ -26,10 +27,12 @@ import { GinaImportStepperComponent } from './gina-import-window/gina-import-ste
     exports: [
         GinaImportStepperComponent,
         GinaImportWindowComponent,
+        TriggerLibraryWindowComponent,
     ],
     declarations: [
         GinaImportStepperComponent,
         GinaImportWindowComponent,
+        TriggerLibraryWindowComponent,
     ],
     providers: [],
 })

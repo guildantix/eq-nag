@@ -1072,4 +1072,8 @@ export class TriggersComponent implements OnInit {
             matIcon: 'clear',
         } ];
     }
+
+    openTriggerLibrary() {
+        this.ipcService.showTriggerLibrary().subscribe( opened => { } );
+    }
 }

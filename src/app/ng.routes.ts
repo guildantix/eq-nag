@@ -3,6 +3,7 @@ import { Routes } from '@angular/router';
 import { MainComponent } from './main.component';
 import { OverlayEditorDialogComponent } from './dialogs/overlay-editor-dialog/overlay-editor-dialog.component';
 import { GinaImportWindowComponent } from './windows/gina-import-window/gina-import-window.component';
+import { TriggerLibraryWindowComponent } from './windows/trigger-library-window/trigger-library-window.component';
 
 
 // let secureRoutes: Routes = [
@@ -69,6 +70,7 @@ import { GinaImportWindowComponent } from './windows/gina-import-window/gina-imp
 
 let _routes: Routes = [
     { path: 'dashboard', component: MainComponent },
+    { path: 'trigger/library', component: TriggerLibraryWindowComponent },
     { path: 'trigger/new', component: TriggerDialogComponent },
     { path: 'trigger/new/:folderId', component: TriggerDialogComponent },
     { path: 'trigger/:id', component: TriggerDialogComponent },

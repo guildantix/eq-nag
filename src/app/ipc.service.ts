@@ -267,6 +267,22 @@ export class IpcService {
         return obs;
     }
 
+    public showTriggerLibrary(): Observable<boolean> {
+        let obs: Observable<boolean> = new Observable<boolean>( ( observer: Observer<boolean> ) => {
+            
+            this.ipc.once( 'trigger:dialog:library', ( e, loaded ) => {
+                this.ngZone.run( () => {
+                    observer.next( loaded );
+                    observer.complete();
+                } );
+            } );
+            this.ipc.send( 'trigger:dialog:library', null );
+
+        } );
+
+        return obs;
+    }
+
     public simulateLogParse( file: string ): void {
         this.ipc.send( 'log:simulate:file', file );
     }
