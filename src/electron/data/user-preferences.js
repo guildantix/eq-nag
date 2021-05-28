@@ -319,6 +319,14 @@ class UserPreferencesStore extends Store {
             event.sender.webContents.send( 'settings:get:phonetic-transforms', this.#data.phoneticTransforms );
         } );
 
+        ipcMain.on( 'settings:set:author', ( event, author ) => {
+            this.author = author;
+        } );
+
+        ipcMain.on( 'settings:get:author', ( event ) => {
+            event.sender.webContents.send( 'settings:get:author', this.author );
+        } );
+
         ipcMain.on( 'settings:set:phonetic-transforms',
             /**
              * @param {Record<string, string>} transforms
