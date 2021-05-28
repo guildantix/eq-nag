@@ -5,6 +5,7 @@ import { MatTable } from '@angular/material/table';
 import { customAlphabet } from 'nanoid';
 import { AuthorModel } from 'src/app/core.model';
 import { SettingsService } from '../settings-http.service';
+import { MatSnackBar } from '@angular/material/snack-bar';
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const nanoid = customAlphabet( alphabet, 16 );
 
@@ -30,7 +31,7 @@ export class SettingsComponent implements OnInit {
     public author: AuthorModel = new AuthorModel();
     public trustedAuthor: boolean = false;
 
-    constructor( private ipcService: IpcService, private dialogService: DialogService, private settingsService: SettingsService ) {
+    constructor( private ipcService: IpcService, private dialogService: DialogService, private settingsService: SettingsService, private snackBar: MatSnackBar ) {
         speechSynthesis.onvoiceschanged = () => {
             this.voiceOptions = speechSynthesis.getVoices();
         };
@@ -145,11 +146,20 @@ export class SettingsComponent implements OnInit {
     showVerifiedUserInfo() {
         this.dialogService.showCustomNotificationDialog( 'Verified Users', [ 'Your author account has been verified.', 'Verified authors are able to publish their triggers to the universal library.' ], 'verified_user' );
     }
-
+//https://discord.gg/v2MTmhEc
     createAuthor() {
         this.settingsService.createAuthor( this.author.name, this.author.discord ).subscribe( author => {
             this.ipcService.saveAuthor( author );
             this.author = author;
+        } );
+    }
+
+    updateAuthor() {
+        this.settingsService.updateAuthor( this.author ).subscribe( success => {
+            if ( success ) {
+                this.snackBar.open( 'Author file updated!', 'dismiss', { duration: 5000 } );
+                this.ipcService.saveAuthor( this.author );
+            }
         } );
     }
 

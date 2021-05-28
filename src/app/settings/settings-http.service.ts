@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { AuthorModel } from '../core.model';
-import { catchError } from 'rxjs/operators';
+import { catchError, map } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 
 @Injectable()
@@ -16,6 +16,14 @@ export class SettingsService {
         m.discord = discord;
         return this.httpClient.post<AuthorModel>( `${environment.shareServiceUrl}/authors`, m )
             .pipe(
+                catchError( this.handleError )
+            );
+    }
+
+    updateAuthor( model: AuthorModel ): Observable<boolean> {
+        return this.httpClient.put( `${environment.shareServiceUrl}/authors`, model, { observe: 'response' } )
+            .pipe(
+                map( value => value.status === 201 ),
                 catchError( this.handleError )
             );
     }
