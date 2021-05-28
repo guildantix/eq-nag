@@ -485,6 +485,21 @@ export class DialogService {
         } ).afterClosed().subscribe();
     }
     
+    public showCustomNotificationDialog( title: string, message: string | string[], icon: string ): void {
+        let data: NotificationDialogModel = new NotificationDialogModel();
+        
+        data.title = title;
+        data.message = message;
+        data.notificationType = NotificationTypes.Custom;
+        data.icon = icon;
+
+        this.dialog.open( NotificationDialogComponent, {
+            width: '450px',
+            data: data,
+            panelClass: 'app-dialog',
+        } ).afterClosed().subscribe();
+    }
+    
     public showErrorDialog( title: string, message: string | string[] ): void {
         let data: NotificationDialogModel = new NotificationDialogModel();
         
