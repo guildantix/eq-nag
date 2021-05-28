@@ -37,7 +37,7 @@
 
         <ng-template [ngIf]="author?.authorId != null" [ngIfElse]="noAuthorFile">
             <button mat-button (click)="updateAuthor()">Save Changes</button>
-            <button mat-button *ngIf="!trustedAuthor">Request Verification</button>
+            <button mat-button *ngIf="!trustedAuthor" (click)="requestVerification()">Request Verification</button>
         </ng-template>
         <ng-template #noAuthorFile>
             <button mat-button color="accent" (click)="createAuthor()">Create</button>

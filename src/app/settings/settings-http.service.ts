@@ -32,6 +32,14 @@ export class SettingsService {
         return this.httpClient.get<boolean>( `${environment.shareServiceUrl}/authors/approved/${authorId}` );
     }
 
+    requestVerification( authorId: string ): Observable<boolean> {
+        return this.httpClient.post( `${environment.shareServiceUrl}/authors/${authorId}/request-verification`, null, { observe: 'response' } )
+            .pipe(
+                map( value => value.status === 200 ),
+                catchError( this.handleError )
+            );
+    }
+
     private handleError( error: HttpErrorResponse ) {
         if ( error.status === 0 ) {
             // A client-side or network error occurred. Handle it accordingly.

@@ -146,7 +146,7 @@ export class SettingsComponent implements OnInit {
     showVerifiedUserInfo() {
         this.dialogService.showCustomNotificationDialog( 'Verified Users', [ 'Your author account has been verified.', 'Verified authors are able to publish their triggers to the universal library.' ], 'verified_user' );
     }
-//https://discord.gg/v2MTmhEc
+    
     createAuthor() {
         this.settingsService.createAuthor( this.author.name, this.author.discord ).subscribe( author => {
             this.ipcService.saveAuthor( author );
@@ -159,6 +159,14 @@ export class SettingsComponent implements OnInit {
             if ( success ) {
                 this.snackBar.open( 'Author file updated!', 'dismiss', { duration: 5000 } );
                 this.ipcService.saveAuthor( this.author );
+            }
+        } );
+    }
+
+    requestVerification() {
+        this.settingsService.requestVerification( this.author.authorId ).subscribe( success => {
+            if ( success ) {
+                this.snackBar.open( 'Request submitted!', 'dismiss', { duration: 5000 } );
             }
         } );
     }
