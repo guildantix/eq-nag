@@ -2,7 +2,7 @@ import { Injectable, NgZone } from '@angular/core';
 import { IpcRenderer } from 'electron';
 import { Observable, Observer } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
-import { DataTickModel, DkpEntryModel, TriggerModel, OverlayWindowModel, ActionTypes, FocusEffectSettings, CharacterModel, BasicError, TriggerFolder, FileModel, Tag } from './core.model';
+import { DataTickModel, DkpEntryModel, TriggerModel, OverlayWindowModel, ActionTypes, FocusEffectSettings, CharacterModel, BasicError, TriggerFolder, FileModel, Tag, AuthorModel } from './core.model';
 import { GinaConfiguration, GinaTriggerGroups } from './gina.model';
 
 @Injectable( { providedIn: 'root' })
@@ -786,6 +786,26 @@ export class IpcService {
 
     public savePhoneticTransforms( transforms: Record<string, string> ): void {
         this.ipc.send( 'settings:set:phonetic-transforms', transforms );
+    }
+
+    public getAuthor(): Observable<AuthorModel> {
+        let obs: Observable<AuthorModel> = new Observable<AuthorModel>( ( observer: Observer<AuthorModel> ) => {
+            
+            this.ipc.once( 'settings:get:author', ( e, author: AuthorModel ) => {
+                this.ngZone.run( () => {
+                    observer.next( author );
+                    observer.complete();
+                } );
+            } );
+            this.ipc.send( 'settings:get:author', null );
+
+        } );
+
+        return obs;
+    }
+
+    public saveAuthor( author: AuthorModel ): void {
+        this.ipc.send( 'settings:set:author', author );
     }
 
     public getIgnoredGinaObjects(): Observable<string[]> {

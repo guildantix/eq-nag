@@ -1,7 +1,7 @@
 <mat-toolbar>
     <span>Settings</span>
     <span class="spacer"></span>
-    <small>Version {{version}}</small>
+    <small>EverQuest Notification Agent v{{version}}</small>
 </mat-toolbar>
 <div class="tab-content">
 
@@ -14,6 +14,35 @@
             </mat-select>
             <mat-hint>Select the text to speech voice</mat-hint>
         </mat-form-field>
+    </fieldset>
+
+    <fieldset>
+        <legend>Sharing <button mat-icon-button color="accent" (click)="showVerifiedUserInfo()" *ngIf="trustedAuthor"><mat-icon class="material-icons-outlined">verified_user</mat-icon></button></legend>
+
+        <div>        
+            <mat-form-field style="width: 50%;">
+                <mat-label>Author Name</mat-label>
+                <input matInput type="text" [(ngModel)]="author.name" />
+                <mat-hint>Enter whatever name you would like to have attached to any shared triggers.</mat-hint>
+            </mat-form-field>
+        </div>
+
+        <div>
+            <mat-form-field style="width: 50%;">
+                <mat-label>Discord</mat-label>
+                <input matInput type="text" [(ngModel)]="author.discord" />
+                <mat-hint>(Optional) Enter your discord name, or discord server.</mat-hint>
+            </mat-form-field>
+        </div>
+
+        <ng-template [ngIf]="author?.authorId != null" [ngIfElse]="noAuthorFile">
+            <button mat-button>Save Changes</button>
+            <button mat-button *ngIf="!trustedAuthor">Request Verification</button>
+        </ng-template>
+        <ng-template #noAuthorFile>
+            <button mat-button color="accent" (click)="createAuthor()">Create</button>
+        </ng-template>
+
     </fieldset>
 
     <fieldset>

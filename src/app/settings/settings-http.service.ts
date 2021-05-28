@@ -11,7 +11,10 @@ export class SettingsService {
     constructor( private httpClient: HttpClient ) { }
 
     createAuthor( name: string, discord: string ): Observable<AuthorModel> {
-        return this.httpClient.post<AuthorModel>( `${environment.shareServiceUrl}/authors`, name )
+        let m = new AuthorModel();
+        m.name = name;
+        m.discord = discord;
+        return this.httpClient.post<AuthorModel>( `${environment.shareServiceUrl}/authors`, m )
             .pipe(
                 catchError( this.handleError )
             );

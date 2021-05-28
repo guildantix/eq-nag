@@ -3,6 +3,8 @@ import { DialogService } from 'src/app/dialogs/dialog.service';
 import { IpcService } from 'src/app/ipc.service';
 import { MatTable } from '@angular/material/table';
 import { customAlphabet } from 'nanoid';
+import { AuthorModel } from 'src/app/core.model';
+import { SettingsService } from '../settings-http.service';
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const nanoid = customAlphabet( alphabet, 16 );
 
@@ -25,8 +27,10 @@ export class SettingsComponent implements OnInit {
     public voiceOptions: SpeechSynthesisVoice[] = [];
     public voiceIndex: number = null;
     public loadingGinaConfig: boolean = false;
+    public author: AuthorModel = new AuthorModel();
+    public trustedAuthor: boolean = false;
 
-    constructor( private ipcService: IpcService, private dialogService: DialogService ) {
+    constructor( private ipcService: IpcService, private dialogService: DialogService, private settingsService: SettingsService ) {
         speechSynthesis.onvoiceschanged = () => {
             this.voiceOptions = speechSynthesis.getVoices();
         };
@@ -63,6 +67,13 @@ export class SettingsComponent implements OnInit {
                 }
             }
         } );
+        
+        this.ipcService.getAuthor().subscribe( author => {
+            if ( author != null ) {
+                this.author = author;
+                this.settingsService.isTrusted( author.authorId ).subscribe( trusted => this.trustedAuthor = trusted );
+            }
+        })
     }
 
     speakPhrase( phrase: string ): void {
@@ -129,6 +140,17 @@ export class SettingsComponent implements OnInit {
         }
 
         return transforms;
+    }
+
+    showVerifiedUserInfo() {
+        this.dialogService.showCustomNotificationDialog( 'Verified Users', [ 'Your author account has been verified.', 'Verified authors are able to publish their triggers to the universal library.' ], 'verified_user' );
+    }
+
+    createAuthor() {
+        this.settingsService.createAuthor( this.author.name, this.author.discord ).subscribe( author => {
+            this.ipcService.saveAuthor( author );
+            this.author = author;
+        } );
     }
 
 }

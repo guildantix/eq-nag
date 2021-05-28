@@ -151,3 +151,14 @@ button.mat-icon-button.small {
 .dim {
     opacity: .1;
 }
+
+p {
+    .hover-only {
+        display: none;
+    }
+
+    &:hover {
+        .hover-only{
+        display: inline;}
+    }
+}
