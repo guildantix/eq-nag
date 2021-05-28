@@ -2,6 +2,7 @@ const { ipcMain } = require( "electron" );
 const Store = require( './store' );
 const ForwardRef = require( '../forward-ref' );
 const fs = require( 'fs' );
+const { AuthorModel } = require( './models/sharing-service' );
 
 const possibleEqFolders = [
     '\\users\\public\\Everquest',
@@ -52,6 +53,15 @@ class UserPreferencesStore extends Store {
      * }}
      */
     #data;
+
+    /** @type {AuthorModel} */
+    get author() {
+        return this.#data.author;
+    }
+    set author( val ) {
+        this.#data.author = val;
+        this.storeDataFile( this.#data );
+    }
 
     get windowHeight() {
         return this.#data.windowBounds.height;
