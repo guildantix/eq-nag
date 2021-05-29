@@ -35,6 +35,7 @@ export class TriggerLibraryWindowComponent implements OnInit {
     public trustedAuthor: boolean = false;
     public notes: string;
     public showNewTrigger: boolean = false;
+    public detailsModel: TriggerPackageMetaModel = null;
 
     constructor( private ipcService: IpcService, private dialogService: DialogService, private snackBar: MatSnackBar,  private libraryService: TriggerLibraryService, private settingsService: SettingsService ) { }
 
@@ -63,9 +64,12 @@ export class TriggerLibraryWindowComponent implements OnInit {
         if ( triggerPackage != null ) {
             this.packages.push( triggerPackage );
             this.packages = this.packages.slice();
-            console.log( 'packages', this.packages );
         }
         this.showNewTrigger = false;
+    }
+
+    showTriggerDetails( triggerPackage: TriggerPackageMetaModel ): void {
+        this.detailsModel = triggerPackage;
     }
 
 }

@@ -26,7 +26,7 @@
                                 <button mat-icon-button class="small" *ngIf="trustedAuthor" (click)="createNewPackage()" title="Create a new Package"><mat-icon [inline]="true">add</mat-icon></button>
                             </div>
                             <ul class="flat-tree">
-                                <li *ngFor="let pkg of packages">{{pkg.name}}</li>
+                                <li *ngFor="let pkg of packages; let i = index" (click)="showTriggerDetails(pkg)">{{pkg.name}}</li>
                             </ul>
                         </div>
                     </div>
@@ -36,7 +36,10 @@
                             <ng-template [ngIf]="showNewTrigger">
                                 <app-new-trigger-package (triggerPackage)="onNewPackage($event)" [authorId]="author?.authorId"></app-new-trigger-package>
                             </ng-template>
-
+                            <ng-template [ngIf]="detailsModel != null">
+                                <app-trigger-package-details [package]="detailsModel"></app-trigger-package-details>
+                            </ng-template>
+                            
                         </div>
                     </div>
                 </div>

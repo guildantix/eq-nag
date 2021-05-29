@@ -1,6 +1,6 @@
 import { Component, EventEmitter, Input, OnInit, Output, ViewChild } from '@angular/core';
 import { MatTable } from '@angular/material/table';
-import { TriggerFolder, TriggerModel, PackageTrigger, TriggerPackageMetaModel } from 'src/app/core.model';
+import { PackageFolder, PackageTrigger, TriggerPackageMetaModel } from 'src/app/core.model';
 import { DialogService } from 'src/app/dialogs/dialog.service';
 import { IpcService } from 'src/app/ipc.service';
 import * as _ from 'lodash';
@@ -13,22 +13,34 @@ import { TriggerLibraryService } from '../trigger-library.service';
 } )
 export class TriggerPackageDetailsComponent implements OnInit {
     
-    public package: TriggerPackageMetaModel = new TriggerPackageMetaModel();
+    private _pkg: TriggerPackageMetaModel;
+    @Input()
+    public get package(): TriggerPackageMetaModel { return this._pkg; }
+    public set package( val: TriggerPackageMetaModel ) {
+        this._pkg = val;
+        if ( val ) {
+            let version = val.versionHistory?.find( f => f.versionId === val.versionId );
+            this.notes = version.notes;
+        }
+        
+        // if ( val?.versionHistory?.length > 0 ) {
+        //     this.notes = val.versionHistory[ 0 ].notes;
+        // }
+    }
     public notes: string;
-    public name: string;
-    private triggers: TriggerModel[];
-    private triggerFolders: TriggerFolder[];
+    // private triggers: TriggerModel[];
+    // private triggerFolders: TriggerFolder[];
 
     @Input() public authorId: string;
-    @Output() public triggerPackage: EventEmitter<TriggerPackageMetaModel> = new EventEmitter<TriggerPackageMetaModel>();
+    // @Output() public triggerPackage: EventEmitter<TriggerPackageMetaModel> = new EventEmitter<TriggerPackageMetaModel>();
 
-    @ViewChild( 'newTriggersTable', { static: true } ) newTriggersTable: MatTable<TriggerModel>;
+    @ViewChild( 'newTriggersTable', { static: true } ) newTriggersTable: MatTable<PackageTrigger>;
 
     constructor( private ipcService: IpcService, private dialogService: DialogService, private libraryService: TriggerLibraryService ) { }
 
     ngOnInit() { }
 
-    private getFolderFamilyNames( folderId: string, folders: TriggerFolder[], names: string[] ): string[] {
+    private getFolderFamilyNames( folderId: string, folders: PackageFolder[], names: string[] ): string[] {
         
         for ( let i = 0; i < folders?.length; i++ ) {
 
@@ -48,9 +60,9 @@ export class TriggerPackageDetailsComponent implements OnInit {
         }
     }
 
-    getTriggerFamily( trigger: TriggerModel ): string {
+    getTriggerFamily( trigger: PackageTrigger ): string {
 
-        let folderFamilyNames = this.getFolderFamilyNames( trigger.folderId, this.triggerFolders, [] );
+        let folderFamilyNames = this.getFolderFamilyNames( trigger.folderId, this.package.model.folders, [] );
         if ( folderFamilyNames?.length > 0 ) {
             let name = `\\${folderFamilyNames[ 0 ]}`;
             for ( let i = 1; i < folderFamilyNames.length; i++ ) {

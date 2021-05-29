@@ -1,15 +1,7 @@
 
-<mat-form-field style="width: 100%">
-    <mat-label>Package Name</mat-label>
-    <input matInput [(ngModel)]="name" name="newPackageName" />
-    <mat-hint></mat-hint>
-</mat-form-field>
+<h1>{{package.name}}</h1>
 
-<mat-form-field style="width: 100%">
-    <mat-label>Package Description</mat-label>
-    <textarea matInput [(ngModel)]="notes" name="newPackageNotes" rows="8"></textarea>
-    <mat-hint></mat-hint>
-</mat-form-field>
+<p>{{notes}}</p>
 
 <div>
 
@@ -32,8 +24,13 @@
             <td mat-cell *matCellDef="let element; let i = index" style="padding-left: 15px; white-space: nowrap; text-overflow: ellipsis; overflow: hidden;" title="{{getTriggerFamily(element)}}">{{getTriggerFamily(element)}}</td>
         </ng-container>
 
-        <tr mat-header-row *matHeaderRowDef="['name', 'family']"></tr>
-        <tr mat-row *matRowDef="let element; let i = index; columns: ['name', 'family'];"></tr>
+        <ng-container matColumnDef="comments">
+            <th mat-header-cell *matHeaderCellDef style="padding-left: 15px; width: 30px;"></th>
+            <td mat-cell *matCellDef="let element; let i = index" style="padding-left: 15px; width: 30px;"><mat-icon class="material-icons-outlined" style="cursor: default;" title="{{element.comments}}" *ngIf="element.comments?.length > 0">description</mat-icon></td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="['name', 'family', 'comments']"></tr>
+        <tr mat-row *matRowDef="let element; let i = index; columns: ['name', 'family', 'comments'];"></tr>
 
     </table>
 
