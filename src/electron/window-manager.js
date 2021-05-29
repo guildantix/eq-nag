@@ -11,6 +11,9 @@ class WindowManager {
     /** @type {BrowserWindow} */
     ginaImportWindow;
 
+    /** @type {BrowserWindow} */
+    triggerLibraryWindow;
+
     #dirname;
 
     constructor(dirname) {
@@ -236,7 +239,7 @@ class WindowManager {
         } );
 
         ipcMain.on( 'trigger:dialog:library', ( event, arg ) => {
-            this.ginaImportWindow = new BrowserWindow( {
+            this.triggerLibraryWindow = new BrowserWindow( {
                 parent: mainWindowRef.reference,
                 modal: false,
                 show: false,
@@ -248,17 +251,20 @@ class WindowManager {
                     devTools: app.isDev(),
                 }
             } );
+            if ( app.isDev() ) {
+                this.triggerLibraryWindow.webContents.openDevTools();
+            }
             let url = `file://${this.#dirname}/dist/index.html#/trigger/library`;
             if ( arg ) {
                 url += `/${arg}`;
             }
-            this.ginaImportWindow.loadURL( url );
-            this.ginaImportWindow.once( "ready-to-show", () => {
-                this.ginaImportWindow.show();
+            this.triggerLibraryWindow.loadURL( url );
+            this.triggerLibraryWindow.once( "ready-to-show", () => {
+                this.triggerLibraryWindow.show();
                 event.sender.webContents.send( 'trigger:dialog:library', true );
             } );
-            this.ginaImportWindow.on( 'closed', () => {
-                this.ginaImportWindow = null;
+            this.triggerLibraryWindow.on( 'closed', () => {
+                this.triggerLibraryWindow = null;
             } );
 
         } );

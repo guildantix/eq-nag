@@ -1,9 +1,10 @@
-import { Component, EventEmitter, OnInit, Output, ViewChild } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output, ViewChild } from '@angular/core';
 import { MatTable } from '@angular/material/table';
 import { TriggerFolder, TriggerModel, PackageTrigger, TriggerPackageMetaModel } from 'src/app/core.model';
 import { DialogService } from 'src/app/dialogs/dialog.service';
 import { IpcService } from 'src/app/ipc.service';
 import * as _ from 'lodash';
+import { TriggerLibraryService } from '../trigger-library.service';
 
 @Component( {
     selector: 'app-new-trigger-package',
@@ -18,11 +19,12 @@ export class NewTriggerPackageComponent implements OnInit {
     private triggers: TriggerModel[];
     private triggerFolders: TriggerFolder[];
 
+    @Input() public authorId: string;
     @Output() public triggerPackage: EventEmitter<TriggerPackageMetaModel> = new EventEmitter<TriggerPackageMetaModel>();
 
     @ViewChild( 'newTriggersTable', { static: true } ) newTriggersTable: MatTable<TriggerModel>;
 
-    constructor( private ipcService: IpcService, private dialogService: DialogService ) { }
+    constructor( private ipcService: IpcService, private dialogService: DialogService, private libraryService: TriggerLibraryService ) { }
 
     ngOnInit() { }
 
@@ -159,6 +161,17 @@ export class NewTriggerPackageComponent implements OnInit {
     cancel(): void {
         this.package = new TriggerPackageMetaModel();
         this.triggerPackage.emit( null );
+    }
+
+    createPackage(): void {
+        this.libraryService.createPackage( this.authorId, this.name, this.package.model, this.notes ).subscribe( pkg => {
+            if ( pkg ) {
+                this.triggerPackage.emit( pkg );
+            } else {
+                this.triggerPackage.emit( null );
+            }
+            this.package = new TriggerPackageMetaModel();
+        } );
     }
     
 }

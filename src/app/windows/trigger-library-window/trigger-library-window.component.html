@@ -26,7 +26,7 @@
                                 <button mat-icon-button class="small" *ngIf="trustedAuthor" (click)="createNewPackage()" title="Create a new Package"><mat-icon [inline]="true">add</mat-icon></button>
                             </div>
                             <ul class="flat-tree">
-                                <li>No items</li>
+                                <li *ngFor="let pkg of packages">{{pkg.name}}</li>
                             </ul>
                         </div>
                     </div>
@@ -34,7 +34,7 @@
                         <div class="ft-content" style="min-height: 500px; padding: 25px;">
                             
                             <ng-template [ngIf]="showNewTrigger">
-                                <app-new-trigger-package (triggerPackage)="onNewPackage($event)"></app-new-trigger-package>
+                                <app-new-trigger-package (triggerPackage)="onNewPackage($event)" [authorId]="author?.authorId"></app-new-trigger-package>
                             </ng-template>
 
                         </div>

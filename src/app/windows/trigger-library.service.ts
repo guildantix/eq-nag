@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { environment } from 'src/environments/environment';
-import { TriggerPackageMetaModel } from '../core.model';
+import { TriggerPackageMetaModel, TriggerPackageModel, TriggerPackageTransferModel } from '../core.model';
 import { catchError, map } from 'rxjs/operators';
 
 @Injectable()
@@ -13,6 +13,19 @@ export class TriggerLibraryService {
     getLibrary(): Observable<TriggerPackageMetaModel[]> {
         return this.httpClient.get<TriggerPackageMetaModel[]>( `${environment.shareServiceUrl}/triggers` )
             .pipe( catchError( this.handleError ) );
+    }
+
+    createPackage( authorId: string, name: string, model: TriggerPackageModel, notes: string ): Observable<TriggerPackageMetaModel> {
+        let data = new TriggerPackageTransferModel();
+
+        data.model = model;
+        data.name = name;
+        data.notes = notes;
+
+        return this.httpClient.post<TriggerPackageMetaModel>( `${environment.shareServiceUrl}/triggers/${authorId}`, data )
+            .pipe(
+                catchError( this.handleError )
+            );
     }
 
     private handleError( error: HttpErrorResponse ) {
