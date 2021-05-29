@@ -1,6 +1,6 @@
 import { Component, EventEmitter, Input, OnInit, Output, ViewChild } from '@angular/core';
 import { MatTable } from '@angular/material/table';
-import { TriggerFolder, TriggerModel, PackageTrigger, TriggerPackageMetaModel } from 'src/app/core.model';
+import { TriggerFolder, TriggerModel, PackageTrigger, TriggerPackageMetaModel, PackageFolder } from 'src/app/core.model';
 import { DialogService } from 'src/app/dialogs/dialog.service';
 import { IpcService } from 'src/app/ipc.service';
 import * as _ from 'lodash';
@@ -18,6 +18,7 @@ export class NewTriggerPackageComponent implements OnInit {
     public name: string;
     private triggers: TriggerModel[];
     private triggerFolders: TriggerFolder[];
+    private ancestryMap: Record<string, string> = {};
 
     @Input() public authorId: string;
     @Output() public triggerPackage: EventEmitter<TriggerPackageMetaModel> = new EventEmitter<TriggerPackageMetaModel>();
@@ -26,23 +27,52 @@ export class NewTriggerPackageComponent implements OnInit {
 
     constructor( private ipcService: IpcService, private dialogService: DialogService, private libraryService: TriggerLibraryService ) { }
 
-    ngOnInit() { }
+    ngOnInit() {
+        this.ipcService.getTriggers().subscribe( triggers => this.triggers = triggers );
+        this.ipcService.getTriggerFolders().subscribe( folders => this.triggerFolders = folders );
+    }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Opens the select trigger folder dialog.  Once a selection is made, 
+     * triggers in the selected folder's hierarchy are added to the package.
+     */
     selectTriggerFolders(): void {
         
         this.dialogService.showSelectTriggerFoldersDialog( null, 'Select folder' ).subscribe( selectedFolderId => {
             if ( selectedFolderId ) {
                 let folder = this.getFolder( selectedFolderId, this.triggerFolders );
                 if ( folder ) {
+                    this.addFolder( folder );
                     this.addFolderTriggers( folder );
                 }
             }
         } );
-        this.ipcService.getTriggers().subscribe( triggers => this.triggers = triggers );
-        this.ipcService.getTriggerFolders().subscribe( folders => this.triggerFolders = folders );
 
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Adds all triggers in the given folder and it's descendants.
+     * 
+     * @param folder The selected folder.
+     */
     addFolderTriggers( folder: TriggerFolder ): void {
         let folderIds = this.getFlattenedFolderIds( folder, [] );
         
@@ -55,6 +85,236 @@ export class NewTriggerPackageComponent implements OnInit {
         this.updateList();
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Adds the given folder and it's direct ancestry and full descendants to 
+     * the package.
+     * 
+     * @param folder The selected folder.
+     */
+    addFolder( folder: TriggerFolder ): void {
+        this.buildFolderAncestryMap();
+        let pkgFolder = this.addFolderAncestors( folder );
+        this.addFolderChildren( folder, pkgFolder );
+    }
+
+
+
+
+
+
+
+
+
+    
+    /**
+     * Adds all children in the given folder to the package folder children.
+     * 
+     * @param folder The selected folder
+     * @param pkgFolder The package folder parent.
+     */
+    addFolderChildren( folder: TriggerFolder, pkgFolder?: PackageFolder ): void {
+
+        pkgFolder = pkgFolder ? pkgFolder : this.findPackageFolder( folder.folderId, this.package.model.folders );
+
+        for ( let i = 0; i < folder.children?.length; i++ ) {
+            let child: PackageFolder = pkgFolder.children.find( f => f.folderId === folder.children[ i ].folderId );
+
+            if ( child == null ) {
+                child = new PackageFolder();
+                child.children = [];
+                child.folderId = folder.children[ i ].folderId;
+                child.name = this.getFolderName( folder.children[ i ].folderId, this.triggerFolders );
+                pkgFolder.children.push( child );
+            }
+
+            this.addFolderChildren( folder.children[ i ], child );
+        }
+    }
+
+
+
+
+
+
+
+
+
+    
+    /**
+     * Returns the package folder with the specified id.
+     * 
+     * @param folderId The folder id
+     * @param folders The list of folders to query.
+     */
+    findPackageFolder( folderId: string, folders: PackageFolder[] ): PackageFolder {
+
+        for ( let i = 0; i < folders.length; i++ ) {
+            if ( folders[ i ].folderId === folderId ) {
+                return folders[ i ];
+            }
+
+            if ( folders[ i ].children?.length > 0 ) {
+                let folder = this.findPackageFolder( folderId, folders[ i ].children );
+                if ( folder ) {
+                    return folder;
+                }
+            }
+        }
+        
+    }
+
+
+
+
+
+
+
+
+
+    
+    /**
+     * Adds the given folder and it's direct ancestors to the package model.
+     * 
+     * @returns Returns the given folder's package folder.
+     * 
+     * @param folder The selected folder.
+     */
+    addFolderAncestors( folder: TriggerFolder ): PackageFolder {
+        let flat: string[] = [ folder.folderId ];
+        let t: string = this.ancestryMap[ folder.folderId ];
+
+        while ( t != null ) {
+            flat.push( t );
+            t = this.ancestryMap[ t ];
+        }
+
+        this.package.model.folders = this.package.model.folders ? this.package.model.folders : [];
+        let folders = this.package.model.folders;
+        let output: PackageFolder;
+        for ( let i = flat.length - 1; i >= 0; i-- ) {
+
+            if ( folders.findIndex( f => f.folderId === flat[ i ] ) === -1 ) {
+                let pf = new PackageFolder();
+                pf.children = [];
+                pf.folderId = flat[ i ];
+                pf.name = this.getFolderName( flat[ i ], this.triggerFolders );
+                folders.push( pf );
+            }
+            
+            output = folders.find( f => f.folderId === flat[ i ] );
+            output.children = output.children ? output.children : [];
+            folders = output.children;
+        }
+
+        return output;
+    }
+
+
+
+
+
+
+
+
+
+    
+    /**
+     * Returns the specified folder's name.
+     * 
+     * @param folderId The selected folder id.
+     * @param folders The list of folders to query.
+     */
+    getFolderName( folderId: string, folders: TriggerFolder[] ): string {
+
+        for ( let i = 0; i < folders.length; i++ ) {
+            if ( folders[ i ].folderId === folderId ) {
+                return folders[ i ].name;
+            }
+            
+            if ( folders[ i ].children?.length > 0 ) {
+                let name = this.getFolderName( folderId, folders[ i ].children );
+                if ( name ) {
+                    return name;
+                }
+            }
+
+        }
+    }
+
+
+
+
+
+
+
+
+
+    
+    /**
+     * Builds a flat ancestry map to quickly lookup the parent folder id of any 
+     * folder in triggerFolders.
+     */
+    buildFolderAncestryMap(): void {
+        this.ancestryMap = {};
+
+        for ( let i = 0; i < this.triggerFolders.length; i++ ) {
+            this.ancestryMap[ this.triggerFolders[ i ].folderId ] = null;
+
+            if ( this.triggerFolders[ i ].children?.length > 0 ) {
+                this.continueFolderAncestryMap( this.triggerFolders[ i ].children, this.triggerFolders[ i ].folderId );
+            }
+        }
+    }
+
+
+
+
+
+
+
+
+
+    
+    /**
+     * The recursive function that generates the ancestry map.
+     * 
+     * @param children The list of folders to process.
+     * @param parentId The parent id of all given children.
+     */
+    continueFolderAncestryMap( children: TriggerFolder[], parentId: string ): void {
+        
+        for ( let i = 0; i < children.length; i++ ) {
+            this.ancestryMap[ children[ i ].folderId ] = parentId;
+            
+            if ( children[ i ].children?.length > 0 ) {
+                this.continueFolderAncestryMap( children[ i ].children, children[ i ].folderId );
+            }
+        }
+    }
+
+
+
+
+
+
+
+
+
+    
+    /**
+     * Adds the given trigger to the package if it doesn't exist already.
+     * 
+     * @param trigger The trigger model.
+     */
     addTrigger( trigger: TriggerModel ) {
         let exists = _.some( this.package.model.triggers, f => f.triggerId === trigger.triggerId );
         
@@ -76,6 +336,22 @@ export class NewTriggerPackageComponent implements OnInit {
 
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Recursively generates an array that contains all folder ids.
+     * 
+     * @param folder The current folder to process.
+     * @param folderIds The current flat folder ids list.
+     * @returns Returns the folder id's list with the given folder's id, plus all descendant folders..
+     */
     getFlattenedFolderIds( folder: TriggerFolder, folderIds: string[] ): string[] {
         
         folderIds.push( folder.folderId );
@@ -89,6 +365,23 @@ export class NewTriggerPackageComponent implements OnInit {
         return folderIds;
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Recursively finds the specified folder.
+     * 
+     * @returns Returns the found folder or null.
+     * 
+     * @param folderId The desired folder id.
+     * @param folders The list of folders to query.
+     */
     getFolder( folderId: string, folders: TriggerFolder[] ): TriggerFolder {
         for ( let i = 0; i < folders.length; i++ ) {
             if ( folders[ i ].folderId === folderId ) {
@@ -104,6 +397,24 @@ export class NewTriggerPackageComponent implements OnInit {
         return null;
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Generates an array that contains all of the specified folder's ancestors
+     * 
+     * @returns Returns an array that contains all of the names of the ancestor of the specified folder.
+     * 
+     * @param folderId The folder id.
+     * @param folders The list of folders to queryr
+     * @param names The current list of hierarchical names.
+     */
     private getFolderFamilyNames( folderId: string, folders: TriggerFolder[], names: string[] ): string[] {
         
         for ( let i = 0; i < folders?.length; i++ ) {
@@ -124,6 +435,22 @@ export class NewTriggerPackageComponent implements OnInit {
         }
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Returns a string that contains the ancestory of the given trigger.
+     * 
+     * @example 'Common/Community'
+     * 
+     * @param trigger The trigger model.
+     */
     public getTriggerFamily( trigger: TriggerModel ): string {
 
         let folderFamilyNames = this.getFolderFamilyNames( trigger.folderId, this.triggerFolders, [] );
@@ -139,6 +466,20 @@ export class NewTriggerPackageComponent implements OnInit {
 
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Removes the specified trigger from the package model.
+     * 
+     * @param triggerId The id of the trigger
+     */
     removeTrigger( triggerId: string ): void {
         if ( triggerId ) {
             let i = this.package.model.triggers.findIndex( f => f.triggerId === triggerId );
@@ -150,15 +491,51 @@ export class NewTriggerPackageComponent implements OnInit {
         }
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Forces the trigger table to redraw by ordering the list by trigger family.
+     */
     updateList(): void {
         this.package.model.triggers = _.orderBy( this.package.model.triggers, f => this.getTriggerFamily( f ) );
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Exits edit/add mode without making changes.
+     */
     cancel(): void {
         this.package = new TriggerPackageMetaModel();
         this.triggerPackage.emit( null );
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Submits the current new package and exits add/edit mode.
+     */
     createPackage(): void {
         this.libraryService.createPackage( this.authorId, this.name, this.package.model, this.notes ).subscribe( pkg => {
             if ( pkg ) {
