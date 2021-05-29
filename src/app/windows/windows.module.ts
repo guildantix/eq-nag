@@ -13,6 +13,7 @@ import { GinaImportStepperComponent } from './gina-import-window/gina-import-ste
 import { TriggerLibraryWindowComponent } from './trigger-library-window/trigger-library-window.component';
 import { TriggerLibraryService } from './trigger-library.service';
 import { NewTriggerPackageComponent } from './new-trigger-package/new-trigger-package.component';
+import { TriggerPackageDetailsComponent } from './trigger-package-details/trigger-package-details.component';
 
 @NgModule({
     imports: [
@@ -36,6 +37,7 @@ import { NewTriggerPackageComponent } from './new-trigger-package/new-trigger-pa
         GinaImportWindowComponent,
         TriggerLibraryWindowComponent,
         NewTriggerPackageComponent,
+        TriggerPackageDetailsComponent,
     ],
     providers: [
         TriggerLibraryService
