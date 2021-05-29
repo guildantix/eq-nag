@@ -407,3 +407,67 @@ export class AuthorModel {
     public name: string;
     public discord: string;
 }
+
+export class TriggerPackageVersion {
+    
+    public packageId: string;
+    public versionId: string;
+    public timestamp: Date;
+
+}
+
+export class VersionHistory {
+
+    public versionId: string;
+    public timestamp: Date;
+    public notes: string;
+
+}
+
+export class TriggerPackageTransferModel {
+
+    public model: any;
+    public notes: string;
+    public name: string;
+    
+}
+
+export class PackageFolder {
+
+    public folderId: string;
+    public name: string;
+    public children: PackageFolder[] = [];
+
+}
+
+export class PackageTrigger {
+
+    public triggerId: string = null;
+    public folderId: string = null;
+    public name: string = '';
+    public capturePhrases: CapturePhrase[] = [];
+    public comments: string = '';
+    public actions: TriggerAction[] = [];
+    public captureMethod: string = 'Any match';
+    public conditions: TriggerCondition[] = [];
+    public classLevels: CharacterClassLevel[] = [];
+
+}
+
+export class TriggerPackageModel {
+    public triggers: PackageTrigger[] = [];
+    public folders: PackageFolder[] = [];
+}
+
+export class TriggerPackageMetaModel {
+    
+    public triggerPackageId: string;
+    public versionId: string;
+    public timestamp: Date;
+    public model: TriggerPackageModel = new TriggerPackageModel();
+    public author: string;
+    public authorDiscord: string;
+    public trustedAuthor: boolean = false;
+    public versionHistory: VersionHistory[];
+    
+}

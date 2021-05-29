@@ -302,10 +302,36 @@ export class DialogService {
      * 
      * @param folderId If moving a folder, this is the id of the folder to be moved.
      */
-    public showSelectTriggerFolderDialog( folderId?: string ): Observable<string> {
+    public showSelectTriggerFolderDialog( folderId?: string, title?: string ): Observable<string> {
         return this.dialog.open<SelectTriggerFolderDialogComponent, any, string>( SelectTriggerFolderDialogComponent, {
             width: '450px',
-            data: { folderId: folderId },
+            data: { folderId: folderId, title: title },
+            panelClass: 'app-dialog',
+        } ).afterClosed();
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Opens the select trigger folder dialog.
+     * 
+     * @returns Returns the selected parent folder id.  If the selected parent 
+     *      folder id is the same as the given folder id, then the user has 
+     *      selected 'No parent' as their option.
+     * 
+     * @param folderId If moving a folder, this is the id of the folder to be moved.
+     */
+    public showSelectTriggerFoldersDialog( folderId?: string, title?: string ): Observable<string> {
+        return this.dialog.open<SelectTriggerFolderDialogComponent, any, string>( SelectTriggerFolderDialogComponent, {
+            width: '450px',
+            data: { folderId: folderId, title: title },
             panelClass: 'app-dialog',
         } ).afterClosed();
     }

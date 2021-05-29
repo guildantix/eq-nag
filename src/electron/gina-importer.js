@@ -39,6 +39,7 @@ class GinaImporter {
             mainWindowRef.reference.webContents.once( 'did-finish-load', () => {
                 queryGina( app.getPath( 'home' ), ginaPath => {
                     ginaDataPath = ginaPath;
+                    // console.log( 'gina data path', app.getPath( 'home' ) );
                     // getGinaConfig( jsonData => {
                     //     if ( jsonData ) {
                     //         mainWindowRef.reference.webContents.send( 'console:log', jsonData );

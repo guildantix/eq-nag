@@ -35,9 +35,11 @@ export class SelectTriggerFolderDialogComponent implements OnInit {
     public dataSource = new MatTreeFlatDataSource(this.treeControl, this.treeFlattener);
     hasChild = (_: number, node: ExampleFlatNode) => node.expandable;
 
+    public title: string = 'Select a parent folder';
+
     constructor(
         public dialogRef: MatDialogRef<SelectTriggerFolderDialogComponent>,
-        @Inject( MAT_DIALOG_DATA ) public data: { folderId: string },
+        @Inject( MAT_DIALOG_DATA ) public data: { folderId: string, title: string },
         public dialog: MatDialog,
         private ipcService: IpcService ) {
         
@@ -50,6 +52,10 @@ export class SelectTriggerFolderDialogComponent implements OnInit {
             this.dataSource.data = folders;
             this.treeControl.expandAll();
         } );
+
+        if ( data?.title ) {
+            this.title = data.title;
+        }
     }
 
     ngOnInit(): void {

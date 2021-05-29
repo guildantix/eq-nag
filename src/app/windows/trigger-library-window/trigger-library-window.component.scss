@@ -38,3 +38,15 @@ div.tab-content {
     flex-direction: row;
     padding:15px;
 }
+
+ul {
+    display: block;
+    padding: 0;
+    margin: 0;
+
+    li {
+        list-style: none;
+        padding: 1px 5px;
+        cursor: pointer;
+    }
+}

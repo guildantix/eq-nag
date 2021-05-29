@@ -11,6 +11,8 @@ import { DialogModule } from '../dialogs/dialog.module';
 import { EditorsModule } from '../editors/editors.module';
 import { GinaImportStepperComponent } from './gina-import-window/gina-import-stepper.component';
 import { TriggerLibraryWindowComponent } from './trigger-library-window/trigger-library-window.component';
+import { TriggerLibraryService } from './trigger-library.service';
+import { NewTriggerPackageComponent } from './new-trigger-package/new-trigger-package.component';
 
 @NgModule({
     imports: [
@@ -33,7 +35,10 @@ import { TriggerLibraryWindowComponent } from './trigger-library-window/trigger-
         GinaImportStepperComponent,
         GinaImportWindowComponent,
         TriggerLibraryWindowComponent,
+        NewTriggerPackageComponent,
     ],
-    providers: [],
+    providers: [
+        TriggerLibraryService
+    ],
 })
 export class WindowsModule { }
