@@ -1,7 +1,7 @@
 
 <h1>{{package.name}}</h1>
 
-<p>{{notes}}</p>
+<p>{{package.description}}</p>
 
 <div>
 
@@ -37,6 +37,17 @@
 </div>
 
 <div class="creator-actions">
-    <button mat-button color="accent">Import Package <mat-icon class="material-icons-outlined">cloud_upload</mat-icon></button>
+    <button mat-button color="accent">Import Package <mat-icon class="material-icons-outlined">cloud_download</mat-icon></button>
+    <button mat-button color="accent" *ngIf="isAuthor" (click)="onUpdatePackageClick()">Update Package <mat-icon class="material-icons-outlined">edit</mat-icon></button>
     <span class="spacer"></span>
+</div>
+
+
+<div>
+    <h4>History</h4>
+    <div *ngFor="let version of package.versionHistory" class="update-record">
+        <div *ngIf="version.notes != null">
+            <span class="color-purple timestamp">{{version.timestamp | date:'short'}}</span>
+            <span class="update-notes">{{version.notes}}</span></div>
+    </div>
 </div>

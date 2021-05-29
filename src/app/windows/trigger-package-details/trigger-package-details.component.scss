@@ -18,3 +18,17 @@ table {
     flex-direction: row;
     padding:15px;
 }
+
+.update-record {
+    margin-top: 9px;
+    
+    .timestamp {
+        font-size: 14px;
+    }
+    .update-notes {
+        font-weight: 300;
+        opacity: .8;
+        padding-left: 25px;
+        display: block;
+    }
+}

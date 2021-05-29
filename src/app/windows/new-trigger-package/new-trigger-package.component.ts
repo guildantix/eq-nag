@@ -5,6 +5,7 @@ import { DialogService } from 'src/app/dialogs/dialog.service';
 import { IpcService } from 'src/app/ipc.service';
 import * as _ from 'lodash';
 import { TriggerLibraryService } from '../trigger-library.service';
+import { MatSnackBar } from '@angular/material/snack-bar';
 
 @Component( {
     selector: 'app-new-trigger-package',
@@ -15,21 +16,90 @@ export class NewTriggerPackageComponent implements OnInit {
     
     public package: TriggerPackageMetaModel = new TriggerPackageMetaModel();
     public notes: string;
-    public name: string;
+    // public name: string;
     private triggers: TriggerModel[];
     private triggerFolders: TriggerFolder[];
     private ancestryMap: Record<string, string> = {};
+    private _pkgId: string;
 
     @Input() public authorId: string;
+    @Input()
+    public get packageId(): string { return this._pkgId; }
+    public set packageId( val: string ) {
+        this._pkgId = val;
+        if ( val ) {
+            this.libraryService.getPackage( val ).subscribe( pkg => {
+                console.log( 'got', pkg );
+                this.package = pkg[0];
+                this.pullTriggerUpdates();
+            } );
+        }
+    }
     @Output() public triggerPackage: EventEmitter<TriggerPackageMetaModel> = new EventEmitter<TriggerPackageMetaModel>();
 
     @ViewChild( 'newTriggersTable', { static: true } ) newTriggersTable: MatTable<TriggerModel>;
 
-    constructor( private ipcService: IpcService, private dialogService: DialogService, private libraryService: TriggerLibraryService ) { }
+    constructor( private ipcService: IpcService, private dialogService: DialogService, private libraryService: TriggerLibraryService, private snackBar: MatSnackBar ) { }
 
     ngOnInit() {
         this.ipcService.getTriggers().subscribe( triggers => this.triggers = triggers );
         this.ipcService.getTriggerFolders().subscribe( folders => this.triggerFolders = folders );
+    }
+
+    pullTriggerUpdates(): void {
+        this.triggers.forEach( trigger => {
+                
+            this.package.model.triggers.forEach( pkgTrigger => {
+                if ( pkgTrigger.triggerId === trigger.triggerId ) {
+                    if ( pkgTrigger.folderId !== trigger.folderId ) {
+                        // if the folder was changed, ensure the new folder is added to the package.
+                        let folder = this.findTriggerFolder( trigger.folderId, this.triggerFolders );
+                        this.addFolderAncestors( folder );
+                        pkgTrigger.folderId = trigger.folderId;
+                    }
+                    pkgTrigger.name = trigger.name;
+                    pkgTrigger.capturePhrases = _.cloneDeep( trigger.capturePhrases );
+                    pkgTrigger.comments = _.cloneDeep( trigger.comments );
+                    pkgTrigger.actions = _.cloneDeep( trigger.actions );
+                    pkgTrigger.captureMethod = _.cloneDeep( trigger.captureMethod );
+                    pkgTrigger.conditions = _.cloneDeep( trigger.conditions );
+                    pkgTrigger.classLevels = _.cloneDeep( trigger.classLevels );
+                }
+            } );
+
+        } );
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Recursively searches and finds the specified folder.
+     * 
+     * @returns Returns the desired folder or undefined.
+     * 
+     * @param folderId The desried folde rid.
+     * @param folders The list of folders to query.
+     */
+    findTriggerFolder( folderId: string, folders: TriggerFolder[] ): TriggerFolder {
+        for ( let i = 0; i < folders.length; i++ ) {
+            if ( folders[ i ].folderId === folderId ) {
+                return folders[ i ];
+            }
+
+            if ( folders[ i ].children?.length > 0 ) {
+                let folder = this.findTriggerFolder( folderId, folders[ i ].children );
+                if ( folder ) {
+                    return folder;
+                }
+            }
+        }
     }
 
 
@@ -522,6 +592,7 @@ export class NewTriggerPackageComponent implements OnInit {
     cancel(): void {
         this.package = new TriggerPackageMetaModel();
         this.triggerPackage.emit( null );
+        console.log( 'author id', this.authorId );
     }
 
 
@@ -536,15 +607,27 @@ export class NewTriggerPackageComponent implements OnInit {
     /**
      * Submits the current new package and exits add/edit mode.
      */
-    createPackage(): void {
-        this.libraryService.createPackage( this.authorId, this.name, this.package.model, this.notes ).subscribe( pkg => {
-            if ( pkg ) {
-                this.triggerPackage.emit( pkg );
-            } else {
-                this.triggerPackage.emit( null );
-            }
-            this.package = new TriggerPackageMetaModel();
-        } );
+    save(): void {
+        if ( this._pkgId != null ) {
+            this.libraryService.updatePackage( this.authorId, this.package, this.notes ).subscribe( pkg => {
+                if ( pkg ) {
+                    this.snackBar.open( 'Update successful!', 'dismiss', { duration: 5000 } );
+                    this.triggerPackage.emit( pkg );
+                    this.package = new TriggerPackageMetaModel();
+                } else {
+                    this.dialogService.showErrorDialog( 'Sync Error', 'Could not update the package' );
+                }
+            } );
+        } else {
+            this.libraryService.createPackage( this.authorId, this.package, this.notes ).subscribe( pkg => {
+                if ( pkg ) {
+                    this.triggerPackage.emit( pkg );
+                    this.package = new TriggerPackageMetaModel();
+                } else {
+                    this.dialogService.showErrorDialog( 'Sync Error', 'Could not create the package' );
+                }
+            } );
+        }
     }
     
 }

@@ -429,7 +429,8 @@ export class TriggerPackageTransferModel {
     public model: any;
     public notes: string;
     public name: string;
-
+    public description: string;
+    
 }
 
 export class PackageFolder {
@@ -470,5 +471,6 @@ export class TriggerPackageMetaModel {
     public trustedAuthor: boolean = false;
     public name: string;
     public versionHistory: VersionHistory[];
-    
+    public description: string;
+
 }

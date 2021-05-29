@@ -35,7 +35,10 @@ export class TriggerLibraryWindowComponent implements OnInit {
     public trustedAuthor: boolean = false;
     public notes: string;
     public showNewTrigger: boolean = false;
+    public showEditTrigger: boolean = false;
+    public showDetailsModel: boolean = false;
     public detailsModel: TriggerPackageMetaModel = null;
+    public editPackageId: string = null;
 
     constructor( private ipcService: IpcService, private dialogService: DialogService, private snackBar: MatSnackBar,  private libraryService: TriggerLibraryService, private settingsService: SettingsService ) { }
 
@@ -68,8 +71,22 @@ export class TriggerLibraryWindowComponent implements OnInit {
         this.showNewTrigger = false;
     }
 
+    onSavePackage( triggerPackage: TriggerPackageMetaModel ): void {
+        if ( triggerPackage != null ) {
+            this.libraryService.getLibrary().subscribe( packages => this.packages = packages );
+        }
+        this.showEditTrigger = false;
+    }
+
     showTriggerDetails( triggerPackage: TriggerPackageMetaModel ): void {
         this.detailsModel = triggerPackage;
+        this.showDetailsModel = true;
+    }
+
+    showEditPackage( packageId: string ): void {
+        this.editPackageId = packageId;
+        this.showEditTrigger = true;
+        this.showDetailsModel = false;
     }
 
 }

@@ -11,21 +11,49 @@ export class TriggerLibraryService {
     constructor( private httpClient: HttpClient ) { }
 
     getLibrary(): Observable<TriggerPackageMetaModel[]> {
-        return this.httpClient.get<TriggerPackageMetaModel[]>( `${environment.shareServiceUrl}/triggers` )
+        return this.httpClient.get<TriggerPackageMetaModel[]>( `${environment.shareServiceUrl}/triggers/library` )
             .pipe( catchError( this.handleError ) );
     }
 
-    createPackage( authorId: string, name: string, model: TriggerPackageModel, notes: string ): Observable<TriggerPackageMetaModel> {
+    isAuthor( packageId: string, authorId: string ): Observable<boolean> {
+        return this.httpClient.get<boolean>( `${environment.shareServiceUrl}/triggers/${packageId}/is-author/${authorId}` )
+            .pipe( catchError( this.handleError ) );
+    }
+
+    createPackage( authorId: string, meta: TriggerPackageMetaModel, notes: string ): Observable<TriggerPackageMetaModel> {
         let data = new TriggerPackageTransferModel();
 
-        data.model = model;
-        data.name = name;
+        data.model = meta.model;
+        data.name = meta.name;
         data.notes = notes;
+        data.description = meta.description;
 
         return this.httpClient.post<TriggerPackageMetaModel>( `${environment.shareServiceUrl}/triggers/${authorId}`, data )
             .pipe(
                 catchError( this.handleError )
             );
+    }
+
+    updatePackage( authorId: string, meta: TriggerPackageMetaModel, notes: string ): Observable<TriggerPackageMetaModel> {
+        let data = new TriggerPackageTransferModel();
+
+        data.model = meta.model;
+        data.name = meta.name;
+        data.notes = notes;
+        data.description = meta.description;
+
+        return this.httpClient.put<TriggerPackageMetaModel>( `${environment.shareServiceUrl}/triggers/${authorId}/update/${meta.triggerPackageId}`, data )
+            .pipe(
+                catchError( this.handleError )
+            );
+    }
+
+    getPackage( packageId: string | string[] ): Observable<TriggerPackageMetaModel[]> {
+        
+        packageId = Array.isArray( packageId ) ? packageId : [ packageId ];
+        
+        return this.httpClient.get<TriggerPackageMetaModel[]>( `${environment.shareServiceUrl}/triggers?packageIds=${packageId.join(',')}` )
+            .pipe( catchError( this.handleError ) );
     }
 
     private handleError( error: HttpErrorResponse ) {

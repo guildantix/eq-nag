@@ -36,8 +36,11 @@
                             <ng-template [ngIf]="showNewTrigger">
                                 <app-new-trigger-package (triggerPackage)="onNewPackage($event)" [authorId]="author?.authorId"></app-new-trigger-package>
                             </ng-template>
-                            <ng-template [ngIf]="detailsModel != null">
-                                <app-trigger-package-details [package]="detailsModel"></app-trigger-package-details>
+                            <ng-template [ngIf]="showEditTrigger">
+                                <app-new-trigger-package (triggerPackage)="onSavePackage($event)" [authorId]="author?.authorId" [packageId]="editPackageId"></app-new-trigger-package>
+                            </ng-template>
+                            <ng-template [ngIf]="showDetailsModel">
+                                <app-trigger-package-details [package]="detailsModel" (editPackageId)="showEditPackage($event)"></app-trigger-package-details>
                             </ng-template>
                             
                         </div>

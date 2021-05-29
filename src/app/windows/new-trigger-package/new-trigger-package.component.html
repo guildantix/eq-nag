@@ -1,13 +1,20 @@
 
-<mat-form-field style="width: 100%">
+<mat-form-field style="width: 100%" *ngIf="packageId == null">
     <mat-label>Package Name</mat-label>
-    <input matInput [(ngModel)]="name" name="newPackageName" />
+    <input matInput [(ngModel)]="package.name" name="newPackageName" />
+    <mat-hint></mat-hint>
+</mat-form-field>
+<h1 *ngIf="packageId != null">{{package.name}}</h1>
+
+<mat-form-field style="width: 100%">
+    <mat-label>Package Description</mat-label>
+    <textarea matInput [(ngModel)]="package.description" name="newPackageDesc" rows="8"></textarea>
     <mat-hint></mat-hint>
 </mat-form-field>
 
 <mat-form-field style="width: 100%">
-    <mat-label>Package Description</mat-label>
-    <textarea matInput [(ngModel)]="notes" name="newPackageNotes" rows="8"></textarea>
+    <mat-label>Update Notes</mat-label>
+    <textarea matInput [(ngModel)]="notes" name="newPackageUpdateNotes" rows="8"></textarea>
     <mat-hint></mat-hint>
 </mat-form-field>
 
@@ -15,7 +22,7 @@
     <button mat-button (click)="selectTriggerFolders()">Add Folder</button>
 </div>
 
-<div>
+<div *ngIf="package?.model?.triggers?.length > 0">
 
     <table mat-table #newTriggersTable="matTable" style="width: 100%; min-width: 600px;" 
         [dataSource]="package.model.triggers"
@@ -55,5 +62,5 @@
 <div class="creator-actions">
     <button mat-button color="warn" (click)="cancel()"><mat-icon class="material-icons-outlined">undo</mat-icon> Cancel</button>
     <span class="spacer"></span>
-    <button mat-button color="accent" (click)="createPackage()">Upload New Package <mat-icon class="material-icons-outlined">cloud_upload</mat-icon></button>
+    <button mat-button color="accent" (click)="save()">Save Package <mat-icon class="material-icons-outlined">cloud_upload</mat-icon></button>
 </div>
