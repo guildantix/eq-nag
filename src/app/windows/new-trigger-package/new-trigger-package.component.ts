@@ -37,10 +37,6 @@ export class NewTriggerPackageComponent implements OnInit {
                     this.addFolderTriggers( folder );
                 }
             }
-            // console.log( 'selected folder id', selectedFolderId );
-            // let folder = this.detatchFolder( this.triggerFolders, sourceFolderId );
-            // this.triggerFolders.push( folder );
-            // this.updateTriggerFolders();
         } );
         this.ipcService.getTriggers().subscribe( triggers => this.triggers = triggers );
         this.ipcService.getTriggerFolders().subscribe( folders => this.triggerFolders = folders );
