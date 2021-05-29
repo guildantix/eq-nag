@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild } from '@angular/core';
+import { Component, EventEmitter, OnInit, Output, ViewChild } from '@angular/core';
 import { MatTable } from '@angular/material/table';
 import { TriggerFolder, TriggerModel, PackageTrigger, TriggerPackageMetaModel } from 'src/app/core.model';
 import { DialogService } from 'src/app/dialogs/dialog.service';
@@ -12,11 +12,13 @@ import * as _ from 'lodash';
 } )
 export class NewTriggerPackageComponent implements OnInit {
     
-    public newPackage: TriggerPackageMetaModel = new TriggerPackageMetaModel();
+    public package: TriggerPackageMetaModel = new TriggerPackageMetaModel();
     public notes: string;
     public name: string;
     private triggers: TriggerModel[];
     private triggerFolders: TriggerFolder[];
+
+    @Output() public triggerPackage: EventEmitter<TriggerPackageMetaModel> = new EventEmitter<TriggerPackageMetaModel>();
 
     @ViewChild( 'newTriggersTable', { static: true } ) newTriggersTable: MatTable<TriggerModel>;
 
@@ -52,14 +54,11 @@ export class NewTriggerPackageComponent implements OnInit {
             }
         } );
 
-        // this.newPackage.model.triggers = _.orderBy(this.newPackage.model.triggers)
-        // this.newPackage.model.triggers = this.newPackage.model.triggers.slice();
         this.updateList();
-        // this.newTriggersTable?.renderRows();
     }
 
     addTrigger( trigger: TriggerModel ) {
-        let exists = _.some( this.newPackage.model.triggers, f => f.triggerId === trigger.triggerId );
+        let exists = _.some( this.package.model.triggers, f => f.triggerId === trigger.triggerId );
         
         if ( !exists ) {
             let pTrg = new PackageTrigger();
@@ -74,7 +73,7 @@ export class NewTriggerPackageComponent implements OnInit {
             pTrg.conditions = _.cloneDeep( trigger.conditions );
             pTrg.classLevels = _.cloneDeep( trigger.classLevels );
 
-            this.newPackage.model.triggers.push( pTrg );
+            this.package.model.triggers.push( pTrg );
         }
 
     }
@@ -144,17 +143,22 @@ export class NewTriggerPackageComponent implements OnInit {
 
     removeTrigger( triggerId: string ): void {
         if ( triggerId ) {
-            let i = this.newPackage.model.triggers.findIndex( f => f.triggerId === triggerId );
+            let i = this.package.model.triggers.findIndex( f => f.triggerId === triggerId );
             if ( i > -1 ) {
-                this.newPackage.model.triggers.splice( i, 1 );
-                // this.newPackage.model.triggers = this.newPackage.model.triggers.slice();
+                this.package.model.triggers.splice( i, 1 );
+                
                 this.updateList();
             }
         }
     }
 
     updateList(): void {
-        this.newPackage.model.triggers = _.orderBy( this.newPackage.model.triggers, f => this.getTriggerFamily( f ) );
+        this.package.model.triggers = _.orderBy( this.package.model.triggers, f => this.getTriggerFamily( f ) );
+    }
+
+    cancel(): void {
+        this.package = new TriggerPackageMetaModel();
+        this.triggerPackage.emit( null );
     }
     
 }

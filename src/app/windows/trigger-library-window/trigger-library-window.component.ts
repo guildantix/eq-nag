@@ -59,4 +59,11 @@ export class TriggerLibraryWindowComponent implements OnInit {
         }
     }
 
+    onNewPackage( triggerPackage: TriggerPackageMetaModel ): void {
+        if ( triggerPackage != null ) {
+            
+        }
+        this.showNewTrigger = false;
+    }
+
 }

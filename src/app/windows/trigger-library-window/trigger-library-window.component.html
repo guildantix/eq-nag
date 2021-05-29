@@ -34,7 +34,7 @@
                         <div class="ft-content" style="min-height: 500px; padding: 25px;">
                             
                             <ng-template [ngIf]="showNewTrigger">
-                                <app-new-trigger-package></app-new-trigger-package>
+                                <app-new-trigger-package (triggerPackage)="onNewPackage($event)"></app-new-trigger-package>
                             </ng-template>
 
                         </div>

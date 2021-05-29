@@ -3,3 +3,18 @@ table {
         max-width: 0px;
     }
 }
+
+.import-actions {
+    .spacer {
+        display: flex;
+        flex: 1 0 auto;
+    }
+    button {
+        mat-icon {
+            margin-top: -4px;
+        }
+    }
+    display:flex;
+    flex-direction: row;
+    padding:15px;
+}
