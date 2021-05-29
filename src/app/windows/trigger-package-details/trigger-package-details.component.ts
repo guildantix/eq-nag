@@ -24,19 +24,12 @@ export class TriggerPackageDetailsComponent implements OnInit {
             this.notes = version.notes;
             this.libraryService.isAuthor( val.triggerPackageId, this.authorId ).subscribe( isAuth => this.isAuthor = isAuth && this.trustedAuthor );
         }
-        
-        // if ( val?.versionHistory?.length > 0 ) {
-        //     this.notes = val.versionHistory[ 0 ].notes;
-        // }
     }
     public notes: string;
     public isAuthor: boolean = false;
-    // private triggers: TriggerModel[];
-    // private triggerFolders: TriggerFolder[];
 
     public authorId: string;
     public trustedAuthor: boolean = false;
-    // @Output() public triggerPackage: EventEmitter<TriggerPackageMetaModel> = new EventEmitter<TriggerPackageMetaModel>();
     @Output() public editPackageId: EventEmitter<string> = new EventEmitter<string>();
     @ViewChild( 'newTriggersTable', { static: true } ) newTriggersTable: MatTable<PackageTrigger>;
 
