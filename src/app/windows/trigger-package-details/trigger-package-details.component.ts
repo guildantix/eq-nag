@@ -3,7 +3,7 @@ import { MatTable } from '@angular/material/table';
 import { PackageFolder, PackageTrigger, TriggerPackageMetaModel } from 'src/app/core.model';
 import { DialogService } from 'src/app/dialogs/dialog.service';
 import { IpcService } from 'src/app/ipc.service';
-import * as _ from 'lodash';
+import * as _ from 'lodash-es';
 import { TriggerLibraryService } from '../trigger-library.service';
 import { SettingsService } from 'src/app/settings/settings-http.service';
 
@@ -27,6 +27,9 @@ export class TriggerPackageDetailsComponent implements OnInit {
     }
     public notes: string;
     public isAuthor: boolean = false;
+    public get showHistory(): boolean {
+        return _.some( this.package.versionHistory, f => f.notes != null );
+    }
 
     public authorId: string;
     public trustedAuthor: boolean = false;

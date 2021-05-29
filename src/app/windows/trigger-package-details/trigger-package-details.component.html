@@ -43,7 +43,7 @@
 </div>
 
 
-<div>
+<div *ngIf="showHistory">
     <h4>History</h4>
     <div *ngFor="let version of package.versionHistory" class="update-record">
         <div *ngIf="version.notes != null">
