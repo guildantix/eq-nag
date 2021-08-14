@@ -212,7 +212,7 @@ export class ScraperService {
                     // class: document.evaluate( "//div[contains(@class, 'db-infobox')]/table/tbody/tr/td/strong[contains(., '" + currentCharacterClass + "')]", document, null, XPathResult.ANY_TYPE, null ).iterateNext().textContent,
                     // level: +document.evaluate( "//div[contains(@class, 'db-infobox')]/table/tbody/tr/td/strong[contains(., '" + currentCharacterClass + "')]", document, null, XPathResult.ANY_TYPE, null ).iterateNext().parentNode.nextSibling.textContent,
                     castOnOther: document.evaluate( "//blockquote[contains(., 'Cast on other')]", document, null, XPathResult.ANY_TYPE, null ).iterateNext().textContent.split( 'Cast on other: ' )[ 1 ].split( 'Effect Fades: ' )[ 0 ],
-                    castOnYou: document.evaluate( "//blockquote[contains(., 'Cast on you')]", document, null, XPathResult.ANY_TYPE, null ).iterateNext().textContent.split( 'Cast on you: ' )[ 1 ].split( 'Cast on other: ' )[ 0 ],
+                    castOnYou: document.evaluate( "//blockquote[contains(., 'Cast on you')]", document, null, XPathResult.ANY_TYPE, null ).iterateNext()?.textContent.split( 'Cast on you: ' )[ 1 ].split( 'Cast on other: ' )[ 0 ],
                     // effectFades_bad: document.evaluate( "//blockquote[contains(., 'Effect Fades')]", document, null, XPathResult.ANY_TYPE, null ).iterateNext().textContent?.split( 'Effect Fades: ' )[ 1 ],
                 };
 
@@ -242,7 +242,7 @@ export class ScraperService {
 
                 } else if ( data._duration.indexOf( 'ticks' ) > -1 ) {
                     data.duration = parseFloat( /([0-9]\sticks)(?!.*([0-9]\sticks))/.exec( data._duration )[ 1 ] ) * 6;
-                    
+
                 } else {
                     let hours = /(?<hours>\d*\.?\d*) hour/gi.exec( data._duration );
                     let minutes = /(?<minutes>\d*\.?\d*) mins/gi.exec( data._duration );
