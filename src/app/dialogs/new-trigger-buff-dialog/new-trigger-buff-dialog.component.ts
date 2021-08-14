@@ -112,18 +112,20 @@ export class NewTriggerBuffDialogComponent implements OnInit {
         // if ( this.spell.targetType === 'Self' ) {
         trigger.captureMethod = 'Any match';
 
-        castOnYouPhraseId = nanoid();
-        trigger.capturePhrases.push( <CapturePhrase>{
-            phraseId: castOnYouPhraseId,
-            useRegEx: true,
-            requirePreviousPhrase: false,
-            duration: null,
-            // /^(?<target>You) feel armored\.$/
-            // /^(?<target>You)r balls feel armored\.$/
-            phrase: this.spell.castOnYou.replace( /\.$/, '\\.$' ).replace( /you/mi, '^(?<target>You)' ),
-        } );
-        buffTimerPhrases.push( castOnYouPhraseId );
-
+        if ( this.useSelfTimer ) {
+            castOnYouPhraseId = nanoid();
+            trigger.capturePhrases.push( <CapturePhrase>{
+                phraseId: castOnYouPhraseId,
+                useRegEx: true,
+                requirePreviousPhrase: false,
+                duration: null,
+                // /^(?<target>You) feel armored\.$/
+                // /^(?<target>You)r balls feel armored\.$/
+                phrase: this.spell.castOnYou.replace( /\.$/, '\\.$' ).replace( /you/mi, '^(?<target>You)' ),
+            } );
+            buffTimerPhrases.push( castOnYouPhraseId );
+        }
+        
         if ( this.useTargetTimer ) {
             castOnOtherPhraseId = nanoid();
             trigger.capturePhrases.push( <CapturePhrase>{
