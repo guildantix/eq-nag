@@ -233,14 +233,34 @@ export class ScraperService {
                     }
 
                 }
-    
+                
+                // durRange is for: 3.3 mins @L1 to 27.0 mins @L9
                 let durRange = /^(?<minDuration>\d*\.?\d*) mins @L\d{1,3} to (?<duration>\d*\.?\d*) mins @L\d{1,3}$/gi.exec( data._duration );
+                
                 if ( durRange?.length > 0 ) {
                     data.duration = parseFloat( durRange.groups.duration ) * 10 * 6;
+
                 } else if ( data._duration.indexOf( 'ticks' ) > -1 ) {
                     data.duration = parseFloat( /([0-9]\sticks)(?!.*([0-9]\sticks))/.exec( data._duration )[ 1 ] ) * 6;
+                    
                 } else {
-                    data.duration = parseFloat( data._duration ) * 10 * 6;
+                    let hours = /(?<hours>\d*\.?\d*) hour/gi.exec( data._duration );
+                    let minutes = /(?<minutes>\d*\.?\d*) mins/gi.exec( data._duration );
+                    let d = 0;
+
+                    if ( hours?.groups?.hours ) {
+                        d += parseFloat( hours.groups.hours ) * 60 * 60;
+                    }
+
+                    if ( minutes?.groups?.minutes ) {
+                        d += parseFloat( minutes.groups.minutes ) * 60;
+                    }
+
+                    if ( d > 0 ) {
+                        data.duration = d;
+                    } else {
+                        data.duration = parseFloat( data._duration ) * 10 * 6;
+                    }
                 }
 
                 let targetTypeCheck = document.evaluate( "//td[./strong = 'Target Type:']/following-sibling::td[1]", document, null, XPathResult.ANY_TYPE, null ).iterateNext();
