@@ -34,6 +34,12 @@ class LogTrigger extends Trigger {
      *  value is stored in the conditionResults dictionary.
      */
     _conditionResults;
+
+    /** @type {boolean} */
+    _onCooldown = false;
+    /** @type {Date} */
+    _cooldownStart = null;
+    
 }
 
 module.exports = { PhraseParse, LogTrigger };

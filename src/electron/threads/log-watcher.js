@@ -17,6 +17,7 @@ const chokidar = require( "chokidar" );
 const StringUtilities = require( '../utilities/string' );
 const NumberUtilities = require( '../utilities/numbers' );
 const FctModel = require( '../data/models/fct' );
+const { DateUtilities } = require( '../utilities/dates' );
 // const _timerId = '7d9j6ZX7p6c5NLMw';
 
 var currentPosition = null;
@@ -384,6 +385,16 @@ function generateTriggerFns() {
              */
             trigger._checkConditions = function () {
                 let conditionsPassed = true;
+
+                if ( trigger._onCooldown ) {
+                    // If the trigger is on cooldown, determine if the trigger must remain on cooldown.
+                    let ellapsedCooldown = DateUtilities.timeSince( trigger._cooldownStart, new Date() );
+                    if ( ellapsedCooldown.totalSeconds > trigger.cooldownDuration ) {
+                        trigger._onCooldown = false;
+                    }
+
+                    return !trigger._onCooldown;
+                }
 
                 trigger._conditionResults = {};
 
@@ -855,6 +866,12 @@ function parseLogEntries( raw, simulating ) {
                 }
             } );
             entryMatched = true;
+
+            // If the trigger has a cooldown, start the cooldown now.
+            if ( trigger.useCooldown ) {
+                trigger._onCooldown = true;
+                trigger._cooldownStart = new Date();
+            }
         } );
     } );
 
