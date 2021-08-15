@@ -19,6 +19,12 @@ export class CapturePhrasesComponent implements OnInit {
     @Input() public captureMethod: string;
     @Output() public captureMethodChange: EventEmitter<string> = new EventEmitter<string>();
 
+    @Input() public useCooldown: boolean;
+    @Output() public useCooldownChange: EventEmitter<boolean> = new EventEmitter<boolean>();
+
+    @Input() public cooldownDuration: number;
+    @Output() public cooldownDurationChange: EventEmitter<number> = new EventEmitter<number>();
+
     @Input() public startWithNewPhrase: boolean = true;
 
     public capturePhraseTableColumns = [ 'moveIndex', 'number', 'phrase', 'regEx', 'delete' ];
@@ -75,6 +81,17 @@ export class CapturePhrasesComponent implements OnInit {
             this.capturePhrases.splice( index + 1, 0, this.capturePhrases.splice( index, 1 )[ 0 ] );
             this.capturePhrasesTable?.renderRows();
         }
+    }
+
+    public explainCooldowns() {
+        this.dialogService.showInfoDialog(
+            'Capture Cooldowns',
+            [
+                'Not all of EverQuest actions are logged.  For example, Lord Nagafen doesn\'t have a casting emote for Fire Breath.',
+                'The common way to deal with these abilities is to capture when someone is hit with this ability.  However, the size of the raid can make these captures expensive.',
+                'In this example, by enabling capture cooldown and setting the duration to 1 second, the trigger will effectively only capture the first person hit with this ability.',
+                'During the cooldown, the capture phrase regular expressions are not executed.'
+            ] );
     }
 
 }

@@ -1,14 +1,33 @@
 <fieldset>
     <legend class="full-width"><span>Phrases</span><span class="spacer"></span><button mat-button (click)="addNewCapturePhrase()" color="accent"><mat-icon>add</mat-icon>New</button></legend>
-    <mat-form-field style="width: 200px;">
-        <mat-label></mat-label>
-        <mat-select [(ngModel)]="captureMethod" name="ddlCaptureMethod" (ngModelChange)="captureMethodChange.emit(captureMethod)">
-            <mat-option value="Any match" matTooltip="Execute this trigger if any phrase matches a single log entry" matTooltipPosition="right">Any match</mat-option>
-            <mat-option value="Sequential" matTooltip="Execute this trigger if all phrases match sequentially across multiple log entries" matTooltipPosition="right">Sequential</mat-option>
-            <mat-option value="Concurrent" disabled matTooltip="Execute this trigger if all phrases match in a single log entry" matTooltipPosition="right">Concurrent</mat-option>
-        </mat-select>
-        <mat-hint>Capture Method</mat-hint>
-    </mat-form-field>
+
+    <div class="options-container">
+
+        <div>
+            <mat-form-field style="width: 200px;">
+                <mat-label></mat-label>
+                <mat-select [(ngModel)]="captureMethod" name="ddlCaptureMethod" (ngModelChange)="captureMethodChange.emit(captureMethod)">
+                    <mat-option value="Any match" matTooltip="Execute this trigger if any phrase matches a single log entry" matTooltipPosition="right">Any match</mat-option>
+                    <mat-option value="Sequential" matTooltip="Execute this trigger if all phrases match sequentially across multiple log entries" matTooltipPosition="right">Sequential</mat-option>
+                    <mat-option value="Concurrent" disabled matTooltip="Execute this trigger if all phrases match in a single log entry" matTooltipPosition="right">Concurrent</mat-option>
+                </mat-select>
+                <mat-hint>Capture Method</mat-hint>
+            </mat-form-field>
+        </div>
+        <div class="spacer"></div>
+        <div>
+            <mat-checkbox [(ngModel)]="useCooldown" name="cbxUseCooldown" (ngModelChange)="useCooldownChange.emit(useCooldown)">Cooldown</mat-checkbox>
+            <sup class="help-sup"
+                matTooltip="If enabled, after a phrase has been executed, wait the specified duration before another phrase can be executed."
+                matTooltipPosition="above"
+                matTooltipClass="tooltip-large"
+                (click)="explainCooldowns()">&nbsp;&nbsp;?</sup>
+            <app-duration [(ngModel)]="cooldownDuration" name="durCooldown" (ngModelChange)="cooldownDurationChange.emit(cooldownDuration)" style="display: inline-block;"></app-duration>
+        </div>
+
+    </div>
+
+
     <table mat-table #capturePhrasesTable="matTable"
         [dataSource]="capturePhrases"
         class="capture-phrases">

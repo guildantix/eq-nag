@@ -16,3 +16,15 @@ mat-form-field {
 .margin-t-50 {
     margin-top: 50px;
 }
+
+.options-container {
+    
+    .spacer {
+        display: flex;
+        flex: 1 0 auto;
+    }
+    
+    display: flex;
+    flex-direction: row;
+
+}
