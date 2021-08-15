@@ -465,6 +465,15 @@ class TriggerDatabaseStore extends Store {
             this.#data.version = 52;
             this.storeDataFile( this.#data );
         }
+        if ( this.#data.version < 53 ) {
+            this.#data?.triggers?.forEach( trigger => {
+                trigger.useCooldown = false;
+                trigger.cooldownDuration = 0;
+            } );
+            
+            this.#data.version = 53;
+            this.storeDataFile( this.#data );
+        }
     }
 
 

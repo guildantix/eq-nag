@@ -308,6 +308,10 @@ class Trigger {
     importIdentifier = null;
     /** @type {ImportTypes} */
     importType = null;
+    /** @type {boolean} */
+    useCooldown = false;
+    /** @type {number} */
+    cooldownDuration = 0;
 }
 
 class FileModel {
