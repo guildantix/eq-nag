@@ -17,6 +17,7 @@ const chokidar = require( "chokidar" );
 const StringUtilities = require( '../utilities/string' );
 const NumberUtilities = require( '../utilities/numbers' );
 const FctModel = require( '../data/models/fct' );
+// const _timerId = '7d9j6ZX7p6c5NLMw';
 
 var currentPosition = null;
 var startLogPosition = null;
@@ -326,7 +327,7 @@ function generateTriggerFns() {
                             if ( hasGroups === true ) {
                                 rgxValue = StringUtilities.parseSequentialGroups( rgxValue, matchGroups );
                             }
-                            console.log( 'rgxValue', rgxValue );
+                            
                             let _res = new RegExp( rgxValue, 'gi' ).exec( value );
                             return {
                                 phraseId: phrase.phraseId,
