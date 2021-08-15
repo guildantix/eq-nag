@@ -9,8 +9,8 @@
             <mat-icon class="material-icons-outlined" style="font-size: 48px;width: 48px;height: 48px;" *ngIf="data.notificationType == notificationTypes.Information">info</mat-icon>
             <mat-icon class="material-icons-outlined" style="font-size: 48px;width: 48px;height: 48px;" *ngIf="data.notificationType == notificationTypes.Custom && data.icon != null">{{data.icon}}</mat-icon>
         </div>
-        <div style="padding-top: 15px; padding-bottom: 15px;">
-            <p style="margin: 0;" *ngFor="let msg of messages">{{msg}}</p>
+        <div style="padding-top: 15px; padding-bottom: 15px; overflow-y: auto; max-height: 245px;">
+            <p style="margin: 0px 0px 8px 0px;" *ngFor="let msg of messages">{{msg}}</p>
         </div>
     </div>
 
