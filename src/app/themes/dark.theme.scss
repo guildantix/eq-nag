@@ -491,3 +491,22 @@ span.item-link {
 .dkp.credit {
     color: #ff4c4c;
 }
+
+.tooltip-large {
+    font-size: 12px;
+}
+
+.help-sup {
+    cursor: pointer;
+    padding-right: 10px;
+    color: $color-blue;
+    font-weight: 500;
+
+    &:hover {
+        color: $color-blue;
+    }
+
+    &:active {
+        color: $color-purple;
+    }
+}
