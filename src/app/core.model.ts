@@ -113,6 +113,8 @@ export class TriggerModel {
     public allakhazamUrl: string = null;
     public importIdentifier: string = null;
     public importType: ImportTypes;
+    public useCooldown: boolean = false;
+    public cooldownDuration: number = 0;
 
 }
 
