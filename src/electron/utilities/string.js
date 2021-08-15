@@ -450,7 +450,7 @@ function parseShortCodesToRegex( value, characterName ) {
     // (?<timerDuration>[0-9]+?[h|hour|hours|hrs]+\s[0-9]*?[m|min|mins|minute|minutes]*?\s?[0-9]+?[s|sec|secs|seconds|second]+?|[0-9]*?[m|min|mins|minute|minutes]*?\s?[0-9]+?[s|sec|secs|seconds|second]+?|[0-9]+)
 
     if ( value ) {
-        value = value.replace( /{TS}/i, '(?<timerDuration>[0-9]+?[h|hour|hours|hrs]+\\s?[0-9]*?[m|min|mins|minute|minutes]*?\\s?[0-9]+?[s|sec|secs|seconds|second]+?|[0-9]*?[m|min|mins|minute|minutes]*?\\s?[0-9]+?[s|sec|secs|seconds|second]+?|[0-9]+)' );
+        value = value.replace( /{TS}/i, '(?<timerDuration>[0-9]*?[h|hour|hours|hrs]*\\s?[0-9]*?[m|min|mins|minute|minutes]*?\\s?[0-9]*?[s|sec|secs|seconds|second]*?|[0-9]*?[m|min|mins|minute|minutes]*?\\s?[0-9]*?[s|sec|secs|seconds|second]*?|[0-9]*)' );
         value = value.replace( /{C}/gi, characterName );
         value = value.replace( /\${Character}/gi, characterName );
         // value = value.replace( /{COUNTER}/gi, '' ); // We may add this in the future, just not sure how to accomplish this.  WE use counter names instead of just {COUNTER} however.
