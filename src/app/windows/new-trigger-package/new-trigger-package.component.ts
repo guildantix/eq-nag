@@ -608,6 +608,46 @@ export class NewTriggerPackageComponent implements OnInit {
      * Submits the current new package and exits add/edit mode.
      */
     save(): void {
+        // Grab all of the files used.
+        this.package.files = this.package.files ? this.package.files : [];
+        this.ipcService.getAudioFileData().subscribe( audioFiles => {
+
+            this.package.model.triggers.forEach( trigger => {
+                trigger.actions.forEach( action => {
+
+                    if ( action.audioFileId ) {
+                        let file = audioFiles.find( f => f.fileId === action.audioFileId );
+
+                        if ( file ) {
+                            let exists = this.package.files.findIndex( f => f.fileId === file.fileId ) > -1;
+                            if ( !exists ) {
+                                this.package.files.push( file );
+                            }
+                        }
+
+                    }
+
+                } );
+            } );
+
+            this.savePackage();
+
+        } );
+    }
+
+
+
+
+
+
+
+
+
+    
+    /**
+     * Submits the package to the API service.
+     */
+    savePackage(): void {
         if ( this._pkgId != null ) {
             this.libraryService.updatePackage( this.authorId, this.package, this.notes ).subscribe( pkg => {
                 if ( pkg ) {
