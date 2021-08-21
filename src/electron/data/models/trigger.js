@@ -314,7 +314,7 @@ class Trigger {
     cooldownDuration = 0;
 }
 
-class FileModel {
+class BaseFileModel {
     
     /** @type {string} */
     fileId = null;
@@ -322,9 +322,21 @@ class FileModel {
     mediaType = MediaTypes.Unknown;
     /** @type {string} */
     fileName = null;
+
+}
+
+class FileModel extends BaseFileModel {
+
     /** @type {string} */
     physicalName = null;
 
 }
 
-module.exports = { Trigger, TriggerAction, ActionTypes, CapturePhrase, TriggerConditionTypes, OperatorTypes, Phrase, TriggerFolder, MediaTypes, FileModel, Tag, ImportTypes, CharacterClassLevel, TimerRestartBehaviors };
+class PackageFileModel extends BaseFileModel {
+
+    /** @type {string} */
+    contents = null;
+
+}
+
+module.exports = { Trigger, TriggerAction, ActionTypes, CapturePhrase, TriggerConditionTypes, OperatorTypes, Phrase, TriggerFolder, MediaTypes, FileModel, PackageFileModel, Tag, ImportTypes, CharacterClassLevel, TimerRestartBehaviors };
