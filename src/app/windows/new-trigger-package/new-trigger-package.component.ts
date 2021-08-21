@@ -611,7 +611,7 @@ export class NewTriggerPackageComponent implements OnInit {
         // Grab all of the files used.
         this.package.files = this.package.files ? this.package.files : [];
         this.ipcService.getAudioFileData().subscribe( audioFiles => {
-
+            
             this.package.model.triggers.forEach( trigger => {
                 trigger.actions.forEach( action => {
 
@@ -643,7 +643,7 @@ export class NewTriggerPackageComponent implements OnInit {
 
 
 
-    
+
     /**
      * Submits the package to the API service.
      */

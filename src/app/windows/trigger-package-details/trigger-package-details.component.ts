@@ -1,11 +1,12 @@
 import { Component, EventEmitter, Input, OnInit, Output, ViewChild } from '@angular/core';
 import { MatTable } from '@angular/material/table';
-import { PackageFolder, PackageTrigger, TriggerPackageMetaModel } from 'src/app/core.model';
+import { PackageFileModel, PackageFolder, PackageTrigger, TriggerPackageMetaModel } from 'src/app/core.model';
 import { DialogService } from 'src/app/dialogs/dialog.service';
 import { IpcService } from 'src/app/ipc.service';
 import * as _ from 'lodash-es';
 import { TriggerLibraryService } from '../trigger-library.service';
 import { SettingsService } from 'src/app/settings/settings-http.service';
+import { forkJoin, Observable, timer } from 'rxjs';
 
 @Component( {
     selector: 'app-trigger-package-details',
@@ -92,5 +93,42 @@ export class TriggerPackageDetailsComponent implements OnInit {
     onUpdatePackageClick() {
         this.editPackageId.emit( this.package.triggerPackageId );
     }
+
+    installPackage() {
+        this.libraryService
+            .getPackage( this.package.triggerPackageId )
+            .subscribe( triggerPackage => {
+                this.libraryService
+                    .getPackageFiles( this.package.triggerPackageId )
+                    .subscribe( packageFiles => this.installTriggerPackage( triggerPackage[ 0 ], packageFiles ) );
+            } );
+        
+    }
+
+    installTriggerPackage( triggerPackage: TriggerPackageMetaModel, packageFiles: PackageFileModel[] ): void {
+        // Adding a timer makes the following easier and I'm being lazy today.
+        let importTasks: Observable<any>[] = [ timer( 1 ) ];
+
+        packageFiles?.forEach( file => {
+            importTasks.push( this.ipcService.importPackageFile( file ) );
+        } );
+        
+        forkJoin( importTasks ).subscribe( results => {
+            
+        } );
+    }
+
+    // Things the installer must do.
+    // ~Pull down the latest version.~
+    // Configure auto-updates.
+    // Setup missing overlays.
+    // ~Pull down sound files.~
+    // ~Pull down custom icons.~ -- These are base64 encoded into the trigger meta.
+    // Pull down eq icons, pulling from the eq directory as normal.
+
+    // Things we need to get this done:
+    //      Wizard-style overlay builder.
+    //      Auto-updater system.
+    //      Adding a section in the share db to store images and files.
 
 }

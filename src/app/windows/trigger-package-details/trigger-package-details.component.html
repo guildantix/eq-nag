@@ -37,7 +37,7 @@
 </div>
 
 <div class="creator-actions">
-    <button mat-button color="accent">Import Package <mat-icon class="material-icons-outlined">cloud_download</mat-icon></button>
+    <button mat-button color="accent" (click)="installPackage()">Import Package <mat-icon class="material-icons-outlined">cloud_download</mat-icon></button>
     <button mat-button color="accent" *ngIf="isAuthor" (click)="onUpdatePackageClick()">Update Package <mat-icon class="material-icons-outlined">edit</mat-icon></button>
     <span class="spacer"></span>
 </div>
