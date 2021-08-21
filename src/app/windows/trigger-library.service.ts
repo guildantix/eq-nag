@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { environment } from 'src/environments/environment';
-import { TriggerPackageMetaModel, TriggerPackageModel, TriggerPackageTransferModel } from '../core.model';
+import { PackageFileModel, TriggerPackageMetaModel, TriggerPackageModel, TriggerPackageTransferModel } from '../core.model';
 import { catchError, map } from 'rxjs/operators';
 import { DialogService } from '../dialogs/dialog.service';
 
@@ -25,6 +25,7 @@ export class TriggerLibraryService {
         let data = new TriggerPackageTransferModel();
 
         data.model = meta.model;
+        data.files = meta.files;
         data.name = meta.name;
         data.notes = notes;
         data.description = meta.description;
@@ -55,6 +56,12 @@ export class TriggerLibraryService {
         packageId = Array.isArray( packageId ) ? packageId : [ packageId ];
         
         return this.httpClient.get<TriggerPackageMetaModel[]>( `${environment.shareServiceUrl}/triggers?packageIds=${packageId.join( ',' )}` )
+            .pipe( catchError( error => this.handleError( error ) ) );
+    }
+
+    getPackageFiles( packageId: string ): Observable<PackageFileModel[]> {
+        
+        return this.httpClient.get<PackageFileModel[]>( `${environment.shareServiceUrl}/triggers/${packageId}/files` )
             .pipe( catchError( error => this.handleError( error ) ) );
     }
 
