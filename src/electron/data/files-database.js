@@ -194,17 +194,6 @@ class FilesDatabaseStore extends Store {
                 m.fileName = f.fileName;
                 m.contents = fs.readFileSync( f.physicalName ).toString( 'base64' );
 
-                // var x = JSON.stringify( m );
-                // var y = JSON.parse( x );
-                // // let mp3 = 'C:\\Users\\USER\\AppData\\Roaming\\electron-angular-eq-parse\\resource-files\\6UbZ7tXLmUXDmLOS.mp3';
-                // let testFilename1 = path.join( this.#filePath, `testing1.mp3` );
-                // let testFilename2 = path.join( this.#filePath, `testing2.mp3` );
-                // // fs.writeFileSync( testFilename1, fs.readFileSync( mp3 ) );
-                // fs.writeFile( testFilename1, Buffer.from( m.contents, 'base64' ), () => { } );
-                // fs.writeFile( testFilename2, Buffer.from( y.contents, 'base64' ), () => { } );
-
-                // console.log( 'test file path,', testFilename1 );
-                // console.log( 'test file path,', testFilename2 );
                 return m;
             } );
 
