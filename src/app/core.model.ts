@@ -395,12 +395,23 @@ export class NewCharacterOptionModel {
 
 }
 
-export class FileModel {
+export class BaseFileModel {
     
     public fileId: string = null;
     public mediaType: MediaTypes = MediaTypes.Unknown;
     public fileName: string = null;
+
+}
+
+export class FileModel extends BaseFileModel {
+
     public physicalName: string = null;
+
+}
+
+export class PackageFileModel extends BaseFileModel {
+    
+    public contents: string;
 
 }
 
@@ -432,6 +443,7 @@ export class TriggerPackageTransferModel {
     public notes: string;
     public name: string;
     public description: string;
+    public files: PackageFileModel[] = [];
     
 }
 
@@ -468,6 +480,7 @@ export class TriggerPackageMetaModel {
     public versionId: string;
     public timestamp: Date;
     public model: TriggerPackageModel = new TriggerPackageModel();
+    public files: PackageFileModel[] = [];
     public author: string;
     public authorDiscord: string;
     public trustedAuthor: boolean = false;
