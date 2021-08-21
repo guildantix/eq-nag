@@ -2,7 +2,7 @@ import { Injectable, NgZone } from '@angular/core';
 import { IpcRenderer } from 'electron';
 import { Observable, Observer } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
-import { DataTickModel, DkpEntryModel, TriggerModel, OverlayWindowModel, ActionTypes, FocusEffectSettings, CharacterModel, BasicError, TriggerFolder, FileModel, Tag, AuthorModel } from './core.model';
+import { DataTickModel, DkpEntryModel, TriggerModel, OverlayWindowModel, ActionTypes, FocusEffectSettings, CharacterModel, BasicError, TriggerFolder, FileModel, Tag, AuthorModel, PackageFileModel } from './core.model';
 import { GinaConfiguration, GinaTriggerGroups } from './gina.model';
 
 @Injectable( { providedIn: 'root' })
@@ -727,6 +727,22 @@ export class IpcService {
         return obs;
     }
 
+    public getAudioFileData(): Observable<PackageFileModel[]> {
+        let obs: Observable<PackageFileModel[]> = new Observable<PackageFileModel[]>( ( observer: Observer<PackageFileModel[]> ) => {
+            
+            this.ipc.once( 'audio-file:getData', ( e, audioFiles: PackageFileModel[] ) => {
+                this.ngZone.run( () => {
+                    observer.next( audioFiles );
+                    observer.complete();
+                } );
+            } );
+            this.ipc.send( 'audio-file:getData', null );
+
+        } );
+
+        return obs;
+    }
+
     public getAudioFileUrl( fileId: string ): Observable<string> {
         let obs: Observable<string> = new Observable<string>( ( observer: Observer<string> ) => {
             
@@ -737,6 +753,22 @@ export class IpcService {
                 } );
             } );
             this.ipc.send( 'audio-file:get:url', fileId );
+
+        } );
+
+        return obs;
+    }
+
+    public importPackageFile( file: PackageFileModel ): Observable<string> {
+        let obs: Observable<string> = new Observable<string>( ( observer: Observer<string> ) => {
+
+            this.ipc.once( 'file:importFromPackage', ( e, fileId: string ) => {
+                this.ngZone.run( () => {
+                    observer.next( fileId );
+                    observer.complete();
+                } );
+            } );
+            this.ipc.send( 'file:importFromPackage', file );
 
         } );
 
