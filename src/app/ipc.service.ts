@@ -779,6 +779,9 @@ export class IpcService {
         let obs: Observable<string> = new Observable<string>( ( observer: Observer<string> ) => {
             let name = file.name;
 
+            if ( !name.endsWith( '.mp3' ) )
+                throw 'Only MP3 files are supported!';
+
             let reader = new FileReader();
             reader.onload = () => {
                 if ( reader.readyState === 2 ) {
