@@ -13,7 +13,7 @@ const ArrayUtilities = require( '../utilities/arrays' );
 const { FormControlDirective } = require( "@angular/forms" );
 const StringUtilities = require( "../utilities/string" );
 const Fuse = require( 'fuse.js' );
-const { MediaTypes, FileModel } = require( './models/trigger' );
+const { MediaTypes, FileModel, PackageFileModel } = require( './models/trigger' );
 
 const eqSpellPages = 63;
 const eqIconPageSize = 256;
@@ -72,6 +72,14 @@ class FilesDatabaseStore extends Store {
             event.sender.webContents.send( 'audio-file:get', this.getAudioFiles() );
         } );
 
+        ipcMain.on( 'audio-file:getData', ( event ) => {
+            event.sender.webContents.send( 'audio-file:getData', this.getAudioFileData() );
+        } );
+
+        ipcMain.on( 'file:importFromPackage', ( event, packageFile ) => {
+            event.sender.webContents.send( 'file:importFromPackage', this.importPackageFile( packageFile ) );
+        } );
+
     }
 
     /**
@@ -111,6 +119,35 @@ class FilesDatabaseStore extends Store {
         return id;
     }
 
+    /**
+     * Imports the given package file into the data store.
+     * 
+     * @param {PackageFileModel} file The package file to import.
+     */
+    importPackageFile( file ) {
+
+        // If the file exists, delete it and remove it from the data store.
+        let existingIndex = this.#data.files.findIndex( f => f.fileId === file.fileId );
+        if ( existingIndex > -1 ) {
+            let existing = this.#data.files.splice( existingIndex, 1 )[ 0 ];
+            fs.rmSync( existing.physicalName );
+        }
+
+        let model = new FileModel();
+
+        model.fileId = file.fileId;
+        model.mediaType = file.mediaType;
+        model.fileName = file.fileName;
+        model.physicalName = path.join( this.#filePath, `${file.fileId}${path.extname( file.fileName )}` );
+
+        fs.writeFile( model.physicalName, Buffer.from( file.contents, 'base64' ), () => { } );
+
+        this.#data.files.push( model );
+        this.storeDataFile( this.#data );
+
+        return file.fileId;
+    }
+
     storeFileByName( filename ) {
 
         let name = path.basename( filename );
@@ -142,7 +179,22 @@ class FilesDatabaseStore extends Store {
         return _.filter( this.#data.files, f => f.mediaType === MediaTypes.Audio );
     }
 
+    getAudioFileData() {
+        /** @type {PackageFileModel[]} */
+        let files = _.filter( this.#data.files, f => f.mediaType === MediaTypes.Audio )
+            .map( f => {
+                let m = new PackageFileModel();
 
+                m.fileId = f.fileId;
+                m.mediaType = f.mediaType;
+                m.fileName = f.fileName;
+                m.contents = fs.readFileSync( f.physicalName ).toString( 'base64' );
+
+                return m;
+            } );
+
+        return files;
+    }
 
 }
 
