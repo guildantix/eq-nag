@@ -129,6 +129,5 @@ export class TriggerPackageDetailsComponent implements OnInit {
     // Things we need to get this done:
     //      Wizard-style overlay builder.
     //      Auto-updater system.
-    //      Adding a section in the share db to store images and files.
 
 }
