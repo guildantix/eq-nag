@@ -1,4 +1,5 @@
 import { StringProtocolResponse } from 'electron';
+import { Color } from './utilities';
 
 export const ErrorCodes = {
     EqFolderNotFound: {
@@ -313,6 +314,26 @@ export class TriggerAction {
     public resetCounterPhrases: Phrase[] = [];
 
     public audioFileId: string;
+
+    public textUseCustomFont: boolean = false;
+    public textFont: string;
+    public textWeight: number;
+
+    public textUseCustomSize: boolean = false;
+    public textSize: number;
+    public textSpacing: number;
+
+    public textUseCustomColor: boolean = false;
+    public textColor: string;
+
+    public textUseCustomBorder: boolean = false;
+    public textBorderColor: string;
+    public textBorderIntensity: number;
+    
+    public textUseCustomGlow: boolean = false;
+    public textGlowColor: string;
+    public textGlowIntensity: number;
+    public textGlowSize: number;
 }
 
 export class ScrapedSpell {

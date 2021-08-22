@@ -264,8 +264,56 @@ class TriggerAction {
     /** @type {Phrase[]} */
     resetCounterPhrases = [];
 
-    /** @type string */
+    /** @type {string} */
     audioFileId = null;
+
+    /** @type {boolean} */
+    textUseCustomFont = false;
+
+    /** @type {boolean} */
+    textUseCustomSize = false;
+
+    /** @type {boolean} */
+    textUseCustomWeight = false;
+
+    /** @type {boolean} */
+    textUseCustomColor = false;
+
+    /** @type {boolean} */
+    textUseCustomBorder = false;
+
+    /** @type {boolean} */
+    textUseCustomGlow = false;
+    
+    /** @type {string} */
+    textFont = null;
+    
+    /** @type {number} */
+    textSize = null;
+    
+    /** @type {number} */
+    textSpacing = null;
+    
+    /** @type {number} */
+    textWeight = null;
+    
+    /** @type {string} */
+    textColor = null;
+    
+    /** @type {string} */
+    textBorderColor = null;
+    
+    /** @type {number} */
+    textBorderIntensity = null;
+    
+    /** @type {string} */
+    textGlowColor = null;
+    
+    /** @type {number} */
+    textGlowIntensity = null;
+    
+    /** @type {number} */
+    textGlowSize = null;
 }
 
 class TriggerCondition {

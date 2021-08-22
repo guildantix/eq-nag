@@ -474,6 +474,39 @@ class TriggerDatabaseStore extends Store {
             this.#data.version = 53;
             this.storeDataFile( this.#data );
         }
+        if ( this.#data.version < 54 ) {
+            this.#data?.triggers?.forEach( trigger => {
+                trigger.actions?.forEach( action => {
+                    if ( action.actionType === ActionTypes.DisplayText ) {
+                        
+                        action.textUseCustomBorder = false;
+                        action.textUseCustomColor = false;
+                        action.textUseCustomFont = false;
+                        action.textUseCustomGlow = false;
+                        action.textUseCustomSize = false;
+                        action.textUseCustomWeight = false;
+
+                    }
+                } );
+            } );
+            
+            this.#data.version = 54;
+            this.storeDataFile( this.#data );
+        }
+        if ( this.#data.version < 55 ) {
+            this.#data?.triggers?.forEach( trigger => {
+                trigger.actions?.forEach( action => {
+                    if ( action.actionType === ActionTypes.DisplayText ) {
+                        
+                        delete action.textUseCustomWeight;
+
+                    }
+                } );
+            } );
+            
+            this.#data.version = 55;
+            this.storeDataFile( this.#data );
+        }
     }
 
 

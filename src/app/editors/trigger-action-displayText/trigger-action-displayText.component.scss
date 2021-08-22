@@ -1,3 +1,22 @@
 mat-form-field {
     width: 100%;
 }
+
+.text-preview-container {
+    flex: none;
+    display: table;
+    max-width: 100%;
+    text-align: center;
+    width: 98%;
+    height: 100px;
+    background-color: #1a1a1a;
+
+    .text-preview {
+        display: table-cell;
+        vertical-align: middle;
+    }
+
+    &.colored-back {
+        background-image: linear-gradient(to bottom right, red,orange,yellow,green,blue,indigo,violet);
+    }
+}

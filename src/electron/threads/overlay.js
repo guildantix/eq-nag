@@ -155,6 +155,8 @@ function Overlay() {
             
             document.querySelector( '#overlay-title' ).textContent = model.name ? model.name : 'Overlay';
             let contentArea = document.querySelector( '.content-area' );
+
+            // Content area display styles, the defaults.
             contentArea.style.fontFamily = `"${model.fontFamily}"`;
             contentArea.style.fontSize = `${model.fontSize}px`;
             contentArea.style.lineHeight = `${( model.lineHeight > 10 ? model.lineHeight : 90 ) / 100}em`;
@@ -282,6 +284,38 @@ function render( comp ) {
         let div = document.createElement( 'div' );
         div.innerHTML = content;
         comp.dom = div;
+
+        // Custom display logic.
+        if ( comp.action.textUseCustomFont ) {
+            div.style.fontFamily = `"${comp.action.textFont}"`;
+
+            if ( comp.action.textWeight ) {
+                div.style.fontWeight = comp.action.textWeight > 0 ? comp.action.textWeight : 300;
+            }
+        }
+
+        if ( comp.action.textUseCustomSize ) {
+            div.style.fontSize = `${comp.action.textSize}px`;
+
+            if ( comp.action.textSpacing ) {
+                div.style.lineHeight = `${( comp.action.textSpacing > 10 ? comp.action.textSpacing : 90 ) / 100}em`;
+            }
+        }
+        if ( comp.action.textUseCustomColor ) {
+            div.style.color = `${comp.action.textColor}`;
+        }
+        let textShadow = null;
+        if ( comp.action.textUseCustomBorder ) {
+            textShadow = `0px 0px 1px ${comp.action.textBorderColor}, -1px -1px 0 ${comp.action.textBorderColor}, 1px -1px 0 ${comp.action.textBorderColor}, -1px 1px 0 ${comp.action.textBorderColor}, 1px 1px 0 ${comp.action.textBorderColor}`;
+        }
+        if ( comp.action.textUseCustomGlow ) {
+            textShadow = textShadow ? textShadow + ',' : '';
+            textShadow += `0px 0px ${comp.action.textGlowSize}px ${comp.action.textGlowColor}, -1px -1px ${comp.action.textGlowSize}px ${comp.action.textGlowColor}, 1px -1px ${comp.action.textGlowSize}px ${comp.action.textGlowColor}, -1px 1px ${comp.action.textGlowSize}px ${comp.action.textGlowColor}, 1px 1px ${comp.action.textGlowSize}px ${comp.action.textGlowColor}`;
+        }
+        if ( textShadow ) {
+            div.style.textShadow = textShadow;
+        }
+
         contentArea.appendChild( comp.dom );
         comp.intervalId = window.setTimeout( () => {
             comp.dom.parentNode.removeChild( comp.dom );

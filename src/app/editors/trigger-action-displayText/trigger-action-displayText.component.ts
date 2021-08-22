@@ -1,5 +1,26 @@
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { OverlayWindowModel, TriggerAction } from 'src/app/core.model';
+import { IpcService } from 'src/app/ipc.service';
+
+const availableFonts = {
+    'Roboto': [ 100, 300, 400, 500, 700, 900 ],
+    'Red Rose': [ 300, 400, 700 ],
+    'Oswald': [ 200, 300, 400, 500, 600, 700 ],
+    'Roboto Mono': [ 100, 200, 300, 400, 500, 600, 700 ],
+    'Open Sans Condensed': [ 300, 700 ],
+    'Ranchers': [ 400 ],
+    'Press Start 2P': [ 400 ],
+};
+
+/**
+ * Returns a hex number for the given value.
+ * 
+ * @param {number} c The value to convert.
+ */
+function componentToHex( c ) {
+    var hex = c.toString( 16 );
+    return hex.length == 1 ? "0" + hex : hex;
+}
 
 @Component( {
     selector: 'app-trigger-action-display-text',
@@ -8,11 +29,145 @@ import { OverlayWindowModel, TriggerAction } from 'src/app/core.model';
 } )
 export class TriggerActionDisplayTextComponent implements OnInit {
 
+    public selectedOverlay: OverlayWindowModel = null;
+    public fontWeightIndex: number = 0;
+    public showColoredBackground: boolean = false;
+
+    public get fontSize(): string {
+        if ( this.action.textUseCustomSize && this.action.textSize ) {
+            return `${this.action.textSize}px`;
+        } else if ( this.selectedOverlay ) {
+            return `${this.selectedOverlay.fontSize}px`;
+        } else {
+            return null;
+        }
+    }
+
+    public get fontSpacing(): string {
+        if ( this.action.textSpacing && this.action.textSpacing ) {
+            return `${this.action.textSpacing}px`;
+        } else if ( this.selectedOverlay ) {
+            return `${this.selectedOverlay.lineHeight}px`;
+        } else {
+            return null;
+        }
+    }
+
+    public get fontColor(): string {
+        if ( this.action.textUseCustomColor && this.action.textColor ) {
+            return `${this.action.textColor}`;
+        } else if ( this.selectedOverlay ) {
+            return `${this.selectedOverlay.fontColor}`;
+        } else {
+            return null;
+        }
+    }
+
+    public get fontFamily(): string {
+        if ( this.action.textUseCustomFont && this.action.textFont ) {
+            return `${this.action.textFont}`;
+        } else if ( this.selectedOverlay ) {
+            return `${this.selectedOverlay.fontFamily}`;
+        } else {
+            return null;
+        }
+    }
+
+    public get fontWeight(): string {
+        if ( this.action.textUseCustomFont && this.action.textWeight ) {
+            return `${this.action.textWeight}`;
+        } else if ( this.selectedOverlay ) {
+            return `${this.selectedOverlay.fontWeight}`;
+        } else {
+            return null;
+        }
+    }
+    
+    public get maxFontWeightIndex(): number {
+        if ( this.fontFamily != null ) {
+            return availableFonts[ this.fontFamily ].length - 1;
+        } else {
+            return 1;
+        }
+    }
+
+    public get textShadow(): string {
+        let shdw = null;
+        if ( this.action.textUseCustomBorder && this.action.textBorderColor ) {
+            shdw = shdw ? shdw : '';
+            shdw += `0px 0px 1px ${this.action.textBorderColor}, -1px -1px 0 ${this.action.textBorderColor}, 1px -1px 0 ${this.action.textBorderColor}, -1px 1px 0 ${this.action.textBorderColor}, 1px 1px 0 ${this.action.textBorderColor}`;
+        } else if ( this.selectedOverlay?.textBorderColor ) {
+            shdw = shdw ? shdw : '';
+            shdw += `0px 0px 1px ${this.selectedOverlay.textBorderColor}, -1px -1px 0 ${this.selectedOverlay.textBorderColor}, 1px -1px 0 ${this.selectedOverlay.textBorderColor}, -1px 1px 0 ${this.selectedOverlay.textBorderColor}, 1px 1px 0 ${this.selectedOverlay.textBorderColor}`;
+        }
+
+        if ( this.action.textUseCustomGlow && this.action.textGlowColor && this.action.textGlowSize ) {
+            shdw = shdw ? shdw + ',' : '';
+            shdw += `0px 0px ${this.action.textGlowSize}px ${this.action.textGlowColor}, -1px -1px ${this.action.textGlowSize}px ${this.action.textGlowColor}, 1px -1px ${this.action.textGlowSize}px ${this.action.textGlowColor}, -1px 1px ${this.action.textGlowSize}px ${this.action.textGlowColor}, 1px 1px ${this.action.textGlowSize}px ${this.action.textGlowColor}`;
+        } else if ( this.selectedOverlay?.textGlowColor && this.selectedOverlay?.textGlowSize ) {
+            shdw = shdw ? shdw + ',' : '';
+            shdw += `0px 0px ${this.selectedOverlay.textGlowSize}px ${this.selectedOverlay.textGlowColor}, -1px -1px ${this.selectedOverlay.textGlowSize}px ${this.selectedOverlay.textGlowColor}, 1px -1px ${this.selectedOverlay.textGlowSize}px ${this.selectedOverlay.textGlowColor}, -1px 1px ${this.selectedOverlay.textGlowSize}px ${this.selectedOverlay.textGlowColor}, 1px 1px ${this.selectedOverlay.textGlowSize}px ${this.selectedOverlay.textGlowColor}`;
+        }
+        
+        return shdw;
+    }
+
+    private overlays: OverlayWindowModel[] = [];
+
     @Input() public action: TriggerAction;
     @Input() public overlayOptions: OverlayWindowModel[] = [];
 
-    constructor() { }
+    constructor( private ipcService: IpcService ) { }
 
-    ngOnInit() { }
+    ngOnInit() {
+        this.ipcService.getOverlayWindows().subscribe( overlays => {
+            this.overlays = overlays;
+
+            if ( this.action.overlayId ) {
+                this.loadOverlayDefaults();
+                this.onChangeFontFamily();
+            }
+        } );
+    }
+
+    onOverlayChanged(): void {
+        if ( this.action.overlayId ) {
+            this.loadOverlayDefaults();
+        }
+    }
+
+    public onChangeFontFamily(): void {
+        let fi: number = availableFonts[ this.fontFamily ].indexOf( this.action.textWeight );
+        this.fontWeightIndex = -1;
+
+        if ( fi > -1 ) {
+            this.fontWeightIndex = fi;
+
+        } else {
+
+            for ( let i = 100; i < 500; i += 100 ) {
+                let lfi: number = availableFonts[ this.fontFamily ].indexOf( this.action.textWeight - i );
+                let ufi: number = availableFonts[ this.fontFamily ].indexOf( this.action.textWeight + i );
+                if ( lfi > -1 ) {
+                    this.fontWeightIndex = lfi;
+                    break;
+                } else if ( ufi > -1 ) {
+                    this.fontWeightIndex = ufi;
+                    break;
+                }
+            }
+            
+        }
+
+        this.fontWeightIndex = this.fontWeightIndex > -1 ? this.fontWeightIndex : 0;
+    }
+
+    onFontWeightChange(): void {
+        this.action.textWeight = availableFonts[ this.fontFamily ][ this.fontWeightIndex ];
+    }
+
+    private loadOverlayDefaults(): void {
+        this.selectedOverlay = this.overlays.find( f => f.overlayId === this.action.overlayId );
+    }
 
 }
