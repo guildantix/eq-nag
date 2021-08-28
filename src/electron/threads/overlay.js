@@ -599,6 +599,8 @@ function getTimerGroup( contentArea, groupName ) {
     h6.style.fontSize = `${groupHeaderSize}px`;
     h6.style.color = groupHeaderColor;
     h6.style.fontWeight = groupHeaderWeight;
+    let h6BorderColor = '#000000'
+    h6.style.textShadow = `0px 0px 1px ${h6BorderColor}, -1px -1px 0 ${h6BorderColor}, 1px -1px 0 ${h6BorderColor}, -1px 1px 0 ${h6BorderColor}, 1px 1px 0 ${h6BorderColor}`;
 
     if ( hideTargetLabel ) {
         h6.style.display = 'none';
