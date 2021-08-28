@@ -1,10 +1,9 @@
 import { ActionTypes, CapturePhrase, Phrase, TimerRestartBehaviors, TriggerAction, TriggerModel } from '../core.model';
 import { GinaTimerStartBehaviors, GinaTimerTypes, GinaTrigger } from '../gina.model';
 import { customAlphabet } from 'nanoid';
-// import * as _ from 'lodash';
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const nanoid = customAlphabet( alphabet, 16 );
-import * as _ from 'lodash';
+import * as _ from 'lodash-es';
 import { forkJoin, Observable, Observer } from 'rxjs';
 import { IpcService } from '../ipc.service';
 

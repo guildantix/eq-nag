@@ -6,7 +6,7 @@ import { map, startWith } from 'rxjs/operators';
 import { InputDialogComponent } from '../input-dialog/input-dialog.component';
 import { AutocompleteDialogModel } from './autocomplete-dialog.model';
 import Fuse from 'fuse.js';
-import * as _ from 'lodash';
+import * as _ from 'lodash-es';
 // import { Fuse } from 'fuse.js';
 // import * as fz from 'fuse.js';
 

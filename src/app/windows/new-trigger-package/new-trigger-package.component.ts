@@ -3,7 +3,7 @@ import { MatTable } from '@angular/material/table';
 import { TriggerFolder, TriggerModel, PackageTrigger, TriggerPackageMetaModel, PackageFolder } from 'src/app/core.model';
 import { DialogService } from 'src/app/dialogs/dialog.service';
 import { IpcService } from 'src/app/ipc.service';
-import * as _ from 'lodash';
+import * as _ from 'lodash-es';
 import { TriggerLibraryService } from '../trigger-library.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
 

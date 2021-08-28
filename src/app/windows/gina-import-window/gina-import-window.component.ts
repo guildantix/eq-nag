@@ -6,7 +6,7 @@ import { forkJoin } from 'rxjs';
 import { DialogService } from 'src/app/dialogs/dialog.service';
 import { GinaPhoneticTransform, GinaTimerTypes, GinaTrigger, GinaTriggerGroup } from 'src/app/gina.model';
 import { IpcService } from 'src/app/ipc.service';
-import * as _ from 'lodash';
+import * as _ from 'lodash-es';
 import { ContextMenuModel } from 'src/app/context-menu/context-menu.model';
 import { GinaImporter } from '../../utilities/gina.import';
 import { ActionTypes, CapturePhrase, OperatorTypes, OverlayWindowModel, TriggerAction, TriggerCondition, TriggerConditionTypes, TriggerFolder, TriggerModel } from 'src/app/core.model';

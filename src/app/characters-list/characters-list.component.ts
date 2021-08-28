@@ -3,7 +3,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { CharacterModel } from '../core.model';
 import { DialogService } from '../dialogs/dialog.service';
 import { IpcService } from '../ipc.service';
-import * as _ from 'lodash';
+import * as _ from 'lodash-es';
 
 @Component( {
     selector: 'app-characters-list',

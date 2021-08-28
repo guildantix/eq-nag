@@ -5,7 +5,7 @@ import { MatTreeFlatDataSource, MatTreeFlattener } from '@angular/material/tree'
 import { Tag, TriggerFolder, TriggerModel } from '../core.model';
 import { DialogService } from '../dialogs/dialog.service';
 import { IpcService } from '../ipc.service';
-import * as _ from 'lodash';
+import * as _ from 'lodash-es';
 import { ContextMenuModel } from '../context-menu/context-menu.model';
 import { MatTable } from '@angular/material/table';
 import { customAlphabet } from 'nanoid';

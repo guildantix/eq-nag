@@ -1,6 +1,6 @@
 import { Component, EventEmitter, Input, OnInit, Output, ViewChild } from '@angular/core';
 import { CharacterClasses, CharacterClassLevel } from 'src/app/core.model';
-import * as _ from 'lodash';
+import * as _ from 'lodash-es';
 import { DialogService } from 'src/app/dialogs/dialog.service';
 import { MatTable } from '@angular/material/table';
 // import { TriggerAction } from 'src/app/core.model';

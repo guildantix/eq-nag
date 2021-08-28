@@ -7,7 +7,7 @@ import { customAlphabet } from 'nanoid';
 import { ElectronService } from 'ngx-electron';
 import { MatSelectChange } from '@angular/material/select';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import * as _ from 'lodash';
+import * as _ from 'lodash-es';
 
 // declare var require: any;
 // const existsSync = require( 'fs' ).existsSync;

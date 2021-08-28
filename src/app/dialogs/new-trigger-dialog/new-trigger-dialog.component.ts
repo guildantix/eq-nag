@@ -6,7 +6,7 @@ import { ScraperService } from 'src/app/scraper.service';
 import { customAlphabet } from 'nanoid';
 import { DialogService } from '../dialog.service';
 import { SelectIconDialogComponent } from '../select-icon-dialog/select-icon-dialog.component';
-import * as _ from 'lodash';
+import * as _ from 'lodash-es';
 import { NewTriggerDialogModel } from '../dialog.model';
 // import { NgForm } from '@angular/forms';
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';

@@ -11,7 +11,7 @@ import { DialogService } from 'src/app/dialogs/dialog.service';
 import { TriggerLibraryService } from '../trigger-library.service';
 import { AuthorModel, PackageTrigger, TriggerFolder, TriggerModel, TriggerPackageMetaModel, TriggerPackageModel } from 'src/app/core.model';
 import { SettingsService } from 'src/app/settings/settings-http.service';
-import * as _ from 'lodash';
+import * as _ from 'lodash-es';
 import { MatTable } from '@angular/material/table';
 
 @Component( {

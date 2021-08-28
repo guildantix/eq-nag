@@ -1,7 +1,7 @@
 import { Component, ElementRef, Input, OnInit, ViewChild } from '@angular/core';
 import { FileModel, OverlayWindowModel, TimerRestartBehaviors, TriggerAction } from 'src/app/core.model';
 import { ImageUtility } from 'src/app/utilities';
-import * as _ from 'lodash';
+import * as _ from 'lodash-es';
 import { ContextMenuModel } from 'src/app/context-menu/context-menu.model';
 import { ContextService } from 'src/app/context-menu/context.service';
 import { IpcService } from 'src/app/ipc.service';

@@ -1,7 +1,7 @@
 import { Component, Input, OnInit, ViewChild } from '@angular/core';
 import { MatHorizontalStepper } from '@angular/material/stepper';
 
-import * as _ from 'lodash';
+import * as _ from 'lodash-es';
 
 import { ActionTypes, OverlayWindowModel, TriggerAction, TriggerModel } from 'src/app/core.model';
 import { DialogService } from 'src/app/dialogs/dialog.service';

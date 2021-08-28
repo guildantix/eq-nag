@@ -5,7 +5,7 @@ import { IpcService } from 'src/app/ipc.service';
 import { ScraperService } from 'src/app/scraper.service';
 import { NewTriggerDialogComponent } from '../new-trigger-dialog/new-trigger-dialog.component';
 import { NewTriggerDialogModel } from '../dialog.model';
-import * as _ from 'lodash';
+import * as _ from 'lodash-es';
 import { customAlphabet } from 'nanoid';
 import { SelectIconDialogComponent } from '../select-icon-dialog/select-icon-dialog.component';
 import { ColorUtility } from 'src/app/utilities';

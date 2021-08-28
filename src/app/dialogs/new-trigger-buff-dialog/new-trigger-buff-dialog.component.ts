@@ -10,7 +10,7 @@ import { SelectIconDialogComponent } from '../select-icon-dialog/select-icon-dia
 import { ColorUtility } from 'src/app/utilities';
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const nanoid = customAlphabet( alphabet, 16 );
-import * as _ from 'lodash';
+import * as _ from 'lodash-es';
 
 @Component( {
     selector: 'app-new-trigger-buff-dialog',
