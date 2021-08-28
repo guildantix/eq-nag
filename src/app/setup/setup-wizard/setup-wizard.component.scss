@@ -1,0 +1,59 @@
+div.img-float-right {
+    float: right;
+    margin-left: 25px;
+    >img {
+        max-height: 225px;
+    }
+}
+
+div.img-float-left {
+    float: left;
+    margin-right: 25px;
+    >img {
+        max-height: 225px;
+    }
+}
+
+mat-dialog-actions {
+    >div {
+        display:flex;
+        flex-direction: row;
+        width: 100%;
+
+        .spacer {
+            display: flex;
+            flex: 1 0 auto;
+        }
+    }
+}
+
+small {
+    opacity: 0.55;
+    font-weight: 100;
+}
+
+::ng-deep .mat-radio-button.picture-radio {
+
+    &:last-child {
+        margin-top: 10px;
+    }
+
+    .mat-radio-container {
+        margin-right: 50px;
+    }
+
+    .mat-radio-label-content {
+        div:first-of-type {
+            padding: 10px;
+        }
+        img {
+            max-width: 500px;
+            box-shadow: 0 0 0 2px #00000075;
+
+            &.selected-grouping {
+                box-shadow: 0 0 0 2px #000000eb, 0 0 0 3px #69f0ae;
+            }
+        }
+    }
+
+}

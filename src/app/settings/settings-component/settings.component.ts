@@ -6,6 +6,7 @@ import { customAlphabet } from 'nanoid';
 import { AuthorModel } from 'src/app/core.model';
 import { SettingsService } from '../settings-http.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { SetupService } from 'src/app/setup/setup.service';
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const nanoid = customAlphabet( alphabet, 16 );
 
@@ -31,7 +32,7 @@ export class SettingsComponent implements OnInit {
     public author: AuthorModel = new AuthorModel();
     public trustedAuthor: boolean = false;
 
-    constructor( private ipcService: IpcService, private dialogService: DialogService, private settingsService: SettingsService, private snackBar: MatSnackBar ) {
+    constructor( private ipcService: IpcService, private dialogService: DialogService, private settingsService: SettingsService, private snackBar: MatSnackBar, private setupService: SetupService ) {
         speechSynthesis.onvoiceschanged = () => {
             this.voiceOptions = speechSynthesis.getVoices();
         };
@@ -169,6 +170,10 @@ export class SettingsComponent implements OnInit {
                 this.snackBar.open( 'Request submitted!', 'dismiss', { duration: 5000 } );
             }
         } );
+    }
+
+    runSetupWizard() {
+        this.setupService.showSetupWizard().subscribe( () => { } );
     }
 
 }

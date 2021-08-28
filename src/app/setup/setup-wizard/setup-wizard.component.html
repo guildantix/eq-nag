@@ -1,0 +1,55 @@
+<h2 mat-dialog-title>Setup</h2>
+
+<mat-dialog-content>
+    <mat-horizontal-stepper [linear]="true" #stepper>
+
+        <mat-step label="Welcome">
+            <p>NAG is an EverQuest Notification Agent.  It works by reading your EverQuest log file for specific phrases and reacts to those log entries in many different ways.</p>
+            <p>To begin, we need to configure a few settings.  To make this easy, I'll ask you a few questions first.</p>
+        </mat-step>
+
+        <mat-step label="FCT">
+            <div class="img-float-left"><img src="/assets/images/fct-example.png" /></div>
+            <p>Floating combat text will display the damage amounts from your hits or hits to you on your screen.</p>
+            <p>Would you like to enable floating combat text?</p>
+            <mat-slide-toggle [(ngModel)]="enableFct" name="enableFct" style="margin-bottom: 14px;"></mat-slide-toggle>
+            <p class="notice border-green" *ngIf="enableFct">
+                <mat-icon class="material-icons color-green">engineering</mat-icon><span>This feature is in an early phase and doesn't support a lot of customization options, but more options are in development.</span>
+            </p>
+        </mat-step>
+
+        <mat-step label="Timers and Countdowns">
+
+            <p>Timers and Overlays can be displayed in two basic formats: Grouped and LInear</p>
+            <p>Which format would you like your timers?</p>
+
+            <div style="padding-left: 25px;">
+                <mat-radio-group [(ngModel)]="groupedTimers" name="groupedTimers">
+                    <mat-radio-button [value]="true" class="picture-radio">
+                        <div>Grouped</div>
+                        <img src="/assets/images/grouped-timer-example.png" [ngClass]="{'selected-grouping': groupedTimers === true}" />
+                    </mat-radio-button>
+        
+                    <mat-radio-button [value]="false" class="picture-radio">
+                        <div>Linear</div>
+                        <img src="/assets/images/inline-timer-example-2.png" [ngClass]="{'selected-grouping': groupedTimers === false}" />
+                    </mat-radio-button>
+                </mat-radio-group>
+            </div>
+
+        </mat-step>
+
+    </mat-horizontal-stepper>
+</mat-dialog-content>
+
+<mat-dialog-actions>
+    
+    <div>
+        <button mat-button [mat-dialog-close]="null" class="t-confirm-no" color="warn">Cancel Setup Wizard</button>
+        <span class="spacer"></span>
+        <button mat-button (click)="previous()">Previous</button>
+        <div style="padding-top: 7px; opacity: 0.25; margin-left: 10px; margin-right: 10px;">|</div>
+        <button mat-button (click)="next()">Next</button>
+    </div>
+
+</mat-dialog-actions>

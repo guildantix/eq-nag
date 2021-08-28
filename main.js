@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, protocol } = require( "electron" );
+const { app, BrowserWindow, ipcMain, protocol, session } = require( "electron" );
 const { autoUpdater } = require('electron-updater');
 const url = require( "url" );
 const path = require( "path" );
@@ -107,7 +107,7 @@ app.on( 'ready', function () {
 
             if ( filePath.match( /^[A-Za-z]:\/(css|img|js|fonts)/ ) ) {
                 filePath = path.join( app.getAppPath(), 'dist', filePath.slice( 3 ) );
-            } else if ( filePath.match( /^[A-Za-z]:\/[^/\\]+?\.(js|css|png|jpeg|jpg|ico|svg|woff|woff2|ttf)$/ ) ) {
+            } else if ( filePath.match( /^[A-Za-z]:\/.*\.(js|css|png|jpeg|jpg|ico|svg|woff|woff2|ttf)$/ ) ) {
                 // case of "vue-cli-service build --mode development"
                 filePath = path.join( app.getAppPath(), 'dist', filePath.slice( 3 ) );
             }

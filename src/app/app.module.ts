@@ -20,6 +20,7 @@ import { IpcService } from './ipc.service';
 import { CoreModule } from './core/core.module';
 import { SettingsComponent } from './settings/settings-component/settings.component';
 import { SettingsService } from './settings/settings-http.service';
+import { SetupModule } from './setup/setup.module';
 
 @NgModule( {
     imports: [
@@ -34,6 +35,7 @@ import { SettingsService } from './settings/settings-http.service';
         CoreModule,
         ContextMenuModule,
         WindowsModule,
+        SetupModule,
     ],
     declarations: [
         AppComponent,
