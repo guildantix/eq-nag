@@ -151,6 +151,8 @@ class TriggerAction {
     variableName = null;
     /** @type boolean */
     onlyStoreUsedValues = false;
+    /** @type boolean */
+    loopBackForValue = false;
     /** @type number */
     ticks = null;
     /** @type string[] */

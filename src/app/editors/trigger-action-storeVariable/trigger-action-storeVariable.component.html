@@ -14,9 +14,13 @@
                 <input matInput [(ngModel)]="action.variableName" name="txtVariableName" />
                 <mat-hint>Variable Name</mat-hint>
             </mat-form-field>
-            
+            <br />
             <mat-checkbox [(ngModel)]="action.onlyStoreUsedValues" name="cbxOnlyStoreUsedValues">Check if value is used?</mat-checkbox>
             <div class="checkbox-hint"><small>If this box is checked, the value is checked against active triggers to ensure that the value is used as a condition before being saved.</small></div>
+
+            <br />
+            <mat-checkbox [(ngModel)]="action.loopBackForValue" name="cbxLoopBackForValue">Loop-back for value?</mat-checkbox>
+            <div class="checkbox-hint"><small>If this box is checked, when the log is loaded it will loop backwards through the log to find the most recent phrase.</small></div>
             
         </div>
     </mat-tab>

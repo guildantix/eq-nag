@@ -6,7 +6,7 @@ const fs = require( 'fs' );
 const DkpEntryModel = require( '../data/models/dkp-entry' );
 const { TriggerAction, ActionTypes, TriggerConditionTypes, OperatorTypes, CharacterClassLevel } = require( '../data/models/trigger' );
 const { PhraseParse, LogTrigger } = require( './log.model' );
-const { OverlayComponent } = require( '../data/models/overlay-window' );
+const { OverlayComponent, OverlayWindow } = require( '../data/models/overlay-window' );
 const CharacterModel = require( '../data/models/character' );
 const customAlphabet = require( 'nanoid' ).customAlphabet;
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
@@ -18,12 +18,15 @@ const StringUtilities = require( '../utilities/string' );
 const NumberUtilities = require( '../utilities/numbers' );
 const FctModel = require( '../data/models/fct' );
 const { DateUtilities } = require( '../utilities/dates' );
+const chunkSize = 512 * 1024;
 // const _timerId = '7d9j6ZX7p6c5NLMw';
 
 var currentPosition = null;
 var startLogPosition = null;
 
 var watcher = null;
+/** @type {OverlayWindow} */
+var overlays = [];
 /** @type {LogTrigger[]} */
 var triggers = [];
 /** @type {Record<string, string[]>} */
@@ -149,13 +152,13 @@ function LogWatcher(character, logPosition) {
         if ( logParseTimeoutId > 0 ) {
             window.clearTimeout( logParseTimeoutId );
             currentPosition = null;
-            startParsingLogFile();
+            backfind( data, () => startParsingLogFile() );
         } else {
             changingLogFile = true;
             window.setTimeout( () => { 
                 changingLogFile = false;
                 currentPosition = null;
-                startParsingLogFile();
+                backfind( data, () => startParsingLogFile() );
             }, logParseTimer );
         }
 
@@ -202,6 +205,7 @@ function LogWatcher(character, logPosition) {
         isDev = data.isDev;
         phoneticTransforms = data.phoneticTransforms;
         charModel = data.characterModel ? data.characterModel : charModel;
+        overlays = data.overlays;
         // isDev = false;
         generateTriggerFns();
         initCounters();
@@ -1312,6 +1316,50 @@ function displayTextComponent( res, timestamp, action, simulating ) {
 
 
 /**
+ * Sends the given information to the debug log overlay.
+ * 
+ * @param {any} info The information to send to the log.
+ * @param {number} duration The duration to leave in the log overlay.
+ */
+function sendInformationToLog( info, duration ) {
+    
+    let overlayId = _.find( overlays, o => o.overlayType === 'Log' )?.overlayId;
+    duration = duration > 0 ? duration : 12;
+    
+    if ( overlayId ) {
+
+        let comp = new OverlayComponent();
+    
+        comp.instanceId = nanoid();
+        comp.action = new TriggerAction();
+        comp.action.actionId = nanoid();
+        comp.action.actionType = ActionTypes.DisplayText;
+        if ( typeof info === 'string' ) {
+            comp.action.displayText = info;
+            comp.action.duration = duration;
+        } else {
+            comp.action.displayText = JSON.stringify( info );
+            comp.action.duration = duration;
+        }
+        
+        comp.overlayId = overlayId;
+        comp.matches = null;
+        comp.timestamp = new Date();
+
+        ipcRenderer.send( 'overlay:send:component', comp );
+    }
+}
+
+
+
+
+
+
+
+
+
+
+/**
  * Saves the given value in the store.
  * 
  * @param {string} key The key of the stored variable.
@@ -1330,6 +1378,10 @@ function saveVariable( key, value, restricted ) {
     if ( storeValue ) {
         storedVariables[ key ] = storedVariables[ key ]?.length > 0 ? storedVariables[ key ] : [];
         storedVariables[ key ].push( value );
+
+        sendInformationToLog( `Storing value [${value}] into [${key}]`, 12 );
+        sendInformationToLog( `Current values are: ${storedVariables[ key ].join( '|' )}` );
+
     }
 
 }
@@ -1718,64 +1770,119 @@ function checkParseHistory( phrase, options ) {
 
 }
 
-// /**
-//  * Parses backwards in the log file to find a match.  If found, returns the matched results.
-//  * 
-//  * @param {string} phrase The phrase to query.
-//  * @param {{timestamp: Date}} options Changes the behavior of the search pattern.
-//  */
-// function backfind( phrase, options ) {
-//     let position = currentPosition;
-//     let chunkSize = 1000000;
+/**
+ * Parses backwards in the log file to find a match.  If found, returns the matched results.
+ * 
+ * @param {string} log The log file to parse.
+ * @param {() => void} callback When all look-backs are completed, this method is executed.
+ */
+function backfind( log, callback ) {
 
-//     function startParsingLogFile() {
-//         fs.open( data, 'r', function ( err, fd ) {
+    let _triggers = _.filter( triggers, t => _.some( t.actions, a => a.loopBackForValue === true ) );
 
-//             if ( fd ) {
-//                 var file = fd;
-//                 let danglyBits = null;
+    /**
+     * Returns false if there is a trigger requiring loopback and still missing a value.
+     */
+    function valuesMissing() {
+        for ( let ti = 0; ti < _triggers?.length ?? 0; ti++ ) {
+            for ( let ai = 0; ai < _triggers[ ti ].actions?.length ?? 0; ai++ ) {
+                let hasValue = storedVariables[ _triggers[ ti ].actions[ ai ].variableName ] instanceof Array ? storedVariables[ _triggers[ ti ].actions[ ai ].variableName ].length > 0 : !!storedVariables[ _triggers[ ti ].actions[ ai ].variableName ];
+                if ( hasValue ) {
+                    return false;
+                }
+            }
+        }
 
-//                 function parseLogFile() {
-//                     var stats = fs.fstatSync( fd );
-//                     var file = fd;
-//                     let size = position < chunkSize ? position : chunkSize;
+        return true;
+    }
+
+    if ( valuesMissing() ) {
+        fs.open( log, 'r', function ( err, fd ) {
+            if ( fd ) {
+                let danglyBits = null;
+                var stats = fs.fstatSync( fd );
+                let myChunkSize = stats.size < chunkSize ? stats.size : chunkSize;
+                let position = stats.size; //  Start at the end of the file.
+
+                function parseChunk() {
+                    if ( position <= 0 || !valuesMissing() ) {
+                        // If we've reached the beginning of the file or all values where parsed, execute the callback function and end parsing.
+                        callback();
+
+                    } else {
+                        fs.read( fd, Buffer.alloc( myChunkSize ), 0, myChunkSize, position - myChunkSize, ( err, bytecount, buff ) => {
                         
-//                     fs.read( file, Buffer.alloc( size ), 0, stats.size - currentPosition, currentPosition, ( err, bytecount, buff ) => {
-                        
-//                         position -= chunkSize;
-//                         let read = buff.toString( 'utf-8', 0, bytecount );
-//                         let lines = read.split( /\r\n|\r|\n/gmi );
-                        
-//                         // lines.forEach( line => {
-//                         //     if ( line && line.length > 0 ) {
-//                         //         parseLogEntries( line );
-//                         //     }
-//                         // } );
+                            let read = buff.toString( 'utf-8', 0, bytecount );
+                            let lines = read.split( /\r\n|\r|\n/gmi );
 
-                        
-//                         if ( position < 0 ) {
-//                             // we're done after this bunch.
-//                             return null;
-//                         }
-                        
-//                     } );
+                            if ( position < stats.size ) {
+                                lines[ lines.length - 1 ] += danglyBits;
+                            }
+                            danglyBits = lines[ 0 ];
 
-//                     // Wait logParseTimer milliseconds and poll again.
-//                     if ( !changingLogFile ) {
-//                         logParseTimeoutId = window.setTimeout( parseLogFile, logParseTimer );
-//                     }
-//                 }
+                            if ( lines?.length > 1 ) {
+                                for ( let i = lines.length - 1; i > 0; i-- ) {
+                                    // We want to parse backwards, reading all lines except for the first in the list, this is because the first in the list could be a partial line.
+                                    if ( lines[ i ].length > 0 && lines[ i ].charAt( 0 ) === '[' ) {
+                                        try {
+                                            _triggers.forEach( trigger => {
+                                                // Check for a valid timestamp in the line.
+                                                let log = lines[ i ].replace( /^\[(.*?)\]\s*/gi, '' );
 
-//                 // Start polling the log file every logParseTimer milliseconds.
-//                 logParseTimeoutId = window.setTimeout( parseLogFile, logParseTimer );
+                                                trigger._parse( log, res => {
+                                                    trigger.actions.forEach( action => {
+                                                        if ( action.actionType === ActionTypes.StoreVariable ) {
+                                                            /* --== Store Variable ==-- */
+                    
+                                                            if ( action.loopBackForValue ) {
+                                                                if ( res.result.length === 1 ) {
+                                                                    saveVariable( action.variableName, res.result[ 0 ], action.onlyStoreUsedValues );
+                                                                } else {
+                                                                    saveVariable( action.variableName, res.result[ 1 ], action.onlyStoreUsedValues );
+                                                                }
+                                                            }
 
-//             } else {
-//                 // If the log file was not found, then start over.
-//                 logParseTimeoutId = window.setTimeout( startParsingLogFile, logParseTimer );
-//             }
-//         } );
-//     }
-// }
+                                                        }
+                                                    } );
+                                                } );
+                                            } );
+                                            
+                                        } catch ( error ) {
+                                            sendInformationToLog( `Failure attempting to read line: ${lines[ i ]}` );
+                                        }
+                                    }
+                                    
+
+                                    if ( !valuesMissing() ) {
+                                        window.setTimeout( () => callback() );
+                                        return;
+                                    }
+                                }
+                            }
+
+                            if ( bytecount <= 0 ) {
+                                // If bytes read was 0, something went wonky and we need to trigger an exit condition.
+                                position = -1;
+                            }
+                            
+                            position -= bytecount;
+
+                            parseChunk();
+
+                        } );
+                    }
+                }
+
+                parseChunk();
+                
+            }
+        } );
+    } else {
+        callback();
+
+    }
+
+}
 
 module.exports = LogWatcher;
 

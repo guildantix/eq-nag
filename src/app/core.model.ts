@@ -254,6 +254,7 @@ export class TriggerAction {
     public repeatCount: number = null;
     public variableName: string;
     public onlyStoreUsedValues: boolean = false;
+    public loopBackForValue: boolean = false;
     public restartBehavior: TimerRestartBehaviors = null;
     public onlyExecuteInDev: boolean = false;
     public overrideTimerColor: string = null;

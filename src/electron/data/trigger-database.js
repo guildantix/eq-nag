@@ -507,6 +507,20 @@ class TriggerDatabaseStore extends Store {
             this.#data.version = 55;
             this.storeDataFile( this.#data );
         }
+        if ( this.#data.version < 56 ) {
+            this.#data?.triggers?.forEach( trigger => {
+                trigger.actions?.forEach( action => {
+                    if ( action.actionType === ActionTypes.DisplayText ) {
+                        
+                        action.loopBackForValue = false;
+
+                    }
+                } );
+            } );
+            
+            this.#data.version = 56;
+            this.storeDataFile( this.#data );
+        }
     }
 
 

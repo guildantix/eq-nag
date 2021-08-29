@@ -197,6 +197,11 @@ function Overlay() {
 
             if ( model.showTextBorder === true ) {
                 textShadow = `0px 0px 1px ${model.textBorderColor}, -1px -1px 0 ${model.textBorderColor}, 1px -1px 0 ${model.textBorderColor}, -1px 1px 0 ${model.textBorderColor}, 1px 1px 0 ${model.textBorderColor}`;
+            } else if ( model.overlayType === 'Log' ) {
+                textShadow = `0px 0px 1px #000000, -1px -1px 0 #000000, 1px -1px 0 #000000, -1px 1px 0 #000000, 1px 1px 0 #000000`;
+                model.showTextGlow = true;
+                model.textGlowSize = 3;
+                model.textGlowColor = '#000000';
             }
 
             if ( model.showTextGlow ) {
