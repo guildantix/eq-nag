@@ -54,6 +54,24 @@ class UserPreferencesStore extends Store {
      */
     #data;
 
+    /** @type {string} */
+    get detrimentalOverlayId() {
+        return this.#data.detrimentalOverlayId;
+    }
+    set detrimentalOverlayId( val ) {
+        this.#data.detrimentalOverlayId = val;
+        this.storeDataFile( this.#data );
+    }
+
+    /** @type {string} */
+    get beneficialOverlayId() {
+        return this.#data.beneficialOverlayId;
+    }
+    set beneficialOverlayId( val ) {
+        this.#data.beneficialOverlayId = val;
+        this.storeDataFile( this.#data );
+    }
+
     /** @type {AuthorModel} */
     get author() {
         return this.#data.author;
@@ -325,6 +343,22 @@ class UserPreferencesStore extends Store {
 
         ipcMain.on( 'settings:get:author', ( event ) => {
             event.sender.webContents.send( 'settings:get:author', this.author );
+        } );
+
+        ipcMain.on( 'settings:set:detrimentalOverlayId', ( event, detrimentalOverlayId ) => {
+            this.detrimentalOverlayId = detrimentalOverlayId;
+        } );
+
+        ipcMain.on( 'settings:get:detrimentalOverlayId', ( event ) => {
+            event.sender.webContents.send( 'settings:get:detrimentalOverlayId', this.detrimentalOverlayId );
+        } );
+
+        ipcMain.on( 'settings:set:beneficialOverlayId', ( event, beneficialOverlayId ) => {
+            this.beneficialOverlayId = beneficialOverlayId;
+        } );
+
+        ipcMain.on( 'settings:get:beneficialOverlayId', ( event ) => {
+            event.sender.webContents.send( 'settings:get:beneficialOverlayId', this.beneficialOverlayId );
         } );
 
         ipcMain.on( 'settings:set:phonetic-transforms',

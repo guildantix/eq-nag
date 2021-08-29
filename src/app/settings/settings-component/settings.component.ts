@@ -3,12 +3,13 @@ import { DialogService } from 'src/app/dialogs/dialog.service';
 import { IpcService } from 'src/app/ipc.service';
 import { MatTable } from '@angular/material/table';
 import { customAlphabet } from 'nanoid';
-import { AuthorModel } from 'src/app/core.model';
+import { AuthorModel, OverlayWindowModel } from 'src/app/core.model';
 import { SettingsService } from '../settings-http.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { SetupService } from 'src/app/setup/setup.service';
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const nanoid = customAlphabet( alphabet, 16 );
+import * as _ from 'lodash-es';
 
 interface IPhoneticTransform {
     id: string;
@@ -31,6 +32,14 @@ export class SettingsComponent implements OnInit {
     public loadingGinaConfig: boolean = false;
     public author: AuthorModel = new AuthorModel();
     public trustedAuthor: boolean = false;
+    public detrimentalOverlayId: string = null;
+    public beneficialOverlayId: string = null;
+
+    public get timerOverlays(): OverlayWindowModel[] {
+        return this.overlays?.filter( m => m.overlayType === 'Timer' );
+    }
+
+    private overlays: OverlayWindowModel[] = [];
 
     constructor( private ipcService: IpcService, private dialogService: DialogService, private settingsService: SettingsService, private snackBar: MatSnackBar, private setupService: SetupService ) {
         speechSynthesis.onvoiceschanged = () => {
@@ -43,7 +52,7 @@ export class SettingsComponent implements OnInit {
             // this.dkpEntries = data.dkpEntries;
             // this.logFile = data.logFile;
             this.voiceIndex = data.voiceIndex;
-            // this.overlays = data.overlays;
+            this.overlays = data.overlays;
             // this.enableFct = data.enableFct;
             // this.damageDealtOverlayId = data.damageDealtOverlayId;
             // this.damageTakenOverlayId = data.damageReceivedOverlayId;
@@ -75,7 +84,19 @@ export class SettingsComponent implements OnInit {
                 this.author = author;
                 this.settingsService.isTrusted( author.authorId ).subscribe( trusted => this.trustedAuthor = trusted );
             }
-        })
+        } );
+
+        this.ipcService.getOverlayWindows().subscribe( overlays => this.overlays = overlays );
+        this.ipcService.getDetrimentalOverlayId().subscribe( id => this.detrimentalOverlayId = id );
+        this.ipcService.getBeneficialOverlayId().subscribe( id => this.beneficialOverlayId = id );
+    }
+
+    saveDetrimentalOverlayId() {
+        this.ipcService.saveDetrimentalOverlayId( this.detrimentalOverlayId );
+    }
+
+    saveBeneficialOverlayId() {
+        this.ipcService.saveBeneficialOverlayId( this.beneficialOverlayId );
     }
 
     speakPhrase( phrase: string ): void {

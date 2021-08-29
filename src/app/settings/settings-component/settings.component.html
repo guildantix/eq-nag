@@ -113,7 +113,23 @@
     </fieldset>
 
     <fieldset>
-        <legend>Initial Setup Wizard</legend>
+        <legend>Setup Wizard</legend>
+
+        <mat-form-field style="width: 45%; margin: 5px;">
+            <mat-label>Default Detrimental Timer Overlay</mat-label>
+            <mat-select [(ngModel)]="detrimentalOverlayId" name="detrimentalOverlayId" (selectionChange)="saveDetrimentalOverlayId()">
+                <mat-option *ngFor="let overlay of timerOverlays" [value]="overlay.overlayId">{{overlay.name}}</mat-option>
+            </mat-select>
+            <mat-hint>The selected overlay will be the default overlay for detremental timers.</mat-hint>
+        </mat-form-field>
+
+        <mat-form-field style="width: 45%; margin: 5px; float: right;">
+            <mat-label>Default Beneficial Timer Overlay</mat-label>
+            <mat-select [(ngModel)]="beneficialOverlayId" name="beneficialOverlayId" (selectionChange)="saveBeneficialOverlayId()">
+                <mat-option *ngFor="let overlay of timerOverlays" [value]="overlay.overlayId">{{overlay.name}}</mat-option>
+            </mat-select>
+            <mat-hint>The selected overlay will be the default overlay for beneficial timers.</mat-hint>
+        </mat-form-field>
 
         <p>If you need to re-run the setup wizard, click on the "Run Setup Wizard" button.</p>
 

@@ -855,6 +855,46 @@ export class IpcService {
         return obs;
     }
 
+    public saveDetrimentalOverlayId( detrimentalOverlayId: string ): void {
+        this.ipc.send( 'settings:set:detrimentalOverlayId', detrimentalOverlayId );
+    }
+
+    public getDetrimentalOverlayId(): Observable<string> {
+        let obs: Observable<string> = new Observable<string>( ( observer: Observer<string> ) => {
+            
+            this.ipc.once( 'settings:get:detrimentalOverlayId', ( e, detrimentalOverlayId: string ) => {
+                this.ngZone.run( () => {
+                    observer.next( detrimentalOverlayId );
+                    observer.complete();
+                } );
+            } );
+            this.ipc.send( 'settings:get:detrimentalOverlayId', null );
+
+        } );
+
+        return obs;
+    }
+
+    public saveBeneficialOverlayId( beneficialOverlayId: string ): void {
+        this.ipc.send( 'settings:set:beneficialOverlayId', beneficialOverlayId );
+    }
+
+    public getBeneficialOverlayId(): Observable<string> {
+        let obs: Observable<string> = new Observable<string>( ( observer: Observer<string> ) => {
+            
+            this.ipc.once( 'settings:get:beneficialOverlayId', ( e, beneficialOverlayId: string ) => {
+                this.ngZone.run( () => {
+                    observer.next( beneficialOverlayId );
+                    observer.complete();
+                } );
+            } );
+            this.ipc.send( 'settings:get:beneficialOverlayId', null );
+
+        } );
+
+        return obs;
+    }
+
     public saveAuthor( author: AuthorModel ): void {
         this.ipc.send( 'settings:set:author', author );
     }
