@@ -1379,8 +1379,8 @@ function saveVariable( key, value, restricted ) {
         storedVariables[ key ] = storedVariables[ key ]?.length > 0 ? storedVariables[ key ] : [];
         storedVariables[ key ].push( value );
 
-        sendInformationToLog( `Storing value [${value}] into [${key}]`, 12 );
-        sendInformationToLog( `Current values are: ${storedVariables[ key ].join( '|' )}` );
+        isDev && sendInformationToLog( `Storing value [${value}] into [${key}]`, 12 );
+        isDev && sendInformationToLog( `Current values are: ${storedVariables[ key ].join( '|' )}` );
 
     }
 
@@ -1428,8 +1428,8 @@ function incrementCounter( key ) {
 function saveScalarVariable( key, value ) {
     storedVariables[ key ] = [ value ];
 
-    sendInformationToLog( `Storing scalar value [${value}] into [${key}]`, 12 );
-    sendInformationToLog( `Current values are: ${storedVariables[ key ].join( '|' )}` );
+    isDev && sendInformationToLog( `Storing scalar value [${value}] into [${key}]`, 12 );
+    isDev && sendInformationToLog( `Current values are: ${storedVariables[ key ].join( '|' )}` );
 }
 
 
@@ -1492,12 +1492,12 @@ function clearStoredVariable( key, value ) {
         if ( index > -1 ) {
 
             storedVariables[ key ].splice( index, 1 );
-            sendInformationToLog( `Removed [${value}] from store variable [${key}] at index [${index}]` );
-            sendInformationToLog( `Current values are: ${storedVariables[ key ].join( '|' )}` );
+            isDev && sendInformationToLog( `Removed [${value}] from store variable [${key}] at index [${index}]` );
+            isDev && sendInformationToLog( `Current values are: ${storedVariables[ key ].join( '|' )}` );
 
         } else {
-            sendInformationToLog( `Clear value failed, [${value}] not found in stored variables` );
-            sendInformationToLog( `Current values are: ${storedVariables[ key ].join( '|' )}` );
+            isDev && sendInformationToLog( `Clear value failed, [${value}] not found in stored variables` );
+            isDev && sendInformationToLog( `Current values are: ${storedVariables[ key ].join( '|' )}` );
 
         }
     }
@@ -1862,7 +1862,7 @@ function backfind( log, callback ) {
                                             } );
                                             
                                         } catch ( error ) {
-                                            sendInformationToLog( `Failure attempting to read line: ${lines[ i ]}` );
+                                            isDev && sendInformationToLog( `Failure attempting to read line: ${lines[ i ]}` );
                                         }
                                     }
                                     
