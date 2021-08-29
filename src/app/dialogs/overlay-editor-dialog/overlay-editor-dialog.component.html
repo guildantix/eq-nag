@@ -14,7 +14,7 @@
                 <div class="tab-content">
 
                     <fieldset class="margin-t-25">
-                        <legend>Properties<small>Description and styles for this overlay window.</small></legend>
+                        <legend><span class="title">Properties</span><small>Description and styles for this overlay window.</small></legend>
                         <mat-form-field>
                             <mat-label></mat-label>
                             <input matInput type="text" [(ngModel)]="model.name" />
@@ -65,8 +65,41 @@
                     </fieldset>
 
                     <fieldset class="margin-t-25" *ngIf="model.overlayType === 'Alert'">
-                        <legend>Alert Options</legend>
+                        <legend><span class="title">Alert Options</span><small>Change properties about how text should appear in this overlay.</small></legend>
 
+                        <!-- <div class="f-row">
+                            <div class="f-sm-4 al-center" style="text-align: left !important;"><mat-label>Alignment</mat-label></div>
+                            <div class="f-sm-4 al-center" style="text-align: left !important;">
+                                <mat-radio-group [(ngModel)]="model.horizontalAlignment" name="horizontalAlignment" (selectionChange)="broadcastModel()" class="horizontal">
+                                    <mat-radio-button value="left"><mat-icon class="material-icons-outlined">format_align_left</mat-icon></mat-radio-button>
+                                    <mat-radio-button value="center"><mat-icon class="material-icons-outlined">format_align_center</mat-icon></mat-radio-button>
+                                    <mat-radio-button value="right"><mat-icon class="material-icons-outlined">format_align_right</mat-icon></mat-radio-button>
+                                </mat-radio-group>
+                                <div class="f-sm-4 al-center"></div>
+                            </div>
+                        </div> -->
+                        <div class="f-row">
+                            <div class="f-sm-4 al-center" style="text-align: left !important;"><mat-label>Horizontal Alignment</mat-label></div>
+                            <div class="f-sm-4 al-center" style="text-align: left !important;">
+                                <mat-radio-group [(ngModel)]="model.horizontalAlignment" name="horizontalAlignment" (selectionChange)="broadcastModel()" class="horizontal">
+                                    <mat-radio-button value="left"><mat-icon class="material-icons-outlined">format_align_left</mat-icon></mat-radio-button>
+                                    <mat-radio-button value="center"><mat-icon class="material-icons-outlined">format_align_center</mat-icon></mat-radio-button>
+                                    <mat-radio-button value="right"><mat-icon class="material-icons-outlined">format_align_right</mat-icon></mat-radio-button>
+                                </mat-radio-group>
+                            </div>
+                            <div class="f-sm-4 al-center"></div>
+                        </div>
+                        <div class="f-row" style="margin-bottom: 60px;">
+                            <div class="f-sm-4 al-center" style="text-align: left !important;"><mat-label>Vertical Alignment</mat-label></div>
+                            <div class="f-sm-4 al-center" style="text-align: left !important;">
+                                <mat-radio-group [(ngModel)]="model.verticalAlignment" name="verticalAlignment" (selectionChange)="broadcastModel()" class="horizontal">
+                                    <mat-radio-button value="top"><mat-icon class="material-icons-outlined">vertical_align_top</mat-icon></mat-radio-button>
+                                    <mat-radio-button value="middle"><mat-icon class="material-icons-outlined">vertical_align_center</mat-icon></mat-radio-button>
+                                    <mat-radio-button value="bottom"><mat-icon class="material-icons-outlined">vertical_align_bottom</mat-icon></mat-radio-button>
+                                </mat-radio-group>
+                            </div>
+                            <div class="f-sm-4 al-center"></div>
+                        </div>
                         <div class="f-row">
                             <div class="f-sm-4 al-center"><mat-checkbox [(ngModel)]="model.showTextBorder" name="cbxShowTextBorder" (change)="broadcastModel()">Text Border</mat-checkbox></div>
                             <div class="f-sm-4 al-center"><mat-checkbox [(ngModel)]="model.showTextGlow" name="cbxShowTextBorder" (change)="broadcastModel()">Text Glow</mat-checkbox></div>
@@ -106,7 +139,7 @@
                     </fieldset>
 
                     <fieldset class="margin-t-25" *ngIf="model.overlayType === 'Timer'">
-                        <legend>Timer Options</legend>
+                        <legend><span class="title">Timer Options</span><small>Change properties about how timers should appear in this overlay.</small></legend>
                                    
                         <div class="f-row">
                             <div class="f-sm-6 al-center">
@@ -166,7 +199,7 @@
                     </fieldset>
 
                     <!-- <fieldset>
-                        <legend>Window</legend>
+                        <legend><span class="title">Window</span></legend>
 
                     </fieldset> -->
                 </div>

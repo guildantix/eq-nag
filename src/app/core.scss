@@ -51,10 +51,14 @@ fieldset {
         button {
             position: absolute;
             right: 12px;
-            top: 0px;
+            top: 3px;
         }
         mat-checkbox {
             margin:0 5px;
+        }
+        span.title {
+            font-size: 24px;
+            font-weight: 100;
         }
         flex-direction: row;
         align-items: center;
@@ -63,14 +67,16 @@ fieldset {
         display: flex;
         position: absolute;
         top: 10px;
-        font-weight: 400;
+        // font-weight: 400;
         margin-bottom: 10px;
         box-sizing: border-box;
-        padding: 0px 16px 4px 16px;
+        padding: 10px 16px 4px 16px;
         max-width: unset;
         border: none;
         width: 100%;
         left: 0;
+        // padding-top: 10px;
+        background-color: #00000038;
     }
 
     small {
@@ -82,7 +88,7 @@ fieldset {
     border:none;
     margin-bottom: 20px;
     display: block;
-    padding-top: 60px;
+    padding-top: 85px;
     position: relative;
     
 }
@@ -484,4 +490,17 @@ button.mat-icon-button.small {
 .checkbox-hint {
     padding-left: 30px;
     margin-bottom: 15px;
+}
+
+mat-card {
+    mat-card-header {
+        mat-card-title {
+            font-weight: 100;
+            font-size: 24px;
+        }
+        background-color: #0000004a;
+        margin-left: -16px;
+        margin-right: -16px;
+        padding-top: 10px;
+    }
 }

@@ -39,17 +39,17 @@ export class TriggerActionDisplayTextComponent implements OnInit {
         } else if ( this.selectedOverlay ) {
             return `${this.selectedOverlay.fontSize}px`;
         } else {
-            return null;
+            return '12px';
         }
     }
 
     public get fontSpacing(): string {
-        if ( this.action.textSpacing && this.action.textSpacing ) {
-            return `${this.action.textSpacing}px`;
+        if ( this.action.textSpacing ) {
+            return `${( this.action.textSpacing > 10 ? this.action.textSpacing : 90 ) / 100}em`;
         } else if ( this.selectedOverlay ) {
-            return `${this.selectedOverlay.lineHeight}px`;
+            return `${( this.selectedOverlay.lineHeight > 10 ? this.selectedOverlay.lineHeight : 90 ) / 100}em`;
         } else {
-            return null;
+            return '1em';
         }
     }
 

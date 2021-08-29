@@ -185,6 +185,8 @@ export class OverlayWindowModel {
     public name: string = '';
     public overlayType: string = '';
     public fontFamily: string = 'Roboto';
+    public horizontalAlignment: string = 'center';
+    public verticalAlignment: string = 'bottom';
     public fontSize: number = 14;
     public lineHeight: number = 90;
     public fontWeight: number = 400;

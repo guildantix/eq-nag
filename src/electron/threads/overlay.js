@@ -162,6 +162,11 @@ function Overlay() {
             contentArea.style.lineHeight = `${( model.lineHeight > 10 ? model.lineHeight : 90 ) / 100}em`;
             contentArea.style.fontWeight = model.fontWeight > 0 ? model.fontWeight : 300;
 
+            if ( model.overlayType === 'Alert' ) {
+                contentArea.style.textAlign = model.horizontalAlignment;
+                contentArea.style.verticalAlign = model.verticalAlignment;
+            }
+
             contentArea.querySelectorAll( '.progress' ).forEach( f => f.style.marginBottom = contentArea.style.lineHeight );
 
             if ( model.fontColor ) {

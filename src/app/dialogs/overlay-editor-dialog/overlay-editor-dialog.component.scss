@@ -59,3 +59,17 @@ span.place-holder {
 mat-tab-group {
     height: 100%;
 }
+
+mat-radio-group {
+    margin-top: 10px;
+}
+
+mat-radio-group.horizontal {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
+
+    mat-radio-button {
+        margin: 0 10px;
+    }
+}

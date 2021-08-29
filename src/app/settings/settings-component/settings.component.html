@@ -6,7 +6,7 @@
 <div class="tab-content">
 
     <fieldset>
-        <legend><span>Text to Speech</span></legend>
+        <legend><span class="title">Text to Speech</span></legend>
         <mat-form-field style="width: 50%;">
             <mat-label></mat-label>
             <mat-select [(ngModel)]="voiceIndex" (selectionChange)="onChangeVoice()">
@@ -17,7 +17,7 @@
     </fieldset>
 
     <fieldset>
-        <legend>Sharing <button mat-icon-button color="accent" (click)="showVerifiedUserInfo()" *ngIf="trustedAuthor"><mat-icon class="material-icons-outlined">verified_user</mat-icon></button></legend>
+        <legend><span class="title">Sharing</span> <button mat-icon-button color="accent" (click)="showVerifiedUserInfo()" *ngIf="trustedAuthor"><mat-icon class="material-icons-outlined">verified_user</mat-icon></button></legend>
 
         <div>        
             <mat-form-field style="width: 50%;">
@@ -46,7 +46,7 @@
     </fieldset>
 
     <fieldset>
-        <legend>Import from GINA</legend>
+        <legend><span class="title">Import from GINA</span></legend>
         <button mat-button color="accent" (click)="openImportGinaDialog()" [disabled]="loadingGinaConfig">
             <span *ngIf="!loadingGinaConfig" style="display: flex; align-items: center; justify-content: center;"><mat-icon>input</mat-icon><span>&nbsp;Import</span></span>
             <span *ngIf="loadingGinaConfig"  style="display: flex; align-items: center; justify-content: center;"><mat-spinner [diameter]="20" color="accent"></mat-spinner><span>&nbsp;Loading ...</span></span>
@@ -54,7 +54,7 @@
     </fieldset>
 
     <fieldset>
-        <legend><span>Phonetic Transforms</span><span class="spacer"></span><button mat-button (click)="addPhoneticTransform(phoneticTransformsTable)" color="accent"><mat-icon>add</mat-icon>New</button></legend>
+        <legend><span class="title">Phonetic Transforms</span><span class="spacer"></span><button mat-button (click)="addPhoneticTransform(phoneticTransformsTable)" color="accent"><mat-icon>add</mat-icon>New</button></legend>
 
         <table mat-table #phoneticTransformsTable="matTable" style="width: 100%;"
             [dataSource]="phoneticTransforms">
@@ -113,7 +113,7 @@
     </fieldset>
 
     <fieldset>
-        <legend>Setup Wizard</legend>
+        <legend><span class="title">Setup Wizard</span></legend>
 
         <mat-form-field style="width: 45%; margin: 5px;">
             <mat-label>Default Detrimental Timer Overlay</mat-label>

@@ -19,6 +19,8 @@ class OverlayWindow {
     name = '';
     overlayType = '';
     fontFamily = 'Roboto';
+    horizontalAlignment = 'center';
+    verticalAlignment = 'bottom';
     fontSize = 14;
     lineHeight = 90;
     fontWeight = 400;
