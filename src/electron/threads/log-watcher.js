@@ -1427,6 +1427,9 @@ function incrementCounter( key ) {
  */
 function saveScalarVariable( key, value ) {
     storedVariables[ key ] = [ value ];
+
+    sendInformationToLog( `Storing scalar value [${value}] into [${key}]`, 12 );
+    sendInformationToLog( `Current values are: ${storedVariables[ key ].join( '|' )}` );
 }
 
 
@@ -1482,12 +1485,23 @@ function storeHasValue( key, value ) {
  * @param {any} value The value to clear.
  */
 function clearStoredVariable( key, value ) {
+
     if ( storedVariables[ key ]?.length ) {
         let index = storedVariables[ key ].indexOf( value );
+
         if ( index > -1 ) {
+
             storedVariables[ key ].splice( index, 1 );
+            sendInformationToLog( `Removed [${value}] from store variable [${key}] at index [${index}]` );
+            sendInformationToLog( `Current values are: ${storedVariables[ key ].join( '|' )}` );
+
+        } else {
+            sendInformationToLog( `Clear value failed, [${value}] not found in stored variables` );
+            sendInformationToLog( `Current values are: ${storedVariables[ key ].join( '|' )}` );
+
         }
     }
+
 }
 
 
