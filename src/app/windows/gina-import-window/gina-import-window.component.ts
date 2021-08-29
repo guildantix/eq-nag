@@ -513,7 +513,7 @@ export class GinaImportWindowComponent implements OnInit {
                     let zoneCondition = new TriggerCondition();
                     zoneCondition.conditionId = nanoid();
                     zoneCondition.conditionType = TriggerConditionTypes.VariableValue;
-                    zoneCondition.operatorType = OperatorTypes.Equals;
+                    zoneCondition.operatorType = OperatorTypes.Contains;
                     zoneCondition.variableName = 'CurrentZone';
                     zoneCondition.variableValue = zone;
                     this.nTrigger.conditions.push( zoneCondition );

@@ -104,7 +104,6 @@ export class NewTriggerRaidAbilityComponent implements OnInit {
             this.getDeathTouchInfo = false;
             this.getNotificationInfo = true;
         } else {
-            console.log( 'moving on from', 'else' );
             this.getUrl = false;
             this.getRecastInfo = false;
             this.getIsDeathTouch = false;
@@ -158,7 +157,7 @@ export class NewTriggerRaidAbilityComponent implements OnInit {
             duration: null,
             // Your eardrums begin to bleed.
             // /^(?<target>You)r eardrums begin to bleed\.$/
-            phrase: '^' + this.ability.castOnYou.replace(/\.$/, '\\.$').replace( /(You)/gmi, '^(?<target>$1)' ),
+            phrase: '^' + this.ability.castOnYou.replace(/\.$/, '\\.$').replace( /(You)/i, '^(?<target>$1)' ),
         } );
         let resistPhraseId = nanoid();
         trigger.capturePhrases.push( <CapturePhrase>{
@@ -300,27 +299,20 @@ export class NewTriggerRaidAbilityComponent implements OnInit {
 
         }
 
-        if ( this.deathTouch ) {
+        
+        if ( this.deathTouch || this.ability.manaDrain || this.ability.silence ) {
+            let effectSpeak = this.deathTouch ? 'Death Touch!' :
+                this.ability.manaDrain ? 'Mana Drain!' :
+                this.ability.silence ? 'Silence!' : null;
+            let cureSpeak = this.ability.cureType ? `cure ${this.ability.cureType}` : `uncurable`;
+            
             trigger.actions.push( <TriggerAction>{
                 phrases: [ hitPhraseId ],
                 actionType: ActionTypes.Speak,
-                displayText: `Death Touch! cure ${this.ability.cureType}`,
+                displayText: `${effectSpeak} ${cureSpeak}`,
                 interruptSpeech: true,
             } );
-        } else if ( this.ability.manaDrain ) {
-            trigger.actions.push( <TriggerAction>{
-                phrases: [ hitPhraseId ],
-                actionType: ActionTypes.Speak,
-                displayText: `Mana Drain! cure ${this.ability.cureType}`,
-                interruptSpeech: true,
-            } );
-        } else if ( this.ability.silence ) {
-            trigger.actions.push( <TriggerAction>{
-                phrases: [ hitPhraseId ],
-                actionType: ActionTypes.Speak,
-                displayText: `Silenced! cure ${this.ability.cureType}`,
-                interruptSpeech: true,
-            } );
+
         }
 
         trigger.conditions = [];
@@ -339,7 +331,7 @@ export class NewTriggerRaidAbilityComponent implements OnInit {
                     conditionId: nanoid(),
                     conditionType: TriggerConditionTypes.VariableValue,
                     variableName: 'CurrentZone',
-                    operatorType: OperatorTypes.Equals,
+                    operatorType: OperatorTypes.Contains,
                     variableValue: zone,
                 } );
             } );

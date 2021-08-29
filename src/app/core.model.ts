@@ -133,6 +133,7 @@ export enum OperatorTypes {
     DoesNotEqual =          1 << 1,
     LessThan =              1 << 2,
     GreaterThan =           1 << 3,
+    Contains =              1 << 4,
 
 }
 

@@ -47,11 +47,13 @@ var OperatorTypes = {
     '2': 'DoesNotEqual',
     '4': 'LessThan',
     '8': 'GreaterThan',
+    '16': 'Contains',
     IsNull: 0,
     Equals: 1,
     DoesNotEqual: 2,
     LessThan: 4,
     GreaterThan: 8,
+    Contains: 16,
 }
 
 var ImportTypes = {

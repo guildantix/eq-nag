@@ -441,6 +441,21 @@ function generateTriggerFns() {
                                 trigger._conditionResults[ condition.variableName ] = storedValue.value;
                             }
 
+                        } else if ( condition.operatorType === OperatorTypes.Contains ) {
+                            
+                            let storedValue = storeContainsValue( condition.variableName, _conditionValues[ condition.variableName ] );
+
+                            if ( !storedValue.exists ) {
+                                conditionsPassed = false;
+                                // isDev && sendInformationToLog( `Condition FAILED, [${_conditionValues[ condition.variableName ]}] not found in store.` );
+
+                            } else {
+                                // Store what value passed.
+                                trigger._conditionResults[ condition.variableName ] = storedValue.value;
+                                // isDev && sendInformationToLog( `Condition passed, [${_conditionValues[ condition.variableName ]}] found [${storedValue.value}] in store.` );
+
+                            }
+                            
                         }
                     }
                 } );
@@ -1467,6 +1482,54 @@ function storeHasValue( key, value ) {
 
     return { exists: false };
     
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Returns true if the given key has a matching value in the store.
+ * 
+ * @returns {{exists: boolean, value: any}}
+ * 
+ * @param {string} key The key of the stored variable.
+ * @param {any|any[]} value The value to check.
+ */
+function storeContainsValue( key, value ) {
+    
+    if ( storedVariables[ key ]?.length > 0 ) {
+        if ( value instanceof Array ) {
+            for ( let i = 0; i < storedVariables[ key ].length; i++ ) {
+                for ( let v = 0; v < value.length; v++ ) {
+                    let rgx = new RegExp( value[ v ].replace( /[.*+?^${}()|[\]\\]/g, '\\$&' ), 'gi' );
+                    
+                    if ( storedVariables[ key ][ i ].match( rgx ) ) {
+                        return { exists: true, value: storedVariables[ key ][ i ] };
+                    } else {
+                        return { exists: false };
+                    }
+                }
+            }
+        } else {
+            for ( let i = 0; i < storedVariables[ key ].length; i++ ) {
+                let rgx = new RegExp( value.replace( /[.*+?^${}()|[\]\\]/g, '\\$&' ), 'gi' );
+
+                if ( storedVariables[ key ][ i ].match( rgx ) ) {
+                    return { exists: true, value: storedVariables[ key ][ i ] };
+                } else {
+                    return { exists: false };
+                }
+            }
+        }
+    }
+
+    return { exists: false };
 }
 
 

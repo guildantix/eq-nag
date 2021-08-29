@@ -164,7 +164,19 @@ function Overlay() {
 
             if ( model.overlayType === 'Alert' ) {
                 contentArea.style.textAlign = model.horizontalAlignment;
-                contentArea.style.verticalAlign = model.verticalAlignment;
+                if ( model.verticalAlignment === 'bottom' ) {
+                    contentArea.style.display = 'flex';
+                    contentArea.style.flexDirection = 'column';
+                    contentArea.style.justifyContent = 'flex-end';
+                } else if ( model.verticalAlignment === 'middle' ) {
+                    contentArea.style.display = 'flex';
+                    contentArea.style.flexDirection = 'column';
+                    contentArea.style.justifyContent = 'center';
+                } else {
+                    contentArea.style.display = 'block';
+                    contentArea.style.flexDirection = undefined;
+                    contentArea.style.justifyContent = undefined;
+                }
             }
 
             contentArea.querySelectorAll( '.progress' ).forEach( f => f.style.marginBottom = contentArea.style.lineHeight );
@@ -293,6 +305,7 @@ function render( comp ) {
         let content = displayTextTemplate( { value: StringUtilities.format( comp.action.displayText, comp.matches ) } );
         let div = document.createElement( 'div' );
         div.innerHTML = content;
+        div.style.animation = `animate-fadeout ${comp.action.duration * 1.05}s ease`;
         comp.dom = div;
 
         // Custom display logic.
