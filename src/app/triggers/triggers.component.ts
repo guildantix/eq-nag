@@ -13,9 +13,10 @@ const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz
 const nanoid = customAlphabet( alphabet, 16 );
 
 interface FolderTreeNode {
-  expandable: boolean;
-  name: string;
-  level: number;
+    expandable: boolean;
+    name: string;
+    level: number;
+    folderId: string;
 }
 
 @Component( {

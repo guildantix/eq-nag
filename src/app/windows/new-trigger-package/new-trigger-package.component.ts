@@ -522,7 +522,7 @@ export class NewTriggerPackageComponent implements OnInit {
      * 
      * @param trigger The trigger model.
      */
-    public getTriggerFamily( trigger: TriggerModel ): string {
+    public getTriggerFamily( trigger: TriggerModel | PackageTrigger ): string {
 
         let folderFamilyNames = this.getFolderFamilyNames( trigger.folderId, this.triggerFolders, [] );
         if ( folderFamilyNames?.length > 0 ) {
