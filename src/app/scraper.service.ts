@@ -40,6 +40,7 @@ export class ScraperService {
                 // ./book[./author/name = 'John'] 
                 // https://stackoverflow.com/a/9683142
                 let resistCheck = document.evaluate( "//td[./strong = 'Resist:']/following-sibling::td[1]", document, null, XPathResult.ANY_TYPE, null ).iterateNext();
+                let castingTimeCheck = document.evaluate( "//td[./strong = 'Casting Time:']/following-sibling::td[1]", document, null, XPathResult.ANY_TYPE, null ).iterateNext();
                 let resistMod = document.evaluate( "//td[./strong = 'Resist Adjust:']/following-sibling::td[1]", document, null, XPathResult.ANY_TYPE, null ).iterateNext();
 
                 // //a/bb[text()="zz"]/following-sibling::cc[1]/text()
@@ -56,7 +57,7 @@ export class ScraperService {
 
                 let model = new ScrapedAbility();
 
-                model.name = data.name;
+                model.name = data.name?.trim();
                 model.duration = data.duration;
                 model.castOnOther = data.castOnOther;
                 model.castOnYou = data.castOnYou;
@@ -94,6 +95,10 @@ export class ScraperService {
 
                 if ( resistCheck ) {
                     model.resistType = resistCheck?.textContent?.trim();
+                }
+
+                if ( castingTimeCheck ) {
+                    model.castTime = parseFloat( castingTimeCheck.textContent ) * 1000;
                 }
 
                 if ( resistMod ) {
