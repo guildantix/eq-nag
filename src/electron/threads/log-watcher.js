@@ -46,6 +46,7 @@ var logParseTimeoutId = null;
 var logParseTimer = 50;
 var changingLogFile = false;
 var isDev = false;
+var enableLogging = true;
 /** @type {CharacterModel} */
 var charModel = null;
 var characterName = null;
@@ -442,17 +443,15 @@ function generateTriggerFns() {
                             }
 
                         } else if ( condition.operatorType === OperatorTypes.Contains ) {
-                            
+
                             let storedValue = storeContainsValue( condition.variableName, _conditionValues[ condition.variableName ] );
 
                             if ( !storedValue.exists ) {
                                 conditionsPassed = false;
-                                // isDev && sendInformationToLog( `Condition FAILED, [${_conditionValues[ condition.variableName ]}] not found in store.` );
 
                             } else {
                                 // Store what value passed.
                                 trigger._conditionResults[ condition.variableName ] = storedValue.value;
-                                // isDev && sendInformationToLog( `Condition passed, [${_conditionValues[ condition.variableName ]}] found [${storedValue.value}] in store.` );
 
                             }
                             
@@ -799,6 +798,8 @@ function parseLogEntries( raw, simulating ) {
         trigger._parse( log, res => {
             trigger.actions.forEach( action => {
                 if ( ( isDev || !action.onlyExecuteInDev ) && ( action.phrases == null || action.phrases?.length === 0 || action.phrases?.indexOf( res.phraseId ) > -1 ) ) {
+                    enableLogging && sendInformationToLog( `Execute trigger action [${trigger.name}] : ${ActionTypes[ action.actionType ]}`, 24 );
+                    enableLogging && sendInformationToLog( `    ||${raw}||`, 24 );
                     if ( action.actionType === ActionTypes.DisplayText ) {
                     /* --== Display Text ==-- */
                         
@@ -978,8 +979,9 @@ function displayBeneficialTimerComponent( res, timestamp, action, trigger, spell
                 let matched = false;
                 
                 renderedPhrases.forEach( phrase => {
-                    let _res = new RegExp( phrase, 'g' ).exec( logEntry );
+                    let _res = new RegExp( phrase, 'gi' ).exec( logEntry );
                     if ( _res?.length > 0 ) {
+                        enableLogging && sendInformationToLog( `DoT Timer ended early: [${logEntry}]` );
                         matched = true;
                     }
                 } );
@@ -1120,8 +1122,9 @@ function displayDotTimerComponent( res, timestamp, action, trigger ) {
                 let matched = false;
                 
                 renderedPhrases.forEach( phrase => {
-                    let _res = new RegExp( phrase, 'g' ).exec( logEntry );
+                    let _res = new RegExp( phrase, 'gi' ).exec( logEntry );
                     if ( _res?.length > 0 ) {
+                        enableLogging && sendInformationToLog( `DoT Timer ended early: [${logEntry}]` );
                         matched = true;
                     }
                 } );
@@ -1238,8 +1241,9 @@ function displayTimerCountdownComponent(res, timestamp, action, trigger) {
                 let matched = false;
                                     
                 renderedPhrases.forEach( phrase => {
-                    let _res = new RegExp( phrase, 'g' ).exec( logEntry );
+                    let _res = new RegExp( phrase, 'gi' ).exec( logEntry );
                     if ( _res?.length > 0 ) {
+                        enableLogging && sendInformationToLog( `DoT Timer ended early: [${logEntry}]` );
                         matched = true;
                     }
                 } );
@@ -1350,7 +1354,7 @@ function sendInformationToLog( info, duration ) {
         comp.action.actionId = nanoid();
         comp.action.actionType = ActionTypes.DisplayText;
         if ( typeof info === 'string' ) {
-            comp.action.displayText = info;
+            comp.action.displayText = info.replace( /\s/gmi, '&nbsp;' );
             comp.action.duration = duration;
         } else {
             comp.action.displayText = JSON.stringify( info );
@@ -1394,8 +1398,8 @@ function saveVariable( key, value, restricted ) {
         storedVariables[ key ] = storedVariables[ key ]?.length > 0 ? storedVariables[ key ] : [];
         storedVariables[ key ].push( value );
 
-        isDev && sendInformationToLog( `Storing value [${value}] into [${key}]`, 12 );
-        isDev && sendInformationToLog( `Current values are: ${storedVariables[ key ].join( '|' )}` );
+        enableLogging && sendInformationToLog( `Storing value [${value}] into [${key}]`, 12 );
+        enableLogging && sendInformationToLog( `Current values are: ${storedVariables[ key ].join( '|' )}` );
 
     }
 
@@ -1443,8 +1447,8 @@ function incrementCounter( key ) {
 function saveScalarVariable( key, value ) {
     storedVariables[ key ] = [ value ];
 
-    isDev && sendInformationToLog( `Storing scalar value [${value}] into [${key}]`, 12 );
-    isDev && sendInformationToLog( `Current values are: ${storedVariables[ key ].join( '|' )}` );
+    enableLogging && sendInformationToLog( `Storing scalar value [${value}] into [${key}]`, 12 );
+    enableLogging && sendInformationToLog( `Current values are: ${storedVariables[ key ].join( '|' )}` );
 }
 
 
@@ -1511,8 +1515,6 @@ function storeContainsValue( key, value ) {
                     
                     if ( storedVariables[ key ][ i ].match( rgx ) ) {
                         return { exists: true, value: storedVariables[ key ][ i ] };
-                    } else {
-                        return { exists: false };
                     }
                 }
             }
@@ -1522,8 +1524,6 @@ function storeContainsValue( key, value ) {
 
                 if ( storedVariables[ key ][ i ].match( rgx ) ) {
                     return { exists: true, value: storedVariables[ key ][ i ] };
-                } else {
-                    return { exists: false };
                 }
             }
         }
@@ -1555,12 +1555,12 @@ function clearStoredVariable( key, value ) {
         if ( index > -1 ) {
 
             storedVariables[ key ].splice( index, 1 );
-            isDev && sendInformationToLog( `Removed [${value}] from store variable [${key}] at index [${index}]` );
-            isDev && sendInformationToLog( `Current values are: ${storedVariables[ key ].join( '|' )}` );
+            enableLogging && sendInformationToLog( `Removed [${value}] from store variable [${key}] at index [${index}]` );
+            enableLogging && sendInformationToLog( `Current values are: ${storedVariables[ key ].join( '|' )}` );
 
         } else {
-            isDev && sendInformationToLog( `Clear value failed, [${value}] not found in stored variables` );
-            isDev && sendInformationToLog( `Current values are: ${storedVariables[ key ].join( '|' )}` );
+            enableLogging && sendInformationToLog( `Clear value failed, [${value}] not found in stored variables` );
+            enableLogging && sendInformationToLog( `Current values are: ${storedVariables[ key ].join( '|' )}` );
 
         }
     }
@@ -1925,7 +1925,7 @@ function backfind( log, callback ) {
                                             } );
                                             
                                         } catch ( error ) {
-                                            isDev && sendInformationToLog( `Failure attempting to read line: ${lines[ i ]}` );
+                                            enableLogging && sendInformationToLog( `Failure attempting to read line: ${lines[ i ]}` );
                                         }
                                     }
                                     
