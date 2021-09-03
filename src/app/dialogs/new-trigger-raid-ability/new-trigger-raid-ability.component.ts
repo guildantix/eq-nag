@@ -127,7 +127,6 @@ export class NewTriggerRaidAbilityComponent implements OnInit {
     }
 
     public import(): void {
-
         let trigger: TriggerModel;
 
         if ( this.data?.trigger?.triggerId != null ) {
@@ -143,12 +142,23 @@ export class NewTriggerRaidAbilityComponent implements OnInit {
         trigger.allakhazamUrl = this.url;
         trigger.captureMethod = 'Any match';
         trigger.importType = ImportTypes.Ability;
+        // trigger.useCooldown = true;
+        // trigger.cooldownDuration = 1;
 
         // ^You resist (?<caster>.+?)\b\s{0,1}'{0,1}s{0,1}\b Void of Suppression!$
         // ^Warden Hanvar has been slain by (?<player>.+?)!$
         // ^The air stops moving around you\.$
         // Overlord Mata Muram begins casting Mark of Death.
         trigger.capturePhrases = [];
+        let castingPhraseId = nanoid();
+        trigger.capturePhrases.push( <CapturePhrase>{
+            phraseId: castingPhraseId,
+            useRegEx: true,
+            requirePreviousPhrase: false,
+            duration: null,
+            // Aaryonar begins casting Cloud of Disempowerment.
+            phrase: `^(?<target>.*) begins casting ${this.ability.name}\\.$`,
+        } );
         let hitPhraseId = nanoid();
         trigger.capturePhrases.push( <CapturePhrase>{
             phraseId: hitPhraseId,
@@ -157,7 +167,7 @@ export class NewTriggerRaidAbilityComponent implements OnInit {
             duration: null,
             // Your eardrums begin to bleed.
             // /^(?<target>You)r eardrums begin to bleed\.$/
-            phrase: '^' + this.ability.castOnYou.replace(/\.$/, '\\.$').replace( /(You)/i, '^(?<target>$1)' ),
+            phrase: '^' + this.ability.castOnYou.replace(/\.$/, '\\.$').replace( /(You)/i, '(?<target>$1)' ),
         } );
         let resistPhraseId = nanoid();
         trigger.capturePhrases.push( <CapturePhrase>{
@@ -185,7 +195,7 @@ export class NewTriggerRaidAbilityComponent implements OnInit {
         if ( this.recastTimerOverlayId && this.recastDelay > 0 ) {
             
             let act = <TriggerAction>{
-                phrases: [ hitOtherPhraseId, hitPhraseId, resistPhraseId ],
+                phrases: [ castingPhraseId, hitOtherPhraseId, hitPhraseId, resistPhraseId ],
                 actionType: ActionTypes.Countdown,
                 overlayId: this.recastTimerOverlayId,
                 duration: this.recastDelay,
@@ -321,19 +331,18 @@ export class NewTriggerRaidAbilityComponent implements OnInit {
             let zones = [];
             this.ability.npcsWithAbility.forEach( npc => {
                 npc.zones?.forEach( zone => {
-                    if ( zones.indexOf( zone ) === -1 ) {
-                        zones.push( zone );
+                    if ( zones.indexOf( zone?.trim() ) === -1 ) {
+                        zones.push( zone?.trim() );
                     }
                 } )
             } );
-            zones.forEach( zone => {
-                trigger.conditions.push( <TriggerCondition>{
-                    conditionId: nanoid(),
-                    conditionType: TriggerConditionTypes.VariableValue,
-                    variableName: 'CurrentZone',
-                    operatorType: OperatorTypes.Contains,
-                    variableValue: zone,
-                } );
+            let zoneText = zones.length > 1 ? zones.join( '|' ) : zones[ 0 ];
+            trigger.conditions.push( <TriggerCondition>{
+                conditionId: nanoid(),
+                conditionType: TriggerConditionTypes.VariableValue,
+                variableName: 'CurrentZone',
+                operatorType: OperatorTypes.Contains,
+                variableValue: zoneText,
             } );
         }
 
@@ -351,7 +360,7 @@ export class NewTriggerRaidAbilityComponent implements OnInit {
                     hitTimer.timerIcon = icon;
                 }
 
-                trigger.actions = trigger.actions.concat( recastCountdowns, [ hitTimer ] );
+                trigger.actions = trigger.actions.concat( recastCountdowns, hitTimer ? [ hitTimer ] : [] );
 
                 if ( trigger.triggerId != null ) {
                     this.ipcService.updateTrigger( trigger ).subscribe( updated => { } );
@@ -364,7 +373,7 @@ export class NewTriggerRaidAbilityComponent implements OnInit {
 
         } else {
 
-            trigger.actions = trigger.actions.concat( recastCountdowns, [ hitTimer ] );
+            trigger.actions = trigger.actions.concat( recastCountdowns, hitTimer ? [ hitTimer ] : [] );
 
             if ( trigger.triggerId != null ) {
                 this.ipcService.updateTrigger( trigger ).subscribe( updated => { } );
