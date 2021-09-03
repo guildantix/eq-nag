@@ -1,5 +1,5 @@
 import { Injectable, NgZone } from '@angular/core';
-import { IpcRenderer } from 'electron';
+import { Display, IpcRenderer } from 'electron';
 import { Observable, Observer } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
 import { DataTickModel, DkpEntryModel, TriggerModel, OverlayWindowModel, ActionTypes, FocusEffectSettings, CharacterModel, BasicError, TriggerFolder, FileModel, Tag, AuthorModel, PackageFileModel } from './core.model';
@@ -157,6 +157,22 @@ export class IpcService {
                 } );
             } );
             this.ipc.send( 'app:version' );
+
+        } );
+
+        return obs;
+    }
+
+    public getPrimaryDisplay(): Observable<Display> {
+        let obs: Observable<Display> = new Observable<Display>( ( observer: Observer<Display> ) => {
+            
+            this.ipc.once( 'app:get:primary-display', ( e, display ) => {
+                this.ngZone.run( () => {
+                    observer.next( display );
+                    observer.complete();
+                } );
+            } );
+            this.ipc.send( 'app:get:primary-display' );
 
         } );
 
@@ -909,6 +925,66 @@ export class IpcService {
                 } );
             } );
             this.ipc.send( 'settings:get:beneficialOverlayId', null );
+
+        } );
+
+        return obs;
+    }
+
+    public saveAlertOverlayId( alertOverlayId: string ): void {
+        this.ipc.send( 'settings:set:alertOverlayId', alertOverlayId );
+    }
+
+    public getAlertOverlayId(): Observable<string> {
+        let obs: Observable<string> = new Observable<string>( ( observer: Observer<string> ) => {
+            
+            this.ipc.once( 'settings:get:alertOverlayId', ( e, alertOverlayId: string ) => {
+                this.ngZone.run( () => {
+                    observer.next( alertOverlayId );
+                    observer.complete();
+                } );
+            } );
+            this.ipc.send( 'settings:get:alertOverlayId', null );
+
+        } );
+
+        return obs;
+    }
+
+    public saveDamageDealtOverlayId( damageDealtOverlayId: string ): void {
+        this.ipc.send( 'settings:set:damageDealtOverlayId', damageDealtOverlayId );
+    }
+
+    public getDamageDealtOverlayId(): Observable<string> {
+        let obs: Observable<string> = new Observable<string>( ( observer: Observer<string> ) => {
+            
+            this.ipc.once( 'settings:get:damageDealtOverlayId', ( e, damageDealtOverlayId: string ) => {
+                this.ngZone.run( () => {
+                    observer.next( damageDealtOverlayId );
+                    observer.complete();
+                } );
+            } );
+            this.ipc.send( 'settings:get:damageDealtOverlayId', null );
+
+        } );
+
+        return obs;
+    }
+
+    public saveDamageReceivedOverlayId( damageReceivedOverlayId: string ): void {
+        this.ipc.send( 'settings:set:damageReceivedOverlayId', damageReceivedOverlayId );
+    }
+
+    public getDamageReceivedOverlayId(): Observable<string> {
+        let obs: Observable<string> = new Observable<string>( ( observer: Observer<string> ) => {
+            
+            this.ipc.once( 'settings:get:damageReceivedOverlayId', ( e, damageReceivedOverlayId: string ) => {
+                this.ngZone.run( () => {
+                    observer.next( damageReceivedOverlayId );
+                    observer.complete();
+                } );
+            } );
+            this.ipc.send( 'settings:get:damageReceivedOverlayId', null );
 
         } );
 

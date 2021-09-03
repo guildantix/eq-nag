@@ -9,14 +9,11 @@ export class SetupService {
     
     constructor( private dialog: MatDialog ) { }
     
-    public showSetupWizard( characterList: CharactersListComponent ): Observable<null> {
+    public showSetupWizard(): Observable<null> {
 
         return this.dialog.open<SetupWizardComponent, any, null>( SetupWizardComponent, {
             width: '920px',
             panelClass: 'app-dialog',
-            // data: {
-            //     characterList: characterList
-            // }
         } ).afterClosed();
         
     }

@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, Input, OnInit } from '@angular/core';
 import { DialogService } from 'src/app/dialogs/dialog.service';
 import { IpcService } from 'src/app/ipc.service';
 import { MatTable } from '@angular/material/table';
@@ -10,6 +10,7 @@ import { SetupService } from 'src/app/setup/setup.service';
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const nanoid = customAlphabet( alphabet, 16 );
 import * as _ from 'lodash-es';
+import { CharactersListComponent } from 'src/app/characters-list/characters-list.component';
 
 interface IPhoneticTransform {
     id: string;
@@ -45,6 +46,8 @@ export class SettingsComponent implements OnInit {
     }
 
     private overlays: OverlayWindowModel[] = [];
+
+    @Input() public characterList: CharactersListComponent;
 
     constructor( private ipcService: IpcService, private dialogService: DialogService, private settingsService: SettingsService, private snackBar: MatSnackBar, private setupService: SetupService ) {
         speechSynthesis.onvoiceschanged = () => {
@@ -204,7 +207,10 @@ export class SettingsComponent implements OnInit {
     }
 
     runSetupWizard() {
-        this.setupService.showSetupWizard( null ).subscribe( () => { } );
+        this.setupService.showSetupWizard().subscribe( () => {
+            this.ipcService.requestTick();
+            this.characterList?.loadCharacters();
+        } );
     }
 
 }

@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, protocol, session } = require( "electron" );
+const { app, BrowserWindow, ipcMain, protocol, session, screen } = require( "electron" );
 const { autoUpdater } = require('electron-updater');
 const url = require( "url" );
 const path = require( "path" );
@@ -148,6 +148,10 @@ ipcMain.on( 'app:minimize:tray', ( event, data ) => {
 
 ipcMain.on( 'app:request:tick', ( event, data ) => {
     sendTick();
+} );
+
+ipcMain.on( 'app:get:primary-display', ( event ) => {
+    event.sender.send( 'app:get:primary-display', screen.getPrimaryDisplay() );
 } );
 
 ipcMain.on( 'main:console:log', ( event, data ) => { mainWindow.webContents.send( 'console:log', data ); } );

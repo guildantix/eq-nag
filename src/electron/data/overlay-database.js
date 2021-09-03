@@ -127,7 +127,7 @@ class OverlayDatabaseStore extends Store {
         this.#data.overlays = this.#data.overlays ? this.#data.overlays : [];
 
         // Generate a new id for the overlay.
-        overlay.overlayId = nanoid();
+        overlay.overlayId = overlay.overlayId?.length === 16 ? overlay.overlayId : nanoid();
 
         // Add it to the store.
         this.#data.overlays.push( overlay );

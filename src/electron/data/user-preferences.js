@@ -387,6 +387,22 @@ class UserPreferencesStore extends Store {
             event.sender.webContents.send( 'settings:get:alertOverlayId', this.alertOverlayId );
         } );
 
+        ipcMain.on( 'settings:set:damageDealtOverlayId', ( event, damageDealtOverlayId ) => {
+            this.damageDealtOverlayId = damageDealtOverlayId;
+        } );
+
+        ipcMain.on( 'settings:get:damageDealtOverlayId', ( event ) => {
+            event.sender.webContents.send( 'settings:get:damageDealtOverlayId', this.damageDealtOverlayId );
+        } );
+
+        ipcMain.on( 'settings:set:damageReceivedOverlayId', ( event, damageReceivedOverlayId ) => {
+            this.damageReceivedOverlayId = damageReceivedOverlayId;
+        } );
+
+        ipcMain.on( 'settings:get:damageReceivedOverlayId', ( event ) => {
+            event.sender.webContents.send( 'settings:get:damageReceivedOverlayId', this.damageReceivedOverlayId );
+        } );
+
         ipcMain.on( 'settings:set:setupCompleted', ( event, setupCompleted ) => {
             this.setupCompleted = setupCompleted;
         } );

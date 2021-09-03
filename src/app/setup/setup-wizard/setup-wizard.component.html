@@ -3,12 +3,12 @@
 <mat-dialog-content class="setup-wizard">
     <mat-horizontal-stepper [linear]="true" #stepper>
 
-        <mat-step label="Welcome">
+        <mat-step label="Welcome" ariaLabel="Welcome">
             <p>NAG is an EverQuest Notification Agent.  It works by reading your EverQuest log file for specific phrases and reacts to those log entries in many different ways.</p>
             <p>To begin, we need to configure a few settings.  To make this easy, I'll ask you a few questions first.</p>
         </mat-step>
 
-        <mat-step label="FCT">
+        <mat-step label="FCT" ariaLabel="FCT">
             <div class="img-float-left"><img src="/assets/images/fct-example.png" /></div>
             <p>Floating combat text will display the damage amounts from your hits or hits to you on your screen.</p>
             <p>Would you like to enable floating combat text?</p>
@@ -18,7 +18,7 @@
             </p>
         </mat-step>
 
-        <mat-step label="Overlays">
+        <mat-step label="Overlays" ariaLabel="Overlays">
 
             <p>Timers and Overlays can be displayed in two basic formats: Grouped and LInear</p>
             <p>Which format would you like your timers?</p>
@@ -39,7 +39,7 @@
 
         </mat-step>
 
-        <mat-step label="Characters">
+        <mat-step label="Characters" ariaLabel="Characters">
 
             <div style="padding-bottom: 15px; text-align: center;">
                 <p>Click on the New Character button to add characters to track in NAG.</p>
@@ -52,7 +52,7 @@
 
         </mat-step>
 
-        <mat-step label="Finished">
+        <mat-step label="Finished" ariaLabel="Finished">
             <p>What to do after setup?</p>
             <mat-list>
                 <mat-list-item>
@@ -88,7 +88,7 @@
         </ng-template>
 
         <ng-template #completeSetup>
-            <button mat-button color="accent">Complete Setup!</button>
+            <button mat-button color="accent" (click)="complete()">Complete Setup!</button>
         </ng-template>
 
     </div>

@@ -62,6 +62,7 @@ export class MainComponent implements OnInit {
         } );
 
         this.ipcService.tickReceived().subscribe( data => {
+            
             this.dkpEntries = data.dkpEntries;
             this.logFile = data.logFile;
             this.overlays = data.overlays;
@@ -71,6 +72,8 @@ export class MainComponent implements OnInit {
             this.focusEffectSettings.hasExtendedDotFocus = data.hasExtendedDotFocus;
             this.focusEffectSettings.extendedDotFocusPercent = data.extendedDotFocusPercent;
             this.focusEffectSettings.extendedDotFocusDecayLevel = data.extendedDotFocusDecayLevel;
+            
+            this.ipcService.getSetupCompleted().subscribe( completed => this.setupCompleted = completed );
 
         } );
 
@@ -80,8 +83,9 @@ export class MainComponent implements OnInit {
     }
 
     runSetupWizard() {
-        this.setupService.showSetupWizard( this.characterList ).subscribe( () => {
+        this.setupService.showSetupWizard().subscribe( () => {
             this.characterList.loadCharacters();
+            this.ipcService.requestTick();
         } );
     }
 
