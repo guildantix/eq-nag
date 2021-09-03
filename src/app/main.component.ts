@@ -6,6 +6,7 @@ import { DkpEntryModel, OverlayWindowModel, FocusEffectSettings } from './core.m
 import { DialogService } from './dialogs/dialog.service';
 import { ScraperService } from './scraper.service';
 import { customAlphabet } from 'nanoid';
+import { SetupService } from './setup/setup.service';
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const nanoid = customAlphabet( alphabet, 16 );
 
@@ -45,10 +46,17 @@ export class MainComponent implements OnInit {
         return this.overlays.filter( f => f.overlayType === 'FCT' );
     }
 
-    constructor( private snackBar: MatSnackBar, private ipcService: IpcService, private dialogService: DialogService, private scraper: ScraperService ) {
+    constructor( private snackBar: MatSnackBar, private ipcService: IpcService, private dialogService: DialogService, private scraper: ScraperService, private setupService: SetupService ) {
     }
 
     ngOnInit(): void {
+        
+        this.ipcService.getSetupCompleted().subscribe( completed => {
+            if ( !completed ) {
+                this.setupService.showSetupWizard().subscribe( () => { } );
+            }
+        } );
+
         this.ipcService.tickReceived().subscribe( data => {
             this.dkpEntries = data.dkpEntries;
             this.logFile = data.logFile;

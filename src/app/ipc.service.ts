@@ -895,6 +895,27 @@ export class IpcService {
         return obs;
     }
 
+    public saveSetupCompleted( completed: boolean ): void {
+        completed = !!completed;
+        this.ipc.send( 'settings:set:setupCompleted', completed );
+    }
+
+    public getSetupCompleted(): Observable<boolean> {
+        let obs: Observable<boolean> = new Observable<boolean>( ( observer: Observer<boolean> ) => {
+            
+            this.ipc.once( 'settings:get:setupCompleted', ( e, setupCompleted: boolean ) => {
+                this.ngZone.run( () => {
+                    observer.next( setupCompleted );
+                    observer.complete();
+                } );
+            } );
+            this.ipc.send( 'settings:get:setupCompleted', null );
+
+        } );
+
+        return obs;
+    }
+
     public saveAuthor( author: AuthorModel ): void {
         this.ipc.send( 'settings:set:author', author );
     }

@@ -72,6 +72,15 @@ class UserPreferencesStore extends Store {
         this.storeDataFile( this.#data );
     }
 
+    /** @type {boolean} */
+    get setupCompleted() {
+        return this.#data.setupCompleted;
+    }
+    set setupCompleted( val ) {
+        this.#data.setupCompleted = val;
+        this.storeDataFile( this.#data );
+    }
+
     /** @type {AuthorModel} */
     get author() {
         return this.#data.author;
@@ -359,6 +368,14 @@ class UserPreferencesStore extends Store {
 
         ipcMain.on( 'settings:get:beneficialOverlayId', ( event ) => {
             event.sender.webContents.send( 'settings:get:beneficialOverlayId', this.beneficialOverlayId );
+        } );
+
+        ipcMain.on( 'settings:set:setupCompleted', ( event, setupCompleted ) => {
+            this.setupCompleted = setupCompleted;
+        } );
+
+        ipcMain.on( 'settings:get:setupCompleted', ( event ) => {
+            event.sender.webContents.send( 'settings:get:setupCompleted', this.setupCompleted );
         } );
 
         ipcMain.on( 'settings:set:phonetic-transforms',
