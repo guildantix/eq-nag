@@ -281,14 +281,14 @@
     <!--    Display Text Template    -->
     <!-- =========================== -->
     <template id="displayTextTemplate">
-        <p>{{value}}</p>
+        <p>{{{value}}}</p>
     </template>
 
     <!-- =========================== -->
     <!--         FCT Template        -->
     <!-- =========================== -->
     <template id="fctTemplate">
-        <span class="fct-text">{{value}}</span>
+        <span class="fct-text">{{{value}}}</span>
         <span class="fct-dmg-src">({{damageSource}})</span>
     </template>
 
@@ -296,7 +296,7 @@
     <!--    FCT Critical Template    -->
     <!-- =========================== -->
     <template id="fctCriticalTemplate">
-        <p class="fct-text">{{value}}</p>
+        <p class="fct-text">{{{value}}}</p>
         <p class="fct-dmg-src">({{damageSource}})</p>
     </template>
 
@@ -304,7 +304,7 @@
     <!--        Timer Template       -->
     <!-- =========================== -->
     <template id="timerTemplate">
-        <p class="dot-text ungrouped"><span class="time-remaining"></span>{{value}}</p>
+        <p class="dot-text ungrouped"><span class="time-remaining"></span>{{{value}}}</p>
         <!-- Background color of .progress is 13% of the .determinate color. -->
         <div class="progress" style="background-color: rgba(0,33,0,.75)"><p style="margin: 4px;">&nbsp;</p>
             <div class="determinate" style="width: 0%; background-color: #008000;"></div>
@@ -323,14 +323,14 @@
     <!--    Target Group Template    -->
     <!-- =========================== -->
     <template id="targetGroupTemplate">
-        <h6>{{name}}</h6>
+        <h6>{{{name}}}</h6>
     </template>
 
     <!-- =========================== -->
     <!-- Target Group Timer Template -->
     <!-- =========================== -->
     <template id="targetGroupTimerTemplate">
-        <p class="dot-text"><span class="time-remaining"></span>{{value}}</p>
+        <p class="dot-text"><span class="time-remaining"></span>{{{value}}}</p>
         <!-- Background color of .progress is 13% of the .determinate color. -->
         <div class="progress" style="background-color: rgba(0,33,0,.75)"><p style="margin: 4px;">&nbsp;</p>
             <div class="determinate" style="width: 40%; background-color: #008000;"></div>
