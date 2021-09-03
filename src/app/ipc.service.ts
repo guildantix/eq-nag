@@ -537,6 +537,22 @@ export class IpcService {
         return obs;
     }
 
+    public updateOverlaysPositions( overlays: OverlayWindowModel[] ): Observable<boolean> {
+        let obs: Observable<boolean> = new Observable<boolean>( ( observer: Observer<boolean> ) => {
+            
+            this.ipc.once( 'overlays:update:position', ( e, updated: boolean ) => {
+                this.ngZone.run( () => {
+                    observer.next( updated );
+                    observer.complete();
+                } );
+            } );
+            this.ipc.send( 'overlays:update:position', overlays );
+
+        } );
+
+        return obs;
+    }
+
     public deleteOverlayWindow( overlayId: string ): Observable<boolean> {
         let obs: Observable<boolean> = new Observable<boolean>( ( observer: Observer<boolean> ) => {
             
@@ -685,6 +701,10 @@ export class IpcService {
 
     public showEditOverlayDialog( overlayId: string ): void {
         this.ipc.send( 'overlay:dialog:edit', overlayId );
+    }
+
+    public showArrangeOverlaysDialog(): void {
+        this.ipc.send( 'overlay:dialog:arrange' );
     }
 
     public broadcastOverlayModel( overlay: OverlayWindowModel ): void {
