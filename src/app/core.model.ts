@@ -374,6 +374,7 @@ export class ScrapedAbility {
     public deathTouch: boolean;
     public deathTouchDuration: number;
     public npcsWithAbility: ScrapedNpc[] = [];
+    public castTime: number;
 
 }
 
@@ -497,6 +498,8 @@ export class PackageTrigger {
 export class TriggerPackageModel {
     public triggers: PackageTrigger[] = [];
     public folders: PackageFolder[] = [];
+    public detrimentalOverlayId: string;
+    public beneficialOverlayId: string;
 }
 
 export class TriggerPackageMetaModel {

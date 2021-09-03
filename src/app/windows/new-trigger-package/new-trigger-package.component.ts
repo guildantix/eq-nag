@@ -1,11 +1,12 @@
 import { Component, EventEmitter, Input, OnInit, Output, ViewChild } from '@angular/core';
 import { MatTable } from '@angular/material/table';
-import { TriggerFolder, TriggerModel, PackageTrigger, TriggerPackageMetaModel, PackageFolder } from 'src/app/core.model';
+import { TriggerFolder, TriggerModel, PackageTrigger, TriggerPackageMetaModel, PackageFolder, PackageFileModel } from 'src/app/core.model';
 import { DialogService } from 'src/app/dialogs/dialog.service';
 import { IpcService } from 'src/app/ipc.service';
 import * as _ from 'lodash-es';
 import { TriggerLibraryService } from '../trigger-library.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { forkJoin } from 'rxjs';
 
 @Component( {
     selector: 'app-new-trigger-package',
@@ -610,7 +611,12 @@ export class NewTriggerPackageComponent implements OnInit {
     save(): void {
         // Grab all of the files used.
         this.package.files = this.package.files ? this.package.files : [];
-        this.ipcService.getAudioFileData().subscribe( audioFiles => {
+        let dataObservables = [
+            this.ipcService.getAudioFileData(),
+            this.ipcService.getDetrimentalOverlayId(),
+            this.ipcService.getBeneficialOverlayId(),
+        ];
+        forkJoin( dataObservables ).subscribe( ([audioFiles, detrimentalOverlayId, beneficialOverlayId]: [PackageFileModel[], string, string]) => {
             
             this.package.model.triggers.forEach( trigger => {
                 trigger.actions.forEach( action => {
@@ -629,6 +635,9 @@ export class NewTriggerPackageComponent implements OnInit {
 
                 } );
             } );
+
+            this.package.model.detrimentalOverlayId = detrimentalOverlayId;
+            this.package.model.beneficialOverlayId = beneficialOverlayId;
 
             this.savePackage();
 

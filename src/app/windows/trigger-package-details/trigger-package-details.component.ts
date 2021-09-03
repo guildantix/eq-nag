@@ -114,7 +114,8 @@ export class TriggerPackageDetailsComponent implements OnInit {
         } );
         
         forkJoin( importTasks ).subscribe( results => {
-            
+            console.log( 'imported files', results );
+            console.log( 'package details', triggerPackage );
         } );
     }
 
