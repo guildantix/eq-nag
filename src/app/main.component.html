@@ -31,13 +31,14 @@
         <mat-tab label="Triggers">
                 
             <app-triggers></app-triggers>
-
+            
         </mat-tab>
         <mat-tab label="Overlays">
                 <mat-toolbar>
                     <span>Overlays</span>
                     <span class="spacer"></span>
-                    <button mat-button color="accent" (click)="showNewOverlayDialog()">New Overlay</button>
+                    <button mat-button color="default" (click)="arrangeOverlays()"><mat-icon class="material-icons-outlined">view_quilt</mat-icon> Arrange Overlay Windows</button>
+                    <button mat-button color="accent" (click)="showNewOverlayDialog()"><mat-icon class="material-icons-outlined">layers</mat-icon> New Overlay</button>
                 </mat-toolbar>
                 <div class="tab-content">
                     <table mat-table #overlaysTable="matTable" style="width: 100%;"

@@ -174,6 +174,10 @@ export class MainComponent implements OnInit {
         this.movingFolderSource = target;
     }
 
+    public arrangeOverlays() {
+        this.ipcService.showArrangeOverlaysDialog();
+    }
+
     public testFn(): void {
         this.ipcService.simulateLogParse( 'E:\\everquest\\Logs\\Backup\\eqlog_Ryvn_mangler_20201024_204401.txt' );
         // let url: string = 'https://everquest.allakhazam.com/db/spell.html?spell=5423';
