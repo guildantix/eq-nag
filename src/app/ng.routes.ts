@@ -4,6 +4,7 @@ import { MainComponent } from './main.component';
 import { OverlayEditorDialogComponent } from './dialogs/overlay-editor-dialog/overlay-editor-dialog.component';
 import { GinaImportWindowComponent } from './windows/gina-import-window/gina-import-window.component';
 import { TriggerLibraryWindowComponent } from './windows/trigger-library-window/trigger-library-window.component';
+import { MoveOverlaysDialogComponent } from './dialogs/move-overlays-dialog/move-overlays-dialog.component';
 
 
 // let secureRoutes: Routes = [
@@ -74,6 +75,7 @@ let _routes: Routes = [
     { path: 'trigger/new', component: TriggerDialogComponent },
     { path: 'trigger/new/:folderId', component: TriggerDialogComponent },
     { path: 'trigger/:id', component: TriggerDialogComponent },
+    { path: 'overlay/arrange', component: MoveOverlaysDialogComponent },
     { path: 'overlay/:id', component: OverlayEditorDialogComponent },
     { path: 'gina/import', component: GinaImportWindowComponent },
     // { path: '', redirectTo: '/users', pathMatch: 'full', canActivate: [ Guard ] }, // If the user is logged in, the Guard will allow the navigation and the user will be redirected to the user list.

@@ -16,6 +16,21 @@ class OverlayDatabaseStore extends Store {
      * */
     #data;
 
+    /**
+     * @type {(overlays: OverlayWindow[]) => void}
+     */
+    #overlayPositionsHandlers = [];
+
+    /**
+     * Registers an overlay handler function that executes when position 
+     * information is changed.
+     * 
+     * @param {(overlays: OverlayWindow[]) => void} handler The handler callback
+     */
+    registerOverlayPositionHandler( handler ) {
+        this.#overlayPositionsHandlers.push( handler );
+    }
+
     get count() {
         return this.#data?.overlays?.length;
     }
@@ -249,7 +264,22 @@ class OverlayDatabaseStore extends Store {
             overlay.windowWidth = model.windowWidth;
             overlay.windowHeight = model.windowHeight;
             let updated = this.update( overlay );
+            this.#overlayPositionsHandlers.forEach( fn => fn( this.getAll() ) );
             event.sender.webContents.send( 'overlay:update:meta', updated );
+            sendTick();
+        } );
+        
+        ipcMain.on( 'overlays:update:position', ( event, overlays ) => {
+            overlays.forEach( overlay => {
+                let model = this.find( overlay.overlayId );
+                model.x = overlay.x;
+                model.y = overlay.y;
+                model.windowWidth = overlay.windowWidth;
+                model.windowHeight = overlay.windowHeight;
+                this.update( model );
+            } );
+            this.#overlayPositionsHandlers.forEach( fn => fn( this.getAll() ) );
+            event.sender.webContents.send( 'overlays:update:position', true );
             sendTick();
         } );
 

@@ -2,7 +2,9 @@ const { app, BrowserWindow, ipcMain, screen } = require( "electron" );
 const ForwardRef = require( './forward-ref' );
 const OverlayDatabaseStore = require( "./data/overlay-database" );
 const UserPreferencesStore = require( "./data/user-preferences" );
+const { OverlayWindow } = require( "./data/models/overlay-window" );
 
+/** @type {Record<string, {window: BrowserWindow, interval: NodeJS.Timer}>} */
 var overlayDictionary = {};
 var criticalPadding = 300;
 
@@ -190,6 +192,28 @@ class WindowManager {
             } );
         } );
         
+        ipcMain.on( 'overlay:dialog:arrange', ( event ) => {
+            let overlayMoveDialog = new BrowserWindow( {
+                parent: mainWindowRef.reference,
+                modal: false,
+                show: false,
+                width: 400,
+                height: 225,
+                frame: false,
+                webPreferences: {
+                    nodeIntegration: true,
+                    devTools: app.isDev(),
+                }
+            } );
+            overlayMoveDialog.loadURL( `file://${this.#dirname}/dist/index.html#/overlay/arrange` );
+            overlayMoveDialog.once( 'dom-read', () => {
+                
+            } );
+            overlayMoveDialog.once( "ready-to-show", () => {
+                overlayMoveDialog.show();
+            } );
+        } );
+        
         ipcMain.on( 'overlay:broadcast', ( event, model ) => {
             if ( overlayDictionary && overlayDictionary[ model.overlayId ] ) {
                 overlayDictionary[ model.overlayId ].window.send( 'overlay:window:model', model );
@@ -269,6 +293,48 @@ class WindowManager {
 
         } );
 
+        overlayDatabase.registerOverlayPositionHandler( overlays => this.updateOverlayPositions( overlays ) );
+        
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Updates all overlay window positions.
+     * 
+     * @param {OverlayWindow[]} overlays Overlays
+     */
+    updateOverlayPositions( overlays ) {
+        overlays.forEach( overlay => {
+
+            if ( overlay.overlayType === 'FCT' ) {
+
+                overlayDictionary[ overlay.overlayId ].window.setBounds( {
+                    x: overlay.x - criticalPadding,
+                    y: overlay.y - criticalPadding,
+                    width: overlay.windowWidth + criticalPadding * 2,
+                    height: overlay.windowHeight + criticalPadding * 2
+                } );
+
+            } else {
+
+                overlayDictionary[ overlay.overlayId ].window.setBounds( {
+                    x: overlay.x,
+                    y: overlay.y,
+                    width: overlay.windowWidth,
+                    height: overlay.windowHeight
+                } );
+
+            }
+
+        } );
     }
 
 
@@ -386,6 +452,8 @@ function loadOverlay( model, overlayDatabase, enableEdit ) {
     overlay.on( 'will-resize', function ( e ) {
         setTimeout( () => {
             let bounds = overlay.webContents.getOwnerBrowserWindow().getBounds();
+            model.x = bounds.x;
+            model.y = bounds.y;
             model.windowWidth = bounds.width;
             model.windowHeight = bounds.height;
             overlayDatabase.update( model );
@@ -397,6 +465,8 @@ function loadOverlay( model, overlayDatabase, enableEdit ) {
             let bounds = overlay.webContents.getOwnerBrowserWindow().getBounds();
             model.x = bounds.x;
             model.y = bounds.y;
+            model.windowWidth = bounds.width;
+            model.windowHeight = bounds.height;
             overlayDatabase.update( model );
         } );
     } );
