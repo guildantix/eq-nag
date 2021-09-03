@@ -23,6 +23,7 @@ import { AutoCompleteDialogComponent } from './autocomplete-dialog/autocomplete-
 import { NewTriggerRaidAbilityComponent } from './new-trigger-raid-ability/new-trigger-raid-ability.component';
 import { NewTriggerBuffDialogComponent } from './new-trigger-buff-dialog/new-trigger-buff-dialog.component';
 import { NamedGroupConditionsDialogComponent } from './named-group-conditions-dialog/named-group-conditions-dialog.component';
+import { MoveOverlaysDialogComponent } from './move-overlays-dialog/move-overlays-dialog.component';
 
 @NgModule( {
     imports: [
@@ -52,6 +53,7 @@ import { NamedGroupConditionsDialogComponent } from './named-group-conditions-di
         NewTriggerRaidAbilityComponent,
         NewTriggerBuffDialogComponent,
         NamedGroupConditionsDialogComponent,
+        MoveOverlaysDialogComponent,
     ],
     declarations: [
         TriggerDialogComponent,
@@ -70,6 +72,7 @@ import { NamedGroupConditionsDialogComponent } from './named-group-conditions-di
         NewTriggerRaidAbilityComponent,
         NewTriggerBuffDialogComponent,
         NamedGroupConditionsDialogComponent,
+        MoveOverlaysDialogComponent,
     ],
     providers: [
         DialogService,

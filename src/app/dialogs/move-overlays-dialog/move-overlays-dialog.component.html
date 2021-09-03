@@ -1,0 +1,20 @@
+<div class="modal">
+    <header>
+        <mat-toolbar class="titlebar" color="default">
+            <span>Arrange Overlays</span>
+            <span class="spacer"></span>
+            <button mat-icon-button aria-label="Exit" (click)="cancel()">
+                <mat-icon>clear</mat-icon>
+            </button>
+        </mat-toolbar>
+    </header>
+    <section>
+        <div style="padding: 25px;">
+            Move each overlay and click 'Save' to keep your changes.
+        </div>
+    </section>
+    <footer>
+        <button mat-button (click)="save()">Save</button>
+        <button mat-button color="warn" (click)="cancel()">Cancel</button>
+    </footer>
+</div>
