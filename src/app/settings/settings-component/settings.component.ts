@@ -34,9 +34,14 @@ export class SettingsComponent implements OnInit {
     public trustedAuthor: boolean = false;
     public detrimentalOverlayId: string = null;
     public beneficialOverlayId: string = null;
+    public alertOverlayId: string = null;
 
     public get timerOverlays(): OverlayWindowModel[] {
         return this.overlays?.filter( m => m.overlayType === 'Timer' );
+    }
+
+    public get alertOverlays(): OverlayWindowModel[] {
+        return this.overlays?.filter( m => m.overlayType === 'Alert' );
     }
 
     private overlays: OverlayWindowModel[] = [];
@@ -89,6 +94,7 @@ export class SettingsComponent implements OnInit {
         this.ipcService.getOverlayWindows().subscribe( overlays => this.overlays = overlays );
         this.ipcService.getDetrimentalOverlayId().subscribe( id => this.detrimentalOverlayId = id );
         this.ipcService.getBeneficialOverlayId().subscribe( id => this.beneficialOverlayId = id );
+        this.ipcService.getAlertOverlayId().subscribe( id => this.alertOverlayId = id );
     }
 
     saveDetrimentalOverlayId() {
@@ -97,6 +103,10 @@ export class SettingsComponent implements OnInit {
 
     saveBeneficialOverlayId() {
         this.ipcService.saveBeneficialOverlayId( this.beneficialOverlayId );
+    }
+
+    saveAlertOverlayId() {
+        this.ipcService.saveAlertOverlayId( this.alertOverlayId );
     }
 
     speakPhrase( phrase: string ): void {

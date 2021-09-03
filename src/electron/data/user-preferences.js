@@ -72,6 +72,15 @@ class UserPreferencesStore extends Store {
         this.storeDataFile( this.#data );
     }
 
+    /** @type {string} */
+    get alertOverlayId() {
+        return this.#data.alertOverlayId;
+    }
+    set alertOverlayId( val ) {
+        this.#data.alertOverlayId = val;
+        this.storeDataFile( this.#data );
+    }
+
     /** @type {boolean} */
     get setupCompleted() {
         return this.#data.setupCompleted;
@@ -368,6 +377,14 @@ class UserPreferencesStore extends Store {
 
         ipcMain.on( 'settings:get:beneficialOverlayId', ( event ) => {
             event.sender.webContents.send( 'settings:get:beneficialOverlayId', this.beneficialOverlayId );
+        } );
+
+        ipcMain.on( 'settings:set:alertOverlayId', ( event, alertOverlayId ) => {
+            this.alertOverlayId = alertOverlayId;
+        } );
+
+        ipcMain.on( 'settings:get:alertOverlayId', ( event ) => {
+            event.sender.webContents.send( 'settings:get:alertOverlayId', this.alertOverlayId );
         } );
 
         ipcMain.on( 'settings:set:setupCompleted', ( event, setupCompleted ) => {

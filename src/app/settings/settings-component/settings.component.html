@@ -115,21 +115,42 @@
     <fieldset>
         <legend><span class="title">Setup Wizard</span></legend>
 
-        <mat-form-field style="width: 45%; margin: 5px;">
-            <mat-label>Default Detrimental Timer Overlay</mat-label>
-            <mat-select [(ngModel)]="detrimentalOverlayId" name="detrimentalOverlayId" (selectionChange)="saveDetrimentalOverlayId()">
-                <mat-option *ngFor="let overlay of timerOverlays" [value]="overlay.overlayId">{{overlay.name}}</mat-option>
-            </mat-select>
-            <mat-hint>The selected overlay will be the default overlay for detremental timers.</mat-hint>
-        </mat-form-field>
+        <table style="width: 100%;">
+            <tr>
+                <td style="width: 33%; padding: 5px;">
+                    <mat-form-field style="width: 100%;">
+                        <mat-label>Default Detrimental Timer Overlay</mat-label>
+                        <mat-select [(ngModel)]="detrimentalOverlayId" name="detrimentalOverlayId" (selectionChange)="saveDetrimentalOverlayId()">
+                            <mat-option *ngFor="let overlay of timerOverlays" [value]="overlay.overlayId">{{overlay.name}}</mat-option>
+                        </mat-select>
+                        <mat-hint>The selected overlay will be the default overlay for detremental timers.</mat-hint>
+                    </mat-form-field>
+                </td>
+                <td style="width: 33%; padding: 5px;">
+                    <mat-form-field style="width: 100%;">
+                        <mat-label>Default Beneficial Timer Overlay</mat-label>
+                        <mat-select [(ngModel)]="beneficialOverlayId" name="beneficialOverlayId" (selectionChange)="saveBeneficialOverlayId()">
+                            <mat-option *ngFor="let overlay of timerOverlays" [value]="overlay.overlayId">{{overlay.name}}</mat-option>
+                        </mat-select>
+                        <mat-hint>The selected overlay will be the default overlay for beneficial timers.</mat-hint>
+                    </mat-form-field>
+                </td>
+                <td style="width: 33%; padding: 5px;">
+                    <mat-form-field style="width: 100%;">
+                        <mat-label>Default Text Overlay</mat-label>
+                        <mat-select [(ngModel)]="alertOverlayId" name="alertOverlayId" (selectionChange)="saveAlertOverlayId()">
+                            <mat-option *ngFor="let overlay of alertOverlays" [value]="overlay.overlayId">{{overlay.name}}</mat-option>
+                        </mat-select>
+                        <mat-hint>The selected overlay will be the default overlay for beneficial timers.</mat-hint>
+                    </mat-form-field>
+                </td>
+            </tr>
+        </table>
 
-        <mat-form-field style="width: 45%; margin: 5px; float: right;">
-            <mat-label>Default Beneficial Timer Overlay</mat-label>
-            <mat-select [(ngModel)]="beneficialOverlayId" name="beneficialOverlayId" (selectionChange)="saveBeneficialOverlayId()">
-                <mat-option *ngFor="let overlay of timerOverlays" [value]="overlay.overlayId">{{overlay.name}}</mat-option>
-            </mat-select>
-            <mat-hint>The selected overlay will be the default overlay for beneficial timers.</mat-hint>
-        </mat-form-field>
+
+
+
+
 
         <p>If you need to re-run the setup wizard, click on the "Run Setup Wizard" button.</p>
 
