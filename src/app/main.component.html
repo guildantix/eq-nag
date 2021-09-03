@@ -2,6 +2,9 @@
     <mat-toolbar class="titlebar" color="primary">
         <span>NAG<span class="hover-only">: An EverQuest Notification Agent</span></span>
         <span class="spacer"></span>
+        <button mat-icon-button aria-label="Run Setup Wizard" (click)="runSetupWizard()" *ngIf="!setupCompleted">
+            <mat-icon class="material-icons-outlined color-green" style="font-size: 32px; line-height: 32px; width: 32px; height: 32px;">settings_suggest</mat-icon>
+        </button>
         <button mat-icon-button aria-label="Minimize to tray" (click)="minimizeTaskbar()">
             <mat-icon>south_east</mat-icon>
         </button>
@@ -37,7 +40,7 @@
                 <mat-toolbar>
                     <span>Overlays</span>
                     <span class="spacer"></span>
-                    <button mat-button color="default" (click)="arrangeOverlays()"><mat-icon class="material-icons-outlined">view_quilt</mat-icon> Arrange Overlay Windows</button>
+                    <button mat-button color="default" class="color-blue" (click)="arrangeOverlays()"><mat-icon class="material-icons-outlined">view_quilt</mat-icon> Arrange Overlays</button>
                     <button mat-button color="accent" (click)="showNewOverlayDialog()"><mat-icon class="material-icons-outlined">layers</mat-icon> New Overlay</button>
                 </mat-toolbar>
                 <div class="tab-content">

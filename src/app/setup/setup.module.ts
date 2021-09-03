@@ -23,10 +23,10 @@ import { SetupService } from './setup.service';
     exports: [
     ],
     declarations: [
-        SetupWizardComponent,
+        // SetupWizardComponent,
     ],
     providers: [
-        SetupService,
+        // SetupService,
     ],
 } )
 export class SetupModule { }

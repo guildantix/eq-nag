@@ -21,6 +21,8 @@ import { CoreModule } from './core/core.module';
 import { SettingsComponent } from './settings/settings-component/settings.component';
 import { SettingsService } from './settings/settings-http.service';
 import { SetupModule } from './setup/setup.module';
+import { SetupWizardComponent } from './setup/setup-wizard/setup-wizard.component';
+import { SetupService } from './setup/setup.service';
 
 @NgModule( {
     imports: [
@@ -35,7 +37,7 @@ import { SetupModule } from './setup/setup.module';
         CoreModule,
         ContextMenuModule,
         WindowsModule,
-        SetupModule,
+        // SetupModule,
     ],
     declarations: [
         AppComponent,
@@ -44,11 +46,13 @@ import { SetupModule } from './setup/setup.module';
         MainComponent,
         CharactersListComponent,
         SettingsComponent,
+        SetupWizardComponent,
     ],
     providers: [
         ScraperService,
         IpcService,
         SettingsService,
+        SetupService,
     ],
     bootstrap: [ AppComponent ],
 } )

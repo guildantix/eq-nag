@@ -7,6 +7,7 @@ import { DialogService } from './dialogs/dialog.service';
 import { ScraperService } from './scraper.service';
 import { customAlphabet } from 'nanoid';
 import { SetupService } from './setup/setup.service';
+import { CharactersListComponent } from './characters-list/characters-list.component';
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const nanoid = customAlphabet( alphabet, 16 );
 
@@ -39,8 +40,10 @@ export class MainComponent implements OnInit {
         '[Sat Mar 14 13:49:08 2020] You slash a kyv hunter for 29027 points of damage. (Lucky Critical)',
     ];
     public movingFolderSource: string = null;
+    public setupCompleted: boolean = true;
 
     @ViewChild( 'fileSelector' ) private fileSelector: ElementRef<HTMLInputElement>;
+    @ViewChild( 'characterList', { static: true } ) private characterList: CharactersListComponent;
 
     public get fctOverlays(): OverlayWindowModel[] {
         return this.overlays.filter( f => f.overlayType === 'FCT' );
@@ -52,8 +55,9 @@ export class MainComponent implements OnInit {
     ngOnInit(): void {
         
         this.ipcService.getSetupCompleted().subscribe( completed => {
+            this.setupCompleted = completed;
             if ( !completed ) {
-                this.setupService.showSetupWizard().subscribe( () => { } );
+                this.runSetupWizard();
             }
         } );
 
@@ -73,6 +77,12 @@ export class MainComponent implements OnInit {
         this.ipcService.logFileChanged().subscribe( data => this.logFile = data );
         this.ipcService.consoleLogRequested().subscribe( data => console.log( 'from main', data ) );
         this.ipcService.getAppIsDev().subscribe( isDev => this.isDev = isDev );
+    }
+
+    runSetupWizard() {
+        this.setupService.showSetupWizard( this.characterList ).subscribe( () => {
+            this.characterList.loadCharacters();
+        } );
     }
 
     removeEntry( entry: any ): void {

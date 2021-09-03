@@ -12,6 +12,7 @@ $color-magenta: #f0698e;
 $color-red-dark: #921f1f;
 $color-titlebar-bg: #4c0e67;
 $color-titlebar-txt: #00000094;
+$color-titlebar-green: #17e883;
 
 $option-odd: #202020;
 $option-even: #1c1c1c;
@@ -90,6 +91,10 @@ $bg-extreme-dark: #191919;
             >.mat-toolbar.mat-primary {
                 background: $color-titlebar-bg !important;
                 color: $color-titlebar-txt !important;
+
+                .color-green {
+                    color: $color-titlebar-green !important;
+                }
             }
         }
     }
@@ -117,6 +122,12 @@ $bg-extreme-dark: #191919;
     
     .inline-button.warn {
         color: $color-red;
+    }
+
+    .button-highlight-green {
+        display: inline-block;
+        border: 1px solid $color-green;
+        border-radius: 4px;
     }
 
     // form-submitted

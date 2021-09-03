@@ -194,7 +194,7 @@ export class SettingsComponent implements OnInit {
     }
 
     runSetupWizard() {
-        this.setupService.showSetupWizard().subscribe( () => { } );
+        this.setupService.showSetupWizard( null ).subscribe( () => { } );
     }
 
 }

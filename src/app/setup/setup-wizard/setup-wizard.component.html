@@ -1,6 +1,6 @@
 <h2 mat-dialog-title>Setup</h2>
 
-<mat-dialog-content>
+<mat-dialog-content class="setup-wizard">
     <mat-horizontal-stepper [linear]="true" #stepper>
 
         <mat-step label="Welcome">
@@ -18,7 +18,7 @@
             </p>
         </mat-step>
 
-        <mat-step label="Timers and Countdowns">
+        <mat-step label="Overlays">
 
             <p>Timers and Overlays can be displayed in two basic formats: Grouped and LInear</p>
             <p>Which format would you like your timers?</p>
@@ -39,12 +39,36 @@
 
         </mat-step>
 
-        <mat-step label="Complete Setup">
-            <p>Almost Done!</p>
-            <p class="notice border-green">
-                <mat-icon class="material-icons-outlined color-green">new_releases</mat-icon><span>After you complete setup, go to the Characters tab and add the characters you want tracked.</span>
-            </p>
-            <button mat-button color="green">Complete Setup!</button>
+        <mat-step label="Characters">
+
+            <div style="padding-bottom: 15px; text-align: center;">
+                <p>Click on the New Character button to add characters to track in NAG.</p>
+                <div class="button-highlight-green">
+                    <button mat-button color="accent" (click)="characterList.newCharacter()">New Character</button>
+                </div>
+            </div>
+
+            <app-characters-list #characterList></app-characters-list>
+
+        </mat-step>
+
+        <mat-step label="Finished">
+            <p>What to do after setup?</p>
+            <mat-list>
+                <mat-list-item>
+                    <mat-icon mat-list-icon class="material-icons">groups</mat-icon>
+                    <div mat-line>You can add additional characters by clicking on the green <span class="color-green">[New Character]</span> button in the Characters tab.</div>
+                </mat-list-item>
+                <mat-list-item>
+                    <mat-icon mat-list-icon class="material-icons-outlined">layers</mat-icon>
+                    <div mat-line>Setup will create default overlays for you.  You can change the size and position of those overlays in the Overlays tab.  At the top, click on the blue <span class="color-blue">[Arrange Overlays]</span> button.</div>
+                </mat-list-item>
+                <mat-list-item>
+                    <mat-icon mat-list-icon class="material-icons">local_library</mat-icon>
+                    <div mat-line>There are trigger packages available in the library for common tasks.  In the Triggers tab, click on the blue <span class="color-blue">[Trigger Library]</span> button to begin importing triggers.</div>
+                </mat-list-item>
+            </mat-list>
+            
         </mat-step>
 
     </mat-horizontal-stepper>
@@ -54,10 +78,19 @@
     
     <div>
         <button mat-button [mat-dialog-close]="null" class="t-confirm-no" color="warn">Cancel Setup Wizard</button>
+
         <span class="spacer"></span>
-        <button mat-button (click)="previous()">Previous</button>
-        <div style="padding-top: 7px; opacity: 0.25; margin-left: 10px; margin-right: 10px;">|</div>
-        <button mat-button (click)="next()">Next</button>
+
+        <ng-template [ngIf]="!onLastStep" [ngIfElse]="completeSetup">
+            <button mat-button (click)="previous()">Previous</button>
+            <div style="padding-top: 7px; opacity: 0.25; margin-left: 10px; margin-right: 10px;">|</div>
+            <button mat-button (click)="next()">Next</button>
+        </ng-template>
+
+        <ng-template #completeSetup>
+            <button mat-button color="accent">Complete Setup!</button>
+        </ng-template>
+
     </div>
 
 </mat-dialog-actions>

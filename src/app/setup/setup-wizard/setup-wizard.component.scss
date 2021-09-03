@@ -57,3 +57,16 @@ small {
     }
 
 }
+
+::ng-deep .setup-wizard {
+    mat-panel-title {
+        small {
+            margin-right: 10px !important;
+        }
+    }
+}
+
+::ng-deep .mat-line {
+    white-space: unset !important;
+    overflow: unset !important;
+}
