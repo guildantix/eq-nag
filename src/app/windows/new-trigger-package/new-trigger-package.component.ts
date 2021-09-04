@@ -396,7 +396,7 @@ export class NewTriggerPackageComponent implements OnInit {
 
         } else {
             pTrg = this.package.model.triggers.find( f => f.triggerId === trigger.triggerId );
-            
+
         }
 
         pTrg.folderId = trigger.folderId;
@@ -628,6 +628,28 @@ export class NewTriggerPackageComponent implements OnInit {
 
                     if ( action.audioFileId ) {
                         let file = audioFiles.find( f => f.fileId === action.audioFileId );
+
+                        if ( file ) {
+                            let exists = this.package.files.findIndex( f => f.fileId === file.fileId ) > -1;
+                            if ( !exists ) {
+                                this.package.files.push( file );
+                            }
+                        }
+
+                    }
+                    if ( action.endedPlayAudioFileId ) {
+                        let file = audioFiles.find( f => f.fileId === action.endedPlayAudioFileId );
+
+                        if ( file ) {
+                            let exists = this.package.files.findIndex( f => f.fileId === file.fileId ) > -1;
+                            if ( !exists ) {
+                                this.package.files.push( file );
+                            }
+                        }
+
+                    }
+                    if ( action.endingPlayAudioFileId ) {
+                        let file = audioFiles.find( f => f.fileId === action.endingPlayAudioFileId );
 
                         if ( file ) {
                             let exists = this.package.files.findIndex( f => f.fileId === file.fileId ) > -1;

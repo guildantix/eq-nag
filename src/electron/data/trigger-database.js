@@ -1,7 +1,7 @@
 const { app, BrowserWindow, ipcMain } = require( "electron" );
 const Store = require( './store' );
 const _ = require( 'lodash' );
-const { Trigger, TriggerFolder, TriggerAction, ActionTypes, Tag, ImportTypes, TimerRestartBehaviors } = require( './models/trigger' );
+const { Trigger, TriggerFolder, TriggerAction, ActionTypes, Tag, ImportTypes, TimerRestartBehaviors, TriggerPackageMetaModel, TriggerPackageVersion, PackageFolder, PackageTrigger } = require( './models/trigger' );
 const ForwardRef = require( '../forward-ref' );
 const customAlphabet = require( 'nanoid' ).customAlphabet;
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
@@ -12,6 +12,10 @@ const { FormControlDirective } = require( "@angular/forms" );
 const StringUtilities = require( "../utilities/string" );
 const Fuse = require( 'fuse.js' );
 const eqZones = require( './models/everquest-zones' );
+const FilesDatabaseStore = require( "./files-database" );
+
+/** @type {FilesDatabaseStore} */
+var _fileStore;
 
 /** @type {Fuse.fuseOptions_tags} */
 const fuseOptions_tags = {
@@ -97,11 +101,24 @@ const fuseOptions_clipboard = {
     ]
 };
 
+class TriggerStoreModel {
+
+    /** @type {Trigger[]} */
+    triggers;
+    /** @type {TriggerFolder[]} */
+    folders;
+    /** @type {Tag[]} */
+    tags;
+    /** @type {TriggerPackageVersion[]} */
+    installedPackages;
+
+}
+
 class TriggerDatabaseStore extends Store {
 
     /** 
      * The data store for this object.
-     * @type {{triggers: Trigger[], folders: TriggerFolder[], tags: Tag[]}}
+     * @type {TriggerStoreModel}
      * */
     #data;
 
@@ -112,7 +129,7 @@ class TriggerDatabaseStore extends Store {
     constructor() {
         super( {
             configName: "trigger-database",
-            defaults: { triggers: [], folders: [], tags: [] },
+            defaults: { triggers: [], folders: [], tags: [], installedPackages: [] },
         } );
         
         this.#data = this.parseDataFile();
@@ -521,6 +538,12 @@ class TriggerDatabaseStore extends Store {
             this.#data.version = 56;
             this.storeDataFile( this.#data );
         }
+        if ( this.#data.version < 57 ) {
+            this.#data.installedPackages = [];
+
+            this.#data.version = 57;
+            this.storeDataFile( this.#data );
+        }
     }
 
 
@@ -569,10 +592,12 @@ class TriggerDatabaseStore extends Store {
      * Attaches store events to ipc main and dispatches react events to the main window.
      * 
      * @param {ForwardRef} mainWindowRef The main window of the application.
-     * @param {TriggerDatabaseStore} _store The store object.
      * @param {function} sendTick The send tick method.
+     * @param {FilesDatabaseStore} fileStore The store object.
      */
-    attachIpcEvents( mainWindowRef, sendTick ) {
+    attachIpcEvents( mainWindowRef, sendTick, fileStore ) {
+
+        _fileStore = fileStore;
 
         ipcMain.on( 'trigger:create', ( event, trigger ) => {
             let triggerId = this.add( trigger );
@@ -647,6 +672,18 @@ class TriggerDatabaseStore extends Store {
         ipcMain.on( 'tags:delete', ( event, tagId ) => {
             this.deleteTag( tagId );
             sendTick();
+        } );
+
+        ipcMain.on( 'pkg:install', ( event, pkg ) => {
+            event.sender.webContents.send( 'pkg:install', this.installTriggerPkg( pkg ) );
+        } );
+
+        ipcMain.on( 'pkg:uninstall', ( event, packageId ) => {
+            event.sender.webContents.send( 'pkg:uninstall', this.uninstallTriggerPkg( packageId ) );
+        } );
+
+        ipcMain.on( 'pkg:isInstalled', ( event, packageId ) => {
+            event.sender.webContents.send( 'pkg:isInstalled', this.isPackageInstalled( packageId ) );
         } );
 
     }
@@ -1436,6 +1473,360 @@ class TriggerDatabaseStore extends Store {
         } else {
             return [];
         }
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Returns true if the specified package is installed.
+     * 
+     * @param {string} packageId The id of the package.
+     */
+    isPackageInstalled( packageId ) {
+        return this.#data.installedPackages.findIndex( f => f.packageId === packageId ) > -1;
+    }
+
+
+
+
+
+
+
+
+
+    
+    /**
+     * Installs the given trigger packages.
+     * 
+     * @param {TriggerPackageMetaModel[]} pkgs The packages to install.
+     */
+    installTriggerPackages( pkgs ) {
+        pkgs?.forEach( pkg => this.installTriggerPackage( pkg ) );
+    }
+
+
+
+
+
+
+
+
+
+    
+    /**
+     * Installs the given trigger package.
+     * 
+     * @param {TriggerPackageMetaModel} pkg The package to install.
+     */
+    installTriggerPkg( pkg ) {
+        
+        if ( this.#data.triggers === null || this.#data.triggers === undefined ) {
+            throw 'Trigger database not loaded!';
+        }
+
+        let triggerVersion = this.#data.installedPackages.find( f => f.packageId === pkg.triggerPackageId );
+
+        if ( triggerVersion == null ) {
+            triggerVersion = new TriggerPackageVersion();
+            triggerVersion.packageId = pkg.triggerPackageId;
+
+            // Add it to the store
+            this.#data.installedPackages.push( triggerVersion );
+        }
+
+        triggerVersion.versionId = pkg.versionId;
+        triggerVersion.timestamp = pkg.timestampDate;
+        triggerVersion.name = pkg.name;
+        triggerVersion.description = pkg.description;
+        triggerVersion.author = pkg.author;
+        triggerVersion.authorDiscord = pkg.authorDiscord;
+
+        let folderMap = this.installPackageFolders( pkg.model?.folders );
+        pkg.model?.triggers?.forEach( pkgTrigger => this.installPackageTrigger( pkg.triggerPackageId, pkgTrigger, folderMap ) );
+
+        // Save changes to the data.
+        this.processPredefinedTriggers();
+        this.storeDataFile( this.#data );
+
+        return true;
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Removes the specified trigger package and uninstalls all related 
+     * triggers.
+     * 
+     * @param {string} packageId The id of  the package to remove.
+     */
+    uninstallTriggerPkg( packageId ) {
+        
+        if ( this.#data.triggers === null || this.#data.triggers === undefined ) {
+            throw 'Trigger database not loaded!';
+        }
+
+        let packageTriggers = _.remove( this.#data.triggers, f => f.packageId === packageId );
+        let packageFolders = packageTriggers.map( f => f.folderId );
+        let packageFiles = [];
+
+        packageTriggers.forEach( trigger => {
+            trigger.actions.forEach( action => {
+                if ( action.audioFileId && packageFiles.indexOf( action.audioFileId ) === -1 ) {
+                    packageFiles.push( action.audioFileId );
+                }
+                if ( action.endedPlayAudioFileId && packageFiles.indexOf( action.endedPlayAudioFileId ) === -1 ) {
+                    packageFiles.push( action.endedPlayAudioFileId );
+                }
+                if ( action.endingPlayAudioFileId && packageFiles.indexOf( action.endingPlayAudioFileId ) === -1 ) {
+                    packageFiles.push( action.endingPlayAudioFileId );
+                }
+            } );
+        } );
+
+        // If the audio files from this package are not referenced by any other 
+        // triggers, then we need to remove these files from the system.  This 
+        // algorithm must be executed after the removal of the package triggers.
+        let filesForRemoval = _.remove( packageFiles, fileId => {
+
+            let usedAudio = _.some( this.#data.triggers, trigger => {
+                return _.some( trigger.actions, action => {
+                    return action.audioFileId === fileId;
+                } );
+            } );
+            let usedEndedAudio = _.some( this.#data.triggers, trigger => {
+                return _.some( trigger.actions, action => {
+                    return action.endedPlayAudioFileId === fileId;
+                } );
+            } );
+            let usedEndingAudio = _.some( this.#data.triggers, trigger => {
+                return _.some( trigger.actions, action => {
+                    return action.endingPlayAudioFileId === fileId;
+                } );
+            } );
+
+            return !usedAudio && !usedEndedAudio && !usedEndingAudio;
+        } );
+        
+        filesForRemoval?.forEach( fileId => _fileStore.deleteFile( fileId ) );
+
+        // Remove any empty folders that were imported with the package.
+        let foldersForRemoval = _.remove( packageFolders, folderId => {
+            return !_.some( this.#data.triggers, trigger => trigger.folderId === folderId );
+        } );
+
+        foldersForRemoval?.forEach( folderId => {
+            this.removeFolder( this.#data.folders, folderId );
+        } );
+
+        _.remove( this.#data.installedPackages, f => f.packageId === packageId );
+
+        // Save changes to the data.
+        this.processPredefinedTriggers();
+        this.storeDataFile( this.#data );
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Removes the specified folder form the store.
+     * 
+     * @param {TriggerFolder[]} folders The list of folders to search.
+     * @param {string} folderId The id of the folder to remove.
+     */
+    removeFolder( folders, folderId ) {
+        let folder = _.remove( folders, f => f.folderId === folderId );
+        if ( !folder ) {
+            folders?.forEach( f => {
+                this.removeFolder( f.children, folderId );
+            } );
+        }
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Installs the given package trigger.  This method does not save changes 
+     * to the data store.
+     * 
+     * @param {string} packageId The id of the package.
+     * @param {PackageTrigger} packageTrigger The package trigger to install.
+     * @param {Record<string, string>} folderMap The folder id map.
+     */
+    installPackageTrigger( packageId, packageTrigger, folderMap ) {
+        /** @type {Trigger} */
+        let trigger;
+
+        let i = this.#data.triggers.findIndex( f => f.triggerId === packageTrigger.triggerId );
+
+        if ( i > -1 ) {
+            trigger = this.#data.triggers.find( f => f.triggerId === packageTrigger.triggerId );
+
+        } else {
+            trigger = new Trigger();
+            trigger.triggerId = packageTrigger.triggerId;
+            trigger.folderId = folderMap[ packageTrigger.folderId ];
+            trigger.packageId = packageId;
+
+            // Add it to the store.
+            this.#data.triggers.push( trigger );
+
+        }
+
+        trigger.name = packageTrigger.name;
+        trigger.capturePhrases = packageTrigger.capturePhrases;
+        trigger.comments = packageTrigger.comments;
+        trigger.actions = packageTrigger.actions;
+        trigger.captureMethod = packageTrigger.captureMethod;
+        trigger.conditions = packageTrigger.conditions;
+        trigger.classLevels = packageTrigger.classLevels;
+        trigger.useCooldown = packageTrigger.useCooldown;
+        trigger.cooldownDuration = packageTrigger.cooldownDuration;
+
+        // TODO: Missing overlay id mappings.
+
+    }
+
+
+
+
+
+
+
+
+
+    
+    /**
+     * Installs the given folders and any child folders.
+     * 
+     * @returns {Record<string, string>} Retuns a map of folder ids.  If new folders were created, the 
+     * map will contain the new folder id.  If an existing folder was found, 
+     * the map will map the package folder id to the existing folder id.
+     * 
+     * @param {PackageFolder[]} packageFolders The folders to install.
+     */
+    installPackageFolders( packageFolders ) {
+        let folders = this.getFolders();
+        /** @type {Record<string, string>} */
+        let folderMap = {};
+
+        packageFolders?.forEach( pkgFolder => {
+            
+            // If there exists a folder with the name, then map the package 
+            // folder id to the existing folder id.
+            let i = folders.findIndex( f => f.name === pkgFolder.name );
+            /** @type {TriggerFolder} */
+            let folder;
+
+            if ( i > -1 ) {
+                
+                folderMap[ pkgFolder.folderId ] = folders[ i ].folderId;
+                folder = folders[ i ];
+
+            } else {
+
+                folderMap[ pkgFolder.folderId ] = pkgFolder.folderId;
+                
+                folder = new TriggerFolder();
+                folder.folderId = pkgFolder.folderId;
+                folder.name = pkgFolder.name;
+                folder.children = [];
+    
+                folders.push( folder );
+
+            }
+
+            pkgFolder.children?.forEach( pkgChild => {
+                this.installPackageFolder( folder, pkgChild );
+            } );
+
+        } );
+
+        this.updateFolders( folders );
+
+        return folderMap;
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Installs the given folder and any child folder.
+     * 
+     * @param {TriggerFolder} parentFolder The folder to install.
+     * @param {PackageFolder} packageFolder The folder to install.
+     * @param {Record<string, string>} folderMap The folder id map.
+     */
+    installPackageFolder( parentFolder, packageFolder, folderMap ) {
+        
+        parentFolder.children == null ? [] : parentFolder.children;
+        
+        // If there exists a folder with the name, then map the package folder 
+        // id to the existing folder id.
+        let i = parentFolder.children.findIndex( f => f.name === packageFolder.name );
+        /** @type {TriggerFolder} */
+        let folder;
+        
+        if ( i > -1 ) {
+                
+            folderMap[ packageFolder.folderId ] = folders[ i ].folderId;
+            folder = folders[ i ];
+
+        } else {
+
+            folderMap[ packageFolder.folderId ] = packageFolder.folderId;
+            
+            folder = new TriggerFolder();
+
+            folder.folderId = packageFolder.folderId;
+            folder.name = packageFolder.name;
+            folder.children = [];
+
+            parentFolder.children.push( folder );
+
+        }
+        
+        packageFolder.children?.forEach( pkgChild => {
+            this.installPackageFolder( folder, pkgChild );
+        } );
+
+    }
+
+    getInstalledPackages() {
+
     }
 
     // /**

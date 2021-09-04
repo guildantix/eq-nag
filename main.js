@@ -224,12 +224,12 @@ var mainWindowRef = new ForwardRef( () => mainWindow ? mainWindow : null );
 userPreferences.attachIpcEvents( mainWindowRef, sendTick );
 winManager.attachIpcEvents( mainWindowRef, sendTick, overlayDatabase, userPreferences );
 dkpDatabase.attachIpcEvents( mainWindowRef, sendTick );
-triggerDatabase.attachIpcEvents( mainWindowRef, sendTick );
+fileDatabase.attachIpcEvents( mainWindowRef );
+triggerDatabase.attachIpcEvents( mainWindowRef, sendTick, fileDatabase );
 overlayDatabase.attachIpcEvents( mainWindowRef, sendTick );
 characterDatabase.attachIpcEvents( mainWindowRef, sendTick );
 logBootstrap.boostrapLogWatchers( mainWindowRef, app.isDev(), characterDatabase, sendTick );
 gameResources.attachIpcEvents( mainWindowRef, userPreferences );
-fileDatabase.attachIpcEvents( mainWindowRef );
 ginaImporter.initGinaImporter( mainWindowRef, app.isDev() );
 
 let x = userPreferences.everquestInstallFolder;

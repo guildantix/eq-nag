@@ -116,6 +116,7 @@ export class TriggerModel {
     
     public triggerId: string = null;
     public folderId: string = null;
+    public packageId: string = null;
     public name: string = '';
     public capturePhrases: CapturePhrase[] = [];
     public comments: string = '';
@@ -466,6 +467,10 @@ export class TriggerPackageVersion {
     public packageId: string;
     public versionId: string;
     public timestamp: Date;
+    public name: string;
+    public description: string;
+    public author: string;
+    public authorDiscord: string;
 
 }
 
@@ -506,6 +511,8 @@ export class PackageTrigger {
     public captureMethod: string = 'Any match';
     public conditions: TriggerCondition[] = [];
     public classLevels: CharacterClassLevel[] = [];
+    public useCooldown: boolean = false;
+    public cooldownDuration: number = 0;
 
 }
 
@@ -514,6 +521,7 @@ export class TriggerPackageModel {
     public folders: PackageFolder[] = [];
     public detrimentalOverlayId: string;
     public beneficialOverlayId: string;
+    public alertOverlayId: string;
 }
 
 export class TriggerPackageMetaModel {

@@ -339,6 +339,8 @@ class Trigger {
     
     triggerId = null;
     folderId = null;
+    /** @type {string} */
+    packageId = null;
     name = '';
     /** @type CapturePhrase[] */
     capturePhrases = [];
@@ -391,4 +393,133 @@ class PackageFileModel extends BaseFileModel {
 
 }
 
-module.exports = { Trigger, TriggerAction, ActionTypes, CapturePhrase, TriggerConditionTypes, OperatorTypes, Phrase, TriggerFolder, MediaTypes, FileModel, PackageFileModel, Tag, ImportTypes, CharacterClassLevel, TimerRestartBehaviors };
+class TriggerPackageVersion {
+    
+    /** @type {string} */
+    packageId;
+    /** @type {string} */
+    versionId;
+    /** @type {Date} */
+    timestamp;
+    /** @type {string} */
+    name;
+    /** @type {string} */
+    description;
+    /** @type {string} */
+    author = null;
+    /** @type {string} */
+    authorDiscord = null;
+
+}
+
+class VersionHistory {
+
+    /** @type {string} */
+    versionId;
+    /** @type {Date} */
+    timestamp;
+    /** @type {string} */
+    notes;
+
+}
+
+class PackageFolder {
+
+    /** @type {string} */
+    folderId;
+    /** @type {string} */
+    name;
+    /** @type {PackageFolder[]} */
+    children = [];
+
+}
+
+class PackageTrigger {
+
+    /** @type {string} */
+    triggerId = null;
+    /** @type {string} */
+    folderId = null;
+    /** @type {string} */
+    name = '';
+    /** @type {CapturePhrase[]} */
+    capturePhrases = [];
+    /** @type {string} */
+    comments = '';
+    /** @type {TriggerAction[]} */
+    actions = [];
+    /** @type {string} */
+    captureMethod = 'Any match';
+    /** @type {TriggerCondition[]} */
+    conditions = [];
+    /** @type {CharacterClassLevel[]} */
+    classLevels = [];
+    /** @type {boolean} */
+    useCooldown = false;
+    /** @type {number} */
+    cooldownDuration = 0;
+
+}
+
+class TriggerPackageModel {
+    
+    /** @type {PackageTrigger[]} */
+    triggers = [];
+    /** @type {PackageFolder[]} */
+    folders = [];
+    /** @type {string} */
+    detrimentalOverlayId;
+    /** @type {string} */
+    beneficialOverlayId;
+}
+
+class TriggerPackageMetaModel {
+    
+    /** @type {string} */
+    triggerPackageId;
+    /** @type {string} */
+    versionId;
+    /** @type {string} */
+    timestampDate;
+    /** @type {TriggerPackageModel} */
+    model = new TriggerPackageModel();
+    /** @type {PackageFileModel[]} */
+    files = [];
+    /** @type {string} */
+    author;
+    /** @type {string} */
+    authorDiscord;
+    /** @type {boolean} */
+    trustedAuthor = false;
+    /** @type {string} */
+    name;
+    /** @type {VersionHistory[]} */
+    versionHistory;
+    /** @type {string} */
+    description;
+
+}
+
+module.exports = {
+    Trigger,
+    TriggerAction,
+    ActionTypes,
+    CapturePhrase,
+    TriggerConditionTypes,
+    OperatorTypes,
+    Phrase,
+    TriggerFolder,
+    MediaTypes,
+    FileModel,
+    PackageFileModel,
+    Tag,
+    ImportTypes,
+    CharacterClassLevel,
+    TimerRestartBehaviors,
+    TriggerPackageVersion,
+    VersionHistory,
+    PackageFolder,
+    PackageTrigger,
+    TriggerPackageModel,
+    TriggerPackageMetaModel
+};

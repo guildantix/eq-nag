@@ -2,7 +2,7 @@ import { Injectable, NgZone } from '@angular/core';
 import { Display, IpcRenderer } from 'electron';
 import { Observable, Observer } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
-import { DataTickModel, DkpEntryModel, TriggerModel, OverlayWindowModel, ActionTypes, FocusEffectSettings, CharacterModel, BasicError, TriggerFolder, FileModel, Tag, AuthorModel, PackageFileModel } from './core.model';
+import { DataTickModel, DkpEntryModel, TriggerModel, OverlayWindowModel, ActionTypes, FocusEffectSettings, CharacterModel, BasicError, TriggerFolder, FileModel, Tag, AuthorModel, PackageFileModel, TriggerPackageMetaModel } from './core.model';
 import { GinaConfiguration, GinaTriggerGroups } from './gina.model';
 
 @Injectable( { providedIn: 'root' })
@@ -805,6 +805,54 @@ export class IpcService {
                 } );
             } );
             this.ipc.send( 'file:importFromPackage', file );
+
+        } );
+
+        return obs;
+    }
+
+    public installTriggerPackage( triggerPackage: TriggerPackageMetaModel ): Observable<boolean> {
+        let obs: Observable<boolean> = new Observable<boolean>( ( observer: Observer<boolean> ) => {
+
+            this.ipc.once( 'pkg:install', ( e, installComplete: boolean ) => {
+                this.ngZone.run( () => {
+                    observer.next( installComplete );
+                    observer.complete();
+                } );
+            } );
+            this.ipc.send( 'pkg:install', triggerPackage );
+
+        } );
+
+        return obs;
+    }
+
+    public uninstallTriggerPackage( packageId: string ): Observable<boolean> {
+        let obs: Observable<boolean> = new Observable<boolean>( ( observer: Observer<boolean> ) => {
+
+            this.ipc.once( 'pkg:uninstall', ( e, complete: boolean ) => {
+                this.ngZone.run( () => {
+                    observer.next( complete );
+                    observer.complete();
+                } );
+            } );
+            this.ipc.send( 'pkg:uninstall', packageId );
+
+        } );
+
+        return obs;
+    }
+
+    public isPackageInstalled( packageId: string ): Observable<boolean> {
+        let obs: Observable<boolean> = new Observable<boolean>( ( observer: Observer<boolean> ) => {
+
+            this.ipc.once( 'pkg:isInstalled', ( e, installed: boolean ) => {
+                this.ngZone.run( () => {
+                    observer.next( installed );
+                    observer.complete();
+                } );
+            } );
+            this.ipc.send( 'pkg:isInstalled', packageId );
 
         } );
 

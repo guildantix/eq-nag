@@ -7,6 +7,7 @@ import * as _ from 'lodash-es';
 import { TriggerLibraryService } from '../trigger-library.service';
 import { SettingsService } from 'src/app/settings/settings-http.service';
 import { forkJoin, Observable, timer } from 'rxjs';
+import { MatSnackBar } from '@angular/material/snack-bar';
 
 @Component( {
     selector: 'app-trigger-package-details',
@@ -24,10 +25,12 @@ export class TriggerPackageDetailsComponent implements OnInit {
             let version = val.versionHistory?.find( f => f.versionId === val.versionId );
             this.notes = version.notes;
             this.libraryService.isAuthor( val.triggerPackageId, this.authorId ).subscribe( isAuth => this.isAuthor = isAuth && this.trustedAuthor );
+            this.ipcService.isPackageInstalled( val.triggerPackageId ).subscribe( installed => this.isInstalled = installed );
         }
     }
     public notes: string;
     public isAuthor: boolean = false;
+    public isInstalled: boolean = false;
     public get showHistory(): boolean {
         return _.some( this.package.versionHistory, f => f.notes != null );
     }
@@ -37,7 +40,7 @@ export class TriggerPackageDetailsComponent implements OnInit {
     @Output() public editPackageId: EventEmitter<string> = new EventEmitter<string>();
     @ViewChild( 'newTriggersTable', { static: true } ) newTriggersTable: MatTable<PackageTrigger>;
 
-    constructor( private ipcService: IpcService, private dialogService: DialogService, private libraryService: TriggerLibraryService, private settingsService: SettingsService ) { }
+    constructor( private ipcService: IpcService, private dialogService: DialogService, private libraryService: TriggerLibraryService, private settingsService: SettingsService, private snackBar: MatSnackBar ) { }
 
     ngOnInit() {
         this.ipcService.getAuthor().subscribe( author => {
@@ -94,6 +97,23 @@ export class TriggerPackageDetailsComponent implements OnInit {
         this.editPackageId.emit( this.package.triggerPackageId );
     }
 
+    uninstallPackage() {
+        this.dialogService.showConfirmDialog(
+            'Are you sure you want to uninstall this package?', 'Click "Yes" to uninstall this package', 'Click "No" to close this modal without uninstalling the trigger package.',
+            confirmed => {
+                if ( confirmed ) {
+                    this.ipcService
+                        .uninstallTriggerPackage( this.package.triggerPackageId )
+                        .subscribe( completed => {
+                            this.snackBar.open( 'Package uninstalled!', 'dismiss', { duration: 2500 } );
+                            this.ipcService.requestTick();
+                            this.isInstalled = false;
+                        } );
+                }
+            } );
+
+    }
+
     installPackage() {
         this.libraryService
             .getPackage( this.package.triggerPackageId )
@@ -114,21 +134,24 @@ export class TriggerPackageDetailsComponent implements OnInit {
         } );
         
         forkJoin( importTasks ).subscribe( results => {
-            console.log( 'imported files', results );
-            console.log( 'package details', triggerPackage );
+            this.ipcService.installTriggerPackage( triggerPackage ).subscribe( installComplete => {
+                this.snackBar.open( 'Package install complete!', 'dismiss', { duration: 2500 } );
+                this.ipcService.requestTick();
+                this.isInstalled = true;
+            } );
         } );
     }
 
     // Things the installer must do.
     // ~Pull down the latest version.~
     // Configure auto-updates.
-    // Setup missing overlays.
+    // ~Setup missing overlays.
     // ~Pull down sound files.~
     // ~Pull down custom icons.~ -- These are base64 encoded into the trigger meta.
-    // Pull down eq icons, pulling from the eq directory as normal.
+    // ~Pull down eq icons, pulling from the eq directory as normal. ~ The images are stored as data URLs, not file references.  This is done automatically with the import.
 
     // Things we need to get this done:
-    //      Wizard-style overlay builder.
+    //      ~Wizard-style overlay builder.
     //      Auto-updater system.
 
 }

@@ -124,6 +124,20 @@ class FilesDatabaseStore extends Store {
     }
 
     /**
+     * Removes the specified file.
+     * 
+     * @param {string} fileId The id of the file to remove.
+     */
+    deleteFile( fileId ) {
+        let file = _.remove( this.#data.files, f => f.fileId === fileId );
+
+        if ( file?.length > 0 ) {
+            fs.unlink( file[ 0 ].physicalName, () => { } );
+            this.storeDataFile( this.#data );
+        }
+    }
+
+    /**
      * Imports the given package file into the data store.
      * 
      * @param {PackageFileModel} file The package file to import.
@@ -140,7 +154,7 @@ class FilesDatabaseStore extends Store {
         let model = new FileModel();
 
         model.fileId = file.fileId;
-        model.mediaType = file.mediaType;
+        model.mediaType = +file.mediaType;
         model.fileName = file.fileName;
         model.physicalName = path.join( this.#filePath, `${file.fileId}${path.extname( file.fileName )}` );
 
