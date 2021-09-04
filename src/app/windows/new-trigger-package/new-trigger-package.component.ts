@@ -30,7 +30,6 @@ export class NewTriggerPackageComponent implements OnInit {
         this._pkgId = val;
         if ( val ) {
             this.libraryService.getPackage( val ).subscribe( pkg => {
-                console.log( 'got', pkg );
                 this.package = pkg[0];
                 this.pullTriggerUpdates();
             } );
@@ -49,7 +48,7 @@ export class NewTriggerPackageComponent implements OnInit {
 
     pullTriggerUpdates(): void {
         this.triggers.forEach( trigger => {
-                
+            
             this.package.model.triggers.forEach( pkgTrigger => {
                 if ( pkgTrigger.triggerId === trigger.triggerId ) {
                     if ( pkgTrigger.folderId !== trigger.folderId ) {
@@ -598,7 +597,6 @@ export class NewTriggerPackageComponent implements OnInit {
     cancel(): void {
         this.package = new TriggerPackageMetaModel();
         this.triggerPackage.emit( null );
-        console.log( 'author id', this.authorId );
     }
 
 
