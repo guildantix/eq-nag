@@ -388,22 +388,27 @@ export class NewTriggerPackageComponent implements OnInit {
      */
     addTrigger( trigger: TriggerModel ) {
         let exists = _.some( this.package.model.triggers, f => f.triggerId === trigger.triggerId );
-        
+        let pTrg = new PackageTrigger();
+
         if ( !exists ) {
-            let pTrg = new PackageTrigger();
-
             pTrg.triggerId = trigger.triggerId;
-            pTrg.folderId = trigger.folderId;
-            pTrg.name = trigger.name;
-            pTrg.capturePhrases = _.cloneDeep( trigger.capturePhrases );
-            pTrg.comments = _.cloneDeep( trigger.comments );
-            pTrg.actions = _.cloneDeep( trigger.actions );
-            pTrg.captureMethod = _.cloneDeep( trigger.captureMethod );
-            pTrg.conditions = _.cloneDeep( trigger.conditions );
-            pTrg.classLevels = _.cloneDeep( trigger.classLevels );
-
             this.package.model.triggers.push( pTrg );
+
+        } else {
+            pTrg = this.package.model.triggers.find( f => f.triggerId === trigger.triggerId );
+            
         }
+
+        pTrg.folderId = trigger.folderId;
+        pTrg.name = trigger.name;
+        pTrg.capturePhrases = _.cloneDeep( trigger.capturePhrases );
+        pTrg.comments = _.cloneDeep( trigger.comments );
+        pTrg.actions = _.cloneDeep( trigger.actions );
+        pTrg.captureMethod = _.cloneDeep( trigger.captureMethod );
+        pTrg.conditions = _.cloneDeep( trigger.conditions );
+        pTrg.classLevels = _.cloneDeep( trigger.classLevels );
+        pTrg.useCooldown = trigger.useCooldown;
+        pTrg.cooldownDuration = trigger.cooldownDuration;
 
     }
 
