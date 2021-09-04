@@ -13,9 +13,12 @@ const StringUtilities = require( "../utilities/string" );
 const Fuse = require( 'fuse.js' );
 const eqZones = require( './models/everquest-zones' );
 const FilesDatabaseStore = require( "./files-database" );
+const UserPreferencesStore = require( "./user-preferences" );
 
 /** @type {FilesDatabaseStore} */
 var _fileStore;
+/** @type {UserPreferencesStore} */
+var _userPreferences;
 
 /** @type {Fuse.fuseOptions_tags} */
 const fuseOptions_tags = {
@@ -593,11 +596,13 @@ class TriggerDatabaseStore extends Store {
      * 
      * @param {ForwardRef} mainWindowRef The main window of the application.
      * @param {function} sendTick The send tick method.
-     * @param {FilesDatabaseStore} fileStore The store object.
+     * @param {FilesDatabaseStore} fileStore The file store.
+     * @param {UserPreferencesStore} userPreferences The overlay store.
      */
-    attachIpcEvents( mainWindowRef, sendTick, fileStore ) {
+    attachIpcEvents( mainWindowRef, sendTick, fileStore, userPreferences ) {
 
         _fileStore = fileStore;
+        _userPreferences = userPreferences;
 
         ipcMain.on( 'trigger:create', ( event, trigger ) => {
             let triggerId = this.add( trigger );
@@ -1548,6 +1553,32 @@ class TriggerDatabaseStore extends Store {
         triggerVersion.author = pkg.author;
         triggerVersion.authorDiscord = pkg.authorDiscord;
 
+        // First, update the overlay Ids to match their cooresponding values on 
+        // the client.
+
+        /** @type {Record<string, string>} */
+        let overlayMap = {}
+
+        overlayMap[ pkg.model.detrimentalOverlayId ] = _userPreferences.detrimentalOverlayId;
+        overlayMap[ pkg.model.beneficialOverlayId ] = _userPreferences.beneficialOverlayId;
+
+        pkg.model?.triggers?.forEach( pkgTrigger => {
+            pkgTrigger.actions?.forEach( pkgAction => {
+
+                if ( pkgAction.actionType === ActionTypes.DisplayText ) {
+                    pkgAction.overlayId = _userPreferences.alertOverlayId;
+                } else {
+                    pkgAction.overlayId = overlayMap[ pkgAction.overlayId ];
+                }
+                
+                pkgAction.endedTextOverlayId = _userPreferences.alertOverlayId;
+                pkgAction.endingSoonTextOverlayId = _userPreferences.alertOverlayId;
+            } );
+        } );
+
+        // Next, create the required folders, creating a folder map that maps 
+        // folder ids to existing folders. If a folder does not exist,  it is 
+        // created  using  the  folder  id  in  the trigger   package  folder.
         let folderMap = this.installPackageFolders( pkg.model?.folders );
         pkg.model?.triggers?.forEach( pkgTrigger => this.installPackageTrigger( pkg.triggerPackageId, pkgTrigger, folderMap ) );
 
@@ -1709,8 +1740,6 @@ class TriggerDatabaseStore extends Store {
         trigger.classLevels = packageTrigger.classLevels;
         trigger.useCooldown = packageTrigger.useCooldown;
         trigger.cooldownDuration = packageTrigger.cooldownDuration;
-
-        // TODO: Missing overlay id mappings.
 
     }
 

@@ -521,7 +521,6 @@ export class TriggerPackageModel {
     public folders: PackageFolder[] = [];
     public detrimentalOverlayId: string;
     public beneficialOverlayId: string;
-    public alertOverlayId: string;
 }
 
 export class TriggerPackageMetaModel {

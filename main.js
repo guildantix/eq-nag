@@ -225,7 +225,7 @@ userPreferences.attachIpcEvents( mainWindowRef, sendTick );
 winManager.attachIpcEvents( mainWindowRef, sendTick, overlayDatabase, userPreferences );
 dkpDatabase.attachIpcEvents( mainWindowRef, sendTick );
 fileDatabase.attachIpcEvents( mainWindowRef );
-triggerDatabase.attachIpcEvents( mainWindowRef, sendTick, fileDatabase );
+triggerDatabase.attachIpcEvents( mainWindowRef, sendTick, fileDatabase, userPreferences );
 overlayDatabase.attachIpcEvents( mainWindowRef, sendTick );
 characterDatabase.attachIpcEvents( mainWindowRef, sendTick );
 logBootstrap.boostrapLogWatchers( mainWindowRef, app.isDev(), characterDatabase, sendTick );
