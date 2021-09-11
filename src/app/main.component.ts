@@ -2,14 +2,17 @@ import { Component, ViewChild, ElementRef, OnInit } from '@angular/core';
 import * as _ from 'lodash-es';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { IpcService } from './ipc.service';
-import { DkpEntryModel, OverlayWindowModel, FocusEffectSettings } from './core.model';
+import { DkpEntryModel, OverlayWindowModel, FocusEffectSettings, TriggerPackageMetaModel } from './core.model';
 import { DialogService } from './dialogs/dialog.service';
 import { ScraperService } from './scraper.service';
 import { customAlphabet } from 'nanoid';
 import { SetupService } from './setup/setup.service';
 import { CharactersListComponent } from './characters-list/characters-list.component';
+import { TriggerLibraryService } from './windows/trigger-library.service';
+import { forkJoin, Observable, timer } from 'rxjs';
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const nanoid = customAlphabet( alphabet, 16 );
+const updateIntervalDuration = 5 * 60 * 1000;
 
 @Component( {
     selector: 'app-main',
@@ -49,7 +52,7 @@ export class MainComponent implements OnInit {
         return this.overlays.filter( f => f.overlayType === 'FCT' );
     }
 
-    constructor( private snackBar: MatSnackBar, private ipcService: IpcService, private dialogService: DialogService, private scraper: ScraperService, private setupService: SetupService ) {
+    constructor( private snackBar: MatSnackBar, private ipcService: IpcService, private dialogService: DialogService, private scraper: ScraperService, private setupService: SetupService, private libraryService: TriggerLibraryService ) {
     }
 
     ngOnInit(): void {
@@ -80,6 +83,52 @@ export class MainComponent implements OnInit {
         this.ipcService.logFileChanged().subscribe( data => this.logFile = data );
         this.ipcService.consoleLogRequested().subscribe( data => console.log( 'from main', data ) );
         this.ipcService.getAppIsDev().subscribe( isDev => this.isDev = isDev );
+        
+        this.checkForTriggerUpdates();
+    }
+
+    checkForTriggerUpdates() {
+        this.ipcService.getInstalledPackages().subscribe( installedPackages => {
+            if ( installedPackages?.length > 0 ) {
+                let ids = installedPackages.map( f => f.packageId );
+
+                this.libraryService.getLatestVersionInfo( ids ).subscribe( infos => {
+                    let packagesWithUpdates: string[] = [];
+
+                    // Check each package for udpates.
+                    infos?.forEach( latestInfo => {
+                        let currentInfo = installedPackages.find( f => f.packageId === latestInfo.TriggerPackageId );
+                        if ( currentInfo.versionId !== latestInfo.CurrentVersionId ) {
+                            packagesWithUpdates.push( currentInfo.packageId );
+                        }
+                    } );
+
+                    if ( packagesWithUpdates?.length > 0 ) {
+                        
+                        let sb = this.snackBar.open( `There are updates to ${packagesWithUpdates.length + 1} trigger package(s).  Installing updates in the background.`, 'dismiss', { duration: 5000 } );
+
+                        this.libraryService
+                            .getPackage( packagesWithUpdates )
+                            .subscribe( packages => {
+                                let installations: Observable<boolean>[] = [];
+                                packages?.forEach( pkg => installations.push( this.ipcService.installTriggerPackage( pkg ) ) );
+
+                                forkJoin( installations ).subscribe( () => {
+                                    sb?.dismiss();
+                                    this.snackBar.open( 'All updates installed successfully!', 'dismiss', { duration: 5000 } );
+                                    window.setTimeout( () => this.checkForTriggerUpdates(), updateIntervalDuration );
+                                } );
+
+                            } );
+                        
+                    } else {
+                        window.setTimeout( () => this.checkForTriggerUpdates(), updateIntervalDuration );
+
+                    }
+
+                } );
+            }
+        } );
     }
 
     runSetupWizard() {

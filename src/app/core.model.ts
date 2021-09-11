@@ -482,6 +482,14 @@ export class VersionHistory {
 
 }
 
+export class TriggerPackageVersionInfoModel {
+    
+    public TriggerPackageId: string;
+    public CurrentVersionId: string;
+    public TimeStamp: Date;
+
+}
+
 export class TriggerPackageTransferModel {
 
     public model: any;

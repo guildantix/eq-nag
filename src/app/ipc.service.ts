@@ -2,7 +2,7 @@ import { Injectable, NgZone } from '@angular/core';
 import { Display, IpcRenderer } from 'electron';
 import { Observable, Observer } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
-import { DataTickModel, DkpEntryModel, TriggerModel, OverlayWindowModel, ActionTypes, FocusEffectSettings, CharacterModel, BasicError, TriggerFolder, FileModel, Tag, AuthorModel, PackageFileModel, TriggerPackageMetaModel } from './core.model';
+import { DataTickModel, DkpEntryModel, TriggerModel, OverlayWindowModel, ActionTypes, FocusEffectSettings, CharacterModel, BasicError, TriggerFolder, FileModel, Tag, AuthorModel, PackageFileModel, TriggerPackageMetaModel, TriggerPackageVersion } from './core.model';
 import { GinaConfiguration, GinaTriggerGroups } from './gina.model';
 
 @Injectable( { providedIn: 'root' })
@@ -853,6 +853,22 @@ export class IpcService {
                 } );
             } );
             this.ipc.send( 'pkg:isInstalled', packageId );
+
+        } );
+
+        return obs;
+    }
+
+    public getInstalledPackages(): Observable<TriggerPackageVersion[]> {
+        let obs: Observable<TriggerPackageVersion[]> = new Observable<TriggerPackageVersion[]>( ( observer: Observer<TriggerPackageVersion[]> ) => {
+
+            this.ipc.once( 'pkg:get:installed', ( e, installed: TriggerPackageVersion[] ) => {
+                this.ngZone.run( () => {
+                    observer.next( installed );
+                    observer.complete();
+                } );
+            } );
+            this.ipc.send( 'pkg:get:installed' );
 
         } );
 

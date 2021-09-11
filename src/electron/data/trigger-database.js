@@ -691,6 +691,10 @@ class TriggerDatabaseStore extends Store {
             event.sender.webContents.send( 'pkg:isInstalled', this.isPackageInstalled( packageId ) );
         } );
 
+        ipcMain.on( 'pkg:get:installed', ( event ) => {
+            event.sender.webContents.send( 'pkg:get:installed', this.getInstalledPackages() );
+        } );
+
     }
 
     /**
@@ -1793,7 +1797,7 @@ class TriggerDatabaseStore extends Store {
             }
 
             pkgFolder.children?.forEach( pkgChild => {
-                this.installPackageFolder( folder, pkgChild );
+                this.installPackageFolder( folder, pkgChild, folderMap );
             } );
 
         } );
@@ -1831,8 +1835,8 @@ class TriggerDatabaseStore extends Store {
         
         if ( i > -1 ) {
                 
-            folderMap[ packageFolder.folderId ] = folders[ i ].folderId;
-            folder = folders[ i ];
+            folderMap[ packageFolder.folderId ] = parentFolder.children[ i ].folderId;
+            folder = parentFolder.children[ i ];
 
         } else {
 
@@ -1849,13 +1853,13 @@ class TriggerDatabaseStore extends Store {
         }
         
         packageFolder.children?.forEach( pkgChild => {
-            this.installPackageFolder( folder, pkgChild );
+            this.installPackageFolder( folder, pkgChild, folderMap );
         } );
 
     }
 
     getInstalledPackages() {
-
+        return this.#data.installedPackages;
     }
 
     // /**

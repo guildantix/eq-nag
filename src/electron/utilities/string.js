@@ -181,6 +181,30 @@ function parsePhoneticTransformsToLiteral( value, phoneticTransforms ) {
             value = value.replace( rgx, phoneticTransforms[ key ] );
         }
     }
+
+    // This next part will parse roman numerals into words.
+    // For example: https://regex101.com/r/xx1bHM/1
+
+    /** @type {Record<string, string>} */
+    let romanNumerals = {
+        'I': 'one',
+        'II': 'two',
+        'III': 'three',
+        'IV': 'four',
+        'V': 'five',
+        'VI': 'size',
+        'VII': 'seven',
+        'VIII': 'eight',
+        'IX': 'nine',
+        'X': 'ten',
+    };
+    // // I is special.  We change all except for lonely I.
+    // value = value.replace( /(\s)i([\.|!|,|?])/gi, '$1one$2' );
+
+    for ( let key of Object.keys( romanNumerals ) ) {
+        let rgx = new RegExp( `(\\s)${key}([\\.|!|,|?|\\s])`, 'gi' );
+        value = value.replace( rgx, `$1${romanNumerals[ key ]}$2` );
+    }
     return value;
 }
 

@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { environment } from 'src/environments/environment';
-import { PackageFileModel, TriggerPackageMetaModel, TriggerPackageModel, TriggerPackageTransferModel } from '../core.model';
+import { PackageFileModel, TriggerPackageMetaModel, TriggerPackageModel, TriggerPackageTransferModel, TriggerPackageVersionInfoModel } from '../core.model';
 import { catchError, map } from 'rxjs/operators';
 import { DialogService } from '../dialogs/dialog.service';
 
@@ -13,6 +13,11 @@ export class TriggerLibraryService {
 
     getLibrary(): Observable<TriggerPackageMetaModel[]> {
         return this.httpClient.get<TriggerPackageMetaModel[]>( `${environment.shareServiceUrl}/triggers/library` )
+            .pipe( catchError( error => this.handleError( error ) ) );
+    }
+
+    getLatestVersionInfo(packageIds: string[]): Observable<TriggerPackageVersionInfoModel[]> {
+        return this.httpClient.post<TriggerPackageVersionInfoModel[]>( `${environment.shareServiceUrl}/triggers/version-info`, packageIds )
             .pipe( catchError( error => this.handleError( error ) ) );
     }
 
