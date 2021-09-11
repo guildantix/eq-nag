@@ -197,6 +197,12 @@ export class NewTriggerBuffDialogComponent implements OnInit {
                 phrase: '^You have been slain by [^!]*!$',
                 useRegEx: true,
             } );
+            buffTimer.endEarlyPhrases.push( <Phrase>{
+                phraseId: nanoid(),
+                // You have been slain by a lightning warrior staticfist!
+                phrase: '^You died\\.$',
+                useRegEx: true,
+            } );
 
         }
 
