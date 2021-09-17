@@ -106,7 +106,7 @@ class LogBootstrapper {
      */
     startWatcher( mainWindowRef, chr, isDev, characterDatabase, sendTick ) {
         let characterId = chr.characterId;
-        let startingStats = fs.statSync( chr.logFile );
+        let startingStats = fs.existsSync( chr.logFile ) ? fs.statSync( chr.logFile ) : null;
         logWatchers[ characterId ] = {
             /** @type {BrowserWindow} */
             window: null,
@@ -120,7 +120,7 @@ class LogBootstrapper {
 
             // Ensure we have the latest information.
             let _chr = characterDatabase.find( characterId );
-            let _stats = fs.statSync( _chr.logFile );
+            let _stats = fs.existsSync( chr.logFile ) ? fs.statSync( _chr.logFile ) : null;
             
             if ( _chr.logFile !== logWatchers[ characterId ].logFile ) {
 
@@ -180,7 +180,7 @@ class LogBootstrapper {
             }
             
             logWatchers[ characterId ].model = _chr;
-            logWatchers[ characterId ].logSize = _stats.size;
+            logWatchers[ characterId ].logSize = _stats == null ? 0 : _stats.size;
 
         }, checkInterval );
 
@@ -234,7 +234,7 @@ function startLogWatcherWindow( logFile, isDev, sendTick, character, logPosition
         //   width: 800,
         //   height: 600,
         show: isDev === true,
-        webPreferences: { nodeIntegration: true, webSecurity: false },
+        webPreferences: { nodeIntegration: true, webSecurity: false, devTools: isDev === true },
     } );
     logWatcherWindow.webContents.openDevTools();
     logWatcherWindow.loadURL( `file://${__dirname}/threads/log-watcher.html?character=${encodeURI(JSON.stringify(character))}&logPosition=${logPosition}` );

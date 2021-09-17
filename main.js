@@ -17,7 +17,7 @@ const GinaImporter = require( "./src/electron/gina-importer" );
 
 /** @type {BrowserWindow} */
 var mainWindow, logWatcherWindow, testWindow;
-var enableDevMode = false;
+var enableDevMode = true;
 const winManager = new WindowManager(__dirname);
 const userPreferences = new UserPreferencesStore( {} );
 const dkpDatabase = new DkpDatabaseStore();

@@ -22,12 +22,12 @@ export class ScraperService {
                 div.style.display = 'none';
                 document.body.appendChild( div );
                 div.innerHTML = this.responseText;
-    
+
                 let data = {
                     name: div.querySelector( 'meta[property="og:title"]' ).getAttribute( 'content' ),
                     spellGem: div.querySelector( 'img[src*="spellicons"]' ),
                     duration: 0,
-                    _duration: document.evaluate( "//strong[contains(., 'Duration:')]", document, null, XPathResult.ANY_TYPE, null ).iterateNext().nextSibling.nextSibling.textContent.trim(),
+                    _duration: document.evaluate( "//strong[contains(., 'Duration:') and not(contains(., 'AE Duration'))]", document, null, XPathResult.ANY_TYPE, null ).iterateNext().nextSibling.nextSibling.textContent.trim(),
                     // class: document.evaluate( "//div[contains(@class, 'db-infobox')]/table/tbody/tr/td/strong[contains(., '" + currentCharacterClass + "')]", document, null, XPathResult.ANY_TYPE, null ).iterateNext().textContent,
                     // level: +document.evaluate( "//div[contains(@class, 'db-infobox')]/table/tbody/tr/td/strong[contains(., '" + currentCharacterClass + "')]", document, null, XPathResult.ANY_TYPE, null ).iterateNext().parentNode.nextSibling.textContent,
                     castOnOther: document.evaluate( "//blockquote[contains(., 'Cast on other')]", document, null, XPathResult.ANY_TYPE, null ).iterateNext().textContent.split( 'Cast on other: ' )[ 1 ].split( 'Effect Fades: ' )[ 0 ],
