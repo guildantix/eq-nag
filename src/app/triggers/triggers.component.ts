@@ -428,6 +428,30 @@ export class TriggersComponent implements OnInit {
 
     
     /**
+     * Toggles the trigger's enabled state and saves the change.
+     * 
+     * @param trigger The trigger.
+     */
+    public toggleEnabled( trigger: TriggerModel ): void {
+        trigger.enabled = !trigger.enabled;
+
+        this.ipcService.updateTrigger( trigger ).subscribe( updated => {
+            if ( !updated ) {
+                this.snackBar.open( 'Could not update trigger!', 'Dismiss', { duration: 5000 } );
+            }
+        } );
+    }
+
+
+
+
+
+
+
+
+
+    
+    /**
      * Moves the specified folder to the specified parent.
      * 
      * @param sourceFolderId The id of the folder to move.

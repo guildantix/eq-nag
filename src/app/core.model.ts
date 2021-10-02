@@ -131,7 +131,8 @@ export class TriggerModel {
     public importType: ImportTypes;
     public useCooldown: boolean = false;
     public cooldownDuration: number = 0;
-
+    public enabled: boolean = true;
+    
 }
 
 export enum TriggerConditionTypes {

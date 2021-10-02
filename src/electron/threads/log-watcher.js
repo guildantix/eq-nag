@@ -795,104 +795,106 @@ function parseLogEntries( raw, simulating ) {
 
     let entryMatched = false;
     triggers.forEach( trigger => {
-        trigger._parse( log, res => {
-            trigger.actions.forEach( action => {
-                if ( ( isDev || !action.onlyExecuteInDev ) && ( action.phrases == null || action.phrases?.length === 0 || action.phrases?.indexOf( res.phraseId ) > -1 ) ) {
-                    enableLogging && sendInformationToLog( `Execute trigger action [${trigger.name}] : ${ActionTypes[ action.actionType ]}`, 24 );
-                    enableLogging && sendInformationToLog( `    ||${raw}||`, 24 );
-                    if ( action.actionType === ActionTypes.DisplayText ) {
-                    /* --== Display Text ==-- */
+        if ( !!trigger.enabled ) {
+            trigger._parse( log, res => {
+                trigger.actions.forEach( action => {
+                    if ( ( isDev || !action.onlyExecuteInDev ) && ( action.phrases == null || action.phrases?.length === 0 || action.phrases?.indexOf( res.phraseId ) > -1 ) ) {
+                        enableLogging && sendInformationToLog( `Execute trigger action [${trigger.name}] : ${ActionTypes[ action.actionType ]}`, 24 );
+                        enableLogging && sendInformationToLog( `    ||${raw}||`, 24 );
+                        if ( action.actionType === ActionTypes.DisplayText ) {
+                            /* --== Display Text ==-- */
                         
-                        displayTextComponent( res, timestamp, action );
+                            displayTextComponent( res, timestamp, action );
                         
-                    } else if ( action.actionType === ActionTypes.PlayAudio ) {
-                    /* --== Play Audio ==-- */
+                        } else if ( action.actionType === ActionTypes.PlayAudio ) {
+                            /* --== Play Audio ==-- */
                         
-                        playAudioFile( action.audioFileId );
+                            playAudioFile( action.audioFileId );
 
-                    } else if ( action.actionType === ActionTypes.Clipboard ) {
-                    /* --== Copy text to clipboard ==-- */
+                        } else if ( action.actionType === ActionTypes.Clipboard ) {
+                            /* --== Copy text to clipboard ==-- */
                             
-                        sendToClipboard( res, action, trigger._conditionResults );
+                            sendToClipboard( res, action, trigger._conditionResults );
                         
-                    } else if ( action.actionType === ActionTypes.StoreVariable ) {
-                    /* --== Store Variable ==-- */
+                        } else if ( action.actionType === ActionTypes.StoreVariable ) {
+                            /* --== Store Variable ==-- */
                         
-                        if ( res.result.length === 1 ) {
-                            saveVariable( action.variableName, res.result[ 0 ], action.onlyStoreUsedValues );
-                        } else {
-                            saveVariable( action.variableName, res.result[ 1 ], action.onlyStoreUsedValues );
-                        }
+                            if ( res.result.length === 1 ) {
+                                saveVariable( action.variableName, res.result[ 0 ], action.onlyStoreUsedValues );
+                            } else {
+                                saveVariable( action.variableName, res.result[ 1 ], action.onlyStoreUsedValues );
+                            }
 
-                    } else if ( action.actionType === ActionTypes.ClearVariable ) {
-                    /* --== Clear Variable ==-- */
+                        } else if ( action.actionType === ActionTypes.ClearVariable ) {
+                            /* --== Clear Variable ==-- */
 
-                        if ( res.result.groups && res.result.groups[ action.variableName ] ) {
-                            clearStoredVariable( action.variableName, res.result.groups[ action.variableName ] );
-                        } else if ( trigger._conditionResults && trigger._conditionResults[ action.variableName ] ) {
-                            clearStoredVariable( action.variableName, trigger._conditionResults[ action.variableName ] );
-                        } else {
-                            clearAllStoredValuesInVariable( action.variableName );
-                        }
+                            if ( res.result.groups && res.result.groups[ action.variableName ] ) {
+                                clearStoredVariable( action.variableName, res.result.groups[ action.variableName ] );
+                            } else if ( trigger._conditionResults && trigger._conditionResults[ action.variableName ] ) {
+                                clearStoredVariable( action.variableName, trigger._conditionResults[ action.variableName ] );
+                            } else {
+                                clearAllStoredValuesInVariable( action.variableName );
+                            }
 
-                    } else if ( action.actionType === ActionTypes.Counter ) {
-                    /* --== Clear Variable ==-- */
+                        } else if ( action.actionType === ActionTypes.Counter ) {
+                            /* --== Clear Variable ==-- */
 
-                        incrementCounter( action.displayText );
+                            incrementCounter( action.displayText );
     
-                    } else if ( action.actionType === ActionTypes.Timer || action.actionType === ActionTypes.Countdown ) {
-                    /* --== Start a Timer/Countdown ==-- */
+                        } else if ( action.actionType === ActionTypes.Timer || action.actionType === ActionTypes.Countdown ) {
+                            /* --== Start a Timer/Countdown ==-- */
                         
-                        displayTimerCountdownComponent( res, timestamp, action, trigger );
+                            displayTimerCountdownComponent( res, timestamp, action, trigger );
 
-                    } else if ( action.actionType === ActionTypes.DotTimer ) {
-                    /* --== DOT Timers ==-- */
+                        } else if ( action.actionType === ActionTypes.DotTimer ) {
+                            /* --== DOT Timers ==-- */
                         
-                        displayDotTimerComponent( res, timestamp, action, trigger );
+                            displayDotTimerComponent( res, timestamp, action, trigger );
 
-                    } else if ( action.actionType === ActionTypes.BeneficialTimer ) {
-                    /* --== Buff Timers ==-- */
+                        } else if ( action.actionType === ActionTypes.BeneficialTimer ) {
+                            /* --== Buff Timers ==-- */
                         
-                        let spellName = trigger?._conditionResults?.SpellBeingCast;
-                        let rgx = new RegExp( `^You begin casting ${spellName}\\.$`, 'gmi' );
-                        let time = timestamp.getTime();
-                        let _t = timestamp.getTime();
-                        if ( action.castTime >= 3000 && charModel.hasBeneficialCastingSpeedFocus ) {
-                            let tMod = calculateCastingMilliseconds( action.castTime, trigger.classLevels, charModel.beneficialCastingSpeedFocusPercent, charModel.beneficialCastingSpeedFocusDecayLevel );
-                            time -= tMod;
-                        } else {
-                            time -= action.castTime;
+                            let spellName = trigger?._conditionResults?.SpellBeingCast;
+                            let rgx = new RegExp( `^You begin casting ${spellName}\\.$`, 'gmi' );
+                            let time = timestamp.getTime();
+                            let _t = timestamp.getTime();
+                            if ( action.castTime >= 3000 && charModel.hasBeneficialCastingSpeedFocus ) {
+                                let tMod = calculateCastingMilliseconds( action.castTime, trigger.classLevels, charModel.beneficialCastingSpeedFocusPercent, charModel.beneficialCastingSpeedFocusDecayLevel );
+                                time -= tMod;
+                            } else {
+                                time -= action.castTime;
+                            }
+
+                            let m = checkParseHistory( rgx, { time: [ time, time + 1000 ] } );
+                            if ( m?.length > 0 ) {
+                                action.displayText = spellName;
+                                displayBeneficialTimerComponent( res, timestamp, action, trigger, spellName );
+                            }
+
+                        } else if ( action.actionType === ActionTypes.Speak ) {
+                            /* --== TTS Speak ==-- */
+                            let duration = null;
+
+                            if ( res.result?.groups?.timerDuration ) {
+                                duration = StringUtilities.getDurationFromLabel( res.result?.groups?.timerDuration );
+                            } else if ( action.duration ) {
+                                duration = +action.duration;
+                            }
+
+                            speakPhrase( action.displayText, action.interruptSpeech, trigger._conditionResults, simulating, res.result, duration );
+                        
                         }
-
-                        let m = checkParseHistory( rgx, { time: [ time, time + 1000 ] } );
-                        if ( m?.length > 0 ) {
-                            action.displayText = spellName;
-                            displayBeneficialTimerComponent( res, timestamp, action, trigger, spellName );
-                        }
-
-                    } else if ( action.actionType === ActionTypes.Speak ) {
-                    /* --== TTS Speak ==-- */
-                        let duration = null;
-
-                        if ( res.result?.groups?.timerDuration ) {
-                            duration = StringUtilities.getDurationFromLabel( res.result?.groups?.timerDuration );
-                        } else if ( action.duration ) {
-                            duration = +action.duration;
-                        }
-
-                        speakPhrase( action.displayText, action.interruptSpeech, trigger._conditionResults, simulating, res.result, duration );
-                        
                     }
+                } );
+                entryMatched = true;
+
+                // If the trigger has a cooldown, start the cooldown now.
+                if ( trigger.useCooldown ) {
+                    trigger._onCooldown = true;
+                    trigger._cooldownStart = new Date();
                 }
             } );
-            entryMatched = true;
-
-            // If the trigger has a cooldown, start the cooldown now.
-            if ( trigger.useCooldown ) {
-                trigger._onCooldown = true;
-                trigger._cooldownStart = new Date();
-            }
-        } );
+        }
     } );
 
     if ( entryMatched ) {
@@ -1856,6 +1858,7 @@ function checkParseHistory( phrase, options ) {
 function backfind( log, callback ) {
 
     let _triggers = _.filter( triggers, t => _.some( t.actions, a => a.loopBackForValue === true ) );
+    console.log( 'backfind triggers', _triggers );
 
     /**
      * Returns false if there is a trigger requiring loopback and still missing a value.
