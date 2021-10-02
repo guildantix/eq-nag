@@ -159,16 +159,19 @@ export class NewTriggerRaidAbilityComponent implements OnInit {
             // Aaryonar begins casting Cloud of Disempowerment.
             phrase: `^(?<target>.*) begins casting ${this.ability.name}\\.$`,
         } );
-        let hitPhraseId = nanoid();
-        trigger.capturePhrases.push( <CapturePhrase>{
-            phraseId: hitPhraseId,
-            useRegEx: true,
-            requirePreviousPhrase: false,
-            duration: null,
-            // Your eardrums begin to bleed.
-            // /^(?<target>You)r eardrums begin to bleed\.$/
-            phrase: '^' + this.ability.castOnYou.replace(/\.$/, '\\.$').replace( /(You)/i, '(?<target>$1)' ),
-        } );
+        let hitPhraseId = null;
+        if ( this.ability.castOnYou ) {
+            hitPhraseId = nanoid();
+            trigger.capturePhrases.push( <CapturePhrase>{
+                phraseId: hitPhraseId,
+                useRegEx: true,
+                requirePreviousPhrase: false,
+                duration: null,
+                // Your eardrums begin to bleed.
+                // /^(?<target>You)r eardrums begin to bleed\.$/
+                phrase: '^' + this.ability.castOnYou.replace( /\.$/, '\\.$' ).replace( /(You)/i, '(?<target>$1)' ),
+            } );
+        }
         let resistPhraseId = nanoid();
         trigger.capturePhrases.push( <CapturePhrase>{
             phraseId: resistPhraseId,
@@ -178,15 +181,18 @@ export class NewTriggerRaidAbilityComponent implements OnInit {
             // /^You resist (?<caster>.+?)\b\s{0,1}'{0,1}s{0,1}\b Void of Suppression!$/
             phrase: `^You resist (?<caster>.+?)\\b\\s{0,1}'{0,1}s{0,1}\\b ${this.ability.name}!$`,
         } );
-        let hitOtherPhraseId = nanoid();
-        trigger.capturePhrases.push( <CapturePhrase>{
-            phraseId: hitOtherPhraseId,
-            useRegEx: true,
-            requirePreviousPhrase: false,
-            duration: null,
-            // /^Your eardrums begin to bleed\.$/
-            phrase: this.ability.castOnOther.replace( /\.$/, '\\.$' ).replace( /soandso's|soandso\s's|soandso/gmi, '^(?<target>.+?)\\b\\s{0,1}\'{0,1}s{0,1}\\b' ),
-        } );
+        let hitOtherPhraseId = null;
+        if ( this.ability.castOnOther ) {
+            hitOtherPhraseId = nanoid();
+            trigger.capturePhrases.push( <CapturePhrase>{
+                phraseId: hitOtherPhraseId,
+                useRegEx: true,
+                requirePreviousPhrase: false,
+                duration: null,
+                // /^Your eardrums begin to bleed\.$/
+                phrase: this.ability.castOnOther.replace( /\.$/, '\\.$' ).replace( /soandso's|soandso\s's|soandso/gmi, '^(?<target>.+?)\\b\\s{0,1}\'{0,1}s{0,1}\\b' ),
+            } );
+        }
 
         trigger.actions = [];
 
@@ -195,7 +201,7 @@ export class NewTriggerRaidAbilityComponent implements OnInit {
         if ( this.recastTimerOverlayId && this.recastDelay > 0 ) {
             
             let act = <TriggerAction>{
-                phrases: [ castingPhraseId, hitOtherPhraseId, hitPhraseId, resistPhraseId ],
+                phrases: [ castingPhraseId ],
                 actionType: ActionTypes.Countdown,
                 overlayId: this.recastTimerOverlayId,
                 duration: this.recastDelay,
@@ -206,6 +212,14 @@ export class NewTriggerRaidAbilityComponent implements OnInit {
                 timerBackgroundColor: ColorUtility.FromHex( '#f57f17' ).darken( 0.93 ).toString( 0.75 ),
                 restartBehavior: TimerRestartBehaviors.RestartTimer,
             };
+
+            if ( hitPhraseId ) {
+                act.phrases.push( hitPhraseId );
+            }
+            if ( hitOtherPhraseId ) {
+                act.phrases.push( hitOtherPhraseId );
+            }
+            act.phrases.push( resistPhraseId );
 
             act.endEarlyPhrases = [];
             act.endEarlyPhrases.push( <Phrase>{
