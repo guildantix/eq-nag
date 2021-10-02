@@ -366,6 +366,8 @@ class Trigger {
     useCooldown = false;
     /** @type {number} */
     cooldownDuration = 0;
+    /** @type {boolean} */
+    enabled = true;
 }
 
 class BaseFileModel {
