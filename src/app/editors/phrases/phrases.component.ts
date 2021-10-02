@@ -29,7 +29,8 @@ export class PhrasesComponent implements OnInit {
     public addPhrase(): void {
         let phrase: Phrase = new Phrase();
         phrase.phraseId = nanoid();
-        this.phrases?.push( phrase );
+        this.phrases = this.phrases?.length > 0 ? this.phrases : [];
+        this.phrases.push( phrase );
         this.phrasesChange.emit( this.phrases );
         this.phrasesTable?.renderRows();
     }
