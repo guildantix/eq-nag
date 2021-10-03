@@ -47,9 +47,25 @@ function _remove( array, predicate, removed ) {
     return -1;
 }
 
+/**
+ * Enumerates through the givne dictionary, executing predicate for each item.
+ * 
+ * @param {Record<string, T>} dictionary The dictionary object.
+ * @param {(item: T, key: string) => void} fn Predicate executed on each item.
+ * @template T
+ */
+function _enumerateDictionary(dictionary, fn) {
+    for ( let key in dictionary ) {
+        if ( dictionary.hasOwnProperty( key ) ) {
+            fn( dictionary[ key ], key );
+        }
+    }
+}
+
 let ArrayUtilities = {
     remove: remove,
     findIndex: findIndex,
+    enumerateDictionary: _enumerateDictionary,
 };
 
 module.exports = ArrayUtilities;
