@@ -3,6 +3,7 @@ const ForwardRef = require( './forward-ref' );
 const OverlayDatabaseStore = require( "./data/overlay-database" );
 const UserPreferencesStore = require( "./data/user-preferences" );
 const { OverlayWindow } = require( "./data/models/overlay-window" );
+const ArrayUtilities = require( "./utilities/arrays" );
 
 /** @type {Record<string, {window: BrowserWindow, interval: NodeJS.Timer}>} */
 var overlayDictionary = {};
@@ -200,6 +201,8 @@ class WindowManager {
                 width: 400,
                 height: 225,
                 frame: false,
+                resizable: false,
+                movable: true,
                 webPreferences: {
                     nodeIntegration: true,
                     devTools: app.isDev(),
@@ -209,9 +212,25 @@ class WindowManager {
             overlayMoveDialog.once( 'dom-read', () => {
                 
             } );
+
+            ArrayUtilities.enumerateDictionary( overlayDictionary, ( item, key ) => clearInterval( item.interval ) );
+            let moveInterval = setInterval( () => {
+                overlayMoveDialog.setAlwaysOnTop( true, "screen-saver" );
+            }, 500 );
+
+            overlayMoveDialog.on( 'close', function () {
+                clearInterval( moveInterval );
+                ArrayUtilities.enumerateDictionary( overlayDictionary, ( item, key ) => {
+                    item.interval = setInterval( () => {
+                        item.window.setAlwaysOnTop( true, "screen-saver" )
+                    }, 1000 );
+                } );
+            } );
+
             overlayMoveDialog.once( "ready-to-show", () => {
                 overlayMoveDialog.show();
             } );
+
         } );
         
         ipcMain.on( 'overlay:broadcast', ( event, model ) => {
@@ -422,6 +441,7 @@ function loadOverlay( model, overlayDatabase, enableEdit ) {
             devTools: app.isDev(),
         },
         skipTaskbar: true,
+        maximizable: false,
     } );
     if ( model.overlayType === 'FCT' ) {
         overlay.setSize( bounds.width + criticalPadding * 2, bounds.height + criticalPadding * 2 );
@@ -431,10 +451,10 @@ function loadOverlay( model, overlayDatabase, enableEdit ) {
         overlay.loadFile( "./src/electron/threads/overlay.html" );
     }
     overlay.setIgnoreMouseEvents( true );
-    overlay.setAlwaysOnTop( true, "screen" );
+    overlay.setAlwaysOnTop( true, "screen-saver" );
 
     let interval = setInterval( () => {
-        overlay.setAlwaysOnTop( true, "screen" );
+        overlay.setAlwaysOnTop( true, "screen-saver" );
     }, 1000 );
 
     if ( enableEdit ) {
