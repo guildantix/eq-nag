@@ -12,6 +12,8 @@
 
 [Add a buff timer](/eq-nag/guides/add-buff-timer).
 
+[Add a DoT timer](/eq-nag/guides/add-dot-timer).
+
 ## Road Map
 
 ### Currently in Development
