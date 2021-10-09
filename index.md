@@ -1,18 +1,18 @@
 ## Nag Guides
 
-[Adding a character to Nag](/eq-nag/guides/add-character).
+[Adding a character to Nag](/eq-nag/guides/add-character)
 
-[Downloading trigger packages](/eq-nag/guides/download-packages).
+[Downloading trigger packages](/eq-nag/guides/download-packages)
 
-[Searching your triggers](/eq-nag/guides/find-a-trigger).
+[Searching your triggers](/eq-nag/guides/find-a-trigger)
 
-[Disabling specific triggers](/eq-nag/guides/disabling-triggers).
+[Disabling specific triggers](/eq-nag/guides/disabling-triggers)
 
-[Arrange your overlays](/eq-nag/guides/arrange-overlays).
+[Arrange your overlays](/eq-nag/guides/arrange-overlays)
 
-[Add a buff timer](/eq-nag/guides/add-buff-timer).
+[Add a buff timer](/eq-nag/guides/add-buff-timer)
 
-[Add a DoT timer](/eq-nag/guides/add-dot-timer).
+[Add a DoT timer](/eq-nag/guides/add-dot-timer)
 
 ## Download
 
