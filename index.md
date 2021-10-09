@@ -8,6 +8,7 @@
 
 - [X] Fix an ongoing issue when arraigning all overlays that prevents the user from saving their changes.
 - [ ] Creating a self-signed installation certificate.
+- [ ] Adding more organization options to the trigger library.
 - [ ] Quickshare to allow users to quickly share their triggers or installed packages with another player.
 
 ### On the Horizon
