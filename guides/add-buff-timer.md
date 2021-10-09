@@ -1,5 +1,7 @@
 ## Adding a buff timer
 
+Buff timers will only track buffs that you cast and should not trigger from buffs cast by other players.
+
 Buff timers are easy to add with the buff timer wizard.  Start by finding the buff details page on alla and copying the URL.
 
 **_NOTE_** _It is important that you get the spell details and not the spell scroll item. Look for ```spell.html``` in the url.
