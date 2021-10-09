@@ -38,6 +38,7 @@ Download the [portable](https://github.com/guildantix/eq-nag/releases/download/v
 - [ ] Changing the overlay subsystem to render all overlays in the same window.  This may improve performance.
 - [ ] Adding healing done and healing received to the floating combat text.
 - [ ] Overhaul the display engine for floating combat text to enable better animation styles and triggers.
+- [ ] Adding more options to the buff timer wizard.
 
 ### Odds and Ends
 - [ ] Sortable trigger folders.
