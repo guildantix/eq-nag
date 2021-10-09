@@ -14,6 +14,16 @@
 
 [Add a DoT timer](/eq-nag/guides/add-dot-timer).
 
+## Download
+
+The current release version is v0.0.41 and you can find the details [here](https://github.com/guildantix/eq-nag/releases/tag/v0.0.41).
+
+There are two ways to run Nag, via the installer or the portable.  The installer will automatically check for updates when Nag loads.
+
+Download the [installer](https://github.com/guildantix/eq-nag/releases/download/v0.0.41/Antix-Parse-Setup-0.0.41.exe).
+
+Download the [portable](https://github.com/guildantix/eq-nag/releases/download/v0.0.41/antixparse_portable.exe).
+
 ## Road Map
 
 ### Currently in Development
