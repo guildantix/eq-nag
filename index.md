@@ -6,6 +6,8 @@
 
 [Searching your triggers](/eq-nag/guides/find-a-trigger).
 
+[Disabling specific triggers](/eq-nag/guides/disabling-triggers).
+
 ## Road Map
 
 ### Currently in Development
