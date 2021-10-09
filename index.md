@@ -13,3 +13,5 @@
 ### On the Horizon
 - [ ] Adding categories and search features to the package manager. Additionally, segregating installed packages from available packages.
 - [ ] Changing the overlay subsystem to render all overlays in the same window.  This may improve performance.
+- [ ] Adding healing done and healing received to the floating combat text.
+- [ ] Overhaul the display engine for floating combat text to enable better animation styles and triggers.
