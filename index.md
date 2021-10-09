@@ -4,6 +4,8 @@
 
 [Downloading trigger packages](/eq-nag/guides/download-packages).
 
+[Searching your triggers](/eq-nag/guides/find-a-trigger).
+
 ## Road Map
 
 ### Currently in Development
