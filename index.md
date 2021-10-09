@@ -20,3 +20,5 @@
 ### Odds and Ends
 - [ ] Sortable trigger folders.
 - [ ] Default trigger folder sort (None, Alpha, Reverse Alpha)
+
+*Odds and ends can be done at any time*
