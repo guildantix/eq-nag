@@ -2,6 +2,8 @@
 
 Nag triggers consist of 3 basic things: Conditions, Capture Phrases, and Actions.
 
+[snippets](#snippets)
+
 ### Conditions
 
 Conditions are automatic checks that enable or disable a trigger.  These checks are typicall light-weight and performant.  They come in two varieties as of this time: Variable checks and Class checks.
@@ -30,6 +32,9 @@ Ssraeshza Temple|Wakening Land|Wall of Slaughter|Plane of Time B|Timorous Deep
 In the Characters tab, you can specify which class the trigger should be activated for, and at what level.
 
 #### Variable Trigger Actions
+
+<a name="snippets"></a>
+## Capture and Render snippets
 
 ## Advanced Topics
 
