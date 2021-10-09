@@ -1,6 +1,6 @@
 ## Welcome to GitHub Pages
 
-This is a [test](/add-character).
+This is a [test](/eq-nag/add-character).
 
 You can use the [editor on GitHub](https://github.com/guildantix/eq-nag/edit/gh-pages/index.md) to maintain and preview the content for your website in Markdown files.
 
