@@ -1,6 +1,8 @@
-## Road Map
+## Nag Guides
 
-## Road map
+[Adding a character to Nag](/eq-nag/guides/add-character).
+
+## Road Map
 
 ### Currently in Development
 
@@ -11,8 +13,3 @@
 ### On the Horizon
 - [ ] Adding categories and search features to the package manager. Additionally, segregating installed packages from available packages.
 - [ ] Changing the overlay subsystem to render all overlays in the same window.  This may improve performance.
-
-## Help Directory
-
-[Adding a character to Nag](/eq-nag/guides/add-character).
-
