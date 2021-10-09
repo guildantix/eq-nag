@@ -12,7 +12,7 @@ Conditions are automatic checks that enable or disable a trigger.  These checks 
 
 On the Capture tab, in the Conditions group, a trigger can have multiple variable checks which, if failed, disable the execution of Capture Phrases. There are two built-in variable types (SpellBeingCast and CurrentZone), but more can be added (refer to the Variable trigger actions below).  A variable condition allows four operators: 
 
-  Operator          | Details
+  Operator&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| Details
   :------------     | :-------------
   Is empty          | Returns true when the specified variable has no value.
   Equals            | Returns true when the specified variable exactly equals the given value(s).
@@ -64,7 +64,7 @@ In the Characters tab, you can specify which class the trigger should be activat
 
   Because latency is a thing, behind the scenes each variable can contain multiple values that are stored in an array.  When a check is performed, the operators work as detailed here:
 
-  Operator          | Details
+  Operator&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| Details
   :------------     | :-------------
   Is empty          | Checks if the array length is greater than 0 and returns false if that condition is true.
   Equals            | Checks if the array contains an element that matches exactly one of the given value(s).
