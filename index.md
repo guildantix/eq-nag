@@ -24,6 +24,10 @@ Download the [installer](https://github.com/guildantix/eq-nag/releases/download/
 
 Download the [portable](https://github.com/guildantix/eq-nag/releases/download/v0.0.41/antixparse_portable.exe).
 
+## Discord
+
+Join our discord server: [https://discord.gg/e3Z8PR8EXE](https://discord.gg/e3Z8PR8EXE)
+
 ## Road Map
 
 ### Currently in Development
