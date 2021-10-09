@@ -36,10 +36,6 @@ In the Characters tab, you can specify which class the trigger should be activat
 <a name="snippets"></a>
 ## Capture and Render snippets
 
-## Advanced Topics
-
-#### Variable storage mechanics
-
 ##### Capture Phrase snippets
 
   Snippet&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| Description | Alt
@@ -60,6 +56,11 @@ In the Characters tab, you can specify which class the trigger should be activat
   {S\[0-9\]}        | When matched with a capture phrase, renders the matched value in text and labels. | 
   {N\[0-9\]}        | When matched with a capture phrase, renders the matched value in text and labels. | 
   {L}               | Renders the matched log entry in text and labels. | 
+
+
+## Advanced Topics
+
+#### Variable storage mechanics
 
   Because latency is a thing, behind the scenes each variable can contain multiple values that are stored in an array.  When a check is performed, the operators work as detailed here:
 
