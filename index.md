@@ -15,3 +15,7 @@
 - [ ] Changing the overlay subsystem to render all overlays in the same window.  This may improve performance.
 - [ ] Adding healing done and healing received to the floating combat text.
 - [ ] Overhaul the display engine for floating combat text to enable better animation styles and triggers.
+
+### Odds and Ends
+- [ ] Sortable trigger folders.
+- [ ] Default trigger folder sort (None, Alpha, Reverse Alpha)
