@@ -39,7 +39,28 @@ In the Characters tab, you can specify which class the trigger should be activat
 ## Advanced Topics
 
 #### Variable storage mechanics
+
+##### Capture Phrase snippets
+
+  Snippet&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| Description | Alt
+  :------------     | :------------- | :-------------
+  {TS}              | Matches any duration, and uses that value as the duration for any timers/countdowns that are triggered from the capture phrase. | 
+  {C}               | Matches your current character's name exactly. | ${Character}
+  {S\[0-9\]}        | Matches any string, and can be used in alert messages or timer labels. | 
+  {N\[0-9\]}        | Matches any number, and can be used in alert messages or timer labels. | 
   
+
+##### Literal snippets
+
+  Snippet&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| Description | Alt
+  :------------     | :------------- | :-------------
+  {TS}              | Matches any number or duration, and uses that value as the duration for any timers/countdowns that are triggered from the capture phrase. | 
+  {C}               | Matches your current character's name exactly. | ${Character}
+  +{_CounterName_}  | Prints the current value of _CounterName_. | 
+  {S\[0-9\]}        | When matched with a capture phrase, renders the matched value in text and labels. | 
+  {N\[0-9\]}        | When matched with a capture phrase, renders the matched value in text and labels. | 
+  {L}               | Renders the matched log entry in text and labels. | 
+
   Because latency is a thing, behind the scenes each variable can contain multiple values that are stored in an array.  When a check is performed, the operators work as detailed here:
 
   Operator          | Details
