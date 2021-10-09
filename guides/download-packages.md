@@ -1,6 +1,6 @@
 ## Downloading Trigger Packages
 
-Start by navigating to the Triggers tab and clicking on the blue \[Trigger Library\] button.
+Start by navigating to the Triggers tab and clicking on the blue **\[Trigger Library\]** button.
 
 ![image](https://user-images.githubusercontent.com/66176124/136665955-e9b25032-2e33-4ee4-bafd-43b32be7585d.png)
 
@@ -22,6 +22,6 @@ If you want to know more about a specific trigger, hover over the note icon.
 
 ![image](https://user-images.githubusercontent.com/66176124/136666125-45116304-e6f9-4b6e-a854-9daf60467a67.png)
 
-At the bottom, often "below the fold", you'll find the green \[Install Package\] button and the package update history.
+At the bottom, often "below the fold", you'll find the green **\[Install Package\]** button and the package update history.
 
 ![image](https://user-images.githubusercontent.com/66176124/136666182-a33a95ed-001a-47fe-be54-56843979a1aa.png)
