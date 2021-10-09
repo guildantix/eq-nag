@@ -10,6 +10,8 @@
 
 [Arrange your overlays](/eq-nag/guides/arrange-overlays).
 
+[Add a buff timer](/eq-nag/guides/add-buff-timer).
+
 ## Road Map
 
 ### Currently in Development
