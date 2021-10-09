@@ -8,6 +8,8 @@
 
 [Disabling specific triggers](/eq-nag/guides/disabling-triggers).
 
+[Arrange your overlays](/eq-nag/guides/arrange-overlays).
+
 ## Road Map
 
 ### Currently in Development
