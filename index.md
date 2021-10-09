@@ -2,6 +2,8 @@
 
 [Adding a character to Nag](/eq-nag/guides/add-character).
 
+[Downloading trigger packages](/eq-nag/guides/download-packages).
+
 ## Road Map
 
 ### Currently in Development
