@@ -45,6 +45,6 @@ In the Characters tab, you can specify which class the trigger should be activat
   Operator          | Details
   :------------     | :-------------
   Is empty          | Checks if the array length is greater than 0 and returns false if that condition is true.
-  Equals            | Checks if the array contains the exact value.
-  Is not equal to   | Checks if the array contains the exact value, and if found returns false.
+  Equals            | Checks if the array contains an element that matches exactly one of the given value(s).
+  Is not equal to   | Checks if the array contains the exact value(s), and if found returns false.
   Contains          | Checks if the array contains an element that matches the given value. The match is not case-sensitive.
