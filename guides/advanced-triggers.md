@@ -125,9 +125,11 @@ There are many different actions available in Nag.
   Clipboard         | Stores a value in the clipboard that they player can paste into the game or other applicaton.
   Beneficial Timer  | Displays a beneficial/buff timer in a timer overlay.
   
-##### Display Text Action
+#### Display Text Action
 
 ![image](https://user-images.githubusercontent.com/66176124/136703706-c9e29b0a-b035-4a7b-8ad1-bb8e4f5eb645.png)
+
+###### Display Text Action Properties
 
   Setting Name &nbsp;&nbsp;&nbsp;&nbsp;| Description
   :------------       | :-------------
