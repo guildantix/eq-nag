@@ -23,7 +23,7 @@
     <ol>
       <li><a href="#action-types">Action Types</a>
         <ol>
-          <li><a href="#display-text-action">Display Text</a>
+          <li><a href="#display-text-action">Display Text</a></li>
         </ol>
       </li>
     </ol>
