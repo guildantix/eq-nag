@@ -22,6 +22,9 @@
 
 Nag triggers consist of 3 basic things: Conditions, Capture Phrases, and Actions.
 
+
+
+
 ### Conditions
 
 Conditions are automatic checks that enable or disable a trigger.  These checks are typicall light-weight and performant.  They come in two varieties as of this time: Variable checks and Class checks.
@@ -39,10 +42,10 @@ On the Capture tab, in the Conditions group, a trigger can have multiple variabl
   
 ##### _A note on condition values_
 
-If the condition should pass for multiple values, for example if a Raid Ability is cast by mobs that are in Ssraeshza Temple, Wakening Land, Wall of Slaughter, Plane of Time B, and Timorous Deep, then the value for that check should be 
+If the condition should pass for multiple values, for example if a Raid Ability is cast by mobs that are in Ssraeshza Temple, Wakening Land, Wall of Slaughter, Plane of Time B, and Timorous Deep, then the value for that check should be as shown below.  Note that Plane of Time B is just "Plane of Time".  The trigger that keeps track of the player's zone uses the log entry: You have entered ZoneName.  This zone name isn't always 100% predictable.
 
 ```
-Ssraeshza Temple|Wakening Land|Wall of Slaughter|Plane of Time B|Timorous Deep
+Ssraeshza Temple|Wakening Land|Wall of Slaughter|Plane of Time|Timorous Deep
 ```
 
 #### Character Classes
@@ -50,10 +53,41 @@ Ssraeshza Temple|Wakening Land|Wall of Slaughter|Plane of Time B|Timorous Deep
 In the Characters tab, you can specify which class the trigger should be activated for, and at what level.
 
 
+
+
 ### Capture Phrases
 
+<!--- ![image](https://user-images.githubusercontent.com/66176124/136701658-a83a9400-c25f-4781-8ac5-f8e30d046c93.png) --->
 
-#### Variable Trigger Actions
+Capture phrases can be either simple text or regular expressions.  These are the phrases that are watched for in the log file.
+
+There are several options when setting up capture phrase(s): capture method, cooldown, and the capture phrases.
+
+#### Capture Method
+
+  Capture Method&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| Details
+  :------------     | :-------------
+  Any Match         | Actions can be triggered from any capture phrase, at any time.  Each capture phrase is parsed on every log entry when this trigger is active.
+  Sequential        | Capture phrases must be matched in order, meaning that any actions attached to the no. 2 phrase cannot be executed until the first phrase has been found.
+  Concurrent        | Not implemented yet. All capture phrases must match before actions are executed.
+
+#### Cooldown
+
+Once a capture phrase has been parsed/executed, a cooldown begins that will prevent any further capture phrases from being checked for the specified duration.
+
+#### Capture Phrases Grid
+
+To add a new capture phrase to a trigger, click on the green **\[+ New\]** button on the group header.
+
+The grid columns show, from left to right, the control to change a phrase's position in the grid, the position number, the capture phrase text, a checkbox to enable regular expresions, and the delete button.
+
+
+
+
+<!--- #### Variable Trigger Actions --->
+
+
+
 
 ## Advanced Ramblings
 
@@ -81,7 +115,6 @@ These snippets can be used to easily accomplish commonly repeated tasks in eithe
   {S\[0-9\]}        | When matched with a capture phrase, renders the matched value in text and labels. | 
   {N\[0-9\]}        | When matched with a capture phrase, renders the matched value in text and labels. | 
   {L}               | Renders the matched log entry in text and labels. | 
-
 
 #### Variable storage mechanics
 
