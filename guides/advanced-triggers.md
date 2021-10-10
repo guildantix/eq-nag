@@ -318,7 +318,73 @@ Allows the user to specify capture phrases that will end the timer early.  Like 
 ![image](https://user-images.githubusercontent.com/66176124/136706713-5f10b9ab-e821-4329-a7ba-14b290adcf46.png)
 
 #### Countdown Action
-  
+
+###### Countdown: Timer
+
+![image](https://user-images.githubusercontent.com/66176124/136706799-3ad54d3b-33bd-4ddb-8264-f661b07cb4eb.png)
+
+###### Countdown: Timer Properties
+
+  Property &nbsp;&nbsp;&nbsp;&nbsp;| Description
+  :------------       | :-------------
+  Overlay window      | The overlay to display this DoT timer.
+  Timer name          | The text for the timer label. This accepts regex capture groups and snippets.
+  Timer duration      | The duration of the timer.
+  Hide Timer          | If enabled, the timer is hidden by default.  
+  Hide conditions     | If conditions are provided, the timer will be **visible** unless _any_ condition passes.  Hide conditions will check values against the _named_ capture groups in the capture phrase.  To edit the conditions, click on the blue Conditions link.
+  Restart behavior    | How should the system handle restarting the timer.
+  Show time remaining | If true, the time remaining will be rendered in the timer label, overriding the preferences on the overlay window.
+  Repeat timer        | If true, will repeat the timer for the specified number of repeats.
+  Use color           | If set, overrides the default color in the overlay window preferences.
+  Timer icon          | Allows the user to select an icon for the timer.
+
+###### Countdown: Timer Ending
+
+![image](https://user-images.githubusercontent.com/66176124/136706837-7d7046e7-c264-4c09-9f06-de959434b0ab.png)
+
+###### Countdown: Timer Ending Properties
+
+  Property &nbsp;&nbsp;&nbsp;&nbsp;| Description
+  :------------         | :-------------
+  Notify                | If enabled, with a duration specified, will notify the player when the timer is ending.
+  Notify duration       | When the timer is down to #duration, notifications will be executed.
+  Change timer color    | Changes the timer color when timer is at or below #duration.
+  Display text          | When enabled, allows the user to specify text to display to the user. This accepts regex capture groups and snippets.
+  Text overlay window   | The overlay window to render the text.
+  Display text duration | The duration to display text.
+  Speak phrase          | When enabled, allows the user to specify text for the TTS to say to the user. This accepts regex capture groups and snippets.
+  Interrupt speech      | When enabled, if the TTS is currently saying something, that will be interrupted.
+  Send to clipboard     | Sends the specified value to the clipboard. This accepts regex capture groups and snippets.
+  Play audio            | When enabled, plays the selected audio clip when timer is at #duration.
+  Select new audio file | Allows the user to add a new audio file to the list of options.
+
+###### Countdown: Timer Ended
+
+![image](https://user-images.githubusercontent.com/66176124/136706892-daf23658-043d-449f-99a9-c64e67f3fbd4.png)
+
+###### Countdown: Timer Ended Properties
+
+  Property &nbsp;&nbsp;&nbsp;&nbsp;| Description
+  :------------         | :-------------
+  Notify when ended     | When enabled, will keep the timer alive for the specified duration.
+  Duration              | The duration to keep the timer alive.
+  Timer color           | When the timer ends, changes the color of the timer.
+  Execute Actions       | When enabled, allows the user to specify actions to execute when the timer ends.
+  Display text          | When enabled, allows the user to specify text to display to the user. This accepts regex capture groups and snippets.
+  Text overlay window   | The overlay window to render the text.
+  Display text duration | The duration to display text.
+  Speak phrase          | When enabled, allows the user to specify text for the TTS to say to the user. This accepts regex capture groups and snippets.
+  Interrupt speech      | When enabled, if the TTS is currently saying something, that will be interrupted.
+  Send to clipboard     | Sends the specified value to the clipboard. This accepts regex capture groups and snippets.
+  Play audio            | When enabled, plays the selected audio clip when timer is at #duration.
+  Select new audio file | Allows the user to add a new audio file to the list of options.
+
+###### Countdown: Timer End Early
+
+Allows the user to specify capture phrases that will end the timer early.  Like capture phrases, these are checked against new log entries but are only active when the timer is active.
+
+![image](https://user-images.githubusercontent.com/66176124/136706917-1d029bcd-3cb0-49fb-9bc1-67334a8228c8.png)
+
 #### Store Variable Action
   
 #### Clear Variable Action
