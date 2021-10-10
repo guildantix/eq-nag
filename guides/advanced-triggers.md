@@ -45,7 +45,8 @@
   </li>
 </ol>
 
-Nag triggers consist of 3 basic things: Conditions, Capture Phrases, and Actions.
+<!--- Nag triggers consist of 3 basic things: Conditions, Capture Phrases, and Actions. --->
+All Nag triggers have three basic properties: the conditions, the capture phrases, and the action types.
 
 
 
