@@ -389,7 +389,17 @@ Allows the user to specify capture phrases that will end the timer early.  Like 
 
 #### Store Variable Action
 
-Variables can be used by other triggers as conditions, rendered in capture phrases, or rendered in literals. (Literals are any textbox entries where text is being read or displayed to the user. ex: Timer labels or Display Text properties)
+Variables are values used by other triggers in three ways.
+
+  Use &nbsp;&nbsp;&nbsp;&nbsp;| Description
+  :------------         | :-------------
+  Conditions | The value of the variable can be checked as a condition to enable or disable triggers.
+  Capture Phrases | Capture phrases can use variable values in ther definition.  (To use a variable value in a capture phrase, use this format ```${VariableName}```.)
+  Literals | Literals are the rendered text that a player sees in any Display Text or Timer Label. They can also be used by the TTS engine.
+
+<!---
+Variables are values used by other triggers as conditions, rendered in capture phrases, or rendered in literals. Literals are any textbox entries where text is being read or displayed to the user. (ex: Timer labels or Display Text properties.)
+--->
 
 ![image](https://user-images.githubusercontent.com/66176124/136707094-a5375589-5ed8-4ca5-bb9e-86215bb1bf84.png)
 
