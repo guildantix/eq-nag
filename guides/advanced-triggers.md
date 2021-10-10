@@ -68,6 +68,9 @@ Ssraeshza Temple|Wakening Land|Wall of Slaughter|Plane of Time|Timorous Deep
 
 #### Character Classes
 
+![image](https://user-images.githubusercontent.com/66176124/136704296-06844534-6434-4c39-853d-acea92a2ebb3.png)
+
+
 In the Characters tab, you can specify which class the trigger should be activated for, and at what level.
 
 
@@ -131,7 +134,7 @@ There are many different actions available in Nag.
 
 ###### Display Text Action Properties
 
-  Setting Name &nbsp;&nbsp;&nbsp;&nbsp;| Description
+  Property &nbsp;&nbsp;&nbsp;&nbsp;| Description
   :------------       | :-------------
   Display Text        | The text to display in an overlay.
   Overlay Window      | The overlay window selected for display.
@@ -144,7 +147,49 @@ There are many different actions available in Nag.
   Custom glow size    | The size of the custom glow. If zero, the overlay defaults for glow and glow size are used.
   Custom font         | Use the specified font. If disabled, the overlay defaults are used.
   Custom font weight  | When a custom font is used, this will set the font weight. If disabled, the overlay defaults are used.
+  
+#### DoT Timer Action
 
+The DoT Timer action has several groups of properties available: Timer, Timer Ending, Timer Ended, Exclude Targets, and End Early.  
+
+DoT timers (and beneficial timers) differ from general timers and countdowns in one major way: they both have their durations modified by the current character's focus effects.  There are also different events and properties that are available on DoT/Beneficial timers.
+
+###### DoT Timer: Timer
+
+![image](https://user-images.githubusercontent.com/66176124/136704417-3cd6a0df-0c28-40f3-9ba8-e2f051b777eb.png)
+
+###### DoT Timer: Timer Properties
+
+  Property &nbsp;&nbsp;&nbsp;&nbsp;| Description
+  :------------       | :-------------
+  Overlay window      | The overlay to display this DoT timer.
+  Timer duration      | The duration of the timer.
+  Restart behavior    | How should the system handle restarting the timer.
+  Show time remaining | If true, the time remaining will be rendered in the timer label, overriding the preferences on the overlay window.
+  Use color           | If set, overrides the default color in the overlay window preferences.
+  Timer icon          | Allows the user to select an icon for the timer.
+  
+###### DoT Timer: Timer Ending
+
+Important note: All of the properties in the event tabs should be hidden until they are enabled by selecting the "Notify" checkbox and giving a duration.
+
+![image](https://user-images.githubusercontent.com/66176124/136704746-668e08e8-3ed6-481f-8bc5-1ed1855475cb.png)
+
+###### DoT Timer: Timer Ending Properties
+
+  Property &nbsp;&nbsp;&nbsp;&nbsp;| Description
+  :------------         | :-------------
+  Notify                | If enabled, with a duration specified, will notify the player when the timer is ending.
+  Notify duration       | When the timer is down to #duration, notifications will be executed.
+  Change timer color    | Changes the timer color when timer is at or below #duration.
+  Display text          | When enabled, allows the user to specify text to display to the user. This accepts regex capture groups and snippets.
+  Text overlay window   | The overlay window to render the text.
+  Display text duration | The duration to display text.
+  Speak phrase          | When enabled, allows the user to specify text for the TTS to say to the user. This accepts regex capture groups and snippets.
+  Interrupt speech      | When enabled, if the TTS is currently saying something, that will be interrupted.
+  Send to clipboard     | Sends the specified value to the clipboard. This accepts regex capture groups and snippets.
+  Play audio            | When enabled, plays the selected audio clip when timer is at #duration.
+  Select new audio file | Allows the user to select add a new audio file to the list of options.
 
 
 
