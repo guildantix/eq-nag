@@ -101,9 +101,11 @@ The grid columns show, from left to right, the control to change a phrase's posi
 
 ## Actions
 
-Actions are executed in response to the parsed capture phrase.  There are many different actions available in Nag.
+Actions are executed in response to the parsed capture phrase.  All triggers have two basic properties, the action type and the trigger phrase.  The "Action Type" dropdown will allow you to select the action to be executed.  The "Trigger on Phrase" dropdown allows you to select 1 or more capture phrases that will trigger the action.
 
 #### Action Types
+
+There are many different actions available in Nag.
 
   Action Type &nbsp;&nbsp;&nbsp;&nbsp;| Details
   :------------     | :-------------
@@ -118,6 +120,24 @@ Actions are executed in response to the parsed capture phrase.  There are many d
   Counter           | Keeps a tally based on the capture phrase.
   Clipboard         | Stores a value in the clipboard that they player can paste into the game or other applicaton.
   Beneficial Timer  | Displays a beneficial/buff timer in a timer overlay.
+  
+##### Display Text
+
+![image](https://user-images.githubusercontent.com/66176124/136703706-c9e29b0a-b035-4a7b-8ad1-bb8e4f5eb645.png)
+
+  Setting Name &nbsp;&nbsp;&nbsp;&nbsp;| Description
+  :------------       | :-------------
+  Display Text        | The text to display in an overlay.
+  Overlay Window      | The overlay window selected for display.
+  Duration            | The duration the text should appear to the player.
+  Custom color        | Displays the text in the given color. If disabled, the overlay defaults are used.
+  Custom size         | Changes the size of the text in the overlay. If disabled, the overlay defaults are used.
+  Custom spacing      | Changes the vertical line spacing for the text. If disabled, the overlay defaults are used.
+  Custom border       | Draws a colored border around the text. If disabled, the overlay defaults are used.
+  Custom glow         | Draws a glow around the text. If disabled, the overlay defaults are used.
+  Custom glow size    | The size of the custom glow. If zero, the overlay defaults for glow and glow size are used.
+  Custom font         | Use the specified font. If disabled, the overlay defaults are used.
+  Custom font weight  | When a custom font is used, this will set the font weight. If disabled, the overlay defaults are used.
 
 
 
