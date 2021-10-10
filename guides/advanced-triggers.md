@@ -24,6 +24,7 @@
       <li><a href="#action-types">Action Types</a>
         <ol>
           <li><a href="#display-text-action">Display Text</a></li>
+          <li><a href="#dot-timer-action">DoT Timer</a></li>
         </ol>
       </li>
     </ol>
