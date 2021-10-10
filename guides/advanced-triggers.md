@@ -32,6 +32,7 @@
           <li><a href="#clear-variable-action">Clear Variable</a></li>
           <li><a href="#counter-action">Counter</a></li>
           <li><a href="#clipboard-action">Clipboard</a></li>
+          <li><a href="#beneficial-timer-action">Beneficial Timer</a></li>
         </ol>
       </li>
     </ol>
@@ -332,7 +333,7 @@ Allows the user to specify capture phrases that will end the timer early.  Like 
 
   Property &nbsp;&nbsp;&nbsp;&nbsp;| Description
   :------------       | :-------------
-  Overlay window      | The overlay to display this DoT timer.
+  Overlay window      | The overlay to display this timer.
   Timer name          | The text for the timer label. This accepts regex capture groups and snippets.
   Timer duration      | The duration of the timer.
   Hide Timer          | If enabled, the timer is hidden by default.  
@@ -471,6 +472,74 @@ The counter action will keep track of the number of times a phrase or phrases we
   Clipboard text  | The text literal that will be sent to the clipboard.
   
 #### Beneficial Timer Action
+
+###### Beneficial Timer: Timer
+
+![image](https://user-images.githubusercontent.com/66176124/136709144-13c90d03-58a7-44a9-9147-4a2ba5705b9b.png)
+
+###### Beneficial Timer: Timer Properties
+
+  Property &nbsp;&nbsp;&nbsp;&nbsp;| Description
+  :------------       | :-------------
+  Overlay window      | The overlay to display this beneficial timer.
+  Timer name          | The text for the timer label. This accepts regex capture groups and snippets.
+  Timer duration      | The duration of the timer.
+  Hide Timer          | If enabled, the timer is hidden by default.  
+  Hide conditions     | If conditions are provided, the timer will be **visible** unless _any_ condition passes.  Hide conditions will check values against the _named_ capture groups in the capture phrase.  To edit the conditions, click on the blue Conditions link.
+  Restart behavior    | How should the system handle restarting the timer.  It's important to know the context of the restart behavior for beneficial timers always includes the target of the spell.  What this means is, when "Restart timer regardless of the name" is selected, Nag still considers buffs on Player 1 and Player 2 to be separate.
+  Show time remaining | If true, the time remaining will be rendered in the timer label, overriding the preferences on the overlay window.
+  Repeat timer        | If true, will repeat the timer for the specified number of repeats.
+  Use color           | If set, overrides the default color in the overlay window preferences.
+  Cast time           | The cast time for the spell, in milliseconds.  This is a required field for beneficial timers.  For instant cast abilities, enter 0 as the value.
+  Timer icon          | Allows the user to select an icon for the timer.
+
+###### Beneficial Timer: Ending
+
+![image](https://user-images.githubusercontent.com/66176124/136709276-522f0ec8-6268-40c6-9361-db7b3dc95955.png)
+
+###### Beneficial Timer: Ending Properties
+
+  Property &nbsp;&nbsp;&nbsp;&nbsp;| Description
+  :------------         | :-------------
+  Notify                | If enabled, with a duration specified, will notify the player when the timer is ending.
+  Notify duration       | When the timer is down to #duration, notifications will be executed.
+  Change timer color    | Changes the timer color when timer is at or below #duration.
+  Display text          | When enabled, allows the user to specify text to display to the user. This accepts regex capture groups and snippets.
+  Text overlay window   | The overlay window to render the text.
+  Display text duration | The duration to display text.
+  Speak phrase          | When enabled, allows the user to specify text for the TTS to say to the user. This accepts regex capture groups and snippets.
+  Interrupt speech      | When enabled, if the TTS is currently saying something, that will be interrupted.
+  Send to clipboard     | Sends the specified value to the clipboard. This accepts regex capture groups and snippets.
+  Play audio            | When enabled, plays the selected audio clip when timer is at #duration.
+  Select new audio file | Allows the user to add a new audio file to the list of options.
+
+###### Beneficial Timer: Ended
+
+![image](https://user-images.githubusercontent.com/66176124/136709312-7208d448-19d1-46da-97a0-9a4c179fc760.png)
+
+###### Beneficial Timer: Ended Properties
+
+  Property &nbsp;&nbsp;&nbsp;&nbsp;| Description
+  :------------         | :-------------
+  Notify when ended     | When enabled, will keep the timer alive for the specified duration.
+  Duration              | The duration to keep the timer alive.
+  Timer color           | When the timer ends, changes the color of the timer.
+  Execute Actions       | When enabled, allows the user to specify actions to execute when the timer ends.
+  Display text          | When enabled, allows the user to specify text to display to the user. This accepts regex capture groups and snippets.
+  Text overlay window   | The overlay window to render the text.
+  Display text duration | The duration to display text.
+  Speak phrase          | When enabled, allows the user to specify text for the TTS to say to the user. This accepts regex capture groups and snippets.
+  Interrupt speech      | When enabled, if the TTS is currently saying something, that will be interrupted.
+  Send to clipboard     | Sends the specified value to the clipboard. This accepts regex capture groups and snippets.
+  Play audio            | When enabled, plays the selected audio clip when timer is at #duration.
+  Select new audio file | Allows the user to add a new audio file to the list of options.
+
+###### Beneficial Timer: End Early
+
+Allows the user to specify capture phrases that will end the timer early.  Like capture phrases, these are checked against new log entries but are only active when the timer is active.
+
+![image](https://user-images.githubusercontent.com/66176124/136709334-b7732c56-bd1f-40fd-9068-8b38c2049715.png)
+
 
 
 
