@@ -19,6 +19,11 @@
       <li><a href="#capture-phrases-grid">Capture Phrases Grid</a></li>
     </ol>
   </li>
+  <li><a href="#actions">Actions</a>
+    <ol>
+      <li><a href="#action-types">Action Types</a></li>
+    </ol>
+  </li>
   <li><a href="#advanced-ramblings">Advanced Ramblings</a>
     <ol>
       <li><a href="#capture-and-render-snippets">Snippets</a></li>
@@ -35,7 +40,6 @@ Nag triggers consist of 3 basic things: Conditions, Capture Phrases, and Actions
 ## Conditions
 
 ![image](https://user-images.githubusercontent.com/66176124/136702770-425e61bc-10c7-4e50-a903-304a9dfcd907.png)
-
 
 Conditions are automatic checks that enable or disable a trigger.  These checks are typicall light-weight and performant.  They come in two varieties as of this time: Variable checks and Class checks.
 
@@ -75,7 +79,7 @@ There are several options when setting up capture phrase(s): capture method, coo
 
 #### Capture Method
 
-  Capture Method&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| Details
+  Capture Method &nbsp;&nbsp;&nbsp;&nbsp;| Details
   :------------     | :-------------
   Any Match         | Actions can be triggered from any capture phrase, at any time.  Each capture phrase is parsed on every log entry when this trigger is active.
   Sequential        | Capture phrases must be matched in order, meaning that any actions attached to the no. 2 phrase cannot be executed until the first phrase has been found.
@@ -94,6 +98,31 @@ The grid columns show, from left to right, the control to change a phrase's posi
 
 
 
+
+## Actions
+
+Actions are executed in response to the parsed capture phrase.  There are many different actions available in Nag.
+
+#### Action Types
+
+  Action Type &nbsp;&nbsp;&nbsp;&nbsp;| Details
+  :------------     | :-------------
+  Display Text      | Displays text in an overlay component.
+  DoT Timer         | Displays a damage of time timer in a timer overlay.
+  Play Audio        | Plays an audio file.
+  Speak             | Uses TTS (Text to speech) synthensis to speak to the player.
+  Timer             | Displays a general timer in a timer overlay. Timers start empty and fills up as the timer nears the end.
+  Countdown         | Displays a genearl countdown in a timer overlay. Countdowns start full and empties as the coundtown nears the end.
+  Store Variable    | Stores a captured value into a variable that can be referenced in other triggers.
+  Clear Variable    | Clears a stored value.
+  Counter           | Keeps a tally based on the capture phrase.
+  Clipboard         | Stores a value in the clipboard that they player can paste into the game or other applicaton.
+  Beneficial Timer  | Displays a beneficial/buff timer in a timer overlay.
+
+
+
+
+
 <!--- #### Variable Trigger Actions --->
 
 
@@ -107,7 +136,7 @@ These snippets can be used to easily accomplish commonly repeated tasks in eithe
 
 ##### Capture Phrase snippets
 
-  Snippet&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| Description | Alt
+  Snippet &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| Description | Alt
   :------------     | :------------- | :-------------
   {TS}              | Matches any duration, and uses that value as the duration for any timers/countdowns that are triggered from the capture phrase. | 
   {C}               | Matches your current character's name exactly. | ${Character}
@@ -117,7 +146,7 @@ These snippets can be used to easily accomplish commonly repeated tasks in eithe
 
 ##### Literal snippets
 
-  Snippet&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| Description | Alt
+  Snippet &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| Description | Alt
   :------------     | :------------- | :-------------
   {TS}              | Matches any number or duration, and uses that value as the duration for any timers/countdowns that are triggered from the capture phrase. | 
   {C}               | Matches your current character's name exactly. | ${Character}
@@ -130,7 +159,7 @@ These snippets can be used to easily accomplish commonly repeated tasks in eithe
 
   Because latency is a thing, behind the scenes each variable can contain multiple values that are stored in an array.  When a check is performed, the operators work as detailed here:
 
-  Operator&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| Details
+  Operator &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| Details
   :------------     | :-------------
   Is empty          | Checks if the array length is greater than 0 and returns false if that condition is true.
   Equals            | Checks if the array contains an element that matches exactly one of the given value(s).
