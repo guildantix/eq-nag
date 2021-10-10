@@ -2,7 +2,7 @@
 
 Nag triggers consist of 3 basic things: Conditions, Capture Phrases, and Actions.
 
-[snippets](#snippets)
+[snippets](#capture-and-render-snippets)
 
 ### Conditions
 
@@ -37,6 +37,8 @@ In the Characters tab, you can specify which class the trigger should be activat
 ## Capture and Render snippets
 
 ##### Capture Phrase snippets
+
+These snippets can be used to easily accomplish commonly repeated tasks in either capture phrases, in timer labels, or in alert texts.
 
   Snippet&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| Description | Alt
   :------------     | :------------- | :-------------
