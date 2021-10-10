@@ -64,7 +64,7 @@ In the Characters tab, you can specify which class the trigger should be activat
 
 ### Capture Phrases
 
-<!--- ![image](https://user-images.githubusercontent.com/66176124/136701658-a83a9400-c25f-4781-8ac5-f8e30d046c93.png) --->
+![image](https://user-images.githubusercontent.com/66176124/136701658-a83a9400-c25f-4781-8ac5-f8e30d046c93.png)
 
 Capture phrases can be either simple text or regular expressions.  These are the phrases that are watched for in the log file.
 
