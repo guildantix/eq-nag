@@ -82,7 +82,7 @@ In the Characters tab, you can specify which class the trigger should be activat
 
 ![image](https://user-images.githubusercontent.com/66176124/136701658-a83a9400-c25f-4781-8ac5-f8e30d046c93.png)
 
-Capture phrases can be either simple text or regular expressions.  These are the phrases that are watched for in the log file.
+Capture phrases can be in simple text or regular expressions.  The capture phrases are matched against log entries and used to execute trigger actions.
 
 There are several options when setting up capture phrase(s): capture method, cooldown, and the capture phrases.
 
@@ -240,9 +240,35 @@ Allows the user to specify capture phrases that will end the DoT timer early.  L
   Select new audio file | Allows the user to add a new audio file to the list of options.
   
 #### Speak Action
-  
+
+![image](https://user-images.githubusercontent.com/66176124/136705810-f380414d-d449-4ba9-8618-56638f556f10.png)
+
+  Property &nbsp;&nbsp;&nbsp;&nbsp;| Description
+  :------------         | :-------------
+  Speak phrase          | The text for the TTS to say to the user. This accepts regex capture groups and snippets.
+  Interrupt speech      | When enabled, if the TTS is currently saying something, that will be interrupted.
+
 #### Timer Action
-  
+
+###### Timer: Timer
+
+![image](https://user-images.githubusercontent.com/66176124/136706045-368b5382-2239-4f44-9615-834ece7d0337.png)
+
+###### Timer: Timer Properties
+
+  Property &nbsp;&nbsp;&nbsp;&nbsp;| Description
+  :------------       | :-------------
+  Overlay window      | The overlay to display this DoT timer.
+  Timer name          | The text for the timer label. This accepts regex capture groups and snippets.
+  Timer duration      | The duration of the timer.
+  Hide Timer          | If enabled, the timer is hidden by default.  
+  Hide conditions     | If conditions are provided, the timer will be **visible** unless _any_ condition passes.  Hide conditions will check values against the _named_ capture groups in the capture phrase.  To edit the conditions, click on the blue Conditions link.
+  Restart behavior    | How should the system handle restarting the timer.
+  Show time remaining | If true, the time remaining will be rendered in the timer label, overriding the preferences on the overlay window.
+  Repeat timer        | If true, will repeat the timer for the specified number of repeats.
+  Use color           | If set, overrides the default color in the overlay window preferences.
+  Timer icon          | Allows the user to select an icon for the timer.
+
 #### Countdown Action
   
 #### Store Variable Action
