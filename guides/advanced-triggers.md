@@ -397,10 +397,6 @@ Variables are values used by other triggers in three ways.
   Capture Phrases | Capture phrases can use variable values in ther definition.  (To use a variable value in a capture phrase, use this format ```${VariableName}```.)
   Literals | Literals are the rendered text that a player sees in any Display Text or Timer Label. They can also be used by the TTS engine.
 
-<!---
-Variables are values used by other triggers as conditions, rendered in capture phrases, or rendered in literals. Literals are any textbox entries where text is being read or displayed to the user. (ex: Timer labels or Display Text properties.)
---->
-
 ![image](https://user-images.githubusercontent.com/66176124/136707094-a5375589-5ed8-4ca5-bb9e-86215bb1bf84.png)
 
 ###### Store Variable Action Properties
@@ -412,6 +408,38 @@ Variables are values used by other triggers as conditions, rendered in capture p
   Loop-back     | If this is enabled, when Nag begins watching a log file, Nag will scan through log entries until the most recent match is found.
   
 #### Clear Variable Action
+
+The clear variable action will clear values from the variable store.  (see: [Variable storage mechanics](#variable-storage-mechanics))
+
+This follows three rules, listed in the order of operation.
+
+ 1. If the clear variable action was triggered by a regular expression capture phrase that includes a named capture group that matches the name of the variable, then the captured value is removed from the variable's array.
+ 2. If the capture phrase does not use a named capture group, and the trigger has a condition that specifes a value for the variable, then the value specified in the trigger conditions is removed from the variable's array.
+ 3. If the first two rules fail, then all values are removed from variable's array.
+
+![image](https://user-images.githubusercontent.com/66176124/136708270-1b315c67-062f-4497-a711-5d9fc91060b0.png)
+
+###### Clear Variable Examples: Spell Interrupted
+
+If the player begins casting Boil Blood, then the value "Boil Blood" will be saved to the SpellBeingCast variable.
+
+In the trigger, there is another Capture Phrase with the regular expression
+
+```
+^Your ${SpellBeingCast} spell is interrupted.
+```
+
+Nag will render this to the following regular expression.
+
+```
+^Your (?<SpellBeingCast>Boil Blood) spell is interrupted.
+```
+
+If the player's spell is interrupted, the first rule is met and the value "Boil Blood" is removed from the SpellBeingCast array.
+
+###### Clear Variable Examples: Spell Succeeded
+
+In the DoT timer trigger for Boil Blood, the first condition is that the array SpellBeingCast contains the value "Boil Blood".  The second action in this Boil Blood trigger is to clear the SpellBeingCast variable after the first tick of damage is received.  Because the capture phrase does not include a capture group named SpellBeingCast, rule 2 is used and Boil Blood is removed from the SpellBeingCast array.
   
 #### Counter Action
   
