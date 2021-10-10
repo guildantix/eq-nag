@@ -215,6 +215,18 @@ Important note: All of the properties in the event tabs should be hidden until t
   Play audio            | When enabled, plays the selected audio clip when timer is at #duration.
   Select new audio file | Allows the user to select add a new audio file to the list of options.
 
+###### DoT Timer: Exclude Targets
+
+Allows the user to specify targets to exclude from executing dot timers.  Like capture phrases, you can use simple text or regular expressions.  Unlike capture phrases, these are only executed against the name of the target of the DoT.
+
+![image](https://user-images.githubusercontent.com/66176124/136705436-f49efb4b-09cd-4f09-aebd-da9377971548.png)
+
+###### DoT Timer: End Early
+
+Allows the user to specify capture phrases that will end the DoT timer early.  Like capture phrases, these are checked against new log entries but are only active when the DoT timer is active.
+
+
+
 
 
 
