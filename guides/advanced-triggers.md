@@ -416,7 +416,7 @@ The clear variable action will clear values from the variable store.  (see: [Var
 
 This follows three rules, listed in the order of operation.
 
- 1. If the clear variable action was triggered by a regular expression capture phrase that includes a named capture group that matches the name of the variable, then the captured value is removed from the variable's array.
+ 1. If the clear variable action that, was triggered by a regular expression capture phrase, the phrase includes a named capture group that matches the name of the variable, then the captured value is removed from the variable's array.
  2. If the capture phrase does not use a named capture group, and the trigger has a condition that specifes a value for the variable, then the value specified in the trigger conditions is removed from the variable's array.
  3. If the first two rules fail, then all values are removed from variable's array.
 
@@ -426,23 +426,23 @@ This follows three rules, listed in the order of operation.
 
 If the player begins casting Boil Blood, then the value "Boil Blood" will be saved to the SpellBeingCast variable.
 
-In the trigger, there is another Capture Phrase with the regular expression
+In the trigger's Capture Phrases, there is another phrase with the definition:
 
 ```
-^Your ${SpellBeingCast} spell is interrupted.
+^Your ${SpellBeingCast} spell is interrupted\.$
 ```
 
-Nag will render this to the following regular expression.
+Nag will render this as the following regular expression:
 
 ```
-^Your (?<SpellBeingCast>Boil Blood) spell is interrupted.
+^Your (?<SpellBeingCast>Boil Blood) spell is interrupted\.$
 ```
 
 If the player's spell is interrupted, the first rule is met and the value "Boil Blood" is removed from the SpellBeingCast array.
 
 ###### Clear Variable Examples: Spell Succeeded
 
-In the DoT timer trigger for Boil Blood, the first condition is that the array SpellBeingCast contains the value "Boil Blood".  The second action in this Boil Blood trigger is to clear the SpellBeingCast variable after the first tick of damage is received.  Because the capture phrase does not include a capture group named SpellBeingCast, rule 2 is used and Boil Blood is removed from the SpellBeingCast array.
+In the DoT timer trigger named Boil Blood, the first condition is that the variable **SpellBeingCast** contains the value "Boil Blood".  In that trigger's Actions tab, the second action is to clear the SpellBeingCast variable.  This action is triggered after the target has taken their first tick of damage from Boil Blood.  Because the capture phrase does not include a capture group named SpellBeingCast, rule 2 is used and the value "Boil Blood" is removed from the SpellBeingCast variable.
   
 #### Counter Action
 
