@@ -1,8 +1,26 @@
 ## Advanced Trigger Mechanics
 
-Nag triggers consist of 3 basic things: Conditions, Capture Phrases, and Actions.
+<!---
+<ol></ol>
+<li><a href=""></a></li>
+--->
 
-[snippets](#capture-and-render-snippets)
+<ol>
+  <li><a href="#conditions">Conditions</a>
+    <ol>
+      <li><a href="#variable-conditions">Variable Conditions</a></li>
+      <li><a href="#character-classes">Character Classes</a></li>
+    </ol>
+  </li>
+  <li><a href="advanced-ramblings">Advanced Ramblings</a>
+    <ol>
+      <li><a href="capture-and-render-snippets">Snippets</a></li>
+      <li><a href="variable-storage-mechanics">Variable storage mechanics</a></li>
+    </ol>
+  </li>
+</ol>
+
+Nag triggers consist of 3 basic things: Conditions, Capture Phrases, and Actions.
 
 ### Conditions
 
@@ -31,14 +49,19 @@ Ssraeshza Temple|Wakening Land|Wall of Slaughter|Plane of Time B|Timorous Deep
 
 In the Characters tab, you can specify which class the trigger should be activated for, and at what level.
 
+
+### Capture Phrases
+
+
 #### Variable Trigger Actions
 
-<a name="snippets"></a>
-## Capture and Render snippets
+## Advanced Ramblings
 
-##### Capture Phrase snippets
+### Capture and Render snippets
 
 These snippets can be used to easily accomplish commonly repeated tasks in either capture phrases, in timer labels, or in alert texts.
+
+##### Capture Phrase snippets
 
   Snippet&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| Description | Alt
   :------------     | :------------- | :-------------
@@ -59,8 +82,6 @@ These snippets can be used to easily accomplish commonly repeated tasks in eithe
   {N\[0-9\]}        | When matched with a capture phrase, renders the matched value in text and labels. | 
   {L}               | Renders the matched log entry in text and labels. | 
 
-
-## Advanced Topics
 
 #### Variable storage mechanics
 
