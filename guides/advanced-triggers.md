@@ -25,6 +25,7 @@
         <ol>
           <li><a href="#display-text-action">Display Text</a></li>
           <li><a href="#dot-timer-action">DoT Timer</a></li>
+          <li><a href="#play-audio-action">Play Audio</a></li>
         </ol>
       </li>
     </ol>
@@ -190,7 +191,7 @@ Important note: All of the properties in the event tabs should be hidden until t
   Interrupt speech      | When enabled, if the TTS is currently saying something, that will be interrupted.
   Send to clipboard     | Sends the specified value to the clipboard. This accepts regex capture groups and snippets.
   Play audio            | When enabled, plays the selected audio clip when timer is at #duration.
-  Select new audio file | Allows the user to select add a new audio file to the list of options.
+  Select new audio file | Allows the user to add a new audio file to the list of options.
   
 ###### DoT Timer: Timer Ended
 
@@ -213,7 +214,7 @@ Important note: All of the properties in the event tabs should be hidden until t
   Interrupt speech      | When enabled, if the TTS is currently saying something, that will be interrupted.
   Send to clipboard     | Sends the specified value to the clipboard. This accepts regex capture groups and snippets.
   Play audio            | When enabled, plays the selected audio clip when timer is at #duration.
-  Select new audio file | Allows the user to select add a new audio file to the list of options.
+  Select new audio file | Allows the user to add a new audio file to the list of options.
 
 ###### DoT Timer: Exclude Targets
 
@@ -225,6 +226,34 @@ Allows the user to specify targets to exclude from executing dot timers.  Like c
 
 Allows the user to specify capture phrases that will end the DoT timer early.  Like capture phrases, these are checked against new log entries but are only active when the DoT timer is active.
 
+![image](https://user-images.githubusercontent.com/66176124/136705754-6950e819-37ae-4ae7-ba23-a666c868d357.png)
+  
+#### Play Audio Action
+
+![image](https://user-images.githubusercontent.com/66176124/136705644-38c2bbba-40fb-48d6-8a89-23ef702d5147.png)
+
+###### Play Audio Properties
+
+  Property &nbsp;&nbsp;&nbsp;&nbsp;| Description
+  :------------         | :-------------
+  Play audio            | Plays the selected audio clip.
+  Select new audio file | Allows the user to add a new audio file to the list of options.
+  
+#### Speak Action
+  
+#### Timer Action
+  
+#### Countdown Action
+  
+#### Store Variable Action
+  
+#### Clear Variable Action
+  
+#### Counter Action
+  
+#### Clipboard Action
+  
+#### Beneficial Timer Action
 
 
 
