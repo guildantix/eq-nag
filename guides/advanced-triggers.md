@@ -26,6 +26,7 @@
           <li><a href="#display-text-action">Display Text</a></li>
           <li><a href="#dot-timer-action">DoT Timer</a></li>
           <li><a href="#play-audio-action">Play Audio</a></li>
+          <li><a href="#timer-action">Timer</a></li>
         </ol>
       </li>
     </ol>
