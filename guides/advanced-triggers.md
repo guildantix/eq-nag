@@ -442,8 +442,30 @@ If the player's spell is interrupted, the first rule is met and the value "Boil 
 In the DoT timer trigger for Boil Blood, the first condition is that the array SpellBeingCast contains the value "Boil Blood".  The second action in this Boil Blood trigger is to clear the SpellBeingCast variable after the first tick of damage is received.  Because the capture phrase does not include a capture group named SpellBeingCast, rule 2 is used and Boil Blood is removed from the SpellBeingCast array.
   
 #### Counter Action
+
+The counter action will keep track of the number of times a phrase or phrases were matched in the log.
+
+![image](https://user-images.githubusercontent.com/66176124/136708646-17942e32-d45b-4c94-89d5-267eaa05a6f6.png)
+
+![image](https://user-images.githubusercontent.com/66176124/136708778-052a81a6-bc8c-4e29-b73d-3dbead4fb36f.png)
+
+#### Counter Action Properties
+  
+  Property &nbsp;&nbsp;&nbsp;&nbsp;| Description
+  :------------     | :-------------
+  Counter name      | Assigns a name to the counter so that it can be rendered to literals using ```+{CounterName}```.
+  Reset duration    | If the specified duration has passed since the last increment, then the counter is reset.  Leave duration at 0 to never reset the counter.
+  Reset conditions  | Allows the user to add phrases that, when matched in the log, will forcibly reset the counter.
   
 #### Clipboard Action
+
+![image](https://user-images.githubusercontent.com/66176124/136708803-be709a2d-78cc-4a90-8ab8-e4b024a72fec.png)
+  
+#### Clipboard Action Properties
+
+  Property &nbsp;&nbsp;&nbsp;&nbsp;| Description
+  :------------   | :-------------
+  Clipboard text  | The text literal that will be sent to the clipboard.
   
 #### Beneficial Timer Action
 
