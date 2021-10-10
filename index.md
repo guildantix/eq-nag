@@ -16,7 +16,7 @@
 
 ## Documentation
 
-[Advanced Trigger Mechanics](/eq-nag/guides/advanced-trigger-mechanics)
+[Advanced Trigger Mechanics](/eq-nag/guides/advanced-triggers)
 
 ## Download
 
