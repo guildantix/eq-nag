@@ -32,7 +32,10 @@ Nag triggers consist of 3 basic things: Conditions, Capture Phrases, and Actions
 
 
 
-### Conditions
+## Conditions
+
+![image](https://user-images.githubusercontent.com/66176124/136702770-425e61bc-10c7-4e50-a903-304a9dfcd907.png)
+
 
 Conditions are automatic checks that enable or disable a trigger.  These checks are typicall light-weight and performant.  They come in two varieties as of this time: Variable checks and Class checks.
 
