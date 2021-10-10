@@ -28,6 +28,7 @@
           <li><a href="#play-audio-action">Play Audio</a></li>
           <li><a href="#timer-action">Timer</a></li>
           <li><a href="#countdown-action">Countdown</a></li>
+          <li><a href="#store-variable-action">Store Variable</a></li>
         </ol>
       </li>
     </ol>
