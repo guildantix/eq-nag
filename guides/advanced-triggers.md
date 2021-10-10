@@ -49,7 +49,7 @@ Nag triggers consist of 3 basic things: Conditions, Capture Phrases, and Actions
 
 ![image](https://user-images.githubusercontent.com/66176124/136702770-425e61bc-10c7-4e50-a903-304a9dfcd907.png)
 
-Conditions are automatic checks that enable or disable a trigger.  These checks are typicall light-weight and performant.  They come in two varieties as of this time: Variable checks and Class checks.
+Conditions are automatic checks that enable or disable a trigger.  These checks are typicall light-weight and performant.  They come in two varieties as of this time: [Variable checks](#store-variable-action) and [Class](#character-classes) checks.
 
 #### Variable Conditions
 
@@ -387,6 +387,18 @@ Allows the user to specify capture phrases that will end the timer early.  Like 
 ![image](https://user-images.githubusercontent.com/66176124/136706917-1d029bcd-3cb0-49fb-9bc1-67334a8228c8.png)
 
 #### Store Variable Action
+
+Variables can be used by other triggers as conditions, rendered in capture phrases, or rendered in literals. (Literals are any textbox entries where text is being read or displayed to the user. ex: Timer labels or Display Text properties)
+
+![image](https://user-images.githubusercontent.com/66176124/136707094-a5375589-5ed8-4ca5-bb9e-86215bb1bf84.png)
+
+###### Store Variable Action Properties
+
+  Property &nbsp;&nbsp;&nbsp;&nbsp;| Description
+  :------------ | :-------------
+  Variable name | The name of the variable.  This value is used to reference the value in other triggers.
+  Check if used | If this is enabled, before storing the value into the variable, other trigger conditions will be scanned to ensure that the value is used as a condition before it is saved to the variable.
+  Loop-back     | If this is enabled, when Nag begins watching a log file, Nag will scan through log entries until the most recent match is found.
   
 #### Clear Variable Action
   
