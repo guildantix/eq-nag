@@ -111,7 +111,7 @@ Actions are executed in response to the parsed capture phrase.  All triggers hav
 
 There are many different actions available in Nag.
 
-  Action Type &nbsp;&nbsp;&nbsp;&nbsp;| Details
+  Action Type &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| Details
   :------------     | :-------------
   Display Text      | Displays text in an overlay component.
   DoT Timer         | Displays a damage of time timer in a timer overlay.
