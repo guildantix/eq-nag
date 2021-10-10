@@ -14,6 +14,10 @@
 
 [Add a DoT timer](/eq-nag/guides/add-dot-timer)
 
+## Documentation
+
+[Advanced Trigger Mechanics](/eq-nag/guides/advanced-trigger-mechanics)
+
 ## Download
 
 The current release version is v0.0.41 and you can find the details [here](https://github.com/guildantix/eq-nag/releases/tag/v0.0.41).
