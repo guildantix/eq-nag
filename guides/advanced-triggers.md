@@ -12,6 +12,13 @@
       <li><a href="#character-classes">Character Classes</a></li>
     </ol>
   </li>
+  <li><a href="#capture-phrases">Capture Phrases</a>
+    <ol>
+      <li><a href="#capture-method">Capture Method</a></li>
+      <li><a href="#capture-cooldown">Cooldown</a></li>
+      <li><a href="#capture-phrases-grid">Capture Phrases Grid</a></li>
+    </ol>
+  </li>
   <li><a href="advanced-ramblings">Advanced Ramblings</a>
     <ol>
       <li><a href="capture-and-render-snippets">Snippets</a></li>
@@ -71,7 +78,7 @@ There are several options when setting up capture phrase(s): capture method, coo
   Sequential        | Capture phrases must be matched in order, meaning that any actions attached to the no. 2 phrase cannot be executed until the first phrase has been found.
   Concurrent        | Not implemented yet. All capture phrases must match before actions are executed.
 
-#### Cooldown
+#### Capture Cooldown
 
 Once a capture phrase has been parsed/executed, a cooldown begins that will prevent any further capture phrases from being checked for the specified duration.
 
