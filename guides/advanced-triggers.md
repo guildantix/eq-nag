@@ -29,6 +29,9 @@
           <li><a href="#timer-action">Timer</a></li>
           <li><a href="#countdown-action">Countdown</a></li>
           <li><a href="#store-variable-action">Store Variable</a></li>
+          <li><a href="#clear-variable-action">Clear Variable</a></li>
+          <li><a href="#counter-action">Counter</a></li>
+          <li><a href="#clipboard-action">Clipboard</a></li>
         </ol>
       </li>
     </ol>
