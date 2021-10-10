@@ -191,6 +191,30 @@ Important note: All of the properties in the event tabs should be hidden until t
   Send to clipboard     | Sends the specified value to the clipboard. This accepts regex capture groups and snippets.
   Play audio            | When enabled, plays the selected audio clip when timer is at #duration.
   Select new audio file | Allows the user to select add a new audio file to the list of options.
+  
+###### DoT Timer: Timer Ended
+
+Important note: All of the properties in the event tabs should be hidden until they are enabled by selecting the "Notify" checkbox and giving a duration.
+
+![image](https://user-images.githubusercontent.com/66176124/136705318-097209fe-f4da-4fa5-9949-71e73c8edd11.png)
+
+###### DoT Timer: Timer Ended Properties
+
+  Property &nbsp;&nbsp;&nbsp;&nbsp;| Description
+  :------------         | :-------------
+  Notify when ended     | For DoT timers, when enabled, will keep the timer alive for the specified duration.
+  Duration              | The duration to keep the timer alive.
+  Timer color           | When the timer ends, changes the color of the timer.
+  Execute Actions       | When enabled, allows the user to specify actions to execute when the timer ends.
+  Display text          | When enabled, allows the user to specify text to display to the user. This accepts regex capture groups and snippets.
+  Text overlay window   | The overlay window to render the text.
+  Display text duration | The duration to display text.
+  Speak phrase          | When enabled, allows the user to specify text for the TTS to say to the user. This accepts regex capture groups and snippets.
+  Interrupt speech      | When enabled, if the TTS is currently saying something, that will be interrupted.
+  Send to clipboard     | Sends the specified value to the clipboard. This accepts regex capture groups and snippets.
+  Play audio            | When enabled, plays the selected audio clip when timer is at #duration.
+  Select new audio file | Allows the user to select add a new audio file to the list of options.
+
 
 
 
