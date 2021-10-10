@@ -19,10 +19,10 @@
       <li><a href="#capture-phrases-grid">Capture Phrases Grid</a></li>
     </ol>
   </li>
-  <li><a href="advanced-ramblings">Advanced Ramblings</a>
+  <li><a href="#advanced-ramblings">Advanced Ramblings</a>
     <ol>
-      <li><a href="capture-and-render-snippets">Snippets</a></li>
-      <li><a href="variable-storage-mechanics">Variable storage mechanics</a></li>
+      <li><a href="#capture-and-render-snippets">Snippets</a></li>
+      <li><a href="#variable-storage-mechanics">Variable storage mechanics</a></li>
     </ol>
   </li>
 </ol>
