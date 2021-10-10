@@ -27,6 +27,7 @@
           <li><a href="#dot-timer-action">DoT Timer</a></li>
           <li><a href="#play-audio-action">Play Audio</a></li>
           <li><a href="#timer-action">Timer</a></li>
+          <li><a href="#countdown-action">Countdown</a></li>
         </ol>
       </li>
     </ol>
