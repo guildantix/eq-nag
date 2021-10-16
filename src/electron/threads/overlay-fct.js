@@ -167,7 +167,9 @@ function render( comp ) {
                 
             comp.intervalId = window.setTimeout( () => {
                 comp.dom.parentNode.removeChild( comp.dom );
-                criticals[ comp.pos.x ][ comp.pos.y ] = false;
+                if ( criticals.length > comp.pos.x && criticals[ comp.pos.x ]?.length > comp.pos.y ) {
+                    criticals[ comp.pos.x ][ comp.pos.y ] = false;
+                }
             }, 4000 );
 
             delayAdd -= comp.delayAmount;
