@@ -7,6 +7,7 @@ const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz
 const idLen = 16;
 const nanoid = customAlphabet( alphabet, 16 );
 const { OverlayWindow } = require( './models/overlay-window' );
+const { StyleProperties } = require( './models/common' );
 
 class OverlayDatabaseStore extends Store {
 
@@ -110,6 +111,79 @@ class OverlayDatabaseStore extends Store {
                 f.hideTargetLabel = false;
             } );
             this.#data.version = 10;
+            this.storeDataFile( this.#data );
+        }
+        if ( !this.#data.version || this.#data.version < 11 ) {
+
+            this.#data?.overlays?.forEach( f => {
+                if ( f.overlayType === 'FCT' ) {
+
+                    f.fctDmgOutStyle = new StyleProperties();
+                    f.fctDmgOutStyle.fontSize = 32;
+                    f.fctDmgOutStyle.lineHeight = 95;
+                    f.fctDmgOutStyle.fontWeight = 700;
+                    f.fctDmgOutStyle.glowSize = 10;
+
+                    f.fctDmgInStyle = new StyleProperties();
+                    f.fctDmgInStyle.fontSize = 32;
+                    f.fctDmgInStyle.lineHeight = 95;
+                    f.fctDmgInStyle.fontWeight = 700;
+                    f.fctDmgInStyle.fontColor = '#b71c1c';
+                    f.fctDmgInStyle.glowSize = 10;
+
+                    f.fctSpellDmgOutStyle = new StyleProperties();
+                    f.fctSpellDmgOutStyle.fontSize = 32;
+                    f.fctSpellDmgOutStyle.lineHeight = 95;
+                    f.fctSpellDmgOutStyle.fontWeight = 700;
+                    f.fctSpellDmgOutStyle.glowSize = 10;
+
+                    f.fctSpellDmgInStyle = new StyleProperties();
+                    f.fctSpellDmgInStyle.fontSize = 32;
+                    f.fctSpellDmgInStyle.lineHeight = 95;
+                    f.fctSpellDmgInStyle.fontWeight = 700;
+                    f.fctSpellDmgInStyle.fontColor = '#b71c1c';
+                    f.fctSpellDmgInStyle.glowSize = 10;
+
+                    f.fctHealingOutStyle = new StyleProperties();
+                    f.fctHealingOutStyle.fontSize = 32;
+                    f.fctHealingOutStyle.lineHeight = 95;
+                    f.fctHealingOutStyle.fontWeight = 700;
+                    f.fctHealingOutStyle.fontColor = '#42a5f5';
+                    f.fctHealingOutStyle.glowSize = 10;
+
+                    f.fctHealingInStyle = new StyleProperties();
+                    f.fctHealingInStyle.fontSize = 32;
+                    f.fctHealingInStyle.lineHeight = 95;
+                    f.fctHealingInStyle.fontWeight = 700;
+                    f.fctHealingInStyle.fontColor = '#42a5f5';
+                    f.fctHealingInStyle.glowSize = 10;
+
+                    f.fctSkillStyle = new StyleProperties();
+                    f.fctSkillStyle.fontSize = 12;
+                    f.fctSkillStyle.fontWeight = 400;
+                    f.fctSkillStyle.fontColor = '#005aff';
+                }
+            } );
+
+            this.#data.version = 11;
+            this.storeDataFile( this.#data );
+        }
+        if ( !this.#data.version || this.#data.version < 12 ) {
+
+            this.#data?.overlays?.forEach( f => {
+                if ( f.overlayType === 'FCT' ) {
+
+                    delete f.fctDmgOutStyle;
+                    delete f.fctDmgInStyle;
+                    delete f.fctSpellDmgOutStyle;
+                    delete f.fctSpellDmgInStyle;
+                    delete f.fctHealingOutStyle;
+                    delete f.fctHealingInStyle;
+                    delete f.fctSkillStyle;
+                }
+            } );
+
+            this.#data.version = 12;
             this.storeDataFile( this.#data );
         }
     }

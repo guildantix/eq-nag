@@ -2,7 +2,7 @@ import { Component, ViewChild, ElementRef, OnInit } from '@angular/core';
 import * as _ from 'lodash-es';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { IpcService } from './ipc.service';
-import { DkpEntryModel, OverlayWindowModel, FocusEffectSettings, TriggerPackageMetaModel } from './core.model';
+import { DkpEntryModel, OverlayWindowModel, FocusEffectSettings, TriggerPackageMetaModel, StylePropertiesModel, FctStylesModel } from './core.model';
 import { DialogService } from './dialogs/dialog.service';
 import { ScraperService } from './scraper.service';
 import { customAlphabet } from 'nanoid';
@@ -45,6 +45,9 @@ export class MainComponent implements OnInit {
     public movingFolderSource: string = null;
     public setupCompleted: boolean = true;
 
+    public combatType: string = 'DmgOut';
+    public fctStyles: FctStylesModel = null;
+
     @ViewChild( 'fileSelector' ) private fileSelector: ElementRef<HTMLInputElement>;
     @ViewChild( 'characterList', { static: true } ) private characterList: CharactersListComponent;
 
@@ -52,7 +55,13 @@ export class MainComponent implements OnInit {
         return this.overlays.filter( f => f.overlayType === 'FCT' );
     }
 
-    constructor( private snackBar: MatSnackBar, private ipcService: IpcService, private dialogService: DialogService, private scraper: ScraperService, private setupService: SetupService, private libraryService: TriggerLibraryService ) {
+    constructor(
+        private snackBar: MatSnackBar,
+        private ipcService: IpcService,
+        private dialogService: DialogService,
+        private setupService: SetupService,
+        private libraryService: TriggerLibraryService,
+    ) {
     }
 
     ngOnInit(): void {
@@ -72,9 +81,10 @@ export class MainComponent implements OnInit {
             this.enableFct = data.enableFct;
             this.damageDealtOverlayId = data.damageDealtOverlayId;
             this.damageTakenOverlayId = data.damageReceivedOverlayId;
-            this.focusEffectSettings.hasExtendedDotFocus = data.hasExtendedDotFocus;
-            this.focusEffectSettings.extendedDotFocusPercent = data.extendedDotFocusPercent;
-            this.focusEffectSettings.extendedDotFocusDecayLevel = data.extendedDotFocusDecayLevel;
+            this.fctStyles = data.fctStyles;
+            // this.focusEffectSettings.hasExtendedDotFocus = data.hasExtendedDotFocus;
+            // this.focusEffectSettings.extendedDotFocusPercent = data.extendedDotFocusPercent;
+            // this.focusEffectSettings.extendedDotFocusDecayLevel = data.extendedDotFocusDecayLevel;
             
             this.ipcService.getSetupCompleted().subscribe( completed => this.setupCompleted = completed );
 
@@ -239,6 +249,10 @@ export class MainComponent implements OnInit {
 
     public arrangeOverlays() {
         this.ipcService.showArrangeOverlaysDialog();
+    }
+    
+    public styleChange( style: StylePropertiesModel ) {
+        this.ipcService.saveFctStyles( this.fctStyles );
     }
 
     public testFn(): void {

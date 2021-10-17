@@ -192,6 +192,36 @@ export class DkpEntryModel {
 
 }
 
+export class StylePropertiesModel {
+    
+    public fontFamily: string = 'Roboto';
+    public fontSize: number = 14;
+    public lineHeight: number = 90;
+    public fontWeight: number = 400;
+    public fontColor: string = '#ffffff';
+    public fontTransparency: number = 1;
+    public showBorder: boolean = true;
+    public borderColor: string = '#000000';
+    public borderIntensity: number = 1;
+    public showGlow: boolean = true;
+    public glowColor: string = '#000000';
+    public glowIntensity: number = 1;
+    public glowSize: number = 5;
+
+}
+
+export class FctStylesModel {
+
+    public fctDmgOutStyle: StylePropertiesModel = null;
+    public fctDmgInStyle: StylePropertiesModel = null;
+    public fctSpellDmgOutStyle: StylePropertiesModel = null;
+    public fctSpellDmgInStyle: StylePropertiesModel = null;
+    public fctHealingOutStyle: StylePropertiesModel = null;
+    public fctHealingInStyle: StylePropertiesModel = null;
+    public fctSkillStyle: StylePropertiesModel = null;
+
+}
+
 export class OverlayWindowModel {
 
     public overlayId: string = null;
@@ -254,6 +284,7 @@ export class DataTickModel {
     public phoneticTransforms: Record<string, string> = {};
     public ignoredGinaObjects: string[] = [];
     public folders: TriggerFolder[] = [];
+    public fctStyles: FctStylesModel;
     
 }
 

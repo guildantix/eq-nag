@@ -115,6 +115,33 @@
                     
                 </fieldset>
 
+                <fieldset class="margin-t-25" *ngIf="fctStyles != null">
+                    <legend><span class="title">FCT Options</span><small>Change how specific combat numbers are displayed.</small></legend>
+
+                    <mat-form-field style="width: 100%;">
+                        <mat-label>FCT Combat Type</mat-label>
+                        <mat-select class="combat-ddl" [(ngModel)]="combatType" name="ddlCombatType" disableOptionCentering style="max-width: unset;">
+                            <mat-option class="combat-option" value="DmgOut">My Damage</mat-option>
+                            <mat-option class="combat-option" value="DmgIn">Other Damage</mat-option>
+                            <mat-option class="combat-option" value="SpellDmgOut">My Spells</mat-option>
+                            <mat-option class="combat-option" value="SpellDmgIn">Other  Spells</mat-option>
+                            <mat-option class="combat-option" value="HealingOut">My Healing</mat-option>
+                            <mat-option class="combat-option" value="HealingIn">Other Healing</mat-option>
+                            <mat-option class="combat-option" value="Skill">Skills</mat-option>
+                        </mat-select>
+                        <mat-hint>Select the combat value type from the list to change the way it is displayed on the screen.</mat-hint>
+                    </mat-form-field>
+
+                    <ng-template [ngIf]="combatType === 'DmgOut'"><app-style-properties [style]="fctStyles.fctDmgOutStyle" label="My Damage" (onChange)="styleChange($event)"></app-style-properties></ng-template>
+                    <ng-template [ngIf]="combatType === 'DmgIn'"><app-style-properties [style]="fctStyles.fctDmgInStyle" label="Other Damage" (onChange)="styleChange($event)"></app-style-properties></ng-template>
+                    <ng-template [ngIf]="combatType === 'SpellDmgOut'"><app-style-properties [style]="fctStyles.fctSpellDmgOutStyle" label="My Spells" (onChange)="styleChange($event)"></app-style-properties></ng-template>
+                    <ng-template [ngIf]="combatType === 'SpellDmgIn'"><app-style-properties [style]="fctStyles.fctSpellDmgInStyle" label="Other  Spells" (onChange)="styleChange($event)"></app-style-properties></ng-template>
+                    <ng-template [ngIf]="combatType === 'HealingOut'"><app-style-properties [style]="fctStyles.fctHealingOutStyle" label="My Healing" (onChange)="styleChange($event)"></app-style-properties></ng-template>
+                    <ng-template [ngIf]="combatType === 'HealingIn'"><app-style-properties [style]="fctStyles.fctHealingInStyle" label="Other Healing" (onChange)="styleChange($event)"></app-style-properties></ng-template>
+                    <ng-template [ngIf]="combatType === 'Skill'"><app-style-properties [style]="fctStyles.fctSkillStyle" label="Skill" (onChange)="styleChange($event)"></app-style-properties></ng-template>
+                    
+                </fieldset>
+
             </div>
         </mat-tab>
         <mat-tab label="Settings">

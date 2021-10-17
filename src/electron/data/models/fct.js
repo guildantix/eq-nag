@@ -1,3 +1,5 @@
+const { StyleProperties } = require( './common' );
+
 class FctModel {
     overlayId = null;
     dealt = false;
@@ -8,4 +10,29 @@ class FctModel {
     timestamp = null;
 }
 
-module.exports = FctModel;
+class FctStylesModel {
+
+    /** @type {StyleProperties} */
+    fctDmgOutStyle = null;
+
+    /** @type {StyleProperties} */
+    fctDmgInStyle = null;
+
+    /** @type {StyleProperties} */
+    fctSpellDmgOutStyle = null;
+
+    /** @type {StyleProperties} */
+    fctSpellDmgInStyle = null;
+
+    /** @type {StyleProperties} */
+    fctHealingOutStyle = null;
+
+    /** @type {StyleProperties} */
+    fctHealingInStyle = null;
+
+    /** @type {StyleProperties} */
+    fctSkillStyle = null;
+
+}
+
+module.exports = { FctModel, FctStylesModel };

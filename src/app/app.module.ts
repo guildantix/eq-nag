@@ -23,6 +23,7 @@ import { SettingsService } from './settings/settings-http.service';
 import { SetupModule } from './setup/setup.module';
 import { SetupWizardComponent } from './setup/setup-wizard/setup-wizard.component';
 import { SetupService } from './setup/setup.service';
+import { EditorsModule } from './editors/editors.module';
 
 @NgModule( {
     imports: [
@@ -38,6 +39,7 @@ import { SetupService } from './setup/setup.service';
         ContextMenuModule,
         WindowsModule,
         // SetupModule,
+        EditorsModule,
     ],
     declarations: [
         AppComponent,

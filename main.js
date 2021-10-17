@@ -175,6 +175,7 @@ function sendTick() {
         phoneticTransforms: userPreferences.phoneticTransforms,
         ignoredGinaObjects: userPreferences.ignoreGinaObjects,
         folders: _folders,
+        fctStyles: userPreferences.fctStyles,
     };
     mainWindow.webContents.send( 'tick', tickData );
     logBootstrap.tick( tickData, characterDatabase );

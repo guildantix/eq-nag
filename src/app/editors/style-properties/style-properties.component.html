@@ -1,0 +1,72 @@
+<div class="style-prop-container">
+    
+    <table>
+        <tr>
+            <th colspan="6">{{label}}</th>
+        </tr>
+        <tr>
+            <td colspan="6">
+                <mat-form-field style="width: 100%;">
+                    <mat-label></mat-label>
+                    <mat-select class="font-ddl" [(ngModel)]="model.fontFamily" name="ddlFontFamily" disableOptionCentering (selectionChange)="onChangeFontFamily()" style="max-width: unset;">
+                        <mat-option class="font-option" value="Roboto" style="font-family: Roboto, sans-serif; font-size: 16px;"><small>Roboto</small></mat-option>
+                        <mat-option class="font-option" value="Red Rose" style="font-family: 'Red Rose', sans-serif; font-size: 16px;"><small>Red Rose</small></mat-option>
+                        <mat-option class="font-option" value="Oswald" style="font-family: Oswald, sans-serif; font-size: 16px;"><small>Oswald</small></mat-option>
+                        <mat-option class="font-option" value="Roboto Mono" style="font-family: 'Roboto Mono', sans-serif; font-size: 16px;"><small>Roboto Mono</small></mat-option>
+                        <mat-option class="font-option" value="Open Sans Condensed" style="font-family: 'Open Sans Condensed', sans-serif; font-size: 16px;"><small>Open Sans Condensed</small></mat-option>
+                        <mat-option class="font-option" value="Ranchers" style="font-family: Ranchers, sans-serif; font-size: 16px;"><small>Ranchers</small></mat-option>
+                        <mat-option class="font-option" value="Press Start 2P" style="font-family: 'Press Start 2P', sans-serif; font-size: 14px;"><small>Press Start 2P</small></mat-option>
+                    </mat-select>
+                    <mat-hint>Font Family</mat-hint>
+                </mat-form-field>
+            </td>
+        </tr>
+        <tr>
+            <td>Color</td>
+            <td><app-color-picker [(ngModel)]="model.fontColor" (change)="emitChange()" [inline]="true"></app-color-picker></td>
+            <td>Weight</td>
+            <td><mat-slider thumbLabel tickInterval="1" step="1" min="0" [max]="maxFontWeightIndex" style="width: 100%;" [(ngModel)]="fontWeightIndex" name="sldrFontWeight" (change)="emitChange()"></mat-slider></td>
+            <td>Size</td>
+            <td><mat-slider thumbLabel tickInterval="1" min="1" max="64" style="width: 100%;" [(ngModel)]="model.fontSize" name="sldrFontSize" (change)="emitChange()"></mat-slider></td>
+        </tr>
+        <tr>
+            <td><mat-checkbox [(ngModel)]="model.showBorder">Border</mat-checkbox></td>
+            <td><app-color-picker [(ngModel)]="model.borderColor" (change)="emitChange()" [inline]="true"></app-color-picker></td>
+            <td>Intensity</td>
+            <td><mat-slider thumbLabel tickInterval="1" min="0" max="100" style="width: 100%;" [(ngModel)]="borderIntensity" name="sldrBorderIntensity" (change)="onChangeBorderTransparency()"></mat-slider></td>
+            <td></td>
+            <td></td>
+        </tr>
+        <tr>
+            <td><mat-checkbox [(ngModel)]="model.showGlow">Glow</mat-checkbox></td>
+            <td><app-color-picker [(ngModel)]="model.glowColor" (change)="emitChange()" [inline]="true"></app-color-picker></td>
+            <td>Intensity</td>
+            <td><mat-slider thumbLabel tickInterval="1" min="0" max="100" style="width: 100%;" [(ngModel)]="glowIntensity" name="sldrGlowIntensity" (change)="onChangeGlowTransparency()"></mat-slider></td>
+            <td>Size</td>
+            <td><mat-slider thumbLabel tickInterval="1" min="0" max="10" style="width: 100%;" [(ngModel)]="model.glowSize" name="sldrTextGlowSize" (change)="emitChange()"></mat-slider></td>
+        </tr>
+    </table>
+
+    <!-- <div class="f-row">
+        <div class="f-sm-3 al-center"><mat-label>Style</mat-label></div>
+        <div class="f-sm-2 al-center"><app-color-picker [(ngModel)]="model.fontColor" (change)="emitChange()" [inline]="true"></app-color-picker></div>
+        <div class="f-sm-3 al-center"><mat-label>Size</mat-label><mat-slider thumbLabel tickInterval="1" min="1" max="64" style="width: 100%;" [(ngModel)]="model.fontSize" name="sldrFontSize" (change)="emitChange()"></mat-slider></div>
+        <div class="f-sm-3 al-center"><mat-label>Weight</mat-label><mat-slider thumbLabel tickInterval="1" step="1" min="0" [max]="maxFontWeightIndex" style="width: 100%;" [(ngModel)]="fontWeightIndex" name="sldrFontWeight" (change)="emitChange()"></mat-slider></div>
+    </div> -->
+
+    <!-- <div class="f-row">
+        <div class="f-sm-3 al-center"><mat-label>Border</mat-label></div>
+        <div class="f-sm-3 al-center"><mat-label>Spacing</mat-label></div>
+        <div class="f-sm-3 al-center"><mat-label>Weight</mat-label></div>
+        <div class="f-sm-3 al-center"><mat-label>Weight</mat-label></div>
+    </div> -->
+
+    <!-- <div class="f-row">
+        <div class="f-sm-3 al-center"><mat-label>Glow</mat-label></div>
+        <div class="f-sm-3 al-center"><mat-label>Spacing</mat-label></div>
+        <div class="f-sm-3 al-center"><mat-label>Weight</mat-label></div>
+        <div class="f-sm-3 al-center"><mat-label>Weight</mat-label></div>
+    </div> -->
+
+
+</div>

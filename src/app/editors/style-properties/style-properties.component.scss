@@ -1,0 +1,91 @@
+
+.style-prop-container {
+    margin-bottom: 50px;
+}
+.flex-layout {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+mat-form-field {
+    font-size: 12px;
+}
+
+.margin-t-50 {
+    margin-top: 50px;
+}
+
+.margin-t-25 {
+    margin-top: 25px;
+}
+
+legend.full-width {
+    min-width: 100%;
+}
+
+.font-ddl {
+    max-width: unset;
+    
+}
+
+.mat-select-panel mat-option.mat-option {
+    height: unset;
+}
+
+.mat-option-text.mat-option-text {
+    white-space: normal;
+}
+
+mat-option.font-option {
+    height: unset;
+
+    small {
+        display: block;
+        color: #ffffff82;
+        margin-top: -27px;
+        margin-left: 10px;
+        margin-bottom: -10px;
+    }
+}
+
+span.place-holder {
+    display: inline;
+    position: relative;
+}
+
+::ng-deep mat-option.font-option span.mat-option-text::before {
+    content: "The quick brown fox jumped over the lazy dog."
+}
+
+mat-tab-group {
+    height: 100%;
+}
+
+mat-radio-group {
+    margin-top: 10px;
+}
+
+mat-radio-group.horizontal {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
+
+    mat-radio-button {
+        margin: 0 10px;
+    }
+}
+
+table {
+    border: none;
+    tr {
+        td:first-child {
+            padding-left: 20px;
+        }
+        td:last-child {
+            padding-right: 20px;
+        }
+    }
+}
+

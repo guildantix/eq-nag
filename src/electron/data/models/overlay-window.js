@@ -67,6 +67,28 @@ class OverlayWindow {
     
     /** @type {boolean} */
     hideTargetLabel = false;
+
+    // /** @type {StyleProperties} */
+    // fctDmgOutStyle = null;
+
+    // /** @type {StyleProperties} */
+    // fctDmgInStyle = null;
+
+    // /** @type {StyleProperties} */
+    // fctSpellDmgOutStyle = null;
+
+    // /** @type {StyleProperties} */
+    // fctSpellDmgInStyle = null;
+
+    // /** @type {StyleProperties} */
+    // fctHealingOutStyle = null;
+
+    // /** @type {StyleProperties} */
+    // fctHealingInStyle = null;
+
+    // /** @type {StyleProperties} */
+    // fctSkillStyle = null;
+
 }
 
 class OverlayComponent {

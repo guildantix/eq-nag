@@ -2,7 +2,7 @@ import { Injectable, NgZone } from '@angular/core';
 import { Display, IpcRenderer } from 'electron';
 import { Observable, Observer } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
-import { DataTickModel, DkpEntryModel, TriggerModel, OverlayWindowModel, ActionTypes, FocusEffectSettings, CharacterModel, BasicError, TriggerFolder, FileModel, Tag, AuthorModel, PackageFileModel, TriggerPackageMetaModel, TriggerPackageVersion } from './core.model';
+import { DataTickModel, DkpEntryModel, TriggerModel, OverlayWindowModel, ActionTypes, FocusEffectSettings, CharacterModel, BasicError, TriggerFolder, FileModel, Tag, AuthorModel, PackageFileModel, TriggerPackageMetaModel, TriggerPackageVersion, FctStylesModel } from './core.model';
 import { GinaConfiguration, GinaTriggerGroups } from './gina.model';
 
 @Injectable( { providedIn: 'root' })
@@ -1049,6 +1049,26 @@ export class IpcService {
                 } );
             } );
             this.ipc.send( 'settings:get:damageReceivedOverlayId', null );
+
+        } );
+
+        return obs;
+    }
+
+    public saveFctStyles( fctStyles: FctStylesModel ): void {
+        this.ipc.send( 'settings:set:fctStyles', fctStyles );
+    }
+
+    public getFctStyles(): Observable<FctStylesModel> {
+        let obs: Observable<FctStylesModel> = new Observable<FctStylesModel>( ( observer: Observer<FctStylesModel> ) => {
+            
+            this.ipc.once( 'settings:get:fctStyles', ( e, fctStyles: FctStylesModel ) => {
+                this.ngZone.run( () => {
+                    observer.next( fctStyles );
+                    observer.complete();
+                } );
+            } );
+            this.ipc.send( 'settings:get:fctStyles', null );
 
         } );
 

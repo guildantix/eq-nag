@@ -21,46 +21,51 @@
                             <mat-hint>Name</mat-hint>
                         </mat-form-field>
 
-                        <mat-form-field>
-                            <mat-label></mat-label>
-                            <mat-select class="font-ddl" [(ngModel)]="model.fontFamily" name="ddlFontFamily" disableOptionCentering (selectionChange)="onChangeFontFamily()" style="max-width: unset;">
-                                <mat-option class="font-option" value="Roboto" style="font-family: Roboto, sans-serif; font-size: 16px;"><small>Roboto</small></mat-option>
-                                <mat-option class="font-option" value="Red Rose" style="font-family: 'Red Rose', sans-serif; font-size: 16px;"><small>Red Rose</small></mat-option>
-                                <mat-option class="font-option" value="Oswald" style="font-family: Oswald, sans-serif; font-size: 16px;"><small>Oswald</small></mat-option>
-                                <mat-option class="font-option" value="Roboto Mono" style="font-family: 'Roboto Mono', sans-serif; font-size: 16px;"><small>Roboto Mono</small></mat-option>
-                                <mat-option class="font-option" value="Open Sans Condensed" style="font-family: 'Open Sans Condensed', sans-serif; font-size: 16px;"><small>Open Sans Condensed</small></mat-option>
-                                <mat-option class="font-option" value="Ranchers" style="font-family: Ranchers, sans-serif; font-size: 16px;"><small>Ranchers</small></mat-option>
-                                <mat-option class="font-option" value="Press Start 2P" style="font-family: 'Press Start 2P', sans-serif; font-size: 14px;"><small>Press Start 2P</small></mat-option>
-                            </mat-select>
-                            <mat-hint>Font</mat-hint>
-                        </mat-form-field>
-
-                        <div class="f-row">
-                            <div class="f-sm-4 al-center"><mat-label>Size</mat-label></div>
-                            <div class="f-sm-4 al-center"><mat-label>Spacing</mat-label></div>
-                            <div class="f-sm-4 al-center"><mat-label>Weight</mat-label></div>
-                        </div>
-                        <div class="f-row">
-                            <div class="f-sm-4"><mat-slider thumbLabel tickInterval="1" min="1" max="64" style="width: 100%;" [(ngModel)]="model.fontSize" name="sldrFontSize" (change)="broadcastModel()"></mat-slider></div>
-                            <div class="f-sm-4"><mat-slider thumbLabel tickInterval="1" step="5" min="10" max="300" style="width: 100%;" [(ngModel)]="model.lineHeight" name="sldrLineHeight" (change)="broadcastModel()"></mat-slider></div>
-                            <div class="f-sm-4"><mat-slider thumbLabel tickInterval="1" step="1" min="0" [max]="maxFontWeightIndex" style="width: 100%;" [(ngModel)]="fontWeightIndex" name="sldrFontWeight" (change)="broadcastModel()"></mat-slider></div>
-                        </div>
-
-                        <div class="f-row">
-                            <div class="f-sm-4 al-center"><mat-label>Text</mat-label></div>
-                            <div class="f-sm-4 al-center"><mat-label>Background</mat-label></div>
-                            <div class="f-sm-4 al-center"><mat-label>Border</mat-label></div>
-                        </div>
-                        <div class="f-row">
-                            <div class="f-sm-4 al-center"><app-color-picker [(ngModel)]="model.fontColor" (change)="broadcastModel()"></app-color-picker></div>
-                            <div class="f-sm-4 al-center"><app-color-picker [(ngModel)]="model.backgroundColor" (change)="broadcastModel()"></app-color-picker></div>
-                            <div class="f-sm-4 al-center"><app-color-picker [(ngModel)]="model.borderColor" (change)="broadcastModel()"></app-color-picker></div>
-                        </div>
-                        <div class="f-row">
-                            <div class="f-sm-4"><mat-slider thumbLabel tickInterval="1" min="0" max="100" style="width: 100%;" [(ngModel)]="fontTransparency" name="sldrFontSize" (change)="onChangeFontTransparency()"></mat-slider></div>
-                            <div class="f-sm-4"><mat-slider thumbLabel tickInterval="1" min="0" max="100" style="width: 100%;" [(ngModel)]="backgroundTransparency" name="sldrFontSize" (change)="onChangeBackgroundTransparency()"></mat-slider></div>
-                            <div class="f-sm-4"><mat-slider thumbLabel tickInterval="1" min="0" max="100" style="width: 100%;" [(ngModel)]="borderTransparency" name="sldrFontSize" (change)="onChangeBorderTransparency()"></mat-slider></div>
-                        </div>
+                        <ng-template [ngIf]="model.overlayType !== 'FCT'">
+                            <mat-form-field>
+                                <mat-label></mat-label>
+                                <mat-select class="font-ddl" [(ngModel)]="model.fontFamily" name="ddlFontFamily" disableOptionCentering (selectionChange)="onChangeFontFamily()" style="max-width: unset;">
+                                    <mat-option class="font-option" value="Roboto" style="font-family: Roboto, sans-serif; font-size: 16px;"><small>Roboto</small></mat-option>
+                                    <mat-option class="font-option" value="Red Rose" style="font-family: 'Red Rose', sans-serif; font-size: 16px;"><small>Red Rose</small></mat-option>
+                                    <mat-option class="font-option" value="Oswald" style="font-family: Oswald, sans-serif; font-size: 16px;"><small>Oswald</small></mat-option>
+                                    <mat-option class="font-option" value="Roboto Mono" style="font-family: 'Roboto Mono', sans-serif; font-size: 16px;"><small>Roboto Mono</small></mat-option>
+                                    <mat-option class="font-option" value="Open Sans Condensed" style="font-family: 'Open Sans Condensed', sans-serif; font-size: 16px;"><small>Open Sans Condensed</small></mat-option>
+                                    <mat-option class="font-option" value="Ranchers" style="font-family: Ranchers, sans-serif; font-size: 16px;"><small>Ranchers</small></mat-option>
+                                    <mat-option class="font-option" value="Press Start 2P" style="font-family: 'Press Start 2P', sans-serif; font-size: 14px;"><small>Press Start 2P</small></mat-option>
+                                </mat-select>
+                                <mat-hint>Font</mat-hint>
+                            </mat-form-field>
+    
+                            <div class="f-row">
+                                <div class="f-sm-4 al-center"><mat-label>Size</mat-label></div>
+                                <div class="f-sm-4 al-center"><mat-label>Spacing</mat-label></div>
+                                <div class="f-sm-4 al-center"><mat-label>Weight</mat-label></div>
+                            </div>
+                            <div class="f-row">
+                                <div class="f-sm-4"><mat-slider thumbLabel tickInterval="1" min="1" max="64" style="width: 100%;" [(ngModel)]="model.fontSize" name="sldrFontSize" (change)="broadcastModel()"></mat-slider></div>
+                                <div class="f-sm-4"><mat-slider thumbLabel tickInterval="1" step="5" min="10" max="300" style="width: 100%;" [(ngModel)]="model.lineHeight" name="sldrLineHeight" (change)="broadcastModel()"></mat-slider></div>
+                                <div class="f-sm-4"><mat-slider thumbLabel tickInterval="1" step="1" min="0" [max]="maxFontWeightIndex" style="width: 100%;" [(ngModel)]="fontWeightIndex" name="sldrFontWeight" (change)="broadcastModel()"></mat-slider></div>
+                            </div>
+    
+                            <div class="f-row">
+                                <div class="f-sm-4 al-center"><mat-label>Text</mat-label></div>
+                                <div class="f-sm-4 al-center"><mat-label>Background</mat-label></div>
+                                <div class="f-sm-4 al-center"><mat-label>Border</mat-label></div>
+                            </div>
+                            <div class="f-row">
+                                <div class="f-sm-4 al-center"><app-color-picker [(ngModel)]="model.fontColor" (change)="broadcastModel()"></app-color-picker></div>
+                                <div class="f-sm-4 al-center"><app-color-picker [(ngModel)]="model.backgroundColor" (change)="broadcastModel()"></app-color-picker></div>
+                                <div class="f-sm-4 al-center"><app-color-picker [(ngModel)]="model.borderColor" (change)="broadcastModel()"></app-color-picker></div>
+                            </div>
+                            <div class="f-row">
+                                <div class="f-sm-4"><mat-slider thumbLabel tickInterval="1" min="0" max="100" style="width: 100%;" [(ngModel)]="fontTransparency" name="sldrFontSize" (change)="onChangeFontTransparency()"></mat-slider></div>
+                                <div class="f-sm-4"><mat-slider thumbLabel tickInterval="1" min="0" max="100" style="width: 100%;" [(ngModel)]="backgroundTransparency" name="sldrFontSize" (change)="onChangeBackgroundTransparency()"></mat-slider></div>
+                                <div class="f-sm-4"><mat-slider thumbLabel tickInterval="1" min="0" max="100" style="width: 100%;" [(ngModel)]="borderTransparency" name="sldrFontSize" (change)="onChangeBorderTransparency()"></mat-slider></div>
+                            </div>
+                        </ng-template>
+                        <ng-template [ngIf]="model.overlayType === 'FCT'">
+                            <p>To change the colors for FCT combat, use the [Floating Combat Text] tab in the main window.</p>
+                        </ng-template>
 
                     </fieldset>
 
@@ -137,6 +142,19 @@
                         </div>
 
                     </fieldset>
+
+                    <!-- <fieldset class="margin-t-25" *ngIf="model.overlayType === 'FCT'">
+                        <legend><span class="title">FCT Options</span><small>Change how specific combat numbers are displayed.</small></legend>
+
+                        <app-style-properties [style]="model.fctDmgOutStyle" label="My Damage" (onChange)="styleChange($event)"></app-style-properties>
+                        <app-style-properties [style]="model.fctDmgInStyle" label="Other Damage" (onChange)="styleChange($event)"></app-style-properties>
+                        <app-style-properties [style]="model.fctSpellDmgOutStyle" label="My Spells" (onChange)="styleChange($event)"></app-style-properties>
+                        <app-style-properties [style]="model.fctSpellDmgInStyle" label="Other  Spells" (onChange)="styleChange($event)"></app-style-properties>
+                        <app-style-properties [style]="model.fctHealingOutStyle" label="My Healing" (onChange)="styleChange($event)"></app-style-properties>
+                        <app-style-properties [style]="model.fctHealingInStyle" label="Other Healing" (onChange)="styleChange($event)"></app-style-properties>
+                        <app-style-properties [style]="model.fctSkillStyle" label="Skill" (onChange)="styleChange($event)"></app-style-properties>
+
+                    </fieldset> -->
 
                     <fieldset class="margin-t-25" *ngIf="model.overlayType === 'Timer'">
                         <legend><span class="title">Timer Options</span><small>Change properties about how timers should appear in this overlay.</small></legend>

@@ -3,6 +3,8 @@ const Store = require( './store' );
 const ForwardRef = require( '../forward-ref' );
 const fs = require( 'fs' );
 const { AuthorModel } = require( './models/sharing-service' );
+const { FctStylesModel } = require( './models/fct' );
+const { StyleProperties } = require( './models/common' );
 
 const possibleEqFolders = [
     '\\users\\public\\Everquest',
@@ -10,6 +12,12 @@ const possibleEqFolders = [
     '\\Daybreak Game Company\\Installed Games\\Everquest',
     '\\Games\\Everquest',
     '\\Everquest',
+    '\\Program Files\\Steam\\steamapps\\Everquest',
+    '\\Program Files\\Steam\\steamapps\\Everquest Live',
+    '\\Steam\\steamapps\\Everquest',
+    '\\Steam\\steamapps\\Everquest Live',
+    '\\steamapps\\Everquest',
+    '\\steamapps\\Everquest Live',
 ];
 
 /**
@@ -50,6 +58,7 @@ class UserPreferencesStore extends Store {
      * @type {{
      * phoneticTransforms: Record<string, string>,
      * ignoreGinaObjects: string[],
+     * fctStyles: FctStylesModel,
      * }}
      */
     #data;
@@ -175,6 +184,14 @@ class UserPreferencesStore extends Store {
         this.storeDataFile( this.#data );
     }
 
+    get fctStyles() {
+        return this.#data.fctStyles;
+    }
+    set fctStyles( val ) {
+        this.#data.fctStyles = val;
+        this.storeDataFile( this.#data );
+    }
+
     get hasExtendedDotFocus() {
         return this.#data.hasExtendedDotFocus;
     }
@@ -230,6 +247,59 @@ class UserPreferencesStore extends Store {
         // var defaults = { windowBounds: { width: 800, height: 600 } };
         
         this.#data = this.parseDataFile();
+
+        if ( !this.#data.version || this.#data.version < 3 ) {
+            
+            this.#data.fctStyles = new FctStylesModel();
+            
+            this.#data.fctStyles.fctDmgOutStyle = new StyleProperties();
+            this.#data.fctStyles.fctDmgOutStyle.fontSize = 32;
+            this.#data.fctStyles.fctDmgOutStyle.lineHeight = 95;
+            this.#data.fctStyles.fctDmgOutStyle.fontWeight = 700;
+            this.#data.fctStyles.fctDmgOutStyle.glowSize = 10;
+
+            this.#data.fctStyles.fctDmgInStyle = new StyleProperties();
+            this.#data.fctStyles.fctDmgInStyle.fontSize = 32;
+            this.#data.fctStyles.fctDmgInStyle.lineHeight = 95;
+            this.#data.fctStyles.fctDmgInStyle.fontWeight = 700;
+            this.#data.fctStyles.fctDmgInStyle.fontColor = '#b71c1c';
+            this.#data.fctStyles.fctDmgInStyle.glowSize = 10;
+
+            this.#data.fctStyles.fctSpellDmgOutStyle = new StyleProperties();
+            this.#data.fctStyles.fctSpellDmgOutStyle.fontSize = 32;
+            this.#data.fctStyles.fctSpellDmgOutStyle.lineHeight = 95;
+            this.#data.fctStyles.fctSpellDmgOutStyle.fontWeight = 700;
+            this.#data.fctStyles.fctSpellDmgOutStyle.glowSize = 10;
+
+            this.#data.fctStyles.fctSpellDmgInStyle = new StyleProperties();
+            this.#data.fctStyles.fctSpellDmgInStyle.fontSize = 32;
+            this.#data.fctStyles.fctSpellDmgInStyle.lineHeight = 95;
+            this.#data.fctStyles.fctSpellDmgInStyle.fontWeight = 700;
+            this.#data.fctStyles.fctSpellDmgInStyle.fontColor = '#b71c1c';
+            this.#data.fctStyles.fctSpellDmgInStyle.glowSize = 10;
+
+            this.#data.fctStyles.fctHealingOutStyle = new StyleProperties();
+            this.#data.fctStyles.fctHealingOutStyle.fontSize = 32;
+            this.#data.fctStyles.fctHealingOutStyle.lineHeight = 95;
+            this.#data.fctStyles.fctHealingOutStyle.fontWeight = 700;
+            this.#data.fctStyles.fctHealingOutStyle.fontColor = '#42a5f5';
+            this.#data.fctStyles.fctHealingOutStyle.glowSize = 10;
+
+            this.#data.fctStyles.fctHealingInStyle = new StyleProperties();
+            this.#data.fctStyles.fctHealingInStyle.fontSize = 32;
+            this.#data.fctStyles.fctHealingInStyle.lineHeight = 95;
+            this.#data.fctStyles.fctHealingInStyle.fontWeight = 700;
+            this.#data.fctStyles.fctHealingInStyle.fontColor = '#42a5f5';
+            this.#data.fctStyles.fctHealingInStyle.glowSize = 10;
+
+            this.#data.fctStyles.fctSkillStyle = new StyleProperties();
+            this.#data.fctStyles.fctSkillStyle.fontSize = 12;
+            this.#data.fctStyles.fctSkillStyle.fontWeight = 400;
+            this.#data.fctStyles.fctSkillStyle.fontColor = '#005aff';
+
+            this.#data.version = 3;
+            this.storeDataFile( this.#data );
+        }
         
     }
 
@@ -322,6 +392,10 @@ class UserPreferencesStore extends Store {
         ipcMain.on( 'settings:set:damageReceivedOverlayId', ( event, arg ) => {
             this.damageReceivedOverlayId = arg;
         } );
+        
+        ipcMain.on( 'settings:set:fctStyles', ( event, arg ) => {
+            this.fctStyles = arg;
+        } );
 
         ipcMain.on( 'settings:set:everquest-folder', ( event, folder ) => {
             console.log( 'saving eq folder', folder );
@@ -395,12 +469,12 @@ class UserPreferencesStore extends Store {
             event.sender.webContents.send( 'settings:get:damageDealtOverlayId', this.damageDealtOverlayId );
         } );
 
-        ipcMain.on( 'settings:set:damageReceivedOverlayId', ( event, damageReceivedOverlayId ) => {
-            this.damageReceivedOverlayId = damageReceivedOverlayId;
-        } );
-
         ipcMain.on( 'settings:get:damageReceivedOverlayId', ( event ) => {
             event.sender.webContents.send( 'settings:get:damageReceivedOverlayId', this.damageReceivedOverlayId );
+        } );
+
+        ipcMain.on( 'settings:get:fctStyles', ( event ) => {
+            event.sender.webContents.send( 'settings:get:fctStyles', this.fctStyles );
         } );
 
         ipcMain.on( 'settings:set:setupCompleted', ( event, setupCompleted ) => {

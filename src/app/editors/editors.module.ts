@@ -24,6 +24,7 @@ import { TriggerActionClearVariableComponent } from './trigger-action-clearVaria
 import { TriggerActionSpeakComponent } from './trigger-action-speak/trigger-action-speak.component';
 import { TriggerActionsComponent } from './trigger-actions/trigger-actions.component';
 import { TriggerClassesComponent } from './trigger-classes/trigger-classes.component';
+import { StylePropertiesComponent } from './style-properties/style-properties.component';
 
 @NgModule({
     imports: [
@@ -50,6 +51,7 @@ import { TriggerClassesComponent } from './trigger-classes/trigger-classes.compo
         TriggerActionClearVariableComponent,
         TriggerActionSpeakComponent,
         TriggerActionsComponent,
+        StylePropertiesComponent,
     ],
     declarations: [
         ConditionsComponent,
@@ -66,6 +68,7 @@ import { TriggerClassesComponent } from './trigger-classes/trigger-classes.compo
         TriggerActionClearVariableComponent,
         TriggerActionSpeakComponent,
         TriggerActionsComponent,
+        StylePropertiesComponent,
     ],
     providers: [],
 })

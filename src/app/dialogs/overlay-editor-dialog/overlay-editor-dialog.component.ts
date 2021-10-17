@@ -1,6 +1,6 @@
 import { Component, OnInit, HostListener } from '@angular/core';
 import { IpcService } from 'src/app/ipc.service';
-import { OverlayWindowModel, ActionTypes, TriggerAction, TimerSortTypes, TimerRestartBehaviors } from 'src/app/core.model';
+import { OverlayWindowModel, ActionTypes, TriggerAction, TimerSortTypes, TimerRestartBehaviors, StylePropertiesModel } from 'src/app/core.model';
 import { ActivatedRoute } from '@angular/router';
 import { ThemePalette } from '@angular/material/core';
 import { AbstractControl, FormControl } from '@angular/forms';
@@ -167,6 +167,10 @@ export class OverlayEditorDialogComponent implements OnInit {
         this.model.textBorderColor = ColorUtility.FromHex( this.textBorderColor ).toHexString( this.model.textBorderIntensity );
         this.model.textGlowColor = ColorUtility.FromHex( this.textGlowColor ).toHexString( this.model.textGlowIntensity );
         this.ipcService.broadcastOverlayModel( this.model );
+    }
+    
+    public styleChange( style: StylePropertiesModel ) {
+        this.broadcastModel();
     }
 
     public cancel(): void {
