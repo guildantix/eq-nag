@@ -74,7 +74,6 @@
             <mat-select [(ngModel)]="effectTimerOverlayId" name="ddlEffectTimerOverlay">
                 <mat-option *ngFor="let option of timerOverlays" [value]="option.overlayId">{{option.name}}</mat-option>
             </mat-select>
-            <mat-hint>Effect timer overlay</mat-hint>
             <mat-hint>This timer displays how long until the DT hits, or the duration of the silence effect.</mat-hint>
         </mat-form-field>
         

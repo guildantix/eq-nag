@@ -56,11 +56,11 @@ export class ScraperService {
                 }
 
                 let model = new ScrapedAbility();
-
+                
                 model.name = data.name?.trim();
                 model.duration = data.duration;
-                model.castOnOther = data.castOnOther;
-                model.castOnYou = data.castOnYou;
+                model.castOnOther = data.castOnOther?.trim()?.replace( / +(?= )/g, '' );
+                model.castOnYou = data.castOnYou?.trim()?.replace( / +(?= )/g, '' );
 
                 if ( data.spellGem != null ) {
                     model.gemSrc = data.spellGem.getAttribute( 'src' );
