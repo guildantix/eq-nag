@@ -4,7 +4,9 @@ const NumberUtilities = require( '../utilities/numbers' );
 const { OverlayWindow, OverlayComponent } = require( '../data/models/overlay-window' );
 const { ActionTypes, TriggerAction } = require( '../data/models/trigger' );
 const { ipcRenderer } = require( 'electron' );
-const Handlebars = require("handlebars");
+const Handlebars = require( "handlebars" );
+const StyleSheetUtil = require( '../utilities/style-sheet' );
+const { FctStylesModel } = require( '../data/models/fct' );
 
 // <!-- Roboto(i): 100, 300, 400, 500, 700, 900 -->
 // <!-- Red Rose: 300, 400, 700 -->
@@ -29,6 +31,7 @@ var fontSize = 1;
 var quadrants = [];
 var criticals = [];
 var criticalPadding = 300;
+var styleSheet = new StyleSheetUtil();
 
 function OverlayFct() {
 
@@ -70,6 +73,17 @@ function OverlayFct() {
     ipcRenderer.on( 'overlay:window:dim', function ( event ) {
         document.querySelector( 'body' ).classList.remove( 'highlight-border' );
     } );
+
+    ipcRenderer.on( 'fctStyles',
+        /**
+         * Handles the sendTick data from main.
+         * 
+         * @param {any} event The event args?
+         * @param {FctStylesModel} fctStyles The tick data.
+         */
+        ( event, fctStyles ) => {
+            console.log( 'fctStyles', fctStyles );
+        } );
 
     ipcRenderer.on( 'overlay:window:model',
         /**
@@ -127,7 +141,6 @@ function OverlayFct() {
                 }
             }
 
-            console.log( 'quadrants', fontSize, qw, qh, quadrants );
         } );
 }
 

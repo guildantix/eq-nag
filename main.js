@@ -179,7 +179,7 @@ function sendTick() {
     };
     mainWindow.webContents.send( 'tick', tickData );
     logBootstrap.tick( tickData, characterDatabase );
-    
+
     if ( winManager.ginaImportWindow != null ) {
         winManager.ginaImportWindow.send( 'tick', tickData );
     }
@@ -223,7 +223,7 @@ ipcMain.on( 'context:get:pseudo-clipboard', ( event, key ) => {
 var mainWindowRef = new ForwardRef( () => mainWindow ? mainWindow : null );
 
 userPreferences.attachIpcEvents( mainWindowRef, sendTick );
-winManager.attachIpcEvents( mainWindowRef, sendTick, overlayDatabase, userPreferences );
+winManager.attachIpcEvents( mainWindowRef, overlayDatabase, userPreferences );
 dkpDatabase.attachIpcEvents( mainWindowRef, sendTick );
 fileDatabase.attachIpcEvents( mainWindowRef );
 triggerDatabase.attachIpcEvents( mainWindowRef, sendTick, fileDatabase, userPreferences );

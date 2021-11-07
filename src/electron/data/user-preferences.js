@@ -238,6 +238,9 @@ class UserPreferencesStore extends Store {
         this.#data.ignoreGinaObjects = val;
     }
 
+    /** @type {(fctStyles: FctStylesModel) => void[]} */
+    onFctStyleChanges = [];
+
     constructor() {
         super( {
             // We'll call our data file 'user-preferences'
@@ -395,6 +398,7 @@ class UserPreferencesStore extends Store {
         
         ipcMain.on( 'settings:set:fctStyles', ( event, arg ) => {
             this.fctStyles = arg;
+            this.onFctStyleChanges?.forEach( fn => fn(this.fctStyles) );
         } );
 
         ipcMain.on( 'settings:set:everquest-folder', ( event, folder ) => {

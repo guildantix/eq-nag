@@ -5,7 +5,7 @@ const UserPreferencesStore = require( "./data/user-preferences" );
 const { OverlayWindow } = require( "./data/models/overlay-window" );
 const ArrayUtilities = require( "./utilities/arrays" );
 
-/** @type {Record<string, {window: BrowserWindow, interval: NodeJS.Timer}>} */
+/** @type {Record<string, {window: BrowserWindow, interval: NodeJS.Timer, model: OverlayWindow}>} */
 var overlayDictionary = {};
 var criticalPadding = 300;
 
@@ -18,6 +18,9 @@ class WindowManager {
     triggerLibraryWindow;
 
     #dirname;
+
+    /** @type {UserPreferencesStore} */
+    #userPrefDb;
 
     constructor(dirname) {
         this.#dirname = dirname;
@@ -36,11 +39,12 @@ class WindowManager {
      * Attaches store events to ipc main and dispatches react events to the main window.
      * 
      * @param {ForwardRef} mainWindowRef The main window of the application.
-     * @param {function} sendTick The send tick method.
      * @param {OverlayDatabaseStore} overlayDatabase The overlay database.
      * @param {UserPreferencesStore} userPreferencesDatabase The user pref database.
      */
-    attachIpcEvents( mainWindowRef, sendTick, overlayDatabase, userPreferencesDatabase ) {
+    attachIpcEvents( mainWindowRef, overlayDatabase, userPreferencesDatabase ) {
+
+        this.#userPrefDb = userPreferencesDatabase;
 
         ipcMain.on( 'trigger:dialog:new', ( event, arg ) => {
             let triggerWindow = new BrowserWindow( {
@@ -314,6 +318,18 @@ class WindowManager {
 
         overlayDatabase.registerOverlayPositionHandler( overlays => this.updateOverlayPositions( overlays ) );
         
+        userPreferencesDatabase.onFctStyleChanges.push( fctStyles => {
+          
+            for ( let overlayId in overlayDictionary ) {
+
+                if ( overlayDictionary[ overlayId ].model.overlayType === 'FCT' ) {
+                    // Send each overlay the FCT styles if they're an fct overlay type.
+                    overlayDictionary[ overlayId ].window.webContents.send( 'fctStyles', fctStyles );
+                }
+
+            }
+
+        } );
     }
 
 
@@ -374,8 +390,27 @@ class WindowManager {
     loadOverlays( overlayDatabase ) {
 
         let overlays = overlayDatabase.getAll();
+        let loadedCount = 0;
         overlays?.forEach( m => {
-            loadOverlay( m, overlayDatabase );
+            loadOverlay( m, overlayDatabase, false, () => {
+
+                loadedCount += 1;
+                
+                if ( loadedCount >= overlays.length ) {
+                    // If all of the overlay windows have been loaded.
+
+                    for ( let overlayId in overlayDictionary ) {
+
+                        if ( overlayDictionary[ overlayId ].model.overlayType === 'FCT' ) {
+                            // Send each overlay the FCT styles if they're an fct overlay type.
+                            overlayDictionary[ overlayId ].window.webContents.send( 'fctStyles', this.#userPrefDb.fctStyles );
+                        }
+
+                    }
+
+                }
+
+            } );
         } );
 
     }
@@ -420,8 +455,9 @@ class WindowManager {
  * @param {OverlayWindow} model The overlay settings object.
  * @param {OverlayDatabaseStore} overlayDatabase The overlay database.
  * @param {boolean} enableEdit If true, edit mode will be enabled.
+ * @param {() => void} afterLoaded Executed after the Dom is loaded.
  */
-function loadOverlay( model, overlayDatabase, enableEdit ) {
+function loadOverlay( model, overlayDatabase, enableEdit, afterLoaded ) {
     let bounds = {
         x: model.x > 0 ? model.x : null,
         y: model.y > 0 ? model.y : null,
@@ -491,7 +527,11 @@ function loadOverlay( model, overlayDatabase, enableEdit ) {
         } );
     } );
 
-    overlayDictionary[ model.overlayId ] = { window: overlay, interval: interval };
+    overlay.webContents.once( 'dom-ready', () => {
+        afterLoaded();
+    } );
+
+    overlayDictionary[ model.overlayId ] = { window: overlay, interval: interval, model: model };
     
 }
 
