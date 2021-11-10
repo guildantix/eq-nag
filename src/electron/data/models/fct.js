@@ -1,6 +1,24 @@
 const { StyleProperties } = require( './common' );
+const { OverlayComponent } = require( './overlay-window' );
 
-class FctModel {
+var FctTypes = {
+    '0': 'dmgOut',
+    '1': 'dmgIn',
+    '2': 'spellDmgOut',
+    '3': 'spellDmgIn',
+    '4': 'healingOut',
+    '5': 'healingIn',
+    '6': 'skill',
+    dmgOut: 0,
+    dmgIn: 1,
+    spellDmgOut: 2,
+    spellDmgIn: 3,
+    healingOut: 4,
+    healingIn: 5,
+    skill: 6,
+}
+
+class FctModel extends OverlayComponent {
     overlayId = null;
     dealt = false;
     text = '';
@@ -8,6 +26,8 @@ class FctModel {
     attack = '';
     /** @type {Date} */
     timestamp = null;
+    /** @type {number} */
+    fctType = FctTypes.dmgOut;
 }
 
 class FctStylesModel {
@@ -35,4 +55,4 @@ class FctStylesModel {
 
 }
 
-module.exports = { FctModel, FctStylesModel };
+module.exports = { FctModel, FctStylesModel, FctTypes };

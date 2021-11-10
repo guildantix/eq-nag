@@ -75,8 +75,9 @@
             z-index: 0;
         }
         
-        .content-area {
-            z-index: 1;
+        .content-area,
+        .healing-content-area {
+            z-index: 2;
             position: fixed;
             left: 6px;
             right: 6px;
@@ -85,7 +86,8 @@
             padding: 5px;
         }
 
-        .content-area p {
+        .content-area p,
+        .healing-content-area p {
             margin: 0;
             /* line-height: 0.9em; */
             /* font-family: Roboto, sans-serif;
@@ -95,7 +97,8 @@
             /* -webkit-text-stroke: 2px black; */
         }
 
-        .content-area .progress {
+        .content-area .progress,
+        .healing-content-area .progress {
             height: 24px;
         }
 
@@ -182,6 +185,11 @@
                             0px 0px 5px #000000d9, -1px -1px 5px #000000d9, 1px -1px 5px #000000d9, -1px 1px 5px #000000d9, 1px 1px 5px #000000d9;
         }
 
+        .fct-healing-out,
+        .fct-healing-in {
+            align-self: flex-end;
+        }
+
     </style>
 </head>
 <body>
@@ -196,23 +204,32 @@
                 <div class="determinate" style="width: 70%">Arch Shielding</div>
             </div> -->
         </div>
+        <div class="healing-content-area">
+            <!-- <div class="progress">
+                <div class="determinate" style="width: 70%">Arch Shielding</div>
+            </div> -->
+        </div>
     </section>
     
     <template id="displayTextTemplate">
         <p>{{value}}</p>
     </template>
+
     <template id="fctTemplate">
         <span class="fct-text">{{value}}</span>
-        <span class="fct-dmg-src">({{damageSource}})</span>
+        <span class="fct-skill">({{damageSource}})</span>
     </template>
+
     <template id="fctCriticalTemplate">
         <p class="fct-text">{{value}}</p>
-        <p class="fct-dmg-src">({{damageSource}})</p>
+        <p class="fct-skill">({{damageSource}})</p>
     </template>
+
     <template id="dotTimerTemplate">
         <div class="progress">
             <div class="determinate" style="width: 100%">{{value}}</div>
         </div>
     </template>
+
 </body>
 </html>

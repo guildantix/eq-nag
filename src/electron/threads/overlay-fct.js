@@ -6,7 +6,7 @@ const { ActionTypes, TriggerAction } = require( '../data/models/trigger' );
 const { ipcRenderer } = require( 'electron' );
 const Handlebars = require( "handlebars" );
 const StyleSheetUtil = require( '../utilities/style-sheet' );
-const { FctStylesModel } = require( '../data/models/fct' );
+const { FctStylesModel, FctModel, FctTypes } = require( '../data/models/fct' );
 
 // <!-- Roboto(i): 100, 300, 400, 500, 700, 900 -->
 // <!-- Red Rose: 300, 400, 700 -->
@@ -31,7 +31,7 @@ var fontSize = 1;
 var quadrants = [];
 var criticals = [];
 var criticalPadding = 300;
-var styleSheet = new StyleSheetUtil();
+var styleSheetUtil = new StyleSheetUtil();
 
 function OverlayFct() {
 
@@ -82,7 +82,16 @@ function OverlayFct() {
          * @param {FctStylesModel} fctStyles The tick data.
          */
         ( event, fctStyles ) => {
-            console.log( 'fctStyles', fctStyles );
+            let style = styleSheetUtil.createStyleSheet( document, 'fct-styles' );
+
+            style.sheet.insertRule( styleSheetUtil.createTextRule( fctStyles.fctDmgOutStyle, 'fct-dmg-out' ) );
+            style.sheet.insertRule( styleSheetUtil.createTextRule( fctStyles.fctDmgInStyle, 'fct-dmg-in' ) );
+            style.sheet.insertRule( styleSheetUtil.createTextRule( fctStyles.fctSpellDmgOutStyle, 'fct-spell-dmg-out' ) );
+            style.sheet.insertRule( styleSheetUtil.createTextRule( fctStyles.fctSpellDmgInStyle, 'fct-spell-dmg-in' ) );
+            style.sheet.insertRule( styleSheetUtil.createTextRule( fctStyles.fctHealingOutStyle, 'fct-healing-out' ) );
+            style.sheet.insertRule( styleSheetUtil.createTextRule( fctStyles.fctHealingInStyle, 'fct-healing-in' ) );
+            style.sheet.insertRule( styleSheetUtil.createTextRule( fctStyles.fctSkillStyle, 'fct-skill' ) );
+            
         } );
 
     ipcRenderer.on( 'overlay:window:model',
@@ -95,10 +104,16 @@ function OverlayFct() {
             
             document.querySelector( '#overlay-title' ).textContent = model.name ? model.name : 'Overlay';
             let contentArea = document.querySelector( '.content-area' );
+            let healingContentArea = document.querySelector( '.healing-content-area' );
             contentArea.style.fontFamily = `"${model.fontFamily}"`;
             contentArea.style.fontSize = `${model.fontSize}px`;
             contentArea.style.lineHeight = `${( model.lineHeight > 10 ? model.lineHeight : 90 ) / 100}em`;
             contentArea.style.fontWeight = model.fontWeight > 0 ? model.fontWeight : 300;
+            
+            healingContentArea.style.fontFamily = `"${model.fontFamily}"`;
+            healingContentArea.style.fontSize = `${model.fontSize}px`;
+            healingContentArea.style.lineHeight = `${( model.lineHeight > 10 ? model.lineHeight : 90 ) / 100}em`;
+            healingContentArea.style.fontWeight = model.fontWeight > 0 ? model.fontWeight : 300;
 
             if ( model.fontColor ) {
                 if ( model.fontTransparency < 1 ) {
@@ -107,19 +122,39 @@ function OverlayFct() {
                     contentArea.style.color = `${model.fontColor}`;
                 }
             }
+            if ( model.fontColor ) {
+                if ( model.fontTransparency < 1 ) {
+                    healingContentArea.style.color = `${model.fontColor}${componentToHex( Math.round( model.fontTransparency * 255 ) )}`;
+                } else {
+                    healingContentArea.style.color = `${model.fontColor}`;
+                }
+            }
             if ( model.backgroundTransparency && model.backgroundTransparency > 0 && model.backgroundColor ) {
                 contentArea.style.backgroundColor = `${model.backgroundColor}${componentToHex( Math.round( model.backgroundTransparency * 255 ) )}`;
             } else {
                 contentArea.style.backgroundColor = null;
+            }
+            if ( model.backgroundTransparency && model.backgroundTransparency > 0 && model.backgroundColor ) {
+                healingContentArea.style.backgroundColor = `${model.backgroundColor}${componentToHex( Math.round( model.backgroundTransparency * 255 ) )}`;
+            } else {
+                healingContentArea.style.backgroundColor = null;
             }
             if ( model.borderTransparency && model.borderTransparency > 0 && model.borderColor ) {
                 contentArea.style.border = `3px solid ${model.borderColor}${componentToHex( Math.round( model.borderTransparency * 255 ) )}`;
             } else {
                 contentArea.style.border = null;
             }
+            if ( model.borderTransparency && model.borderTransparency > 0 && model.borderColor ) {
+                healingContentArea.style.border = `3px solid ${model.borderColor}${componentToHex( Math.round( model.borderTransparency * 255 ) )}`;
+            } else {
+                healingContentArea.style.border = null;
+            }
 
             contentArea.classList.add( 'fct-content' );
             contentArea.style.margin = `${criticalPadding}px`;
+
+            healingContentArea.classList.add( 'fct-content' );
+            healingContentArea.style.margin = `${criticalPadding}px`;
 
             width = contentArea.clientWidth;
             height = contentArea.clientHeight;
@@ -154,12 +189,35 @@ var delayAdd = 0;
 /**
  * Renders the overlayComponents to the overlay window.
  * 
- * @param {OverlayComponent} comp Tells the renderer to forcefully redraw the overlayComponents.
+ * @param {FctModel} comp Tells the renderer to forcefully redraw the overlayComponents.
  */
 function render( comp ) {
     
     let contentArea = document.querySelector( '.content-area' );
     let div = document.createElement( 'div' );
+
+    if ( comp.fctType === FctTypes.dmgOut ) {
+        div.classList.add( 'fct-dmg-out' );
+
+    } else if ( comp.fctType === FctTypes.dmgIn ) {
+        div.classList.add( 'fct-dmg-in' );
+
+    } else if ( comp.fctType === FctTypes.spellDmgOut ) {
+        div.classList.add( 'fct-spell-dmg-out' );
+
+    } else if ( comp.fctType === FctTypes.spellDmgIn ) {
+        div.classList.add( 'fct-spell-dmg-in' );
+
+    } else if ( comp.fctType === FctTypes.healingOut ) {
+        div.classList.add( 'fct-healing-out' );
+
+    } else if ( comp.fctType === FctTypes.healingIn ) {
+        div.classList.add( 'fct-healing-in' );
+
+    } else if ( comp.fctType === FctTypes.skill ) {
+        div.classList.add( 'fct-skill' );
+
+    }
 
     if ( comp.critical ) {
         let content = fctCriticalTemplate( { value: comp.text, damageSource: comp.attack } );
@@ -197,7 +255,14 @@ function render( comp ) {
         div.classList.add( 'animate-fade-out' );
 
         comp.dom = div;
-        contentArea.appendChild( div );
+
+        if ( comp.fctType === FctTypes.healingOut || comp.fctType === FctTypes.healingIn ) {
+            // div.classList.add( 'fct-healing-out' );
+            // contentArea.appendChild( div );
+            document.querySelector( '.healing-content-area' ).appendChild( div );
+        } else {
+            contentArea.appendChild( div );
+        }
         comp.intervalId = window.setTimeout( () => {
             comp.dom.parentNode.removeChild( comp.dom );
         }, 7000 );

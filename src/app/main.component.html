@@ -99,7 +99,7 @@
                             <mat-select [(ngModel)]="damageDealtOverlayId" name="ddlDamageDealtOverlay" (selectionChange)="onChangeDealtFctOverylays()">
                                 <mat-option *ngFor="let option of fctOverlays" [value]="option.overlayId">{{option.name}}</mat-option>
                             </mat-select>
-                            <mat-hint>Damage Dealt Overlay</mat-hint>
+                            <mat-hint>Damage Dealt or Healing Done Overlay</mat-hint>
                         </mat-form-field>
                     </p>
 
@@ -109,7 +109,7 @@
                             <mat-select [(ngModel)]="damageTakenOverlayId" name="ddlDamageReceivedOverlay" (selectionChange)="onChangeReceivedFctOverylays()">
                                 <mat-option *ngFor="let option of fctOverlays" [value]="option.overlayId">{{option.name}}</mat-option>
                             </mat-select>
-                            <mat-hint>Damage Received Overlay</mat-hint>
+                            <mat-hint>Damage Received or Healing Received Overlay</mat-hint>
                         </mat-form-field>
                     </p>
                     

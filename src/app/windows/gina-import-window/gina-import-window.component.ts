@@ -162,13 +162,6 @@ export class GinaImportWindowComponent implements OnInit {
             this.ignoredGinaObjects = data.ignoredGinaObjects?.length > 0 ? data.ignoredGinaObjects : [];
             this.overlays = data.overlays;
             
-            // this.enableFct = data.enableFct;
-            // this.damageDealtOverlayId = data.damageDealtOverlayId;
-            // this.damageTakenOverlayId = data.damageReceivedOverlayId;
-            // this.focusEffectSettings.hasExtendedDotFocus = data.hasExtendedDotFocus;
-            // this.focusEffectSettings.extendedDotFocusPercent = data.extendedDotFocusPercent;
-            // this.focusEffectSettings.extendedDotFocusDecayLevel = data.extendedDotFocusDecayLevel;
-
             data.triggers?.forEach( trigger => {
                 this.importedTriggerNames.push( trigger.importIdentifier );
             } );

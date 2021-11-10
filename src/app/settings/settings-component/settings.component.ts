@@ -61,13 +61,7 @@ export class SettingsComponent implements OnInit {
             // this.logFile = data.logFile;
             this.voiceIndex = data.voiceIndex;
             this.overlays = data.overlays;
-            // this.enableFct = data.enableFct;
-            // this.damageDealtOverlayId = data.damageDealtOverlayId;
-            // this.damageTakenOverlayId = data.damageReceivedOverlayId;
-            // this.focusEffectSettings.hasExtendedDotFocus = data.hasExtendedDotFocus;
-            // this.focusEffectSettings.extendedDotFocusPercent = data.extendedDotFocusPercent;
-            // this.focusEffectSettings.extendedDotFocusDecayLevel = data.extendedDotFocusDecayLevel;
-
+            
             this.phoneticTransforms = [];
             if ( data.phoneticTransforms ) {
                 for ( let key of Object.keys( data.phoneticTransforms ) ) {

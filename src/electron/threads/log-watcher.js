@@ -16,7 +16,7 @@ const _ = require( 'lodash' );
 const chokidar = require( "chokidar" );
 const StringUtilities = require( '../utilities/string' );
 const NumberUtilities = require( '../utilities/numbers' );
-const { FctModel } = require( '../data/models/fct' );
+const { FctModel, FctTypes } = require( '../data/models/fct' );
 const { DateUtilities } = require( '../utilities/dates' );
 const chunkSize = 512 * 1024;
 // const _timerId = '7d9j6ZX7p6c5NLMw';
@@ -612,6 +612,14 @@ function parseLogEntries( raw, simulating ) {
     // let rgxNum = /(\d+)/gi;
     let rgxCombatText = /hit|damage|miss|dodge|riposte|parry|become better|backstab|stun|attack/gi;
     let rgxFctCritical = /\. \(.*(Critical).*\)/gi;
+
+    // Someone healed you.
+    // https://regex101.com/r/Jdtzsf/3
+    // ^(?<healer>.+?) healed you (over time for|for) (?<healAmount>[0-9]*) (\(([0-9]*)\) )?hit points by (?<healType>.+?)\.
+
+    // You healed someone else.
+    // https://regex101.com/r/0btqKz/1
+    // ^(?<healer>You) healed (?<target>.+?) (over time for|for) (?<healAmount>[0-9]*) (\(([0-9]*)\) )?hit points by (?<healType>.+?)\.
     
     let fctRegExs = [
         // 0: rgxMelee
@@ -632,6 +640,10 @@ function parseLogEntries( raw, simulating ) {
         /(.*) hit you for ([0-9]*) points of ([a-zA-Z0-9_]*) damage by (.*)\./gi,
         // 8: rgxSpellDmg
         /You ([a-zA-Z0-9_]*) (.*) for ([0-9]*) points of (.*) damage by (.*)\./gi,
+        // 9: You heal other
+        /^(?<healer>.+?) healed (?<target>you) (over time for|for) (?<healAmount>[0-9]*) (\(([0-9]*)\) )?hit points by (?<healType>.+?)\./gi,
+        // 10: Other heal you
+        /^(?<healer>You) healed (?<target>.+?) (over time for|for) (?<healAmount>[0-9]*) (\(([0-9]*)\) )?hit points by (?<healType>.+?)\./gi,
     ];
 
     let timestamp = new Date( rgxTimestamp.exec( raw )[ 1 ] );
@@ -645,7 +657,7 @@ function parseLogEntries( raw, simulating ) {
             
             if ( results && results.length > 1 ) {
                 let model = new FctModel();
-                model.dealt = ( i >= 0 && i <= 4 ) || i === 8 ? true : false;
+                model.dealt = ( i >= 0 && i <= 4 ) || i === 8 || i === 9 ? true : false;
                 model.overlayId = model.dealt ? damageDealtOverlayId : damageReceivedOverlayId;
 
                 if ( i === 0 ) {
@@ -657,6 +669,7 @@ function parseLogEntries( raw, simulating ) {
 
                     model.text = `${dmg}`;
                     model.attack = type;
+                    model.fctType = FctTypes.dmgOut;
 
                 } else if ( i === 1 ) {
                     /* --== My melee misses ==-- */
@@ -664,6 +677,7 @@ function parseLogEntries( raw, simulating ) {
                     let dmg = 'miss';
 
                     model.attack = 'Melee';
+                    model.fctType = FctTypes.dmgOut;
                     break;
 
                 } else if ( i === 2 ) {
@@ -675,6 +689,7 @@ function parseLogEntries( raw, simulating ) {
 
                     model.text = `${dmg}`;
                     model.attack = spell;
+                    model.fctType = FctTypes.spellDmgOut;
 
                 } else if ( i === 3 ) {
                     /* --== My thorns dmg ==-- */
@@ -684,12 +699,17 @@ function parseLogEntries( raw, simulating ) {
 
                     model.text = `${dmg}`;
                     model.attack = 'Thorns';
+                    model.fctType = FctTypes.dmgOut;
 
                 } else if ( i === 4 ) {
                     /* --== My skill up ==-- */
                     
                     let skill = results[ 1 ];
                     let level = results[ 2 ];
+
+                    model.text = skill;
+                    model.attack = level;
+                    model.fctType = FctTypes.skill;
 
                 } else if ( i === 5 ) {
                     /* --== Melee damage taken ==-- */
@@ -700,6 +720,7 @@ function parseLogEntries( raw, simulating ) {
 
                     model.text = `${dmg}`;
                     model.attack = type;
+                    model.fctType = FctTypes.dmgIn;
 
                 } else if ( i === 6 ) {
                     /* --== Me avoiding melee ==-- */
@@ -709,6 +730,7 @@ function parseLogEntries( raw, simulating ) {
                     let miss = results[ 3 ];
 
                     model.attack = type;
+                    model.fctType = FctTypes.dmgIn;
                     break;
 
                 } else if ( i === 7 ) {
@@ -721,6 +743,7 @@ function parseLogEntries( raw, simulating ) {
 
                     model.text = `${dmg}`;
                     model.attack = spell;
+                    model.fctType = FctTypes.spellDmgIn;
 
                 } else if ( i === 8 ) {
                     /* --== My spell hits ==-- */
@@ -731,6 +754,18 @@ function parseLogEntries( raw, simulating ) {
 
                     model.text = `${dmg}`;
                     model.attack = spell;
+                    model.fctType = FctTypes.spellDmgOut;
+
+                } else if ( i === 9 || i === 10 ) {
+
+                    let healer = results.groups?.healer;
+                    let target = results.groups?.target;
+                    let healAmount = results.groups?.healAmount;
+                    let spell = results.groups?.healType;
+
+                    model.text = `${healAmount}`;
+                    model.attack = spell;
+                    model.fctType = i === 9 ? FctTypes.healingOut : FctTypes.healingIn;
 
                 }
 
