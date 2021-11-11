@@ -114,7 +114,11 @@ class WindowManager {
                 overlayDictionary[ overlayId ].window.webContents.send( 'overlay:window:enable-edit' );
             } else {
                 if ( model ) {
-                    loadOverlay( model, overlayDatabase, true );
+                    loadOverlay( model, overlayDatabase, true, () => {
+                        if ( model.overlayType === 'FCT' ) {
+                            overlayDictionary[ overlayId ].window.webContents.send( 'fctStyles', this.#userPrefDb.fctStyles );
+                        }
+                    } );
                 } else {
                     console.error( `Could not find over lay ${overlayId}` );
                     return;
@@ -139,7 +143,7 @@ class WindowManager {
                 overlayDictionary[ overlayId ].window.webContents.send( 'overlay:window:disable-edit' );
             } else {
                 if ( model ) {
-                    loadOverlay( model, overlayDatabase, false );
+                    loadOverlay( model, overlayDatabase, false, () => { } );
                 } else {
                     console.error( `Could not find over lay ${overlayId}` );
                     return;
@@ -528,7 +532,9 @@ function loadOverlay( model, overlayDatabase, enableEdit, afterLoaded ) {
     } );
 
     overlay.webContents.once( 'dom-ready', () => {
-        afterLoaded();
+        if ( afterLoaded ) {
+            afterLoaded();
+        }
     } );
 
     overlayDictionary[ model.overlayId ] = { window: overlay, interval: interval, model: model };

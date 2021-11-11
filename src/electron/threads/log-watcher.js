@@ -640,9 +640,9 @@ function parseLogEntries( raw, simulating ) {
         /(.*) hit you for ([0-9]*) points of ([a-zA-Z0-9_]*) damage by (.*)\./gi,
         // 8: rgxSpellDmg
         /You ([a-zA-Z0-9_]*) (.*) for ([0-9]*) points of (.*) damage by (.*)\./gi,
-        // 9: You heal other
+        // 9: Other heal you
         /^(?<healer>.+?) healed (?<target>you) (over time for|for) (?<healAmount>[0-9]*) (\(([0-9]*)\) )?hit points by (?<healType>.+?)\./gi,
-        // 10: Other heal you
+        // 10: You heal other
         /^(?<healer>You) healed (?<target>.+?) (over time for|for) (?<healAmount>[0-9]*) (\(([0-9]*)\) )?hit points by (?<healType>.+?)\./gi,
     ];
 
@@ -651,14 +651,15 @@ function parseLogEntries( raw, simulating ) {
     if ( !timestamp || timestamp.length === 0 || timestamp.length === 1 )
         console.log( 'failed parse', raw );
     
+    let log = raw.replace( rgxTimestamp, '' );
+    
     if ( enableFct && raw.match( rgxCombatText )?.length > 0 ) {
         for ( let i = 0; i < fctRegExs.length; i++ ) {
-            let results = fctRegExs[ i ].exec( raw );
+            let results = fctRegExs[ i ].exec( log );
             
             if ( results && results.length > 1 ) {
                 let model = new FctModel();
-                model.dealt = ( i >= 0 && i <= 4 ) || i === 8 || i === 9 ? true : false;
-                model.overlayId = model.dealt ? damageDealtOverlayId : damageReceivedOverlayId;
+                model.dealt = ( i >= 0 && i <= 4 ) || i === 8 ? true : false;
 
                 if ( i === 0 ) {
                     /* --== My melee damage ==-- */
@@ -764,13 +765,15 @@ function parseLogEntries( raw, simulating ) {
                     let spell = results.groups?.healType;
 
                     model.text = `${healAmount}`;
-                    model.attack = spell;
-                    model.fctType = i === 9 ? FctTypes.healingOut : FctTypes.healingIn;
+                    model.dealt = i === 10;
+                    model.attack = model.dealt ? spell : healer;
+                    model.fctType = i === 10 ? FctTypes.healingOut : FctTypes.healingIn;
 
                 }
 
                 model.critical = raw.match( rgxFctCritical );
                 model.timestamp = timestamp;
+                model.overlayId = model.dealt ? damageDealtOverlayId : damageReceivedOverlayId;
 
                 ipcRenderer.send( 'overlay:send:component', model );
 
@@ -782,8 +785,6 @@ function parseLogEntries( raw, simulating ) {
         } // for ( let i = 0; i < fctRegExs.length; i++ )
         
     }
-    
-    let log = raw.replace( rgxTimestamp, '' );
 
     // If there are any cancellable actions, evaluate them here.
     if ( cancellableComponents?.length > 0 ) {
