@@ -36,7 +36,7 @@
                 </p>
                 
                 <div>
-                    <button mat-button matStepperPrevious>Next</button>
+                    <button mat-button matStepperPrevious>Prev</button>
                     <button mat-button matStepperNext [disabled]="(!useSelfTimer && !useTargetTimer && !alertWhenBuffFades && !alertWhenBuffOverwritten) || stepTwoForm.invalid">Next</button>
                 </div>
 
@@ -60,7 +60,7 @@
                 <p><mat-checkbox [(ngModel)]="cancelTimerIfTargetDies" name="cancelTimerIfTargetDies">End timer early if your target dies.</mat-checkbox></p>
                 
                 <div>
-                    <button mat-button matStepperPrevious>Next</button>
+                    <button mat-button matStepperPrevious>Prev</button>
                     <button mat-button matStepperNext [disabled]="stepThreeForm.invalid">Next</button>
                 </div>
 
