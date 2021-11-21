@@ -313,6 +313,7 @@ export class ScraperService {
                 
                 itemAnchors.forEach( a => {
                     let resource = new OutsideResource();
+                    
                     resource.name = a.innerText;
                     let href = a.getAttribute( 'href' );
                     if ( href[ 0 ] === '/' ) {
@@ -320,7 +321,10 @@ export class ScraperService {
                     } else {
                         resource.url = href;
                     }
-                    
+
+                    if ( resource.name.match( /^Spell: /gi ) == null ) {
+                        model.itemsWithEffect.push( resource );
+                    }
                 } );
 
                 observer.next( model );
