@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { forkJoin, Observable, Observer } from 'rxjs';
-import { CharacterClasses, CharacterClassLevel, ScrapedAbility, ScrapedNpc, ScrapedSpell } from './core.model';
+import { CharacterClasses, CharacterClassLevel, OutsideResource, ScrapedAbility, ScrapedNpc, ScrapedSpell } from './core.model';
 
 const allakhazamUrl: string = 'https://everquest.allakhazam.com';
 // interface Node {
@@ -214,6 +214,7 @@ export class ScraperService {
                     spellGem: div.querySelector( 'img[src*="spellicons"]' ),
                     duration: 0,
                     _duration: document.evaluate( "//strong[contains(., 'Duration:')]", document, null, XPathResult.ANY_TYPE, null ).iterateNext().nextSibling.nextSibling.textContent.trim(),
+                    itemsWithEffect: document.evaluate( "//tr//td//h2[contains(., 'Items with this effect')]", document, null, XPathResult.ANY_TYPE, null ).iterateNext().parentElement.parentElement.nextElementSibling,
                     // class: document.evaluate( "//div[contains(@class, 'db-infobox')]/table/tbody/tr/td/strong[contains(., '" + currentCharacterClass + "')]", document, null, XPathResult.ANY_TYPE, null ).iterateNext().textContent,
                     // level: +document.evaluate( "//div[contains(@class, 'db-infobox')]/table/tbody/tr/td/strong[contains(., '" + currentCharacterClass + "')]", document, null, XPathResult.ANY_TYPE, null ).iterateNext().parentNode.nextSibling.textContent,
                     castOnOther: document.evaluate( "//blockquote[contains(., 'Cast on other')]", document, null, XPathResult.ANY_TYPE, null ).iterateNext().textContent.split( 'Cast on other: ' )[ 1 ].split( 'Effect Fades: ' )[ 0 ],
@@ -306,6 +307,22 @@ export class ScraperService {
                 } else {
                     model.gemIndex = -1;
                 }
+                
+                // Scrape items with this effect into outside resources.
+                let itemAnchors = data.itemsWithEffect.querySelectorAll( 'a' );
+                
+                itemAnchors.forEach( a => {
+                    let resource = new OutsideResource();
+                    resource.name = a.innerText;
+                    let href = a.getAttribute( 'href' );
+                    if ( href[ 0 ] === '/' ) {
+                        resource.url = `https://everquest.allakhazam.com${href}`;
+                    } else {
+                        resource.url = href;
+                    }
+                    
+                } );
+
                 observer.next( model );
                 observer.complete();
 

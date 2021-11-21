@@ -387,6 +387,17 @@ export class TriggerAction {
     public textGlowSize: number;
 }
 
+export class OutsideResource {
+
+    public get allakhazam(): boolean {
+        return this.url.match( /^(http|https):\/\/.*\.allakhazam\.com.*/gi )?.length > 0;
+    }
+    
+    public url: string;
+    public name: string;
+
+}
+
 export class ScrapedSpell {
     
     public name: string;
@@ -400,6 +411,7 @@ export class ScrapedSpell {
     /** The cast time, in milliseconds. */
     public castTime: number;
     public effectFades: string;
+    public itemsWithEffect: OutsideResource[] = [];
     
 }
 
