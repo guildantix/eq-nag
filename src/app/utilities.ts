@@ -1,5 +1,23 @@
 import { Observable, Observer } from 'rxjs';
 
+export class StringUtility {
+
+    /**
+     * Inserts the given value into the given string value at the specified 
+     * value.
+     * 
+     * @param string The original string value
+     * @param value The value to insert into string.
+     * @param position The position to perform operation.
+     * 
+     * @returns Returns a new string with the given value inserted into the 
+     * specified position.
+     */
+    public static Insert( string: string, value: string, position: number ): string {
+        return string.substr( 0, position ) + value + string.substr( position );
+    }
+}
+
 export class ImageUtility {
 
     public static toDataUrl( file: Blob ): Observable<string> {

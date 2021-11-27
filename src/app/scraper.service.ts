@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { forkJoin, Observable, Observer } from 'rxjs';
 import { CharacterClasses, CharacterClassLevel, OutsideResource, ScrapedAbility, ScrapedClickEffect, ScrapedNpc, ScrapedSpell } from './core.model';
+import { StringUtility } from './utilities';
 
 const allakhazamUrl: string = 'https://everquest.allakhazam.com';
 // interface Node {
@@ -278,6 +279,8 @@ export class ScraperService {
                     castOnYou: document.evaluate( "//blockquote[contains(., 'Cast on you')]", document, null, XPathResult.ANY_TYPE, null ).iterateNext()?.textContent.split( 'Cast on you: ' )[ 1 ].split( 'Cast on other: ' )[ 0 ],
                     // effectFades_bad: document.evaluate( "//blockquote[contains(., 'Effect Fades')]", document, null, XPathResult.ANY_TYPE, null ).iterateNext().textContent?.split( 'Effect Fades: ' )[ 1 ],
                 };
+
+                data.name = data.name.match( /^Ancient\s/ ) ? StringUtility.Insert( data.name, ':', /^Ancient\s/.exec( data.name ).index + 'Ancient'.length ) : data.name;
 
                 let classes: CharacterClassLevel[] = [];
                 for ( const key of Object.keys( CharacterClasses ) ) {
