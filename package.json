@@ -81,7 +81,8 @@
           "provider": "github",
           "token": "REDACTED_TOKEN"
         }
-      ]
+      ],
+      "icon": "Nag.ico"
     },
     "portable": {
       "artifactName": "antixparse_portable.exe"
