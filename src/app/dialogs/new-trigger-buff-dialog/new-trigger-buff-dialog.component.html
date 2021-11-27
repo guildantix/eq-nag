@@ -67,7 +67,11 @@
             </form>
         </mat-step>
         <mat-step label="Items with this Effect" *ngIf="spell?.itemsWithEffect?.length > 0">
-            <form #optionalAForm="ngForm">
+            <div *ngIf="loadingItemDetails" class="loading">
+                <p>Loading ...</p>
+                <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+            </div>
+            <form #optionalAForm="ngForm" *ngIf="!loadingItemDetails">
 
                 <p>There are item(s) with this effect.  Would you like to include any of these?</p>
 

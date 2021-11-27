@@ -33,7 +33,8 @@ export class NewTriggerBuffDialogComponent implements OnInit {
     public endingSoonDuration: number = null;
     public readyForImport: boolean = false;
     public selectedItems: ScrapedClickEffect[] = [];
-    
+    public loadingItemDetails: boolean = false;
+
     public get timerOverlays(): OverlayWindowModel[] {
         return this.overlays.filter( f => f.overlayType === 'Timer' );
     }
@@ -77,6 +78,8 @@ export class NewTriggerBuffDialogComponent implements OnInit {
     }
 
     public processSelectedItemClickies() {
+        this.loadingItemDetails = true;
+
         let observables: Observable<ScrapedClickEffect>[] = [];
         
         this.spell.itemsWithEffect.forEach( item => {
@@ -87,6 +90,7 @@ export class NewTriggerBuffDialogComponent implements OnInit {
 
         forkJoin( observables ).subscribe( items => {
             this.selectedItems = items;
+            this.loadingItemDetails = false;
             this.stepper.next();
         } );
     }
@@ -192,6 +196,7 @@ export class NewTriggerBuffDialogComponent implements OnInit {
                 hideConditions: [],
                 castTime: item.castTime,
                 onlyUseAaBeneficialFocus: true,
+                skipBenCastingTimeFocus: true,
             } );
         } );
 

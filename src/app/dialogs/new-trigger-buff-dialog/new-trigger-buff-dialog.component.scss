@@ -18,3 +18,11 @@ p.note {
     text-align: justify;
     border-radius: 3px;
 }
+
+
+div.loading {
+    display: flex;
+    flex-direction: column;
+    padding: 10px 20%;
+    align-items: center;
+}
