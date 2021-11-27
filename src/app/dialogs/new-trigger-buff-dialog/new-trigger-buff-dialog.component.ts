@@ -184,6 +184,14 @@ export class NewTriggerBuffDialogComponent implements OnInit {
         } );
         
         this.selectedItems.forEach( item => {
+            
+            item.classes.forEach( chrClass => {
+                let i = trigger.classLevels.findIndex( f => f.class === chrClass.class );
+                if ( i == -1 ) {
+                    trigger.classLevels.push( chrClass );
+                }
+            } );
+
             buffTimers.push( <TriggerAction>{
                 phrases: [].concat( buffTimerPhrases ),
                 actionType: ActionTypes.BeneficialTimer,
