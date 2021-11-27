@@ -2,8 +2,16 @@
 <fieldset>
     <legend class="full-width"><span class="title">Class & Level</span><span class="spacer"></span><button mat-button (click)="addClassLevel()" color="accent"><mat-icon>add</mat-icon>New</button></legend>
 
-    <p>Some triggers only apply to specific classes.  If a class is in this list, this trigger will only activate for that class(es).  If they can be further restricted by level then include that information as well.  For example, Necromancers only get Blood of Thule at level 65.</p>
+    <p class="notice border-blue">
+        <mat-icon class="material-icons-outlined color-blue">info</mat-icon><span>Some triggers only apply to specific classes.  If a class is in this list, this trigger will only activate for that class(es).  If they can be further restricted by level then include that information as well.  For example, Necromancers only get Blood of Thule at level 65.</span>
+    </p>
     
+    <p class="notice border-purple">
+        <mat-icon class="material-icons-outlined color-purple">info</mat-icon><span>The level is only used for calculating focus decay and only the class is used to automatically disable/enable spell triggers.</span>
+    </p>
+
+    <br />
+
     <table mat-table #classesTable="matTable" *ngIf="classLevels?.length > 0"
         [dataSource]="classLevels">
 
