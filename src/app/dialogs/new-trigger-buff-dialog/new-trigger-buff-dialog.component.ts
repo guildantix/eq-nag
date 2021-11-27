@@ -191,6 +191,7 @@ export class NewTriggerBuffDialogComponent implements OnInit {
                 hideTimer: hideTimer,
                 hideConditions: [],
                 castTime: item.castTime,
+                onlyUseAaBeneficialFocus: true,
             } );
         } );
 
