@@ -84,6 +84,10 @@
                 </div>
             </div>
 
+            <div class="card-property" *ngIf="action.actionType === actionTypes.BeneficialTimer">
+                <div class="content-middle"><mat-checkbox [(ngModel)]="action.skipBenCastingTimeFocus" name="cbxSkipBenCastingTimeFocus" title="Item click effects do not benefit from spell haste.">Do not use beneficial spell haste focus.</mat-checkbox></div>
+            </div>
+
             <div class="card-property">
                 <div class="content-top">Timer Icon<div style="padding: 20px 15px;"><img *ngIf="action.timerIcon" [src]="action.timerIcon" (click)="openIconFileModal(action)" /></div></div>
                 <div class="content-vertical content-right content-top">
