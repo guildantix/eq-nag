@@ -27,6 +27,10 @@
                 <div class="content-right"><app-duration [(ngModel)]="action.duration" name="durActionDuration" style="display: inline-block;" ></app-duration></div>
             </div>
 
+            <div class="card-property" *ngIf="action.actionType === actionTypes.BeneficialTimer">
+                <div class="content-middle"><mat-checkbox [(ngModel)]="action.onlyUseAaBeneficialFocus" name="cbxOnlyUseAaBeneficialFocus" title="Item click effects only benefit from AA extended focus.">AA Extended Focus Only</mat-checkbox></div>
+            </div>
+
             <div class="card-property">
                 <div class="content-middle"><mat-checkbox [(ngModel)]="action.hideTimer" name="cbxHideTimer" title="Use this option if you want to keep track of a duration but don't need to see the progress.">Hide Timer?</mat-checkbox></div>
                 <div class="content-middle"><a *ngIf="action.hideTimer" (click)="editHideTimerConditions()" href="javascript:void(0);" class="color-blue">Conditions</a></div>
