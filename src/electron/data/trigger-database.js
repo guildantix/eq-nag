@@ -565,6 +565,16 @@ class TriggerDatabaseStore extends Store {
             this.#data.version = 60;
             this.storeDataFile( this.#data );
         }
+        if ( this.#data.version < 61 ) {
+            this.#data?.triggers?.forEach( trigger => {
+                trigger.actions?.forEach( action => {
+                    action.skipBenCastingTimeFocus = false;
+                } );
+            } );
+            
+            this.#data.version = 61;
+            this.storeDataFile( this.#data );
+        }
     }
 
 

@@ -315,6 +315,7 @@ export class TriggerAction {
     public hideConditions: TriggerCondition[] = [];
     public castTime: number = null;
     public onlyUseAaBeneficialFocus: boolean = false;
+    public skipBenCastingTimeFocus: boolean = false;
 
     public ifEndingSoon: boolean = false;
     public endingSoonShowTimer: boolean = false;
