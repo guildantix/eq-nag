@@ -1,6 +1,6 @@
-import { Component, OnInit, Inject } from '@angular/core';
+import { Component, OnInit, Inject, ViewChild } from '@angular/core';
 import { MatDialog, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
-import { ActionTypes, CapturePhrase, Phrase, OperatorTypes, OverlayWindowModel, TimerSortTypes, TriggerAction, TriggerCondition, TriggerConditionTypes, TriggerModel, ImportTypes, TimerRestartBehaviors } from 'src/app/core.model';
+import { ActionTypes, CapturePhrase, Phrase, OperatorTypes, OverlayWindowModel, TimerSortTypes, TriggerAction, TriggerCondition, TriggerConditionTypes, TriggerModel, ImportTypes, TimerRestartBehaviors, ScrapedSpell, ScrapedClickEffect } from 'src/app/core.model';
 import { IpcService } from 'src/app/ipc.service';
 import { ScraperService } from 'src/app/scraper.service';
 import { customAlphabet } from 'nanoid';
@@ -8,6 +8,8 @@ import { DialogService } from '../dialog.service';
 import { SelectIconDialogComponent } from '../select-icon-dialog/select-icon-dialog.component';
 import * as _ from 'lodash-es';
 import { NewTriggerDialogModel } from '../dialog.model';
+import { forkJoin, Observable } from 'rxjs';
+import { MatHorizontalStepper } from '@angular/material/stepper';
 // import { NgForm } from '@angular/forms';
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const nanoid = customAlphabet( alphabet, 16 );
@@ -25,10 +27,15 @@ export class NewTriggerDialogComponent implements OnInit {
     public overlays: OverlayWindowModel[] = [];
     public onlyExecuteForRareEqTargets: boolean = false;
     public cancelTimerIfTargetDies: boolean = false;
+    public spell: ScrapedSpell;
+    public selectedItems: ScrapedClickEffect[] = [];
+    public loadingItemDetails: boolean = false;
 
     public get timerOverlays(): OverlayWindowModel[] {
         return this.overlays.filter( f => f.overlayType === 'Timer' );
     }
+    
+    @ViewChild( 'stepper', { static: false, read: MatHorizontalStepper } ) public stepper: MatHorizontalStepper;
 
     constructor(
         public dialogRef: MatDialogRef<NewTriggerDialogComponent>,
@@ -52,171 +59,217 @@ export class NewTriggerDialogComponent implements OnInit {
 
     public scrape(): void {
         this.scraper.ScrapeAllakhazamSpell( this.url ).subscribe( spell => {
+            this.spell = spell;
+            this.stepper.next();
+        } );
+    }
 
-            let trigger: TriggerModel;
+    public processSelectedItemClickies() {
+        this.loadingItemDetails = true;
 
-            if ( this.data?.trigger?.triggerId != null ) {
-                trigger = this.data.trigger;
-            } else {
-                trigger = new TriggerModel();
-                trigger.comments = `DoT timer for ${spell.name}.`;
-                trigger.folderId = this.data?.selectedFolderId;
+        let observables: Observable<ScrapedClickEffect>[] = [];
+        
+        this.spell.itemsWithEffect.forEach( item => {
+            if ( item.selected ) {
+                observables.push( this.scraper.ScrapeAllakhazamItemClickInfo( item.url ) );
             }
+        } );
 
-            trigger.name = spell.name;
-            trigger.classLevels = spell.classes;
-            trigger.allakhazamUrl = this.url;
-            trigger.captureMethod = 'Sequential';
-            trigger.importType = ImportTypes.DotTimer;
-
-            trigger.capturePhrases = [];
-            trigger.capturePhrases.push( <CapturePhrase>{
-                phraseId: nanoid(),
-                useRegEx: true,
-                requirePreviousPhrase: false,
-                duration: null,
-                ///^(?<target>.+?)\s?'s has been poisoned\.
-                phrase: spell.castOnOther.replace( /\.$/, '\\.$' ).replace( /soandso's|soandso\s's|soandso/gmi, '^(?<target>.+?)\\b\\s{0,1}\'{0,1}s{0,1}\\b' ),
+        if ( observables.length > 0 ) {
+            forkJoin( observables ).subscribe( items => {
+                this.selectedItems = items;
+                this.loadingItemDetails = false;
+                this.stepper.next();
             } );
-            trigger.capturePhrases.push( <CapturePhrase>{
-                phraseId: nanoid(),
-                useRegEx: true,
-                requirePreviousPhrase: false,
-                duration: null,
-                // ^?{target} has taken (?<damage>[0-9]*) ?damage from your Poison Bolt\.
-                phrase: `^?{target} has taken (?<damage>[0-9]*) ?damage from your ${spell.name}(?: Rk\\. II| Rk\\. III){0,1}\\.`,
-            } );
+        } else {
+            this.stepper.next();
+        }
+    }
+    
+    public generateTrigger() {
+        
+        let trigger: TriggerModel;
 
-            let originalDotAction: TriggerAction;
-            if ( trigger.triggerId != null ) {
-                originalDotAction = _.find( trigger.actions, ( action: TriggerAction ) => action.actionType === ActionTypes.DotTimer );
-            }
+        if ( this.data?.trigger?.triggerId != null ) {
+            trigger = this.data.trigger;
+        } else {
+            trigger = new TriggerModel();
+            trigger.comments = `DoT timer for ${this.spell.name}.`;
+            trigger.folderId = this.data?.selectedFolderId;
+        }
+
+        trigger.name = this.spell.name;
+        trigger.classLevels = this.spell.classes;
+        trigger.allakhazamUrl = this.url;
+        trigger.captureMethod = 'Sequential';
+        trigger.importType = ImportTypes.DotTimer;
+
+        trigger.capturePhrases = [];
+        trigger.capturePhrases.push( <CapturePhrase>{
+            phraseId: nanoid(),
+            useRegEx: true,
+            requirePreviousPhrase: false,
+            duration: null,
+            ///^(?<target>.+?)\s?'s has been poisoned\.
+            phrase: this.spell.castOnOther.replace( /\.$/, '\\.$' ).replace( /soandso's|soandso\s's|soandso/gmi, '^(?<target>.+?)\\b\\s{0,1}\'{0,1}s{0,1}\\b' ),
+        } );
+        trigger.capturePhrases.push( <CapturePhrase>{
+            phraseId: nanoid(),
+            useRegEx: true,
+            requirePreviousPhrase: false,
+            duration: null,
+            // ^?{target} has taken (?<damage>[0-9]*) ?damage from your Poison Bolt\.
+            phrase: `^?{target} has taken (?<damage>[0-9]*) ?damage from your ${this.spell.name}(?: Rk\\. II| Rk\\. III){0,1}\\.`,
+        } );
+
+        let originalDotAction: TriggerAction;
+        if ( trigger.triggerId != null ) {
+            originalDotAction = _.find( trigger.actions, ( action: TriggerAction ) => action.actionType === ActionTypes.DotTimer && action.castTime == this.spell.castTime );
+        }
+        
+        trigger.actions = [];
+        let actions: TriggerAction[] = [];
+        let endingSoonVals = originalDotAction != null && originalDotAction.ifEndingSoon;
+        let remainAfterVals = originalDotAction != null && originalDotAction.remainAfterEnded;
+        actions.push( <TriggerAction>{
+            phrases: [ trigger.capturePhrases[ 1 ].phraseId ],
+            actionType: ActionTypes.DotTimer,
+            overlayId: this.overlayId,
+            duration: this.spell.duration,
+            actionId: nanoid(),
+            restartBehavior: TimerRestartBehaviors.RestartOnDuplicate,
+
+            ifEndingSoon: endingSoonVals ? true : false,
+            endingDuration: endingSoonVals ? originalDotAction.endingDuration : null,
+            endingSoonChangeColor: endingSoonVals ? originalDotAction.endingSoonChangeColor : false,
+            endingSoonColor: endingSoonVals ? originalDotAction.endingSoonColor : null,
+            endingSoonBackgroundColor: endingSoonVals ? originalDotAction.endingSoonBackgroundColor : null,
+            endingSoonDisplayText: endingSoonVals ? originalDotAction.endingSoonDisplayText : null,
+            endingSoonTextOverlayId: endingSoonVals ? originalDotAction.endingSoonTextOverlayId : null,
+            endingSoonText: endingSoonVals ? originalDotAction.endingSoonText : null,
+            endingSoonTextDuration: endingSoonVals ? originalDotAction.endingSoonTextDuration : null,
+            endingSoonSpeak: endingSoonVals ? originalDotAction.endingSoonSpeak : false,
+            endingSoonSpeakPhrase: endingSoonVals ? originalDotAction.endingSoonSpeakPhrase : null,
             
-            trigger.actions = [];
-            let dotAction = <TriggerAction>{
-                phrases: [ trigger.capturePhrases[ 1 ].phraseId ],
-                actionType: ActionTypes.DotTimer,
-                overlayId: this.overlayId,
-                duration: spell.duration,
-                actionId: nanoid(),
-                restartBehavior: TimerRestartBehaviors.RestartOnDuplicate,
-            };
+            remainAfterEnded: remainAfterVals ? true : false,
+            remainDuration: remainAfterVals ? originalDotAction.remainDuration : null,
+            endedDisplayText: remainAfterVals ? originalDotAction.endedDisplayText : null,
+            endedTextOverlayId: remainAfterVals ? originalDotAction.endedTextOverlayId : null,
+            endedText: remainAfterVals ? originalDotAction.endedText : null,
+            endedTextDuration: remainAfterVals ? originalDotAction.endedTextDuration : null,
+            endedSpeak: remainAfterVals ? originalDotAction.endedSpeak : false,
+            endedSpeakPhrase: remainAfterVals ? originalDotAction.endedSpeakPhrase : null,
+            endedChangeColor: remainAfterVals ? originalDotAction.endedChangeColor : null,
+            endedColor: remainAfterVals ? originalDotAction.endedColor : null,
+            endedBackgroundColor: remainAfterVals ? originalDotAction.endedBackgroundColor : null,
+        } );
 
-            if ( originalDotAction != null && originalDotAction.ifEndingSoon ) {
-                dotAction.ifEndingSoon = originalDotAction.ifEndingSoon;
-                dotAction.endingDuration = originalDotAction.endingDuration;
-                dotAction.endingSoonChangeColor = originalDotAction.endingSoonChangeColor;
-                dotAction.endingSoonColor = originalDotAction.endingSoonColor;
-                dotAction.endingSoonBackgroundColor = originalDotAction.endingSoonBackgroundColor;
-                dotAction.endingSoonDisplayText = originalDotAction.endingSoonDisplayText;
-                dotAction.endingSoonTextOverlayId = originalDotAction.endingSoonTextOverlayId;
-                dotAction.endingSoonText = originalDotAction.endingSoonText;
-                dotAction.endingSoonTextDuration = originalDotAction.endingSoonTextDuration;
-                dotAction.endingSoonSpeak = originalDotAction.endingSoonSpeak;
-                dotAction.endingSoonSpeakPhrase = originalDotAction.endingSoonSpeakPhrase;
-            }
+        
+        // this.selectedItems.forEach( item => {
+        //     actions.push( <TriggerAction>{
+        //         phrases: [ trigger.capturePhrases[ 1 ].phraseId ],
+        //         actionType: ActionTypes.BeneficialTimer,
+        //         overlayId: this.timerOverlayId,
+        //         duration: this.spell.duration,
+        //         actionId: nanoid(),
+        //         restartBehavior: TimerRestartBehaviors.RestartOnDuplicate,
+        //         displayText: `${this.spell.name}`,
+        //         useCustomColor: true,
+        //         overrideTimerColor: '#0288d1',
+        //         timerBackgroundColor: ColorUtility.FromHex( '#0288d1' ).darken( 0.93 ).toString( 0.75 ),
+        //         endEarlyPhrases: [],
+        //         hideTimer: hideTimer,
+        //         hideConditions: [],
+        //         // castTime: item.castTime,
+        //         // onlyUseAaBeneficialFocus: true,
+        //         // skipBenCastingTimeFocus: true,
+        //     } );
+        // } );
 
-            if ( originalDotAction != null && originalDotAction.remainAfterEnded ) {
-                dotAction.remainAfterEnded = originalDotAction.remainAfterEnded;
-                dotAction.remainDuration = originalDotAction.remainDuration;
-                dotAction.endedDisplayText = originalDotAction.endedDisplayText;
-                dotAction.endedTextOverlayId = originalDotAction.endedTextOverlayId;
-                dotAction.endedText = originalDotAction.endedText;
-                dotAction.endedTextDuration = originalDotAction.endedTextDuration;
-                dotAction.endedSpeak = originalDotAction.endedSpeak;
-                dotAction.endedSpeakPhrase = originalDotAction.endedSpeakPhrase;
-                dotAction.endedChangeColor = originalDotAction.endedChangeColor;
-                dotAction.endedColor = originalDotAction.endedColor;
-                dotAction.endedBackgroundColor = originalDotAction.endedBackgroundColor;
-            }
+        if ( this.onlyExecuteForRareEqTargets ) {
+            actions.forEach( action => action.excludeTargets = [] );
+            actions.forEach( action => action.excludeTargets.push( <Phrase>{
+                phraseId: nanoid(),
+                phrase: '^(?:A\\s|An\\s|a\\s|an\\s|[a-z])',
+                useRegEx: true,
+            } ) );
+        }
+        if ( this.cancelTimerIfTargetDies ) {
+            actions.forEach( action => action.endEarlyPhrases = [] );
+            actions.forEach( action => action.endEarlyPhrases.push( <Phrase>{
+                phraseId: nanoid(),
+                phrase: '^${target} has been slain by [^!]*!$',
+                useRegEx: true,
+            } ) );
+            actions.forEach( action => action.endEarlyPhrases.push( <Phrase>{
+                phraseId: nanoid(),
+                phrase: '^You have slain ${target}!$',
+                useRegEx: true,
+            } ) );
+            actions.forEach( action => action.endEarlyPhrases.push( <Phrase>{
+                phraseId: nanoid(),
+                phrase: '^${target} dies\\.$',
+                useRegEx: true,
+            } ) );
+            actions.forEach( action => action.endEarlyPhrases.push( <Phrase>{
+                phraseId: nanoid(),
+                // You have been slain by a lightning warrior staticfist!
+                phrase: '^You have been slain by [^!]*!$',
+                useRegEx: true,
+            } ) );
+            actions.forEach( action => action.endEarlyPhrases.push( <Phrase>{
+                phraseId: nanoid(),
+                phrase: '^${target} died\\.$',
+                useRegEx: true,
+            } ) );
+        }
+        // trigger.actions.push( dotAction );
+        trigger.actions = actions;
+        trigger.actions.push( <TriggerAction>{
+            phrases: [ trigger.capturePhrases[ 1 ].phraseId ],
+            actionType: ActionTypes.ClearVariable,
+            variableName: 'SpellBeingCast',
+            actionId: nanoid(),
+        } );
 
+        trigger.conditions = [];
+        trigger.conditions.push( <TriggerCondition>{
+            conditionId: nanoid(),
+            conditionType: TriggerConditionTypes.VariableValue,
+            variableName: 'SpellBeingCast',
+            operatorType: OperatorTypes.Equals,
+            // Hoshkar's Swift Sickness|Hoshkar's Swift Sickness Rk. II|Hoshkar's Swift Sickness Rk. III
+            variableValue: `${this.spell.name}|${this.spell.name} Rk\. II|${this.spell.name} Rk\. III`,
+        } );
 
-            if ( this.onlyExecuteForRareEqTargets ) {
-                dotAction.excludeTargets = [];
-                dotAction.excludeTargets.push( <Phrase>{
-                    phraseId: nanoid(),
-                    phrase: '^(?:A\\s|An\\s|a\\s|an\\s|[a-z])',
-                    useRegEx: true,
-                } );
-            }
-            if ( this.cancelTimerIfTargetDies ) {
-                dotAction.endEarlyPhrases = [];
-                dotAction.endEarlyPhrases.push( <Phrase>{
-                    phraseId: nanoid(),
-                    phrase: '^${target} has been slain by [^!]*!$',
-                    useRegEx: true,
-                } );
-                dotAction.endEarlyPhrases.push( <Phrase>{
-                    phraseId: nanoid(),
-                    phrase: '^You have slain ${target}!$',
-                    useRegEx: true,
-                } );
-                dotAction.endEarlyPhrases.push( <Phrase>{
-                    phraseId: nanoid(),
-                    phrase: '^${target} dies\\.$',
-                    useRegEx: true,
-                } );
-                dotAction.endEarlyPhrases.push( <Phrase>{
-                    phraseId: nanoid(),
-                    // You have been slain by a lightning warrior staticfist!
-                    phrase: '^You have been slain by [^!]*!$',
-                    useRegEx: true,
-                } );
-                dotAction.endEarlyPhrases.push( <Phrase>{
-                    phraseId: nanoid(),
-                    phrase: '^${target} died\\.$',
-                    useRegEx: true,
-                } );
-            }
-            trigger.actions.push( dotAction );
-            trigger.actions.push( <TriggerAction>{
-                phrases: [ trigger.capturePhrases[ 1 ].phraseId ],
-                actionType: ActionTypes.ClearVariable,
-                variableName: 'SpellBeingCast',
-                actionId: nanoid(),
-            } );
-
-            trigger.conditions = [];
-            trigger.conditions.push( <TriggerCondition>{
-                conditionId: nanoid(),
-                conditionType: TriggerConditionTypes.VariableValue,
-                variableName: 'SpellBeingCast',
-                operatorType: OperatorTypes.Equals,
-                // Hoshkar's Swift Sickness|Hoshkar's Swift Sickness Rk. II|Hoshkar's Swift Sickness Rk. III
-                variableValue: `${spell.name}|${spell.name} Rk\. II|${spell.name} Rk\. III`,
-            } );
-
-            if ( spell.gemIndex > -1 ) {
-                
-                this.dialog.open( SelectIconDialogComponent, {
-                    width: '750px',
-                    data: {
-                        iconIndex: spell.gemIndex,
-                    }
-                } ).afterClosed().subscribe( icon => {
-                    trigger.actions[ 0 ].timerIcon = icon;
-
-                    if ( trigger.triggerId != null ) {
-                        this.ipcService.updateTrigger( trigger ).subscribe( updated => { } );
-                    } else {
-                        this.ipcService.createNewTrigger( trigger ).subscribe( triggerId => { trigger.triggerId = triggerId; } );
-                    }
-
-                    this.dialogRef.close();
-                } );
-
-            } else {
+        if ( this.spell.gemIndex > -1 ) {
+            
+            this.dialog.open( SelectIconDialogComponent, {
+                width: '750px',
+                data: {
+                    iconIndex: this.spell.gemIndex,
+                }
+            } ).afterClosed().subscribe( icon => {
+                trigger.actions[ 0 ].timerIcon = icon;
 
                 if ( trigger.triggerId != null ) {
                     this.ipcService.updateTrigger( trigger ).subscribe( updated => { } );
                 } else {
                     this.ipcService.createNewTrigger( trigger ).subscribe( triggerId => { trigger.triggerId = triggerId; } );
                 }
-                
+
                 this.dialogRef.close();
+            } );
+
+        } else {
+
+            if ( trigger.triggerId != null ) {
+                this.ipcService.updateTrigger( trigger ).subscribe( updated => { } );
+            } else {
+                this.ipcService.createNewTrigger( trigger ).subscribe( triggerId => { trigger.triggerId = triggerId; } );
             }
             
-        } );
+            this.dialogRef.close();
+        }
     }
-    
 }

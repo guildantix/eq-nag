@@ -4,29 +4,75 @@
     
     <p *ngIf="data?.trigger?.triggerId != null">WARNING: This may overwright any custom setting you have applied to this trigger.  Are you sure you want to continue?</p>
 
-    <p>
-        
-        <mat-form-field style="width: 50%;">
-            <mat-label></mat-label>
-            <mat-select [(ngModel)]="overlayId" name="ddlDotTimerOverlay">
-                <mat-option *ngFor="let option of timerOverlays" [value]="option.overlayId">{{option.name}}</mat-option>
-            </mat-select>
-            <mat-hint>Overlay Window</mat-hint>
-        </mat-form-field>
-    </p>
-    <p>
-        <mat-form-field style="width: 100%;">
-            <mat-label></mat-label>
-            <input matInput type="text" [(ngModel)]="url" />
-            <mat-hint>Allakhazam URL</mat-hint>
-        </mat-form-field>
-    </p>
-    <p>
-        <mat-checkbox [(ngModel)]="onlyExecuteForRareEqTargets" name="onlyExecuteForRareEqTargets">Only execute for rare and raid targets.</mat-checkbox>
-    </p>
-    <p>
-        <mat-checkbox [(ngModel)]="cancelTimerIfTargetDies" name="cancelTimerIfTargetDies">End timer early if your target dies.</mat-checkbox>
-    </p>
+    <mat-horizontal-stepper [linear]="true" #stepper>
+        <mat-step [stepControl]="stepOneForm" label="Scrape">
+            <form #stepOneForm="ngForm">
+                <p>
+                    
+                    <mat-form-field style="width: 100%;">
+                        <mat-label></mat-label>
+                        <input matInput type="text" [(ngModel)]="url" name="url" required />
+                        <mat-hint>Allakhazam URL</mat-hint>
+                    </mat-form-field>
+                </p>
+                            
+                <div>
+                    <button mat-button (click)="scrape()">Next</button>
+                </div>
+            </form>
+        </mat-step>
+        <mat-step [stepControl]="stepTwoForm" label="Tracking">
+            <form #stepTwoForm="ngForm">
+
+                <p>
+                                
+                    <mat-form-field style="width: 50%;">
+                        <mat-label></mat-label>
+                        <mat-select [(ngModel)]="overlayId" name="ddlDotTimerOverlay" required>
+                            <mat-option *ngFor="let option of timerOverlays" [value]="option.overlayId">{{option.name}}</mat-option>
+                        </mat-select>
+                        <mat-hint>Overlay Window</mat-hint>
+                    </mat-form-field>
+                </p>
+                <p><mat-checkbox [(ngModel)]="onlyExecuteForRareEqTargets" name="onlyExecuteForRareEqTargets">Only execute for rare and raid targets.</mat-checkbox></p>
+                <p><mat-checkbox [(ngModel)]="cancelTimerIfTargetDies" name="cancelTimerIfTargetDies">End timer early if your target dies.</mat-checkbox></p>
+                
+                <div>
+                    <button mat-button matStepperPrevious>Prev</button>
+                    <button mat-button matStepperNext [disabled]="stepTwoForm.invalid">Next</button>
+                </div>
+
+            </form>
+        </mat-step>
+        <!-- <mat-step label="Items with this Effect" *ngIf="spell?.itemsWithEffect?.length > 0">
+            <div *ngIf="loadingItemDetails" class="loading">
+                <p>Loading ...</p>
+                <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+            </div>
+            <form #optionalAForm="ngForm" *ngIf="!loadingItemDetails">
+
+                <p>There are item(s) with this effect.  Would you like to include any of these?</p>
+
+                <p *ngFor="let item of spell.itemsWithEffect;let i = index">
+                    <mat-checkbox [(ngModel)]="item.selected" name="includeItem_{{i}}">{{item.name}}</mat-checkbox>
+                </p>
+                
+                <div>
+                    <button mat-button matStepperPrevious>Prev</button>
+                    <button mat-button (click)="processSelectedItemClickies()" [disabled]="optionalAForm.invalid">Next</button>
+                </div>
+
+            </form>
+        </mat-step> -->
+        <mat-step label="Import">
+            <form>
+                <p>Ready for import!</p>
+                <div>
+                    <button mat-button (click)="generateTrigger()" class="t-confirm-yes" color="accent">Import</button>
+                </div>
+            </form>
+        </mat-step>
+    </mat-horizontal-stepper>
 </mat-dialog-content>
 
 <mat-dialog-actions>
