@@ -48,6 +48,7 @@ export class CharactersListComponent implements OnInit {
         character.extendedDotFocusPercent = this.calculateFocusPercent( character.extendedDotFocusPercent );
         character.extendedBeneficialFocusPercent = this.calculateFocusPercent( character.extendedBeneficialFocusPercent );
         character.beneficialCastingSpeedFocusPercent = this.calculateFocusPercent( character.beneficialCastingSpeedFocusPercent );
+        character.extendedBeneficialFocusAaPercent = this.calculateFocusPercent( character.extendedBeneficialFocusAaPercent );
         // let dotExtFocusPct = /([0-9]*)\+([0-9]*)/gi.exec( character.extendedDotFocusPercent?.toString() );
         // if ( dotExtFocusPct?.length > 0 ) {
         //     character.extendedDotFocusPercent = +dotExtFocusPct[ 1 ] + +dotExtFocusPct[ 2 ];
