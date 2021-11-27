@@ -894,7 +894,7 @@ function parseLogEntries( raw, simulating ) {
                             let rgx = new RegExp( `^You begin casting ${spellName}\\.$`, 'gmi' );
                             let time = timestamp.getTime();
                             let _t = timestamp.getTime();
-                            if ( action.castTime >= 3000 && charModel.hasBeneficialCastingSpeedFocus ) {
+                            if ( action.castTime >= 3000 && charModel.hasBeneficialCastingSpeedFocus && !action.skipBenCastingTimeFocus ) {
                                 let tMod = calculateCastingMilliseconds( action.castTime, trigger.classLevels, charModel.beneficialCastingSpeedFocusPercent, charModel.beneficialCastingSpeedFocusDecayLevel );
                                 time -= tMod;
                             } else {
