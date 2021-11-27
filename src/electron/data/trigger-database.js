@@ -555,6 +555,16 @@ class TriggerDatabaseStore extends Store {
             this.#data.version = 59;
             this.storeDataFile( this.#data );
         }
+        if ( this.#data.version < 60 ) {
+            this.#data?.triggers?.forEach( trigger => {
+                trigger.actions?.forEach( action => {
+                    action.onlyUseAaBeneficialFocus = false;
+                } );
+            } );
+            
+            this.#data.version = 60;
+            this.storeDataFile( this.#data );
+        }
     }
 
 

@@ -179,6 +179,8 @@ class TriggerAction {
     hideConditions = [];
     /** @type number */
     castTime = null;
+    /** @type boolean */
+    onlyUseAaBeneficialFocus = false;
 
     /** @type boolean */
     ifEndingSoon = false;
