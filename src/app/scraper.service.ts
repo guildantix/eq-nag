@@ -382,7 +382,7 @@ export class ScraperService {
                         resource.url = href;
                     }
 
-                    if ( resource.name.match( /^Spell: /gi ) == null ) {
+                    if ( resource.name.match( /^Spell: /gi ) == null && resource.name.match( /^Ancient: /gi ) == null ) {
                         model.itemsWithEffect.push( resource );
                     }
                 } );

@@ -88,11 +88,15 @@ export class NewTriggerBuffDialogComponent implements OnInit {
             }
         } );
 
-        forkJoin( observables ).subscribe( items => {
-            this.selectedItems = items;
-            this.loadingItemDetails = false;
+        if ( observables.length > 0 ) {
+            forkJoin( observables ).subscribe( items => {
+                this.selectedItems = items;
+                this.loadingItemDetails = false;
+                this.stepper.next();
+            } );
+        } else {
             this.stepper.next();
-        } );
+        }
     }
 
     public import(): void {
