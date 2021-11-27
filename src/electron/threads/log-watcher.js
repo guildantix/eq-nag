@@ -1001,7 +1001,7 @@ function displayBeneficialTimerComponent( res, timestamp, action, trigger, spell
     }
 
     if ( charModel.hasExtendedBeneficialFocus ) {
-        comp.action.duration += calculateAdditionalTicks( comp.action.duration, trigger.classLevels, charModel.extendedBeneficialFocusPercent, charModel.extendedBeneficialFocusDecayLevel, charModel.extendedBeneficialFocusAaPercent ) * 6;
+        comp.action.duration += calculateAdditionalTicks( comp.action.duration, trigger.classLevels, charModel.extendedBeneficialFocusPercent, charModel.extendedBeneficialFocusDecayLevel, charModel.extendedBeneficialFocusAaPercent, comp.action.onlyUseAaBeneficialFocus ) * 6;
     }
 
     // reset the trigger.
@@ -1753,17 +1753,20 @@ function speakPhrase( phrase, interrupt, conditionResults, simulating, parseResu
  * @param {number} wornExtFocusPercent The worn percent increase.
  * @param {number} extFocusDecayLevel The level in which the focus begins to fade.
  * @param {number} aaExtFocusPercent The aa percent increase.
+ * @param {boolean} onlyUseAaBeneficialFocus If true, only the AA ben ext. focus effect will be used.
  */
-function calculateAdditionalTicks( duration, triggerClasses, wornExtFocusPercent, extFocusDecayLevel, aaExtFocusPercent ) {
-    
-    let percent = wornExtFocusPercent;
-    let charClassData = _.find( triggerClasses, ccl => ccl.class === charModel.class );
+function calculateAdditionalTicks( duration, triggerClasses, wornExtFocusPercent, extFocusDecayLevel, aaExtFocusPercent, onlyUseAaBeneficialFocus ) {
+    let percent = 0;
 
-    if ( charClassData != null && charClassData.level > extFocusDecayLevel ) {
-        let decayPercent = ( charClassData.level - extFocusDecayLevel ) * 5;
-        percent = percent * ( 1 - decayPercent / 100 );
+    if ( !onlyUseAaBeneficialFocus ) {
+        percent = wornExtFocusPercent;
+        let charClassData = _.find( triggerClasses, ccl => ccl.class === charModel.class );
+
+        if ( charClassData != null && charClassData.level > extFocusDecayLevel ) {
+            let decayPercent = ( charClassData.level - extFocusDecayLevel ) * 5;
+            percent = percent * ( 1 - decayPercent / 100 );
+        }
     }
-
     percent += aaExtFocusPercent;
 
     let baseTicks = duration / 6;
