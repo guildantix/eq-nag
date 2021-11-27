@@ -436,7 +436,7 @@ class WindowManager {
             for ( let key in overlayDictionary ) {
                 if ( overlayDictionary.hasOwnProperty( key ) ) {
                     clearInterval( overlayDictionary[ key ].interval );
-                    overlayDictionary[ key ].window.close();
+                    overlayDictionary[ key ].window?.close();
                     overlayDictionary[ key ].window = null;
                 }
             }

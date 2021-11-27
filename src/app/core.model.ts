@@ -395,7 +395,15 @@ export class OutsideResource {
     
     public url: string;
     public name: string;
+    public selected: boolean = false;
 
+}
+
+export class ScrapedClickEffect {
+    public name: string;
+    /** The cast time, in milliseconds. */
+    public castTime: number;
+    public classes: CharacterClassLevel[] = [];
 }
 
 export class ScrapedSpell {
@@ -467,6 +475,7 @@ export class CharacterModel {
     public hasExtendedBeneficialFocus: boolean;
     public extendedBeneficialFocusPercent: number;
     public extendedBeneficialFocusDecayLevel: number;
+    public extendedBeneficialFocusAaPercent: number;
     public hasBeneficialCastingSpeedFocus: boolean;
     public beneficialCastingSpeedFocusPercent: number;
     public beneficialCastingSpeedFocusDecayLevel: number;

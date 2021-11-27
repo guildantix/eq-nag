@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { forkJoin, Observable, Observer } from 'rxjs';
-import { CharacterClasses, CharacterClassLevel, OutsideResource, ScrapedAbility, ScrapedNpc, ScrapedSpell } from './core.model';
+import { CharacterClasses, CharacterClassLevel, OutsideResource, ScrapedAbility, ScrapedClickEffect, ScrapedNpc, ScrapedSpell } from './core.model';
 
 const allakhazamUrl: string = 'https://everquest.allakhazam.com';
 // interface Node {
@@ -199,6 +199,63 @@ export class ScraperService {
         return obs;
     }
 
+    public ScrapeAllakhazamItemClickInfo( url: string ): Observable<ScrapedClickEffect> {
+
+        let obs = new Observable<ScrapedClickEffect>( observer => {
+
+            var oReq = new XMLHttpRequest();
+            oReq.addEventListener( "load", function () {
+                let div = document.createElement( 'div' );
+                div.style.display = 'none';
+                document.body.appendChild( div );
+                div.innerHTML = this.responseText;
+    
+                let data = {
+                    name: div.querySelector( 'meta[property="og:title"]' ).getAttribute( 'content' ),
+                    effectLine: document.evaluate( "//div[contains(@class, 'nobgrd') and contains(., 'Effect: ')]", document, null, XPathResult.ANY_TYPE, null ).iterateNext()?.textContent?.split( 'Effect: ' )[ 1 ]?.split( /\r\n|\r|\n/gi )[ 0 ]?.trim(),
+                    classList: document.evaluate( "//div[contains(@class, 'nobgrd') and contains(., 'Class: ')]", document, null, XPathResult.ANY_TYPE, null ).iterateNext()?.textContent.split( 'Class: ' )[ 1 ]?.split( /\r\n|\r|\n/gi )[ 0 ]?.trim(),
+                };
+
+                let castingTimeCheck = ( /Casting Time: (.*)\)/gi.exec( data.effectLine ) ?? [ '0' ] )[ 1 ];
+                let levelCheck = ( /at Level ([0-9]+)/gi.exec( data.effectLine ) ?? [ '1' ] )[ 1 ];
+                let classes: CharacterClassLevel[] = [];
+
+                data.classList?.split( /\s/gi )?.forEach( cls => {
+                    if ( cls?.toLowerCase() != 'all' ) {
+                        
+                        let classLevel = new CharacterClassLevel();
+                    
+                        classLevel.class = cls;
+                        classLevel.level = +levelCheck;
+
+                        classes.push( classLevel );
+                    }
+                } );
+                
+                document.body.removeChild( div );
+                div = null;
+
+                let model = new ScrapedClickEffect();
+
+                model.name = data.name;
+                model.classes = classes;
+                model.castTime = castingTimeCheck == null ? 0 :
+                                 castingTimeCheck.toLowerCase() == 'instant' ? 0 :
+                                 +castingTimeCheck * 1000;
+
+                console.log( 'model', model );
+                observer.next( model );
+                observer.complete();
+
+            } );
+            
+            oReq.open( "GET", url );
+            oReq.send();
+        } );
+
+        return obs;
+    }
+
     public ScrapeAllakhazamSpell( url: string ): Observable<ScrapedSpell> {
         let obs: Observable<ScrapedSpell> = new Observable<ScrapedSpell>( ( observer: Observer<ScrapedSpell> ) => {
             
@@ -213,11 +270,11 @@ export class ScraperService {
                     name: div.querySelector( 'meta[property="og:title"]' ).getAttribute( 'content' ),
                     spellGem: div.querySelector( 'img[src*="spellicons"]' ),
                     duration: 0,
-                    _duration: document.evaluate( "//strong[contains(., 'Duration:')]", document, null, XPathResult.ANY_TYPE, null ).iterateNext().nextSibling.nextSibling.textContent.trim(),
-                    itemsWithEffect: document.evaluate( "//tr//td//h2[contains(., 'Items with this effect')]", document, null, XPathResult.ANY_TYPE, null ).iterateNext().parentElement.parentElement.nextElementSibling,
+                    _duration: document.evaluate( "//strong[contains(., 'Duration:')]", document, null, XPathResult.ANY_TYPE, null ).iterateNext()?.nextSibling.nextSibling.textContent.trim(),
+                    itemsWithEffect: document.evaluate( "//tr//td//h2[contains(., 'Items with this effect')]", document, null, XPathResult.ANY_TYPE, null ).iterateNext()?.parentElement.parentElement.nextElementSibling,
                     // class: document.evaluate( "//div[contains(@class, 'db-infobox')]/table/tbody/tr/td/strong[contains(., '" + currentCharacterClass + "')]", document, null, XPathResult.ANY_TYPE, null ).iterateNext().textContent,
                     // level: +document.evaluate( "//div[contains(@class, 'db-infobox')]/table/tbody/tr/td/strong[contains(., '" + currentCharacterClass + "')]", document, null, XPathResult.ANY_TYPE, null ).iterateNext().parentNode.nextSibling.textContent,
-                    castOnOther: document.evaluate( "//blockquote[contains(., 'Cast on other')]", document, null, XPathResult.ANY_TYPE, null ).iterateNext().textContent.split( 'Cast on other: ' )[ 1 ].split( 'Effect Fades: ' )[ 0 ],
+                    castOnOther: document.evaluate( "//blockquote[contains(., 'Cast on other')]", document, null, XPathResult.ANY_TYPE, null ).iterateNext()?.textContent.split( 'Cast on other: ' )[ 1 ].split( 'Effect Fades: ' )[ 0 ],
                     castOnYou: document.evaluate( "//blockquote[contains(., 'Cast on you')]", document, null, XPathResult.ANY_TYPE, null ).iterateNext()?.textContent.split( 'Cast on you: ' )[ 1 ].split( 'Cast on other: ' )[ 0 ],
                     // effectFades_bad: document.evaluate( "//blockquote[contains(., 'Effect Fades')]", document, null, XPathResult.ANY_TYPE, null ).iterateNext().textContent?.split( 'Effect Fades: ' )[ 1 ],
                 };

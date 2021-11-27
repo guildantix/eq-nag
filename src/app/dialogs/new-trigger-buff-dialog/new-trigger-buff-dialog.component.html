@@ -24,7 +24,7 @@
             <form #stepTwoForm="ngForm">
 
                 <p><mat-slide-toggle [(ngModel)]="useSelfTimer" name="togUseSelfTimer">Track the buff duration with a countdown for <strong>Self</strong>.</mat-slide-toggle></p>
-                <p><mat-slide-toggle [(ngModel)]="useTargetTimer" name="togUseTargetTimer" [disabled]="spell?.targetType === 'Self'">Track the buff duration with a countdown for <strong>Other</strong>.</mat-slide-toggle></p>
+                <p><mat-slide-toggle [(ngModel)]="useTargetTimer" name="togUseTargetTimer" [disabled]="spell?.targetType === 'Self' || spell?.castOnOther == null">Track the buff duration with a countdown for <strong>Other</strong>.</mat-slide-toggle></p>
                 <p><mat-slide-toggle [(ngModel)]="alertEndingSoon" name="togAlertEndingSoon">Notify me when the buff is ending in </mat-slide-toggle><app-duration [(ngModel)]="endingSoonDuration" name="durEndingSoon" [inline]="true" *ngIf="alertEndingSoon" required></app-duration></p>
                 <p><mat-slide-toggle [(ngModel)]="alertWhenBuffFades" name="togAlertWhenBuffFades">Notify me when the buff fades.</mat-slide-toggle></p>
 
@@ -62,6 +62,22 @@
                 <div>
                     <button mat-button matStepperPrevious>Prev</button>
                     <button mat-button matStepperNext [disabled]="stepThreeForm.invalid">Next</button>
+                </div>
+
+            </form>
+        </mat-step>
+        <mat-step label="Items with this Effect" *ngIf="spell?.itemsWithEffect?.length > 0">
+            <form #optionalAForm="ngForm">
+
+                <p>There are item(s) with this effect.  Would you like to include any of these?</p>
+
+                <p *ngFor="let item of spell.itemsWithEffect;let i = index">
+                    <mat-checkbox [(ngModel)]="item.selected" name="includeItem_{{i}}">{{item.name}}</mat-checkbox>
+                </p>
+                
+                <div>
+                    <button mat-button matStepperPrevious>Prev</button>
+                    <button mat-button (click)="processSelectedItemClickies()" [disabled]="optionalAForm.invalid">Next</button>
                 </div>
 
             </form>

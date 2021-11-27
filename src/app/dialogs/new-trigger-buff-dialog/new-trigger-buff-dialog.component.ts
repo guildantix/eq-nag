@@ -1,7 +1,7 @@
 import { Component, Inject, OnInit, ViewChild } from '@angular/core';
 import { MatDialog, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { MatHorizontalStepper } from '@angular/material/stepper';
-import { ActionTypes, CapturePhrase, ImportTypes, OperatorTypes, OverlayWindowModel, Phrase, ScrapedSpell, TimerRestartBehaviors, TriggerAction, TriggerCondition, TriggerConditionTypes, TriggerModel } from 'src/app/core.model';
+import { ActionTypes, CapturePhrase, ImportTypes, OperatorTypes, OverlayWindowModel, Phrase, ScrapedClickEffect, ScrapedSpell, TimerRestartBehaviors, TriggerAction, TriggerCondition, TriggerConditionTypes, TriggerModel } from 'src/app/core.model';
 import { IpcService } from 'src/app/ipc.service';
 import { ScraperService } from 'src/app/scraper.service';
 import { NewTriggerDialogModel } from '../dialog.model';
@@ -11,6 +11,7 @@ import { ColorUtility } from 'src/app/utilities';
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const nanoid = customAlphabet( alphabet, 16 );
 import * as _ from 'lodash-es';
+import { forkJoin, Observable } from 'rxjs';
 
 @Component( {
     selector: 'app-new-trigger-buff-dialog',
@@ -31,6 +32,7 @@ export class NewTriggerBuffDialogComponent implements OnInit {
     public timerOverlayId: string;
     public endingSoonDuration: number = null;
     public readyForImport: boolean = false;
+    public selectedItems: ScrapedClickEffect[] = [];
     
     public get timerOverlays(): OverlayWindowModel[] {
         return this.overlays.filter( f => f.overlayType === 'Timer' );
@@ -62,7 +64,7 @@ export class NewTriggerBuffDialogComponent implements OnInit {
 
     public scrape(): void {
         this.scraper.ScrapeAllakhazamSpell( this.url ).subscribe( spell => {
-            console.log( 'spell', spell );
+            
             this.spell = spell;
 
             this.endingSoonDuration = this.spell.duration <= 120 ? 12 :
@@ -70,6 +72,21 @@ export class NewTriggerBuffDialogComponent implements OnInit {
                     this.spell.duration > 600 && this.spell.duration < 900 ? 120 :
                         600;
 
+            this.stepper.next();
+        } );
+    }
+
+    public processSelectedItemClickies() {
+        let observables: Observable<ScrapedClickEffect>[] = [];
+        
+        this.spell.itemsWithEffect.forEach( item => {
+            if ( item.selected ) {
+                observables.push( this.scraper.ScrapeAllakhazamItemClickInfo( item.url ) );
+            }
+        } );
+
+        forkJoin( observables ).subscribe( items => {
+            this.selectedItems = items;
             this.stepper.next();
         } );
     }
@@ -139,7 +156,9 @@ export class NewTriggerBuffDialogComponent implements OnInit {
             buffTimerPhrases.push( castOnOtherPhraseId );
         }
         
-        let buffTimer = <TriggerAction>{
+        let hideTimer = !this.useSelfTimer || ( this.spell?.targetType !== 'Self' && !this.useTargetTimer );
+        let buffTimers: TriggerAction[] = [];
+        buffTimers.push( <TriggerAction>{
             phrases: [].concat( buffTimerPhrases ),
             actionType: ActionTypes.BeneficialTimer,
             overlayId: this.timerOverlayId,
@@ -151,36 +170,55 @@ export class NewTriggerBuffDialogComponent implements OnInit {
             overrideTimerColor: '#0288d1',
             timerBackgroundColor: ColorUtility.FromHex( '#0288d1' ).darken( 0.93 ).toString( 0.75 ),
             endEarlyPhrases: [],
-            hideTimer: !this.useSelfTimer || (this.spell?.targetType !== 'Self' && !this.useTargetTimer),
+            hideTimer: hideTimer,
             hideConditions: [],
             castTime: this.spell.castTime,
-        };
+        } );
+        
+        this.selectedItems.forEach( item => {
+            buffTimers.push( <TriggerAction>{
+                phrases: [].concat( buffTimerPhrases ),
+                actionType: ActionTypes.BeneficialTimer,
+                overlayId: this.timerOverlayId,
+                duration: this.spell.duration,
+                actionId: nanoid(),
+                restartBehavior: TimerRestartBehaviors.RestartTimer,
+                displayText: `${this.spell.name}`,
+                useCustomColor: true,
+                overrideTimerColor: '#0288d1',
+                timerBackgroundColor: ColorUtility.FromHex( '#0288d1' ).darken( 0.93 ).toString( 0.75 ),
+                endEarlyPhrases: [],
+                hideTimer: hideTimer,
+                hideConditions: [],
+                castTime: item.castTime,
+            } );
+        } );
 
         // Add hide timer conditions.  I'm being overly verbose here so that it 
         // works when adding other options that may hide/show the timer in the 
         // future.
-        if ( buffTimer.hideTimer && this.useSelfTimer && ( this.spell?.targetType !== 'Self' && !this.useTargetTimer ) ) {
+        if ( hideTimer && this.useSelfTimer && ( this.spell?.targetType !== 'Self' && !this.useTargetTimer ) ) {
             // Hide the timer when the target !== 'You'
-            buffTimer.hideConditions.push( <TriggerCondition>{
+            buffTimers.forEach( timer => timer.hideConditions.push( <TriggerCondition>{
                 conditionId: nanoid(),
                 conditionType: TriggerConditionTypes.NamedGroupValue,
                 operatorType: OperatorTypes.DoesNotEqual,
                 variableName: 'target',
                 variableValue: 'You',
-            } );
-        } else if ( buffTimer.hideTimer && this.useTargetTimer && ( !this.useSelfTimer && this.spell?.targetType === 'Self' ) ) {
+            } ) );
+        } else if ( hideTimer && this.useTargetTimer && ( !this.useSelfTimer && this.spell?.targetType === 'Self' ) ) {
             // Hide the timer when the target === 'You'
-            buffTimer.hideConditions.push( <TriggerCondition>{
+            buffTimers.forEach( timer => timer.hideConditions.push( <TriggerCondition>{
                 conditionId: nanoid(),
                 conditionType: TriggerConditionTypes.NamedGroupValue,
                 operatorType: OperatorTypes.Equals,
                 variableName: 'target',
                 variableValue: 'You',
-            } );
+            } ) );
         }
 
-        trigger.actions.push( buffTimer );
-        iconTimerIds.push( buffTimer.actionId );
+        buffTimers.forEach( timer => trigger.actions.push( timer ) );
+        buffTimers.forEach( timer => iconTimerIds.push( timer.actionId ) );
 
         trigger.actions.push( <TriggerAction>{
             phrases: [ castOnYouPhraseId ],
@@ -191,94 +229,94 @@ export class NewTriggerBuffDialogComponent implements OnInit {
 
         if ( this.useSelfTimer && this.cancelTimerIfTargetDies ) {
                 
-            buffTimer.endEarlyPhrases.push( <Phrase>{
+            buffTimers.forEach( timer => timer.endEarlyPhrases.push( <Phrase>{
                 phraseId: nanoid(),
                 // You have been slain by a lightning warrior staticfist!
                 phrase: '^You have been slain by [^!]*!$',
                 useRegEx: true,
-            } );
-            buffTimer.endEarlyPhrases.push( <Phrase>{
+            } ) );
+            buffTimers.forEach( timer => timer.endEarlyPhrases.push( <Phrase>{
                 phraseId: nanoid(),
                 // You have been slain by a lightning warrior staticfist!
                 phrase: '^You died\\.$',
                 useRegEx: true,
-            } );
+            } ) );
 
         }
 
         if ( this.useTargetTimer && this.cancelTimerIfTargetDies ) {
             
-            buffTimer.endEarlyPhrases.push( <Phrase>{
+            buffTimers.forEach( timer => timer.endEarlyPhrases.push( <Phrase>{
                 phraseId: nanoid(),
                 phrase: '^${target} has been slain by [^!]*!$',
                 useRegEx: true,
-            } );
-            buffTimer.endEarlyPhrases.push( <Phrase>{
+            } ) );
+            buffTimers.forEach( timer => timer.endEarlyPhrases.push( <Phrase>{
                 phraseId: nanoid(),
                 phrase: '^You have slain ${target}!$',
                 useRegEx: true,
-            } );
+            } ) );
             // This is apparently just for players
-            buffTimer.endEarlyPhrases.push( <Phrase>{
+            buffTimers.forEach( timer => timer.endEarlyPhrases.push( <Phrase>{
                 phraseId: nanoid(),
                 // Jhinx dies.
                 phrase: '^${target} dies\\.$',
                 useRegEx: true,
-            } );
-            buffTimer.endEarlyPhrases.push( <Phrase>{
+            } ) );
+            buffTimers.forEach( timer => timer.endEarlyPhrases.push( <Phrase>{
                 phraseId: nanoid(),
                 // A Valorian Guardian died.
                 phrase: '^${target} died\\.$',
                 useRegEx: true,
-            } );
+            } ) );
 
         }
 
         if ( this.spell.effectFades ) {
             // End when the buff ends early.
-            buffTimer.endEarlyPhrases.push( <Phrase>{
+            buffTimers.forEach( timer => timer.endEarlyPhrases.push( <Phrase>{
                 phraseId: nanoid(),
                 phrase: '^' + this.spell.effectFades.replace( /\.$/, '\\.$' ),
                 useRegEx: true,
-            } );
+            } ) );
         }
 
         if ( this.spell.targetType !== 'Self' ) {
             // End when the buff is overwritten.
-            buffTimer.endEarlyPhrases.push( <Phrase>{
+            buffTimers.forEach( timer => timer.endEarlyPhrases.push( <Phrase>{
                 phraseId: nanoid(),
                 // Your Dead Men Floating spell on Xeraphine has been overwritten.
                 phrase: `^Your ${this.spell.name}(?: Rk\. II| Rk\. III){0,1} spell on \${target} has been overwritten\\.$`,
                 useRegEx: true,
-            } );
+            } ) );
 
             // End when the buff fades
-            buffTimer.endEarlyPhrases.push( <Phrase>{
+            buffTimers.forEach( timer => timer.endEarlyPhrases.push( <Phrase>{
                 phraseId: nanoid(),
                 // Your Dead Men Floating spell has worn off of Rodus.
                 phrase: `Your ${this.spell.name}(?: Rk\. II| Rk\. III){0,1} spell has worn off of \${target}\\.$`,
                 useRegEx: true,
-            } );
+            } ) );
         }
 
         if ( this.spell.targetType === 'Pet' || this.spell.targetType === 'Undead' ) {
 
             // End when the buff fades
-            buffTimer.endEarlyPhrases.push( <Phrase>{
+            buffTimers.forEach( timer => timer.endEarlyPhrases.push( <Phrase>{
                 phraseId: nanoid(),
                 // Your pet's Sigil of Decay spell has worn off.
                 phrase: `Your pet's ${this.spell.name}(?: Rk\. II| Rk\. III){0,1} spell has worn off\\.$`,
                 useRegEx: true,
-            } );
+            } ) );
 
         }
 
         if ( this.alertWhenBuffFades ) {
 
             // Using the timer method until I come up with a way to allow the simple capture of the faded msg to work alongside the condition that the spell is currently being cast.
-            buffTimer.notifyWhenEnded = true;
-            buffTimer.endedSpeak = true;
-            buffTimer.endedSpeakPhrase = `Your ${this.spell.name} on \${target} has ended.`;
+            buffTimers.forEach( timer => timer.notifyWhenEnded = true );
+            buffTimers.forEach( timer => timer.endedSpeak = true );
+            buffTimers.forEach( timer => timer.endedSpeakPhrase = `Your ${this.spell.name} on \${target} has ended.` );
 
             // let fadedOnOtherPhraseId = nanoid();
             // trigger.capturePhrases.push( <CapturePhrase>{
@@ -349,11 +387,11 @@ export class NewTriggerBuffDialogComponent implements OnInit {
         }
 
         if ( this.alertEndingSoon ) {
-            buffTimer.ifEndingSoon = true;
-            buffTimer.endingDuration = this.endingSoonDuration;
-            buffTimer.endingSoonSpeak = true;
-            buffTimer.endingSoonSpeakPhrase = `Your ${this.spell.name} on \${target} is ending soon.`;
-            buffTimer.endingSoonShowTimer = this.showTimerWhenEndingSoon;
+            buffTimers.forEach( timer => timer.ifEndingSoon = true );
+            buffTimers.forEach( timer => timer.endingDuration = this.endingSoonDuration );
+            buffTimers.forEach( timer => timer.endingSoonSpeak = true );
+            buffTimers.forEach( timer => timer.endingSoonSpeakPhrase = `Your ${this.spell.name} on \${target} is ending soon.` );
+            buffTimers.forEach( timer => timer.endingSoonShowTimer = this.showTimerWhenEndingSoon );
         }
 
         // Leaving this here to enable it when the alert when ended is decoupled from the timer.

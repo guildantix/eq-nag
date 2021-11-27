@@ -40,6 +40,13 @@ class CharacterDatabaseStore extends Store {
             this.#data.version = 3;
             this.storeDataFile( this.#data );
         }
+        if ( !this.#data.version || this.#data.version < 4 ) {
+            this.#data?.characters?.forEach( f => {
+                f.extendedBeneficialFocusAaPercent = null;
+            } );
+            this.#data.version = 4;
+            this.storeDataFile( this.#data );
+        }
         
     }
     

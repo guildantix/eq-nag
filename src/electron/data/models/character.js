@@ -24,14 +24,17 @@ class CharacterModel {
     /** @type {string} */
     server = null;
 
-    /** @type {boolean} True if the character has an extended dot focus item. */
+    /** @type {boolean} True if the character has an extended beneficial focus item. */
     hasExtendedBeneficialFocus = false;
 
-    /** @type {number} The amount of bonus from the extended dot focus effect. */
+    /** @type {number} The amount of bonus from the extended beneficial focus effect. */
     extendedBeneficialFocusPercent = null;
 
-    /** @type {number} The level at which the extended dot focus effect will begin to decay. */
+    /** @type {number} The level at which the extended beneficial focus effect will begin to decay. */
     extendedBeneficialFocusDecayLevel = null;
+
+    /** @type {number} The amount of bonus from the extended beneficial focus AA. */
+    extendedBeneficialFocusAaPercent = null;
 
     /** @type {boolean} True if the character has an extended dot focus item. */
     hasBeneficialCastingSpeedFocus = false;
@@ -41,7 +44,6 @@ class CharacterModel {
 
     /** @type {number} The level at which the extended dot focus effect will begin to decay. */
     beneficialCastingSpeedFocusDecayLevel = null;
-
 
 }
 
