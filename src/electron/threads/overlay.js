@@ -11,6 +11,9 @@ const customAlphabet = require( 'nanoid' ).customAlphabet;
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const nanoid = customAlphabet( alphabet, 16 );
 
+window.onerror = ( error, url, line ) => {
+    ipcRenderer.send( 'app:log:exception', `$${error}\r\n    at ${url}:${line}` );
+};
 
 // <!-- Roboto(i): 100, 300, 400, 500, 700, 900 -->
 // <!-- Red Rose: 300, 400, 700 -->

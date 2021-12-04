@@ -8,6 +8,10 @@ const Handlebars = require( "handlebars" );
 const StyleSheetUtil = require( '../utilities/style-sheet' );
 const { FctStylesModel, FctModel, FctTypes } = require( '../data/models/fct' );
 
+window.onerror = ( error, url, line ) => {
+    ipcRenderer.send( 'app:log:exception', `$${error}\r\n    at ${url}:${line}` );
+};
+
 // <!-- Roboto(i): 100, 300, 400, 500, 700, 900 -->
 // <!-- Red Rose: 300, 400, 700 -->
 // <!-- Oswald: 200, 300, 400, 500, 600, 700 -->
@@ -15,7 +19,6 @@ const { FctStylesModel, FctModel, FctTypes } = require( '../data/models/fct' );
 // <!-- Open Sans Condensed: 300(i), 700 -->
 // <!-- Ranchers: 400 -->
 // <!-- Press Start 2P: 400 -->
-
 
 /** @type {OverlayComponent[]} */
 var overlayComponents = [];

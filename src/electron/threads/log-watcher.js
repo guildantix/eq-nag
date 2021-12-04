@@ -21,6 +21,10 @@ const { DateUtilities } = require( '../utilities/dates' );
 const chunkSize = 512 * 1024;
 // const _timerId = '7d9j6ZX7p6c5NLMw';
 
+window.onerror = ( error, url, line ) => {
+    ipcRenderer.send( 'app:log:exception', `$${error}\r\n    at ${url}:${line}` );
+};
+
 var currentPosition = null;
 var startLogPosition = null;
 
