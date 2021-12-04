@@ -352,6 +352,8 @@ export class ScraperService {
 
                 if ( castingTimeCheck ) {
                     model.castTime = parseFloat( castingTimeCheck.textContent ) * 1000;
+                } else {
+                    model.castTime = 0;
                 }
 
                 if ( effectFadesCheck ) {
@@ -369,9 +371,9 @@ export class ScraperService {
                 }
                 
                 // Scrape items with this effect into outside resources.
-                let itemAnchors = data.itemsWithEffect.querySelectorAll( 'a' );
+                let itemAnchors = data.itemsWithEffect?.querySelectorAll( 'a' );
                 
-                itemAnchors.forEach( a => {
+                itemAnchors?.forEach( a => {
                     let resource = new OutsideResource();
                     
                     resource.name = a.innerText;
