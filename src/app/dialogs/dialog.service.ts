@@ -497,18 +497,22 @@ export class DialogService {
         } ).afterClosed().subscribe();
     }
     
-    public showInfoDialog( title: string, message: string | string[] ): void {
+    public showInfoDialog( title: string, message: string | string[] ): MatDialogRef<NotificationDialogComponent> {
         let data: NotificationDialogModel = new NotificationDialogModel();
         
         data.title = title;
         data.message = message;
         data.notificationType = NotificationTypes.Information;
 
-        this.dialog.open( NotificationDialogComponent, {
+        let ref = this.dialog.open( NotificationDialogComponent, {
             width: '450px',
             data: data,
             panelClass: 'app-dialog',
-        } ).afterClosed().subscribe();
+        } );
+        
+        ref.afterClosed().subscribe();
+
+        return ref;
     }
     
     public showCustomNotificationDialog( title: string, message: string | string[], icon: string ): void {
