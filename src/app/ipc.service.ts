@@ -1,5 +1,6 @@
 import { Injectable, NgZone } from '@angular/core';
 import { Display, IpcRenderer } from 'electron';
+import { UpdateInfo } from 'electron-updater';
 import { Observable, Observer } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
 import { DataTickModel, DkpEntryModel, TriggerModel, OverlayWindowModel, ActionTypes, FocusEffectSettings, CharacterModel, BasicError, TriggerFolder, FileModel, Tag, AuthorModel, PackageFileModel, TriggerPackageMetaModel, TriggerPackageVersion, FctStylesModel } from './core.model';
@@ -17,11 +18,20 @@ export class IpcService {
     private _consoleLogRequestObservers: Observer<any>[] = [];
     private _logActivatedObservers: Observer<any>[] = [];
     private _logDeactivatedObservers: Observer<any>[] = [];
+    private _updateAvailableObservers: Observer<UpdateInfo>[] = [];
 
     constructor( private ngZone: NgZone ) {
         if ( ( <any>window ).require ) {
             try {
                 this.ipc = ( <any>window ).require( 'electron' ).ipcRenderer;
+
+                this.ipc.on( 'update_downloaded', ( event: any, data: UpdateInfo ) => {
+                    ngZone.run( () => {
+                        this._updateAvailableObservers?.forEach( f => {
+                            f.next( data );
+                        } );
+                    } );
+                } );
 
                 this.ipc.on( 'tick', ( event: any, data: DataTickModel ) => {
                     ngZone.run( () => {
@@ -89,6 +99,14 @@ export class IpcService {
         } else {
             console.warn( 'App not running inside Electron!' );
         }
+    }
+
+    public updateAvailable(): Observable<UpdateInfo> {
+        let obs: Observable<UpdateInfo> = new Observable<UpdateInfo>( ( observer: Observer<UpdateInfo> ) => {
+            this._updateAvailableObservers.push( observer );
+        } );
+
+        return obs;
     }
 
     public tickReceived(): Observable<DataTickModel> {
@@ -201,6 +219,22 @@ export class IpcService {
         } );
 
         return obs;
+    }
+
+    public quitAndInstallUpdate(): void {
+        this.ipc.send( 'app:restart', null );
+    }
+
+    public logException( ex: any ): void {
+        this.ipc.send( 'app:log:exception', ex );
+    }
+
+    public logInfo( info: string ): void {
+        this.ipc.send( 'app:log:info', info );
+    }
+
+    public downloadLogZip(): void {
+        this.ipc.send( 'settings:download-log' );
     }
 
     public removeDkpAward( entry: DkpEntryModel ): void {
@@ -1134,7 +1168,7 @@ export class IpcService {
                         ginaConfig.BehaviorGroups.Behavior = [ ginaConfig.BehaviorGroups.Behavior ];
                     }
 
-                    if ( !( ginaConfig.Settings.PhoneticTransforms.Transform instanceof Array ) ) {
+                    if ( !( ginaConfig.Settings.PhoneticTransforms.Transform instanceof Array ) && ginaConfig.Settings.PhoneticTransforms ) {
                         ginaConfig.Settings.PhoneticTransforms.Transform = [ ginaConfig.Settings.PhoneticTransforms.Transform ];
                     }
 

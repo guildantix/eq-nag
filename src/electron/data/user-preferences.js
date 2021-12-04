@@ -1,10 +1,12 @@
-const { ipcMain } = require( "electron" );
+const { ipcMain, BrowserWindow, dialog } = require( "electron" );
 const Store = require( './store' );
 const ForwardRef = require( '../forward-ref' );
+const path = require( 'path' );
 const fs = require( 'fs' );
 const { AuthorModel } = require( './models/sharing-service' );
 const { FctStylesModel } = require( './models/fct' );
 const { StyleProperties } = require( './models/common' );
+const archiver = require( 'archiver' );
 
 const possibleEqFolders = [
     '\\users\\public\\Everquest',
@@ -501,6 +503,48 @@ class UserPreferencesStore extends Store {
 
         ipcMain.on( 'settings:get:ignore-gina-objects', ( event ) => {
             event.sender.webContents.send( 'settings:get:ignore-gina-objects', this.#data.ignoreGinaObjects );
+        } );
+
+        ipcMain.on( 'settings:download-log', () => {
+            let logPath = path.join( this.userDataPath, 'logs', 'main.log' );
+
+            if ( fs.existsSync( logPath ) ) {
+                let logZip = path.join( this.userDataPath, 'log.zip' );
+                let output = fs.createWriteStream( logZip );
+                let zip = archiver( 'zip' );
+                
+                output.on( 'close', () => {
+
+                    let options = {
+                        //Placeholder 1
+                        title: "EQ Nag - Log File",
+                
+                        //Placeholder 2
+                        defaultPath: "nag-log.zip",
+                
+                        //Placeholder 4
+                        buttonLabel: "Save Log File",
+                
+                        //Placeholder 3
+                        filters: [
+                            { name: 'Zip', extensions: [ 'zip' ] }
+                        ]
+                    }
+
+                    const WIN = BrowserWindow.getFocusedWindow();
+
+                    dialog.showSaveDialog( WIN, options ).then( saveResult => {
+                        if ( !saveResult.canceled ) {
+                            fs.copyFile( logZip, saveResult.filePath, () => {} );
+                        }
+                    } );
+                } );
+
+                zip.pipe( output );
+                zip.file( logPath, { name: 'main.log' } );
+                zip.finalize();
+            }
+
         } );
 
         ipcMain.on( 'settings:set:ignore-gina-objects',
