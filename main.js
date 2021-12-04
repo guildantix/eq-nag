@@ -1,7 +1,9 @@
 const { app, BrowserWindow, ipcMain, protocol, session, screen } = require( "electron" );
-const { autoUpdater } = require('electron-updater');
+const { autoUpdater, updaterSignal } = require('electron-updater');
 const url = require( "url" );
 const path = require( "path" );
+const log = require( 'electron-log' );
+const unhandled = require('electron-unhandled');
 const { clipboard } = require( 'electron' );
 const UserPreferencesStore = require( './src/electron/data/user-preferences' );
 const DkpDatabaseStore = require( './src/electron/data/dkp-database' );
@@ -18,6 +20,7 @@ const GinaImporter = require( "./src/electron/gina-importer" );
 /** @type {BrowserWindow} */
 var mainWindow, logWatcherWindow, testWindow;
 var enableDevMode = true;
+const updateCheckInterval = 10 * 60 * 1000;
 const winManager = new WindowManager(__dirname);
 const userPreferences = new UserPreferencesStore( {} );
 const dkpDatabase = new DkpDatabaseStore();
@@ -30,6 +33,13 @@ const fileDatabase = new FilesDatabaseStore();
 const ginaImporter = new GinaImporter();
 
 GH_TOKEN = "e3460400ae1273a5cac83e1b86a5aceae7f8bab7";
+
+autoUpdater.logger = log;
+
+unhandled({
+    logger: log.error,
+    showDialog: false,
+});
 
 function createWindow() {
     mainWindow = new BrowserWindow( {
@@ -79,12 +89,12 @@ function createWindow() {
     } );
 
     mainWindow.webContents.once( 'dom-ready', () => {
-        autoUpdater.checkForUpdatesAndNotify().then( result => {
-            mainWindow.webContents.send( 'console:log', result );
-        }, error => {
-            mainWindow.webContents.send( 'console:log', error );
-        } );
         sendTick();
+        autoUpdater.checkForUpdates();
+        setInterval( () => {
+            autoUpdater.checkForUpdates();
+        }, updateCheckInterval );
+        
     } );
 
     winManager.loadOverlays( overlayDatabase );
@@ -126,7 +136,7 @@ app.on( 'ready', function () {
         callback( path.normalize( filePath ) );
     } );
     createWindow();
-} )
+} );
 
 app.on( 'window-all-closed', function () {
     if ( process.platform !== 'darwin' ) app.quit()
@@ -134,6 +144,14 @@ app.on( 'window-all-closed', function () {
 
 app.on( 'activate', function () {
     if ( mainWindow === null ) createWindow()
+} );
+
+ipcMain.on( 'app:log:exception', ( event, data ) => {
+    log.error( data );
+} );
+
+ipcMain.on( 'app:log:info', ( event, data ) => {
+    log.info( data );
 } );
 
 ipcMain.on( 'app:quit', ( event, data ) => { app.quit(); } );
@@ -186,15 +204,18 @@ function sendTick() {
 
 }
 
-autoUpdater.signals.updateDownloaded( () => {
-    mainWindow.webContents.send( 'update_downloaded' );
+autoUpdater.on( 'update-downloaded', () => {
+    log.info( 'update-downloaded executed' );
+    winManager.eachWindow( window => window.webContents.send( 'update_downloaded', null ) );
 } );
 
-autoUpdater.on( 'update-available', () => {
-    mainWindow.webContents.send( 'update_available' );
+autoUpdater.on( 'update-available', info => {
+    log.info( info );
+    mainWindow.webContents.send( 'update_available', info );
 } );
 
 ipcMain.on( 'app:restart', () => {
+    log.info( 'app:restart executed' );
     autoUpdater.quitAndInstall();
 } );
 

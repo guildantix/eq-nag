@@ -1,8 +1,9 @@
 {
   "name": "electron-angular-eq-parse",
-  "version": "0.0.44",
+  "version": "0.0.47",
   "main": "main.js",
   "scripts": {
+    "copy-source-maps": "copyfiles --flat dist/*.map source-maps/%npm_package_version%",
     "tsc": "tsc",
     "ng": "ng",
     "start": "electron .",
@@ -10,7 +11,7 @@
     "lint": "ng lint",
     "e2e": "ng e2e",
     "start:electron": "tsc && ng build --base-href ./ --configuration=production && electron .",
-    "build": "electron-builder build --win --publish never",
+    "build": "npm run copy-source-maps && electron-builder build --win --publish never",
     "deploy": "electron-builder build --win --publish always"
   },
   "private": true,
@@ -26,7 +27,10 @@
     "@angular/platform-browser-dynamic": "~10.0.2",
     "@angular/router": "~10.0.2",
     "@types/lodash-es": "^4.17.4",
+    "archiver": "^5.3.0",
     "chokidar": "^3.4.0",
+    "electron-log": "^4.4.1",
+    "electron-unhandled": "^3.0.2",
     "electron-updater": "^4.3.1",
     "fuse.js": "^6.4.3",
     "handlebars": "^4.7.6",
@@ -69,8 +73,8 @@
     "token": "REDACTED_TOKEN"
   },
   "build": {
-    "productName": "Antix Parse",
-    "appId": "scripter.AntixParse",
+    "productName": "EQ Nag",
+    "appId": "scripter.eqNotificationAgent",
     "win": {
       "target": [
         "portable",
@@ -85,7 +89,7 @@
       "icon": "Nag.ico"
     },
     "portable": {
-      "artifactName": "antixparse_portable.exe"
+      "artifactName": "eq_nag_portable.exe"
     },
     "directories": {
       "output": "electron/output",
