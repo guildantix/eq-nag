@@ -10,6 +10,7 @@ import { SetupService } from './setup/setup.service';
 import { CharactersListComponent } from './characters-list/characters-list.component';
 import { TriggerLibraryService } from './windows/trigger-library.service';
 import { forkJoin, Observable, timer } from 'rxjs';
+import { MatDialogRef } from '@angular/material/dialog';
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const nanoid = customAlphabet( alphabet, 16 );
 const updateIntervalDuration = 5 * 60 * 1000;
@@ -65,6 +66,17 @@ export class MainComponent implements OnInit {
     }
 
     ngOnInit(): void {
+
+        this.ipcService.updateAvailable().subscribe( updateInfo => {
+            let msg = `Update ${updateInfo.version} is available.  Would you like to install the update now?`;
+            this.dialogService.showConfirmDialog(
+                msg, 'Click "Yes" to close Nag and install the update.', 'Click "No" to close this dialog and wait until Nag restarts to install the update.',
+                confirmed => {
+                    if ( confirmed ) {
+                        
+                    }
+                } );
+        } );
         
         this.ipcService.getSetupCompleted().subscribe( completed => {
             this.setupCompleted = completed;
@@ -237,6 +249,10 @@ export class MainComponent implements OnInit {
                     this.ipcService.deleteOverlayWindow( this.overlays[ index ].overlayId ).subscribe();
                 }
             } );
+    }
+
+    public checkForUpdate() {
+        // let v = new UpdateInfo
     }
 
     public updateFocusEffectSettings(): void {
