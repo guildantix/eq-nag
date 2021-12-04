@@ -94,6 +94,10 @@ export class SettingsComponent implements OnInit {
         this.ipcService.getAlertOverlayId().subscribe( id => this.alertOverlayId = id );
     }
 
+    downloadLogFile() {
+        this.ipcService.downloadLogZip();
+    }
+
     saveDetrimentalOverlayId() {
         this.ipcService.saveDetrimentalOverlayId( this.detrimentalOverlayId );
     }
