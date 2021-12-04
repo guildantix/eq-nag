@@ -3,6 +3,7 @@ const { app, BrowserWindow, ipcMain, screen } = require( "electron" );
 const ForwardRef = require( '../electron/forward-ref' );
 const fs = require( 'fs' );
 const path = require( "path" );
+const log = require( 'electron-log' );
 // const parser = require( 'xml2json' );
 const parseStringPromise = require( 'xml2js' ).parseStringPromise;
 
@@ -39,7 +40,9 @@ class GinaImporter {
             mainWindowRef.reference.webContents.once( 'did-finish-load', () => {
                 queryGina( app.getPath( 'home' ), ginaPath => {
                     ginaDataPath = ginaPath;
+                    log.info( `gina path: ${ginaPath}` );
                     // console.log( 'gina data path', app.getPath( 'home' ) );
+                    // console.log( 'gina path actual', ginaDataPath );
                     // getGinaConfig( jsonData => {
                     //     if ( jsonData ) {
                     //         mainWindowRef.reference.webContents.send( 'console:log', jsonData );
