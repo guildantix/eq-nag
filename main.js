@@ -204,13 +204,21 @@ function sendTick() {
 
 }
 
+/** @type {import("electron-updater").UpdateInfo} */
+var updateInfo = null;
+
 autoUpdater.on( 'update-downloaded', () => {
     log.info( 'update-downloaded executed' );
-    winManager.eachWindow( window => window.webContents.send( 'update_downloaded', null ) );
+    mainWindow.webContents.send( 'update_downloaded', updateInfo );
+    winManager.eachWindow( ( window, identifier ) => {
+        log.info( `Sending update to ${identifier}` );
+        window.webContents.send( 'update_downloaded', updateInfo );
+    } );
 } );
 
 autoUpdater.on( 'update-available', info => {
     log.info( info );
+    updateInfo = info;
     mainWindow.webContents.send( 'update_available', info );
 } );
 
@@ -254,7 +262,7 @@ logBootstrap.boostrapLogWatchers( mainWindowRef, app.isDev(), characterDatabase,
 gameResources.attachIpcEvents( mainWindowRef, userPreferences );
 ginaImporter.initGinaImporter( mainWindowRef, app.isDev() );
 
-let x = userPreferences.everquestInstallFolder;
+// let x = userPreferences.everquestInstallFolder;
 
 // Pulls the spell name
 // document.querySelector('meta[property="og:title"]').getAttribute('content')

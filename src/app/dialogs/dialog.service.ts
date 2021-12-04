@@ -88,6 +88,59 @@ export class DialogService {
 
 
     /**
+     * Displays a confirmation dialog to the user.
+     * 
+     * @param title The title of the confirmation dialog.
+     * @param message The question to display to the user.
+     * @param yesText The description of the action taken when the user confirms the question.
+     * @param noText The description of the action taken when the user declines the question.
+     * @param onClose This function is executed after the user makes their decision and the decision is passed as the confirmed parameter.
+     */
+    public showAskDialog( title: string, message: string | (string|ColoredString)[], yesText: string, noText: string, onClose: ( confirmed: boolean ) => void ): void {
+        
+        let dialogRef: MatDialogRef<ConfirmDialogComponent> = this.dialog.open( ConfirmDialogComponent, {
+            width: '550px',
+            data: {
+                title: title ?? 'Confirm',
+                message: message,
+                yesMessage: yesText,
+                noMessage: noText
+            },
+            panelClass: 'app-dialog',
+        } );
+
+        let af = dialogRef.afterClosed();
+
+        af.subscribe( onClose );
+        af.subscribe( e => {
+
+            if ( document.activeElement instanceof HTMLElement ) {
+                // This is a workaround to prevent the error:
+                // 
+                //      ExpressionChangedAfterItHasBeenCheckedError: Expression has changed after it was checked. Previous value for 'mat-form-field-should-float': 'false'. Current value: 'true'.
+                //
+                // I'm sure there's some deeper meaning behind it, but for some 
+                // reason when the confirm dialog's `Yes` button is still the 
+                // active element at this point, that error is written to the 
+                // console.
+                // This error only happens when a list is reloaded after.
+                document.activeElement.blur();
+            }
+
+        } );
+        
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
      * Displays the trigger action wizard.
      * 
      * @param model The trigger action to edit/create.

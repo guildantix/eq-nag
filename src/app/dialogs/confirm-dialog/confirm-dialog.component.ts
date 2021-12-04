@@ -9,7 +9,7 @@ import { ColoredString } from '../dialog.model';
 } )
 export class ConfirmDialogComponent implements OnInit {
 
-
+    public title: string = 'Confirm';
     public messages: (string|ColoredString)[] = [];
 
     constructor(
@@ -23,6 +23,10 @@ export class ConfirmDialogComponent implements OnInit {
             this.messages.push( this.data.message );
         } else {
             this.messages.push( 'Are you sure?' );
+        }
+
+        if ( this.data.title ) {
+            this.title = this.data.title;
         }
     }
 

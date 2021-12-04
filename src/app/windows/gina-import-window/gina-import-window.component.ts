@@ -166,7 +166,7 @@ export class GinaImportWindowComponent implements OnInit {
                 this.importedTriggerNames.push( trigger.importIdentifier );
             } );
 
-            this.importedPhoneticTransforms = Object.keys( data.phoneticTransforms );
+            this.importedPhoneticTransforms = Object.keys( data.phoneticTransforms ?? {} );
             
             this.loadGinaConfig();
 

@@ -48,7 +48,7 @@ class WindowManager {
     attachIpcEvents( mainWindowRef, overlayDatabase, userPreferencesDatabase ) {
 
         this.#userPrefDb = userPreferencesDatabase;
-        this.#mainWindow = mainWindowRef;
+        this.#mainWindow = mainWindowRef.reference;
 
         ipcMain.on( 'trigger:dialog:new', ( event, arg ) => {
             let triggerWindow = new BrowserWindow( {
@@ -459,19 +459,23 @@ class WindowManager {
     /**
      * Iterates each active window and executes function.
      * 
-     * @param {( window: BrowserWindow ) => void} fn Iteratee
+     * @param {( window: BrowserWindow, identifier: string ) => void} fn Iteratee
      */
     eachWindow( fn ) {
+
         if ( this.ginaImportWindow ) {
-            fn( this.ginaImportWindow );
+            fn( this.ginaImportWindow, 'ginaImportWindow' );
         }
+
         if ( this.triggerLibraryWindow ) {
-            fn( this.triggerLibraryWindow );
+            fn( this.triggerLibraryWindow, 'triggerLibraryWindow' );
         }
-        if ( this.#mainWindow ) {
-            fn( this.#mainWindow );
+
+        if ( overlayDictionary ) {
+            for ( let overlayId in overlayDictionary ) {
+                fn( overlayDictionary[ overlayId ].window, overlayDictionary[ overlayId ].model.name );
+            }
         }
-        overlayDictionary?.forEach( fn );
     }
 }
 
