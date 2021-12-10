@@ -12,6 +12,10 @@ window.onerror = ( error, url, line ) => {
     ipcRenderer.send( 'app:log:exception', `$${error}\r\n    at ${url}:${line}` );
 };
 
+function logInfo( data ) {
+    ipcRenderer.send( 'app:log:info', data );
+}
+
 // <!-- Roboto(i): 100, 300, 400, 500, 700, 900 -->
 // <!-- Red Rose: 300, 400, 700 -->
 // <!-- Oswald: 200, 300, 400, 500, 600, 700 -->
@@ -236,8 +240,14 @@ function render( comp ) {
     
             comp.pos = getRandomLocation();
             criticals[ comp.pos.x ][ comp.pos.y ] = true;
-            div.style.left = `${quadrants[ comp.pos.x ][ comp.pos.y ].x + ( div.clientWidth / 2 )}px`;
-            div.style.top = `${quadrants[ comp.pos.x ][ comp.pos.y ].y - ( div.clientHeight * 1.25 )}px`;
+
+            try {
+                div.style.left = `${quadrants[ comp.pos.x ][ comp.pos.y ].x + ( div.clientWidth / 2 )}px`; // Cannot read property 'x' of undefined
+                div.style.top = `${quadrants[ comp.pos.x ][ comp.pos.y ].y - ( div.clientHeight * 1.25 )}px`;
+            } catch ( error ) {
+                logInfo( `criticals: ${JSON.stringify( criticals ?? '' )}` );
+                logInfo( `quadrants: ${JSON.stringify( quadrants ?? '' )}` );
+            }
                 
             comp.intervalId = window.setTimeout( () => {
                 comp.dom.parentNode.removeChild( comp.dom );
