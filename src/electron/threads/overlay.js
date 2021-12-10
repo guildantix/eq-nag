@@ -141,13 +141,15 @@ function Overlay() {
             
         } else {
             let i = _.findIndex( overlayComponents, comp => comp.instanceId === instanceId );
-            let timerType = overlayComponents[ i ].action.actionType === ActionTypes.BeneficialTimer || overlayComponents[ i ].action.actionType === ActionTypes.Countdown || overlayComponents[ i ].action.actionType === ActionTypes.Timer;
-            let endNaturally = timerType === true && ( overlayComponents[ i ].action.remainAfterEnded || overlayComponents[ i ].action.notifyWhenEnded );
+            if ( i > -1 ) {
+                let timerType = overlayComponents[ i ].action.actionType === ActionTypes.BeneficialTimer || overlayComponents[ i ].action.actionType === ActionTypes.Countdown || overlayComponents[ i ].action.actionType === ActionTypes.Timer;
+                let endNaturally = timerType === true && ( overlayComponents[ i ].action.remainAfterEnded || overlayComponents[ i ].action.notifyWhenEnded );
 
-            if ( endNaturally ) {
-                overlayComponents[ i ].start = new Date( new Date().getTime() - overlayComponents[ i ].action.duration * 1000 );
-            } else {
-                overlayComponents[ i ].removeComponent();
+                if ( endNaturally ) {
+                    overlayComponents[ i ].start = new Date( new Date().getTime() - overlayComponents[ i ].action.duration * 1000 );
+                } else {
+                    overlayComponents[ i ].removeComponent();
+                }
             }
         }
 
