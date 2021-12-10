@@ -1,5 +1,5 @@
 import { FlatTreeControl } from '@angular/cdk/tree';
-import { Component, OnInit, ViewChild } from '@angular/core';
+import { Component, ElementRef, HostListener, NgZone, OnInit, ViewChild } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTreeFlatDataSource, MatTreeFlattener } from '@angular/material/tree';
 import { Tag, TriggerFolder, TriggerModel } from '../core.model';
@@ -9,6 +9,9 @@ import * as _ from 'lodash-es';
 import { ContextMenuModel } from '../context-menu/context-menu.model';
 import { MatTable } from '@angular/material/table';
 import { customAlphabet } from 'nanoid';
+import { TableVirtualScrollDataSource } from 'ng-table-virtual-scroll';
+import { CdkVirtualScrollViewport } from '@angular/cdk/scrolling';
+import { BehaviorSubject } from 'rxjs';
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const nanoid = customAlphabet( alphabet, 16 );
 
@@ -42,11 +45,39 @@ export class TriggersComponent implements OnInit {
     public hasChild = ( _: number, node: FolderTreeNode ) => node.expandable;
     public selectedFolderId: string;
     public triggers: TriggerModel[] = [];
-    public filteredTriggers: TriggerModel[] = [];
+
+    private _indexRecords: number = 0;
+    private _maxRecords: number = 0;
+    private _filteredRecords: TriggerModel[] = [];
+    public dataSourceTest: BehaviorSubject<TriggerModel[]> = new BehaviorSubject<TriggerModel[]>( [] );
+    
+    public get filteredTriggers(): TriggerModel[] {
+        return this._filteredRecords;
+    }
+    public set filteredTriggers( value: TriggerModel[] ) {
+        
+        this._indexRecords = 0;
+        this._maxRecords = value?.length ?? 0;
+        let take = this._maxRecords < 30 ? this._maxRecords : 30;
+        this._indexRecords = take;
+
+        this.triggersTable.renderRows();
+        this._filteredRecords = value;
+        this._tableDataSource = new TableVirtualScrollDataSource( this._filteredRecords.slice( 0, this._indexRecords ) );
+
+        this.dataSourceTest.next( this._filteredRecords.slice( 0, this._indexRecords ) );
+    }
+
+    private _tableDataSource: TableVirtualScrollDataSource<TriggerModel> = new TableVirtualScrollDataSource<TriggerModel>([]);
+    public get tableDataSource(): TableVirtualScrollDataSource<TriggerModel> {
+        return this._tableDataSource;
+    };
+
     public isDev: boolean = false;
     public triggerSearchResults: TriggerModel[] = [];
     public searchTerm: string = null;
     @ViewChild( 'triggersTable' ) triggersTable: MatTable<TriggerModel>;
+    @ViewChild( 'triggerScroller', { static: true } ) triggerScroller: CdkVirtualScrollViewport;
 
     public get allExpanded(): boolean {
         return this._treeExpanded;
@@ -58,13 +89,33 @@ export class TriggersComponent implements OnInit {
     constructor(
         private snackBar: MatSnackBar,
         private ipcService: IpcService,
-        private dialogService: DialogService ) {
+        private dialogService: DialogService,
+        private ngZone: NgZone ) {
         
         this.dataSource.data = [];
 
     }
 
     ngOnInit() {
+
+        this.triggerScroller.elementScrolled().subscribe( e => {
+            this.ngZone.run( () => {
+                
+                let elRef = ( this.triggersTable as any )._elementRef as ElementRef<HTMLTableElement>;
+                let remainingScroll = elRef.nativeElement.clientHeight - this.triggerScroller.elementRef.nativeElement.scrollTop - this.triggerScroller.elementRef.nativeElement.clientHeight;
+                if ( remainingScroll <= 0 ) {
+                
+                    this._indexRecords += 10;
+                    this._indexRecords = this._indexRecords > this._maxRecords ? this._maxRecords : this._indexRecords;
+                
+                    this._tableDataSource = new TableVirtualScrollDataSource( this._filteredRecords.slice( 0, this._indexRecords ) );
+                    this.dataSourceTest.next( this._filteredRecords.slice( 0, this._indexRecords ) );
+                
+                    this.triggersTable.renderRows();
+
+                }
+            } );
+        } );
 
         this.ipcService.tickReceived().subscribe( tick => {
             this.triggers = tick.triggers.filter( f => this.isDev || !f.predefined );
