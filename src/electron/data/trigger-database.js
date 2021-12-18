@@ -575,6 +575,37 @@ class TriggerDatabaseStore extends Store {
             this.#data.version = 61;
             this.storeDataFile( this.#data );
         }
+        if ( this.#data.version < 62 ) {
+            this.#data?.triggers?.forEach( trigger => {
+                trigger.actions?.forEach( action => {
+                    action.variableStorageType = 'localVariable';
+                } );
+            } );
+            
+            this.#data.version = 62;
+            this.storeDataFile( this.#data );
+        }
+        if ( this.#data.version < 63 ) {
+            this.#data?.triggers?.forEach( trigger => {
+                trigger.actions?.forEach( action => {
+                    action.sequentialRestartBehavior = 'none';
+                } );
+            } );
+            
+            this.#data.version = 63;
+            this.storeDataFile( this.#data );
+        }
+        if ( this.#data.version < 64 ) {
+            this.#data?.triggers?.forEach( trigger => {
+                trigger.sequentialRestartBehavior = 'none';
+                trigger.actions?.forEach( action => {
+                    delete action.sequentialRestartBehavior;
+                } );
+            } );
+            
+            this.#data.version = 64;
+            this.storeDataFile( this.#data );
+        }
     }
 
 

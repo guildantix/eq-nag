@@ -65,36 +65,45 @@ export class TriggerDialogComponent implements OnInit {
 
     public save(): void {
         this.model.actions?.forEach( ( action: TriggerAction ) => {
-            if ( action.useCustomColor === true ) {
-                action.overrideTimerColor = action.overrideTimerColor;
-                action.timerBackgroundColor = ColorUtility.FromHex( action.overrideTimerColor ).darken( 0.93 ).toString( 0.75 );
-            } else {
-                action.overrideTimerColor = null;
-                action.timerBackgroundColor = null;
-            }
 
-            if ( action.ifEndingSoon === true && action.endingDuration > 0 ) {
-                if ( action.endingSoonChangeColor === true ) {
-                    action.endingSoonBackgroundColor = ColorUtility.FromHex( action.endingSoonColor ).darken( 0.93 ).toString( 0.75 );
+            if ( action.actionType === ActionTypes.StoreVariable ) {
+
+                
+                
+            } else {
+
+                if ( action.useCustomColor === true ) {
+                    action.overrideTimerColor = action.overrideTimerColor;
+                    action.timerBackgroundColor = ColorUtility.FromHex( action.overrideTimerColor ).darken( 0.93 ).toString( 0.75 );
                 } else {
-                    action.endingSoonBackgroundColor = null;
+                    action.overrideTimerColor = null;
+                    action.timerBackgroundColor = null;
                 }
-            } else {
-                action.endingDuration = null;
-                action.endingSoonColor = null;
-            }
 
-            if ( action.remainAfterEnded === true && action.remainDuration > 0 ) {
-                if ( action.endedChangeColor === true ) {
-                    action.endedBackgroundColor = ColorUtility.FromHex( action.endedColor ).darken( 0.93 ).toString( 0.75 );
+                if ( action.ifEndingSoon === true && action.endingDuration > 0 ) {
+                    if ( action.endingSoonChangeColor === true ) {
+                        action.endingSoonBackgroundColor = ColorUtility.FromHex( action.endingSoonColor ).darken( 0.93 ).toString( 0.75 );
+                    } else {
+                        action.endingSoonBackgroundColor = null;
+                    }
                 } else {
+                    action.endingDuration = null;
+                    action.endingSoonColor = null;
+                }
+
+                if ( action.remainAfterEnded === true && action.remainDuration > 0 ) {
+                    if ( action.endedChangeColor === true ) {
+                        action.endedBackgroundColor = ColorUtility.FromHex( action.endedColor ).darken( 0.93 ).toString( 0.75 );
+                    } else {
+                        action.endedBackgroundColor = null;
+                    }
+                } else {
+                    action.remainAfterEnded = false;
+                    action.remainDuration = null;
+                    action.endedColor = null;
                     action.endedBackgroundColor = null;
                 }
-            } else {
-                action.remainAfterEnded = false;
-                action.remainDuration = null;
-                action.endedColor = null;
-                action.endedBackgroundColor = null;
+
             }
 
         } );

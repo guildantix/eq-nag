@@ -39,6 +39,21 @@
                         
                         <app-capture-phrases [(capturePhrases)]="model.capturePhrases" [(captureMethod)]="model.captureMethod" [(useCooldown)]="model.useCooldown" [(cooldownDuration)]="model.cooldownDuration"></app-capture-phrases>
     
+                        <fieldset *ngIf="model.captureMethod === 'Sequential'">
+                            <legend class="full-width"><span class="title">Sequential Rules</span><span class="spacer"></span></legend>
+                            
+                            <mat-form-field>
+                                <mat-label>Restart Behavior</mat-label>
+                                <mat-select [(ngModel)]="model.sequentialRestartBehavior" name="ddlSequentialRestartBehavior">
+                                    <mat-option value="none">None</mat-option>
+                                    <mat-option value="exactFirstMatch">Restart on Phrase #1</mat-option>
+                                </mat-select>
+                                <mat-hint *ngIf="model.sequentialRestartBehavior === 'none'">Always begin a new sequence.</mat-hint>
+                                <mat-hint *ngIf="model.sequentialRestartBehavior === 'exactFirstMatch'">Restart the sequence when phrase #1 matches exactly.</mat-hint>
+                            </mat-form-field>
+
+                        </fieldset>
+
                     </div>
                 </mat-tab>
                 <mat-tab label="Actions">

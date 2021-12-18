@@ -132,6 +132,7 @@ export class TriggerModel {
     public useCooldown: boolean = false;
     public cooldownDuration: number = 0;
     public enabled: boolean = true;
+    public sequentialRestartBehavior: string = 'none';
     
 }
 
@@ -316,6 +317,7 @@ export class TriggerAction {
     public castTime: number = null;
     public onlyUseAaBeneficialFocus: boolean = false;
     public skipBenCastingTimeFocus: boolean = false;
+    public variableStorageType: string = 'localVariable';
 
     public ifEndingSoon: boolean = false;
     public endingSoonShowTimer: boolean = false;
@@ -576,6 +578,7 @@ export class PackageTrigger {
     public classLevels: CharacterClassLevel[] = [];
     public useCooldown: boolean = false;
     public cooldownDuration: number = 0;
+    public sequentialRestartBehavior: string = 'none';
 
 }
 

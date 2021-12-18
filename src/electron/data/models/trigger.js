@@ -183,6 +183,8 @@ class TriggerAction {
     onlyUseAaBeneficialFocus = false;
     /** @type {boolean} */
     skipBenCastingTimeFocus = false;
+    /** @type {string} */
+    variableStorageType = 'localVariable';
 
     /** @type boolean */
     ifEndingSoon = false;
@@ -372,6 +374,8 @@ class Trigger {
     cooldownDuration = 0;
     /** @type {boolean} */
     enabled = true;
+    /** @type {string} */
+    sequentialRestartBehavior = 'none';
 }
 
 class BaseFileModel {
@@ -464,6 +468,8 @@ class PackageTrigger {
     useCooldown = false;
     /** @type {number} */
     cooldownDuration = 0;
+    /** @type {string} */
+    sequentialRestartBehavior = 'none';
 
 }
 

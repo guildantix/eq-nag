@@ -13,7 +13,7 @@ class LogTrigger extends Trigger {
      * Parses the given log entry and executes a callback when a match is found.
      * 
      * @param {string} value The full log entry sans timestamp.
-     * @param {(match: PhraseParse) => void} onMatch This callback is executed when a match is identified.
+     * @param {(match: PhraseParse, deltaTime: number) => void} onMatch This callback is executed when a match is identified.
      */
     _parse = ( value, onMatch ) => { };
 
@@ -40,6 +40,8 @@ class LogTrigger extends Trigger {
     /** @type {Date} */
     _cooldownStart = null;
     
+    /** @type {number} */
+    _deltaTime = null;
 }
 
 module.exports = { PhraseParse, LogTrigger };

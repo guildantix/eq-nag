@@ -319,7 +319,7 @@ function generateTriggerFns() {
             /** @type {((value: string, hasGroups: boolean, matchGroups: Record<string, string>) => PhraseParse)[]} */
             let _phraseParsers = [];
 
-            /** @type {{groups: Record<string, string>, hasGroups: boolean, captureIndex: number}[]} */
+            /** @type {{groups: Record<string, string>, hasGroups: boolean, captureIndex: number, time: number, logValue: string}[]} */
             let _sequentialMatchs = [];
 
             trigger.capturePhrases?.forEach( phrase => {
@@ -333,6 +333,10 @@ function generateTriggerFns() {
 
                             rgxValue = StringUtilities.parseShortCodesToRegex( rgxValue, characterName );
                             rgxValue = StringUtilities.parseStoredVariablesToRegex( rgxValue, storedVariables );
+
+                            if ( trigger.captureMethod === 'Sequential' ) {
+                                rgxValue = StringUtilities.parseMatchesToLiteral( rgxValue, { groups: matchGroups }, trigger._deltaTime );
+                            }
 
                             if ( hasGroups === true ) {
                                 rgxValue = StringUtilities.parseSequentialGroups( rgxValue, matchGroups );
@@ -496,7 +500,7 @@ function generateTriggerFns() {
                         for ( let i = 0; i < _phraseParsers?.length; i++ ) {
                             let _res = _phraseParsers[ i ]( value );
                             if ( _res?.match ) {
-                                onMatch( _res );
+                                onMatch( _res, 0 );
                             }
                         }
                     }
@@ -514,7 +518,7 @@ function generateTriggerFns() {
                  * Parses the given log entry and executes a callback when a match is found.
                  * 
                  * @param {string} value The full log entry sans timestamp.
-                 * @param {(match: PhraseParse) => void} onMatch This callback is executed when a match is identified.
+                 * @param {(match: PhraseParse, deltaTime: number) => void} onMatch This callback is executed when a match is identified.
                  */
                 trigger._parse = ( value, onMatch ) => {
 
@@ -522,11 +526,16 @@ function generateTriggerFns() {
 
                         let _res = _phraseParsers[ 0 ]( value );
 
+                        // This checks the first phrase, and if no matches are 
+                        // found, then any active sequences are checked agains 
+                        // the log value.
                         if ( _res?.match ) {
                             let _newSeqMatch = {
                                 groups: {},
                                 hasGroups: false,
                                 captureIndex: 1,
+                                time: Date.now(),
+                                logValue: _res.result[ 0 ],
                             };
 
                             let groupKeys = _res.result?.groups ? Object.keys( _res.result.groups ) : [];
@@ -538,9 +547,18 @@ function generateTriggerFns() {
 
                             _newSeqMatch.hasGroups = groupKeys?.length > 0;
 
+                            if ( trigger.sequentialRestartBehavior === 'exactFirstMatch' && _sequentialMatchs?.length > 0 ) {
+                                let sequenceIndex = _sequentialMatchs.findIndex( s => s.logValue === _newSeqMatch.logValue );
+                                if ( sequenceIndex > -1 ) {
+                                    _sequentialMatchs.splice( sequenceIndex, 1 );
+                                }
+                            }
+
                             _sequentialMatchs.push( _newSeqMatch );
 
-                            onMatch( _res );
+                            trigger._deltaTime = 0;
+
+                            onMatch( _res, trigger._deltaTime );
 
                         }
                             
@@ -551,6 +569,9 @@ function generateTriggerFns() {
                                         
                                     if ( _res?.match ) {
                                         _sequentialMatchs[ i ].captureIndex += 1;
+
+                                        trigger._deltaTime = Date.now() - _sequentialMatchs[ i ].time;
+                                        _sequentialMatchs[ i ].time = Date.now();
                                             
                                         let groupKeys = _res.result?.groups ? Object.keys( _res.result.groups ) : [];
                                         if ( groupKeys.length > 0 ) {
@@ -561,7 +582,7 @@ function generateTriggerFns() {
                 
                                         _sequentialMatchs[ i ].hasGroups = _sequentialMatchs[ i ].hasGroups || groupKeys.length > 0;
                 
-                                        onMatch( _res );
+                                        onMatch( _res, trigger._deltaTime );
                                         
                                     }
                                 }
@@ -836,7 +857,7 @@ function parseLogEntries( raw, simulating ) {
     let entryMatched = false;
     triggers.forEach( trigger => {
         if ( !!trigger.enabled ) {
-            trigger._parse( log, res => {
+            trigger._parse( log, (res, deltaTime) => {
                 trigger.actions.forEach( action => {
                     if ( ( isDev || !action.onlyExecuteInDev ) && ( action.phrases == null || action.phrases?.length === 0 || action.phrases?.indexOf( res.phraseId ) > -1 ) ) {
                         enableLogging && sendInformationToLog( `Execute trigger action [${trigger.name}] : ${ActionTypes[ action.actionType ]}`, 24 );
@@ -844,7 +865,7 @@ function parseLogEntries( raw, simulating ) {
                         if ( action.actionType === ActionTypes.DisplayText ) {
                             /* --== Display Text ==-- */
                         
-                            displayTextComponent( res, timestamp, action );
+                            displayTextComponent( res, timestamp, action, deltaTime );
                         
                         } else if ( action.actionType === ActionTypes.PlayAudio ) {
                             /* --== Play Audio ==-- */
@@ -854,7 +875,7 @@ function parseLogEntries( raw, simulating ) {
                         } else if ( action.actionType === ActionTypes.Clipboard ) {
                             /* --== Copy text to clipboard ==-- */
                             
-                            sendToClipboard( res, action, trigger._conditionResults );
+                            sendToClipboard( res, action, trigger._conditionResults, deltaTime );
                         
                         } else if ( action.actionType === ActionTypes.StoreVariable ) {
                             /* --== Store Variable ==-- */
@@ -884,12 +905,12 @@ function parseLogEntries( raw, simulating ) {
                         } else if ( action.actionType === ActionTypes.Timer || action.actionType === ActionTypes.Countdown ) {
                             /* --== Start a Timer/Countdown ==-- */
                         
-                            displayTimerCountdownComponent( res, timestamp, action, trigger );
+                            displayTimerCountdownComponent( res, timestamp, action, deltaTime, trigger );
 
                         } else if ( action.actionType === ActionTypes.DotTimer ) {
                             /* --== DOT Timers ==-- */
                         
-                            displayDotTimerComponent( res, timestamp, action, trigger );
+                            displayDotTimerComponent( res, timestamp, action, deltaTime, trigger );
 
                         } else if ( action.actionType === ActionTypes.BeneficialTimer ) {
                             /* --== Buff Timers ==-- */
@@ -921,7 +942,7 @@ function parseLogEntries( raw, simulating ) {
                                 duration = +action.duration;
                             }
 
-                            speakPhrase( action.displayText, action.interruptSpeech, trigger._conditionResults, simulating, res.result, duration );
+                            speakPhrase( action.displayText, action.interruptSpeech, trigger._conditionResults, simulating, res.result, duration, deltaTime );
                         
                         }
                     }
@@ -1051,9 +1072,10 @@ function displayBeneficialTimerComponent( res, timestamp, action, trigger, spell
  * @param {PhraseParse} res The information from the parsed phrase.
  * @param {Date} timestamp The timestamp of the log entry.
  * @param {TriggerAction} action The trigger's display text action.
+ * @param {number} deltaTime The change in time, in milliseconds, since the previous sequential capture.
  * @param {LogTrigger} trigger If true the component is written to the console instead of sent to the overlay window.
  */
-function displayDotTimerComponent( res, timestamp, action, trigger ) {
+function displayDotTimerComponent( res, timestamp, action, deltaTime, trigger ) {
                         
     if ( action.excludeTargets?.length > 0 ) {
         for ( let i = 0; i < action.excludeTargets.length; i++ ) {
@@ -1088,7 +1110,7 @@ function displayDotTimerComponent( res, timestamp, action, trigger ) {
         comp.action.endingSoonText = StringUtilities.parseShortCodeValuesToLiteral( action.endingSoonText, characterName, comp.action.duration, res.result?.groups, res.result ? res.result[ 0 ] : null );
         comp.action.endingSoonText = StringUtilities.parseStoredVariablesToLiteral( comp.action.endingSoonText, storedVariables );
         comp.action.endingSoonText = StringUtilities.parseConditionResultsToLiteral( comp.action.endingSoonText, trigger._conditionResults );
-        comp.action.endingSoonText = StringUtilities.parseMatchesToLiteral( comp.action.endingSoonText, res.result );
+        comp.action.endingSoonText = StringUtilities.parseMatchesToLiteral( comp.action.endingSoonText, res.result, deltaTime );
         comp.action.endingSoonText = StringUtilities.parseCountersToLiteral( comp.action.endingSoonText, counters );
     }
 
@@ -1096,7 +1118,7 @@ function displayDotTimerComponent( res, timestamp, action, trigger ) {
         comp.action.endingSoonSpeakPhrase = StringUtilities.parseShortCodeValuesToLiteral( action.endingSoonSpeakPhrase, characterName, comp.action.duration, res.result?.groups, res.result ? res.result[ 0 ] : null );
         comp.action.endingSoonSpeakPhrase = StringUtilities.parseStoredVariablesToLiteral( comp.action.endingSoonSpeakPhrase, storedVariables );
         comp.action.endingSoonSpeakPhrase = StringUtilities.parseConditionResultsToLiteral( comp.action.endingSoonSpeakPhrase, trigger._conditionResults );
-        comp.action.endingSoonSpeakPhrase = StringUtilities.parseMatchesToLiteral( comp.action.endingSoonSpeakPhrase, res.result );
+        comp.action.endingSoonSpeakPhrase = StringUtilities.parseMatchesToLiteral( comp.action.endingSoonSpeakPhrase, res.result, deltaTime );
         comp.action.endingSoonSpeakPhrase = StringUtilities.parseCountersToLiteral( comp.action.endingSoonSpeakPhrase, counters );
     }
 
@@ -1104,7 +1126,7 @@ function displayDotTimerComponent( res, timestamp, action, trigger ) {
         comp.action.endingClipboardText = StringUtilities.parseShortCodeValuesToLiteral( action.endingClipboardText, characterName, comp.action.duration, res.result?.groups, res.result ? res.result[ 0 ] : null );
         comp.action.endingClipboardText = StringUtilities.parseStoredVariablesToLiteral( comp.action.endingClipboardText, storedVariables );
         comp.action.endingClipboardText = StringUtilities.parseConditionResultsToLiteral( comp.action.endingClipboardText, trigger._conditionResults );
-        comp.action.endingClipboardText = StringUtilities.parseMatchesToLiteral( comp.action.endingClipboardText, res.result );
+        comp.action.endingClipboardText = StringUtilities.parseMatchesToLiteral( comp.action.endingClipboardText, res.result, deltaTime );
         comp.action.endingClipboardText = StringUtilities.parseCountersToLiteral( comp.action.endingClipboardText, counters );
     }
 
@@ -1112,7 +1134,7 @@ function displayDotTimerComponent( res, timestamp, action, trigger ) {
         comp.action.endedText = StringUtilities.parseShortCodeValuesToLiteral( action.endedText, characterName, comp.action.duration, res.result?.groups, res.result ? res.result[ 0 ] : null );
         comp.action.endedText = StringUtilities.parseStoredVariablesToLiteral( comp.action.endedText, storedVariables );
         comp.action.endedText = StringUtilities.parseConditionResultsToLiteral( comp.action.endedText, trigger._conditionResults );
-        comp.action.endedText = StringUtilities.parseMatchesToLiteral( comp.action.endedText, res.result );
+        comp.action.endedText = StringUtilities.parseMatchesToLiteral( comp.action.endedText, res.result, deltaTime );
         comp.action.endedText = StringUtilities.parseCountersToLiteral( comp.action.endedText, counters );
     }
 
@@ -1120,7 +1142,7 @@ function displayDotTimerComponent( res, timestamp, action, trigger ) {
         comp.action.endedSpeakPhrase = StringUtilities.parseShortCodeValuesToLiteral( action.endedSpeakPhrase, characterName, comp.action.duration, res.result?.groups, res.result ? res.result[ 0 ] : null );
         comp.action.endedSpeakPhrase = StringUtilities.parseStoredVariablesToLiteral( comp.action.endedSpeakPhrase, storedVariables );
         comp.action.endedSpeakPhrase = StringUtilities.parseConditionResultsToLiteral( comp.action.endedSpeakPhrase, trigger._conditionResults );
-        comp.action.endedSpeakPhrase = StringUtilities.parseMatchesToLiteral( comp.action.endedSpeakPhrase, res.result );
+        comp.action.endedSpeakPhrase = StringUtilities.parseMatchesToLiteral( comp.action.endedSpeakPhrase, res.result, deltaTime );
         comp.action.endedSpeakPhrase = StringUtilities.parseCountersToLiteral( comp.action.endedSpeakPhrase, counters );
     }
 
@@ -1128,7 +1150,7 @@ function displayDotTimerComponent( res, timestamp, action, trigger ) {
         comp.action.endedClipboardText = StringUtilities.parseShortCodeValuesToLiteral( action.endedClipboardText, characterName, comp.action.duration, res.result?.groups, res.result ? res.result[ 0 ] : null );
         comp.action.endedClipboardText = StringUtilities.parseStoredVariablesToLiteral( comp.action.endedClipboardText, storedVariables );
         comp.action.endedClipboardText = StringUtilities.parseConditionResultsToLiteral( comp.action.endedClipboardText, trigger._conditionResults );
-        comp.action.endedClipboardText = StringUtilities.parseMatchesToLiteral( comp.action.endedClipboardText, res.result );
+        comp.action.endedClipboardText = StringUtilities.parseMatchesToLiteral( comp.action.endedClipboardText, res.result, deltaTime );
         comp.action.endedClipboardText = StringUtilities.parseCountersToLiteral( comp.action.endedClipboardText, counters );
     }
 
@@ -1157,7 +1179,7 @@ function displayDotTimerComponent( res, timestamp, action, trigger ) {
     ipcRenderer.send( 'overlay:send:component', comp );
 
     if ( comp.action.endEarlyPhrases?.length > 0 ) {
-        let renderedPhrases = renderPhrases( comp.action.endEarlyPhrases, trigger._conditionResults, res.result );
+        let renderedPhrases = renderPhrases( comp.action.endEarlyPhrases, trigger._conditionResults, res.result, deltaTime );
 
         cancellableComponents.push( {
             _parse: ( logEntry ) => {
@@ -1194,9 +1216,10 @@ function displayDotTimerComponent( res, timestamp, action, trigger ) {
  * @param {PhraseParse} res The information from the parsed phrase.
  * @param {Date} timestamp The timestamp of the log entry.
  * @param {TriggerAction} action The trigger's display text action.
+ * @param {number} deltaTime The change in time, in milliseconds, since the previous sequential capture.
  * @param {LogTrigger} trigger If true the component is written to the console instead of sent to the overlay window.
  */
-function displayTimerCountdownComponent(res, timestamp, action, trigger) {
+function displayTimerCountdownComponent(res, timestamp, action, deltaTime, trigger) {
       
     // ${target} has been slain by (.+?)!
     let comp = new OverlayComponent();
@@ -1214,7 +1237,7 @@ function displayTimerCountdownComponent(res, timestamp, action, trigger) {
     comp.action.displayText = StringUtilities.parseShortCodeValuesToLiteral( comp.action.displayText, characterName, comp.action.duration, res.result?.groups, res.result ? res.result[ 0 ] : null );
     comp.action.displayText = StringUtilities.parseStoredVariablesToLiteral( comp.action.displayText, storedVariables );
     comp.action.displayText = StringUtilities.parseConditionResultsToLiteral( comp.action.displayText, trigger._conditionResults );
-    comp.action.displayText = StringUtilities.parseMatchesToLiteral( comp.action.displayText, res.result );
+    comp.action.displayText = StringUtilities.parseMatchesToLiteral( comp.action.displayText, res.result, deltaTime );
     comp.action.displayText = StringUtilities.parseCountersToLiteral( comp.action.displayText, counters );
 
     comp.overlayId = action.overlayId;
@@ -1226,7 +1249,7 @@ function displayTimerCountdownComponent(res, timestamp, action, trigger) {
         comp.action.endingSoonText = StringUtilities.parseShortCodeValuesToLiteral( action.endingSoonText, characterName, comp.action.duration, res.result?.groups, res.result ? res.result[ 0 ] : null );
         comp.action.endingSoonText = StringUtilities.parseStoredVariablesToLiteral( comp.action.endingSoonText, storedVariables );
         comp.action.endingSoonText = StringUtilities.parseConditionResultsToLiteral( comp.action.endingSoonText, trigger._conditionResults );
-        comp.action.endingSoonText = StringUtilities.parseMatchesToLiteral( comp.action.endingSoonText, res.result );
+        comp.action.endingSoonText = StringUtilities.parseMatchesToLiteral( comp.action.endingSoonText, res.result, deltaTime );
         comp.action.endingSoonText = StringUtilities.parseCountersToLiteral( comp.action.endingSoonText, counters );
     }
 
@@ -1234,7 +1257,7 @@ function displayTimerCountdownComponent(res, timestamp, action, trigger) {
         comp.action.endingSoonSpeakPhrase = StringUtilities.parseShortCodeValuesToLiteral( action.endingSoonSpeakPhrase, characterName, comp.action.duration, res.result?.groups, res.result ? res.result[ 0 ] : null );
         comp.action.endingSoonSpeakPhrase = StringUtilities.parseStoredVariablesToLiteral( comp.action.endingSoonSpeakPhrase, storedVariables );
         comp.action.endingSoonSpeakPhrase = StringUtilities.parseConditionResultsToLiteral( comp.action.endingSoonSpeakPhrase, trigger._conditionResults );
-        comp.action.endingSoonSpeakPhrase = StringUtilities.parseMatchesToLiteral( comp.action.endingSoonSpeakPhrase, res.result );
+        comp.action.endingSoonSpeakPhrase = StringUtilities.parseMatchesToLiteral( comp.action.endingSoonSpeakPhrase, res.result, deltaTime );
         comp.action.endingSoonSpeakPhrase = StringUtilities.parseCountersToLiteral( comp.action.endingSoonSpeakPhrase, counters );
     }
 
@@ -1242,7 +1265,7 @@ function displayTimerCountdownComponent(res, timestamp, action, trigger) {
         comp.action.endingClipboardText = StringUtilities.parseShortCodeValuesToLiteral( action.endingClipboardText, characterName, comp.action.duration, res.result?.groups, res.result ? res.result[ 0 ] : null );
         comp.action.endingClipboardText = StringUtilities.parseStoredVariablesToLiteral( comp.action.endingClipboardText, storedVariables );
         comp.action.endingClipboardText = StringUtilities.parseConditionResultsToLiteral( comp.action.endingClipboardText, trigger._conditionResults );
-        comp.action.endingClipboardText = StringUtilities.parseMatchesToLiteral( comp.action.endingClipboardText, res.result );
+        comp.action.endingClipboardText = StringUtilities.parseMatchesToLiteral( comp.action.endingClipboardText, res.result, deltaTime );
         comp.action.endingClipboardText = StringUtilities.parseCountersToLiteral( comp.action.endingClipboardText, counters );
     }
 
@@ -1250,7 +1273,7 @@ function displayTimerCountdownComponent(res, timestamp, action, trigger) {
         comp.action.endedText = StringUtilities.parseShortCodeValuesToLiteral( action.endedText, characterName, comp.action.duration, res.result?.groups, res.result ? res.result[ 0 ] : null );
         comp.action.endedText = StringUtilities.parseStoredVariablesToLiteral( comp.action.endedText, storedVariables );
         comp.action.endedText = StringUtilities.parseConditionResultsToLiteral( comp.action.endedText, trigger._conditionResults );
-        comp.action.endedText = StringUtilities.parseMatchesToLiteral( comp.action.endedText, res.result );
+        comp.action.endedText = StringUtilities.parseMatchesToLiteral( comp.action.endedText, res.result, deltaTime );
         comp.action.endedText = StringUtilities.parseCountersToLiteral( comp.action.endedText, counters );
     }
 
@@ -1258,7 +1281,7 @@ function displayTimerCountdownComponent(res, timestamp, action, trigger) {
         comp.action.endedSpeakPhrase = StringUtilities.parseShortCodeValuesToLiteral( action.endedSpeakPhrase, characterName, comp.action.duration, res.result?.groups, res.result ? res.result[ 0 ] : null );
         comp.action.endedSpeakPhrase = StringUtilities.parseStoredVariablesToLiteral( comp.action.endedSpeakPhrase, storedVariables );
         comp.action.endedSpeakPhrase = StringUtilities.parseConditionResultsToLiteral( comp.action.endedSpeakPhrase, trigger._conditionResults );
-        comp.action.endedSpeakPhrase = StringUtilities.parseMatchesToLiteral( comp.action.endedSpeakPhrase, res.result );
+        comp.action.endedSpeakPhrase = StringUtilities.parseMatchesToLiteral( comp.action.endedSpeakPhrase, res.result, deltaTime );
         comp.action.endedSpeakPhrase = StringUtilities.parseCountersToLiteral( comp.action.endedSpeakPhrase, counters );
     }
 
@@ -1266,7 +1289,7 @@ function displayTimerCountdownComponent(res, timestamp, action, trigger) {
         comp.action.endedClipboardText = StringUtilities.parseShortCodeValuesToLiteral( action.endedClipboardText, characterName, comp.action.duration, res.result?.groups, res.result ? res.result[ 0 ] : null );
         comp.action.endedClipboardText = StringUtilities.parseStoredVariablesToLiteral( comp.action.endedClipboardText, storedVariables );
         comp.action.endedClipboardText = StringUtilities.parseConditionResultsToLiteral( comp.action.endedClipboardText, trigger._conditionResults );
-        comp.action.endedClipboardText = StringUtilities.parseMatchesToLiteral( comp.action.endedClipboardText, res.result );
+        comp.action.endedClipboardText = StringUtilities.parseMatchesToLiteral( comp.action.endedClipboardText, res.result, deltaTime );
         comp.action.endedClipboardText = StringUtilities.parseCountersToLiteral( comp.action.endedClipboardText, counters );
     }
 
@@ -1276,7 +1299,7 @@ function displayTimerCountdownComponent(res, timestamp, action, trigger) {
     ipcRenderer.send( 'overlay:send:component', comp );
 
     if ( comp.action.endEarlyPhrases?.length > 0 ) {
-        let renderedPhrases = renderPhrases( comp.action.endEarlyPhrases, trigger._conditionResults, res.result );
+        let renderedPhrases = renderPhrases( comp.action.endEarlyPhrases, trigger._conditionResults, res.result, deltaTime );
 
         cancellableComponents.push( {
             _parse: ( logEntry ) => {
@@ -1313,14 +1336,15 @@ function displayTimerCountdownComponent(res, timestamp, action, trigger) {
  * @param {PhraseParse} res The information from the parsed phrase.
  * @param {TriggerAction} action The trigger's display text action.
  * @param {Record<string, string>} conditionResults The values of the conditions when the trigger was parsed.
+ * @param {number} deltaTime The change in time, in milliseconds, since the previous sequential capture.
  */
-function sendToClipboard( res, action, conditionResults ) {
+function sendToClipboard( res, action, conditionResults, deltaTime ) {
     let clipboardText = action.displayText;
 
     clipboardText = StringUtilities.parseShortCodeValuesToLiteral( clipboardText, characterName, action.duration, res.result?.groups, res.result ? res.result[ 0 ] : null );
     clipboardText = StringUtilities.parseStoredVariablesToLiteral( clipboardText, storedVariables );
     clipboardText = StringUtilities.parseConditionResultsToLiteral( clipboardText, conditionResults );
-    clipboardText = StringUtilities.parseMatchesToLiteral( clipboardText, res.result );
+    clipboardText = StringUtilities.parseMatchesToLiteral( clipboardText, res.result, deltaTime );
     clipboardText = StringUtilities.parseCountersToLiteral( clipboardText, counters );
 
     ipcRenderer.send( 'clipboard:writeText', clipboardText );
@@ -1342,9 +1366,10 @@ function sendToClipboard( res, action, conditionResults ) {
  * @param {PhraseParse} res The information from the parsed phrase.
  * @param {TriggerAction} action The trigger's display text action.
  * @param {Date} timestamp The timestamp of the log entry.
+ * @param {number} deltaTime The change in time, in milliseconds, since the previous sequential capture.
  * @param {boolean} simulating If true the component is written to the console instead of sent to the overlay window.
  */
-function displayTextComponent( res, timestamp, action, simulating ) {
+function displayTextComponent( res, timestamp, action, deltaTime, simulating ) {
     
     let comp = new OverlayComponent();
 
@@ -1354,7 +1379,7 @@ function displayTextComponent( res, timestamp, action, simulating ) {
     comp.action.displayText = StringUtilities.parseShortCodeValuesToLiteral( comp.action.displayText, characterName, comp.action.duration, res.result?.groups, res.result ? res.result[ 0 ] : null );
     comp.action.displayText = StringUtilities.parseStoredVariablesToLiteral( comp.action.displayText, storedVariables );
     comp.action.displayText = StringUtilities.parseCountersToLiteral( comp.action.displayText, counters );
-    comp.action.displayText = StringUtilities.parseMatchesToLiteral( comp.action.displayText, res.result );
+    comp.action.displayText = StringUtilities.parseMatchesToLiteral( comp.action.displayText, res.result, deltaTime );
 
     comp.overlayId = action.overlayId;
     comp.matches = res.result;
@@ -1642,9 +1667,12 @@ function clearAllStoredValuesInVariable( key ) {
  * @param {Phrase} phrases The list of phrases to render.
  * @param {Record<string,any>} conditionResults The value of condition checks for the executed trigger.
  * @param {RegExpExecArray} parseResult The regexp exec array of the parsed log entry.
+ * @param {number} deltaTime The change in time, in milliseconds, since the previous sequential capture.
  */
-function renderPhrases( phrases, conditionResults, parseResult ) {
+function renderPhrases( phrases, conditionResults, parseResult, deltaTime ) {
     let renderedPhrases = [];
+    
+    deltaTime = deltaTime != null ? deltaTime : 0;
 
     for ( let phraseIndex = 0; phraseIndex < phrases?.length; phraseIndex++ ) {
         let renderedPhrase = phrases[ phraseIndex ].phrase;
@@ -1652,7 +1680,7 @@ function renderPhrases( phrases, conditionResults, parseResult ) {
         renderedPhrase = StringUtilities.parseShortCodeValuesToLiteral( renderedPhrase, characterName, 0, parseResult?.groups, parseResult ? parseResult[ 0 ] : null );
         renderedPhrase = StringUtilities.parseStoredVariablesToLiteral( renderedPhrase, storedVariables );
         renderedPhrase = conditionResults?.length > 0 ? StringUtilities.parseConditionResultsToLiteral( renderedPhrase, conditionResults ) : renderedPhrase;
-        renderedPhrase = parseResult?.length > 0 ? StringUtilities.parseMatchesToLiteral( renderedPhrase, parseResult ) : renderedPhrase;
+        renderedPhrase = parseResult?.length > 0 ? StringUtilities.parseMatchesToLiteral( renderedPhrase, parseResult, deltaTime ) : renderedPhrase;
         renderedPhrase = StringUtilities.parseCountersToLiteral( renderedPhrase, counters );
 
         if ( phrases[ phraseIndex ].useRegEx ) {
@@ -1683,8 +1711,9 @@ function renderPhrases( phrases, conditionResults, parseResult ) {
  * @param {boolean} simulating If true the phrase is written to the log instead of spoken.
  * @param {RegExpExecArray} parseResult The regexp exec array of the parsed log entry.
  * @param {number} timerDuration The duration in seconds of the timer, if applicable.
+ * @param {number} deltaTime The change in time, in milliseconds, since the previous sequential capture.
  */
-function speakPhrase( phrase, interrupt, conditionResults, simulating, parseResult, timerDuration ) {
+function speakPhrase( phrase, interrupt, conditionResults, simulating, parseResult, timerDuration, deltaTime ) {
     
     if ( !simulating && phrase && voiceIndex > -1 ) {
 
@@ -1696,7 +1725,7 @@ function speakPhrase( phrase, interrupt, conditionResults, simulating, parseResu
             utter.text = StringUtilities.parseConditionResultsToLiteral( utter.text, conditionResults );
         }
         if ( parseResult ) {
-            utter.text = StringUtilities.parseMatchesToLiteral( utter.text, parseResult );
+            utter.text = StringUtilities.parseMatchesToLiteral( utter.text, parseResult, deltaTime );
         }
         utter.text = StringUtilities.parseCountersToLiteral( utter.text, counters );
         utter.text = StringUtilities.parsePhoneticTransformsToLiteral( utter.text, phoneticTransforms );
@@ -1894,6 +1923,15 @@ function checkParseHistory( phrase, options ) {
     }
 
 }
+
+
+
+
+
+
+
+
+
 
 /**
  * Parses backwards in the log file to find a match.  If found, returns the matched results.
