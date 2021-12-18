@@ -302,6 +302,7 @@ export class TriggerAction {
     public repeatTimer: boolean = false;
     public repeatCount: number = null;
     public variableName: string;
+    public storeLiteralDefinition: string;
     public onlyStoreUsedValues: boolean = false;
     public loopBackForValue: boolean = false;
     public restartBehavior: TimerRestartBehaviors = null;

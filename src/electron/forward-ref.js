@@ -1,6 +1,7 @@
+/** @template T */
 class ForwardRef {
 
-    /** @type {() => any} */
+    /** @type {() => T} */
     #refFn;
 
     /** @type {number} */
@@ -12,7 +13,7 @@ class ForwardRef {
 
     /**
      * Constructs the forward ref object.
-     * @param {() => any} refFn The function to pull a reference to an object.
+     * @param {() => T} refFn The function to pull a reference to an object.
      */
     constructor( refFn ) {
         this.#refFn = refFn;

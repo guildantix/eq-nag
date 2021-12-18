@@ -194,6 +194,7 @@ function sendTick() {
         ignoredGinaObjects: userPreferences.ignoreGinaObjects,
         folders: _folders,
         fctStyles: userPreferences.fctStyles,
+        persistentStorage: userPreferences.persistentStorage,
     };
     mainWindow.webContents.send( 'tick', tickData );
     logBootstrap.tick( tickData, characterDatabase );
@@ -250,8 +251,9 @@ ipcMain.on( 'context:get:pseudo-clipboard', ( event, key ) => {
 } );
 
 var mainWindowRef = new ForwardRef( () => mainWindow ? mainWindow : null );
+var logBootstrapRef = new ForwardRef( () => logBootstrap ? logBootstrap : null );
 
-userPreferences.attachIpcEvents( mainWindowRef, sendTick );
+userPreferences.attachIpcEvents( mainWindowRef, sendTick, logBootstrapRef );
 winManager.attachIpcEvents( mainWindowRef, overlayDatabase, userPreferences );
 dkpDatabase.attachIpcEvents( mainWindowRef, sendTick );
 fileDatabase.attachIpcEvents( mainWindowRef );

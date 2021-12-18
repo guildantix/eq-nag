@@ -7,6 +7,7 @@ const { AuthorModel } = require( './models/sharing-service' );
 const { FctStylesModel } = require( './models/fct' );
 const { StyleProperties } = require( './models/common' );
 const archiver = require( 'archiver' );
+const LogBootstrapper = require( "../log-bootstrap" );
 
 const possibleEqFolders = [
     '\\users\\public\\Everquest',
@@ -240,6 +241,14 @@ class UserPreferencesStore extends Store {
         this.#data.ignoreGinaObjects = val;
     }
 
+    /** @type {Record<string, any>} */
+    get persistentStorage() {
+        return this.#data.persistentStorage;
+    }
+    set persistentStorage( val ) {
+        this.#data.persistentStorage = val;
+    }
+
     /** @type {(fctStyles: FctStylesModel) => void[]} */
     onFctStyleChanges = [];
 
@@ -362,10 +371,11 @@ class UserPreferencesStore extends Store {
     /**
      * Attaches store events to ipc main and dispatches react events to the main window.
      * 
-     * @param {ForwardRef} mainWindowRef The main window of the application.
+     * @param {ForwardRef<BrowserWindow>} mainWindowRef The main window of the application.
      * @param {function} sendTick The send tick method.
+     * @param {ForwardRef<LogBootstrapper>} logBootstrapRef The main window of the application.
      */
-    attachIpcEvents( mainWindowRef, sendTick ) {
+    attachIpcEvents( mainWindowRef, sendTick, logBootstrapRef ) {
 
         ipcMain.on( 'log:select', ( event, arg ) => {
             this.logFile = arg;
@@ -400,7 +410,7 @@ class UserPreferencesStore extends Store {
         
         ipcMain.on( 'settings:set:fctStyles', ( event, arg ) => {
             this.fctStyles = arg;
-            this.onFctStyleChanges?.forEach( fn => fn(this.fctStyles) );
+            this.onFctStyleChanges?.forEach( fn => fn( this.fctStyles ) );
         } );
 
         ipcMain.on( 'settings:set:everquest-folder', ( event, folder ) => {
@@ -535,7 +545,7 @@ class UserPreferencesStore extends Store {
 
                     dialog.showSaveDialog( WIN, options ).then( saveResult => {
                         if ( !saveResult.canceled ) {
-                            fs.copyFile( logZip, saveResult.filePath, () => {} );
+                            fs.copyFile( logZip, saveResult.filePath, () => { } );
                         }
                     } );
                 } );
@@ -555,6 +565,37 @@ class UserPreferencesStore extends Store {
                 this.#data.ignoreGinaObjects = ignoredObjects;
                 this.storeDataFile( this.#data );
                 sendTick();
+            } );
+        
+        
+
+        ipcMain.on( 'settings:get:persistent-storage', ( event ) => {
+            event.sender.webContents.send( 'settings:get:persistent-storage', this.persistentStorage );
+        } );
+
+        ipcMain.on( 'settings:set:persistent-storage-value',
+            /**
+             * @param {{keys: string[], value: string}} storeValue
+             */
+            ( event, storeValue ) => {
+                this.persistentStorage = this.persistentStorage ? this.persistentStorage : {};
+
+                let storage = this.persistentStorage;
+                let mi = ( storeValue.keys?.length ?? 0 ) - 1;
+
+                for ( let i = 0; i < storeValue.keys?.length ?? 0; i++ ) {
+                    if ( i === mi ) {
+                        storage[ storeValue.keys[ i ] ] = storeValue.value;
+                    } else {
+                        if ( !storage[ storeValue.keys[ i ] ] ) {
+                            storage[ storeValue.keys[ i ] ] = {};
+                        }
+                        storage = storage[ storeValue.keys[ i ] ];
+                    }
+                }
+                
+                this.storeDataFile( this.#data );
+                logBootstrapRef.reference.sendToEach( 'settings:get:persistent-storage', this.persistentStorage );
             } );
 
     }

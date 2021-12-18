@@ -151,6 +151,8 @@ class TriggerAction {
     repeatCount = null;
     /** @type string */
     variableName = null;
+    /** @type {string} */
+    storeLiteralDefinition = null;
     /** @type boolean */
     onlyStoreUsedValues = false;
     /** @type boolean */

@@ -218,6 +218,20 @@ class LogBootstrapper {
         }
     }
 
+    /**
+     * Sends the event to each log watcher window.
+     * 
+     * @param {string} eventId The event identifier.
+     * @param {string} value The event value.
+     */
+    sendToEach( eventId, value ) {
+        for ( let key in logWatchers ) {
+            if ( logWatchers.hasOwnProperty( key ) && logWatchers[ key ].window != null ) {
+                logWatchers[ key ].window.webContents.send( eventId, value );
+            }
+        }
+    }
+
 }
 
 /**

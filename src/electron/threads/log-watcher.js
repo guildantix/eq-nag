@@ -60,6 +60,8 @@ var utterances = [];
 var phoneticTransforms = {};
 /** @type {Record<number, string[]>} */
 var parsedLogEntries = {};
+/** @type {{}} */
+var persistentDictionary = {};
 
 // Common errors: 
 //  ${C} instead of {C}
@@ -211,6 +213,7 @@ function LogWatcher(character, logPosition) {
         phoneticTransforms = data.phoneticTransforms;
         charModel = data.characterModel ? data.characterModel : charModel;
         overlays = data.overlays;
+
         // isDev = false;
         generateTriggerFns();
         initCounters();
@@ -246,6 +249,13 @@ function LogWatcher(character, logPosition) {
         }
 
     } );
+
+    ipcRenderer.on( 'settings:get:persistent-storage', ( e, v ) => {
+        persistentDictionary = v;
+        console.log( 'new dictionary', v );
+    } );
+
+    ipcRenderer.send( 'settings:get:persistent-storage', null );
 
     speechSynthesis.onvoiceschanged = () => {
         voiceOptions = speechSynthesis.getVoices();
@@ -880,10 +890,14 @@ function parseLogEntries( raw, simulating ) {
                         } else if ( action.actionType === ActionTypes.StoreVariable ) {
                             /* --== Store Variable ==-- */
                         
-                            if ( res.result.length === 1 ) {
-                                saveVariable( action.variableName, res.result[ 0 ], action.onlyStoreUsedValues );
+                            if ( action.variableStorageType === 'persistentDictionary' ) {
+                                savePersistentDictionary( action.variableName, res, timestamp, action, deltaTime, trigger );
                             } else {
-                                saveVariable( action.variableName, res.result[ 1 ], action.onlyStoreUsedValues );
+                                if ( res.result.length === 1 ) {
+                                    saveVariable( action.variableName, res.result[ 0 ], action.onlyStoreUsedValues );
+                                } else {
+                                    saveVariable( action.variableName, res.result[ 1 ], action.onlyStoreUsedValues );
+                                }
                             }
 
                         } else if ( action.actionType === ActionTypes.ClearVariable ) {
@@ -2046,6 +2060,70 @@ function backfind( log, callback ) {
 
     }
 
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Saves the given value in the store.
+ * 
+ * @param {string} key The dictionary definition.
+ * @param {PhraseParse} res The information from the parsed phrase.
+ * @param {Date} timestamp The timestamp of the log entry.
+ * @param {TriggerAction} action The trigger's display text action.
+ * @param {number} deltaTime The change in time, in milliseconds, since the previous sequential capture.
+ * @param {LogTrigger} trigger The trigger that owns this action.
+ */
+function savePersistentDictionary( key, res, timestamp, action, deltaTime, trigger ) {
+    let renderedKeys = key;
+    
+    renderedKeys = StringUtilities.parseShortCodeValuesToLiteral( renderedKeys, characterName, 0, res.result?.groups, res.result ? res.result[ 0 ] : null );
+    renderedKeys = StringUtilities.parseStoredVariablesToLiteral( renderedKeys, storedVariables );
+    renderedKeys = StringUtilities.parseConditionResultsToLiteral( renderedKeys, trigger._conditionResults );
+    renderedKeys = StringUtilities.parseMatchesToLiteral( renderedKeys, res.result, deltaTime );
+    renderedKeys = StringUtilities.parseCountersToLiteral( renderedKeys, counters );
+
+    let renderedValue = action.storeLiteralDefinition;
+    
+    renderedValue = StringUtilities.parseShortCodeValuesToLiteral( renderedValue, characterName, 0, res.result?.groups, res.result ? res.result[ 0 ] : null );
+    renderedValue = StringUtilities.parseStoredVariablesToLiteral( renderedValue, storedVariables );
+    renderedValue = StringUtilities.parseConditionResultsToLiteral( renderedValue, trigger._conditionResults );
+    renderedValue = StringUtilities.parseMatchesToLiteral( renderedValue, res.result, deltaTime );
+    renderedValue = StringUtilities.parseCountersToLiteral( renderedValue, counters );
+
+    let keys = StringUtilities.parseDictionaryKeys( renderedKeys );
+
+    // https://regex101.com/r/Bf9Vk8/1
+    keys.unshift( /^.+?(?=(\[))/gmi.exec( key )[ 0 ] );
+
+    storePersistentDictionary( keys, renderedValue );
+
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Sends the given value to the user-preferences to store.
+ * 
+ * @param {string[]} keys The keys for the dictionary value.
+ * @param {string} value The value to keep.
+ */
+function storePersistentDictionary( keys, value ) {
+    ipcRenderer.send( 'settings:set:persistent-storage-value', { keys: keys, value: value } );
 }
 
 module.exports = LogWatcher;

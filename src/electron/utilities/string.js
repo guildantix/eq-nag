@@ -242,6 +242,32 @@ function parseSequentialGroups( value, groups ) {
 }
 
 /**
+ * Parses the given value as a dictionary literal.
+ * 
+ * @returns {string[]}
+ * 
+ * @description
+ *  ex: PlayerCastTimes[Eryndhel][Curavita Rk. II] => ['Eryndhel', 'Curavita Rk. II']
+ *  https://regex101.com/r/QdKUba/1
+ * 
+ * @param {string} value The value to parse.
+ */
+function parseDictionaryKeys( value ) {
+    /** @type {RegExpExecArray[]} */
+    let keys = [ ...value.matchAll( /(?<=\[)(.*?)(?=\])/g ) ];
+    /** @type {string[]} */
+    let output = [];
+    for ( let i = 0; i < keys?.length ?? 0; i++ ) {
+        let key = keys[ i ][ 1 ];
+        if ( key ) {
+            output.push( key );
+        }
+    }
+
+    return output;
+}
+
+/**
  * Parses the given string, inserting values according to the provided regular 
  * expression exec array.
  * 
@@ -251,8 +277,9 @@ function parseSequentialGroups( value, groups ) {
  * 
  * @param {string} value The string value to parse.
  * @param {RegExpExecArray} matches The regular expression results.
+ * @param {number} deltaTime The change in time, in milliseconds, since the previous sequential capture.
  */
-function parseMatchesToLiteral( value, matches ) {
+function parseMatchesToLiteral( value, matches, deltaTime ) {
     if ( isNullOrWhitespace( value ) ) {
         return value;
     }
@@ -270,7 +297,9 @@ function parseMatchesToLiteral( value, matches ) {
             //      Mob Name A has been slain by Soandso!
             let key = namedResults[ m ][ 1 ];
 
-            if ( matches.groups[ key ] != null ) {
+            if ( key === 'deltaTime' ) {
+                value = value.replace( RegExp( `\\\${${key}}`, 'g' ), deltaTime );
+            } else if ( matches.groups[ key ] != null ) {
                 value = value.replace( RegExp( `\\\${${key}}`, 'g' ), matches.groups[ key ] );
             }
         }
@@ -684,6 +713,7 @@ let StringUtilities = {
     parseShortCodesToRegex: parseShortCodesToRegex,
     getDurationFromLabel: getDurationFromLabel,
     compare: compare,
+    parseDictionaryKeys: parseDictionaryKeys,
 };
 
 module.exports = StringUtilities;
