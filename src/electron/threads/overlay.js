@@ -126,7 +126,7 @@ function Overlay() {
                     if ( i > -1 ) {
                         let comp = overlayGroups[ key ].components[ i ];
                         let timerType = comp.action.actionType === ActionTypes.BeneficialTimer || comp.action.actionType === ActionTypes.Countdown || comp.action.actionType === ActionTypes.Timer;
-                        let endNaturally = timerType === true && ( comp.action.remainAfterEnded || comp.action.notifyWhenEnded );
+                        let endNaturally = timerType === true && ( comp.action.remainAfterEnded || comp.action.notifyWhenEnded ) && !comp.action.remainUnlessEndedEarly;
                         
                         if ( endNaturally ) {
                             comp.start = new Date( new Date().getTime() - comp.action.duration * 1000 );
@@ -580,12 +580,12 @@ function createGroupedTimer( contentArea, group, comp ) {
     comp.removeComponent = () => {
         comp.dom.parentNode && comp.dom.parentNode.removeChild( comp.dom );
         window.clearInterval( comp.intervalId );
-        ArrayUtilities.remove( overlayGroups[ groupKey ].components, f => f.instanceId == comp.instanceId );
+        ArrayUtilities.remove( overlayGroups[ groupKey ]?.components, f => f.instanceId == comp.instanceId );
 
         window.setTimeout( () => {
             // We delay execution of this code and move it to the end of the stack 
             // because other overlay components may be added to this group.
-            if ( overlayGroups[ groupKey ].components?.length === 0 ) {
+            if ( overlayGroups[ groupKey ]?.components?.length === 0 ) {
                 overlayGroups[ groupKey ].dom.parentNode && overlayGroups[ groupKey ].dom.parentNode.removeChild( overlayGroups[ groupKey ].dom );
                 delete overlayGroups[ groupKey ];
             }
