@@ -143,6 +143,8 @@ class TriggerAction {
     displayText;
     /** @type number */
     duration = null;
+    /** @type {string} */
+    storageDuration = null;
     /** @type boolean */
     showRemainingDuration = false;
     /** @type boolean */
@@ -233,6 +235,8 @@ class TriggerAction {
     notifyWhenEnded = false;
     /** @type number */
     remainDuration = null;
+    /** @type {boolean} */
+    remainUnlessEndedEarly = false;
     
     /** @type boolean */
     endedDisplayText = false;
