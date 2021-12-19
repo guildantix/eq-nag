@@ -447,13 +447,14 @@ export class DialogService {
      * @param label Placeholder/label for the input.
      * @param hint Any additional information related to the request and how to fulfill it.
      */
-    public showInputDialog( title: string, message: string | string[], label?: string, hint?: string, ): Observable<string> {
+    public showInputDialog( title: string, message: string | string[], label?: string, hint?: string, initialValue?: string ): Observable<string> {
         let data: InputDialogModel = new InputDialogModel();
         
         data.title = title;
         data.message = message;
         data.label = label;
         data.hint = hint;
+        data.initialValue = initialValue;
 
         return this.dialog.open<InputDialogComponent, any, string>( InputDialogComponent, {
             width: '450px',
