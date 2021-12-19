@@ -1245,7 +1245,14 @@ function displayTimerCountdownComponent(res, timestamp, action, deltaTime, trigg
     if ( res.result?.groups?.timerDuration ) {
         comp.action.duration = StringUtilities.getDurationFromLabel( res.result?.groups?.timerDuration );
     } else {
-        comp.action.duration = +action.duration;
+
+        if ( action.storageDuration ) {
+            let dur = +action.duration;
+            dur = +getPersistentDictionaryValue( action.storageDuration, res, timestamp, action, deltaTime, trigger );
+            comp.action.duration = dur > 0 ? dur / 1000 : +action.duration;
+        } else {
+            comp.action.duration = +action.duration;
+        }
     }
     
     comp.action.displayText = StringUtilities.parseShortCodeValuesToLiteral( comp.action.displayText, characterName, comp.action.duration, res.result?.groups, res.result ? res.result[ 0 ] : null );
@@ -2105,6 +2112,55 @@ function savePersistentDictionary( key, res, timestamp, action, deltaTime, trigg
 
     storePersistentDictionary( keys, renderedValue );
 
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Returns the stored value or null.
+ * 
+ * @param {string} key The dictionary definition.
+ * @param {PhraseParse} res The information from the parsed phrase.
+ * @param {Date} timestamp The timestamp of the log entry.
+ * @param {TriggerAction} action The trigger's display text action.
+ * @param {number} deltaTime The change in time, in milliseconds, since the previous sequential capture.
+ * @param {LogTrigger} trigger The trigger that owns this action.
+ */
+function getPersistentDictionaryValue( key, res, timestamp, action, deltaTime, trigger ) {
+    let renderedKeys = key;
+    
+    renderedKeys = StringUtilities.parseShortCodeValuesToLiteral( renderedKeys, characterName, 0, res.result?.groups, res.result ? res.result[ 0 ] : null );
+    renderedKeys = StringUtilities.parseStoredVariablesToLiteral( renderedKeys, storedVariables );
+    renderedKeys = StringUtilities.parseConditionResultsToLiteral( renderedKeys, trigger._conditionResults );
+    renderedKeys = StringUtilities.parseMatchesToLiteral( renderedKeys, res.result, deltaTime );
+    renderedKeys = StringUtilities.parseCountersToLiteral( renderedKeys, counters );
+    
+    let keys = StringUtilities.parseDictionaryKeys( renderedKeys );
+    // https://regex101.com/r/Bf9Vk8/1
+    keys.unshift( /^.+?(?=(\[))/gmi.exec( key )[ 0 ] );
+
+    let storage = persistentDictionary;
+
+    for ( let i = 0; i < keys?.length ?? 0; i++ ) {
+        if ( storage[ keys[ i ] ] ) {
+            if ( i === keys.length - 1 ) {
+                return storage[ keys[ i ] ];
+            }
+
+            storage = storage[ keys[ i ] ];
+        } else {
+            return null;
+        }
+    }
+
+    return null;
 }
 
 
