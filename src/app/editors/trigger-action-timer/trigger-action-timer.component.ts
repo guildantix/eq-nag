@@ -56,6 +56,19 @@ export class TriggerActionTimerComponent implements OnInit {
         } );
     }
 
+    public enterStorageDurationFormula() {
+        this.dialogService
+            .showInputDialog( 'Storage Formula', [ 'Enter the persistent storage formula for the timer duration' ], 'Persistent Storage Formula', null, this.action.storageDuration ).subscribe( value => {
+                if ( value !== null ) {
+                    // This is weird, but if the user clicks on cancel, the 
+                    // dialog returns exactly null. However, if they delete 
+                    // the content of the input and hit Ok, then we assume 
+                    // they intend to remove the storageDuration.
+                    this.action.storageDuration = value ?? null;
+                }
+            } );
+    }
+
     iconFileSelected( e: any ) {
         this.onIconFileSelected( e );
         this.onIconFileSelected = null;

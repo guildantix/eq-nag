@@ -23,7 +23,7 @@
             </div>
 
             <div class="card-property">
-                <div class="content-middle">Timer duration</div>
+                <div class="content-middle">Timer duration<a (click)="enterStorageDurationFormula()" href="javascript:void(0);" class="color-blue" style="float: right;">Storage Formula</a></div>
                 <div class="content-right"><app-duration [(ngModel)]="action.duration" name="durActionDuration" style="display: inline-block;" ></app-duration></div>
             </div>
 
@@ -221,7 +221,7 @@
             <!-- Notify when ending -->
             <div class="card-property">
 
-                <div class="content-middle"><mat-checkbox [(ngModel)]="action.remainAfterEnded" name="cbxRemainAfterEnded">Notify when ended</mat-checkbox></div>
+                <div class="content-middle"><mat-checkbox [(ngModel)]="action.remainAfterEnded" name="cbxRemainAfterEnded">Remain after ended</mat-checkbox></div>
                 <div class="content-right" *ngIf="action.remainAfterEnded"><app-duration [(ngModel)]="action.remainDuration" name="durRemainDuration"></app-duration></div>
 
             </div>
@@ -326,6 +326,8 @@
     </mat-tab>
     <mat-tab label="End Early">
         <div class="card-tab-content">
+
+            <mat-checkbox *ngIf="action.remainAfterEnded" [(ngModel)]="action.remainUnlessEndedEarly" name="cbxRemainUnlessEndedEarly">When ended early, force the timer to close without waiting for the remain timer to end.</mat-checkbox>
             
             <app-phrases [(phrases)]="action.endEarlyPhrases">
                 <span style="font-size: 12px; font-weight: 400; line-height: 10px;">If any of the below phrases match a new log entry, the timer will end early.</span>

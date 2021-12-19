@@ -298,6 +298,7 @@ export class TriggerAction {
     public name: string;
     public displayText: string;
     public duration: number;
+    public storageDuration: string;
     public showRemainingDuration: boolean = false;
     public repeatTimer: boolean = false;
     public repeatCount: number = null;
@@ -345,6 +346,7 @@ export class TriggerAction {
     public remainAfterEnded: boolean = false;
     public notifyWhenEnded: boolean = false;
     public remainDuration: number = null;
+    public remainUnlessEndedEarly: boolean = false;
     
     public endedDisplayText: boolean = false;
     public endedTextOverlayId: string = null;
