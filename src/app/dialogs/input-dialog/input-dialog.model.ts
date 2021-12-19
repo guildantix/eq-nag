@@ -3,4 +3,5 @@ export class InputDialogModel {
     public message: string | string[];
     public label: string;
     public hint: string;
+    public initialValue?: string = null;
 }
