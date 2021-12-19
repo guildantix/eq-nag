@@ -106,6 +106,12 @@ app.isDev = () => enableDevMode === true && process.defaultApp === true;
 app.commandLine.appendSwitch( 'enable-speech-dispatcher' );
 
 app.on( 'ready', function () {
+    
+    winManager.onReady();
+    screen.on( 'display-metrics-changed', ( e, newDisplay ) => {
+        log.info( 'screen metrics have changed.', e, newDisplay );
+        winManager.checkWindowPosition();
+    } );
     protocol.interceptFileProtocol( 'file', ( req, callback ) => {
         let filePath = new url.URL( req.url ).pathname;
         if ( process.platform === 'win32' ) {
