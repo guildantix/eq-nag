@@ -639,7 +639,7 @@ function generateTriggerFns() {
 function parseLogEntries( raw, simulating ) {
     
     simulating = simulating === true ? true : false;
-
+    
     // let rgxTrigger = /grats;/gi;
     let rgxTimestamp = /^\[(.*?)\]\s*/gi;
     // let rgxGrabText = /\'(.*?)\'$/gi;
