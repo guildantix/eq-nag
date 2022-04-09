@@ -98,6 +98,7 @@ function createWindow() {
     } );
 
     winManager.loadOverlays( overlayDatabase );
+    winManager.loadRenderer();
     
 };
 

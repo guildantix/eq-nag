@@ -443,6 +443,72 @@ class WindowManager {
         } );
 
     }
+    
+
+    loadRenderer() {
+        
+        let displays = screen.getAllDisplays();
+        let left = 0, right = 0;
+        let top = 0, bottom = 0;
+
+        displays.forEach( display => {
+
+            let absLeft = display.bounds.x;
+            let absRight = display.bounds.x + display.bounds.width;
+            let absTop = display.bounds.y;
+            let absBottom = display.bounds.y + display.bounds.height;
+
+
+            left = absLeft < left ? absLeft : left;
+            right = absRight > right ? absRight : right;
+            top = absTop < top ? absTop : top;
+            bottom = absBottom > bottom ? absBottom : bottom;
+
+        } );
+
+        let bounds = {
+            x: left,
+            y: top,
+            width: right - left,
+            height: bottom - top,
+        };
+
+        let renderer = new BrowserWindow( {
+            width: bounds.width,
+            height: bounds.height,
+            x: bounds.x,
+            y: bounds.y,
+            transparent: true,
+            frame: false,
+            resizable: true,
+            webPreferences: {
+                nodeIntegration: true,
+                devTools: app.isDev(),
+            },
+            skipTaskbar: true,
+            maximizable: false,
+        } );
+        
+        renderer.setBounds( {
+            width: bounds.width,
+            height: bounds.height,
+            x: bounds.x,
+            y: bounds.y,
+        } );
+        
+        renderer.loadURL( `file://${__dirname}/threads/renderer.html?originX=${0 - bounds.x}&originY=${0 - bounds.y}` );
+        renderer.setIgnoreMouseEvents( true );
+        renderer.setAlwaysOnTop( true, "screen-saver" );
+        
+        // Open the DevTools.
+        if ( app.isDev() ) {
+            renderer.webContents.openDevTools();
+        }
+    
+        let interval = setInterval( () => {
+            renderer.setAlwaysOnTop( true, "screen-saver" );
+        }, 1000 );
+    }
 
 
 

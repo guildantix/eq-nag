@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Overlay Testing</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans+Condensed:ital,wght@0,300;0,700;1,300&family=Oswald:wght@200;300;400;500;600;700&family=Press+Start+2P&family=Ranchers&family=Red+Rose:wght@300;400;700&family=Roboto+Mono:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;1,100;1,200;1,300;1,400;1,500;1,600;1,700&family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap" rel="stylesheet">
+
+    <!-- Compiled and minified CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+
+    <!-- Compiled and minified JavaScript -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+
+    <style>
+        body {
+            color: #ffffff;
+        }
+
+        /* div.show-border {
+            border: 6px solid rgba(0,0,0,0.5);
+        } */
+
+        div.highlight-border {
+            border: 6px solid #00d4ff59;
+            /* display:block;
+            position: fixed;
+            left: 0;
+            right: 0;
+            top: 0;
+            bottom: 0; */
+        }
+
+        div.highlight-border .overlay-name-watermark {
+            display: block;
+        }
+
+        .drag {
+            border: 6px solid rgba(0,0,0,0.5);
+            /* -webkit-user-select: none;
+            -webkit-app-region: drag; */
+            background-color: rgba(0,0,0,0.15);
+            /* border: 6px solid black; */
+        }
+
+        .drag .overlay-name-watermark {
+            display: block;
+        }
+
+        section.body {
+            -webkit-user-select: none;
+            user-select: none;
+            -webkit-app-region: drag;
+            /* position: relative;
+            display: inline-block;
+            width: 500px;
+            height: 50px; */
+            position: fixed;
+            left: 6px;
+            right: 6px;
+            top: 6px;
+            bottom: 6px;
+        }
+
+        .overlay-name-watermark {
+            text-align: center;
+            color: rgba(255,255,255,0.15);
+            display: none;
+            z-index: 0;
+        }
+
+        .overlay-name-watermark h1 {
+            white-space: nowrap;
+            font-size: 4.2rem;
+            line-height: 110%;
+            margin: 2.8rem 0 1.68rem 0;
+        }
+        
+        .content-area {
+            z-index: 1;
+            position: fixed;
+            left: 6px;
+            right: 6px;
+            top: 6px;
+            bottom: 6px;
+            padding: 5px;
+        }
+
+        .content-area p {
+            margin: 0;
+            /* line-height: 0.9em; */
+            /* font-family: Roboto, sans-serif;
+            font-style: italic;
+            font-weight: 300; */
+            /* -webkit-text-stroke: 1px black; */
+            /* -webkit-text-stroke: 2px black; */
+        }
+
+        .content-area .progress {
+            height: auto;
+            margin-top: -5px;
+            margin-bottom: 10px;
+            line-height: 0.9em;
+            /* height: 24px; */
+        }
+
+        .fct-label {
+            position: absolute;
+        }
+
+        .fct-critical-hit {
+            font-weight: bold;
+        }
+
+        .animate-bottom {
+            position: absolute;
+            animation: animatebottom 7s linear;
+            /* animation-name: animatebottom;
+            animation-duration: 2s */
+        }
+        @keyframes animatebottom { 
+            0% { top:100%; opacity:1 } 
+            100% { top:-100px; opacity:1; }
+        }
+
+        .animate-fade-shrink {
+            position: absolute;
+            display: inline-block;
+            text-align: center;
+            animation: animate-fadeshrink 4s ease-out;
+        }
+
+        @keyframes animate-fadeshrink {
+            0% { opacity: 0.5; transform: scale(1.5); }
+            1% { opacity: 1; transform: scale(2.0); }
+            50% { opacity: 1; transform: scale(2.0); }
+            /* 75% { opacity: .85; transform: scale(1.25);} */
+            100% { opacity: 0; transform: scale(.1);}
+        }
+
+        /* @keyframes animate-fadeshrink {
+            0% { opacity: 0.5; font-size: 58px; }
+            1% { opacity: 1; font-size: 64px; }
+            12% { opacity: 1; font-size: 64px; }
+            25% { opacity: .85; font-size: 64px;}
+            100% { opacity: 0; font-size: 6px;}
+        } */
+
+        .animate-fade-out {
+            position:relative;
+            display: inline-block;
+            animation: animate-fadeout 7s ease;
+        }
+
+        @keyframes animate-fadeout {
+            0% { opacity: 1; }
+            60% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+
+        .fct-content {
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+        }
+
+        .fct-dmg-src {
+            /* float: left; */
+            /* clear: both; */
+            font-size: 12px;
+            /* font-weight: 300; */
+            font-weight: normal;
+            color: #005aff;
+            -webkit-text-stroke: .1px black;
+            -webkit-text-fill-color: #005aff;
+        }
+
+        .fct-text {
+            -webkit-text-stroke: 1px black;
+            text-shadow: 0px 0px 10px black;
+        }
+
+        .dot-text {
+            position: absolute;
+            z-index: 1;
+            padding: 4px;
+            line-height: 0.9em;
+            /* font-size: 12px !important; */
+            /* font-weight: 300; */
+            /* font-weight: normal !important; */
+            /* font-kerning: none; */
+            /* font-weight: normal !important; */
+            letter-spacing: 1px;
+            /* color: #000000; */
+            /* text-shadow: -1px -1px 0 #ffffff, 1px -1px 0 #ffffff, -1px 1px 0 #ffffff, 1px 1px 0 #ffffff; */
+            color: white;
+            font-weight: 400 !important;
+            /* font-family: 'Roboto' !important; */
+            /* font-weight: 300 !important; */
+            /* color: #005aff; */
+            text-shadow: -1px -1px 2px #000, 1px -1px 2px #000, -1px 1px 2px #000, 1px 1px 2px #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
+            /* text-shadow: 0px 0px 10px #000000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000; */
+            /* -webkit-text-stroke: 1px white; */
+            /* color: #0000007a; */
+            /* margin: 6px; */
+        }
+
+        .dot-text.ungrouped {
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            /* width: 200px; */
+            overflow: hidden;
+            width: 100%;
+            padding-right: 30px;
+        }
+
+        .grouped-mobs {
+            display: flex;
+            flex-wrap: wrap;
+            /* align-items: flex-start; */
+            align-content: flex-start;
+            /* vertical-align: top; */
+        }
+
+        .mob-dot-group {
+            display: inline-block;
+            width: 200px;
+            /* max-width: 63%; */
+        }
+
+        .mob-dot-group:nth-child(n+0) {
+            margin-left: 25px;;
+        }
+
+            .mob-dot-group > div {
+                width: 200px;
+            }
+
+                .mob-dot-group > div > p {
+                    text-overflow: ellipsis;
+                    white-space: nowrap;
+                    width: 200px;
+                    overflow: hidden;
+                }
+
+            .mob-dot-group h6 {
+                text-align: center;
+            }
+            
+            .mob-dot-group .dot-icons-grid {
+                display: flex;
+                /* justify-content: space-evenly; */
+                flex-wrap: wrap;
+            }
+
+            .mob-dot-icon {
+                display: inline-block;
+                /* flex: 1; */
+                margin: 4px;
+                width: 50px;
+            }
+
+                .mob-dot-icon span {
+                    display: block;
+                }
+    </style>
+</head>
+<body>
+
+    <script type="text/javascript">
+        const urlParams = new URLSearchParams(window.location.search);
+        var Renderer = require('./renderer');
+        Renderer(+urlParams.get('originX'), +urlParams.get('originY'));
+    </script>
+
+    <section class="body">
+        <div class="content-area" style="padding-left: 20px;"></div>
+        <div class="healing-content-area"></div>
+    </section>
+    
+    <!-- =========================== -->
+    <!--      Overlay Template       -->
+    <!-- =========================== -->
+    <template id="overlay">
+        <div class="overlay-name-watermark"><h1 id="overlay-title">Overlay Title</h1></div>
+        <div>
+
+        </div>
+    </template>
+    
+    <!-- =========================== -->
+    <!--    Display Text Template    -->
+    <!-- =========================== -->
+    <template id="displayTextTemplate">
+        <p>{{{value}}}</p>
+    </template>
+
+    <!-- =========================== -->
+    <!--         FCT Template        -->
+    <!-- =========================== -->
+    <template id="fctTemplate">
+        <span class="fct-text">{{value}}</span>
+        <span class="fct-skill">({{damageSource}})</span>
+    </template>
+
+    <!-- =========================== -->
+    <!--    FCT Critical Template    -->
+    <!-- =========================== -->
+    <template id="fctCriticalTemplate">
+        <p class="fct-text">{{value}}</p>
+        <p class="fct-skill">({{damageSource}})</p>
+    </template>
+
+    <!-- =========================== -->
+    <!--        Timer Template       -->
+    <!-- =========================== -->
+    <template id="timerTemplate">
+        <p class="dot-text ungrouped"><span class="time-remaining"></span>{{{value}}}</p>
+        <!-- Background color of .progress is 13% of the .determinate color. -->
+        <div class="progress" style="background-color: rgba(0,33,0,.75)"><p style="margin: 4px;">&nbsp;</p>
+            <div class="determinate" style="width: 0%; background-color: #008000;"></div>
+        </div>
+    </template>
+
+    <!-- =========================== -->
+    <!--     Timer Icon Template     -->
+    <!-- =========================== -->
+    <template id="timerIconTemplate">
+        <!-- A convergeance of dumb has resulted in the derp -->
+        <img src="{{icon}}" class="dot-icon" derp="{{{iconStyle}}}" />
+    </template>
+
+    <!-- =========================== -->
+    <!--    Target Group Template    -->
+    <!-- =========================== -->
+    <template id="targetGroupTemplate">
+        <h6>{{{name}}}</h6>
+    </template>
+
+    <!-- =========================== -->
+    <!-- Target Group Timer Template -->
+    <!-- =========================== -->
+    <template id="targetGroupTimerTemplate">
+        <p class="dot-text"><span class="time-remaining"></span>{{{value}}}</p>
+        <!-- Background color of .progress is 13% of the .determinate color. -->
+        <div class="progress" style="background-color: rgba(0,33,0,.75)"><p style="margin: 4px;">&nbsp;</p>
+            <div class="determinate" style="width: 40%; background-color: #008000;"></div>
+        </div>
+    </template>
+
+</body>
+</html>
