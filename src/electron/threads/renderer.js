@@ -597,6 +597,8 @@ function enableMoveResize( dom ) {
         document.removeEventListener( 'pointermove', trackW );
         document.removeEventListener( 'pointermove', trackMove );
 
+        // Next, lets check if the user made any changes.  If they have, then 
+        // we need to let the overlay database know.
         for ( let overlayId in overlayInstances ) {
             if ( overlayId && overlayInstances.hasOwnProperty( overlayId ) ) {
                 if ( dom === overlayInstances[ overlayId ].dom ) {
@@ -609,6 +611,7 @@ function enableMoveResize( dom ) {
 
                     if ( changes ) {
                         console.log( 'CHANGES DETECTED', overlayInstances[ overlayId ].model.name );
+                        console.error( 'Not Implemented Yet!' );
                         overlayInstances[ overlayId ].model.x = bounds.x - origin.x;
                         overlayInstances[ overlayId ].model.y = bounds.y - origin.y;
                         overlayInstances[ overlayId ].model.windowWidth = bounds.width;
