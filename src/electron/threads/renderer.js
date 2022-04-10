@@ -282,14 +282,14 @@ function Renderer( originX, originY ) {
             if ( model?.overlayId ) {
                 updateOverlay( model.overlayId, model );
             }
-            console.error( 'Does not handle cancelling updates.' );
+            console.error( 'Does not handle cancelling updates. When the user cancels, it should revert any changes.' );
             console.error( 'Does not handle new overlays.' );
         } );
 
     speechSynthesis.onvoiceschanged = () => {
         voiceOptions = speechSynthesis.getVoices();
     };
-    
+
 }
 
 
