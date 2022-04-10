@@ -475,6 +475,15 @@ function Renderer( originX, originY ) {
 //     }
 // }
 
+
+
+
+
+
+
+
+
+
 /**
  * Autosizes the header of the specified overlay.
  * @param {string} overlayId The id of the overlay.
@@ -499,6 +508,15 @@ function autoSizeHeader( overlayId ) {
     header.style.position = pos;
 }
 
+
+
+
+
+
+
+
+
+
 /**
  * Disables resize events on the given dom element.
  * 
@@ -514,6 +532,14 @@ function disableMoveResize( dom ) {
     dom.classList.remove( 'drag' );
     dom.dispatchEvent( stopTrackingMoveResizeEvent );
 }
+
+
+
+
+
+
+
+
 
 
 /**
@@ -671,6 +697,20 @@ function enableMoveResize( dom ) {
     document.addEventListener( 'pointerup', onMouseUp );
 }
 
+
+
+
+
+
+
+
+
+
+/**
+ * Modifies the given element so that it is on top of other elements (z-index: 2).
+ * 
+ * @param {HTMlElement} dom The DOM element to modify.
+ */
 function moveToTop( dom ) {
     for ( let overlayId in overlayInstances ) {
         if ( overlayId && overlayInstances.hasOwnProperty( overlayId ) ) {
@@ -682,6 +722,15 @@ function moveToTop( dom ) {
         }
     }
 }
+
+
+
+
+
+
+
+
+
 
 /**
  * Executes the given handler on each overlay instance.
@@ -695,28 +744,6 @@ function eachOverlay( fn ) {
         }
     }
 }
-
-// function resizeWidth( e, dom ) {
-    
-// }
-
-// let m_pos;
-// function resize(e){
-//   const dx = m_pos - e.x;
-//   m_pos = e.x;
-//   panel.style.width = (parseInt(getComputedStyle(panel, '').width) + dx) + "px";
-// }
-
-// panel.addEventListener("mousedown", function(e){
-//   if (e.offsetX < BORDER_SIZE) {
-//     m_pos = e.x;
-//     document.addEventListener("mousemove", resize, false);
-//   }
-// }, false);
-
-// document.addEventListener("mouseup", function(){
-//     document.removeEventListener("mousemove", resize, false);
-// }, false);
 
 
 
