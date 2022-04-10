@@ -1653,15 +1653,15 @@ function destroyComponents( overlayId, predicate ) {
 
 
 
-// /**
-//  * Returns a hex number for the given value.
-//  * 
-//  * @param {number} c The value to convert.
-//  */
-// function componentToHex( c ) {
-//     var hex = c.toString( 16 );
-//     return hex.length == 1 ? "0" + hex : hex;
-// }
+/**
+ * Returns a hex number for the given value.
+ * 
+ * @param {number} c The value to convert.
+ */
+function componentToHex( c ) {
+    var hex = c.toString( 16 );
+    return hex.length == 1 ? "0" + hex : hex;
+}
 
 
 
