@@ -45,6 +45,13 @@ class OverlayInstance {
     model;
 }
 
+class ReceivedOverlayComponent {
+    /** @type {OverlayComponent} */
+    component;
+    /** @type  {string} */
+    overlayId;
+}
+
 
 /** @type {OverlayComponent[]} */
 var overlayComponents = [];
@@ -162,6 +169,19 @@ function Renderer( originX, originY ) {
     //         model.added = new Date();
     //         render( model );
     //     } );
+
+    ipcRenderer.on( 'renderer:receive:component',
+        /**
+         * Handles receiving a new trigger action.
+         * @param {*} event The event object.
+         * @param {OverlayComponent} model The trigger action.
+         */
+        function ( event, model ) {
+            model.added = new Date();
+            console.log( 'received component', model );
+            // model.overlayId;
+            // render( model );
+        } );
 
     ipcRenderer.on( 'overlay:window:enable-edit', function ( event, overlayId ) {
         overlayInstances[ overlayId ].dom.classList.add( 'highlight-border' );

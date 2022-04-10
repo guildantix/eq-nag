@@ -288,9 +288,10 @@ class WindowManager {
         } );
         
         ipcMain.on( 'overlay:send:component', ( event, component ) => {
-            if ( overlayDictionary && overlayDictionary[ component.overlayId ] ) {
-                overlayDictionary[ component.overlayId ].window.send( 'overlay:receive:component', component );
-            }
+            // if ( overlayDictionary && overlayDictionary[ component.overlayId ] ) {
+            //     overlayDictionary[ component.overlayId ].window.send( 'overlay:receive:component', component );
+            // }
+            this.#renderer.webContents.send( 'renderer:receive:component', component );
         } );
         
         ipcMain.on( 'overlay:destroy:component', ( event, instanceId ) => {
