@@ -130,10 +130,8 @@ function Renderer( originX, originY ) {
                 div.style.height = (overlay.windowHeight) + 'px';
                 div.style.width = ( overlay.windowWidth ) + 'px';
                 
-                div.classList.add( 'drag' );
-
                 document.body.appendChild( div );
-                enableMoveResize( div );
+                // enableMoveResize( div );
 
                 overlayInstances[ overlay.overlayId ] = {
                     dom: div,
@@ -621,7 +619,9 @@ function enableMoveResize( dom ) {
             }
         }
     }
-    
+
+    dom.classList.add( 'drag' );
+
     for ( let i = 0; i < resizeHandles.length; i++ ) {
         let handle = document.createElement( 'span' );
         handle.classList.add( resizeHandles[ i ] );
