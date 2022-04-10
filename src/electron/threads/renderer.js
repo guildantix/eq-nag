@@ -155,9 +155,9 @@ function Renderer( originX, originY ) {
                 div.innerHTML = content;
                 div.style.position = 'absolute';
             
-                div.style.left = (overlay.x + originX) + 'px';
-                div.style.top = (overlay.y + originY) + 'px';
-                div.style.height = (overlay.windowHeight) + 'px';
+                div.style.left = ( overlay.x + originX ) + 'px';
+                div.style.top = ( overlay.y + originY ) + 'px';
+                div.style.height = ( overlay.windowHeight ) + 'px';
                 div.style.width = ( overlay.windowWidth ) + 'px';
                 
                 document.body.appendChild( div );
@@ -191,17 +191,6 @@ function Renderer( originX, originY ) {
         } );
     
     ipcRenderer.send( 'overlay:get', null );
-
-    // ipcRenderer.on( 'overlay:receive:component',
-    //     /**
-    //      * Handles receiving a new trigger action.
-    //      * @param {*} event The event object.
-    //      * @param {OverlayComponent} model The trigger action.
-    //      */
-    //     function ( event, model ) {
-    //         model.added = new Date();
-    //         render( model );
-    //     } );
 
     ipcRenderer.on( 'renderer:receive:component',
         /**
@@ -297,9 +286,10 @@ function Renderer( originX, originY ) {
             console.error( 'Does not handle new overlays.' );
         } );
 
-    // speechSynthesis.onvoiceschanged = () => {
-    //     voiceOptions = speechSynthesis.getVoices();
-    // };
+    speechSynthesis.onvoiceschanged = () => {
+        voiceOptions = speechSynthesis.getVoices();
+    };
+    
 }
 
 
