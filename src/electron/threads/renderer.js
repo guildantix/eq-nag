@@ -312,6 +312,11 @@ function updateOverlay( overlayId, model ) {
     overlayInstances[ overlayId ].title.innerText = model.name ? model.name : 'Overlay';
     let contentArea = overlayInstances[ overlayId ].dom.querySelector( '.overlay-content-area' );
 
+    // let noOverflowTypes = [ 'Log', 'Alert', 'Timer', 'Chart' ];
+    if ( model.overlayType !== 'FCT' ) {
+        contentArea.classList.add( 'no-overflow' );
+    }
+
     // Content area display styles, the defaults.
     contentArea.style.fontFamily = `"${model.fontFamily}"`;
     contentArea.style.fontSize = `${model.fontSize}px`;
