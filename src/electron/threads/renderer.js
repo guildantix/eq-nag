@@ -1382,7 +1382,7 @@ function applyTimerSettings( overlayId, contentArea, comp, group ) {
             comp.repeatCount = comp.repeatCount > 0 ? comp.repeatCount + 1 : 1;
             
             if ( comp.action.repeatCount == null || comp.repeatCount <= comp.action.repeatCount ) {
-                comp = resetTimerComponentClock( comp, comp.repeatCount );
+                comp = resetTimerComponentClock( overlayId, comp, comp.repeatCount );
             } else {
                 delayRemoveComponent( overlayId, comp );
             }
@@ -1434,37 +1434,38 @@ function delayRemoveComponent( overlayId, comp, delay ) {
 
 
 
-// /**
-//  * Resets the timer clock and styles on the give overlay component.
-//  * 
-//  * @param {OverlayComponent} comp The overlay component to reset the clock.
-//  */
-// function resetTimerComponentClock(comp, repeatCount) {
+/**
+ * Resets the timer clock and styles on the give overlay component.
+ * 
+ * @param {string} overlayId The id of the desired overlay.
+ * @param {OverlayComponent} comp The overlay component to reset the clock.
+ */
+function resetTimerComponentClock( overlayId, comp, repeatCount ) {
     
-//     repeatCount = repeatCount > 0 ? repeatCount : 1;
+    repeatCount = repeatCount > 0 ? repeatCount : 1;
 
-//     // Reset the start duration
-//     comp.start = new Date( comp.timestamp.getTime() + ( repeatCount * comp.action.duration ) * 1000 );
-//     comp.timeRemaining = comp.action.duration;
+    // Reset the start duration
+    comp.start = new Date( comp.timestamp.getTime() + ( repeatCount * comp.action.duration ) * 1000 );
+    comp.timeRemaining = comp.action.duration;
 
-//     // Reset the ending conditions
-//     comp.endingSoonSpoken = false;
-//     comp.endingSoonTextDisplayed = false;
-//     comp.endedSpoken = false;
-//     comp.endedTextDisplayed = false;
-//     comp.instanceId = comp.instanceId;
+    // Reset the ending conditions
+    comp.endingSoonSpoken = false;
+    comp.endingSoonTextDisplayed = false;
+    comp.endedSpoken = false;
+    comp.endedTextDisplayed = false;
+    comp.instanceId = comp.instanceId;
 
-//     // Reset the background color
-//     if ( comp.action.overrideTimerColor ) {
-//         comp.dom.querySelector( '.determinate' ).style.backgroundColor = comp.action.overrideTimerColor;
-//         comp.dom.querySelector( '.progress' ).style.backgroundColor = comp.action.timerBackgroundColor;
-//     } else {
-//         comp.dom.querySelector( '.determinate' ).style.backgroundColor = '#008000';
-//         comp.dom.querySelector( '.progress' ).style.backgroundColor = 'rgba(0,33,0,.75)';
-//     }
+    // Reset the background color
+    if ( comp.action.overrideTimerColor ) {
+        comp.dom.querySelector( '.determinate' ).style.backgroundColor = comp.action.overrideTimerColor;
+        comp.dom.querySelector( '.progress' ).style.backgroundColor = comp.action.timerBackgroundColor;
+    } else {
+        comp.dom.querySelector( '.determinate' ).style.backgroundColor = '#008000';
+        comp.dom.querySelector( '.progress' ).style.backgroundColor = 'rgba(0,33,0,.75)';
+    }
 
-//     return comp;
-// }
+    return comp;
+}
 
 
 
