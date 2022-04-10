@@ -282,9 +282,10 @@ class WindowManager {
         } );
         
         ipcMain.on( 'overlay:broadcast', ( event, model ) => {
-            if ( overlayDictionary && overlayDictionary[ model.overlayId ] ) {
-                overlayDictionary[ model.overlayId ].window.send( 'overlay:window:model', model );
-            }
+            // if ( overlayDictionary && overlayDictionary[ model.overlayId ] ) {
+            //     overlayDictionary[ model.overlayId ].window.send( 'overlay:window:model', model );
+            // }
+            this.#renderer.webContents.send( 'renderer:overlay:update', model );
         } );
         
         ipcMain.on( 'overlay:send:component', ( event, component ) => {

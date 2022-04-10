@@ -1,3 +1,4 @@
+; 'use strict'
 const DomUtilities = require( '../utilities/dom' );
 const StringUtilities = require( '../utilities/string' );
 const NumberUtilities = require( '../utilities/numbers' );
@@ -43,6 +44,26 @@ class OverlayInstance {
     title;
     /** @type {OverlayWindow} */
     model;
+    /** @type {Object.<string, TimerGroup>} */
+    overlayGroups;
+    /** @type {number} */
+    sortDirection;
+    /** @type {number} */
+    dotTextHeight;
+    /** @type {boolean} */
+    showRemainingDuration;
+    /** @type {boolean} */
+    groupByTarget;
+    /** @type {number} */
+    groupHeaderSize;
+    /** @type {string} */
+    groupHeaderColor;
+    /** @type {number} */
+    groupHeaderWeight;
+    /** @type {boolean} */
+    hideTargetLabel;
+    /** @type {OverlayComponent[]} */
+    overlayComponents;
 }
 
 class ReceivedOverlayComponent {
@@ -53,10 +74,10 @@ class ReceivedOverlayComponent {
 }
 
 
-/** @type {OverlayComponent[]} */
-var overlayComponents = [];
-/** @type {Object.<string, TimerGroup>} */
-var overlayGroups = {};
+// /** @type {OverlayComponent[]} */
+// var overlayComponents = [];
+// /** @type {Object.<string, TimerGroup>} */
+// var overlayGroups = {};
 /** @type {Record<string, OverlayInstance>} */
 var overlayInstances = {};
 
@@ -70,20 +91,21 @@ var targetGroupTimerTemplate;
 const fctFps = 1000 / 60;
 var fctRenderQueue = [];
 var fctRenderInterval = 250;
-var width = 1;
-var height = 1;
-var fontSize = 1;
-var sortDirection = TimerSortTypes.None;
+// var width = 1;
+// var height = 1;
+// var fontSize = 1;
+// var sortDirection = TimerSortTypes.None;
 var voiceOptions = [];
-var dotTextHeight = 0;
-var showRemainingDuration = false;
-var groupByTarget = false;
-var groupHeaderSize = 12;
-var groupHeaderColor = '#ffffff';
-var groupHeaderWeight = 400;
-var hideTargetLabel = false;
+// var dotTextHeight = 0;
+// var showRemainingDuration = false;
+// var groupByTarget = false;
+// var groupHeaderSize = 12;
+// var groupHeaderColor = '#ffffff';
+// var groupHeaderWeight = 400;
+// var hideTargetLabel = false;
 /** @type {Record<number, number>} */
 var destroySchedule = {};
+
 const dragBorderSize = 6;
 const dragCornerSize = 12;
 let resizeHandles = [ 'resize-n', 'resize-s', 'resize-e', 'resize-w', 'resize-ne', 'resize-se', 'resize-sw', 'resize-nw' ];
@@ -125,7 +147,7 @@ function Renderer( originX, originY ) {
          */
         function ( event, overlays ) {
             
-            // let contentArea = document.querySelector( '.content-area' );
+            // let contentArea = document.querySelector( '.overlay-content-area' );
             overlays.forEach( overlay => {
                 
                 let content = overlayTemplate( {} );
@@ -145,6 +167,16 @@ function Renderer( originX, originY ) {
                     dom: div,
                     title: div.querySelector( '#overlay-title' ),
                     model: overlay,
+                    overlayGroups: {},
+                    sortDirection: TimerSortTypes.None,
+                    dotTextHeight: 0,
+                    showRemainingDuration: false,
+                    groupByTarget: false,
+                    groupHeaderSize: 12,
+                    groupHeaderColor: '#ffffff',
+                    groupHeaderWeight: 400,
+                    hideTargetLabel: false,
+                    overlayComponents: [],
                 };
 
                 overlayInstances[ overlay.overlayId ].title.innerHTML = overlay.name;
@@ -153,6 +185,7 @@ function Renderer( originX, originY ) {
                     moveToTop( div );
                 } );
                 
+                updateOverlay( overlay.overlayId, overlay );
             } );
             
         } );
@@ -178,9 +211,7 @@ function Renderer( originX, originY ) {
          */
         function ( event, model ) {
             model.added = new Date();
-            console.log( 'received component', model );
-            // model.overlayId;
-            // render( model );
+            render( model.overlayId, model );
         } );
 
     ipcRenderer.on( 'overlay:window:enable-edit', function ( event, overlayId ) {
@@ -214,13 +245,13 @@ function Renderer( originX, originY ) {
 
     // ipcRenderer.on( 'component:destroy', function ( event, instanceId ) {
         
-    //     if ( groupByTarget ) {
-    //         for ( let key in overlayGroups ) {
-    //             if ( overlayGroups.hasOwnProperty( key ) ) {
+    //     if ( overlayInstances[ overlayId ].groupByTarget ) {
+    //         for ( let key in overlayInstances[ overlayId ].overlayGroups ) {
+    //             if ( overlayInstances[ overlayId ].overlayGroups.hasOwnProperty( key ) ) {
                     
-    //                 let i = _.findIndex( overlayGroups[ key ].components, comp => comp.instanceId === instanceId );
+    //                 let i = _.findIndex( overlayInstances[ overlayId ].overlayGroups[ key ].components, comp => comp.instanceId === instanceId );
     //                 if ( i > -1 ) {
-    //                     let comp = overlayGroups[ key ].components[ i ];
+    //                     let comp = overlayInstances[ overlayId ].overlayGroups[ key ].components[ i ];
     //                     let timerType = comp.action.actionType === ActionTypes.BeneficialTimer || comp.action.actionType === ActionTypes.Countdown || comp.action.actionType === ActionTypes.Timer;
     //                     let endNaturally = timerType === true && ( comp.action.remainAfterEnded || comp.action.notifyWhenEnded ) && !comp.action.remainUnlessEndedEarly;
                         
@@ -236,153 +267,35 @@ function Renderer( originX, originY ) {
     //         }
             
     //     } else {
-    //         let i = _.findIndex( overlayComponents, comp => comp.instanceId === instanceId );
+    //         let i = _.findIndex( overlayInstances[ overlayId ].overlayComponents, comp => comp.instanceId === instanceId );
     //         if ( i > -1 ) {
-    //             let timerType = overlayComponents[ i ].action.actionType === ActionTypes.BeneficialTimer || overlayComponents[ i ].action.actionType === ActionTypes.Countdown || overlayComponents[ i ].action.actionType === ActionTypes.Timer;
-    //             let endNaturally = timerType === true && ( overlayComponents[ i ].action.remainAfterEnded || overlayComponents[ i ].action.notifyWhenEnded );
+    //             let timerType = overlayInstances[ overlayId ].overlayComponents[ i ].action.actionType === ActionTypes.BeneficialTimer || overlayInstances[ overlayId ].overlayComponents[ i ].action.actionType === ActionTypes.Countdown || overlayInstances[ overlayId ].overlayComponents[ i ].action.actionType === ActionTypes.Timer;
+    //             let endNaturally = timerType === true && ( overlayInstances[ overlayId ].overlayComponents[ i ].action.remainAfterEnded || overlayInstances[ overlayId ].overlayComponents[ i ].action.notifyWhenEnded );
 
     //             if ( endNaturally ) {
-    //                 overlayComponents[ i ].start = new Date( new Date().getTime() - overlayComponents[ i ].action.duration * 1000 );
+    //                 overlayInstances[ overlayId ].overlayComponents[ i ].start = new Date( new Date().getTime() - overlayInstances[ overlayId ].overlayComponents[ i ].action.duration * 1000 );
     //             } else {
-    //                 overlayComponents[ i ].removeComponent();
+    //                 overlayInstances[ overlayId ].overlayComponents[ i ].removeComponent();
     //             }
     //         }
     //     }
 
     // } );
 
-    // ipcRenderer.on( 'overlay:window:model',
-    //     /**
-    //      * Changes the window properties based on the given model.
-    //      * @param {any} event The event object.
-    //      * @param {OverlayWindow} model The overlay window model.
-    //      */
-    //     function ( event, model ) {
-            
-    //         document.querySelector( '#overlay-title' ).textContent = model.name ? model.name : 'Overlay';
-    //         let contentArea = document.querySelector( '.content-area' );
-
-    //         // Content area display styles, the defaults.
-    //         contentArea.style.fontFamily = `"${model.fontFamily}"`;
-    //         contentArea.style.fontSize = `${model.fontSize}px`;
-    //         contentArea.style.lineHeight = `${( model.lineHeight > 10 ? model.lineHeight : 90 ) / 100}em`;
-    //         contentArea.style.fontWeight = model.fontWeight > 0 ? model.fontWeight : 300;
-
-    //         if ( model.overlayType === 'Alert' ) {
-    //             contentArea.style.textAlign = model.horizontalAlignment;
-    //             if ( model.verticalAlignment === 'bottom' ) {
-    //                 contentArea.style.display = 'flex';
-    //                 contentArea.style.flexDirection = 'column';
-    //                 contentArea.style.justifyContent = 'flex-end';
-    //             } else if ( model.verticalAlignment === 'middle' ) {
-    //                 contentArea.style.display = 'flex';
-    //                 contentArea.style.flexDirection = 'column';
-    //                 contentArea.style.justifyContent = 'center';
-    //             } else {
-    //                 contentArea.style.display = 'block';
-    //                 contentArea.style.flexDirection = undefined;
-    //                 contentArea.style.justifyContent = undefined;
-    //             }
-    //         }
-
-    //         contentArea.querySelectorAll( '.progress' ).forEach( f => f.style.marginBottom = contentArea.style.lineHeight );
-
-    //         if ( model.fontColor ) {
-    //             if ( model.fontTransparency < 1 ) {
-    //                 contentArea.style.color = `${model.fontColor}${componentToHex( Math.round( model.fontTransparency * 255 ) )}`;
-    //             } else {
-    //                 contentArea.style.color = `${model.fontColor}`;
-    //             }
-    //         }
-    //         if ( model.backgroundTransparency && model.backgroundTransparency > 0 && model.backgroundColor ) {
-    //             contentArea.style.backgroundColor = `${model.backgroundColor}${componentToHex( Math.round( model.backgroundTransparency * 255 ) )}`;
-    //         } else {
-    //             contentArea.style.backgroundColor = null;
-    //         }
-    //         if ( model.borderTransparency && model.borderTransparency > 0 && model.borderColor ) {
-    //             contentArea.style.border = `3px solid ${model.borderColor}${componentToHex( Math.round( model.borderTransparency * 255 ) )}`;
-    //         } else {
-    //             contentArea.style.border = null;
-    //         }
-
-    //         width = contentArea.clientWidth;
-    //         height = contentArea.clientHeight;
-    //         fontSize = model.fontSize;
-    //         sortDirection = model.timerSortType;
-
-    //         contentArea.style.textShadow = null;
-    //         let textShadow = null;
-
-    //         if ( model.showTextBorder === true ) {
-    //             textShadow = `0px 0px 1px ${model.textBorderColor}, -1px -1px 0 ${model.textBorderColor}, 1px -1px 0 ${model.textBorderColor}, -1px 1px 0 ${model.textBorderColor}, 1px 1px 0 ${model.textBorderColor}`;
-    //         } else if ( model.overlayType === 'Log' ) {
-    //             textShadow = `0px 0px 1px #000000, -1px -1px 0 #000000, 1px -1px 0 #000000, -1px 1px 0 #000000, 1px 1px 0 #000000`;
-    //             model.showTextGlow = true;
-    //             model.textGlowSize = 3;
-    //             model.textGlowColor = '#000000';
-    //         }
-
-    //         if ( model.showTextGlow ) {
-    //             if ( textShadow?.length > 0 ) {
-    //                 textShadow += ',';
-    //             } else {
-    //                 textShadow = '';
-    //             }
-
-    //             textShadow += `0px 0px ${model.textGlowSize}px ${model.textGlowColor}, -1px -1px ${model.textGlowSize}px ${model.textGlowColor}, 1px -1px ${model.textGlowSize}px ${model.textGlowColor}, -1px 1px ${model.textGlowSize}px ${model.textGlowColor}, 1px 1px ${model.textGlowSize}px ${model.textGlowColor}`;
-    //         }
-    //         contentArea.style.textShadow = textShadow;
-
-    //         // Calculate the height of dot texts.
-    //         let pDot = document.createElement( 'p' );
-    //         pDot.classList.add( 'dot-text' );
-    //         pDot.style.visibility = 'hidden';
-    //         pDot.innerHTML = '&nbsp;';
-    //         contentArea.appendChild( pDot );
-    //         dotTextHeight = pDot.clientHeight;
-    //         contentArea.style.paddingLeft = `${dotTextHeight + 2}px`;
-    //         contentArea.removeChild( pDot );
-
-    //         // Update any active elements
-    //         document.querySelectorAll( '.content-area .dot-icon' ).forEach( icon => {
-    //             icon.style.marginLeft = `-${dotTextHeight + 2}px`;
-    //             icon.style.height = `${dotTextHeight}px`;
-    //         } );
-
-    //         showRemainingDuration = model.showTimeRemaining === true;
-
-    //         if ( model.groupByTarget ) {
-    //             contentArea.classList.add( 'grouped-mobs' );
-    //             groupByTarget = true;
-    //         } else {
-    //             contentArea.classList.remove( 'grouped-mobs' );
-    //             groupByTarget = false;
-    //         }
-
-    //         groupHeaderSize = model.groupHeaderSize > 0 ? model.groupHeaderSize : 12;
-    //         groupHeaderColor = !StringUtilities.isNullOrWhitespace( model.groupHeaderColor ) ? model.groupHeaderColor : '#ffffff';
-    //         groupHeaderWeight = model.groupHeaderWeight > 0 ? model.groupHeaderWeight : 400;
-
-    //         hideTargetLabel = model.hideTargetLabel;
-
-    //         for ( let key in overlayGroups ) {
-    //             if ( overlayGroups.hasOwnProperty( key ) ) {
-                    
-    //                 let h6 = overlayGroups[ key ].dom.querySelector( 'h6' );
-
-    //                 h6.style.fontSize = `${groupHeaderSize}px`;
-    //                 h6.style.color = groupHeaderColor;
-    //                 h6.style.fontWeight = groupHeaderWeight;
-
-    //                 if ( hideTargetLabel ) {
-    //                     h6.style.display = 'none';
-    //                 } else {
-    //                     delete h6.style.display;
-    //                 }
-    //             }
-    //         }
-            
-    //     } );
+    ipcRenderer.on( 'renderer:overlay:update',
+        /**
+         * Handles the event.
+         * 
+         * @param {any} event The event args.
+         * @param {OverlayWindow} model The overlay window model.
+         */
+        function ( event, model ) {
+            if ( model?.overlayId ) {
+                updateOverlay( model.overlayId, model );
+            }
+            console.error( 'Does not handle cancelling updates.' );
+            console.error( 'Does not handle new overlays.' );
+        } );
 
     // speechSynthesis.onvoiceschanged = () => {
     //     voiceOptions = speechSynthesis.getVoices();
@@ -398,102 +311,248 @@ function Renderer( originX, originY ) {
 
 
 
-// /**
-//  * Renders the overlayComponents to the overlay window.
-//  *
-//  * @param {OverlayComponent} comp Tells the renderer to forcefully redraw the overlayComponents.
-//  */
-// function render( comp ) {
-//     let contentArea = document.querySelector( '.content-area' );
-//     let now = new Date();
-//     if ( comp.action.actionType === ActionTypes.DisplayText ) {
-//         comp.removeAt = new Date( now.setSeconds( comp.action.duration ) );
-//         let content = displayTextTemplate( { value: StringUtilities.format( comp.action.displayText, comp.matches ) } );
-//         let div = document.createElement( 'div' );
-//         div.innerHTML = content;
-//         div.style.animation = `animate-fadeout ${comp.action.duration * 1.05}s ease`;
-//         comp.dom = div;
+/**
+ * Updates the model and default properties/styles of the specified overlay.
+ * 
+ * @param {string} overlayId The id of the overlay.
+ * @param {OverlayWindow} model The overlay window model.
+ */
+function updateOverlay( overlayId, model ) {
+    
+    // document.querySelector( '#overlay-title' ).textContent = model.name ? model.name : 'Overlay';
+    overlayInstances[ overlayId ].model = model;
+    overlayInstances[ overlayId ].title.innerText = model.name ? model.name : 'Overlay';
+    let contentArea = overlayInstances[ overlayId ].dom.querySelector( '.overlay-content-area' );
 
-//         // Custom display logic.
-//         if ( comp.action.textUseCustomFont ) {
-//             div.style.fontFamily = `"${comp.action.textFont}"`;
+    // Content area display styles, the defaults.
+    contentArea.style.fontFamily = `"${model.fontFamily}"`;
+    contentArea.style.fontSize = `${model.fontSize}px`;
+    contentArea.style.lineHeight = `${( model.lineHeight > 10 ? model.lineHeight : 90 ) / 100}em`;
+    contentArea.style.fontWeight = model.fontWeight > 0 ? model.fontWeight : 300;
 
-//             if ( comp.action.textWeight ) {
-//                 div.style.fontWeight = comp.action.textWeight > 0 ? comp.action.textWeight : 300;
-//             }
-//         }
+    if ( model.overlayType === 'Alert' ) {
+        contentArea.style.textAlign = model.horizontalAlignment;
+        if ( model.verticalAlignment === 'bottom' ) {
+            contentArea.style.display = 'flex';
+            contentArea.style.flexDirection = 'column';
+            contentArea.style.justifyContent = 'flex-end';
+        } else if ( model.verticalAlignment === 'middle' ) {
+            contentArea.style.display = 'flex';
+            contentArea.style.flexDirection = 'column';
+            contentArea.style.justifyContent = 'center';
+        } else {
+            contentArea.style.display = 'block';
+            contentArea.style.flexDirection = undefined;
+            contentArea.style.justifyContent = undefined;
+        }
+    }
 
-//         if ( comp.action.textUseCustomSize ) {
-//             div.style.fontSize = `${comp.action.textSize}px`;
+    contentArea.querySelectorAll( '.progress' ).forEach( f => f.style.marginBottom = contentArea.style.lineHeight );
 
-//             if ( comp.action.textSpacing ) {
-//                 div.style.lineHeight = `${( comp.action.textSpacing > 10 ? comp.action.textSpacing : 90 ) / 100}em`;
-//             }
-//         }
-//         if ( comp.action.textUseCustomColor ) {
-//             div.style.color = `${comp.action.textColor}`;
-//         }
-//         let textShadow = null;
-//         if ( comp.action.textUseCustomBorder ) {
-//             textShadow = `0px 0px 1px ${comp.action.textBorderColor}, -1px -1px 0 ${comp.action.textBorderColor}, 1px -1px 0 ${comp.action.textBorderColor}, -1px 1px 0 ${comp.action.textBorderColor}, 1px 1px 0 ${comp.action.textBorderColor}`;
-//         }
-//         if ( comp.action.textUseCustomGlow ) {
-//             textShadow = textShadow ? textShadow + ',' : '';
-//             textShadow += `0px 0px ${comp.action.textGlowSize}px ${comp.action.textGlowColor}, -1px -1px ${comp.action.textGlowSize}px ${comp.action.textGlowColor}, 1px -1px ${comp.action.textGlowSize}px ${comp.action.textGlowColor}, -1px 1px ${comp.action.textGlowSize}px ${comp.action.textGlowColor}, 1px 1px ${comp.action.textGlowSize}px ${comp.action.textGlowColor}`;
-//         }
-//         if ( textShadow ) {
-//             div.style.textShadow = textShadow;
-//         }
+    if ( model.fontColor ) {
+        if ( model.fontTransparency < 1 ) {
+            contentArea.style.color = `${model.fontColor}${componentToHex( Math.round( model.fontTransparency * 255 ) )}`;
+        } else {
+            contentArea.style.color = `${model.fontColor}`;
+        }
+    }
+    if ( model.backgroundTransparency && model.backgroundTransparency > 0 && model.backgroundColor ) {
+        contentArea.style.backgroundColor = `${model.backgroundColor}${componentToHex( Math.round( model.backgroundTransparency * 255 ) )}`;
+    } else {
+        contentArea.style.backgroundColor = null;
+    }
+    if ( model.borderTransparency && model.borderTransparency > 0 && model.borderColor ) {
+        contentArea.style.border = `3px solid ${model.borderColor}${componentToHex( Math.round( model.borderTransparency * 255 ) )}`;
+    } else {
+        contentArea.style.border = null;
+    }
 
-//         contentArea.appendChild( comp.dom );
-//         comp.intervalId = window.setTimeout( () => {
-//             comp.dom.parentNode.removeChild( comp.dom );
-//             ArrayUtilities.remove( overlayComponents, f => f.instanceId == comp.instanceId );
-//         }, comp.action.duration * 1000 );
-//         overlayComponents.push( comp );
+    // width = contentArea.clientWidth;
+    // height = contentArea.clientHeight;
+    // fontSize = model.fontSize;
+    overlayInstances[ overlayId ].sortDirection = model.timerSortType;
 
-//     } else if ( comp.action.actionType === ActionTypes.Timer
-//         || comp.action.actionType === ActionTypes.Countdown
-//         || comp.action.actionType === ActionTypes.DotTimer
-//         || comp.action.actionType === ActionTypes.BeneficialTimer ) {
+    contentArea.style.textShadow = null;
+    let textShadow = null;
+
+    if ( model.showTextBorder === true ) {
+        textShadow = `0px 0px 1px ${model.textBorderColor}, -1px -1px 0 ${model.textBorderColor}, 1px -1px 0 ${model.textBorderColor}, -1px 1px 0 ${model.textBorderColor}, 1px 1px 0 ${model.textBorderColor}`;
+    } else if ( model.overlayType === 'Log' ) {
+        textShadow = `0px 0px 1px #000000, -1px -1px 0 #000000, 1px -1px 0 #000000, -1px 1px 0 #000000, 1px 1px 0 #000000`;
+        model.showTextGlow = true;
+        model.textGlowSize = 3;
+        model.textGlowColor = '#000000';
+    }
+
+    if ( model.showTextGlow ) {
+        if ( textShadow?.length > 0 ) {
+            textShadow += ',';
+        } else {
+            textShadow = '';
+        }
+
+        textShadow += `0px 0px ${model.textGlowSize}px ${model.textGlowColor}, -1px -1px ${model.textGlowSize}px ${model.textGlowColor}, 1px -1px ${model.textGlowSize}px ${model.textGlowColor}, -1px 1px ${model.textGlowSize}px ${model.textGlowColor}, 1px 1px ${model.textGlowSize}px ${model.textGlowColor}`;
+    }
+    contentArea.style.textShadow = textShadow;
+
+    // Calculate the height of dot texts.
+    let pDot = document.createElement( 'p' );
+    pDot.classList.add( 'dot-text' );
+    pDot.style.visibility = 'hidden';
+    pDot.innerHTML = '&nbsp;';
+    contentArea.appendChild( pDot );
+    overlayInstances[ overlayId ].dotTextHeight = pDot.clientHeight;
+    contentArea.style.paddingLeft = `${overlayInstances[ overlayId ].dotTextHeight + 2}px`;
+    contentArea.removeChild( pDot );
+
+    // Update any active elements
+    overlayInstances[ overlayId ].dom.querySelectorAll( '.overlay-content-area .dot-icon' ).forEach( icon => {
+        icon.style.marginLeft = `-${overlayInstances[ overlayId ].dotTextHeight + 2}px`;
+        icon.style.height = `${overlayInstances[ overlayId ].dotTextHeight}px`;
+    } );
+
+    overlayInstances[ overlayId ].showRemainingDuration = model.showTimeRemaining === true;
+
+    if ( model.groupByTarget ) {
+        contentArea.classList.add( 'grouped-mobs' );
+        overlayInstances[ overlayId ].groupByTarget = true;
+    } else {
+        contentArea.classList.remove( 'grouped-mobs' );
+        overlayInstances[ overlayId ].groupByTarget = false;
+    }
+
+    overlayInstances[ overlayId ].groupHeaderSize = model.groupHeaderSize > 0 ? model.groupHeaderSize : 12;
+    overlayInstances[ overlayId ].groupHeaderColor = !StringUtilities.isNullOrWhitespace( model.groupHeaderColor ) ? model.groupHeaderColor : '#ffffff';
+    overlayInstances[ overlayId ].groupHeaderWeight = model.groupHeaderWeight > 0 ? model.groupHeaderWeight : 400;
+
+    overlayInstances[ overlayId ].hideTargetLabel = model.hideTargetLabel;
+
+    for ( let key in overlayInstances[ overlayId ].overlayGroups ) {
+        if ( overlayInstances[ overlayId ].overlayGroups.hasOwnProperty( key ) ) {
+                    
+            let h6 = overlayInstances[ overlayId ].overlayGroups[ key ].dom.querySelector( 'h6' );
+
+            h6.style.fontSize = `${overlayInstances[ overlayId ].groupHeaderSize}px`;
+            h6.style.color = overlayInstances[ overlayId ].groupHeaderColor;
+            h6.style.fontWeight = overlayInstances[ overlayId ].groupHeaderWeight;
+
+            if ( overlayInstances[ overlayId ].hideTargetLabel ) {
+                h6.style.display = 'none';
+            } else {
+                delete h6.style.display;
+            }
+        }
+    }
+            
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Renders the overlayComponents to the overlay window.
+ *
+ * @param {string} overlayId The id of the desired overlay.
+ * @param {OverlayComponent} comp Tells the renderer to forcefully redraw the overlayComponents.
+ */
+function render( overlayId, comp ) {
+    let contentArea = overlayInstances[ overlayId ].dom.querySelector( '.overlay-content-area' );
+    let now = new Date();
+
+    if ( comp.action.actionType === ActionTypes.DisplayText ) {
+        comp.removeAt = new Date( now.setSeconds( comp.action.duration ) );
+        let content = displayTextTemplate( { value: StringUtilities.format( comp.action.displayText, comp.matches ) } );
+        let div = document.createElement( 'div' );
+        div.innerHTML = content;
+        div.style.animation = `animate-fadeout ${comp.action.duration * 1.05}s ease`;
+        comp.dom = div;
+
+        // Custom display logic.
+        if ( comp.action.textUseCustomFont ) {
+            div.style.fontFamily = `"${comp.action.textFont}"`;
+
+            if ( comp.action.textWeight ) {
+                div.style.fontWeight = comp.action.textWeight > 0 ? comp.action.textWeight : 300;
+            }
+        }
+
+        if ( comp.action.textUseCustomSize ) {
+            div.style.fontSize = `${comp.action.textSize}px`;
+
+            if ( comp.action.textSpacing ) {
+                div.style.lineHeight = `${( comp.action.textSpacing > 10 ? comp.action.textSpacing : 90 ) / 100}em`;
+            }
+        }
+        if ( comp.action.textUseCustomColor ) {
+            div.style.color = `${comp.action.textColor}`;
+        }
+        let textShadow = null;
+        if ( comp.action.textUseCustomBorder ) {
+            textShadow = `0px 0px 1px ${comp.action.textBorderColor}, -1px -1px 0 ${comp.action.textBorderColor}, 1px -1px 0 ${comp.action.textBorderColor}, -1px 1px 0 ${comp.action.textBorderColor}, 1px 1px 0 ${comp.action.textBorderColor}`;
+        }
+        if ( comp.action.textUseCustomGlow ) {
+            textShadow = textShadow ? textShadow + ',' : '';
+            textShadow += `0px 0px ${comp.action.textGlowSize}px ${comp.action.textGlowColor}, -1px -1px ${comp.action.textGlowSize}px ${comp.action.textGlowColor}, 1px -1px ${comp.action.textGlowSize}px ${comp.action.textGlowColor}, -1px 1px ${comp.action.textGlowSize}px ${comp.action.textGlowColor}, 1px 1px ${comp.action.textGlowSize}px ${comp.action.textGlowColor}`;
+        }
+        if ( textShadow ) {
+            div.style.textShadow = textShadow;
+        }
+
+        contentArea.appendChild( comp.dom );
+        comp.intervalId = window.setTimeout( () => {
+            comp.dom.parentNode.removeChild( comp.dom );
+            ArrayUtilities.remove( overlayInstances[ overlayId ].overlayComponents, f => f.instanceId == comp.instanceId );
+        }, comp.action.duration * 1000 );
+        overlayInstances[ overlayId ].overlayComponents.push( comp );
+
+    } else if ( comp.action.actionType === ActionTypes.Timer
+        || comp.action.actionType === ActionTypes.Countdown
+        || comp.action.actionType === ActionTypes.DotTimer
+        || comp.action.actionType === ActionTypes.BeneficialTimer ) {
         
-//         if ( restartTimerComponent( comp ) ) {
-//             return;
-//         }
+        if ( restartTimerComponent( overlayId, comp ) ) {
+            return;
+        }
         
-//         if ( groupByTarget ) {
+        if ( overlayInstances[ overlayId ].groupByTarget ) {
             
-//             /** @type {TimerGroup} */
-//             let group;
+            /** @type {TimerGroup} */
+            let group;
             
-//             if ( comp.action.actionType === ActionTypes.DotTimer || comp.action.actionType === ActionTypes.BeneficialTimer ) {
-//                 group = getTimerGroup( contentArea, comp.matches.groups.target );
+            if ( comp.action.actionType === ActionTypes.DotTimer || comp.action.actionType === ActionTypes.BeneficialTimer ) {
+                group = getTimerGroup( overlayId, contentArea, comp.matches.groups.target );
             
-//                 createGroupedDotTimer( contentArea, group, comp );
+                createGroupedDotTimer( overlayId, contentArea, group, comp );
 
-//             } else {
-//                 group = getTimerGroup( contentArea, 'General' );
+            } else {
+                group = getTimerGroup( overlayId, contentArea, 'General' );
                 
-//                 createGroupedTimer( contentArea, group, comp );
+                createGroupedTimer( overlayId, contentArea, group, comp );
                 
-//             }
+            }
             
-//             sortGroupComponents( group );
-//             group.updateVisibility();
+            sortGroupComponents( overlayId, group );
+            group.updateVisibility();
             
-//         } else {
+        } else {
 
-//             if ( comp.action.actionType === ActionTypes.DotTimer || comp.action.actionType === ActionTypes.BeneficialTimer ) {
-//                 createUngroupedDotTimer( contentArea, comp );
-//             } else {
-//                 createUngroupedTimer( contentArea, comp );
-//             }
+            if ( comp.action.actionType === ActionTypes.DotTimer || comp.action.actionType === ActionTypes.BeneficialTimer ) {
+                createUngroupedDotTimer( overlayId, contentArea, comp );
+            } else {
+                createUngroupedTimer( overlayId, contentArea, comp );
+            }
             
-//             sortOverlayComponents();
+            sortOverlayComponents( overlayId );
             
-//         }
-//     }
-// }
+        }
+    }
+}
 
 
 
@@ -774,56 +833,26 @@ function eachOverlay( fn ) {
 
 
 
-// /**
-//  * Sorts the overlay components according to the user specified sort direction.
-//  */
-// function sortOverlayComponents() {
-//     // If the user has specified a sort direction.
-//     if ( sortDirection > 0 ) {
-//         // Every time a new timer is added, reorganize the timers so that the 
-//         // timer ending first will appear in the order in which the user has
-//         // specified.
+/**
+ * Sorts the overlay components according to the user specified sort direction.
+ * 
+ * @param {string} overlayId The id of the desired overlay.
+ */
+function sortOverlayComponents( overlayId ) {
+    // If the user has specified a sort direction.
+    if ( overlayInstances[ overlayId ].sortDirection > 0 ) {
+        // Every time a new timer is added, reorganize the timers so that the 
+        // timer ending first will appear in the order in which the user has
+        // specified.
 
-//         let dir = sortDirection === TimerSortTypes.Ascending ? -1 : 1;
-//         let sorted = _.sortBy( overlayComponents, [ c => dir * c.timeRemaining ] );
-//         for ( let i = 0; i < sorted.length; i++ ) {
-//             sorted[ i ].dom.parentNode.prepend( sorted[ i ].dom );
-//         }
+        let dir = overlayInstances[ overlayId ].sortDirection === TimerSortTypes.Ascending ? -1 : 1;
+        let sorted = _.sortBy( overlayInstances[ overlayId ].overlayComponents, [ c => dir * c.timeRemaining ] );
+        for ( let i = 0; i < sorted.length; i++ ) {
+            sorted[ i ].dom.parentNode.prepend( sorted[ i ].dom );
+        }
 
-//     }
-// }
-
-
-
-
-
-
-
-
-
-
-// /**
-//  * Sorts the given timer group's overlay components according to the user 
-//  * specified sort direction.
-//  * 
-//  * @param {TimerGroup} group The overlay component group.
-//  */
-// function sortGroupComponents( group ) {
-//     // If the user has specified a sort direction.
-//     if ( sortDirection > 0 ) {
-//         // Every time a new timer is added, reorganize the timers so that the 
-//         // timer ending first will appear in the order in which the user has
-//         // specified.
-
-//         let dir = sortDirection === TimerSortTypes.Ascending ? -1 : 1;
-//         let hdr = group.dom.querySelector( 'h6' );
-//         group.components = _.sortBy( group.components, [ c => dir * c.timeRemaining ] );
-//         for ( let i = 0; i < group.components.length; i++ ) {
-//             group.dom.insertBefore( group.components[ i ].dom, hdr.nextSibling );
-//         }
-
-//     }
-// }
+    }
+}
 
 
 
@@ -834,83 +863,116 @@ function eachOverlay( fn ) {
 
 
 
-// /**
-//  * Returns the label for the given timer overlay component.
-//  * 
-//  * @param {OverlayComponent} comp The overlay component of the timer.
-//  */
-// function getTimerLabel( comp ) {
-//     let label = '';
+/**
+ * Sorts the given timer group's overlay components according to the user 
+ * specified sort direction.
+ * 
+ * @param {string} overlayId The id of the desired overlay.
+ * @param {TimerGroup} group The overlay component group.
+ */
+function sortGroupComponents( overlayId, group ) {
+    // If the user has specified a sort direction.
+    if ( overlayInstances[ overlayId ].sortDirection > 0 ) {
+        // Every time a new timer is added, reorganize the timers so that the 
+        // timer ending first will appear in the order in which the user has
+        // specified.
 
-//     if ( comp.action.actionType === ActionTypes.Timer || comp.action.actionType === ActionTypes.Countdown ) {
-//         label = comp.action.displayText || comp.triggerName;
-//     } else if ( comp.action.actionType === ActionTypes.DotTimer || comp.action.actionType === ActionTypes.BeneficialTimer ) {
-//         if ( groupByTarget || hideTargetLabel ) {
-//             label = comp.triggerName;
-//         } else {
-//             label = comp.action.displayText || comp.triggerName;
-//         }
-//     }
+        let dir = overlayInstances[ overlayId ].sortDirection === TimerSortTypes.Ascending ? -1 : 1;
+        let hdr = group.dom.querySelector( 'h6' );
+        group.components = _.sortBy( group.components, [ c => dir * c.timeRemaining ] );
+        for ( let i = 0; i < group.components.length; i++ ) {
+            group.dom.insertBefore( group.components[ i ].dom, hdr.nextSibling );
+        }
 
-//     return label;
-// }
-
-
-
-
-
+    }
+}
 
 
 
 
 
-// /**
-//  * Creates a new grouped overlay component.
-//  * 
-//  * @param {Node} contentArea The content area for dot timers.
-//  * @param {{dom: HTMLDivElement, components: OverlayComponent[]}} group The component group.
-//  * @param {OverlayComponent} comp The overlay component.
-//  */
-// function createGroupedDotTimer( contentArea, group, comp ) {
-//     let displayText = getTimerLabel( comp );
-//     let content = targetGroupTimerTemplate( { value: displayText } );
 
-//     let div = document.createElement( 'div' );
-//     div.innerHTML = content;
-//     comp.dom = div;
+
+
+
+
+/**
+ * Returns the label for the given timer overlay component.
+ * 
+ * @param {string} overlayId The id of the desired overlay.
+ * @param {OverlayComponent} comp The overlay component of the timer.
+ */
+function getTimerLabel( overlayId, comp ) {
+    let label = '';
+
+    if ( comp.action.actionType === ActionTypes.Timer || comp.action.actionType === ActionTypes.Countdown ) {
+        label = comp.action.displayText || comp.triggerName;
+    } else if ( comp.action.actionType === ActionTypes.DotTimer || comp.action.actionType === ActionTypes.BeneficialTimer ) {
+        if ( overlayInstances[ overlayId ].groupByTarget || overlayInstances[ overlayId ].hideTargetLabel ) {
+            label = comp.triggerName;
+        } else {
+            label = comp.action.displayText || comp.triggerName;
+        }
+    }
+
+    return label;
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Creates a new grouped overlay component.
+ * 
+ * @param {string} overlayId The id of the desired overlay.
+ * @param {Node} contentArea The content area for dot timers.
+ * @param {{dom: HTMLDivElement, components: OverlayComponent[]}} group The component group.
+ * @param {OverlayComponent} comp The overlay component.
+ */
+function createGroupedDotTimer( overlayId, contentArea, group, comp ) {
+    let displayText = getTimerLabel( overlayId, comp );
+    let content = targetGroupTimerTemplate( { value: displayText } );
+
+    let div = document.createElement( 'div' );
+    div.innerHTML = content;
+    comp.dom = div;
     
-//     if ( comp.action.timerIcon != null ) {
-//         div.innerHTML = timerIconTemplate( { icon: comp.action.timerIcon, iconStyle: `"style="position: absolute; margin-left: -${dotTextHeight + 2}px;  height: ${dotTextHeight}px;` } ) + div.innerHTML;
-//     }
+    if ( comp.action.timerIcon != null ) {
+        div.innerHTML = timerIconTemplate( { icon: comp.action.timerIcon, iconStyle: `"style="position: absolute; margin-left: -${overlayInstances[ overlayId ].dotTextHeight + 2}px;  height: ${overlayInstances[ overlayId ].dotTextHeight}px;` } ) + div.innerHTML;
+    }
 
-//     comp.dom = div;
-//     comp.description = displayText;
+    comp.dom = div;
+    comp.description = displayText;
 
-//     // Create a method that will remove the component from the screen.
-//     let groupKey = group.name;
-//     comp.removeComponent = () => {
-//         comp.dom.parentNode && comp.dom.parentNode.removeChild( comp.dom );
-//         window.clearInterval( comp.intervalId );
-//         ArrayUtilities.remove( overlayGroups[ groupKey ].components, f => f.instanceId == comp.instanceId );
+    // Create a method that will remove the component from the screen.
+    let groupKey = group.name;
+    comp.removeComponent = () => {
+        comp.dom.parentNode && comp.dom.parentNode.removeChild( comp.dom );
+        window.clearInterval( comp.intervalId );
+        ArrayUtilities.remove( overlayInstances[ overlayId ].overlayGroups[ groupKey ].components, f => f.instanceId == comp.instanceId );
 
-//         window.setTimeout( () => {
-//             // We delay execution of this code and move it to the end of the stack 
-//             // because other overlay components may be added to this group.
-//             if ( overlayGroups[ groupKey ].components?.length === 0 ) {
-//                 overlayGroups[ groupKey ].dom.parentNode && overlayGroups[ groupKey ].dom.parentNode.removeChild( overlayGroups[ groupKey ].dom );
-//                 delete overlayGroups[ groupKey ];
-//             }
-//         } );
-//     };
+        window.setTimeout( () => {
+            // We delay execution of this code and move it to the end of the stack 
+            // because other overlay components may be added to this group.
+            if ( overlayInstances[ overlayId ].overlayGroups[ groupKey ].components?.length === 0 ) {
+                overlayInstances[ overlayId ].overlayGroups[ groupKey ].dom.parentNode && overlayInstances[ overlayId ].overlayGroups[ groupKey ].dom.parentNode.removeChild( overlayInstances[ overlayId ].overlayGroups[ groupKey ].dom );
+                delete overlayInstances[ overlayId ].overlayGroups[ groupKey ];
+            }
+        } );
+    };
     
-//     applyTimerSettings( contentArea, comp, group );
+    applyTimerSettings( overlayId, contentArea, comp, group );
 
-//     group.dom.appendChild( comp.dom );
-//     group.components.push( comp );
+    group.dom.appendChild( comp.dom );
+    group.components.push( comp );
 
-// }
-
-
+}
 
 
 
@@ -919,127 +981,54 @@ function eachOverlay( fn ) {
 
 
 
-// /**
-//  * Creates a new grouped timer component.
-//  * 
-//  * @param {Node} contentArea The content area for dot timers.
-//  * @param {{dom: HTMLDivElement, components: OverlayComponent[]}} group The component group.
-//  * @param {OverlayComponent} comp The overlay component.
-//  */
-// function createGroupedTimer( contentArea, group, comp ) {
-//     let displayText = getTimerLabel( comp );
-//     let content = targetGroupTimerTemplate( { value: displayText } );
 
-//     let div = document.createElement( 'div' );
-//     div.innerHTML = content;
-//     comp.dom = div;
+
+/**
+ * Creates a new grouped timer component.
+ * 
+ * @param {string} overlayId The id of the desired overlay.
+ * @param {Node} contentArea The content area for dot timers.
+ * @param {{dom: HTMLDivElement, components: OverlayComponent[]}} group The component group.
+ * @param {OverlayComponent} comp The overlay component.
+ */
+function createGroupedTimer( overlayId, contentArea, group, comp ) {
+    let displayText = getTimerLabel( overlayId, comp );
+    let content = targetGroupTimerTemplate( { value: displayText } );
+
+    let div = document.createElement( 'div' );
+    div.innerHTML = content;
+    comp.dom = div;
     
-//     if ( comp.action.timerIcon != null ) {
-//         div.innerHTML = timerIconTemplate( { icon: comp.action.timerIcon, iconStyle: `"style="position: absolute; margin-left: -${dotTextHeight + 2}px;  height: ${dotTextHeight}px;` } ) + div.innerHTML;
-//     }
+    if ( comp.action.timerIcon != null ) {
+        div.innerHTML = timerIconTemplate( { icon: comp.action.timerIcon, iconStyle: `"style="position: absolute; margin-left: -${overlayInstances[ overlayId ].dotTextHeight + 2}px;  height: ${overlayInstances[ overlayId ].dotTextHeight}px;` } ) + div.innerHTML;
+    }
 
-//     comp.dom = div;
-//     comp.description = displayText;
+    comp.dom = div;
+    comp.description = displayText;
 
-//     // Create a method that will remove the component from the screen.
-//     let groupKey = group.name;
-//     comp.removeComponent = () => {
-//         comp.dom.parentNode && comp.dom.parentNode.removeChild( comp.dom );
-//         window.clearInterval( comp.intervalId );
-//         ArrayUtilities.remove( overlayGroups[ groupKey ]?.components, f => f.instanceId == comp.instanceId );
+    // Create a method that will remove the component from the screen.
+    let groupKey = group.name;
+    comp.removeComponent = () => {
+        comp.dom.parentNode && comp.dom.parentNode.removeChild( comp.dom );
+        window.clearInterval( comp.intervalId );
+        ArrayUtilities.remove( overlayInstances[ overlayId ].overlayGroups[ groupKey ]?.components, f => f.instanceId == comp.instanceId );
 
-//         window.setTimeout( () => {
-//             // We delay execution of this code and move it to the end of the stack 
-//             // because other overlay components may be added to this group.
-//             if ( overlayGroups[ groupKey ]?.components?.length === 0 ) {
-//                 overlayGroups[ groupKey ].dom.parentNode && overlayGroups[ groupKey ].dom.parentNode.removeChild( overlayGroups[ groupKey ].dom );
-//                 delete overlayGroups[ groupKey ];
-//             }
-//         } );
-//     };
+        window.setTimeout( () => {
+            // We delay execution of this code and move it to the end of the stack 
+            // because other overlay components may be added to this group.
+            if ( overlayInstances[ overlayId ].overlayGroups[ groupKey ]?.components?.length === 0 ) {
+                overlayInstances[ overlayId ].overlayGroups[ groupKey ].dom.parentNode && overlayInstances[ overlayId ].overlayGroups[ groupKey ].dom.parentNode.removeChild( overlayInstances[ overlayId ].overlayGroups[ groupKey ].dom );
+                delete overlayInstances[ overlayId ].overlayGroups[ groupKey ];
+            }
+        } );
+    };
     
-//     applyTimerSettings( contentArea, comp, group );
+    applyTimerSettings( overlayId, contentArea, comp, group );
 
-//     group.dom.appendChild( comp.dom );
-//     group.components.push( comp );
+    group.dom.appendChild( comp.dom );
+    group.components.push( comp );
 
-// }
-
-
-
-
-
-
-
-
-
-
-// /**
-//  * Returns the group for the specified name.  If the group is not found, 
-//  * then a new group is created.
-//  * 
-//  * @param {Node} contentArea The content area for timers.
-//  * @param {string} groupName The name of the desired group.
-//  */
-// function getTimerGroup( contentArea, groupName ) {
-
-//     for ( let key in overlayGroups ) {
-//         if ( key === groupName && overlayGroups.hasOwnProperty( key ) ) {
-//             return overlayGroups[ key ];
-//         }
-//     }
-
-//     let content = targetGroupTemplate( { name: groupName } );
-//     let div = document.createElement( 'div' );
-//     div.classList.add( 'mob-dot-group' );
-//     div.innerHTML = content;
-//     let h6 = div.querySelector( 'h6' );
-
-//     h6.style.fontSize = `${groupHeaderSize}px`;
-//     h6.style.color = groupHeaderColor;
-//     h6.style.fontWeight = groupHeaderWeight;
-//     let h6BorderColor = '#000000'
-//     h6.style.textShadow = `0px 0px 1px ${h6BorderColor}, -1px -1px 0 ${h6BorderColor}, 1px -1px 0 ${h6BorderColor}, -1px 1px 0 ${h6BorderColor}, 1px 1px 0 ${h6BorderColor}`;
-
-//     if ( hideTargetLabel ) {
-//         h6.style.display = 'none';
-//     } else {
-//         delete h6.style.display;
-//     }
-
-//     contentArea.appendChild( div );
-
-//     overlayGroups[ groupName ] = {
-//         visible: true,
-//         name: groupName,
-//         dom: div,
-//         components: [],
-//         updateVisibility: () => {
-//             let g = overlayGroups[ groupName ];
-
-//             if ( g.components?.length > 0 ) {
-//                 let visible = _.some( g.components, c => !c.hidden );
-
-//                 if ( visible && !g.visible ) {
-//                     contentArea.appendChild( g.dom );
-//                     g.visible = true;
-
-//                 } else if ( !visible && g.visible ) {
-//                     contentArea.removeChild( g.dom );
-//                     g.visible = false;
-
-//                 }
-
-//             } else {
-//                 contentArea.removeChild( g.dom );
-//                 g.visible = false;
-
-//             }
-
-//         }
-//     };
-//     return overlayGroups[ groupName ];
-// }
+}
 
 
 
@@ -1050,42 +1039,118 @@ function eachOverlay( fn ) {
 
 
 
-// /**
-//  * Creates a new dot timer and places it in the content area.
-//  * 
-//  * @param {Node} contentArea The content area for dot timers.
-//  * @param {OverlayComponent} comp The dot timer component.
-//  */
-// function createUngroupedDotTimer( contentArea, comp ) {
-//     let displayText = getTimerLabel( comp );
-//     let content = timerTemplate( { value: displayText } );
+/**
+ * Returns the group for the specified name.  If the group is not found, 
+ * then a new group is created.
+ * 
+ * @param {string} overlayId The id of the desired overlay.
+ * @param {Node} contentArea The content area for timers.
+ * @param {string} groupName The name of the desired group.
+ */
+function getTimerGroup( overlayId, contentArea, groupName ) {
 
-//     // Create the component's dom element and append it to the content area.
-//     let div = document.createElement( 'div' );
-//     div.innerHTML = content;
+    for ( let key in overlayInstances[ overlayId ].overlayGroups ) {
+        if ( key === groupName && overlayInstances[ overlayId ].overlayGroups.hasOwnProperty( key ) ) {
+            return overlayInstances[ overlayId ].overlayGroups[ key ];
+        }
+    }
+
+    let content = targetGroupTemplate( { name: groupName } );
+    let div = document.createElement( 'div' );
+    div.classList.add( 'mob-dot-group' );
+    div.innerHTML = content;
+    let h6 = div.querySelector( 'h6' );
+
+    h6.style.fontSize = `${overlayInstances[ overlayId ].groupHeaderSize}px`;
+    h6.style.color = overlayInstances[ overlayId ].groupHeaderColor;
+    h6.style.fontWeight = overlayInstances[ overlayId ].groupHeaderWeight;
+    let h6BorderColor = '#000000'
+    h6.style.textShadow = `0px 0px 1px ${h6BorderColor}, -1px -1px 0 ${h6BorderColor}, 1px -1px 0 ${h6BorderColor}, -1px 1px 0 ${h6BorderColor}, 1px 1px 0 ${h6BorderColor}`;
+
+    if ( overlayInstances[ overlayId ].hideTargetLabel ) {
+        h6.style.display = 'none';
+    } else {
+        delete h6.style.display;
+    }
+
+    contentArea.appendChild( div );
+
+    overlayInstances[ overlayId ].overlayGroups[ groupName ] = {
+        visible: true,
+        name: groupName,
+        dom: div,
+        components: [],
+        updateVisibility: () => {
+            let g = overlayInstances[ overlayId ].overlayGroups[ groupName ];
+
+            if ( g.components?.length > 0 ) {
+                let visible = _.some( g.components, c => !c.hidden );
+
+                if ( visible && !g.visible ) {
+                    contentArea.appendChild( g.dom );
+                    g.visible = true;
+
+                } else if ( !visible && g.visible ) {
+                    contentArea.removeChild( g.dom );
+                    g.visible = false;
+
+                }
+
+            } else {
+                contentArea.removeChild( g.dom );
+                g.visible = false;
+
+            }
+
+        }
+    };
+    return overlayInstances[ overlayId ].overlayGroups[ groupName ];
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Creates a new dot timer and places it in the content area.
+ * 
+ * @param {string} overlayId The id of the desired overlay.
+ * @param {Node} contentArea The content area for dot timers.
+ * @param {OverlayComponent} comp The dot timer component.
+ */
+function createUngroupedDotTimer( overlayId, contentArea, comp ) {
+    let displayText = getTimerLabel( overlayId, comp );
+    let content = timerTemplate( { value: displayText } );
+
+    // Create the component's dom element and append it to the content area.
+    let div = document.createElement( 'div' );
+    div.innerHTML = content;
     
-//     if ( comp.action.timerIcon != null ) {
-//         div.innerHTML = timerIconTemplate( { icon: comp.action.timerIcon, iconStyle: `"style="position: absolute; margin-left: -${dotTextHeight + 2}px;  height: ${dotTextHeight}px;` } ) + div.innerHTML;
-//     }
+    if ( comp.action.timerIcon != null ) {
+        div.innerHTML = timerIconTemplate( { icon: comp.action.timerIcon, iconStyle: `"style="position: absolute; margin-left: -${overlayInstances[ overlayId ].dotTextHeight + 2}px;  height: ${overlayInstances[ overlayId ].dotTextHeight}px;` } ) + div.innerHTML;
+    }
 
-//     comp.dom = div;
-//     comp.description = displayText;
+    comp.dom = div;
+    comp.description = displayText;
 
-//     // Create a method that will remove the component from the screen.
-//     comp.removeComponent = () => {
-//         comp.dom.parentNode && comp.dom.parentNode.removeChild( comp.dom );
-//         window.clearInterval( comp.intervalId );
-//         ArrayUtilities.remove( overlayComponents, f => f.instanceId == comp.instanceId );
-//     };
+    // Create a method that will remove the component from the screen.
+    comp.removeComponent = () => {
+        comp.dom.parentNode && comp.dom.parentNode.removeChild( comp.dom );
+        window.clearInterval( comp.intervalId );
+        ArrayUtilities.remove( overlayInstances[ overlayId ].overlayComponents, f => f.instanceId == comp.instanceId );
+    };
     
-//     applyTimerSettings( contentArea, comp );
+    applyTimerSettings( overlayId, contentArea, comp );
     
-//     contentArea.appendChild( comp.dom );
-//     overlayComponents.push( comp );
+    contentArea.appendChild( comp.dom );
+    overlayInstances[ overlayId ].overlayComponents.push( comp );
 
-// }
-
-
+}
 
 
 
@@ -1094,42 +1159,43 @@ function eachOverlay( fn ) {
 
 
 
-// /**
-//  * Creates a new timer and places it in the content area.
-//  * 
-//  * @param {Node} contentArea The content area for dot timers.
-//  * @param {OverlayComponent} comp The dot timer component.
-//  */
-// function createUngroupedTimer( contentArea, comp ) {
-//     let displayText = getTimerLabel( comp );
-//     let content = timerTemplate( { value: displayText } );
 
-//     // Create the component's dom element and append it to the content area.
-//     let div = document.createElement( 'div' );
-//     div.innerHTML = content;
+
+/**
+ * Creates a new timer and places it in the content area.
+ * 
+ * @param {string} overlayId The id of the desired overlay.
+ * @param {Node} contentArea The content area for dot timers.
+ * @param {OverlayComponent} comp The dot timer component.
+ */
+function createUngroupedTimer( overlayId, contentArea, comp ) {
+    let displayText = getTimerLabel( overlayId, comp );
+    let content = timerTemplate( { value: displayText } );
+
+    // Create the component's dom element and append it to the content area.
+    let div = document.createElement( 'div' );
+    div.innerHTML = content;
     
-//     if ( comp.action.timerIcon != null ) {
-//         div.innerHTML = timerIconTemplate( { icon: comp.action.timerIcon, iconStyle: `"style="position: absolute; margin-left: -${dotTextHeight + 2}px;  height: ${dotTextHeight}px;` } ) + div.innerHTML;
-//     }
+    if ( comp.action.timerIcon != null ) {
+        div.innerHTML = timerIconTemplate( { icon: comp.action.timerIcon, iconStyle: `"style="position: absolute; margin-left: -${overlayInstances[ overlayId ].dotTextHeight + 2}px;  height: ${overlayInstances[ overlayId ].dotTextHeight}px;` } ) + div.innerHTML;
+    }
 
-//     comp.dom = div;
-//     comp.description = displayText;
+    comp.dom = div;
+    comp.description = displayText;
 
-//     // Create a method that will remove the component from the screen.
-//     comp.removeComponent = () => {
-//         comp.dom.parentNode && comp.dom.parentNode.removeChild( comp.dom );
-//         window.clearInterval( comp.intervalId );
-//         ArrayUtilities.remove( overlayComponents, f => f.instanceId == comp.instanceId );
-//     };
+    // Create a method that will remove the component from the screen.
+    comp.removeComponent = () => {
+        comp.dom.parentNode && comp.dom.parentNode.removeChild( comp.dom );
+        window.clearInterval( comp.intervalId );
+        ArrayUtilities.remove( overlayInstances[ overlayId ].overlayComponents, f => f.instanceId == comp.instanceId );
+    };
     
-//     applyTimerSettings( contentArea, comp );
+    applyTimerSettings( overlayId, contentArea, comp );
     
-//     contentArea.appendChild( comp.dom );
-//     overlayComponents.push( comp );
+    contentArea.appendChild( comp.dom );
+    overlayInstances[ overlayId ].overlayComponents.push( comp );
 
-// }
-
-
+}
 
 
 
@@ -1138,191 +1204,192 @@ function eachOverlay( fn ) {
 
 
 
-// /**
-//  * Applies the general timer settings to the given component.
-//  * 
-//  * @param {Node} contentArea The content area for timers.
-//  * @param {OverlayComponent} comp Applies the general timer settings to the given timer component.
-//  * @param {TimerGroup} group The containing group, if available.
-//  */
-// function applyTimerSettings( contentArea, comp, group ) {
-//     // Apply the styles required to make the progress bar height match the 
-//     // specified number in the overlay settings.
-//     comp.dom.querySelector( '.progress' ).style.marginBottom = contentArea.style.lineHeight;
-//     if ( comp.action.overrideTimerColor ) {
-//         comp.dom.querySelector( '.determinate' ).style.backgroundColor = comp.action.overrideTimerColor;
-//         comp.dom.querySelector( '.progress' ).style.backgroundColor = comp.action.timerBackgroundColor;
-//     }
 
-//     if ( showRemainingDuration || comp.action.showRemainingDuration ) {
-//         comp.dom.querySelector( 'span.time-remaining' ).innerHTML = `(${comp.action.duration})&nbsp;`;
-//     } else {
-//         comp.dom.querySelector( 'span.time-remaining' ).innerHTML = ``;
-//     }
 
-//     // Set the starting conditions for the timer.
-//     comp.start = comp.timestamp;
-//     comp.timeRemaining = comp.action.duration;
+/**
+ * Applies the general timer settings to the given component.
+ * 
+ * @param {string} overlayId The id of the desired overlay.
+ * @param {Node} contentArea The content area for timers.
+ * @param {OverlayComponent} comp Applies the general timer settings to the given timer component.
+ * @param {TimerGroup} group The containing group, if available.
+ */
+function applyTimerSettings( overlayId, contentArea, comp, group ) {
+    // Apply the styles required to make the progress bar height match the 
+    // specified number in the overlay settings.
+    comp.dom.querySelector( '.progress' ).style.marginBottom = contentArea.style.lineHeight;
+    if ( comp.action.overrideTimerColor ) {
+        comp.dom.querySelector( '.determinate' ).style.backgroundColor = comp.action.overrideTimerColor;
+        comp.dom.querySelector( '.progress' ).style.backgroundColor = comp.action.timerBackgroundColor;
+    }
 
-//     // Update visibility
-//     if ( comp.action.hideTimer ) {
-//         let doHide = true;
+    if ( overlayInstances[ overlayId ].showRemainingDuration || comp.action.showRemainingDuration ) {
+        comp.dom.querySelector( 'span.time-remaining' ).innerHTML = `(${comp.action.duration})&nbsp;`;
+    } else {
+        comp.dom.querySelector( 'span.time-remaining' ).innerHTML = ``;
+    }
 
-//         if ( comp.action.hideConditions?.length > 0 ) {
-//             let namedGroups = Object.keys( comp.matches?.groups );
+    // Set the starting conditions for the timer.
+    comp.start = comp.timestamp;
+    comp.timeRemaining = comp.action.duration;
 
-//             for ( let i = 0; i < comp.action.hideConditions.length; i++ ) {
-//                 let hc = comp.action.hideConditions[ i ];
+    // Update visibility
+    if ( comp.action.hideTimer ) {
+        let doHide = true;
 
-//                 if ( hc.operatorType === OperatorTypes.Equals ) {
-//                     // If it does not exist or the values do not match, then bad.
-//                     if ( namedGroups.indexOf( hc.variableName ) === -1 || !StringUtilities.compare( hc.variableValue, comp.matches.groups[ hc.variableName ] ) ) {
-//                         doHide = false;
-//                         break;
-//                     }
+        if ( comp.action.hideConditions?.length > 0 ) {
+            let namedGroups = Object.keys( comp.matches?.groups );
 
-//                 } else if ( hc.operatorType === OperatorTypes.DoesNotEqual ) {
-//                     // If it exists and the value matches, then bad.
-//                     if ( namedGroups.indexOf( hc.variableName ) > -1 && StringUtilities.compare( hc.variableValue, comp.matches.groups[ hc.variableName ] ) ) {
-//                         doHide = false;
-//                         break;
-//                     }
+            for ( let i = 0; i < comp.action.hideConditions.length; i++ ) {
+                let hc = comp.action.hideConditions[ i ];
 
-//                 }
+                if ( hc.operatorType === OperatorTypes.Equals ) {
+                    // If it does not exist or the values do not match, then bad.
+                    if ( namedGroups.indexOf( hc.variableName ) === -1 || !StringUtilities.compare( hc.variableValue, comp.matches.groups[ hc.variableName ] ) ) {
+                        doHide = false;
+                        break;
+                    }
 
-//             }
+                } else if ( hc.operatorType === OperatorTypes.DoesNotEqual ) {
+                    // If it exists and the value matches, then bad.
+                    if ( namedGroups.indexOf( hc.variableName ) > -1 && StringUtilities.compare( hc.variableValue, comp.matches.groups[ hc.variableName ] ) ) {
+                        doHide = false;
+                        break;
+                    }
 
-//         }
+                }
 
-//         if ( doHide ) {
-//             comp.hidden = comp.action.hideTimer;
-//             comp.dom.style.display = 'none';
-//         }
-//     }
+            }
 
-//     // Setting the initial state of the determinate will prevent the progress 
-//     // bar from jumping from the end to the beginning when shown.
-//     if ( comp.action.actionType === ActionTypes.Countdown || comp.action.actionType === ActionTypes.BeneficialTimer ) {
-//         comp.dom.querySelector( 'div.determinate' ).style.width = `100%`;
-//     } else {
-//         comp.dom.querySelector( 'div.determinate' ).style.width = `0%`;
-//     }
+        }
 
-//     // Set the update method.
-//     comp.intervalId = window.setInterval( () => {
-//         let perc = ( Math.abs( ( new Date() ) - comp.start ) / 1000 ) / comp.action.duration;
+        if ( doHide ) {
+            comp.hidden = comp.action.hideTimer;
+            comp.dom.style.display = 'none';
+        }
+    }
 
-//         comp.timeRemaining = comp.action.duration - ( comp.action.duration * perc );
+    // Setting the initial state of the determinate will prevent the progress 
+    // bar from jumping from the end to the beginning when shown.
+    if ( comp.action.actionType === ActionTypes.Countdown || comp.action.actionType === ActionTypes.BeneficialTimer ) {
+        comp.dom.querySelector( 'div.determinate' ).style.width = `100%`;
+    } else {
+        comp.dom.querySelector( 'div.determinate' ).style.width = `0%`;
+    }
 
-//         if ( comp.action.actionType === ActionTypes.Countdown || comp.action.actionType === ActionTypes.BeneficialTimer ) {
-//             comp.dom.querySelector( 'div.determinate' ).style.width = `${100 - ( perc * 100 )}%`;
-//         } else {
-//             comp.dom.querySelector( 'div.determinate' ).style.width = `${perc * 100}%`;
-//         }
+    // Set the update method.
+    comp.intervalId = window.setInterval( () => {
+        let perc = ( Math.abs( ( new Date() ) - comp.start ) / 1000 ) / comp.action.duration;
 
-//         if ( showRemainingDuration || comp.action.showRemainingDuration ) {
-//             comp.dom.querySelector( 'span.time-remaining' ).innerHTML = `(${getDurationLabel( comp.timeRemaining )})&nbsp;`;
-//         } else {
-//             comp.dom.querySelector( 'span.time-remaining' ).innerHTML = ``;
-//         }
+        comp.timeRemaining = comp.action.duration - ( comp.action.duration * perc );
 
-//         if ( comp.action.ifEndingSoon && comp.action.endingDuration > 0 && comp.timeRemaining > 0 && comp.timeRemaining <= comp.action.endingDuration ) {
-//             // Apply any ending soon condition effects.
+        if ( comp.action.actionType === ActionTypes.Countdown || comp.action.actionType === ActionTypes.BeneficialTimer ) {
+            comp.dom.querySelector( 'div.determinate' ).style.width = `${100 - ( perc * 100 )}%`;
+        } else {
+            comp.dom.querySelector( 'div.determinate' ).style.width = `${perc * 100}%`;
+        }
 
-//             if ( comp.action.endingSoonChangeColor ) {
-//                 comp.dom.querySelector( 'div.determinate' ).style.backgroundColor = comp.action.endingSoonColor;
-//                 comp.dom.querySelector( 'div.progress' ).style.backgroundColor = comp.action.endingSoonBackgroundColor;
-//             }
+        if ( overlayInstances[ overlayId ].showRemainingDuration || comp.action.showRemainingDuration ) {
+            comp.dom.querySelector( 'span.time-remaining' ).innerHTML = `(${getDurationLabel( overlayId, comp.timeRemaining )})&nbsp;`;
+        } else {
+            comp.dom.querySelector( 'span.time-remaining' ).innerHTML = ``;
+        }
 
-//             if ( comp.hidden && comp.action.endingSoonShowTimer ) {
-//                 comp.hidden = false;
-//                 comp.dom.style.display = null;
-//                 if ( groupByTarget && group ) {
-//                     group.updateVisibility();
-//                 }
-//             }
+        if ( comp.action.ifEndingSoon && comp.action.endingDuration > 0 && comp.timeRemaining > 0 && comp.timeRemaining <= comp.action.endingDuration ) {
+            // Apply any ending soon condition effects.
 
-//             if ( !comp.endingSoonSpoken && comp.action.endingSoonSpeak ) {
-//                 comp.endingSoonSpoken = true;
-//                 speakPhrase( comp.action.endingSoonSpeakPhrase, comp.action.endingSoonInterruptSpeech, comp.matches, comp.action.duration );
-//             }
+            if ( comp.action.endingSoonChangeColor ) {
+                comp.dom.querySelector( 'div.determinate' ).style.backgroundColor = comp.action.endingSoonColor;
+                comp.dom.querySelector( 'div.progress' ).style.backgroundColor = comp.action.endingSoonBackgroundColor;
+            }
 
-//             if ( !comp.endingAudioPlayed && comp.action.endingPlayAudio ) {
-//                 comp.endingAudioPlayed = true;
-//                 playAudioFile( comp.action.endingPlayAudioFileId );
-//             }
+            if ( comp.hidden && comp.action.endingSoonShowTimer ) {
+                comp.hidden = false;
+                comp.dom.style.display = null;
+                if ( overlayInstances[ overlayId ].groupByTarget && group ) {
+                    group.updateVisibility();
+                }
+            }
 
-//             if ( !comp.endingCopied && comp.action.endingClipboard ) {
-//                 comp.endingCopied = true;
-//                 ipcRenderer.send( 'clipboard:writeText', comp.action.endingClipboardText );
-//             }
+            if ( !comp.endingSoonSpoken && comp.action.endingSoonSpeak ) {
+                comp.endingSoonSpoken = true;
+                speakPhrase( comp.action.endingSoonSpeakPhrase, comp.action.endingSoonInterruptSpeech, comp.matches, comp.action.duration );
+            }
 
-//             if ( !comp.endingSoonTextDisplayed && comp.action.endingSoonDisplayText ) {
-//                 comp.endingSoonTextDisplayed = true;
-//                 sendDisplayTextToOverlay( comp.action.endingSoonTextOverlayId, comp.action.endingSoonText, comp.action.endingSoonTextDuration );
-//             }
+            if ( !comp.endingAudioPlayed && comp.action.endingPlayAudio ) {
+                comp.endingAudioPlayed = true;
+                playAudioFile( comp.action.endingPlayAudioFileId );
+            }
 
-//         }
+            if ( !comp.endingCopied && comp.action.endingClipboard ) {
+                comp.endingCopied = true;
+                ipcRenderer.send( 'clipboard:writeText', comp.action.endingClipboardText );
+            }
+
+            if ( !comp.endingSoonTextDisplayed && comp.action.endingSoonDisplayText ) {
+                comp.endingSoonTextDisplayed = true;
+                sendDisplayTextToOverlay( comp.action.endingSoonTextOverlayId, comp.action.endingSoonText, comp.action.endingSoonTextDuration );
+            }
+
+        }
         
-//         if ( comp.timeRemaining <= 0 && !comp.action.repeatTimer && ( comp.action.remainAfterEnded || comp.action.notifyWhenEnded ) ) {
-//             // If the timer has ended, but is required to remain for a 
-//             // duration, apply the ended conditions to the timer.
+        if ( comp.timeRemaining <= 0 && !comp.action.repeatTimer && ( comp.action.remainAfterEnded || comp.action.notifyWhenEnded ) ) {
+            // If the timer has ended, but is required to remain for a 
+            // duration, apply the ended conditions to the timer.
 
-//             if ( comp.action.endedChangeColor ) {
-//                 comp.dom.querySelector( 'div.determinate' ).style.backgroundColor = comp.action.endedColor;
-//                 comp.dom.querySelector( 'div.progress' ).style.backgroundColor = comp.action.endedBackgroundColor;
-//             }
+            if ( comp.action.endedChangeColor ) {
+                comp.dom.querySelector( 'div.determinate' ).style.backgroundColor = comp.action.endedColor;
+                comp.dom.querySelector( 'div.progress' ).style.backgroundColor = comp.action.endedBackgroundColor;
+            }
 
-//             if ( comp.hidden && comp.action.remainAfterEnded ) {
-//                 comp.hidden = false;
-//                 comp.dom.style.display = null;
-//                 if ( groupByTarget && group ) {
-//                     group.updateVisibility();
-//                 }
-//             }
+            if ( comp.hidden && comp.action.remainAfterEnded ) {
+                comp.hidden = false;
+                comp.dom.style.display = null;
+                if ( overlayInstances[ overlayId ].groupByTarget && group ) {
+                    group.updateVisibility();
+                }
+            }
 
-//             if ( !comp.endedSpoken && comp.action.endedSpeak ) {
-//                 comp.endedSpoken = true;
-//                 speakPhrase( comp.action.endedSpeakPhrase, comp.action.endedInterruptSpeech, comp.matches, comp.action.duration );
-//             }
+            if ( !comp.endedSpoken && comp.action.endedSpeak ) {
+                comp.endedSpoken = true;
+                speakPhrase( comp.action.endedSpeakPhrase, comp.action.endedInterruptSpeech, comp.matches, comp.action.duration );
+            }
 
-//             if ( !comp.endedAudioPlayed && comp.action.endedPlayAudio ) {
-//                 comp.endedAudioPlayed = true;
-//                 playAudioFile( comp.action.endedPlayAudioFileId );
-//             }
+            if ( !comp.endedAudioPlayed && comp.action.endedPlayAudio ) {
+                comp.endedAudioPlayed = true;
+                playAudioFile( comp.action.endedPlayAudioFileId );
+            }
 
-//             if ( !comp.endedCopied && comp.action.endedClipboard ) {
-//                 comp.endedCopied = true;
-//                 ipcRenderer.send( 'clipboard:writeText', comp.action.endedClipboardText );
-//             }
+            if ( !comp.endedCopied && comp.action.endedClipboard ) {
+                comp.endedCopied = true;
+                ipcRenderer.send( 'clipboard:writeText', comp.action.endedClipboardText );
+            }
 
-//             if ( !comp.endedTextDisplayed && comp.action.endedDisplayText ) {
-//                 comp.endedTextDisplayed = true;
-//                 sendDisplayTextToOverlay( comp.action.endedTextOverlayId, comp.action.endedText, comp.action.endedTextDuration );
-//             }
-//         }
+            if ( !comp.endedTextDisplayed && comp.action.endedDisplayText ) {
+                comp.endedTextDisplayed = true;
+                sendDisplayTextToOverlay( comp.action.endedTextOverlayId, comp.action.endedText, comp.action.endedTextDuration );
+            }
+        }
 
-//         if ( ( comp.timeRemaining <= 0 && !comp.action.remainAfterEnded && !comp.action.repeatTimer ) || ( comp.timeRemaining <= -1 * comp.action.remainDuration && !comp.action.repeatTimer ) ) {
-//             // When conditions met that require the timer be removed from the 
-//             // screen, then call the remove comonponent method.
+        if ( ( comp.timeRemaining <= 0 && !comp.action.remainAfterEnded && !comp.action.repeatTimer ) || ( comp.timeRemaining <= -1 * comp.action.remainDuration && !comp.action.repeatTimer ) ) {
+            // When conditions met that require the timer be removed from the 
+            // screen, then call the remove comonponent method.
             
-//             delayRemoveComponent( comp );
+            delayRemoveComponent( overlayId, comp );
 
-//         } else if ( comp.timeRemaining <= 0 && comp.action.repeatTimer ) {
+        } else if ( comp.timeRemaining <= 0 && comp.action.repeatTimer ) {
             
-//             comp.repeatCount = comp.repeatCount > 0 ? comp.repeatCount + 1 : 1;
+            comp.repeatCount = comp.repeatCount > 0 ? comp.repeatCount + 1 : 1;
             
-//             if ( comp.action.repeatCount == null || comp.repeatCount <= comp.action.repeatCount ) {
-//                 comp = resetTimerComponentClock( comp, comp.repeatCount );
-//             } else {
-//                 delayRemoveComponent( comp );
-//             }
-//         }
+            if ( comp.action.repeatCount == null || comp.repeatCount <= comp.action.repeatCount ) {
+                comp = resetTimerComponentClock( comp, comp.repeatCount );
+            } else {
+                delayRemoveComponent( overlayId, comp );
+            }
+        }
 
-//     }, 250 );
-// }
-
-
+    }, 250 );
+}
 
 
 
@@ -1331,29 +1398,32 @@ function eachOverlay( fn ) {
 
 
 
-// /**
-//  * Removes the given component after the specified number of milliseconds have 
-//  * passed.
-//  * 
-//  * @param {OverlayComponent} comp The component to remove.
-//  * @param {number} delay The number of milliseconds to delay removal.
-//  */
-// function delayRemoveComponent( comp, delay ) {
 
-//     if ( destroySchedule[ comp.instanceId ] == null ) {
+
+/**
+ * Removes the given component after the specified number of milliseconds have 
+ * passed.
+ * 
+ * @param {string} overlayId The id of the desired overlay.
+ * @param {OverlayComponent} comp The component to remove.
+ * @param {number} delay The number of milliseconds to delay removal.
+ */
+function delayRemoveComponent( overlayId, comp, delay ) {
+
+    if ( destroySchedule[ comp.instanceId ] == null ) {
     
-//         delay = delay > 0 ? delay : 1000;
+        delay = delay > 0 ? delay : 1000;
     
-//         let timeoutId = window.setTimeout( () => {
-//             comp.removeComponent();
-//             ipcRenderer.send( 'log:destroy:component', comp.instanceId );
-//             destroySchedule[ comp.instanceId ] = null;
-//         }, delay );
+        let timeoutId = window.setTimeout( () => {
+            comp.removeComponent();
+            ipcRenderer.send( 'log:destroy:component', comp.instanceId );
+            destroySchedule[ comp.instanceId ] = null;
+        }, delay );
 
-//         destroySchedule[ comp.instanceId ] = timeoutId;
-//     }
+        destroySchedule[ comp.instanceId ] = timeoutId;
+    }
     
-// }
+}
 
 
 
@@ -1405,41 +1475,42 @@ function eachOverlay( fn ) {
 
 
 
-// /**
-//  * Restarts a named timer component.  Using this method, only the description/text of the timer is considered when restarting.
-//  * 
-//  * @returns {boolean} Returns true if the given component should not be created.
-//  * 
-//  * @param {OverlayComponent} comp The overlay component to restart.
-//  */
-// function restartTimerComponent( comp ) {
+/**
+ * Restarts a named timer component.  Using this method, only the description/text of the timer is considered when restarting.
+ * 
+ * @returns {boolean} Returns true if the given component should not be created.
+ * 
+ * @param {string} overlayId The id of the desired overlay.
+ * @param {OverlayComponent} comp The overlay component to restart.
+ */
+function restartTimerComponent( overlayId, comp ) {
 
-//     if ( comp.action.restartBehavior === TimerRestartBehaviors.RestartOnDuplicate ) {
+    if ( comp.action.restartBehavior === TimerRestartBehaviors.RestartOnDuplicate ) {
         
-//         if ( comp.action.actionType === ActionTypes.BeneficialTimer || comp.action.actionType === ActionTypes.DotTimer ) {
-//             destroyComponents( c => c.action.actionId == comp.action.actionId && c.matches.groups.target === comp.matches.groups.target );
+        if ( comp.action.actionType === ActionTypes.BeneficialTimer || comp.action.actionType === ActionTypes.DotTimer ) {
+            destroyComponents( overlayId, c => c.action.actionId == comp.action.actionId && c.matches.groups?.target === comp.matches.groups?.target );
 
-//         } else if ( comp.action.actionType === ActionTypes.Timer || comp.action.actionType === ActionTypes.Countdown ) {
-//             // If a timer's displayText property was not supplied by the user, 
-//             // then the description (which is the text that is rendered on the 
-//             // progress bar) of a timer is set to the trigger's name.  If the 
-//             // parameter component's display text is null, it would then match 
-//             // the description (Trigger's Name, by default) of the same action 
-//             // id.
-//             destroyComponents( c => c.action.actionId == comp.action.actionId && ( comp.action.displayText == null || c.description === comp.action.displayText ) );
+        } else if ( comp.action.actionType === ActionTypes.Timer || comp.action.actionType === ActionTypes.Countdown ) {
+            // If a timer's displayText property was not supplied by the user, 
+            // then the description (which is the text that is rendered on the 
+            // progress bar) of a timer is set to the trigger's name.  If the 
+            // parameter component's display text is null, it would then match 
+            // the description (Trigger's Name, by default) of the same action 
+            // id.
+            destroyComponents( overlayId, c => c.action.actionId == comp.action.actionId && ( comp.action.displayText == null || c.description === comp.action.displayText ) );
             
-//         }
+        }
 
-//     } else if ( comp.action.restartBehavior === TimerRestartBehaviors.RestartTimer ) {
-//         destroyComponents( c => c.action.actionId == comp.action.actionId );
+    } else if ( comp.action.restartBehavior === TimerRestartBehaviors.RestartTimer ) {
+        destroyComponents( overlayId, c => c.action.actionId == comp.action.actionId );
         
-//     } else if ( comp.action.restartBehavior === TimerRestartBehaviors.DoNothing ) {
-//         // I realize this is bad practice, I'm tired, it's late, and it's documented.
-//         return true;
-//     }
+    } else if ( comp.action.restartBehavior === TimerRestartBehaviors.DoNothing ) {
+        // I realize this is bad practice, I'm tired, it's late, and it's documented.
+        return true;
+    }
 
-//     return false;
-// }
+    return false;
+}
 
 
 
@@ -1460,10 +1531,10 @@ function eachOverlay( fn ) {
 // function findComponents( predicate ) {
 //     let ocs = [];
 
-//     if ( groupByTarget ) {
+//     if ( overlayInstances[ overlayId ].groupByTarget ) {
 
-//         for ( let key of Object.keys( overlayGroups ) ) {
-//             overlayGroups[ key ].components?.forEach( c => {
+//         for ( let key of Object.keys( overlayInstances[ overlayId ].overlayGroups ) ) {
+//             overlayInstances[ overlayId ].overlayGroups[ key ].components?.forEach( c => {
 //                 if ( predicate( c ) ) {
 //                     ocs.push( c );
 //                 }
@@ -1472,7 +1543,7 @@ function eachOverlay( fn ) {
 
 //     } else {
 
-//         overlayComponents?.forEach( c => {
+//         overlayInstances[ overlayId ].overlayComponents?.forEach( c => {
 //             if ( predicate( c ) ) {
 //                 ocs.push( c );
 //             }
@@ -1492,41 +1563,42 @@ function eachOverlay( fn ) {
 
 
 
-// /**
-//  * Destroys all overlay components predicate returns truthy for.
-//  * 
-//  * @param {(component: OverlayComponent) => boolean} predicate Executed per iteration, passing in the overlay component as the first argument.
-//  */
-// function destroyComponents( predicate ) {
-//     let ocs = [];
+/**
+ * Destroys all overlay components predicate returns truthy for.
+ * 
+ * @param {string} overlayId The id of the desired overlay.
+ * @param {(component: OverlayComponent) => boolean} predicate Executed per iteration, passing in the overlay component as the first argument.
+ */
+function destroyComponents( overlayId, predicate ) {
+    let ocs = [];
 
-//     if ( groupByTarget ) {
+    if ( overlayInstances[ overlayId ].groupByTarget ) {
 
-//         for ( let key of Object.keys( overlayGroups ) ) {
-//             overlayGroups[ key ].components?.forEach( c => {
-//                 if ( predicate( c ) ) {
-//                     ocs.push( c );
-//                 }
-//             } );
-//         }
+        for ( let key of Object.keys( overlayInstances[ overlayId ].overlayGroups ) ) {
+            overlayInstances[ overlayId ].overlayGroups[ key ].components?.forEach( c => {
+                if ( predicate( c ) ) {
+                    ocs.push( c );
+                }
+            } );
+        }
 
-//     } else {
+    } else {
 
-//         overlayComponents?.forEach( c => {
-//             if ( predicate( c ) ) {
-//                 ocs.push( c );
-//             }
-//         } );
+        overlayInstances[ overlayId ].overlayComponents?.forEach( c => {
+            if ( predicate( c ) ) {
+                ocs.push( c );
+            }
+        } );
 
-//     }
+    }
 
-//     ocs.forEach( c => {
-//         c.removeComponent();
-//         ipcRenderer.send( 'log:destroy:component', c.instanceId );
-//     } );
+    ocs.forEach( c => {
+        c.removeComponent();
+        ipcRenderer.send( 'log:destroy:component', c.instanceId );
+    } );
     
-//     ocs = null;
-// }
+    ocs = null;
+}
 
 
 
@@ -1599,47 +1671,26 @@ function eachOverlay( fn ) {
 
 
 
-// /**
-//  * Sends the given text to the specified overlay.
-//  * 
-//  * @param {string} overlayId The id of the overlay.
-//  * @param {string} text The text value to display.
-//  * @param {number} duration The number of seconds to display text.
-//  */
-// function sendDisplayTextToOverlay( overlayId, text, duration ) {
-//     let comp = new OverlayComponent();
+/**
+ * Sends the given text to the specified overlay.
+ * 
+ * @param {string} overlayId The id of the overlay.
+ * @param {string} text The text value to display.
+ * @param {number} duration The number of seconds to display text.
+ */
+function sendDisplayTextToOverlay( overlayId, text, duration ) {
+    let comp = new OverlayComponent();
 
-//     comp.instanceId = nanoid();
-//     comp.action = new TriggerAction();
-//     comp.action.displayText = text;
-//     comp.action.duration = duration;
-//     comp.overlayId = overlayId;
-//     comp.matches = [];
-//     comp.timestamp = new Date();
+    comp.instanceId = nanoid();
+    comp.action = new TriggerAction();
+    comp.action.displayText = text;
+    comp.action.duration = duration;
+    comp.overlayId = overlayId;
+    comp.matches = [];
+    comp.timestamp = new Date();
 
-//     ipcRenderer.send( 'overlay:send:component', comp );
-// }
-
-
-
-
-
-
-
-
-
-
-// /**
-//  * Sends the given message to a log watcher to speak.
-//  * 
-//  * @param {string} phrase The phrase to speak.
-//  * @param {boolean} interruptSpeech If true, any speech will be interrupted.  If false, this text is added to the end of the queue.
-//  * @param {RegExpExecArray} parseResult The results of the regular expression match.
-//  * @param {number} timerDuration If this text is associated with a timer, this is the natural duration, in seconds, of the timer.
-//  */
-// function speakPhrase( phrase, interruptSpeech, parseResult, timerDuration ) {
-//     ipcRenderer.send( 'log:speak:phrase', { phrase: phrase, interruptSpeech: interruptSpeech, parseResult: parseResult, timerDuration: timerDuration } );
-// }
+    render( overlayId, comp );
+}
 
 
 
@@ -1650,34 +1701,54 @@ function eachOverlay( fn ) {
 
 
 
-// /**
-//  * Returns a label for the given duration.
-//  * 
-//  * @param {number} duration The duration, in seconds.
-//  */
-// function getDurationLabel( duration ) {
-//     if ( duration > 60 ) {
-//         let d = Math.ceil( duration );
-//         let hrs = Math.floor( d / 3600 );
-//         let mins = Math.floor( ( d % 3600 ) / 60 );
-//         let secs = d % 60;
+/**
+ * Sends the given message to a log watcher to speak.
+ * 
+ * @param {string} phrase The phrase to speak.
+ * @param {boolean} interruptSpeech If true, any speech will be interrupted.  If false, this text is added to the end of the queue.
+ * @param {RegExpExecArray} parseResult The results of the regular expression match.
+ * @param {number} timerDuration If this text is associated with a timer, this is the natural duration, in seconds, of the timer.
+ */
+function speakPhrase( phrase, interruptSpeech, parseResult, timerDuration ) {
+    ipcRenderer.send( 'log:speak:phrase', { phrase: phrase, interruptSpeech: interruptSpeech, parseResult: parseResult, timerDuration: timerDuration } );
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Returns a label for the given duration.
+ * 
+ * @param {string} overlayId The id of the desired overlay.
+ * @param {number} duration The duration, in seconds.
+ */
+function getDurationLabel( overlayId, duration ) {
+    if ( duration > 60 ) {
+        let d = Math.ceil( duration );
+        let hrs = Math.floor( d / 3600 );
+        let mins = Math.floor( ( d % 3600 ) / 60 );
+        let secs = d % 60;
         
-//         let label = '';
-//         if ( hrs > 0 ) {
-//             label += `${hrs}h ${mins}m ${secs}s`;
-//         } else if ( mins > 0 ) {
-//             label += `${mins}m ${secs}s`;
-//         } else if ( secs > 0 ) {
-//             label += `${secs}s`;
-//         }
+        let label = '';
+        if ( hrs > 0 ) {
+            label += `${hrs}h ${mins}m ${secs}s`;
+        } else if ( mins > 0 ) {
+            label += `${mins}m ${secs}s`;
+        } else if ( secs > 0 ) {
+            label += `${secs}s`;
+        }
 
-//         return label;
-//     } else {
-//         return `${Math.ceil(duration)}s`;
-//     }
-// }
-
-
+        return label;
+    } else {
+        return `${Math.ceil(duration)}s`;
+    }
+}
 
 
 
@@ -1686,19 +1757,21 @@ function eachOverlay( fn ) {
 
 
 
-// /**
-//  * Plays the specified audio file.
-//  * 
-//  * @param {string} fileId The id of the desired file.
-//  */
-// function playAudioFile( fileId ) {
-//     ipcRenderer.once( 'audio-file:get:url', ( e, url ) => {
-//         if ( url ) {
-//             let player = new Audio( url );
-//             player.play();
-//         }
-//     } );
-//     ipcRenderer.send( 'audio-file:get:url', fileId );
-// }
+
+
+/**
+ * Plays the specified audio file.
+ * 
+ * @param {string} fileId The id of the desired file.
+ */
+function playAudioFile( fileId ) {
+    ipcRenderer.once( 'audio-file:get:url', ( e, url ) => {
+        if ( url ) {
+            let player = new Audio( url );
+            player.play();
+        }
+    } );
+    ipcRenderer.send( 'audio-file:get:url', fileId );
+}
 
 module.exports = Renderer;
