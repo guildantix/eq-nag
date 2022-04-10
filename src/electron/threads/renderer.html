@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline';" /> -->
     <title>Overlay Testing</title>
 
     <link href="https://fonts.googleapis.com/css2?family=Open+Sans+Condensed:ital,wght@0,300;0,700;1,300&family=Oswald:wght@200;300;400;500;600;700&family=Press+Start+2P&family=Ranchers&family=Red+Rose:wght@300;400;700&family=Roboto+Mono:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;1,100;1,200;1,300;1,400;1,500;1,600;1,700&family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap" rel="stylesheet">
@@ -37,11 +38,99 @@
         }
 
         .drag {
-            border: 6px solid rgba(0,0,0,0.5);
-            /* -webkit-user-select: none;
-            -webkit-app-region: drag; */
+            -webkit-user-select: none;
+            user-select: none;
             background-color: rgba(0,0,0,0.15);
-            /* border: 6px solid black; */
+            resize: both;
+        }
+
+        .resize-n::after {
+            content: '';
+            background-color: rgba(0,0,0,0.5);
+            position: absolute;
+            right: -6px;
+            left: -6px;
+            top: -6px;
+            height: 6px;
+            cursor: ns-resize;
+        }
+
+        .resize-s::after {
+            content: '';
+            background-color: rgba(0,0,0,0.5);
+            position: absolute;
+            right: -6px;
+            left: -6px;
+            bottom: -6px;
+            height: 6px;
+            cursor: ns-resize;
+        }
+
+        .resize-e::after {
+            content: '';
+            background-color: rgba(0,0,0,0.5);
+            position: absolute;
+            right: -6px;
+            top: -6px;
+            width: 6px;
+            bottom: -6px;
+            cursor: ew-resize;
+        }
+
+        .resize-w::after {
+            content: '';
+            background-color: rgba(0,0,0,0.5);
+            position: absolute;
+            left: -6px;
+            top: -6px;
+            width: 6px;
+            bottom: -6px;
+            cursor: ew-resize;
+        }
+
+        .resize-ne::after {
+            content: '';
+            right: -6px;
+            /* left: -6px; */
+            top: -6px;
+            height: 12px;
+            width: 12px;
+            position: absolute;
+            cursor: ne-resize;
+        }
+
+        .resize-se::after {
+            content: '';
+            right: -6px;
+            /* left: -6px; */
+            bottom: -6px;
+            height: 12px;
+            width: 12px;
+            position: absolute;
+            cursor: se-resize;
+        }
+
+        .resize-sw::after {
+            content: '';
+            left: -6px;
+            /* left: -6px; */
+            bottom: -6px;
+            height: 12px;
+            width: 12px;
+            position: absolute;
+            cursor: sw-resize;
+        }
+
+        .resize-nw::after {
+            content: '';
+            left: -6px;
+            /* left: -6px; */
+            top: -6px;
+            height: 12px;
+            width: 12px;
+            position: absolute;
+            cursor: nw-resize;
+            border: 1px solid red;
         }
 
         .drag .overlay-name-watermark {
@@ -56,7 +145,8 @@
             display: inline-block;
             width: 500px;
             height: 50px; */
-            position: fixed;
+            position: absolute;
+            border: 1px solid orange;
             left: 6px;
             right: 6px;
             top: 6px;
@@ -79,7 +169,8 @@
         
         .content-area {
             z-index: 1;
-            position: fixed;
+            position: absolute;
+            border: 1px solid yellowgreen;
             left: 6px;
             right: 6px;
             top: 6px;
@@ -267,17 +358,17 @@
     </style>
 </head>
 <body>
-
+    <button>test</button>
     <script type="text/javascript">
         const urlParams = new URLSearchParams(window.location.search);
         var Renderer = require('./renderer');
         Renderer(+urlParams.get('originX'), +urlParams.get('originY'));
     </script>
 
-    <section class="body">
+    <!-- <section class="body">
         <div class="content-area" style="padding-left: 20px;"></div>
         <div class="healing-content-area"></div>
-    </section>
+    </section> -->
     
     <!-- =========================== -->
     <!--      Overlay Template       -->

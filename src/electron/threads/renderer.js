@@ -41,6 +41,8 @@ class OverlayInstance {
     dom;
     /** @type {HTMLElement} */
     title;
+    /** @type {OverlayWindow} */
+    model;
 }
 
 
@@ -75,6 +77,9 @@ var groupHeaderWeight = 400;
 var hideTargetLabel = false;
 /** @type {Record<number, number>} */
 var destroySchedule = {};
+const dragBorderSize = 6;
+const dragCornerSize = 12;
+let resizeHandles = [ 'resize-n', 'resize-s', 'resize-e', 'resize-w', 'resize-ne', 'resize-se', 'resize-sw', 'resize-nw' ];
 
 
 
@@ -86,7 +91,6 @@ var destroySchedule = {};
 
 
 function Renderer( originX, originY ) {
-    // console.log( 'originX, originY', originX, originY );
     
     DomUtilities.docReady( f => {
         overlayTemplate = Handlebars.compile( document.querySelector( '#overlay' ).innerHTML );
@@ -107,8 +111,8 @@ function Renderer( originX, originY ) {
          * @param {OverlayWindow[]} overlays The list of overlays.
          */
         function ( event, overlays ) {
-            // console.log( 'overlays', overlays );
-            let contentArea = document.querySelector( '.content-area' );
+            
+            // let contentArea = document.querySelector( '.content-area' );
             overlays.forEach( overlay => {
                 
                 let content = overlayTemplate( {} );
@@ -123,16 +127,21 @@ function Renderer( originX, originY ) {
                 
                 div.classList.add( 'drag' );
 
-                console.log( 'div', div );
-                contentArea.appendChild( div );
+                document.body.appendChild( div );
+                enableResize( div );
 
                 overlayInstances[ overlay.overlayId ] = {
                     dom: div,
                     title: div.querySelector( '#overlay-title' ),
+                    model: overlay,
                 };
 
                 overlayInstances[ overlay.overlayId ].title.innerHTML = overlay.name;
                 autoSizeHeader( overlay.overlayId );
+
+                div.addEventListener( 'click', function ( e ) {
+                    moveToTop( div );
+                } );
                 
             } );
             
@@ -475,6 +484,130 @@ function autoSizeHeader( overlayId ) {
 
     header.style.position = pos;
 }
+
+
+/**
+ * Enables resize events on the given dom element.
+ * 
+ * @param {HTMLElement} dom The element to enable resize event on.
+ */
+function enableResize( dom ) {
+    
+    /** @type {import('electron').Rectangle} */
+    let bounds = {
+        x: dom.offsetLeft,
+        y: dom.offsetTop,
+        width: dom.offsetWidth,
+        height: dom.offsetHeight,
+    };
+    
+    let trackN = function ( evt ) {
+        dom.style.top = `${evt.y}px`;
+        const dy = bounds.y - dom.offsetTop;
+        bounds.y = dom.offsetTop;
+        bounds.height += dy;
+        dom.style.height = `${bounds.height}px`;
+    }
+
+    let trackS = function ( evt ) {
+        const dy = evt.y - (bounds.y + bounds.height);
+        bounds.height += dy;
+        dom.style.height = `${bounds.height}px`;
+    }
+
+    let trackE = function ( evt ) {
+        const dx = evt.x - ( bounds.x + bounds.width );
+        bounds.width += dx;
+        dom.style.width = `${bounds.width}px`;
+    }
+
+    let trackW = function ( evt ) {
+        dom.style.left = `${evt.x}px`;
+        const dx = bounds.x - dom.offsetLeft;
+        bounds.x = dom.offsetLeft;
+        bounds.width += dx;
+        dom.style.width = `${bounds.width}px`;
+    }
+
+    let onMouseDown = function ( evt ) {
+        const dx = evt.x - bounds.x;
+        const dy = evt.y - bounds.y;
+
+        const n = dy >= 0 - dragBorderSize && dy < 0;
+        const s = dy <= bounds.height + dragBorderSize && dy >= bounds.height;
+        const e = dx <= bounds.width + dragBorderSize && dx >= bounds.width;
+        const w = dx >= 0 - dragBorderSize && dx < 0;
+
+        n && document.addEventListener( 'pointermove', trackN );
+        s && document.addEventListener( 'pointermove', trackS );
+        e && document.addEventListener( 'pointermove', trackE );
+        w && document.addEventListener( 'pointermove', trackW );
+
+        const ne = ( dy >= dragBorderSize - dragCornerSize && dy < dragBorderSize ) && ( dx <= bounds.width + dragBorderSize && dx >= bounds.width - dragBorderSize );
+        const se = ( dy <= bounds.height + dragBorderSize && dy >= bounds.height - dragBorderSize ) && ( dx <= bounds.width + dragBorderSize && dx >= bounds.width - dragBorderSize );
+        const sw = ( dy <= bounds.height + dragBorderSize && dy >= bounds.height - dragBorderSize ) && ( dx >= dragBorderSize - dragCornerSize && dx < dragBorderSize );
+        const nw = ( dy >= dragBorderSize - dragCornerSize && dy < dragBorderSize ) && ( dx >= dragBorderSize - dragCornerSize && dx < dragBorderSize );
+
+        ne && !n && document.addEventListener( 'pointermove', trackN );
+        ne && !e && document.addEventListener( 'pointermove', trackE );
+        se && !s && document.addEventListener( 'pointermove', trackS );
+        se && !e && document.addEventListener( 'pointermove', trackE );
+        sw && !s && document.addEventListener( 'pointermove', trackS );
+        sw && !w && document.addEventListener( 'pointermove', trackW );
+        nw && !n && document.addEventListener( 'pointermove', trackN );
+        nw && !w && document.addEventListener( 'pointermove', trackW );
+    }
+
+    let onMouseUp = function ( evt ) {
+        document.removeEventListener( 'pointermove', trackN );
+        document.removeEventListener( 'pointermove', trackS );
+        document.removeEventListener( 'pointermove', trackE );
+        document.removeEventListener( 'pointermove', trackW );
+    }
+    
+    for ( let i = 0; i < resizeHandles.length; i++ ) {
+        let handle = document.createElement( 'span' );
+        handle.classList.add( resizeHandles[ i ] );
+        dom.appendChild( handle );
+    }
+
+    dom.addEventListener( 'pointerdown', onMouseDown );
+    document.addEventListener( 'pointerup', onMouseUp );
+}
+
+function moveToTop( dom ) {
+    for ( let overlayId in overlayInstances ) {
+        if ( overlayId && overlayInstances.hasOwnProperty( overlayId ) ) {
+            if ( dom === overlayInstances[ overlayId ].dom ) {
+                overlayInstances[ overlayId ].dom.style.zIndex = 2;
+            } else {
+                overlayInstances[ overlayId ].dom.style.zIndex = 1;
+            }
+        }
+    }
+}
+
+// function resizeWidth( e, dom ) {
+    
+// }
+
+// let m_pos;
+// function resize(e){
+//   const dx = m_pos - e.x;
+//   m_pos = e.x;
+//   panel.style.width = (parseInt(getComputedStyle(panel, '').width) + dx) + "px";
+// }
+
+// panel.addEventListener("mousedown", function(e){
+//   if (e.offsetX < BORDER_SIZE) {
+//     m_pos = e.x;
+//     document.addEventListener("mousemove", resize, false);
+//   }
+// }, false);
+
+// document.addEventListener("mouseup", function(){
+//     document.removeEventListener("mousemove", resize, false);
+// }, false);
 
 
 

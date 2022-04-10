@@ -473,14 +473,25 @@ class WindowManager {
             height: bottom - top,
         };
 
+        // parent: mainWindowRef.reference,
+        // modal: false,
+        // show: false,
+        // width: 1000,
+        // height: 800,
+        // frame: false,
+        // webPreferences: {
+        //     nodeIntegration: true,
+        //     devTools: app.isDev(),
+        // }
         let renderer = new BrowserWindow( {
-            width: bounds.width,
-            height: bounds.height,
-            x: bounds.x,
-            y: bounds.y,
+            // width: bounds.width,
+            // height: bounds.height,
+            // x: bounds.x,
+            // y: bounds.y,
             transparent: true,
             frame: false,
-            resizable: true,
+            resizable: false,
+            movable: false,
             webPreferences: {
                 nodeIntegration: true,
                 devTools: app.isDev(),
@@ -497,17 +508,19 @@ class WindowManager {
         } );
         
         renderer.loadURL( `file://${__dirname}/threads/renderer.html?originX=${0 - bounds.x}&originY=${0 - bounds.y}` );
-        renderer.setIgnoreMouseEvents( true );
-        renderer.setAlwaysOnTop( true, "screen-saver" );
+        // renderer.setIgnoreMouseEvents( true );
+        // renderer.setAlwaysOnTop( true, "screen-saver" );
+        // renderer.movable = false;
+        // renderer.resizable = false;
         
         // Open the DevTools.
         if ( app.isDev() ) {
             renderer.webContents.openDevTools();
         }
     
-        let interval = setInterval( () => {
-            renderer.setAlwaysOnTop( true, "screen-saver" );
-        }, 1000 );
+        // let interval = setInterval( () => {
+        //     renderer.setAlwaysOnTop( true, "screen-saver" );
+        // }, 1000 );
     }
 
 
