@@ -556,6 +556,11 @@ function enableMoveResize( dom ) {
         const e = dx <= bounds.width + dragBorderSize && dx >= bounds.width;
         const w = dx >= 0 - dragBorderSize && dx < 0;
 
+        // Janky if clause (only works in javascript), but it's easy to read in
+        // this format: 
+        // 
+        //      if 'n' then attach the 'trackN' event.
+        // 
         n && document.addEventListener( 'pointermove', trackN );
         s && document.addEventListener( 'pointermove', trackS );
         e && document.addEventListener( 'pointermove', trackE );
