@@ -128,7 +128,7 @@ function Renderer( originX, originY ) {
                 div.classList.add( 'drag' );
 
                 document.body.appendChild( div );
-                enableResize( div );
+                enableMoveResize( div );
 
                 overlayInstances[ overlay.overlayId ] = {
                     dom: div,
@@ -491,7 +491,7 @@ function autoSizeHeader( overlayId ) {
  * 
  * @param {HTMLElement} dom The element to enable resize event on.
  */
-function enableResize( dom ) {
+function enableMoveResize( dom ) {
     
     /** @type {import('electron').Rectangle} */
     let bounds = {
