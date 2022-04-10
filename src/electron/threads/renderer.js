@@ -147,7 +147,6 @@ function Renderer( originX, originY ) {
          */
         function ( event, overlays ) {
             
-            // let contentArea = document.querySelector( '.overlay-content-area' );
             overlays.forEach( overlay => {
                 
                 let content = overlayTemplate( {} );
@@ -161,7 +160,6 @@ function Renderer( originX, originY ) {
                 div.style.width = ( overlay.windowWidth ) + 'px';
                 
                 document.body.appendChild( div );
-                // enableMoveResize( div );
 
                 overlayInstances[ overlay.overlayId ] = {
                     dom: div,
