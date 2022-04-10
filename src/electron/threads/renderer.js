@@ -80,6 +80,8 @@ var destroySchedule = {};
 const dragBorderSize = 6;
 const dragCornerSize = 12;
 let resizeHandles = [ 'resize-n', 'resize-s', 'resize-e', 'resize-w', 'resize-ne', 'resize-se', 'resize-sw', 'resize-nw' ];
+/** @type {import('electron').Point} */
+let origin = { x: 0, y: 0 };
 
 
 
@@ -92,6 +94,9 @@ let resizeHandles = [ 'resize-n', 'resize-s', 'resize-e', 'resize-w', 'resize-ne
 
 function Renderer( originX, originY ) {
     
+    origin.x = originX;
+    origin.y = originY;
+
     DomUtilities.docReady( f => {
         overlayTemplate = Handlebars.compile( document.querySelector( '#overlay' ).innerHTML );
         displayTextTemplate = Handlebars.compile( document.querySelector( '#displayTextTemplate' ).innerHTML );
@@ -586,6 +591,27 @@ function enableMoveResize( dom ) {
         document.removeEventListener( 'pointermove', trackE );
         document.removeEventListener( 'pointermove', trackW );
         document.removeEventListener( 'pointermove', trackMove );
+
+        for ( let overlayId in overlayInstances ) {
+            if ( overlayId && overlayInstances.hasOwnProperty( overlayId ) ) {
+                if ( dom === overlayInstances[ overlayId ].dom ) {
+                    let changes = false;
+
+                    changes = changes ? changes : overlayInstances[ overlayId ].model.x !== ( bounds.x - origin.x );
+                    changes = changes ? changes : overlayInstances[ overlayId ].model.y !== ( bounds.y - origin.y );
+                    changes = changes ? changes : overlayInstances[ overlayId ].model.windowWidth !== bounds.width;
+                    changes = changes ? changes : overlayInstances[ overlayId ].model.windowHeight !== bounds.height;
+
+                    if ( changes ) {
+                        console.log( 'CHANGES DETECTED', overlayInstances[ overlayId ].model.name );
+                        overlayInstances[ overlayId ].model.x = bounds.x - origin.x;
+                        overlayInstances[ overlayId ].model.y = bounds.y - origin.y;
+                        overlayInstances[ overlayId ].model.windowWidth = bounds.width;
+                        overlayInstances[ overlayId ].model.windowHeight = bounds.height;
+                    }
+                }
+            }
+        }
     }
     
     for ( let i = 0; i < resizeHandles.length; i++ ) {
