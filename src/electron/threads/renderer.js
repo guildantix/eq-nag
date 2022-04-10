@@ -500,6 +500,12 @@ function enableMoveResize( dom ) {
         width: dom.offsetWidth,
         height: dom.offsetHeight,
     };
+
+    /** @type {import('electron').Point} */
+    let relMousePos = {
+        x: 0,
+        y: 0,
+    };
     
     let trackN = function ( evt ) {
         dom.style.top = `${evt.y}px`;
@@ -529,6 +535,13 @@ function enableMoveResize( dom ) {
         dom.style.width = `${bounds.width}px`;
     }
 
+    let trackMove = function ( evt ) {
+        bounds.x = evt.x - relMousePos.x;
+        bounds.y = evt.y - relMousePos.y;
+        dom.style.left = `${bounds.x}px`;
+        dom.style.top = `${bounds.y}px`;
+    }
+
     let onMouseDown = function ( evt ) {
         const dx = evt.x - bounds.x;
         const dy = evt.y - bounds.y;
@@ -556,13 +569,23 @@ function enableMoveResize( dom ) {
         sw && !w && document.addEventListener( 'pointermove', trackW );
         nw && !n && document.addEventListener( 'pointermove', trackN );
         nw && !w && document.addEventListener( 'pointermove', trackW );
+
+        if ( !n && !s && !e && !w && !ne && !se && !sw && !nw ) {
+            relMousePos.x = dx;
+            relMousePos.y = dy;
+            document.addEventListener( 'pointermove', trackMove );
+        }
     }
 
     let onMouseUp = function ( evt ) {
+        // We'll be using the fact that we can happily call remove event 
+        // listener all day long and the js engine doesn't care if it's 
+        // actually attached.
         document.removeEventListener( 'pointermove', trackN );
         document.removeEventListener( 'pointermove', trackS );
         document.removeEventListener( 'pointermove', trackE );
         document.removeEventListener( 'pointermove', trackW );
+        document.removeEventListener( 'pointermove', trackMove );
     }
     
     for ( let i = 0; i < resizeHandles.length; i++ ) {
