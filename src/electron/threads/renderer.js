@@ -82,6 +82,7 @@ const dragCornerSize = 12;
 let resizeHandles = [ 'resize-n', 'resize-s', 'resize-e', 'resize-w', 'resize-ne', 'resize-se', 'resize-sw', 'resize-nw' ];
 /** @type {import('electron').Point} */
 let origin = { x: 0, y: 0 };
+const stopTrackingMoveResizeEvent = new Event( 'stop-tracking-mr' );
 
 
 
@@ -140,7 +141,6 @@ function Renderer( originX, originY ) {
                 };
 
                 overlayInstances[ overlay.overlayId ].title.innerHTML = overlay.name;
-                autoSizeHeader( overlay.overlayId );
 
                 div.addEventListener( 'click', function ( e ) {
                     moveToTop( div );
@@ -163,15 +163,26 @@ function Renderer( originX, originY ) {
     //         render( model );
     //     } );
 
-    // ipcRenderer.on( 'overlay:window:enable-edit', function ( event ) {
-    //     document.querySelector( 'section.body' ).classList.add( 'drag' );
-    //     document.querySelector( 'body' ).classList.add( 'show-border' );
-    // } );
+    ipcRenderer.on( 'overlay:window:enable-edit', function ( event, overlayId ) {
+        overlayInstances[ overlayId ].dom.classList.add( 'highlight-border' );
+        autoSizeHeader( overlayId );
+    } );
 
-    // ipcRenderer.on( 'overlay:window:disable-edit', function ( event ) {
-    //     document.querySelector( 'section.body' ).classList.remove( 'drag' );
-    //     document.querySelector( 'body' ).classList.remove( 'show-border' );
-    // } );
+    ipcRenderer.on( 'overlay:window:disable-edit', function ( event, overlayId ) {
+        overlayInstances[ overlayId ].dom.classList.remove( 'highlight-border' );
+    } );
+
+    ipcRenderer.on( 'renderer:arrange-overlays', function ( event ) {
+        eachOverlay( function ( overlay ) {
+            enableMoveResize( overlay.dom );
+        } );
+    } );
+
+    ipcRenderer.on( 'renderer:end-arrange-overlays', function ( event ) {
+        eachOverlay( function ( overlay ) {
+            disableMoveResize( overlay.dom );
+        } );
+    } );
 
     // ipcRenderer.on( 'overlay:window:highlight', function ( event ) {
     //     document.querySelector( 'body' ).classList.add( 'highlight-border' );
@@ -488,6 +499,22 @@ function autoSizeHeader( overlayId ) {
     header.style.position = pos;
 }
 
+/**
+ * Disables resize events on the given dom element.
+ * 
+ * @param {HTMLElement} dom The element to enable resize event on.
+ */
+function disableMoveResize( dom ) {
+    for ( let i = 0; i < resizeHandles.length; i++ ) {
+        let handle = dom.querySelector( `.${resizeHandles[ i ]}` );
+        dom.removeChild( handle );
+        handle.remove();
+    }
+
+    dom.classList.remove( 'drag' );
+    dom.dispatchEvent( stopTrackingMoveResizeEvent );
+}
+
 
 /**
  * Enables resize events on the given dom element.
@@ -620,6 +647,17 @@ function enableMoveResize( dom ) {
         }
     }
 
+    let stopTracking = function ( evt ) {
+        dom.removeEventListener( 'pointerdown', onMouseDown );
+        dom.removeEventListener( 'stop-tracking-mr', stopTracking );
+        document.removeEventListener( 'pointerup', onMouseUp );
+        document.removeEventListener( 'pointermove', trackN );
+        document.removeEventListener( 'pointermove', trackS );
+        document.removeEventListener( 'pointermove', trackE );
+        document.removeEventListener( 'pointermove', trackW );
+        document.removeEventListener( 'pointermove', trackMove );
+    }
+
     dom.classList.add( 'drag' );
 
     for ( let i = 0; i < resizeHandles.length; i++ ) {
@@ -629,6 +667,7 @@ function enableMoveResize( dom ) {
     }
 
     dom.addEventListener( 'pointerdown', onMouseDown );
+    dom.addEventListener( 'stop-tracking-mr', stopTracking );
     document.addEventListener( 'pointerup', onMouseUp );
 }
 
@@ -640,6 +679,19 @@ function moveToTop( dom ) {
             } else {
                 overlayInstances[ overlayId ].dom.style.zIndex = 1;
             }
+        }
+    }
+}
+
+/**
+ * Executes the given handler on each overlay instance.
+ * 
+ * @param {(overlay: OverlayInstance) => void} fn 
+ */
+function eachOverlay( fn ) {
+    for ( let overlayId in overlayInstances ) {
+        if ( overlayId && overlayInstances.hasOwnProperty( overlayId ) ) {
+            fn( overlayInstances[ overlayId ] );
         }
     }
 }

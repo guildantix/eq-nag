@@ -24,6 +24,9 @@ class WindowManager {
     /** @type {BrowserWindow} */
     #mainWindow;
 
+    /** @type {BrowserWindow} */
+    #renderer;
+
     #dirname;
 
     /** @type {UserPreferencesStore} */
@@ -130,25 +133,36 @@ class WindowManager {
             bwin?.close();
         } );
 
+        ipcMain.on( 'renderer:arrange-overlays', ( event ) => {
+            this.#renderer.setIgnoreMouseEvents( false );
+            this.#renderer.webContents.send( 'renderer:arrange-overlays' );
+        } );
+
+        ipcMain.on( 'renderer:end-arrange-overlays', ( event ) => {
+            this.#renderer.setIgnoreMouseEvents( true );
+            this.#renderer.webContents.send( 'renderer:end-arrange-overlays' );
+        } );
+
         ipcMain.on( 'overlay:enable-edit', ( event, overlayId ) => {
             let model = overlayDatabase.find( overlayId );
 
-            if ( overlayDictionary && overlayDictionary[ overlayId ] ) {
-                overlayDictionary[ overlayId ].window.setIgnoreMouseEvents( false );
-                overlayDictionary[ overlayId ].window.webContents.send( 'overlay:window:enable-edit' );
-                overlayDictionary[ overlayId ].editMode = true;
-            } else {
-                if ( model ) {
-                    loadOverlay( model, overlayDatabase, true, () => {
-                        if ( model.overlayType === 'FCT' ) {
-                            overlayDictionary[ overlayId ].window.webContents.send( 'fctStyles', this.#userPrefDb.fctStyles );
-                        }
-                    } );
-                } else {
-                    console.error( `Could not find over lay ${overlayId}` );
-                    return;
-                }
-            }
+            // if ( overlayDictionary && overlayDictionary[ overlayId ] ) {
+            //     overlayDictionary[ overlayId ].window.setIgnoreMouseEvents( false );
+            //     overlayDictionary[ overlayId ].window.webContents.send( 'overlay:window:enable-edit', overlayId );
+            //     overlayDictionary[ overlayId ].editMode = true;
+            // } else {
+            //     if ( model ) {
+            //         loadOverlay( model, overlayDatabase, true, () => {
+            //             if ( model.overlayType === 'FCT' ) {
+            //                 overlayDictionary[ overlayId ].window.webContents.send( 'fctStyles', this.#userPrefDb.fctStyles );
+            //             }
+            //         } );
+            //     } else {
+            //         console.error( `Could not find over lay ${overlayId}` );
+            //         return;
+            //     }
+            // }
+            this.#renderer.webContents.send( 'overlay:window:enable-edit', overlayId );
             
             if ( model?.overlayType === 'FCT' ) {
                 overlayDictionary[ overlayId ].window.setBounds( {
@@ -165,7 +179,7 @@ class WindowManager {
             
             if ( overlayDictionary && overlayDictionary[ overlayId ] ) {
                 overlayDictionary[ overlayId ].window.setIgnoreMouseEvents( true );
-                overlayDictionary[ overlayId ].window.webContents.send( 'overlay:window:disable-edit' );
+                overlayDictionary[ overlayId ].window.webContents.send( 'overlay:window:disable-edit', overlayId );
             } else {
                 if ( model ) {
                     loadOverlay( model, overlayDatabase, false, () => { } );
@@ -174,6 +188,7 @@ class WindowManager {
                     return;
                 }
             }
+            this.#renderer.webContents.send( 'overlay:window:disable-edit', overlayId );
             
             if ( model?.overlayType === 'FCT' ) {
                 overlayDictionary[ overlayId ].window.setBounds( {
@@ -502,9 +517,11 @@ class WindowManager {
             renderer.webContents.openDevTools();
         }
     
-        let interval = setInterval( () => {
-            renderer.setAlwaysOnTop( true, "screen-saver" );
-        }, 1000 );
+        // let interval = setInterval( () => {
+        //     renderer.setAlwaysOnTop( true, "screen-saver" );
+        // }, 1000 );
+
+        this.#renderer = renderer;
     }
 
 
@@ -667,7 +684,7 @@ function loadOverlay( model, overlayDatabase, enableEdit, afterLoaded ) {
 
     if ( enableEdit ) {
         overlay.webContents.once( 'dom-ready', () => {
-            overlay.webContents.send( 'overlay:window:enable-edit' );
+            overlay.webContents.send( 'overlay:window:enable-edit', model.overlayId );
             overlay.setIgnoreMouseEvents( false );
             overlay.webContents.send( 'overlay:window:model', model );
         } );

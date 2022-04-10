@@ -745,6 +745,14 @@ export class IpcService {
         this.ipc.send( 'overlay:enable-edit', overlayId );
     }
 
+    public arrangeOverlays(): void {
+        this.ipc.send( 'renderer:arrange-overlays' );
+    }
+
+    public endArrangeOverlays(): void {
+        this.ipc.send( 'renderer:end-arrange-overlays' );
+    }
+
     public disableOverlayEditMode( overlayId: string ): void {
         this.ipc.send( 'overlay:disable-edit', overlayId );
     }

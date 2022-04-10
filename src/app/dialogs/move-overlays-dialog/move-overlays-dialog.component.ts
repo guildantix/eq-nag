@@ -25,7 +25,8 @@ export class MoveOverlaysDialogComponent implements OnInit {
             this.overlays = overlays;
             this.noChangesOverlays = _.cloneDeep( overlays );
 
-            this.overlays.forEach( overlay => this.ipcService.enableOverlayEditMode( overlay.overlayId ) );
+            // this.overlays.forEach( overlay => this.ipcService.enableOverlayEditMode( overlay.overlayId ) );
+            this.ipcService.arrangeOverlays();
         } );
     }
 
@@ -42,6 +43,7 @@ export class MoveOverlaysDialogComponent implements OnInit {
      * Closes this dialog.
      */
     closeModal(): void {
+        this.ipcService.endArrangeOverlays();
         this.ipcService.closeThisChild();
     }
 
