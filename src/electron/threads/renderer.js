@@ -1522,38 +1522,52 @@ function restartTimerComponent( overlayId, comp ) {
 
 
 
-// /**
-//  * Finds all overlay components of the specified action.
-//  * 
-//  * @returns {OverlayComponent[]}
-//  * 
-//  * @param {(component: OverlayComponent) => boolean} predicate Invoked per iteration, if true the component is included in the results.
-//  */
-// function findComponents( predicate ) {
-//     let ocs = [];
+/**
+ * Finds all overlay components that satisfy the given predicate.
+ * 
+ * @description This method will search all overlays.
+ * 
+ * @returns {Record<string, OverlayComponent[]>} Returns a record of all 
+ *      overlay components that satisfy the predicate, from all overlays.
+ * 
+ * @param {(component: OverlayComponent) => boolean} predicate Invoked per iteration, if true the component is included in the results.
+ */
+function findComponents( predicate ) {
+    /** @type {Record<string, OverlayComponent[]>} */
+    let results = {};
 
-//     if ( overlayInstances[ overlayId ].groupByTarget ) {
+    for ( let overlayId in overlayInstances ) {
+        if ( overlayInstances.hasOwnProperty( overlayId ) ) {
+            let ocs = [];
 
-//         for ( let key of Object.keys( overlayInstances[ overlayId ].overlayGroups ) ) {
-//             overlayInstances[ overlayId ].overlayGroups[ key ].components?.forEach( c => {
-//                 if ( predicate( c ) ) {
-//                     ocs.push( c );
-//                 }
-//             } );
-//         }
+            if ( overlayInstances[ overlayId ].groupByTarget ) {
 
-//     } else {
+                for ( let key of Object.keys( overlayInstances[ overlayId ].overlayGroups ) ) {
+                    overlayInstances[ overlayId ].overlayGroups[ key ].components?.forEach( c => {
+                        if ( predicate( c ) ) {
+                            ocs.push( c );
+                        }
+                    } );
+                }
+        
+            } else {
+        
+                overlayInstances[ overlayId ].overlayComponents?.forEach( c => {
+                    if ( predicate( c ) ) {
+                        ocs.push( c );
+                    }
+                } );
+        
+            }
 
-//         overlayInstances[ overlayId ].overlayComponents?.forEach( c => {
-//             if ( predicate( c ) ) {
-//                 ocs.push( c );
-//             }
-//         } );
+            if ( ocs.length > 0 ) {
+                results[ overlayId ] = ocs;
+            }
+        }
+    }
 
-//     }
-
-//     return ocs;
-// }
+    return results;
+}
 
 
 
@@ -1600,49 +1614,6 @@ function destroyComponents( overlayId, predicate ) {
     
     ocs = null;
 }
-
-
-
-
-
-
-
-
-
-
-// /**
-//  * Restarts the given overlay component.
-//  * 
-//  * @param {OverlayComponent} oldComp The overlay component to restart.
-//  * @param {OverlayComponent} newComp The new overlay component.
-//  */
-// function _restartTimerComponent( oldComp, newComp ) {
-
-//     // Tell log watchers to remove any hooks they have for the old component.
-//     ipcRenderer.send( 'log:destroy:component', oldComp.instanceId );
-
-//     // Reset the start duration
-//     oldComp.start = newComp.timestamp;
-//     oldComp.timeRemaining = newComp.action.duration;
-
-//     // Reset the ending conditions
-//     oldComp.endingSoonSpoken = false;
-//     oldComp.endingSoonTextDisplayed = false;
-//     oldComp.endedSpoken = false;
-//     oldComp.endedTextDisplayed = false;
-//     oldComp.instanceId = newComp.instanceId;
-
-//     // Reset the background color
-//     if ( oldComp.action.overrideTimerColor ) {
-//         oldComp.dom.querySelector( '.determinate' ).style.backgroundColor = oldComp.action.overrideTimerColor;
-//         oldComp.dom.querySelector( '.progress' ).style.backgroundColor = oldComp.action.timerBackgroundColor;
-//     } else {
-//         oldComp.dom.querySelector( '.determinate' ).style.backgroundColor = '#008000';
-//         oldComp.dom.querySelector( '.progress' ).style.backgroundColor = 'rgba(0,33,0,.75)';
-//     }
-
-//     return true;
-// }
 
 
 
