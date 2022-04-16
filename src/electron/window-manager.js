@@ -144,68 +144,20 @@ class WindowManager {
         } );
 
         ipcMain.on( 'overlay:enable-edit', ( event, overlayId ) => {
-            let model = overlayDatabase.find( overlayId );
-
-            // if ( overlayDictionary && overlayDictionary[ overlayId ] ) {
-            //     overlayDictionary[ overlayId ].window.setIgnoreMouseEvents( false );
-            //     overlayDictionary[ overlayId ].window.webContents.send( 'overlay:window:enable-edit', overlayId );
-            //     overlayDictionary[ overlayId ].editMode = true;
-            // } else {
-            //     if ( model ) {
-            //         loadOverlay( model, overlayDatabase, true, () => {
-            //             if ( model.overlayType === 'FCT' ) {
-            //                 overlayDictionary[ overlayId ].window.webContents.send( 'fctStyles', this.#userPrefDb.fctStyles );
-            //             }
-            //         } );
-            //     } else {
-            //         console.error( `Could not find over lay ${overlayId}` );
-            //         return;
-            //     }
-            // }
-            this.#renderer.webContents.send( 'overlay:window:enable-edit', overlayId );
-            
-            if ( model?.overlayType === 'FCT' ) {
-                overlayDictionary[ overlayId ].window.setBounds( {
-                    x: model.x,
-                    y: model.y,
-                    width: model.windowWidth,
-                    height: model.windowHeight
-                } );
-            }
+            this.#renderer.webContents.send( 'renderer:window:enable-edit', overlayId );
         } );
         
         ipcMain.on( 'overlay:disable-edit', ( event, overlayId ) => {
-            let model = overlayDatabase.find( overlayId );
-            
-            if ( overlayDictionary && overlayDictionary[ overlayId ] ) {
-                overlayDictionary[ overlayId ].window.setIgnoreMouseEvents( true );
-                overlayDictionary[ overlayId ].window.webContents.send( 'overlay:window:disable-edit', overlayId );
-            } else {
-                if ( model ) {
-                    loadOverlay( model, overlayDatabase, false, () => { } );
-                } else {
-                    console.error( `Could not find over lay ${overlayId}` );
-                    return;
-                }
-            }
-            this.#renderer.webContents.send( 'overlay:window:disable-edit', overlayId );
-            
-            if ( model?.overlayType === 'FCT' ) {
-                overlayDictionary[ overlayId ].window.setBounds( {
-                    x: model.x - criticalPadding,
-                    y: model.y - criticalPadding,
-                    width: model.windowWidth + criticalPadding * 2,
-                    height: model.windowHeight + criticalPadding * 2
-                } );
-            }
+            // TODO: Check if new overlay, then load it.
+            this.#renderer.webContents.send( 'renderer:window:disable-edit', overlayId );
         } );
 
         ipcMain.on( 'overlay:highlight', ( event, overlayId ) => {
-            this.#renderer.webContents.send( 'overlay:window:highlight', overlayId );
+            this.#renderer.webContents.send( 'renderer:window:highlight', overlayId );
         } );
         
         ipcMain.on( 'overlay:dim', ( event, overlayId ) => {
-            this.#renderer.webContents.send( 'overlay:window:dim', overlayId );
+            this.#renderer.webContents.send( 'renderer:window:dim', overlayId );
         } );
         
         ipcMain.on( 'overlay:dialog:edit', ( event, overlayId ) => {
@@ -398,7 +350,7 @@ class WindowManager {
 
         } );
     }
-
+    
 
 
 
@@ -409,40 +361,8 @@ class WindowManager {
 
 
     /**
-     * Loads all overlays.
-     * 
-     * @param {OverlayDatabaseStore} overlayDatabase The overlay database.
-     * @param {UserPreferencesStore} overlayDatabase The user preferences database.
+     * Loads the unified renderer window.
      */
-    loadOverlays( overlayDatabase ) {
-
-        let overlays = overlayDatabase.getAll();
-        let loadedCount = 0;
-        overlays?.forEach( m => {
-            loadOverlay( m, overlayDatabase, false, () => {
-
-                loadedCount += 1;
-                
-                if ( loadedCount >= overlays.length ) {
-                    // If all of the overlay windows have been loaded.
-
-                    for ( let overlayId in overlayDictionary ) {
-
-                        if ( overlayDictionary[ overlayId ].model.overlayType === 'FCT' ) {
-                            // Send each overlay the FCT styles if they're an fct overlay type.
-                            overlayDictionary[ overlayId ].window.webContents.send( 'fctStyles', this.#userPrefDb.fctStyles );
-                        }
-
-                    }
-
-                }
-
-            } );
-        } );
-
-    }
-    
-
     loadRenderer() {
         
         let displays = screen.getAllDisplays();

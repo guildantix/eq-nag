@@ -250,12 +250,12 @@ function Renderer( originX, originY ) {
             renderFct( model.overlayId, model );
         } );
 
-    ipcRenderer.on( 'overlay:window:enable-edit', function ( event, overlayId ) {
+    ipcRenderer.on( 'renderer:window:enable-edit', function ( event, overlayId ) {
         overlayInstances[ overlayId ].dom.classList.add( 'highlight-border' );
         autoSizeHeader( overlayId );
     } );
 
-    ipcRenderer.on( 'overlay:window:disable-edit', function ( event, overlayId ) {
+    ipcRenderer.on( 'renderer:window:disable-edit', function ( event, overlayId ) {
         overlayInstances[ overlayId ].dom.classList.remove( 'highlight-border' );
     } );
 
@@ -271,11 +271,11 @@ function Renderer( originX, originY ) {
         } );
     } );
 
-    ipcRenderer.on( 'overlay:window:highlight', function ( event, overlayId ) {
+    ipcRenderer.on( 'renderer:window:highlight', function ( event, overlayId ) {
         overlayInstances[ overlayId ]?.dom.classList.add( 'highlight-border' );
     } );
 
-    ipcRenderer.on( 'overlay:window:dim', function ( event, overlayId ) {
+    ipcRenderer.on( 'renderer:window:dim', function ( event, overlayId ) {
         overlayInstances[ overlayId ]?.dom.classList.remove( 'highlight-border' );
     } );
 
