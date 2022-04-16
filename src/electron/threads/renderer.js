@@ -135,8 +135,8 @@ const styleSheetUtil = new StyleSheetUtil();
 const fctCssEncapsulationId = '_' + nanoid();
 const delayBetweenCrits = 500;
 const delayVariance = 0.50;
-const delayAdd = 0;
-const criticalPadding = 300;
+let delayAdd = 0;
+const criticalPadding = 0;
 
 
 
@@ -348,7 +348,7 @@ function Renderer( originX, originY ) {
          * @param {FctStylesModel} fctStyles The user-specified FCT styles.
          */
         ( event, fctStyles ) => {
-            let style = styleSheetUtil.createStyleSheet( document, 'fct-styles' );
+            let style = styleSheetUtil.createStyleSheet( document, nanoid() );
 
             style.sheet.insertRule( styleSheetUtil.createTextRule( fctStyles.fctDmgOutStyle, 'fct-dmg-out', fctCssEncapsulationId ) );
             style.sheet.insertRule( styleSheetUtil.createTextRule( fctStyles.fctDmgInStyle, 'fct-dmg-in', fctCssEncapsulationId ) );
@@ -358,7 +358,8 @@ function Renderer( originX, originY ) {
             style.sheet.insertRule( styleSheetUtil.createTextRule( fctStyles.fctHealingInStyle, 'fct-healing-in', fctCssEncapsulationId ) );
             style.sheet.insertRule( styleSheetUtil.createTextRule( fctStyles.fctSkillStyle, 'fct-skill', fctCssEncapsulationId ) );
 
-            console.log( 'style', style );
+            // console.log( 'style', styleSheetUtil.createTextRule( fctStyles.fctDmgOutStyle, 'fct-dmg-out', fctCssEncapsulationId ) );
+            // style.sheet.insertRule( `*[${fctCssEncapsulationId}] {border:1px solid green;}` );
             
         } );
 
@@ -572,8 +573,8 @@ function updateOverlay( overlayId, model ) {
         let height = contentArea.clientHeight;
         let fontSize = model.fontSize;
 
-        let quadrants = [];
-        let criticals = [];
+        let quadrants = overlayInstances[ overlayId ].quadrants?.length > 0 ? overlayInstances[ overlayId ].quadrants :[];
+        let criticals = overlayInstances[ overlayId ].criticals?.length > 0 ? overlayInstances[ overlayId ].criticals :[];
 
         // we could calculate the specific size of critical fct, but it's 'good enough' to estimate.  A little overlapping is fine.
         let qw = fontSize / 2 * 4.6875 * 2.5;
@@ -605,7 +606,85 @@ function updateOverlay( overlayId, model ) {
  * @param {FctModel} comp Tells the renderer to forcefully redraw the overlayComponents.
  */
 function renderFct( overlayId, comp ) {
-    console.log( 'FCT Comp', comp );
+    let contentArea = overlayInstances[ overlayId ].dom.querySelector( '.overlay-content-area' );
+    let div = document.createElement( 'div' );
+
+    if ( comp.fctType === FctTypes.dmgOut ) {
+        div.classList.add( 'fct-dmg-out' );
+
+    } else if ( comp.fctType === FctTypes.dmgIn ) {
+        div.classList.add( 'fct-dmg-in' );
+
+    } else if ( comp.fctType === FctTypes.spellDmgOut ) {
+        div.classList.add( 'fct-spell-dmg-out' );
+
+    } else if ( comp.fctType === FctTypes.spellDmgIn ) {
+        div.classList.add( 'fct-spell-dmg-in' );
+
+    } else if ( comp.fctType === FctTypes.healingOut ) {
+        div.classList.add( 'fct-healing-out' );
+
+    } else if ( comp.fctType === FctTypes.healingIn ) {
+        div.classList.add( 'fct-healing-in' );
+
+    } else if ( comp.fctType === FctTypes.skill ) {
+        div.classList.add( 'fct-skill' );
+
+    }
+
+    if ( comp.critical ) {
+        let content = fctCriticalTemplate( { value: comp.text, damageSource: comp.attack } );
+        div.innerHTML = content;
+
+        div.classList.add( 'animate-fade-shrink' );
+
+        comp.dom = div;
+        comp.delayAmount = NumberUtilities.randomBounded( delayBetweenCrits - ( delayBetweenCrits * delayVariance ), delayBetweenCrits + ( delayBetweenCrits * delayVariance ) + 1 );
+        
+        window.setTimeout( () => {
+            contentArea.appendChild( div );
+    
+            comp.pos = getRandomLocation( overlayId );
+            overlayInstances[ overlayId ].criticals[ comp.pos.x ][ comp.pos.y ] = true;
+
+            try {
+                div.style.left = `${overlayInstances[ overlayId ].quadrants[ comp.pos.x ][ comp.pos.y ].x + ( div.clientWidth / 2 )}px`; // Cannot read property 'x' of undefined
+                div.style.top = `${overlayInstances[ overlayId ].quadrants[ comp.pos.x ][ comp.pos.y ].y - ( div.clientHeight * 1.25 )}px`;
+            } catch ( error ) {
+                logInfo( `criticals: ${JSON.stringify( overlayInstances[ overlayId ].criticals ?? '' )}` );
+                logInfo( `quadrants: ${JSON.stringify( overlayInstances[ overlayId ].quadrants ?? '' )}` );
+            }
+                
+            comp.intervalId = window.setTimeout( () => {
+                comp.dom.parentNode.removeChild( comp.dom );
+                if ( overlayInstances[ overlayId ].criticals.length > comp.pos.x && overlayInstances[ overlayId ].criticals[ comp.pos.x ]?.length > comp.pos.y ) {
+                    overlayInstances[ overlayId ].criticals[ comp.pos.x ][ comp.pos.y ] = false;
+                }
+            }, 4000 );
+
+            delayAdd -= comp.delayAmount;
+        }, delayAdd );
+
+        delayAdd += comp.delayAmount;
+
+    } else {
+        let content = fctTemplate( { value: comp.text, damageSource: comp.attack } );
+        div.innerHTML = content;
+
+        div.classList.add( 'animate-fade-out' );
+
+        comp.dom = div;
+
+        if ( comp.fctType === FctTypes.healingOut || comp.fctType === FctTypes.healingIn ) {
+            overlayInstances[ overlayId ].dom.querySelector( '.healing-content-area' ).appendChild( div );
+        } else {
+            contentArea.appendChild( div );
+        }
+        comp.intervalId = window.setTimeout( () => {
+            comp.dom.parentNode.removeChild( comp.dom );
+        }, 7000 );
+
+    }
 }
 
 
@@ -1122,7 +1201,7 @@ function createGroupedDotTimer( overlayId, contentArea, group, comp ) {
         window.setTimeout( () => {
             // We delay execution of this code and move it to the end of the stack 
             // because other overlay components may be added to this group.
-            if ( overlayInstances[ overlayId ].overlayGroups[ groupKey ].components?.length === 0 ) {
+            if ( overlayInstances[ overlayId ].overlayGroups[ groupKey ]?.components?.length === 0 ) {
                 overlayInstances[ overlayId ].overlayGroups[ groupKey ].dom.parentNode && overlayInstances[ overlayId ].overlayGroups[ groupKey ].dom.parentNode.removeChild( overlayInstances[ overlayId ].overlayGroups[ groupKey ].dom );
                 delete overlayInstances[ overlayId ].overlayGroups[ groupKey ];
             }
@@ -1923,7 +2002,7 @@ function playAudioFile( fileId ) {
  * @param {string} overlayId The overlay id.
  */
 function getRandomLocation( overlayId ) {
-    let c = getCompCount();
+    let c = getCompCount( overlayId );
     let xs = Math.floor( c / overlayInstances[ overlayId ].criticals.length );
     // let yx = Math.floor( c / overlayInstances[ overlayId ].criticals[ 0 ].length );
     let x = -1;
@@ -1934,7 +2013,7 @@ function getRandomLocation( overlayId ) {
         crazy++;
 
         let t = NumberUtilities.randomBounded( 0, overlayInstances[ overlayId ].criticals.length );
-        if ( countCritX( t ) <= xs ) {
+        if ( countCritX( overlayId, t ) <= xs ) {
             x = t;
         }
     }

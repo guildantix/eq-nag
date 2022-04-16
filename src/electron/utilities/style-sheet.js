@@ -134,7 +134,7 @@ class StyleSheetUtil {
         }
 
         if ( !StringUtilities.isNullOrWhitespace( viewEncapsulationId ) ) {
-            return `.${className}[${viewEncapsulationId}] {${styles}}`;
+            return `*[${viewEncapsulationId}] .${className} {${styles}}`;
         } else {
             return `.${className} {${styles}}`;
         }
