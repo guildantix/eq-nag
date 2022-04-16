@@ -167,7 +167,8 @@
             margin: 2.8rem 0 1.68rem 0;
         }
         
-        .overlay-content-area {
+        .overlay-content-area,
+        .healing-content-area {
             position: absolute;
             left: 6px;
             right: 6px;
@@ -176,16 +177,19 @@
             padding: 5px;
         }
         
-        .overlay-content-area.no-overflow {
+        .overlay-content-area.no-overflow,
+        .healing-content-area.no-overflow {
             overflow: hidden;
             white-space: nowrap;
         }
 
-        .overlay-content-area p {
+        .overlay-content-area p,
+        .healing-content-area p {
             margin: 0;
         }
 
-        .overlay-content-area .progress {
+        .overlay-content-area .progress,
+        .healing-content-area .progress {
             height: auto;
             margin-top: -5px;
             margin-bottom: 10px;
@@ -242,7 +246,7 @@
 
         @keyframes animate-fadeout {
             0% { opacity: 1; }
-            60% { opacity: 1; }
+            90% { opacity: 1; }
             100% { opacity: 0; }
         }
 
@@ -259,13 +263,25 @@
             /* font-weight: 300; */
             font-weight: normal;
             color: #005aff;
-            -webkit-text-stroke: .1px black;
-            -webkit-text-fill-color: #005aff;
+            text-shadow:    0px 0px 1px #000000ff, -1px -1px 1px #000000ff, 1px -1px 1px #000000ff, -1px 1px 1px #000000ff, 1px 1px 1px #000000ff,
+                            0px 0px 5px #000000d9, -1px -1px 5px #000000d9, 1px -1px 5px #000000d9, -1px 1px 5px #000000d9, 1px 1px 5px #000000d9;
+            /* text-shadow: 0px 0px 10px #000000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000; */
+            /* -webkit-text-stroke: .1px black; */
+            /* -webkit-text-fill-color: #005aff; */
+            /* text-shadow: 0px 0px 10px black; */
         }
 
         .fct-text {
-            -webkit-text-stroke: 1px black;
-            text-shadow: 0px 0px 10px black;
+            /* -webkit-text-stroke: .1px black; */
+            /* -webkit-text-fill-color: #ffffff; */
+            /* text-shadow: 0px 0px 10px black; */
+            text-shadow:    0px 0px 1px #000000ff, -1px -1px 1px #000000ff, 1px -1px 1px #000000ff, -1px 1px 1px #000000ff, 1px 1px 1px #000000ff,
+                            0px 0px 5px #000000d9, -1px -1px 5px #000000d9, 1px -1px 5px #000000d9, -1px 1px 5px #000000d9, 1px 1px 5px #000000d9;
+        }
+
+        .fct-healing-out,
+        .fct-healing-in {
+            align-self: flex-end;
         }
 
         .dot-text {
@@ -373,6 +389,19 @@
         <div class="overlay-name-watermark"><h1 id="overlay-title">Overlay Title</h1></div>
         <div class="overlay-content-area">
 
+        </div>
+    </template>
+    
+    <!-- =========================== -->
+    <!--    FCT Overlay Template     -->
+    <!-- =========================== -->
+    <template id="overlayFct">
+        <div class="overlay-name-watermark"><h1 id="overlay-title">Overlay Title</h1></div>
+        <div class="overlay-content-area">
+
+        </div>
+        <div class="healing-content-area">
+            
         </div>
     </template>
     

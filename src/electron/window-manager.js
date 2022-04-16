@@ -285,6 +285,10 @@ class WindowManager {
             this.#renderer.webContents.send( 'renderer:receive:component', component );
         } );
         
+        ipcMain.on( 'overlay:send:fct-component', ( event, component ) => {
+            this.#renderer.webContents.send( 'renderer:receive:fct-component', component );
+        } );
+        
         ipcMain.on( 'overlay:destroy:component', ( event, instanceId ) => {
             this.#renderer.webContents.send( 'component:destroy', instanceId );
         } );
@@ -351,16 +355,7 @@ class WindowManager {
         overlayDatabase.registerOverlayPositionHandler( overlays => this.updateOverlayPositions( overlays ) );
         
         userPreferencesDatabase.onFctStyleChanges.push( fctStyles => {
-          
-            for ( let overlayId in overlayDictionary ) {
-
-                if ( overlayDictionary[ overlayId ].model.overlayType === 'FCT' ) {
-                    // Send each overlay the FCT styles if they're an fct overlay type.
-                    overlayDictionary[ overlayId ].window.webContents.send( 'fctStyles', fctStyles );
-                }
-
-            }
-
+            this.#renderer.webContents.send( 'fctStyles', fctStyles );
         } );
     }
 

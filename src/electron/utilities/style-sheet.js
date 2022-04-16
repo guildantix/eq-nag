@@ -99,8 +99,9 @@ class StyleSheetUtil {
      * 
      * @param {StyleProperties} styleProperties The styleproperties to define this rule.
      * @param {string} className The class name.
+     * @param {string} viewEncapsulationId The unique id for view encapsulation.
      */
-    createTextRule( styleProperties, className ) {
+    createTextRule( styleProperties, className, viewEncapsulationId ) {
         let styles = '';
 
         if ( !StringUtilities.isNullOrWhitespace( styleProperties.fontFamily ) ) {
@@ -132,7 +133,11 @@ class StyleSheetUtil {
             styles += `text-shadow: ${textShadow};`;
         }
 
-        return `.${className} {${styles}}`;
+        if ( !StringUtilities.isNullOrWhitespace( viewEncapsulationId ) ) {
+            return `.${className}[${viewEncapsulationId}] {${styles}}`;
+        } else {
+            return `.${className} {${styles}}`;
+        }
     }
 }
 

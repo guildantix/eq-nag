@@ -11,10 +11,16 @@ const _ = require( 'lodash' );
 const customAlphabet = require( 'nanoid' ).customAlphabet;
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const nanoid = customAlphabet( alphabet, 16 );
+const StyleSheetUtil = require( '../utilities/style-sheet' );
+const { FctStylesModel, FctModel, FctTypes } = require( '../data/models/fct' );
 
 window.onerror = ( error, url, line ) => {
     ipcRenderer.send( 'app:log:exception', `$${error}\r\n    at ${url}:${line}` );
 };
+
+function logInfo( data ) {
+    ipcRenderer.send( 'app:log:info', data );
+}
 
 // <!-- Roboto(i): 100, 300, 400, 500, 700, 900 -->
 // <!-- Red Rose: 300, 400, 700 -->
@@ -64,6 +70,18 @@ class OverlayInstance {
     hideTargetLabel;
     /** @type {OverlayComponent[]} */
     overlayComponents;
+    /** @type {string} */
+    encapsulationId;
+    /** @type {number} */
+    width;
+    /** @type {number} */
+    height;
+    /** @type {number} */
+    fontSize;
+    /** @type {boolean[][]} */
+    criticals;
+    /** @type {{x: number, y: number}[][]} */
+    quadrants;
 }
 
 class ReceivedOverlayComponent {
@@ -83,6 +101,7 @@ var overlayInstances = {};
 
 var mobGroups = [];
 var overlayTemplate;
+var overlayFctTemplate;
 var displayTextTemplate;
 var timerTemplate;
 var timerIconTemplate;
@@ -112,6 +131,12 @@ let resizeHandles = [ 'resize-n', 'resize-s', 'resize-e', 'resize-w', 'resize-ne
 /** @type {import('electron').Point} */
 let origin = { x: 0, y: 0 };
 const stopTrackingMoveResizeEvent = new Event( 'stop-tracking-mr' );
+const styleSheetUtil = new StyleSheetUtil();
+const fctCssEncapsulationId = '_' + nanoid();
+const delayBetweenCrits = 500;
+const delayVariance = 0.50;
+const delayAdd = 0;
+const criticalPadding = 300;
 
 
 
@@ -129,6 +154,7 @@ function Renderer( originX, originY ) {
 
     DomUtilities.docReady( f => {
         overlayTemplate = Handlebars.compile( document.querySelector( '#overlay' ).innerHTML );
+        overlayFctTemplate = Handlebars.compile( document.querySelector( '#overlayFct' ).innerHTML );
         displayTextTemplate = Handlebars.compile( document.querySelector( '#displayTextTemplate' ).innerHTML );
         timerTemplate = Handlebars.compile( document.querySelector( '#timerTemplate' ).innerHTML );
         timerIconTemplate = Handlebars.compile( document.querySelector( '#timerIconTemplate' ).innerHTML );
@@ -149,8 +175,16 @@ function Renderer( originX, originY ) {
             
             overlays.forEach( overlay => {
                 
-                let content = overlayTemplate( {} );
+                let content;
                 let div = document.createElement( 'div' );
+
+                if ( overlay.overlayType === 'FCT' ) {
+                    content = overlayFctTemplate( {} );
+                    div.setAttribute( fctCssEncapsulationId, '' );
+                } else {
+                    content = overlayTemplate( {} );
+                }
+
                 div.innerHTML = content;
                 div.style.position = 'absolute';
             
@@ -177,17 +211,21 @@ function Renderer( originX, originY ) {
                     overlayComponents: [],
                 };
 
+                overlayInstances[ overlay.overlayId ].encapsulationId = '_' + nanoid();
                 overlayInstances[ overlay.overlayId ].title.innerHTML = overlay.name;
 
                 div.addEventListener( 'click', function ( e ) {
                     moveToTop( div );
                 } );
-                
+
+                div.setAttribute( overlayInstances[ overlay.overlayId ].encapsulationId, '' );
+
                 updateOverlay( overlay.overlayId, overlay );
             } );
             
         } );
     
+    /** Tell the main thread that we need a list of all overlays. */
     ipcRenderer.send( 'overlay:get', null );
 
     ipcRenderer.on( 'renderer:receive:component',
@@ -199,6 +237,17 @@ function Renderer( originX, originY ) {
         function ( event, model ) {
             model.added = new Date();
             render( model.overlayId, model );
+        } );
+
+    ipcRenderer.on( 'renderer:receive:fct-component',
+        /**
+         * Handles receiving a new trigger action.
+         * @param {*} event The event object.
+         * @param {OverlayComponent} model The trigger action.
+         */
+        function ( event, model ) {
+            model.added = new Date();
+            renderFct( model.overlayId, model );
         } );
 
     ipcRenderer.on( 'overlay:window:enable-edit', function ( event, overlayId ) {
@@ -269,7 +318,7 @@ function Renderer( originX, originY ) {
                             overlayInstances[ overlayId ].overlayComponents[ i ].removeComponent();
                         }
                     }
-                    
+
                 }
             }
         }
@@ -289,6 +338,28 @@ function Renderer( originX, originY ) {
             }
             console.error( 'Does not handle cancelling updates. When the user cancels, it should revert any changes.' );
             console.error( 'Does not handle new overlays.' );
+        } );
+    
+    ipcRenderer.on( 'fctStyles',
+        /**
+         * Handles receiving updates to FCT styles.
+         * 
+         * @param {any} event The event args?
+         * @param {FctStylesModel} fctStyles The user-specified FCT styles.
+         */
+        ( event, fctStyles ) => {
+            let style = styleSheetUtil.createStyleSheet( document, 'fct-styles' );
+
+            style.sheet.insertRule( styleSheetUtil.createTextRule( fctStyles.fctDmgOutStyle, 'fct-dmg-out', fctCssEncapsulationId ) );
+            style.sheet.insertRule( styleSheetUtil.createTextRule( fctStyles.fctDmgInStyle, 'fct-dmg-in', fctCssEncapsulationId ) );
+            style.sheet.insertRule( styleSheetUtil.createTextRule( fctStyles.fctSpellDmgOutStyle, 'fct-spell-dmg-out', fctCssEncapsulationId ) );
+            style.sheet.insertRule( styleSheetUtil.createTextRule( fctStyles.fctSpellDmgInStyle, 'fct-spell-dmg-in', fctCssEncapsulationId ) );
+            style.sheet.insertRule( styleSheetUtil.createTextRule( fctStyles.fctHealingOutStyle, 'fct-healing-out', fctCssEncapsulationId ) );
+            style.sheet.insertRule( styleSheetUtil.createTextRule( fctStyles.fctHealingInStyle, 'fct-healing-in', fctCssEncapsulationId ) );
+            style.sheet.insertRule( styleSheetUtil.createTextRule( fctStyles.fctSkillStyle, 'fct-skill', fctCssEncapsulationId ) );
+
+            console.log( 'style', style );
+            
         } );
 
     speechSynthesis.onvoiceschanged = () => {
@@ -322,128 +393,219 @@ function updateOverlay( overlayId, model ) {
     // let noOverflowTypes = [ 'Log', 'Alert', 'Timer', 'Chart' ];
     if ( model.overlayType !== 'FCT' ) {
         contentArea.classList.add( 'no-overflow' );
-    }
 
-    // Content area display styles, the defaults.
-    contentArea.style.fontFamily = `"${model.fontFamily}"`;
-    contentArea.style.fontSize = `${model.fontSize}px`;
-    contentArea.style.lineHeight = `${( model.lineHeight > 10 ? model.lineHeight : 90 ) / 100}em`;
-    contentArea.style.fontWeight = model.fontWeight > 0 ? model.fontWeight : 300;
-
-    if ( model.overlayType === 'Alert' ) {
-        contentArea.style.textAlign = model.horizontalAlignment;
-        if ( model.verticalAlignment === 'bottom' ) {
-            contentArea.style.display = 'flex';
-            contentArea.style.flexDirection = 'column';
-            contentArea.style.justifyContent = 'flex-end';
-        } else if ( model.verticalAlignment === 'middle' ) {
-            contentArea.style.display = 'flex';
-            contentArea.style.flexDirection = 'column';
-            contentArea.style.justifyContent = 'center';
-        } else {
-            contentArea.style.display = 'block';
-            contentArea.style.flexDirection = undefined;
-            contentArea.style.justifyContent = undefined;
-        }
-    }
-
-    contentArea.querySelectorAll( '.progress' ).forEach( f => f.style.marginBottom = contentArea.style.lineHeight );
-
-    if ( model.fontColor ) {
-        if ( model.fontTransparency < 1 ) {
-            contentArea.style.color = `${model.fontColor}${componentToHex( Math.round( model.fontTransparency * 255 ) )}`;
-        } else {
-            contentArea.style.color = `${model.fontColor}`;
-        }
-    }
-    if ( model.backgroundTransparency && model.backgroundTransparency > 0 && model.backgroundColor ) {
-        contentArea.style.backgroundColor = `${model.backgroundColor}${componentToHex( Math.round( model.backgroundTransparency * 255 ) )}`;
-    } else {
-        contentArea.style.backgroundColor = null;
-    }
-    if ( model.borderTransparency && model.borderTransparency > 0 && model.borderColor ) {
-        contentArea.style.border = `3px solid ${model.borderColor}${componentToHex( Math.round( model.borderTransparency * 255 ) )}`;
-    } else {
-        contentArea.style.border = null;
-    }
-
-    // width = contentArea.clientWidth;
-    // height = contentArea.clientHeight;
-    // fontSize = model.fontSize;
-    overlayInstances[ overlayId ].sortDirection = model.timerSortType;
-
-    contentArea.style.textShadow = null;
-    let textShadow = null;
-
-    if ( model.showTextBorder === true ) {
-        textShadow = `0px 0px 1px ${model.textBorderColor}, -1px -1px 0 ${model.textBorderColor}, 1px -1px 0 ${model.textBorderColor}, -1px 1px 0 ${model.textBorderColor}, 1px 1px 0 ${model.textBorderColor}`;
-    } else if ( model.overlayType === 'Log' ) {
-        textShadow = `0px 0px 1px #000000, -1px -1px 0 #000000, 1px -1px 0 #000000, -1px 1px 0 #000000, 1px 1px 0 #000000`;
-        model.showTextGlow = true;
-        model.textGlowSize = 3;
-        model.textGlowColor = '#000000';
-    }
-
-    if ( model.showTextGlow ) {
-        if ( textShadow?.length > 0 ) {
-            textShadow += ',';
-        } else {
-            textShadow = '';
-        }
-
-        textShadow += `0px 0px ${model.textGlowSize}px ${model.textGlowColor}, -1px -1px ${model.textGlowSize}px ${model.textGlowColor}, 1px -1px ${model.textGlowSize}px ${model.textGlowColor}, -1px 1px ${model.textGlowSize}px ${model.textGlowColor}, 1px 1px ${model.textGlowSize}px ${model.textGlowColor}`;
-    }
-    contentArea.style.textShadow = textShadow;
-
-    // Calculate the height of dot texts.
-    let pDot = document.createElement( 'p' );
-    pDot.classList.add( 'dot-text' );
-    pDot.style.visibility = 'hidden';
-    pDot.innerHTML = '&nbsp;';
-    contentArea.appendChild( pDot );
-    overlayInstances[ overlayId ].dotTextHeight = pDot.clientHeight;
-    contentArea.style.paddingLeft = `${overlayInstances[ overlayId ].dotTextHeight + 2}px`;
-    contentArea.removeChild( pDot );
-
-    // Update any active elements
-    overlayInstances[ overlayId ].dom.querySelectorAll( '.overlay-content-area .dot-icon' ).forEach( icon => {
-        icon.style.marginLeft = `-${overlayInstances[ overlayId ].dotTextHeight + 2}px`;
-        icon.style.height = `${overlayInstances[ overlayId ].dotTextHeight}px`;
-    } );
-
-    overlayInstances[ overlayId ].showRemainingDuration = model.showTimeRemaining === true;
-
-    if ( model.groupByTarget ) {
-        contentArea.classList.add( 'grouped-mobs' );
-        overlayInstances[ overlayId ].groupByTarget = true;
-    } else {
-        contentArea.classList.remove( 'grouped-mobs' );
-        overlayInstances[ overlayId ].groupByTarget = false;
-    }
-
-    overlayInstances[ overlayId ].groupHeaderSize = model.groupHeaderSize > 0 ? model.groupHeaderSize : 12;
-    overlayInstances[ overlayId ].groupHeaderColor = !StringUtilities.isNullOrWhitespace( model.groupHeaderColor ) ? model.groupHeaderColor : '#ffffff';
-    overlayInstances[ overlayId ].groupHeaderWeight = model.groupHeaderWeight > 0 ? model.groupHeaderWeight : 400;
-
-    overlayInstances[ overlayId ].hideTargetLabel = model.hideTargetLabel;
-
-    for ( let key in overlayInstances[ overlayId ].overlayGroups ) {
-        if ( overlayInstances[ overlayId ].overlayGroups.hasOwnProperty( key ) ) {
-                    
-            let h6 = overlayInstances[ overlayId ].overlayGroups[ key ].dom.querySelector( 'h6' );
-
-            h6.style.fontSize = `${overlayInstances[ overlayId ].groupHeaderSize}px`;
-            h6.style.color = overlayInstances[ overlayId ].groupHeaderColor;
-            h6.style.fontWeight = overlayInstances[ overlayId ].groupHeaderWeight;
-
-            if ( overlayInstances[ overlayId ].hideTargetLabel ) {
-                h6.style.display = 'none';
+        // Content area display styles, the defaults.
+        contentArea.style.fontFamily = `"${model.fontFamily}"`;
+        contentArea.style.fontSize = `${model.fontSize}px`;
+        contentArea.style.lineHeight = `${( model.lineHeight > 10 ? model.lineHeight : 90 ) / 100}em`;
+        contentArea.style.fontWeight = model.fontWeight > 0 ? model.fontWeight : 300;
+    
+        if ( model.overlayType === 'Alert' ) {
+            contentArea.style.textAlign = model.horizontalAlignment;
+            if ( model.verticalAlignment === 'bottom' ) {
+                contentArea.style.display = 'flex';
+                contentArea.style.flexDirection = 'column';
+                contentArea.style.justifyContent = 'flex-end';
+            } else if ( model.verticalAlignment === 'middle' ) {
+                contentArea.style.display = 'flex';
+                contentArea.style.flexDirection = 'column';
+                contentArea.style.justifyContent = 'center';
             } else {
-                delete h6.style.display;
+                contentArea.style.display = 'block';
+                contentArea.style.flexDirection = undefined;
+                contentArea.style.justifyContent = undefined;
             }
         }
+    
+        contentArea.querySelectorAll( '.progress' ).forEach( f => f.style.marginBottom = contentArea.style.lineHeight );
+    
+        if ( model.fontColor ) {
+            if ( model.fontTransparency < 1 ) {
+                contentArea.style.color = `${model.fontColor}${componentToHex( Math.round( model.fontTransparency * 255 ) )}`;
+            } else {
+                contentArea.style.color = `${model.fontColor}`;
+            }
+        }
+        if ( model.backgroundTransparency && model.backgroundTransparency > 0 && model.backgroundColor ) {
+            contentArea.style.backgroundColor = `${model.backgroundColor}${componentToHex( Math.round( model.backgroundTransparency * 255 ) )}`;
+        } else {
+            contentArea.style.backgroundColor = null;
+        }
+        if ( model.borderTransparency && model.borderTransparency > 0 && model.borderColor ) {
+            contentArea.style.border = `3px solid ${model.borderColor}${componentToHex( Math.round( model.borderTransparency * 255 ) )}`;
+        } else {
+            contentArea.style.border = null;
+        }
+    
+        // width = contentArea.clientWidth;
+        // height = contentArea.clientHeight;
+        // fontSize = model.fontSize;
+        overlayInstances[ overlayId ].sortDirection = model.timerSortType;
+    
+        contentArea.style.textShadow = null;
+        let textShadow = null;
+    
+        if ( model.showTextBorder === true ) {
+            textShadow = `0px 0px 1px ${model.textBorderColor}, -1px -1px 0 ${model.textBorderColor}, 1px -1px 0 ${model.textBorderColor}, -1px 1px 0 ${model.textBorderColor}, 1px 1px 0 ${model.textBorderColor}`;
+        } else if ( model.overlayType === 'Log' ) {
+            textShadow = `0px 0px 1px #000000, -1px -1px 0 #000000, 1px -1px 0 #000000, -1px 1px 0 #000000, 1px 1px 0 #000000`;
+            model.showTextGlow = true;
+            model.textGlowSize = 3;
+            model.textGlowColor = '#000000';
+        }
+    
+        if ( model.showTextGlow ) {
+            if ( textShadow?.length > 0 ) {
+                textShadow += ',';
+            } else {
+                textShadow = '';
+            }
+    
+            textShadow += `0px 0px ${model.textGlowSize}px ${model.textGlowColor}, -1px -1px ${model.textGlowSize}px ${model.textGlowColor}, 1px -1px ${model.textGlowSize}px ${model.textGlowColor}, -1px 1px ${model.textGlowSize}px ${model.textGlowColor}, 1px 1px ${model.textGlowSize}px ${model.textGlowColor}`;
+        }
+        contentArea.style.textShadow = textShadow;
+    
+        // Calculate the height of dot texts.
+        let pDot = document.createElement( 'p' );
+        pDot.classList.add( 'dot-text' );
+        pDot.style.visibility = 'hidden';
+        pDot.innerHTML = '&nbsp;';
+        contentArea.appendChild( pDot );
+        overlayInstances[ overlayId ].dotTextHeight = pDot.clientHeight;
+        contentArea.style.paddingLeft = `${overlayInstances[ overlayId ].dotTextHeight + 2}px`;
+        contentArea.removeChild( pDot );
+    
+        // Update any active elements
+        overlayInstances[ overlayId ].dom.querySelectorAll( '.overlay-content-area .dot-icon' ).forEach( icon => {
+            icon.style.marginLeft = `-${overlayInstances[ overlayId ].dotTextHeight + 2}px`;
+            icon.style.height = `${overlayInstances[ overlayId ].dotTextHeight}px`;
+        } );
+    
+        overlayInstances[ overlayId ].showRemainingDuration = model.showTimeRemaining === true;
+    
+        if ( model.groupByTarget ) {
+            contentArea.classList.add( 'grouped-mobs' );
+            overlayInstances[ overlayId ].groupByTarget = true;
+        } else {
+            contentArea.classList.remove( 'grouped-mobs' );
+            overlayInstances[ overlayId ].groupByTarget = false;
+        }
+    
+        overlayInstances[ overlayId ].groupHeaderSize = model.groupHeaderSize > 0 ? model.groupHeaderSize : 12;
+        overlayInstances[ overlayId ].groupHeaderColor = !StringUtilities.isNullOrWhitespace( model.groupHeaderColor ) ? model.groupHeaderColor : '#ffffff';
+        overlayInstances[ overlayId ].groupHeaderWeight = model.groupHeaderWeight > 0 ? model.groupHeaderWeight : 400;
+    
+        overlayInstances[ overlayId ].hideTargetLabel = model.hideTargetLabel;
+    
+        for ( let key in overlayInstances[ overlayId ].overlayGroups ) {
+            if ( overlayInstances[ overlayId ].overlayGroups.hasOwnProperty( key ) ) {
+                        
+                let h6 = overlayInstances[ overlayId ].overlayGroups[ key ].dom.querySelector( 'h6' );
+    
+                h6.style.fontSize = `${overlayInstances[ overlayId ].groupHeaderSize}px`;
+                h6.style.color = overlayInstances[ overlayId ].groupHeaderColor;
+                h6.style.fontWeight = overlayInstances[ overlayId ].groupHeaderWeight;
+    
+                if ( overlayInstances[ overlayId ].hideTargetLabel ) {
+                    h6.style.display = 'none';
+                } else {
+                    delete h6.style.display;
+                }
+            }
+        }
+    } else {
+        
+        let healingContentArea = overlayInstances[ overlayId ].dom.querySelector( '.healing-content-area' );
+        contentArea.style.fontFamily = `"${model.fontFamily}"`;
+        contentArea.style.fontSize = `${model.fontSize}px`;
+        contentArea.style.lineHeight = `${( model.lineHeight > 10 ? model.lineHeight : 90 ) / 100}em`;
+        contentArea.style.fontWeight = model.fontWeight > 0 ? model.fontWeight : 300;
+        
+        healingContentArea.style.fontFamily = `"${model.fontFamily}"`;
+        healingContentArea.style.fontSize = `${model.fontSize}px`;
+        healingContentArea.style.lineHeight = `${( model.lineHeight > 10 ? model.lineHeight : 90 ) / 100}em`;
+        healingContentArea.style.fontWeight = model.fontWeight > 0 ? model.fontWeight : 300;
+
+        if ( model.fontColor ) {
+            if ( model.fontTransparency < 1 ) {
+                contentArea.style.color = `${model.fontColor}${componentToHex( Math.round( model.fontTransparency * 255 ) )}`;
+            } else {
+                contentArea.style.color = `${model.fontColor}`;
+            }
+        }
+        if ( model.fontColor ) {
+            if ( model.fontTransparency < 1 ) {
+                healingContentArea.style.color = `${model.fontColor}${componentToHex( Math.round( model.fontTransparency * 255 ) )}`;
+            } else {
+                healingContentArea.style.color = `${model.fontColor}`;
+            }
+        }
+        if ( model.backgroundTransparency && model.backgroundTransparency > 0 && model.backgroundColor ) {
+            contentArea.style.backgroundColor = `${model.backgroundColor}${componentToHex( Math.round( model.backgroundTransparency * 255 ) )}`;
+        } else {
+            contentArea.style.backgroundColor = null;
+        }
+        if ( model.backgroundTransparency && model.backgroundTransparency > 0 && model.backgroundColor ) {
+            healingContentArea.style.backgroundColor = `${model.backgroundColor}${componentToHex( Math.round( model.backgroundTransparency * 255 ) )}`;
+        } else {
+            healingContentArea.style.backgroundColor = null;
+        }
+        if ( model.borderTransparency && model.borderTransparency > 0 && model.borderColor ) {
+            contentArea.style.border = `3px solid ${model.borderColor}${componentToHex( Math.round( model.borderTransparency * 255 ) )}`;
+        } else {
+            contentArea.style.border = null;
+        }
+        if ( model.borderTransparency && model.borderTransparency > 0 && model.borderColor ) {
+            healingContentArea.style.border = `3px solid ${model.borderColor}${componentToHex( Math.round( model.borderTransparency * 255 ) )}`;
+        } else {
+            healingContentArea.style.border = null;
+        }
+
+        contentArea.classList.add( 'fct-content' );
+        contentArea.style.margin = `${criticalPadding}px`;
+
+        healingContentArea.classList.add( 'fct-content' );
+        healingContentArea.style.margin = `${criticalPadding}px`;
+
+        // 
+        let width = contentArea.clientWidth;
+        let height = contentArea.clientHeight;
+        let fontSize = model.fontSize;
+
+        let quadrants = [];
+        let criticals = [];
+
+        // we could calculate the specific size of critical fct, but it's 'good enough' to estimate.  A little overlapping is fine.
+        let qw = fontSize / 2 * 4.6875 * 2.5;
+        let qh = fontSize / 2 * 3.125 * 2;
+
+        for ( let x = 0; x < Math.floor( width / qw ); x++ ) {
+            quadrants[ x ] = [];
+            criticals[ x ] = [];
+            for ( let y = 0; y < Math.floor( height / qh ); y++ ) {
+                quadrants[ x ][ y ] = { x: x * qw, y: y * qh };
+                criticals[ x ][ y ] = false;
+            }
+        }
+
+        overlayInstances[ overlayId ].width = width;
+        overlayInstances[ overlayId ].height = height;
+        overlayInstances[ overlayId ].fontSize = fontSize;
+
+        overlayInstances[ overlayId ].quadrants = quadrants;
+        overlayInstances[ overlayId ].criticals = criticals;
     }
             
+}
+
+/**
+ * Renders the FCT component.
+ *
+ * @param {string} overlayId The id of the desired overlay.
+ * @param {FctModel} comp Tells the renderer to forcefully redraw the overlayComponents.
+ */
+function renderFct( overlayId, comp ) {
+    console.log( 'FCT Comp', comp );
 }
 
 
@@ -465,7 +627,7 @@ function render( overlayId, comp ) {
     let contentArea = overlayInstances[ overlayId ].dom.querySelector( '.overlay-content-area' );
     let now = new Date();
 
-    if ( comp.action.actionType === ActionTypes.DisplayText ) {
+    if ( comp?.action?.actionType === ActionTypes.DisplayText ) {
         comp.removeAt = new Date( now.setSeconds( comp.action.duration ) );
         let content = displayTextTemplate( { value: StringUtilities.format( comp.action.displayText, comp.matches ) } );
         let div = document.createElement( 'div' );
@@ -511,10 +673,10 @@ function render( overlayId, comp ) {
         }, comp.action.duration * 1000 );
         overlayInstances[ overlayId ].overlayComponents.push( comp );
 
-    } else if ( comp.action.actionType === ActionTypes.Timer
-        || comp.action.actionType === ActionTypes.Countdown
-        || comp.action.actionType === ActionTypes.DotTimer
-        || comp.action.actionType === ActionTypes.BeneficialTimer ) {
+    } else if ( comp?.action?.actionType === ActionTypes.Timer
+        || comp?.action?.actionType === ActionTypes.Countdown
+        || comp?.action?.actionType === ActionTypes.DotTimer
+        || comp?.action?.actionType === ActionTypes.BeneficialTimer ) {
         
         if ( restartTimerComponent( overlayId, comp ) ) {
             return;
@@ -1744,6 +1906,100 @@ function playAudioFile( fileId ) {
         }
     } );
     ipcRenderer.send( 'audio-file:get:url', fileId );
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Returns a random critical location that's free.
+ * 
+ * @param {string} overlayId The overlay id.
+ */
+function getRandomLocation( overlayId ) {
+    let c = getCompCount();
+    let xs = Math.floor( c / overlayInstances[ overlayId ].criticals.length );
+    // let yx = Math.floor( c / overlayInstances[ overlayId ].criticals[ 0 ].length );
+    let x = -1;
+    let y = -1;
+
+    let crazy = 0;
+    while ( x === -1 && crazy < overlayInstances[ overlayId ].criticals.length * overlayInstances[ overlayId ].criticals[ 0 ].length ) {
+        crazy++;
+
+        let t = NumberUtilities.randomBounded( 0, overlayInstances[ overlayId ].criticals.length );
+        if ( countCritX( t ) <= xs ) {
+            x = t;
+        }
+    }
+
+    if ( crazy === overlayInstances[ overlayId ].criticals.length * overlayInstances[ overlayId ].criticals[ 0 ].length ) {
+        return { x: NumberUtilities.randomBounded( 0, overlayInstances[ overlayId ].criticals.length ), y: NumberUtilities.randomBounded( 0, overlayInstances[ overlayId ].criticals[ 0 ].length ) };
+    }
+
+    crazy = 0;
+    while ( y === -1 && crazy < overlayInstances[ overlayId ].criticals[ x ].length ) {
+        crazy++;
+
+        let t = NumberUtilities.randomBounded( 0, overlayInstances[ overlayId ].criticals[ x ].length );
+        if ( !overlayInstances[ overlayId ].criticals[ x ][ t ] ) {
+            y = t;
+        }
+    }
+
+    return { x: x, y: y };
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Returns the total number of criticals on the screen.
+ * 
+ * @param {string} overlayId The overlay id.
+ * @returns 
+ */
+function getCompCount( overlayId ) {
+    let c = 0;
+    for ( let x = 0; x < overlayInstances[ overlayId ].criticals.length; x++ ) {
+        for ( let y = 0; y < overlayInstances[ overlayId ].criticals[ x ].length; y++ ) {
+            c += overlayInstances[ overlayId ].criticals[ x ][ y ] === true ? 1 : 0;
+        }
+    }
+    return c;
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Returns the number of criticals in the x position.
+ * 
+ * @param {string} overlayId The overlay id.
+ * @param {number} x The x position.
+ */
+function countCritX( overlayId, x ) {
+    let c = 0;
+    overlayInstances[ overlayId ].criticals[ x ].forEach( pos => c += pos ? 1 : 0 );
+    return c;
 }
 
 module.exports = Renderer;

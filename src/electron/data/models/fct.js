@@ -28,6 +28,7 @@ class FctModel extends OverlayComponent {
     timestamp = null;
     /** @type {number} */
     fctType = FctTypes.dmgOut;
+    fct = true;
 }
 
 class FctStylesModel {

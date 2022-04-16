@@ -810,7 +810,7 @@ function parseLogEntries( raw, simulating ) {
                 model.timestamp = timestamp;
                 model.overlayId = model.dealt ? damageDealtOverlayId : damageReceivedOverlayId;
 
-                ipcRenderer.send( 'overlay:send:component', model );
+                ipcRenderer.send( 'overlay:send:fct-component', model );
 
                 // leave the loop, we found the correct FCT type.
                 break;
