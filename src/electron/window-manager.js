@@ -201,15 +201,11 @@ class WindowManager {
         } );
 
         ipcMain.on( 'overlay:highlight', ( event, overlayId ) => {
-            if ( overlayDictionary && overlayDictionary[ overlayId ] ) {
-                overlayDictionary[ overlayId ].window.webContents.send( 'overlay:window:highlight' );
-            }
+            this.#renderer.webContents.send( 'overlay:window:highlight', overlayId );
         } );
         
         ipcMain.on( 'overlay:dim', ( event, overlayId ) => {
-            if ( overlayDictionary && overlayDictionary[ overlayId ] ) {
-                overlayDictionary[ overlayId ].window.webContents.send( 'overlay:window:dim' );
-            }
+            this.#renderer.webContents.send( 'overlay:window:dim', overlayId );
         } );
         
         ipcMain.on( 'overlay:dialog:edit', ( event, overlayId ) => {
@@ -282,25 +278,15 @@ class WindowManager {
         } );
         
         ipcMain.on( 'overlay:broadcast', ( event, model ) => {
-            // if ( overlayDictionary && overlayDictionary[ model.overlayId ] ) {
-            //     overlayDictionary[ model.overlayId ].window.send( 'overlay:window:model', model );
-            // }
             this.#renderer.webContents.send( 'renderer:overlay:update', model );
         } );
         
         ipcMain.on( 'overlay:send:component', ( event, component ) => {
-            // if ( overlayDictionary && overlayDictionary[ component.overlayId ] ) {
-            //     overlayDictionary[ component.overlayId ].window.send( 'overlay:receive:component', component );
-            // }
             this.#renderer.webContents.send( 'renderer:receive:component', component );
         } );
         
         ipcMain.on( 'overlay:destroy:component', ( event, instanceId ) => {
-            for ( var overlayId in overlayDictionary ) {
-                if ( overlayDictionary.hasOwnProperty( overlayId ) ) {
-                    overlayDictionary[ overlayId ].window.send( 'component:destroy', instanceId );
-                }
-            }
+            this.#renderer.webContents.send( 'component:destroy', instanceId );
         } );
 
         ipcMain.on( 'gina:dialog:import', ( event, arg ) => {

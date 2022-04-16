@@ -222,52 +222,59 @@ function Renderer( originX, originY ) {
         } );
     } );
 
-    // ipcRenderer.on( 'overlay:window:highlight', function ( event ) {
-    //     document.querySelector( 'body' ).classList.add( 'highlight-border' );
-    // } );
+    ipcRenderer.on( 'overlay:window:highlight', function ( event, overlayId ) {
+        overlayInstances[ overlayId ]?.dom.classList.add( 'highlight-border' );
+    } );
 
-    // ipcRenderer.on( 'overlay:window:dim', function ( event ) {
-    //     document.querySelector( 'body' ).classList.remove( 'highlight-border' );
-    // } );
+    ipcRenderer.on( 'overlay:window:dim', function ( event, overlayId ) {
+        overlayInstances[ overlayId ]?.dom.classList.remove( 'highlight-border' );
+    } );
 
-    // ipcRenderer.on( 'component:destroy', function ( event, instanceId ) {
+    ipcRenderer.on( 'component:destroy', function ( event, instanceId ) {
         
-    //     if ( overlayInstances[ overlayId ].groupByTarget ) {
-    //         for ( let key in overlayInstances[ overlayId ].overlayGroups ) {
-    //             if ( overlayInstances[ overlayId ].overlayGroups.hasOwnProperty( key ) ) {
+        for ( let overlayId in overlayInstances ) {
+            if ( overlayInstances.hasOwnProperty( overlayId ) ) {
+                
+                if ( overlayInstances[ overlayId ].groupByTarget ) {
+
+                    for ( let key in overlayInstances[ overlayId ].overlayGroups ) {
+                        if ( overlayInstances[ overlayId ].overlayGroups.hasOwnProperty( key ) ) {
                     
-    //                 let i = _.findIndex( overlayInstances[ overlayId ].overlayGroups[ key ].components, comp => comp.instanceId === instanceId );
-    //                 if ( i > -1 ) {
-    //                     let comp = overlayInstances[ overlayId ].overlayGroups[ key ].components[ i ];
-    //                     let timerType = comp.action.actionType === ActionTypes.BeneficialTimer || comp.action.actionType === ActionTypes.Countdown || comp.action.actionType === ActionTypes.Timer;
-    //                     let endNaturally = timerType === true && ( comp.action.remainAfterEnded || comp.action.notifyWhenEnded ) && !comp.action.remainUnlessEndedEarly;
+                            let i = _.findIndex( overlayInstances[ overlayId ].overlayGroups[ key ].components, comp => comp.instanceId === instanceId );
+                            if ( i > -1 ) {
+                                let comp = overlayInstances[ overlayId ].overlayGroups[ key ].components[ i ];
+                                let timerType = comp.action.actionType === ActionTypes.BeneficialTimer || comp.action.actionType === ActionTypes.Countdown || comp.action.actionType === ActionTypes.Timer;
+                                let endNaturally = timerType === true && ( comp.action.remainAfterEnded || comp.action.notifyWhenEnded ) && !comp.action.remainUnlessEndedEarly;
                         
-    //                     if ( endNaturally ) {
-    //                         comp.start = new Date( new Date().getTime() - comp.action.duration * 1000 );
-    //                     } else {
-    //                         comp.removeComponent();
-    //                     }
-
-    //                 }
+                                if ( endNaturally ) {
+                                    comp.start = new Date( new Date().getTime() - comp.action.duration * 1000 );
+                                } else {
+                                    comp.removeComponent();
+                                }
+                            }
                     
-    //             }
-    //         }
+                        }
+                    }
             
-    //     } else {
-    //         let i = _.findIndex( overlayInstances[ overlayId ].overlayComponents, comp => comp.instanceId === instanceId );
-    //         if ( i > -1 ) {
-    //             let timerType = overlayInstances[ overlayId ].overlayComponents[ i ].action.actionType === ActionTypes.BeneficialTimer || overlayInstances[ overlayId ].overlayComponents[ i ].action.actionType === ActionTypes.Countdown || overlayInstances[ overlayId ].overlayComponents[ i ].action.actionType === ActionTypes.Timer;
-    //             let endNaturally = timerType === true && ( overlayInstances[ overlayId ].overlayComponents[ i ].action.remainAfterEnded || overlayInstances[ overlayId ].overlayComponents[ i ].action.notifyWhenEnded );
+                } else {
+                    let i = _.findIndex( overlayInstances[ overlayId ].overlayComponents, comp => comp.instanceId === instanceId );
 
-    //             if ( endNaturally ) {
-    //                 overlayInstances[ overlayId ].overlayComponents[ i ].start = new Date( new Date().getTime() - overlayInstances[ overlayId ].overlayComponents[ i ].action.duration * 1000 );
-    //             } else {
-    //                 overlayInstances[ overlayId ].overlayComponents[ i ].removeComponent();
-    //             }
-    //         }
-    //     }
+                    if ( i > -1 ) {
+                        let timerType = overlayInstances[ overlayId ].overlayComponents[ i ].action.actionType === ActionTypes.BeneficialTimer || overlayInstances[ overlayId ].overlayComponents[ i ].action.actionType === ActionTypes.Countdown || overlayInstances[ overlayId ].overlayComponents[ i ].action.actionType === ActionTypes.Timer;
+                        let endNaturally = timerType === true && ( overlayInstances[ overlayId ].overlayComponents[ i ].action.remainAfterEnded || overlayInstances[ overlayId ].overlayComponents[ i ].action.notifyWhenEnded );
 
-    // } );
+                        if ( endNaturally ) {
+                            overlayInstances[ overlayId ].overlayComponents[ i ].start = new Date( new Date().getTime() - overlayInstances[ overlayId ].overlayComponents[ i ].action.duration * 1000 );
+                        } else {
+                            overlayInstances[ overlayId ].overlayComponents[ i ].removeComponent();
+                        }
+                    }
+                    
+                }
+            }
+        }
+
+    } );
 
     ipcRenderer.on( 'renderer:overlay:update',
         /**
