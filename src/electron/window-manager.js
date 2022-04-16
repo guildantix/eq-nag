@@ -303,51 +303,9 @@ class WindowManager {
             } );
 
         } );
-
-        overlayDatabase.registerOverlayPositionHandler( overlays => this.updateOverlayPositions( overlays ) );
         
         userPreferencesDatabase.onFctStyleChanges.push( fctStyles => {
             this.#renderer.webContents.send( 'fctStyles', fctStyles );
-        } );
-    }
-
-
-
-
-
-
-
-
-
-
-    /**
-     * Updates all overlay window positions.
-     * 
-     * @param {OverlayWindow[]} overlays Overlays
-     */
-    updateOverlayPositions( overlays ) {
-        overlays.forEach( overlay => {
-
-            if ( overlay.overlayType === 'FCT' ) {
-
-                overlayDictionary[ overlay.overlayId ].window.setBounds( {
-                    x: overlay.x - criticalPadding,
-                    y: overlay.y - criticalPadding,
-                    width: overlay.windowWidth + criticalPadding * 2,
-                    height: overlay.windowHeight + criticalPadding * 2
-                } );
-
-            } else {
-
-                overlayDictionary[ overlay.overlayId ].window.setBounds( {
-                    x: overlay.x,
-                    y: overlay.y,
-                    width: overlay.windowWidth,
-                    height: overlay.windowHeight
-                } );
-
-            }
-
         } );
     }
     
