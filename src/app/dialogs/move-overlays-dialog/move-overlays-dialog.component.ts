@@ -12,7 +12,6 @@ import { forkJoin, Observable } from 'rxjs';
 export class MoveOverlaysDialogComponent implements OnInit {
 
     private overlays: OverlayWindowModel[] = [];
-    private noChangesOverlays: OverlayWindowModel[];
 
     @HostListener( 'window:beforeunload' ) doSomething() {
         this.overlays.forEach( overlay => this.ipcService.disableOverlayEditMode( overlay.overlayId ) );
@@ -23,9 +22,6 @@ export class MoveOverlaysDialogComponent implements OnInit {
     ngOnInit() {
         this.ipcService.getOverlayWindows().subscribe( overlays => {
             this.overlays = overlays;
-            this.noChangesOverlays = _.cloneDeep( overlays );
-
-            // this.overlays.forEach( overlay => this.ipcService.enableOverlayEditMode( overlay.overlayId ) );
             this.ipcService.arrangeOverlays();
         } );
     }
@@ -60,9 +56,8 @@ export class MoveOverlaysDialogComponent implements OnInit {
      * Cancels any changes and then closes this dialog.
      */
     cancel() {
-        this.ipcService.updateOverlaysPositions( this.noChangesOverlays ).subscribe( updated => {
-            this.closeModal();
-        } );
+        this.ipcService.undoOverlayPositionChanges();
+        this.closeModal();
     }
 
 
@@ -78,6 +73,7 @@ export class MoveOverlaysDialogComponent implements OnInit {
      * Closes this dialog.
      */
     save() {
+        this.ipcService.saveUpdatedOverlayPositions();
         this.closeModal();
     }
 }

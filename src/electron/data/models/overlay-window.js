@@ -9,6 +9,19 @@ var TimerSortTypes = {
     Descending: 2,
 }
 
+class OverlayDimensions {
+    /** @type string */
+    overlayId;
+    /** @type {number} */
+    windowHeight;
+    /** @type {number} */
+    windowWidth;
+    /** @type {number} */
+    x;
+    /** @type {number} */
+    y;
+}
+
 class OverlayWindow {
 
     overlayId = null;
@@ -127,4 +140,4 @@ class OverlayComponent {
     removeComponent;
 }
 
-module.exports = { OverlayWindow, OverlayComponent, TimerSortTypes };
+module.exports = { OverlayDimensions, OverlayWindow, OverlayComponent, TimerSortTypes };

@@ -587,6 +587,14 @@ export class IpcService {
         return obs;
     }
 
+    public undoOverlayPositionChanges(): void {
+        this.ipc.send( 'renderer:reset:overlayDimensions', null );
+    }
+
+    public saveUpdatedOverlayPositions(): void {
+        this.ipc.send( 'renderer:save:overlayDimensions', null );
+    }
+
     public updateOverlaysPositions( overlays: OverlayWindowModel[] ): Observable<boolean> {
         let obs: Observable<boolean> = new Observable<boolean>( ( observer: Observer<boolean> ) => {
             

@@ -3,7 +3,7 @@ const DomUtilities = require( '../utilities/dom' );
 const StringUtilities = require( '../utilities/string' );
 const NumberUtilities = require( '../utilities/numbers' );
 const ArrayUtilities = require( '../utilities/arrays' );
-const { OverlayWindow, OverlayComponent, TimerSortTypes } = require( '../data/models/overlay-window' );
+const { OverlayDimensions, OverlayWindow, OverlayComponent, TimerSortTypes } = require( '../data/models/overlay-window' );
 const { ActionTypes, TriggerAction, TriggerConditionTypes, OperatorTypes, TimerRestartBehaviors } = require( '../data/models/trigger' );
 const { ipcRenderer } = require( 'electron' );
 const Handlebars = require( "handlebars" );
@@ -361,6 +361,58 @@ function Renderer( originX, originY ) {
             // console.log( 'style', styleSheetUtil.createTextRule( fctStyles.fctDmgOutStyle, 'fct-dmg-out', fctCssEncapsulationId ) );
             // style.sheet.insertRule( `*[${fctCssEncapsulationId}] {border:1px solid green;}` );
             
+        } );
+
+    ipcRenderer.on( 'renderer:get:overlayDimensions',
+        /**
+         * Handles the event.
+         * 
+         * @param {any} event The event args.
+         * @param {OverlayDimensions[]} overlayDimensions The overlay dimension info.
+         */
+        function ( event, overlayDimensions ) {
+            overlayDimensions.forEach( d => {
+                overlayInstances[ d.overlayId ].dom.style.left = `${d.x + origin.x}px`;
+                overlayInstances[ d.overlayId ].dom.style.top = `${d.y + origin.y}px`;
+                overlayInstances[ d.overlayId ].dom.style.width = `${d.windowWidth}px`;
+                overlayInstances[ d.overlayId ].dom.style.height = `${d.windowHeight}px`;
+            } );
+        } );
+    
+    ipcRenderer.on( 'renderer:reset:overlayDimensions',
+        /**
+         * Resets the overlay dimenions via a reload.
+         * 
+         * @param {any} event The event args?
+         */
+        ( event ) => {
+            ipcRenderer.send( 'overlay:get:overlayDimensions', null );
+        } );
+    
+    ipcRenderer.on( 'renderer:save:overlayDimensions',
+        /**
+         * Compiles and sends the main thread a list of all overlay positions.
+         * 
+         * @param {any} event The event args?
+         */
+        ( event ) => {
+
+            /** @type {OverlayDimensions[]} */
+            let model = [];
+
+            for ( let overlayId in overlayInstances ) {
+                if ( overlayInstances.hasOwnProperty( overlayId ) ) {
+                    let d = new OverlayDimensions();
+                    d.overlayId = overlayId;
+                    d.x = overlayInstances[ overlayId ].dom.offsetLeft - origin.x;
+                    d.y = overlayInstances[ overlayId ].dom.offsetTop - origin.y;
+                    d.windowWidth = overlayInstances[ overlayId ].dom.offsetWidth;
+                    d.windowHeight = overlayInstances[ overlayId ].dom.offsetHeight;
+                    model.push( d );
+                }
+            }
+
+            ipcRenderer.send( 'overlay:set:overlayDimensions', model );
         } );
 
     speechSynthesis.onvoiceschanged = () => {

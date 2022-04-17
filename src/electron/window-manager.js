@@ -244,6 +244,14 @@ class WindowManager {
         ipcMain.on( 'overlay:destroy:component', ( event, instanceId ) => {
             this.#renderer.webContents.send( 'component:destroy', instanceId );
         } );
+        
+        ipcMain.on( 'renderer:reset:overlayDimensions', ( event ) => {
+            this.#renderer.webContents.send( 'renderer:reset:overlayDimensions', null );
+        } );
+        
+        ipcMain.on( 'renderer:save:overlayDimensions', ( event ) => {
+            this.#renderer.webContents.send( 'renderer:save:overlayDimensions', null );
+        } );
 
         ipcMain.on( 'gina:dialog:import', ( event, arg ) => {
             this.ginaImportWindow = new BrowserWindow( {

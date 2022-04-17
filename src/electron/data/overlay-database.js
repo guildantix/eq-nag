@@ -6,7 +6,7 @@ const customAlphabet = require( 'nanoid' ).customAlphabet;
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const idLen = 16;
 const nanoid = customAlphabet( alphabet, 16 );
-const { OverlayWindow } = require( './models/overlay-window' );
+const { OverlayDimensions, OverlayWindow } = require( './models/overlay-window' );
 const { StyleProperties } = require( './models/common' );
 
 class OverlayDatabaseStore extends Store {
@@ -362,6 +362,49 @@ class OverlayDatabaseStore extends Store {
             event.sender.webContents.send( 'overlay:delete', deleted );
             sendTick();
         } );
+
+        ipcMain.on( 'overlay:set:overlayDimensions',
+            /**
+             * Updates all overlay dimensions.
+             * 
+             * @param {any} event The event args?
+             * @param {OverlayDimensions[]} dims The overlay dimensions
+             */
+            ( event, dims ) => {
+                dims.forEach( d => {
+                    let model = this.find( d.overlayId );
+                    if ( model ) {
+                        model.x = d.x;
+                        model.y = d.y;
+                        model.windowWidth = d.windowWidth;
+                        model.windowHeight = d.windowHeight;
+                        this.update( model );
+                    }
+                } );
+                event.sender.webContents.send( 'overlays:update:position', true );
+            } );
+        
+        ipcMain.on( 'overlay:get:overlayDimensions',
+            /**
+             * Returns a list of all overlay dimensions.
+             * 
+             * @param {any} event The event args?
+             */
+            ( event ) => {
+                let overlays = this.getAll();
+                /** @type {OverlayDimensions[]} */
+                let dims = [];
+                overlays.forEach( o => {
+                    let d = new OverlayDimensions();
+                    d.overlayId = o.overlayId;
+                    d.x = o.x;
+                    d.y = o.y;
+                    d.windowWidth = o.windowWidth;
+                    d.windowHeight = o.windowHeight;
+                    dims.push( d );
+                } );
+                event.sender.webContents.send( 'renderer:get:overlayDimensions', dims );
+            } );
 
     }
 
