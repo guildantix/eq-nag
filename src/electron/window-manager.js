@@ -209,18 +209,12 @@ class WindowManager {
                 
             } );
 
-            ArrayUtilities.enumerateDictionary( overlayDictionary, ( item, key ) => clearInterval( item.interval ) );
             let moveInterval = setInterval( () => {
                 overlayMoveDialog.setAlwaysOnTop( true, "screen-saver" );
             }, 500 );
 
             overlayMoveDialog.on( 'close', function () {
                 clearInterval( moveInterval );
-                ArrayUtilities.enumerateDictionary( overlayDictionary, ( item, key ) => {
-                    item.interval = setInterval( () => {
-                        item.window.setAlwaysOnTop( true, "screen-saver" )
-                    }, 1000 );
-                } );
             } );
 
             overlayMoveDialog.once( "ready-to-show", () => {
