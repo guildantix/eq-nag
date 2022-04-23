@@ -380,6 +380,7 @@ class WindowManager {
             renderer.webContents.openDevTools();
         }
     
+        // TODO: Add an option to force always on top, or re-enable entirely.
         // let interval = setInterval( () => {
         //     renderer.setAlwaysOnTop( true, "screen-saver" );
         // }, 1000 );
@@ -400,15 +401,8 @@ class WindowManager {
      * Unloads all windows.
      */
     unload() {
-        if ( overlayDictionary ) {
-            for ( let key in overlayDictionary ) {
-                if ( overlayDictionary.hasOwnProperty( key ) ) {
-                    clearInterval( overlayDictionary[ key ].interval );
-                    overlayDictionary[ key ].window?.close();
-                    overlayDictionary[ key ].window = null;
-                }
-            }
-        }
+        this.#renderer?.close();
+        this.#renderer = null;
     }
 
 
