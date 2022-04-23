@@ -429,11 +429,10 @@ class WindowManager {
             fn( this.triggerLibraryWindow, 'triggerLibraryWindow' );
         }
 
-        if ( overlayDictionary ) {
-            for ( let overlayId in overlayDictionary ) {
-                fn( overlayDictionary[ overlayId ].window, overlayDictionary[ overlayId ].model.name );
-            }
+        if ( this.#renderer ) {
+            fn( this.#renderer, 'rendererWindow' );
         }
+        
     }
 
 
