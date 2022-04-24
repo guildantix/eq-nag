@@ -208,7 +208,6 @@ function Renderer( originX, originY ) {
          */
         ( data, overlay ) => {
             initializeOverlay( overlay );
-            console.log( 'new overlay', overlay );
         } );
     
     /** Tell the main thread that we need a list of all overlays. */
@@ -238,7 +237,6 @@ function Renderer( originX, originY ) {
 
     ipcRenderer.on( 'renderer:window:enable-edit', function ( event, overlayId ) {
         overlayInstances[ overlayId ].dom.classList.add( 'highlight-border' );
-        autoSizeHeader( overlayId );
     } );
 
     ipcRenderer.on( 'renderer:window:disable-edit', function ( event, overlayId ) {
@@ -479,8 +477,27 @@ function updateOverlay( overlayId, model ) {
     // document.querySelector( '#overlay-title' ).textContent = model.name ? model.name : 'Overlay';
     overlayInstances[ overlayId ].model = model;
     overlayInstances[ overlayId ].title.innerText = model.name ? model.name : 'Overlay';
-    // TODO: Scale overlay names to fit the area.
+
+    /** @type {HTMLElement} */
     let contentArea = overlayInstances[ overlayId ].dom.querySelector( '.overlay-content-area' );
+
+    // Sets the size of the header to fit the content area.
+    let renderWidth = DomUtilities.getInnerContentArea( contentArea );
+    const titleContainer = overlayInstances[ overlayId ].dom.querySelector( '.overlay-name-watermark' );
+    const title = overlayInstances[ overlayId ].title;
+    
+    titleContainer.style.display = 'block';
+    
+    const style = window.getComputedStyle( title );
+    const font = /(\d+(?:\.\d{1,2})?)\s?(.*)/.exec( style.fontSize );
+    let fntSize = parseFloat( font[ 1 ] );
+    const fntUnit = font[ 2 ];
+    
+    while ( title.offsetWidth > renderWidth.width ) {
+        fntSize -= 0.1;
+        title.style.fontSize = `${fntSize}${fntUnit}`;
+    }
+    titleContainer.style.display = '';
 
     // let noOverflowTypes = [ 'Log', 'Alert', 'Timer', 'Chart' ];
     if ( model.overlayType !== 'FCT' ) {
@@ -884,39 +901,6 @@ function render( overlayId, comp ) {
             
         }
     }
-}
-
-
-
-
-
-
-
-
-
-
-/**
- * Autosizes the header of the specified overlay.
- * @param {string} overlayId The id of the overlay.
- */
-function autoSizeHeader( overlayId ) {
-
-    /** @type {HTMLDivElement} */
-    let header = overlayInstances[ overlayId ].dom.querySelector( '.overlay-name-watermark' );
-    /** @type {HTMLElement} */
-    let title = overlayInstances[ overlayId ].dom.querySelector( '#overlay-title' );
-
-    let pos = header.style.position;
-    header.style.position = 'fixed';
-
-    let maxWidth = overlayInstances[ overlayId ].dom.clientWidth - ( overlayInstances[ overlayId ].dom.clientWidth * 0.1 );
-    let rem = 4.2;
-    while ( title.clientWidth > maxWidth ) {
-        rem -= 0.1;
-        title.style.fontSize = `${rem}rem`;
-    }
-
-    header.style.position = pos;
 }
 
 
