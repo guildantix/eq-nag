@@ -192,7 +192,7 @@ function Renderer( originX, originY ) {
          * @param {OverlayWindow[]} overlays The list of overlays.
          */
         function ( event, overlays ) {
-            
+            // TODO: Check if the resolution has changed, and modify size/position to coorelate.
             overlays.forEach( overlay => {
                 initializeOverlay( overlay );
             } );
@@ -479,6 +479,7 @@ function updateOverlay( overlayId, model ) {
     // document.querySelector( '#overlay-title' ).textContent = model.name ? model.name : 'Overlay';
     overlayInstances[ overlayId ].model = model;
     overlayInstances[ overlayId ].title.innerText = model.name ? model.name : 'Overlay';
+    // TODO: Scale overlay names to fit the area.
     let contentArea = overlayInstances[ overlayId ].dom.querySelector( '.overlay-content-area' );
 
     // let noOverflowTypes = [ 'Log', 'Alert', 'Timer', 'Chart' ];

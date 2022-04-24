@@ -75,6 +75,7 @@ export class OverlayEditorDialogComponent implements OnInit {
 
             if ( this.overlayId != null ) {
                 this.ipcService.getOverlayWindow( this.overlayId ).subscribe( overlay => {
+                    // TODO: Allow the user to move/resize this overlay.  Enter arrainge mode with just this overlay, keeping the editor window on top.
                     this.ipcService.enableOverlayEditMode( this.overlayId );
                     this._noChangesModel = Object.assign( new OverlayWindowModel(), overlay );
                     this.model = overlay;
