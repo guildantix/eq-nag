@@ -159,7 +159,6 @@ class WindowManager {
 
         ipcMain.on( 'overlay:enable-edit', ( event, overlayId ) => {
             // Note: This is triggered by the NgInit event on the overlay editor window.
-            // TODO: Check if new overlay, then load it.
             this.#renderer.webContents.send( 'renderer:window:enable-edit', overlayId );
         } );
         
