@@ -177,8 +177,8 @@ function Renderer( originX, originY ) {
             data.overlays.forEach( function ( overlay ) {
                 let div = overlayInstances[ overlay.overlayId ].dom;
 
-                div.style.left = ( overlay.x + originX ) + 'px';
-                div.style.top = ( overlay.y + originY ) + 'px';
+                div.style.left = ( overlay.x + origin.x ) + 'px';
+                div.style.top = ( overlay.y + origin.y ) + 'px';
                 div.style.height = ( overlay.windowHeight ) + 'px';
                 div.style.width = ( overlay.windowWidth ) + 'px';
             } );
@@ -194,55 +194,21 @@ function Renderer( originX, originY ) {
         function ( event, overlays ) {
             
             overlays.forEach( overlay => {
-                
-                let content;
-                let div = document.createElement( 'div' );
-
-                if ( overlay.overlayType === 'FCT' ) {
-                    content = overlayFctTemplate( {} );
-                    div.setAttribute( fctCssEncapsulationId, '' );
-                } else {
-                    content = overlayTemplate( {} );
-                }
-
-                div.innerHTML = content;
-                div.style.position = 'absolute';
-            
-                div.style.left = ( overlay.x + originX ) + 'px';
-                div.style.top = ( overlay.y + originY ) + 'px';
-                div.style.height = ( overlay.windowHeight ) + 'px';
-                div.style.width = ( overlay.windowWidth ) + 'px';
-                
-                document.body.appendChild( div );
-
-                overlayInstances[ overlay.overlayId ] = {
-                    dom: div,
-                    title: div.querySelector( '#overlay-title' ),
-                    model: overlay,
-                    overlayGroups: {},
-                    sortDirection: TimerSortTypes.None,
-                    dotTextHeight: 0,
-                    showRemainingDuration: false,
-                    groupByTarget: false,
-                    groupHeaderSize: 12,
-                    groupHeaderColor: '#ffffff',
-                    groupHeaderWeight: 400,
-                    hideTargetLabel: false,
-                    overlayComponents: [],
-                };
-
-                overlayInstances[ overlay.overlayId ].encapsulationId = '_' + nanoid();
-                overlayInstances[ overlay.overlayId ].title.innerHTML = overlay.name;
-
-                div.addEventListener( 'click', function ( e ) {
-                    moveToTop( div );
-                } );
-
-                div.setAttribute( overlayInstances[ overlay.overlayId ].encapsulationId, '' );
-
-                updateOverlay( overlay.overlayId, overlay );
+                initializeOverlay( overlay );
             } );
             
+        } );
+    
+    ipcRenderer.on( 'renderer:overlay:new',
+        /**
+         * Gets all overlay models.
+         * 
+         * @param {any} event 
+         * @param {OverlayWindow} overlay The new overlay.
+         */
+        ( data, overlay ) => {
+            initializeOverlay( overlay );
+            console.log( 'new overlay', overlay );
         } );
     
     /** Tell the main thread that we need a list of all overlays. */
@@ -356,8 +322,6 @@ function Renderer( originX, originY ) {
             if ( model?.overlayId ) {
                 updateOverlay( model.overlayId, model );
             }
-            console.error( 'Does not handle cancelling updates. When the user cancels, it should revert any changes.' );
-            console.error( 'Does not handle new overlays.' );
         } );
     
     ipcRenderer.on( 'fctStyles',
@@ -439,6 +403,60 @@ function Renderer( originX, originY ) {
         voiceOptions = speechSynthesis.getVoices();
     };
 
+}
+
+/**
+ * Initializes the given overlay.
+ * 
+ * @param {OverlayWindow} overlay The overlay to initialize.
+ */
+function initializeOverlay( overlay ) {
+    let content;
+    let div = document.createElement( 'div' );
+
+    if ( overlay.overlayType === 'FCT' ) {
+        content = overlayFctTemplate( {} );
+        div.setAttribute( fctCssEncapsulationId, '' );
+    } else {
+        content = overlayTemplate( {} );
+    }
+
+    div.innerHTML = content;
+    div.style.position = 'absolute';
+            
+    div.style.left = ( overlay.x + origin.x ) + 'px';
+    div.style.top = ( overlay.y + origin.y ) + 'px';
+    div.style.height = ( overlay.windowHeight ) + 'px';
+    div.style.width = ( overlay.windowWidth ) + 'px';
+                
+    document.body.appendChild( div );
+
+    overlayInstances[ overlay.overlayId ] = {
+        dom: div,
+        title: div.querySelector( '#overlay-title' ),
+        model: overlay,
+        overlayGroups: {},
+        sortDirection: TimerSortTypes.None,
+        dotTextHeight: 0,
+        showRemainingDuration: false,
+        groupByTarget: false,
+        groupHeaderSize: 12,
+        groupHeaderColor: '#ffffff',
+        groupHeaderWeight: 400,
+        hideTargetLabel: false,
+        overlayComponents: [],
+    };
+
+    overlayInstances[ overlay.overlayId ].encapsulationId = '_' + nanoid();
+    overlayInstances[ overlay.overlayId ].title.innerHTML = overlay.name;
+
+    div.addEventListener( 'click', function ( e ) {
+        moveToTop( div );
+    } );
+
+    div.setAttribute( overlayInstances[ overlay.overlayId ].encapsulationId, '' );
+
+    updateOverlay( overlay.overlayId, overlay );
 }
 
 

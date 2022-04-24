@@ -20,7 +20,7 @@ class OverlayDatabaseStore extends Store {
     /**
      * @type {(overlays: OverlayWindow[]) => void}
      */
-    #overlayPositionsHandlers = [];
+    #overlayMetaUpdateHandlers = [];
 
     /**
      * Registers an overlay handler function that executes when position 
@@ -28,8 +28,22 @@ class OverlayDatabaseStore extends Store {
      * 
      * @param {(overlays: OverlayWindow[]) => void} handler The handler callback
      */
-    registerOverlayPositionHandler( handler ) {
-        this.#overlayPositionsHandlers.push( handler );
+    registerOverlayMetaUpdateHandler( handler ) {
+        this.#overlayMetaUpdateHandlers.push( handler );
+    }
+
+    /**
+     * @type {(overlay: OverlayWindow) => void}
+     */
+    #newOverlayHandlers = [];
+
+    /**
+     * Registers a handler function that is invoked for new overlays.
+     * 
+     * @param {(overlay: OverlayWindow) => void} handler The handler callback
+     */
+    registerNewOverlayHandler( handler ) {
+        this.#newOverlayHandlers.push( handler );
     }
 
     get count() {
@@ -320,6 +334,7 @@ class OverlayDatabaseStore extends Store {
         ipcMain.on( 'overlay:create', ( event, overlay ) => {
             let overlayId = this.add( overlay );
             event.sender.webContents.send( 'overlay:create', overlayId );
+            this.#newOverlayHandlers.forEach( fn => fn( overlay ) );
             sendTick();
         } );
 
@@ -338,7 +353,7 @@ class OverlayDatabaseStore extends Store {
             overlay.windowWidth = model.windowWidth;
             overlay.windowHeight = model.windowHeight;
             let updated = this.update( overlay );
-            this.#overlayPositionsHandlers.forEach( fn => fn( this.getAll() ) );
+            this.#overlayMetaUpdateHandlers.forEach( fn => fn( [ model ] ) );
             event.sender.webContents.send( 'overlay:update:meta', updated );
             sendTick();
         } );
@@ -352,7 +367,7 @@ class OverlayDatabaseStore extends Store {
                 model.windowHeight = overlay.windowHeight;
                 this.update( model );
             } );
-            this.#overlayPositionsHandlers.forEach( fn => fn( this.getAll() ) );
+            this.#overlayMetaUpdateHandlers.forEach( fn => fn( this.getAll() ) );
             event.sender.webContents.send( 'overlays:update:position', true );
             sendTick();
         } );

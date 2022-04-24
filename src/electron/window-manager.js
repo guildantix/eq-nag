@@ -6,12 +6,13 @@ const { OverlayWindow } = require( "./data/models/overlay-window" );
 const ArrayUtilities = require( "./utilities/arrays" );
 const log = require( 'electron-log' );
 
-/** @type {Record<string, {window: BrowserWindow, interval: NodeJS.Timer, model: OverlayWindow, editMode: boolean}>} */
-var overlayDictionary = {};
-var criticalPadding = 300;
+// TODO: Remove commented code
+// /** @type {Record<string, {window: BrowserWindow, interval: NodeJS.Timer, model: OverlayWindow, editMode: boolean}>} */
+// var overlayDictionary = {};
+// var criticalPadding = 300;
 
-/** @type {Electron.Size} */
-var defaultSize;
+// /** @type {Electron.Size} */
+// var defaultSize;
 
 class WindowManager {
 
@@ -52,7 +53,8 @@ class WindowManager {
      * Initialize on ready variables.
      */
     onReady() {
-        defaultSize = screen.getPrimaryDisplay().workAreaSize;
+        // TODO: Remove commented code
+        // defaultSize = screen.getPrimaryDisplay().workAreaSize;
     }
 
 
@@ -76,6 +78,14 @@ class WindowManager {
         this.#userPrefDb = userPreferencesDatabase;
         this.#mainWindow = mainWindowRef.reference;
         this.#overlayDatabase = overlayDatabase;
+
+        this.#overlayDatabase.registerNewOverlayHandler( overlay => {
+            this.#renderer.webContents.send( 'renderer:overlay:new', overlay );
+        } );
+
+        this.#overlayDatabase.registerOverlayMetaUpdateHandler( overlays => {
+            overlays.forEach( overlay => this.#renderer.webContents.send( 'renderer:overlay:update', overlay ) );
+        } );
 
         ipcMain.on( 'trigger:dialog:new', ( event, arg ) => {
             let triggerWindow = new BrowserWindow( {
@@ -148,11 +158,12 @@ class WindowManager {
         } );
 
         ipcMain.on( 'overlay:enable-edit', ( event, overlayId ) => {
+            // Note: This is triggered by the NgInit event on the overlay editor window.
+            // TODO: Check if new overlay, then load it.
             this.#renderer.webContents.send( 'renderer:window:enable-edit', overlayId );
         } );
         
         ipcMain.on( 'overlay:disable-edit', ( event, overlayId ) => {
-            // TODO: Check if new overlay, then load it.
             this.#renderer.webContents.send( 'renderer:window:disable-edit', overlayId );
         } );
 
@@ -536,124 +547,125 @@ class WindowManager {
 
 
 
-/**
- * Displays the given overlay window.
- * 
- * @param {OverlayWindow} model The overlay settings object.
- * @param {OverlayDatabaseStore} overlayDatabase The overlay database.
- * @param {boolean} enableEdit If true, edit mode will be enabled.
- * @param {() => void} afterLoaded Executed after the Dom is loaded.
- */
-function loadOverlay( model, overlayDatabase, enableEdit, afterLoaded ) {
-    let bounds = {
-        x: model.x > 0 ? model.x : null,
-        y: model.y > 0 ? model.y : null,
-        width: model.windowWidth > 0 ? model.windowWidth : 800,
-        height: model.windowHeight > 0 ? model.windowHeight : 800,
-    };
-    let overlay = new BrowserWindow( {
-        width: bounds.width,
-        height: bounds.height,
-        x: bounds.x,
-        y: bounds.y,
-        transparent: true,
-        frame: false,
-        resizable: true,
-        webPreferences: {
-            nodeIntegration: true,
-            devTools: app.isDev(),
-        },
-        skipTaskbar: true,
-        maximizable: false,
-    } );
-    if ( model.overlayType === 'FCT' ) {
-        overlay.setSize( bounds.width + criticalPadding * 2, bounds.height + criticalPadding * 2 );
-        overlay.setPosition( bounds.x - criticalPadding, bounds.y - criticalPadding );
-        overlay.loadFile( "./src/electron/threads/overlay-fct.html" );
-    } else {
-        overlay.loadFile( "./src/electron/threads/overlay.html" );
-    }
-    overlay.setIgnoreMouseEvents( true );
-    overlay.setAlwaysOnTop( true, "screen-saver" );
+// TODO: Remove commented code
+// /**
+//  * Displays the given overlay window.
+//  * 
+//  * @param {OverlayWindow} model The overlay settings object.
+//  * @param {OverlayDatabaseStore} overlayDatabase The overlay database.
+//  * @param {boolean} enableEdit If true, edit mode will be enabled.
+//  * @param {() => void} afterLoaded Executed after the Dom is loaded.
+//  */
+// function loadOverlay( model, overlayDatabase, enableEdit, afterLoaded ) {
+//     let bounds = {
+//         x: model.x > 0 ? model.x : null,
+//         y: model.y > 0 ? model.y : null,
+//         width: model.windowWidth > 0 ? model.windowWidth : 800,
+//         height: model.windowHeight > 0 ? model.windowHeight : 800,
+//     };
+//     let overlay = new BrowserWindow( {
+//         width: bounds.width,
+//         height: bounds.height,
+//         x: bounds.x,
+//         y: bounds.y,
+//         transparent: true,
+//         frame: false,
+//         resizable: true,
+//         webPreferences: {
+//             nodeIntegration: true,
+//             devTools: app.isDev(),
+//         },
+//         skipTaskbar: true,
+//         maximizable: false,
+//     } );
+//     if ( model.overlayType === 'FCT' ) {
+//         overlay.setSize( bounds.width + criticalPadding * 2, bounds.height + criticalPadding * 2 );
+//         overlay.setPosition( bounds.x - criticalPadding, bounds.y - criticalPadding );
+//         overlay.loadFile( "./src/electron/threads/overlay-fct.html" );
+//     } else {
+//         overlay.loadFile( "./src/electron/threads/overlay.html" );
+//     }
+//     overlay.setIgnoreMouseEvents( true );
+//     overlay.setAlwaysOnTop( true, "screen-saver" );
 
-    let interval = setInterval( () => {
-        overlay.setAlwaysOnTop( true, "screen-saver" );
-    }, 1000 );
+//     let interval = setInterval( () => {
+//         overlay.setAlwaysOnTop( true, "screen-saver" );
+//     }, 1000 );
 
-    if ( enableEdit ) {
-        overlay.webContents.once( 'dom-ready', () => {
-            overlay.webContents.send( 'overlay:window:enable-edit', model.overlayId );
-            overlay.setIgnoreMouseEvents( false );
-            overlay.webContents.send( 'overlay:window:model', model );
-        } );
-    } else {
-        overlay.webContents.once( 'dom-ready', () => {
-            overlay.webContents.send( 'overlay:window:model', model );
-        } );
-    }
+//     if ( enableEdit ) {
+//         overlay.webContents.once( 'dom-ready', () => {
+//             overlay.webContents.send( 'overlay:window:enable-edit', model.overlayId );
+//             overlay.setIgnoreMouseEvents( false );
+//             overlay.webContents.send( 'overlay:window:model', model );
+//         } );
+//     } else {
+//         overlay.webContents.once( 'dom-ready', () => {
+//             overlay.webContents.send( 'overlay:window:model', model );
+//         } );
+//     }
 
-    overlay.on( 'move', e => {
+//     overlay.on( 'move', e => {
 
-        if ( !overlayDictionary[ model.overlayId ].editMode ) {
-            log.info( '(loadOverlay:move) Overlay has moved outside of edit mode.', model.overlayId );
-            // If the window has moved outside of edit mode, this is definitely 
-            // invalid.
+//         if ( !overlayDictionary[ model.overlayId ].editMode ) {
+//             log.info( '(loadOverlay:move) Overlay has moved outside of edit mode.', model.overlayId );
+//             // If the window has moved outside of edit mode, this is definitely 
+//             // invalid.
 
-            var currentSize = screen.getPrimaryDisplay().workAreaSize;
-            if ( currentSize.width != defaultSize.width || currentSize.height != defaultSize.height ) {
-                // We ignore this and will move the window back to it's correct 
-                // position when the resolution changes back to previous.
-                log.info( '(loadOverlay:move) Screen size has changed, will not move window back to defined positions.' );
+//             var currentSize = screen.getPrimaryDisplay().workAreaSize;
+//             if ( currentSize.width != defaultSize.width || currentSize.height != defaultSize.height ) {
+//                 // We ignore this and will move the window back to it's correct 
+//                 // position when the resolution changes back to previous.
+//                 log.info( '(loadOverlay:move) Screen size has changed, will not move window back to defined positions.' );
 
-            } else {
-                log.info( '(loadOverlay:move) Resetting overlay to the correct position.' );
-                if ( model.overlayType === 'FCT' ) {
-                    overlay.setSize( bounds.width + criticalPadding * 2, bounds.height + criticalPadding * 2 );
-                    overlay.setPosition( bounds.x - criticalPadding, bounds.y - criticalPadding );
+//             } else {
+//                 log.info( '(loadOverlay:move) Resetting overlay to the correct position.' );
+//                 if ( model.overlayType === 'FCT' ) {
+//                     overlay.setSize( bounds.width + criticalPadding * 2, bounds.height + criticalPadding * 2 );
+//                     overlay.setPosition( bounds.x - criticalPadding, bounds.y - criticalPadding );
 
-                } else {
-                    overlay.setSize( bounds.width, bounds.height );
-                    overlay.setPosition( bounds.x, bounds.y );
+//                 } else {
+//                     overlay.setSize( bounds.width, bounds.height );
+//                     overlay.setPosition( bounds.x, bounds.y );
 
-                }
+//                 }
 
-            }
-        } else {
-            // This move may be valid.
+//             }
+//         } else {
+//             // This move may be valid.
 
-        }
-    } );
+//         }
+//     } );
 
-    overlay.on( 'will-resize', function ( e ) {
-        setTimeout( () => {
-            let bounds = overlay.webContents.getOwnerBrowserWindow().getBounds();
-            model.x = bounds.x;
-            model.y = bounds.y;
-            model.windowWidth = bounds.width;
-            model.windowHeight = bounds.height;
-            overlayDatabase.update( model );
-        } );
-    } );
+//     overlay.on( 'will-resize', function ( e ) {
+//         setTimeout( () => {
+//             let bounds = overlay.webContents.getOwnerBrowserWindow().getBounds();
+//             model.x = bounds.x;
+//             model.y = bounds.y;
+//             model.windowWidth = bounds.width;
+//             model.windowHeight = bounds.height;
+//             overlayDatabase.update( model );
+//         } );
+//     } );
 
-    overlay.on( 'will-move', function () {
-        setTimeout( () => {
-            let bounds = overlay.webContents.getOwnerBrowserWindow().getBounds();
-            model.x = bounds.x;
-            model.y = bounds.y;
-            model.windowWidth = bounds.width;
-            model.windowHeight = bounds.height;
-            overlayDatabase.update( model );
-        } );
-    } );
+//     overlay.on( 'will-move', function () {
+//         setTimeout( () => {
+//             let bounds = overlay.webContents.getOwnerBrowserWindow().getBounds();
+//             model.x = bounds.x;
+//             model.y = bounds.y;
+//             model.windowWidth = bounds.width;
+//             model.windowHeight = bounds.height;
+//             overlayDatabase.update( model );
+//         } );
+//     } );
 
-    overlay.webContents.once( 'dom-ready', () => {
-        if ( afterLoaded ) {
-            afterLoaded();
-        }
-    } );
+//     overlay.webContents.once( 'dom-ready', () => {
+//         if ( afterLoaded ) {
+//             afterLoaded();
+//         }
+//     } );
 
-    overlayDictionary[ model.overlayId ] = { window: overlay, interval: interval, model: model, editMode: enableEdit };
+//     overlayDictionary[ model.overlayId ] = { window: overlay, interval: interval, model: model, editMode: enableEdit };
     
-}
+// }
 
 module.exports = WindowManager;

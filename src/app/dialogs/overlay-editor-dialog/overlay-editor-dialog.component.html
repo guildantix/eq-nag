@@ -17,7 +17,7 @@
                         <legend><span class="title">Properties</span><small>Description and styles for this overlay window.</small></legend>
                         <mat-form-field>
                             <mat-label></mat-label>
-                            <input matInput type="text" [(ngModel)]="model.name" />
+                            <input matInput type="text" [(ngModel)]="model.name" (ngModelChange)="broadcastModel()" />
                             <mat-hint>Name</mat-hint>
                         </mat-form-field>
 
