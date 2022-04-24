@@ -32,6 +32,9 @@ class WindowManager {
     /** @type {UserPreferencesStore} */
     #userPrefDb;
 
+    /** @type {OverlayDatabaseStore} */
+    #overlayDatabase;
+
     constructor( dirname ) {
         this.#dirname = dirname;
     }
@@ -72,6 +75,7 @@ class WindowManager {
 
         this.#userPrefDb = userPreferencesDatabase;
         this.#mainWindow = mainWindowRef.reference;
+        this.#overlayDatabase = overlayDatabase;
 
         ipcMain.on( 'trigger:dialog:new', ( event, arg ) => {
             let triggerWindow = new BrowserWindow( {
@@ -324,32 +328,8 @@ class WindowManager {
      * Loads the unified renderer window.
      */
     loadRenderer() {
-        
-        let displays = screen.getAllDisplays();
-        let left = 0, right = 0;
-        let top = 0, bottom = 0;
 
-        displays.forEach( display => {
-
-            let absLeft = display.bounds.x;
-            let absRight = display.bounds.x + display.bounds.width;
-            let absTop = display.bounds.y;
-            let absBottom = display.bounds.y + display.bounds.height;
-
-
-            left = absLeft < left ? absLeft : left;
-            right = absRight > right ? absRight : right;
-            top = absTop < top ? absTop : top;
-            bottom = absBottom > bottom ? absBottom : bottom;
-
-        } );
-
-        let bounds = {
-            x: left,
-            y: top,
-            width: right - left,
-            height: bottom - top,
-        };
+        let bounds = this.calculateRendererBounds();
 
         let renderer = new BrowserWindow( {
             transparent: true,
@@ -398,6 +378,49 @@ class WindowManager {
 
 
     /**
+     * Returns the bounds for the renderer window.
+     * 
+     * @returns {import("electron").Rectangle}
+     */
+    calculateRendererBounds() {
+        
+        let displays = screen.getAllDisplays();
+        let left = 0, right = 0;
+        let top = 0, bottom = 0;
+
+        displays.forEach( display => {
+
+            let absLeft = display.bounds.x;
+            let absRight = display.bounds.x + display.bounds.width;
+            let absTop = display.bounds.y;
+            let absBottom = display.bounds.y + display.bounds.height;
+
+
+            left = absLeft < left ? absLeft : left;
+            right = absRight > right ? absRight : right;
+            top = absTop < top ? absTop : top;
+            bottom = absBottom > bottom ? absBottom : bottom;
+
+        } );
+
+        return {
+            x: left,
+            y: top,
+            width: right - left,
+            height: bottom - top,
+        };
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
      * Unloads all windows.
      */
     unload() {
@@ -432,7 +455,7 @@ class WindowManager {
         if ( this.#renderer ) {
             fn( this.#renderer, 'rendererWindow' );
         }
-        
+
     }
 
 
@@ -449,38 +472,57 @@ class WindowManager {
      * edit  mode.
      */
     checkWindowPosition() {
-        var currentSize = screen.getPrimaryDisplay().workAreaSize;
+        var currentSize = this.#renderer.getBounds();
+        let newSize = this.calculateRendererBounds();
+        // let ratios = { x: newSize.width / currentSize.width, y: newSize.height / currentSize.height };
+        let currentOrigin = { x: 0 - currentSize.x, y: 0 - currentSize.y };
+        let newOrigin = { x: 0 - newSize.x, y: 0 - newSize.y };
         
-        if ( overlayDictionary ) {
-            for ( let overlayId in overlayDictionary ) {
-                if ( currentSize.width != defaultSize.width || currentSize.height != defaultSize.height ) {
-                    // We ignore this and will move the window back to it's correct 
-                    // position when the resolution changes back to previous.
-                    log.info( '(checkWindowPosition) Screen size has changed, will not move window back to defined positions.' );
-        
-                } else {
-                    log.info( '(checkWindowPosition) Resetting overlay to the correct position.' );
+        this.#renderer?.setSize( newSize.width, newSize.height );
+        this.#renderer?.setPosition( newSize.x, newSize.y );
 
-                    let bounds = {
-                        x: overlayDictionary[ overlayId ].model.x > 0 ? overlayDictionary[ overlayId ].model.x : null,
-                        y: overlayDictionary[ overlayId ].model.y > 0 ? overlayDictionary[ overlayId ].model.y : null,
-                        width: overlayDictionary[ overlayId ].model.windowWidth > 0 ? overlayDictionary[ overlayId ].model.windowWidth : 800,
-                        height: overlayDictionary[ overlayId ].model.windowHeight > 0 ? overlayDictionary[ overlayId ].model.windowHeight : 800,
-                    };
+        // We need to recalculate the x,y coordinates of each overlay, from the
+        // origin.
+        // Changing the resolution of one monitor doesn't mean that the 
+        // relative positions or sizes of overlays on the other monitor should 
+        // stay the same or change.
+        
+        let overlays = this.#overlayDatabase.getAll();
 
-                    if ( overlayDictionary[ overlayId ].model.overlayType === 'FCT' ) {
-                        overlayDictionary[ overlayId ].window.setSize( bounds.width + criticalPadding * 2, bounds.height + criticalPadding * 2 );
-                        overlayDictionary[ overlayId ].window.setPosition( bounds.x - criticalPadding, bounds.y - criticalPadding );
-        
-                    } else {
-                        overlayDictionary[ overlayId ].window.setSize( bounds.width, bounds.height );
-                        overlayDictionary[ overlayId ].window.setPosition( bounds.x, bounds.y );
-        
-                    }
-        
-                }
+        overlays.forEach( overlay => {
+            /** @type {{left: number, top: number, right: number, bottom: number}} */
+            let originalBoundaries = {
+                left: overlay.x,
+                top: overlay.y,
+                right: currentSize.width - ( overlay.x + currentOrigin.x + overlay.width ),
+                bottom: currentSize.height - ( overlay.y + currentOrigin.y + overlay.height ),
+            };
+
+            // Let's calculate the new boundaries for the new resolution.  We
+            // can compare the right/bottom values to determine if the monitor 
+            // that contains the overlay has had its resolution changed.
+
+            /** @type {{left: number, top: number, right: number, bottom: number}} */
+            let newBoundaries = {
+                left: overlay.x,
+                top: overlay.y,
+                right: newSize.width - ( overlay.x + newOrigin.x + overlay.width ),
+                bottom: newSize.height - ( overlay.y + newOrigin.y + overlay.height ),
+            };
+
+            if ( originalBoundaries.bottom !== newBoundaries.bottom || originalBoundaries.right !== newBoundaries.right ) {
+                // The quadrant containing this overlay has had it's resolution changed, and the overlay needs to update to match.
+                let hRatio = ( newSize.x + newOrigin.x ) / ( currentSize.x + currentOrigin.x );
+                let vRatio = ( newSize.y + newOrigin.y ) / ( currentSize.y + currentOrigin.y );
+
+                overlay.x = overlay.x * hRatio;
+                overlay.height = overlay.height * hRatio;
+                overlay.y = overlay.y * vRatio;
+                overlay.width = overlay.width * vRatio;
             }
-        }
+        } );
+
+        this.#renderer.webContents.send( 'renderer:resolution-changed', { overlays: overlays, origin: newOrigin } );
 
     }
 }

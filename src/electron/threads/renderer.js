@@ -164,6 +164,26 @@ function Renderer( originX, originY ) {
         targetGroupTimerTemplate = Handlebars.compile( document.querySelector( '#targetGroupTimerTemplate' ).innerHTML );
     } );
 
+    ipcRenderer.on( 'renderer:resolution-changed',
+        /**
+         * Updates the position of each overlay.
+         * 
+         * @param {any} event 
+         * @param {{overlays: OverlayWindow[], origin: import('electron').Point}} data The list of overlays.
+         */
+        function ( event, data ) {
+            origin = data.origin;
+            
+            data.overlays.forEach( function ( overlay ) {
+                let div = overlayInstances[ overlay.overlayId ].dom;
+
+                div.style.left = ( overlay.x + originX ) + 'px';
+                div.style.top = ( overlay.y + originY ) + 'px';
+                div.style.height = ( overlay.windowHeight ) + 'px';
+                div.style.width = ( overlay.windowWidth ) + 'px';
+            } );
+        } );
+
     ipcRenderer.on( 'overlay:get',
         /**
          * Gets all overlay models.
@@ -1034,7 +1054,6 @@ function enableMoveResize( dom ) {
 
                     if ( changes ) {
                         console.log( 'CHANGES DETECTED', overlayInstances[ overlayId ].model.name );
-                        console.error( 'Not Implemented Yet!' );
                         overlayInstances[ overlayId ].model.x = bounds.x - origin.x;
                         overlayInstances[ overlayId ].model.y = bounds.y - origin.y;
                         overlayInstances[ overlayId ].model.windowWidth = bounds.width;
