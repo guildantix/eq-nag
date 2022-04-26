@@ -493,21 +493,37 @@ function getDurationFromLabel( label ) {
 
             return duration;
         }
+        let milMatches = /(?<hours>[0-9]+):(?<minutes>[0-9]+):(?<seconds>[0-9]+)/gi.exec( label );
+        if ( milMatches?.length > 0 ) {
+            let duration = 0;
+            
+            if ( milMatches.groups.hours ) {
+                duration += parseInt( milMatches.groups.hours ) * 3600;
+            }
+            if ( milMatches.groups.minutes ) {
+                duration += parseInt( milMatches.groups.minutes ) * 60;
+            }
+            if ( milMatches.groups.seconds ) {
+                duration += parseInt( milMatches.groups.seconds );
+            }
+
+            return duration;
+        }
     }
 
     return parseFloat( label );
 }
 
 function parseShortCodesToRegex( value, characterName ) {
-    // https://regex101.com/r/g9QIL1/1
-    // (?<timerDuration>[0-9]+?[h|hour|hours|hrs]+\s[0-9]*?[m|min|mins|minute|minutes]*?\s?[0-9]+?[s|sec|secs|seconds|second]+?|[0-9]*?[m|min|mins|minute|minutes]*?\s?[0-9]+?[s|sec|secs|seconds|second]+?|[0-9]+)
+    // https://regex101.com/r/g9QIL1/2
+    // (?<timerDuration>[0-9]+?[h|hour|hours|hrs]+\s[0-9]*?[m|min|mins|minute|minutes]*?\s?[0-9]+?[s|sec|secs|seconds|second]+?|[0-9]*?[m|min|mins|minute|minutes]*?\s?[0-9]+?[s|sec|secs|seconds|second]+?|[0-9]+:[0-9]+:[0-9]+|[0-9]+)
     // (?<timerDuration>[0-9]*?[h|hour|hours|hrs]*\s?[0-9]*?[m|min|mins|minute|minutes]*?\s?[0-9]*?[s|sec|secs|seconds|second]*?|[0-9]*?[m|min|mins|minute|minutes]*?\s?[0-9]*?[s|sec|secs|seconds|second]*?|[0-9]*)
     
     // https://regex101.com/r/e0CFEL/1
     // ^(?=.*timer)Halindar (?:start timer|starts*|begins*|timer)(?: a |\s)*(?<timerDuration>[0-9]*?[h|hour|hours|hrs]*\s?[0-9]*?[m|min|mins|minute|minutes]*?\s?[0-9]*?[s|sec|secs|seconds|second]*?|[0-9]*?[m|min|mins|minute|minutes]*?\s?[0-9]*?[s|sec|secs|seconds|second]*?|[0-9]*)(?:\stimer)*(?:for Targeting)*\.$
 
     if ( value ) {
-        value = value.replace( /{TS}/i, '(?<timerDuration>[0-9]*?[h|hour|hours|hrs]*\\s?[0-9]*?[m|min|mins|minute|minutes]*?\\s?[0-9]*?[s|sec|secs|seconds|second]*?|[0-9]*?[m|min|mins|minute|minutes]*?\\s?[0-9]*?[s|sec|secs|seconds|second]*?|[0-9.]*)' );
+        value = value.replace( /{TS}/i, '(?<timerDuration>[0-9]*?[h|hour|hours|hrs]*\\s?[0-9]*?[m|min|mins|minute|minutes]*?\\s?[0-9]*?[s|sec|secs|seconds|second]*?|[0-9]*?[m|min|mins|minute|minutes]*?\\s?[0-9]*?[s|sec|secs|seconds|second]*?|[0-9]+:[0-9]+:[0-9]+|[0-9.]*)' );
         value = value.replace( /{C}/gi, characterName );
         value = value.replace( /\${Character}/gi, characterName );
         // value = value.replace( /{COUNTER}/gi, '' ); // We may add this in the future, just not sure how to accomplish this.  WE use counter names instead of just {COUNTER} however.
