@@ -191,6 +191,12 @@ export class OverlayEditorDialogComponent implements OnInit {
             this.closeModal();
         }
     }
+
+    sendToOrigin() {
+        if ( this.overlayId != null ) {
+            this.ipcService.sendOverlayToOrigin( this.overlayId );
+        }
+    }
     
     public sendDisplayTextTest(): void {
         if ( this.model.overlayType === 'Timer' ) {

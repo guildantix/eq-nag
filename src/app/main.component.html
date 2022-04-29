@@ -44,7 +44,7 @@
                     <button mat-button color="accent" (click)="showNewOverlayDialog()"><mat-icon class="material-icons-outlined">layers</mat-icon> New Overlay</button>
                 </mat-toolbar>
                 <div class="tab-content">
-                    <!-- TODO: Add button to send an overlay to origin -->
+
                     <table mat-table #overlaysTable="matTable" style="width: 100%;"
                         [dataSource]="overlays">
 
@@ -52,6 +52,7 @@
                             <th mat-header-cell *matHeaderCellDef style="text-align: center; width: 50px;">  </th>
                             <td mat-cell *matCellDef="let element; let i = index" style="text-align: center; width: 50px;">
                                 <button mat-button color="accent" aria-label="Edit this overlay" (click)="enableOverlayEdit(element.overlayId)">Edit</button>
+                                <button mat-button color="accent" aria-label="Send overlay to the middle of your monitor" (click)="sendToOrigin(element.overlayId)" matTooltip="Send this overlay to the center of your primary monitor." matTooltipPosition="right">Center Overlay</button>
                             </td>
                         </ng-container>
 

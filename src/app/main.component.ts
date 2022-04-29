@@ -252,6 +252,10 @@ export class MainComponent implements OnInit {
             } );
     }
 
+    sendToOrigin( overlayId: string ) {
+        this.ipcService.sendOverlayToOrigin( overlayId );
+    }
+
     public checkForUpdate() {
         // let v = new UpdateInfo
     }

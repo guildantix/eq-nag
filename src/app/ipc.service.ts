@@ -797,6 +797,10 @@ export class IpcService {
         this.ipc.send( 'log:send:raw', rawLogLine );
     }
 
+    public sendOverlayToOrigin( overlayId: string ): void {
+        this.ipc.send( 'overlay:send-to-origin', overlayId );
+    }
+
     public getAudioFiles(): Observable<FileModel[]> {
         let obs: Observable<FileModel[]> = new Observable<FileModel[]>( ( observer: Observer<FileModel[]> ) => {
             

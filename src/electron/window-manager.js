@@ -261,6 +261,8 @@ class WindowManager {
             this.#renderer.webContents.send( 'renderer:save:overlayDimensions', null );
         } );
 
+        ipcMain.on( 'overlay:send-to-origin', ( event, overlayId ) => this.sendOverlayToMiddle( overlayId ) );
+
         ipcMain.on( 'gina:dialog:import', ( event, arg ) => {
             this.ginaImportWindow = new BrowserWindow( {
                 parent: mainWindowRef.reference,
@@ -484,7 +486,9 @@ class WindowManager {
     checkWindowPosition() {
         var currentSize = this.#renderer.getBounds();
         let newSize = this.calculateRendererBounds();
-        // let ratios = { x: newSize.width / currentSize.width, y: newSize.height / currentSize.height };
+        // Because the size includes the relative position to the primary 
+        // display, we can find the (x0,y0) point of the primary display using 
+        // this simple formula.
         let currentOrigin = { x: 0 - currentSize.x, y: 0 - currentSize.y };
         let newOrigin = { x: 0 - newSize.x, y: 0 - newSize.y };
         
@@ -534,6 +538,32 @@ class WindowManager {
 
         this.#renderer.webContents.send( 'renderer:resolution-changed', { overlays: overlays, origin: newOrigin } );
 
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Sends the specified overlay to the middle of the main monitor.
+     * 
+     * @param {string} overlayId The id of the desired overlay.
+     */
+    sendOverlayToMiddle( overlayId ) {
+        const primarySize = screen.getPrimaryDisplay().size;
+        let overlay = this.#overlayDatabase.find( overlayId );
+        
+        overlay.x = ( primarySize.width - overlay.windowWidth ) / 2;
+        overlay.y = ( primarySize.height - overlay.windowHeight ) / 2;
+
+        this.#overlayDatabase.update( overlay );
+
+        this.#renderer.webContents.send( 'renderer:overlay:move', { overlayId: overlayId, x: overlay.x, y: overlay.y } );
     }
 }
 

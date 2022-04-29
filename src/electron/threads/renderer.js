@@ -239,6 +239,18 @@ function Renderer( originX, originY ) {
         overlayInstances[ overlayId ].dom.classList.add( 'highlight-border' );
     } );
 
+    ipcRenderer.on( 'renderer:overlay:move',
+        /**
+         * Handles the overlay move event.
+         * 
+         * @param {any} event The event args.
+         * @param {{overlayId: string, x: number, y: number}} data The event data.
+         */
+        function ( event, data ) {
+            overlayInstances[ data.overlayId ].dom.style.left = `${data.x + origin.x}px`;
+            overlayInstances[ data.overlayId ].dom.style.top = `${data.y + origin.y}px`;
+        } );
+
     ipcRenderer.on( 'renderer:window:disable-edit', function ( event, overlayId ) {
         overlayInstances[ overlayId ].dom.classList.remove( 'highlight-border' );
     } );
