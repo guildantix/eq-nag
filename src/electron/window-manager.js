@@ -6,6 +6,14 @@ const { OverlayWindow } = require( "./data/models/overlay-window" );
 const ArrayUtilities = require( "./utilities/arrays" );
 const log = require( 'electron-log' );
 
+/** 
+ * We will occassionally need to disable the 'force on top' of the renderer, so 
+ * we keep the interval id as a global value.
+ * 
+ * @type {number} 
+ */
+let rendererOnTopId = null;
+
 class WindowManager {
 
     /** @type {BrowserWindow} */
@@ -142,11 +150,19 @@ class WindowManager {
         ipcMain.on( 'renderer:arrange-overlays', ( event ) => {
             this.#renderer.setIgnoreMouseEvents( false );
             this.#renderer.webContents.send( 'renderer:arrange-overlays' );
+
+            if ( rendererOnTopId ) {
+                clearInterval( rendererOnTopId );
+            }
         } );
 
         ipcMain.on( 'renderer:end-arrange-overlays', ( event ) => {
             this.#renderer.setIgnoreMouseEvents( true );
             this.#renderer.webContents.send( 'renderer:end-arrange-overlays' );
+
+            rendererOnTopId = setInterval( () => {
+                this.#renderer.setAlwaysOnTop( true, "screen-saver" );
+            }, 1000 );
         } );
 
         ipcMain.on( 'overlay:enable-edit', ( event, overlayId ) => {
@@ -390,13 +406,13 @@ class WindowManager {
         if ( app.isDev() ) {
             renderer.webContents.openDevTools();
         }
-    
-        // TODO: Add an option to force always on top, or re-enable entirely.
-        // let interval = setInterval( () => {
-        //     renderer.setAlwaysOnTop( true, "screen-saver" );
-        // }, 1000 );
 
         this.#renderer = renderer;
+
+        rendererOnTopId = setInterval( () => {
+            this.#renderer.setAlwaysOnTop( true, "screen-saver" );
+        }, 1000 );
+
     }
 
 
