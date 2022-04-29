@@ -75,7 +75,7 @@ export class OverlayEditorDialogComponent implements OnInit {
 
             if ( this.overlayId != null ) {
                 this.ipcService.getOverlayWindow( this.overlayId ).subscribe( overlay => {
-                    // TODO: Allow the user to move/resize this overlay.  Enter arrainge mode with just this overlay, keeping the editor window on top.
+                    
                     this.ipcService.enableOverlayEditMode( this.overlayId );
                     this._noChangesModel = Object.assign( new OverlayWindowModel(), overlay );
                     this.model = overlay;
@@ -93,6 +93,15 @@ export class OverlayEditorDialogComponent implements OnInit {
                     this.textBorderIntensity = ColorUtility.FromHex( this.model.textBorderColor ).a * 100;
                     this.textGlowIntensity = ColorUtility.FromHex( this.model.textGlowColor ).a * 100;
                     this.dotGroupHeaderWeightIndex = availableFonts[ this.model.fontFamily ].indexOf( this.model.groupHeaderWeight );
+                } );
+
+                this.ipcService.overlayBoundsChanged().subscribe( e => {
+                    if ( e.overlayId === this.overlayId ) {
+                        this.model.x = e.bounds.x;
+                        this.model.y = e.bounds.y;
+                        this.model.windowWidth = e.bounds.width;
+                        this.model.windowHeight = e.bounds.height;
+                    }
                 } );
             }
      

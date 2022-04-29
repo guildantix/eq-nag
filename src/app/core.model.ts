@@ -607,3 +607,10 @@ export class TriggerPackageMetaModel {
     public description: string;
 
 }
+
+export class OverlayBoundsChangedEventArgs {
+    
+    public overlayId: string;
+    public bounds: Rectangle;
+
+}

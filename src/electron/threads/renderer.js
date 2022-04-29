@@ -192,7 +192,8 @@ function Renderer( originX, originY ) {
          * @param {OverlayWindow[]} overlays The list of overlays.
          */
         function ( event, overlays ) {
-            // TODO: Check if the resolution has changed, and modify size/position to coorelate.
+            // TODO: Check if the resolution has changed, then ensure that each overlay cannot be rendered off-screen during initialization.
+            // Maybe throw a warning if the resolution has changed since the last time the user arranged the overlays.
             overlays.forEach( overlay => {
                 initializeOverlay( overlay );
             } );
@@ -236,7 +237,7 @@ function Renderer( originX, originY ) {
         } );
 
     ipcRenderer.on( 'renderer:window:enable-edit', function ( event, overlayId ) {
-        overlayInstances[ overlayId ].dom.classList.add( 'highlight-border' );
+        enableMoveResize( overlayInstances[ overlayId ].dom );
     } );
 
     ipcRenderer.on( 'renderer:overlay:move',
@@ -252,7 +253,7 @@ function Renderer( originX, originY ) {
         } );
 
     ipcRenderer.on( 'renderer:window:disable-edit', function ( event, overlayId ) {
-        overlayInstances[ overlayId ].dom.classList.remove( 'highlight-border' );
+            disableMoveResize( overlayInstances[ overlayId ].dom );
     } );
 
     ipcRenderer.on( 'renderer:arrange-overlays', function ( event ) {
@@ -326,12 +327,12 @@ function Renderer( originX, originY ) {
          * Handles the event.
          * 
          * @param {any} event The event args.
-         * @param {OverlayWindow} model The overlay window model.
+         * @param {OverlayWindow[]} model The overlay window model.
          */
         function ( event, model ) {
-            if ( model?.overlayId ) {
-                updateOverlay( model.overlayId, model );
-            }
+            model.forEach( overlay => {
+                updateOverlay( overlay.overlayId, overlay );
+            } );
         } );
     
     ipcRenderer.on( 'fctStyles',
@@ -351,9 +352,6 @@ function Renderer( originX, originY ) {
             style.sheet.insertRule( styleSheetUtil.createTextRule( fctStyles.fctHealingOutStyle, 'fct-healing-out', fctCssEncapsulationId ) );
             style.sheet.insertRule( styleSheetUtil.createTextRule( fctStyles.fctHealingInStyle, 'fct-healing-in', fctCssEncapsulationId ) );
             style.sheet.insertRule( styleSheetUtil.createTextRule( fctStyles.fctSkillStyle, 'fct-skill', fctCssEncapsulationId ) );
-
-            // console.log( 'style', styleSheetUtil.createTextRule( fctStyles.fctDmgOutStyle, 'fct-dmg-out', fctCssEncapsulationId ) );
-            // style.sheet.insertRule( `*[${fctCssEncapsulationId}] {border:1px solid green;}` );
             
         } );
 
@@ -489,6 +487,11 @@ function updateOverlay( overlayId, model ) {
     // document.querySelector( '#overlay-title' ).textContent = model.name ? model.name : 'Overlay';
     overlayInstances[ overlayId ].model = model;
     overlayInstances[ overlayId ].title.innerText = model.name ? model.name : 'Overlay';
+
+    overlayInstances[ overlayId ].dom.style.left = `${model.x + origin.x}px`;
+    overlayInstances[ overlayId ].dom.style.top = `${model.y + origin.y}px`;
+    overlayInstances[ overlayId ].dom.style.width = `${model.windowWidth}px`;
+    overlayInstances[ overlayId ].dom.style.height = `${model.windowHeight}px`;
 
     /** @type {HTMLElement} */
     let contentArea = overlayInstances[ overlayId ].dom.querySelector( '.overlay-content-area' );
@@ -932,8 +935,10 @@ function render( overlayId, comp ) {
 function disableMoveResize( dom ) {
     for ( let i = 0; i < resizeHandles.length; i++ ) {
         let handle = dom.querySelector( `.${resizeHandles[ i ]}` );
-        dom.removeChild( handle );
-        handle.remove();
+        if ( handle ) {
+            dom.removeChild( handle );
+            handle.remove();
+        }
     }
 
     dom.classList.remove( 'drag' );
@@ -1068,11 +1073,20 @@ function enableMoveResize( dom ) {
                     changes = changes ? changes : overlayInstances[ overlayId ].model.windowHeight !== bounds.height;
 
                     if ( changes ) {
-                        console.log( 'CHANGES DETECTED', overlayInstances[ overlayId ].model.name );
                         overlayInstances[ overlayId ].model.x = bounds.x - origin.x;
                         overlayInstances[ overlayId ].model.y = bounds.y - origin.y;
                         overlayInstances[ overlayId ].model.windowWidth = bounds.width;
                         overlayInstances[ overlayId ].model.windowHeight = bounds.height;
+                        
+                        ipcRenderer.send( 'overlay:event:bounds-changed', {
+                            overlayId: overlayId,
+                            bounds: {
+                                x: overlayInstances[ overlayId ].model.x,
+                                y: overlayInstances[ overlayId ].model.y,
+                                width: overlayInstances[ overlayId ].model.windowWidth,
+                                height: overlayInstances[ overlayId ].model.windowHeight
+                            }
+                        } );
                     }
                 }
             }

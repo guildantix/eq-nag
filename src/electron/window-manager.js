@@ -28,6 +28,9 @@ class WindowManager {
     /** @type {BrowserWindow} */
     #renderer;
 
+    /** @type {BrowserWindow[]} */
+    #openOverlayEditors = [];
+
     #dirname;
 
     /** @type {UserPreferencesStore} */
@@ -83,8 +86,8 @@ class WindowManager {
             this.#renderer.webContents.send( 'renderer:overlay:new', overlay );
         } );
 
-        this.#overlayDatabase.registerOverlayMetaUpdateHandler( overlays => {
-            overlays.forEach( overlay => this.#renderer.webContents.send( 'renderer:overlay:update', overlay ) );
+        this.#overlayDatabase.registerOverlayUpdateHandler( overlays => {
+            this.#renderer.webContents.send( 'renderer:overlay:update', overlays );
         } );
 
         ipcMain.on( 'trigger:dialog:new', ( event, arg ) => {
@@ -160,6 +163,18 @@ class WindowManager {
         ipcMain.on( 'overlay:enable-edit', ( event, overlayId ) => {
             // Note: This is triggered by the NgInit event on the overlay editor window.
             this.#renderer.webContents.send( 'renderer:window:enable-edit', overlayId );
+            this.#renderer.setIgnoreMouseEvents( false );
+            
+            let caller = BrowserWindow.fromWebContents( event.sender );
+
+            const onTopIntervalId = setInterval( () => {
+                caller.setAlwaysOnTop( true, "screen-saver" );
+            }, 500 );
+
+            caller.on( 'close', () => {
+                clearInterval( onTopIntervalId );
+                this.#renderer.setIgnoreMouseEvents( true );
+            } );
         } );
         
         ipcMain.on( 'overlay:disable-edit', ( event, overlayId ) => {
@@ -196,6 +211,13 @@ class WindowManager {
             } );
             overlayEditorDialog.once( "ready-to-show", () => {
                 overlayEditorDialog.show();
+                this.#openOverlayEditors.push( overlayEditorDialog );
+            } );
+            overlayEditorDialog.on( 'close', () => {
+                let i = this.#openOverlayEditors.indexOf( overlayEditorDialog );
+                if ( i > -1 ) {
+                    this.#openOverlayEditors.splice( i, 1 );
+                }
             } );
             overlayEditorDialog.on( 'move', function () {
                 let bounds = overlayEditorDialog.webContents.getOwnerBrowserWindow().getBounds();
@@ -238,7 +260,9 @@ class WindowManager {
         } );
         
         ipcMain.on( 'overlay:broadcast', ( event, model ) => {
-            this.#renderer.webContents.send( 'renderer:overlay:update', model );
+            if ( model?.overlayId ) {
+                this.#renderer.webContents.send( 'renderer:overlay:update', [ model ] );
+            }
         } );
         
         ipcMain.on( 'overlay:send:component', ( event, component ) => {
@@ -262,6 +286,12 @@ class WindowManager {
         } );
 
         ipcMain.on( 'overlay:send-to-origin', ( event, overlayId ) => this.sendOverlayToMiddle( overlayId ) );
+
+        ipcMain.on( 'overlay:event:bounds-changed', ( event, d ) => {
+            this.#openOverlayEditors.forEach( window => {
+                window?.webContents.send( 'overlay:event:bounds-changed', d );
+            } );
+        } );
 
         ipcMain.on( 'gina:dialog:import', ( event, arg ) => {
             this.ginaImportWindow = new BrowserWindow( {

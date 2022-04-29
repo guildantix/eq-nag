@@ -3,7 +3,7 @@ import { Display, IpcRenderer } from 'electron';
 import { UpdateInfo } from 'electron-updater';
 import { Observable, Observer } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
-import { DataTickModel, DkpEntryModel, TriggerModel, OverlayWindowModel, ActionTypes, FocusEffectSettings, CharacterModel, BasicError, TriggerFolder, FileModel, Tag, AuthorModel, PackageFileModel, TriggerPackageMetaModel, TriggerPackageVersion, FctStylesModel } from './core.model';
+import { DataTickModel, DkpEntryModel, TriggerModel, OverlayWindowModel, ActionTypes, FocusEffectSettings, CharacterModel, BasicError, TriggerFolder, FileModel, Tag, AuthorModel, PackageFileModel, TriggerPackageMetaModel, TriggerPackageVersion, FctStylesModel, OverlayBoundsChangedEventArgs } from './core.model';
 import { GinaConfiguration, GinaTriggerGroups } from './gina.model';
 
 @Injectable( { providedIn: 'root' })
@@ -19,6 +19,7 @@ export class IpcService {
     private _logActivatedObservers: Observer<any>[] = [];
     private _logDeactivatedObservers: Observer<any>[] = [];
     private _updateAvailableObservers: Observer<UpdateInfo>[] = [];
+    private _overlayBoundsChangedObservers: Observer<OverlayBoundsChangedEventArgs>[] = [];
 
     constructor( private ngZone: NgZone ) {
         if ( ( <any>window ).require ) {
@@ -28,6 +29,14 @@ export class IpcService {
                 this.ipc.on( 'update_downloaded', ( event: any, data: UpdateInfo ) => {
                     ngZone.run( () => {
                         this._updateAvailableObservers?.forEach( f => {
+                            f.next( data );
+                        } );
+                    } );
+                } );
+
+                this.ipc.on( 'overlay:event:bounds-changed', ( event: any, data: OverlayBoundsChangedEventArgs ) => {
+                    ngZone.run( () => {
+                        this._overlayBoundsChangedObservers?.forEach( f => {
                             f.next( data );
                         } );
                     } );
@@ -104,6 +113,14 @@ export class IpcService {
     public updateAvailable(): Observable<UpdateInfo> {
         let obs: Observable<UpdateInfo> = new Observable<UpdateInfo>( ( observer: Observer<UpdateInfo> ) => {
             this._updateAvailableObservers.push( observer );
+        } );
+
+        return obs;
+    }
+
+    public overlayBoundsChanged(): Observable<OverlayBoundsChangedEventArgs> {
+        let obs: Observable<OverlayBoundsChangedEventArgs> = new Observable<OverlayBoundsChangedEventArgs>( ( observer: Observer<OverlayBoundsChangedEventArgs> ) => {
+            this._overlayBoundsChangedObservers.push( observer );
         } );
 
         return obs;
@@ -574,13 +591,13 @@ export class IpcService {
     public updateOverlayWindow( model: OverlayWindowModel ): Observable<boolean> {
         let obs: Observable<boolean> = new Observable<boolean>( ( observer: Observer<boolean> ) => {
             
-            this.ipc.once( 'overlay:update:meta', ( e, updated: boolean ) => {
+            this.ipc.once( 'overlay:update', ( e, updated: boolean ) => {
                 this.ngZone.run( () => {
                     observer.next( updated );
                     observer.complete();
                 } );
             } );
-            this.ipc.send( 'overlay:update:meta', model );
+            this.ipc.send( 'overlay:update', model );
 
         } );
 

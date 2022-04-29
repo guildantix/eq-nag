@@ -20,7 +20,7 @@ class OverlayDatabaseStore extends Store {
     /**
      * @type {(overlays: OverlayWindow[]) => void}
      */
-    #overlayMetaUpdateHandlers = [];
+    #overlayUpdateHandlers = [];
 
     /**
      * Registers an overlay handler function that executes when position 
@@ -28,8 +28,8 @@ class OverlayDatabaseStore extends Store {
      * 
      * @param {(overlays: OverlayWindow[]) => void} handler The handler callback
      */
-    registerOverlayMetaUpdateHandler( handler ) {
-        this.#overlayMetaUpdateHandlers.push( handler );
+    registerOverlayUpdateHandler( handler ) {
+        this.#overlayUpdateHandlers.push( handler );
     }
 
     /**
@@ -346,15 +346,10 @@ class OverlayDatabaseStore extends Store {
             }
         } );
 
-        ipcMain.on( 'overlay:update:meta', ( event, overlay ) => {
-            let model = this.find( overlay.overlayId );
-            overlay.x = model.x;
-            overlay.y = model.y;
-            overlay.windowWidth = model.windowWidth;
-            overlay.windowHeight = model.windowHeight;
+        ipcMain.on( 'overlay:update', ( event, overlay ) => {
             let updated = this.update( overlay );
-            this.#overlayMetaUpdateHandlers.forEach( fn => fn( [ model ] ) );
-            event.sender.webContents.send( 'overlay:update:meta', updated );
+            this.#overlayUpdateHandlers.forEach( fn => fn( [ overlay ] ) );
+            event.sender.webContents.send( 'overlay:update', updated );
             sendTick();
         } );
         
@@ -367,7 +362,7 @@ class OverlayDatabaseStore extends Store {
                 model.windowHeight = overlay.windowHeight;
                 this.update( model );
             } );
-            this.#overlayMetaUpdateHandlers.forEach( fn => fn( this.getAll() ) );
+            this.#overlayUpdateHandlers.forEach( fn => fn( this.getAll() ) );
             event.sender.webContents.send( 'overlays:update:position', true );
             sendTick();
         } );
