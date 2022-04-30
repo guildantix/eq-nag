@@ -11,6 +11,8 @@ import { CharactersListComponent } from './characters-list/characters-list.compo
 import { TriggerLibraryService } from './windows/trigger-library.service';
 import { forkJoin, Observable, timer } from 'rxjs';
 import { MatDialogRef } from '@angular/material/dialog';
+import { NotificationDialogModel, NotificationTypes } from './dialogs/notification-dialog/notification-dialog.model';
+import { CustomButton } from './dialogs/dialog.model';
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const nanoid = customAlphabet( alphabet, 16 );
 const updateIntervalDuration = 5 * 60 * 1000;
@@ -106,8 +108,34 @@ export class MainComponent implements OnInit {
         this.ipcService.logFileChanged().subscribe( data => this.logFile = data );
         this.ipcService.consoleLogRequested().subscribe( data => console.log( 'from main', data ) );
         this.ipcService.getAppIsDev().subscribe( isDev => this.isDev = isDev );
+        this.ipcService.displayWarningDialog().subscribe( e => {
+            let dialogArgs = new NotificationDialogModel();
+            if ( e.code === 'Renderer:ResolutionChanged' ) {
+                dialogArgs.message = [
+                    'The resolution of one or more of your monitors has changed.',
+                    'Your overlay positions have been automatically moved to match.',
+                    'To manually arrange your overlays, click on the Arrange button below.' ];
+                dialogArgs.title = 'Your resolution has changed!';
+                dialogArgs.notificationType = NotificationTypes.Warning;
+                
+                let arrangeBtn = new CustomButton();
+                arrangeBtn.cssClassString = 'color-blue';
+                arrangeBtn.matIcon = 'view_quilt';
+                arrangeBtn.matIconsOutlined = true;
+                arrangeBtn.text = 'Arrange Overlays';
+                arrangeBtn.onClick = () => {
+                    this.arrangeOverlays();
+                    return true;
+                };
+
+                dialogArgs.customButtons = [ arrangeBtn ];
+
+                this.dialogService.showNotificationDialog( dialogArgs );
+            }
+        } );
         
         this.checkForTriggerUpdates();
+        this.ipcService.mainWindowAngularReady();
     }
 
     checkForTriggerUpdates() {
