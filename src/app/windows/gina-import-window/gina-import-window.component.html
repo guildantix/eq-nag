@@ -27,8 +27,6 @@
                                 <button mat-icon-button [title]="(showImported ? 'Hide items have have already been imported.' : 'Show items that have already been imported.')" (click)="showImported = !showImported">
                                     <mat-icon [ngClass]="{'material-icons-outlined': !showImported}" [inline]="true">check_circle</mat-icon>
                                 </button>
-                                <!-- <button mat-icon-button class="small" (click)="addTriggerFolderDialog()"><mat-icon [inline]="true">add</mat-icon></button> -->
-                                <!-- <button mat-icon-button class="small" (click)="toggleTree()"><mat-icon *ngIf="!allExpanded" [inline]="true">unfold_more</mat-icon><mat-icon *ngIf="allExpanded" [inline]="true">unfold_less</mat-icon></button> -->
                             </div>
     
                             <mat-tree [dataSource]="dataSource" [treeControl]="treeControl" style="overflow-y: scroll; max-height: 575px;">
@@ -37,8 +35,6 @@
                                 <!-- [ngClass]="{selected: node.folderId === selectedFolderId}" [appContextMenu]="getFolderContextMenu(node.folderId, node.name)" -->
                                 <mat-tree-node *matTreeNodeDef="let node" matTreeNodePadding matTreeNodePaddingIndent="20" (click)="selectForImport(node.item, node.ginaName, node.folders)" [ngClass]="{selected: node.ginaName == selectedGinaName}" [appContextMenu]="getObjectContextMenu(node)" >
                                     <button mat-icon-button class="trigger-button">
-                                        <!-- <span style="display: inline-block;width: 18px;">&nbsp;</span> -->
-                                        <!-- <mat-icon>article</mat-icon> -->
                                         <mat-icon>label</mat-icon>
                                     </button>
                                     <div class="tree-click-target" title="{{node.ginaName}}"><span>{{node.name}}</span></div>
@@ -323,9 +319,6 @@
         </form>
     </section>
     <footer>
-        <!-- <button mat-button [disabled]="ginaImportForm.invalid" (click)="save()">Save</button> -->
         <button mat-button color="warn" (click)="closeModal()">Cancel</button>
-        <!-- <button mat-button color="accent" (click)="copyJson()" *ngIf="isDev">Copy JSON</button> -->
-        <!-- <button mat-button color="default" (click)="reimportDotTimerFromAllakhazam()" *ngIf="model.allakhazamUrl != null && model.allakhazamUrl.indexOf('spell.html') > -1">Re-import from Allakhazam</button> -->
     </footer>
 </div>

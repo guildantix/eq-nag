@@ -57,8 +57,6 @@ export class SettingsComponent implements OnInit {
 
     ngOnInit() {
         this.ipcService.tickReceived().subscribe( data => {
-            // this.dkpEntries = data.dkpEntries;
-            // this.logFile = data.logFile;
             this.voiceIndex = data.voiceIndex;
             this.overlays = data.overlays;
             
@@ -94,22 +92,84 @@ export class SettingsComponent implements OnInit {
         this.ipcService.getAlertOverlayId().subscribe( id => this.alertOverlayId = id );
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Allows the user to save a copy of their current log file, in zip form.
+     */
     downloadLogFile() {
         this.ipcService.downloadLogZip();
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Stores the default detrimental overlay id.
+     */
     saveDetrimentalOverlayId() {
         this.ipcService.saveDetrimentalOverlayId( this.detrimentalOverlayId );
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Stores the default beneficial overlay id.
+     */
     saveBeneficialOverlayId() {
         this.ipcService.saveBeneficialOverlayId( this.beneficialOverlayId );
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Stores the default alert overlay id.
+     */
     saveAlertOverlayId() {
         this.ipcService.saveAlertOverlayId( this.alertOverlayId );
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Uses TTS to speak the given phrase.
+     * 
+     * @param phrase The phrase to speak.
+     */
     speakPhrase( phrase: string ): void {
         var utter = new SpeechSynthesisUtterance();
         utter.text = phrase;
@@ -118,10 +178,34 @@ export class SettingsComponent implements OnInit {
         speechSynthesis.speak( utter );
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Stores the selected voice index.
+     */
     onChangeVoice(): void {
         this.ipcService.updateVoiceIndex( this.voiceIndex );
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Opens the GINA import dialog.
+     */
     openImportGinaDialog(): void {
         this.loadingGinaConfig = true;
         this.ipcService.showGinaImportWindow().subscribe( loaded => {
@@ -132,12 +216,41 @@ export class SettingsComponent implements OnInit {
         } );
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Adds a new empty phonetic transform.
+     * 
+     * @param table A reference to the MatTable object.
+     */
     addPhoneticTransform( table: MatTable<IPhoneticTransform> ): void {
         this.phoneticTransforms.push( { id: nanoid() } );
         table?.renderRows();
         this.phoneticTransformsModified = true;
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Deletes the desired transform, after confirmation.
+     * 
+     * @param index The index of the desired transform.
+     * @param table A reference to the MatTable object.
+     */
     deletePhoneticTransform( index: number, table: MatTable<IPhoneticTransform> ): void {
         this.dialogService.showConfirmDialog(
             `Are you sure you want to delete ${this.phoneticTransforms[ index ].originalText}?`,
@@ -152,11 +265,35 @@ export class SettingsComponent implements OnInit {
             } );
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Saves the current phonetic transforms.
+     */
     savePhoneticTransforms(): void {
         this.ipcService.savePhoneticTransforms( this.getPhoneticTransformsRecord() );
         this.phoneticTransformsModified = false;
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Returns the currently stored phonetic transforms.
+     */
     getPhoneticTransformsRecord(): Record<string, string> {
         let transforms: Record<string, string> = {};
         let duplicates: string[] = [];
@@ -176,10 +313,34 @@ export class SettingsComponent implements OnInit {
         return transforms;
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Opens a dialog to show their current verified user status.
+     */
     showVerifiedUserInfo() {
         this.dialogService.showCustomNotificationDialog( 'Verified Users', [ 'Your author account has been verified.', 'Verified authors are able to publish their triggers to the universal library.' ], 'verified_user' );
     }
     
+
+
+
+
+
+
+
+
+    
+    /**
+     * Creates a new author record on the server.
+     */
     createAuthor() {
         this.settingsService.createAuthor( this.author.name, this.author.discord ).subscribe( author => {
             this.ipcService.saveAuthor( author );
@@ -187,6 +348,18 @@ export class SettingsComponent implements OnInit {
         } );
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * For verified authors, allows the user to update their author details.
+     */
     updateAuthor() {
         this.settingsService.updateAuthor( this.author ).subscribe( success => {
             if ( success ) {
@@ -196,6 +369,18 @@ export class SettingsComponent implements OnInit {
         } );
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Submits a request for permissions to author and share package libraries.
+     */
     requestVerification() {
         this.settingsService.requestVerification( this.author.authorId ).subscribe( success => {
             if ( success ) {
@@ -204,6 +389,18 @@ export class SettingsComponent implements OnInit {
         } );
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Executes the setup wizard.
+     */
     runSetupWizard() {
         this.setupService.showSetupWizard().subscribe( () => {
             this.ipcService.requestTick();

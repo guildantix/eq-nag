@@ -54,6 +54,23 @@ export class TriggerPackageDetailsComponent implements OnInit {
         } );
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Returns the list of folder parents, including, the specified folder id.
+     * 
+     * @param folderId The id of the end folder.
+     * @param folders The list of folders to search.
+     * @param names The current list of folder names found in the hierarchy.
+     * @returns 
+     */
     private getFolderFamilyNames( folderId: string, folders: PackageFolder[], names: string[] ): string[] {
         
         for ( let i = 0; i < folders?.length; i++ ) {
@@ -74,6 +91,20 @@ export class TriggerPackageDetailsComponent implements OnInit {
         }
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Returns breadcrumbs for the given trigger's folder/name structure.
+     * 
+     * @param trigger The desired trigger.
+     */
     getTriggerFamily( trigger: PackageTrigger ): string {
 
         let folderFamilyNames = this.getFolderFamilyNames( trigger.folderId, this.package.model.folders, [] );
@@ -89,14 +120,50 @@ export class TriggerPackageDetailsComponent implements OnInit {
 
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Updates the list of triggers in this package.
+     */
     updateList(): void {
         this.package.model.triggers = _.orderBy( this.package.model.triggers, f => this.getTriggerFamily( f ) );
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Saves changes to the package.
+     */
     onUpdatePackageClick() {
         this.editPackageId.emit( this.package.triggerPackageId );
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Uninstalls the selected package, after confirmation.
+     */
     uninstallPackage() {
         this.dialogService.showConfirmDialog(
             'Are you sure you want to uninstall this package?', 'Click "Yes" to uninstall this package', 'Click "No" to close this modal without uninstalling the trigger package.',
@@ -114,6 +181,18 @@ export class TriggerPackageDetailsComponent implements OnInit {
 
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Installs the selected package.
+     */
     installPackage() {
         this.libraryService
             .getPackage( this.package.triggerPackageId )
@@ -125,6 +204,21 @@ export class TriggerPackageDetailsComponent implements OnInit {
         
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Installs the given trigger package.
+     * 
+     * @param triggerPackage The trigger package to install.
+     * @param packageFiles The files attached to this package.
+     */
     installTriggerPackage( triggerPackage: TriggerPackageMetaModel, packageFiles: PackageFileModel[] ): void {
         // Adding a timer makes the following easier and I'm being lazy today.
         let importTasks: Observable<any>[] = [ timer( 1 ) ];
@@ -141,6 +235,18 @@ export class TriggerPackageDetailsComponent implements OnInit {
             } );
         } );
     }
+
+
+
+
+
+
+
+
+
+
+    // TODO: Overlay selection/new overlays when installing new trigger packages.
+    // TODO: Fix the auto updater.
 
     // Things the installer must do.
     // ~Pull down the latest version.~

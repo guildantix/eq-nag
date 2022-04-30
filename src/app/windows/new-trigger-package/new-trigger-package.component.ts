@@ -46,6 +46,20 @@ export class NewTriggerPackageComponent implements OnInit {
         this.ipcService.getTriggerFolders().subscribe( folders => this.triggerFolders = folders );
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Updates all trigger packages.  
+     * Note: this is only updating the definitions and not updating installed 
+     * package triggers.
+     */
     pullTriggerUpdates(): void {
         this.triggers.forEach( trigger => {
             

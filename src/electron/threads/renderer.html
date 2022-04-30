@@ -21,18 +21,8 @@
             user-select: none;
         }
 
-        /* div.show-border {
-            border: 6px solid rgba(0,0,0,0.5);
-        } */
-
         div.highlight-border {
             border: 6px solid #00d4ff59;
-            /* display:block;
-            position: fixed;
-            left: 0;
-            right: 0;
-            top: 0;
-            bottom: 0; */
         }
 
         div.highlight-border .overlay-name-watermark {
@@ -92,7 +82,6 @@
         .resize-ne::after {
             content: '';
             right: -6px;
-            /* left: -6px; */
             top: -6px;
             height: 12px;
             width: 12px;
@@ -103,7 +92,6 @@
         .resize-se::after {
             content: '';
             right: -6px;
-            /* left: -6px; */
             bottom: -6px;
             height: 12px;
             width: 12px;
@@ -114,7 +102,6 @@
         .resize-sw::after {
             content: '';
             left: -6px;
-            /* left: -6px; */
             bottom: -6px;
             height: 12px;
             width: 12px;
@@ -125,7 +112,6 @@
         .resize-nw::after {
             content: '';
             left: -6px;
-            /* left: -6px; */
             top: -6px;
             height: 12px;
             width: 12px;
@@ -141,10 +127,6 @@
             -webkit-user-select: none;
             user-select: none;
             -webkit-app-region: drag;
-            /* position: relative;
-            display: inline-block;
-            width: 500px;
-            height: 50px; */
             position: absolute;
             border: 1px solid orange;
             left: 6px;
@@ -209,8 +191,6 @@
         .animate-bottom {
             position: absolute;
             animation: animatebottom 7s linear;
-            /* animation-name: animatebottom;
-            animation-duration: 2s */
         }
         @keyframes animatebottom { 
             0% { top:100%; opacity:1 } 
@@ -228,17 +208,8 @@
             0% { opacity: 0.5; transform: scale(1.5); }
             1% { opacity: 1; transform: scale(2.0); }
             50% { opacity: 1; transform: scale(2.0); }
-            /* 75% { opacity: .85; transform: scale(1.25);} */
             100% { opacity: 0; transform: scale(.1);}
         }
-
-        /* @keyframes animate-fadeshrink {
-            0% { opacity: 0.5; font-size: 58px; }
-            1% { opacity: 1; font-size: 64px; }
-            12% { opacity: 1; font-size: 64px; }
-            25% { opacity: .85; font-size: 64px;}
-            100% { opacity: 0; font-size: 6px;}
-        } */
 
         .animate-fade-out {
             position:relative;
@@ -259,24 +230,14 @@
         }
 
         .fct-dmg-src {
-            /* float: left; */
-            /* clear: both; */
             font-size: 12px;
-            /* font-weight: 300; */
             font-weight: normal;
             color: #005aff;
             text-shadow:    0px 0px 1px #000000ff, -1px -1px 1px #000000ff, 1px -1px 1px #000000ff, -1px 1px 1px #000000ff, 1px 1px 1px #000000ff,
                             0px 0px 5px #000000d9, -1px -1px 5px #000000d9, 1px -1px 5px #000000d9, -1px 1px 5px #000000d9, 1px 1px 5px #000000d9;
-            /* text-shadow: 0px 0px 10px #000000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000; */
-            /* -webkit-text-stroke: .1px black; */
-            /* -webkit-text-fill-color: #005aff; */
-            /* text-shadow: 0px 0px 10px black; */
         }
 
         .fct-text {
-            /* -webkit-text-stroke: .1px black; */
-            /* -webkit-text-fill-color: #ffffff; */
-            /* text-shadow: 0px 0px 10px black; */
             text-shadow:    0px 0px 1px #000000ff, -1px -1px 1px #000000ff, 1px -1px 1px #000000ff, -1px 1px 1px #000000ff, 1px 1px 1px #000000ff,
                             0px 0px 5px #000000d9, -1px -1px 5px #000000d9, 1px -1px 5px #000000d9, -1px 1px 5px #000000d9, 1px 1px 5px #000000d9;
         }
@@ -291,30 +252,15 @@
             z-index: 1;
             padding: 4px;
             line-height: 0.9em;
-            /* font-size: 12px !important; */
-            /* font-weight: 300; */
-            /* font-weight: normal !important; */
-            /* font-kerning: none; */
-            /* font-weight: normal !important; */
             letter-spacing: 1px;
-            /* color: #000000; */
-            /* text-shadow: -1px -1px 0 #ffffff, 1px -1px 0 #ffffff, -1px 1px 0 #ffffff, 1px 1px 0 #ffffff; */
             color: white;
             font-weight: 400 !important;
-            /* font-family: 'Roboto' !important; */
-            /* font-weight: 300 !important; */
-            /* color: #005aff; */
             text-shadow: -1px -1px 2px #000, 1px -1px 2px #000, -1px 1px 2px #000, 1px 1px 2px #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
-            /* text-shadow: 0px 0px 10px #000000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000; */
-            /* -webkit-text-stroke: 1px white; */
-            /* color: #0000007a; */
-            /* margin: 6px; */
         }
 
         .dot-text.ungrouped {
             text-overflow: ellipsis;
             white-space: nowrap;
-            /* width: 200px; */
             overflow: hidden;
             width: 100%;
             padding-right: 30px;
@@ -323,15 +269,12 @@
         .grouped-mobs {
             display: flex;
             flex-wrap: wrap;
-            /* align-items: flex-start; */
             align-content: flex-start;
-            /* vertical-align: top; */
         }
 
         .mob-dot-group {
             display: inline-block;
             width: 200px;
-            /* max-width: 63%; */
         }
 
         .mob-dot-group:nth-child(n+0) {
@@ -355,13 +298,11 @@
             
             .mob-dot-group .dot-icons-grid {
                 display: flex;
-                /* justify-content: space-evenly; */
                 flex-wrap: wrap;
             }
 
             .mob-dot-icon {
                 display: inline-block;
-                /* flex: 1; */
                 margin: 4px;
                 width: 50px;
             }
@@ -379,11 +320,6 @@
         Renderer(+urlParams.get('originX'), +urlParams.get('originY'));
     </script>
 
-    <!-- <section class="body">
-        <div class="content-area" style="padding-left: 20px;"></div>
-        <div class="healing-content-area"></div>
-    </section> -->
-    
     <!-- =========================== -->
     <!--      Overlay Template       -->
     <!-- =========================== -->

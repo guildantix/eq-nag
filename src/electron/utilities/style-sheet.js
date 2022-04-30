@@ -44,6 +44,15 @@ class StyleSheetUtil {
     /** @type {Record<string, HTMLStyleElement>} */
     #styles = {};
 
+
+
+
+
+
+
+
+
+
     /**
      * Creates a new style sheet, adds it to the dom, and returns its reference.
      * 
@@ -72,25 +81,14 @@ class StyleSheetUtil {
         return style;
     }
 
-    // /**
-    //  * Attaches the specified style to the DOM, removing the old one if it exists.
-    //  * 
-    //  * @param {Document} document The DOM.
-    //  * @param {HTMLStyleElement} style The HTML style element to attach.
-    //  * @param {string} name Identify this style.
-    //  */
-    // attachStyleSheet( document, style, name ) {
-        
-    //     if ( this.#styles[ name ] != null ) {
-    //         this.#styles[ name ].remove();
-    //         delete this.#styles[ name ];
-    //     }
 
-    //     style.setAttribute( 'id', name );
-    //     document.head.appendChild( style );
 
-    //     this.#styles[ name ] = style;
-    // }
+
+
+
+
+
+
 
     /**
      * Returns the css rule for the given style property
@@ -141,6 +139,15 @@ class StyleSheetUtil {
     }
 }
 
+
+
+
+
+
+
+
+
+
 /**
  * Returns the hexidecimal value for the given integer.
  * 
@@ -151,6 +158,15 @@ function componentToHex( c ) {
     var hex = c.toString( 16 );
     return hex.length == 1 ? "0" + hex : hex;
 }
+
+
+
+
+
+
+
+
+
 
 /**
  * Returns the hexidecimal value for the given integer.

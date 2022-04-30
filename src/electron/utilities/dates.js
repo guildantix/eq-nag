@@ -35,6 +35,15 @@ class TimeSpan {
 
 }
 
+
+
+
+
+
+
+
+
+
 /**
  * Calculates the amount of time between the two given dates.
  * 
@@ -52,9 +61,17 @@ function _timeSince( start, end ) {
     return new TimeSpan(delta);
 }
 
+
+
+
+
+
+
+
+
+
 let DateUtilities = {
     timeSince: _timeSince,
-    // findIndex: findIndex,
 };
 
 module.exports = { DateUtilities, TimeSpan };

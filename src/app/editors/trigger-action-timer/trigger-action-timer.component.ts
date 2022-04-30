@@ -1,14 +1,10 @@
 import { Component, ElementRef, Input, OnInit, ViewChild } from '@angular/core';
-import { MatTable } from '@angular/material/table';
 import { ContextMenuModel } from 'src/app/context-menu/context-menu.model';
 import { ContextService } from 'src/app/context-menu/context.service';
-import { ActionTypes, FileModel, OverlayWindowModel, Phrase, TimerRestartBehaviors, TriggerAction } from 'src/app/core.model';
+import { ActionTypes, FileModel, OverlayWindowModel, TimerRestartBehaviors, TriggerAction } from 'src/app/core.model';
 import { ImageUtility } from 'src/app/utilities';
 import { IpcService } from 'src/app/ipc.service';
 import { DialogService } from 'src/app/dialogs/dialog.service';
-import { customAlphabet } from 'nanoid';
-const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
-const nanoid = customAlphabet( alphabet, 16 );
 
 @Component( {
     selector: 'app-trigger-action-timer',
@@ -39,15 +35,41 @@ export class TriggerActionTimerComponent implements OnInit {
         this.ipcService.getAudioFiles().subscribe( files => this.audioFiles = files );
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Opens the file selector for the icon file for the targeted action.
+     * 
+     * @param action The target action.
+     */
     openIconFileModal( action: TriggerAction ) {
-        this.onIconFileSelected = e => {
+        this.onIconFileSelected = () => {
             ImageUtility.toDataUrl( this.iconFileSelector.nativeElement.files[ 0 ] ).subscribe( dataUrl => action.timerIcon = dataUrl );
-            // console.log( 'found', action.actionId, this.iconFileSelector.nativeElement.files[ 0 ].path );
-            // action.timerIcon = this.iconFileSelector.nativeElement.files[ 0 ].path;
         };
         this.iconFileSelector.nativeElement.click();
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Opens the EQ Spell Icon modal to select an icon for the targeted action.
+     * 
+     * @param action The target action.
+     */
     public selectEqSpellIcon( action: TriggerAction ): void {
         this.dialogService.showSelectIconDialog( icon => {
             if ( icon != null ) {
@@ -56,6 +78,18 @@ export class TriggerActionTimerComponent implements OnInit {
         } );
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Opens an input dialog for the user to enter a storage formula.
+     */
     public enterStorageDurationFormula() {
         this.dialogService
             .showInputDialog( 'Storage Formula', [ 'Enter the persistent storage formula for the timer duration' ], 'Persistent Storage Formula', null, this.action.storageDuration ).subscribe( value => {
@@ -69,13 +103,39 @@ export class TriggerActionTimerComponent implements OnInit {
             } );
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Executes the on icon file selected dynamic event handler.
+     * 
+     * @param e The file input event args.
+     */
     iconFileSelected( e: any ) {
         this.onIconFileSelected( e );
         this.onIconFileSelected = null;
-        // console.log( 'testing', typeof e);
-        // this.ipcService.updateLogFile( this.iconFileSelector.nativeElement.files[ 0 ].path );
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Returns the right-click menu for the targeted action.
+     * 
+     * @param action The targeted action.
+     */
     public getActionEndedCtxMenu( action: TriggerAction ): ContextMenuModel[] {
         return [ <ContextMenuModel>{
             label: 'Copy Timer Ended Properties',
@@ -92,16 +152,56 @@ export class TriggerActionTimerComponent implements OnInit {
         } ];
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Copies the trigger action properties to the clipboard.
+     * 
+     * @param action The source trigger action.
+     */
     public copyActionEndedProperties( action: TriggerAction ): void {
         this.contextService.copyActionEndedProperties( action );
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Pastes the clipboard trigger action properties to the target action.
+     * 
+     * @param action The target trigger action.
+     */
     public pasteActionEndedProperties( action: TriggerAction ): void {
         this.contextService.pasteActionEndedProperties( action );
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Opens the file selector for the ending audio file.
+     */
     public openEndingAudioFileModal() {
-        this._audioFileSelected = e => {
+        this._audioFileSelected = () => {
             this.ipcService
                 .saveAudioFile( this.audioFileSelector.nativeElement.files[ 0 ] )
                 .subscribe( fileId => {
@@ -114,8 +214,20 @@ export class TriggerActionTimerComponent implements OnInit {
         this.audioFileSelector.nativeElement.click();
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Opens the file selector for the ended audio file.
+     */
     public openEndedAudioFileModal() {
-        this._audioFileSelected = e => {
+        this._audioFileSelected = () => {
             this.ipcService
                 .saveAudioFile( this.audioFileSelector.nativeElement.files[ 0 ] )
                 .subscribe( fileId => {
@@ -128,11 +240,39 @@ export class TriggerActionTimerComponent implements OnInit {
         this.audioFileSelector.nativeElement.click();
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Executes the on audio file selected dynamic event handler.
+     * 
+     * @param e The file input event args.
+     */
     public onAudioFileSelected( e: any ) {
         this._audioFileSelected( e );
         this._audioFileSelected = null;
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Plays the specified audio file.
+     * 
+     * @param fileId The id of the desired audio file.
+     */
     public playAudioFile( fileId: string ): void {
         if ( fileId ) {
 
@@ -146,6 +286,18 @@ export class TriggerActionTimerComponent implements OnInit {
         }
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Shows the hide timer conditions dialog.
+     */
     public editHideTimerConditions(): void {
         this.dialogService.showNamedGroupConditionsDialog( 'Edit hide conditions', [ 'If you only want to hide the timer under specific conditions, you can enter them here.', 'These conditions evaluate based on the named groups in the capture phrase regular expression.' ], this.action.hideConditions ).subscribe( conditions => this.action.hideConditions = conditions );
     }

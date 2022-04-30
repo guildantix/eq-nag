@@ -91,11 +91,6 @@ class ReceivedOverlayComponent {
     overlayId;
 }
 
-
-// /** @type {OverlayComponent[]} */
-// var overlayComponents = [];
-// /** @type {Object.<string, TimerGroup>} */
-// var overlayGroups = {};
 /** @type {Record<string, OverlayInstance>} */
 var overlayInstances = {};
 
@@ -107,21 +102,7 @@ var timerTemplate;
 var timerIconTemplate;
 var targetGroupTemplate;
 var targetGroupTimerTemplate;
-const fctFps = 1000 / 60;
-var fctRenderQueue = [];
-var fctRenderInterval = 250;
-// var width = 1;
-// var height = 1;
-// var fontSize = 1;
-// var sortDirection = TimerSortTypes.None;
 var voiceOptions = [];
-// var dotTextHeight = 0;
-// var showRemainingDuration = false;
-// var groupByTarget = false;
-// var groupHeaderSize = 12;
-// var groupHeaderColor = '#ffffff';
-// var groupHeaderWeight = 400;
-// var hideTargetLabel = false;
 /** @type {Record<number, number>} */
 var destroySchedule = {};
 
@@ -411,6 +392,15 @@ function Renderer( originX, originY ) {
 
 }
 
+
+
+
+
+
+
+
+
+
 /**
  * Initializes the given overlay.
  * 
@@ -482,7 +472,6 @@ function initializeOverlay( overlay ) {
  */
 function updateOverlay( overlayId, model ) {
     
-    // document.querySelector( '#overlay-title' ).textContent = model.name ? model.name : 'Overlay';
     overlayInstances[ overlayId ].model = model;
     overlayInstances[ overlayId ].title.innerText = model.name ? model.name : 'Overlay';
 
@@ -512,7 +501,6 @@ function updateOverlay( overlayId, model ) {
     }
     titleContainer.style.display = '';
 
-    // let noOverflowTypes = [ 'Log', 'Alert', 'Timer', 'Chart' ];
     if ( model.overlayType !== 'FCT' ) {
         contentArea.classList.add( 'no-overflow' );
 
@@ -559,9 +547,6 @@ function updateOverlay( overlayId, model ) {
             contentArea.style.border = null;
         }
     
-        // width = contentArea.clientWidth;
-        // height = contentArea.clientHeight;
-        // fontSize = model.fontSize;
         overlayInstances[ overlayId ].sortDirection = model.timerSortType;
     
         contentArea.style.textShadow = null;
@@ -689,7 +674,6 @@ function updateOverlay( overlayId, model ) {
         healingContentArea.classList.add( 'fct-content' );
         healingContentArea.style.margin = `${criticalPadding}px`;
 
-        // 
         let width = contentArea.clientWidth;
         let height = contentArea.clientHeight;
         let fontSize = model.fontSize;
@@ -719,6 +703,15 @@ function updateOverlay( overlayId, model ) {
     }
             
 }
+
+
+
+
+
+
+
+
+
 
 /**
  * Renders the FCT component.

@@ -46,6 +46,15 @@ class FilesDatabaseStore extends Store {
         }
     }
     
+
+
+
+
+
+
+
+
+    
     /**
      * Attaches store events to ipc main and dispatches react events to the main window.
      * 
@@ -82,6 +91,15 @@ class FilesDatabaseStore extends Store {
 
     }
 
+
+
+
+
+
+
+
+
+    
     /**
      * Returns a file URL for the specified file.
      * 
@@ -94,6 +112,15 @@ class FilesDatabaseStore extends Store {
         }
     }
 
+
+
+
+
+
+
+
+
+    
     /**
      * Saves the posted file to the store.
      * 
@@ -123,6 +150,15 @@ class FilesDatabaseStore extends Store {
         return id;
     }
 
+
+
+
+
+
+
+
+
+    
     /**
      * Removes the specified file.
      * 
@@ -137,6 +173,15 @@ class FilesDatabaseStore extends Store {
         }
     }
 
+
+
+
+
+
+
+
+
+    
     /**
      * Imports the given package file into the data store.
      * 
@@ -166,6 +211,22 @@ class FilesDatabaseStore extends Store {
         return file.fileId;
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Stores the specified filename in the data store, copying the file that 
+     * exists on the computer into the files path.
+     * 
+     * @param {string} filename The full path and name of the desired file.
+     * @returns 
+     */
     storeFileByName( filename ) {
 
         let name = path.basename( filename );
@@ -193,10 +254,34 @@ class FilesDatabaseStore extends Store {
         }
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Returns a list of all audio files int he store.
+     */
     getAudioFiles() {
         return _.filter( this.#data.files, f => f.mediaType === MediaTypes.Audio );
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Returns all file with data, in base64 format, for all audio files.
+     */
     getAudioFileData() {
         /** @type {PackageFileModel[]} */
         let files = _.filter( this.#data.files, f => f.mediaType === MediaTypes.Audio )

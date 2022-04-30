@@ -55,16 +55,54 @@ export class TriggerLibraryWindowComponent implements OnInit {
         } );
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Closes this modal.
+     */
     public closeModal(): void {
         this.ipcService.closeThisChild();
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Shows the new trigger button.
+     */
     createNewPackage(): void {
         if ( this.trustedAuthor ) {
             this.showNewTrigger = true;
         }
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Reloads the trigger packages when the user makes a change.
+     * 
+     * @param triggerPackage The new trigger package.
+     */
     onNewPackage( triggerPackage: TriggerPackageMetaModel ): void {
         if ( triggerPackage != null ) {
             this.packages.push( triggerPackage );
@@ -73,6 +111,20 @@ export class TriggerLibraryWindowComponent implements OnInit {
         this.showNewTrigger = false;
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Reloads the trigger packages when the user makes a change.
+     * 
+     * @param triggerPackage The updated trigger package.
+     */
     onSavePackage( triggerPackage: TriggerPackageMetaModel ): void {
         if ( triggerPackage != null ) {
             this.libraryService.getLibrary().subscribe( packages => this.packages = packages );
@@ -80,11 +132,39 @@ export class TriggerLibraryWindowComponent implements OnInit {
         this.showEditTrigger = false;
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Shows the details panel on the given trigger package.
+     * 
+     * @param triggerPackage The desired trigger package.
+     */
     showTriggerDetails( triggerPackage: TriggerPackageMetaModel ): void {
         this.detailsModel = triggerPackage;
         this.showDetailsModel = true;
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Shows the edit package panel for the specified package.
+     * 
+     * @param packageId The id of the package.
+     */
     showEditPackage( packageId: string ): void {
         this.editPackageId = packageId;
         this.showEditTrigger = true;

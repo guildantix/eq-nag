@@ -5,27 +5,87 @@ import { environment } from 'src/environments/environment';
 import { PackageFileModel, TriggerPackageMetaModel, TriggerPackageModel, TriggerPackageTransferModel, TriggerPackageVersionInfoModel } from '../core.model';
 import { catchError, map } from 'rxjs/operators';
 import { DialogService } from '../dialogs/dialog.service';
+import { IpcService } from '../ipc.service';
 
 @Injectable()
 export class TriggerLibraryService {
 
-    constructor( private httpClient: HttpClient, private dialogService: DialogService ) { }
+    constructor( private httpClient: HttpClient, private dialogService: DialogService, private ipcService: IpcService ) { }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Returns all trigger packages.
+     */
     getLibrary(): Observable<TriggerPackageMetaModel[]> {
         return this.httpClient.get<TriggerPackageMetaModel[]>( `${environment.shareServiceUrl}/triggers/library` )
             .pipe( catchError( error => this.handleError( error ) ) );
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Returns the latest version information for the given package(s).
+     * 
+     * @param packageIds The id of the desired package(s).
+     * @returns 
+     */
     getLatestVersionInfo(packageIds: string[]): Observable<TriggerPackageVersionInfoModel[]> {
         return this.httpClient.post<TriggerPackageVersionInfoModel[]>( `${environment.shareServiceUrl}/triggers/version-info`, packageIds )
             .pipe( catchError( error => this.handleError( error ) ) );
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Returns true if the specified author is the author of the specified 
+     * package.
+     * 
+     * @param packageId The id of the package.
+     * @param authorId The id of the author.
+     */
     isAuthor( packageId: string, authorId: string ): Observable<boolean> {
         return this.httpClient.get<boolean>( `${environment.shareServiceUrl}/triggers/${packageId}/is-author/${authorId}` )
             .pipe( catchError( error => this.handleError( error ) ) );
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Creates a new trigger package on the server.
+     * 
+     * @param authorId The id of the author.
+     * @param meta The package meta data.
+     * @param notes The update notes.
+     */
     createPackage( authorId: string, meta: TriggerPackageMetaModel, notes: string ): Observable<TriggerPackageMetaModel> {
         let data = new TriggerPackageTransferModel();
 
@@ -41,6 +101,22 @@ export class TriggerLibraryService {
             );
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Updates the trigger package.
+     * 
+     * @param authorId The id of the author.
+     * @param meta The updated package meta data.
+     * @param notes The update notes describing this update.
+     */
     updatePackage( authorId: string, meta: TriggerPackageMetaModel, notes: string ): Observable<TriggerPackageMetaModel> {
         let data = new TriggerPackageTransferModel();
 
@@ -56,6 +132,20 @@ export class TriggerLibraryService {
             );
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Returns the details of the specified package(s).
+     * 
+     * @param packageId The id of the desired package(s).
+     */
     getPackage( packageId: string | string[] ): Observable<TriggerPackageMetaModel[]> {
         
         packageId = Array.isArray( packageId ) ? packageId : [ packageId ];
@@ -64,13 +154,45 @@ export class TriggerLibraryService {
             .pipe( catchError( error => this.handleError( error ) ) );
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Returns the files to install with the specified package.
+     * 
+     * @param packageId The id of the desired package.
+     */
     getPackageFiles( packageId: string ): Observable<PackageFileModel[]> {
         
         return this.httpClient.get<PackageFileModel[]>( `${environment.shareServiceUrl}/triggers/${packageId}/files` )
             .pipe( catchError( error => this.handleError( error ) ) );
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Logs the error to the console and the log file, displays the error to the user, then throws an observable error.
+     * 
+     * @param error The captured error.
+     */
     private handleError( error: HttpErrorResponse ) {
+
+        // Log the error to the user log file.
+        this.ipcService.logException( error );
+
         if ( error.status === 0 ) {
             // A client-side or network error occurred. Handle it accordingly.
             console.error( 'An error occurred:', error.error );

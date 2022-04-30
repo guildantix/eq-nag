@@ -75,6 +75,18 @@ export class NewTriggerRaidAbilityComponent implements OnInit {
 
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Scrapes the entered URL for spell data.
+     */
     public scrape(): void {
         // ^You resist (?<caster>.+?)\b\s{0,1}'{0,1}s{0,1}\b Void of Suppression!$
         // ^Warden Hanvar has been slain by (?<player>.+?)!$
@@ -90,6 +102,19 @@ export class NewTriggerRaidAbilityComponent implements OnInit {
         } );
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Moves to the next step, setting properties based on parsed information 
+     * and user selection.
+     */
     public nextStep(): void {
         if ( this.getUrl ) {
             this.getUrl = false;
@@ -113,6 +138,19 @@ export class NewTriggerRaidAbilityComponent implements OnInit {
         }
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Sets the death touch property to true, and moves to the next step to 
+     * enter death touch details.
+     */
     public yesIsDeathTouch(): void {
         this.deathTouch = true;
         this.getDeathTouchInfo = true;
@@ -120,12 +158,37 @@ export class NewTriggerRaidAbilityComponent implements OnInit {
         this.nextStep();
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Sets the death touch property to false and moves to the next step, 
+     * twice, to skip the death touch details.
+     */
     public noIsDeathTouch(): void {
         this.deathTouch = false;
         this.nextStep();
         this.nextStep();
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Uses the parsed data to create the trigger.
+     */
     public import(): void {
         let trigger: TriggerModel;
 
@@ -142,6 +205,7 @@ export class NewTriggerRaidAbilityComponent implements OnInit {
         trigger.allakhazamUrl = this.url;
         trigger.captureMethod = 'Any match';
         trigger.importType = ImportTypes.Ability;
+        // TODO: Enable options for raid abilities to have a cooldown.
         // trigger.useCooldown = true;
         // trigger.cooldownDuration = 1;
 
@@ -400,6 +464,20 @@ export class NewTriggerRaidAbilityComponent implements OnInit {
         
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Returns a list of phrases to end this action early.
+     * 
+     * @param target The target of the phrase.
+     */
     public getRecastTimerEndEarlyPhrases( target: string ): Phrase[] {
         
         let phrases: Phrase[] = [];

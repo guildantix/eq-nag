@@ -130,12 +130,19 @@ export class TriggerActionDisplayTextComponent implements OnInit {
         } );
     }
 
-    onOverlayChanged(): void {
-        if ( this.action.overlayId ) {
-            this.loadOverlayDefaults();
-        }
-    }
 
+
+
+
+
+
+
+
+    
+    /**
+     * When the user changes the font family, this loads the selected font 
+     * family's availabe properties.
+     */
     public onChangeFontFamily(): void {
         let fi: number = availableFonts[ this.fontFamily ].indexOf( this.action.textWeight );
         this.fontWeightIndex = -1;
@@ -162,10 +169,35 @@ export class TriggerActionDisplayTextComponent implements OnInit {
         this.fontWeightIndex = this.fontWeightIndex > -1 ? this.fontWeightIndex : 0;
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Changes the preview's font weight value based on the selected font 
+     * weight index.
+     */
     onFontWeightChange(): void {
         this.action.textWeight = availableFonts[ this.fontFamily ][ this.fontWeightIndex ];
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Loads the style defaults for this action's selected overlay.
+     */
     private loadOverlayDefaults(): void {
         this.selectedOverlay = this.overlays.find( f => f.overlayId === this.action.overlayId );
     }

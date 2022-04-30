@@ -67,8 +67,7 @@ export class TriggerDialogComponent implements OnInit {
         this.model.actions?.forEach( ( action: TriggerAction ) => {
 
             if ( action.actionType === ActionTypes.StoreVariable ) {
-
-                
+                // No special processing operations are required for store variable actions.
                 
             } else {
 

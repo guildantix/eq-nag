@@ -44,26 +44,6 @@
 
             </form>
         </mat-step>
-        <!-- <mat-step label="Items with this Effect" *ngIf="spell?.itemsWithEffect?.length > 0">
-            <div *ngIf="loadingItemDetails" class="loading">
-                <p>Loading ...</p>
-                <mat-progress-bar mode="indeterminate"></mat-progress-bar>
-            </div>
-            <form #optionalAForm="ngForm" *ngIf="!loadingItemDetails">
-
-                <p>There are item(s) with this effect.  Would you like to include any of these?</p>
-
-                <p *ngFor="let item of spell.itemsWithEffect;let i = index">
-                    <mat-checkbox [(ngModel)]="item.selected" name="includeItem_{{i}}">{{item.name}}</mat-checkbox>
-                </p>
-                
-                <div>
-                    <button mat-button matStepperPrevious>Prev</button>
-                    <button mat-button (click)="processSelectedItemClickies()" [disabled]="optionalAForm.invalid">Next</button>
-                </div>
-
-            </form>
-        </mat-step> -->
         <mat-step label="Import">
             <form>
                 <p>Ready for import!</p>

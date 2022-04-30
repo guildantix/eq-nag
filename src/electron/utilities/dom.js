@@ -7,6 +7,15 @@ function docReady( fn ) {
     }
 }
 
+
+
+
+
+
+
+
+
+
 /**
  * Updates the given dom element's text value without changing any child nodes.
  * 
@@ -23,9 +32,16 @@ function updateDomTextOnly( dom, text ) {
             }
         }
     }
-    // document.querySelector('.dot-text').childNodes[1].nodeType === Node.TEXT_NODE;
-    // document.querySelector('.dot-text').childNodes[1].nodeValue = 'Updated again';
 }
+
+
+
+
+
+
+
+
+
 
 /**
  * Returns the inner content area, in pixels, of the given dom element.
@@ -97,6 +113,15 @@ function getInnerContentArea( dom ) {
         height: dom.clientHeight - padding.top - padding.bottom,
     }
 }
+
+
+
+
+
+
+
+
+
 
 let DomUtilities = {
     docReady: docReady,

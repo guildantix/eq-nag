@@ -27,6 +27,15 @@ class GinaImporter {
         this.loadDataFile();
     }
     
+
+
+
+
+
+
+
+
+
     /**
      * Initializes the GINA importer service.
      * 
@@ -41,15 +50,6 @@ class GinaImporter {
                 queryGina( app.getPath( 'home' ), ginaPath => {
                     ginaDataPath = ginaPath;
                     log.info( `gina path: ${ginaPath}` );
-                    // console.log( 'gina data path', app.getPath( 'home' ) );
-                    // console.log( 'gina path actual', ginaDataPath );
-                    // getGinaConfig( jsonData => {
-                    //     if ( jsonData ) {
-                    //         mainWindowRef.reference.webContents.send( 'console:log', jsonData );
-                    //     } else {
-                            
-                    //     }
-                    // } );
                 } );
             } );
 
@@ -68,6 +68,17 @@ class GinaImporter {
     }
     
 
+
+
+
+
+
+
+
+
+    /**
+     * Loads the list of GINA triggers already imported.
+     */
     loadDataFile() {
         try {
             let data = JSON.parse( fs.readFileSync( this.#storePath ) );
@@ -81,6 +92,19 @@ class GinaImporter {
         }
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Saves the imported gina information, preventing those triggers from 
+     * appearing in the list.
+     */
     storeDataFile() {
         try {
             fs.writeFile( this.#storePath, JSON.stringify( { importedGinaTriggers: importedGinaTriggers } ), () => { } );
@@ -90,6 +114,15 @@ class GinaImporter {
     }
 
 }
+
+
+
+
+
+
+
+
+
 
 /**
  * Parses the gina config file.
@@ -103,6 +136,21 @@ function getGinaConfig( onLoaded ) {
     } );
 }
 
+
+
+
+
+
+
+
+
+
+/**
+ * Recursively searchs folder for installed GINA.
+ * 
+ * @param {string} folder The starting folder path.
+ * @param {(path: string) => void} onFound Executed when the gina folder has been found.
+ */
 function queryGina( folder, onFound ) {
     fs.readdir( folder, { withFileTypes: true }, ( err, entities ) => {
         if ( entities ) {
@@ -122,5 +170,14 @@ function queryGina( folder, onFound ) {
         }
     } );
 }
+
+
+
+
+
+
+
+
+
 
 module.exports = GinaImporter;

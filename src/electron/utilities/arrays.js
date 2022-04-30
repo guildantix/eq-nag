@@ -11,6 +11,15 @@ function remove( array, predicate ) {
     return _remove( array, predicate, [] );
 }
 
+
+
+
+
+
+
+
+
+
 /**
  * Returns the first index the predicate returns truthy for.
  * 
@@ -26,6 +35,15 @@ function findIndex( array, predicate ) {
         }
     }
 }
+
+
+
+
+
+
+
+
+
 
 /**
  * Removes all elements the predicate returns truthy for.
@@ -47,6 +65,15 @@ function _remove( array, predicate, removed ) {
     return -1;
 }
 
+
+
+
+
+
+
+
+
+
 /**
  * Enumerates through the givne dictionary, executing predicate for each item.
  * 
@@ -61,6 +88,15 @@ function _enumerateDictionary(dictionary, fn) {
         }
     }
 }
+
+
+
+
+
+
+
+
+
 
 let ArrayUtilities = {
     remove: remove,

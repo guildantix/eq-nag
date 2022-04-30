@@ -31,10 +31,34 @@ export class InputDialogComponent implements OnInit {
 
     ngOnInit() { }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Closes the dialog and passes null to the dialog ref.
+     */
     cancel() {
         this.dialogRef.close( null );
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Closes this dialog and passes the user value to the dialog ref.
+     */
     accept() {
         this.dialogRef.close( this.model ?? '' );
     }

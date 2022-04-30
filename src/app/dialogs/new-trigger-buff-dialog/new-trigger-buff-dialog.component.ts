@@ -63,6 +63,18 @@ export class NewTriggerBuffDialogComponent implements OnInit {
         this.ipcService.getOverlayWindows().subscribe( overlays => this.overlays = overlays );
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Scrapes the entered URL for spell data.
+     */
     public scrape(): void {
         this.scraper.ScrapeAllakhazamSpell( this.url ).subscribe( spell => {
             
@@ -77,6 +89,19 @@ export class NewTriggerBuffDialogComponent implements OnInit {
         } );
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Scrapes item click information from each selected item with this spell 
+     * as a click effect.
+     */
     public processSelectedItemClickies() {
         this.loadingItemDetails = true;
 
@@ -99,6 +124,18 @@ export class NewTriggerBuffDialogComponent implements OnInit {
         }
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Uses the parsed data to create the trigger.
+     */
     public import(): void {
 
         let trigger: TriggerModel;
@@ -335,72 +372,6 @@ export class NewTriggerBuffDialogComponent implements OnInit {
             buffTimers.forEach( timer => timer.notifyWhenEnded = true );
             buffTimers.forEach( timer => timer.endedSpeak = true );
             buffTimers.forEach( timer => timer.endedSpeakPhrase = `Your ${this.spell.name} on \${target} has ended.` );
-
-            // let fadedOnOtherPhraseId = nanoid();
-            // trigger.capturePhrases.push( <CapturePhrase>{
-            //     phraseId: fadedOnOtherPhraseId,
-            //     useRegEx: true,
-            //     requirePreviousPhrase: false,
-            //     duration: null,
-            //     // Your Necrotic Cysts spell has worn off of Rodus.
-            //     // /^Your Necrotic Cysts spell has worn off of (?<target>[^\.]*)\.$/
-            //     phrase: `^Your ${this.spell.name}(?: Rk\. II| Rk\. III){0,1} spell has worn off of (?<target>[^\\.]*)\\.$`,
-            // } );
-
-            // trigger.actions.push( <TriggerAction>{
-            //     phrases: [ fadedOnOtherPhraseId ],
-            //     actionType: ActionTypes.Speak,
-            //     actionId: nanoid(),
-            //     interruptSpeech: false,
-            //     displayText: `Your ${this.spell.name}(?: Rk\. II| Rk\. III){0,1} on \${target} has ended.`,
-            // } );
-            
-            // if ( this.spell.effectFades ) {
-            //     let fadeOnSelfPhraseId = nanoid();
-            //     trigger.capturePhrases.push( <CapturePhrase>{
-            //         phraseId: fadeOnSelfPhraseId,
-            //         useRegEx: true,
-            //         requirePreviousPhrase: false,
-            //         duration: null,
-            //         phrase: '^' + this.spell.effectFades.replace( /\.$/, '\\.$' ),
-            //     } );
-
-            //     trigger.actions.push( <TriggerAction>{
-            //         phrases: [ fadedOnOtherPhraseId ],
-            //         actionType: ActionTypes.Speak,
-            //         actionId: nanoid(),
-            //         interruptSpeech: false,
-            //         displayText: `Your ${this.spell.name}(?: Rk\. II| Rk\. III){0,1} has ended.`,
-            //     } );
-
-            // }
-
-            // phrases: [].concat( buffTimerPhrases ),
-            // actionType: ActionTypes.BeneficialTimer,
-            // overlayId: this.timerOverlayId,
-            // duration: this.spell.duration,
-            // actionId: nanoid(),
-            // restartBehavior: TimerRestartBehaviors.RestartTimer,
-            // displayText: this.spell.name,
-            // useCustomColor: true,
-            // overrideTimerColor: '#0288d1',
-            // timerBackgroundColor: ColorUtility.FromHex( '#0288d1' ).darken( 0.93 ).toString( 0.75 ),
-            // endEarlyPhrases: [],
-            // hideTimer: !this.useSelfTimer && !this.useTargetTimer,
-            // castTime: this.spell.castTime,
-
-            // buffTimer.notifyWhenEnded = true;
-            // buffTimer.endedSpeak = true;
-            // buffTimer.endedSpeakPhrase = `Your ${this.spell.name}(?: Rk\. II| Rk\. III){0,1} on \${target} has ended.`;
-            
-            // if ( this.spell.effectFades ) {
-            //     // End when the buff ends early.
-            //     buffTimer.endEarlyPhrases.push( <Phrase>{
-            //         phraseId: nanoid(),
-            //         phrase: '^' + this.spell.effectFades.replace( /\.$/, '\\.$' ),
-            //         useRegEx: true,
-            //     } );
-            // }
             
         }
 
@@ -453,24 +424,6 @@ export class NewTriggerBuffDialogComponent implements OnInit {
             
             this.dialogRef.close();
         }
-
-        // let castOnOtherPhraseId = nanoid();
-        // trigger.capturePhrases.push( <CapturePhrase>{
-        //     phraseId: castOnOtherPhraseId,
-        //     useRegEx: true,
-        //     requirePreviousPhrase: false,
-        //     duration: null,
-        //     ///^(?<target>.+?)\s?'s has been poisoned\.
-        //     phrase: this.spell.castOnOther.replace( /\.$/, '\\.$' ).replace( /soandso's|soandso\s's|soandso/gmi, '^(?<target>.+?)\\b\\s{0,1}\'{0,1}s{0,1}\\b' ),
-        // } );
-        // trigger.capturePhrases.push( <CapturePhrase>{
-        //     phraseId: nanoid(),
-        //     useRegEx: true,
-        //     requirePreviousPhrase: false,
-        //     duration: null,
-        //     // ^?{target} has taken (?<damage>[0-9]*) ?damage from your Poison Bolt\.
-        //     phrase: `^?{target} has taken (?<damage>[0-9]*) ?damage from your ${this.spell.name}\\.`,
-        // } );
     }
 
 }

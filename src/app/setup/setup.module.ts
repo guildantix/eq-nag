@@ -23,10 +23,11 @@ import { SetupService } from './setup.service';
     exports: [
     ],
     declarations: [
-        // SetupWizardComponent,
+        // TODO: Why is setup wizard directly imported to the app module?
+        
     ],
     providers: [
-        // SetupService,
+        
     ],
 } )
 export class SetupModule { }

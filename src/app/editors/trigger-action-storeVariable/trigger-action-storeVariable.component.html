@@ -36,6 +36,7 @@
             </ng-template>
             <ng-template [ngIf]="action.variableStorageType === 'persistentDictionary'">
                 
+                <!-- TODO: Add a help text modal on click, to display this information. -->
                 <!-- <p>A persistent dictionary type will remember the stored value even after Nag closes.  The name chosen will be used to specify what to name the dictionary.</p> -->
                 <!-- <p>For example, if we keep track of the cast time for players casting Ethereal Light, we could name the dictionary EtherealLightCastTimes.  We could reference the cast time for the stored value in the duration value for timers by using: <code>EtherealLightCastTimes[Azaneal]</code>.</p> -->
 
@@ -51,14 +52,6 @@
                     <mat-hint>The value to parse and store.</mat-hint>
                 </mat-form-field>
                 
-                <!-- <br />
-                <mat-checkbox [(ngModel)]="action.onlyStoreUsedValues" name="cbxOnlyStoreUsedValues">Check if value is used?</mat-checkbox>
-                <div class="checkbox-hint"><small>If this box is checked, the value is checked against active triggers to ensure that the value is used as a condition before being saved.</small></div>
-    
-                <br />
-                <mat-checkbox [(ngModel)]="action.loopBackForValue" name="cbxLoopBackForValue">Loop-back for value?</mat-checkbox>
-                <div class="checkbox-hint"><small>If this box is checked, when the log is loaded it will loop backwards through the log to find the most recent phrase.</small></div> -->
-
             </ng-template>
             
         </div>

@@ -1,10 +1,36 @@
 const { result } = require( "lodash" );
 
+
+
+
+
+
+
+
+
+
+/**
+ * Formats the given string like the c# equivalent.
+ * 
+ * @returns {string} Returns the formated string.
+ * 
+ * @param {string} format The format string
+ * @param {any[]} args Any number of arguments.
+ */
 function format( format, args ) {
     return format.replace( /{(\d+)}/g, function ( match, number ) {
         return typeof args[ number ] != 'undefined' ? args[ number ] : match;
     } );
 }
+
+
+
+
+
+
+
+
+
 
 /**
  * Compares the two strings.
@@ -32,6 +58,15 @@ function compare( a, b, caseSensitive ) {
     }
 }
 
+
+
+
+
+
+
+
+
+
 /**
  * Returns true if the given value is null, undefined, or contains only whitespace.
  * 
@@ -43,6 +78,25 @@ function isNullOrWhitespace( value ) {
     }
 }
 
+
+
+
+
+
+
+
+
+
+/**
+ * Parses the given string, inserting stored variables where matched with ${name_of_var}.
+ * 
+ * @example
+ *      storedVariables['SpellBeingCast'] = ['Envenomed Bolt', 'Pyre of Mori']
+ *      ${SpellBeingCast} => (?<SpellBeingCast>Envenomed Bolt|Pyre of Mori)
+ * 
+ * @param {string} value The string value to parse.
+ * @param {Record<string, string[]>} storedVariables The dictionary of stored variables.
+ */
 function parseStoredVariablesToRegex(value, storedVariables) {
     // \${(.[^}]*)}     Your ${SpellBeingCast} spell is interrupted.
     //                      Full match	47-63	{SpellBeingCast}
@@ -68,8 +122,21 @@ function parseStoredVariablesToRegex(value, storedVariables) {
     return value;
 }
 
+
+
+
+
+
+
+
+
+
 /**
  * Parses the given string, inserting stored variables where matched with ${name_of_var}.
+ * 
+ * @example
+ *      storedVariables['SpellBeingCast'] = 'Minor Shielding'
+ *      ${SpellBeingCast} => Minor Shielding
  * 
  * @param {string} value The string value to parse.
  * @param {Record<string, string[]>} storedVariables The dictionary of stored variables.
@@ -83,7 +150,6 @@ function parseStoredVariablesToLiteral( value, storedVariables ) {
     if ( result?.length > 1 ) {
         for ( let i = 1; i < result.length; i++ ) {
             let values = storedVariables[ result[ i ] ];
-            //value = value.replace(/\${SpellBeingCast}/g, 'Envenomed Bolt, Pyre of Mori');
             if ( values?.length > 0 ) {
                 let text = values[ 0 ];
                 
@@ -93,19 +159,20 @@ function parseStoredVariablesToLiteral( value, storedVariables ) {
             
                 value = value.replace( RegExp( `\\\${${result[ i ]}}`, 'g' ), text );
             }
-            // value = value.replace( RegExp( `\\\${${result[ i ]}}`, 'g' ), storedVariables[ result[ i ] ] );
-            // let _reg = new RegExp( `{\\$${result[ i ]}}`, 'g' );
-            // value = value.replace( _reg, storedVariables[ result[ i ] ] );
         }
-        // for ( let key in storedVariables ) {
-        //     if ( storedVariables.hasOwnProperty( key ) ) {
-        //         let _reg = new RegExp( `{${storedVariables[ matches[ 1 ] ]}}`, 'g' );
-        //     }
-        // }
     }
 
     return value;
 }
+
+
+
+
+
+
+
+
+
 
 /**
  * Transforms the given phrase, replacing matching named conditions to the values those conditions matched when the trigger was executed.
@@ -137,6 +204,15 @@ function parseConditionResultsToLiteral( value, conditionResults ) {
     return value;
 }
 
+
+
+
+
+
+
+
+
+
 /**
  * Parses counter values to the given display text.
  * 
@@ -166,6 +242,15 @@ function parseCountersToLiteral( value, counters ) {
     
     return value;
 }
+
+
+
+
+
+
+
+
+
 
 /**
  * Transforms values in the given string based on the given phonetic transforms.
@@ -208,6 +293,15 @@ function parsePhoneticTransformsToLiteral( value, phoneticTransforms ) {
     return value;
 }
 
+
+
+
+
+
+
+
+
+
 /**
  * Replaces named group matches in the given string from the dictionary.
  * 
@@ -241,6 +335,15 @@ function parseSequentialGroups( value, groups ) {
     return value;
 }
 
+
+
+
+
+
+
+
+
+
 /**
  * Parses the given value as a dictionary literal.
  * 
@@ -266,6 +369,15 @@ function parseDictionaryKeys( value ) {
 
     return output;
 }
+
+
+
+
+
+
+
+
+
 
 /**
  * Parses the given string, inserting values according to the provided regular 
@@ -303,13 +415,6 @@ function parseMatchesToLiteral( value, matches, deltaTime ) {
                 value = value.replace( RegExp( `\\\${${key}}`, 'g' ), matches.groups[ key ] );
             }
         }
-        // for ( let i = 1; i < result.length; i++ ) {
-        //     //value = value.replace(/\${target}/g, 'A Slimy Weasel');
-        //     //value = value.replace(/\{1}/g, 'A Slimy Weasel');
-        //     if ( conditionResults[ result[ i ] ] ) {
-        //         value = value.replace( RegExp( `\\\${${result[ i ]}}`, 'g' ), conditionResults[ result[ i ] ] );
-        //     }
-        // }
     }
 
     // #{([0-9]+?)}     This is a test #{1} so that testing can #{2}.
@@ -340,6 +445,25 @@ function parseMatchesToLiteral( value, matches, deltaTime ) {
     return value;
 }
 
+
+
+
+
+
+
+
+
+
+/**
+ * Parses stored variable values into the given phrase.
+ * 
+ * @example
+ *      storedVariables['SpellBeingCast'] = 'Minor Shielding'
+ *      ${SpellBeingCast} => Minor Shielding
+ * 
+ * @param {string} value The phrase to parse.
+ * @param {Record<string, any>} storedVariables The stored variables.
+ */
 function parseStoredVariablesToLiteralArray( value, storedVariables ) {
     // \${(.[^}]*)}     Your ${SpellBeingCast} spell is interrupted.
     //                      Full match	47-63	{SpellBeingCast}
@@ -350,30 +474,30 @@ function parseStoredVariablesToLiteralArray( value, storedVariables ) {
     if ( result?.length > 1 ) {
         for ( let i = 1; i < result.length; i++ ) {
             let values = storedVariables[ result[ i ] ];
-            //value = value.replace(/\${SpellBeingCast}/g, 'Envenomed Bolt');
             if ( values?.length > 0 ) {
-                // let text = values[ 0 ];
+                
                 for ( let i = 1; i < values.length; i++ ) {
                     literals.push( value.replace( RegExp( `\\\${${result[ i ]}}`, 'g' ), values[ i ] ) );
-                    // text += ',' + values[ i ];
+                    
                 }
-                // value = value.replace( RegExp( `\\\${${result[ i ]}}`, 'g' ), text );
+                
             }
-            // value = value.replace( RegExp( `\\\${${result[ i ]}}`, 'g' ), storedVariables[ result[ i ] ] );
-            // let _reg = new RegExp( `{\\$${result[ i ]}}`, 'g' );
-            // value = value.replace( _reg, storedVariables[ result[ i ] ] );
         }
-        // for ( let key in storedVariables ) {
-        //     if ( storedVariables.hasOwnProperty( key ) ) {
-        //         let _reg = new RegExp( `{${storedVariables[ matches[ 1 ] ]}}`, 'g' );
-        //     }
-        // }
     } else {
         literals.push( value );
     }
 
     return literals;
 }
+
+
+
+
+
+
+
+
+
 
 /**
  * Transforms the given string so that the matched short code values are rendered into the string.
@@ -403,6 +527,16 @@ function parseShortCodeValuesToLiteral( value, characterName, duration, groups, 
     return value;
 }
 
+
+
+
+
+
+
+
+
+
+// TODO: Why is this commented out?
 // /**
 //  * Transforms the given string so that the matched short code values are rendered into the string.
 //  * 
@@ -428,6 +562,15 @@ function parseShortCodeValuesToLiteral( value, characterName, duration, groups, 
 //         } );
 //     }
 // }
+
+
+
+
+
+
+
+
+
 
 /**
  * Returns the given duration as a human readable number.
@@ -466,6 +609,15 @@ function getDurationLabel( seconds ) {
     }
 
 }
+
+
+
+
+
+
+
+
+
 
 /**
  * Returns the number of seconds in the given duration label.
@@ -514,6 +666,26 @@ function getDurationFromLabel( label ) {
     return parseFloat( label );
 }
 
+
+
+
+
+
+
+
+
+
+/**
+ * Parses the given string and converts shortcodes into proper regular expressions or simple text.
+ * 
+ * @example
+ *      {S2} => (?<S2>.+?)
+ *      {C} => Eryndhel
+ * 
+ * @param {string} value The phrase to search.
+ * @param {string} characterName The current character's name.
+ * @returns 
+ */
 function parseShortCodesToRegex( value, characterName ) {
     // https://regex101.com/r/g9QIL1/2
     // (?<timerDuration>[0-9]+?[h|hour|hours|hrs]+\s[0-9]*?[m|min|mins|minute|minutes]*?\s?[0-9]+?[s|sec|secs|seconds|second]+?|[0-9]*?[m|min|mins|minute|minutes]*?\s?[0-9]+?[s|sec|secs|seconds|second]+?|[0-9]+:[0-9]+:[0-9]+|[0-9]+)
@@ -535,15 +707,16 @@ function parseShortCodesToRegex( value, characterName ) {
     }
 
     return value;
-    // let result = /{(.[^}]+?)}/g.exec( value );
-    // let indexedResults = [ ...value.matchAll( /{([^}]+?)}/g ) ];
-
-    // if ( results?.length > 0 ) {
-    //     // for ( let i = 0; i < results.length; i++ ) {
-            
-    //     // }
-    // }
 }
+
+
+
+
+
+
+
+
+
 
 /**
  * Parses any gina conditional n values to regex.
@@ -585,6 +758,15 @@ function parseNConditionalCodesToRegex( value ) {
     return value;
 }
 
+
+
+
+
+
+
+
+
+
 // greater than: https://regex101.com/r/cs0xI3/1
 // less than: https://regex101.com/r/pWPL4Y/1, https://regex101.com/r/pWPL4Y/2 
 
@@ -612,6 +794,15 @@ function _getGreaterThanRegex( nval ) {
     return rgx;
 }
 
+
+
+
+
+
+
+
+
+
 /**
  * Returns a regular express to evaluate numbers less than the given value.
  * 
@@ -632,6 +823,16 @@ function _getLessThanRegex( nval ) {
     return rgx;
 }
 
+
+
+
+
+
+
+
+
+
+// TODO: Why is this commented out?
 // /**
 //  * Parses any gina conditional n values to regex and returns eval functions for each n-value.
 //  * 
@@ -712,6 +913,15 @@ function _getLessThanRegex( nval ) {
 
 //     return result;
 // }
+
+
+
+
+
+
+
+
+
 
 let StringUtilities = {
     format: format,

@@ -1,16 +1,14 @@
 import { Component, OnInit, Inject, ViewChild } from '@angular/core';
 import { MatDialog, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
-import { ActionTypes, CapturePhrase, Phrase, OperatorTypes, OverlayWindowModel, TimerSortTypes, TriggerAction, TriggerCondition, TriggerConditionTypes, TriggerModel, ImportTypes, TimerRestartBehaviors, ScrapedSpell, ScrapedClickEffect } from 'src/app/core.model';
+import { ActionTypes, CapturePhrase, Phrase, OperatorTypes, OverlayWindowModel, TriggerAction, TriggerCondition, TriggerConditionTypes, TriggerModel, ImportTypes, TimerRestartBehaviors, ScrapedSpell, ScrapedClickEffect } from 'src/app/core.model';
 import { IpcService } from 'src/app/ipc.service';
 import { ScraperService } from 'src/app/scraper.service';
 import { customAlphabet } from 'nanoid';
-import { DialogService } from '../dialog.service';
 import { SelectIconDialogComponent } from '../select-icon-dialog/select-icon-dialog.component';
 import * as _ from 'lodash-es';
 import { NewTriggerDialogModel } from '../dialog.model';
 import { forkJoin, Observable } from 'rxjs';
 import { MatHorizontalStepper } from '@angular/material/stepper';
-// import { NgForm } from '@angular/forms';
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const nanoid = customAlphabet( alphabet, 16 );
 
@@ -57,35 +55,37 @@ export class NewTriggerDialogComponent implements OnInit {
         this.ipcService.getOverlayWindows().subscribe( overlays => this.overlays = overlays );
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Scrapes the entered URL for spell data.
+     */
     public scrape(): void {
         this.scraper.ScrapeAllakhazamSpell( this.url ).subscribe( spell => {
             this.spell = spell;
             this.stepper.next();
         } );
     }
-
-    public processSelectedItemClickies() {
-        this.loadingItemDetails = true;
-
-        let observables: Observable<ScrapedClickEffect>[] = [];
-        
-        this.spell.itemsWithEffect.forEach( item => {
-            if ( item.selected ) {
-                observables.push( this.scraper.ScrapeAllakhazamItemClickInfo( item.url ) );
-            }
-        } );
-
-        if ( observables.length > 0 ) {
-            forkJoin( observables ).subscribe( items => {
-                this.selectedItems = items;
-                this.loadingItemDetails = false;
-                this.stepper.next();
-            } );
-        } else {
-            this.stepper.next();
-        }
-    }
     
+
+
+
+
+
+
+
+
+
+    /**
+     * Uses the parsed data to create the trigger.
+     */
     public generateTrigger() {
         
         let trigger: TriggerModel;
@@ -164,28 +164,6 @@ export class NewTriggerDialogComponent implements OnInit {
             endedBackgroundColor: remainAfterVals ? originalDotAction.endedBackgroundColor : null,
         } );
 
-        
-        // this.selectedItems.forEach( item => {
-        //     actions.push( <TriggerAction>{
-        //         phrases: [ trigger.capturePhrases[ 1 ].phraseId ],
-        //         actionType: ActionTypes.BeneficialTimer,
-        //         overlayId: this.timerOverlayId,
-        //         duration: this.spell.duration,
-        //         actionId: nanoid(),
-        //         restartBehavior: TimerRestartBehaviors.RestartOnDuplicate,
-        //         displayText: `${this.spell.name}`,
-        //         useCustomColor: true,
-        //         overrideTimerColor: '#0288d1',
-        //         timerBackgroundColor: ColorUtility.FromHex( '#0288d1' ).darken( 0.93 ).toString( 0.75 ),
-        //         endEarlyPhrases: [],
-        //         hideTimer: hideTimer,
-        //         hideConditions: [],
-        //         // castTime: item.castTime,
-        //         // onlyUseAaBeneficialFocus: true,
-        //         // skipBenCastingTimeFocus: true,
-        //     } );
-        // } );
-
         if ( this.onlyExecuteForRareEqTargets ) {
             actions.forEach( action => action.excludeTargets = [] );
             actions.forEach( action => action.excludeTargets.push( <Phrase>{
@@ -223,7 +201,7 @@ export class NewTriggerDialogComponent implements OnInit {
                 useRegEx: true,
             } ) );
         }
-        // trigger.actions.push( dotAction );
+        
         trigger.actions = actions;
         trigger.actions.push( <TriggerAction>{
             phrases: [ trigger.capturePhrases[ 1 ].phraseId ],
