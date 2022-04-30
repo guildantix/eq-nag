@@ -536,8 +536,14 @@ export class DialogService {
 
 
 
+    public showNotificationDialog( data: NotificationDialogModel ): void {
+        this.dialog.open( NotificationDialogComponent, {
+            data: data,
+            panelClass: 'app-dialog',
+        } ).afterClosed().subscribe();
+    }
 
-    public showWarningDialog( title: string, message: string | string[] ): void {
+    public showWarningDialog( title: string, message: string | ( string | ColoredString )[] ): void {
         let data: NotificationDialogModel = new NotificationDialogModel();
         
         data.title = title;
@@ -551,7 +557,7 @@ export class DialogService {
         } ).afterClosed().subscribe();
     }
     
-    public showInfoDialog( title: string, message: string | string[] ): MatDialogRef<NotificationDialogComponent> {
+    public showInfoDialog( title: string, message: string | ( string | ColoredString )[] ): MatDialogRef<NotificationDialogComponent> {
         let data: NotificationDialogModel = new NotificationDialogModel();
         
         data.title = title;
@@ -569,7 +575,7 @@ export class DialogService {
         return ref;
     }
     
-    public showCustomNotificationDialog( title: string, message: string | string[], icon: string ): void {
+    public showCustomNotificationDialog( title: string, message: string | ( string | ColoredString )[], icon: string ): void {
         let data: NotificationDialogModel = new NotificationDialogModel();
         
         data.title = title;
@@ -584,7 +590,7 @@ export class DialogService {
         } ).afterClosed().subscribe();
     }
     
-    public showErrorDialog( title: string, message: string | string[] ): void {
+    public showErrorDialog( title: string, message: string | ( string | ColoredString )[] ): void {
         let data: NotificationDialogModel = new NotificationDialogModel();
         
         data.title = title;

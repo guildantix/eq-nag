@@ -1,10 +1,13 @@
-import { ColoredString } from "../dialog.model";
+import { ColoredString, CustomButton } from "../dialog.model";
 
 export class NotificationDialogModel {
+    
     public title: string;
     public message: string | ( string | ColoredString )[];
     public notificationType: NotificationTypes;
     public icon: string;
+    public customButtons: CustomButton[] = [];
+    
 }
 
 export enum NotificationTypes {

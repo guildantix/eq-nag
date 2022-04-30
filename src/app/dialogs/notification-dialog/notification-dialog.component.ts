@@ -1,7 +1,6 @@
 import { Component, Inject, OnInit } from '@angular/core';
 import { MatDialog, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
-import { ColoredString } from '../dialog.model';
-// import { IpcService } from 'src/app/ipc.service';
+import { ColoredString, CustomButton } from '../dialog.model';
 import { NotificationDialogModel, NotificationTypes } from './notification-dialog.model';
 
 @Component( {
@@ -27,4 +26,15 @@ export class NotificationDialogComponent implements OnInit {
     }
 
     ngOnInit() { }
+
+    public onClickCustomButton( btn: CustomButton ) {
+        let resp = btn.onClick();
+        if ( resp === true ) {
+            this.dialogRef.close();
+        }
+    }
+
+    isColoredString( msg: any ): boolean {
+        return msg instanceof ColoredString;
+    }
 }
