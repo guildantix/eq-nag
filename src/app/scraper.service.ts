@@ -4,17 +4,29 @@ import { CharacterClasses, CharacterClassLevel, OutsideResource, ScrapedAbility,
 import { StringUtility } from './utilities';
 
 const allakhazamUrl: string = 'https://everquest.allakhazam.com';
-// interface Node {
-//     getAttribute( attr: string ): string;
-// }
 
 @Injectable()
 export class ScraperService {
 
     constructor() { }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Scrapes ability information from the given allakhazam URL.
+     * 
+     * @returns Returns the ScrapedAbility.
+     * 
+     * @param url The allakhazam URL for the desired ability.
+     */
     public ScrapeAllakhazamAbility( url: string ): Observable<ScrapedAbility> {
-        // this.ScrapeNpcData
         let obs: Observable<ScrapedAbility> = new Observable<ScrapedAbility>( ( observer: Observer<ScrapedAbility> ) => {
             const _scraper = this;
             var oReq = new XMLHttpRequest();
@@ -29,14 +41,9 @@ export class ScraperService {
                     spellGem: div.querySelector( 'img[src*="spellicons"]' ),
                     duration: 0,
                     _duration: document.evaluate( "//strong[contains(., 'Duration:') and not(contains(., 'AE Duration'))]", document, null, XPathResult.ANY_TYPE, null ).iterateNext().nextSibling.nextSibling.textContent.trim(),
-                    // class: document.evaluate( "//div[contains(@class, 'db-infobox')]/table/tbody/tr/td/strong[contains(., '" + currentCharacterClass + "')]", document, null, XPathResult.ANY_TYPE, null ).iterateNext().textContent,
-                    // level: +document.evaluate( "//div[contains(@class, 'db-infobox')]/table/tbody/tr/td/strong[contains(., '" + currentCharacterClass + "')]", document, null, XPathResult.ANY_TYPE, null ).iterateNext().parentNode.nextSibling.textContent,
                     castOnOther: document.evaluate( "//blockquote[contains(., 'Cast on other')]", document, null, XPathResult.ANY_TYPE, null ).iterateNext()?.textContent.split( 'Cast on other: ' )[ 1 ].split( 'Effect Fades: ' )[ 0 ],
                     castOnYou: document.evaluate( "//blockquote[contains(., 'Cast on you')]", document, null, XPathResult.ANY_TYPE, null ).iterateNext()?.textContent.split( 'Cast on you: ' )[ 1 ].split( 'Cast on other: ' )[ 0 ],
                 };
-
-                // console.log( '***', document.evaluate( "//blockquote[contains(., '1:')]", document, null, XPathResult.ANY_TYPE, null ).iterateNext().textContent );
-                // console.log( '***', document.evaluate( '//table[@class="db-page"]/tbody//blockquote', document, null, XPathResult.ANY_TYPE, null ).iterateNext() );
 
                 // ./book[./author/name = 'John'] 
                 // https://stackoverflow.com/a/9683142
@@ -45,7 +52,6 @@ export class ScraperService {
                 let resistMod = document.evaluate( "//td[./strong = 'Resist Adjust:']/following-sibling::td[1]", document, null, XPathResult.ANY_TYPE, null ).iterateNext();
 
                 // //a/bb[text()="zz"]/following-sibling::cc[1]/text()
-                // console.log( '***', document.evaluate( '//tr[./td/h2 = "Description"]/following-sibling::tr[1]//blockquote', document, null, XPathResult.ANY_TYPE, null ).iterateNext() );
                 let descriptionBlock = document.evaluate( '//tr[./td/h2 = "Description"]/following-sibling::tr[1]//blockquote', document, null, XPathResult.ANY_TYPE, null ).iterateNext();
 
                 let npcsWithAbilityResult = document.evaluate( '//div[@id="NPCs_with_Ability_t"]//li/a', document, null, XPathResult.ANY_TYPE, null );
@@ -139,17 +145,12 @@ export class ScraperService {
                     let npcUrls = [];
                     while ( node != null ) {
                         npcUrls.push( node.getAttribute( 'href' ) );
-                        // let npc = new ScrapedNpc();
-                        // npc.name = node.textContent;
-                        // npc.url = node.getAttribute( 'href' );
-                        // model.npcsWithAbility.push( npc );
                         node = npcsWithAbilityResult.iterateNext() as HTMLAnchorElement;
                     }
                     
                     let npcData = [];
                     npcUrls?.forEach( url => {
                         npcData.push( _scraper.ScrapeNpcData( allakhazamUrl + url ) );
-                        // _scraper.ScrapeNpcData( allakhazamUrl + npc.url ).subscribe( () => { } );
                     } );
                     
                     forkJoin( npcData ).subscribe( ( results: ScrapedNpc[] ) => {
@@ -158,11 +159,6 @@ export class ScraperService {
                     } );
                 } else {
                     _scraper.completObserver( div, observer, model );
-                    // document.body.removeChild( div );
-                    // div = null;
-    
-                    // observer.next( model );
-                    // observer.complete();
                 }
 
             } );
@@ -173,6 +169,22 @@ export class ScraperService {
         return obs;
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Passes the given model to the observer and completes the observer.
+     * 
+     * @param div The HTML Div element that was appended to parse the data.
+     * @param observer The observer.
+     * @param model The model to next.
+     */
     private completObserver<T>( div: HTMLDivElement, observer: Observer<T>, model: T ): void {
     
         document.body.removeChild( div );
@@ -183,6 +195,22 @@ export class ScraperService {
 
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Scrapes NPC information from the given allakhazam URL.
+     * 
+     * @returns Returns the ScrapedNpc model.
+     * 
+     * @param url The allakhazam URL for the desired NPC.
+     */
     public ScrapeNpcData( url: string ): Observable<ScrapedNpc> {
         let obs: Observable<ScrapedNpc> = new Observable<ScrapedNpc>( ( observer: Observer<ScrapedNpc> ) => {
             var oReq = new XMLHttpRequest();
@@ -226,6 +254,22 @@ export class ScraperService {
         return obs;
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Scrapes item click information from the given allakhazam URL.
+     * 
+     * @returns Returns the ScrapedClickEffect.
+     * 
+     * @param url The allakhazam URL for the desired item.
+     */
     public ScrapeAllakhazamItemClickInfo( url: string ): Observable<ScrapedClickEffect> {
 
         let obs = new Observable<ScrapedClickEffect>( observer => {
@@ -283,6 +327,22 @@ export class ScraperService {
         return obs;
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Scrapes spell information from the given allakhazam URL.
+     * 
+     * @returns Returns the ScrapedSpell model.
+     * 
+     * @param url The allakhazam URL for the desired spell.
+     */
     public ScrapeAllakhazamSpell( url: string ): Observable<ScrapedSpell> {
         let obs: Observable<ScrapedSpell> = new Observable<ScrapedSpell>( ( observer: Observer<ScrapedSpell> ) => {
             
@@ -299,11 +359,8 @@ export class ScraperService {
                     duration: 0,
                     _duration: document.evaluate( "//strong[contains(., 'Duration:')]", document, null, XPathResult.ANY_TYPE, null ).iterateNext()?.nextSibling.nextSibling.textContent.trim(),
                     itemsWithEffect: document.evaluate( "//tr//td//h2[contains(., 'Items with this effect')]", document, null, XPathResult.ANY_TYPE, null ).iterateNext()?.parentElement.parentElement.nextElementSibling,
-                    // class: document.evaluate( "//div[contains(@class, 'db-infobox')]/table/tbody/tr/td/strong[contains(., '" + currentCharacterClass + "')]", document, null, XPathResult.ANY_TYPE, null ).iterateNext().textContent,
-                    // level: +document.evaluate( "//div[contains(@class, 'db-infobox')]/table/tbody/tr/td/strong[contains(., '" + currentCharacterClass + "')]", document, null, XPathResult.ANY_TYPE, null ).iterateNext().parentNode.nextSibling.textContent,
                     castOnOther: document.evaluate( "//blockquote[contains(., 'Cast on other')]", document, null, XPathResult.ANY_TYPE, null ).iterateNext()?.textContent.split( 'Cast on other: ' )[ 1 ].split( 'Effect Fades: ' )[ 0 ],
                     castOnYou: document.evaluate( "//blockquote[contains(., 'Cast on you')]", document, null, XPathResult.ANY_TYPE, null ).iterateNext()?.textContent.split( 'Cast on you: ' )[ 1 ].split( 'Cast on other: ' )[ 0 ],
-                    // effectFades_bad: document.evaluate( "//blockquote[contains(., 'Effect Fades')]", document, null, XPathResult.ANY_TYPE, null ).iterateNext().textContent?.split( 'Effect Fades: ' )[ 1 ],
                 };
 
                 data.name = data.name.match( /^Ancient\s/ ) ? StringUtility.Insert( data.name, ':', /^Ancient\s/.exec( data.name ).index + 'Ancient'.length ) : data.name;
@@ -366,8 +423,6 @@ export class ScraperService {
 
                 model.name = data.name.replace(/ Rk\. III| Rk\. II/gi, '');
                 model.duration = data.duration;
-                // model.class = data.class;
-                // model.level = data.level;
                 model.classes = classes;
                 model.castOnOther = data.castOnOther?.trim()?.replace( / +(?= )/g, '' );
                 model.castOnYou = data.castOnYou?.trim()?.replace( / +(?= )/g, '' );
@@ -390,8 +445,6 @@ export class ScraperService {
                     // let rgx = /.*gem_([0-9]*).*/;
                     model.gemSrc = data.spellGem.getAttribute( 'src' );
                     model.gemIndex = +/.*gem_([0-9]*).*/.exec( model.gemSrc )[ 1 ];
-                    // console.log( 'testing', rgx.exec( data.spellGem.getAttribute( 'src' ) ).groups[ 0 ] );
-                    // console.log( 'testing', +rgx.exec( data.spellGem.getAttribute( 'src' ) )[ 1 ] );
                 } else {
                     model.gemIndex = -1;
                 }

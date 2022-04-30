@@ -12,7 +12,7 @@ import { TriggerLibraryService } from './windows/trigger-library.service';
 import { forkJoin, Observable, timer } from 'rxjs';
 import { MatDialogRef } from '@angular/material/dialog';
 import { NotificationDialogModel, NotificationTypes } from './dialogs/notification-dialog/notification-dialog.model';
-import { CustomButton } from './dialogs/dialog.model';
+import { ColoredString, CustomButton } from './dialogs/dialog.model';
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const nanoid = customAlphabet( alphabet, 16 );
 const updateIntervalDuration = 5 * 60 * 1000;
@@ -112,7 +112,7 @@ export class MainComponent implements OnInit {
             let dialogArgs = new NotificationDialogModel();
             if ( e.code === 'Renderer:ResolutionChanged' ) {
                 dialogArgs.message = [
-                    'The resolution of one or more of your monitors has changed.',
+                    new ColoredString('The resolution of one or more of your monitors has changed.', '#f0e069', true),
                     'Your overlay positions have been automatically moved to match.',
                     'To manually arrange your overlays, click on the Arrange button below.' ];
                 dialogArgs.title = 'Your resolution has changed!';
