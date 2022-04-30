@@ -536,6 +536,12 @@ export class DialogService {
 
 
 
+
+    /**
+     * Shows a notification dialog to the user.
+     * 
+     * @param data The dialog display model.
+     */
     public showNotificationDialog( data: NotificationDialogModel ): void {
         this.dialog.open( NotificationDialogComponent, {
             data: data,
@@ -543,6 +549,21 @@ export class DialogService {
         } ).afterClosed().subscribe();
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Shows a warning dialog to the user.
+     * 
+     * @param title The dialog title.
+     * @param message The message(s) to display to the user.
+     */
     public showWarningDialog( title: string, message: string | ( string | ColoredString )[] ): void {
         let data: NotificationDialogModel = new NotificationDialogModel();
         
@@ -557,6 +578,21 @@ export class DialogService {
         } ).afterClosed().subscribe();
     }
     
+
+
+
+
+
+
+
+
+    
+    /**
+     * Shows an info dialog to the user.
+     * 
+     * @param title The dialog title.
+     * @param message The message(s) to display to the user.
+     */
     public showInfoDialog( title: string, message: string | ( string | ColoredString )[] ): MatDialogRef<NotificationDialogComponent> {
         let data: NotificationDialogModel = new NotificationDialogModel();
         
@@ -575,6 +611,22 @@ export class DialogService {
         return ref;
     }
     
+
+
+
+
+
+
+
+
+    
+    /**
+     * Shows a custom notification dialog to the user.
+     * 
+     * @param title The dialog title.
+     * @param message The message(s) to display to the user.
+     * @param icon The mat icon name to use in the custom dialog.
+     */
     public showCustomNotificationDialog( title: string, message: string | ( string | ColoredString )[], icon: string ): void {
         let data: NotificationDialogModel = new NotificationDialogModel();
         
@@ -590,6 +642,21 @@ export class DialogService {
         } ).afterClosed().subscribe();
     }
     
+
+
+
+
+
+
+
+
+    
+    /**
+     * Shows an error dialog to the user.
+     * 
+     * @param title The dialog title.
+     * @param message The message(s) to display to the user.
+     */
     public showErrorDialog( title: string, message: string | ( string | ColoredString )[] ): void {
         let data: NotificationDialogModel = new NotificationDialogModel();
         

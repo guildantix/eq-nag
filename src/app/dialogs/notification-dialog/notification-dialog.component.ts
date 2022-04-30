@@ -27,6 +27,20 @@ export class NotificationDialogComponent implements OnInit {
 
     ngOnInit() { }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Executes the given button's on click event.
+     * 
+     * @param btn The clicked button.
+     */
     public onClickCustomButton( btn: CustomButton ) {
         let resp = btn.onClick();
         if ( resp === true ) {
@@ -34,6 +48,20 @@ export class NotificationDialogComponent implements OnInit {
         }
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Returns true if the given message object is a colored string.
+     * 
+     * @param msg The message object.
+     */
     isColoredString( msg: any ): boolean {
         return msg instanceof ColoredString;
     }
