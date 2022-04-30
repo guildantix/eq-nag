@@ -609,8 +609,14 @@ export class TriggerPackageMetaModel {
 }
 
 export class OverlayBoundsChangedEventArgs {
-    
+
     public overlayId: string;
     public bounds: Rectangle;
+
+}
+
+export class DialogEventArgs {
+    
+    public code: string;
 
 }
