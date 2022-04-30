@@ -47,22 +47,4 @@ export class NotificationDialogComponent implements OnInit {
             this.dialogRef.close();
         }
     }
-
-
-
-
-
-
-
-
-
-
-    /**
-     * Returns true if the given message object is a colored string.
-     * 
-     * @param msg The message object.
-     */
-    isColoredString( msg: any ): boolean {
-        return msg instanceof ColoredString;
-    }
 }

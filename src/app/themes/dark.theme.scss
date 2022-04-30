@@ -5,6 +5,7 @@ $color-light: #ffffffde;
 $color-dark: #373737de;
 $color-green: #69f0ae;
 $color-blue: #69b2f0;
+$color-yellow: #f0e069;
 $color-orange: #f0c669;
 $color-red: #f06969;
 $color-purple: #c269f0;
@@ -38,6 +39,10 @@ $bg-extreme-dark: #191919;
         color: $color-green;
     }
     
+    .color-yellow {
+        color: $color-yellow;
+    }
+    
     .color-orange {
         color: $color-orange;
     }
@@ -68,6 +73,10 @@ $bg-extreme-dark: #191919;
     
     .border-green {
         border-color: rgba($color-green, .8); // a: 0.80
+    }
+    
+    .border-yellow {
+        border-color: rgba($color-yellow, .8); // a: 0.80
     }
     
     .border-orange {

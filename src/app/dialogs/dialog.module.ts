@@ -24,6 +24,7 @@ import { NewTriggerRaidAbilityComponent } from './new-trigger-raid-ability/new-t
 import { NewTriggerBuffDialogComponent } from './new-trigger-buff-dialog/new-trigger-buff-dialog.component';
 import { NamedGroupConditionsDialogComponent } from './named-group-conditions-dialog/named-group-conditions-dialog.component';
 import { MoveOverlaysDialogComponent } from './move-overlays-dialog/move-overlays-dialog.component';
+import { ColoredStringPipe } from '../pipes/colored-string.pipe';
 
 @NgModule( {
     imports: [
@@ -56,6 +57,7 @@ import { MoveOverlaysDialogComponent } from './move-overlays-dialog/move-overlay
         MoveOverlaysDialogComponent,
     ],
     declarations: [
+        ColoredStringPipe,
         TriggerDialogComponent,
         ConfirmDialogComponent,
         OverlayDetailsDialogComponent,

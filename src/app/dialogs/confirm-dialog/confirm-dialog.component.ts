@@ -29,9 +29,5 @@ export class ConfirmDialogComponent implements OnInit {
             this.title = this.data.title;
         }
     }
-
-    isColoredString( msg: any ): boolean {
-        return msg instanceof ColoredString;
-    }
     
 }

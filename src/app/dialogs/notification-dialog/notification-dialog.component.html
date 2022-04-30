@@ -10,14 +10,7 @@
             <mat-icon class="material-icons-outlined" style="font-size: 48px;width: 48px;height: 48px;" *ngIf="data.notificationType == notificationTypes.Custom && data.icon != null">{{data.icon}}</mat-icon>
         </div>
         <div style="padding-top: 15px; padding-bottom: 15px; overflow-y: auto; max-height: 245px;">
-            <p style="margin: 0px 0px 8px 0px;" *ngFor="let msg of messages">
-                <ng-template [ngIf]="isColoredString(msg)" [ngIfElse]="isString">
-                    <span [style.color]="msg.color" [style.font-weight]="msg.bold ? 'bold' : 'unset'">{{msg.value}}</span>
-                </ng-template>
-                <ng-template #isString>
-                    {{msg}}
-                </ng-template>
-            </p>
+            <p style="margin: 0px 0px 8px 0px;" *ngFor="let msg of messages" [innerHtml]="msg | coloredString"></p>
         </div>
     </div>
 

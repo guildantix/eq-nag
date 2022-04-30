@@ -2,17 +2,10 @@
 
 <mat-dialog-content>
 
-    <p *ngFor="let msg of messages">
-        <ng-template [ngIf]="isColoredString(msg)" [ngIfElse]="isString">
-            <span [style.color]="msg.color" [style.font-weight]="msg.bold ? 'bold' : 'unset'">{{msg.value}}</span>
-        </ng-template>
-        <ng-template #isString>
-            {{msg}}
-        </ng-template>
-    </p>
+    <p *ngFor="let msg of messages" [innerHtml]="msg | coloredString"></p>
     <div class="btn-info">
         <small *ngIf="data.yesMessage != null">{{data.yesMessage}}</small>
-        <small *ngIf="data.noMessage != null">{{data.noMessage}}</small>    
+        <small *ngIf="data.noMessage != null">{{data.noMessage}}</small>
     </div>
 </mat-dialog-content>
 
