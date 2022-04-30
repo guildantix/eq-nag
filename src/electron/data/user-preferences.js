@@ -249,6 +249,15 @@ class UserPreferencesStore extends Store {
         this.#data.persistentStorage = val;
     }
 
+    /** @type {import("electron").Rectangle} */
+    get rendererBounds() {
+        return this.#data.rendererBounds;
+    }
+    set rendererBounds( val ) {
+        this.#data.rendererBounds = val;
+        this.storeDataFile( this.#data );
+    }
+
     /** @type {(fctStyles: FctStylesModel) => void[]} */
     onFctStyleChanges = [];
 
