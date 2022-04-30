@@ -192,8 +192,6 @@ function Renderer( originX, originY ) {
          * @param {OverlayWindow[]} overlays The list of overlays.
          */
         function ( event, overlays ) {
-            // TODO: Check if the resolution has changed, then ensure that each overlay cannot be rendered off-screen during initialization.
-            // Maybe throw a warning if the resolution has changed since the last time the user arranged the overlays.
             overlays.forEach( overlay => {
                 initializeOverlay( overlay );
             } );
