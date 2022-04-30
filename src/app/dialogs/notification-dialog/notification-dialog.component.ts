@@ -1,5 +1,6 @@
 import { Component, Inject, OnInit } from '@angular/core';
 import { MatDialog, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
+import { ColoredString } from '../dialog.model';
 // import { IpcService } from 'src/app/ipc.service';
 import { NotificationDialogModel, NotificationTypes } from './notification-dialog.model';
 
@@ -11,7 +12,7 @@ import { NotificationDialogModel, NotificationTypes } from './notification-dialo
 export class NotificationDialogComponent implements OnInit {
 
     public model: string;
-    public messages: string[] = [];
+    public messages: ( string | ColoredString )[] = [];
     public notificationTypes: typeof NotificationTypes = NotificationTypes;
 
     constructor(
