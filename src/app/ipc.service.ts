@@ -3,7 +3,7 @@ import { Display, IpcRenderer } from 'electron';
 import { UpdateInfo } from 'electron-updater';
 import { Observable, Observer } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
-import { DataTickModel, DkpEntryModel, TriggerModel, OverlayWindowModel, ActionTypes, FocusEffectSettings, CharacterModel, BasicError, TriggerFolder, FileModel, Tag, AuthorModel, PackageFileModel, TriggerPackageMetaModel, TriggerPackageVersion, FctStylesModel, OverlayBoundsChangedEventArgs } from './core.model';
+import { DataTickModel, DkpEntryModel, TriggerModel, OverlayWindowModel, ActionTypes, FocusEffectSettings, CharacterModel, BasicError, TriggerFolder, FileModel, Tag, AuthorModel, PackageFileModel, TriggerPackageMetaModel, TriggerPackageVersion, FctStylesModel, OverlayBoundsChangedEventArgs, DialogEventArgs } from './core.model';
 import { GinaConfiguration, GinaTriggerGroups } from './gina.model';
 
 @Injectable( { providedIn: 'root' })
@@ -20,6 +20,7 @@ export class IpcService {
     private _logDeactivatedObservers: Observer<any>[] = [];
     private _updateAvailableObservers: Observer<UpdateInfo>[] = [];
     private _overlayBoundsChangedObservers: Observer<OverlayBoundsChangedEventArgs>[] = [];
+    private _warningDialogObservers: Observer<DialogEventArgs>[] = [];
 
     constructor( private ngZone: NgZone ) {
         if ( ( <any>window ).require ) {
@@ -37,6 +38,15 @@ export class IpcService {
                 this.ipc.on( 'overlay:event:bounds-changed', ( event: any, data: OverlayBoundsChangedEventArgs ) => {
                     ngZone.run( () => {
                         this._overlayBoundsChangedObservers?.forEach( f => {
+                            f.next( data );
+                        } );
+                    } );
+                } );
+
+                this.ipc.on( 'dialog:warning', ( event: any, data: DialogEventArgs ) => {
+                    ngZone.run( () => {
+                        console.log( 'caught', data );
+                        this._warningDialogObservers?.forEach( f => {
                             f.next( data );
                         } );
                     } );
@@ -121,6 +131,14 @@ export class IpcService {
     public overlayBoundsChanged(): Observable<OverlayBoundsChangedEventArgs> {
         let obs: Observable<OverlayBoundsChangedEventArgs> = new Observable<OverlayBoundsChangedEventArgs>( ( observer: Observer<OverlayBoundsChangedEventArgs> ) => {
             this._overlayBoundsChangedObservers.push( observer );
+        } );
+
+        return obs;
+    }
+
+    public displayWarningDialog(): Observable<DialogEventArgs> {
+        let obs: Observable<DialogEventArgs> = new Observable<DialogEventArgs>( ( observer: Observer<DialogEventArgs> ) => {
+            this._warningDialogObservers.push( observer );
         } );
 
         return obs;
@@ -316,6 +334,10 @@ export class IpcService {
 
     public resizeTriggerWindow( width: number = null, height: number = null ): void {
         this.ipc.send( 'trigger:dialog:resize', { width: width, height: height } );
+    }
+
+    public mainWindowAngularReady(): void {
+        this.ipc.send( 'main:angular-ready' );
     }
 
     public showGinaImportWindow(): Observable<boolean> {
