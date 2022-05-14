@@ -36,6 +36,7 @@ Join our discord server: [https://discord.gg/e3Z8PR8EXE](https://discord.gg/e3Z8
 
 ### Currently in Development
 
+- [ ] Death Recap - Detailed description of what killed you.
 - [ ] Creating a self-signed installation certificate.
 - [ ] Adding more organization options to the trigger library.
 - [ ] Quickshare to allow users to quickly share their triggers or installed packages with another player.
