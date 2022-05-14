@@ -877,7 +877,7 @@ export class TriggersComponent implements OnInit {
         if ( this.selectedFolderId == null || trigger.folderId === this.selectedFolderId ) {
             return '';
         } else {
-            let folders = this.getTriggerFolder( this.selectedFolderId, this.triggerFolders ).children;
+            let folders = this.findFolderById( this.selectedFolderId ).children;
             let folderFamilyNames = this.getFolderFamilyNames( trigger.folderId, folders, [] );
             if ( folderFamilyNames?.length > 0 ) {
                 let name = `\\${folderFamilyNames[ 0 ]}`;
@@ -889,40 +889,6 @@ export class TriggersComponent implements OnInit {
                 return null;
             }
         }
-    }
-
-
-
-
-
-
-
-
-
-
-    /**
-     * Finds and returns the specified folder in the given folder hierarchy.
-     * 
-     * @param folderId The id of the desired folder.
-     * @param folders The hierarchy of folders containing the desired folder.
-     */
-    private getTriggerFolder( folderId: string, folders: TriggerFolder[] ): TriggerFolder {
-
-        for ( let i = 0; i < folders?.length; i++ ) {
-
-            if ( folders[ i ].folderId === folderId ) {
-                return folders[ i ];
-
-            } else {
-                let d = this.getTriggerFolder( folderId, folders[ i ].children );
-
-                if ( d ) {
-                    return d;
-                }
-
-            }
-        }
-
     }
 
 
@@ -1061,6 +1027,84 @@ export class TriggersComponent implements OnInit {
 
 
 
+    
+    /**
+     * Recursively searches for a trigger folder with the given id.
+     * 
+     * @param folderId The id of the folder.
+     * @param search The current list of folders to search.
+     * @returns Returns the found folder, or undefined if not found.
+     */
+    private findFolderById( folderId: string, search: TriggerFolder[] = null ): TriggerFolder {
+        search = search ? search : this.triggerFolders;
+
+        for ( let i = 0; i < search?.length; i++ ) {
+            let folder = search[ i ].folderId === folderId ? search[ i ] : this.findFolderById( folderId, search[ i ].children );
+
+            if ( folder ) {
+                return folder;
+            }
+        }
+
+    }
+
+
+
+
+
+
+
+
+
+    
+    /**
+     * Returns a list of all descendant triggers for the given folder.
+     * 
+     * @param folder The desired trigger folder.
+     * @param triggers The current list of all descendant triggers.
+     */
+    private getDescendantTriggers( folder: TriggerFolder, triggers: TriggerModel[] = null ): TriggerModel[] {
+        triggers = triggers ? triggers : [];
+
+        // Pull in all the indirect descendants.
+        folder.children.forEach( f => triggers = triggers.concat( this.getDescendantTriggers( f, triggers ) ) );
+
+        // Pull in all the direct descendants.
+        triggers = triggers.concat( this.triggers.filter( f => f.folderId === folder.folderId ) );
+        
+        return triggers;
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Selects all descendant triggers, and sends them to the quick share 
+     * dialog.
+     * 
+     * @param folderId The id of the folder.
+     */
+    private quickShareFolder( folderId: string ): void {
+        let folder = this.findFolderById( folderId );
+        let descendantTriggers = this.getDescendantTriggers( folder );
+        
+        this.dialogService.showPrepareQuickShareDialog( descendantTriggers, [ folder ] ).subscribe( quickShareId => console.log( 'quickShareId', quickShareId ) );
+    }
+
+
+
+
+
+
+
+
+
 
     /**
      * Returns a context menu definition for the specified folder.
@@ -1092,6 +1136,18 @@ export class TriggersComponent implements OnInit {
             disabled: () => false,
             hide: () => false,
             matIcon: 'label_important',
+        }, <ContextMenuModel>{
+            label: '-',
+            action: () => { },
+            disabled: () => false,
+            hide: () => false,
+            // matIcon: 'content_paste',
+        }, {
+            label: 'Quick Share',
+            action: () => this.quickShareFolder( folderId ),
+            disabled: () => false,
+            hide: () => false,
+            matIcon: 'publish',
         }, <ContextMenuModel>{
             label: '-',
             action: () => { },

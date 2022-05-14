@@ -1,4 +1,4 @@
-import { TriggerModel } from '../core.model';
+import { TriggerFolder, TriggerModel } from '../core.model';
 
 export class NewTriggerDialogModel {
     
@@ -25,4 +25,16 @@ export class CustomButton {
     public matIconsOutlined: boolean = false;
     public matIcon: string;
 
+}
+
+export class PrepareQuickShareModel {
+
+    public triggers: TriggerModel[] = [];
+    public folders: TriggerFolder[] = [];
+    
+}
+
+export class QuickShareTriggerFolder extends TriggerFolder {
+    public triggers: TriggerModel[] = [];
+    public children: QuickShareTriggerFolder[] = [];
 }

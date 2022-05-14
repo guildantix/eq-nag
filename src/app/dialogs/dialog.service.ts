@@ -17,10 +17,12 @@ import { NotificationDialogComponent } from './notification-dialog/notification-
 import { AutocompleteDialogModel } from './autocomplete-dialog/autocomplete-dialog.model';
 import { AutoCompleteDialogComponent } from './autocomplete-dialog/autocomplete-dialog.component';
 import { NewTriggerRaidAbilityComponent } from './new-trigger-raid-ability/new-trigger-raid-ability.component';
-import { ColoredString, NewTriggerDialogModel } from './dialog.model';
+import { ColoredString, NewTriggerDialogModel, PrepareQuickShareModel } from './dialog.model';
 import { NewTriggerBuffDialogComponent } from './new-trigger-buff-dialog/new-trigger-buff-dialog.component';
 import { NamedGroupConditionsModel } from './named-group-conditions-dialog/named-group-conditions.model';
 import { NamedGroupConditionsDialogComponent } from './named-group-conditions-dialog/named-group-conditions-dialog.component';
+import { PrepareQuickShareDialogComponent } from './quick-share/prepair-quick-share.component';
+import { ReceiveQuickShareDialogComponent } from './quick-share/receive-quick-share.component';
 
 @Injectable()
 export class DialogService {
@@ -669,6 +671,66 @@ export class DialogService {
             data: data,
             panelClass: 'app-dialog',
         } ).afterClosed().subscribe();
+    }
+    
+
+
+
+
+
+
+
+
+    
+    /**
+     * Shows the prepare quickshare dialog to the user.
+     * 
+     * @returns Returns the quick share id, in share format.  ie: {NAG:asdff1234QWER7654}
+     * 
+     * @param triggers The triggers to share.
+     * @param folders The trigger folders to include in the share.
+     */
+    public showPrepareQuickShareDialog( triggers: TriggerModel[], folders: TriggerFolder[] ): Observable<string> {
+
+        return this.dialog.open<PrepareQuickShareDialogComponent, PrepareQuickShareModel, string>( PrepareQuickShareDialogComponent, {
+                width: '750px',
+                data: Object.assign( new PrepareQuickShareModel(), {
+                    triggers: triggers,
+                    folders: folders,
+                } ),
+                panelClass: 'app-dialog',
+                autoFocus: false,
+            } )
+            .afterClosed();
+
+    }
+
+
+
+
+
+
+
+
+
+    
+    /**
+     * Shows the import quickshare dialog to the user.
+     * 
+     * @returns Returns true if the user has imported any folders/triggers.
+     * 
+     * @param quickShareId The quick share id, in share format.
+     */
+    public showReceiveQuickShareDialog(quickShareId: string): Observable<boolean> {
+
+        return this.dialog.open<ReceiveQuickShareDialogComponent, string, boolean>( ReceiveQuickShareDialogComponent, {
+                width: '750px',
+                data: quickShareId,
+                panelClass: 'app-dialog',
+                autoFocus: false,
+            } )
+            .afterClosed();
+
     }
     
 }

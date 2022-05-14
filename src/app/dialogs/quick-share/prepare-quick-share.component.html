@@ -1,0 +1,37 @@
+<h2 mat-dialog-title>Send trigger(s) and folder(s)</h2>
+
+<mat-dialog-content>
+
+    <input type="hidden" />
+    
+    <div class="tree-container">
+        <mat-tree [dataSource]="dataSource" [treeControl]="treeControl" #tree>
+                
+            <!-- This is the tree node template for leaf nodes -->
+            <mat-tree-node *matTreeNodeDef="let node" matTreeNodePadding matTreeNodePaddingIndent="20" class="trigger-node" >
+                <mat-checkbox [(ngModel)]="node.selected" (ngModelChange)="onTriggerSelectChange()"></mat-checkbox>
+                <div class="tree-click-target" title="{{node.name}}" (click)="toggleSelect(node)"><span>{{node.name}}</span></div>
+            </mat-tree-node>
+    
+            <!-- This is the tree node template for expandable nodes -->
+            <mat-tree-node *matTreeNodeDef="let node;when: hasChild" matTreeNodePadding matTreeNodePaddingIndent="20" class="folder-node">
+                <mat-checkbox [checked]="node?.folderState === 'all'" [indeterminate]="node?.folderState === 'partial'" (change)="onFolderSelectChange(node, $event.checked)" [disabled]="!node.hasChildren"></mat-checkbox>
+                <button mat-icon-button matTreeNodeToggle [attr.aria-label]="'Toggle ' + node.name" [disabled]="!node.hasChildren">
+                    <mat-icon [inline]="true" class="mat-icon-rtl-mirror">
+                        {{treeControl.isExpanded(node) ? 'expand_more' : 'chevron_right'}}
+                    </mat-icon>
+                </button>
+                <div class="tree-click-target"><span [ngClass]="{'disabled-label': !node.hasChildren}">{{node.name}}</span></div>
+            </mat-tree-node>
+        </mat-tree>
+    </div>
+
+</mat-dialog-content>
+
+<mat-dialog-actions>
+
+    <!-- cdk-focus-start -->
+    <button mat-button [mat-dialog-close]="null" class="t-confirm-no" color="warn">Cancel</button>
+    <button mat-button (click)="createQuickShare()" class="t-confirm-yes" color="accent" [disabled]="creatingQuickShare">Copy to Clipboard <div *ngIf="creatingQuickShare" style="display: inline-block; margin-left: 10px;"><mat-spinner [diameter]="24" color="accent"></mat-spinner></div></button>
+
+</mat-dialog-actions>
