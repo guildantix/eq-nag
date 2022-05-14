@@ -20,13 +20,13 @@
 
 ## Download
 
-The current release version is v0.0.41 and you can find the details [here](https://github.com/guildantix/eq-nag/releases/tag/v0.0.41).
+The current release version is v0.1.1 and you can find the details [here](https://github.com/guildantix/eq-nag/releases/tag/v0.1.1).
 
 There are two ways to run Nag, via the installer or the portable.  The installer will automatically check for updates when Nag loads.
 
-Download the [installer](https://github.com/guildantix/eq-nag/releases/download/v0.0.41/Antix-Parse-Setup-0.0.41.exe).
+Download the [installer](https://github.com/guildantix/eq-nag/releases/download/v0.1.1/EQ-Nag-Setup-0.1.1.exe).
 
-Download the [portable](https://github.com/guildantix/eq-nag/releases/download/v0.0.41/antixparse_portable.exe).
+Download the [portable](https://github.com/guildantix/eq-nag/releases/download/v0.1.1/eq_nag_portable.exe).
 
 ## Discord
 
@@ -36,16 +36,13 @@ Join our discord server: [https://discord.gg/e3Z8PR8EXE](https://discord.gg/e3Z8
 
 ### Currently in Development
 
-- [X] Fix an ongoing issue when arraigning all overlays that prevents the user from saving their changes.
 - [ ] Creating a self-signed installation certificate.
 - [ ] Adding more organization options to the trigger library.
 - [ ] Quickshare to allow users to quickly share their triggers or installed packages with another player.
 
 ### On the Horizon
 - [ ] Adding categories and search features to the package manager. Additionally, segregating installed packages from available packages.
-- [ ] Changing the overlay subsystem to render all overlays in the same window.  This may improve performance.
 - [ ] Adding healing done and healing received to the floating combat text.
-- [ ] Overhaul the display engine for floating combat text to enable better animation styles and triggers.
 - [ ] Adding more options to the buff timer wizard.
 
 ### Odds and Ends
