@@ -5,6 +5,7 @@ const UserPreferencesStore = require( "./data/user-preferences" );
 const { OverlayWindow } = require( "./data/models/overlay-window" );
 const ArrayUtilities = require( "./utilities/arrays" );
 const log = require( 'electron-log' );
+const CharacterModel = require( './data/models/character' );
 
 /** 
  * We will occassionally need to disable the 'force on top' of the renderer, so 
@@ -27,6 +28,9 @@ class WindowManager {
 
     /** @type {BrowserWindow} */
     #renderer;
+
+    /** @type {BrowserWindow} */
+    #deathRecap;
 
     /** @type {BrowserWindow[]} */
     #openOverlayEditors = [];
@@ -146,6 +150,17 @@ class WindowManager {
             let bwin = BrowserWindow.fromWebContents( event.sender );
             bwin?.close();
         } );
+        
+        ipcMain.on( 'window:death-recap',
+            /**
+             * Loads the death recap.
+             * 
+             * @param {any} event Event args.
+             * @param {CharacterModel} arg The character model.
+             */
+            ( event, arg ) => {
+                this.loadDeathRecap( arg );
+            } );
 
         ipcMain.on( 'renderer:arrange-overlays', ( event ) => {
             this.#renderer.setIgnoreMouseEvents( false );
@@ -417,6 +432,52 @@ class WindowManager {
         ipcMain.once('main:angular-ready', () => {
             this.checkWindowPosition( true );
         } );
+
+    }
+
+    /**
+     * Loads a death recap for the specified character.
+     * 
+     * @param {CharacterModel} character The character to view the death recap.
+     */
+    loadDeathRecap( character ) {
+
+        let deathRecap = new BrowserWindow( {
+            transparent: true,
+            frame: false,
+            resizable: true,
+            movable: true,
+            webPreferences: {
+                nodeIntegration: true,
+                devTools: app.isDev(),
+            },
+            skipTaskbar: false,
+            maximizable: false,
+        } );
+        
+        let size = { width: 1100, height: 800 };
+        let workAreaSize = screen.getPrimaryDisplay().workAreaSize;
+
+        deathRecap.setBounds( {
+            width: size.width,
+            height: size.height,
+            x: ( workAreaSize.width - size.width ) / 2,
+            y: ( workAreaSize.height - size.height ) / 2,
+        } );
+        
+        deathRecap.loadURL( `file://${__dirname}/windows/death-recap.html?character=${encodeURI( JSON.stringify( character ) )}` );
+        // deathRecap.setIgnoreMouseEvents( true );
+        // deathRecap.setAlwaysOnTop( true, "screen-saver" );
+        
+        // Open the DevTools.
+        if ( app.isDev() ) {
+            deathRecap.webContents.openDevTools();
+        }
+
+        this.#deathRecap = deathRecap;
+    }
+
+    closeDeathRecap() {
 
     }
 

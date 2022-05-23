@@ -648,6 +648,12 @@ function parseLogEntries( raw, simulating ) {
     // let rgxNum = /(\d+)/gi;
     let rgxCombatText = /hit|damage|miss|dodge|riposte|parry|become better|backstab|stun|attack/gi;
     let rgxFctCritical = /\. \(.*(Critical).*\)/gi;
+    let tempDeathRecap = new RegExp( `Israphel death recap`, 'gi' );
+
+    if ( raw.match( tempDeathRecap )?.length > 0 ) {
+        ipcRenderer.send( 'window:death-recap', charModel );
+        return;
+    }
 
     // Someone healed you.
     // https://regex101.com/r/Jdtzsf/3
