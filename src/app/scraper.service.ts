@@ -353,16 +353,26 @@ export class ScraperService {
                 document.body.appendChild( div );
                 div.innerHTML = this.responseText;
     
+                let spellEmoteSources = (<HTMLElement>document.evaluate( "//blockquote[contains(., 'Cast on other') or contains(., 'Cast on you') or contains(., 'Effect Fades')]", document, null, XPathResult.ANY_TYPE, null ).iterateNext())?.innerHTML.split( '<br>' );
+                let spellEmotes: Record<string, string> = {};
+                for ( let i = 0; i < spellEmoteSources.length; i++ ) {
+                    let emote = spellEmoteSources[ i ].split( ':' );
+                    if ( emote?.length > 1 ) {
+                        spellEmotes[ emote[ 0 ].trim() ] = emote[ 1 ].trim();
+                    }
+                }
+
                 let data = {
                     name: div.querySelector( 'meta[property="og:title"]' ).getAttribute( 'content' ),
                     spellGem: div.querySelector( 'img[src*="spellicons"]' ),
                     duration: 0,
                     _duration: document.evaluate( "//strong[contains(., 'Duration:')]", document, null, XPathResult.ANY_TYPE, null ).iterateNext()?.nextSibling.nextSibling.textContent.trim(),
                     itemsWithEffect: document.evaluate( "//tr//td//h2[contains(., 'Items with this effect')]", document, null, XPathResult.ANY_TYPE, null ).iterateNext()?.parentElement.parentElement.nextElementSibling,
-                    castOnOther: document.evaluate( "//blockquote[contains(., 'Cast on other')]", document, null, XPathResult.ANY_TYPE, null ).iterateNext()?.textContent.split( 'Cast on other: ' )[ 1 ].split( 'Effect Fades: ' )[ 0 ],
-                    castOnYou: document.evaluate( "//blockquote[contains(., 'Cast on you')]", document, null, XPathResult.ANY_TYPE, null ).iterateNext()?.textContent.split( 'Cast on you: ' )[ 1 ].split( 'Cast on other: ' )[ 0 ],
+                    castOnOther: spellEmotes[ 'Cast on other' ],
+                    castOnYou: spellEmotes[ 'Cast on you' ],
+                    effectFades: spellEmotes[ 'Effect Fades' ],
                 };
-
+                
                 data.name = data.name.match( /^Ancient\s/ ) ? StringUtility.Insert( data.name, ':', /^Ancient\s/.exec( data.name ).index + 'Ancient'.length ) : data.name;
 
                 let classes: CharacterClassLevel[] = [];
@@ -414,7 +424,6 @@ export class ScraperService {
 
                 let targetTypeCheck = document.evaluate( "//td[./strong = 'Target Type:']/following-sibling::td[1]", document, null, XPathResult.ANY_TYPE, null ).iterateNext();
                 let castingTimeCheck = document.evaluate( "//td[./strong = 'Casting Time:']/following-sibling::td[1]", document, null, XPathResult.ANY_TYPE, null ).iterateNext();
-                let effectFadesCheck = document.evaluate( "//blockquote[contains(., 'Effect Fades')]", document, null, XPathResult.ANY_TYPE, null ).iterateNext();
     
                 document.body.removeChild( div );
                 div = null;
@@ -437,8 +446,8 @@ export class ScraperService {
                     model.castTime = 0;
                 }
 
-                if ( effectFadesCheck ) {
-                    model.effectFades = effectFadesCheck.textContent?.trim().split( 'Effect Fades: ' )[ 1 ];
+                if ( data.effectFades != null ) {
+                    model.effectFades = data.effectFades;
                 }
 
                 if ( data.spellGem != null ) {
