@@ -37,4 +37,14 @@ div.tab-content {
     display:flex;
     flex-direction: row;
     padding:15px;
+
+    position: fixed;
+    bottom: 4px;
+    right: 0;
+    z-index: 2;
+    left: 32%;
+}
+::ng-deep .toolbar-top {
+    position: absolute !important;
+    left: 0 !important;
 }
