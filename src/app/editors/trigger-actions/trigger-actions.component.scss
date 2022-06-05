@@ -14,3 +14,16 @@ mat-form-field {
         padding-top: 50px;
     }
 }
+
+.toolbar-top {
+    height: 36px;
+    position: fixed;
+    left: 0;
+    right: 0;
+    z-index: 2;
+    background-color: #1a1a1a;
+}
+
+.flex-layout {
+    padding-top: 30px;
+}
