@@ -21,7 +21,7 @@ import { ColoredString, NewTriggerDialogModel, PrepareQuickShareModel } from './
 import { NewTriggerBuffDialogComponent } from './new-trigger-buff-dialog/new-trigger-buff-dialog.component';
 import { NamedGroupConditionsModel } from './named-group-conditions-dialog/named-group-conditions.model';
 import { NamedGroupConditionsDialogComponent } from './named-group-conditions-dialog/named-group-conditions-dialog.component';
-import { PrepareQuickShareDialogComponent } from './quick-share/prepair-quick-share.component';
+import { PrepareQuickShareDialogComponent } from './quick-share/prepare-quick-share.component';
 import { ReceiveQuickShareDialogComponent } from './quick-share/receive-quick-share.component';
 
 @Injectable()

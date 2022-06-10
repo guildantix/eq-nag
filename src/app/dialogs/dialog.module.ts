@@ -25,7 +25,7 @@ import { NewTriggerBuffDialogComponent } from './new-trigger-buff-dialog/new-tri
 import { NamedGroupConditionsDialogComponent } from './named-group-conditions-dialog/named-group-conditions-dialog.component';
 import { MoveOverlaysDialogComponent } from './move-overlays-dialog/move-overlays-dialog.component';
 import { ColoredStringPipe } from '../pipes/colored-string.pipe';
-import { PrepareQuickShareDialogComponent } from './quick-share/prepair-quick-share.component';
+import { PrepareQuickShareDialogComponent } from './quick-share/prepare-quick-share.component';
 import { ReceiveQuickShareDialogComponent } from './quick-share/receive-quick-share.component';
 
 @NgModule( {
