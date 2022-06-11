@@ -19,7 +19,21 @@
     <fieldset>
         <legend><span class="title">Sharing</span> <button mat-icon-button color="accent" (click)="showVerifiedUserInfo()" *ngIf="trustedAuthor"><mat-icon class="material-icons-outlined">verified_user</mat-icon></button></legend>
 
-        <div>        
+        <!-- <p matTooltip="If enabled, will listen for and respond to quick share triggers in the log file.">
+            <mat-checkbox [(ngModel)]="enableQuickShareImports" (change)="onQuickShareImportsChange()">Enable importing QuickShare triggers.</mat-checkbox>
+        </p> -->
+
+        <div>
+            <div class="formless-hint half-width">
+                <!-- <mat-form-field style="width: 100%;"> -->
+                    <!-- <mat-label>Author Name</mat-label> -->
+                    <div class="formless-input"><mat-checkbox [(ngModel)]="enableQuickShareImports" (change)="onQuickShareImportsChange()">Enable importing QuickShare triggers.</mat-checkbox></div>
+                    <mat-hint>If enabled, will listen for and respond to quick share triggers in the log file.</mat-hint>
+                <!-- </mat-form-field> -->
+            </div>
+        </div>
+
+        <div>
             <mat-form-field style="width: 50%;">
                 <mat-label>Author Name</mat-label>
                 <input matInput type="text" [(ngModel)]="author.name" />

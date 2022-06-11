@@ -1370,4 +1370,24 @@ export class IpcService {
         } );
     }
 
+    public updateEnableQuickShareImports( enabled: boolean ): void {
+        this.ipc.send( 'settings:set:quickShareImports', enabled );
+    }
+
+    public getEnableQuickShareImports(): Observable<boolean> {
+        let obs: Observable<boolean> = new Observable<boolean>( ( observer: Observer<boolean> ) => {
+            
+            this.ipc.once( 'settings:get:quickShareImports', ( e, enabled: boolean ) => {
+                this.ngZone.run( () => {
+                    observer.next( enabled );
+                    observer.complete();
+                } );
+            } );
+            this.ipc.send( 'settings:get:quickShareImports', null );
+
+        } );
+
+        return obs;
+    }
+
 }

@@ -36,6 +36,7 @@ export class SettingsComponent implements OnInit {
     public detrimentalOverlayId: string = null;
     public beneficialOverlayId: string = null;
     public alertOverlayId: string = null;
+    public enableQuickShareImports: boolean = false;
 
     public get timerOverlays(): OverlayWindowModel[] {
         return this.overlays?.filter( m => m.overlayType === 'Timer' );
@@ -75,6 +76,15 @@ export class SettingsComponent implements OnInit {
         this.loadSettings();
     }
 
+
+
+
+
+
+
+
+
+
     /**
      * Loads the settings data.
      */
@@ -99,7 +109,24 @@ export class SettingsComponent implements OnInit {
         this.ipcService.getDetrimentalOverlayId().subscribe( id => this.detrimentalOverlayId = id );
         this.ipcService.getBeneficialOverlayId().subscribe( id => this.beneficialOverlayId = id );
         this.ipcService.getAlertOverlayId().subscribe( id => this.alertOverlayId = id );
+        this.ipcService.getEnableQuickShareImports().subscribe( enabled => this.enableQuickShareImports = enabled );
 
+    }
+
+
+
+
+
+
+
+
+
+    
+    /**
+     * Saves changes to the user preference.
+     */
+    onQuickShareImportsChange(): void {
+        this.ipcService.updateEnableQuickShareImports( this.enableQuickShareImports );
     }
 
 

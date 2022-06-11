@@ -258,6 +258,15 @@ class UserPreferencesStore extends Store {
         this.storeDataFile( this.#data );
     }
 
+    /** @type {boolean} */
+    get enableQuickShareImports() {
+        return this.#data.enableQuickShareImports === true;
+    }
+    set enableQuickShareImports( val ) {
+        this.#data.enableQuickShareImports = val === true;
+        this.storeDataFile( this.#data );
+    }
+
     /** @type {(fctStyles: FctStylesModel) => void[]} */
     onFctStyleChanges = [];
 
@@ -322,6 +331,15 @@ class UserPreferencesStore extends Store {
 
             this.#data.version = 3;
             this.storeDataFile( this.#data );
+
+        } else if ( !this.#data.version || this.#data.version < 4 ) {
+            
+            // QuickSharing should be enabled by default, so we use database
+            // upgrade to set that state.
+            this.#data.enableQuickShareImports = true;
+            this.#data.version = 4;
+            this.storeDataFile( this.#data );
+
         }
         
     }
@@ -397,6 +415,14 @@ class UserPreferencesStore extends Store {
         
         ipcMain.on( 'settings:set:fct', ( event, arg ) => {
             this.enableFct = arg;
+        } );
+        
+        ipcMain.on( 'settings:set:quickShareImports', ( event, arg ) => {
+            this.enableQuickShareImports = arg;
+        } );
+
+        ipcMain.on( 'settings:get:quickShareImports', ( event ) => {
+            event.sender.webContents.send( 'settings:get:quickShareImports', this.enableQuickShareImports );
         } );
         
         ipcMain.on( 'settings:set:focus-effects', ( event, arg ) => {

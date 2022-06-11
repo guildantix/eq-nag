@@ -504,3 +504,47 @@ mat-card {
         padding-top: 10px;
     }
 }
+
+div.formless-hint {
+
+    &.half-width {
+        width: calc(50% - 10px);
+    }
+    &.full-width {
+        width: calc(100% - 10px);
+    }
+
+    padding: 0px 5px 25px 5px;
+    border: 2px solid #0000006b;
+    background-color: #0000002e;
+    
+    border-radius: 3px;
+    display: inline-block;
+    position: relative;
+    text-align: left;
+    margin-bottom: 5px;
+
+    > .formless-input {
+        height: 41px;
+        display: flex;
+        flex-direction: row;
+        > * {
+            align-self: center;
+        }
+    }
+
+    > mat-hint {
+        
+        color: rgba(255,255,255,.7);
+        background-color: #00000052 !important;
+
+        display: block;
+        padding: 5px 5px 5px 5px;
+        font-weight: normal;
+        font-size: 10px;
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+    }
+}
