@@ -8,11 +8,14 @@ import { environment } from 'src/environments/environment';
 import { catchError, map } from 'rxjs/operators';
 import { IpcRenderer } from 'electron';
 import * as _ from 'lodash';
+import { MatDialog } from '@angular/material/dialog';
+import { NotificationDialogComponent } from '../dialogs/notification-dialog/notification-dialog.component';
+import { NotificationTypes } from '../dialogs/notification-dialog/notification-dialog.model';
 
 @Injectable( { providedIn: 'root' } )
 export class QuickShareService {
 
-    constructor( private httpClient: HttpClient, private dialogService: DialogService, private ipcService: IpcService ) { }
+    constructor( private httpClient: HttpClient, private dialog: MatDialog, private ipcService: IpcService ) { }
 
 
 
@@ -196,7 +199,15 @@ export class QuickShareService {
             // A client-side or network error occurred. Handle it accordingly.
             console.error( 'An error occurred:', error.error );
             
-            this.dialogService.showErrorDialog( 'Unknown Error', [ 'An error occurred:', error.error.Message ] );
+            this.dialog.open( NotificationDialogComponent, {
+                width: '450px',
+                data: {
+                    title: 'Unknown Error',
+                    message: [ 'An error occurred:', error.error.Message ],
+                    notificationType: NotificationTypes.Error,
+                },
+                panelClass: 'app-dialog',
+            } ).afterClosed().subscribe();
 
         } else {
             // The backend returned an unsuccessful response code.
@@ -205,7 +216,15 @@ export class QuickShareService {
                 `Backend returned code ${error.status}, ` +
                 `body was:`, error.error );
             
-            this.dialogService.showErrorDialog( `[${error.status}] Error`, [ 'An error was thrown while attempting the request.', error.error.Message ] );
+                this.dialog.open( NotificationDialogComponent, {
+                    width: '450px',
+                    data: {
+                        title: `[${error.status}] Error`,
+                        message: [ 'An error was thrown while attempting the request.', error.error.Message ],
+                        notificationType: NotificationTypes.Error,
+                    },
+                    panelClass: 'app-dialog',
+                } ).afterClosed().subscribe();
         }
 
         // Return an observable with a user-facing error message.
