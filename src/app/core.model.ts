@@ -287,6 +287,7 @@ export class DataTickModel {
     public ignoredGinaObjects: string[] = [];
     public folders: TriggerFolder[] = [];
     public fctStyles: FctStylesModel;
+    public enableQuickShareImports: boolean = true;
     
 }
 

@@ -518,12 +518,6 @@ export class PrepareQuickShareDialogComponent implements OnInit {
                 this.creatingQuickShare = false;
                 
             } );
-        
-        // https://regex101.com/r/FvGiGC/1
-        // {NAG:(?<quickShareId>.+?)}
-
-        // https://regex101.com/r/n9aOlR/1
-        // ^(?<author>Name|Name2) .*{NAG:(?<quickShareId>.+?)}
 
     }
     

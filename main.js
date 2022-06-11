@@ -201,6 +201,7 @@ function sendTick() {
         folders: _folders,
         fctStyles: userPreferences.fctStyles,
         persistentStorage: userPreferences.persistentStorage,
+        enableQuickShareImports: userPreferences.enableQuickShareImports,
     };
     mainWindow.webContents.send( 'tick', tickData );
     logBootstrap.tick( tickData, characterDatabase );
@@ -244,6 +245,11 @@ ipcMain.on( 'app:version', ( event ) => {
 
 ipcMain.on( 'clipboard:writeText', ( event, value ) => {
     clipboard.writeText( value );
+} );
+
+ipcMain.on( 'quickshare_captured', ( event, quickShareId ) => {
+    console.log( 'quickShareId', quickShareId );
+    mainWindow.webContents.send( 'quickshare_captured', quickShareId );
 } );
 
 var pseudoClipboard = {};

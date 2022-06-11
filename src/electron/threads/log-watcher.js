@@ -41,6 +41,7 @@ var cancellableComponents = [];
 /** @type {Record<string, string[]>} */
 var usedConditionValues = {};
 var enableFct = false;
+var enableQuickShareImports = true;
 var damageDealtOverlayId = null;
 var damageReceivedOverlayId = null;
 var voiceOptions = [];
@@ -212,6 +213,7 @@ function LogWatcher(character, logPosition) {
         phoneticTransforms = data.phoneticTransforms;
         charModel = data.characterModel ? data.characterModel : charModel;
         overlays = data.overlays;
+        enableQuickShareImports = data.enableQuickShareImports;
 
         // isDev = false;
         generateTriggerFns();
@@ -686,6 +688,20 @@ function parseLogEntries( raw, simulating ) {
         console.log( 'failed parse', raw );
     
     let log = raw.replace( rgxTimestamp, '' );
+        
+    // https://regex101.com/r/FvGiGC/1
+    // {NAG:(?<quickShareId>.+?)}
+    let quickShareRegx = /{NAG:(?<quickShareId>.+?)}/g;
+    // {NAG:OVtf9VzRSjykb1xx}
+
+    // https://regex101.com/r/n9aOlR/1
+    // ^(?<author>Name|Name2) .*{NAG:(?<quickShareId>.+?)}
+
+    // Capture quickshares, when enabled.
+    let quickShare = !enableQuickShareImports ? null : quickShareRegx.exec( log );
+    if ( quickShare && quickShare.groups?.quickShareId ) {
+        ipcRenderer.send( 'quickshare_captured', quickShare.groups.quickShareId );
+    }
     
     if ( enableFct && raw.match( rgxCombatText )?.length > 0 ) {
         for ( let i = 0; i < fctRegExs.length; i++ ) {

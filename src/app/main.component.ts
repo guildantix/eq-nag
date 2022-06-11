@@ -2,7 +2,7 @@ import { Component, ViewChild, ElementRef, OnInit } from '@angular/core';
 import * as _ from 'lodash-es';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { IpcService } from './ipc.service';
-import { DkpEntryModel, OverlayWindowModel, FocusEffectSettings, TriggerPackageMetaModel, StylePropertiesModel, FctStylesModel } from './core.model';
+import { DkpEntryModel, OverlayWindowModel, FocusEffectSettings, TriggerPackageMetaModel, StylePropertiesModel, FctStylesModel, QuickShareMetaModel, QuickShareFileModel } from './core.model';
 import { DialogService } from './dialogs/dialog.service';
 import { ScraperService } from './scraper.service';
 import { customAlphabet } from 'nanoid';
@@ -14,6 +14,7 @@ import { MatDialogRef } from '@angular/material/dialog';
 import { NotificationDialogModel, NotificationTypes } from './dialogs/notification-dialog/notification-dialog.model';
 import { ColoredString, CustomButton } from './dialogs/dialog.model';
 import { SettingsComponent } from './settings/settings-component/settings.component';
+import { QuickShareService } from './core/quick-share.service';
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const nanoid = customAlphabet( alphabet, 16 );
 const updateIntervalDuration = 5 * 60 * 1000;
@@ -66,6 +67,7 @@ export class MainComponent implements OnInit {
         private dialogService: DialogService,
         private setupService: SetupService,
         private libraryService: TriggerLibraryService,
+        private quickShareService: QuickShareService,
     ) {
     }
 
@@ -138,6 +140,20 @@ export class MainComponent implements OnInit {
         
         this.checkForTriggerUpdates();
         this.ipcService.mainWindowAngularReady();
+
+        this.ipcService.quickShareCaptured().subscribe( quickShareId => {
+            let observables = [
+                this.quickShareService.getQuickShare( quickShareId ),
+                this.quickShareService.getQuickShareFiles( quickShareId ),
+            ];
+
+            forkJoin( observables )
+                .subscribe( ( [ quickShare, files ]: [ QuickShareMetaModel[], QuickShareFileModel[] ] ) => {
+                    console.log( 'quickShares', quickShare );
+                    console.log( 'quickFiles', files );
+                } );
+            
+        } );
     }
 
     checkForTriggerUpdates() {

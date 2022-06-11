@@ -419,6 +419,7 @@ class UserPreferencesStore extends Store {
         
         ipcMain.on( 'settings:set:quickShareImports', ( event, arg ) => {
             this.enableQuickShareImports = arg;
+            sendTick();
         } );
 
         ipcMain.on( 'settings:get:quickShareImports', ( event ) => {
