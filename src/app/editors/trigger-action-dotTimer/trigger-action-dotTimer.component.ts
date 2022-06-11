@@ -36,7 +36,9 @@ export class TriggerActionDotTimerComponent implements OnInit {
 
     openIconFileModal( action: TriggerAction ) {
         this.onIconFileSelected = e => {
-            ImageUtility.toDataUrl( this.iconFileSelector.nativeElement.files[ 0 ] ).subscribe( dataUrl => action.timerIcon = dataUrl );
+            if ( this.iconFileSelector.nativeElement?.files?.length > 0 ) {
+                ImageUtility.toDataUrl( this.iconFileSelector.nativeElement.files[ 0 ] ).subscribe( dataUrl => action.timerIcon = dataUrl );
+            }
             // console.log( 'found', action.actionId, this.iconFileSelector.nativeElement.files[ 0 ].path );
             // action.timerIcon = this.iconFileSelector.nativeElement.files[ 0 ].path;
         };
