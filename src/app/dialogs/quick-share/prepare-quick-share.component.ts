@@ -388,6 +388,9 @@ export class PrepareQuickShareDialogComponent implements OnInit {
     createQuickShare(): void {
         this.creatingQuickShare = true;
 
+        // If the current user has already created their author account, then 
+        // that record is used, otherwise the user is presented with a dialog 
+        // to create their account.
         let authorObs = new Observable<AuthorModel>( observer => {
             this.ipcService.getAuthor().subscribe( author => {
                 
@@ -397,7 +400,7 @@ export class PrepareQuickShareDialogComponent implements OnInit {
 
                 } else {
 
-                    // Show author dialog to pull in name and/or discord information.
+                    // Show author dialog to pull in name and? discord information.
                     this.dialog.open<AuthorDialogComponent, any, AuthorModel>( AuthorDialogComponent, {
                         width: '450px',
                         panelClass: 'app-dialog',
@@ -427,9 +430,13 @@ export class PrepareQuickShareDialogComponent implements OnInit {
             authorObs,
         ];
 
+        // combineLatest will wait for the next value in each observable, but 
+        // doesn't require the observables to be completed.
         combineLatest( dataObservables ).subscribe(
             ( [ flattenedTreenodes, triggers, folders, audioFiles, detrimentalOverlayId, beneficialOverlayId, author ]: [ QuickShareTreeNode[], TriggerModel[], TriggerFolder[], PackageFileModel[], string, string, AuthorModel ] ) => {
 
+                // Pulls the selected triggers and folders into quickshare data 
+                // formats.
                 let selectedTriggerNodes = flattenedTreenodes.filter( f => !f.isFolder && f.selected );
                 let triggerIds = _.map( selectedTriggerNodes, f => f.id );
                 let quickShareTriggers = triggers
@@ -447,6 +454,7 @@ export class PrepareQuickShareDialogComponent implements OnInit {
 
                 let quickShareFiles: QuickShareFileModel[] = [];
 
+                // Creates the QuickShare file format models.
                 quickShareTriggers.forEach( trigger => {
                     trigger.actions.forEach( action => {
 
@@ -487,6 +495,8 @@ export class PrepareQuickShareDialogComponent implements OnInit {
                     } );
                 } );
 
+                // Submits the final quickshare to the server to generate a 
+                // quickShareId.
                 this.quickShareService
                     .createQuickShare( author.authorId, quickShare, quickShareFiles, null )
                     .subscribe( quickShareId => this.dialogRef.close( quickShareId ) );
