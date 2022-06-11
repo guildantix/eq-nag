@@ -27,6 +27,7 @@ import { MoveOverlaysDialogComponent } from './move-overlays-dialog/move-overlay
 import { ColoredStringPipe } from '../pipes/colored-string.pipe';
 import { PrepareQuickShareDialogComponent } from './quick-share/prepare-quick-share.component';
 import { ReceiveQuickShareDialogComponent } from './quick-share/receive-quick-share.component';
+import { AuthorDialogComponent } from './author-dialog/author-dialog.component';
 
 @NgModule( {
     imports: [
@@ -59,6 +60,7 @@ import { ReceiveQuickShareDialogComponent } from './quick-share/receive-quick-sh
         MoveOverlaysDialogComponent,
         PrepareQuickShareDialogComponent,
         ReceiveQuickShareDialogComponent,
+        AuthorDialogComponent,
     ],
     declarations: [
         ColoredStringPipe,
@@ -81,6 +83,7 @@ import { ReceiveQuickShareDialogComponent } from './quick-share/receive-quick-sh
         MoveOverlaysDialogComponent,
         PrepareQuickShareDialogComponent,
         ReceiveQuickShareDialogComponent,
+        AuthorDialogComponent,
     ],
     providers: [
         DialogService,

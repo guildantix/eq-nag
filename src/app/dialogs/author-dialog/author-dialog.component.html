@@ -1,0 +1,30 @@
+<h2 mat-dialog-title>New Author</h2>
+
+<mat-dialog-content>
+
+    <form #authorForm="ngForm">
+        <div>
+            <mat-form-field style="width: 100%;">
+                <mat-label>Author Name</mat-label>
+                <input matInput type="text" [(ngModel)]="model.name" name="authorName" required />
+                <mat-hint>Enter whatever name you would like to have attached to any shared triggers.</mat-hint>
+            </mat-form-field>
+        </div>
+
+        <div>
+            <mat-form-field style="width: 100%;">
+                <mat-label>Discord</mat-label>
+                <input matInput type="text" [(ngModel)]="model.discord" name="discordHandle" />
+                <mat-hint>(Optional) Enter your discord name, or discord server.</mat-hint>
+            </mat-form-field>
+        </div>
+    </form>
+
+</mat-dialog-content>
+
+<mat-dialog-actions>
+    
+    <button mat-button (click)="cancel()" class="t-confirm-no" color="warn">Cancel</button>
+    <button mat-button (click)="accept()" class="t-confirm-no" [disabled]="authorForm.invalid">OK</button>
+
+</mat-dialog-actions>
