@@ -56,6 +56,9 @@ export class SettingsComponent implements OnInit {
     }
 
     ngOnInit() {
+
+        this.ipcService.getAppVersion().subscribe( version => this.version = version );
+        
         this.ipcService.tickReceived().subscribe( data => {
             this.voiceIndex = data.voiceIndex;
             this.overlays = data.overlays;
@@ -69,7 +72,13 @@ export class SettingsComponent implements OnInit {
 
         } );
 
-        this.ipcService.getAppVersion().subscribe( version => this.version = version );
+        this.loadSettings();
+    }
+
+    /**
+     * Loads the settings data.
+     */
+    public loadSettings() {
         this.ipcService.getPhoneticTransforms().subscribe( transforms => {
             this.phoneticTransforms = [];
             if ( transforms ) {
@@ -90,6 +99,7 @@ export class SettingsComponent implements OnInit {
         this.ipcService.getDetrimentalOverlayId().subscribe( id => this.detrimentalOverlayId = id );
         this.ipcService.getBeneficialOverlayId().subscribe( id => this.beneficialOverlayId = id );
         this.ipcService.getAlertOverlayId().subscribe( id => this.alertOverlayId = id );
+
     }
 
 

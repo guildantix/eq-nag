@@ -13,6 +13,7 @@ import { forkJoin, Observable, timer } from 'rxjs';
 import { MatDialogRef } from '@angular/material/dialog';
 import { NotificationDialogModel, NotificationTypes } from './dialogs/notification-dialog/notification-dialog.model';
 import { ColoredString, CustomButton } from './dialogs/dialog.model';
+import { SettingsComponent } from './settings/settings-component/settings.component';
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const nanoid = customAlphabet( alphabet, 16 );
 const updateIntervalDuration = 5 * 60 * 1000;
@@ -53,6 +54,7 @@ export class MainComponent implements OnInit {
 
     @ViewChild( 'fileSelector' ) private fileSelector: ElementRef<HTMLInputElement>;
     @ViewChild( 'characterList', { static: true } ) private characterList: CharactersListComponent;
+    @ViewChild( 'settingsPanel', { static: true } ) private settingsPanel: SettingsComponent;
 
     public get fctOverlays(): OverlayWindowModel[] {
         return this.overlays.filter( f => f.overlayType === 'FCT' );
@@ -211,6 +213,10 @@ export class MainComponent implements OnInit {
 
     onChangeTabs( selectedIndex: number ): void {
         this.showConsole = selectedIndex === 0;
+
+        if ( selectedIndex === 4 ) {
+            this.settingsPanel.loadSettings();
+        }
     }
 
     onEnableFctChange(): void {
