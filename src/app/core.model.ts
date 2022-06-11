@@ -1,5 +1,6 @@
 import { StringProtocolResponse } from 'electron';
 import { Color } from './utilities';
+import * as _ from 'lodash-es';
 
 export const ErrorCodes = {
     EqFolderNotFound: {
@@ -516,11 +517,7 @@ export class PackageFileModel extends BaseFileModel {
 
 }
 
-export class QuickShareFileModel extends BaseFileModel {
-    
-    public contents: string;
-
-}
+export class QuickShareFileModel extends PackageFileModel { }
 
 export class AuthorModel {
     public authorId: string;
@@ -589,6 +586,40 @@ export class PackageTrigger {
     public cooldownDuration: number = 0;
     public sequentialRestartBehavior: string = 'none';
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Creates a new package trigger object from the given trigger model.
+     * 
+     * @returns Returns the created package trigger.
+     * 
+     * @param trigger The base trigger.
+     */
+    public static FromTrigger( trigger: TriggerModel ): PackageTrigger {
+        let pTrg = new PackageTrigger();
+
+        pTrg.triggerId = trigger.triggerId;
+        pTrg.folderId = trigger.folderId;
+        pTrg.name = trigger.name;
+        pTrg.capturePhrases = _.cloneDeep( trigger.capturePhrases );
+        pTrg.comments = _.cloneDeep( trigger.comments );
+        pTrg.actions = _.cloneDeep( trigger.actions );
+        pTrg.captureMethod = _.cloneDeep( trigger.captureMethod );
+        pTrg.conditions = _.cloneDeep( trigger.conditions );
+        pTrg.classLevels = _.cloneDeep( trigger.classLevels );
+        pTrg.useCooldown = trigger.useCooldown;
+        pTrg.cooldownDuration = trigger.cooldownDuration;
+
+        return pTrg;
+    }
+
 }
 
 export class TriggerPackageModel {
@@ -640,7 +671,7 @@ export class QuickShareTransferModel {
 
     public model: any;
     public notes: string;
-    public files: PackageFileModel[] = [];
+    public files: QuickShareFileModel[] = [];
     
 }
 
