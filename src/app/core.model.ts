@@ -516,6 +516,12 @@ export class PackageFileModel extends BaseFileModel {
 
 }
 
+export class QuickShareFileModel extends BaseFileModel {
+    
+    public contents: string;
+
+}
+
 export class AuthorModel {
     public authorId: string;
     public name: string;
@@ -605,6 +611,44 @@ export class TriggerPackageMetaModel {
     public name: string;
     public versionHistory: VersionHistory[];
     public description: string;
+
+}
+
+export class QuickShareModel {
+    
+    public triggers: PackageTrigger[] = [];
+    public folders: PackageFolder[] = [];
+    public detrimentalOverlayId: string;
+    public beneficialOverlayId: string;
+
+}
+
+export class QuickShareMetaModel {
+
+    public quickShareId: string;
+    public versionId: string;
+    public timeStamp: Date;
+    public model: QuickShareModel = new QuickShareModel();
+    public author: string;
+    public authorDiscord: string;
+    public trustedAuthor: boolean = false;
+    // public files: QuickShareFileModel[] = [];
+
+}
+
+export class QuickShareTransferModel {
+
+    public model: any;
+    public notes: string;
+    public files: PackageFileModel[] = [];
+    
+}
+
+export class QuickShareVersion {
+    
+    public quickShareId: string;
+    public versionId: string;
+    public timestamp: Date;
 
 }
 

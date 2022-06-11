@@ -21,11 +21,20 @@ export class IpcService {
     private _updateAvailableObservers: Observer<UpdateInfo>[] = [];
     private _overlayBoundsChangedObservers: Observer<OverlayBoundsChangedEventArgs>[] = [];
     private _warningDialogObservers: Observer<DialogEventArgs>[] = [];
+    private _onReceivedQuickShare: Observer<string>[] = [];
 
     constructor( private ngZone: NgZone ) {
         if ( ( <any>window ).require ) {
             try {
                 this.ipc = ( <any>window ).require( 'electron' ).ipcRenderer;
+
+                this.ipc.on( 'quickshare_captured', ( event: any, quickShareId: string ) => {
+                    ngZone.run( () => {
+                        this._onReceivedQuickShare?.forEach( f => {
+                            f.next( quickShareId );
+                        } );
+                    } );
+                } );
 
                 this.ipc.on( 'update_downloaded', ( event: any, data: UpdateInfo ) => {
                     ngZone.run( () => {
@@ -118,6 +127,14 @@ export class IpcService {
         } else {
             console.warn( 'App not running inside Electron!' );
         }
+    }
+
+    public quickShareCaptured(): Observable<string> {
+        let obs: Observable<string> = new Observable<string>( ( observer: Observer<string> ) => {
+            this._onReceivedQuickShare.push( observer );
+        } );
+
+        return obs;
     }
 
     public updateAvailable(): Observable<UpdateInfo> {
