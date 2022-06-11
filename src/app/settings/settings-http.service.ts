@@ -6,7 +6,7 @@ import { catchError, map } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 import { IpcService } from '../ipc.service';
 
-@Injectable()
+@Injectable({providedIn: 'root'})
 export class SettingsService {
 
     constructor( private httpClient: HttpClient, private ipcService: IpcService ) { }
