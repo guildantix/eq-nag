@@ -3,10 +3,17 @@ import { FlatTreeControl } from '@angular/cdk/tree';
 import { Component, OnInit, Inject, ViewChild } from '@angular/core';
 import { MatDialog, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { MatTree, MatTreeFlatDataSource, MatTreeFlattener } from '@angular/material/tree';
-import { forkJoin } from 'rxjs';
-import { TriggerFolder, TriggerModel } from 'src/app/core.model';
+import { combineLatest, forkJoin, Observable } from 'rxjs';
+import { AuthorModel, PackageFileModel, PackageFolder, PackageTrigger, QuickShareFileModel, QuickShareModel, TriggerFolder, TriggerModel } from 'src/app/core.model';
 import { IpcService } from 'src/app/ipc.service';
 import { PrepareQuickShareModel, QuickShareTriggerFolder } from '../dialog.model';
+import * as _ from 'lodash-es';
+import { QuickShareService } from 'src/app/core/quick-share.service';
+import { SettingsService } from 'src/app/settings/settings-http.service';
+import { AuthorDialogComponent } from '../author-dialog/author-dialog.component';
+import { NotificationDialogComponent } from '../notification-dialog/notification-dialog.component';
+import { NotificationTypes } from '../notification-dialog/notification-dialog.model';
+import { HttpErrorResponse } from '@angular/common/http';
 
 interface QuickShareTreeNode {
     expandable: boolean;
@@ -68,7 +75,10 @@ export class PrepareQuickShareDialogComponent implements OnInit {
         public dialogRef: MatDialogRef<PrepareQuickShareDialogComponent, string>,
         @Inject( MAT_DIALOG_DATA ) public data: PrepareQuickShareModel,
         public dialog: MatDialog,
-        private ipcService: IpcService ) { }
+        private ipcService: IpcService,
+        private quickShareService: QuickShareService,
+        private settingsService: SettingsService
+    ) { }
 
     ngOnInit(): void {
         
@@ -191,35 +201,186 @@ export class PrepareQuickShareDialogComponent implements OnInit {
         this.updateFolderStates();
     }
 
-    getSelectedFolders( folders: TriggerFolder[] | QuickShareTriggerFolder[] = null, selectedFolders: QuickShareTriggerFolder[] = null ): void {
-        // Get all folders with at least 'partial'
-        folders = folders ? folders : this.allFolders;
-        selectedFolders = selectedFolders ? selectedFolders : [];
+    /**
+     * Returns a folder hierarchy of selected folders.
+     * 
+     * @param source The source folder list.
+     * @param folderIds The list of selected folder ids.
+     */
+    private getQuickShareFolders( source: TriggerFolder[], folderIds: string[] ): PackageFolder[] {
+        let quickShareFolders: PackageFolder[] = [];
+        
+        for ( let i = 0; i < source?.length; i++ ) {
+            let f = source[ i ];
+            if ( this._hasSelected( f, folderIds ) ) {
+                let pf = new PackageFolder();
 
-        let selected = this.treeControl.dataNodes.filter( f => f.isFolder && ( f.folderState === 'all' || f.folderState === 'partial' ) );
+                pf.folderId = f.folderId;
+                pf.name = f.name;
 
-        selectedFolders = selectedFolders.concat( selected.map( f => Object.assign( new QuickShareTriggerFolder(), f ) ) );
-        // descendantIds.push( folder.folderId );
+                if ( f.children?.length > 0 ) {
+                    pf.children = this.getQuickShareFolders( f.children, folderIds );
+                } else {
+                    pf.children = [];
+                }
+                quickShareFolders.push( pf );
+            }
+        }
 
-        selectedFolders.forEach( f => {
-            // this.getSelectedFolders(f.children)
-        } );
-        // folders.forEach
-        // folder.children.forEach( c => this.getDescendantFolderIds( c, descendantIds ) );
+        return quickShareFolders;
+    }
 
-        // return descendantIds;
-        // Populate the triggers property for each folder.
+    /**
+     * Returns true if the given folder, or it's descendants, are selected.
+     * 
+     * @param folder The folder to check.
+     * @param selectedIds The list of selected folder ids.
+     */
+    private _hasSelected( folder: TriggerFolder, selectedIds: string[] ): boolean {
+
+        if ( selectedIds.indexOf( folder.folderId ) > -1 ) {
+            return true;
+
+        } else {
+            for ( let i = 0; i < folder.children?.length; i++ ) {
+                if ( this._hasSelected( folder.children[ i ], selectedIds ) ) {
+                    return true;
+                }
+            }
+        }
+        
     }
 
     createQuickShare(): void {
         this.creatingQuickShare = true;
 
+        let authorObs = new Observable<AuthorModel>( observer => {
+            this.ipcService.getAuthor().subscribe( author => {
+                
+                if ( author?.authorId ) {
+                    observer.next( author );
+                    observer.complete();
 
-        // window.setTimeout( () => {
-        //     this.creatingQuickShare = false;
-        //     this.dialogRef.close( 'accepted' );
-        // }, 2500 );
-        // console.log( 'testing', this.treeControl.dataNodes );
+                } else {
+
+                    // Show author dialog to pull in name and/or discord information.
+                    this.dialog.open<AuthorDialogComponent, any, AuthorModel>( AuthorDialogComponent, {
+                        width: '450px',
+                        panelClass: 'app-dialog',
+                    } ).afterClosed().subscribe( authorName => {
+
+                        this.settingsService
+                            .createAuthor( authorName.name, authorName.discord )
+                            .subscribe( newAuthor => {
+                                this.ipcService.saveAuthor( newAuthor );
+                                observer.next( newAuthor );
+                                observer.complete();
+                            } );
+
+                    } );
+                }
+
+            } );
+        } );
+
+        let dataObservables = [
+            this.dataSource._flattenedData.asObservable(),
+            this.ipcService.getTriggers(),
+            this.ipcService.getTriggerFolders(),
+            this.ipcService.getAudioFileData(),
+            this.ipcService.getDetrimentalOverlayId(),
+            this.ipcService.getBeneficialOverlayId(),
+            authorObs,
+        ];
+
+        combineLatest( dataObservables ).subscribe(
+            ( [ flattenedTreenodes, triggers, folders, audioFiles, detrimentalOverlayId, beneficialOverlayId, author ]: [ QuickShareTreeNode[], TriggerModel[], TriggerFolder[], PackageFileModel[], string, string, AuthorModel ] ) => {
+
+                let selectedTriggerNodes = flattenedTreenodes.filter( f => !f.isFolder && f.selected );
+                let triggerIds = _.map( selectedTriggerNodes, f => f.id );
+                let quickShareTriggers = triggers
+                    .filter( f => triggerIds.indexOf( f.triggerId ) > -1 )
+                    .map( trigger => PackageTrigger.FromTrigger( trigger ) );
+                let folderIds = _.uniq( _.map( quickShareTriggers, f => f.folderId ) );
+                let quickShareFolders = this.getQuickShareFolders( folders, folderIds );
+
+                let quickShare = new QuickShareModel();
+                
+                quickShare.folders = quickShareFolders;
+                quickShare.triggers = quickShareTriggers;
+                quickShare.detrimentalOverlayId = detrimentalOverlayId;
+                quickShare.beneficialOverlayId = beneficialOverlayId;
+
+                let quickShareFiles: QuickShareFileModel[] = [];
+
+                quickShareTriggers.forEach( trigger => {
+                    trigger.actions.forEach( action => {
+
+                        if ( action.audioFileId ) {
+                            let file = audioFiles.find( f => f.fileId === action.audioFileId );
+    
+                            if ( file ) {
+                                let exists = quickShareFiles.findIndex( f => f.fileId === file.fileId ) > -1;
+                                if ( !exists ) {
+                                    quickShareFiles.push( file );
+                                }
+                            }
+    
+                        }
+                        if ( action.endedPlayAudioFileId ) {
+                            let file = audioFiles.find( f => f.fileId === action.endedPlayAudioFileId );
+    
+                            if ( file ) {
+                                let exists = quickShareFiles.findIndex( f => f.fileId === file.fileId ) > -1;
+                                if ( !exists ) {
+                                    quickShareFiles.push( file );
+                                }
+                            }
+    
+                        }
+                        if ( action.endingPlayAudioFileId ) {
+                            let file = audioFiles.find( f => f.fileId === action.endingPlayAudioFileId );
+    
+                            if ( file ) {
+                                let exists = quickShareFiles.findIndex( f => f.fileId === file.fileId ) > -1;
+                                if ( !exists ) {
+                                    quickShareFiles.push( file );
+                                }
+                            }
+    
+                        }
+    
+                    } );
+                } );
+
+                this.quickShareService
+                    .createQuickShare( author.authorId, quickShare, quickShareFiles, null )
+                    .subscribe( quickShareId => this.dialogRef.close( quickShareId ) );
+                
+                this.creatingQuickShare = false;
+
+            }, ( err: HttpErrorResponse | string ) => {
+                
+                this.dialog.open( NotificationDialogComponent, {
+                    width: '450px',
+                    data: {
+                        title: `Error`,
+                        message: [ 'An error was thrown while attempting the request.', err instanceof HttpErrorResponse ? err.error?.Message ?? 'Unknown Error' : err ],
+                        notificationType: NotificationTypes.Error,
+                    },
+                    panelClass: 'app-dialog',
+                } ).afterClosed().subscribe();
+                
+                this.creatingQuickShare = false;
+                
+            } );
+        
+        // https://regex101.com/r/FvGiGC/1
+        // {NAG:(?<quickShareId>.+?)}
+
+        // https://regex101.com/r/n9aOlR/1
+        // ^(?<author>Name|Name2) .*{NAG:(?<quickShareId>.+?)}
+
     }
     
 }

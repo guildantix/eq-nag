@@ -7,13 +7,13 @@
     <div class="tree-container">
         <mat-tree [dataSource]="dataSource" [treeControl]="treeControl" #tree>
                 
-            <!-- This is the tree node template for leaf nodes -->
+            <!-- This is the tree node template for leaf/trigger nodes -->
             <mat-tree-node *matTreeNodeDef="let node" matTreeNodePadding matTreeNodePaddingIndent="20" class="trigger-node" >
                 <mat-checkbox [(ngModel)]="node.selected" (ngModelChange)="onTriggerSelectChange()"></mat-checkbox>
                 <div class="tree-click-target" title="{{node.name}}" (click)="toggleSelect(node)"><span>{{node.name}}</span></div>
             </mat-tree-node>
     
-            <!-- This is the tree node template for expandable nodes -->
+            <!-- This is the tree node template for expandable/folder nodes -->
             <mat-tree-node *matTreeNodeDef="let node;when: hasChild" matTreeNodePadding matTreeNodePaddingIndent="20" class="folder-node">
                 <mat-checkbox [checked]="node?.folderState === 'all'" [indeterminate]="node?.folderState === 'partial'" (change)="onFolderSelectChange(node, $event.checked)" [disabled]="!node.hasChildren"></mat-checkbox>
                 <button mat-icon-button matTreeNodeToggle [attr.aria-label]="'Toggle ' + node.name" [disabled]="!node.hasChildren">
