@@ -106,6 +106,20 @@ export class PrepareQuickShareDialogComponent implements OnInit {
         
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Toggles the select state on the given tree node.
+     * 
+     * @param node The tree node.
+     */
     toggleSelect( node: QuickShareTreeNode ): void {
         let trigger = <TriggerModel>node.item;
         if ( trigger.triggerId ) {
@@ -113,6 +127,23 @@ export class PrepareQuickShareDialogComponent implements OnInit {
         }
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Generates the tree node data.
+     * 
+     * @param folder The trigger folder hierarchy.
+     * @param triggers The full trigger list.
+     * @param data The current node heirarchy.
+     * @param includeTriggers The triggers to forcibly select.
+     */
     private processFolder( folder: TriggerFolder, triggers: TriggerModel[], data: QuickShareTreeObject[], includeTriggers: TriggerModel[] ): void {
         
         let node = new QuickShareTreeObject();
@@ -140,6 +171,22 @@ export class PrepareQuickShareDialogComponent implements OnInit {
         } );
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Returns the specified trigger folder in the given hierarchy.
+     * 
+     * @param folderId The id of the desired folder.
+     * @param search The list of folders to query.
+     * @returns 
+     */
     private findFolderById( folderId: string, search: TriggerFolder[] = null ): TriggerFolder {
         search = search ? search : this.allFolders;
 
@@ -153,6 +200,22 @@ export class PrepareQuickShareDialogComponent implements OnInit {
 
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Returns a list of all direct and descendant child folders.
+     * 
+     * @param folder The starting folder.
+     * @param descendantIds The current list of descendant folder ids.
+     * @returns 
+     */
     private getDescendantFolderIds( folder: TriggerFolder, descendantIds: string[] = null ): string[]{
         descendantIds = descendantIds ? descendantIds : [];
 
@@ -163,6 +226,19 @@ export class PrepareQuickShareDialogComponent implements OnInit {
         return descendantIds;
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Updates the selection state of all folders, show partial/full/none 
+     * selection state based on the direct and descendant selected triggers.
+     */
     private updateFolderStates(): void {
 
         this.treeControl.dataNodes.forEach( f => {
@@ -185,6 +261,21 @@ export class PrepareQuickShareDialogComponent implements OnInit {
         
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Selects all triggers in the given folder, including all descendants.
+     * 
+     * @param node The tree node for the folder.
+     * @param value The selected state for the folder.
+     */
     onFolderSelectChange( node: QuickShareTreeNode, value: boolean ): void {
         
         let folder = this.findFolderById( node.id );
@@ -197,10 +288,31 @@ export class PrepareQuickShareDialogComponent implements OnInit {
         this.updateFolderStates();
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Triggers the update folder states method.
+     */
     onTriggerSelectChange(): void {
         this.updateFolderStates();
     }
 
+
+
+
+
+
+
+
+
+    
     /**
      * Returns a folder hierarchy of selected folders.
      * 
@@ -230,6 +342,15 @@ export class PrepareQuickShareDialogComponent implements OnInit {
         return quickShareFolders;
     }
 
+
+
+
+
+
+
+
+
+    
     /**
      * Returns true if the given folder, or it's descendants, are selected.
      * 
@@ -251,6 +372,19 @@ export class PrepareQuickShareDialogComponent implements OnInit {
         
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Creates the quickshare object and submits the quickshare to the nag 
+     * service to generate an id.
+     */
     createQuickShare(): void {
         this.creatingQuickShare = true;
 
