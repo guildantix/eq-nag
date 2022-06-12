@@ -548,3 +548,16 @@ div.formless-hint {
         bottom: 0;
     }
 }
+
+span.stacked-icon {
+    position: relative;
+    &.add-to-folder {
+        >:nth-child(2) {
+            position: absolute;
+            font-size: 11px;
+            left: 9px;
+            top: 8px;
+            font-weight: bold;
+        }
+    }
+}

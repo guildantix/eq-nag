@@ -4,13 +4,13 @@
 
     <div style="display: flex;flex-direction: row;">
         <div style="display: flex;padding: 20px 25px;">
-            <mat-icon class="material-icons-outlined" style="font-size: 48px;width: 48px;height: 48px;" *ngIf="data.notificationType == notificationTypes.Warning">warning</mat-icon>
-            <mat-icon style="font-size: 48px;width: 48px;height: 48px;" *ngIf="data.notificationType == notificationTypes.Error">error</mat-icon>
-            <mat-icon class="material-icons-outlined" style="font-size: 48px;width: 48px;height: 48px;" *ngIf="data.notificationType == notificationTypes.Information">info</mat-icon>
-            <mat-icon class="material-icons-outlined" style="font-size: 48px;width: 48px;height: 48px;" *ngIf="data.notificationType == notificationTypes.Custom && data.icon != null">{{data.icon}}</mat-icon>
+            <mat-icon class="material-icons-outlined color-yellow"    style="font-size: 64px; width: 64px; height: 64px; align-self: center; opacity: 0.85;" *ngIf="data.notificationType == notificationTypes.Warning">warning</mat-icon>
+            <mat-icon class="material-icons-outlined color-red-warn " style="font-size: 64px; width: 64px; height: 64px; align-self: center; opacity: 0.80;" *ngIf="data.notificationType == notificationTypes.Error">report</mat-icon>
+            <mat-icon class="material-icons-outlined color-blue"      style="font-size: 64px; width: 64px; height: 64px; align-self: center; opacity: 0.85;" *ngIf="data.notificationType == notificationTypes.Information">info</mat-icon>
+            <mat-icon class="material-icons-outlined color-white"     style="font-size: 64px; width: 64px; height: 64px; align-self: center; opacity: 0.75;" *ngIf="data.notificationType == notificationTypes.Custom && data.icon != null">{{data.icon}}</mat-icon>
         </div>
-        <div style="padding-top: 15px; padding-bottom: 15px; overflow-y: auto; max-height: 245px;">
-            <p style="margin: 0px 0px 8px 0px;" *ngFor="let msg of messages" [innerHtml]="msg | coloredString"></p>
+        <div style="padding-top: 15px; padding-bottom: 15px; overflow-y: auto; max-height: 245px; display: flex; align-items: center; flex-direction: column;">
+            <p style="margin: 0px 0px 8px 0px; align-self: flex-start;" *ngFor="let msg of messages" [innerHtml]="msg | coloredString"></p>
         </div>
     </div>
 

@@ -25,7 +25,15 @@ export class NotificationDialogComponent implements OnInit {
         }
     }
 
-    ngOnInit() { }
+    ngOnInit() {
+        if ( this.data.notificationType === NotificationTypes.Error ) {
+            this.dialogRef.addPanelClass( 'red-warn-glow' );
+        } else if ( this.data.notificationType === NotificationTypes.Information ) {
+            this.dialogRef.addPanelClass( 'blue-glow' );
+        }else if ( this.data.notificationType === NotificationTypes.Warning ) {
+            this.dialogRef.addPanelClass( 'yellow-glow' );
+        }
+    }
 
 
 

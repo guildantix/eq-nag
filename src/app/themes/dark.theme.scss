@@ -7,7 +7,9 @@ $color-green: #69f0ae;
 $color-blue: #69b2f0;
 $color-yellow: #f0e069;
 $color-orange: #f0c669;
+$color-orange-dark: #d9990b;
 $color-red: #f06969;
+$color-red-warn: #f44336;
 $color-purple: #c269f0;
 $color-magenta: #f0698e;
 $color-red-dark: #921f1f;
@@ -47,8 +49,16 @@ $bg-extreme-dark: #191919;
         color: $color-orange;
     }
     
+    .color-orange-dark {
+        color: $color-orange-dark;
+    }
+    
     .color-red {
         color: $color-red;
+    }
+
+    .color-red-warn {
+        color: $color-red-warn;
     }
     
     .color-purple {
@@ -83,8 +93,16 @@ $bg-extreme-dark: #191919;
         border-color: rgba($color-orange, .8); // a: 0.80
     }
     
+    .border-orange-dark {
+        border-color: rgba($color-orange-dark, .8); // a: 0.80
+    }
+    
     .border-red {
         border-color: rgba($color-red, .8); // a: 0.80
+    }
+
+    .border-red-warn {
+        border-color: rgba($color-red-warn, .8); // a: 0.80
     }
     
     .border-purple {
@@ -367,6 +385,18 @@ $bg-extreme-dark: #191919;
     }
 
     .app-dialog {
+        &.red-warn-glow > mat-dialog-container {
+            box-shadow: 0 0 5px 1px $color-red-warn;
+            border: 1px solid $color-red-warn;
+        }
+        &.blue-glow > mat-dialog-container {
+            box-shadow: 0 0 5px 1px $color-blue;
+            border: 1px solid $color-blue;
+        }
+        &.yellow-glow > mat-dialog-container {
+            box-shadow: 0 0 5px 1px $color-yellow;
+            border: 1px solid $color-yellow;
+        }
         .mat-dialog-container {
             background-color: #353535;
         }
