@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { ConfirmDialogComponent } from './confirm-dialog/confirm-dialog.component';
-import { OverlayWindowModel, ScrapedSpell, TriggerAction, TriggerCondition, TriggerFolder, TriggerModel } from '../core.model';
+import { OverlayWindowModel, QuickShareFileModel, QuickShareMetaModel, ScrapedSpell, TriggerAction, TriggerCondition, TriggerFolder, TriggerModel } from '../core.model';
 import { Observable } from 'rxjs';
 import { OverlayDetailsDialogComponent } from './overlay-details-dialog/overlay-details-dialog.component';
 import { TriggerActionWizardModalComponent } from './trigger-action-wizard-modal/trigger-action-wizard-modal.component';
@@ -721,15 +721,14 @@ export class DialogService {
      * 
      * @param quickShareId The quick share id, in share format.
      */
-    public showReceiveQuickShareDialog(quickShareId: string): Observable<boolean> {
+    public showReceiveQuickShareDialog(quickShares: QuickShareMetaModel[], files: QuickShareFileModel[]): Observable<boolean> {
 
-        return this.dialog.open<ReceiveQuickShareDialogComponent, string, boolean>( ReceiveQuickShareDialogComponent, {
-                width: '750px',
-                data: quickShareId,
-                panelClass: 'app-dialog',
-                autoFocus: false,
-            } )
-            .afterClosed();
+        return this.dialog.open<ReceiveQuickShareDialogComponent, any, boolean>( ReceiveQuickShareDialogComponent, {
+            width: '550px',
+            data: { quickShares: quickShares, files: files },
+            panelClass: 'app-dialog',
+            autoFocus: false,
+        } ).afterClosed();
 
     }
     
