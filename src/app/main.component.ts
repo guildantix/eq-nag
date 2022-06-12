@@ -149,6 +149,7 @@ export class MainComponent implements OnInit {
 
             forkJoin( observables )
                 .subscribe( ( [ quickShare, files ]: [ QuickShareMetaModel[], QuickShareFileModel[] ] ) => {
+                    // TODO: Ignore quickshares that have been installed and the latest version.
                     console.log( 'quickShares', quickShare );
                     console.log( 'quickFiles', files );
                 } );
@@ -327,7 +328,22 @@ export class MainComponent implements OnInit {
     }
 
     public testFn(): void {
-        this.ipcService.simulateLogParse( 'E:\\everquest\\Logs\\Backup\\eqlog_Ryvn_mangler_20201024_204401.txt' );
+        let quickShareId = 'OVtf9VzRSjykb1xx';
+        let observables = [
+            this.quickShareService.getQuickShare( quickShareId ),
+            this.quickShareService.getQuickShareFiles( quickShareId ),
+        ];
+
+        forkJoin( observables )
+            .subscribe( ( [ quickShare, files ]: [ QuickShareMetaModel[], QuickShareFileModel[] ] ) => {
+                this.dialogService.showReceiveQuickShareDialog( quickShare, files ).subscribe( imported => {
+                    if ( imported ) {
+                        // reload data.
+                    }
+                } );
+            } );
+        
+        // this.ipcService.simulateLogParse( 'E:\\everquest\\Logs\\Backup\\eqlog_Ryvn_mangler_20201024_204401.txt' );
         // let url: string = 'https://everquest.allakhazam.com/db/spell.html?spell=5423';
         // let charClass: string = 'NEC';
 
