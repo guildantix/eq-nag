@@ -595,3 +595,9 @@ p.notice {
     line-height: 1;
     margin: 5px 25px;
 }
+
+.mat-tooltip {
+    font-size: 14px !important;
+    background-color: $bg-tab-content;
+    border: 3px solid rgba($color-grey-80, .20);
+}
