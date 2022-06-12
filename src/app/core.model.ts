@@ -99,6 +99,114 @@ export class TriggerFolder {
     public active: boolean = true;
     public comments: string;
     public children: TriggerFolder[] = [];
+
+    /**
+     * Returns the specified trigger folder in the given hierarchy.
+     * 
+     * @param folderId The id of the desired folder.
+     * @param search The list of folders to query.
+     * @returns 
+     */
+    public static findFolderById( folderId: string, search: TriggerFolder[] ): TriggerFolder {
+        // TODO: Update all find folder by id methods to use this method.
+        
+        for ( let i = 0; i < search?.length; i++ ) {
+            let folder = search[ i ].folderId === folderId ? search[ i ] : this.findFolderById( folderId, search[ i ].children );
+    
+            if ( folder ) {
+                return folder;
+            }
+        }
+    
+    }
+
+    /**
+     * Returns the direct ancestry of the specified folder.
+     * 
+     * @comments This method will strip all siblings from the hierarchy, 
+     *           returning only the direct ancestors of the specified folder.
+     * 
+     * @param folderId The desired folder id.
+     * @param rootFolders The root list of folders.
+     */
+    public static getFolderAncestry( folderId: string, rootFolders: TriggerFolder[] ): TriggerFolder[] {
+        let flat: string[] = [ folderId ];
+        let ancestryMap: Record<string, string> = this.getFolderAncestryMap( rootFolders );
+
+        // Traverse up the ancestry, stopping at the parent root folder id.
+        let t: string = ancestryMap[ folderId ];
+        while ( t != null ) {
+            flat.push( t );
+            t = ancestryMap[ t ];
+        }
+
+        let output: TriggerFolder[] = [];
+        let generation: TriggerFolder[] = rootFolders;
+        let outputGeneration = output;
+
+        for ( let i = flat.length - 1; i >= 0; i-- ) {
+
+            let folder = generation.find( f => f.folderId === flat[ i ] );
+            let ancestor = new TriggerFolder();
+
+            ancestor.folderId = folder.folderId;
+            ancestor.name = folder.name;
+            ancestor.expanded = folder.expanded;
+            ancestor.active = folder.active;
+            ancestor.comments = folder.comments;
+            ancestor.children = [];
+
+            outputGeneration.push( ancestor );
+
+            // Setup the next generation.
+            outputGeneration = ancestor.children;
+            generation = folder.children;
+
+        }
+
+        return output;
+    }
+
+    /**
+     * Builds a flat ancestry map to quickly lookup the parent folder id of any 
+     * folder in the given folder hierarchy.
+     * 
+     * @param folders The folder hierarchy.
+     * @returns Returns the ancestry map.
+     */
+    public static getFolderAncestryMap( folders: TriggerFolder[] ): Record<string, string> {
+        // TODO: Ancestry map gen should be using this method.
+        let ancestryMap: Record<string, string> = {};
+
+        for ( let i = 0; i < folders.length; i++ ) {
+            ancestryMap[ folders[ i ].folderId ] = null;
+
+            if ( folders[ i ].children?.length > 0 ) {
+                this._recursiveBuildAncestryMap( ancestryMap, folders[ i ].children, folders[ i ].folderId );
+            }
+        }
+
+        return ancestryMap;
+    }
+
+    /**
+     * The recursive function that generates the ancestry map.
+     * 
+     * @param ancestryMap The current ancestry map, which will be modified by reference.
+     * @param children The children of the current parent folder.
+     * @param parentId The id of the parent folder.
+     */
+    private static _recursiveBuildAncestryMap( ancestryMap: Record<string, string>, children: TriggerFolder[], parentId: string ) {
+
+        for ( let i = 0; i < children.length; i++ ) {
+            ancestryMap[ children[ i ].folderId ] = parentId;
+            
+            if ( children[ i ].children?.length > 0 ) {
+                this._recursiveBuildAncestryMap( ancestryMap, children[ i ].children, children[ i ].folderId );
+            }
+        }
+
+    }
 }
 
 export class CharacterClassLevel {
@@ -569,6 +677,42 @@ export class PackageFolder {
     public folderId: string;
     public name: string;
     public children: PackageFolder[] = [];
+
+    /**
+     * Returns the specified trigger folder in the given hierarchy.
+     * 
+     * @param folderId The id of the desired folder.
+     * @param search The list of folders to query.
+     * @returns 
+     */
+    public static findFolderById( folderId: string, search: PackageFolder[] ): PackageFolder {
+
+        for ( let i = 0; i < search?.length; i++ ) {
+            let folder = search[ i ].folderId === folderId ? search[ i ] : this.findFolderById( folderId, search[ i ].children );
+
+            if ( folder ) {
+                return folder;
+            }
+        }
+
+    }
+
+    /**
+     * Returns a list of all direct and descendant child folders.
+     * 
+     * @param folder The starting folder.
+     * @param descendantIds The current list of descendant folder ids.
+     * @returns 
+     */
+     public static getDescendantFolderIds( folder: PackageFolder, descendantIds: string[] = null ): string[]{
+        descendantIds = descendantIds ? descendantIds : [];
+
+        descendantIds.push( folder.folderId );
+
+        folder.children.forEach( c => this.getDescendantFolderIds( c, descendantIds ) );
+
+        return descendantIds;
+    }
 
 }
 

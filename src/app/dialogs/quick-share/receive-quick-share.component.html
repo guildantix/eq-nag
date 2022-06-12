@@ -2,13 +2,55 @@
 
 <mat-dialog-content>
     
-    <p></p>
+    <input type="hidden" />
+    
+    <div class="tree-container">
+        <mat-tree [dataSource]="dataSource" [treeControl]="treeControl" #tree>
+                
+            <!-- This is the tree node template for leaf/trigger nodes -->
+            <mat-tree-node *matTreeNodeDef="let node" matTreeNodePadding matTreeNodePaddingIndent="20" class="trigger-node" >
+                <mat-checkbox [(ngModel)]="node.selected" (ngModelChange)="onTriggerSelectChange()"></mat-checkbox>
+                <div class="tree-click-target" title="{{node.name}}" (click)="toggleSelect(node)" style="width: 100%;"><span>{{node.name}}</span></div>
+                <mat-icon *ngIf="!node.exists" class="material-icons-outlined color-green hover-hide" matTooltip="This trigger will be installed.">cloud_download</mat-icon>
+                <mat-icon *ngIf="node.update" class="material-icons-outlined color-orange-dark" matTooltip="This trigger will be updated.">cloud_download</mat-icon>
+                <mat-icon *ngIf="node.overwrite" class="material-icons-outlined color-red" matTooltip="This trigger will be overwritten.">cloud_download</mat-icon>
+                <mat-icon *ngIf="node.duplicate" class="material-icons-outlined color-red" matTooltip="This trigger will be overwritten.">cloud_off</mat-icon>
+            </mat-tree-node>
+    
+            <!-- This is the tree node template for expandable/folder nodes -->
+            <mat-tree-node *matTreeNodeDef="let node;when: hasChild" matTreeNodePadding matTreeNodePaddingIndent="20" class="folder-node">
+                <mat-checkbox [checked]="node?.folderState === 'all'" [indeterminate]="node?.folderState === 'partial'" (change)="onFolderSelectChange(node, $event.checked)" [disabled]="!node.hasChildren"></mat-checkbox>
+                <button mat-icon-button matTreeNodeToggle [attr.aria-label]="'Toggle ' + node.name" [disabled]="!node.hasChildren">
+                    <mat-icon [inline]="true" class="mat-icon-rtl-mirror">
+                        {{treeControl.isExpanded(node) ? 'expand_more' : 'chevron_right'}}
+                    </mat-icon>
+                </button>
+                <div class="tree-click-target" style="width: 100%;"><span [ngClass]="{'disabled-label': !node.hasChildren}">{{node.name}}</span></div>
+                
+                <!-- This folder will be created -->
+                <mat-icon *ngIf="!node.exists" class="material-icons-outlined color-green" matTooltip="This folder will be created.">create_new_folder</mat-icon>
+                
+                <!-- contains triggers that will be overwritten -->
+                <mat-icon *ngIf="node.overwrite" class="material-icons-outlined color-red" matTooltip="This contains triggers that will be overwritten.">report_problem</mat-icon>
+                
+                <!-- contains triggers with possible duplicates -->
+                <mat-icon *ngIf="!node.overwrite && node.duplicate" class="material-icons-outlined color-orange-dark" matTooltip="This folder contains triggers with possible duplicates.">report_problem</mat-icon>
+                
+                <!-- contains triggers that will be updated -->
+                <mat-icon *ngIf="!node.overwrite && !node.duplicate && node.update" class="material-icons-outlined color-orange-dark" matTooltip="This folder contains triggers that will be updated.">report</mat-icon>
+
+            </mat-tree-node>
+        </mat-tree>
+    </div>
 
 </mat-dialog-content>
 
 <mat-dialog-actions>
 
-  <button mat-button [mat-dialog-close]="null" class="t-confirm-no" color="warn">Cancel</button>
-  <button mat-button (click)="receiveSelectedTriggers()" class="t-confirm-yes" color="accent">Import</button>
+    <button mat-button [mat-dialog-close]="null" class="t-confirm-no" color="warn">Cancel</button>
+    <button mat-button (click)="receiveSelectedTriggers()" class="t-confirm-yes" color="accent">Import</button>
+    <span style="flex: 1 1 auto;"></span>
+    <mat-checkbox style="font-size: 14px;">Stage imported triggers.</mat-checkbox>
+    <button mat-icon-button class="color-blue" style="font-size: 14px;" (click)="showStagingFolderHelp()"><mat-icon>help_outline</mat-icon></button>
 
 </mat-dialog-actions>

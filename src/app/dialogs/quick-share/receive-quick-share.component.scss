@@ -1,0 +1,34 @@
+.tree-container {
+    height: 300px;
+    padding-top: 25px;
+    overflow-y: scroll;
+}
+
+mat-tree-node {
+
+    &.trigger-node {
+        mat-checkbox {
+            margin-left: 10px;
+            margin-right: 10px;
+        }
+    }
+    &.folder-node {
+        mat-checkbox {
+            margin-left: 10px;
+            margin-right: 10px;
+        }
+    }
+    &:hover {
+        .hover-hide {
+            display:unset !important;
+        }
+    }
+
+    .hover-hide {
+        display: none;
+    }
+}
+
+.disabled-label {
+    color: rgba(255,255,255,.3);
+}
