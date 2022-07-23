@@ -693,7 +693,9 @@ export class DialogService {
     public showPrepareQuickShareDialog( triggers: TriggerModel[], folders: TriggerFolder[] ): Observable<string> {
 
         return this.dialog.open<PrepareQuickShareDialogComponent, PrepareQuickShareModel, string>( PrepareQuickShareDialogComponent, {
-                width: '750px',
+            width: '750px',
+            maxHeight: '80vh', // 'calc(100vh - 90px)',
+            height : 'auto',
                 data: Object.assign( new PrepareQuickShareModel(), {
                     triggers: triggers,
                     folders: folders,
