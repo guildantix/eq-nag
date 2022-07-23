@@ -6,11 +6,12 @@ import { MatTreeFlattener, MatTreeFlatDataSource } from '@angular/material/tree'
 import { PackageFolder, PackageTrigger, QuickShareFileModel, QuickShareMetaModel, QuickShareModel, TriggerFolder, TriggerModel } from 'src/app/core.model';
 import * as _ from 'lodash-es';
 import { IpcService } from 'src/app/ipc.service';
-import { combineLatest, forkJoin, Observable } from 'rxjs';
+import { combineLatest, forkJoin, Observable, timer } from 'rxjs';
 import { nagId } from 'src/app/core/nag-id.util';
 import { NotificationDialogModel, NotificationTypes } from '../notification-dialog/notification-dialog.model';
 import { NotificationDialogComponent } from '../notification-dialog/notification-dialog.component';
 import { ColoredString } from '../dialog.model';
+import { MatSnackBar } from '@angular/material/snack-bar';
 
 interface QuickShareTreeNode {
     expandable: boolean;
@@ -95,6 +96,7 @@ export class ReceiveQuickShareDialogComponent implements OnInit {
         @Inject( MAT_DIALOG_DATA ) public data: { quickShares: QuickShareMetaModel[], files: QuickShareFileModel[] },
         public dialog: MatDialog,
         private ipcService: IpcService,
+        private snackBar: MatSnackBar,
     ) { }
 
     ngOnInit(): void {
@@ -417,7 +419,59 @@ export class ReceiveQuickShareDialogComponent implements OnInit {
 
     
     receiveSelectedTriggers(): void {
-        this.dialogRef.close( true );
+        let importTriggerIds = this.treeControl.dataNodes.filter( f => f.selected && !f.isFolder ).map( f => f.id );
+        let importFolderIds = this.treeControl.dataNodes.filter( f => f.selected && f.isFolder ).map( f => f.id );
+        let fileIds = [];
+
+        // For all selected triggers, create a list of used file ids.
+        this.allTriggers.filter( f => importTriggerIds.indexOf( f.triggerId ) > -1 )?.forEach( trigger => {
+            trigger.actions?.forEach( action => {
+                if ( action.audioFileId ) {
+                    fileIds.push( action.audioFileId );
+                }
+                if ( action.endedPlayAudioFileId ) {
+                    fileIds.push( action.endedPlayAudioFileId );
+                }
+                if ( action.endingPlayAudioFileId ) {
+                    fileIds.push( action.endingPlayAudioFileId );
+                }
+            } );
+        } );
+
+        // Ensure each id exists once.
+        fileIds = _.uniq( fileIds );
+
+        // Adding a timer makes the following easier (you can't forkjoin an empty array) and I'm being lazy today.
+        let importTasks: Observable<any>[] = [ timer( 1 ) ];
+
+        this.data.files?.forEach( file => {
+            if ( fileIds.indexOf( file.fileId ) > -1 ) {
+                importTasks.push( this.ipcService.importPackageFile( file ) );
+            }
+        } );
+        
+        forkJoin( importTasks ).subscribe( results => {
+
+            let installTasks: Observable<any>[] = [ timer( 1 ) ];
+            
+            this.data.quickShares?.forEach( quickShare => {
+                // Remove from the model triggers and folders that are left un-selected.
+                quickShare.model.triggers = quickShare.model.triggers.filter( f => importTriggerIds.indexOf( f.triggerId ) > -1 );
+                quickShare.model.folders = quickShare.model.folders.filter( f => importFolderIds.indexOf( f.folderId ) > -1 );
+
+                // Install the model.
+                installTasks.push( this.ipcService.installQuickShare( quickShare ) );
+            } );
+
+            forkJoin( installTasks ).subscribe( results => {
+                this.snackBar.open( 'Quick Share(s) installed!', 'dismiss', { duration: 2500 } );
+                this.ipcService.requestTick();
+                
+                this.dialogRef.close( true );
+            } );
+
+        } );
+
     }
 
 }
