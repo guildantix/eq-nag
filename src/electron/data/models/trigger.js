@@ -518,6 +518,53 @@ class TriggerPackageMetaModel {
 
 }
 
+class QuickShareVersion {
+    
+    /** @type {string} */
+    quickShareId;
+    /** @type {string} */
+    versionId;
+    /** @type {Date} */
+    timestamp;
+    /** @type {string} */
+    author = null;
+    /** @type {string} */
+    authorDiscord = null;
+
+}
+
+class QuickShareModel {
+    
+    /** @type {PackageTrigger[]} */
+    triggers;
+    /** @type {PackageFolder[]} */
+    folders;
+    /** @type {string} */
+    detrimentalOverlayId;
+    /** @type {string} */
+    beneficialOverlayId;
+
+}
+
+class QuickShareMetaModel {
+
+    /** @type {string} */
+    quickShareId;
+    /** @type {string} */
+    versionId;
+    /** @type {Date} */
+    timeStamp;
+    /** @type {QuickShareModel} */
+    model;
+    /** @type {string} */
+    author;
+    /** @type {string} */
+    authorDiscord;
+    /** @type {boolean} */
+    trustedAuthor;
+
+}
+
 module.exports = {
     Trigger,
     TriggerAction,
@@ -539,5 +586,8 @@ module.exports = {
     PackageFolder,
     PackageTrigger,
     TriggerPackageModel,
-    TriggerPackageMetaModel
+    TriggerPackageMetaModel,
+    QuickShareVersion,
+    QuickShareModel,
+    QuickShareMetaModel,
 };
