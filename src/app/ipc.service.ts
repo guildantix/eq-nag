@@ -3,7 +3,7 @@ import { Display, IpcRenderer } from 'electron';
 import { UpdateInfo } from 'electron-updater';
 import { Observable, Observer } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
-import { DataTickModel, DkpEntryModel, TriggerModel, OverlayWindowModel, ActionTypes, FocusEffectSettings, CharacterModel, BasicError, TriggerFolder, FileModel, Tag, AuthorModel, PackageFileModel, TriggerPackageMetaModel, TriggerPackageVersion, FctStylesModel, OverlayBoundsChangedEventArgs, DialogEventArgs } from './core.model';
+import { DataTickModel, DkpEntryModel, TriggerModel, OverlayWindowModel, ActionTypes, FocusEffectSettings, CharacterModel, BasicError, TriggerFolder, FileModel, Tag, AuthorModel, PackageFileModel, TriggerPackageMetaModel, TriggerPackageVersion, FctStylesModel, OverlayBoundsChangedEventArgs, DialogEventArgs, QuickShareMetaModel } from './core.model';
 import { GinaConfiguration, GinaTriggerGroups } from './gina.model';
 
 @Injectable( { providedIn: 'root' })
@@ -979,6 +979,22 @@ export class IpcService {
                 } );
             } );
             this.ipc.send( 'pkg:get:installed' );
+
+        } );
+
+        return obs;
+    }
+
+    public installQuickShare( quickShare: QuickShareMetaModel ): Observable<boolean> {
+        let obs: Observable<boolean> = new Observable<boolean>( ( observer: Observer<boolean> ) => {
+
+            this.ipc.once( 'quickShare:install', ( e, installComplete: boolean ) => {
+                this.ngZone.run( () => {
+                    observer.next( installComplete );
+                    observer.complete();
+                } );
+            } );
+            this.ipc.send( 'quickShare:install', quickShare );
 
         } );
 

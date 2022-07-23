@@ -726,7 +726,9 @@ export class DialogService {
     public showReceiveQuickShareDialog(quickShares: QuickShareMetaModel[], files: QuickShareFileModel[]): Observable<boolean> {
 
         return this.dialog.open<ReceiveQuickShareDialogComponent, any, boolean>( ReceiveQuickShareDialogComponent, {
-            width: '550px',
+            width: '750px',
+            maxHeight: '80vh', 
+            height : 'auto',
             data: { quickShares: quickShares, files: files },
             panelClass: 'app-dialog',
             autoFocus: false,
