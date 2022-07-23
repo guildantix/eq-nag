@@ -417,7 +417,9 @@ export class ReceiveQuickShareDialogComponent implements OnInit {
 
 
 
-    
+    /**
+     * Imports the selected quick share triggers.
+     */
     receiveSelectedTriggers(): void {
         let importTriggerIds = this.treeControl.dataNodes.filter( f => f.selected && !f.isFolder ).map( f => f.id );
         let importFolderIds = this.treeControl.dataNodes.filter( f => f.selected && f.isFolder ).map( f => f.id );
