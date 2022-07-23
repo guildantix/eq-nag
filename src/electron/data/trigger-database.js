@@ -1,7 +1,23 @@
 const { app, BrowserWindow, ipcMain } = require( "electron" );
 const Store = require( './store' );
 const _ = require( 'lodash' );
-const { Trigger, TriggerFolder, TriggerAction, ActionTypes, Tag, ImportTypes, TimerRestartBehaviors, TriggerPackageMetaModel, TriggerPackageVersion, PackageFolder, PackageTrigger } = require( './models/trigger' );
+const {
+    Trigger,
+    TriggerFolder,
+    TriggerAction,
+    ActionTypes,
+    Tag,
+    ImportTypes,
+    TimerRestartBehaviors,
+    TriggerPackageMetaModel,
+    TriggerPackageVersion,
+    PackageFolder,
+    PackageTrigger,
+    PackageFileModel,
+    QuickShareVersion,
+    QuickShareModel,
+    QuickShareMetaModel,
+} = require( './models/trigger' );
 const ForwardRef = require( '../forward-ref' );
 const customAlphabet = require( 'nanoid' ).customAlphabet;
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
@@ -114,7 +130,8 @@ class TriggerStoreModel {
     tags;
     /** @type {TriggerPackageVersion[]} */
     installedPackages;
-
+    /** @type {QuickShareVersion[]} */
+    installedQuickShares;
 }
 
 class TriggerDatabaseStore extends Store {
@@ -636,6 +653,12 @@ class TriggerDatabaseStore extends Store {
             this.#data.version = 67;
             this.storeDataFile( this.#data );
         }
+        if ( this.#data.version < 68 ) {
+            this.#data.installedQuickShares = [];
+
+            this.#data.version = 68;
+            this.storeDataFile( this.#data );
+        }
     }
 
 
@@ -793,6 +816,10 @@ class TriggerDatabaseStore extends Store {
 
         ipcMain.on( 'pkg:get:installed', ( event ) => {
             event.sender.webContents.send( 'pkg:get:installed', this.getInstalledPackages() );
+        } );
+
+        ipcMain.on( 'quickShare:install', ( event, quickShare ) => {
+            event.sender.webContents.send( 'quickShare:install', this.installQuickshare( quickShare ) );
         } );
 
     }
@@ -1703,6 +1730,78 @@ class TriggerDatabaseStore extends Store {
 
 
     /**
+     * Installs the given quickshare triggers, folders, and files.
+     * 
+     * @param {QuickShareMetaModel} quickShare The quickshare to install.
+     */
+    installQuickshare( quickShare ) {
+        
+        if ( this.#data.triggers === null || this.#data.triggers === undefined ) {
+            throw 'Trigger database not loaded!';
+        }
+
+        let quickShareVersion = this.#data.installedQuickShares.find( f => f.quickShareId === quickShare.quickShareId );
+
+        if ( quickShareVersion == null ) {
+            quickShareVersion = new QuickShareVersion();
+            quickShareVersion.quickShareId = quickShare.quickShareId;
+
+            // Add it to the store
+            this.#data.installedQuickShares.push( quickShareVersion );
+        }
+
+        quickShareVersion.versionId = quickShare.versionId;
+        quickShareVersion.timestamp = quickShare.timestamp;
+        quickShareVersion.author = quickShare.author;
+        quickShareVersion.authorDiscord = quickShare.authorDiscord;
+
+        // First, update the overlay Ids to match their cooresponding values on 
+        // the client.
+
+        /** @type {Record<string, string>} */
+        let overlayMap = {}
+
+        overlayMap[ quickShare.model.detrimentalOverlayId ] = _userPreferences.detrimentalOverlayId;
+        overlayMap[ quickShare.model.beneficialOverlayId ] = _userPreferences.beneficialOverlayId;
+
+        quickShare.model?.triggers?.forEach( trigger => {
+            trigger.actions?.forEach( action => {
+
+                if ( action.actionType === ActionTypes.DisplayText ) {
+                    action.overlayId = _userPreferences.alertOverlayId;
+                } else {
+                    action.overlayId = overlayMap[ action.overlayId ];
+                }
+                
+                action.endedTextOverlayId = _userPreferences.alertOverlayId;
+                action.endingSoonTextOverlayId = _userPreferences.alertOverlayId;
+
+            } );
+        } );
+
+        // Next, create the required folders, creating a folder map that maps 
+        // folder ids to existing folders. If a folder does not exist,  it is 
+        // created  using  the  folder  id  in  the trigger   package  folder.
+        let folderMap = this.installPackageFolders( quickShare.model?.folders );
+        quickShare.model?.triggers?.forEach( trigger => this.installPackageTrigger( quickShare.quickShareId, trigger, folderMap ) );
+
+        // Save changes to the data.
+        this.processPredefinedTriggers();
+        this.storeDataFile( this.#data );
+
+        return true;
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
      * Removes the specified trigger package and uninstalls all related 
      * triggers.
      * 
@@ -1958,9 +2057,168 @@ class TriggerDatabaseStore extends Store {
 
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Returns the list of installed trigger packages.
+     * 
+     * @returns {TriggerPackageVersion[]}
+     */
     getInstalledPackages() {
         return this.#data.installedPackages;
     }
+
+
+
+
+
+
+
+
+
+    
+    /**
+     * Returns a list of installed quick shares.
+     * 
+     * @returns {QuickShareVersion[]}
+     */
+    getInstalledQuickShares() {
+        return this.#data.installedQuickShares;
+    }
+
+    // /**
+    //  * Installs the given quick share trigger.
+    //  * 
+    //  * @param {PackageTrigger} quickShareTrigger The package trigger to install.
+    //  * @param {Record<string, string>} folderMap The folder id map.
+    //  */
+    // installQuickShareTrigger(quickShareTrigger, folderMap) {
+    //     /** @type {Trigger} */
+    //     let trigger;
+
+    //     let i = this.#data.triggers.findIndex( f => f.triggerId === quickShareTrigger.triggerId );
+
+    //     if ( i > -1 ) {
+    //         trigger = this.#data.triggers.find( f => f.triggerId === quickShareTrigger.triggerId );
+
+    //     } else {
+    //         trigger = new Trigger();
+    //         trigger.triggerId = quickShareTrigger.triggerId;
+    //         trigger.folderId = folderMap[ quickShareTrigger.folderId ];
+
+    //         // Add it to the store.
+    //         this.#data.triggers.push( trigger );
+
+    //     }
+
+    //     trigger.name = quickShareTrigger.name;
+    //     trigger.capturePhrases = quickShareTrigger.capturePhrases;
+    //     trigger.comments = quickShareTrigger.comments;
+    //     trigger.actions = quickShareTrigger.actions;
+    //     trigger.captureMethod = quickShareTrigger.captureMethod;
+    //     trigger.conditions = quickShareTrigger.conditions;
+    //     trigger.classLevels = quickShareTrigger.classLevels;
+    //     trigger.useCooldown = quickShareTrigger.useCooldown;
+    //     trigger.cooldownDuration = quickShareTrigger.cooldownDuration;
+    // }
+
+    // /**
+    //  * Installs the given folders and any child folders.
+    //  * 
+    //  * @returns {Record<string, string>} Retuns a map of folder ids.  If new folders were created, the 
+    //  * map will contain the new folder id.  If an existing folder was found, 
+    //  * the map will map the package folder id to the existing folder id.
+    //  * 
+    //  * @param {PackageFolder[]} quickShareFolders The folders to install.
+    //  */
+    // installQuickShareFolders( quickShareFolders ) {
+    //     let folders = this.getFolders();
+    //     /** @type {Record<string, string>} */
+    //     let folderMap = {};
+
+    //     quickShareFolders?.forEach( pkgFolder => {
+            
+    //         // If there exists a folder with the name, then map the package 
+    //         // folder id to the existing folder id.
+    //         let i = folders.findIndex( f => f.name === pkgFolder.name );
+    //         /** @type {TriggerFolder} */
+    //         let folder;
+
+    //         if ( i > -1 ) {
+                
+    //             folderMap[ pkgFolder.folderId ] = folders[ i ].folderId;
+    //             folder = folders[ i ];
+
+    //         } else {
+
+    //             folderMap[ pkgFolder.folderId ] = pkgFolder.folderId;
+                
+    //             folder = new TriggerFolder();
+    //             folder.folderId = pkgFolder.folderId;
+    //             folder.name = pkgFolder.name;
+    //             folder.children = [];
+    
+    //             folders.push( folder );
+
+    //         }
+
+    //         pkgFolder.children?.forEach( pkgChild => {
+    //             this.installChildQuickShareFolder( folder, pkgChild, folderMap );
+    //         } );
+
+    //     } );
+
+    //     this.updateFolders( folders );
+
+    //     return folderMap;
+    // }
+
+    // /**
+    //  * Installs the given quick share folder.
+    //  * 
+    //  * @param {TriggerFolder} parentFolder The parent folder.
+    //  * @param {PackageFolder} quickShareFolder The folder to install.
+    //  * @param {Record<string, string>} folderMap The folder id map.
+    //  */
+    // installChildQuickShareFolder(parentFolder, quickShareFolder, folderMap) {
+    //     parentFolder.children == null ? [] : parentFolder.children;
+        
+    //     // If there exists a folder with the name, then map the package folder 
+    //     // id to the existing folder id.
+    //     let i = parentFolder.children.findIndex( f => f.name === packageFolder.name );
+    //     /** @type {TriggerFolder} */
+    //     let folder;
+        
+    //     if ( i > -1 ) {
+                
+    //         folderMap[ packageFolder.folderId ] = parentFolder.children[ i ].folderId;
+    //         folder = parentFolder.children[ i ];
+
+    //     } else {
+
+    //         folderMap[ packageFolder.folderId ] = packageFolder.folderId;
+            
+    //         folder = new TriggerFolder();
+
+    //         folder.folderId = packageFolder.folderId;
+    //         folder.name = packageFolder.name;
+    //         folder.children = [];
+
+    //         parentFolder.children.push( folder );
+
+    //     }
+        
+    //     packageFolder.children?.forEach( pkgChild => {
+    //         this.installPackageFolder( folder, pkgChild, folderMap );
+    //     } );
+    // }
 
     // /**
     //  * Adds the given folder to the specified parent folder.
