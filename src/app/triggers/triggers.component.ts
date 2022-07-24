@@ -45,6 +45,7 @@ export class TriggersComponent implements OnInit {
     public hasChild = ( _: number, node: FolderTreeNode ) => node.expandable;
     public selectedFolderId: string;
     public triggers: TriggerModel[] = [];
+    public processing: boolean = false;
 
     private _indexRecords: number = 0;
     private _maxRecords: number = 0;
@@ -702,15 +703,17 @@ export class TriggersComponent implements OnInit {
      */
     public deleteFolder( folderId: string, name: string ): void {
         this.dialogService.showConfirmDialog(
-            [ `Are you sure you want to delete ${name}?`, `This will remove all triggers from this folder and all descendants, leaving those triggers ungrouped.` ],
+            [ `Are you sure you want to delete ${name}?`, `This will remove all triggers from this folder and all descendants, permanently deleting them.` ],
             `Click "Yes" to delete ${name}.`, 'Click "No" to close this dialog without deleting the folder.',
             confirmed => {
                 if ( confirmed === true ) {
+                    this.processing = true;
                     if ( this.selectedFolderId === folderId ) {
                         this.selectedFolderId = null;
                     }
                     this._deleteFolder( this.triggerFolders, folderId );
                     this.updateTriggerFolders();
+                    this.ipcService.updateTriggers( this.triggers ).subscribe( failed => this.processing = false );
                 }
             } );
     }
@@ -733,19 +736,40 @@ export class TriggersComponent implements OnInit {
     private _deleteFolder( folders: TriggerFolder[], folderId: string ): void {
         for ( let i = 0; i < folders.length; i++ ) {
             if ( folders[ i ].folderId === folderId ) {
-                
-                // Remove the folder from the list.
+
+                this._deleteFolderTriggers( folders[ i ] );
+
+                // Remove the folder from the list, also removing all descendants.
                 folders.splice( i, 1 );
                 
-                // Remove any existing folders.
-                this._removeFolderTriggers( this.triggerFolders, folderId );
-
                 // We're done here.
                 break;
 
             } else if ( folders[ i ].children?.length > 0 ) {
                 this._deleteFolder( folders[ i ].children, folderId );
             }
+        }
+    }
+
+
+
+
+
+
+
+
+
+    
+    /**
+     * Removes all triggers for the given folder, and all triggers in the folder descendants.
+     * 
+     * @param folder The folder to remove.
+     */
+    private _deleteFolderTriggers( folder: TriggerFolder ) {
+        this.triggers = this.triggers.filter( f => f.folderId !== folder.folderId );
+
+        if ( folder.children?.length > 0 ) {
+            folder.children.forEach( child => this._deleteFolderTriggers( child ) );
         }
     }
 
@@ -766,7 +790,7 @@ export class TriggersComponent implements OnInit {
      */
     private _removeFolderTriggers( folders: TriggerFolder[], folderId: string ): void {
 
-        this.triggers.forEach( trigger => trigger.folderId = trigger.folderId === folderId ? null : trigger.folderId );
+        this.triggers.forEach( trigger => trigger.folderId = ( trigger.folderId === folderId ? null : trigger.folderId ) );
         this.filterTriggers();
         this.searchTerm = null;
 
