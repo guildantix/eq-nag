@@ -11,7 +11,11 @@ export class ColoredStringPipe implements PipeTransform {
 
     transform( msg: string | ColoredString ): string | SafeHtml {
         if ( msg instanceof ColoredString ) {
-            let content = `<span style="color: ${msg.color}; font-weight: ${msg.bold ? 'bold' : 'unset'}">${msg.value}</span>`;
+            let value = msg.value
+            value = value.replace( /\*\*(.*?)\*\*/gi, '<strong>$1</strong>' );
+            value = value.replace( /\~\~(.*?)\~\~/gi, '<i>$1</i>' );
+            value = value.replace( /\^\^(.*?)\^\^/gi, '<sup>$1</sup>' );
+            let content = `<span style="color: ${msg.color}; font-weight: ${msg.bold ? 'bold' : 'unset'}">${value}</span>`;
 
             return this.sanitizer.bypassSecurityTrustHtml( content );
         } else {
