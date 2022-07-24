@@ -22,11 +22,20 @@ export class IpcService {
     private _overlayBoundsChangedObservers: Observer<OverlayBoundsChangedEventArgs>[] = [];
     private _warningDialogObservers: Observer<DialogEventArgs>[] = [];
     private _onReceivedQuickShare: Observer<string>[] = [];
+    private _onOrphanedTriggerWarning: Observer<boolean>[] = [];
 
     constructor( private ngZone: NgZone ) {
         if ( ( <any>window ).require ) {
             try {
                 this.ipc = ( <any>window ).require( 'electron' ).ipcRenderer;
+
+                this.ipc.on( 'orphaned_trigger_warning', ( event: any, data: boolean ) => {
+                    ngZone.run( () => {
+                        this._onOrphanedTriggerWarning?.forEach( f => {
+                            f.next( data );
+                        } );
+                    } );
+                } );
 
                 this.ipc.on( 'quickshare_captured', ( event: any, quickShareId: string ) => {
                     ngZone.run( () => {
@@ -127,6 +136,14 @@ export class IpcService {
         } else {
             console.warn( 'App not running inside Electron!' );
         }
+    }
+
+    public orphanedTriggersFound(): Observable<boolean> {
+        let obs: Observable<boolean> = new Observable<boolean>( ( observer: Observer<boolean> ) => {
+            this._onOrphanedTriggerWarning.push( observer );
+        } );
+
+        return obs;
     }
 
     public quickShareCaptured(): Observable<string> {

@@ -142,6 +142,12 @@ class TriggerDatabaseStore extends Store {
      * */
     #data;
 
+    /**
+     * If true, orphaned triggers were found and moved to the orphan folder.
+     * @type {boolean}
+     */
+    #orphanedFound = false;
+
     get count() {
         return this.#data?.triggers?.length;
     }
@@ -153,6 +159,7 @@ class TriggerDatabaseStore extends Store {
         } );
         
         this.#data = this.parseDataFile();
+        this.findOrphanedTriggers();
         this.processPredefinedTriggers();
 
         if ( !this.#data.version || this.#data.version < 3 ) {
@@ -713,6 +720,97 @@ class TriggerDatabaseStore extends Store {
 
 
 
+    
+    /**
+     * Finds all orphaned triggers and moves them to an Orphaned Triggers folder.
+     */
+    findOrphanedTriggers() {
+        this.#data.triggers.forEach( trigger => {
+            if ( !trigger.predefined ) {
+                let folder = this.findFolderById( this.#data.folders, trigger.folderId );
+                if ( !folder ) {
+                    this.#orphanedFound = true;
+                    // Find the orphaned triggers folder, and create it if it doesn't exist.
+                    let orphanFolder = this.findOrphanedTriggerFolder();
+
+                    trigger.folderId = orphanFolder.folderId;
+                    
+                }
+            }
+        } );
+    }
+
+
+
+
+
+
+
+
+
+    
+    /**
+     * Returns the orphaned trigger folder.  If the folder does not exist, it is created.
+     * 
+     * @returns {TriggerFolder}
+     */
+    findOrphanedTriggerFolder() {
+        const name = 'Orphaned Triggers';
+        let i = this.#data.folders.findIndex( f => f.name === name );
+            
+        if ( i < 0 ) {
+            let orphanFolder = new TriggerFolder();
+
+            orphanFolder.folderId = nanoid();
+            orphanFolder.name = name;
+            orphanFolder.expanded = false;
+            orphanFolder.active = true;
+            orphanFolder.comments = 'Container for orphaned triggers.';
+            orphanFolder.children = [];
+
+            this.#data.folders.push( orphanFolder );
+            this.updateFolders( this.#data.folders );
+        }
+
+        return this.#data.folders.find( f => f.name === name );
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Finds the specified folder, returns undefined if not found.
+     * 
+     * @param {TriggerFolder[]} folders The source to search for folder id.
+     * @param {string} folderId The id of the folder to find.
+     */
+    findFolderById( folders, folderId ) {
+        for ( let i = 0; i < folders?.length; i++ ) {
+            if ( folders[ i ].folderId === folderId ) {
+                return folders[ i ];
+            } else if ( folders[ i ]?.children?.length > 0 ) {
+                let found = this.findFolderById( folders[ i ].children, folderId );
+                if ( found ) {
+                    return found;
+                }
+            }
+        }
+    }
+
+
+
+
+
+
+
+
+
 
     /**
      * Attaches store events to ipc main and dispatches react events to the main window.
@@ -821,6 +919,14 @@ class TriggerDatabaseStore extends Store {
         ipcMain.on( 'quickShare:install', ( event, quickShare ) => {
             event.sender.webContents.send( 'quickShare:install', this.installQuickshare( quickShare ) );
         } );
+
+        if ( this.#orphanedFound ) {
+            mainWindowRef.whenReady( () => {
+                setTimeout( () => {
+                    mainWindowRef.reference.webContents.send( 'orphaned_trigger_warning', true );
+                }, 5000 );
+            } );
+        }
 
     }
 
@@ -1321,16 +1427,24 @@ class TriggerDatabaseStore extends Store {
 
 
     /**
-     * Updates the list of given triggers.
+     * Syncs all triggers with the given list, updating existing triggers, creating new triggers, and removing triggers not in this list.
      * 
-     * @returns {TriggerModel[]} Returns a list of triggers that failed to update.
+     * @returns {Trigger[]} Returns a list of triggers that failed to update.
      * 
-     * @param {TriggerModel[]} triggers The triggers to update.
+     * @param {Trigger[]} triggers The triggers to update.
      */
     updateAll( triggers ) {
-
-        /** @type {TriggerModel[]} */
+        
+        /** @type {Trigger[]} */
         let failed = [];
+
+        let existingIds = triggers.map( f => f.triggerId );
+        
+        this.#data.triggers = this.#data.triggers.filter( f => existingIds.indexOf( f.triggerId ) > -1 );
+
+        // Save changes to the data.
+        this.processPredefinedTriggers();
+        this.storeDataFile();
 
         triggers.forEach( trigger => {
             if ( StringUtilities.isNullOrWhitespace( trigger.triggerId ) ) {
@@ -1348,7 +1462,7 @@ class TriggerDatabaseStore extends Store {
                 }
             }
         } );
-        
+
         return failed;
     }
 

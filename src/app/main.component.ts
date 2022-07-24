@@ -151,12 +151,25 @@ export class MainComponent implements OnInit {
                 .subscribe( ( [ quickShare, files ]: [ QuickShareMetaModel[], QuickShareFileModel[] ] ) => {
                     this.dialogService.showReceiveQuickShareDialog( quickShare, files ).subscribe( imported => {
                         if ( imported ) {
-                            
+                            this.ipcService.requestTick();
                         }
                     } );
                 } );
             
         } );
+
+        this.ipcService.orphanedTriggersFound().subscribe( found => {
+            if ( found ) {
+                this.dialogService
+                    .showWarningDialog(
+                        'Orphaned Triggers', [
+                        'Triggers were found that do not have a parent folder, or the parent folder has been deleted.',
+                        'These triggers have been moved to the "Orphaned Triggers" folder.',
+                        'The way folders are deleted has been changed.',
+                        new ColoredString( 'Now, when deleting a folder, all sub-folders and all triggers in the hierarchy will be ~~**deleted**~~.', '#f44336' )
+                    ] );
+            }
+        })
     }
 
     checkForTriggerUpdates() {
