@@ -235,11 +235,10 @@ export class ReceiveQuickShareDialogComponent implements OnInit {
     private processExistingTriggers( realTriggers: TriggerModel[], realFolders: TriggerFolder[] ) {
         this.allTriggers.forEach( qst => {
             let i = realTriggers.findIndex( f => f.triggerId === qst.triggerId );
-            if ( i  > -1 ) {
-                let rt = realTriggers[ i ];
-                let ancestryFolders = TriggerFolder.getFolderAncestry( rt.folderId, realFolders );
+            if ( i > -1 && realTriggers[ i ].folderId != null ) {
+                let ancestryFolders = TriggerFolder.getFolderAncestry( realTriggers[ i ].folderId, realFolders );
                 this.insertRealFolders( ancestryFolders );
-                qst.folderId = rt.folderId;
+                qst.folderId = realTriggers[ i ].folderId;
             }
         } );
     }
