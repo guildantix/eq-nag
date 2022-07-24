@@ -1094,7 +1094,7 @@ export class TriggersComponent implements OnInit {
         let folder = this.findFolderById( folderId );
         let descendantTriggers = this.getDescendantTriggers( folder );
         
-        this.dialogService.showPrepareQuickShareDialog( descendantTriggers, [ folder ] ).subscribe( quickShareId => console.log( 'quickShareId', quickShareId ) );
+        this.dialogService.showPrepareQuickShareDialog( descendantTriggers, [ folder ] ).subscribe( quickShareId => { } );
     }
 
 

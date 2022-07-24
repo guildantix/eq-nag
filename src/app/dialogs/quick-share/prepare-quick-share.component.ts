@@ -14,6 +14,7 @@ import { AuthorDialogComponent } from '../author-dialog/author-dialog.component'
 import { NotificationDialogComponent } from '../notification-dialog/notification-dialog.component';
 import { NotificationTypes } from '../notification-dialog/notification-dialog.model';
 import { HttpErrorResponse } from '@angular/common/http';
+import { MatSnackBar } from '@angular/material/snack-bar';
 
 interface QuickShareTreeNode {
     expandable: boolean;
@@ -77,7 +78,8 @@ export class PrepareQuickShareDialogComponent implements OnInit {
         public dialog: MatDialog,
         private ipcService: IpcService,
         private quickShareService: QuickShareService,
-        private settingsService: SettingsService
+        private settingsService: SettingsService,
+        private snackBar: MatSnackBar,
     ) { }
 
     ngOnInit(): void {
@@ -499,7 +501,12 @@ export class PrepareQuickShareDialogComponent implements OnInit {
                 // quickShareId.
                 this.quickShareService
                     .createQuickShare( author.authorId, quickShare, quickShareFiles, null )
-                    .subscribe( quickShareId => this.dialogRef.close( quickShareId ) );
+                    .subscribe( quickShareId => {
+                        let code = `{NAG:${quickShareId}}`;
+                        this.ipcService.sendTextToClipboard( code );
+                        this.snackBar.open( 'Quickshare copied to clipboard', 'Dismiss', { duration: 5000 } );
+                        this.dialogRef.close( quickShareId );
+                    } );
                 
                 this.creatingQuickShare = false;
 

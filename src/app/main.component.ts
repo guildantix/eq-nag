@@ -149,9 +149,11 @@ export class MainComponent implements OnInit {
 
             forkJoin( observables )
                 .subscribe( ( [ quickShare, files ]: [ QuickShareMetaModel[], QuickShareFileModel[] ] ) => {
-                    // TODO: Ignore quickshares that have been installed and the latest version.
-                    console.log( 'quickShares', quickShare );
-                    console.log( 'quickFiles', files );
+                    this.dialogService.showReceiveQuickShareDialog( quickShare, files ).subscribe( imported => {
+                        if ( imported ) {
+                            
+                        }
+                    } );
                 } );
             
         } );
