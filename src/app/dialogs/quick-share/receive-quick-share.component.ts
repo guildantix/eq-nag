@@ -57,7 +57,7 @@ export class ReceiveQuickShareDialogComponent implements OnInit {
 
     private _transformer: ( node: QuickShareTreeObject, level: number ) => QuickShareTreeNode = ( node: QuickShareTreeObject, level: number ) => {
         return {
-            expandable: node.folder ? true : false, // node.children?.length > 0,
+            expandable: node.folder ? true : false, 
             name: node.name,
             level: level,
             item: node.folder ? node.folder : node.trigger,
@@ -122,13 +122,17 @@ export class ReceiveQuickShareDialogComponent implements OnInit {
 
             this.updateFolderStates();
         } );
-                
-        // this.treeControl.dataNodes?.forEach( n => {
-        //     if ( n.expandable && n.folderState !== 'none' ) {
-        //         this.treeControl.expand( n );
-        //     }
-        // } );
+        
     }
+
+
+
+
+
+
+
+
+
 
     /**
      * Processes and tracks the actions against each real trigger.  Also checks 
@@ -174,6 +178,15 @@ export class ReceiveQuickShareDialogComponent implements OnInit {
         } );
     }
 
+
+
+
+
+
+
+
+
+    
     /**
      * Traverses the package folder hierarchy, updating folder ids when the 
      * package folder exists as a real folder.
@@ -202,6 +215,15 @@ export class ReceiveQuickShareDialogComponent implements OnInit {
         } );
     }
 
+
+
+
+
+
+
+
+
+    
     /**
      * Checks the real triggers against the quick share triggers, when finding 
      * a trigger id that matches, then moves it to the correct folder.
@@ -221,6 +243,15 @@ export class ReceiveQuickShareDialogComponent implements OnInit {
         } );
     }
 
+
+
+
+
+
+
+
+
+    
     /**
      * Inserts the given folder ancestry into the quick share folders.
      * 
@@ -277,7 +308,6 @@ export class ReceiveQuickShareDialogComponent implements OnInit {
         node.folder = folder;
         node.exists = realFolder != null;
         node.overwrite = this.foldersWithOverwrites.indexOf( folder.folderId ) > -1;
-        // node.duplicate = this.possibleDuplicateTriggers[ trigger.triggerId ]?.length > 0;
         node.update = this.foldersWithUpdates.indexOf( folder.folderId ) > -1;
 
         // Push this folder node into the data list.

@@ -39,8 +39,6 @@ export class TriggerActionDotTimerComponent implements OnInit {
             if ( this.iconFileSelector.nativeElement?.files?.length > 0 ) {
                 ImageUtility.toDataUrl( this.iconFileSelector.nativeElement.files[ 0 ] ).subscribe( dataUrl => action.timerIcon = dataUrl );
             }
-            // console.log( 'found', action.actionId, this.iconFileSelector.nativeElement.files[ 0 ].path );
-            // action.timerIcon = this.iconFileSelector.nativeElement.files[ 0 ].path;
         };
         this.iconFileSelector.nativeElement.click();
     }
@@ -56,8 +54,6 @@ export class TriggerActionDotTimerComponent implements OnInit {
     iconFileSelected( e: any ) {
         this.onIconFileSelected( e );
         this.onIconFileSelected = null;
-        // console.log( 'testing', typeof e);
-        // this.ipcService.updateLogFile( this.iconFileSelector.nativeElement.files[ 0 ].path );
     }
 
     public getActionEndedCtxMenu( action: TriggerAction ): ContextMenuModel[] {

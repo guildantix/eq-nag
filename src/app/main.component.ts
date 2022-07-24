@@ -330,20 +330,20 @@ export class MainComponent implements OnInit {
     }
 
     public testFn(): void {
-        let quickShareId = 'OVtf9VzRSjykb1xx';
-        let observables = [
-            this.quickShareService.getQuickShare( quickShareId ),
-            this.quickShareService.getQuickShareFiles( quickShareId ),
-        ];
+        // let quickShareId = 'OVtf9VzRSjykb1xx';
+        // let observables = [
+        //     this.quickShareService.getQuickShare( quickShareId ),
+        //     this.quickShareService.getQuickShareFiles( quickShareId ),
+        // ];
 
-        forkJoin( observables )
-            .subscribe( ( [ quickShare, files ]: [ QuickShareMetaModel[], QuickShareFileModel[] ] ) => {
-                this.dialogService.showReceiveQuickShareDialog( quickShare, files ).subscribe( imported => {
-                    if ( imported ) {
-                        // reload data.
-                    }
-                } );
-            } );
+        // forkJoin( observables )
+        //     .subscribe( ( [ quickShare, files ]: [ QuickShareMetaModel[], QuickShareFileModel[] ] ) => {
+        //         this.dialogService.showReceiveQuickShareDialog( quickShare, files ).subscribe( imported => {
+        //             if ( imported ) {
+        //                 // reload data.
+        //             }
+        //         } );
+        //     } );
         
         // this.ipcService.simulateLogParse( 'E:\\everquest\\Logs\\Backup\\eqlog_Ryvn_mangler_20201024_204401.txt' );
         // let url: string = 'https://everquest.allakhazam.com/db/spell.html?spell=5423';

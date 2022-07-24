@@ -52,12 +52,11 @@ export class PrepareQuickShareDialogComponent implements OnInit {
     
     private _transformer: ( node: QuickShareTreeObject, level: number ) => QuickShareTreeNode = ( node: QuickShareTreeObject, level: number ) => {
         return {
-            expandable: node.folder ? true : false, // node.children?.length > 0,
+            expandable: node.folder ? true : false, 
             name: node.name,
             level: level,
             item: node.folder ? node.folder : node.trigger,
             selected: node.selected === false ? false : true,
-            // folderState: 'all',
             id: node.folder ? node.folder.folderId : node.trigger.triggerId,
             isFolder: node.folder ? true : false,
             hasChildren: node.children?.length > 0,

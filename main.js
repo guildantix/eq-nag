@@ -248,7 +248,6 @@ ipcMain.on( 'clipboard:writeText', ( event, value ) => {
 } );
 
 ipcMain.on( 'quickshare_captured', ( event, quickShareId ) => {
-    console.log( 'quickShareId', quickShareId );
     mainWindow.webContents.send( 'quickshare_captured', quickShareId );
 } );
 

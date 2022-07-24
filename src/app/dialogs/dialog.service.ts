@@ -694,7 +694,7 @@ export class DialogService {
 
         return this.dialog.open<PrepareQuickShareDialogComponent, PrepareQuickShareModel, string>( PrepareQuickShareDialogComponent, {
             width: '750px',
-            maxHeight: '80vh', // 'calc(100vh - 90px)',
+            maxHeight: '80vh', 
             height : 'auto',
                 data: Object.assign( new PrepareQuickShareModel(), {
                     triggers: triggers,
