@@ -349,7 +349,9 @@ class TriggerCondition {
 
 class Trigger {
     
+    /** @type {string} */
     triggerId = null;
+    /** @type {string} */
     folderId = null;
     /** @type {string} */
     packageId = null;
