@@ -4,7 +4,7 @@ class ForwardRef {
     /** @type {() => T} */
     #refFn;
 
-    /** @type {number} */
+    /** @type {NodeJS.Timer} */
     #checkIntervalId;
 
     get reference() {
@@ -25,12 +25,15 @@ class ForwardRef {
      * @param {() => void)} fn The callback function to execute.
      */
     whenReady( fn ) {
-        this.#checkIntervalId = setInterval( () => {
-            if ( this.reference ) {
-                clearInterval( this.#checkIntervalId );
-                fn();
-            }
-        } );
+        setTimeout( () => this.checkRef( fn ) );
+    }
+
+    checkRef(fn) {
+        if ( this.reference ) {
+            fn();
+        } else {
+            setTimeout( () => this.checkRef( fn ) );
+        }
     }
 }
 
