@@ -562,6 +562,8 @@ class QuickShareMetaModel {
     authorDiscord;
     /** @type {boolean} */
     trustedAuthor;
+    /** @type {boolean} */
+    stageNewTriggers;
 
 }
 

@@ -75,6 +75,7 @@ export class ReceiveQuickShareDialogComponent implements OnInit {
     public treeFlattener = new MatTreeFlattener(this._transformer, node => node.level, node => node.expandable, node => node.children);
     public dataSource = new MatTreeFlatDataSource( this.treeControl, this.treeFlattener );
     public hasChild = ( _: number, node: QuickShareTreeNode ) => node.expandable;
+    public stageNewTriggers: boolean = false;
 
     private allFolders: PackageFolder[] = [];
     private allTriggers: PackageTrigger[] = [];
@@ -487,6 +488,9 @@ export class ReceiveQuickShareDialogComponent implements OnInit {
             let installTasks: Observable<any>[] = [ timer( 1 ) ];
             
             this.data.quickShares?.forEach( quickShare => {
+                
+                quickShare.stageNewTriggers = this.stageNewTriggers;
+
                 // Remove from the model triggers and folders that are left un-selected.
                 quickShare.model.triggers = quickShare.model.triggers.filter( f => importTriggerIds.indexOf( f.triggerId ) > -1 );
                 quickShare.model.folders = quickShare.model.folders.filter( f => importFolderIds.indexOf( f.folderId ) > -1 );

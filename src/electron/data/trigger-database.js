@@ -1779,6 +1779,34 @@ class TriggerDatabaseStore extends Store {
             } );
         } );
 
+        // TODO: Enable quick share staging.
+        // if ( quickShare.stageNewTriggers ) {
+        //     let i = this.#data.folders.findIndex( f => f.name === 'Quick Share Staging' );
+            
+        //     if ( i < 0 ) {
+        //         let stageFolder = new TriggerFolder();
+
+        //         stageFolder.folderId = nanoid();
+        //         stageFolder.name = 'Quick Share Staging';
+        //         stageFolder.expanded = false;
+        //         stageFolder.active = false;
+        //         stageFolder.comments = 'Staging for newly imported quick share triggers.';
+        //         stageFolder.children = [];
+
+        //         this.#data.folders.push( stageFolder );
+        //         this.updateFolders( this.#data.folders )
+        //     }
+
+        //     let stageFolder = this.#data.folders.find( f => f.name === 'Quick Share Staging' );
+            
+        //     let stageQuickshareFolder = new PackageFolder();
+        //     stageQuickshareFolder.folderId = stageFolder.folderId;
+        //     stageQuickshareFolder.name = stageFolder.name;
+        //     stageQuickshareFolder.children = quickShare.model.folders;
+
+        //     quickShare.model.folders = [ stageQuickshareFolder ];
+        // }
+
         // Next, create the required folders, creating a folder map that maps 
         // folder ids to existing folders. If a folder does not exist,  it is 
         // created  using  the  folder  id  in  the trigger   package  folder.

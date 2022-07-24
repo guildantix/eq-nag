@@ -808,7 +808,7 @@ export class QuickShareMetaModel {
     public author: string;
     public authorDiscord: string;
     public trustedAuthor: boolean = false;
-    // public files: QuickShareFileModel[] = [];
+    public stageNewTriggers: boolean = false;
 
 }
 
