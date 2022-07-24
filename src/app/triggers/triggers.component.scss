@@ -42,3 +42,11 @@ fieldset p mat-form-field {
     color: #ffffff7d;
     font-weight: 100;
 }
+
+mat-progress-bar {
+    margin-top: -20px;
+    left: 0;
+    right: 0;
+    position: absolute;
+    height: 10px;
+}

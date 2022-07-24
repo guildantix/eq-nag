@@ -35,7 +35,8 @@
     </mat-menu>
 </mat-toolbar>
 <div class="tab-content">
-    
+
+    <mat-progress-bar mode="indeterminate" *ngIf="processing"></mat-progress-bar>
 
     <div class="ft-row" style="position: fixed; top: 200px; left: 10px; right: 0; bottom: 10px;">
         <div class="ft-item" style="margin: 3px; width: 32%;">
