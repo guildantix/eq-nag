@@ -574,7 +574,7 @@ export class DialogService {
         data.notificationType = NotificationTypes.Warning;
 
         this.dialog.open( NotificationDialogComponent, {
-            width: '450px',
+            maxWidth: '60vw',
             data: data,
             panelClass: 'app-dialog',
         } ).afterClosed().subscribe();
