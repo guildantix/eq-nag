@@ -774,6 +774,20 @@ export class TriggerPackageModel {
     public beneficialOverlayId: string;
 }
 
+export class TriggerPackageListModel {
+    
+    public triggerPackageId: string;
+    public versionId: string;
+    public timestamp: Date;
+    public files: PackageFileModel[] = [];
+    public author: string;
+    public authorDiscord: string;
+    public trustedAuthor: boolean = false;
+    public name: string;
+    public description: string;
+
+}
+
 export class TriggerPackageMetaModel {
     
     public triggerPackageId: string;

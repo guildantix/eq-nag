@@ -1,54 +1,62 @@
-
-<h1>{{package.name}}</h1>
-
-<p>{{package.description}}</p>
-
-<div>
-
-    <table mat-table #newTriggersTable="matTable" style="width: 100%; min-width: 600px;" 
-        [dataSource]="package.model.triggers"
-        class="capture-phrases">
-
-        <ng-container matColumnDef="id">
-            <th mat-header-cell *matHeaderCellDef style="width: 100px; padding-left: 15px;"> Id </th>
-            <td mat-cell *matCellDef="let element; let i = index" style="width: 100px; padding-left: 15px;">{{element.triggerId}}</td>
-        </ng-container>
-
-        <ng-container matColumnDef="name">
-            <th mat-header-cell *matHeaderCellDef style="padding-left: 15px;"> Name </th>
-            <td mat-cell *matCellDef="let element; let i = index" style="padding-left: 15px; white-space: nowrap; overflow: hidden;">{{element.name}}</td>
-        </ng-container>
-
-        <ng-container matColumnDef="family">
-            <th mat-header-cell *matHeaderCellDef style="padding-left: 15px;"> Family </th>
-            <td mat-cell *matCellDef="let element; let i = index" style="padding-left: 15px; white-space: nowrap; text-overflow: ellipsis; overflow: hidden;" title="{{getTriggerFamily(element)}}">{{getTriggerFamily(element)}}</td>
-        </ng-container>
-
-        <ng-container matColumnDef="comments">
-            <th mat-header-cell *matHeaderCellDef style="padding-left: 15px; width: 30px;"></th>
-            <td mat-cell *matCellDef="let element; let i = index" style="padding-left: 15px; width: 30px;"><mat-icon class="material-icons-outlined" style="cursor: default;" title="{{element.comments}}" *ngIf="element.comments?.length > 0">description</mat-icon></td>
-        </ng-container>
-
-        <tr mat-header-row *matHeaderRowDef="['name', 'family', 'comments']"></tr>
-        <tr mat-row *matRowDef="let element; let i = index; columns: ['name', 'family', 'comments'];"></tr>
-
-    </table>
-
-</div>
-
-<div class="creator-actions">
-    <button mat-button color="accent" (click)="installPackage()" *ngIf="!isInstalled"><mat-icon class="material-icons-outlined">cloud_download</mat-icon> Install Package</button>
-    <button mat-button color="warn" (click)="uninstallPackage()" *ngIf="isInstalled"><mat-icon class="material-icons-outlined">clear</mat-icon> Uninstall Package</button>
-    <button mat-button color="accent" *ngIf="isAuthor" (click)="onUpdatePackageClick()"><mat-icon class="material-icons-outlined">edit</mat-icon> Update Package</button>
-    <span class="spacer"></span>
-</div>
-
-
-<div *ngIf="showHistory">
-    <h4>History</h4>
-    <div *ngFor="let version of package.versionHistory" class="update-record">
-        <div *ngIf="version.notes != null">
-            <span class="color-purple timestamp">{{version.timestamp | date:'short'}}</span>
-            <span class="update-notes">{{version.notes}}</span></div>
+<ng-template [ngIf]="package == null">
+    <div class="loading-gina">
+        <p>Loading ...</p>
+        <mat-progress-bar mode="indeterminate"></mat-progress-bar>
     </div>
-</div>
+</ng-template>
+
+<ng-template [ngIf]="package != null">
+    <h1>{{package.name}}</h1>
+    
+    <p>{{package.description}}</p>
+    
+    <div>
+    
+        <table mat-table #newTriggersTable="matTable" style="width: 100%; min-width: 600px;" 
+            [dataSource]="package.model.triggers"
+            class="capture-phrases">
+    
+            <ng-container matColumnDef="id">
+                <th mat-header-cell *matHeaderCellDef style="width: 100px; padding-left: 15px;"> Id </th>
+                <td mat-cell *matCellDef="let element; let i = index" style="width: 100px; padding-left: 15px;">{{element.triggerId}}</td>
+            </ng-container>
+    
+            <ng-container matColumnDef="name">
+                <th mat-header-cell *matHeaderCellDef style="padding-left: 15px;"> Name </th>
+                <td mat-cell *matCellDef="let element; let i = index" style="padding-left: 15px; white-space: nowrap; overflow: hidden;">{{element.name}}</td>
+            </ng-container>
+    
+            <ng-container matColumnDef="family">
+                <th mat-header-cell *matHeaderCellDef style="padding-left: 15px;"> Family </th>
+                <td mat-cell *matCellDef="let element; let i = index" style="padding-left: 15px; white-space: nowrap; text-overflow: ellipsis; overflow: hidden;" title="{{getTriggerFamily(element)}}">{{getTriggerFamily(element)}}</td>
+            </ng-container>
+    
+            <ng-container matColumnDef="comments">
+                <th mat-header-cell *matHeaderCellDef style="padding-left: 15px; width: 30px;"></th>
+                <td mat-cell *matCellDef="let element; let i = index" style="padding-left: 15px; width: 30px;"><mat-icon class="material-icons-outlined" style="cursor: default;" title="{{element.comments}}" *ngIf="element.comments?.length > 0">description</mat-icon></td>
+            </ng-container>
+    
+            <tr mat-header-row *matHeaderRowDef="['name', 'family', 'comments']"></tr>
+            <tr mat-row *matRowDef="let element; let i = index; columns: ['name', 'family', 'comments'];"></tr>
+    
+        </table>
+    
+    </div>
+    
+    <div class="creator-actions">
+        <button mat-button color="accent" (click)="installPackage()" *ngIf="!isInstalled"><mat-icon class="material-icons-outlined">cloud_download</mat-icon> Install Package</button>
+        <button mat-button color="warn" (click)="uninstallPackage()" *ngIf="isInstalled"><mat-icon class="material-icons-outlined">clear</mat-icon> Uninstall Package</button>
+        <button mat-button color="accent" *ngIf="isAuthor" (click)="onUpdatePackageClick()"><mat-icon class="material-icons-outlined">edit</mat-icon> Update Package</button>
+        <span class="spacer"></span>
+    </div>
+    
+    
+    <div *ngIf="showHistory">
+        <h4>History</h4>
+        <div *ngFor="let version of package.versionHistory" class="update-record">
+            <div *ngIf="version.notes != null">
+                <span class="color-purple timestamp">{{version.timestamp | date:'short'}}</span>
+                <span class="update-notes">{{version.notes}}</span></div>
+        </div>
+    </div>
+</ng-template>

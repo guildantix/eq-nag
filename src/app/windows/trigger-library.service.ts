@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { environment } from 'src/environments/environment';
-import { PackageFileModel, TriggerPackageMetaModel, TriggerPackageModel, TriggerPackageTransferModel, TriggerPackageVersionInfoModel } from '../core.model';
+import { PackageFileModel, TriggerPackageListModel, TriggerPackageMetaModel, TriggerPackageModel, TriggerPackageTransferModel, TriggerPackageVersionInfoModel } from '../core.model';
 import { catchError, map } from 'rxjs/operators';
 import { DialogService } from '../dialogs/dialog.service';
 import { IpcService } from '../ipc.service';
@@ -23,9 +23,28 @@ export class TriggerLibraryService {
     
     /**
      * Returns all trigger packages.
+     * 
+     * @deprecated The method should not be used
      */
     getLibrary(): Observable<TriggerPackageMetaModel[]> {
         return this.httpClient.get<TriggerPackageMetaModel[]>( `${environment.shareServiceUrl}/triggers/library` )
+            .pipe( catchError( error => this.handleError( error ) ) );
+    }
+    
+
+
+
+
+
+
+
+
+
+    /**
+     * Returns all trigger packages.
+     */
+    getPackagesList(): Observable<TriggerPackageListModel[]> {
+        return this.httpClient.get<TriggerPackageListModel[]>( `${environment.shareServiceUrl}/triggers/library/list` )
             .pipe( catchError( error => this.handleError( error ) ) );
     }
 

@@ -4,6 +4,13 @@ table {
     }
 }
 
+div.loading-gina {
+    display: flex;
+    flex-direction: column;
+    padding: 10px 20%;
+    align-items: center;
+}
+
 .creator-actions {
     .spacer {
         display: flex;

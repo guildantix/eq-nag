@@ -17,16 +17,22 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 export class TriggerPackageDetailsComponent implements OnInit {
     
     private _pkg: TriggerPackageMetaModel;
-    @Input()
-    public get package(): TriggerPackageMetaModel { return this._pkg; }
-    public set package( val: TriggerPackageMetaModel ) {
-        this._pkg = val;
-        if ( val ) {
-            let version = val.versionHistory?.find( f => f.versionId === val.versionId );
-            this.notes = version.notes;
-            this.libraryService.isAuthor( val.triggerPackageId, this.authorId ).subscribe( isAuth => this.isAuthor = isAuth && this.trustedAuthor );
-            this.ipcService.isPackageInstalled( val.triggerPackageId ).subscribe( installed => this.isInstalled = installed );
-        }
+    public package: TriggerPackageMetaModel = null;
+    @Input() public set packageId( value: string ) {
+        this.package = null;
+
+        this.libraryService.getPackage( [ value ] ).subscribe( packages => {
+            if ( packages?.length > 0 ) {
+                this.package = packages[ 0 ];
+
+                this.libraryService.isAuthor( this.package.triggerPackageId, this.authorId ).subscribe( isAuth => this.isAuthor = isAuth && this.trustedAuthor );
+                this.ipcService.isPackageInstalled( this.package.triggerPackageId ).subscribe( installed => this.isInstalled = installed );
+                
+                let version = this.package.versionHistory?.find( f => f.versionId === this.package.versionId );
+                this.notes = version.notes;
+            }
+        } );
+        
     }
     public notes: string;
     public isAuthor: boolean = false;

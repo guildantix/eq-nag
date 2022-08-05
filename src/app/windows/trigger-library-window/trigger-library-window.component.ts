@@ -9,7 +9,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { IpcService } from 'src/app/ipc.service';
 import { DialogService } from 'src/app/dialogs/dialog.service';
 import { TriggerLibraryService } from '../trigger-library.service';
-import { AuthorModel, PackageTrigger, TriggerFolder, TriggerModel, TriggerPackageMetaModel, TriggerPackageModel } from 'src/app/core.model';
+import { AuthorModel, PackageTrigger, TriggerFolder, TriggerModel, TriggerPackageListModel, TriggerPackageMetaModel, TriggerPackageModel } from 'src/app/core.model';
 import { SettingsService } from 'src/app/settings/settings-http.service';
 import * as _ from 'lodash-es';
 import { MatTable } from '@angular/material/table';
@@ -29,7 +29,7 @@ import { MatTable } from '@angular/material/table';
 export class TriggerLibraryWindowComponent implements OnInit {
 
     public loadingLibrary: boolean = true;
-    public packages: TriggerPackageMetaModel[] = [];
+    public packages: TriggerPackageListModel[] = [];
     public currentPackage: TriggerPackageMetaModel;
     public author: AuthorModel;
     public trustedAuthor: boolean = false;
@@ -37,13 +37,14 @@ export class TriggerLibraryWindowComponent implements OnInit {
     public showNewTrigger: boolean = false;
     public showEditTrigger: boolean = false;
     public showDetailsModel: boolean = false;
-    public detailsModel: TriggerPackageMetaModel = null;
+    // public detailsModel: TriggerPackageMetaModel = null;
     public editPackageId: string = null;
+    public viewPackageId: string = null;
 
     constructor( private ipcService: IpcService, private dialogService: DialogService, private snackBar: MatSnackBar,  private libraryService: TriggerLibraryService, private settingsService: SettingsService ) { }
 
     ngOnInit() {
-        this.libraryService.getLibrary().subscribe( packages => {
+        this.libraryService.getPackagesList().subscribe( packages => {
             this.packages = packages;
             this.loadingLibrary = false;
         } );
@@ -146,8 +147,8 @@ export class TriggerLibraryWindowComponent implements OnInit {
      * 
      * @param triggerPackage The desired trigger package.
      */
-    showTriggerDetails( triggerPackage: TriggerPackageMetaModel ): void {
-        this.detailsModel = triggerPackage;
+    showTriggerDetails( packageId: string ): void {
+        this.viewPackageId = packageId;
         this.showDetailsModel = true;
     }
 
