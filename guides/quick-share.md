@@ -33,7 +33,3 @@ When staging quick share triggers, all *new* triggers will be installed in a roo
 
 
 **NOTE** *If the author of the quick share sends the same trigger (for example: they fixed an audio trigger), that trigger will be updated and will not be duplicated.  Updated triggers will be denoted with the orange cloud icon demonstrated in the screenshot.*
-
-## Deleting Trigger Folders
-
-This function has changed.  Originally, triggers that are contained in the hierarchy of the deleted folder would be orphaned but still remain.  Now, all triggers in the hierarchy will be deleted.
