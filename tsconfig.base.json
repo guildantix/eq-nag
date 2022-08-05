@@ -12,10 +12,17 @@
     "emitDecoratorMetadata": true,
     "importHelpers": true,
     "target": "es2015",
+    "typeRoots": [
+        "node_modules/@types"
+    ],
     "module": "es2020",
     "lib": [
       "es2018",
       "dom"
     ]
+  },
+  "angularCompilerOptions": {
+    "fullTemplateTypeCheck": true,
+    "preserveWhitespaces": false
   }
 }
