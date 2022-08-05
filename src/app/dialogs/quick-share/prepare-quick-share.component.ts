@@ -422,7 +422,6 @@ export class PrepareQuickShareDialogComponent implements OnInit {
         } );
 
         let dataObservables = [
-            this.dataSource._flattenedData.asObservable(),
             this.ipcService.getTriggers(),
             this.ipcService.getTriggerFolders(),
             this.ipcService.getAudioFileData(),
@@ -434,10 +433,11 @@ export class PrepareQuickShareDialogComponent implements OnInit {
         // combineLatest will wait for the next value in each observable, but 
         // doesn't require the observables to be completed.
         combineLatest( dataObservables ).subscribe(
-            ( [ flattenedTreenodes, triggers, folders, audioFiles, detrimentalOverlayId, beneficialOverlayId, author ]: [ QuickShareTreeNode[], TriggerModel[], TriggerFolder[], PackageFileModel[], string, string, AuthorModel ] ) => {
+            ( [ triggers, folders, audioFiles, detrimentalOverlayId, beneficialOverlayId, author ]: [ TriggerModel[], TriggerFolder[], PackageFileModel[], string, string, AuthorModel ] ) => {
 
-                // Pulls the selected triggers and folders into quickshare data 
+                // Pulls the selected triggers and folders into quickshare data
                 // formats.
+                let flattenedTreenodes: QuickShareTreeNode[] = this.treeControl.dataNodes;
                 let selectedTriggerNodes = flattenedTreenodes.filter( f => !f.isFolder && f.selected );
                 let triggerIds = _.map( selectedTriggerNodes, f => f.id );
                 let quickShareTriggers = triggers
