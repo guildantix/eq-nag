@@ -113,8 +113,9 @@ export class ReceiveQuickShareDialogComponent implements OnInit {
                 this.allTriggers = _.concat( this.allTriggers, quickShare.model.triggers );
             } );
             
-            this.processExistingTriggers( result.triggers, result.folders );
+            this.processExistingTriggers( result.triggers, result.folders ); // This one here
             this.mapFolderIds( result.folders, this.allFolders );
+            this.removeEmptyFolders( this.allFolders );
             this.processTriggerActions( this.allTriggers, result.triggers, result.folders );
 
             this.allFolders.forEach( folder => this.processFolder( folder, this.allTriggers, data, result.folders, result.triggers ) );
@@ -124,6 +125,45 @@ export class ReceiveQuickShareDialogComponent implements OnInit {
             this.updateFolderStates();
         } );
         
+    }
+
+
+
+
+
+
+
+
+
+    
+    /**
+     * Removes all empty folders from the given folder hierarchy.
+     * 
+     * @param folders The list of folders to parse.
+     */
+    private removeEmptyFolders( folders: PackageFolder[] ) {
+        
+        let ri: number[] = [];
+
+        for ( let i = 0; i < folders.length; i++ ) {
+
+            if ( folders[ i ].children?.length > 0 ) {
+                this.removeEmptyFolders( folders[ i ].children );
+            }
+            
+            if ( folders[ i ].children == null || folders[ i ].children.length === 0 ) {
+                let c = this.allTriggers.filter( f => f.folderId === folders[ i ].folderId ).length;
+                if ( c === 0 ) {
+                    console.log( 'remove', folders[ i ].name );
+                    ri.push( i );
+                }
+            }
+        }
+
+        for ( let i = ri.length - 1; i >= 0; i-- ) {
+            folders.splice( i, 1 );
+        }
+
     }
 
 
@@ -234,12 +274,19 @@ export class ReceiveQuickShareDialogComponent implements OnInit {
      */
     private processExistingTriggers( realTriggers: TriggerModel[], realFolders: TriggerFolder[] ) {
         this.allTriggers.forEach( qst => {
+            // Find the index of the trigger that is already in my library.
             let i = realTriggers.findIndex( f => f.triggerId === qst.triggerId );
+
+            // If this trigger exists and the folder id is not null.
             if ( i > -1 && realTriggers[ i ].folderId != null ) {
+
+                // Get the direct parent of the folder that contains the real trigger, in this case it's the same folder thats in the quick share.
                 let ancestryFolders = TriggerFolder.getFolderAncestry( realTriggers[ i ].folderId, realFolders );
+
                 this.insertRealFolders( ancestryFolders );
                 qst.folderId = realTriggers[ i ].folderId;
             }
+
         } );
     }
 
@@ -262,7 +309,7 @@ export class ReceiveQuickShareDialogComponent implements OnInit {
         let generation = this.allFolders;
 
         while ( folder != null ) {
-            let pkgFolder: PackageFolder = generation.find( f => f.folderId === folder.folderId );
+            let pkgFolder: PackageFolder = generation.find( f => f.name === folder.name );
 
             if ( pkgFolder == null ) {
                 pkgFolder = new PackageFolder();
@@ -274,7 +321,6 @@ export class ReceiveQuickShareDialogComponent implements OnInit {
                 generation.push( pkgFolder );
             }
 
-            console.log( 'generation', generation );
             generation = pkgFolder.children;
             folder = folder.children?.length > 0 ? folder.children[ 0 ] : null;
         }
