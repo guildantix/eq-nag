@@ -649,10 +649,10 @@ export class TriggersComponent implements OnInit {
      * @param folderId The id of the desired folder.
      * @param name The current name of the folder.
      */
-    public renameFolder( folderId: string, name: string ): void {
-        this.dialogService.showInputDialog( 'Rename folder', [ `Please enter a new name for the ${name} folder.` ], 'Folder name' ).subscribe( name => {
-            if ( name ) {
-                this._renameFolder( this.triggerFolders, folderId, name, );
+    public renameFolder( folderId: string, folderName: string ): void {
+        this.dialogService.showInputDialog( 'Rename folder', [ `Please enter a new name for the ${folderName} folder.` ], 'Folder name', 'Enter a new name for the folder', folderName ).subscribe( newName => {
+            if ( newName ) {
+                this._renameFolder( this.triggerFolders, folderId, newName );
                 this.updateTriggerFolders();
             }
         } );
