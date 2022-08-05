@@ -1,3 +1,5 @@
+@use 'sass:math' as math;
+
 .titlebar {
     user-select: none;
     -webkit-user-select: none;
@@ -99,7 +101,7 @@ fieldset {
 
 @for $i from 1 through 12 {
     .f-sm-#{$i} {
-        width: percentage($i * (1/12));
+        width: percentage($i * math.div(1,12));
         display: inline-block;
     }
 }
