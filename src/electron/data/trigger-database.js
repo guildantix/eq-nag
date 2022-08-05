@@ -2131,6 +2131,8 @@ class TriggerDatabaseStore extends Store {
                 folder = new TriggerFolder();
                 folder.folderId = pkgFolder.folderId;
                 folder.name = pkgFolder.name;
+                folder.active = true;
+                folder.expanded = false;
                 folder.children = [];
     
                 folders.push( folder );
@@ -2181,12 +2183,16 @@ class TriggerDatabaseStore extends Store {
 
         } else {
 
-            folderMap[ packageFolder.folderId ] = packageFolder.folderId;
+            let folderId = nanoid();
+
+            folderMap[ packageFolder.folderId ] = folderId;
             
             folder = new TriggerFolder();
 
-            folder.folderId = packageFolder.folderId;
+            folder.folderId = folderId;
             folder.name = packageFolder.name;
+            folder.active = true;
+            folder.expanded = false;
             folder.children = [];
 
             parentFolder.children.push( folder );

@@ -135,7 +135,7 @@ export class ReceiveQuickShareDialogComponent implements OnInit {
 
 
 
-    
+
     /**
      * Removes all empty folders from the given folder hierarchy.
      * 
@@ -475,7 +475,7 @@ export class ReceiveQuickShareDialogComponent implements OnInit {
         let data: NotificationDialogModel = new NotificationDialogModel();
         
         data.title = 'Quick Share Folder';
-        data.message = ['Using this option will import new triggers into the Quick Share folder.', new ColoredString('Any existing/updated triggers will not be moved.', '#69f0ae', false), 'If a Quick Share folder does not exist, a new one will be created at the root.'];
+        data.message = ['Using this option will import new triggers into the Quick Share Staged folder.', new ColoredString('Any existing/updated triggers will not be moved.', '#69f0ae', false), 'If a Quick Share Staged folder does not exist, a new one will be created at the root.'];
         data.notificationType = NotificationTypes.Information;
 
         this.dialog.open( NotificationDialogComponent, {
@@ -497,6 +497,7 @@ export class ReceiveQuickShareDialogComponent implements OnInit {
      * Imports the selected quick share triggers.
      */
     receiveSelectedTriggers(): void {
+
         let importTriggerIds = this.treeControl.dataNodes.filter( f => f.selected && !f.isFolder ).map( f => f.id );
         let importFolderIds = this.treeControl.dataNodes.filter( f => f.selected && f.isFolder ).map( f => f.id );
         let fileIds = [];
@@ -528,17 +529,24 @@ export class ReceiveQuickShareDialogComponent implements OnInit {
             }
         } );
         
+        /** The folder id for the shared staged folder. */
+        let stagedId = nagId();
+
         forkJoin( importTasks ).subscribe( results => {
 
             let installTasks: Observable<any>[] = [ timer( 1 ) ];
             
             this.data.quickShares?.forEach( quickShare => {
-                
+
                 quickShare.stageNewTriggers = this.stageNewTriggers;
 
                 // Remove from the model triggers and folders that are left un-selected.
                 quickShare.model.triggers = quickShare.model.triggers.filter( f => importTriggerIds.indexOf( f.triggerId ) > -1 );
                 quickShare.model.folders = quickShare.model.folders.filter( f => importFolderIds.indexOf( f.folderId ) > -1 );
+                
+                if ( this.stageNewTriggers ) {
+                    this.stageTriggers( quickShare, stagedId );
+                }
 
                 // Install the model.
                 installTasks.push( this.ipcService.installQuickShare( quickShare ) );
@@ -554,5 +562,43 @@ export class ReceiveQuickShareDialogComponent implements OnInit {
         } );
 
     }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Creates a staged folder and moves all quickshare root folders into 
+     * staged.
+     * 
+     * @param quickShare The quick share to stage.
+     * @param stagedId The staged folder id.
+     */
+    public stageTriggers( quickShare: QuickShareMetaModel, stagedId: string ) {
+
+            
+        let pf = new PackageFolder();
+
+        pf.folderId = stagedId;
+        pf.name = 'Quick Share Staged';
+        pf.children = quickShare.model.folders;
+
+        quickShare.model.folders = [ pf ];
+
+    }
+
+
+
+
+
+
+
+
+
 
 }
