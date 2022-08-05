@@ -1,6 +1,6 @@
 import { Component, Inject, OnInit, ViewChild } from '@angular/core';
 import { MatDialogRef, MatDialog, MAT_DIALOG_DATA } from '@angular/material/dialog';
-import { MatHorizontalStepper } from '@angular/material/stepper';
+import { MatStepper } from '@angular/material/stepper';
 import { Size } from 'electron';
 import { CharactersListComponent } from 'src/app/characters-list/characters-list.component';
 import { OverlayWindowModel, Point, Rectangle } from 'src/app/core.model';
@@ -31,7 +31,7 @@ export class SetupWizardComponent implements OnInit {
     private _benficialId: string;
     private _alertId: string;
 
-    @ViewChild( 'stepper', { static: false, read: MatHorizontalStepper } ) public stepper: MatHorizontalStepper;
+    @ViewChild( 'stepper', { static: false, read: MatStepper } ) public stepper: MatStepper;
     
     constructor(
         public dialogRef: MatDialogRef<SetupWizardComponent>,

@@ -1,5 +1,5 @@
 import { Component, Input, OnInit, ViewChild } from '@angular/core';
-import { MatHorizontalStepper } from '@angular/material/stepper';
+import { MatStepper } from '@angular/material/stepper';
 
 import * as _ from 'lodash-es';
 
@@ -22,7 +22,7 @@ export class GinaImportStepperComponent implements OnInit {
     public showMissingOverlays: boolean = false;
     public showDuplicatesCheck: boolean = false;
     
-    @ViewChild( 'stepper', { static: false, read: MatHorizontalStepper } ) public stepper: MatHorizontalStepper;
+    @ViewChild( 'stepper', { static: false, read: MatStepper } ) public stepper: MatStepper;
 
     constructor( private dialogService: DialogService, private ipcService: IpcService ) { }
 

@@ -1,7 +1,7 @@
 <h2 mat-dialog-title>Setup</h2>
 
 <mat-dialog-content class="setup-wizard">
-    <mat-horizontal-stepper [linear]="true" #stepper>
+    <mat-stepper [linear]="true" #stepper>
 
         <mat-step label="Welcome" ariaLabel="Welcome">
             <p>NAG is an EverQuest Notification Agent.  It works by reading your EverQuest log file for specific phrases and reacts to those log entries in many different ways.</p>
@@ -71,7 +71,7 @@
             
         </mat-step>
 
-    </mat-horizontal-stepper>
+    </mat-stepper>
 </mat-dialog-content>
 
 <mat-dialog-actions>

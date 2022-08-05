@@ -1,5 +1,5 @@
 
-<mat-horizontal-stepper [linear]="true" #stepper>
+<mat-stepper [linear]="true" #stepper>
     <mat-step [stepControl]="stepOneForm" label="Overlay Windows" *ngIf="showMissingOverlays">
         <form #stepOneForm="ngForm">
 
@@ -63,4 +63,4 @@
             </div>
         </form>
     </mat-step>
-</mat-horizontal-stepper>
+</mat-stepper>

@@ -8,7 +8,7 @@ import { SelectIconDialogComponent } from '../select-icon-dialog/select-icon-dia
 import * as _ from 'lodash-es';
 import { NewTriggerDialogModel } from '../dialog.model';
 import { forkJoin, Observable } from 'rxjs';
-import { MatHorizontalStepper } from '@angular/material/stepper';
+import { MatStepper } from '@angular/material/stepper';
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const nanoid = customAlphabet( alphabet, 16 );
 
@@ -33,7 +33,7 @@ export class NewTriggerDialogComponent implements OnInit {
         return this.overlays.filter( f => f.overlayType === 'Timer' );
     }
     
-    @ViewChild( 'stepper', { static: false, read: MatHorizontalStepper } ) public stepper: MatHorizontalStepper;
+    @ViewChild( 'stepper', { static: false, read: MatStepper } ) public stepper: MatStepper;
 
     constructor(
         public dialogRef: MatDialogRef<NewTriggerDialogComponent>,

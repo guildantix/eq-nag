@@ -1,6 +1,6 @@
 import { Component, Inject, OnInit, ViewChild } from '@angular/core';
 import { MatDialog, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
-import { MatHorizontalStepper } from '@angular/material/stepper';
+import { MatStepper } from '@angular/material/stepper';
 import { ActionTypes, CapturePhrase, ImportTypes, OperatorTypes, OverlayWindowModel, Phrase, ScrapedClickEffect, ScrapedSpell, TimerRestartBehaviors, TriggerAction, TriggerCondition, TriggerConditionTypes, TriggerModel } from 'src/app/core.model';
 import { IpcService } from 'src/app/ipc.service';
 import { ScraperService } from 'src/app/scraper.service';
@@ -39,7 +39,7 @@ export class NewTriggerBuffDialogComponent implements OnInit {
         return this.overlays.filter( f => f.overlayType === 'Timer' );
     }
     
-    @ViewChild( 'stepper', { static: false, read: MatHorizontalStepper } ) public stepper: MatHorizontalStepper;
+    @ViewChild( 'stepper', { static: false, read: MatStepper } ) public stepper: MatStepper;
 
     public spell: ScrapedSpell;
     

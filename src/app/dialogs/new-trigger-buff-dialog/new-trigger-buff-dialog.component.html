@@ -4,7 +4,7 @@
     
     <p *ngIf="data?.trigger?.triggerId != null">WARNING: This may overwright any custom setting you have applied to this trigger.  Are you sure you want to continue?</p>
 
-    <mat-horizontal-stepper [linear]="true" #stepper>
+    <mat-stepper [linear]="true" #stepper>
         <mat-step [stepControl]="stepOneForm" label="Scrape">
             <form #stepOneForm="ngForm">
                 <p>
@@ -108,7 +108,7 @@
             <form #stepFourForm="ngForm">
             </form>
         </mat-step> -->
-    </mat-horizontal-stepper>
+    </mat-stepper>
 
 </mat-dialog-content>
 

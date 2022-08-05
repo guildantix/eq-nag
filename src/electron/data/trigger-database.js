@@ -24,7 +24,6 @@ const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz
 const idLen = 16;
 const nanoid = customAlphabet( alphabet, 16 );
 const ArrayUtilities = require( '../utilities/arrays' );
-const { FormControlDirective } = require( "@angular/forms" );
 const StringUtilities = require( "../utilities/string" );
 const Fuse = require( 'fuse.js' );
 const eqZones = require( './models/everquest-zones' );
