@@ -33,7 +33,7 @@ import { EditorsModule } from './editors/editors.module';
         NgxElectronModule,
         DialogModule,
         BrowserAnimationsModule,
-        RouterModule.forRoot( appRoutes, { enableTracing: false, useHash: true } ),
+        RouterModule.forRoot( appRoutes, { enableTracing: false, useHash: true, relativeLinkResolution: 'legacy' } ),
         HttpClientModule,
         CoreModule,
         ContextMenuModule,
