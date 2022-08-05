@@ -467,6 +467,27 @@ export class ReceiveQuickShareDialogComponent implements OnInit {
 
 
 
+    
+    /**
+     * Toggles the select state on the given tree node.
+     * 
+     * @param node The tree node.
+     */
+    toggleSelect( node: QuickShareTreeNode ): void {
+        let trigger = <TriggerModel>node.item;
+        if ( trigger.triggerId ) {
+            node.selected = !node.selected;
+        }
+    }
+
+
+
+
+
+
+
+
+
 
     /**
      * Shows the user an information dialog to explain the process of staging.

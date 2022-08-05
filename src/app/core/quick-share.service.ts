@@ -7,7 +7,7 @@ import { Observable, Observer, throwError } from 'rxjs';
 import { environment } from 'src/environments/environment';
 import { catchError, map } from 'rxjs/operators';
 import { IpcRenderer } from 'electron';
-import * as _ from 'lodash';
+import * as _ from 'lodash-es';
 import { MatDialog } from '@angular/material/dialog';
 import { NotificationDialogComponent } from '../dialogs/notification-dialog/notification-dialog.component';
 import { NotificationTypes } from '../dialogs/notification-dialog/notification-dialog.model';

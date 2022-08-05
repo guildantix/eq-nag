@@ -136,7 +136,7 @@
                                                         <span *ngIf="selectedTrigger.TimerType == ginaTimerTypes.RepeatingTimer">Repeating Timer</span>
                                                     </div>
                                                     <div class="field-line"><label>Timer Name</label><span>{{selectedTrigger.TimerName}}</span></div>
-                                                    <div class="field-line"><label>Timer Duration</label><span>{{getDurationLabel(+selectedTrigger.TimerDuration)}}</span></div>
+                                                    <div class="field-line"><label>Timer Duration</label><span>{{getDurationLabel(selectedTrigger.TimerDuration)}}</span></div>
                                                     <div class="field-line" *ngIf="selectedTrigger.RestartBasedOnTimerName == 'True'"><label>Restart</label><span>Only if timer name matches.</span></div>
                                                     <div class="field-line" *ngIf="selectedTrigger.RestartBasedOnTimerName != 'True' && selectedTrigger.TimerStartBehavior == 'RestartTimer'"><label>Restart</label><span>Restart regardless of timer name.</span></div>
                                                     <div class="field-line" *ngFor="let endEarly of selectedTrigger.TimerEarlyEnders?.EarlyEnder"><label>End early condition<ng-container *ngIf="endEarly.EnableRegex">&nbsp;(regex)</ng-container></label><span>{{endEarly.EarlyEndText}}</span></div>
@@ -173,7 +173,7 @@
 
                                                 <div class="field-list">
                                                     <div class="field-line" *ngIf="selectedTrigger.UseCounterResetTimer == 'True'"><label>Use counter</label><span>Yes</span></div>
-                                                    <div class="field-line" *ngIf="selectedTrigger.UseCounterResetTimer == 'True'"><label>Reset counter after</label><span>{{getDurationLabel(+selectedTrigger.CounterResetDuration)}}</span></div>
+                                                    <div class="field-line" *ngIf="selectedTrigger.UseCounterResetTimer == 'True'"><label>Reset counter after</label><span>{{getDurationLabel(selectedTrigger.CounterResetDuration)}}</span></div>
 
                                                 </div>
 

@@ -336,7 +336,9 @@ export class GinaImportWindowComponent implements OnInit {
         player.play();
     }
 
-    public getDurationLabel( seconds: number ): string {
+    public getDurationLabel( seconds: number | string ): string {
+        
+        seconds = +seconds;
 
         if ( seconds > 0 ) {
             let hours = Math.floor( seconds / 3600 );
