@@ -16,17 +16,17 @@
   },
   "private": true,
   "dependencies": {
-    "@angular-devkit/schematics": "^12.2.18",
-    "@angular/animations": "~12.2.16",
+    "@angular-devkit/schematics": "^13.3.9",
+    "@angular/animations": "~13.3.11",
     "@angular/cdk": "^12.2.13",
-    "@angular/common": "~12.2.16",
-    "@angular/compiler": "~12.2.16",
-    "@angular/core": "~12.2.16",
-    "@angular/forms": "~12.2.16",
+    "@angular/common": "~13.3.11",
+    "@angular/compiler": "~13.3.11",
+    "@angular/core": "~13.3.11",
+    "@angular/forms": "~13.3.11",
     "@angular/material": "^12.2.13",
-    "@angular/platform-browser": "~12.2.16",
-    "@angular/platform-browser-dynamic": "~12.2.16",
-    "@angular/router": "~12.2.16",
+    "@angular/platform-browser": "~13.3.11",
+    "@angular/platform-browser-dynamic": "~13.3.11",
+    "@angular/router": "~13.3.11",
     "@types/lodash-es": "^4.17.4",
     "archiver": "^5.3.0",
     "chokidar": "^3.4.0",
@@ -48,9 +48,9 @@
     "zone.js": "~0.11.4"
   },
   "devDependencies": {
-    "@angular-devkit/build-angular": "~12.2.18",
-    "@angular/cli": "~12.2.18",
-    "@angular/compiler-cli": "~12.2.16",
+    "@angular-devkit/build-angular": "~13.3.9",
+    "@angular/cli": "~13.3.9",
+    "@angular/compiler-cli": "~13.3.11",
     "@types/jasmine": "~3.6.0",
     "@types/jasminewd2": "~2.0.3",
     "@types/node": "^12.19.4",
@@ -68,7 +68,7 @@
     "protractor": "~7.0.0",
     "ts-node": "~8.3.0",
     "tslint": "~6.1.0",
-    "typescript": "^4.3.5"
+    "typescript": "^4.6.4"
   },
   "repository": {
     "type": "git",
