@@ -14,6 +14,8 @@
 
 [Add a DoT timer](/eq-nag/guides/add-dot-timer)
 
+[Quick Share](/eq-nag/guides/quick-share)
+
 ## Documentation
 
 [Advanced Trigger Mechanics](/eq-nag/guides/advanced-triggers)
