@@ -113,6 +113,6 @@
           }
         }
       }
-    }},
-  "defaultProject": "electron-angular-eq-parse"
+    }
+  }
 }
