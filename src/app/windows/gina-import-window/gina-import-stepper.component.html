@@ -1,6 +1,6 @@
 
 <mat-stepper [linear]="true" #stepper>
-    <mat-step [stepControl]="stepOneForm" label="Overlay Windows" *ngIf="showMissingOverlays">
+    <mat-step [stepControl]="stepOneForm.control" label="Overlay Windows" *ngIf="showMissingOverlays">
         <form #stepOneForm="ngForm">
 
             <div style="margin-bottom: 20px;">Overlay windows are used to display information in-game.  When a trigger calls for showing text or timers, that information is rendered in an overlay window.</div>
@@ -13,7 +13,7 @@
                         <mat-option *ngFor="let option of alertOverlays" [value]="option.overlayId">{{option.name}}</mat-option>
                     </mat-select>
                 </mat-form-field>
-
+                
                 <ng-template [ngIf]="action.actionType == actionTypes.Countdown || action.actionType == actionTypes.DotTimer || action.actionType == actionTypes.Timer">
 
                     <mat-form-field *ngIf="action.overlayId == null">

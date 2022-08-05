@@ -5,7 +5,7 @@
     <p *ngIf="data?.trigger?.triggerId != null">WARNING: This may overwright any custom setting you have applied to this trigger.  Are you sure you want to continue?</p>
 
     <mat-stepper [linear]="true" #stepper>
-        <mat-step [stepControl]="stepOneForm" label="Scrape">
+        <mat-step [stepControl]="stepOneForm.control" label="Scrape">
             <form #stepOneForm="ngForm">
                 <p>
                     <mat-form-field style="width: 100%;">
@@ -20,7 +20,7 @@
                 </div>
             </form>
         </mat-step>
-        <mat-step [stepControl]="stepTwoForm" label="Tracking">
+        <mat-step [stepControl]="stepTwoForm.control" label="Tracking">
             <form #stepTwoForm="ngForm">
 
                 <p><mat-slide-toggle [(ngModel)]="useSelfTimer" name="togUseSelfTimer">Track the buff duration with a countdown for <strong>Self</strong>.</mat-slide-toggle></p>
@@ -42,7 +42,7 @@
 
             </form>
         </mat-step>
-        <mat-step [stepControl]="stepThreeForm" label="Timer Settings">
+        <mat-step [stepControl]="stepThreeForm.control" label="Timer Settings">
             <form #stepThreeForm="ngForm">
 
                 <p>
@@ -104,7 +104,7 @@
         <!-- If this is a self only buff, do we need more options? -->
         <!-- If this is a single target buff, do we need more options? -->
 
-        <!-- <mat-step [stepControl]="stepFourForm" label="Notification Settings" *ngIf="alertWhenBuffFades || alertWhenBuffOverwritten">
+        <!-- <mat-step [stepControl]="stepFourForm.control" label="Notification Settings" *ngIf="alertWhenBuffFades || alertWhenBuffOverwritten">
             <form #stepFourForm="ngForm">
             </form>
         </mat-step> -->

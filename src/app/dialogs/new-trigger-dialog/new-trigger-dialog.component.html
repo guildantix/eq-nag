@@ -5,7 +5,7 @@
     <p *ngIf="data?.trigger?.triggerId != null">WARNING: This may overwright any custom setting you have applied to this trigger.  Are you sure you want to continue?</p>
 
     <mat-stepper [linear]="true" #stepper>
-        <mat-step [stepControl]="stepOneForm" label="Scrape">
+        <mat-step [stepControl]="stepOneForm.control" label="Scrape">
             <form #stepOneForm="ngForm">
                 <p>
                     
@@ -21,7 +21,7 @@
                 </div>
             </form>
         </mat-step>
-        <mat-step [stepControl]="stepTwoForm" label="Tracking">
+        <mat-step [stepControl]="stepTwoForm.control" label="Tracking">
             <form #stepTwoForm="ngForm">
 
                 <p>

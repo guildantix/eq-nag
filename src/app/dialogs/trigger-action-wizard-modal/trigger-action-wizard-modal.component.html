@@ -3,7 +3,7 @@
 <mat-dialog-content>
 
     <mat-horizontal-stepper linear #stepper style="width:  700px;">
-        <mat-step [stepControl]="formActionType" errorMessage="Action type is required.">
+        <mat-step [stepControl]="formActionType.control" errorMessage="Action type is required.">
             <form #formActionType="ngForm" [ngClass]="{'form-submitted': formActionType.submitted}">
                 <ng-template matStepLabel>Action Type</ng-template>
 
@@ -21,7 +21,7 @@
                 </div>
             </form>
         </mat-step>
-        <mat-step [stepControl]="formOverlay">
+        <mat-step [stepControl]="formOverlay.control">
             <form #formOverlay="ngForm" [ngClass]="{'form-submitted': formOverlay.submitted}">
                 <ng-template matStepLabel>Overlay</ng-template>
                     <mat-radio-group aria-label="Select an overlay window" [(ngModel)]="model.overlayId" name="rdgOverlay" required>
@@ -33,7 +33,7 @@
                 </div>
             </form>
         </mat-step>
-        <mat-step [stepControl]="formDisplayText" *ngIf="model.actionType === ActionTypes.DisplayText">
+        <mat-step [stepControl]="formDisplayText.control" *ngIf="model.actionType === ActionTypes.DisplayText">
             <form #formDisplayText="ngForm">
                 <ng-template matStepLabel>Display Text</ng-template>
                 <mat-form-field style="width: 100%;">
@@ -47,7 +47,7 @@
                 </div>
             </form>
         </mat-step>
-        <mat-step [stepControl]="formDuration" *ngIf="model.actionType === ActionTypes.DisplayText">
+        <mat-step [stepControl]="formDuration.control" *ngIf="model.actionType === ActionTypes.DisplayText">
             <form #formDuration="ngForm">
                 <ng-template matStepLabel>Duration</ng-template>
                 <p>How long should this text stay on the screen?</p>
