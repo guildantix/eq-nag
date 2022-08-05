@@ -1,5 +1,5 @@
 import { Injectable, NgZone } from '@angular/core';
-import { Display, IpcRenderer } from 'electron';
+import * as Electron from 'electron';
 import { UpdateInfo } from 'electron-updater';
 import { Observable, Observer } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
@@ -9,7 +9,12 @@ import { GinaConfiguration, GinaTriggerGroups } from './gina.model';
 @Injectable( { providedIn: 'root' })
 export class IpcService {
     
-    private ipc: IpcRenderer;
+    private _remote: Electron.Remote;
+    private _desktopCapturer: Electron.DesktopCapturer;
+    private _webFrame: Electron.WebFrame;
+    private _clipboard: Electron.Clipboard;
+    private _crashReporter: Electron.CrashReporter;
+    private ipc: Electron.IpcRenderer;
     private _tickObservers: Observer<DataTickModel>[] = [];
     private _transmitObservers: Observer<DkpEntryModel[]>[] = [];
     private _logFileChangeObservers: Observer<string>[] = [];
@@ -24,10 +29,36 @@ export class IpcService {
     private _onReceivedQuickShare: Observer<string>[] = [];
     private _onOrphanedTriggerWarning: Observer<boolean>[] = [];
 
+    public get remote(): Electron.Remote {
+        return this._remote;
+    }
+
+    public get desktopCapturer(): Electron.DesktopCapturer {
+        return this._desktopCapturer;
+    }
+
+    public get webFrame(): Electron.WebFrame {
+        return this._webFrame;
+    }
+
+    public get clipboard(): Electron.Clipboard {
+        return this._clipboard;
+    }
+
+    public get crashReporter(): Electron.CrashReporter {
+        return this._crashReporter;
+    }
+
     constructor( private ngZone: NgZone ) {
         if ( ( <any>window ).require ) {
             try {
+
                 this.ipc = ( <any>window ).require( 'electron' ).ipcRenderer;
+                this._remote = ( <any>window ).require( 'electron' ).remote;
+                this._desktopCapturer = ( <any>window ).require( 'electron' ).desktopCapturer;
+                this._webFrame = ( <any>window ).require( 'electron' ).webFrame;
+                this._clipboard = ( <any>window ).require( 'electron' ).clipboard;
+                this._crashReporter = ( <any>window ).require( 'electron' ).crashReporter;
 
                 this.ipc.on( 'orphaned_trigger_warning', ( event: any, data: boolean ) => {
                     ngZone.run( () => {
@@ -250,8 +281,8 @@ export class IpcService {
         return obs;
     }
 
-    public getPrimaryDisplay(): Observable<Display> {
-        let obs: Observable<Display> = new Observable<Display>( ( observer: Observer<Display> ) => {
+    public getPrimaryDisplay(): Observable<Electron.Display> {
+        let obs: Observable<Electron.Display> = new Observable<Electron.Display>( ( observer: Observer<Electron.Display> ) => {
             
             this.ipc.once( 'app:get:primary-display', ( e, display ) => {
                 this.ngZone.run( () => {

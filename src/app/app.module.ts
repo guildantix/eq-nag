@@ -11,7 +11,6 @@ import { appRoutes } from './ng.routes';
 import { HttpClientModule } from '@angular/common/http';
 import { ScraperService } from './scraper.service';
 import { CharactersListComponent } from './characters-list/characters-list.component';
-import { NgxElectronModule } from 'ngx-electron';
 import { ContextMenuModule } from './context-menu/context-menu.module';
 import { TriggersComponent } from './triggers/triggers.component';
 import { ClassNamePipe } from './pipes/class-name.pipe';
@@ -30,7 +29,6 @@ import { EditorsModule } from './editors/editors.module';
         BrowserModule,
         FormsModule,
         MaterialModule,
-        NgxElectronModule,
         DialogModule,
         BrowserAnimationsModule,
         RouterModule.forRoot( appRoutes, { enableTracing: false, useHash: true, relativeLinkResolution: 'legacy' } ),

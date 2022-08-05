@@ -1,18 +1,12 @@
 import { Component, OnInit, Inject, ElementRef, ViewChild } from '@angular/core';
 import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
-import { ActionTypes, CapturePhrase, CharacterModel, NewCharacterOptionModel, OperatorTypes, OverlayWindowModel, TimerSortTypes, TriggerAction, TriggerCondition, TriggerConditionTypes, TriggerModel } from 'src/app/core.model';
+import { CharacterModel, NewCharacterOptionModel } from 'src/app/core.model';
 import { IpcService } from 'src/app/ipc.service';
-import { ScraperService } from 'src/app/scraper.service';
 import { customAlphabet } from 'nanoid';
-import { ElectronService } from 'ngx-electron';
 import { MatSelectChange } from '@angular/material/select';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import * as _ from 'lodash-es';
 
-// declare var require: any;
-// const existsSync = require( 'fs' ).existsSync;
-// import { existsSync } from 'fs';
-// import { NgForm } from '@angular/forms';
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const nanoid = customAlphabet( alphabet, 16 );
 
@@ -23,10 +17,6 @@ declare var window: {
     webkitRequestFileSystem: any,
     Files: any,
 };
-// declare var TEMPORARY: any;
-// declare var Files: any;
-// window.requestFileSystem = window.requestFileSystem || window.webkitRequestFileSystem; 
-// window.directoryEntry = window.directoryEntry || window.webkitDirectoryEntry;
 
 @Component( {
     selector: 'app-new-character-dialog',
@@ -48,8 +38,8 @@ export class NewCharacterDialogComponent implements OnInit {
         public dialogRef: MatDialogRef<NewCharacterDialogComponent>,
         @Inject( MAT_DIALOG_DATA ) public data: any,
         public ipcService: IpcService,
-        private _electronService: ElectronService,
-        private snackBar: MatSnackBar ) { }
+        private snackBar: MatSnackBar,
+    ) { }
 
     ngOnInit(): void {
         this.ipcService.getCharacters().subscribe( characters => {
@@ -71,7 +61,7 @@ export class NewCharacterDialogComponent implements OnInit {
         // get name only regex: \\{0,1}((?:.(?!\\))+)\.(?:.(?!\\))+$
         // get char dets regex: eqlog_(?<Character>.*)_(?<Server>[a-z]*)\.txt$
         
-        let fs: any = this._electronService.remote.require( 'fs' );
+        let fs: any = this.ipcService.remote.require( 'fs' );
         if ( fs.existsSync( logsPath ) ) {
             fs.readdir( logsPath, ( err, files ) => {
                 let dictionary: any = {};

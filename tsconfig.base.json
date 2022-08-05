@@ -22,6 +22,7 @@
   },
   "angularCompilerOptions": {
     "fullTemplateTypeCheck": true,
-    "preserveWhitespaces": false
+    "preserveWhitespaces": false,
+    "enableIvy": true,
   }
 }
