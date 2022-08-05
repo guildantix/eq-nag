@@ -1,4 +1,4 @@
-import { Component, Inject, OnInit } from '@angular/core';
+import { Component, HostListener, Inject, OnInit } from '@angular/core';
 import { MatDialog, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { IpcService } from 'src/app/ipc.service';
 import { InputDialogModel } from './input-dialog.model';
@@ -12,6 +12,14 @@ export class InputDialogComponent implements OnInit {
 
     public model: string;
     public messages: string[] = [];
+
+    @HostListener( 'keyup', [ '$event' ] ) public onKeyUp( e: KeyboardEvent ) {
+        if ( e.key === 'Enter' ) {
+            this.accept();
+        } else if ( e.key === 'Escape' ) {
+            this.cancel();
+        }
+    }
 
     constructor(
         public dialogRef: MatDialogRef<InputDialogComponent>,
