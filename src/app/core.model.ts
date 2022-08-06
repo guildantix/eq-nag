@@ -765,6 +765,72 @@ export class PackageTrigger {
         return pTrg;
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Returns true if the details of the package trigger match the details of 
+     * the installed trigger.
+     * 
+     * @param packageTrigger The package trigger.
+     * @param trigger The trigger to check against.
+     */
+    public static matchesTrigger( packageTrigger: PackageTrigger, trigger: TriggerModel ): string[] {
+        let changes: string[] = [];
+        
+        if ( packageTrigger.triggerId !== trigger.triggerId ) {
+            return changes;
+        }
+        
+        if ( packageTrigger.folderId !== trigger.folderId ) {
+            changes.push( 'Folder' );
+        }
+
+        if ( packageTrigger.name !== trigger.name ) {
+            changes.push( 'Name' );
+        }
+
+        if ( packageTrigger.useCooldown !== trigger.useCooldown ) {
+            changes.push( 'Use Cooldown' );
+        }
+
+        if ( packageTrigger.cooldownDuration !== trigger.cooldownDuration ) {
+            changes.push( 'Cooldown Duration' );
+        }
+
+        if ( packageTrigger.comments !== trigger.comments ) {
+            changes.push( 'Comments' );
+        }
+
+        if ( packageTrigger.captureMethod !== trigger.captureMethod ) {
+            changes.push( 'Capture Method' );
+        }
+
+        if ( !_.isEqual( packageTrigger.capturePhrases, trigger.capturePhrases ) ) {
+            changes.push( 'Capture Phrase(es)' );
+        }
+
+        if ( !_.isEqual( packageTrigger.actions, trigger.actions ) ) {
+            changes.push( 'Action(s)' );
+        }
+
+        if ( !_.isEqual( packageTrigger.conditions, trigger.conditions ) ) {
+            changes.push( 'Condition(s)' );
+        }
+
+        if ( !_.isEqual( packageTrigger.classLevels, trigger.classLevels ) ) {
+            changes.push( 'Class Info' );
+        }
+        
+        
+        return changes;
+    }
 }
 
 export class TriggerPackageModel {
