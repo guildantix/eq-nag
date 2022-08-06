@@ -14,6 +14,7 @@ import { TriggerLibraryWindowComponent } from './trigger-library-window/trigger-
 import { TriggerLibraryService } from './trigger-library.service';
 import { NewTriggerPackageComponent } from './new-trigger-package/new-trigger-package.component';
 import { TriggerPackageDetailsComponent } from './trigger-package-details/trigger-package-details.component';
+import { WebComponentsModule } from '../web-components/web-components.module';
 
 @NgModule({
     imports: [
@@ -26,6 +27,7 @@ import { TriggerPackageDetailsComponent } from './trigger-package-details/trigge
         ContextMenuModule,
         DialogModule,
         EditorsModule,
+        WebComponentsModule,
     ],
     exports: [
         GinaImportStepperComponent,
