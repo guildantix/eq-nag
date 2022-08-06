@@ -1,0 +1,32 @@
+input[type=radio]:checked 
+{
+    ~ .accordion-content {
+        display: block;
+    }
+}
+
+:host {
+    
+    display: flex;
+    flex-direction: column;
+
+    .accordion-header {
+        
+        padding: 0;
+
+        label {
+            margin: 0;
+            font-weight: 300;
+            font-size: 18px;
+            padding: 4px 7px;
+            display: block;
+            cursor: pointer;
+        }
+
+    }
+
+    .accordion-content {
+        display: none;
+    }
+    
+}
