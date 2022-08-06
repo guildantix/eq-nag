@@ -772,6 +772,7 @@ export class TriggerPackageModel {
     public folders: PackageFolder[] = [];
     public detrimentalOverlayId: string;
     public beneficialOverlayId: string;
+    public tags: string[] = [];
 }
 
 export class TriggerPackageListModel {
