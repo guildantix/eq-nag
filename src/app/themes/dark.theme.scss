@@ -1,4 +1,5 @@
 $color-grey-80: #808080;
+$color-light-grey: #eeeeee;
 $text: #ffffff;
 
 $color-light: #ffffffde;
@@ -24,6 +25,9 @@ $option-panel: #252525;
 $option-selected: #242424;
 $option-small: #c7e3ff7d;
 
+$bg-label-dark-hover: #111111;
+$bg-label-dark-active: #1a1a1a;
+$bg-label-dark: #151515;
 $bg-tab-content: #1a1a1a;
 $bg-extreme-dark: #191919;
 
@@ -600,4 +604,37 @@ p.notice {
     font-size: 14px !important;
     background-color: $bg-tab-content;
     border: 3px solid rgba($color-grey-80, .20);
+}
+
+.accordion {
+    // outline: 1px solid red;
+
+        input[type=radio]:checked 
+        {
+            ~ .accordion-header {
+                border-bottom-color: $color-titlebar-bg;
+            }
+        }
+
+    .accordion-panel {
+
+        .accordion-header {
+            
+            border-bottom: 4px solid rgba($color-titlebar-bg, 0.36);
+            background-color: $bg-label-dark;
+            color: $color-light-grey;
+
+            &:hover {
+                background-color: $bg-label-dark-hover;
+            }
+
+            &:active {
+                background-color: $bg-label-dark-active;
+            }
+
+        }
+        .accordion-content {
+            background-color: $bg-extreme-dark;
+        }
+    }
 }
