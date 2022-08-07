@@ -1,4 +1,5 @@
 import { Observable, Observer } from 'rxjs';
+import * as _ from 'lodash-es';
 
 export class StringUtility {
 
@@ -15,6 +16,41 @@ export class StringUtility {
      */
     public static Insert( string: string, value: string, position: number ): string {
         return string.substr( 0, position ) + value + string.substr( position );
+    }
+}
+
+export class ArrayUtility {
+
+    /**
+     * Returns true if the first all of the first array's elements exist in the 
+     * second array.
+     * 
+     * @param a The first array of values.
+     * @param b The second array of values.
+     * @returns 
+     */
+    public static IsContainedIn<T>( a: T[], b: T[] ): boolean {
+        return !_.some(a.map( f => b.indexOf( f ) ), i => i < 0);
+    }
+
+    /**
+     * Returns true if the first array contains a value that also exists in the 
+     * second array.
+     * 
+     * @param a The first array of values.
+     * @param b The second array of values.
+     * @returns 
+     */
+    public static Like<T>( a: T[], b: T[] ): boolean {
+        
+        for ( let i = 0; i < a?.length; i++ ) {
+            let fi = b?.indexOf( a[ i ] );
+            if ( fi > -1 ) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
 
