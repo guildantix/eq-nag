@@ -263,9 +263,8 @@ export enum OperatorTypes {
 
 }
 
-export class TriggerCondition {
-    
-    public conditionId: string = null;
+export class TriggerConditionProperties {
+
     public conditionType: TriggerConditionTypes = TriggerConditionTypes.VariableValue;
     public operatorType: OperatorTypes;
     public variableName: string;
@@ -273,10 +272,23 @@ export class TriggerCondition {
 
 }
 
-export class Phrase {
-    public phraseId: string;
+export class TriggerCondition extends TriggerConditionProperties {
+    
+    public conditionId: string = null;
+
+}
+
+export class PhraseProperties {
+
     public phrase: string;
     public useRegEx: boolean;
+
+}
+
+export class Phrase extends PhraseProperties {
+
+    public phraseId: string;
+
 }
 
 export class CapturePhrase extends Phrase {
@@ -399,21 +411,17 @@ export class DataTickModel {
     
 }
 
-export class TriggerAction {
+export class TriggerActionProperties {
+    
+    public overlayId: string = null;
 
-    public actionId: string;
-    public actionType: ActionTypes;
-    public phrases: string[] = [];
-    public overlayId: string;
-    public name: string;
-    public displayText: string;
-    public duration: number;
-    public storageDuration: string;
+    public duration: number = null;
+    public storageDuration: string = null;
     public showRemainingDuration: boolean = false;
     public repeatTimer: boolean = false;
     public repeatCount: number = null;
-    public variableName: string;
-    public storeLiteralDefinition: string;
+    public variableName: string = null;
+    public storeLiteralDefinition: string = null;
     public onlyStoreUsedValues: boolean = false;
     public loopBackForValue: boolean = false;
     public restartBehavior: TimerRestartBehaviors = null;
@@ -481,27 +489,37 @@ export class TriggerAction {
     public endEarlyPhrases: Phrase[] = [];
     public resetCounterPhrases: Phrase[] = [];
 
-    public audioFileId: string;
+    public audioFileId: string = null;
 
     public textUseCustomFont: boolean = false;
-    public textFont: string;
-    public textWeight: number;
+    public textFont: string = null;
+    public textWeight: number = null;
 
     public textUseCustomSize: boolean = false;
-    public textSize: number;
-    public textSpacing: number;
+    public textSize: number = null;
+    public textSpacing: number = null;
 
     public textUseCustomColor: boolean = false;
-    public textColor: string;
+    public textColor: string = null;
 
     public textUseCustomBorder: boolean = false;
-    public textBorderColor: string;
-    public textBorderIntensity: number;
+    public textBorderColor: string = null;
+    public textBorderIntensity: number = null;
     
     public textUseCustomGlow: boolean = false;
-    public textGlowColor: string;
-    public textGlowIntensity: number;
-    public textGlowSize: number;
+    public textGlowColor: string = null;
+    public textGlowIntensity: number = null;
+    public textGlowSize: number = null;
+
+}
+
+export class TriggerAction extends TriggerActionProperties {
+
+    public actionId: string;
+    public actionType: ActionTypes;
+    public phrases: string[] = [];
+    public name: string;
+    public displayText: string;
 }
 
 export class OutsideResource {
@@ -669,6 +687,8 @@ export class TriggerPackageTransferModel {
     public name: string;
     public description: string;
     public files: PackageFileModel[] = [];
+    public category: string;
+    public tags: string[] = [];
     
 }
 
@@ -833,12 +853,13 @@ export class PackageTrigger {
     }
 }
 
+export const TriggerPackageCategories: string[] = [ 'Raids', 'Spells', 'Community', 'Other' ];
+
 export class TriggerPackageModel {
     public triggers: PackageTrigger[] = [];
     public folders: PackageFolder[] = [];
     public detrimentalOverlayId: string;
     public beneficialOverlayId: string;
-    public tags: string[] = [];
 }
 
 export class TriggerPackageListModel {
@@ -852,6 +873,8 @@ export class TriggerPackageListModel {
     public trustedAuthor: boolean = false;
     public name: string;
     public description: string;
+    public category: string;
+    public tags: string[] = [];
 
 }
 
@@ -868,6 +891,8 @@ export class TriggerPackageMetaModel {
     public name: string;
     public versionHistory: VersionHistory[];
     public description: string;
+    public category: string;
+    public tags: string[] = [];
 
 }
 

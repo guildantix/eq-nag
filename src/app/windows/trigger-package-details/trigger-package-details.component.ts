@@ -26,7 +26,9 @@ export class TriggerPackageDetailsComponent implements OnInit {
                 this.package = packages[ 0 ];
 
                 this.libraryService.isAuthor( this.package.triggerPackageId, this.authorId ).subscribe( isAuth => this.isAuthor = isAuth && this.trustedAuthor );
-                this.ipcService.isPackageInstalled( this.package.triggerPackageId ).subscribe( installed => this.isInstalled = installed );
+                this.ipcService.isPackageInstalled( this.package.triggerPackageId ).subscribe( installed => {
+                    this.isInstalled = installed;
+                } );
                 
                 let version = this.package.versionHistory?.find( f => f.versionId === this.package.versionId );
                 this.notes = version.notes;

@@ -113,6 +113,8 @@ export class TriggerLibraryService {
         data.name = meta.name;
         data.notes = notes;
         data.description = meta.description;
+        data.category = meta.category;
+        data.tags = meta.tags;
 
         return this.httpClient.post<TriggerPackageMetaModel>( `${environment.shareServiceUrl}/triggers/${authorId}`, data )
             .pipe(
@@ -144,6 +146,8 @@ export class TriggerLibraryService {
         data.name = meta.name;
         data.notes = notes;
         data.description = meta.description;
+        data.category = meta.category;
+        data.tags = meta.tags;
 
         return this.httpClient.put<TriggerPackageMetaModel>( `${environment.shareServiceUrl}/triggers/${authorId}/update/${meta.triggerPackageId}`, data )
             .pipe(

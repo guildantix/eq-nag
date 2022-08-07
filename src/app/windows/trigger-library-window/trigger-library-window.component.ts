@@ -9,10 +9,18 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { IpcService } from 'src/app/ipc.service';
 import { DialogService } from 'src/app/dialogs/dialog.service';
 import { TriggerLibraryService } from '../trigger-library.service';
-import { AuthorModel, PackageTrigger, TriggerFolder, TriggerModel, TriggerPackageListModel, TriggerPackageMetaModel, TriggerPackageModel } from 'src/app/core.model';
+import { AuthorModel, PackageTrigger, TriggerFolder, TriggerModel, TriggerPackageCategories, TriggerPackageListModel, TriggerPackageMetaModel, TriggerPackageModel } from 'src/app/core.model';
 import { SettingsService } from 'src/app/settings/settings-http.service';
 import * as _ from 'lodash-es';
 import { MatTable } from '@angular/material/table';
+import { ArrayUtility } from 'src/app/utilities';
+
+enum LibraryPanels {
+    browse = 0,
+    newTrigger = 1,
+    editTrigger = 2,
+    viewTrigger = 3,
+}
 
 @Component( {
     selector: 'app-trigger-library-window',
@@ -34,26 +42,111 @@ export class TriggerLibraryWindowComponent implements OnInit {
     public author: AuthorModel;
     public trustedAuthor: boolean = false;
     public notes: string;
-    public showNewTrigger: boolean = false;
-    public showEditTrigger: boolean = false;
-    public showDetailsModel: boolean = false;
-    // public detailsModel: TriggerPackageMetaModel = null;
     public editPackageId: string = null;
     public viewPackageId: string = null;
+    public categories: string[] = TriggerPackageCategories;
+    private category: string = null;
+    public tags: string[] = [];
+    public installedTriggers: Record<string, boolean> = {};
+
+    private panel: LibraryPanels = LibraryPanels.browse;
+
+    public get showBrowse(): boolean {
+        return this.panel === LibraryPanels.browse;
+    }
+    public get showNewTrigger(): boolean {
+        return this.panel === LibraryPanels.newTrigger;
+    }
+    public get showEditTrigger(): boolean {
+        return this.panel === LibraryPanels.editTrigger;
+    }
+    public get showDetailsModel(): boolean {
+        return this.panel === LibraryPanels.viewTrigger;
+    }
+    public get showTagSelector(): boolean {
+        return this.category != null;
+    }
+    public get tagOptions(): string[] {
+        return [].concat.apply( [], this.packages?.filter( f => f.category === this.category || this.category === null ).map( f => f.tags ) );
+    }
+
+    public get filteredPackages(): TriggerPackageListModel[] {
+        let packages = this.packages?.filter( f => f.category === this.category || this.category === null || ( this.category === 'installed' && this.installedTriggers[ f.triggerPackageId ] ) );
+        if ( this.tags?.length > 0 ) {
+            return packages.filter( f => ArrayUtility.IsContainedIn( this.tags, f.tags ) );
+        } else {
+            return packages;
+        }
+    }
 
     constructor( private ipcService: IpcService, private dialogService: DialogService, private snackBar: MatSnackBar,  private libraryService: TriggerLibraryService, private settingsService: SettingsService ) { }
 
     ngOnInit() {
-        this.libraryService.getPackagesList().subscribe( packages => {
-            this.packages = packages;
-            this.loadingLibrary = false;
-        } );
+        this.loadPackages();
+        // this.libraryService.getPackagesList().subscribe( packages => {
+        //     this.packages = packages;
+        //     packages.forEach( pkg => {
+        //         this.ipcService.isPackageInstalled( pkg.triggerPackageId ).subscribe( installed => this.installedTriggers[ pkg.triggerPackageId ] = installed );
+        //     } );
+        //     this.loadingLibrary = false;
+        // } );
         this.ipcService.getAuthor().subscribe( author => {
             this.author = author;
             if ( author?.authorId ) {
                 this.settingsService.isTrusted( author.authorId ).subscribe( trusted => this.trustedAuthor = trusted );
             }
         } );
+    }
+
+    isTagSelected( tag: string ): boolean {
+        return this.tags?.indexOf( tag ) > -1;
+    }
+
+    toggleTag( tag: string ) {
+        this.tags = this.tags?.length > 0 ? this.tags : [];
+        let i = this.tags.indexOf( tag );
+        if ( i > -1 ) {
+            this.tags.splice( i, 1 );
+        } else {
+            this.tags.push( tag );
+        }
+    }
+    
+
+
+
+
+
+
+
+
+
+    /**
+     * Selects the given category, allowing the fitler to remove packages not in the category.
+     * 
+     * @param category The category to select.
+     */
+    selectCategory( category: string ) {
+        this.category = this.panel === LibraryPanels.browse && this.isCategorySelected( category ) ? null : category;
+        this.panel = LibraryPanels.browse;
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Returns true if the given category matches the selected category.
+     * 
+     * @param category The category to compare.
+     */
+    isCategorySelected( category: string ) {
+        return this.category === category;
     }
 
 
@@ -86,7 +179,8 @@ export class TriggerLibraryWindowComponent implements OnInit {
      */
     createNewPackage(): void {
         if ( this.trustedAuthor ) {
-            this.showNewTrigger = true;
+            // this.showNewTrigger = true;
+            this.panel = LibraryPanels.newTrigger;
         }
     }
 
@@ -105,11 +199,13 @@ export class TriggerLibraryWindowComponent implements OnInit {
      * @param triggerPackage The new trigger package.
      */
     onNewPackage( triggerPackage: TriggerPackageMetaModel ): void {
+
         if ( triggerPackage != null ) {
-            this.packages.push( triggerPackage );
-            this.packages = this.packages.slice();
+            this.loadPackages();
         }
-        this.showNewTrigger = false;
+
+        this.panel = LibraryPanels.browse;
+
     }
 
 
@@ -127,10 +223,13 @@ export class TriggerLibraryWindowComponent implements OnInit {
      * @param triggerPackage The updated trigger package.
      */
     onSavePackage( triggerPackage: TriggerPackageMetaModel ): void {
+        
         if ( triggerPackage != null ) {
-            this.libraryService.getLibrary().subscribe( packages => this.packages = packages );
+            this.loadPackages();
         }
-        this.showEditTrigger = false;
+        
+        this.panel = LibraryPanels.browse;
+        
     }
 
 
@@ -149,7 +248,7 @@ export class TriggerLibraryWindowComponent implements OnInit {
      */
     showTriggerDetails( packageId: string ): void {
         this.viewPackageId = packageId;
-        this.showDetailsModel = true;
+        this.panel = LibraryPanels.viewTrigger;
     }
 
 
@@ -168,8 +267,22 @@ export class TriggerLibraryWindowComponent implements OnInit {
      */
     showEditPackage( packageId: string ): void {
         this.editPackageId = packageId;
-        this.showEditTrigger = true;
-        this.showDetailsModel = false;
+        this.panel = LibraryPanels.editTrigger;
+    }
+
+    loadPackages() {
+        this.loadingLibrary = true;
+        this.libraryService.getPackagesList().subscribe( packages => {
+            this.packages = packages;
+            packages.forEach( pkg => {
+                this.ipcService.isPackageInstalled( pkg.triggerPackageId ).subscribe( installed => this.installedTriggers[ pkg.triggerPackageId ] = installed );
+            } );
+            this.loadingLibrary = false;
+        } );
+    }
+    
+    showBrowsePackages() {
+        this.panel = LibraryPanels.browse;
     }
 
 }

@@ -908,7 +908,8 @@ class TriggerDatabaseStore extends Store {
         } );
 
         ipcMain.on( 'pkg:isInstalled', ( event, packageId ) => {
-            event.sender.webContents.send( 'pkg:isInstalled', this.isPackageInstalled( packageId ) );
+            // TODO: All possible methods should specify a contextual return key in the get methods.
+            event.sender.webContents.send( `pkg:isInstalled:${packageId}`, this.isPackageInstalled( packageId ) );
         } );
 
         ipcMain.on( 'pkg:get:installed', ( event ) => {

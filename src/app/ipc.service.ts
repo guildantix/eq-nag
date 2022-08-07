@@ -1004,7 +1004,7 @@ export class IpcService {
     public isPackageInstalled( packageId: string ): Observable<boolean> {
         let obs: Observable<boolean> = new Observable<boolean>( ( observer: Observer<boolean> ) => {
 
-            this.ipc.once( 'pkg:isInstalled', ( e, installed: boolean ) => {
+            this.ipc.once( `pkg:isInstalled:${packageId}`, ( e, installed: boolean ) => {
                 this.ngZone.run( () => {
                     observer.next( installed );
                     observer.complete();

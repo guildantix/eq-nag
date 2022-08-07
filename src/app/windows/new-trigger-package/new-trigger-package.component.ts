@@ -1,12 +1,13 @@
 import { Component, EventEmitter, Input, OnInit, Output, ViewChild } from '@angular/core';
 import { MatTable } from '@angular/material/table';
-import { TriggerFolder, TriggerModel, PackageTrigger, TriggerPackageMetaModel, PackageFolder, PackageFileModel } from 'src/app/core.model';
+import { TriggerFolder, TriggerModel, PackageTrigger, TriggerPackageMetaModel, PackageFolder, PackageFileModel, TriggerPackageModel, TriggerPackageCategories } from 'src/app/core.model';
 import { DialogService } from 'src/app/dialogs/dialog.service';
 import { IpcService } from 'src/app/ipc.service';
 import * as _ from 'lodash-es';
 import { TriggerLibraryService } from '../trigger-library.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { forkJoin } from 'rxjs';
+import { MatChipInputEvent } from '@angular/material/chips';
 
 @Component( {
     selector: 'app-new-trigger-package',
@@ -22,6 +23,9 @@ export class NewTriggerPackageComponent implements OnInit {
     private triggerFolders: TriggerFolder[];
     private ancestryMap: Record<string, string> = {};
     private _pkgId: string;
+    public triggerUpdates: Record<string, string[]> = {};
+    public categories: string[] = TriggerPackageCategories;
+    public editName: boolean = false;
 
     @Input() public authorId: string;
     @Input()
@@ -29,10 +33,21 @@ export class NewTriggerPackageComponent implements OnInit {
     public set packageId( val: string ) {
         this._pkgId = val;
         if ( val ) {
-            this.libraryService.getPackage( val ).subscribe( pkg => {
-                this.package = pkg[0];
+
+            let observables = [
+                this.libraryService.getPackage( val ),
+                this.ipcService.getTriggers(),
+                this.ipcService.getTriggerFolders(),
+            ];
+
+            forkJoin( observables ).subscribe( ( [ pkg, triggers, folders ]: [ TriggerPackageMetaModel[], TriggerModel[], TriggerFolder[] ] ) => {
+                this.package = pkg[ 0 ];
+                this.package.tags = this.package.tags?.length > 0 ? this.package.tags : [];
+                this.triggers = triggers;
+                this.triggerFolders = folders;
                 this.pullTriggerUpdates();
             } );
+            
         }
     }
     @Output() public triggerPackage: EventEmitter<TriggerPackageMetaModel> = new EventEmitter<TriggerPackageMetaModel>();
@@ -42,8 +57,25 @@ export class NewTriggerPackageComponent implements OnInit {
     constructor( private ipcService: IpcService, private dialogService: DialogService, private libraryService: TriggerLibraryService, private snackBar: MatSnackBar ) { }
 
     ngOnInit() {
-        this.ipcService.getTriggers().subscribe( triggers => this.triggers = triggers );
-        this.ipcService.getTriggerFolders().subscribe( folders => this.triggerFolders = folders );
+        // this.ipcService.getTriggers().subscribe( triggers => this.triggers = triggers );
+        // this.ipcService.getTriggerFolders().subscribe( folders => this.triggerFolders = folders );
+    }
+    
+    addKeywordFromInput( event: MatChipInputEvent ) {
+        if ( event.value ) {
+            this.package.tags = this.package.tags?.length > 0 ? this.package.tags : [];
+            this.package.tags.push( event.value );
+            event.chipInput!.clear();
+        }
+    }
+    
+    removeKeyword( keyword: string ) {
+        this.package.tags = this.package.tags?.length > 0 ? this.package.tags : [];
+        let i = this.package.tags.findIndex( f => f === keyword );
+        if ( i > -1 ) {
+            this.package.tags.splice( i, 1 );
+        }
+        // this.keywords.delete( keyword );
     }
 
 
@@ -61,16 +93,21 @@ export class NewTriggerPackageComponent implements OnInit {
      * package triggers.
      */
     pullTriggerUpdates(): void {
+        
         this.triggers.forEach( trigger => {
             
             this.package.model.triggers.forEach( pkgTrigger => {
                 if ( pkgTrigger.triggerId === trigger.triggerId ) {
+
+                    this.triggerUpdates[ trigger.triggerId ] = PackageTrigger.matchesTrigger( pkgTrigger, trigger );
+
                     if ( pkgTrigger.folderId !== trigger.folderId ) {
                         // if the folder was changed, ensure the new folder is added to the package.
                         let folder = this.findTriggerFolder( trigger.folderId, this.triggerFolders );
                         this.addFolderAncestors( folder );
                         pkgTrigger.folderId = trigger.folderId;
                     }
+
                     pkgTrigger.name = trigger.name;
                     pkgTrigger.capturePhrases = _.cloneDeep( trigger.capturePhrases );
                     pkgTrigger.comments = _.cloneDeep( trigger.comments );
@@ -78,6 +115,9 @@ export class NewTriggerPackageComponent implements OnInit {
                     pkgTrigger.captureMethod = _.cloneDeep( trigger.captureMethod );
                     pkgTrigger.conditions = _.cloneDeep( trigger.conditions );
                     pkgTrigger.classLevels = _.cloneDeep( trigger.classLevels );
+                    pkgTrigger.useCooldown = trigger.useCooldown;
+                    pkgTrigger.cooldownDuration = trigger.cooldownDuration;
+
                 }
             } );
 

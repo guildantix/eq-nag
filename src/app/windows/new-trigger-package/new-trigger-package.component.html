@@ -1,10 +1,37 @@
 
-<mat-form-field style="width: 100%" *ngIf="packageId == null">
+
+
+
+<mat-form-field style="width: 100%; margin-top: 8px;" *ngIf="packageId == null || editName">
     <mat-label>Package Name</mat-label>
     <input matInput [(ngModel)]="package.name" name="newPackageName" />
     <mat-hint></mat-hint>
 </mat-form-field>
-<h1 *ngIf="packageId != null">{{package.name}}</h1>
+
+<h1 *ngIf="packageId != null && !editName" style="position: relative; margin-bottom: 0;">{{package.name}}&nbsp;<button mat-icon-button (click)="editName = true" style="position: absolute; opacity: 0.5;"><mat-icon>edit</mat-icon></button></h1>
+
+<div class="creator-actions">
+    <button mat-button color="warn" (click)="cancel()"><mat-icon class="material-icons-outlined">undo</mat-icon> Cancel</button>
+    <span class="spacer"></span>
+    <button mat-button color="accent" (click)="save()">Save Package <mat-icon class="material-icons-outlined">cloud_upload</mat-icon></button>
+</div>
+
+<mat-form-field style="width: 100%">
+    <mat-label>Package Category</mat-label>
+    <mat-select [(ngModel)]="package.category" name="packageCategory">
+        <mat-option *ngFor="let category of categories" [value]="category">{{category}}</mat-option>
+    </mat-select>
+    <mat-hint></mat-hint>
+</mat-form-field>
+
+<mat-form-field style="width: 100%">
+    <mat-label>Tags</mat-label>
+    <mat-chip-list #tagList multiple>
+        <mat-chip *ngFor="let tag of package.tags" [value]="tag" (removed)="removeKeyword(tag)">{{tag}}<button matChipRemove><mat-icon>cancel</mat-icon></button></mat-chip>
+        <input matInput placeholder="Tag Name" [matChipInputFor]="tagList" (matChipInputTokenEnd)="addKeywordFromInput($event)" />
+    </mat-chip-list>
+    <mat-hint></mat-hint>
+</mat-form-field>
 
 <mat-form-field style="width: 100%">
     <mat-label>Package Description</mat-label>
@@ -35,7 +62,7 @@
 
         <ng-container matColumnDef="name">
             <th mat-header-cell *matHeaderCellDef style="padding-left: 15px;"> Name </th>
-            <td mat-cell *matCellDef="let element; let i = index" style="padding-left: 15px; white-space: nowrap; overflow: hidden;">{{element.name}}</td>
+            <td mat-cell *matCellDef="let element; let i = index" style="padding-left: 15px; white-space: nowrap; overflow: hidden;" [ngClass]="{'with-changes': triggerUpdates[ element.triggerId ]?.length > 0}" title="{{triggerUpdates[ element.triggerId ]?.join(', ')}}">{{element.name}}</td>
         </ng-container>
 
         <ng-container matColumnDef="family">

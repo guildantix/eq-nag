@@ -258,7 +258,7 @@ ipcMain.on( 'context:store:pseudo-clipboard', ( event, model ) => {
     }
 } );
 ipcMain.on( 'context:get:pseudo-clipboard', ( event, key ) => {
-    event.sender.send( 'context:get:pseudo-clipboard', pseudoClipboard[ key ] );
+    event.sender.send( `context:get:pseudo-clipboard:${key}`, pseudoClipboard[ key ] );
 } );
 
 var mainWindowRef = new ForwardRef( () => mainWindow ? mainWindow : null );

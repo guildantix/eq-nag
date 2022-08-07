@@ -10,6 +10,22 @@ div.loading-gina {
     align-items: center;
 }
 
+.package-row {
+    cursor: pointer;
+
+    &:hover {
+        td {
+            background-color: #ffffff11;
+        }
+    }
+
+    &:active {
+        td {
+            background-color: #ffffff1e;
+        }
+    }
+}
+
 div.tab-content {
     overflow-y: scroll;
     position: fixed;
@@ -49,4 +65,19 @@ ul {
         padding: 1px 5px;
         cursor: pointer;
     }
+}
+
+h3 {
+    font-weight: 300;
+    font-size: 32px;
+}
+
+button.back-to-list-btn {
+    position: absolute;
+    right: 50px;
+    top: 80px;
+}
+
+.selected-category {
+    font-weight: bold;
 }

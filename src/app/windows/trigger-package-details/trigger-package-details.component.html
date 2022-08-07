@@ -7,6 +7,10 @@
 
 <ng-template [ngIf]="package != null">
     <h1>{{package.name}}</h1>
+
+    <mat-chip-list #tagList multiple>
+        <mat-chip *ngFor="let tag of package.tags" [value]="tag">{{tag}}</mat-chip>
+    </mat-chip-list>
     
     <p>{{package.description}}</p>
     
