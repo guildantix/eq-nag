@@ -1,4 +1,6 @@
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { ContextMenuModel } from 'src/app/context-menu/context-menu.model';
+import { ContextService } from 'src/app/context-menu/context.service';
 import { OverlayWindowModel, TriggerAction } from 'src/app/core.model';
 import { IpcService } from 'src/app/ipc.service';
 
@@ -117,7 +119,10 @@ export class TriggerActionDisplayTextComponent implements OnInit {
     @Input() public action: TriggerAction;
     @Input() public overlayOptions: OverlayWindowModel[] = [];
 
-    constructor( private ipcService: IpcService ) { }
+    constructor(
+        private ipcService: IpcService,
+        private contextService: ContextService,
+    ) { }
 
     ngOnInit() {
         this.ipcService.getOverlayWindows().subscribe( overlays => {
@@ -200,6 +205,22 @@ export class TriggerActionDisplayTextComponent implements OnInit {
      */
     private loadOverlayDefaults(): void {
         this.selectedOverlay = this.overlays.find( f => f.overlayId === this.action.overlayId );
+    }
+
+    public getActionCtxMenu( action: TriggerAction ): ContextMenuModel[] {
+        return [ <ContextMenuModel>{
+            label: 'Copy Properties',
+            action: () => this.contextService.copyTriggerActionProperties( action ),
+            disabled: () => false,
+            hide: () => false,
+            matIcon: 'content_copy',
+        }, <ContextMenuModel>{
+            label: 'Paste Properties',
+            action: () => this.contextService.pasteTriggerActionProperties( action ),
+            disabled: () => !this.contextService.hasActionProperties,
+            hide: () => false,
+            matIcon: 'content_paste',
+        } ];
     }
 
 }
