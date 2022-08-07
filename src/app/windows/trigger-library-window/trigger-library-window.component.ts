@@ -66,8 +66,12 @@ export class TriggerLibraryWindowComponent implements OnInit {
     public get showTagSelector(): boolean {
         return this.category != null;
     }
+    private _tagOptions: string[] = null;
     public get tagOptions(): string[] {
-        return [].concat.apply( [], this.packages?.filter( f => f.category === this.category || this.category === null ).map( f => f.tags ) );
+        if ( this._tagOptions == null ) {
+            this._tagOptions = _.uniq( [].concat.apply( [], this.packages?.filter( f => f.category === this.category || this.category === null ).map( f => f.tags ) ) );;
+        }
+        return this._tagOptions;
     }
 
     public get filteredPackages(): TriggerPackageListModel[] {
@@ -151,6 +155,7 @@ export class TriggerLibraryWindowComponent implements OnInit {
      * @param category The category to select.
      */
     selectCategory( category: string ) {
+        this._tagOptions = null;
         this.category = this.panel === LibraryPanels.browse && this.isCategorySelected( category ) ? null : category;
         this.panel = LibraryPanels.browse;
     }
