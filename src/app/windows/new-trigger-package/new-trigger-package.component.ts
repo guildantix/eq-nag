@@ -56,11 +56,22 @@ export class NewTriggerPackageComponent implements OnInit {
 
     constructor( private ipcService: IpcService, private dialogService: DialogService, private libraryService: TriggerLibraryService, private snackBar: MatSnackBar ) { }
 
-    ngOnInit() {
-        // this.ipcService.getTriggers().subscribe( triggers => this.triggers = triggers );
-        // this.ipcService.getTriggerFolders().subscribe( folders => this.triggerFolders = folders );
-    }
+    ngOnInit() { }
     
+
+
+
+
+
+
+
+
+    
+    /**
+     * Adds the inputed value to the package tags.
+     * 
+     * @param event The mat chip input event args.
+     */
     addKeywordFromInput( event: MatChipInputEvent ) {
         if ( event.value ) {
             this.package.tags = this.package.tags?.length > 0 ? this.package.tags : [];
@@ -69,13 +80,26 @@ export class NewTriggerPackageComponent implements OnInit {
         }
     }
     
+
+
+
+
+
+
+
+
+    
+    /**
+     * Removes the given tag from the package.
+     * 
+     * @param keyword The tag to remove.
+     */
     removeKeyword( keyword: string ) {
         this.package.tags = this.package.tags?.length > 0 ? this.package.tags : [];
         let i = this.package.tags.findIndex( f => f === keyword );
         if ( i > -1 ) {
             this.package.tags.splice( i, 1 );
         }
-        // this.keywords.delete( keyword );
     }
 
 

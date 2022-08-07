@@ -23,6 +23,20 @@ export class ContextService {
         } );
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Copies only the trigger action properties for a timer's action ended.
+     * 
+     * @param action The source trigger action.
+     */
     public copyActionEndedProperties( action: TriggerAction ): void {
         this.actionEndedProperties = new TriggerEndedProperties();
 
@@ -31,6 +45,15 @@ export class ContextService {
 
     }
 
+
+
+
+
+
+
+
+
+    
     /**
      * Copies the properties from the given trigger action into the virtual 
      * clipboard.
@@ -53,6 +76,15 @@ export class ContextService {
 
     }
 
+
+
+
+
+
+
+
+
+    
     /**
      * Copies the properties from the trigger action in the virtual clipboard 
      * to the given action.
@@ -73,20 +105,71 @@ export class ContextService {
 
     }
 
+
+
+
+
+
+
+
+
+    
+    /** Returns true if there is an action ended in the clipboard. */
     public get hasActionEnded(): boolean {
         return this.actionEndedProperties != null;
     }
 
+
+
+
+
+
+
+
+
+    
+    /** Returns true if there is an action properties in the clipboard. */
     public get hasActionProperties(): boolean {
         return this.actionProperties != null;
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Pastes only the trigger action properties for a timer's action ended.
+     * 
+     * @param action The target trigger action.
+     */
     public pasteActionEndedProperties( action: TriggerAction ): void {
 
         this.copyProperties( this.actionEndedProperties, action, Object.keys( new TriggerEndedProperties() ) );
         
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Copies the specified properties from each of the array in source to the target array.
+     * 
+     * @param source The source objects.
+     * @param target The target objects.
+     * @param keys The list of properties to copy.
+     * @param newIdFields The list of id fields on the target object.  Each matching key will be instantiated with nagId() instead of copying the value from source.
+     */
     private copyArrayProperties( source: any[], target: any[], keys: string[], newIdFields?: string[] ): any[] {
         target = [];
 
@@ -101,6 +184,23 @@ export class ContextService {
         return target;
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Copies the specified properties from source object to target.
+     * 
+     * @param source The source object.
+     * @param target The target object.
+     * @param keys The list of properties to copy.
+     * @param newIdFields The list of id fields on the target object.  Each matching key will be instantiated with nagId() instead of copying the value from source.
+     */
     private copyProperties( source: any, target: any, keys: string[], newIdFields?: string[] ): void {
 
         for ( const key of keys ) {
@@ -113,6 +213,20 @@ export class ContextService {
         
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Returns the stored value with the given key.
+     * 
+     * @param key The value identifier.
+     */
     private get<T>( key: string ): Observable<T> {
         let obs: Observable<T> = new Observable<T>( ( observer: Observer<T> ) => {
             
@@ -129,10 +243,39 @@ export class ContextService {
         return obs;
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Stores the given value with the given key in the virtual clipboard.
+     * 
+     * @param key The value identifier.
+     * @param value The value to keep.
+     */
     private store( key: string, value: any ): void {
         this.ipc.send( 'context:store:pseudo-clipboard', { key: key, value: value } );
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Closes all context menus except the referenced menu.
+     * 
+     * @param menu The menu to remain open.
+     */
     public closeAllButThis( menu: ContextMenuComponent ): void {
         if ( this.openedMenu != null && this.openedMenu.isOpen && menu != this.openedMenu ) {
             this.openedMenu.close();
@@ -140,8 +283,29 @@ export class ContextService {
         this.openedMenu = menu;
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Clears the cached opened menu reference.
+     */
     public clearOpenedMenu(): void {
         this.openedMenu = null;
     }
     
+
+
+
+
+
+
+
+
+
 }

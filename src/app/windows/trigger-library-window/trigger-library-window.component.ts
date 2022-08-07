@@ -82,26 +82,50 @@ export class TriggerLibraryWindowComponent implements OnInit {
     constructor( private ipcService: IpcService, private dialogService: DialogService, private snackBar: MatSnackBar,  private libraryService: TriggerLibraryService, private settingsService: SettingsService ) { }
 
     ngOnInit() {
+
         this.loadPackages();
-        // this.libraryService.getPackagesList().subscribe( packages => {
-        //     this.packages = packages;
-        //     packages.forEach( pkg => {
-        //         this.ipcService.isPackageInstalled( pkg.triggerPackageId ).subscribe( installed => this.installedTriggers[ pkg.triggerPackageId ] = installed );
-        //     } );
-        //     this.loadingLibrary = false;
-        // } );
+
         this.ipcService.getAuthor().subscribe( author => {
             this.author = author;
             if ( author?.authorId ) {
                 this.settingsService.isTrusted( author.authorId ).subscribe( trusted => this.trustedAuthor = trusted );
             }
         } );
+
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Returns true if the specified tag exists in the selection.
+     * 
+     * @param tag The tag to check.
+     */
     isTagSelected( tag: string ): boolean {
         return this.tags?.indexOf( tag ) > -1;
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Toggles the select state on the given tag.
+     * 
+     * @param tag The tag to toggle.
+     */
     toggleTag( tag: string ) {
         this.tags = this.tags?.length > 0 ? this.tags : [];
         let i = this.tags.indexOf( tag );
@@ -229,7 +253,7 @@ export class TriggerLibraryWindowComponent implements OnInit {
         }
         
         this.panel = LibraryPanels.browse;
-        
+
     }
 
 
@@ -270,6 +294,18 @@ export class TriggerLibraryWindowComponent implements OnInit {
         this.panel = LibraryPanels.editTrigger;
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Loads the available packages from the server.
+     */
     loadPackages() {
         this.loadingLibrary = true;
         this.libraryService.getPackagesList().subscribe( packages => {
@@ -281,8 +317,29 @@ export class TriggerLibraryWindowComponent implements OnInit {
         } );
     }
     
+
+
+
+
+
+
+
+
+    
+    /**
+     * Shows the browse panel.
+     */
     showBrowsePackages() {
         this.panel = LibraryPanels.browse;
     }
+
+
+
+
+
+
+
+
+
 
 }

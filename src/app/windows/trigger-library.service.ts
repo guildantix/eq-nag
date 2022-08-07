@@ -24,7 +24,7 @@ export class TriggerLibraryService {
     /**
      * Returns all trigger packages.
      * 
-     * @deprecated The method should not be used
+     * @deprecated The method should not be used, use getPackagesList instead.
      */
     getLibrary(): Observable<TriggerPackageMetaModel[]> {
         return this.httpClient.get<TriggerPackageMetaModel[]>( `${environment.shareServiceUrl}/triggers/library` )
