@@ -1,6 +1,6 @@
 {
   "name": "electron-angular-eq-parse",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "main": "main.js",
   "scripts": {
     "copy-source-maps": "copyfiles --flat dist/*.map source-maps/%npm_package_version%",
@@ -16,7 +16,6 @@
   },
   "private": true,
   "dependencies": {
-    "@angular-devkit/schematics": "^14.1.1",
     "@angular/animations": "^14.1.1",
     "@angular/cdk": "^14.1.1",
     "@angular/common": "^14.1.1",
@@ -48,6 +47,7 @@
   },
   "devDependencies": {
     "@angular-devkit/build-angular": "^14.1.1",
+    "@angular-devkit/schematics": "^14.1.1",
     "@angular/cli": "^14.1.1",
     "@angular/compiler-cli": "^14.1.1",
     "@types/jasmine": "~3.6.0",
