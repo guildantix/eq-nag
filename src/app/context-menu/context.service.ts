@@ -1,24 +1,24 @@
 import { Injectable, NgZone } from '@angular/core';
 import { Observable, Observer } from 'rxjs';
-import { Phrase, TriggerAction, TriggerCondition } from '../core.model';
+import { Phrase, PhraseProperties, TriggerAction, TriggerActionProperties, TriggerCondition, TriggerConditionProperties } from '../core.model';
 import { TriggerEndedProperties } from './context-menu.model';
 import { IpcRenderer } from 'electron';
 import { ContextMenuComponent } from './context-menu.component';
 import * as _ from 'lodash-es';
+import { nagId } from '../core/nag-id.util';
 
 @Injectable()
 export class ContextService {
 
     private ipc: IpcRenderer;
     private actionEndedProperties: TriggerEndedProperties = null;
-    private actionProperties: TriggerAction = null;
+    private actionProperties: TriggerActionProperties = null;
     private openedMenu: ContextMenuComponent;
 
     constructor( private ngZone: NgZone ) {
         this.ipc = ( <any>window ).require( 'electron' ).ipcRenderer;
         this.get<TriggerEndedProperties>( 'action-ended' ).subscribe( model => this.actionEndedProperties = model );
-        this.get<TriggerAction>( 'trigger-properties' ).subscribe( model => {
-            console.log( 'retrieved', model );
+        this.get<TriggerActionProperties>( 'action-properties' ).subscribe( model => {
             this.actionProperties = model;
         } );
     }
@@ -39,16 +39,17 @@ export class ContextService {
      */
     public copyTriggerActionProperties( action: TriggerAction ): void {
 
-        this.actionProperties = new TriggerAction();
+        this.actionProperties = new TriggerActionProperties();
         
-        Object.assign( this.actionProperties, action );
+        this.copyProperties( action, this.actionProperties, Object.keys( new TriggerActionProperties() ) );
         
-        this.actionProperties.hideConditions = _.map( action.hideConditions, cond => Object.assign( new TriggerCondition(), cond ) );
-        this.actionProperties.excludeTargets = _.map( action.excludeTargets, phrase => Object.assign( new Phrase(), phrase ) );
-        this.actionProperties.endEarlyPhrases = _.map( action.endEarlyPhrases, phrase => Object.assign( new Phrase(), phrase ) );
-        this.actionProperties.resetCounterPhrases = _.map( action.resetCounterPhrases, phrase => Object.assign( new Phrase(), phrase ) );
+        // TODO: Test the copied array of objects.
+        this.actionProperties.hideConditions = this.copyArrayProperties( action.hideConditions, [], Object.keys( new TriggerConditionProperties() ), [ 'conditionId' ] );
+        this.actionProperties.excludeTargets = this.copyArrayProperties( action.excludeTargets, [], Object.keys( new PhraseProperties() ), [ 'phraseId' ] );
+        this.actionProperties.endEarlyPhrases = this.copyArrayProperties( action.endEarlyPhrases, [], Object.keys( new PhraseProperties() ), [ 'phraseId' ] );
+        this.actionProperties.resetCounterPhrases = this.copyArrayProperties( action.resetCounterPhrases, [], Object.keys( new PhraseProperties() ), [ 'phraseId' ] );
 
-        this.store( 'trigger-properties', this.actionProperties );
+        this.store( 'action-properties', this.actionProperties );
 
     }
 
@@ -61,12 +62,13 @@ export class ContextService {
     public pasteTriggerActionProperties( action: TriggerAction ): void {
         
         if ( this.actionProperties ) {
-            Object.assign( action, this.actionProperties );
-
-            action.hideConditions = _.map( this.actionProperties.hideConditions, cond => Object.assign( new TriggerCondition(), cond ) );
-            action.excludeTargets = _.map( this.actionProperties.excludeTargets, phrase => Object.assign( new Phrase(), phrase ) );
-            action.endEarlyPhrases = _.map( this.actionProperties.endEarlyPhrases, phrase => Object.assign( new Phrase(), phrase ) );
-            action.resetCounterPhrases = _.map( this.actionProperties.resetCounterPhrases, phrase => Object.assign( new Phrase(), phrase ) );
+            
+            this.copyProperties( this.actionProperties, action, Object.keys( new TriggerActionProperties() ) );
+        
+            action.hideConditions = this.copyArrayProperties( this.actionProperties.hideConditions, [], Object.keys( new TriggerConditionProperties() ), [ 'conditionId' ] );
+            action.excludeTargets = this.copyArrayProperties( this.actionProperties.excludeTargets, [], Object.keys( new PhraseProperties() ), [ 'phraseId' ] );
+            action.endEarlyPhrases = this.copyArrayProperties( this.actionProperties.endEarlyPhrases, [], Object.keys( new PhraseProperties() ), [ 'phraseId' ] );
+            action.resetCounterPhrases = this.copyArrayProperties( this.actionProperties.resetCounterPhrases, [], Object.keys( new PhraseProperties() ), [ 'phraseId' ] );
         }
 
     }
@@ -85,10 +87,28 @@ export class ContextService {
         
     }
 
-    private copyProperties( source: any, target: any, keys: string[] ): void {
+    private copyArrayProperties( source: any[], target: any[], keys: string[], newIdFields?: string[] ): any[] {
+        target = [];
+
+        source.forEach( s => {
+            let t = new TriggerCondition();
+
+            this.copyProperties( s, t, keys, newIdFields );
+
+            target.push( t );
+        } );
+
+        return target;
+    }
+
+    private copyProperties( source: any, target: any, keys: string[], newIdFields?: string[] ): void {
 
         for ( const key of keys ) {
-            target[ key ] = source[ key ];
+            if ( newIdFields?.indexOf( key ) > -1 ) {
+                target[ key ] = nagId();
+            } else {
+                target[ key ] = source[ key ];
+            }
         }
         
     }
