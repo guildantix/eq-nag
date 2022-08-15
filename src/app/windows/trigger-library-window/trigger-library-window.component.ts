@@ -83,6 +83,10 @@ export class TriggerLibraryWindowComponent implements OnInit {
         }
     }
 
+    public get selectedCategory(): string {
+        return this.category === 'installed' ? null : this.category;
+    }
+
     constructor( private ipcService: IpcService, private dialogService: DialogService, private snackBar: MatSnackBar,  private libraryService: TriggerLibraryService, private settingsService: SettingsService ) { }
 
     ngOnInit() {

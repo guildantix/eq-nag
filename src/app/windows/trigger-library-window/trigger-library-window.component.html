@@ -36,10 +36,10 @@
                         <div class="ft-content" style="min-height: 500px; padding: 25px;">
                             
                             <ng-template [ngIf]="showNewTrigger">
-                                <app-new-trigger-package (triggerPackage)="onNewPackage($event)" [authorId]="author?.authorId"></app-new-trigger-package>
+                                <app-new-trigger-package (triggerPackage)="onNewPackage($event)" [authorId]="author?.authorId" [selectedCategory]="selectedCategory"></app-new-trigger-package>
                             </ng-template>
                             <ng-template [ngIf]="showEditTrigger">
-                                <app-new-trigger-package (triggerPackage)="onSavePackage($event)" [authorId]="author?.authorId" [packageId]="editPackageId"></app-new-trigger-package>
+                                <app-new-trigger-package (triggerPackage)="onSavePackage($event)" [authorId]="author?.authorId" [selectedCategory]="selectedCategory" [packageId]="editPackageId"></app-new-trigger-package>
                             </ng-template>
                             <ng-template [ngIf]="showDetailsModel">
                                 <div><button mat-button class="back-to-list-btn color-green" (click)="showBrowsePackages()"><mat-icon style="transform: rotate(180deg)">forward</mat-icon> Back to List</button></div>

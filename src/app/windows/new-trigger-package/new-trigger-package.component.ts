@@ -18,7 +18,6 @@ export class NewTriggerPackageComponent implements OnInit {
     
     public package: TriggerPackageMetaModel = new TriggerPackageMetaModel();
     public notes: string;
-    // public name: string;
     private triggers: TriggerModel[];
     private triggerFolders: TriggerFolder[];
     private ancestryMap: Record<string, string> = {};
@@ -27,28 +26,32 @@ export class NewTriggerPackageComponent implements OnInit {
     public categories: string[] = TriggerPackageCategories;
     public editName: boolean = false;
 
+    private _selectedCategory: string = null;
+    @Input() public set selectedCategory( value: string ) {
+        this._selectedCategory = value;
+        this.package.category = value;
+    }
+
     @Input() public authorId: string;
     @Input()
     public get packageId(): string { return this._pkgId; }
     public set packageId( val: string ) {
         this._pkgId = val;
-        if ( val ) {
 
-            let observables = [
-                this.libraryService.getPackage( val ),
-                this.ipcService.getTriggers(),
-                this.ipcService.getTriggerFolders(),
-            ];
+        let observables = [
+            this.libraryService.getPackage( val ),
+            this.ipcService.getTriggers(),
+            this.ipcService.getTriggerFolders(),
+        ];
 
-            forkJoin( observables ).subscribe( ( [ pkg, triggers, folders ]: [ TriggerPackageMetaModel[], TriggerModel[], TriggerFolder[] ] ) => {
-                this.package = pkg[ 0 ];
-                this.package.tags = this.package.tags?.length > 0 ? this.package.tags : [];
-                this.triggers = triggers;
-                this.triggerFolders = folders;
-                this.pullTriggerUpdates();
-            } );
-            
-        }
+        forkJoin( observables ).subscribe( ( [ pkg, triggers, folders ]: [ TriggerPackageMetaModel[], TriggerModel[], TriggerFolder[] ] ) => {
+            this.package = pkg[ 0 ];
+            this.package.tags = this.package.tags?.length > 0 ? this.package.tags : [];
+            this.triggers = triggers;
+            this.triggerFolders = folders;
+            this.pullTriggerUpdates();
+        } );
+
     }
     @Output() public triggerPackage: EventEmitter<TriggerPackageMetaModel> = new EventEmitter<TriggerPackageMetaModel>();
 
@@ -56,7 +59,23 @@ export class NewTriggerPackageComponent implements OnInit {
 
     constructor( private ipcService: IpcService, private dialogService: DialogService, private libraryService: TriggerLibraryService, private snackBar: MatSnackBar ) { }
 
-    ngOnInit() { }
+    ngOnInit() {
+
+        let observables = [
+            this.ipcService.getTriggers(),
+            this.ipcService.getTriggerFolders(),
+        ];
+
+        forkJoin( observables ).subscribe( ( [ triggers, folders ]: [ TriggerModel[], TriggerFolder[] ] ) => {
+            this.package = new TriggerPackageMetaModel();
+            this.package.category = this._selectedCategory;
+            this.package.tags = this.package.tags?.length > 0 ? this.package.tags : [];
+            this.triggers = triggers;
+            this.triggerFolders = folders;
+            this.pullTriggerUpdates();
+        } );
+
+    }
     
 
 
@@ -674,6 +693,7 @@ export class NewTriggerPackageComponent implements OnInit {
      */
     cancel(): void {
         this.package = new TriggerPackageMetaModel();
+        this.package.category = this._selectedCategory;
         this.triggerPackage.emit( null );
     }
 
@@ -766,6 +786,7 @@ export class NewTriggerPackageComponent implements OnInit {
                     this.snackBar.open( 'Update successful!', 'dismiss', { duration: 5000 } );
                     this.triggerPackage.emit( pkg );
                     this.package = new TriggerPackageMetaModel();
+                    this.package.category = this._selectedCategory;
                 } else {
                     this.dialogService.showErrorDialog( 'Sync Error', 'Could not update the package' );
                 }
@@ -775,6 +796,7 @@ export class NewTriggerPackageComponent implements OnInit {
                 if ( pkg ) {
                     this.triggerPackage.emit( pkg );
                     this.package = new TriggerPackageMetaModel();
+                    this.package.category = this._selectedCategory;
                 } else {
                     this.dialogService.showErrorDialog( 'Sync Error', 'Could not create the package' );
                 }
