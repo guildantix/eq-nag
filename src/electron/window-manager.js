@@ -481,8 +481,7 @@ class WindowManager {
         if ( app.isDev() ) {
             deathRecap.webContents.openDevTools();
         }
-
-        this.#deathRecap = deathRecap;
+        
     }
 
 
@@ -544,7 +543,7 @@ class WindowManager {
 
 
 
-    
+
     /**
      * Closes the death recap window.
      */
