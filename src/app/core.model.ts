@@ -1,6 +1,7 @@
 import { StringProtocolResponse } from 'electron';
 import { Color } from './utilities';
 import * as _ from 'lodash-es';
+import { nagId } from './core/nag-id.util';
 
 export const ErrorCodes = {
     EqFolderNotFound: {
@@ -946,5 +947,24 @@ export class OverlayBoundsChangedEventArgs {
 export class DialogEventArgs {
     
     public code: string;
+
+}
+
+export class LogFileLocation {
+
+    public lineNo: number;
+    public description: string;
+    public raw: string;
+    public timestamp: Date;
+
+}
+
+export class IpcMessage<T> {
+
+    public id: string;
+
+    constructor( public value: T ) {
+        this.id = nagId();
+    }
 
 }

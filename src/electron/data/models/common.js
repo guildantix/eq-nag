@@ -1,3 +1,7 @@
+const customAlphabet = require( 'nanoid' ).customAlphabet;
+const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+const nanoid = customAlphabet( alphabet, 16 );
+
 const ErrorCodes = {
     EqFolderNotFound: {
         code: 'EQDIRNULL',
@@ -55,4 +59,40 @@ class StyleProperties {
 
 }
 
-module.exports = { StyleProperties, BasicError, ErrorCodes };
+/**
+ * @template T
+ */
+class IpcMessage {
+
+    /** @type {string} */
+    id;
+
+    /** @type {T} */
+    value;
+
+    /**
+     * Constructs the IPC Message object.
+     * 
+     * @param {T} val The message value.
+     */
+    constructor( val ) {
+        this.id = nanoid();
+        this.value = val;
+    }
+}
+
+class PlayerCharacter {
+    /** @type {string} */
+    name;
+    /** @type {string} */
+    class;
+}
+
+class PlayerPet {
+    /** @type {string} */
+    owner;
+    /** @type {string} */
+    name;
+}
+
+module.exports = { StyleProperties, BasicError, ErrorCodes, IpcMessage, PlayerCharacter, PlayerPet };
