@@ -60,6 +60,7 @@ class CombatParser {
                                 log.description = `You have been slain by ${e.groups.slayer}!`;
                                 log.raw = lines[ i ];
                                 log.timestamp = new Date( e.groups.timestamp );
+                                log.logFilePath = logFilePath;
 
                                 deathsFound.push( log );
                             }

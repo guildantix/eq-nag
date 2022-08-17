@@ -423,6 +423,11 @@ export class IpcService {
         return obs;
     }
 
+    public showDeathRecap( logFileLoc: LogFileLocation ) {
+        let message = new IpcMessage( logFileLoc );
+        this.ipc.send( 'window:death-recap', message );
+    }
+
     public showGinaImportWindow(): Observable<boolean> {
         let obs: Observable<boolean> = new Observable<boolean>( ( observer: Observer<boolean> ) => {
             

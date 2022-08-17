@@ -39,7 +39,7 @@
                     <mat-progress-bar mode="indeterminate"></mat-progress-bar>
                 </div>
                 <div *ngIf="!loadingDeaths">
-                    
+
                     <table mat-table style="width: 100%;" [dataSource]="deaths">
 
                         <ng-container matColumnDef="description">
@@ -53,7 +53,7 @@
                         </ng-container>
 
                         <tr mat-header-row *matHeaderRowDef="['description', 'timestamp']"></tr>
-                        <tr mat-row *matRowDef="let element; columns: ['description', 'timestamp'];"></tr>
+                        <tr mat-row *matRowDef="let element; columns: ['description', 'timestamp'];" style="cursor: pointer;" (click)="showDeathRecap(element)"></tr>
 
                     </table>
 

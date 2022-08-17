@@ -8,6 +8,8 @@ class LogFileLocation {
     raw;
     /** @type {Date} */
     timestamp;
+    /** @type {string} */
+    logFilePath;
 }
 
 module.exports = { LogFileLocation };

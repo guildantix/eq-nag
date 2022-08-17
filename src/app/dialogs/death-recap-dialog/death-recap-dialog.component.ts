@@ -120,5 +120,10 @@ export class DeathRecapDialogComponent implements OnInit {
             } );
         this.stepper.next();
     }
+
+    showDeathRecap( logFileLoc: LogFileLocation ) {
+        this.ipcService.showDeathRecap( logFileLoc );
+        this.dialogRef.close();
+    }
     
 }

@@ -6,6 +6,8 @@ const { OverlayWindow } = require( "./data/models/overlay-window" );
 const ArrayUtilities = require( "./utilities/arrays" );
 const log = require( 'electron-log' );
 const CharacterModel = require( './data/models/character' );
+const { IpcMessage } = require( "./data/models/common" );
+const { LogFileLocation } = require( "./data/log-file-location" );
 
 /** 
  * We will occassionally need to disable the 'force on top' of the renderer, so 
@@ -151,16 +153,28 @@ class WindowManager {
             bwin?.close();
         } );
         
+        // ipcMain.on( 'window:death-recap',
+        //     /**
+        //      * Loads the death recap.
+        //      * 
+        //      * @param {any} event Event args.
+        //      * @param {CharacterModel} arg The character model.
+        //      */
+        //     ( event, arg ) => {
+        //         this.loadDeathRecap( arg );
+        //     } );
+        
         ipcMain.on( 'window:death-recap',
             /**
-             * Loads the death recap.
+             * Loads the death recap for the specified player death.
              * 
              * @param {any} event Event args.
-             * @param {CharacterModel} arg The character model.
+             * @param {IpcMessage<LogFileLocation>} arg The character model.
              */
             ( event, arg ) => {
-                this.loadDeathRecap( arg );
-            } );
+                this.loadDeathRecap( arg.value, arg.id );
+            }
+        );
 
         ipcMain.on( 'renderer:arrange-overlays', ( event ) => {
             this.#renderer.setIgnoreMouseEvents( false );
@@ -496,9 +510,10 @@ class WindowManager {
     /**
      * Loads a death recap for the specified character.
      * 
-     * @param {CharacterModel} character The character to view the death recap.
+     * @param {LogFileLocation} logFileLocation The location in the log file where death happened.
+     * @param {string} messageId The ipc message id.
      */
-    loadDeathRecap( character ) {
+    loadDeathRecap( logFileLocation, messageId ) {
 
         let deathRecap = new BrowserWindow( {
             transparent: true,
@@ -523,7 +538,7 @@ class WindowManager {
             y: ( workAreaSize.height - size.height ) / 2,
         } );
         
-        deathRecap.loadURL( `file://${__dirname}/windows/death-recap.html?character=${encodeURI( JSON.stringify( character ) )}` );
+        deathRecap.loadURL( `file://${__dirname}/windows/death-recap.html?logFilePath=${encodeURI( logFileLocation.logFilePath )}&lineNo=${logFileLocation.lineNo}&messageId=${encodeURI(messageId)}` );
         // deathRecap.setIgnoreMouseEvents( true );
         // deathRecap.setAlwaysOnTop( true, "screen-saver" );
         

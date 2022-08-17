@@ -956,6 +956,7 @@ export class LogFileLocation {
     public description: string;
     public raw: string;
     public timestamp: Date;
+    public logFilePath: string;
 
 }
 
