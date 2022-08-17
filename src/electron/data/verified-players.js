@@ -24,6 +24,9 @@ Only players can do the following:
     has left the group. -- Mercs too
     is now the leader of your raid.
     
+As important: only players can kill NPCs.
+    
+    Singlemobnamewithcapitol has been slain by Verifiedplayername!
 
 */
 
