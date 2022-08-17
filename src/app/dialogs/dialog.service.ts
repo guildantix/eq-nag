@@ -23,6 +23,7 @@ import { NamedGroupConditionsModel } from './named-group-conditions-dialog/named
 import { NamedGroupConditionsDialogComponent } from './named-group-conditions-dialog/named-group-conditions-dialog.component';
 import { PrepareQuickShareDialogComponent } from './quick-share/prepare-quick-share.component';
 import { ReceiveQuickShareDialogComponent } from './quick-share/receive-quick-share.component';
+import { DeathRecapDialogComponent } from './death-recap-dialog/death-recap-dialog.component';
 
 @Injectable()
 export class DialogService {
@@ -734,6 +735,25 @@ export class DialogService {
             autoFocus: false,
         } ).afterClosed();
 
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Opens the new character dialog.
+     */
+    public showDeathRecapDialog(): void {
+        this.dialog.open( DeathRecapDialogComponent, {
+            width: '750px',
+            panelClass: 'app-dialog',
+        } ).afterClosed().subscribe();
     }
     
 }

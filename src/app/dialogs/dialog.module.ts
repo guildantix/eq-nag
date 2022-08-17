@@ -28,6 +28,7 @@ import { ColoredStringPipe } from '../pipes/colored-string.pipe';
 import { PrepareQuickShareDialogComponent } from './quick-share/prepare-quick-share.component';
 import { ReceiveQuickShareDialogComponent } from './quick-share/receive-quick-share.component';
 import { AuthorDialogComponent } from './author-dialog/author-dialog.component';
+import { DeathRecapDialogComponent } from './death-recap-dialog/death-recap-dialog.component';
 
 @NgModule( {
     imports: [
@@ -84,6 +85,7 @@ import { AuthorDialogComponent } from './author-dialog/author-dialog.component';
         PrepareQuickShareDialogComponent,
         ReceiveQuickShareDialogComponent,
         AuthorDialogComponent,
+        DeathRecapDialogComponent,
     ],
     providers: [
         DialogService,
