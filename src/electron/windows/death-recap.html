@@ -139,11 +139,13 @@
     </style>
 
 </head>
-<body>
+<body style="display: none;">
 
     <script type="text/javascript">
+        const urlParams = new URLSearchParams(window.location.search);
         var DeathRecap = require('./death-recap');
-        DeathRecap();
+        let lineNo = +urlParams.get('lineNo');
+        DeathRecap(decodeURI(urlParams.get('logFilePath')), lineNo > 0 ? lineNo : null, decodeURI(urlParams.get('messageId')));
     </script>
 
     <section class="body">

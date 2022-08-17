@@ -18,6 +18,7 @@ const FilesDatabaseStore = require( './src/electron/data/files-database' );
 const GinaImporter = require( "./src/electron/gina-importer" );
 const CombatParser = require( "./src/electron/utilities/combat-parser" );
 const { IpcMessage } = require( "./src/electron/data/models/common" );
+const { LogFileLocation } = require( "./src/electron/data/log-file-location" );
 
 /** @type {BrowserWindow} */
 var mainWindow, logWatcherWindow, testWindow;
@@ -270,9 +271,20 @@ ipcMain.on( 'death-recap:find-deaths',
      * @param {IpcMessage<string>} message The log file to parse.
      */
     ( event, message ) => {
-        let parser = new CombatParser();
-        parser.findAllDeaths( message.value, deathsFoud => event.sender.send( `death-recap:find-deaths:${message.id}`, deathsFoud ) );
-    } );
+        winManager.findPlayerDeaths( message.value, message.id );
+    }
+);
+
+ipcMain.on( 'death-recap:find-deaths:results',
+    /**
+     * 
+     * @param {any} event The event args.
+     * @param {IpcMessage<LogFileLocation[]>} message The log file to parse.
+     */
+     ( event, message ) => {
+        mainWindow.webContents.send( `death-recap:find-deaths:${message.id}`, message.value );
+    }
+);
 
 var mainWindowRef = new ForwardRef( () => mainWindow ? mainWindow : null );
 var logBootstrapRef = new ForwardRef( () => logBootstrap ? logBootstrap : null );

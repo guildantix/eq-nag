@@ -435,6 +435,65 @@ class WindowManager {
 
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Loads a death recap for the specified character.
+     * 
+     * @param {string} logFilePath The character to view the death recap.
+     */
+    findPlayerDeaths( logFilePath, messageId ) {
+
+        let deathRecap = new BrowserWindow( {
+            transparent: true,
+            frame: false,
+            resizable: true,
+            movable: true,
+            webPreferences: {
+                nodeIntegration: true,
+                devTools: app.isDev(),
+            },
+            skipTaskbar: true,
+            maximizable: false,
+        } );
+        
+        let size = { width: 1100, height: 800 };
+        let workAreaSize = screen.getPrimaryDisplay().workAreaSize;
+
+        deathRecap.setBounds( {
+            width: size.width,
+            height: size.height,
+            x: ( workAreaSize.width - size.width ) / 2,
+            y: ( workAreaSize.height - size.height ) / 2,
+        } );
+        
+        deathRecap.loadURL( `file://${__dirname}/windows/death-recap.html?logFilePath=${encodeURI( logFilePath )}&lineNo=&messageId=${encodeURI(messageId)}` );
+        deathRecap.setIgnoreMouseEvents( true );
+        
+        // Open the DevTools.
+        if ( app.isDev() ) {
+            deathRecap.webContents.openDevTools();
+        }
+
+        this.#deathRecap = deathRecap;
+    }
+
+
+
+
+
+
+
+
+
+
     /**
      * Loads a death recap for the specified character.
      * 
@@ -477,8 +536,21 @@ class WindowManager {
         this.#deathRecap = deathRecap;
     }
 
-    closeDeathRecap() {
 
+
+
+
+
+
+
+
+    
+    /**
+     * Closes the death recap window.
+     */
+    closeDeathRecap() {
+        this.#deathRecap?.close();
+        this.#deathRecap = null;
     }
 
 

@@ -343,9 +343,12 @@ export class MainComponent implements OnInit {
     }
 
     public testFn(): void {
+        // large file test: E:\\EverQuest\\Logs\\backup\\20220721\\eqlog_Halifor_rizlona.txt
+        
         this.ipcService.findPlayerCharacterDeaths( 'E:\\EverQuest\\Logs\\eqlog_Ryvn_rizlona.txt' ).subscribe( deaths => console.log( 'deaths', deaths ) );
         // this.ipcService.findPlayerCharacterDeaths( 'E:\\EverQuest\\Logs\\eqlog_Israphel_rizlona.txt' ).subscribe( deaths => console.log( 'deaths', deaths ) );
         // this.ipcService.findPlayerCharacterDeaths( 'E:\\EverQuest\\Logs\\eqlog_Eryndhel_rizlona.txt' ).subscribe( deaths => console.log( 'deaths', deaths ) );
+        
         // let quickShareId = 'OVtf9VzRSjykb1xx';
         // let observables = [
         //     this.quickShareService.getQuickShare( quickShareId ),

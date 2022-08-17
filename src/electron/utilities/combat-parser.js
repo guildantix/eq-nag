@@ -26,22 +26,23 @@ class CombatParser {
         let deathsFound = [];
         
         fs.open( logFilePath, 'r', ( err, fd ) => {
-            let read = 0;
+            // let read = 0;
             
             if ( fd ) {
                 let file = fd;
                 let fstats = fs.fstatSync( file );
 
                 let position = 0;
+                let lineNo = 0;
                 /** @type {string} */
                 let danglyBits = null;
 
                 let readFile = () => {
-                    let rsize = read + ( this.chunkSize * this.chunks ) > fstats.size ? fstats.size - read : ( this.chunkSize * this.chunks );
+                    let rsize = position + ( this.chunkSize * this.chunks ) > fstats.size ? fstats.size - position : ( this.chunkSize * this.chunks );
     
                     fs.read( file, Buffer.alloc( rsize ), 0, rsize, position, ( err, bytecount, buff ) => {
 
-                        read += bytecount;
+                        // read += bytecount;
                         position += bytecount;
     
                         let lines = ( ( danglyBits == null ? '' : danglyBits ) + buff.toString( 'utf-8', 0, bytecount ) ).split( /\r\n|\r|\n/gmi );
@@ -49,12 +50,13 @@ class CombatParser {
                         danglyBits = lines.pop();
 
                         for ( let i = 0; i < lines?.length; i++ ) {
+                            lineNo++;
                             // https://regex101.com/r/a4YxfW/1
                             let e = /^\[(?<timestamp>.*?)\]\s*You have been slain by (?<slayer>[^!]*)!$/gi.exec( lines[ i ] );
                             if ( e ) {
                                 let log = new LogFileLocation();
                                 
-                                log.lineNo = 0;
+                                log.lineNo = lineNo;
                                 log.description = `You have been slain by ${e.groups.slayer}!`;
                                 log.raw = lines[ i ];
                                 log.timestamp = new Date( e.groups.timestamp );
@@ -65,8 +67,8 @@ class CombatParser {
 
                         if ( bytecount <= 0 ) {
                             callback( deathsFound );
-                        } else if ( read < fstats.size ) {
-                            readFile();
+                        } else if ( position < fstats.size ) {
+                            setTimeout( () => readFile(), 50 );
                         } else {
                             callback( deathsFound );
                         }
