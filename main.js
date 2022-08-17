@@ -16,6 +16,8 @@ const LogBootstrapper = require( './src/electron/log-bootstrap' );
 const GameResources = require( './src/electron/data/game-resources' );
 const FilesDatabaseStore = require( './src/electron/data/files-database' );
 const GinaImporter = require( "./src/electron/gina-importer" );
+const CombatParser = require( "./src/electron/utilities/combat-parser" );
+const { IpcMessage } = require( "./src/electron/data/models/common" );
 
 /** @type {BrowserWindow} */
 var mainWindow, logWatcherWindow, testWindow;
@@ -260,6 +262,17 @@ ipcMain.on( 'context:store:pseudo-clipboard', ( event, model ) => {
 ipcMain.on( 'context:get:pseudo-clipboard', ( event, key ) => {
     event.sender.send( `context:get:pseudo-clipboard:${key}`, pseudoClipboard[ key ] );
 } );
+
+ipcMain.on( 'death-recap:find-deaths',
+    /**
+     * 
+     * @param {any} event The event args.
+     * @param {IpcMessage<string>} message The log file to parse.
+     */
+    ( event, message ) => {
+        let parser = new CombatParser();
+        parser.findAllDeaths( message.value, deathsFoud => event.sender.send( `death-recap:find-deaths:${message.id}`, deathsFoud ) );
+    } );
 
 var mainWindowRef = new ForwardRef( () => mainWindow ? mainWindow : null );
 var logBootstrapRef = new ForwardRef( () => logBootstrap ? logBootstrap : null );

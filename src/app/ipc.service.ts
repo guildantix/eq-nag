@@ -3,7 +3,7 @@ import * as Electron from 'electron';
 import { UpdateInfo } from 'electron-updater';
 import { Observable, Observer } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
-import { DataTickModel, DkpEntryModel, TriggerModel, OverlayWindowModel, ActionTypes, FocusEffectSettings, CharacterModel, BasicError, TriggerFolder, FileModel, Tag, AuthorModel, PackageFileModel, TriggerPackageMetaModel, TriggerPackageVersion, FctStylesModel, OverlayBoundsChangedEventArgs, DialogEventArgs, QuickShareMetaModel } from './core.model';
+import { DataTickModel, DkpEntryModel, TriggerModel, OverlayWindowModel, ActionTypes, FocusEffectSettings, CharacterModel, BasicError, TriggerFolder, FileModel, Tag, AuthorModel, PackageFileModel, TriggerPackageMetaModel, TriggerPackageVersion, FctStylesModel, OverlayBoundsChangedEventArgs, DialogEventArgs, QuickShareMetaModel, LogFileLocation, IpcMessage } from './core.model';
 import { GinaConfiguration, GinaTriggerGroups } from './gina.model';
 
 @Injectable( { providedIn: 'root' })
@@ -403,6 +403,24 @@ export class IpcService {
 
     public mainWindowAngularReady(): void {
         this.ipc.send( 'main:angular-ready' );
+    }
+
+    public findPlayerCharacterDeaths( logFile: string ): Observable<LogFileLocation[]> {
+        let obs: Observable<LogFileLocation[]> = new Observable<LogFileLocation[]>( ( observer: Observer<LogFileLocation[]> ) => {
+            
+            let message = new IpcMessage( logFile );
+
+            this.ipc.once( `death-recap:find-deaths:${message.id}`, ( e, deathsFound ) => {
+                this.ngZone.run( () => {
+                    observer.next( deathsFound );
+                    observer.complete();
+                } );
+            } );
+            this.ipc.send( 'death-recap:find-deaths', message );
+
+        } );
+
+        return obs;
     }
 
     public showGinaImportWindow(): Observable<boolean> {
