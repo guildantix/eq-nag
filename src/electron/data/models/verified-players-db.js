@@ -8,3 +8,5 @@ class VerifiedPlayersDb {
     /** @type {Record<string, string>} */
     petOwner = {};
 }
+
+module.exports = { VerifiedPlayersDb };

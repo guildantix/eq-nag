@@ -2,6 +2,7 @@ const { PlayerCharacter, PlayerPet } = require( "./models/common" );
 const Store = require( './store' );
 const _ = require( 'lodash' );
 const StringUtilities = require( "../utilities/string" );
+const { VerifiedPlayersDb } = require( "./models/verified-players-db" );
 
 /*
 
