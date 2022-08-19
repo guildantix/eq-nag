@@ -375,36 +375,6 @@ let combatRegex = [
 
     // (?<attackType>[(backstab|backstabs|bash|bashes|bite|bites|claw|claws|crush|crushes|frenzy|frenzies|gore|gores|hit|hits|kick|kicks|learn|learns|maul|mauls|pierce|pierces|punch|punches|rend|rends|shoot|shoots|slam|slams|slash|slashes|slice|slices|smash|smashes|sting|stings|strike|strikes|sweep|sweeps)]+?)
 
-
-
-    
-    
-
-    //   { "backstab", "backstabs" }, 
-    //   { "bash", "bashes" }, 
-    //   { "bite", "bites" }, 
-    //   { "claw", "claws" }, 
-    //   { "crush", "crushes" },
-    //   { "frenzy", "frenzies" }, 
-    //   { "gore", "gores" }, 
-    //   { "hit", "hits" }, 
-    //   { "kick", "kicks" }, 
-    //   { "learn", "learns" },
-    //   { "maul", "mauls" }, 
-    //   { "pierce", "pierces" }, 
-    //   { "punch", "punches" }, 
-    //   { "rend", "rends" }, 
-    //   { "shoot", "shoots" },
-    //   { "slam", "slams" }, 
-    //   { "slash", "slashes" }, 
-    //   { "slice", "slices" }, 
-    //   { "smash", "smashes" }, 
-    //   { "sting", "stings" },
-    //   { "strike", "strikes" }, 
-    //   { "sweep", "sweeps" }
-
-    
-
 class CombatParser {
 
     /** @type {number} */
