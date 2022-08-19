@@ -10,6 +10,7 @@ Only players can do the following:
     Chat
     Loot
     Assassinate
+    Banestrike
     Twincast heals
     Double bow shot
     Headshot
@@ -33,7 +34,7 @@ As important: only players can kill NPCs.
 class VerifiedPlayersStore extends Store {
 
     /** The data store for this object.
-     * @type {{players: Record<string, boolean>, pets: Record<string, boolean>, playerClasses: Record<string, string>, petOwner: Record<string, string>}}
+     * @type {VerifiedPlayersDb}
      * */
     #data;
 
@@ -48,6 +49,41 @@ class VerifiedPlayersStore extends Store {
         if ( !this.#data.version || this.#data.version < 1 ) {
             
         }
+    }
+
+    /**
+     * Attaches store events to ipc main and dispatches react events to the main window.
+     * 
+     * @param {ForwardRef} mainWindowRef The main window of the application.
+     * @param {function} sendTick The send tick method.
+     */
+     attachIpcEvents( mainWindowRef, sendTick ) {
+
+        // ipcMain.on( 'character:create', ( event, character ) => {
+        //     let characterId = this.add( character );
+        //     event.sender.webContents.send( 'character:create', characterId );
+        //     sendTick();
+        // } );
+
+        ipcMain.on( 'verified-players:get', ( event, name ) => {
+            if ( characterId != null && characterId.length > 0 ) {
+                event.sender.webContents.send( `verified-players:get:${name}`, this.isPlayer( name ) );
+            } else {
+                event.sender.webContents.send( 'verified-players:get', this.#data );
+            }
+        } );
+
+        // ipcMain.on( 'character:update', ( event, character ) => {
+        //     event.sender.webContents.send( 'character:update', this.update( character ) );
+        //     sendTick();
+        // } );
+
+        // ipcMain.on( 'character:delete', ( event, characterId ) => {
+        //     let deleted = this.remove( characterId );
+        //     event.sender.webContents.send( 'character:delete', deleted );
+        //     sendTick();
+        // } );
+
     }
 
 
