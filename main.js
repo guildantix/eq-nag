@@ -19,6 +19,7 @@ const GinaImporter = require( "./src/electron/gina-importer" );
 const CombatParser = require( "./src/electron/utilities/combat-parser" );
 const { IpcMessage } = require( "./src/electron/data/models/common" );
 const { LogFileLocation } = require( "./src/electron/data/log-file-location" );
+const VerifiedPlayersStore = require( "./src/electron/data/verified-players" );
 
 /** @type {BrowserWindow} */
 var mainWindow, logWatcherWindow, testWindow;
@@ -34,6 +35,7 @@ const logBootstrap = new LogBootstrapper();
 const gameResources = new GameResources();
 const fileDatabase = new FilesDatabaseStore();
 const ginaImporter = new GinaImporter();
+const verifiedPlayersDatabase = new VerifiedPlayersStore();
 
 GH_TOKEN = "e3460400ae1273a5cac83e1b86a5aceae7f8bab7";
 
@@ -299,6 +301,7 @@ characterDatabase.attachIpcEvents( mainWindowRef, sendTick );
 logBootstrap.boostrapLogWatchers( mainWindowRef, app.isDev(), characterDatabase, sendTick );
 gameResources.attachIpcEvents( mainWindowRef, userPreferences );
 ginaImporter.initGinaImporter( mainWindowRef, app.isDev() );
+verifiedPlayersDatabase.attachIpcEvents( mainWindowRef, sendTick );
 
 // let x = userPreferences.everquestInstallFolder;
 
