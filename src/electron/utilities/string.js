@@ -392,7 +392,7 @@ function parseDictionaryKeys( value ) {
  * @param {number} deltaTime The change in time, in milliseconds, since the previous sequential capture.
  */
 function parseMatchesToLiteral( value, matches, deltaTime ) {
-    if ( isNullOrWhitespace( value ) ) {
+    if ( isNullOrWhitespace( value ) || matches == null ) {
         return value;
     }
     // \${(.[^}]*)}     Your ${SpellBeingCast} spell is interrupted.
