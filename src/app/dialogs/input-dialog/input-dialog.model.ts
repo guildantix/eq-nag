@@ -4,4 +4,5 @@ export class InputDialogModel {
     public label: string;
     public hint: string;
     public initialValue?: string = null;
+    public useTextArea: boolean = false;
 }
