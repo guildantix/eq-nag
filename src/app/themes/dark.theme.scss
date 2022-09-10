@@ -478,7 +478,8 @@ $bg-extreme-dark: #191919;
         color: $color-green;
     }
 
-    .context-menu-background {
+    .context-menu-background,
+    .trigger-main-menu {
         hr {
             border-color: rgba($text, .05);
         }
