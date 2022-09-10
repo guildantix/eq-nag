@@ -11,7 +11,7 @@
     <button mat-icon-button [matMenuTriggerFor]="menu" aria-label="Example icon-button with a menu">
         <mat-icon>more_vert</mat-icon>
     </button>
-    <mat-menu #menu="matMenu">
+    <mat-menu #menu="matMenu" class="trigger-main-menu">
         <button mat-menu-item (click)="showNewDotTimerDialog()">
             <!-- <mat-icon>system_update_alt</mat-icon> -->
             <span>DoT Timer (Allakhazam)</span>
@@ -23,6 +23,11 @@
         <button mat-menu-item (click)="showNewBuffTimerDialog()">
             <!-- <mat-icon>system_update_alt</mat-icon> -->
             <span>Buff Timer (Allakhazam)</span>
+        </button>
+        <hr />
+        <button mat-menu-item (click)="showSimLogEntry()">
+            <!-- <mat-icon>system_update_alt</mat-icon> -->
+            <span>Simulate Log</span>
         </button>
         <!-- <button mat-menu-item disabled>
             <mat-icon>voicemail</mat-icon>

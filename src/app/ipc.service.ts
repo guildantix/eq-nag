@@ -464,6 +464,10 @@ export class IpcService {
         this.ipc.send( 'log:simulate:file', file );
     }
 
+    public simulateLogLines( lines: string[] ): void {
+        this.ipc.send( 'log:simulate:lines', lines );
+    }
+
     public createNewTrigger( model: TriggerModel ): Observable<string> {
         let obs: Observable<string> = new Observable<string>( ( observer: Observer<string> ) => {
             
