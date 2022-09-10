@@ -207,6 +207,7 @@ function sendTick() {
         fctStyles: userPreferences.fctStyles,
         persistentStorage: userPreferences.persistentStorage,
         enableQuickShareImports: userPreferences.enableQuickShareImports,
+        detrimentalOverlayId: userPreferences.detrimentalOverlayId,
     };
     mainWindow.webContents.send( 'tick', tickData );
     logBootstrap.tick( tickData, characterDatabase );

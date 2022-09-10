@@ -54,6 +54,22 @@ class LogBootstrapper {
             }
         } );
 
+        ipcMain.on( 'log:simulate:lines', function ( event, data ) {
+            for ( let key in logWatchers ) {
+                if ( logWatchers.hasOwnProperty( key ) && logWatchers[ key ].window != null ) {
+                    logWatchers[ key ].window.webContents.send( 'log:simulate:lines', data );
+                    logWatchers[ key ].simulating = true;
+                    break;
+                }
+            }
+        } );
+
+        ipcMain.on( 'log:simulate:done', function ( event, characterId ) {
+            if ( logWatchers.hasOwnProperty( characterId ) ) {
+                logWatchers[ characterId ].simulating = false;
+            }
+        } );
+
         ipcMain.on( 'log:destroy:component', function ( event, instanceId ) {
             for ( let key in logWatchers ) {
                 if ( logWatchers.hasOwnProperty( key ) && logWatchers[ key ].window != null ) {
@@ -145,7 +161,7 @@ class LogBootstrapper {
 
                 if ( logWatchers[ characterId ].window == null ) {
 
-                    // If the window has not been engaged, then open it.
+                    // If the window has not been engaged, then open it. // TODO: Start up a log watcher when simulating. Even allow a charcter to be selected from a list.
                     logWatchers[ characterId ].window = startLogWatcherWindow( _chr.logFile, isDev, sendTick, _chr, logWatchers[ characterId ].logSize > _stats.size ? 0 : logWatchers[ characterId ].logSize );
                     
                     // Notify the main window.
@@ -159,7 +175,7 @@ class LogBootstrapper {
                 logWatchers[ characterId ].nullAttemptCount += 1;
 
                 // If after # of attempts without seeing any changes in the log file, then kill the process.
-                if ( logWatchers[ characterId ].nullAttemptCount >= killAfterNAttempts ) {
+                if ( !logWatchers[ characterId ].simulating && logWatchers[ characterId ].nullAttemptCount >= killAfterNAttempts ) {
                     
                     logWatchers[ characterId ].window.send( 'log:check:pulse', null );
                     ipcMain.once( 'log:pulse', function ( e, alive ) {

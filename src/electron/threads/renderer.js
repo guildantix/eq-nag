@@ -817,6 +817,9 @@ function renderFct( overlayId, comp ) {
  * @param {OverlayComponent} comp Tells the renderer to forcefully redraw the overlayComponents.
  */
 function render( overlayId, comp ) {
+    if ( overlayInstances[ overlayId ] == null ) {
+        console.error( 'Could not render to overlay', comp, overlayId );
+    }
     let contentArea = overlayInstances[ overlayId ].dom.querySelector( '.overlay-content-area' );
     let now = new Date();
 
