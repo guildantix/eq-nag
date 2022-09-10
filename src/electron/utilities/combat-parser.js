@@ -5,6 +5,8 @@ const nanoid = customAlphabet( alphabet, 16 );
 const { LogFileLocation } = require( '../data/log-file-location' );
 const fs = require( 'fs' );
 const StringUtilities = require( './string' );
+const { ipcRenderer } = require( 'electron' );
+const { VerifiedPlayersDb } = require( '../data/models/verified-players-db' );
 
 class AttackModifiers {
     
@@ -70,9 +72,19 @@ class LogRecord {
 /** @type {Record<string, boolean>} */
 let verifiedPlayers = {};
 /** @type {Record<string, boolean>} */
+let vertifiedPets = {};
+/** @type {Record<string, boolean>} */
 let vertifiedNpcs = {};
+/** @type {Record<string, string>} */
+let playerClasses = {};
+/** @type {Record<string, string>} */
+let petOwner = {};
+/** @type {Record<string, boolean>} */
+let unverifiedActors = {};
+
 /** @type {string} */
-let characterName = 'Unknown';
+let characterName = 'You';
+
 /** @type {LogRecord[]} */
 let encounterEvents = [];
 
@@ -391,6 +403,19 @@ class CombatParser {
      * @param {number} lineNo The line number at which death occurred.
      */
     loadDeathRecap( logFilePath ) {
+        ipcRenderer.on( 'verified-players:get',
+            /**
+             * Handles the event.
+             * 
+             * @param {any} event Event args.
+             * @param {VerifiedPlayersDb} data Verified players data.
+             */
+            ( event, data ) => {
+            
+            }
+        );
+        ipcRenderer.send( 'verified-players:get' );
+        
         // parse the entire log file for player data.
         // find the encounter duration.
     }

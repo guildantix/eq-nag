@@ -3,6 +3,7 @@ const Store = require( './store' );
 const _ = require( 'lodash' );
 const StringUtilities = require( "../utilities/string" );
 const { VerifiedPlayersDb } = require( "./models/verified-players-db" );
+const { app, BrowserWindow, ipcMain, screen } = require( "electron" );
 
 /*
 
@@ -67,7 +68,7 @@ class VerifiedPlayersStore extends Store {
         // } );
 
         ipcMain.on( 'verified-players:get', ( event, name ) => {
-            if ( characterId != null && characterId.length > 0 ) {
+            if ( name != null && name.length > 0 ) {
                 event.sender.webContents.send( `verified-players:get:${name}`, this.isPlayer( name ) );
             } else {
                 event.sender.webContents.send( 'verified-players:get', this.#data );
