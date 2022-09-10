@@ -944,7 +944,7 @@ function parseLogEntries( raw, simulating ) {
                         } else if ( action.actionType === ActionTypes.BeneficialTimer ) {
                             /* --== Buff Timers ==-- */
                         
-                            let spellName = trigger?._conditionResults?.SpellBeingCast;
+                            let spellName = trigger?._conditionResults?.SpellBeingCast ?? action.displayText;
                             let rgx = new RegExp( `^You begin casting ${spellName}\\.$`, 'gmi' );
                             let time = timestamp.getTime();
                             let _t = timestamp.getTime();
@@ -955,8 +955,10 @@ function parseLogEntries( raw, simulating ) {
                                 time -= action.castTime;
                             }
 
+                            // This checks the cast time to limit the chances that we're not capturing another player's buff.
                             let m = checkParseHistory( rgx, { time: [ time, time + 1000 ] } );
-                            if ( m?.length > 0 ) {
+                            // If the cast time is zero, there's no need for this check.
+                            if ( m?.length > 0 || action.castTime === 0 ) {
                                 action.displayText = spellName;
                                 displayBeneficialTimerComponent( res, timestamp, action, trigger, spellName );
                             }

@@ -159,15 +159,16 @@ export class NewTriggerBuffDialogComponent implements OnInit {
 
         let glyphType = this.spell.castTime == 0 && !this.spell.castOnYou;
 
-        trigger.conditions.push( <TriggerCondition>{
-            conditionId: nanoid(),
-            conditionType: TriggerConditionTypes.VariableValue,
-            variableName: 'SpellBeingCast',
-            operatorType: OperatorTypes.Equals,
-            // Gorgon Skin|Gorgon Skin Rk. II|Gorgon Skin Rk. III
-            variableValue: `${this.spell.name}|${this.spell.name} Rk\. II|${this.spell.name} Rk\. III`,
-        } );
-
+        if ( !glyphType ) {
+            trigger.conditions.push( <TriggerCondition>{
+                conditionId: nanoid(),
+                conditionType: TriggerConditionTypes.VariableValue,
+                variableName: 'SpellBeingCast',
+                operatorType: OperatorTypes.Equals,
+                // Gorgon Skin|Gorgon Skin Rk. II|Gorgon Skin Rk. III
+                variableValue: `${this.spell.name}|${this.spell.name} Rk\. II|${this.spell.name} Rk\. III`,
+            } );
+        }
 
         let castOnYouPhraseId: string = null;
         let castOnOtherPhraseId: string = null;
@@ -187,7 +188,7 @@ export class NewTriggerBuffDialogComponent implements OnInit {
                     duration: null,
                     // /^(?<target>You) feel armored\.$/
                     // /^(?<target>You)r balls feel armored\.$/
-                    phrase: rawPhrase.replace( /\.$/, '\\.$' ).replace( /you/mi, '^(?<target>You)' ),
+                    phrase: '^' + rawPhrase.replace( /\.$/, '\\.$' ).replace( /you/mi, '(?<target>You)' ),
                 } );
                 buffTimerPhrases.push( castOnYouPhraseId );
             }
