@@ -157,6 +157,8 @@ export class NewTriggerBuffDialogComponent implements OnInit {
         trigger.capturePhrases = [];
         trigger.conditions = [];
 
+        let glyphType = this.spell.castTime == 0 && !this.spell.castOnYou;
+
         trigger.conditions.push( <TriggerCondition>{
             conditionId: nanoid(),
             conditionType: TriggerConditionTypes.VariableValue,
@@ -171,10 +173,26 @@ export class NewTriggerBuffDialogComponent implements OnInit {
         let castOnOtherPhraseId: string = null;
         let buffTimerPhrases: string[] = [];
         let iconTimerIds: string[] = [];
-        // if ( this.spell.targetType === 'Self' ) {
+        
         trigger.captureMethod = 'Any match';
 
-        if ( this.useSelfTimer ) {
+        if ( this.useSelfTimer && !glyphType ) {
+            let rawPhrase = this.spell.castOnYou ? this.spell.castOnYou : this.spell.youCast;
+            if ( rawPhrase?.length > 0 ) {
+                castOnYouPhraseId = nanoid();
+                trigger.capturePhrases.push( <CapturePhrase>{
+                    phraseId: castOnYouPhraseId,
+                    useRegEx: true,
+                    requirePreviousPhrase: false,
+                    duration: null,
+                    // /^(?<target>You) feel armored\.$/
+                    // /^(?<target>You)r balls feel armored\.$/
+                    phrase: rawPhrase.replace( /\.$/, '\\.$' ).replace( /you/mi, '^(?<target>You)' ),
+                } );
+                buffTimerPhrases.push( castOnYouPhraseId );
+            }
+        } else if ( this.useSelfTimer && glyphType ) {
+            let glyphPhrase = `^(?<target>You) begin casting ${this.spell.name}\\.`;
             castOnYouPhraseId = nanoid();
             trigger.capturePhrases.push( <CapturePhrase>{
                 phraseId: castOnYouPhraseId,
@@ -183,7 +201,7 @@ export class NewTriggerBuffDialogComponent implements OnInit {
                 duration: null,
                 // /^(?<target>You) feel armored\.$/
                 // /^(?<target>You)r balls feel armored\.$/
-                phrase: this.spell.castOnYou.replace( /\.$/, '\\.$' ).replace( /you/mi, '^(?<target>You)' ),
+                phrase: glyphPhrase,
             } );
             buffTimerPhrases.push( castOnYouPhraseId );
         }

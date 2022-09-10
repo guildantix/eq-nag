@@ -548,6 +548,7 @@ export class ScrapedSpell {
     public classes: CharacterClassLevel[] = [];
     public castOnOther: string;
     public castOnYou: string;
+    public youCast: string;
     public gemIndex: number;
     public gemSrc: string;
     public targetType: string;

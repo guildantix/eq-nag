@@ -371,6 +371,7 @@ export class ScraperService {
                     castOnOther: spellEmotes[ 'Cast on other' ],
                     castOnYou: spellEmotes[ 'Cast on you' ],
                     effectFades: spellEmotes[ 'Effect Fades' ],
+                    youCast: spellEmotes[ 'You cast' ],
                 };
                 
                 data.name = data.name.match( /^Ancient\s/ ) ? StringUtility.Insert( data.name, ':', /^Ancient\s/.exec( data.name ).index + 'Ancient'.length ) : data.name;
@@ -435,12 +436,13 @@ export class ScraperService {
                 model.classes = classes;
                 model.castOnOther = data.castOnOther?.trim()?.replace( / +(?= )/g, '' );
                 model.castOnYou = data.castOnYou?.trim()?.replace( / +(?= )/g, '' );
+                model.youCast = data.youCast?.trim()?.replace( / +(?= )/g, '' );
                 
                 if ( targetTypeCheck ) {
                     model.targetType = targetTypeCheck.textContent?.trim();
                 }
 
-                if ( castingTimeCheck ) {
+                if ( castingTimeCheck && castingTimeCheck.textContent?.trim().toLowerCase() !== 'instant' ) {
                     model.castTime = parseFloat( castingTimeCheck.textContent ) * 1000;
                 } else {
                     model.castTime = 0;
