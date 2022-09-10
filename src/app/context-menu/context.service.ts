@@ -67,10 +67,10 @@ export class ContextService {
         this.copyProperties( action, this.actionProperties, Object.keys( new TriggerActionProperties() ) );
         
         // TODO: Test the copied array of objects.
-        this.actionProperties.hideConditions = this.copyArrayProperties( action.hideConditions, [], Object.keys( new TriggerConditionProperties() ), [ 'conditionId' ] );
-        this.actionProperties.excludeTargets = this.copyArrayProperties( action.excludeTargets, [], Object.keys( new PhraseProperties() ), [ 'phraseId' ] );
-        this.actionProperties.endEarlyPhrases = this.copyArrayProperties( action.endEarlyPhrases, [], Object.keys( new PhraseProperties() ), [ 'phraseId' ] );
-        this.actionProperties.resetCounterPhrases = this.copyArrayProperties( action.resetCounterPhrases, [], Object.keys( new PhraseProperties() ), [ 'phraseId' ] );
+        this.actionProperties.hideConditions = this.copyArrayProperties( action.hideConditions ?? [], [], Object.keys( new TriggerConditionProperties() ), [ 'conditionId' ] );
+        this.actionProperties.excludeTargets = this.copyArrayProperties( action.excludeTargets ?? [], [], Object.keys( new PhraseProperties() ), [ 'phraseId' ] );
+        this.actionProperties.endEarlyPhrases = this.copyArrayProperties( action.endEarlyPhrases ?? [], [], Object.keys( new PhraseProperties() ), [ 'phraseId' ] );
+        this.actionProperties.resetCounterPhrases = this.copyArrayProperties( action.resetCounterPhrases ?? [], [], Object.keys( new PhraseProperties() ), [ 'phraseId' ] );
 
         this.store( 'action-properties', this.actionProperties );
 
