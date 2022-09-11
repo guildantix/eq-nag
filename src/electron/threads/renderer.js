@@ -134,6 +134,7 @@ function Renderer( originX, originY ) {
     origin.y = originY;
 
     DomUtilities.docReady( f => {
+        // TODO: Sometimes (rarely?) getting overlayTemplate is not a function
         overlayTemplate = Handlebars.compile( document.querySelector( '#overlay' ).innerHTML );
         overlayFctTemplate = Handlebars.compile( document.querySelector( '#overlayFct' ).innerHTML );
         displayTextTemplate = Handlebars.compile( document.querySelector( '#displayTextTemplate' ).innerHTML );
