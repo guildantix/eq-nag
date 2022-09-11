@@ -556,6 +556,7 @@ export class ScrapedSpell {
     public castTime: number;
     public effectFades: string;
     public itemsWithEffect: OutsideResource[] = [];
+    public itemClickOnly: boolean = false;
     
 }
 

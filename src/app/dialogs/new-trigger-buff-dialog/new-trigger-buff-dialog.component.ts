@@ -222,22 +222,25 @@ export class NewTriggerBuffDialogComponent implements OnInit {
         
         let hideTimer = !this.useSelfTimer || ( this.spell?.targetType !== 'Self' && !this.useTargetTimer );
         let buffTimers: TriggerAction[] = [];
-        buffTimers.push( <TriggerAction>{
-            phrases: [].concat( buffTimerPhrases ),
-            actionType: ActionTypes.BeneficialTimer,
-            overlayId: this.timerOverlayId,
-            duration: this.spell.duration,
-            actionId: nanoid(),
-            restartBehavior: TimerRestartBehaviors.RestartOnDuplicate,
-            displayText: this.spell.name,
-            useCustomColor: true,
-            overrideTimerColor: '#0288d1',
-            timerBackgroundColor: ColorUtility.FromHex( '#0288d1' ).darken( 0.93 ).toString( 0.75 ),
-            endEarlyPhrases: [],
-            hideTimer: hideTimer,
-            hideConditions: [],
-            castTime: this.spell.castTime,
-        } );
+
+        if ( !this.spell.itemClickOnly ) {
+            buffTimers.push( <TriggerAction>{
+                phrases: [].concat( buffTimerPhrases ),
+                actionType: ActionTypes.BeneficialTimer,
+                overlayId: this.timerOverlayId,
+                duration: this.spell.duration,
+                actionId: nanoid(),
+                restartBehavior: TimerRestartBehaviors.RestartOnDuplicate,
+                displayText: this.spell.name,
+                useCustomColor: true,
+                overrideTimerColor: '#0288d1',
+                timerBackgroundColor: ColorUtility.FromHex( '#0288d1' ).darken( 0.93 ).toString( 0.75 ),
+                endEarlyPhrases: [],
+                hideTimer: hideTimer,
+                hideConditions: [],
+                castTime: this.spell.castTime,
+            } );
+        }
         
         this.selectedItems.forEach( item => {
             

@@ -462,7 +462,8 @@ export class ScraperService {
                 
                 // Scrape items with this effect into outside resources.
                 let itemAnchors = data.itemsWithEffect?.querySelectorAll( 'a' );
-                
+                model.itemClickOnly = itemAnchors?.length > 0;
+
                 itemAnchors?.forEach( a => {
                     let resource = new OutsideResource();
                     
@@ -476,7 +477,10 @@ export class ScraperService {
 
                     if ( resource.name.match( /^Spell: /gi ) == null && resource.name.match( /^Ancient: /gi ) == null ) {
                         model.itemsWithEffect.push( resource );
+                    } else {
+                        model.itemClickOnly = false;
                     }
+                    
                 } );
 
                 observer.next( model );
