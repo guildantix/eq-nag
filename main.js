@@ -226,8 +226,13 @@ autoUpdater.on( 'update-downloaded', () => {
     mainWindow.webContents.send( 'update_downloaded', updateInfo );
     winManager.eachWindow( ( window, identifier ) => {
         log.info( `Sending update to ${identifier}` );
+        // TODO: Load update notes markdown.
         window.webContents.send( 'update_downloaded', updateInfo );
     } );
+    if ( updateCheckInterval > 0 ) {
+        // Once an update is loaded, stop checking for updates.
+        clearInterval( updateCheckInterval );
+    }
 } );
 
 autoUpdater.on( 'update-available', info => {
