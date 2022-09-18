@@ -67,13 +67,13 @@ class VerifiedPlayersStore extends Store {
         //     sendTick();
         // } );
 
-        ipcMain.on( 'verified-players:get', ( event, name ) => {
-            if ( name != null && name.length > 0 ) {
-                event.sender.webContents.send( `verified-players:get:${name}`, this.isPlayer( name ) );
-            } else {
-                event.sender.webContents.send( 'verified-players:get', this.#data );
-            }
-        } );
+         ipcMain.on( 'verified-players:get', ( event ) => {
+             event.sender.webContents.send( 'verified-players:get', this.#data );
+         } );
+
+         ipcMain.on( 'verified-players:is-player', ( event, name ) => {
+             event.sender.webContents.send( `verified-players:get:${name}`, this.isPlayer( name ) );
+         } );
 
         // ipcMain.on( 'character:update', ( event, character ) => {
         //     event.sender.webContents.send( 'character:update', this.update( character ) );
