@@ -61,12 +61,6 @@ class VerifiedPlayersStore extends Store {
      */
      attachIpcEvents( mainWindowRef, sendTick ) {
 
-        // ipcMain.on( 'character:create', ( event, character ) => {
-        //     let characterId = this.add( character );
-        //     event.sender.webContents.send( 'character:create', characterId );
-        //     sendTick();
-        // } );
-
          ipcMain.on( 'verified-players:get', ( event ) => {
              event.sender.webContents.send( 'verified-players:get', this.#data );
          } );
@@ -74,17 +68,6 @@ class VerifiedPlayersStore extends Store {
          ipcMain.on( 'verified-players:is-player', ( event, name ) => {
              event.sender.webContents.send( `verified-players:get:${name}`, this.isPlayer( name ) );
          } );
-
-        // ipcMain.on( 'character:update', ( event, character ) => {
-        //     event.sender.webContents.send( 'character:update', this.update( character ) );
-        //     sendTick();
-        // } );
-
-        // ipcMain.on( 'character:delete', ( event, characterId ) => {
-        //     let deleted = this.remove( characterId );
-        //     event.sender.webContents.send( 'character:delete', deleted );
-        //     sendTick();
-        // } );
 
     }
 

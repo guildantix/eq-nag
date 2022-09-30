@@ -145,7 +145,7 @@ export class SettingsComponent implements OnInit {
      * Saves changes to the death recap preferences.
      */
     onDeathRecapPrefsChange(): void {
-        // TODO: Create different triggers based on preference selections.
+        
         let capturePhrase = new CapturePhrase();
         capturePhrase.phraseId = nagId();
         capturePhrase.requirePreviousPhrase = false;
@@ -218,39 +218,6 @@ export class SettingsComponent implements OnInit {
                 }
             } );
         }
-
-        // actions.push( <TriggerAction>{
-        //     phrases: [ trigger.capturePhrases[ 1 ].phraseId ],
-        //     actionType: ActionTypes.DotTimer,
-        //     overlayId: this.overlayId,
-        //     duration: this.spell.duration,
-        //     actionId: nanoid(),
-        //     restartBehavior: TimerRestartBehaviors.RestartOnDuplicate,
-
-        //     ifEndingSoon: endingSoonVals ? true : false,
-        //     endingDuration: endingSoonVals ? originalDotAction.endingDuration : null,
-        //     endingSoonChangeColor: endingSoonVals ? originalDotAction.endingSoonChangeColor : false,
-        //     endingSoonColor: endingSoonVals ? originalDotAction.endingSoonColor : null,
-        //     endingSoonBackgroundColor: endingSoonVals ? originalDotAction.endingSoonBackgroundColor : null,
-        //     endingSoonDisplayText: endingSoonVals ? originalDotAction.endingSoonDisplayText : null,
-        //     endingSoonTextOverlayId: endingSoonVals ? originalDotAction.endingSoonTextOverlayId : null,
-        //     endingSoonText: endingSoonVals ? originalDotAction.endingSoonText : null,
-        //     endingSoonTextDuration: endingSoonVals ? originalDotAction.endingSoonTextDuration : null,
-        //     endingSoonSpeak: endingSoonVals ? originalDotAction.endingSoonSpeak : false,
-        //     endingSoonSpeakPhrase: endingSoonVals ? originalDotAction.endingSoonSpeakPhrase : null,
-            
-        //     remainAfterEnded: remainAfterVals ? true : false,
-        //     remainDuration: remainAfterVals ? originalDotAction.remainDuration : null,
-        //     endedDisplayText: remainAfterVals ? originalDotAction.endedDisplayText : null,
-        //     endedTextOverlayId: remainAfterVals ? originalDotAction.endedTextOverlayId : null,
-        //     endedText: remainAfterVals ? originalDotAction.endedText : null,
-        //     endedTextDuration: remainAfterVals ? originalDotAction.endedTextDuration : null,
-        //     endedSpeak: remainAfterVals ? originalDotAction.endedSpeak : false,
-        //     endedSpeakPhrase: remainAfterVals ? originalDotAction.endedSpeakPhrase : null,
-        //     endedChangeColor: remainAfterVals ? originalDotAction.endedChangeColor : null,
-        //     endedColor: remainAfterVals ? originalDotAction.endedColor : null,
-        //     endedBackgroundColor: remainAfterVals ? originalDotAction.endedBackgroundColor : null,
-        // } );
 
     }
 

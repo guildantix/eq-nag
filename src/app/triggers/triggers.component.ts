@@ -196,6 +196,18 @@ export class TriggersComponent implements OnInit {
         this.dialogService.showNewBuffTimerDialog( this.selectedFolderId );
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Opens the log simulation modal.
+     */
     public showSimLogEntry(): void {
         this.dialogService.showInputDialog( 'Enter Log Entries', [ 'Enter the lines of the log file that you want to simulate.' ], 'Log lines', null, null, true ).subscribe( data => {
             let lines = data.split( /\r\n|\r|\n/gi );
@@ -1236,11 +1248,45 @@ export class TriggersComponent implements OnInit {
         } ];
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Opens the trigger library window.
+     */
     openTriggerLibrary() {
         this.ipcService.showTriggerLibrary().subscribe( opened => { } );
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Opens the death recap manual log reading modal.
+     */
     openDeathRecap() {
         this.dialogService.showDeathRecapDialog();
     }
+
+
+
+
+
+
+
+
+
+
 }

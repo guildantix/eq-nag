@@ -10,6 +10,15 @@ const { DeathRecapEncounterMob, DeathRecapRaidStats, DeathRecapEncounter, DeathR
 const DomUtilities = require( '../utilities/dom' );
 const NumberUtilities = require( '../utilities/numbers' );
 
+
+
+
+
+
+
+
+
+
 /** @type {HandlebarsTemplateDelegate<any>} */
 var numberTemplate = null;
 /** @type {HandlebarsTemplateDelegate<any>} */
@@ -18,6 +27,15 @@ var numberMagnitudeTemplate = null;
 var statItemTemplate = null;
 /** @type {HandlebarsTemplateDelegate<any>} */
 var statGroupTemplate = null;
+
+
+
+
+
+
+
+
+
 
 /**
  * Returns the format data for the given number.
@@ -50,6 +68,15 @@ function getNumberFormat( numeric ) {
         return { value: 'n/a', magnitude: null };
     }
 }
+
+
+
+
+
+
+
+
+
 
 /**
  * The death recap screen.
@@ -335,6 +362,20 @@ function DeathRecap( logFilePath, lineNo, messageId, characterName ) {
     } );
 }
 
+
+
+
+
+
+
+
+
+
+/**
+ * Executes the given callback when the document is ready.
+ * 
+ * @param {() => void)} fn The callback function to execute.
+ */
 function docReady( fn ) {
     // see if DOM is already available
     if ( document.readyState === "complete" || document.readyState === "interactive" ) {

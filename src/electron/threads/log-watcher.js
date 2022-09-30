@@ -200,102 +200,6 @@ function LogWatcher(character, logPosition) {
         } );
     } );
 
-    var x = {
-        "triggerId": "M7rvxOfZl0ZHmJeB",
-        "folderId": "T0ONPtiBPcSHlCcs",
-        "packageId": null,
-        "name": "Countdown Test",
-        "capturePhrases": [
-            { "requirePreviousPhrase": false, "duration": null, "phraseId": "VlftEuDURj2Qhdqp", "useRegEx": true, "phrase": "^Halivar starts a countdown\\.$" } ],
-        "comments": "Testing countdowns",
-        "actions": [
-            {
-                "phrases": [ "VlftEuDURj2Qhdqp" ],
-                "showRemainingDuration": true,
-                "repeatTimer": false,
-                "repeatCount": null,
-                "onlyStoreUsedValues": false,
-                "loopBackForValue": false,
-                "restartBehavior": 2,
-                "onlyExecuteInDev": false,
-                "overrideTimerColor": null,
-                "timerBackgroundColor": null,
-                "useCustomColor": false,
-                "timerIcon": null,
-                "timerIconDef": null,
-                "interruptSpeech": false,
-                "hideTimer": false,
-                "hideConditions": [],
-                "castTime": null,
-                "ifEndingSoon": false,
-                "endingSoonShowTimer": false,
-                "endingDuration": null,
-                "endingSoonChangeColor": false,
-                "endingSoonColor": null,
-                "endingSoonBackgroundColor": null,
-                "endingSoonDisplayText": false,
-                "endingSoonTextOverlayId": null,
-                "endingSoonText": null,
-                "endingSoonTextDuration": null,
-                "endingSoonSpeak": false,
-                "endingSoonSpeakPhrase": null,
-                "endingSoonInterruptSpeech": false,
-                "endingClipboard": false,
-                "endingClipboardText": null,
-                "endingPlayAudio": false,
-                "endingPlayAudioFileId": null,
-                "remainAfterEnded": false,
-                "notifyWhenEnded": true,
-                "remainDuration": null,
-                "endedDisplayText": false,
-                "endedTextOverlayId": null,
-                "endedText": null,
-                "endedTextDuration": null,
-                "endedClipboard": false,
-                "endedClipboardText": null,
-                "endedSpeak": true,
-                "endedSpeakPhrase": "Countdown ended.",
-                "endedInterruptSpeech": false,
-                "endedPlayAudio": false,
-                "endedPlayAudioFileId": null,
-                "endedChangeColor": false,
-                "endedColor": null,
-                "endedBackgroundColor": null,
-                "excludeTargets": [],
-                "endEarlyPhrases": [],
-                "resetCounterPhrases": [],
-                "textUseCustomFont": false,
-                "textUseCustomSize": false,
-                "textUseCustomColor": false,
-                "textUseCustomBorder": false,
-                "textUseCustomGlow": false,
-                "actionType": 3,
-                "overlayId": "jDn5o4myyhNQb92J",
-                "displayText": "Countdown",
-                "duration": 10,
-                "actionId": "vWZ0da1tgU7K9NDO",
-                "onlyUseAaBeneficialFocus": false,
-                "skipBenCastingTimeFocus": false,
-                "variableStorageType": "localVariable",
-                "storeLiteralDefinition": null,
-                "storageDuration": null,
-                "remainUnlessEndedEarly": false
-            } ],
-        "captureMethod": "Any match",
-        "conditions": [],
-        "classLevels": [],
-        "predefined": false,
-        "onlyExecuteInDev": false,
-        "allakhazamUrl": null,
-        "importIdentifier": null,
-        "useCooldown": false,
-        "cooldownDuration": 0,
-        "enabled": true,
-        "score": 0.9949047687155309,
-        "refIndex": 175,
-        "sequentialRestartBehavior": "none"
-    }
-
     ipcRenderer.on( 'log:simulate:lines', function ( event, data ) {
         /** @type {{lines: string[], delay: number, timestamp: Date}[]} */
         var lineData = [];
@@ -323,9 +227,6 @@ function LogWatcher(character, logPosition) {
                 action.showRemainingDuration = true;
                 action.actionType = ActionTypes.Countdown;
             
-                // let start = new Date( /^\[(.*?)\]\s*/gi.exec( lines[ 0 ] )[ 1 ] );
-                // let end = new Date( /^\[(.*?)\]\s*/gi.exec( lines[ lines.length - 1 ] )[ 1 ] );
-                // action.duration = DateUtilities.timeSince( start, end ).totalSeconds;
                 action.duration = duration;
 
                 displayTimerCountdownComponent( res, new Date(), action, 0, trigger );
@@ -350,42 +251,10 @@ function LogWatcher(character, logPosition) {
                 }
             };
         
-        // let fixSimTime =
-        //     /**
-        //      * Fixes the timestamp in the given log entry to start at the begining of the sim.
-        //      * 
-        //      * @returns {string} Returns the updated log entry.
-        //      * 
-        //      * @param {string} raw The raw log entry file.
-        //      * @param {Date} start The starting timestamp of the simulation.
-        //      */
-        //     ( raw, start ) => {
-
-        //     };
-
-        // let toEqTimeFormat =
-        //     /**
-        //      * Returns the given Date to EQ log entry time.
-        //      * 
-        //      * @returns {string}
-        //      * 
-        //      * @param {Date} timestamp The timestamp of the log entry.
-        //      */
-        //     ( timestamp ) => {
-            
-        //     };
-
         if ( data?.length > 0 ) {
             let currentTimestamp = null;
             let start = new Date( /^\[(.*?)\]\s*/gi.exec( data[ 0 ] )[ 1 ] );
-            // let now = new Date();
-            // let start = new Date( now.getFullYear(), now.getMonth(), now.getDate(), now.getHours(), now.getMinutes(), now.getSeconds(), 0 );
             let di = -1;
-
-            // // Update the timestamp in each log entry.
-            // for ( let i = 0; i < data.length; i++ ) {
-            //     let lineTimestamp = new Date( /^\[(.*?)\]\s*/gi.exec( data[ i ] )[ 1 ] );
-            // }
 
             // Process each log file into a chunk that contains all entries at the same second.
             for ( let i = 0; i < data.length; i++ ) {
@@ -438,7 +307,6 @@ function LogWatcher(character, logPosition) {
         enableQuickShareImports = data.enableQuickShareImports;
         detrimentalOverlayId = data.detrimentalOverlayId;
 
-        // isDev = false;
         generateTriggerFns();
         initCounters();
     } );
