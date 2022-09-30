@@ -1239,4 +1239,8 @@ export class TriggersComponent implements OnInit {
     openTriggerLibrary() {
         this.ipcService.showTriggerLibrary().subscribe( opened => { } );
     }
+
+    openDeathRecap() {
+        this.dialogService.showDeathRecapDialog();
+    }
 }
