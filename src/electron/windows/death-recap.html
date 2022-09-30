@@ -50,6 +50,9 @@
         .color-yellow {
             color: rgb(255, 238, 88);
         }
+        .color-light-yellow {
+            color: rgb(240, 224, 105);
+        }
         .color-purple {
             color: rgb(74, 20, 140);
         }
@@ -61,6 +64,9 @@
         }
         .color-light-green {
             color: rgb(38, 166, 154);
+        }
+        .color-med-green {
+            color: #14cc73;
         }
 
         .character-name {
@@ -136,6 +142,115 @@
             flex: 1 1 auto;
             /* padding-left: 3px; */
         }
+
+        a.close-button {
+            text-decoration: none !important;
+            position: fixed;
+            right: 0;
+            top: 0;
+            padding: 7px 16px;
+            margin: 25px 20px;
+            background-color: #b71c1c1c;
+            color: #b71c1cb3;
+            font-weight: bold;
+            border-radius: 2px;
+        }
+        a.close-button:hover {
+            color: #b71c1c;
+            background-color: #b71c1c36;
+            /* text-decoration: none; */
+        }
+        a.close-button:active {
+            color: #b71c1c;
+            background-color: #b71c1c0d;
+            /* color: white; */
+        }
+
+        .stats-container {
+            display: flex;
+            flex-direction: column;
+            /* max-height: 300px; */
+            overflow: scroll;
+            /* max-height: 64vh; */
+            /* position: absolute; */
+            /* bottom: 0; */
+            /* width: 285px; */
+            /* max-height: 525px; */
+            max-height: calc(100vh - 300px);
+        }
+        .stats-container::-webkit-scrollbar {
+            width: 0px;
+            background: transparent; /* make scrollbar transparent */
+        }
+        .stats-container > *:not(:first-of-type) {
+            margin-top: 25px;
+        }
+
+        .stat-group-title {
+            /* color: #f0e069; */
+            /* color: #f0c669; */
+            /* font-weight: 500; */
+            font-size: 18px;
+            overflow: hidden;
+            /* text-overflow: clip; */
+            /* max-width: 100%; */
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            /* flex: 0 0 auto; */
+            max-width: 285px;
+        }
+
+        .number-magnitude {
+            font-weight: 400;
+            font-size: 16px;
+            line-height: 17px;
+            margin-left: 3px;
+            display: inline-block;
+            width: 14px;
+            text-align: left;
+            padding-left: 1px;
+        }
+
+        span.actor {
+            margin-left: 13px;
+            font-size: 12px;
+            color: #ffffff8c;
+            display: block;
+        }
+
+        /* CSS LOADER */
+        .css-loader {
+            text-align: center;
+            margin-top: 200px;
+        }
+
+        .loader {
+            position: relative;
+            width: 100px;
+            height: 100px;
+            display: inline-block;
+        }
+
+        .loader:before , .loader:after{
+            content: '';
+            border-radius: 50%;
+            position: absolute;
+            inset: 0;
+            box-shadow: 0 0 10px 2px rgba(0, 0, 0, 0.3) inset;
+            display: inline-block;
+            width: 100%;
+            height: 100%;
+        }
+        .loader:after {
+            box-shadow: 0 2px 0 #de1717 inset;
+            animation: rotate 2s linear infinite;
+        }
+
+        @keyframes rotate {
+            0% {  transform: rotate(0)}
+            100% { transform: rotate(360deg)}
+        }
+
     </style>
 
 </head>
@@ -145,101 +260,70 @@
         const urlParams = new URLSearchParams(window.location.search);
         var DeathRecap = require('./death-recap');
         let lineNo = +urlParams.get('lineNo');
-        DeathRecap(decodeURI(urlParams.get('logFilePath')), lineNo > 0 ? lineNo : null, decodeURI(urlParams.get('messageId')));
+        DeathRecap(decodeURI(urlParams.get('logFilePath')), lineNo > 0 ? lineNo : null, decodeURI(urlParams.get('messageId')), decodeURI(urlParams.get('characterName')));
     </script>
 
     <section class="body">
-        <h1 class="color-light-red">Death Recap</h1>
-        <h5 class="color-red character-name">Israphel</h5>
-        <div class="dashboard">
+        
+        <a class="close-button" href="javascript:void(0)">Close</a>
+        <h1 class="color-red">Death Recap</h1>
+        <h5 class="color-med-green character-name" id="characterName">Israphel</h5>
+
+        <div class="css-loader">
+            <span class="loader"></span>
+        </div>
+        <div class="dashboard" style="display: none;">
 
             <div class="dashboard-widget damage-log">
                 <h4 style="color: rgb(204, 204, 204);">Damage Log</h4>
                 <div class="hr"></div>
-                <div class="damage-log-entries">
-                    <div class="value color-red">1,115</div><div class="type color-orange" title="(Jelvan the Terrorist)">Melee </div>
-                    <div class="value color-red">953</div><div class="type color-orange" title="(Jelvan the Terrorist)">Melee</div>
-                    <div class="value color-blue">2,600</div><div class="type color-light-blue" title="(Halifor)">Supernal Light</div>
-                    <div class="value color-red">12,204</div><div class="type color-orange" title="(Jelvan the Terrorist)">Spell of Devastation</div>
-                    <div class="value color-red">1,279</div><div class="type color-orange" title="(Jelvan the Terrorist)">Melee</div>
-                    <div class="value color-blue">2,600</div><div class="type color-light-blue" title="(Halifor)">Supernal Light</div>
-                    <div class="value color-blue">1,150</div><div class="type color-light-blue" title="(Halifor)">Pious Remedy</div>
-                    <div class="value color-red">578</div><div class="type color-orange" title="(Jelvan the Terrorist)">Melee<br/></div>
-                    <div class="value color-red">1,115</div><div class="type color-orange" title="(Jelvan the Terrorist)">Melee </div>
-                    <div class="value color-red">953</div><div class="type color-orange" title="(Jelvan the Terrorist)">Melee</div>
-                    <div class="value color-blue">2,600</div><div class="type color-light-blue" title="(Halifor)">Supernal Light</div>
-                    <div class="value color-red">12,204</div><div class="type color-orange" title="(Jelvan the Terrorist)">Spell of Devastation</div>
-                    <div class="value color-red">1,279</div><div class="type color-orange" title="(Jelvan the Terrorist)">Melee</div>
-                    <div class="value color-blue">2,600</div><div class="type color-light-blue" title="(Halifor)">Supernal Light</div>
-                    <div class="value color-blue">1,150</div><div class="type color-light-blue" title="(Halifor)">Pious Remedy</div>
-                    <div class="value color-red">578</div><div class="type color-orange" title="(Jelvan the Terrorist)">Melee<br/></div>
+                <div class="stats-container">
+                    <div class="damage-log-entries" id="damageLogContainer">
+                    </div>
                 </div>
             </div>
 
             <div class="dashboard-widget damage-log sources">
                 <h4 style="color: rgb(204, 204, 204);">Damage Sources</h4>
                 <div class="hr"></div>
-                <div class="damage-log-entries">
-                    <div class="value color-red">30,352</div><div class="type color-orange">Jelvan the Terrorist </div>
-                    <div class="value color-red">1,906</div><div class="type color-orange">Minion of Boss</div>
-                    <div class="value color-blue">7,500</div><div class="type color-light-blue">Halifor</div>
-                    <div class="value color-blue">5,200</div><div class="type color-light-blue">Otherhealbot</div>
+                <div class="stats-container">
+                    <div class="damage-log-entries" id="damageSourcesContainer">
+                    </div>
                 </div>
             </div>
 
             <div class="dashboard-widget damage-log statistics">
                 <h4 style="color: rgb(204, 204, 204);">Encounter Statistics</h4>
                 <div class="hr"></div>
-                <div class="damage-log-entries">
-                    <div class="value color-red">24</div><div class="type color-orange">Quads</div>
-                    <div class="value color-red">1,015</div><div class="type color-orange">Avg Hit</div>
-                    <div class="value color-light-purple">657</div><div class="type color-orange">Avg Defensive Hit</div>
-                    <div class="value color-red">1,279</div><div class="type color-orange">Max Hit</div>
-                    <div class="value color-light-purple">901</div><div class="type color-orange">Max Defensive Hit</div>
-                    <div class="value color-red">421</div><div class="type color-orange">Min Hit</div>
-                    <div class="value color-light-purple">127</div><div class="type color-orange">Min Defensive Hit</div>
-                    <div class="value color-red">12,204</div><div class="type color-orange">Max Spell</div>
-                    <div class="value color-soft-white">No</div><div class="type color-orange">Flurries</div>
-                    <div class="value color-soft-white">Yes</div><div class="type color-orange">Rampage</div>
-                    <div class="value color-soft-white">Yes</div><div class="type color-orange">Wild Rampage</div>
-                    <div class="value color-light-purple">1,542,589</div><div class="type color-orange">Defensive Reduction</div>
-                    <div class="value color-light-blue">1,234,824</div><div class="type color-orange">Healing Received</div>
-                    <div class="value color-light-green">127,375</div><div class="type color-orange">Raid DPS</div>
-                    <div class="value color-light-blue">12,187,923</div><div class="type color-orange">Raid Healing</div>
-                    <div class="value color-red">4,867,137</div><div class="type color-orange">Raid Damage</div>
+                <div class="stats-container" id="encounterStatsContainer">
                 </div>
             </div>
+
         </div>
     </section>
 
-    
-    <!-- <div class="damage-log-entries"><div class="statistic color-orange">Quads</div><div class="spacer"></div><div class="statistic-value color-red">24</div></div>
-    <div class="damage-log-entries"><div class="statistic color-orange">Avg Hit</div><div class="spacer"></div><div class="statistic-value color-red">1,015</div></div>
-    <div class="damage-log-entries"><div class="statistic color-orange">Avg Defensive Hit</div><div class="spacer"></div><div class="statistic-value color-light-purple">657</div></div>
-    <div class="damage-log-entries"><div class="statistic color-orange">Max Hit</div><div class="spacer"></div><div class="statistic-value color-red">1,279</div></div>
-    <div class="damage-log-entries"><div class="statistic color-orange">Max Defensive Hit</div><div class="spacer"></div><div class="statistic-value color-light-purple">901</div></div>
-    <div class="damage-log-entries"><div class="statistic color-orange">Min Hit</div><div class="spacer"></div><div class="statistic-value color-red">421</div></div>
-    <div class="damage-log-entries"><div class="statistic color-orange">Min Defensive Hit</div><div class="spacer"></div><div class="statistic-value color-light-purple">127</div></div>
-    <div class="damage-log-entries"><div class="statistic color-orange">Max Spell</div><div class="spacer"></div><div class="statistic-value color-red">12,204</div></div>
-    <div class="damage-log-entries"><div class="statistic color-orange">Flurries</div><div class="spacer"></div><div class="statistic-value color-soft-white">No</div></div>
-    <div class="damage-log-entries"><div class="statistic color-orange">Rampage</div><div class="spacer"></div><div class="statistic-value color-soft-white">Yes</div></div>
-    <div class="damage-log-entries"><div class="statistic color-orange">Wild Rampage</div><div class="spacer"></div><div class="statistic-value color-soft-white">Yes</div></div>
-    <div class="damage-log-entries"><div class="statistic color-orange">Defensive Reduction</div><div class="spacer"></div><div class="statistic-value color-light-purple">1,542,589</div></div>
-    <div class="damage-log-entries"><div class="statistic color-orange">Healing Received</div><div class="spacer"></div><div class="statistic-value color-light-blue">1,234,824</div></div> -->
-    
-    <!-- <div><div class="color-red">1,115</div><div class="color-light-blue">Melee</div></div>
-    <div><div class="color-red">953</div><div class="color-light-blue">Melee</div></div>
-    <div><div class="color-red">12,204</div><div class="color-light-blue">Spell of Devastation</div></div>
-    <div><div class="color-red">1,279</div><div class="color-light-blue">Melee</div></div>
-    <div><div class="color-red">578</div><div class="color-light-blue">Melee</div></div> -->
+    <template id="numberTemplate">
+        {{value}}
+    </template>
 
-    <!-- <div class="value color-red">1,115</div><div class="type color-orange">Melee<br/><span class="color-grey">(Jelvan the Terrorist)</span></div>
-    <div class="value color-red">953</div><div class="type color-orange">Melee<br/><span class="color-grey">(Jelvan the Terrorist)</span></div>
-    <div class="value color-blue">2,600</div><div class="type color-light-blue">Supernal Light<br/><span class="color-grey">(Halifor)</span></div>
-    <div class="value color-red">12,204</div><div class="type color-orange">Spell of Devastation<br/><span class="color-grey">(Jelvan the Terrorist)</span></div>
-    <div class="value color-red">1,279</div><div class="type color-orange">Melee<br/><span class="color-grey">(Jelvan the Terrorist)</span></div>
-    <div class="value color-blue">2,600</div><div class="type color-light-blue">Supernal Light<br/><span class="color-grey">(Halifor)</span></div>
-    <div class="value color-blue">1,150</div><div class="type color-light-blue">Pious Remedy<br/><span class="color-grey">(Halifor)</span></div>
-    <div class="value color-red">578</div><div class="type color-orange">Melee<br/><span class="color-grey">(Jelvan the Terrorist)</span></div> -->
+    <template id="numberMagnitudeTemplate">
+        {{value}}<span class="number-magnitude">{{magnitude}}</span>
+    </template>
+
+    <template id="statItemTemplate">
+        <div class="value {{numberCssClass}}">{{{value}}}</div><div class="type {{textCssClass}}">{{{description}}}{{#if actor}}<span class="actor">({{actor}})</span>{{/if}}</div>
+    </template>
+
+    <template id="statGroupTemplate">
+        <div>
+            <div class="stat-group-title {{groupNameCssClass}}">{{{groupName}}}</div>
+            <div class="damage-log-entries">
+                {{#each statItems}}
+                    {{{this}}}
+                {{/each}}
+            </div>
+        </div>
+    </template>
+
 </body>
 </html>
