@@ -357,11 +357,13 @@ export class DialogService {
      *      selected 'No parent' as their option.
      * 
      * @param folderId If moving a folder, this is the id of the folder to be moved.
+     * @param title The dialog window title.
+     * @param description If provided, renders a p tag at the top with "description".
      */
-    public showSelectTriggerFolderDialog( folderId?: string, title?: string ): Observable<string> {
+    public showSelectTriggerFolderDialog( folderId?: string, title?: string, description?: string ): Observable<string> {
         return this.dialog.open<SelectTriggerFolderDialogComponent, any, string>( SelectTriggerFolderDialogComponent, {
             width: '450px',
-            data: { folderId: folderId, title: title },
+            data: { folderId: folderId, title: title, description: description },
             panelClass: 'app-dialog',
         } ).afterClosed();
     }
