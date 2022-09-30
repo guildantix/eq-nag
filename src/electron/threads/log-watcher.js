@@ -388,19 +388,21 @@ function LogWatcher(character, logPosition) {
 
             // Process each log file into a chunk that contains all entries at the same second.
             for ( let i = 0; i < data.length; i++ ) {
-                let lineTimestamp = new Date( /^\[(.*?)\]\s*/gi.exec( data[ i ] )[ 1 ] );
+                if ( data[ i ]?.length > 0 ) {
+                    let lineTimestamp = new Date( /^\[(.*?)\]\s*/gi.exec( data[ i ] )[ 1 ] );
 
-                if ( currentTimestamp == null || lineTimestamp.getTime() != currentTimestamp.getTime() ) {
-                    currentTimestamp = lineTimestamp;
-                    di += 1;
-                    lineData[ di ] = {
-                        lines: [],
-                        delay: DateUtilities.timeSince( start, lineTimestamp ).totalSeconds,
-                        timestamp: lineTimestamp,
-                    };
+                    if ( currentTimestamp == null || lineTimestamp.getTime() != currentTimestamp.getTime() ) {
+                        currentTimestamp = lineTimestamp;
+                        di += 1;
+                        lineData[ di ] = {
+                            lines: [],
+                            delay: DateUtilities.timeSince( start, lineTimestamp ).totalSeconds,
+                            timestamp: lineTimestamp,
+                        };
+                    }
+
+                    lineData[ di ].lines.push( data[ i ] );
                 }
-
-                lineData[ di ].lines.push( data[ i ] );
             }
 
             let fudge = 0;
