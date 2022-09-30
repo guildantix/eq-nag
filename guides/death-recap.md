@@ -1,5 +1,7 @@
 ## Death Recap
 
+![image](https://user-images.githubusercontent.com/66176124/193347315-c9a108c7-4492-4c04-bff6-27b544685e25.png)
+
 The death recap window can give you a "bird's eye view" of what happened leading up to a character's demise. The purpose of this window is to display some metrics important to that question. 
 
 The *Damage Log* section will display what happened to your character, including damage taken and healing received. 
