@@ -989,3 +989,9 @@ export class IpcMessage<T> {
     }
 
 }
+
+export class DeathRecapPreferences {
+    triggerId: string;
+    engageMode: 'hotkey' | 'automatic';
+    hotkeyPhrase: string;
+}

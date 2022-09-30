@@ -8,6 +8,7 @@ const { FctStylesModel } = require( './models/fct' );
 const { StyleProperties } = require( './models/common' );
 const archiver = require( 'archiver' );
 const LogBootstrapper = require( "../log-bootstrap" );
+const { DeathRecapPreferences } = require( '../data/models/death-recap' );
 
 const possibleEqFolders = [
     '\\users\\public\\Everquest',
@@ -62,9 +63,19 @@ class UserPreferencesStore extends Store {
      * phoneticTransforms: Record<string, string>,
      * ignoreGinaObjects: string[],
      * fctStyles: FctStylesModel,
+     * deathRecap: DeathRecapPreferences,
      * }}
      */
     #data;
+
+    /** @type {DeathRecapPreferences} */
+    get deathRecap() {
+        return this.#data.deathRecap;
+    }
+    set deathRecap( val ) {
+        this.#data.deathRecap = val;
+        this.storeDataFile( this.#data );
+    }
 
     /** @type {string} */
     get detrimentalOverlayId() {
@@ -487,6 +498,14 @@ class UserPreferencesStore extends Store {
 
         ipcMain.on( 'settings:get:author', ( event ) => {
             event.sender.webContents.send( 'settings:get:author', this.author );
+        } );
+
+        ipcMain.on( 'settings:set:deathRecap', ( event, deathRecap ) => {
+            this.deathRecap = deathRecap;
+        } );
+
+        ipcMain.on( 'settings:get:deathRecap', ( event ) => {
+            event.sender.webContents.send( 'settings:get:deathRecap', this.deathRecap );
         } );
 
         ipcMain.on( 'settings:set:detrimentalOverlayId', ( event, detrimentalOverlayId ) => {

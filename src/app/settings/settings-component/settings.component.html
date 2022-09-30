@@ -17,6 +17,31 @@
     </fieldset>
 
     <fieldset>
+        <legend><span class="title">Death Recap</span></legend>
+
+        <p>To enable the Death Recap window, select how you would like the window to be loaded.</p>
+        <p>Loading with "Hotkey" will create an EQ hotkey that when pressed, will display your last death.</p>
+        <p>Loading with "Automatic" will automatically display the Death Recap window when you are slain.</p>
+
+        <mat-radio-group [(ngModel)]="deathRecapPreferences.engageMode" name="deathRecapEngageMode" (change)="onDeathRecapPrefsChange()">
+            <mat-radio-button value="hotkey">
+                <div>Hotkey</div>
+            </mat-radio-button>
+
+            <mat-radio-button value="automatic">
+                <div>Automatic</div>
+            </mat-radio-button>
+        </mat-radio-group>
+
+        <ng-template [ngIf]="deathRecapPreferences.engageMode === 'hotkey'">
+            <p>To create a hotkey, copy the command below and paste it into EverQuest and hit enter.</p>
+            <code style="margin-left: 25px; margin-bottom: 25px;">{{deathRecapPreferences.hotkeyPhrase}}</code>
+            <button type="button" style="margin-left: 10px; color: #69b2f0;" mat-button (click)="onCopyDeathRecapHotkeyCommand()">Copy</button>
+        </ng-template>
+
+    </fieldset>
+
+    <fieldset>
         <legend><span class="title">Sharing</span> <button mat-icon-button color="accent" (click)="showVerifiedUserInfo()" *ngIf="trustedAuthor"><mat-icon class="material-icons-outlined">verified_user</mat-icon></button></legend>
 
         <div>

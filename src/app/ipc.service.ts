@@ -3,7 +3,7 @@ import * as Electron from 'electron';
 import { UpdateInfo } from 'electron-updater';
 import { Observable, Observer } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
-import { DataTickModel, DkpEntryModel, TriggerModel, OverlayWindowModel, ActionTypes, FocusEffectSettings, CharacterModel, BasicError, TriggerFolder, FileModel, Tag, AuthorModel, PackageFileModel, TriggerPackageMetaModel, TriggerPackageVersion, FctStylesModel, OverlayBoundsChangedEventArgs, DialogEventArgs, QuickShareMetaModel, LogFileLocation, IpcMessage } from './core.model';
+import { DataTickModel, DkpEntryModel, TriggerModel, OverlayWindowModel, ActionTypes, FocusEffectSettings, CharacterModel, BasicError, TriggerFolder, FileModel, Tag, AuthorModel, PackageFileModel, TriggerPackageMetaModel, TriggerPackageVersion, FctStylesModel, OverlayBoundsChangedEventArgs, DialogEventArgs, QuickShareMetaModel, LogFileLocation, IpcMessage, DeathRecapPreferences } from './core.model';
 import { GinaConfiguration, GinaTriggerGroups } from './gina.model';
 
 @Injectable( { providedIn: 'root' })
@@ -1475,6 +1475,26 @@ export class IpcService {
                 } );
             } );
             this.ipc.send( 'settings:get:quickShareImports', null );
+
+        } );
+
+        return obs;
+    }
+    
+    public updateDeathRecapPreferences( model: DeathRecapPreferences ): void {
+        this.ipc.send( 'settings:set:deathRecap', model );
+    }
+
+    public getDeathRecapPreferences(): Observable<DeathRecapPreferences> {
+        let obs: Observable<DeathRecapPreferences> = new Observable<DeathRecapPreferences>( ( observer: Observer<DeathRecapPreferences> ) => {
+            
+            this.ipc.once( 'settings:get:deathRecap', ( e, model: DeathRecapPreferences ) => {
+                this.ngZone.run( () => {
+                    observer.next( model );
+                    observer.complete();
+                } );
+            } );
+            this.ipc.send( 'settings:get:deathRecap', null );
 
         } );
 

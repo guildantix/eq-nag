@@ -3,7 +3,7 @@ import { DialogService } from 'src/app/dialogs/dialog.service';
 import { IpcService } from 'src/app/ipc.service';
 import { MatTable } from '@angular/material/table';
 import { customAlphabet } from 'nanoid';
-import { AuthorModel, OverlayWindowModel } from 'src/app/core.model';
+import { ActionTypes, AuthorModel, CapturePhrase, DeathRecapPreferences, OverlayWindowModel, TriggerAction, TriggerModel } from 'src/app/core.model';
 import { SettingsService } from '../settings-http.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { SetupService } from 'src/app/setup/setup.service';
@@ -11,6 +11,7 @@ const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz
 const nanoid = customAlphabet( alphabet, 16 );
 import * as _ from 'lodash-es';
 import { CharactersListComponent } from 'src/app/characters-list/characters-list.component';
+import { nagId } from 'src/app/core/nag-id.util';
 
 interface IPhoneticTransform {
     id: string;
@@ -37,6 +38,7 @@ export class SettingsComponent implements OnInit {
     public beneficialOverlayId: string = null;
     public alertOverlayId: string = null;
     public enableQuickShareImports: boolean = false;
+    public deathRecapPreferences: DeathRecapPreferences = new DeathRecapPreferences();
 
     public get timerOverlays(): OverlayWindowModel[] {
         return this.overlays?.filter( m => m.overlayType === 'Timer' );
@@ -110,6 +112,7 @@ export class SettingsComponent implements OnInit {
         this.ipcService.getBeneficialOverlayId().subscribe( id => this.beneficialOverlayId = id );
         this.ipcService.getAlertOverlayId().subscribe( id => this.alertOverlayId = id );
         this.ipcService.getEnableQuickShareImports().subscribe( enabled => this.enableQuickShareImports = enabled );
+        this.ipcService.getDeathRecapPreferences().subscribe( recapPrefs => this.deathRecapPreferences = recapPrefs ?? new DeathRecapPreferences() );
 
     }
 
@@ -127,6 +130,146 @@ export class SettingsComponent implements OnInit {
      */
     onQuickShareImportsChange(): void {
         this.ipcService.updateEnableQuickShareImports( this.enableQuickShareImports );
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Saves changes to the death recap preferences.
+     */
+    onDeathRecapPrefsChange(): void {
+        // TODO: Create different triggers based on preference selections.
+        let capturePhrase = new CapturePhrase();
+        capturePhrase.phraseId = nagId();
+        capturePhrase.requirePreviousPhrase = false;
+        capturePhrase.useRegEx = true;
+        capturePhrase.duration = null;
+
+        if ( this.deathRecapPreferences.engageMode === 'hotkey' ) {
+            this.deathRecapPreferences.hotkeyPhrase = '/hot "Death Recap" /em wonders how they died.';
+            capturePhrase.phrase = '^${Character} wonders how they died\\.$';
+
+        } else if ( this.deathRecapPreferences.engageMode === 'automatic' ) {
+            capturePhrase.phrase = '^You have been slain by (?<slayer>[^!]*)!$';
+            this.deathRecapPreferences.hotkeyPhrase = null;
+
+        } else {
+            return;
+        }
+
+        if ( this.deathRecapPreferences.triggerId != null ) {
+
+            this.ipcService.getTrigger( this.deathRecapPreferences.triggerId ).subscribe( trigger => {
+                
+                // Rename the trigger.
+                trigger.name = `Death Recap [${this.deathRecapPreferences.engageMode === 'hotkey' ? 'Hotkey' : 'Auto'}]`;
+                
+                // Assign the built capture phrase.
+                trigger.capturePhrases = [ capturePhrase ];
+
+                // Build the trigger action and assign to existing trigger.
+                let action = new TriggerAction();
+                action.phrases = [ capturePhrase.phraseId ];
+                action.actionType = ActionTypes.DisplayDeathRecap;
+                action.actionId = nagId();
+                trigger.actions = [ action ];
+                
+                this.ipcService.updateTrigger( trigger ).subscribe( success => {
+                    this.ipcService.updateDeathRecapPreferences( this.deathRecapPreferences );
+                    this.snackBar.open( 'The death recap trigger has been updated!', 'Dismiss', { duration: 5000 } );
+                } );
+            } );
+            
+        } else {
+
+            this.dialogService.showSelectTriggerFolderDialog( null, 'Select Trigger Folder', 'Select the folder that will contain the generated trigger.' ).subscribe( folderId => {
+                if ( folderId ) {
+                    
+                    // Initialize a new trigger model.
+                    let trigger = new TriggerModel();
+                    trigger.name = `Death Recap [${this.deathRecapPreferences.engageMode === 'hotkey' ? 'Hotkey' : 'Auto'}]`;
+                    trigger.folderId = folderId;
+            
+                    // Assign the built capture phrase.
+                    trigger.capturePhrases = [ capturePhrase ];
+
+                    // Build the trigger action.
+                    let action = new TriggerAction();
+                    action.phrases = [ capturePhrase.phraseId ];
+                    action.actionType = ActionTypes.DisplayDeathRecap;
+                    action.actionId = nagId();
+                    trigger.actions = [ action ];
+
+                    this.ipcService.createNewTrigger( trigger ).subscribe( triggerId => {
+
+                        // Save the death recap preferences.
+                        this.deathRecapPreferences.triggerId = triggerId;
+
+                        this.ipcService.updateDeathRecapPreferences( this.deathRecapPreferences );
+                        this.snackBar.open( 'The death recap trigger has been created!', 'Dismiss', { duration: 5000 } );
+                    } );
+                }
+            } );
+        }
+
+        // actions.push( <TriggerAction>{
+        //     phrases: [ trigger.capturePhrases[ 1 ].phraseId ],
+        //     actionType: ActionTypes.DotTimer,
+        //     overlayId: this.overlayId,
+        //     duration: this.spell.duration,
+        //     actionId: nanoid(),
+        //     restartBehavior: TimerRestartBehaviors.RestartOnDuplicate,
+
+        //     ifEndingSoon: endingSoonVals ? true : false,
+        //     endingDuration: endingSoonVals ? originalDotAction.endingDuration : null,
+        //     endingSoonChangeColor: endingSoonVals ? originalDotAction.endingSoonChangeColor : false,
+        //     endingSoonColor: endingSoonVals ? originalDotAction.endingSoonColor : null,
+        //     endingSoonBackgroundColor: endingSoonVals ? originalDotAction.endingSoonBackgroundColor : null,
+        //     endingSoonDisplayText: endingSoonVals ? originalDotAction.endingSoonDisplayText : null,
+        //     endingSoonTextOverlayId: endingSoonVals ? originalDotAction.endingSoonTextOverlayId : null,
+        //     endingSoonText: endingSoonVals ? originalDotAction.endingSoonText : null,
+        //     endingSoonTextDuration: endingSoonVals ? originalDotAction.endingSoonTextDuration : null,
+        //     endingSoonSpeak: endingSoonVals ? originalDotAction.endingSoonSpeak : false,
+        //     endingSoonSpeakPhrase: endingSoonVals ? originalDotAction.endingSoonSpeakPhrase : null,
+            
+        //     remainAfterEnded: remainAfterVals ? true : false,
+        //     remainDuration: remainAfterVals ? originalDotAction.remainDuration : null,
+        //     endedDisplayText: remainAfterVals ? originalDotAction.endedDisplayText : null,
+        //     endedTextOverlayId: remainAfterVals ? originalDotAction.endedTextOverlayId : null,
+        //     endedText: remainAfterVals ? originalDotAction.endedText : null,
+        //     endedTextDuration: remainAfterVals ? originalDotAction.endedTextDuration : null,
+        //     endedSpeak: remainAfterVals ? originalDotAction.endedSpeak : false,
+        //     endedSpeakPhrase: remainAfterVals ? originalDotAction.endedSpeakPhrase : null,
+        //     endedChangeColor: remainAfterVals ? originalDotAction.endedChangeColor : null,
+        //     endedColor: remainAfterVals ? originalDotAction.endedColor : null,
+        //     endedBackgroundColor: remainAfterVals ? originalDotAction.endedBackgroundColor : null,
+        // } );
+
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Copies the death recap command to the user's clipboard.
+     */
+    onCopyDeathRecapHotkeyCommand(): void {
+        this.ipcService.sendTextToClipboard( this.deathRecapPreferences.hotkeyPhrase );
+
+        this.snackBar.open( 'The command has been copied to your clipboard!', 'Dismiss', { duration: 5000 } );
     }
 
 

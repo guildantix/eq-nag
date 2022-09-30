@@ -85,4 +85,13 @@ class DeathRecapModel {
     encounterStatistics;
 }
 
-module.exports = { DeathRecapEncounterMob, DeathRecapRaidStats, DeathRecapEncounter, DeathRecapLog, DeathRecapDamageSource, DeathRecapModel };
+class DeathRecapPreferences {
+    /** @type {string} */
+    triggerId;
+    /** @type {'hotkey' | 'automatic'} */
+    engageMode;
+    /** @type {string} */
+    hotkeyPhrase;
+}
+
+module.exports = { DeathRecapEncounterMob, DeathRecapRaidStats, DeathRecapEncounter, DeathRecapLog, DeathRecapDamageSource, DeathRecapModel, DeathRecapPreferences };
