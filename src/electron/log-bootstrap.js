@@ -2,6 +2,7 @@ const { app, BrowserWindow, ipcMain, screen } = require( "electron" );
 const fs = require( 'fs' );
 const CharacterDatabaseStore = require( './data/character-database' );
 const CharacterModel = require( './data/models/character' );
+const _ = require( 'lodash' );
 
 // logWatcherRef.reference?.webContents.send( 'log:changed', arg );
 
@@ -61,6 +62,33 @@ class LogBootstrapper {
                     logWatchers[ key ].simulating = true;
                     break;
                 }
+            }
+
+            
+            if ( !_.some( logWatchers, f => f.simulating ) ) {
+                let characters = characterDatabase.getAll();
+                let _chr = characters[ 0 ];
+                if ( logWatchers[ _chr.characterId ].window == null ) {
+                    let _stats = fs.existsSync( _chr.logFile ) ? fs.statSync( _chr.logFile ) : null;
+
+                    // If the window has not been engaged, then open it. // TODO: Start up a log watcher when simulating. Even allow a charcter to be selected from a list.
+                    logWatchers[ _chr.characterId ].window = startLogWatcherWindow( _chr.logFile, isDev, sendTick, _chr, logWatchers[ _chr.characterId ].logSize > _stats.size ? 0 : logWatchers[ _chr.characterId ].logSize );
+                
+                    // Notify the main window.
+                    mainWindowRef.reference.webContents.send( 'log:character:activated', _chr.characterId );
+                    
+                    logWatchers[ _chr.characterId ].window.webContents.once( 'dom-ready', () => {
+                        logWatchers[ _chr.characterId ].window.webContents.send( 'log:simulate:lines', data );
+                        logWatchers[ _chr.characterId ].simulating = true;
+                    } );
+
+                } else {
+                    // logWatchers[ _chr.characterId ].window.webContents.once( 'dom-ready', () => {
+                        logWatchers[ _chr.characterId ].window.webContents.send( 'log:simulate:lines', data );
+                        logWatchers[ _chr.characterId ].simulating = true;
+                    // } );
+                }
+
             }
         } );
 
