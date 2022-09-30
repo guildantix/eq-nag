@@ -123,7 +123,7 @@ function getInnerContentArea( dom ) {
 
 
 
-let DomUtilities = {
+const DomUtilities = {
     docReady: docReady,
     updateDomTextOnly: updateDomTextOnly,
     getInnerContentArea: getInnerContentArea,

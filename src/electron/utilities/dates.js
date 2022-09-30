@@ -70,8 +70,29 @@ function _timeSince( start, end ) {
 
 
 
-let DateUtilities = {
+/**
+ * Adds the given seconds to the given date value.
+ * 
+ * @param {Date} value The original date value.
+ * @param {number} seconds The number of seconds to add.
+ * @returns Returns a new Date instance.
+ */
+function _addSeconds( value, seconds ) {
+    return new Date( value.getTime() + seconds * 1000 );
+}
+
+
+
+
+
+
+
+
+
+
+const DateUtilities = {
     timeSince: _timeSince,
+    addSeconds: _addSeconds,
 };
 
 module.exports = { DateUtilities, TimeSpan };
