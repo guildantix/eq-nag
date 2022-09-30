@@ -10,6 +10,7 @@ var ActionTypes = {
     '8': 'Counter',
     '9': 'Clipboard',
     '10': 'BeneficialTimer',
+    '11': 'DisplayDeathRecap',
     DisplayText: 0,
     PlayAudio: 1,
     Speak: 2,
@@ -21,6 +22,7 @@ var ActionTypes = {
     Counter: 8,
     Clipboard: 9,
     BeneficialTimer: 10,
+    DisplayDeathRecap: 11,
 }
 
 var TriggerConditionTypes = {

@@ -18,6 +18,7 @@ const StringUtilities = require( '../utilities/string' );
 const NumberUtilities = require( '../utilities/numbers' );
 const { FctModel, FctTypes } = require( '../data/models/fct' );
 const { DateUtilities } = require( '../utilities/dates' );
+const { IpcMessage } = require( '../data/models/common' );
 const chunkSize = 512 * 1024;
 
 window.onerror = ( error, url, line ) => {
@@ -1206,7 +1207,11 @@ function parseLogEntries( raw, simulating, padTime ) {
 
                             speakPhrase( action.displayText, action.interruptSpeech, trigger._conditionResults, simulating, res.result, duration, deltaTime );
                         
+                        } else if ( action.actionType === ActionTypes.DisplayDeathRecap ) {
+                            loadLastDeathRecap();
+                            
                         }
+
                     }
                 } );
                 entryMatched = true;
@@ -1216,6 +1221,7 @@ function parseLogEntries( raw, simulating, padTime ) {
                     trigger._onCooldown = true;
                     trigger._cooldownStart = new Date();
                 }
+
             } );
         }
     } );
@@ -2414,6 +2420,25 @@ function getPersistentDictionaryValue( key, res, timestamp, action, deltaTime, t
     }
 
     return null;
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Loads the current character's last death recap.
+ */
+function loadLastDeathRecap() {
+
+    let message = new IpcMessage( { logFilePath: charModel.logFile, characterName: characterName } );
+    ipcRenderer.send( 'window:last-death-recap', message );
+    
 }
 
 

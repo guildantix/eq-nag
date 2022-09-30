@@ -23,6 +23,7 @@ export enum ActionTypes {
     Counter = 8,
     Clipboard = 9,
     BeneficialTimer = 10,
+    DisplayDeathRecap = 11,
     
 }
 

@@ -391,26 +391,41 @@ class CombatParser {
      * Loads the death recap data.
      * 
      * @param {string} logFilePath The full path to the log file to process.
-     * @param {number} lineNo The line number at which death occurred.
+     * @param {number?} lineNo The line number at which death occurred, if no value is provided loads the last death found in the log file.
      * @param {( data: any ) => void} callback Executed when the death recap data is ready.
      * @param {string} myCharacterName The character name of the log file owner.
      */
     loadDeathRecap( logFilePath, lineNo, myCharacterName, callback ) {
         characterName = myCharacterName;
-        ipcRenderer.on( 'verified-players:get',
-            /**
-             * Handles the event.
-             * 
-             * @param {any} event Event args.
-             * @param {VerifiedPlayersDb} data Verified players data.
-             */
-            ( event, data ) => {
-                // verifiedPlayersDb = data;
-                this._doLoadDeathRecap( logFilePath, lineNo, callback );
-            }
-        );
-        ipcRenderer.send( 'verified-players:get' );
-        
+
+        let act = () => {
+            ipcRenderer.on( 'verified-players:get',
+                /**
+                 * Handles the event.
+                 * 
+                 * @param {any} event Event args.
+                 * @param {VerifiedPlayersDb} data Verified players data.
+                 */
+                ( event, data ) => {
+                    // verifiedPlayersDb = data;
+                    this._doLoadDeathRecap( logFilePath, lineNo, callback );
+                }
+            );
+            ipcRenderer.send( 'verified-players:get' );
+        }
+
+        if ( lineNo > 0 ) {
+            act();
+        } else {
+            this.findAllDeaths( logFilePath, found => {
+                if ( found?.length > 0 ) {
+                    lineNo = found[ found.length - 1 ].lineNo;
+                    act();
+                } else {
+                    // TODO: Display a message for No Deaths Found!
+                }
+            } );
+        }
         // parse the entire log file for player data.
         // find the encounter duration.
     }

@@ -77,7 +77,7 @@ function DeathRecap( logFilePath, lineNo, messageId, characterName ) {
     // "Constructor"
     let combatParser = new CombatParser();
 
-    if ( lineNo > 0 ) {
+    if ( lineNo !== -1 ) {
         
         combatParser.loadDeathRecap( logFilePath, lineNo, characterName,
             /**

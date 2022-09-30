@@ -164,6 +164,18 @@ class WindowManager {
                 this.loadDeathRecap( arg.value.logFileLoc, arg.id, arg.value.characterName );
             }
         );
+        
+        ipcMain.on( 'window:last-death-recap',
+            /**
+             * Loads the death recap for the specified player death.
+             * 
+             * @param {any} event Event args.
+             * @param {IpcMessage<{logFilePath: string, characterName: string}>} arg The character model.
+             */
+            ( event, arg ) => {
+                this.loadLastDeathRecap( arg.value.logFilePath, arg.id, arg.value.characterName );
+            }
+        );
 
         ipcMain.on( 'renderer:arrange-overlays', ( event ) => {
             this.#renderer.setIgnoreMouseEvents( false );
@@ -497,6 +509,26 @@ class WindowManager {
 
 
     /**
+     * Loads the last death recap screen.
+     * 
+     * @param {string} logFilePath The full path to the log file.
+     * @param {string} messageId The message id.
+     * @param {string} characterName The name of the character that died.
+     */
+    loadLastDeathRecap( logFilePath, messageId, characterName ) {
+        this._loadDeathRecap( logFilePath, 'last', messageId, characterName );
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
      * Loads a death recap for the specified character.
      * 
      * @param {LogFileLocation} logFileLocation The location in the log file where death happened.
@@ -504,7 +536,28 @@ class WindowManager {
      * @param {string} characterName The name of the character.
      */
     loadDeathRecap( logFileLocation, messageId, characterName ) {
+        this._loadDeathRecap( logFileLocation.logFilePath, logFileLocation.lineNo, messageId, characterName );
+    }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Loads the death recap screen.
+     * 
+     * @param {string} logFilePath The full path to the log file.
+     * @param {number|'last'} lineNo The line number of the death, or 'last' to pull the latest death.
+     * @param {string} messageId The message id.
+     * @param {string} characterName The name of the character that died.
+     */
+    _loadDeathRecap( logFilePath, lineNo, messageId, characterName ) {
+        
         let deathRecap = new BrowserWindow( {
             transparent: true,
             frame: false,
@@ -529,7 +582,7 @@ class WindowManager {
             y: ( workAreaSize.height - size.height ) / 2,
         } );
         
-        deathRecap.loadURL( `file://${__dirname}/windows/death-recap.html?logFilePath=${encodeURI( logFileLocation.logFilePath )}&lineNo=${logFileLocation.lineNo}&characterName=${encodeURI(characterName)}&messageId=${encodeURI(messageId)}` );
+        deathRecap.loadURL( `file://${__dirname}/windows/death-recap.html?logFilePath=${encodeURI( logFilePath )}&lineNo=${lineNo}&characterName=${encodeURI(characterName)}&messageId=${encodeURI(messageId)}` );
         // deathRecap.setIgnoreMouseEvents( true );
         deathRecap.setAlwaysOnTop( true, "screen-saver" );
         
