@@ -485,6 +485,12 @@ $bg-extreme-dark: #191919;
         }
         background-color: rgb(33, 33, 33);
     }
+
+    code {
+        border-radius: 3px;
+        background-color: $bg-tab-content;
+        color: #c1c1c1;
+    }
 }
 
 fieldset.trigger-property-group {
