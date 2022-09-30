@@ -16,6 +16,9 @@
 
 [Quick Share](/eq-nag/guides/quick-share)
 
+[Death Recap](/eq-nag/guides/death-recap)
+![new](https://user-images.githubusercontent.com/66176124/193346159-c4652bf7-7d83-4aad-87d3-2a6b69548ec3.png)
+
 ## Documentation
 
 [Advanced Trigger Mechanics](/eq-nag/guides/advanced-triggers)
