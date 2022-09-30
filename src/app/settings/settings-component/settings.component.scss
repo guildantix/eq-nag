@@ -9,4 +9,10 @@ div.tab-content {
     > fieldset:not(:first-child) {
         margin-top: 50px;
     }
+    fieldset {
+        p {
+            font-weight: 300;
+            color: #eeeeee;
+        }
+    }
 }

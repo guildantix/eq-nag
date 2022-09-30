@@ -16,12 +16,15 @@
         </mat-form-field>
     </fieldset>
 
-    <fieldset>
+    <fieldset style="padding-left: 28px; padding-right: 28px; padding-top: 60px;">
         <legend><span class="title">Death Recap</span></legend>
-
-        <p>To enable the Death Recap window, select how you would like the window to be loaded.</p>
-        <p>Loading with "Hotkey" will create an EQ hotkey that when pressed, will display your last death.</p>
-        <p>Loading with "Automatic" will automatically display the Death Recap window when you are slain.</p>
+        <p>The death recap window can give you a "bird's eye view" of what happened leading up to a character's demise.  The purpose of this window is to display some metrics important to that question.  
+        <br />The <span class="color-orange-dark" style="font-weight: 400;">Damage Log</span> section will display what happened to your character, including damage taken and healing received.  
+        <br />The <span class="color-orange-dark" style="font-weight: 400;">Damage Sources</span> section will show a list of all NPC damage done to the raid, and all healing received by the raid.  
+        <br />The <span class="color-orange-dark" style="font-weight: 400;">Encounter Statistics</span> will list the general statistics of the raid, and a list of metrics for each enemy encountered in the fight.</p>
+        <p>To enable the Death Recap window, select how you would like the window to be loaded.
+        <br/>Loading with <span class="color-blue" style="font-weight: 400;">Hotkey</span> will create an EQ hotkey that when pressed, will display your last death.
+        <br/>Loading with <span class="color-blue" style="font-weight: 400;">Automatic</span> will automatically display the Death Recap window when you are slain.</p>
 
         <mat-radio-group [(ngModel)]="deathRecapPreferences.engageMode" name="deathRecapEngageMode" (change)="onDeathRecapPrefsChange()">
             <mat-radio-button value="hotkey">
