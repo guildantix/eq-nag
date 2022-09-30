@@ -153,26 +153,15 @@ class WindowManager {
             bwin?.close();
         } );
         
-        // ipcMain.on( 'window:death-recap',
-        //     /**
-        //      * Loads the death recap.
-        //      * 
-        //      * @param {any} event Event args.
-        //      * @param {CharacterModel} arg The character model.
-        //      */
-        //     ( event, arg ) => {
-        //         this.loadDeathRecap( arg );
-        //     } );
-        
         ipcMain.on( 'window:death-recap',
             /**
              * Loads the death recap for the specified player death.
              * 
              * @param {any} event Event args.
-             * @param {IpcMessage<LogFileLocation>} arg The character model.
+             * @param {IpcMessage<{logFileLoc: LogFileLocation, characterName: string}>} arg The character model.
              */
             ( event, arg ) => {
-                this.loadDeathRecap( arg.value, arg.id );
+                this.loadDeathRecap( arg.value.logFileLoc, arg.id, arg.value.characterName );
             }
         );
 
@@ -512,8 +501,9 @@ class WindowManager {
      * 
      * @param {LogFileLocation} logFileLocation The location in the log file where death happened.
      * @param {string} messageId The ipc message id.
+     * @param {string} characterName The name of the character.
      */
-    loadDeathRecap( logFileLocation, messageId ) {
+    loadDeathRecap( logFileLocation, messageId, characterName ) {
 
         let deathRecap = new BrowserWindow( {
             transparent: true,
@@ -525,7 +515,8 @@ class WindowManager {
                 devTools: app.isDev(),
             },
             skipTaskbar: false,
-            maximizable: false,
+            maximizable: true,
+            minimizable: true,
         } );
         
         let size = { width: 1100, height: 800 };
@@ -538,14 +529,79 @@ class WindowManager {
             y: ( workAreaSize.height - size.height ) / 2,
         } );
         
-        deathRecap.loadURL( `file://${__dirname}/windows/death-recap.html?logFilePath=${encodeURI( logFileLocation.logFilePath )}&lineNo=${logFileLocation.lineNo}&messageId=${encodeURI(messageId)}` );
+        deathRecap.loadURL( `file://${__dirname}/windows/death-recap.html?logFilePath=${encodeURI( logFileLocation.logFilePath )}&lineNo=${logFileLocation.lineNo}&characterName=${encodeURI(characterName)}&messageId=${encodeURI(messageId)}` );
         // deathRecap.setIgnoreMouseEvents( true );
-        // deathRecap.setAlwaysOnTop( true, "screen-saver" );
+        deathRecap.setAlwaysOnTop( true, "screen-saver" );
         
         // Open the DevTools.
         if ( app.isDev() ) {
             deathRecap.webContents.openDevTools();
         }
+
+        deathRecap.webContents.once( 'dom-ready', () => {
+            deathRecap.setAlwaysOnTop( false, "screen-saver" );
+        } );
+
+        // TODO: Remove this code or come back and try again.  Cannot get auto-
+        //       close to work because settin focus doesn't actually set focus, 
+        //       even though Electron reports that focus is set.
+        
+        // let checkFocus = () => {
+        //     let focused = deathRecap.isFocused();
+        //     // console.log( 'derp', focused );
+
+        //     if ( focused )
+        //         setTimeout( () => checkFocus(), 100 );
+        //     else {
+        //         deathRecap?.close();
+        //         deathRecap = null;
+        //     }
+        // };
+        
+
+        // let c = 0;
+        // let limit = 10;
+        // let setFocus = () => {
+        //     c++;
+        //     deathRecap.webContents.focus();
+        //     deathRecap.focus();
+
+        //     console.log( 'deathRecap.isFocused()', deathRecap.isFocused() );
+
+        //     if ( deathRecap.isFocused() ) {
+        //         deathRecap.minimize();
+                
+        //         deathRecap.on( 'blur', () => {
+        //             console.log( 'window blur called' );
+        //         } );
+        //         deathRecap.webContents.on( 'blur', () => {
+        //             console.log( 'webContents blur called' );
+        //         } );
+
+        //         setTimeout( () => {
+        //             deathRecap.restore();
+        //             deathRecap.focus();
+        //             deathRecap.show();
+        //             console.log( 'resetting focus' );
+        //             setTimeout( () => checkFocus(), 100 );
+        //         }, 1000 );
+        //     }
+        //     else if ( c < limit )
+        //         setTimeout( () => setFocus(), 100 );
+        // };
+
+        // deathRecap.on( 'show', () => {
+        //     setTimeout( () => setFocus(), 100 );
+            
+        //     // deathRecap.on( 'blur', () => {
+        //     //     console.log( 'blur called' );
+        //     //     deathRecap?.close();
+        //     //     deathRecap = null;
+        //     // } );
+        // } );
+
+        // deathRecap.on( 'blur', () => this.#mainWindow.reference.webContents.send('console:log', 'shown') );
+        // deathRecap.on( 'always-on-top-changed', () => console.log( 'always-on-top-changed' ) );
 
         this.#deathRecap = deathRecap;
     }
