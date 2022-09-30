@@ -16,8 +16,9 @@
                 <span class="material-icons" *ngIf="action.actionType === actionTypes.Counter">exposure_plus_1</span>
                 <span class="material-icons" *ngIf="action.actionType === actionTypes.Clipboard">content_copy</span>
                 <span class="material-icons" *ngIf="action.actionType === actionTypes.BeneficialTimer">watch_later</span>
+                <span class="material-icons" *ngIf="action.actionType === actionTypes.DisplayDeathRecap">sick</span>
             </div>
-            <mat-card-title>{{action.actionType == null ? 'Unset Action' : actionTypes[action.actionType]}}</mat-card-title>
+            <mat-card-title>{{action.actionType == null ? 'Unset Action' : actionTypeLabels(action.actionType)}}</mat-card-title>
             <mat-card-subtitle>
                 <span *ngIf="action.actionType === actionTypes.DisplayText">Display text on an overlay.</span>
                 <span *ngIf="action.actionType === actionTypes.DotTimer">Creates a countdown until the dot expires.</span>
@@ -30,6 +31,7 @@
                 <span *ngIf="action.actionType === actionTypes.Counter">Track the number of times an event occurs.</span>
                 <span *ngIf="action.actionType === actionTypes.Clipboard">Put text into the clipboard.</span>
                 <span *ngIf="action.actionType === actionTypes.BeneficialTimer">Creates a countdown until the buff expires.</span>
+                <span *ngIf="action.actionType === actionTypes.DisplayDeathRecap">Displays the Death Recap window.</span>
                 <mat-label *ngIf="isDev" style="color:#00000059;">&nbsp;{{action.actionId}}</mat-label>
             </mat-card-subtitle>
         </mat-card-header>
@@ -39,17 +41,18 @@
                 <mat-form-field style="width: 100%;">
                     <mat-label></mat-label>
                     <mat-select [(ngModel)]="action.actionType" name="ddlActionType_{{i}}">
-                        <mat-option [value]="actionTypes.DisplayText">Display Text</mat-option>
-                        <mat-option [value]="actionTypes.DotTimer">DoT Timer</mat-option>
-                        <mat-option [value]="actionTypes.PlayAudio">Play Audio</mat-option>
-                        <mat-option [value]="actionTypes.Speak">Speak</mat-option>
-                        <mat-option [value]="actionTypes.Timer">Timer</mat-option>
-                        <mat-option [value]="actionTypes.Countdown">Countdown</mat-option>
-                        <mat-option [value]="actionTypes.StoreVariable">Store Variable</mat-option>
-                        <mat-option [value]="actionTypes.ClearVariable">Clear Variable</mat-option>
-                        <mat-option [value]="actionTypes.Counter">Counter</mat-option>
-                        <mat-option [value]="actionTypes.Clipboard">Clipboard</mat-option>
-                        <mat-option [value]="actionTypes.BeneficialTimer">Beneficial Timer</mat-option>
+                        <mat-option [value]="actionTypes.DisplayText">{{actionTypeLabels(actionTypes.DisplayText)}}</mat-option>
+                        <mat-option [value]="actionTypes.DotTimer">{{actionTypeLabels(actionTypes.DotTimer)}}</mat-option>
+                        <mat-option [value]="actionTypes.PlayAudio">{{actionTypeLabels(actionTypes.PlayAudio)}}</mat-option>
+                        <mat-option [value]="actionTypes.Speak">{{actionTypeLabels(actionTypes.Speak)}}</mat-option>
+                        <mat-option [value]="actionTypes.Timer">{{actionTypeLabels(actionTypes.Timer)}}</mat-option>
+                        <mat-option [value]="actionTypes.Countdown">{{actionTypeLabels(actionTypes.Countdown)}}</mat-option>
+                        <mat-option [value]="actionTypes.StoreVariable">{{actionTypeLabels(actionTypes.StoreVariable)}}</mat-option>
+                        <mat-option [value]="actionTypes.ClearVariable">{{actionTypeLabels(actionTypes.ClearVariable)}}</mat-option>
+                        <mat-option [value]="actionTypes.Counter">{{actionTypeLabels(actionTypes.Counter)}}</mat-option>
+                        <mat-option [value]="actionTypes.Clipboard">{{actionTypeLabels(actionTypes.Clipboard)}}</mat-option>
+                        <mat-option [value]="actionTypes.BeneficialTimer">{{actionTypeLabels(actionTypes.BeneficialTimer)}}</mat-option>
+                        <mat-option [value]="actionTypes.DisplayDeathRecap">{{actionTypeLabels(actionTypes.DisplayDeathRecap)}}</mat-option>
                     </mat-select>
                     <mat-hint>Action Type</mat-hint>
                 </mat-form-field>
@@ -132,6 +135,12 @@
             <div *ngIf="action.actionType === actionTypes.BeneficialTimer">
 
                 <app-trigger-action-timer [action]="action" [overlayOptions]="timerOverlays" [alertOverlays]="alertOverlays"></app-trigger-action-timer>
+
+            </div>
+
+            <div *ngIf="action.actionType === actionTypes.DisplayDeathRecap">
+
+                <app-trigger-action-death-recap [action]="action"></app-trigger-action-death-recap>
 
             </div>
 

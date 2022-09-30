@@ -25,6 +25,7 @@ import { TriggerActionSpeakComponent } from './trigger-action-speak/trigger-acti
 import { TriggerActionsComponent } from './trigger-actions/trigger-actions.component';
 import { TriggerClassesComponent } from './trigger-classes/trigger-classes.component';
 import { StylePropertiesComponent } from './style-properties/style-properties.component';
+import { TriggerActionDeathRecapComponent } from './trigger-action-death-recap/trigger-action-death-recap.component';
 
 @NgModule({
     imports: [
@@ -52,6 +53,7 @@ import { StylePropertiesComponent } from './style-properties/style-properties.co
         TriggerActionSpeakComponent,
         TriggerActionsComponent,
         StylePropertiesComponent,
+        TriggerActionDeathRecapComponent,
     ],
     declarations: [
         ConditionsComponent,
@@ -69,6 +71,7 @@ import { StylePropertiesComponent } from './style-properties/style-properties.co
         TriggerActionSpeakComponent,
         TriggerActionsComponent,
         StylePropertiesComponent,
+        TriggerActionDeathRecapComponent,
     ],
     providers: [],
 })

@@ -1208,6 +1208,7 @@ function parseLogEntries( raw, simulating, padTime ) {
                             speakPhrase( action.displayText, action.interruptSpeech, trigger._conditionResults, simulating, res.result, duration, deltaTime );
                         
                         } else if ( action.actionType === ActionTypes.DisplayDeathRecap ) {
+                            console.log( 'death recap called for' );
                             loadLastDeathRecap();
                             
                         }

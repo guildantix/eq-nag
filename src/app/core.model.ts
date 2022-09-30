@@ -27,6 +27,25 @@ export enum ActionTypes {
     
 }
 
+export function ActionTypeLabels(actionType: ActionTypes): string {
+    
+
+    return actionType === ActionTypes.DisplayText ? 'Display Text' :
+        actionType === ActionTypes.PlayAudio ? 'Play Audio' :
+        actionType === ActionTypes.Speak ? 'Speak' :
+        actionType === ActionTypes.Timer ? 'Timer' :
+        actionType === ActionTypes.Countdown ? 'Countdown' :
+        actionType === ActionTypes.StoreVariable ? 'Store Variable' :
+        actionType === ActionTypes.DotTimer ? 'DoT Timer' :
+        actionType === ActionTypes.ClearVariable ? 'Clear Variable' :
+        actionType === ActionTypes.Counter ? 'Counter' :
+        actionType === ActionTypes.Clipboard ? 'Clipboard' :
+        actionType === ActionTypes.BeneficialTimer ? 'Beneficial Timer' :
+        actionType === ActionTypes.DisplayDeathRecap ? 'Display Death Recap' :
+        'Unset Action';
+    
+}
+
 export enum MediaTypes {
     
     Unknown = 0,

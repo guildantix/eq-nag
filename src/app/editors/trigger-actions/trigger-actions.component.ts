@@ -1,5 +1,5 @@
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
-import { ActionTypes, CapturePhrase, OverlayWindowModel, TriggerAction } from 'src/app/core.model';
+import { ActionTypeLabels, ActionTypes, CapturePhrase, OverlayWindowModel, TriggerAction } from 'src/app/core.model';
 import { DialogService } from 'src/app/dialogs/dialog.service';
 import { IpcService } from 'src/app/ipc.service';
 
@@ -18,6 +18,7 @@ export class TriggerActionsComponent implements OnInit {
     @Input() public capturePhrases: CapturePhrase[] = [];
 
     public actionTypes: typeof ActionTypes = ActionTypes;
+    public actionTypeLabels = ActionTypeLabels;
     public overlays: OverlayWindowModel[] = [];
     
     public get alertOverlays(): OverlayWindowModel[] {
