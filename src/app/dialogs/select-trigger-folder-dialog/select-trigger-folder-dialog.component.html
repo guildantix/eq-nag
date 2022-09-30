@@ -1,6 +1,8 @@
-<h2 mat-dialog-title></h2>
+<h2 mat-dialog-title>{{title}}</h2>
 
 <mat-dialog-content>
+
+    <p *ngIf="description !== null">{{description}}</p>
 
     <div *ngIf="this.data?.folderId != null" class="well">
         <div><button mat-button color="accent" [mat-dialog-close]="this.data?.folderId">No parent</button></div>

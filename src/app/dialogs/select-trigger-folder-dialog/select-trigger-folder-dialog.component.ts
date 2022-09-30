@@ -36,10 +36,11 @@ export class SelectTriggerFolderDialogComponent implements OnInit {
     hasChild = (_: number, node: ExampleFlatNode) => node.expandable;
 
     public title: string = 'Select a parent folder';
+    public description: string|null = null;
 
     constructor(
         public dialogRef: MatDialogRef<SelectTriggerFolderDialogComponent>,
-        @Inject( MAT_DIALOG_DATA ) public data: { folderId: string, title: string },
+        @Inject( MAT_DIALOG_DATA ) public data: { folderId: string, title: string, description?: string },
         public dialog: MatDialog,
         private ipcService: IpcService ) {
         
@@ -55,6 +56,10 @@ export class SelectTriggerFolderDialogComponent implements OnInit {
 
         if ( data?.title ) {
             this.title = data.title;
+        }
+
+        if ( data?.description ) {
+            this.description = data.description;
         }
     }
 
