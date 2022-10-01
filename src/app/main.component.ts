@@ -15,6 +15,7 @@ import { NotificationDialogModel, NotificationTypes } from './dialogs/notificati
 import { ColoredString, CustomButton } from './dialogs/dialog.model';
 import { SettingsComponent } from './settings/settings-component/settings.component';
 import { QuickShareService } from './core/quick-share.service';
+
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const nanoid = customAlphabet( alphabet, 16 );
 const updateIntervalDuration = 5 * 60 * 1000;
@@ -169,7 +170,17 @@ export class MainComponent implements OnInit {
                         new ColoredString( 'Now, when deleting a folder, all sub-folders and all triggers in the hierarchy will be ~~**deleted**~~.', '#f44336' )
                     ] );
             }
-        })
+        } );
+
+        this.ipcService.missingPackageOverlayFound().subscribe( packageOverlay => {
+            this.dialogService.showMapPackageOverlayDialog( packageOverlay ).subscribe( overlay => {
+                if ( overlay ) {
+                    this.ipcService.packageOverlayMapped( packageOverlay.overlayId, overlay.overlayId );
+                } else {
+                    this.dialogService.showWarningDialog( 'Package Install Cancelled', [ 'No overlay selected.', 'The package has not been installed!' ] );
+                }
+            } );
+        } );
     }
 
     checkForTriggerUpdates() {
