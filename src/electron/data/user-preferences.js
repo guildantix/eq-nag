@@ -64,9 +64,19 @@ class UserPreferencesStore extends Store {
      * ignoreGinaObjects: string[],
      * fctStyles: FctStylesModel,
      * deathRecap: DeathRecapPreferences,
+     * minimizeToTrayOnLoad: boolean,
      * }}
      */
     #data;
+
+    /** @type {boolean} */
+    get minimizeToTrayOnLoad() {
+        return this.#data.minimizeToTrayOnLoad;
+    }
+    set minimizeToTrayOnLoad( val ) {
+        this.#data.minimizeToTrayOnLoad = val;
+        this.storeDataFile( this.#data );
+    }
 
     /** @type {DeathRecapPreferences} */
     get deathRecap() {
@@ -498,6 +508,14 @@ class UserPreferencesStore extends Store {
 
         ipcMain.on( 'settings:get:author', ( event ) => {
             event.sender.webContents.send( 'settings:get:author', this.author );
+        } );
+
+        ipcMain.on( 'settings:set:minimizeToTrayOnLoad', ( event, minimizeToTrayOnLoad ) => {
+            this.minimizeToTrayOnLoad = minimizeToTrayOnLoad;
+        } );
+
+        ipcMain.on( 'settings:get:minimizeToTrayOnLoad', ( event ) => {
+            event.sender.webContents.send( 'settings:get:minimizeToTrayOnLoad', this.minimizeToTrayOnLoad );
         } );
 
         ipcMain.on( 'settings:set:deathRecap', ( event, deathRecap ) => {

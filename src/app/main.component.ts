@@ -235,6 +235,10 @@ export class MainComponent implements OnInit {
         this.ipcService.minimizeApp();
     }
 
+    sendToTray(): void {
+        this.ipcService.sendToTray();
+    }
+
     openModal() {
         this.fileSelector.nativeElement.click();
     }

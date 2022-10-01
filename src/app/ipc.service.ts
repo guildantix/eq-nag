@@ -349,6 +349,10 @@ export class IpcService {
         this.ipc.send( 'app:minimize' );
     }
 
+    public sendToTray(): void {
+        this.ipc.send( 'app:minimize:tray' );
+    }
+
     public updateLogFile( logFile: string ): void {
         this.ipc.send( 'log:select', logFile );
     }
@@ -1475,6 +1479,26 @@ export class IpcService {
                 } );
             } );
             this.ipc.send( 'settings:get:quickShareImports', null );
+
+        } );
+
+        return obs;
+    }
+
+    public updateMinimizeToTrayOnLoad( enabled: boolean ): void {
+        this.ipc.send( 'settings:set:minimizeToTrayOnLoad', enabled );
+    }
+
+    public getMinimizeToTrayOnLoad(): Observable<boolean> {
+        let obs: Observable<boolean> = new Observable<boolean>( ( observer: Observer<boolean> ) => {
+            
+            this.ipc.once( 'settings:get:minimizeToTrayOnLoad', ( e, enabled: boolean ) => {
+                this.ngZone.run( () => {
+                    observer.next( enabled );
+                    observer.complete();
+                } );
+            } );
+            this.ipc.send( 'settings:get:minimizeToTrayOnLoad', null );
 
         } );
 

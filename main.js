@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, protocol, session, screen } = require( "electron" );
+const { app, BrowserWindow, ipcMain, protocol, session, screen, Tray, Menu } = require( "electron" );
 const { autoUpdater, updaterSignal } = require('electron-updater');
 const url = require( "url" );
 const path = require( "path" );
@@ -36,6 +36,8 @@ const gameResources = new GameResources();
 const fileDatabase = new FilesDatabaseStore();
 const ginaImporter = new GinaImporter();
 const verifiedPlayersDatabase = new VerifiedPlayersStore();
+/** @type {Tray} */
+var trayMenu = null;
 
 GH_TOKEN = "e3460400ae1273a5cac83e1b86a5aceae7f8bab7";
 
@@ -44,7 +46,33 @@ autoUpdater.logger = log;
 unhandled({
     logger: log.error,
     showDialog: false,
-});
+} );
+
+function createTray() {
+    let appTrayMenu = new Tray( path.join( __dirname, "Nag.ico" ) );
+    const contextMenu = Menu.buildFromTemplate( [
+        {
+            label: 'Show', click: function () {
+                mainWindow.show();
+            }
+        },
+        {
+            label: 'Exit', click: function () {
+                app.isQuiting = true;
+                app.quit();
+            }
+        }
+    ] );
+
+    appTrayMenu.on( 'double-click', function ( event ) {
+        mainWindow.show();
+    } );
+
+    appTrayMenu.setToolTip( 'Nag' );
+    appTrayMenu.setContextMenu( contextMenu );
+
+    return appTrayMenu;
+}
 
 function createWindow() {
     mainWindow = new BrowserWindow( {
@@ -58,7 +86,10 @@ function createWindow() {
             nodeIntegration: true,
             devTools: app.isDev(),
         },
+        show: false,
     } );
+
+    trayMenu = createTray();
 
     mainWindow.loadURL(
         url.format( {
@@ -100,6 +131,12 @@ function createWindow() {
             autoUpdater.checkForUpdates();
         }, updateCheckInterval );
         
+    } );
+
+    mainWindow.once( 'ready-to-show', () => {
+        if ( !userPreferences.minimizeToTrayOnLoad ) {
+            mainWindow.show();
+        }
     } );
 
     winManager.loadRenderer();
@@ -172,7 +209,7 @@ ipcMain.on( 'app:minimize', ( event, data ) => {
 } );
 
 ipcMain.on( 'app:minimize:tray', ( event, data ) => {
-    mainWindow.minimize();
+    mainWindow.hide();
 } );
 
 ipcMain.on( 'app:request:tick', ( event, data ) => {

@@ -39,6 +39,7 @@ export class SettingsComponent implements OnInit {
     public alertOverlayId: string = null;
     public enableQuickShareImports: boolean = false;
     public deathRecapPreferences: DeathRecapPreferences = new DeathRecapPreferences();
+    public minimizeToTrayOnLoad: boolean = false;
 
     public get timerOverlays(): OverlayWindowModel[] {
         return this.overlays?.filter( m => m.overlayType === 'Timer' );
@@ -112,6 +113,7 @@ export class SettingsComponent implements OnInit {
         this.ipcService.getBeneficialOverlayId().subscribe( id => this.beneficialOverlayId = id );
         this.ipcService.getAlertOverlayId().subscribe( id => this.alertOverlayId = id );
         this.ipcService.getEnableQuickShareImports().subscribe( enabled => this.enableQuickShareImports = enabled );
+        this.ipcService.getMinimizeToTrayOnLoad().subscribe( enabled => this.minimizeToTrayOnLoad = enabled );
         this.ipcService.getDeathRecapPreferences().subscribe( recapPrefs => this.deathRecapPreferences = recapPrefs ?? new DeathRecapPreferences() );
 
     }
@@ -130,6 +132,22 @@ export class SettingsComponent implements OnInit {
      */
     onQuickShareImportsChange(): void {
         this.ipcService.updateEnableQuickShareImports( this.enableQuickShareImports );
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Saves changes to the user preference.
+     */
+    onMinimizeToTrayOnLoadChange(): void {
+        this.ipcService.updateMinimizeToTrayOnLoad( this.minimizeToTrayOnLoad );
     }
 
 
