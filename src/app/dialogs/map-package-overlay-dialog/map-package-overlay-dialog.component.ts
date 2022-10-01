@@ -1,5 +1,5 @@
-import { Component, OnInit } from '@angular/core';
-import { MatDialog, MatDialogRef } from '@angular/material/dialog';
+import { Component, Inject, OnInit } from '@angular/core';
+import { MatDialog, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { OverlayWindowModel } from 'src/app/core.model';
 import { IpcService } from 'src/app/ipc.service';
 import { NotificationDialogComponent } from '../notification-dialog/notification-dialog.component';
@@ -12,7 +12,7 @@ import { NotificationDialogModel, NotificationTypes } from '../notification-dial
 } )
 export class MapPackageOverlayDialogComponent implements OnInit {
 
-    public overlayName: string = 'Tertiary Text Overlay';
+    public missingOverlay: OverlayWindowModel;
     public mappedOverlay: OverlayWindowModel;
     public existingOverlays: OverlayWindowModel[] = [];
 
@@ -23,16 +23,18 @@ export class MapPackageOverlayDialogComponent implements OnInit {
         public dialogRef: MatDialogRef<MapPackageOverlayDialogComponent>,
         private ipcService: IpcService,
         private dialog: MatDialog,
+        @Inject( MAT_DIALOG_DATA ) public data: OverlayWindowModel,
     ) { }
 
     ngOnInit() {
+        this.missingOverlay = this.data;
         this.ipcService.getOverlayWindows().subscribe( overlays => this.existingOverlays = overlays );
     }
 
     public displayOverlayDescription() {
         let data: NotificationDialogModel = new NotificationDialogModel();
         
-        data.title = this.overlayName;
+        data.title = this.missingOverlay?.name ?? 'Error, missing overlay details!';
         // TODO: Add the overlay description to this message.
         data.message = 'Overlay descriptions have not been implemented yet!';
         data.notificationType = NotificationTypes.Information;

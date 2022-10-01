@@ -761,10 +761,26 @@ export class DialogService {
         } ).afterClosed().subscribe();
     }
 
-    public showMapPackageOverlayDialog(): Observable<string> {
+
+
+
+
+
+
+
+
+    
+    /**
+     * Opens the map package overlay dialog.
+     * 
+     * @returns Returns the user overlay mapped to the missing overlay.
+     * 
+     * @param missingOverlay The overlay that is missing.
+     */
+    public showMapPackageOverlayDialog( missingOverlay: OverlayWindowModel ): Observable<string> {
         return this.dialog.open<MapPackageOverlayDialogComponent, any, string>( MapPackageOverlayDialogComponent, {
             width: '750px',
-            data: {},
+            data: missingOverlay,
             panelClass: 'app-dialog',
         } ).afterClosed();
     }
