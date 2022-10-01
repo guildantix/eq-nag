@@ -28,6 +28,7 @@ export class IpcService {
     private _warningDialogObservers: Observer<DialogEventArgs>[] = [];
     private _onReceivedQuickShare: Observer<string>[] = [];
     private _onOrphanedTriggerWarning: Observer<boolean>[] = [];
+    private _onMissingPackageOverlay: Observer<OverlayWindowModel>[] = [];
 
     public get remote(): Electron.Remote {
         return this._remote;
@@ -59,6 +60,14 @@ export class IpcService {
                 this._webFrame = ( <any>window ).require( 'electron' ).webFrame;
                 this._clipboard = ( <any>window ).require( 'electron' ).clipboard;
                 this._crashReporter = ( <any>window ).require( 'electron' ).crashReporter;
+
+                this.ipc.on( 'pkg:missing-overlay', ( event: any, data: OverlayWindowModel ) => {
+                    ngZone.run( () => {
+                        this._onMissingPackageOverlay?.forEach( f => {
+                            f.next( data );
+                        } );
+                    } );
+                } );
 
                 this.ipc.on( 'orphaned_trigger_warning', ( event: any, data: boolean ) => {
                     ngZone.run( () => {
@@ -167,6 +176,18 @@ export class IpcService {
         } else {
             console.warn( 'App not running inside Electron!' );
         }
+    }
+
+    public missingPackageOverlayFound(): Observable<OverlayWindowModel> {
+        let obs: Observable<OverlayWindowModel> = new Observable<OverlayWindowModel>( ( observer: Observer<OverlayWindowModel> ) => {
+            this._onMissingPackageOverlay.push( observer );
+        } );
+
+        return obs;
+    }
+
+    public packageOverlayMapped( packageOverlayId: string, mappedOverlayId: string ): void {
+        this.ipc.send( `trigger:missing-overlay:${packageOverlayId}`, mappedOverlayId );
     }
 
     public orphanedTriggersFound(): Observable<boolean> {

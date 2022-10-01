@@ -883,6 +883,7 @@ export class TriggerPackageModel {
     public folders: PackageFolder[] = [];
     public detrimentalOverlayId: string;
     public beneficialOverlayId: string;
+    public packageOverlays: OverlayWindowModel[] = [];
 }
 
 export class TriggerPackageListModel {

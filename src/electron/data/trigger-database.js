@@ -120,7 +120,8 @@ const fuseOptions_clipboard = {
 };
 
 class TriggerStoreModel {
-
+    /** @type {number} */
+    version;
     /** @type {Trigger[]} */
     triggers;
     /** @type {TriggerFolder[]} */
@@ -131,6 +132,8 @@ class TriggerStoreModel {
     installedPackages;
     /** @type {QuickShareVersion[]} */
     installedQuickShares;
+    /** @type {Record<string, string>} This maps user overlay ids to author overlay ids. */
+    packageOverlayMap;
 }
 
 class TriggerDatabaseStore extends Store {
@@ -665,6 +668,12 @@ class TriggerDatabaseStore extends Store {
             this.#data.version = 68;
             this.storeDataFile( this.#data );
         }
+        if ( this.#data.version < 69 ) {
+            this.#data.packageOverlayMap = {};
+
+            this.#data.version = 69;
+            this.storeDataFile( this.#data );
+        }
     }
 
 
@@ -900,7 +909,7 @@ class TriggerDatabaseStore extends Store {
         } );
 
         ipcMain.on( 'pkg:install', ( event, pkg ) => {
-            event.sender.webContents.send( 'pkg:install', this.installTriggerPkg( pkg ) );
+            this.installTriggerPkg( pkg, event );
         } );
 
         ipcMain.on( 'pkg:uninstall', ( event, packageId ) => {
@@ -1755,10 +1764,74 @@ class TriggerDatabaseStore extends Store {
     /**
      * Installs the given trigger packages.
      * 
+     * @deprecated Do not use this.
+     * 
      * @param {TriggerPackageMetaModel[]} pkgs The packages to install.
      */
     installTriggerPackages( pkgs ) {
         pkgs?.forEach( pkg => this.installTriggerPackage( pkg ) );
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Ensures that the package overlays are installed.
+     * 
+     * @remarks Install is a bad choice here, when a package overlay is 
+     *  missing, it is sent to the main window with the intent to have the user 
+     *  step through creating a matching overlay.  Once all overlays have a 
+     *  matching overlay in user data, then the package can be installed.
+     * 
+     * @param {TriggerPackageMetaModel} pkg The trigger package.
+     * @param {Electron.IpcMainEvent} event The original event args.
+     * @param {(overlayMap: Record<string, string>) => void} callback The callback function executed after all overlay maps have been completed.
+     */
+    installTriggerPackageOverlays( pkg, event, callback ) {
+        let overlayMap = this.#data.packageOverlayMap ?? {};
+        let finalize = () => {
+            this.#data.packageOverlayMap = overlayMap;
+            this.storeDataFile( this.#data );
+        }
+
+        overlayMap[ pkg.model.detrimentalOverlayId ] = _userPreferences.detrimentalOverlayId;
+        overlayMap[ pkg.model.beneficialOverlayId ] = _userPreferences.beneficialOverlayId;
+        
+        let missingOverlays = pkg.model.packageOverlays?.filter( f => overlayMap[ f.overlayId ] == null ) ?? [];
+
+        let installOverlay =
+            /**
+             * Execute the process for installing trigger overlays.
+             * 
+             * @param {number} i The index of the overlay.
+             */
+            ( i ) => {
+
+                if ( i < missingOverlays.length ) {
+                    // If we still have more overlays to process, then send that to the sender.
+                    ipcMain.once( `trigger:missing-overlay:${missingOverlays[ i ].overlayId}`, ( event, userOverlayId ) => {
+                        overlayMap[ missingOverlays[ i ].overlayId ] = userOverlayId;
+                        installOverlay( i + 1 );
+                    } );
+                    
+                    event.sender.webContents.send( 'pkg:missing-overlay', missingOverlays[ i ] );
+
+                } else {
+                    // We're done, let's continue the normal process.
+                    finalize();
+                    callback( overlayMap );
+
+                }
+            
+            };
+        
+        installOverlay( 0 );
     }
 
 
@@ -1774,64 +1847,62 @@ class TriggerDatabaseStore extends Store {
      * Installs the given trigger package.
      * 
      * @param {TriggerPackageMetaModel} pkg The package to install.
+     * @param {Electron.IpcMainEvent} event The event args.
      */
-    installTriggerPkg( pkg ) {
+    installTriggerPkg( pkg, event ) {
         
         if ( this.#data.triggers === null || this.#data.triggers === undefined ) {
             throw 'Trigger database not loaded!';
         }
 
-        let triggerVersion = this.#data.installedPackages.find( f => f.packageId === pkg.triggerPackageId );
+        this.installTriggerPackageOverlays( pkg, event, overlayMap => {
 
-        if ( triggerVersion == null ) {
-            triggerVersion = new TriggerPackageVersion();
-            triggerVersion.packageId = pkg.triggerPackageId;
+            let triggerVersion = this.#data.installedPackages.find( f => f.packageId === pkg.triggerPackageId );
 
-            // Add it to the store
-            this.#data.installedPackages.push( triggerVersion );
-        }
+            if ( triggerVersion == null ) {
+                triggerVersion = new TriggerPackageVersion();
+                triggerVersion.packageId = pkg.triggerPackageId;
 
-        triggerVersion.versionId = pkg.versionId;
-        triggerVersion.timestamp = pkg.timestampDate;
-        triggerVersion.name = pkg.name;
-        triggerVersion.description = pkg.description;
-        triggerVersion.author = pkg.author;
-        triggerVersion.authorDiscord = pkg.authorDiscord;
+                // Add it to the store
+                this.#data.installedPackages.push( triggerVersion );
+            }
 
-        // First, update the overlay Ids to match their cooresponding values on 
-        // the client.
+            triggerVersion.versionId = pkg.versionId;
+            triggerVersion.timestamp = pkg.timestampDate;
+            triggerVersion.name = pkg.name;
+            triggerVersion.description = pkg.description;
+            triggerVersion.author = pkg.author;
+            triggerVersion.authorDiscord = pkg.authorDiscord;
 
-        /** @type {Record<string, string>} */
-        let overlayMap = {}
+            // First, update the overlay Ids to match their cooresponding values on
+            // the client.
+            pkg.model?.triggers?.forEach( pkgTrigger => {
+                pkgTrigger.actions?.forEach( pkgAction => {
 
-        overlayMap[ pkg.model.detrimentalOverlayId ] = _userPreferences.detrimentalOverlayId;
-        overlayMap[ pkg.model.beneficialOverlayId ] = _userPreferences.beneficialOverlayId;
-
-        pkg.model?.triggers?.forEach( pkgTrigger => {
-            pkgTrigger.actions?.forEach( pkgAction => {
-
-                if ( pkgAction.actionType === ActionTypes.DisplayText ) {
-                    pkgAction.overlayId = _userPreferences.alertOverlayId;
-                } else {
-                    pkgAction.overlayId = overlayMap[ pkgAction.overlayId ];
-                }
+                    if ( pkgAction.actionType === ActionTypes.DisplayText ) {
+                        pkgAction.overlayId = overlayMap[ pkgAction.overlayId ] ?? _userPreferences.alertOverlayId;
+                    } else {
+                        pkgAction.overlayId = overlayMap[ pkgAction.overlayId ];
+                    }
                 
-                pkgAction.endedTextOverlayId = _userPreferences.alertOverlayId;
-                pkgAction.endingSoonTextOverlayId = _userPreferences.alertOverlayId;
+                    pkgAction.endedTextOverlayId = overlayMap[ pkgAction.overlayId ] ?? _userPreferences.alertOverlayId;
+                    pkgAction.endingSoonTextOverlayId = overlayMap[ pkgAction.overlayId ] ?? _userPreferences.alertOverlayId;
+                } );
             } );
+
+            // Next, create the required folders, creating a folder map that maps 
+            // folder ids to existing folders. If a folder does not exist,  it is 
+            // created  using  the  folder  id  in  the trigger   package  folder.
+            let folderMap = this.installPackageFolders( pkg.model?.folders );
+            pkg.model?.triggers?.forEach( pkgTrigger => this.installPackageTrigger( pkg.triggerPackageId, pkgTrigger, folderMap ) );
+
+            // Save changes to the data.
+            this.processPredefinedTriggers();
+            this.storeDataFile( this.#data );
+            
+            event.sender.webContents.send( 'pkg:install', true );
         } );
 
-        // Next, create the required folders, creating a folder map that maps 
-        // folder ids to existing folders. If a folder does not exist,  it is 
-        // created  using  the  folder  id  in  the trigger   package  folder.
-        let folderMap = this.installPackageFolders( pkg.model?.folders );
-        pkg.model?.triggers?.forEach( pkgTrigger => this.installPackageTrigger( pkg.triggerPackageId, pkgTrigger, folderMap ) );
-
-        // Save changes to the data.
-        this.processPredefinedTriggers();
-        this.storeDataFile( this.#data );
-
-        return true;
     }
 
 

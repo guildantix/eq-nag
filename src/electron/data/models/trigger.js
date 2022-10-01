@@ -1,3 +1,5 @@
+const { OverlayWindow } = require( "./overlay-window" )
+
 var ActionTypes = {
     '0': 'DisplayText',
     '1': 'PlayAudio',
@@ -493,6 +495,9 @@ class TriggerPackageModel {
     detrimentalOverlayId;
     /** @type {string} */
     beneficialOverlayId;
+    /** @type {OverlayWindow[]} */
+    packageOverlays;
+
 }
 
 class TriggerPackageMetaModel {
