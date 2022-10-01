@@ -769,7 +769,7 @@ export class DialogService {
 
 
 
-    
+
     /**
      * Opens the map package overlay dialog.
      * 
@@ -777,8 +777,8 @@ export class DialogService {
      * 
      * @param missingOverlay The overlay that is missing.
      */
-    public showMapPackageOverlayDialog( missingOverlay: OverlayWindowModel ): Observable<string> {
-        return this.dialog.open<MapPackageOverlayDialogComponent, any, string>( MapPackageOverlayDialogComponent, {
+    public showMapPackageOverlayDialog( missingOverlay: OverlayWindowModel ): Observable<OverlayWindowModel> {
+        return this.dialog.open<MapPackageOverlayDialogComponent, OverlayWindowModel, OverlayWindowModel>( MapPackageOverlayDialogComponent, {
             width: '750px',
             data: missingOverlay,
             panelClass: 'app-dialog',
