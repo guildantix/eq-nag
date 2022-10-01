@@ -1,0 +1,51 @@
+<h2 mat-dialog-title>Missing an Overlay</h2>
+
+<mat-dialog-content>
+
+    <p>The package that you're installing is using an overlay that you don't have, <span class="color-orange">{{overlayName}}</span>
+        <sup class="help-sup"
+            matTooltip="Tertiary is going to be busy with things that are ..."
+            matTooltipPosition="above"
+            matTooltipClass="tooltip-large"
+            (click)="displayOverlayDescription()">&nbsp;&nbsp;?</sup>.</p>
+
+    <ng-template [ngIf]="!useExisting && !copyOverlay">
+        <p>Would you like to <span class="color-blue">copy</span> the overlay or use an <span class="color-green">existing overlay</span>?</p>
+    
+        <p class="notice border-blue">
+            <mat-icon class="material-icons-outlined color-blue">info</mat-icon><span>If you choose to copy the package overlay, You will be able to resize/move the overlay after it has been copied.</span>
+        </p>
+        
+        <p class="notice border-orange">
+            <mat-icon class="material-icons-outlined color-orange">warning</mat-icon><span>Cancelling will also cancel installing the trigger package!</span>
+        </p>
+
+    </ng-template>
+
+    <ng-template [ngIf]="useExisting">
+        <p>To use an existing overlay, select the overlay you would like to use instead.</p>
+        <mat-form-field>
+            <mat-label>Existing Overlay</mat-label>
+            <mat-select [(ngModel)]="mappedOverlay" name="mappedOverlay">
+                <mat-option *ngFor="let overlay of existingOverlays" [value]="overlay">{{overlay.name}}</mat-option>
+            </mat-select>
+            <mat-hint></mat-hint>
+        </mat-form-field>
+    </ng-template>
+
+</mat-dialog-content>
+
+<mat-dialog-actions>
+    
+    <button mat-button (click)="cancel()" class="t-confirm-no" color="warn">Cancel</button>
+
+    <ng-template [ngIf]="useExisting">
+        <button type="button" mat-button class="color-green" [disabled]="mappedOverlay == null" (click)="accept(mappedOverlay)">Use this overlay</button>
+    </ng-template>
+    
+    <ng-template [ngIf]="!useExisting && !copyOverlay">
+        <button type="button" mat-button class="color-blue">Copy</button>
+        <button type="button" mat-button class="color-green" (click)="useExisting = true">Use Existing</button>
+    </ng-template>
+
+</mat-dialog-actions>

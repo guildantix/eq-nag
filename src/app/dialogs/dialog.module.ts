@@ -29,6 +29,7 @@ import { PrepareQuickShareDialogComponent } from './quick-share/prepare-quick-sh
 import { ReceiveQuickShareDialogComponent } from './quick-share/receive-quick-share.component';
 import { AuthorDialogComponent } from './author-dialog/author-dialog.component';
 import { DeathRecapDialogComponent } from './death-recap-dialog/death-recap-dialog.component';
+import { MapPackageOverlayDialogComponent } from './map-package-overlay-dialog/map-package-overlay-dialog.component';
 
 @NgModule( {
     imports: [
@@ -62,6 +63,7 @@ import { DeathRecapDialogComponent } from './death-recap-dialog/death-recap-dial
         PrepareQuickShareDialogComponent,
         ReceiveQuickShareDialogComponent,
         AuthorDialogComponent,
+        MapPackageOverlayDialogComponent,
     ],
     declarations: [
         ColoredStringPipe,
@@ -86,6 +88,7 @@ import { DeathRecapDialogComponent } from './death-recap-dialog/death-recap-dial
         ReceiveQuickShareDialogComponent,
         AuthorDialogComponent,
         DeathRecapDialogComponent,
+        MapPackageOverlayDialogComponent,
     ],
     providers: [
         DialogService,

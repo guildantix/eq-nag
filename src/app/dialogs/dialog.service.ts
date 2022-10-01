@@ -24,6 +24,7 @@ import { NamedGroupConditionsDialogComponent } from './named-group-conditions-di
 import { PrepareQuickShareDialogComponent } from './quick-share/prepare-quick-share.component';
 import { ReceiveQuickShareDialogComponent } from './quick-share/receive-quick-share.component';
 import { DeathRecapDialogComponent } from './death-recap-dialog/death-recap-dialog.component';
+import { MapPackageOverlayDialogComponent } from './map-package-overlay-dialog/map-package-overlay-dialog.component';
 
 @Injectable()
 export class DialogService {
@@ -758,6 +759,14 @@ export class DialogService {
             width: '750px',
             panelClass: 'app-dialog',
         } ).afterClosed().subscribe();
+    }
+
+    public showMapPackageOverlayDialog(): Observable<string> {
+        return this.dialog.open<MapPackageOverlayDialogComponent, any, string>( MapPackageOverlayDialogComponent, {
+            width: '750px',
+            data: {},
+            panelClass: 'app-dialog',
+        } ).afterClosed();
     }
     
 }
