@@ -3,6 +3,7 @@ import { MatDialog, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dial
 import { OverlayWindowModel } from 'src/app/core.model';
 import { nagId } from 'src/app/core/nag-id.util';
 import { IpcService } from 'src/app/ipc.service';
+import { StringUtility } from 'src/app/utilities';
 import { NotificationDialogComponent } from '../notification-dialog/notification-dialog.component';
 import { NotificationDialogModel, NotificationTypes } from '../notification-dialog/notification-dialog.model';
 
@@ -20,6 +21,10 @@ export class MapPackageOverlayDialogComponent implements OnInit, OnDestroy {
     public useExisting: boolean = false;
     public copyOverlay: boolean = false;
     private _newOverlayId: string = null;
+
+    public get overlayDescriptionShort(): string {
+        return StringUtility.LimitLength( this.missingOverlay.description, 53, true );
+    }
 
     constructor(
         public dialogRef: MatDialogRef<MapPackageOverlayDialogComponent>,
@@ -46,8 +51,7 @@ export class MapPackageOverlayDialogComponent implements OnInit, OnDestroy {
         let data: NotificationDialogModel = new NotificationDialogModel();
         
         data.title = this.missingOverlay?.name ?? 'Error, missing overlay details!';
-        // TODO: Add the overlay description to this message.
-        data.message = 'Overlay descriptions have not been implemented yet!';
+        data.message = this.missingOverlay.description;
         data.notificationType = NotificationTypes.Information;
 
         let ref = this.dialog.open( NotificationDialogComponent, {

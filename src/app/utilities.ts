@@ -17,6 +17,32 @@ export class StringUtility {
     public static Insert( string: string, value: string, position: number ): string {
         return string.substr( 0, position ) + value + string.substr( position );
     }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Limits the length of a string to the specified max value.
+     * 
+     * @param value The original string value.
+     * @param maxLength The max length allowed.
+     * @param ellipsis If true, an ellipsis will be appended to the end.
+     */
+    public static LimitLength( value: string, maxLength: number, ellipsis: boolean = true ) {
+        maxLength = ellipsis ? maxLength - 4 : maxLength;
+
+        if ( value?.length >= maxLength ) {
+            return value.substring( 0, maxLength ) + ( ellipsis ? ' ...' : '' );
+        } else {
+            return value;
+        }
+    }
 }
 
 export class ArrayUtility {

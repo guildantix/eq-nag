@@ -3,8 +3,8 @@
 <mat-dialog-content>
 
     <p>The package that you're installing is using an overlay that you don't have, <span class="color-orange">{{missingOverlay?.name}}</span>
-        <sup class="help-sup"
-            matTooltip="Tertiary is going to be busy with things that are ..."
+        <sup class="help-sup" *ngIf="missingOverlay?.description?.length > 0"
+            [matTooltip]="overlayDescriptionShort"
             matTooltipPosition="above"
             matTooltipClass="tooltip-large"
             (click)="displayOverlayDescription()">&nbsp;&nbsp;?</sup>.</p>
