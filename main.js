@@ -104,12 +104,14 @@ function createWindow() {
     }
 
     mainWindow.on( 'closed', function () {
-        mainWindow = null
+        mainWindow = null;
+        trayMenu = null;
     } );
 
     mainWindow.on( 'close', function () {
         winManager.unload();
         logBootstrap.unload();
+        trayMenu.destroy();
     } );
 
     mainWindow.on( 'resize', function ( e ) {
