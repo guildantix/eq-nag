@@ -172,6 +172,20 @@ export class MainComponent implements OnInit {
             }
         } );
 
+        // window.setTimeout( () => {
+        //     let testOverlayId = 'A9sSxftjOOyUzOOq';
+        //     this.ipcService.getOverlayWindow( testOverlayId ).subscribe( packageOverlay => {
+        //         this.dialogService.showMapPackageOverlayDialog( packageOverlay ).subscribe( overlay => {
+        //             if ( overlay ) {
+        //                 // this.ipcService.packageOverlayMapped( packageOverlay.overlayId, overlay.overlayId );
+        //                 console.log( 'new overlay', overlay );
+        //             } else {
+        //                 this.dialogService.showWarningDialog( 'Package Install Cancelled', [ 'No overlay selected.', 'The package has not been installed!' ] );
+        //             }
+        //         } );
+        //     } );
+        // }, 2500 );
+        
         this.ipcService.missingPackageOverlayFound().subscribe( packageOverlay => {
             this.dialogService.showMapPackageOverlayDialog( packageOverlay ).subscribe( overlay => {
                 if ( overlay ) {

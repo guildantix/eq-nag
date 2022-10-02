@@ -21,6 +21,14 @@
                             <mat-hint>Name</mat-hint>
                         </mat-form-field>
 
+                        <app-link-button (click)="enterDescription = true" *ngIf="!enterDescription" style="margin-top: 5px; margin-bottom: 5px;">Add a description ...</app-link-button>
+                
+                        <mat-form-field *ngIf="enterDescription">
+                            <mat-label></mat-label>
+                            <textarea matInput [(ngModel)]="model.description" name="txtDescription" rows="5"></textarea>
+                            <mat-hint>Description</mat-hint>
+                        </mat-form-field>
+
                         <ng-template [ngIf]="model.overlayType !== 'FCT'">
                             <mat-form-field>
                                 <mat-label></mat-label>

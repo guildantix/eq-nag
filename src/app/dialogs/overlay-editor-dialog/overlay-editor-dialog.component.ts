@@ -51,6 +51,7 @@ export class OverlayEditorDialogComponent implements OnInit {
     public textBorderColor: string = '#000000';
     public textGlowIntensity: number = 100;
     public textGlowColor: string = '#000000';
+    public enterDescription: boolean;
     
     public get maxFontWeightIndex(): number {
         if ( this.model?.fontFamily != null ) {
@@ -79,6 +80,7 @@ export class OverlayEditorDialogComponent implements OnInit {
                     this.ipcService.enableOverlayEditMode( this.overlayId );
                     this._noChangesModel = Object.assign( new OverlayWindowModel(), overlay );
                     this.model = overlay;
+                    this.enterDescription = this.model.description?.length > 0;
 
                     this.model.fontFamily = this.model.fontFamily ? this.model.fontFamily : 'Roboto';
                     this.model.fontSize = this.model.fontSize > 0 ? this.model.fontSize : 14;
