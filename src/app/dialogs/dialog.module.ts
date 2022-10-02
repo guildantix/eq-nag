@@ -30,6 +30,7 @@ import { ReceiveQuickShareDialogComponent } from './quick-share/receive-quick-sh
 import { AuthorDialogComponent } from './author-dialog/author-dialog.component';
 import { DeathRecapDialogComponent } from './death-recap-dialog/death-recap-dialog.component';
 import { MapPackageOverlayDialogComponent } from './map-package-overlay-dialog/map-package-overlay-dialog.component';
+import { WebComponentsModule } from '../web-components/web-components.module';
 
 @NgModule( {
     imports: [
@@ -41,6 +42,7 @@ import { MapPackageOverlayDialogComponent } from './map-package-overlay-dialog/m
         FormInputModule,
         ContextMenuModule,
         EditorsModule,
+        WebComponentsModule,
     ],
     exports: [
         TriggerDialogComponent,
