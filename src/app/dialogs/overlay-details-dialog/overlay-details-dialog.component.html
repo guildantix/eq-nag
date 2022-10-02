@@ -13,13 +13,22 @@
         <mat-form-field>
             <mat-label></mat-label>
             <mat-select [(ngModel)]="model.overlayType" name="ddlOverlayType" required>
-                <mat-option value="Log">Log</mat-option>
-                <mat-option value="Alert">Alert</mat-option>
+                <mat-option value="Log">Debug Log</mat-option>
+                <mat-option value="Alert">Text Notifications</mat-option>
                 <mat-option value="Timer">Timer & Countdown</mat-option>
-                <mat-option value="FCT">Combat Text</mat-option>
+                <mat-option value="FCT">Floating Combat Text</mat-option>
+                <!-- TODO: Am I going to do anything with charts? -->
                 <mat-option value="Chart" disabled>Chart</mat-option>
             </mat-select>
             <mat-hint>Overlay Type</mat-hint>
+        </mat-form-field>
+
+        <app-link-button (click)="enterDescription = true" *ngIf="!enterDescription" style="margin-top: 5px;">Enter a description ...</app-link-button>
+
+        <mat-form-field *ngIf="enterDescription">
+            <mat-label></mat-label>
+            <textarea matInput [(ngModel)]="model.description" name="txtDescription" rows="5"></textarea>
+            <mat-hint>Description</mat-hint>
         </mat-form-field>
 
     </form>

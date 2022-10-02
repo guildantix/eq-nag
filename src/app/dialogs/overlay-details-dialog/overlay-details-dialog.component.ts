@@ -10,6 +10,7 @@ import { OverlayWindowModel } from 'src/app/core.model';
 export class OverlayDetailsDialogComponent implements OnInit {
 
     public model: OverlayWindowModel;
+    public enterDescription: boolean;
 
     constructor(
         public dialogRef: MatDialogRef<OverlayDetailsDialogComponent>,
