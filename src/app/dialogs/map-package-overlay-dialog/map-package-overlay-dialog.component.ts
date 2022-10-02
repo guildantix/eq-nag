@@ -1,6 +1,7 @@
-import { Component, Inject, OnInit } from '@angular/core';
+import { Component, Inject, OnDestroy, OnInit } from '@angular/core';
 import { MatDialog, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { OverlayWindowModel } from 'src/app/core.model';
+import { nagId } from 'src/app/core/nag-id.util';
 import { IpcService } from 'src/app/ipc.service';
 import { NotificationDialogComponent } from '../notification-dialog/notification-dialog.component';
 import { NotificationDialogModel, NotificationTypes } from '../notification-dialog/notification-dialog.model';
@@ -10,7 +11,7 @@ import { NotificationDialogModel, NotificationTypes } from '../notification-dial
     templateUrl: 'map-package-overlay-dialog.component.html',
     styleUrls: [ './map-package-overlay-dialog.component.scss' ],
 } )
-export class MapPackageOverlayDialogComponent implements OnInit {
+export class MapPackageOverlayDialogComponent implements OnInit, OnDestroy {
 
     public missingOverlay: OverlayWindowModel;
     public mappedOverlay: OverlayWindowModel;
@@ -18,6 +19,7 @@ export class MapPackageOverlayDialogComponent implements OnInit {
 
     public useExisting: boolean = false;
     public copyOverlay: boolean = false;
+    private _newOverlayId: string = null;
 
     constructor(
         public dialogRef: MatDialogRef<MapPackageOverlayDialogComponent>,
@@ -26,11 +28,20 @@ export class MapPackageOverlayDialogComponent implements OnInit {
         @Inject( MAT_DIALOG_DATA ) public data: OverlayWindowModel,
     ) { }
 
+    ngOnDestroy(): void {
+        if ( this.copyOverlay && this._newOverlayId) {
+            this.ipcService.disableOverlayEditMode( this._newOverlayId );
+        }
+    }
+
     ngOnInit() {
         this.missingOverlay = this.data;
         this.ipcService.getOverlayWindows().subscribe( overlays => this.existingOverlays = overlays );
     }
 
+    /**
+     * Displays the package overlay's description.
+     */
     public displayOverlayDescription() {
         let data: NotificationDialogModel = new NotificationDialogModel();
         
@@ -46,16 +57,43 @@ export class MapPackageOverlayDialogComponent implements OnInit {
         } );
         
         ref.afterClosed().subscribe();
-
-        return ref;
     }
 
+    /**
+     * Copies the package overlay and allows the user to move/resize the copied 
+     * overlay.
+     */
+    public copyPackageOverlay() {
+        this.copyOverlay = true;
+        let newOverlay = Object.assign( new OverlayWindowModel(), this.missingOverlay );
+        newOverlay.overlayId = nagId();
+        this.ipcService
+            .createNewOverlayWindow( newOverlay )
+            .subscribe( overlayId => {
+                this._newOverlayId = overlayId;
+                this.ipcService.enableOverlayEditMode( this._newOverlayId );
+                this.mappedOverlay = newOverlay;
+            } );
+    }
+
+    /**
+     * Maps the package overlay to the provided overlay.
+     * 
+     * @param overlay The overlay to map.
+     */
     public accept( overlay: OverlayWindowModel ) {
         this.dialogRef.close( overlay );
     }
 
+    /**
+     * Cancels the map package overlay and the package import process.
+     */
     public cancel() {
-        this.dialogRef.close( null );
+        if ( this._newOverlayId ) {
+            this.ipcService.deleteOverlayWindow( this._newOverlayId ).subscribe( deleted => this.dialogRef.close( null ) );
+        } else {
+            this.dialogRef.close( null );
+        }
     }
 
 }

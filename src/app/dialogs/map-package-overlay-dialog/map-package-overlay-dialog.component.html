@@ -33,6 +33,10 @@
         </mat-form-field>
     </ng-template>
 
+    <ng-template [ngIf]="copyOverlay">
+        <p>Move/resize the overlay to your liking, and click "Done" when you're happy with the result.</p>
+    </ng-template>
+
 </mat-dialog-content>
 
 <mat-dialog-actions>
@@ -42,9 +46,13 @@
     <ng-template [ngIf]="useExisting">
         <button type="button" mat-button class="color-green" [disabled]="mappedOverlay == null" (click)="accept(mappedOverlay)">Use this overlay</button>
     </ng-template>
+
+    <ng-template [ngIf]="copyOverlay">
+        <button type="button" mat-button class="color-green" [disabled]="mappedOverlay == null" (click)="accept(mappedOverlay)">Done</button>
+    </ng-template>
     
     <ng-template [ngIf]="!useExisting && !copyOverlay">
-        <button type="button" mat-button class="color-blue">Copy</button>
+        <button type="button" mat-button class="color-blue" (click)="copyPackageOverlay()">Copy</button>
         <button type="button" mat-button class="color-green" (click)="useExisting = true">Use Existing</button>
     </ng-template>
 
