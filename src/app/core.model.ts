@@ -373,6 +373,7 @@ export class OverlayWindowModel {
     public x: number = null;
     public y: number = null;
     public name: string = '';
+    public description: string;
     public overlayType: string = '';
     public fontFamily: string = 'Roboto';
     public horizontalAlignment: string = 'center';

@@ -30,6 +30,7 @@ class OverlayWindow {
     x = null;
     y = null;
     name = '';
+    description = '';
     overlayType = '';
     fontFamily = 'Roboto';
     horizontalAlignment = 'center';
