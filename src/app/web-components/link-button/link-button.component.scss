@@ -1,0 +1,20 @@
+
+$color-blue: #69b2f0;
+$color-blue-highlight: #87bdec;
+$color-purple: #c269f0;
+:host {
+    cursor: pointer;
+    display: inline-block;
+    color: $color-blue;
+
+    div.link-button {
+        display: inline-block;
+    
+        &:hover {
+            color: $color-blue-highlight;
+        }
+        &:active {
+            color: $color-purple;
+        }
+    }
+}

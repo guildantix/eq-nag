@@ -7,6 +7,7 @@ import { FormInputModule } from '../form-inputs/form-inputs.module';
 import { MaterialModule } from '../material.module';
 import { AccordionPanelComponent } from './accordion/accordion-panel.component';
 import { AccordionComponent } from './accordion/accordion.component';
+import { LinkButtonComponent } from './link-button/link-button.component';
 
 @NgModule({
     imports: [
@@ -21,10 +22,12 @@ import { AccordionComponent } from './accordion/accordion.component';
     exports: [
         AccordionComponent,
         AccordionPanelComponent,
+        LinkButtonComponent,
     ],
     declarations: [
         AccordionComponent,
         AccordionPanelComponent,
+        LinkButtonComponent,
     ],
     providers: [],
 })
