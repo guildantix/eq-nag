@@ -937,6 +937,9 @@ function disableMoveResize( dom ) {
     }
 
     dom.classList.remove( 'drag' );
+    dom.classList.remove( 'mouse-enabled' );
+    const domContentArea = dom.querySelector( '.overlay-content-area' );
+    domContentArea.classList.remove( 'mouse-enabled' );
     dom.dispatchEvent( stopTrackingMoveResizeEvent );
 }
 
@@ -955,6 +958,10 @@ function disableMoveResize( dom ) {
  * @param {HTMLElement} dom The element to enable resize event on.
  */
 function enableMoveResize( dom ) {
+
+    dom.classList.add( 'mouse-enabled' );
+    const domContentArea = dom.querySelector( '.overlay-content-area' );
+    domContentArea.classList.add( 'mouse-enabled' );
     
     /** @type {import('electron').Rectangle} */
     let bounds = {
@@ -1104,6 +1111,7 @@ function enableMoveResize( dom ) {
     for ( let i = 0; i < resizeHandles.length; i++ ) {
         let handle = document.createElement( 'span' );
         handle.classList.add( resizeHandles[ i ] );
+        handle.classList.add( 'mouse-enabled' );
         dom.appendChild( handle );
     }
 

@@ -198,18 +198,6 @@ class WindowManager {
         ipcMain.on( 'overlay:enable-edit', ( event, overlayId ) => {
             // Note: This is triggered by the NgInit event on the overlay editor window.
             this.#renderer.webContents.send( 'renderer:window:enable-edit', overlayId );
-            this.#renderer.setIgnoreMouseEvents( false );
-            
-            let caller = BrowserWindow.fromWebContents( event.sender );
-
-            const onTopIntervalId = setInterval( () => {
-                caller.setAlwaysOnTop( true, "screen-saver" );
-            }, 500 );
-
-            caller.on( 'close', () => {
-                clearInterval( onTopIntervalId );
-                this.#renderer.setIgnoreMouseEvents( true );
-            } );
         } );
         
         ipcMain.on( 'overlay:disable-edit', ( event, overlayId ) => {
@@ -430,7 +418,7 @@ class WindowManager {
         } );
         
         renderer.loadURL( `file://${__dirname}/threads/renderer.html?originX=${0 - bounds.x}&originY=${0 - bounds.y}` );
-        renderer.setIgnoreMouseEvents( true );
+        renderer.setIgnoreMouseEvents( true, { forward: true } );
         renderer.setAlwaysOnTop( true, "screen-saver" );
         
         // Open the DevTools.

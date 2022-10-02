@@ -313,11 +313,25 @@
     </style>
 </head>
 <body>
-    
+
     <script type="text/javascript">
-        const urlParams = new URLSearchParams(window.location.search);
-        var Renderer = require('./renderer');
-        Renderer(+urlParams.get('originX'), +urlParams.get('originY'));
+        const urlParams = new URLSearchParams( window.location.search );
+        var Renderer = require( './renderer' );
+        Renderer( +urlParams.get( 'originX' ), +urlParams.get( 'originY' ) );
+
+        const remote = require( "electron" ).remote;
+        let win = remote.getCurrentWindow();
+        window.addEventListener( "mousemove", event => {
+            
+            if ( event.target && event.target.classList && event.target.classList.contains( 'mouse-enabled' ) === true ) {
+                win.setIgnoreMouseEvents( false );
+
+            } else {
+                win.setIgnoreMouseEvents( true, { forward: true } );
+
+            }
+        } );
+        win.setIgnoreMouseEvents( true, { forward: true } );
     </script>
 
     <!-- =========================== -->
