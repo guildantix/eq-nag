@@ -236,6 +236,7 @@ export class TriggerPackageDetailsComponent implements OnInit {
         } );
         
         forkJoin( importTasks ).subscribe( results => {
+            // Missing package overlays are caught in the main component's ngInit event.
             this.ipcService.installTriggerPackage( triggerPackage ).subscribe( installComplete => {
                 this.snackBar.open( 'Package install complete!', 'dismiss', { duration: 2500 } );
                 this.ipcService.requestTick();
