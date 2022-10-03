@@ -1800,8 +1800,12 @@ class TriggerDatabaseStore extends Store {
             this.storeDataFile( this.#data );
         }
 
+        // TODO: Notes: When uninstalling a package, we may need to remove the package mappings.  However, the trigger overlay might be used by other packages.  I'm not exactly sure on the best way to handle that.
+
         overlayMap[ pkg.model.detrimentalOverlayId ] = _userPreferences.detrimentalOverlayId;
         overlayMap[ pkg.model.beneficialOverlayId ] = _userPreferences.beneficialOverlayId;
+        // This was added after the original feature and may be null for older trigger packages.
+        overlayMap[ pkg.model.textOverlayId ? pkg.model.textOverlayId : _userPreferences.alertOverlayId ] = _userPreferences.alertOverlayId;
         
         let missingOverlays = pkg.model.packageOverlays?.filter( f => overlayMap[ f.overlayId ] == null ) ?? [];
 
@@ -1948,6 +1952,8 @@ class TriggerDatabaseStore extends Store {
 
         overlayMap[ quickShare.model.detrimentalOverlayId ] = _userPreferences.detrimentalOverlayId;
         overlayMap[ quickShare.model.beneficialOverlayId ] = _userPreferences.beneficialOverlayId;
+
+        // TODO: quickshare needs to map to overlay ids that aren't defaults.
 
         quickShare.model?.triggers?.forEach( trigger => {
             trigger.actions?.forEach( action => {
@@ -2310,6 +2316,30 @@ class TriggerDatabaseStore extends Store {
      */
     getInstalledQuickShares() {
         return this.#data.installedQuickShares;
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Removes the mapping to the specified overlay.
+     * 
+     * @param {string} overlayId The overlay id.
+     */
+    removeOverlayMapping( overlayId ) {
+        for ( let key in this.#data.packageOverlayMap ) {
+            if ( this.#data.packageOverlayMap.hasOwnProperty( key ) && this.#data.packageOverlayMap[ key ] === overlayId ) {
+                this.#data.packageOverlayMap[ key ] = null;
+            }
+        }
+
+        this.storeDataFile( this.#data );
     }
 
 }

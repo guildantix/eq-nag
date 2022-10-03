@@ -8,6 +8,7 @@ const idLen = 16;
 const nanoid = customAlphabet( alphabet, 16 );
 const { OverlayDimensions, OverlayWindow } = require( './models/overlay-window' );
 const { StyleProperties } = require( './models/common' );
+const TriggerDatabaseStore = require( "./trigger-database" );
 
 class OverlayDatabaseStore extends Store {
 
@@ -44,6 +45,20 @@ class OverlayDatabaseStore extends Store {
      */
     registerNewOverlayHandler( handler ) {
         this.#newOverlayHandlers.push( handler );
+    }
+
+    /**
+     * @type {(overlayId: string) => void}
+     */
+    #overlayDeleteHandlers = [];
+
+    /**
+     * Registers an overlay handler function that executes when the overlay has been deleted.
+     * 
+     * @param {(overlayId: string) => void} handler The handler callback
+     */
+    registerOverlayDeleteHandler( handler ) {
+        this.#overlayDeleteHandlers.push( handler );
     }
 
     get count() {
@@ -329,8 +344,9 @@ class OverlayDatabaseStore extends Store {
      * 
      * @param {ForwardRef} mainWindowRef The main window of the application.
      * @param {function} sendTick The send tick method.
+     * @param {TriggerDatabaseStore} triggerDb Trigger database.
      */
-    attachIpcEvents( mainWindowRef, sendTick ) {
+    attachIpcEvents( mainWindowRef, sendTick, triggerDb ) {
         ipcMain.on( 'overlay:create', ( event, overlay ) => {
             let overlayId = this.add( overlay );
             event.sender.webContents.send( 'overlay:create', overlayId );
@@ -369,6 +385,10 @@ class OverlayDatabaseStore extends Store {
 
         ipcMain.on( 'overlay:delete', ( event, overlayId ) => {
             let deleted = this.remove( overlayId );
+            if ( deleted ) {
+                triggerDb.removeOverlayMapping( overlayId );
+            }
+            this.#overlayDeleteHandlers.forEach( fn => fn( overlayId ) );
             event.sender.webContents.send( 'overlay:delete', deleted );
             sendTick();
         } );
