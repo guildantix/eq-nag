@@ -60,6 +60,16 @@ export class TriggerPackageDetailsComponent implements OnInit {
                 }
             } );
         } );
+        
+        this.ipcService.missingPackageOverlayFound().subscribe( packageOverlay => {
+            this.dialogService.showMapPackageOverlayDialog( packageOverlay ).subscribe( overlay => {
+                if ( overlay ) {
+                    this.ipcService.packageOverlayMapped( packageOverlay.overlayId, overlay.overlayId );
+                } else {
+                    this.dialogService.showWarningDialog( 'Package Install Cancelled', [ 'No overlay selected.', 'The package has not been installed!' ] );
+                }
+            } );
+        } );
     }
 
 
@@ -207,7 +217,9 @@ export class TriggerPackageDetailsComponent implements OnInit {
             .subscribe( triggerPackage => {
                 this.libraryService
                     .getPackageFiles( this.package.triggerPackageId )
-                    .subscribe( packageFiles => this.installTriggerPackage( triggerPackage[ 0 ], packageFiles ) );
+                    .subscribe( packageFiles => {
+                        this.installTriggerPackage( triggerPackage[ 0 ], packageFiles )
+                    } );
             } );
         
     }
