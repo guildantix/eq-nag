@@ -244,7 +244,9 @@ function Renderer( originX, originY ) {
         } );
 
     ipcRenderer.on( 'renderer:window:disable-edit', function ( event, overlayId ) {
+        if ( overlayInstances[ overlayId ] ) {
             disableMoveResize( overlayInstances[ overlayId ].dom );
+        }
     } );
 
     ipcRenderer.on( 'renderer:arrange-overlays', function ( event ) {
