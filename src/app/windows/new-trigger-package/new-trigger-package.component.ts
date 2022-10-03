@@ -1,6 +1,6 @@
-import { Component, EventEmitter, Input, OnInit, Output, ViewChild } from '@angular/core';
+import { ChangeDetectorRef, Component, EventEmitter, Input, OnInit, Output, ViewChild } from '@angular/core';
 import { MatTable } from '@angular/material/table';
-import { TriggerFolder, TriggerModel, PackageTrigger, TriggerPackageMetaModel, PackageFolder, PackageFileModel, TriggerPackageModel, TriggerPackageCategories } from 'src/app/core.model';
+import { TriggerFolder, TriggerModel, PackageTrigger, TriggerPackageMetaModel, PackageFolder, PackageFileModel, TriggerPackageModel, TriggerPackageCategories, OverlayWindowModel, TriggerAction } from 'src/app/core.model';
 import { DialogService } from 'src/app/dialogs/dialog.service';
 import { IpcService } from 'src/app/ipc.service';
 import * as _ from 'lodash-es';
@@ -8,6 +8,7 @@ import { TriggerLibraryService } from '../trigger-library.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { forkJoin } from 'rxjs';
 import { MatChipInputEvent } from '@angular/material/chips';
+import { getPackageImportProperties } from 'src/app/core.decorators';
 
 @Component( {
     selector: 'app-new-trigger-package',
@@ -51,13 +52,12 @@ export class NewTriggerPackageComponent implements OnInit {
             this.triggerFolders = folders;
             this.pullTriggerUpdates();
         } );
-
     }
     @Output() public triggerPackage: EventEmitter<TriggerPackageMetaModel> = new EventEmitter<TriggerPackageMetaModel>();
 
     @ViewChild( 'newTriggersTable', { static: true } ) newTriggersTable: MatTable<TriggerModel>;
 
-    constructor( private ipcService: IpcService, private dialogService: DialogService, private libraryService: TriggerLibraryService, private snackBar: MatSnackBar ) { }
+    constructor( private ipcService: IpcService, private dialogService: DialogService, private libraryService: TriggerLibraryService, private snackBar: MatSnackBar, private changeDetectorRef: ChangeDetectorRef ) { }
 
     ngOnInit() {
 
@@ -67,8 +67,7 @@ export class NewTriggerPackageComponent implements OnInit {
         ];
 
         forkJoin( observables ).subscribe( ( [ triggers, folders ]: [ TriggerModel[], TriggerFolder[] ] ) => {
-            this.package = new TriggerPackageMetaModel();
-            this.package.category = this._selectedCategory;
+            this.package.category = this.package.category ?? this._selectedCategory;
             this.package.tags = this.package.tags?.length > 0 ? this.package.tags : [];
             this.triggers = triggers;
             this.triggerFolders = folders;
@@ -716,14 +715,33 @@ export class NewTriggerPackageComponent implements OnInit {
             this.ipcService.getAudioFileData(),
             this.ipcService.getDetrimentalOverlayId(),
             this.ipcService.getBeneficialOverlayId(),
+            this.ipcService.getAlertOverlayId(),
+            this.ipcService.getOverlayWindows(),
         ];
-        forkJoin( dataObservables ).subscribe( ([audioFiles, detrimentalOverlayId, beneficialOverlayId]: [PackageFileModel[], string, string]) => {
+
+        forkJoin( dataObservables ).subscribe( ( [ audioFiles, detrimentalOverlayId, beneficialOverlayId, textOverlayId, overlays ]: [ PackageFileModel[], string, string, string, OverlayWindowModel[] ] ) => {
+            
+            this.package.model.packageOverlays = [];
             
             this.package.model.triggers.forEach( trigger => {
                 trigger.actions.forEach( action => {
 
-                    if ( action.audioFileId ) {
-                        let file = audioFiles.find( f => f.fileId === action.audioFileId );
+                    let actionProperties = getPackageImportProperties( Object.assign( new TriggerAction(), action ) );
+
+                    actionProperties.overlayIds.forEach( overlayId => {
+                        if ( overlayId !== detrimentalOverlayId && overlayId !== beneficialOverlayId && overlayId !== textOverlayId ) {
+                            let overlay = overlays.find( f => f.overlayId === overlayId );
+                            if ( overlay ) {
+                                let exists = this.package.model.packageOverlays.findIndex( f => f.overlayId === overlayId ) > -1;
+                                if ( !exists ) {
+                                    this.package.model.packageOverlays.push( overlay );
+                                }
+                            }
+                        }
+                    } );
+
+                    actionProperties.audioFileIds.forEach( audoFileId => {
+                        let file = audioFiles.find( f => f.fileId === audoFileId );
 
                         if ( file ) {
                             let exists = this.package.files.findIndex( f => f.fileId === file.fileId ) > -1;
@@ -731,36 +749,14 @@ export class NewTriggerPackageComponent implements OnInit {
                                 this.package.files.push( file );
                             }
                         }
-
-                    }
-                    if ( action.endedPlayAudioFileId ) {
-                        let file = audioFiles.find( f => f.fileId === action.endedPlayAudioFileId );
-
-                        if ( file ) {
-                            let exists = this.package.files.findIndex( f => f.fileId === file.fileId ) > -1;
-                            if ( !exists ) {
-                                this.package.files.push( file );
-                            }
-                        }
-
-                    }
-                    if ( action.endingPlayAudioFileId ) {
-                        let file = audioFiles.find( f => f.fileId === action.endingPlayAudioFileId );
-
-                        if ( file ) {
-                            let exists = this.package.files.findIndex( f => f.fileId === file.fileId ) > -1;
-                            if ( !exists ) {
-                                this.package.files.push( file );
-                            }
-                        }
-
-                    }
+                    } );
 
                 } );
             } );
 
             this.package.model.detrimentalOverlayId = detrimentalOverlayId;
             this.package.model.beneficialOverlayId = beneficialOverlayId;
+            this.package.model.textOverlayId = textOverlayId;
 
             this.savePackage();
 
