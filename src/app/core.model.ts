@@ -893,6 +893,7 @@ export class TriggerPackageModel {
     public beneficialOverlayId: string;
     public textOverlayId: string;
     public packageOverlays: OverlayWindowModel[] = [];
+    public primaryDisplaySize: Electron.Size;
 }
 
 export class TriggerPackageListModel {

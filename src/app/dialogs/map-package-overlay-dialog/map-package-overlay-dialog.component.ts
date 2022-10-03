@@ -80,7 +80,6 @@ export class MapPackageOverlayDialogComponent implements OnInit, OnDestroy {
                 this.mappedOverlay = newOverlay;
 
                 this.ipcService.overlayBoundsChanged().subscribe( e => {
-                    console.log( 'e', e );
                     if ( e.overlayId === this._newOverlayId ) {
                         this.mappedOverlay.x = e.bounds.x;
                         this.mappedOverlay.y = e.bounds.y;

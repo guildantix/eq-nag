@@ -717,9 +717,10 @@ export class NewTriggerPackageComponent implements OnInit {
             this.ipcService.getBeneficialOverlayId(),
             this.ipcService.getAlertOverlayId(),
             this.ipcService.getOverlayWindows(),
+            this.ipcService.getPrimaryDisplay(),
         ];
-
-        forkJoin( dataObservables ).subscribe( ( [ audioFiles, detrimentalOverlayId, beneficialOverlayId, textOverlayId, overlays ]: [ PackageFileModel[], string, string, string, OverlayWindowModel[] ] ) => {
+        
+        forkJoin( dataObservables ).subscribe( ( [ audioFiles, detrimentalOverlayId, beneficialOverlayId, textOverlayId, overlays, primaryDisplay ]: [ PackageFileModel[], string, string, string, OverlayWindowModel[], Electron.Display ] ) => {
             
             this.package.model.packageOverlays = [];
             
@@ -757,6 +758,7 @@ export class NewTriggerPackageComponent implements OnInit {
             this.package.model.detrimentalOverlayId = detrimentalOverlayId;
             this.package.model.beneficialOverlayId = beneficialOverlayId;
             this.package.model.textOverlayId = textOverlayId;
+            this.package.model.primaryDisplaySize = primaryDisplay.size;
 
             this.savePackage();
 

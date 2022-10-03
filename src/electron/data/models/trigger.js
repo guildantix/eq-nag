@@ -499,7 +499,8 @@ class TriggerPackageModel {
     textOverlayId;
     /** @type {OverlayWindow[]} */
     packageOverlays;
-
+    /** @type {Electron.Size} */
+    primaryDisplaySize;
 }
 
 class TriggerPackageMetaModel {

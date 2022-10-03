@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain } = require( "electron" );
+const { app, BrowserWindow, ipcMain, screen } = require( "electron" );
 const Store = require( './store' );
 const _ = require( 'lodash' );
 const {
@@ -1808,7 +1808,9 @@ class TriggerDatabaseStore extends Store {
         overlayMap[ pkg.model.textOverlayId ? pkg.model.textOverlayId : _userPreferences.alertOverlayId ] = _userPreferences.alertOverlayId;
         
         let missingOverlays = pkg.model.packageOverlays?.filter( f => overlayMap[ f.overlayId ] == null ) ?? [];
-
+        let myDisplaySize = screen.getPrimaryDisplay().size;
+        let sizeRatio = { heightRatio: myDisplaySize.height / pkg.model.primaryDisplaySize?.height ?? 1, widthRatio: myDisplaySize.width / pkg.model.primaryDisplaySize?.width ?? 1 };
+        
         let installOverlay =
             /**
              * Execute the process for installing trigger overlays.
@@ -1823,6 +1825,34 @@ class TriggerDatabaseStore extends Store {
                         overlayMap[ missingOverlays[ i ].overlayId ] = userOverlayId;
                         installOverlay( i + 1 );
                     } );
+
+                    if ( pkg.model.primaryDisplaySize ) {
+                        // Because the origin of the renderer is at the top left 
+                        // corner of the primary display, these calculations can be 
+                        // simplified. If the bounds of the overlay extend past the 
+                        // bounds of the primary display, we need to just center 
+                        // the new display, otherwise we can adjust by ratio to 
+                        // place the copied overlay in the same relative location.
+
+                        let extendsPastHorizontalBounds = missingOverlays[ i ].x < 0 || missingOverlays[ i ].x > ( pkg.model.primaryDisplaySize.width - missingOverlays[ i ].windowWidth );
+                        let extendsPastVerticalBounds = missingOverlays[ i ].y < 0 || missingOverlays[ i ].y > ( pkg.model.primaryDisplaySize.height - missingOverlays[ i ].windowHeight );
+
+                        if ( extendsPastHorizontalBounds || extendsPastVerticalBounds ) {
+                            // Center the new overlay.
+                            missingOverlays[ i ].windowWidth = missingOverlays[ i ].windowWidth * sizeRatio.widthRatio;
+                            missingOverlays[ i ].windowHeight = missingOverlays[ i ].windowHeight * sizeRatio.heightRatio;
+                            missingOverlays[ i ].x = ( myDisplaySize.width / 2 ) - ( missingOverlays[ i ].x / 2 );
+                            missingOverlays[ i ].y = ( myDisplaySize.height / 2 ) - ( missingOverlays[ i ].y / 2 );
+
+                        } else {
+                            // Position relative to source display.
+                            missingOverlays[ i ].x = missingOverlays[ i ].x * sizeRatio.widthRatio;
+                            missingOverlays[ i ].y = missingOverlays[ i ].y * sizeRatio.heightRatio;
+                            missingOverlays[ i ].windowWidth = missingOverlays[ i ].windowWidth * sizeRatio.widthRatio;
+                            missingOverlays[ i ].windowHeight = missingOverlays[ i ].windowHeight * sizeRatio.heightRatio;
+
+                        }
+                    }
                     
                     event.sender.webContents.send( 'pkg:missing-overlay', missingOverlays[ i ] );
 
