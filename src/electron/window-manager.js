@@ -315,6 +315,7 @@ class WindowManager {
         ipcMain.on( 'overlay:send-to-origin', ( event, overlayId ) => this.sendOverlayToMiddle( overlayId ) );
 
         ipcMain.on( 'overlay:event:bounds-changed', ( event, d ) => {
+            this.#mainWindow.reference.webContents.send( 'overlay:event:bounds-changed', d );
             this.#openOverlayEditors.forEach( window => {
                 window?.webContents.send( 'overlay:event:bounds-changed', d );
             } );

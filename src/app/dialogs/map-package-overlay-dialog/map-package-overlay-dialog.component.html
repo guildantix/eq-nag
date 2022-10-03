@@ -48,7 +48,7 @@
     </ng-template>
 
     <ng-template [ngIf]="copyOverlay">
-        <button type="button" mat-button class="color-green" [disabled]="mappedOverlay == null" (click)="accept(mappedOverlay)">Done</button>
+        <button type="button" mat-button class="color-green" [disabled]="mappedOverlay == null" (click)="updateAndAccept(mappedOverlay)">Done</button>
     </ng-template>
     
     <ng-template [ngIf]="!useExisting && !copyOverlay">

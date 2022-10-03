@@ -74,9 +74,20 @@ export class MapPackageOverlayDialogComponent implements OnInit, OnDestroy {
         this.ipcService
             .createNewOverlayWindow( newOverlay )
             .subscribe( overlayId => {
+
                 this._newOverlayId = overlayId;
                 this.ipcService.enableOverlayEditMode( this._newOverlayId );
                 this.mappedOverlay = newOverlay;
+
+                this.ipcService.overlayBoundsChanged().subscribe( e => {
+                    console.log( 'e', e );
+                    if ( e.overlayId === this._newOverlayId ) {
+                        this.mappedOverlay.x = e.bounds.x;
+                        this.mappedOverlay.y = e.bounds.y;
+                        this.mappedOverlay.windowWidth = e.bounds.width;
+                        this.mappedOverlay.windowHeight = e.bounds.height;
+                    }
+                } );
             } );
     }
 
@@ -87,6 +98,15 @@ export class MapPackageOverlayDialogComponent implements OnInit, OnDestroy {
      */
     public accept( overlay: OverlayWindowModel ) {
         this.dialogRef.close( overlay );
+    }
+
+    /**
+     * Maps the package overlay to the provided overlay, after saving changes to the position.
+     * 
+     * @param overlay The overlay to map.
+     */
+    public updateAndAccept( overlay: OverlayWindowModel ) {
+        this.ipcService.updateOverlayWindow( overlay ).subscribe( success => this.dialogRef.close( overlay ) );
     }
 
     /**
