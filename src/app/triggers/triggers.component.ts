@@ -643,8 +643,9 @@ export class TriggersComponent implements OnInit {
      * 
      * @param folders The updated list of trigger folders.
      */
-    private updateViewTriggerData(folders: TriggerFolder[]): void {
+    private updateViewTriggerData( folders: TriggerFolder[] ): void {
         
+        this.selectedFolderId = folders.findIndex( f => f.folderId === this.selectedFolderId ) > -1 ? this.selectedFolderId : null;
         this.triggerFolders = folders;
         this.dataSource.data = folders;
         this.expandFolders( folders );
@@ -893,7 +894,7 @@ export class TriggersComponent implements OnInit {
     private filterTriggers(): void {
         if ( this.selectedFolderId ) {
             let folderIds = this.getFolderLineageIds( this.selectedFolderId, this.triggerFolders );
-            this.filteredTriggers = _.sortBy( this.triggers.filter( trigger => folderIds.indexOf( trigger.folderId ) > -1 ), trigger => trigger.name );
+            this.filteredTriggers = _.sortBy( this.triggers.filter( trigger => folderIds?.indexOf( trigger.folderId ) > -1 ), trigger => trigger.name );
             
         } else {
             this.filteredTriggers = this.triggers.slice();
