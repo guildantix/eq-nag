@@ -93,6 +93,10 @@ class WindowManager {
             this.#renderer.webContents.send( 'renderer:overlay:update', overlays );
         } );
 
+        this.#overlayDatabase.registerOverlayDeleteHandler( overlayId => {
+            this.#renderer.webContents.send( 'renderer:overlay:delete', overlayId );
+        })
+
         ipcMain.on( 'trigger:dialog:new', ( event, arg ) => {
             let triggerWindow = new BrowserWindow( {
                 parent: mainWindowRef.reference,

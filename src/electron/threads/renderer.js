@@ -191,6 +191,17 @@ function Renderer( originX, originY ) {
             initializeOverlay( overlay );
         } );
     
+    ipcRenderer.on( 'renderer:overlay:delete',
+        /**
+         * Removes the specified overlay from the dom.
+         * 
+         * @param {any} event 
+         * @param {string} overlayId The new overlay.
+         */
+        ( event, overlayId ) => {
+            deleteOverlay( overlayId );
+        } );
+    
     /** Tell the main thread that we need a list of all overlays. */
     ipcRenderer.send( 'overlay:get', null );
 
@@ -454,6 +465,25 @@ function initializeOverlay( overlay ) {
     div.setAttribute( overlayInstances[ overlay.overlayId ].encapsulationId, '' );
 
     updateOverlay( overlay.overlayId, overlay );
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Deletes the specified overlay from the dom.
+ * 
+ * @param {string} overlayId The overlay id.
+ */
+function deleteOverlay( overlayId ) {
+    overlayInstances[ overlayId ].dom.remove();
+    delete overlayInstances[ overlayId ];
 }
 
 
