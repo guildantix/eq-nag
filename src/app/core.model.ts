@@ -2,6 +2,7 @@ import { StringProtocolResponse } from 'electron';
 import { Color } from './utilities';
 import * as _ from 'lodash-es';
 import { nagId } from './core/nag-id.util';
+import { TriggerPackageExportTypes, TriggerPackageProperty } from './core.decorators';
 
 export const ErrorCodes = {
     EqFolderNotFound: {
@@ -435,6 +436,7 @@ export class DataTickModel {
 
 export class TriggerActionProperties {
     
+    @TriggerPackageProperty(TriggerPackageExportTypes.OverlayId)
     public overlayId: string = null;
 
     public duration: number = null;
@@ -469,6 +471,7 @@ export class TriggerActionProperties {
     public endingSoonBackgroundColor: string = null;
     
     public endingSoonDisplayText: boolean = false;
+    @TriggerPackageProperty(TriggerPackageExportTypes.OverlayId)
     public endingSoonTextOverlayId: string = null;
     public endingSoonText: string = null;
     public endingSoonTextDuration: number = null;
@@ -481,6 +484,7 @@ export class TriggerActionProperties {
     public endingClipboardText: string = null;
 
     public endingPlayAudio: boolean = false;
+    @TriggerPackageProperty(TriggerPackageExportTypes.AudioFileId)
     public endingPlayAudioFileId: string = null;
 
     public remainAfterEnded: boolean = false;
@@ -489,6 +493,7 @@ export class TriggerActionProperties {
     public remainUnlessEndedEarly: boolean = false;
     
     public endedDisplayText: boolean = false;
+    @TriggerPackageProperty(TriggerPackageExportTypes.OverlayId)
     public endedTextOverlayId: string = null;
     public endedText: string = null;
     public endedTextDuration: number = null;
@@ -501,6 +506,7 @@ export class TriggerActionProperties {
     public endedInterruptSpeech: boolean = false;
 
     public endedPlayAudio: boolean = false;
+    @TriggerPackageProperty(TriggerPackageExportTypes.AudioFileId)
     public endedPlayAudioFileId: string = null;
 
     public endedChangeColor: boolean = false;
@@ -511,6 +517,7 @@ export class TriggerActionProperties {
     public endEarlyPhrases: Phrase[] = [];
     public resetCounterPhrases: Phrase[] = [];
 
+    @TriggerPackageProperty(TriggerPackageExportTypes.AudioFileId)
     public audioFileId: string = null;
 
     public textUseCustomFont: boolean = false;
@@ -884,6 +891,7 @@ export class TriggerPackageModel {
     public folders: PackageFolder[] = [];
     public detrimentalOverlayId: string;
     public beneficialOverlayId: string;
+    public textOverlayId: string;
     public packageOverlays: OverlayWindowModel[] = [];
 }
 
