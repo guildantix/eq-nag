@@ -2,15 +2,13 @@ import { Component, ViewChild, ElementRef, OnInit } from '@angular/core';
 import * as _ from 'lodash-es';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { IpcService } from './ipc.service';
-import { DkpEntryModel, OverlayWindowModel, FocusEffectSettings, TriggerPackageMetaModel, StylePropertiesModel, FctStylesModel, QuickShareMetaModel, QuickShareFileModel } from './core.model';
+import { DkpEntryModel, OverlayWindowModel, FocusEffectSettings, StylePropertiesModel, FctStylesModel, QuickShareMetaModel, QuickShareFileModel } from './core.model';
 import { DialogService } from './dialogs/dialog.service';
-import { ScraperService } from './scraper.service';
 import { customAlphabet } from 'nanoid';
 import { SetupService } from './setup/setup.service';
 import { CharactersListComponent } from './characters-list/characters-list.component';
 import { TriggerLibraryService } from './windows/trigger-library.service';
-import { forkJoin, Observable, timer } from 'rxjs';
-import { MatDialogRef } from '@angular/material/dialog';
+import { forkJoin, Observable } from 'rxjs';
 import { NotificationDialogModel, NotificationTypes } from './dialogs/notification-dialog/notification-dialog.model';
 import { ColoredString, CustomButton } from './dialogs/dialog.model';
 import { SettingsComponent } from './settings/settings-component/settings.component';
@@ -172,6 +170,16 @@ export class MainComponent implements OnInit {
             }
         } );
 
+        // TODO: Remove this code block.
+        // window.setTimeout( () => {
+        //     let triggerId = 'TxNRzMTuKmugJkEU';
+        //     this.ipcService.getTrigger( triggerId ).subscribe( trigger => {
+        //         let action = Object.assign( new TriggerAction(), trigger.actions[ 0 ] );
+        //         let x = getPackageImportProperties( action );
+        //         console.log( 'overlay ids?', x.overlayIds );
+        //     } );
+        // }, 2500);
+
         // window.setTimeout( () => {
         //     let testOverlayId = 'A9sSxftjOOyUzOOq';
         //     this.ipcService.getOverlayWindow( testOverlayId ).subscribe( packageOverlay => {
@@ -185,7 +193,7 @@ export class MainComponent implements OnInit {
         //         } );
         //     } );
         // }, 2500 );
-        
+
         this.ipcService.missingPackageOverlayFound().subscribe( packageOverlay => {
             this.dialogService.showMapPackageOverlayDialog( packageOverlay ).subscribe( overlay => {
                 if ( overlay ) {
