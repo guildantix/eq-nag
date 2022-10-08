@@ -107,13 +107,11 @@ function createWindow() {
 
     mainWindow.on( 'closed', function () {
         mainWindow = null;
-        trayMenu = null;
     } );
 
     mainWindow.on( 'close', function () {
         winManager.unload();
         logBootstrap.unload();
-        trayMenu.destroy();
     } );
 
     mainWindow.on( 'resize', function ( e ) {
@@ -152,6 +150,11 @@ function createWindow() {
 app.isDev = () => enableDevMode === true && process.defaultApp === true;
 
 app.commandLine.appendSwitch( 'enable-speech-dispatcher' );
+
+app.on( 'before-quit', () => {
+    trayMenu.destroy();
+    trayMenu = null;
+} );
 
 app.on( 'ready', function () {
     
