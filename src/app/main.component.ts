@@ -2,7 +2,7 @@ import { Component, ViewChild, ElementRef, OnInit } from '@angular/core';
 import * as _ from 'lodash-es';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { IpcService } from './ipc.service';
-import { DkpEntryModel, OverlayWindowModel, FocusEffectSettings, StylePropertiesModel, FctStylesModel, QuickShareMetaModel, QuickShareFileModel } from './core.model';
+import { DkpEntryModel, OverlayWindowModel, FocusEffectSettings, StylePropertiesModel, FctStylesModel, QuickShareMetaModel, QuickShareFileModel, TriggerAction } from './core.model';
 import { DialogService } from './dialogs/dialog.service';
 import { customAlphabet } from 'nanoid';
 import { SetupService } from './setup/setup.service';
@@ -13,6 +13,7 @@ import { NotificationDialogModel, NotificationTypes } from './dialogs/notificati
 import { ColoredString, CustomButton } from './dialogs/dialog.model';
 import { SettingsComponent } from './settings/settings-component/settings.component';
 import { QuickShareService } from './core/quick-share.service';
+import { getPackageImportProperties } from './core.decorators';
 
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const nanoid = customAlphabet( alphabet, 16 );
@@ -30,6 +31,7 @@ export class MainComponent implements OnInit {
     public logFile: string = 'Not Selected';
     public showConsole: boolean = true;
     public enableFct: boolean = false;
+    public overlayAssignCounts: Record<string, number> = {};
     public overlays: OverlayWindowModel[] = [];
     public damageDealtOverlayId: string;
     public damageTakenOverlayId: string;
@@ -100,9 +102,15 @@ export class MainComponent implements OnInit {
             this.damageDealtOverlayId = data.damageDealtOverlayId;
             this.damageTakenOverlayId = data.damageReceivedOverlayId;
             this.fctStyles = data.fctStyles;
-            // this.focusEffectSettings.hasExtendedDotFocus = data.hasExtendedDotFocus;
-            // this.focusEffectSettings.extendedDotFocusPercent = data.extendedDotFocusPercent;
-            // this.focusEffectSettings.extendedDotFocusDecayLevel = data.extendedDotFocusDecayLevel;
+            
+            data.triggers.forEach( trigger => {
+                trigger.actions.forEach( action => {
+                    let actionProperties = getPackageImportProperties( Object.assign( new TriggerAction(), action ) );
+                    actionProperties.overlayIds.forEach( overlayId => {
+                        this.overlayAssignCounts[ overlayId ] = this.overlayAssignCounts[ overlayId ] > 0 ? this.overlayAssignCounts[ overlayId ] + 1 : 1;
+                    } );
+                } );
+            } );
             
             this.ipcService.getSetupCompleted().subscribe( completed => this.setupCompleted = completed );
 
@@ -205,6 +213,40 @@ export class MainComponent implements OnInit {
         } );
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * The id of the overlay.
+     * 
+     * @param overlayId The desired overlayId.
+     */
+    getOverlayCountLabel( overlayId: string ): string | number {
+        if ( overlayId === this.damageDealtOverlayId || overlayId === this.damageTakenOverlayId ) {
+            return 'FCT';
+        } else {
+            return this.overlayAssignCounts[ overlayId ] ?? 0;
+        }
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Checks for trigger updates.
+     */
     checkForTriggerUpdates() {
         this.ipcService.getInstalledPackages().subscribe( installedPackages => {
             if ( installedPackages?.length > 0 ) {
