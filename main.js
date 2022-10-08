@@ -89,6 +89,8 @@ function createWindow() {
         show: false,
     } );
 
+    mainWindow.setBackgroundColor( '#1a1a1a' );
+
     trayMenu = createTray();
 
     mainWindow.loadURL(
@@ -140,6 +142,8 @@ function createWindow() {
             mainWindow.show();
         }
     } );
+
+    winManager.configureRendererMouseBlockingOnMoveResize( mainWindow );
 
     winManager.loadRenderer();
     

@@ -118,6 +118,7 @@ const delayBetweenCrits = 500;
 const delayVariance = 0.50;
 let delayAdd = 0;
 const criticalPadding = 0;
+var mouseForwardingPaused = false;
 
 
 
@@ -267,6 +268,14 @@ function Renderer( originX, originY ) {
 
     ipcRenderer.on( 'renderer:window:dim', function ( event, overlayId ) {
         overlayInstances[ overlayId ]?.dom.classList.remove( 'highlight-border' );
+    } );
+
+    ipcRenderer.on( 'renderer:mouse-forwarding:pause', function ( event, overlayId ) {
+        mouseForwardingPaused = true;
+    } );
+
+    ipcRenderer.on( 'renderer:mouse-forwarding:resume', function ( event, overlayId ) {
+        mouseForwardingPaused = false;
     } );
 
     ipcRenderer.on( 'component:destroy', function ( event, instanceId ) {

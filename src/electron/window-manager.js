@@ -45,6 +45,9 @@ class WindowManager {
     /** @type {OverlayDatabaseStore} */
     #overlayDatabase;
 
+    /** @type {NodeJS.Timeout} */
+    #resumeRendererMouseForwardingTimeout = null;
+
     constructor( dirname ) {
         this.#dirname = dirname;
     }
@@ -118,6 +121,8 @@ class WindowManager {
             triggerWindow.once( "ready-to-show", () => {
                 triggerWindow.show();
             } );
+            triggerWindow.setBackgroundColor( '#1a1a1a' );
+            this.configureRendererMouseBlockingOnMoveResize( triggerWindow );
         } );
         
         ipcMain.on( 'trigger:dialog:edit', ( event, arg ) => {
@@ -137,6 +142,8 @@ class WindowManager {
             triggerWindow.once( "ready-to-show", () => {
                 triggerWindow.show();
             } );
+            triggerWindow.setBackgroundColor( '#1a1a1a' );
+            this.configureRendererMouseBlockingOnMoveResize( triggerWindow );
         } );
 
         ipcMain.on( 'trigger:dialog:resize', ( event, size ) => {
@@ -182,7 +189,6 @@ class WindowManager {
         );
 
         ipcMain.on( 'renderer:arrange-overlays', ( event ) => {
-            this.#renderer.setIgnoreMouseEvents( false );
             this.#renderer.webContents.send( 'renderer:arrange-overlays' );
 
             if ( rendererOnTopId ) {
@@ -191,7 +197,6 @@ class WindowManager {
         } );
 
         ipcMain.on( 'renderer:end-arrange-overlays', ( event ) => {
-            this.#renderer.setIgnoreMouseEvents( true );
             this.#renderer.webContents.send( 'renderer:end-arrange-overlays' );
 
             rendererOnTopId = setInterval( () => {
@@ -232,6 +237,7 @@ class WindowManager {
                     devTools: app.isDev(),
                 }
             } );
+            overlayEditorDialog.setBackgroundColor( '#1a1a1a' );
             overlayEditorDialog.loadURL( `file://${this.#dirname}/dist/index.html#/overlay/${overlayId}` );
             overlayEditorDialog.once( 'dom-read', () => {
                 
@@ -250,6 +256,7 @@ class WindowManager {
                 let bounds = overlayEditorDialog.webContents.getOwnerBrowserWindow().getBounds();
                 userPreferencesDatabase.setOverlayeEditorPosition( overlayId, bounds.x, bounds.y );
             } );
+            this.configureRendererMouseBlockingOnMoveResize( overlayEditorDialog );
         } );
         
         ipcMain.on( 'overlay:dialog:arrange', ( event ) => {
@@ -283,6 +290,7 @@ class WindowManager {
             overlayMoveDialog.once( "ready-to-show", () => {
                 overlayMoveDialog.show();
             } );
+            this.configureRendererMouseBlockingOnMoveResize( overlayMoveDialog );
 
         } );
         
@@ -346,6 +354,8 @@ class WindowManager {
             this.ginaImportWindow.on( 'closed', () => {
                 this.ginaImportWindow = null;
             } );
+            this.ginaImportWindow.setBackgroundColor( '#1a1a1a' );
+            this.configureRendererMouseBlockingOnMoveResize( this.ginaImportWindow );
 
         } );
 
@@ -377,7 +387,8 @@ class WindowManager {
             this.triggerLibraryWindow.on( 'closed', () => {
                 this.triggerLibraryWindow = null;
             } );
-
+            this.triggerLibraryWindow.setBackgroundColor( '#1a1a1a' );
+            this.configureRendererMouseBlockingOnMoveResize( this.triggerLibraryWindow );
         } );
         
         userPreferencesDatabase.onFctStyleChanges.push( fctStyles => {
@@ -576,7 +587,6 @@ class WindowManager {
         } );
         
         deathRecap.loadURL( `file://${__dirname}/windows/death-recap.html?logFilePath=${encodeURI( logFilePath )}&lineNo=${lineNo}&characterName=${encodeURI(characterName)}&messageId=${encodeURI(messageId)}` );
-        // deathRecap.setIgnoreMouseEvents( true );
         deathRecap.setAlwaysOnTop( true, "screen-saver" );
         
         // Open the DevTools.
@@ -650,6 +660,7 @@ class WindowManager {
         // deathRecap.on( 'always-on-top-changed', () => console.log( 'always-on-top-changed' ) );
 
         this.#deathRecap = deathRecap;
+        this.configureRendererMouseBlockingOnMoveResize( this.#deathRecap );
     }
 
 
@@ -865,6 +876,106 @@ class WindowManager {
 
         this.#renderer.webContents.send( 'renderer:overlay:move', { overlayId: overlayId, x: overlay.x, y: overlay.y } );
     }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Attaches event handlers to the given browser window that disables the 
+     * mouse forwarding for the renderer while the browser window is being 
+     * resized/moved.
+     * 
+     * @param {BrowserWindow} win The browser window to configure.
+     */
+    configureRendererMouseBlockingOnMoveResize( win ) {
+        
+        win.on( 'will-move', e => {
+
+            // If a timeout for resuming mouse forwarding is active, let's cancel it.
+            if ( this.#resumeRendererMouseForwardingTimeout != null ) {
+                clearTimeout( this.#resumeRendererMouseForwardingTimeout );
+                this.#resumeRendererMouseForwardingTimeout = null;
+            }
+
+            // Tell renderer to stop capturing mouse capture forwarding.
+            this.pauseRendererMouseForwarding();
+
+            // Start a new timeout that will reactivate the mouse forwarding.
+            this.#resumeRendererMouseForwardingTimeout = setTimeout( () => {
+                this.resumeRendererMouseForwarding();
+            }, 500 );
+            
+        } );
+
+        win.on( 'will-resize', e => {
+
+            // If a timeout for resuming mouse forwarding is active, let's cancel it.
+            if ( this.#resumeRendererMouseForwardingTimeout != null ) {
+                clearTimeout( this.#resumeRendererMouseForwardingTimeout );
+                this.#resumeRendererMouseForwardingTimeout = null;
+            }
+
+            // Tell renderer to stop capturing mouse capture forwarding.
+            this.pauseRendererMouseForwarding();
+
+            // Start a new timeout that will reactivate the mouse forwarding.
+            this.#resumeRendererMouseForwardingTimeout = setTimeout( () => {
+                this.resumeRendererMouseForwarding();
+            }, 500 );
+        } );
+        
+
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Pauses mouse forwarding for the renderer.
+     */
+    pauseRendererMouseForwarding() {
+        this.#renderer.webContents.send( 'renderer:mouse-forwarding:pause', {} );
+        this.#renderer.setIgnoreMouseEvents( true, { forward: false } );
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Resumes mouse forwarding for the renderer.
+     */
+    resumeRendererMouseForwarding() {
+        this.#renderer.webContents.send( 'renderer:mouse-forwarding:resume', {} );
+        this.#renderer.setIgnoreMouseEvents( true, { forward: true } );
+    }
+    
+
+
+
+
+
+
+
+
+
 }
 
 module.exports = WindowManager;
