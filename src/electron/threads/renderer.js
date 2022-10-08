@@ -979,8 +979,8 @@ function disableMoveResize( dom ) {
 
     dom.classList.remove( 'drag' );
     dom.classList.remove( 'mouse-enabled' );
-    const domContentArea = dom.querySelector( '.overlay-content-area' );
-    domContentArea.classList.remove( 'mouse-enabled' );
+    const domContentArea = dom.querySelectorAll( ':scope *' );
+    domContentArea.forEach( d => d.classList.remove( 'mouse-enabled' ) );
     dom.dispatchEvent( stopTrackingMoveResizeEvent );
 }
 
@@ -1001,8 +1001,8 @@ function disableMoveResize( dom ) {
 function enableMoveResize( dom ) {
 
     dom.classList.add( 'mouse-enabled' );
-    const domContentArea = dom.querySelector( '.overlay-content-area' );
-    domContentArea.classList.add( 'mouse-enabled' );
+    const domContentArea = dom.querySelectorAll( ':scope *' );
+    domContentArea.forEach( d => d.classList.add( 'mouse-enabled' ) );
     
     /** @type {import('electron').Rectangle} */
     let bounds = {

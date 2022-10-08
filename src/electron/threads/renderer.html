@@ -322,13 +322,13 @@
         const remote = require( "electron" ).remote;
         let win = remote.getCurrentWindow();
         window.addEventListener( "mousemove", event => {
-            
+
             if ( event.target && event.target.classList && event.target.classList.contains( 'mouse-enabled' ) === true ) {
                 win.setIgnoreMouseEvents( false );
 
             } else {
                 win.setIgnoreMouseEvents( true, { forward: true } );
-
+                
             }
         } );
     </script>
