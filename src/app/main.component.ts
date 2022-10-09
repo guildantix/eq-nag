@@ -15,6 +15,7 @@ import { SettingsComponent } from './settings/settings-component/settings.compon
 import { QuickShareService } from './core/quick-share.service';
 import { getPackageImportProperties, getTriggerOverlayKeys, getTriggerOverlayDescriptors } from './core.decorators';
 import { ActionOverlayUseModel } from './dialogs/action-overlay-reassignment-dialog/action-overlay-reassignment.model';
+import { TriggersComponent } from './triggers/triggers.component';
 
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const nanoid = customAlphabet( alphabet, 16 );
@@ -57,6 +58,7 @@ export class MainComponent implements OnInit {
     @ViewChild( 'fileSelector' ) private fileSelector: ElementRef<HTMLInputElement>;
     @ViewChild( 'characterList', { static: true } ) private characterList: CharactersListComponent;
     @ViewChild( 'settingsPanel', { static: true } ) private settingsPanel: SettingsComponent;
+    @ViewChild( 'triggersList', { static: true } ) private triggersList: TriggersComponent;
 
     public get fctOverlays(): OverlayWindowModel[] {
         return this.overlays.filter( f => f.overlayType === 'FCT' );
@@ -129,6 +131,37 @@ export class MainComponent implements OnInit {
                     } );
                 } );
             
+        } );
+
+        this.ipcService.quickSharePackageCaptured().subscribe( packageId => {
+
+            // Start by grabbing all installed packages and checking if the package has already been installed.
+            this.ipcService.getInstalledPackages().subscribe( installedPkgs => {
+                let exists = installedPkgs.findIndex( f => f.packageId === packageId ) > -1;
+
+                if ( !exists ) {
+
+                    // If the package is new, then ask the user if the would like to have it installed.
+                    this.libraryService.getPackage( packageId ).subscribe( pkg => {
+                        this.dialogService.showConfirmDialog(
+                            [ `${pkg[ 0 ].name}`, 'Would you like to install this package?' ],
+                            'Click "Yes" to install this new package.',
+                            'Click "No" to close this window without installing the new package.',
+                            confirmed => {
+                                
+                                if ( confirmed ) {
+
+                                    // If the user agrees, then install the package.
+                                    this.triggersList.installTriggerPackage( packageId );
+
+                                }
+
+                            } );
+                    } );
+
+                }
+            } );
+
         } );
 
         this.ipcService.orphanedTriggersFound().subscribe( found => {
