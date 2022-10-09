@@ -436,7 +436,11 @@ export class DataTickModel {
 
 export class TriggerActionProperties {
     
-    @TriggerPackageProperty(TriggerPackageExportTypes.OverlayId)
+    @TriggerPackageProperty( {
+        propertyType: TriggerPackageExportTypes.OverlayId,
+        name: 'Action Primary Overlay',
+        description: 'For timer time actions, this will be where the timer displays.  For text type actions, this is where the text will be displayed.'
+    } )
     public overlayId: string = null;
 
     public duration: number = null;
@@ -471,7 +475,11 @@ export class TriggerActionProperties {
     public endingSoonBackgroundColor: string = null;
     
     public endingSoonDisplayText: boolean = false;
-    @TriggerPackageProperty(TriggerPackageExportTypes.OverlayId)
+    @TriggerPackageProperty( {
+        propertyType: TriggerPackageExportTypes.OverlayId,
+        name: 'Ending Soon Text Overlay',
+        description: 'For timer type actions, when text is displayed when ending soon, this is the overlay that text will appear.'
+    } )
     public endingSoonTextOverlayId: string = null;
     public endingSoonText: string = null;
     public endingSoonTextDuration: number = null;
@@ -484,7 +492,11 @@ export class TriggerActionProperties {
     public endingClipboardText: string = null;
 
     public endingPlayAudio: boolean = false;
-    @TriggerPackageProperty(TriggerPackageExportTypes.AudioFileId)
+    @TriggerPackageProperty( {
+        propertyType: TriggerPackageExportTypes.AudioFileId,
+        name: 'Ending Soon Audio File',
+        description: 'For timer type actions, when audio is played when ending soon, this is the audio file to play.'
+    } )
     public endingPlayAudioFileId: string = null;
 
     public remainAfterEnded: boolean = false;
@@ -493,7 +505,11 @@ export class TriggerActionProperties {
     public remainUnlessEndedEarly: boolean = false;
     
     public endedDisplayText: boolean = false;
-    @TriggerPackageProperty(TriggerPackageExportTypes.OverlayId)
+    @TriggerPackageProperty( {
+        propertyType: TriggerPackageExportTypes.OverlayId,
+        name: 'Ended Text Overlay',
+        description: 'For timer type actions, when text is displayed when the timer ends, this is the overlay that text will appear.'
+    } )
     public endedTextOverlayId: string = null;
     public endedText: string = null;
     public endedTextDuration: number = null;
@@ -506,7 +522,11 @@ export class TriggerActionProperties {
     public endedInterruptSpeech: boolean = false;
 
     public endedPlayAudio: boolean = false;
-    @TriggerPackageProperty(TriggerPackageExportTypes.AudioFileId)
+    @TriggerPackageProperty( {
+        propertyType: TriggerPackageExportTypes.AudioFileId,
+        name: 'Ended Audio File',
+        description: 'For timer type actions, when audio is played when the timer ends, this is the audio file to play.'
+    } )
     public endedPlayAudioFileId: string = null;
 
     public endedChangeColor: boolean = false;
@@ -517,7 +537,11 @@ export class TriggerActionProperties {
     public endEarlyPhrases: Phrase[] = [];
     public resetCounterPhrases: Phrase[] = [];
 
-    @TriggerPackageProperty(TriggerPackageExportTypes.AudioFileId)
+    @TriggerPackageProperty( {
+        propertyType: TriggerPackageExportTypes.AudioFileId,
+        name: 'Audio File',
+        description: 'For audio actions, this is the audio file that plays.'
+    } )
     public audioFileId: string = null;
 
     public textUseCustomFont: boolean = false;
