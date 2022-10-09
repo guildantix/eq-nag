@@ -27,6 +27,7 @@ export class IpcService {
     private _overlayBoundsChangedObservers: Observer<OverlayBoundsChangedEventArgs>[] = [];
     private _warningDialogObservers: Observer<DialogEventArgs>[] = [];
     private _onReceivedQuickShare: Observer<string>[] = [];
+    private _onReceivedQuickSharePackage: Observer<string>[] = [];
     private _onOrphanedTriggerWarning: Observer<boolean>[] = [];
     private _onMissingPackageOverlay: Observer<OverlayWindowModel>[] = [];
 
@@ -81,6 +82,14 @@ export class IpcService {
                     ngZone.run( () => {
                         this._onReceivedQuickShare?.forEach( f => {
                             f.next( quickShareId );
+                        } );
+                    } );
+                } );
+
+                this.ipc.on( 'quicksharePackage_captured', ( event: any, packageId: string ) => {
+                    ngZone.run( () => {
+                        this._onReceivedQuickSharePackage?.forEach( f => {
+                            f.next( packageId );
                         } );
                     } );
                 } );
@@ -201,6 +210,14 @@ export class IpcService {
     public quickShareCaptured(): Observable<string> {
         let obs: Observable<string> = new Observable<string>( ( observer: Observer<string> ) => {
             this._onReceivedQuickShare.push( observer );
+        } );
+
+        return obs;
+    }
+
+    public quickSharePackageCaptured(): Observable<string> {
+        let obs: Observable<string> = new Observable<string>( ( observer: Observer<string> ) => {
+            this._onReceivedQuickSharePackage.push( observer );
         } );
 
         return obs;
