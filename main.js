@@ -48,6 +48,11 @@ unhandled({
     showDialog: false,
 } );
 
+/**
+ * Creates a tray menu for the application.
+ * 
+ * @returns Returns the new application tray menu.
+ */
 function createTray() {
     let appTrayMenu = new Tray( path.join( __dirname, "Nag.ico" ) );
     const contextMenu = Menu.buildFromTemplate( [

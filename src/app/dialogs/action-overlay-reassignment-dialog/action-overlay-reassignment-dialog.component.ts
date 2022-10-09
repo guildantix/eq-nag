@@ -12,13 +12,6 @@ import { ActionOverlayReviewModel, OverlayReassignments } from './action-overlay
 export class ActionOverlayReassignmentDialogComponent implements OnInit {
 
     private allOverlays: OverlayWindowModel[] = [];
-    // public get overlays(): OverlayWindowModel[] {
-    //     if ( this.data.overlay ) {
-    //         return this.allOverlays.filter( f => f.overlayType === this.data.overlay.overlayType && f.overlayId !== this.data.overlay.overlayId );
-    //     } else {
-    //         return this.allOverlays;
-    //     }
-    // }
     public fullReassignmentOverlayId: string;
     public folders: TriggerFolder[] = [];
 

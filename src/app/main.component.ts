@@ -2,19 +2,16 @@ import { Component, ViewChild, ElementRef, OnInit } from '@angular/core';
 import * as _ from 'lodash-es';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { IpcService } from './ipc.service';
-import { DkpEntryModel, OverlayWindowModel, FocusEffectSettings, StylePropertiesModel, FctStylesModel, QuickShareMetaModel, QuickShareFileModel, TriggerAction, TriggerModel, actionOverlayMap, TriggerPackageMetaModel } from './core.model';
+import { DkpEntryModel, OverlayWindowModel, FocusEffectSettings, StylePropertiesModel, FctStylesModel, QuickShareMetaModel, QuickShareFileModel, TriggerPackageMetaModel } from './core.model';
 import { DialogService } from './dialogs/dialog.service';
 import { customAlphabet } from 'nanoid';
 import { SetupService } from './setup/setup.service';
 import { CharactersListComponent } from './characters-list/characters-list.component';
 import { TriggerLibraryService } from './windows/trigger-library.service';
 import { forkJoin, Observable, timer } from 'rxjs';
-import { NotificationDialogModel, NotificationTypes } from './dialogs/notification-dialog/notification-dialog.model';
-import { ColoredString, CustomButton } from './dialogs/dialog.model';
+import { ColoredString } from './dialogs/dialog.model';
 import { SettingsComponent } from './settings/settings-component/settings.component';
 import { QuickShareService } from './core/quick-share.service';
-import { getPackageImportProperties, getTriggerOverlayKeys, getTriggerOverlayDescriptors } from './core.decorators';
-import { ActionOverlayUseModel } from './dialogs/action-overlay-reassignment-dialog/action-overlay-reassignment.model';
 import { TriggersComponent } from './triggers/triggers.component';
 
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
@@ -176,30 +173,6 @@ export class MainComponent implements OnInit {
                     ] );
             }
         } );
-
-        // TODO: Remove this code block.
-        // window.setTimeout( () => {
-        //     let triggerId = 'TxNRzMTuKmugJkEU';
-        //     this.ipcService.getTrigger( triggerId ).subscribe( trigger => {
-        //         let action = Object.assign( new TriggerAction(), trigger.actions[ 0 ] );
-        //         let x = getPackageImportProperties( action );
-        //         console.log( 'overlay ids?', x.overlayIds );
-        //     } );
-        // }, 2500);
-
-        // window.setTimeout( () => {
-        //     let testOverlayId = 'A9sSxftjOOyUzOOq';
-        //     this.ipcService.getOverlayWindow( testOverlayId ).subscribe( packageOverlay => {
-        //         this.dialogService.showMapPackageOverlayDialog( packageOverlay ).subscribe( overlay => {
-        //             if ( overlay ) {
-        //                 // this.ipcService.packageOverlayMapped( packageOverlay.overlayId, overlay.overlayId );
-        //                 console.log( 'new overlay', overlay );
-        //             } else {
-        //                 this.dialogService.showWarningDialog( 'Package Install Cancelled', [ 'No overlay selected.', 'The package has not been installed!' ] );
-        //             }
-        //         } );
-        //     } );
-        // }, 2500 );
 
         this.ipcService.missingPackageOverlayFound().subscribe( packageOverlay => {
             this.dialogService.showMapPackageOverlayDialog( packageOverlay ).subscribe( overlay => {

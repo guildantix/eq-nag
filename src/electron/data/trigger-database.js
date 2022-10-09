@@ -1816,8 +1816,6 @@ class TriggerDatabaseStore extends Store {
             this.storeDataFile( this.#data );
         }
 
-        // TODO: Notes: When uninstalling a package, we may need to remove the package mappings.  However, the trigger overlay might be used by other packages.  I'm not exactly sure on the best way to handle that.
-
         overlayMap[ pkg.model.detrimentalOverlayId ] = _userPreferences.detrimentalOverlayId;
         overlayMap[ pkg.model.beneficialOverlayId ] = _userPreferences.beneficialOverlayId;
         // This was added after the original feature and may be null for older trigger packages.

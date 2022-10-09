@@ -47,6 +47,15 @@ export class MapPackageOverlayDialogComponent implements OnInit, OnDestroy {
         this.ipcService.getOverlayWindows().subscribe( overlays => this.existingOverlays = overlays );
     }
 
+
+
+
+
+
+
+
+
+    
     /**
      * Displays the package overlay's description.
      */
@@ -66,6 +75,15 @@ export class MapPackageOverlayDialogComponent implements OnInit, OnDestroy {
         ref.afterClosed().subscribe();
     }
 
+
+
+
+
+
+
+
+
+    
     /**
      * Copies the package overlay and allows the user to move/resize the copied 
      * overlay.
@@ -93,6 +111,15 @@ export class MapPackageOverlayDialogComponent implements OnInit, OnDestroy {
             } );
     }
 
+
+
+
+
+
+
+
+
+    
     /**
      * Maps the package overlay to the provided overlay.
      * 
@@ -102,6 +129,15 @@ export class MapPackageOverlayDialogComponent implements OnInit, OnDestroy {
         this.dialogRef.close( overlay );
     }
 
+
+
+
+
+
+
+
+
+    
     /**
      * Maps the package overlay to the provided overlay, after saving changes to the position.
      * 
@@ -111,6 +147,15 @@ export class MapPackageOverlayDialogComponent implements OnInit, OnDestroy {
         this.ipcService.updateOverlayWindow( overlay ).subscribe( success => this.dialogRef.close( overlay ) );
     }
 
+
+
+
+
+
+
+
+
+    
     /**
      * Cancels the map package overlay and the package import process.
      */
@@ -121,5 +166,14 @@ export class MapPackageOverlayDialogComponent implements OnInit, OnDestroy {
             this.dialogRef.close( null );
         }
     }
+
+
+
+
+
+
+
+
+
 
 }
