@@ -2,7 +2,7 @@ import { Component, ViewChild, ElementRef, OnInit } from '@angular/core';
 import * as _ from 'lodash-es';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { IpcService } from './ipc.service';
-import { DkpEntryModel, OverlayWindowModel, FocusEffectSettings, StylePropertiesModel, FctStylesModel, QuickShareMetaModel, QuickShareFileModel, TriggerAction } from './core.model';
+import { DkpEntryModel, OverlayWindowModel, FocusEffectSettings, StylePropertiesModel, FctStylesModel, QuickShareMetaModel, QuickShareFileModel, TriggerAction, TriggerModel, actionOverlayMap } from './core.model';
 import { DialogService } from './dialogs/dialog.service';
 import { customAlphabet } from 'nanoid';
 import { SetupService } from './setup/setup.service';
@@ -13,7 +13,8 @@ import { NotificationDialogModel, NotificationTypes } from './dialogs/notificati
 import { ColoredString, CustomButton } from './dialogs/dialog.model';
 import { SettingsComponent } from './settings/settings-component/settings.component';
 import { QuickShareService } from './core/quick-share.service';
-import { getPackageImportProperties } from './core.decorators';
+import { getPackageImportProperties, getTriggerOverlayKeys, getTriggerOverlayDescriptors } from './core.decorators';
+import { ActionOverlayUseModel } from './dialogs/action-overlay-reassignment-dialog/action-overlay-reassignment.model';
 
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const nanoid = customAlphabet( alphabet, 16 );
@@ -103,14 +104,7 @@ export class MainComponent implements OnInit {
             this.damageTakenOverlayId = data.damageReceivedOverlayId;
             this.fctStyles = data.fctStyles;
             
-            data.triggers.forEach( trigger => {
-                trigger.actions.forEach( action => {
-                    let actionProperties = getPackageImportProperties( Object.assign( new TriggerAction(), action ) );
-                    actionProperties.overlayIds.forEach( overlayId => {
-                        this.overlayAssignCounts[ overlayId ] = this.overlayAssignCounts[ overlayId ] > 0 ? this.overlayAssignCounts[ overlayId ] + 1 : 1;
-                    } );
-                } );
-            } );
+            this.calculateOverlayUseCounts( data.triggers );
             
             this.ipcService.getSetupCompleted().subscribe( completed => this.setupCompleted = completed );
 
@@ -233,6 +227,102 @@ export class MainComponent implements OnInit {
         } else {
             return this.overlayAssignCounts[ overlayId ] ?? 0;
         }
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Calculates all overlay uses in the given list of triggers.
+     * 
+     * @param triggers The list of triggers to use in the calculations.
+     */
+    calculateOverlayUseCounts( triggers: TriggerModel[] ) {
+        this.overlayAssignCounts = {};
+        triggers.forEach( trigger => {
+            trigger.actions.forEach( action => {
+                let actionProperties = getPackageImportProperties( Object.assign( new TriggerAction(), action ) );
+                actionProperties.overlayIds.forEach( overlayId => {
+                    this.overlayAssignCounts[ overlayId ] = this.overlayAssignCounts[ overlayId ] > 0 ? this.overlayAssignCounts[ overlayId ] + 1 : 1;
+                } );
+            } );
+        } );
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Finds missing overlays.
+     */
+    findMissingOverlays() {
+        let data: ActionOverlayUseModel[] = [];
+
+        let overlayIds = this.overlays.map( f => f.overlayId );
+        this.ipcService.getTriggers().subscribe( triggers => {
+            triggers.forEach( trigger => {
+                trigger.actions.forEach( action => {
+                    if ( actionOverlayMap[ action.actionType ] !== '' && ( !trigger.onlyExecuteInDev || this.isDev ) && ( !trigger.predefined || this.isDev ) ) {
+                        let propertyDescriptors = getTriggerOverlayDescriptors( Object.assign( new TriggerAction(), action ) );
+                        let overlayKeys = Object.keys( propertyDescriptors );
+
+                        overlayKeys.forEach( overlayKey => {
+                            const overlayId = action[ overlayKey ];
+                            if ( overlayId != null && overlayIds.indexOf( overlayId ) === -1 ) {
+                                data.push( {
+                                    trigger: trigger,
+                                    actionId: action.actionId,
+                                    overlayKey: overlayKey,
+                                    propertyName: propertyDescriptors[ overlayKey ].name,
+                                    propertyDesc: propertyDescriptors[ overlayKey ].description,
+                                    actionType: action.actionType,
+                                } );
+                            }
+                        } );
+                    }
+                } );
+            } );
+
+            if ( data?.length > 0 ) {
+                // If there are missing overlays, let the user assign overlays where required.
+                this.dialogService.showOverlayAssignment( data ).subscribe( assignments => {
+                    if ( assignments?.actionUses?.length > 0 ) {
+                        triggers.forEach( trigger => {
+                            let triggerOverlayAssignments = assignments.actionUses.filter( f => f.triggerId == trigger.triggerId );
+
+                            triggerOverlayAssignments.forEach( triggerAssignment => {
+                                const action = trigger.actions.find( f => f.actionId == triggerAssignment.actionId );
+                                if ( action ) {
+                                    action[ triggerAssignment.overlayKey ] = triggerAssignment.overlayId;
+                                }
+                            } );
+                        
+                        } );
+
+                        this.ipcService.updateTriggers( triggers ).subscribe( updated => {
+                            this.calculateOverlayUseCounts( triggers );
+                        } );
+                    }
+                } );
+
+            } else {
+                // If there are no missing overlays, let the user know.
+                this.dialogService.showInfoDialog( 'Missing Overlays', [ 'There are no missing overlays found.' ] );
+
+            }
+        } );
     }
 
 
@@ -386,15 +476,72 @@ export class MainComponent implements OnInit {
         this.ipcService.showEditOverlayDialog( overlayId );
     }
 
+    /**
+     * Deletes the specified overlay.
+     * 
+     * @param index The index of the overlay to delete.
+     */
     deleteOverlay( index: number ): void {
-        this.dialogService.showConfirmDialog(
-            `Are you sure you want to delete ${this.overlays[ index ].name}?`,
-            'Click "Yes" to delete this overlay.', 'Click "No" to close this dialog without deleting this overlay.',
-            confirmed => {
-                if ( confirmed === true ) {
-                    this.ipcService.deleteOverlayWindow( this.overlays[ index ].overlayId ).subscribe();
-                }
+        if ( this.overlayAssignCounts[ this.overlays[ index ].overlayId ] > 0 ) {
+            let overlayIds = this.overlays.map( f => f.overlayId );
+            let data: ActionOverlayUseModel[] = [];
+            
+            this.ipcService.getTriggers().subscribe( triggers => {
+                triggers.forEach( trigger => {
+                    trigger.actions.forEach( action => {
+                        let propertyDescriptors = getTriggerOverlayDescriptors( Object.assign( new TriggerAction(), action ) );
+                        let overlayKeys = Object.keys( propertyDescriptors );
+                        
+                        overlayKeys.forEach( overlayKey => {
+                            const overlayId = action[ overlayKey ];
+                            if ( overlayId === this.overlays[ index ].overlayId ) {
+                                data.push( {
+                                    trigger: trigger,
+                                    actionId: action.actionId,
+                                    overlayKey: overlayKey,
+                                    propertyName: propertyDescriptors[overlayKey].name,
+                                    propertyDesc: propertyDescriptors[ overlayKey ].description,
+                                    actionType: action.actionType,
+                                } );
+                            }
+                        } );
+                    } );
+                } );
+    
+                this.dialogService.showOverlayReassignment( this.overlays[ index ], data, true ).subscribe( reassignment => {
+
+                    if ( reassignment?.actionUses?.length > 0 ) {
+                        triggers.forEach( trigger => {
+                            let triggerOverlayAssignments = reassignment.actionUses.filter( f => f.triggerId == trigger.triggerId );
+
+                            triggerOverlayAssignments.forEach( triggerAssignment => {
+                                const action = trigger.actions.find( f => f.actionId == triggerAssignment.actionId );
+                                if ( action ) {
+                                    action[ triggerAssignment.overlayKey ] = triggerAssignment.overlayId;
+                                }
+                            } );
+                        
+                        } );
+
+                        this.ipcService.updateTriggers( triggers ).subscribe( updated => {
+                            this.calculateOverlayUseCounts( triggers );
+                            this.deleteOverlay( index );
+                        } );
+                    }
+
+                } );
             } );
+
+        } else {
+            this.dialogService.showConfirmDialog(
+                `Are you sure you want to delete ${this.overlays[ index ].name}?`,
+                'Click "Yes" to delete this overlay.', 'Click "No" to close this dialog without deleting this overlay.',
+                confirmed => {
+                    if ( confirmed === true ) {
+                        this.ipcService.deleteOverlayWindow( this.overlays[ index ].overlayId ).subscribe();
+                    }
+                } );
+        }
     }
 
     sendToOrigin( overlayId: string ) {
