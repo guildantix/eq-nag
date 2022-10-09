@@ -31,6 +31,7 @@ import { AuthorDialogComponent } from './author-dialog/author-dialog.component';
 import { DeathRecapDialogComponent } from './death-recap-dialog/death-recap-dialog.component';
 import { MapPackageOverlayDialogComponent } from './map-package-overlay-dialog/map-package-overlay-dialog.component';
 import { WebComponentsModule } from '../web-components/web-components.module';
+import { ActionOverlayReassignmentDialogComponent } from './action-overlay-reassignment-dialog/action-overlay-reassignment-dialog.component';
 
 @NgModule( {
     imports: [
@@ -66,6 +67,7 @@ import { WebComponentsModule } from '../web-components/web-components.module';
         ReceiveQuickShareDialogComponent,
         AuthorDialogComponent,
         MapPackageOverlayDialogComponent,
+        ActionOverlayReassignmentDialogComponent,
     ],
     declarations: [
         ColoredStringPipe,
@@ -91,6 +93,7 @@ import { WebComponentsModule } from '../web-components/web-components.module';
         AuthorDialogComponent,
         DeathRecapDialogComponent,
         MapPackageOverlayDialogComponent,
+        ActionOverlayReassignmentDialogComponent,
     ],
     providers: [
         DialogService,

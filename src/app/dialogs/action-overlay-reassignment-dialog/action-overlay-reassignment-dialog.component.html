@@ -1,0 +1,60 @@
+<h2 mat-dialog-title>Overlay Use Details and Reassignment</h2>
+
+<mat-dialog-content>
+
+    <h1 [ngClass]="{'show-warning': data.showDeleteWarning}">{{data.overlay.name}}</h1>
+
+    <p *ngIf="data.showDeleteWarning" class="color-orange">This Overlay cannot be deleted because it is used in trigger actions.  Before you can delete this overlay, you must reassign the uses of this overlay to another overlay.</p>
+
+    <p>If you would like to reassign all references to this overlay to another overlay, you can select that here.</p>
+
+    <mat-form-field style="width: 100%">
+        <mat-label></mat-label>
+        <mat-select [(ngModel)]="fullReassignmentOverlayId" name="fullReassignmentOverlayId">
+            <mat-option *ngFor="let option of overlays" [value]="option.overlayId">{{option.name}}</mat-option>
+        </mat-select>
+        <mat-hint>Full Replacement Overlay</mat-hint>
+    </mat-form-field>
+
+    <p>If you only need to change a few references, you can select the changes below</p>
+
+    <div *ngFor="let use of data.actionUses; let i = index">
+        <div *ngIf="showTriggerName(i)" style="margin-bottom: 8px;">
+            <h3>{{use.trigger.name}}<span class="text-depress" style="font-size: 12px;">{{getTriggerFamily(use.trigger.folderId)}}</span></h3>
+            <div style="padding-left: 10px; font-weight: 300; font-size: 14px;">{{use.trigger.comments}}</div>
+        </div>
+        <mat-form-field style="width: 100%">
+            <mat-label>{{use.propertyName}}</mat-label>
+            <mat-select [(ngModel)]="use.reassignmentOverlayId" name="reassignmentOverlayId_{{i}}">
+                <mat-option *ngFor="let option of overlays" [value]="option.overlayId">{{option.name}}</mat-option>
+            </mat-select>
+            <mat-hint>{{use.propertyDesc}}</mat-hint>
+        </mat-form-field>
+    </div>
+
+    <!-- <form #authorForm="ngForm">
+        <div>
+            <mat-form-field style="width: 100%;">
+                <mat-label>Author Name</mat-label>
+                <input matInput type="text" [(ngModel)]="model.name" name="authorName" required />
+                <mat-hint>Enter whatever name you would like to have attached to any shared triggers.</mat-hint>
+            </mat-form-field>
+        </div>
+
+        <div>
+            <mat-form-field style="width: 100%;">
+                <mat-label>Discord</mat-label>
+                <input matInput type="text" [(ngModel)]="model.discord" name="discordHandle" />
+                <mat-hint>(Optional) Enter your discord name, or discord server.</mat-hint>
+            </mat-form-field>
+        </div>
+    </form> -->
+
+</mat-dialog-content>
+
+<mat-dialog-actions>
+    
+    <button mat-button (click)="cancel()" class="t-confirm-no" color="warn">Cancel</button>
+    <button mat-button (click)="accept()" class="t-confirm-no">Accept</button>
+
+</mat-dialog-actions>

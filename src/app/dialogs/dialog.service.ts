@@ -25,6 +25,9 @@ import { PrepareQuickShareDialogComponent } from './quick-share/prepare-quick-sh
 import { ReceiveQuickShareDialogComponent } from './quick-share/receive-quick-share.component';
 import { DeathRecapDialogComponent } from './death-recap-dialog/death-recap-dialog.component';
 import { MapPackageOverlayDialogComponent } from './map-package-overlay-dialog/map-package-overlay-dialog.component';
+import { ActionOverlayReviewModel, ActionOverlayUseModel, OverlayReassignments } from './action-overlay-reassignment-dialog/action-overlay-reassignment.model';
+import { ActionOverlayReassignmentDialogComponent } from './action-overlay-reassignment-dialog/action-overlay-reassignment-dialog.component';
+import * as _ from 'lodash';
 
 @Injectable()
 export class DialogService {
@@ -783,6 +786,53 @@ export class DialogService {
             data: missingOverlay,
             panelClass: 'app-dialog',
         } ).afterClosed();
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Opens the overlay use details and reassignment modal.
+     * 
+     * @returns Returns the user overlay reassignment details.
+     * 
+     * @param missingOverlay The overlay that is missing.
+     */
+    public showOverlayReassignment( overlay: OverlayWindowModel, overlayUses: ActionOverlayUseModel[], showDeleteWarning?: boolean ): Observable<OverlayReassignments> {
+        let af =  this.dialog.open<ActionOverlayReassignmentDialogComponent, ActionOverlayReviewModel, OverlayReassignments>( ActionOverlayReassignmentDialogComponent, {
+            width: '750px',
+            data: {
+                overlay: overlay,
+                actionUses: _.orderBy( overlayUses, [ f => f.trigger.triggerId, f => f.actionId ], [ 'asc', 'asc' ] ),
+                showDeleteWarning: showDeleteWarning === true,
+            },
+            panelClass: 'app-dialog',
+        } ).afterClosed();
+
+        af.subscribe( e => {
+
+            if ( document.activeElement instanceof HTMLElement ) {
+                // This is a workaround to prevent the error:
+                // 
+                //      ExpressionChangedAfterItHasBeenCheckedError: Expression has changed after it was checked. Previous value for 'mat-form-field-should-float': 'false'. Current value: 'true'.
+                //
+                // I'm sure there's some deeper meaning behind it, but for some 
+                // reason when the confirm dialog's `Yes` button is still the 
+                // active element at this point, that error is written to the 
+                // console.
+                // This error only happens when a list is reloaded after.
+                document.activeElement.blur();
+            }
+
+        } );
+
+        return af;
     }
     
 }
