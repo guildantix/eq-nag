@@ -28,6 +28,21 @@ export enum ActionTypes {
     
 }
 
+export const actionOverlayMap: Record<number, 'Log' | 'Alert' | 'Timer' | 'FCT' | 'Chart' | ''> = {
+    0: 'Alert',
+    1: '',
+    2: '',
+    3: 'Timer',
+    4: 'Timer',
+    5: '',
+    6: 'Timer',
+    7: '',
+    8: '',
+    9: '',
+    10: 'Timer',
+    11: '',
+};
+
 export function ActionTypeLabels(actionType: ActionTypes): string {
     
 
@@ -375,7 +390,7 @@ export class OverlayWindowModel {
     public y: number = null;
     public name: string = '';
     public description: string;
-    public overlayType: string = '';
+    public overlayType: 'Log' | 'Alert' | 'Timer' | 'FCT' | 'Chart' | '' = '';
     public fontFamily: string = 'Roboto';
     public horizontalAlignment: string = 'center';
     public verticalAlignment: string = 'bottom';
