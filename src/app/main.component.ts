@@ -2,13 +2,13 @@ import { Component, ViewChild, ElementRef, OnInit } from '@angular/core';
 import * as _ from 'lodash-es';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { IpcService } from './ipc.service';
-import { DkpEntryModel, OverlayWindowModel, FocusEffectSettings, StylePropertiesModel, FctStylesModel, QuickShareMetaModel, QuickShareFileModel, TriggerAction, TriggerModel, actionOverlayMap } from './core.model';
+import { DkpEntryModel, OverlayWindowModel, FocusEffectSettings, StylePropertiesModel, FctStylesModel, QuickShareMetaModel, QuickShareFileModel, TriggerAction, TriggerModel, actionOverlayMap, TriggerPackageMetaModel } from './core.model';
 import { DialogService } from './dialogs/dialog.service';
 import { customAlphabet } from 'nanoid';
 import { SetupService } from './setup/setup.service';
 import { CharactersListComponent } from './characters-list/characters-list.component';
 import { TriggerLibraryService } from './windows/trigger-library.service';
-import { forkJoin, Observable } from 'rxjs';
+import { forkJoin, Observable, timer } from 'rxjs';
 import { NotificationDialogModel, NotificationTypes } from './dialogs/notification-dialog/notification-dialog.model';
 import { ColoredString, CustomButton } from './dialogs/dialog.model';
 import { SettingsComponent } from './settings/settings-component/settings.component';
@@ -214,14 +214,47 @@ export class MainComponent implements OnInit {
                         this.libraryService
                             .getPackage( packagesWithUpdates )
                             .subscribe( packages => {
-                                let installations: Observable<boolean>[] = [];
-                                packages?.forEach( pkg => installations.push( this.ipcService.installTriggerPackage( pkg ) ) );
+                                let installedCount = 0;
 
-                                forkJoin( installations ).subscribe( () => {
-                                    sb?.dismiss();
-                                    this.snackBar.open( 'All updates installed successfully!', 'dismiss', { duration: 5000 } );
-                                    window.setTimeout( () => this.checkForTriggerUpdates(), updateIntervalDuration );
-                                } );
+                                const installPackage = ( pkg: TriggerPackageMetaModel ) => {
+                                    this.libraryService
+                                        .getPackageFiles( pkg.triggerPackageId )
+                                        .subscribe( packageFiles => {
+                                            
+                                            this.ipcService.getAudioFiles().subscribe( existingAudioFiles => {
+                                                // Adding a timer makes the following easier and I'm being lazy today.
+                                                let importTasks: Observable<any>[] = [ timer( 1 ) ];
+                                    
+                                                // We need to install all new files.
+                                                packageFiles?.forEach( file => {
+                                                    if ( existingAudioFiles.findIndex( f => f.fileId === file.fileId ) === -1 ) {
+                                                        // If the package file doesn't exist, install it.
+                                                        importTasks.push( this.ipcService.importPackageFile( file ) );
+                                                    }
+                                                } );
+        
+                                                forkJoin( importTasks ).subscribe( results => {
+                                                    // Missing package overlays are caught in the main component's ngInit event.
+                                                    this.ipcService.installTriggerPackage( pkg ).subscribe( installComplete => {
+                                                        installedCount += 1;
+                                                        if ( installedCount < packages?.length ) {
+                                                            installPackage( packages[ installedCount ] );
+                                                        } else {
+                                                            sb?.dismiss();
+                                                            this.snackBar.open( 'All updates installed successfully!', 'dismiss', { duration: 5000 } );
+                                                            this.ipcService.requestTick();
+                                                            window.setTimeout( () => this.checkForTriggerUpdates(), updateIntervalDuration );
+                                                        }
+                                                    } );
+                                                } );
+                                            
+                                            } );
+                                            
+                                        } );
+                                }
+
+                                // Let's kick-off the first update.
+                                installPackage( packages[ installedCount ] );
 
                             } );
                         
