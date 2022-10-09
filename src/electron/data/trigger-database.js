@@ -1086,8 +1086,10 @@ class TriggerDatabaseStore extends Store {
      * @returns {string} Returns the generated trigger id.
      * 
      * @param {Trigger} trigger The trigger to add to the store.
+     * @param {boolean?} storeData If true, saves changes to the data file.
      */
-    add( trigger ) {
+    add( trigger, storeData ) {
+        storeData = storeData === false ? false : true;
         // Init the triggers array.
         this.#data.triggers = this.#data.triggers ? this.#data.triggers : [];
 
@@ -1100,9 +1102,11 @@ class TriggerDatabaseStore extends Store {
         // Add it to the store.
         this.#data.triggers.push( trigger );
 
-        // Save changes to the data.
-        this.processPredefinedTriggers();
-        this.storeDataFile( this.#data );
+        if ( storeData ) {
+            // Save changes to the data.
+            this.processPredefinedTriggers();
+            this.storeDataFile( this.#data );
+        }
 
         return trigger.triggerId;
     }
@@ -1401,9 +1405,10 @@ class TriggerDatabaseStore extends Store {
      * @returns {boolean} Returns true if the trigger was updated.
      * 
      * @param {TriggerModel} trigger The trigger to update.
+     * @param {boolean?} storeData If true, saves changes to the data file.
      */
-    update( trigger ) {
-
+    update( trigger, storeData ) {
+        storeData = storeData === false ? false : true;
         trigger.actions?.forEach( f => f.actionId = f.actionId ? f.actionId : nanoid() );
         trigger.capturePhrases?.forEach( f => f.phraseId = f.phraseId ? f.phraseId : nanoid() );
         trigger.conditions?.forEach( f => f.conditionId = f.conditionId ? f.conditionId : nanoid() );
@@ -1415,9 +1420,11 @@ class TriggerDatabaseStore extends Store {
         if ( i > -1 && i < this.#data?.triggers?.length ) {
             this.#data.triggers[ i ] = trigger;
 
-            // Save changes to the data.
-            this.processPredefinedTriggers();
-            this.storeDataFile( this.#data );
+            if ( storeData ) {
+                // Save changes to the data.
+                this.processPredefinedTriggers();
+                this.storeDataFile( this.#data );
+            }
 
             return true;
         } else {
@@ -1448,16 +1455,11 @@ class TriggerDatabaseStore extends Store {
         let failed = [];
 
         let existingIds = triggers.map( f => f.triggerId );
-        
         this.#data.triggers = this.#data.triggers.filter( f => existingIds.indexOf( f.triggerId ) > -1 );
-
-        // Save changes to the data.
-        this.processPredefinedTriggers();
-        this.storeDataFile();
 
         triggers.forEach( trigger => {
             if ( StringUtilities.isNullOrWhitespace( trigger.triggerId ) ) {
-                let newId = this.add( trigger );
+                let newId = this.add( trigger, false );
                 
                 if ( StringUtilities.isNullOrWhitespace( newId ) ) {
                     failed.push( trigger );
@@ -1466,11 +1468,15 @@ class TriggerDatabaseStore extends Store {
                 }
 
             } else {
-                if ( !this.update( trigger ) ) {
+                if ( !this.update( trigger, false ) ) {
                     failed.push( trigger );
                 }
             }
         } );
+
+        // Save changes to the data.
+        this.processPredefinedTriggers();
+        this.storeDataFile( this.#data );
 
         return failed;
     }
