@@ -811,6 +811,55 @@ export class DialogService {
                 overlay: overlay,
                 actionUses: _.orderBy( overlayUses, [ f => f.trigger.triggerId, f => f.actionId ], [ 'asc', 'asc' ] ),
                 showDeleteWarning: showDeleteWarning === true,
+                hideReassignment: false,
+            },
+            panelClass: 'app-dialog',
+        } ).afterClosed();
+
+        af.subscribe( e => {
+
+            if ( document.activeElement instanceof HTMLElement ) {
+                // This is a workaround to prevent the error:
+                // 
+                //      ExpressionChangedAfterItHasBeenCheckedError: Expression has changed after it was checked. Previous value for 'mat-form-field-should-float': 'false'. Current value: 'true'.
+                //
+                // I'm sure there's some deeper meaning behind it, but for some 
+                // reason when the confirm dialog's `Yes` button is still the 
+                // active element at this point, that error is written to the 
+                // console.
+                // This error only happens when a list is reloaded after.
+                document.activeElement.blur();
+            }
+
+        } );
+
+        return af;
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Opens the overlay use details and reassignment modal.
+     * 
+     * @returns Returns the user overlay reassignment details.
+     * 
+     * @param missingOverlay The overlay that is missing.
+     */
+    public showOverlayAssignment( overlayUses: ActionOverlayUseModel[] ): Observable<OverlayReassignments> {
+        let af =  this.dialog.open<ActionOverlayReassignmentDialogComponent, ActionOverlayReviewModel, OverlayReassignments>( ActionOverlayReassignmentDialogComponent, {
+            width: '750px',
+            data: {
+                overlay: null,
+                actionUses: _.orderBy( overlayUses, [ f => f.trigger.triggerId, f => f.actionId ], [ 'asc', 'asc' ] ),
+                showDeleteWarning: false,
+                hideReassignment: true,
             },
             panelClass: 'app-dialog',
         } ).afterClosed();

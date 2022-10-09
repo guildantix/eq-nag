@@ -2,22 +2,27 @@
 
 <mat-dialog-content>
 
-    <h1 [ngClass]="{'show-warning': data.showDeleteWarning}">{{data.overlay.name}}</h1>
+    <h1 [ngClass]="{'show-warning': data.showDeleteWarning}">{{data.overlay?.name ?? 'Overlay Assignment'}}</h1>
 
     <p *ngIf="data.showDeleteWarning" class="color-orange">This Overlay cannot be deleted because it is used in trigger actions.  Before you can delete this overlay, you must reassign the uses of this overlay to another overlay.</p>
 
-    <p>If you would like to reassign all references to this overlay to another overlay, you can select that here.</p>
+    <ng-template [ngIf]="!data.hideReassignment" [ngIfElse]="genericInstructions">
+        <p>If you would like to reassign all references to this overlay to another overlay, you can select that here.</p>
 
-    <mat-form-field style="width: 100%">
-        <mat-label></mat-label>
-        <mat-select [(ngModel)]="fullReassignmentOverlayId" name="fullReassignmentOverlayId">
-            <mat-option *ngFor="let option of overlays" [value]="option.overlayId">{{option.name}}</mat-option>
-        </mat-select>
-        <mat-hint>Full Replacement Overlay</mat-hint>
-    </mat-form-field>
+        <mat-form-field style="width: 100%">
+            <mat-label></mat-label>
+            <mat-select [(ngModel)]="fullReassignmentOverlayId" name="fullReassignmentOverlayId">
+                <mat-option *ngFor="let option of getOverlaysOfType(data.overlay.overlayType)" [value]="option.overlayId">{{option.name}}</mat-option>
+            </mat-select>
+            <mat-hint>Full Replacement Overlay</mat-hint>
+        </mat-form-field>
 
-    <p>If you only need to change a few references, you can select the changes below</p>
-
+        <p>If you only need to change a few references, you can select the changes below</p>
+    </ng-template>
+    <ng-template #genericInstructions>
+        <p>Select the overlays to use for each action.</p>
+    </ng-template>
+    
     <div *ngFor="let use of data.actionUses; let i = index">
         <div *ngIf="showTriggerName(i)" style="margin-bottom: 8px;">
             <h3>{{use.trigger.name}}<span class="text-depress" style="font-size: 12px;">{{getTriggerFamily(use.trigger.folderId)}}</span></h3>
@@ -26,7 +31,7 @@
         <mat-form-field style="width: 100%">
             <mat-label>{{use.propertyName}}</mat-label>
             <mat-select [(ngModel)]="use.reassignmentOverlayId" name="reassignmentOverlayId_{{i}}">
-                <mat-option *ngFor="let option of overlays" [value]="option.overlayId">{{option.name}}</mat-option>
+                <mat-option *ngFor="let option of getOverlays(use.actionType)" [value]="option.overlayId">{{option.name}}</mat-option>
             </mat-select>
             <mat-hint>{{use.propertyDesc}}</mat-hint>
         </mat-form-field>

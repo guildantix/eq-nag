@@ -1,6 +1,6 @@
 import { Component, Inject, OnInit } from '@angular/core';
 import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
-import { OverlayWindowModel, TriggerFolder } from 'src/app/core.model';
+import { actionOverlayMap, ActionTypes, OverlayWindowModel, TriggerFolder } from 'src/app/core.model';
 import { IpcService } from 'src/app/ipc.service';
 import { ActionOverlayReviewModel, OverlayReassignments } from './action-overlay-reassignment.model';
 
@@ -12,9 +12,13 @@ import { ActionOverlayReviewModel, OverlayReassignments } from './action-overlay
 export class ActionOverlayReassignmentDialogComponent implements OnInit {
 
     private allOverlays: OverlayWindowModel[] = [];
-    public get overlays(): OverlayWindowModel[] {
-        return this.allOverlays.filter( f => f.overlayType === this.data.overlay.overlayType && f.overlayId !== this.data.overlay.overlayId );
-    }
+    // public get overlays(): OverlayWindowModel[] {
+    //     if ( this.data.overlay ) {
+    //         return this.allOverlays.filter( f => f.overlayType === this.data.overlay.overlayType && f.overlayId !== this.data.overlay.overlayId );
+    //     } else {
+    //         return this.allOverlays;
+    //     }
+    // }
     public fullReassignmentOverlayId: string;
     public folders: TriggerFolder[] = [];
 
@@ -27,6 +31,14 @@ export class ActionOverlayReassignmentDialogComponent implements OnInit {
     ngOnInit() {
         this.ipcService.getOverlayWindows().subscribe( overlays => this.allOverlays = overlays );
         this.ipcService.getTriggerFolders().subscribe( folders => this.folders = folders );
+    }
+
+    public getOverlays( actionType: ActionTypes ): OverlayWindowModel[] {
+        return this.allOverlays.filter( f => f.overlayId !== this.data.overlay?.overlayId && actionOverlayMap[ actionType ] === f.overlayType );
+    }
+
+    public getOverlaysOfType( overlayType: 'Log' | 'Alert' | 'Timer' | 'FCT' | 'Chart' | '' ): OverlayWindowModel[] {
+        return this.allOverlays.filter( f => f.overlayId !== this.data.overlay?.overlayId && f.overlayType === overlayType );
     }
     
 

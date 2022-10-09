@@ -1,4 +1,4 @@
-import { TriggerModel, TriggerAction, OverlayWindowModel } from "src/app/core.model";
+import { TriggerModel, TriggerAction, OverlayWindowModel, ActionTypes } from "src/app/core.model";
 
 export class ActionOverlayUseModel {
 
@@ -8,13 +8,14 @@ export class ActionOverlayUseModel {
     propertyName?: string;
     propertyDesc?: string;
     reassignmentOverlayId?: string;
-
+    actionType: ActionTypes;
 }
 
 export class ActionOverlayReviewModel {
 
     showDeleteWarning: boolean = false;
-    overlay: OverlayWindowModel;
+    hideReassignment: boolean = false;
+    overlay?: OverlayWindowModel;
 
     actionUses: ActionOverlayUseModel[] = [];
 
