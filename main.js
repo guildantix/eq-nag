@@ -308,6 +308,10 @@ ipcMain.on( 'quickshare_captured', ( event, quickShareId ) => {
     mainWindow.webContents.send( 'quickshare_captured', quickShareId );
 } );
 
+ipcMain.on( 'quicksharePackage_captured', ( event, packageId ) => {
+    mainWindow.webContents.send( 'quicksharePackage_captured', packageId );
+} );
+
 var pseudoClipboard = {};
 ipcMain.on( 'context:store:pseudo-clipboard', ( event, model ) => {
     if ( model && model.key ) {
