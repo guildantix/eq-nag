@@ -6,10 +6,30 @@ export enum TriggerPackageExportTypes {
     AudioFileId = 1,
 }
 
+export class TriggerPackageImportProperties {
+    public overlayIds: string[] = [];
+    public audioFileIds: string[] = [];
+    public propertyDescriptions: Record<string, {name?: string, description?: string}> = {};
+}
+
 const packageImportOverlayTypeKey = Symbol( 'packageImportOverlayType' );
 const packageImportAudioFileTypeKey = Symbol( 'packageImportAudioFileTypeKey' );
 const packageImportPropertyDescriptionsKey = Symbol( 'packageImportPropertyDescriptionsKey' );
 
+
+
+
+
+
+
+
+
+
+/**
+ * Decorator that marks the property as either an overlay id or an audio file id.
+ * 
+ * @param propDescriptor Descriptions about this property.
+ */
 export function TriggerPackageProperty( propDescriptor: { propertyType: TriggerPackageExportTypes, name?: string, description?: string } ): any {
     return function <T>( target: T, key: string, descriptor: PropertyDescriptor ) {
         if ( propDescriptor.propertyType === TriggerPackageExportTypes.OverlayId ) {
@@ -44,16 +64,38 @@ export function TriggerPackageProperty( propDescriptor: { propertyType: TriggerP
     };
 }
 
-export class TriggerPackageImportProperties {
-    public overlayIds: string[] = [];
-    public audioFileIds: string[] = [];
-    public propertyDescriptions: Record<string, {name?: string, description?: string}> = {};
-}
 
+
+
+
+
+
+
+
+
+/**
+ * Returns a list of propertyNames on the given object that are overlayids.
+ * 
+ * @param object The object containing overlayids.
+ */
 export function getTriggerOverlayKeys<T>( object: T ): string[] {
     return Reflect.getMetadata( packageImportOverlayTypeKey, object );
 }
 
+
+
+
+
+
+
+
+
+
+/**
+ * Returns a record set of all overlay descriptors for the given object.
+ * 
+ * @param object The object that contains overlayid properties.
+ */
 export function getTriggerOverlayDescriptors<T>( object: T ): Record<string, {name?: string, description?: string}> {
     let fullDescriptors = Reflect.getMetadata( packageImportPropertyDescriptionsKey, object );
     let overlayKeys = getTriggerOverlayKeys( object );
@@ -62,10 +104,24 @@ export function getTriggerOverlayDescriptors<T>( object: T ): Record<string, {na
     overlayKeys.forEach( key => {
         overlayDescriptors[ key ] = fullDescriptors[ key ];
     } );
-    
+
     return overlayDescriptors;
 }
 
+
+
+
+
+
+
+
+
+
+/**
+ * Returns the trigger package import properties for the given trigger.
+ * 
+ * @param object The object that contains overlayid and fileid properties.
+ */
 export function getPackageImportProperties<T>( object: T ): TriggerPackageImportProperties {
     let result = new TriggerPackageImportProperties();
 
