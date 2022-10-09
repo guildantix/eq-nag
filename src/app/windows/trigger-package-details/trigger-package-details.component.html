@@ -51,6 +51,7 @@
         <button mat-button color="accent" (click)="installPackage()" *ngIf="!isInstalled"><mat-icon class="material-icons-outlined">cloud_download</mat-icon> Install Package</button>
         <button mat-button color="warn" (click)="uninstallPackage()" *ngIf="isInstalled"><mat-icon class="material-icons-outlined">clear</mat-icon> Uninstall Package</button>
         <button mat-button color="accent" *ngIf="isAuthor" (click)="onUpdatePackageClick()"><mat-icon class="material-icons-outlined">edit</mat-icon> Update Package</button>
+        <button mat-button class="color-blue" (click)="copyQuickSharePackage()"><mat-icon class="material-icons-outlined">publish</mat-icon> Copy Quick Share Code</button>
         <span class="spacer"></span>
     </div>
     

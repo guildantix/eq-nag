@@ -266,6 +266,24 @@ export class TriggerPackageDetailsComponent implements OnInit {
 
 
 
+    /**
+     * Creates and copies the quick share code for the current package.
+     */
+    copyQuickSharePackage() {
+        let code = `{NAG:package/${this.package.triggerPackageId}}`;
+        this.ipcService.sendTextToClipboard( code );
+        this.snackBar.open( 'Package quick share code copied to clipboard', 'Dismiss', { duration: 5000 } );
+    }
+
+
+
+
+
+
+
+
+
+
     // TODO: Overlay selection/new overlays when installing new trigger packages.
     // TODO: Fix the auto updater.
 
