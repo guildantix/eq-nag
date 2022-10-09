@@ -789,10 +789,15 @@ function parseLogEntries( raw, simulating, padTime ) {
     
     let log = raw.replace( rgxTimestamp, '' );
         
-    // https://regex101.com/r/FvGiGC/1
+    // https://regex101.com/r/FvGiGC/2
     // {NAG:(?<quickShareId>.+?)}
-    let quickShareRegx = /{NAG:(?<quickShareId>.+?)}/g;
+    // TODO: Remove the negative lookahead for package after a few versions.
+    let quickShareRegx = /{NAG:(?!package\/)(quick-share\/)?(?<quickShareId>.+?)}/g;
+    // https://regex101.com/r/RwCLkN/1
+    let packageShareRegx = /{NAG:package\/(?<packageId>.+?)}/g;
     // {NAG:OVtf9VzRSjykb1xx}
+    // {NAG:quick-share/OVtf9VzRSjykb1xx}
+    // {NAG:package/X0VJh1fjkddZCl9r}
 
     // https://regex101.com/r/n9aOlR/1
     // ^(?<author>Name|Name2) .*{NAG:(?<quickShareId>.+?)}
@@ -801,6 +806,11 @@ function parseLogEntries( raw, simulating, padTime ) {
     let quickShare = !enableQuickShareImports ? null : quickShareRegx.exec( log );
     if ( quickShare && quickShare.groups?.quickShareId ) {
         ipcRenderer.send( 'quickshare_captured', quickShare.groups.quickShareId );
+    }
+    
+    let quickSharePackage = packageShareRegx.exec( log );
+    if ( quickSharePackage && quickSharePackage.groups?.packageId ) {
+        ipcRenderer.send( 'quicksharePackage_captured', quickSharePackage.groups.packageId );
     }
     
     if ( enableFct && raw.match( rgxCombatText )?.length > 0 ) {

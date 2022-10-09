@@ -501,7 +501,7 @@ export class PrepareQuickShareDialogComponent implements OnInit {
                 this.quickShareService
                     .createQuickShare( author.authorId, quickShare, quickShareFiles, null )
                     .subscribe( quickShareId => {
-                        let code = `{NAG:${quickShareId}}`;
+                        let code = `{NAG:quick-share/${quickShareId}}`;
                         this.ipcService.sendTextToClipboard( code );
                         this.snackBar.open( 'Quickshare copied to clipboard', 'Dismiss', { duration: 5000 } );
                         this.dialogRef.close( quickShareId );
