@@ -23,6 +23,7 @@ import { SetupModule } from './setup/setup.module';
 import { SetupWizardComponent } from './setup/setup-wizard/setup-wizard.component';
 import { SetupService } from './setup/setup.service';
 import { EditorsModule } from './editors/editors.module';
+import { OverlaysComponent } from './overlays/overlays.component';
 
 @NgModule( {
     imports: [
@@ -43,6 +44,7 @@ import { EditorsModule } from './editors/editors.module';
         AppComponent,
         ClassNamePipe,
         TriggersComponent,
+        OverlaysComponent,
         MainComponent,
         CharactersListComponent,
         SettingsComponent,

@@ -38,65 +38,8 @@
             
         </mat-tab>
         <mat-tab label="Overlays">
-                <mat-toolbar>
-                    <span>Overlays</span>
-                    <span class="spacer"></span>
-                    <button mat-button color="default" class="color-blue" (click)="arrangeOverlays()"><mat-icon class="material-icons-outlined">view_quilt</mat-icon> Arrange Overlays</button>
-                    <button mat-button color="accent" (click)="showNewOverlayDialog()"><mat-icon class="material-icons-outlined">layers</mat-icon> New Overlay</button>
-                    <button mat-icon-button [matMenuTriggerFor]="menu" aria-label="Example icon-button with a menu">
-                        <mat-icon>more_vert</mat-icon>
-                    </button>
-                    <mat-menu #menu="matMenu" class="trigger-main-menu">
-                        <button mat-menu-item (click)="findMissingOverlays()" matTooltip="Will find any references to overlays that do not exist in your list of overlays." matTooltipPosition="left">
-                            <span>Find Missing Overlays</span>
-                        </button>
-                    </mat-menu>
-                </mat-toolbar>
-                <div class="tab-content">
-
-                    <table mat-table #overlaysTable="matTable" style="width: 100%;"
-                        [dataSource]="overlays">
-
-                        <ng-container matColumnDef="edit">
-                            <th mat-header-cell *matHeaderCellDef style="text-align: center; width: 90px;">  </th>
-                            <td mat-cell *matCellDef="let element; let i = index" style="text-align: center; width: 90px;">
-                                <button mat-icon-button color="accent" aria-label="Edit this overlay" (click)="enableOverlayEdit(element.overlayId)" matTooltip="Edit this overlay" matTooltipPosition="above"><mat-icon>display_settings</mat-icon></button>
-                                <button mat-icon-button color="accent" aria-label="Send overlay to the middle of your monitor" (click)="sendToOrigin(element.overlayId)" matTooltip="Send this overlay to the center of your primary monitor." matTooltipPosition="above"><mat-icon>filter_center_focus</mat-icon></button>
-                            </td>
-                        </ng-container>
-
-                        <ng-container matColumnDef="id">
-                            <th mat-header-cell *matHeaderCellDef style="width: 100px; padding-left: 15px;"> Id </th>
-                            <td mat-cell *matCellDef="let element; let i = index" style="width: 100px; padding-left: 15px;"> {{element.overlayId}} </td>
-                        </ng-container>
-
-                        <ng-container matColumnDef="name">
-                            <th mat-header-cell *matHeaderCellDef style="padding-left: 15px;"> Name </th>
-                            <td mat-cell *matCellDef="let element; let i = index" style="padding-left: 15px;"> {{element.name}} </td>
-                        </ng-container>
-
-                        <ng-container matColumnDef="assignCount">
-                            <th mat-header-cell *matHeaderCellDef style="padding-right: 15px; text-align: right;"> Use Count </th>
-                            <td mat-cell *matCellDef="let element; let i = index" style="padding-right: 15px; text-align: right;">
-                                <ng-template [ngIf]="element.overlayId === damageDealtOverlayId || element.overlayId === this.damageTakenOverlayId" [ngIfElse]="normalOverlay">FCT</ng-template>
-                                <ng-template #normalOverlay>{{overlayAssignCounts[element.overlayId] ?? 0}}</ng-template>
-                            </td>
-                        </ng-container>
-
-                        <ng-container matColumnDef="delete">
-                            <th mat-header-cell *matHeaderCellDef style="text-align: center; width: 50px; padding-left: 15px;">  </th>
-                            <td mat-cell *matCellDef="let element; let i = index" style="text-align: center; width: 50px; padding-left: 15px;">
-                                <button mat-icon-button color="warn" aria-label="Delete this overlay" (click)="deleteOverlay(i)">
-                                    <mat-icon>clear</mat-icon>
-                                </button>
-                            </td>
-                        </ng-container>
-
-                        <tr mat-header-row *matHeaderRowDef="['edit', 'id', 'name', 'assignCount', 'delete']"></tr>
-                        <tr mat-row *matRowDef="let element; columns: ['edit', 'id', 'name', 'assignCount', 'delete'];"></tr>
-
-                    </table>
-                </div>
+                
+            <app-overlays [damageDealtOverlayId]="damageDealtOverlayId" [damageTakenOverlayId]="damageTakenOverlayId" [isDev]="isDev"></app-overlays>
 
         </mat-tab>
         <mat-tab label="Floating Combat Text">

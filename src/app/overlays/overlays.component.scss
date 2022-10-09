@@ -1,0 +1,168 @@
+.spacer {
+    flex: 1 1 auto;
+}
+div.tab-content {
+    overflow-y: scroll;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    top: 176px;
+    padding: 27px 13px 20px 13px;
+
+    > fieldset:not(:first-child) {
+        margin-top: 50px;
+    }
+}
+div.console {
+    width: 100%;
+    overflow-y: auto;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow-x: hidden;
+    font-family: Consolas, monospace;
+    font-weight: normal;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 150px;
+
+    ul li {
+        font-size: 12px;
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        line-height: 12px;
+    }
+}
+
+fieldset p mat-form-field {
+    max-width: 400px;
+    width: 100%;
+}
+
+
+.example-tree-invisible {
+    display: none;
+  }
+  
+  .example-tree ul,
+  .example-tree li {
+    margin-top: 0;
+    margin-bottom: 0;
+    list-style-type: none;
+  }
+
+.mat-tree-node {
+    &:nth-last-child(1) {
+        border-bottom: 1px solid;
+    }
+    &.selected {
+        &:hover {
+            .delete-button {
+                display:unset !important;
+            }
+        }
+    }
+    .delete-button {
+        display: none;
+    }
+    .spacer {
+        display: flex;
+        flex: 1 0 auto;
+    }
+    button {
+        mat-icon {
+            font-size: 18px;
+        }
+        margin-left: 5px;
+    }
+    min-height: unset !important;
+    height: 27px !important;
+    cursor: pointer;
+    display: flex;
+    flex-direction: row;
+    padding-right: 15px;
+}
+
+tr.mat-row {
+    height: 27px !important;
+}
+
+.ft-row {
+
+    .ft-item {
+
+        .ft-content {            
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+        }
+
+        display: flex;
+        margin: 3px;
+
+    }
+
+    display: flex;
+    flex-wrap: wrap;
+    flex-direction: row;
+
+}
+
+.trigger-categories-header {
+    .spacer {
+        display: flex;
+        flex: 1 0 auto;
+    }
+    button[mat-icon-button] {
+        font-size: 16px;
+    }
+    border-bottom: 1px solid;
+    height: 20px;
+    vertical-align: middle;
+    font-size: 12px;
+    font-weight: 500;
+    font-family: Roboto, "Helvetica Neue", sans-serif;
+    padding-left: 40px;
+    padding-top: 20px;
+    padding-bottom: 15px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    padding-right: 15px;
+}
+
+button.mat-icon-button.small {
+    mat-icon {
+        margin-top: -16.5px;
+        // margin-right: -1px;
+    }
+    font-size: 15px;
+    width: 25px;
+    height: 25px;
+}
+
+.instructions {
+    mat-icon {
+        font-weight: bold;
+    }
+    font-size: 12px;
+    padding: 25px;
+}
+
+.dim {
+    opacity: .1;
+}
+
+p {
+    .hover-only {
+        display: none;
+    }
+
+    &:hover {
+        .hover-only{
+        display: inline;}
+    }
+}

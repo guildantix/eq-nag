@@ -1,2 +1,4 @@
 
+/* Temporary fix for tooltip show delay: https://github.com/angular/components/issues/24614#issuecomment-1190286647 */
+.mat-tooltip-hide { display: none!important; }
 
