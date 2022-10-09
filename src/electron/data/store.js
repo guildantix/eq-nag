@@ -36,6 +36,9 @@ class Store {
     }
 
     storeDataFile( data ) {
+        if ( !data )
+            throw 'Attmept to store null data file!';
+        
         try {
             fs.writeFileSync( this.#path, JSON.stringify( data ) );
         } catch ( error ) {
