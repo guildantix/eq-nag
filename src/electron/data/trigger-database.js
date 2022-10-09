@@ -1812,7 +1812,7 @@ class TriggerDatabaseStore extends Store {
         
         let finalize = () => {
             this.#data.packageOverlayMap = overlayMap;
-            this.#data.packageOverlays[ pkg.triggerPackageId ] = pkg.model.packageOverlays.map( f => f.overlayId );
+            this.#data.packageOverlays[ pkg.triggerPackageId ] = pkg.model.packageOverlays?.map( f => f.overlayId ) ?? [];
             this.storeDataFile( this.#data );
         }
 
