@@ -134,6 +134,8 @@ class TriggerStoreModel {
     installedQuickShares;
     /** @type {Record<string, string>} This maps user overlay ids to author overlay ids. */
     packageOverlayMap;
+    /** @type {Record<string, string[]>} This is a record of all package original overlay ids. */
+    packageOverlays;
 }
 
 class TriggerDatabaseStore extends Store {
@@ -672,6 +674,12 @@ class TriggerDatabaseStore extends Store {
             this.#data.packageOverlayMap = {};
 
             this.#data.version = 69;
+            this.storeDataFile( this.#data );
+        }
+        if ( this.#data.version < 70 ) {
+            this.#data.packageOverlays = {};
+
+            this.#data.version = 70;
             this.storeDataFile( this.#data );
         }
     }
@@ -1801,8 +1809,10 @@ class TriggerDatabaseStore extends Store {
      */
     installTriggerPackageOverlays( pkg, event, callback ) {
         let overlayMap = this.#data.packageOverlayMap ?? {};
+        
         let finalize = () => {
             this.#data.packageOverlayMap = overlayMap;
+            this.#data.packageOverlays[ pkg.triggerPackageId ] = pkg.model.packageOverlays.map( f => f.overlayId );
             this.storeDataFile( this.#data );
         }
 
@@ -1885,6 +1895,8 @@ class TriggerDatabaseStore extends Store {
     
     /**
      * Installs the given trigger package.
+     * 
+     * @note Files are installed in the Angular, prior to calling this function.
      * 
      * @param {TriggerPackageMetaModel} pkg The package to install.
      * @param {Electron.IpcMainEvent} event The event args.
@@ -2122,6 +2134,16 @@ class TriggerDatabaseStore extends Store {
         } );
 
         _.remove( this.#data.installedPackages, f => f.packageId === packageId );
+
+        // Remove all package overlay ids from the package overlay map.  This 
+        // will allow the user to uninstall and reassign/create new overlays 
+        // for the same package.
+        let packageOverlayIds = this.#data.packageOverlays[ packageId ];
+        if ( packageOverlayIds ) {
+            packageOverlayIds.forEach( pkgOverlayId => {
+                this.#data.packageOverlayMap[ pkgOverlayId ] = null;
+            } );
+        }
 
         // Save changes to the data.
         this.processPredefinedTriggers();
