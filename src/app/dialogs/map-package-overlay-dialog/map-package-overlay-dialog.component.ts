@@ -16,7 +16,10 @@ export class MapPackageOverlayDialogComponent implements OnInit, OnDestroy {
 
     public missingOverlay: OverlayWindowModel;
     public mappedOverlay: OverlayWindowModel;
-    public existingOverlays: OverlayWindowModel[] = [];
+    private existingOverlays: OverlayWindowModel[] = [];
+    public get matchingOverlays(): OverlayWindowModel[] {
+        return this.existingOverlays.filter( f => f.overlayType === this.missingOverlay.overlayType );
+    }
 
     public useExisting: boolean = false;
     public copyOverlay: boolean = false;

@@ -27,7 +27,7 @@
         <mat-form-field>
             <mat-label></mat-label>
             <mat-select [(ngModel)]="mappedOverlay" name="mappedOverlay">
-                <mat-option *ngFor="let overlay of existingOverlays" [value]="overlay">{{overlay.name}}</mat-option>
+                <mat-option *ngFor="let overlay of matchingOverlays" [value]="overlay">{{overlay.name}}</mat-option>
             </mat-select>
             <mat-hint>Existing Overlay</mat-hint>
         </mat-form-field>
