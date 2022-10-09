@@ -736,6 +736,9 @@ class WindowManager {
      * Unloads all windows.
      */
     unload() {
+        if ( rendererOnTopId ) {
+            clearTimeout( rendererOnTopId );
+        }
         this.#renderer?.close();
         this.#renderer = null;
     }
