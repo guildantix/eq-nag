@@ -124,10 +124,18 @@ export class TriggersComponent implements OnInit {
         } );
 
         this.ipcService.tickReceived().subscribe( tick => {
+            let selectedFolderId = this.selectedFolderId;
+            let searchTerm = this.searchTerm;
             this.triggers = tick.triggers.filter( f => this.isDev || !f.predefined );
             this.updateViewTriggerData( tick.folders );
-            this.filterTriggers();
-            this.searchTerm = null;
+            if ( selectedFolderId ) {
+                this.toggleSelectedFolder( selectedFolderId );
+            }
+            if ( searchTerm ) {
+                this.searchTerm = searchTerm;
+                this.searchTriggers();
+            } 
+            
         } );
 
         this.ipcService.getAppIsDev().subscribe( isDev => this.isDev = isDev );
