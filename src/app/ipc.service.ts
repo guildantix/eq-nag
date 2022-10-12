@@ -31,6 +31,8 @@ export class IpcService {
     private _onOrphanedTriggerWarning: Observer<boolean>[] = [];
     private _onMissingPackageOverlay: Observer<OverlayWindowModel>[] = [];
 
+    private _ginaConfigCache: GinaConfiguration = null;
+
     public get remote(): Electron.Remote {
         return this._remote;
     }
@@ -1368,27 +1370,33 @@ export class IpcService {
      */
     public getGinaConfiguration(): Observable<GinaConfiguration> {
         let obs: Observable<GinaConfiguration> = new Observable<GinaConfiguration>( ( observer: Observer<GinaConfiguration> ) => {
-            
-            this.ipc.once( 'gina:get:configuration', ( e, ginaConfig: GinaConfiguration ) => {
-                this.ngZone.run( () => {
+            if ( this._ginaConfigCache === null ) {
+                this.ipc.once( 'gina:get:configuration', ( e, ginaConfig: GinaConfiguration ) => {
+                    this.ngZone.run( () => {
 
-                    // Because the source is XML, we need to process all arrays so that even if an array has a single element it's still an array.  I just don't want a bunch of "if property is array" statements in other areas of the code.
-                    if ( !( ginaConfig.BehaviorGroups.Behavior instanceof Array ) ) {
-                        ginaConfig.BehaviorGroups.Behavior = [ ginaConfig.BehaviorGroups.Behavior ];
-                    }
+                        // Because the source is XML, we need to process all arrays so that even if an array has a single element it's still an array.  I just don't want a bunch of "if property is array" statements in other areas of the code.
+                        if ( !( ginaConfig.BehaviorGroups.Behavior instanceof Array ) ) {
+                            ginaConfig.BehaviorGroups.Behavior = [ ginaConfig.BehaviorGroups.Behavior ];
+                        }
 
-                    if ( !( ginaConfig.Settings.PhoneticTransforms.Transform instanceof Array ) && ginaConfig.Settings.PhoneticTransforms ) {
-                        ginaConfig.Settings.PhoneticTransforms.Transform = [ ginaConfig.Settings.PhoneticTransforms.Transform ];
-                    }
+                        if ( !( ginaConfig.Settings.PhoneticTransforms.Transform instanceof Array ) && ginaConfig.Settings.PhoneticTransforms ) {
+                            ginaConfig.Settings.PhoneticTransforms.Transform = [ ginaConfig.Settings.PhoneticTransforms.Transform ];
+                        }
 
-                    this.processGinaTriggerGroup( ginaConfig.TriggerGroups );
-                    
-                    observer.next( ginaConfig );
-                    observer.complete();
+                        this.processGinaTriggerGroup( ginaConfig.TriggerGroups );
 
+                        this._ginaConfigCache = ginaConfig;
+                        observer.next( ginaConfig );
+                        observer.complete();
+
+                    } );
                 } );
-            } );
-            this.ipc.send( 'gina:get:configuration', null );
+                this.ipc.send( 'gina:get:configuration', null );
+            } else {
+                
+                observer.next( this._ginaConfigCache );
+                observer.complete();
+            }
 
         } );
 
