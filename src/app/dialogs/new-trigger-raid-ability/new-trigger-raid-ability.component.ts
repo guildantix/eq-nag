@@ -9,6 +9,7 @@ import * as _ from 'lodash-es';
 import { customAlphabet } from 'nanoid';
 import { SelectIconDialogComponent } from '../select-icon-dialog/select-icon-dialog.component';
 import { ColorUtility } from 'src/app/utilities';
+import { nagId } from 'src/app/core/nag-id.util';
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const nanoid = customAlphabet( alphabet, 16 );
 
@@ -40,6 +41,7 @@ export class NewTriggerRaidAbilityComponent implements OnInit {
     public recastTimerOverlayId: string = null;
     public effectTimerOverlayId: string = null;
     public alertOverlayId: string = null;
+    public trackOther: boolean = false;
 
     public get timerOverlays(): OverlayWindowModel[] {
         return this.overlays.filter( f => f.overlayType === 'Timer' );
@@ -260,6 +262,59 @@ export class NewTriggerRaidAbilityComponent implements OnInit {
 
         trigger.actions = [];
 
+        let trackOtherTimer: TriggerAction = null;
+        if ( this.trackOther ) {
+            
+            let msg = this.deathTouch ? `(\${target}) DT` :
+                this.ability.manaDrain ? `(\${target}) Mana Drain` :
+                this.ability.silence ? `(\${target}) Silence` :
+                `(\${target}) ${this.ability.name}`;
+
+            if ( ( this.deathTouch && this.deathTouchDispellable ) || ( !this.deathTouch && this.ability.cureType ) ) {
+                msg += `, ${this.ability.cureType}`;
+            } else if ( !this.ability.cureType ) {
+                msg += ', Purify/Radiant/Pure Spirit';
+            }
+                
+            let duration = this.deathTouch && this.deathTouchDuration > 0 ? this.deathTouchDuration : this.ability.duration;
+            
+            trackOtherTimer = <TriggerAction>{
+                phrases: [ hitOtherPhraseId ],
+                actionType: ActionTypes.Countdown,
+                overlayId: this.effectTimerOverlayId,
+                duration: duration,
+                actionId: nagId(),
+                displayText: msg,
+                useCustomColor: true,
+                overrideTimerColor: '#b71c1c',
+                timerBackgroundColor: ColorUtility.FromHex( '#b71c1c' ).darken( 0.93 ).toString( 0.75 ),
+                restartBehavior: TimerRestartBehaviors.RestartOnDuplicate,
+            };
+
+            trackOtherTimer.endEarlyPhrases = [];
+            trackOtherTimer.endEarlyPhrases.push( <Phrase>{
+                phraseId: nagId(),
+                phrase: '^${target} has been slain by [^!]*!$',
+                useRegEx: true,
+            }, <Phrase>{
+                phraseId: nagId(),
+                phrase: '^${target} dies\\.$',
+                useRegEx: true,
+            }, <Phrase>{
+                phraseId: nanoid(),
+                phrase: '^${target} died\\.$',
+                useRegEx: true,
+            }, <Phrase>{
+                phraseId: nanoid(),
+                // Alora is cured of Mark of Death by Spoilers.
+                // https://regex101.com/r/WSLpJc/1
+                phrase: `^\${target} is cured of ${this.ability.name}.*?`,
+                useRegEx: true,
+            } );
+
+            trigger.actions.push( trackOtherTimer );
+        }
+
         // Start by adding recast timers
         let recastCountdowns: TriggerAction[] = [];
         if ( this.recastTimerOverlayId && this.recastDelay > 0 ) {
@@ -436,6 +491,9 @@ export class NewTriggerRaidAbilityComponent implements OnInit {
                 recastCountdowns.forEach( countdown => countdown.timerIcon = icon );
                 if ( hitTimer ) {
                     hitTimer.timerIcon = icon;
+                }
+                if ( trackOtherTimer ) {
+                    trackOtherTimer.timerIcon = icon;
                 }
 
                 trigger.actions = trigger.actions.concat( recastCountdowns, hitTimer ? [ hitTimer ] : [] );

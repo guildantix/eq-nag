@@ -56,6 +56,11 @@
             <p><mat-slide-toggle [(ngModel)]="recastNotifyDisplayText" name="togRecastNotifyDisplayText">Use alert text</mat-slide-toggle></p>
         </ng-template>
 
+        <ng-template [ngIf]="ability.castOnOther">
+            <p>Would you like to track this effect on other players?</p>
+            <p><mat-slide-toggle [(ngModel)]="trackOther" name="trackOther">Track debuff on others</mat-slide-toggle></p>
+        </ng-template>
+
         <button mat-button (click)="nextStep()" class="t-confirm-yes" color="accent">Next</button>
     </div>
     <div *ngIf="readyForImport">
@@ -74,7 +79,7 @@
             <mat-select [(ngModel)]="effectTimerOverlayId" name="ddlEffectTimerOverlay">
                 <mat-option *ngFor="let option of timerOverlays" [value]="option.overlayId">{{option.name}}</mat-option>
             </mat-select>
-            <mat-hint>This timer displays how long until the DT hits, or the duration of the silence effect.</mat-hint>
+            <mat-hint>This timer displays how long until the DT hits, or the duration of the debuff.</mat-hint>
         </mat-form-field>
         
         <mat-form-field style="width: 100%;">
