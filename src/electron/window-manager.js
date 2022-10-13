@@ -98,7 +98,7 @@ class WindowManager {
 
         this.#overlayDatabase.registerOverlayDeleteHandler( overlayId => {
             this.#renderer.webContents.send( 'renderer:overlay:delete', overlayId );
-        })
+        } );
 
         ipcMain.on( 'trigger:dialog:new', ( event, arg ) => {
             let triggerWindow = new BrowserWindow( {
@@ -435,7 +435,13 @@ class WindowManager {
         
         renderer.loadURL( `file://${__dirname}/threads/renderer.html?originX=${0 - bounds.x}&originY=${0 - bounds.y}` );
         renderer.setIgnoreMouseEvents( true, { forward: true } );
+
+        // https://github.com/electron/electron/issues/10078#issuecomment-331581160
         renderer.setAlwaysOnTop( true, "screen-saver" );
+        renderer.setVisibleOnAllWorkspaces( true );
+        renderer.setFullScreenable( false );
+        
+        // renderer.setAlwaysOnTop( true, "screen-saver" );
         
         // Open the DevTools.
         if ( app.isDev() ) {
@@ -446,6 +452,8 @@ class WindowManager {
 
         rendererOnTopId = setInterval( () => {
             this.#renderer.setAlwaysOnTop( true, "screen-saver" );
+            this.#renderer.setVisibleOnAllWorkspaces( true );
+            this.#renderer.setFullScreenable( false );
         }, 1000 );
 
         ipcMain.once('main:angular-ready', () => {
