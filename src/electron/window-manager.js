@@ -8,6 +8,7 @@ const log = require( 'electron-log' );
 const CharacterModel = require( './data/models/character' );
 const { IpcMessage } = require( "./data/models/common" );
 const { LogFileLocation } = require( "./data/log-file-location" );
+const path = require( "path" );
 
 /** 
  * We will occassionally need to disable the 'force on top' of the renderer, so 
@@ -24,6 +25,9 @@ class WindowManager {
 
     /** @type {BrowserWindow} */
     triggerLibraryWindow;
+
+    /** @type {BrowserWindow} */
+    updateNotesWindow;
 
     /** @type {ForwardRef<BrowserWindow>} */
     #mainWindow;
@@ -390,10 +394,73 @@ class WindowManager {
             this.triggerLibraryWindow.setBackgroundColor( '#1a1a1a' );
             this.configureRendererMouseBlockingOnMoveResize( this.triggerLibraryWindow );
         } );
+
+        ipcMain.on( 'window:update-notes:show', ( event, arg ) => {
+            
+            this.updateNotesWindow = new BrowserWindow( {
+                parent: mainWindowRef.reference,
+                modal: false,
+                show: false,
+                width: 1000,
+                height: 800,
+                frame: false,
+                webPreferences: {
+                    nodeIntegration: false,
+                    devTools: app.isDev(),
+                    preload: path.join( __dirname, '/preloaders/update-notes.js' ),
+                    contextIsolation: true,
+                }
+            } );
+            if ( app.isDev() ) {
+                this.updateNotesWindow.webContents.openDevTools();
+            }
+            let url = `file://${this.#dirname}/dist/index.html#/update-notes`;
+            if ( arg ) {
+                url += `/${arg}`;
+            }
+            this.updateNotesWindow.loadURL( url );
+            this.updateNotesWindow.once( "ready-to-show", () => {
+                this.updateNotesWindow.show();
+                event.sender.webContents.send( 'window:update-notes:show', true );
+            } );
+            this.updateNotesWindow.on( 'closed', () => {
+                this.updateNotesWindow = null;
+            } );
+            this.updateNotesWindow.setBackgroundColor( '#1a1a1a' );
+            this.configureRendererMouseBlockingOnMoveResize( this.updateNotesWindow );
+            this.centerBrowserWindowOn( this.updateNotesWindow, mainWindowRef.reference );
+        } );
         
         userPreferencesDatabase.onFctStyleChanges.push( fctStyles => {
             this.#renderer.webContents.send( 'fctStyles', fctStyles );
         } );
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Centers the given centerBWin on top of the given refBWin.
+     * 
+     * @param {BrowserWindow} centerBWin The browser window to center.
+     * @param {BrowserWindow} refBWin The browser window to be centered on.
+     */
+    centerBrowserWindowOn( centerBWin, refBWin ) {
+        let mainWinBounds = refBWin.getBounds();
+        let middleX = mainWinBounds.x + ( mainWinBounds.width / 2 );
+        let middleY = mainWinBounds.y + ( mainWinBounds.height / 2 );
+
+        let winBounds = centerBWin.getBounds();
+        winBounds.x = Math.round( middleX - ( winBounds.width / 2 ) );
+        winBounds.y = Math.round( middleY - ( winBounds.height / 2 ) );
+        
+        centerBWin.setBounds( winBounds );
     }
     
 
@@ -773,6 +840,10 @@ class WindowManager {
 
         if ( this.triggerLibraryWindow ) {
             fn( this.triggerLibraryWindow, 'triggerLibraryWindow' );
+        }
+
+        if ( this.updateNotesWindow ) {
+            fn( this.updateNotesWindow, 'updateNotesWindow' );
         }
 
         if ( this.#renderer ) {
