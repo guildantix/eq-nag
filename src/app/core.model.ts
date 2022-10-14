@@ -1045,3 +1045,46 @@ export class DeathRecapPreferences {
     engageMode: 'hotkey' | 'automatic';
     hotkeyPhrase: string;
 }
+
+export class VersionNumber {
+    
+    public major: number;
+    public minor: number;
+    public revision: number;
+
+    constructor( private version: string ) {
+        let parts = version.split( /\./gi );
+        if ( parts?.length !== 3 ) {
+            throw 'Invalid version number!';
+        }
+        this.major = +parts[ 0 ];
+        this.minor = +parts[ 1 ];
+        this.revision = +parts[ 2 ];
+    }
+
+    /**
+     * Returns -1 if a is less than b, 0 if a equals b, 1 if a is greater than b.
+     * 
+     * @param a Version number a.
+     * @param b Version number b.
+     */
+    public static CompareVersions( a: VersionNumber, b: VersionNumber ): number {
+        let aMj = a.major * 100000;
+        let bMj = b.major * 100000;
+        let aMn = a.minor * 1000;
+        let bMn = b.minor * 1000;
+        let aRv = a.revision;
+        let bRv = b.revision;
+        let aV = aMj + aMn + aRv;
+        let bV = bMj + bMn + bRv;
+        
+        if ( aV < bV ) {
+            return -1;
+        } else if ( aV === bV ) {
+            return 0;
+        } else {
+            return 1;
+        }
+
+    }
+}

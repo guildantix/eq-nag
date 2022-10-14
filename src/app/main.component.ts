@@ -2,7 +2,7 @@ import { Component, ViewChild, ElementRef, OnInit } from '@angular/core';
 import * as _ from 'lodash-es';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { IpcService } from './ipc.service';
-import { DkpEntryModel, OverlayWindowModel, FocusEffectSettings, StylePropertiesModel, FctStylesModel, QuickShareMetaModel, QuickShareFileModel, TriggerPackageMetaModel } from './core.model';
+import { DkpEntryModel, OverlayWindowModel, FocusEffectSettings, StylePropertiesModel, FctStylesModel, QuickShareMetaModel, QuickShareFileModel, TriggerPackageMetaModel, VersionNumber } from './core.model';
 import { DialogService } from './dialogs/dialog.service';
 import { customAlphabet } from 'nanoid';
 import { SetupService } from './setup/setup.service';
@@ -186,9 +186,14 @@ export class MainComponent implements OnInit {
 
         this.ipcService.getAppVersion().subscribe( version => {
             this.ipcService.getLastUpdateNotesViewed().subscribe( updateNotesVersion => {
-                if ( version !== updateNotesVersion ) {
+                let versionSeen = new VersionNumber( version );
+                let versionLatest = new VersionNumber( updateNotesVersion );
+
+                if ( VersionNumber.CompareVersions( versionSeen, versionLatest ) === -1 ) {
+                    // If the version seen is less than version latest, show the update notes.
                     this.showLatestUpdateNotes();
                 }
+                // TODO: Show pre-release notes if the user has a pre-release installed.
             } );
         } );
 
@@ -202,7 +207,7 @@ export class MainComponent implements OnInit {
 
 
 
-    
+
     /**
      * Loads the latest update notes window.
      */
