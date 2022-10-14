@@ -15,6 +15,9 @@ import { TriggerLibraryService } from './trigger-library.service';
 import { NewTriggerPackageComponent } from './new-trigger-package/new-trigger-package.component';
 import { TriggerPackageDetailsComponent } from './trigger-package-details/trigger-package-details.component';
 import { WebComponentsModule } from '../web-components/web-components.module';
+import { HttpClientModule } from '@angular/common/http';
+import { MarkdownModule } from 'ngx-markdown';
+import { UpdateNotesWindowComponent } from './update-notes-window/update-notes-window.component';
 
 @NgModule({
     imports: [
@@ -28,6 +31,8 @@ import { WebComponentsModule } from '../web-components/web-components.module';
         DialogModule,
         EditorsModule,
         WebComponentsModule,
+        HttpClientModule,
+        MarkdownModule.forRoot(),
     ],
     exports: [
         GinaImportStepperComponent,
@@ -40,6 +45,7 @@ import { WebComponentsModule } from '../web-components/web-components.module';
         TriggerLibraryWindowComponent,
         NewTriggerPackageComponent,
         TriggerPackageDetailsComponent,
+        UpdateNotesWindowComponent,
     ],
     providers: [
         TriggerLibraryService

@@ -1,0 +1,19 @@
+<div class="modal">
+    <header>
+        <mat-toolbar class="titlebar" color="default">
+            <span>Update Notes v{{versionNumber}}</span>
+            <span class="spacer"></span>
+            <button mat-icon-button aria-label="Close Update Notes" (click)="close()">
+                <mat-icon>clear</mat-icon>
+            </button>
+        </mat-toolbar>
+    </header>
+    <section>
+        <div class="update-notes">
+            <markdown [data]="updateNotes"></markdown>
+        </div>
+    </section>
+    <footer>
+        <button mat-button color="warn" (click)="close()">Close</button>
+    </footer>
+</div>
