@@ -1550,6 +1550,30 @@ export class IpcService {
 
         return obs;
     }
+
+    public setLastUpdatedNotesViewed( version: string ): void {
+        this.ipc.send( 'settings:set:lastViewedUpdateNotes', version );
+    }
+
+    public getLastUpdateNotesViewed(): Observable<string> {
+        let obs: Observable<string> = new Observable<string>( ( observer: Observer<string> ) => {
+            
+            this.ipc.once( 'settings:get:lastViewedUpdateNotes', ( e, version: string ) => {
+                this.ngZone.run( () => {
+                    observer.next( version );
+                    observer.complete();
+                } );
+            } );
+            this.ipc.send( 'settings:get:lastViewedUpdateNotes', null );
+
+        } );
+
+        return obs;
+    }
+
+    public showUpdateNotesWindow(): void {
+        this.ipc.send( 'window:update-notes:show' );
+    }
     
     public updateDeathRecapPreferences( model: DeathRecapPreferences ): void {
         this.ipc.send( 'settings:set:deathRecap', model );
