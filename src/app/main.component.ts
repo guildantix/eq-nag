@@ -183,6 +183,31 @@ export class MainComponent implements OnInit {
                 }
             } );
         } );
+
+        this.ipcService.getAppVersion().subscribe( version => {
+            this.ipcService.getLastUpdateNotesViewed().subscribe( updateNotesVersion => {
+                if ( version !== updateNotesVersion ) {
+                    this.showLatestUpdateNotes();
+                }
+            } );
+        } );
+
+    }
+
+
+
+
+
+
+
+
+
+    
+    /**
+     * Loads the latest update notes window.
+     */
+    public showLatestUpdateNotes() {
+        this.ipcService.showUpdateNotesWindow();
     }
 
 
