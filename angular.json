@@ -28,7 +28,10 @@
               "src/styles.scss",
               "src/app/themes/dark.theme.scss"
             ],
-            "scripts": [],
+            "scripts": [
+                "node_modules/marked/marked.min.js",
+                "node_modules/emoji-toolkit/lib/js/joypixels.min.js"
+            ],
             "vendorChunk": true,
             "extractLicenses": false,
             "buildOptimizer": false,
