@@ -65,6 +65,7 @@ class UserPreferencesStore extends Store {
      * fctStyles: FctStylesModel,
      * deathRecap: DeathRecapPreferences,
      * minimizeToTrayOnLoad: boolean,
+     * lastViewedUpdateNotes: string,
      * }}
      */
     #data;
@@ -75,6 +76,15 @@ class UserPreferencesStore extends Store {
     }
     set minimizeToTrayOnLoad( val ) {
         this.#data.minimizeToTrayOnLoad = val;
+        this.storeDataFile( this.#data );
+    }
+
+    /** @type {string} */
+    get lastViewedUpdateNotes() {
+        return this.#data.lastViewedUpdateNotes;
+    }
+    set lastViewedUpdateNotes( val ) {
+        this.#data.lastViewedUpdateNotes = val;
         this.storeDataFile( this.#data );
     }
 
@@ -516,6 +526,14 @@ class UserPreferencesStore extends Store {
 
         ipcMain.on( 'settings:get:minimizeToTrayOnLoad', ( event ) => {
             event.sender.webContents.send( 'settings:get:minimizeToTrayOnLoad', this.minimizeToTrayOnLoad );
+        } );
+
+        ipcMain.on( 'settings:set:lastViewedUpdateNotes', ( event, lastViewedUpdateNotes ) => {
+            this.lastViewedUpdateNotes = lastViewedUpdateNotes;
+        } );
+
+        ipcMain.on( 'settings:get:lastViewedUpdateNotes', ( event ) => {
+            event.sender.webContents.send( 'settings:get:lastViewedUpdateNotes', this.lastViewedUpdateNotes );
         } );
 
         ipcMain.on( 'settings:set:deathRecap', ( event, deathRecap ) => {
