@@ -8,6 +8,7 @@ import { MaterialModule } from '../material.module';
 import { AccordionPanelComponent } from './accordion/accordion-panel.component';
 import { AccordionComponent } from './accordion/accordion.component';
 import { LinkButtonComponent } from './link-button/link-button.component';
+import { TriggerActionOptionComponent } from './trigger-action-option/trigger-action-option.component';
 
 @NgModule({
     imports: [
@@ -23,11 +24,13 @@ import { LinkButtonComponent } from './link-button/link-button.component';
         AccordionComponent,
         AccordionPanelComponent,
         LinkButtonComponent,
+        TriggerActionOptionComponent,
     ],
     declarations: [
         AccordionComponent,
         AccordionPanelComponent,
         LinkButtonComponent,
+        TriggerActionOptionComponent,
     ],
     providers: [],
 })
