@@ -1,0 +1,25 @@
+<mat-tab-group animationDuration="0ms" [selectedIndex]="0" [appContextMenu]="getActionCtxMenu(action)">
+    <mat-tab label="Notification text">
+        
+        <div class="card-tab-content">
+
+            <div class="card-property">
+                <div class="content-middle">
+                    <mat-label>Glow Duration</mat-label>
+                </div>
+                <div class="content-middle"><app-duration [(ngModel)]="action.duration" name="durActionDuration"></app-duration></div>
+            </div>
+
+            <div class="card-property">
+                <div class="content-middle"><mat-label>Glow Color</mat-label></div>
+                <div class="content-middle content-right"><app-color-picker [(ngModel)]="action.textColor" name="acpGlowColor"></app-color-picker></div>
+            </div>
+
+            <div class="card-property">
+                <div class="content-middle"><mat-checkbox [(ngModel)]="action.flash" name="cbxGlowFlash">Glow Flash</mat-checkbox></div>
+                <div class="content-middle content-right"></div>
+            </div>
+
+        </div>
+    </mat-tab>
+</mat-tab-group>

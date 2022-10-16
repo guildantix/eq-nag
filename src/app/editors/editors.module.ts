@@ -28,6 +28,7 @@ import { StylePropertiesComponent } from './style-properties/style-properties.co
 import { TriggerActionDeathRecapComponent } from './trigger-action-death-recap/trigger-action-death-recap.component';
 import { WebComponentsModule } from '../web-components/web-components.module';
 import { CoreModule } from '../core/core.module';
+import { TriggerActionScreenGlowComponent } from './trigger-action-screen-glow/trigger-action-screen-glow.component';
 
 @NgModule({
     imports: [
@@ -58,6 +59,7 @@ import { CoreModule } from '../core/core.module';
         TriggerActionsComponent,
         StylePropertiesComponent,
         TriggerActionDeathRecapComponent,
+        TriggerActionScreenGlowComponent,
     ],
     declarations: [
         ConditionsComponent,
@@ -76,6 +78,7 @@ import { CoreModule } from '../core/core.module';
         TriggerActionsComponent,
         StylePropertiesComponent,
         TriggerActionDeathRecapComponent,
+        TriggerActionScreenGlowComponent,
     ],
     providers: [],
 })
