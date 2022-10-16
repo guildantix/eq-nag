@@ -25,7 +25,7 @@ export enum ActionTypes {
     Clipboard = 9,
     BeneficialTimer = 10,
     DisplayDeathRecap = 11,
-    
+    ScreenGlow = 12,
 }
 
 export const actionOverlayMap: Record<number, 'Log' | 'Alert' | 'Timer' | 'FCT' | 'Chart' | ''> = {
@@ -41,6 +41,7 @@ export const actionOverlayMap: Record<number, 'Log' | 'Alert' | 'Timer' | 'FCT' 
     9: '',
     10: 'Timer',
     11: '',
+    12: '',
 };
 
 export function ActionTypeLabels(actionType: ActionTypes): string {
@@ -58,6 +59,7 @@ export function ActionTypeLabels(actionType: ActionTypes): string {
         actionType === ActionTypes.Clipboard ? 'Clipboard' :
         actionType === ActionTypes.BeneficialTimer ? 'Beneficial Timer' :
         actionType === ActionTypes.DisplayDeathRecap ? 'Display Death Recap' :
+        actionType === ActionTypes.ScreenGlow ? 'Screen Glow' :
         'Unset Action';
     
 }
@@ -75,6 +77,7 @@ export function ActionTypeIcons( actionType: ActionTypes ): string {
         actionType === ActionTypes.Clipboard ? 'content_copy' :
         actionType === ActionTypes.BeneficialTimer ? 'watch_later' :
         actionType === ActionTypes.DisplayDeathRecap ? 'sick' :
+        actionType === ActionTypes.ScreenGlow ? 'brightness_5' :
         'block';
 }
 
@@ -509,6 +512,7 @@ export class TriggerActionProperties {
     public onlyUseAaBeneficialFocus: boolean = false;
     public skipBenCastingTimeFocus: boolean = false;
     public variableStorageType: string = 'localVariable';
+    public flash: boolean = false;
 
     public endingSoonSubActions: TriggerSubAction[] = [];
     public endedSubActions: TriggerSubAction[] = [];

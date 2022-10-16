@@ -13,6 +13,7 @@ var ActionTypes = {
     '9': 'Clipboard',
     '10': 'BeneficialTimer',
     '11': 'DisplayDeathRecap',
+    '12': 'ScreenGlow',
     DisplayText: 0,
     PlayAudio: 1,
     Speak: 2,
@@ -25,6 +26,7 @@ var ActionTypes = {
     Clipboard: 9,
     BeneficialTimer: 10,
     DisplayDeathRecap: 11,
+    ScreenGlow: 12,
 }
 
 var TriggerConditionTypes = {
@@ -211,6 +213,8 @@ class TriggerAction {
     skipBenCastingTimeFocus = false;
     /** @type {string} */
     variableStorageType = 'localVariable';
+    /** @type {boolean} */
+    flash = false;
 
     /** @type {TriggerSubAction[]} */
     endingSoonSubActions = [];
