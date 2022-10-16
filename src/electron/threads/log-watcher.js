@@ -1221,7 +1221,35 @@ function executeTriggerAction( trigger, action, timestamp, res, deltaTime ) {
         
         loadLastDeathRecap();
         
+    } else if ( action.actionType === ActionTypes.ScreenGlow ) {
+        /* --== Death Recap ==-- */
+        
+        displayScreenGlow(action);
+        
     }
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Sends teh given screen glow action to the renderer.
+ * 
+ * @param {TriggerAction} action The screen glow action to render.
+ */
+function displayScreenGlow( action ) {
+    let comp = new OverlayComponent();
+
+    comp.instanceId = nanoid();
+    comp.action = action;
+    
+    ipcRenderer.send( 'overlay:send:component', comp );
 }
 
 
