@@ -17,6 +17,7 @@
                 <span class="material-icons" *ngIf="action.actionType === actionTypes.Clipboard">content_copy</span>
                 <span class="material-icons" *ngIf="action.actionType === actionTypes.BeneficialTimer">watch_later</span>
                 <span class="material-icons" *ngIf="action.actionType === actionTypes.DisplayDeathRecap">sick</span>
+                <span class="material-icons" *ngIf="action.actionType === actionTypes.ScreenGlow">brightness_5</span>
             </div>
             <mat-card-title>{{action.actionType == null ? 'Unset Action' : actionTypeLabels(action.actionType)}}</mat-card-title>
             <mat-card-subtitle>
@@ -32,6 +33,7 @@
                 <span *ngIf="action.actionType === actionTypes.Clipboard">Put text into the clipboard.</span>
                 <span *ngIf="action.actionType === actionTypes.BeneficialTimer">Creates a countdown until the buff expires.</span>
                 <span *ngIf="action.actionType === actionTypes.DisplayDeathRecap">Displays the Death Recap window.</span>
+                <span *ngIf="action.actionType === actionTypes.ScreenGlow">Renders a glow around the main display.</span>
                 <mat-label *ngIf="isDev" style="color:#00000059;">&nbsp;{{action.actionId}}</mat-label>
             </mat-card-subtitle>
         </mat-card-header>
@@ -53,6 +55,7 @@
                         <mat-option [value]="actionTypes.Clipboard">{{actionTypeLabels(actionTypes.Clipboard)}}</mat-option>
                         <mat-option [value]="actionTypes.BeneficialTimer">{{actionTypeLabels(actionTypes.BeneficialTimer)}}</mat-option>
                         <mat-option [value]="actionTypes.DisplayDeathRecap">{{actionTypeLabels(actionTypes.DisplayDeathRecap)}}</mat-option>
+                        <mat-option [value]="actionTypes.ScreenGlow">{{actionTypeLabels(actionTypes.ScreenGlow)}}</mat-option>
                     </mat-select>
                     <mat-hint>Action Type</mat-hint>
                 </mat-form-field>
@@ -141,6 +144,12 @@
             <div *ngIf="action.actionType === actionTypes.DisplayDeathRecap">
 
                 <app-trigger-action-death-recap [action]="action"></app-trigger-action-death-recap>
+
+            </div>
+
+            <div *ngIf="action.actionType === actionTypes.ScreenGlow">
+
+                <app-trigger-action-screen-glow [action]="action"></app-trigger-action-screen-glow>
 
             </div>
 
