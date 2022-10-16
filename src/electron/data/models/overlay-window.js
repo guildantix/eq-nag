@@ -112,6 +112,10 @@ class OverlayComponent {
     endingSoonSpoken = false;
     /** @type {boolean} */
     endingSoonTextDisplayed = false;
+    /** @type {boolean} */
+    endingSoonSubActionsExecuted = false;
+    /** @type {boolean} */
+    endedSubActionsExecuted = false;
     /** @type {number} */
     voiceIndex = -1;
     /** @type {boolean} */
