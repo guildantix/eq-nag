@@ -500,7 +500,7 @@ class WindowManager {
             y: bounds.y,
         } );
         
-        renderer.loadURL( `file://${__dirname}/threads/renderer.html?originX=${0 - bounds.x}&originY=${0 - bounds.y}` );
+        renderer.loadURL( `file://${__dirname}/threads/renderer.html?originX=${0 - bounds.x}&originY=${0 - bounds.y}&glowOnStart=${this.#userPrefDb.glowOnStartup === true ? 'true' : 'false'}` );
         renderer.setIgnoreMouseEvents( true, { forward: true } );
 
         // https://github.com/electron/electron/issues/10078#issuecomment-331581160

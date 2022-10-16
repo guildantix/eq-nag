@@ -40,6 +40,7 @@ export class SettingsComponent implements OnInit {
     public enableQuickShareImports: boolean = false;
     public deathRecapPreferences: DeathRecapPreferences = new DeathRecapPreferences();
     public minimizeToTrayOnLoad: boolean = false;
+    public glowOnStartup: boolean = true;
 
     public get timerOverlays(): OverlayWindowModel[] {
         return this.overlays?.filter( m => m.overlayType === 'Timer' );
@@ -115,6 +116,7 @@ export class SettingsComponent implements OnInit {
         this.ipcService.getEnableQuickShareImports().subscribe( enabled => this.enableQuickShareImports = enabled );
         this.ipcService.getMinimizeToTrayOnLoad().subscribe( enabled => this.minimizeToTrayOnLoad = enabled );
         this.ipcService.getDeathRecapPreferences().subscribe( recapPrefs => this.deathRecapPreferences = recapPrefs ?? new DeathRecapPreferences() );
+        this.ipcService.getEnableGlowOnStartup().subscribe( f => this.glowOnStartup = f );
 
     }
 
@@ -132,6 +134,22 @@ export class SettingsComponent implements OnInit {
      */
     onQuickShareImportsChange(): void {
         this.ipcService.updateEnableQuickShareImports( this.enableQuickShareImports );
+    }
+
+
+
+
+
+
+
+
+
+    
+    /**
+     * Saves changes to the user preference.
+     */
+    onGlowOnStartupChanged(): void {
+        this.ipcService.updateEnableGlowOnStartup( this.glowOnStartup );
     }
 
 

@@ -233,6 +233,14 @@
             /* animation-timing-function: ; */
         }
 
+        .animate-glow-fadein {
+            animation: animate-fadeinout-in 1s ease-in;
+        }
+
+        .animate-glow-fadeout {
+            animation: animate-fadeinout-out 1s ease-out;
+        }
+
         @keyframes animate-fadeinout-out {
             0% { opacity: 1; }
             100% { opacity: 0; }
@@ -345,7 +353,8 @@
     <script type="text/javascript">
         const urlParams = new URLSearchParams( window.location.search );
         var Renderer = require( './renderer' );
-        Renderer( +urlParams.get( 'originX' ), +urlParams.get( 'originY' ) );
+        console.log("urlParams.get('glowOnStart')", urlParams.get('glowOnStart'));
+        Renderer( +urlParams.get( 'originX' ), +urlParams.get( 'originY' ), urlParams.get('glowOnStart') === 'true' );
 
         const remote = require( "electron" ).remote;
         let win = remote.getCurrentWindow();

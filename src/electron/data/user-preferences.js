@@ -298,6 +298,15 @@ class UserPreferencesStore extends Store {
         this.storeDataFile( this.#data );
     }
 
+    /** @type {boolean} */
+    get glowOnStartup() {
+        return this.#data.glowOnStartup === true;
+    }
+    set glowOnStartup( val ) {
+        this.#data.glowOnStartup = val === true;
+        this.storeDataFile( this.#data );
+    }
+
     /** @type {(fctStyles: FctStylesModel) => void[]} */
     onFctStyleChanges = [];
 
@@ -363,12 +372,21 @@ class UserPreferencesStore extends Store {
             this.#data.version = 3;
             this.storeDataFile( this.#data );
 
-        } else if ( !this.#data.version || this.#data.version < 4 ) {
+        }
+        if ( !this.#data.version || this.#data.version < 4 ) {
             
             // QuickSharing should be enabled by default, so we use database
             // upgrade to set that state.
             this.#data.enableQuickShareImports = true;
             this.#data.version = 4;
+            this.storeDataFile( this.#data );
+
+        }
+        if ( !this.#data.version || this.#data.version < 5 ) {
+            
+            // Enable the glow on startup.
+            this.#data.glowOnStartup = true;
+            this.#data.version = 5;
             this.storeDataFile( this.#data );
 
         }
@@ -455,6 +473,15 @@ class UserPreferencesStore extends Store {
 
         ipcMain.on( 'settings:get:quickShareImports', ( event ) => {
             event.sender.webContents.send( 'settings:get:quickShareImports', this.enableQuickShareImports );
+        } );
+        
+        ipcMain.on( 'settings:set:glowOnStartup', ( event, arg ) => {
+            this.glowOnStartup = arg;
+            sendTick();
+        } );
+
+        ipcMain.on( 'settings:get:glowOnStartup', ( event ) => {
+            event.sender.webContents.send( 'settings:get:glowOnStartup', this.glowOnStartup );
         } );
         
         ipcMain.on( 'settings:set:focus-effects', ( event, arg ) => {

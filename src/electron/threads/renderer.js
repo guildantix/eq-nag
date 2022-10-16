@@ -133,7 +133,7 @@ var screenGlowTimerId = null;
 
 
 
-function Renderer( originX, originY ) {
+function Renderer( originX, originY, glowOnStart ) {
     
     origin.x = originX;
     origin.y = originY;
@@ -150,6 +150,9 @@ function Renderer( originX, originY ) {
         targetGroupTemplate = Handlebars.compile( document.querySelector( '#targetGroupTemplate' ).innerHTML );
         targetGroupTimerTemplate = Handlebars.compile( document.querySelector( '#targetGroupTimerTemplate' ).innerHTML );
 
+        if ( glowOnStart ) {
+            renderGlow( '#4c0e67', 4000, false );
+        }
     } );
 
     ipcRenderer.on( 'renderer:resolution-changed',
@@ -2182,6 +2185,9 @@ const scr = require( 'electron' ).remote.screen;
  */
 function renderGlow( color, duration, flash ) {
     duration = duration > 0 ? duration : 5000;
+    duration = flash ? duration : duration - 1000;
+    duration = duration < 2000 ? 2000 : duration;
+    duration = flash && duration % 2000 > 0 ? duration + ( 2000 - duration % 2000 ) : duration;
 
     if ( !screenGlower ) {
         let bounds = scr.getPrimaryDisplay().bounds;
@@ -2191,6 +2197,8 @@ function renderGlow( color, duration, flash ) {
         content.classList.add( 'screen-glow' );
         if ( flash ) {
             content.classList.add( 'animate-fadeinout-inf' );
+        } else {
+            content.classList.add( 'animate-glow-fadein' );
         }
         // 
         content.style.boxShadow = `inset 0 0 133px ${color}`;
@@ -2199,13 +2207,21 @@ function renderGlow( color, duration, flash ) {
         content.style.top = `${origin.y}px`;
         content.style.width = `${bounds.width}px`;
         content.style.height = `${bounds.height}px`;
-
+        
         document.body.appendChild( content );
         screenGlower = content;
 
         screenGlowTimerId = window.setTimeout( () => {
-            screenGlower = null;
-            document.body.removeChild( content );
+            if ( !flash ) {
+                content.classList.add( 'animate-glow-fadeout' );
+                screenGlowTimerId = window.setTimeout( () => {
+                    screenGlower = null;
+                    document.body.removeChild( content );
+                }, 1000);
+            } else {
+                screenGlower = null;
+                document.body.removeChild( content );
+            }
         }, duration );
     } else {
         window.clearTimeout( screenGlowTimerId );
@@ -2213,8 +2229,16 @@ function renderGlow( color, duration, flash ) {
         screenGlower.style.boxShadow = `inset 0 0 133px ${color}`;
         
         screenGlowTimerId = window.setTimeout( () => {
-            document.body.removeChild( screenGlower );
-            screenGlower = null;
+            if ( !flash ) {
+                screenGlower.classList.add( 'animate-glow-fadeout' );
+                screenGlowTimerId = window.setTimeout( () => {
+                    document.body.removeChild( screenGlower );
+                    screenGlower = null;
+                }, 1000);
+            } else {
+                document.body.removeChild( screenGlower );
+                screenGlower = null;
+            }
         }, duration );
 
     }

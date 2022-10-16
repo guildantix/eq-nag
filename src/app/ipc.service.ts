@@ -1531,6 +1531,26 @@ export class IpcService {
         return obs;
     }
 
+    public updateEnableGlowOnStartup( enabled: boolean ): void {
+        this.ipc.send( 'settings:set:glowOnStartup', enabled );
+    }
+
+    public getEnableGlowOnStartup(): Observable<boolean> {
+        let obs: Observable<boolean> = new Observable<boolean>( ( observer: Observer<boolean> ) => {
+            
+            this.ipc.once( 'settings:get:glowOnStartup', ( e, enabled: boolean ) => {
+                this.ngZone.run( () => {
+                    observer.next( enabled );
+                    observer.complete();
+                } );
+            } );
+            this.ipc.send( 'settings:get:glowOnStartup', null );
+
+        } );
+
+        return obs;
+    }
+
     public updateMinimizeToTrayOnLoad( enabled: boolean ): void {
         this.ipc.send( 'settings:set:minimizeToTrayOnLoad', enabled );
     }
