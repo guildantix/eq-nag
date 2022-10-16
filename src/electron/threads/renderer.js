@@ -150,9 +150,6 @@ function Renderer( originX, originY ) {
         targetGroupTemplate = Handlebars.compile( document.querySelector( '#targetGroupTemplate' ).innerHTML );
         targetGroupTimerTemplate = Handlebars.compile( document.querySelector( '#targetGroupTimerTemplate' ).innerHTML );
 
-        // renderGlow( '#f0c669', 10000, true );
-        // window.setTimeout( () => renderGlow('#f44336', 10000, true), 5000 );
-        // renderGlow( '#c269f0', 2000, true );
     } );
 
     ipcRenderer.on( 'renderer:resolution-changed',
@@ -867,102 +864,112 @@ function renderFct( overlayId, comp ) {
  * @param {OverlayComponent} comp Tells the renderer to forcefully redraw the overlayComponents.
  */
 function render( overlayId, comp ) {
-    if ( overlayInstances[ overlayId ] == null ) {
-        console.error( 'Could not render to overlay', comp, overlayId );
-    }
-    let contentArea = overlayInstances[ overlayId ].dom.querySelector( '.overlay-content-area' );
-    let now = new Date();
 
-    if ( comp?.action?.actionType === ActionTypes.DisplayText ) {
-        comp.removeAt = new Date( now.setSeconds( comp.action.duration ) );
-        let content = displayTextTemplate( { value: StringUtilities.format( comp.action.displayText, comp.matches ) } );
-        let div = document.createElement( 'div' );
-        div.innerHTML = content;
-        div.style.animation = `animate-fadeout ${comp.action.duration * 1.05}s ease`;
-        comp.dom = div;
+    if ( comp?.action?.actionType === ActionTypes.ScreenGlow ) {
+        // Non overlay components
 
-        // Custom display logic.
-        if ( comp.action.textUseCustomFont ) {
-            div.style.fontFamily = `"${comp.action.textFont}"`;
+        if ( comp?.action?.actionType === ActionTypes.ScreenGlow ) {
+            renderGlow( comp.action.textColor, comp.action.duration * 1000, comp.action.flash );
 
-            if ( comp.action.textWeight ) {
-                div.style.fontWeight = comp.action.textWeight > 0 ? comp.action.textWeight : 300;
-            }
         }
+    } else {
 
-        if ( comp.action.textUseCustomSize ) {
-            div.style.fontSize = `${comp.action.textSize}px`;
-
-            if ( comp.action.textSpacing ) {
-                div.style.lineHeight = `${( comp.action.textSpacing > 10 ? comp.action.textSpacing : 90 ) / 100}em`;
-            }
-        }
-        if ( comp.action.textUseCustomColor ) {
-            div.style.color = `${comp.action.textColor}`;
-        }
-        let textShadow = null;
-        if ( comp.action.textUseCustomBorder ) {
-            textShadow = `0px 0px 1px ${comp.action.textBorderColor}, -1px -1px 0 ${comp.action.textBorderColor}, 1px -1px 0 ${comp.action.textBorderColor}, -1px 1px 0 ${comp.action.textBorderColor}, 1px 1px 0 ${comp.action.textBorderColor}`;
-        }
-        if ( comp.action.textUseCustomGlow ) {
-            textShadow = textShadow ? textShadow + ',' : '';
-            textShadow += `0px 0px ${comp.action.textGlowSize}px ${comp.action.textGlowColor}, -1px -1px ${comp.action.textGlowSize}px ${comp.action.textGlowColor}, 1px -1px ${comp.action.textGlowSize}px ${comp.action.textGlowColor}, -1px 1px ${comp.action.textGlowSize}px ${comp.action.textGlowColor}, 1px 1px ${comp.action.textGlowSize}px ${comp.action.textGlowColor}`;
-        }
-        if ( textShadow ) {
-            div.style.textShadow = textShadow;
-        }
-
-        contentArea.appendChild( comp.dom );
-        comp.intervalId = window.setTimeout( () => {
-            comp.dom.parentNode.removeChild( comp.dom );
-            ArrayUtilities.remove( overlayInstances[ overlayId ].overlayComponents, f => f.instanceId == comp.instanceId );
-        }, comp.action.duration * 1000 );
-        overlayInstances[ overlayId ].overlayComponents.push( comp );
-
-    } else if ( comp?.action?.actionType === ActionTypes.Timer
-        || comp?.action?.actionType === ActionTypes.Countdown
-        || comp?.action?.actionType === ActionTypes.DotTimer
-        || comp?.action?.actionType === ActionTypes.BeneficialTimer ) {
-        
-        if ( restartTimerComponent( overlayId, comp ) ) {
+        if ( overlayInstances[ overlayId ] == null ) {
+            console.error( 'Could not render to overlay, overlay not found!', comp, overlayId );
             return;
         }
+
+        let contentArea = overlayInstances[ overlayId ].dom.querySelector( '.overlay-content-area' );
+        let now = new Date();
+
+        if ( comp?.action?.actionType === ActionTypes.DisplayText ) {
+            comp.removeAt = new Date( now.setSeconds( comp.action.duration ) );
+            let content = displayTextTemplate( { value: StringUtilities.format( comp.action.displayText, comp.matches ) } );
+            let div = document.createElement( 'div' );
+            div.innerHTML = content;
+            div.style.animation = `animate-fadeout ${comp.action.duration * 1.05}s ease`;
+            comp.dom = div;
+
+            // Custom display logic.
+            if ( comp.action.textUseCustomFont ) {
+                div.style.fontFamily = `"${comp.action.textFont}"`;
+
+                if ( comp.action.textWeight ) {
+                    div.style.fontWeight = comp.action.textWeight > 0 ? comp.action.textWeight : 300;
+                }
+            }
+
+            if ( comp.action.textUseCustomSize ) {
+                div.style.fontSize = `${comp.action.textSize}px`;
+
+                if ( comp.action.textSpacing ) {
+                    div.style.lineHeight = `${( comp.action.textSpacing > 10 ? comp.action.textSpacing : 90 ) / 100}em`;
+                }
+            }
+            if ( comp.action.textUseCustomColor ) {
+                div.style.color = `${comp.action.textColor}`;
+            }
+            let textShadow = null;
+            if ( comp.action.textUseCustomBorder ) {
+                textShadow = `0px 0px 1px ${comp.action.textBorderColor}, -1px -1px 0 ${comp.action.textBorderColor}, 1px -1px 0 ${comp.action.textBorderColor}, -1px 1px 0 ${comp.action.textBorderColor}, 1px 1px 0 ${comp.action.textBorderColor}`;
+            }
+            if ( comp.action.textUseCustomGlow ) {
+                textShadow = textShadow ? textShadow + ',' : '';
+                textShadow += `0px 0px ${comp.action.textGlowSize}px ${comp.action.textGlowColor}, -1px -1px ${comp.action.textGlowSize}px ${comp.action.textGlowColor}, 1px -1px ${comp.action.textGlowSize}px ${comp.action.textGlowColor}, -1px 1px ${comp.action.textGlowSize}px ${comp.action.textGlowColor}, 1px 1px ${comp.action.textGlowSize}px ${comp.action.textGlowColor}`;
+            }
+            if ( textShadow ) {
+                div.style.textShadow = textShadow;
+            }
+
+            contentArea.appendChild( comp.dom );
+            comp.intervalId = window.setTimeout( () => {
+                comp.dom.parentNode.removeChild( comp.dom );
+                ArrayUtilities.remove( overlayInstances[ overlayId ].overlayComponents, f => f.instanceId == comp.instanceId );
+            }, comp.action.duration * 1000 );
+            overlayInstances[ overlayId ].overlayComponents.push( comp );
+
+        } else if ( comp?.action?.actionType === ActionTypes.Timer
+            || comp?.action?.actionType === ActionTypes.Countdown
+            || comp?.action?.actionType === ActionTypes.DotTimer
+            || comp?.action?.actionType === ActionTypes.BeneficialTimer ) {
         
-        if ( overlayInstances[ overlayId ].groupByTarget ) {
-            
-            /** @type {TimerGroup} */
-            let group;
-            
-            if ( comp.action.actionType === ActionTypes.DotTimer || comp.action.actionType === ActionTypes.BeneficialTimer ) {
-                group = getTimerGroup( overlayId, contentArea, comp.matches.groups.target );
-            
-                createGroupedDotTimer( overlayId, contentArea, group, comp );
-
-            } else {
-                group = getTimerGroup( overlayId, contentArea, 'General' );
-                
-                createGroupedTimer( overlayId, contentArea, group, comp );
-                
+            if ( restartTimerComponent( overlayId, comp ) ) {
+                return;
             }
+        
+            if ( overlayInstances[ overlayId ].groupByTarget ) {
             
-            sortGroupComponents( overlayId, group );
-            group.updateVisibility();
+                /** @type {TimerGroup} */
+                let group;
             
-        } else {
+                if ( comp.action.actionType === ActionTypes.DotTimer || comp.action.actionType === ActionTypes.BeneficialTimer ) {
+                    group = getTimerGroup( overlayId, contentArea, comp.matches.groups.target );
+            
+                    createGroupedDotTimer( overlayId, contentArea, group, comp );
 
-            if ( comp.action.actionType === ActionTypes.DotTimer || comp.action.actionType === ActionTypes.BeneficialTimer ) {
-                createUngroupedDotTimer( overlayId, contentArea, comp );
+                } else {
+                    group = getTimerGroup( overlayId, contentArea, 'General' );
+                
+                    createGroupedTimer( overlayId, contentArea, group, comp );
+                
+                }
+            
+                sortGroupComponents( overlayId, group );
+                group.updateVisibility();
+            
             } else {
-                createUngroupedTimer( overlayId, contentArea, comp );
+
+                if ( comp.action.actionType === ActionTypes.DotTimer || comp.action.actionType === ActionTypes.BeneficialTimer ) {
+                    createUngroupedDotTimer( overlayId, contentArea, comp );
+                } else {
+                    createUngroupedTimer( overlayId, contentArea, comp );
+                }
+            
+                sortOverlayComponents( overlayId );
+            
             }
-            
-            sortOverlayComponents( overlayId );
-            
+
         }
-
-    } else if ( comp?.action?.actionType === ActionTypes.ScreenGlow ) {
-        renderGlow( comp.action.textColor, comp.action.duration, comp.action.flash );
-
     }
 }
 
