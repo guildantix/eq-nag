@@ -1,10 +1,11 @@
 import { Component, ElementRef, Input, OnInit, ViewChild } from '@angular/core';
 import { ContextMenuModel } from 'src/app/context-menu/context-menu.model';
 import { ContextService } from 'src/app/context-menu/context.service';
-import { ActionTypes, FileModel, OverlayWindowModel, TimerRestartBehaviors, TriggerAction } from 'src/app/core.model';
-import { ImageUtility } from 'src/app/utilities';
+import { ActionTypeIcons, ActionTypeLabels, ActionTypes, FileModel, OverlayWindowModel, Phrase, TimerRestartBehaviors, TriggerAction, TriggerSubAction } from 'src/app/core.model';
+import { ImageUtility, StringUtility } from 'src/app/utilities';
 import { IpcService } from 'src/app/ipc.service';
 import { DialogService } from 'src/app/dialogs/dialog.service';
+import * as _ from 'lodash-es';
 
 @Component( {
     selector: 'app-trigger-action-timer',
@@ -17,10 +18,14 @@ export class TriggerActionTimerComponent implements OnInit {
     public audioFiles: FileModel[] = [];
     public actionTypes: typeof ActionTypes = ActionTypes;
     public timerRestartBehaviors: typeof TimerRestartBehaviors = TimerRestartBehaviors;
+    public actionTypeLabels = ActionTypeLabels;
+    public actionTypeIcons = ActionTypeIcons;
 
     @Input( 'action' ) public action: TriggerAction;
+    @Input( 'triggerActions' ) public actionOptions: TriggerAction[] = [];
     @Input( 'overlayOptions' ) public timerOverlays: OverlayWindowModel[] = [];
     @Input( 'alertOverlays' ) public alertOverlays: OverlayWindowModel[] = [];
+    @Input( 'phrases' ) public phrases: Phrase[] = [];
 
     @ViewChild( 'iconFileSelector' ) private iconFileSelector: ElementRef<HTMLInputElement>;
     @ViewChild( 'audioFileSelector' ) private audioFileSelector: ElementRef<HTMLInputElement>;
@@ -33,6 +38,119 @@ export class TriggerActionTimerComponent implements OnInit {
 
     ngOnInit() {
         this.ipcService.getAudioFiles().subscribe( files => this.audioFiles = files );
+    }
+
+    public actionLabel( action: TriggerAction ): string {
+        let actionTypeLabel = ActionTypeLabels( action.actionType );
+        return actionTypeLabel;
+        // let timerTypes = [ ActionTypes.BeneficialTimer, ActionTypes.Countdown, ActionTypes.DotTimer, ActionTypes.Timer ];
+        // let displayTextTypes = [ActionTypes.];
+        // if(action.actionType === )
+        // return `${actionTypeLabel} ${action.displayText}`;
+    }
+
+    public actionDesc( action: TriggerAction ): String {
+        return action.displayText;
+    }
+
+    public addSubAction( property: TriggerSubAction[] ) {
+        property.unshift( new TriggerSubAction() );
+        console.log( 'testing', property );
+    }
+
+    public removeSubAction( property: TriggerSubAction[], index: number ) {
+        property.splice( index, 1 );
+    }
+
+    public assignSubAction( subAction: TriggerSubAction, action: TriggerAction ) {
+        subAction.actionId = action.actionId;
+
+        // {TS} in the phrase is dynamic duration, variableName == duration
+        // search properties: displayText, if phrase captures {TS}, excludeTargets, endEarlyPhrases, resetCounterPhrases.
+
+        // TODO: Executing a counter sub-action should increment the counter.
+
+        // Notes:
+        //  *  Named groups will match against ${name_of_group} and indexed results will 
+        //  *  match against #{index}
+        
+        // https://regex101.com/r/wX7lp1/1
+        // ${ - Named literal
+        // #{ - Indexed literal
+        
+        // +{ - Counter value >>-----> counters are stored globally, so this is not needed.
+
+        // Discover non-matching variables.
+        // We have to scan all properties of the action for variable uses.
+        let subActionVariableNames = TriggerAction.findVariableNames( action );
+        let actionVariableNames = TriggerAction.findVariableNames( this.action );
+
+        let missingVariableNames = subActionVariableNames.filter( f => actionVariableNames.indexOf( f ) === -1 );
+        missingVariableNames.forEach( v => {
+            subAction.variableValues.push( {
+                name: v,
+                value: '',
+            } );
+        } );
+        
+        // let snippetRegex = /[^$]\{(?<variableName>\S+?)\}/gi;
+        // let explicitGroup = /(?:\(\?\<(?<variableName>\S+?)\>.+?\))/gi;
+        // let subActionPhrases = this.phrases.filter( f => action.phrases.indexOf( f.phraseId ) > -1 );
+        // let myPhrases = this.phrases.filter( f => this.action.phrases.indexOf( f.phraseId ) > -1 );
+        // let subActionVariableNames: string[] = [];
+        // let actionVariableNames: string[] = [];
+        
+        // subActionPhrases.forEach( phrase => {
+        //     let s = StringUtility.MatchAll( phrase.phrase, snippetRegex, 'variableName' );
+        //     let e = StringUtility.MatchAll( phrase.phrase, explicitGroup, 'variableName' );
+        //     subActionVariableNames = _.uniq( Array.prototype.concat( subActionVariableNames, s, e ) );
+        // } );
+        // myPhrases.forEach( phrase => {
+        //     let s = StringUtility.MatchAll( phrase.phrase, snippetRegex, 'variableName' );
+        //     let e = StringUtility.MatchAll( phrase.phrase, explicitGroup, 'variableName' );
+        //     actionVariableNames = _.uniq( Array.prototype.concat( actionVariableNames, s, e ) );
+        // } );
+
+        // let missingVariableNames = subActionVariableNames.filter( f => actionVariableNames.indexOf( f ) === -1 );
+
+        // missingVariableNames.forEach( v => {
+        //     subAction.variableValues.push( {
+        //         name: v,
+        //         value: '',
+        //     } );
+        // } );
+        
+        // let subActionVariables = Array.prototype.concat( snippetResults, explicitResults );
+
+        // let snippetResults = StringUtility.MatchAll( subActionPhrases[ 0 ].phrase, snippetRegex, 'variableName' );
+        // let explicitResults = StringUtility.MatchAll( subActionPhrases[ 0 ].phrase, explicitGroup, 'variableName' );
+        
+        
+        // let snippetResults = [ ...(' ' + phrases[ 0 ].phrase).matchAll( snippetRegex ) ];
+        // let explicitResults = [ ...( ' ' + phrases[ 0 ].phrase ).matchAll( explicitGroup ) ];
+        
+        // console.log( 'testing', subActionVariables );
+    }
+
+    public getSubActionAction( actionId: string ): TriggerAction {
+        return this.actionOptions.find( f => f.actionId === actionId );
+    }
+
+    public helpVariableAssignment() {
+        // This sub-action uses variables from capture phrases that are not available in all of the phrases that trigger the calling action.
+
+        // When an action executes another action, you have the triggered action, which is the action executed by a capture phrase, and the executed action, which is executed by the triggered action (for example, when a timer ends it can execute another action).
+        // Variable assignment allows actions to execute other actions even if the triggered action is missing variables used by the executed action.
+        // When this happens, we can assign override values to the unused variables.
+        // For example, if the triggerd action is missing a value for {timerName}, you could assign the value of "Timer" to the executed action's {timerName}.
+        this.dialogService.showInfoDialog(
+            'Variable Assignment', [
+                // 'This sub-action uses variables from capture phrases that are not available in all of the phrases that trigger the calling action.',
+                // 'When this happens, we can assign override values to the unused variables.',
+                'When an action executes another action, you have the triggered action, which is the action executed by a capture phrase, and the executed action, which is executed by the triggered action (for example, when a timer ends it can execute another action).', 
+                'Variable assignment allows actions to execute other actions even if the triggered action is missing variables used by the executed action.', 
+                'For example, if the triggerd action is missing a value for {timerName}, you could assign the value of "Timer" (or "${timerDescription}" if the triggered action has a variabled named "timerDescription") to the executed action\'s {timerName}.',
+            ] );
     }
 
 

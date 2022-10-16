@@ -26,6 +26,8 @@ import { TriggerActionsComponent } from './trigger-actions/trigger-actions.compo
 import { TriggerClassesComponent } from './trigger-classes/trigger-classes.component';
 import { StylePropertiesComponent } from './style-properties/style-properties.component';
 import { TriggerActionDeathRecapComponent } from './trigger-action-death-recap/trigger-action-death-recap.component';
+import { WebComponentsModule } from '../web-components/web-components.module';
+import { CoreModule } from '../core/core.module';
 
 @NgModule({
     imports: [
@@ -33,9 +35,11 @@ import { TriggerActionDeathRecapComponent } from './trigger-action-death-recap/t
         FormsModule,
         ReactiveFormsModule,
         MaterialModule,
+        CoreModule,
         BrowserAnimationsModule,
         FormInputModule,
         ContextMenuModule,
+        WebComponentsModule,
     ],
     exports: [
         ConditionsComponent,

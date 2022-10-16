@@ -113,6 +113,42 @@
 
             </div>
 
+            <div class="card-property" *ngIf="action.ifEndingSoon" style="padding: 0;">
+                <div class="full-width content-top" style="padding: 0;">
+                    <div style="display: flex; flex-direction: row; padding: 0 42px;">
+                        <div class="content-top" style="padding-top: 22px;"><label>Execute actions when ending soon.</label></div>
+                        <div class="content-top content-vertical content-right" style="padding-top: 9px; flex: 1 1 auto;">
+                            <div style="text-align: right;"><button mat-icon-button color="accent" (click)="addSubAction(action.endingSoonSubActions)"><mat-icon>add</mat-icon></button></div>
+                        </div>
+                    </div>
+                    <div style="padding-bottom: 25px;" *ngIf="action.endingSoonSubActions?.length > 0">
+                        <div class="full-width content-top content-left" style="padding-top: 5px;" *ngFor="let subAction of action.endingSoonSubActions; let i = index">
+                            <div class="sub-action-options-container" *ngIf="!subAction.actionId">
+                                <div class="hr"></div>
+                                <app-trigger-action-option *ngFor="let action of actionOptions; let i = index" [action]="action" (click)="assignSubAction(subAction, action)"></app-trigger-action-option>
+                            </div>
+                            <div class="sub-action-container" *ngIf="subAction.actionId">
+                                <ng-container *ngIf="getSubActionAction(subAction.actionId) as subActionAction">
+                                    <div class="sub-action">
+                                        <div class="sub-action-icon"><mat-icon>{{actionTypeIcons(subActionAction.actionType)}}</mat-icon></div>
+                                        <div class="sub-action-desc">
+                                            <h4>{{actionTypeLabels(subActionAction.actionType)}}</h4>
+                                            <p>{{subActionAction.displayText}}</p>
+                                            <button class="color-red" mat-icon-button (click)="removeSubAction(action.endingSoonSubActions, i)" style="float: right; margin-top: -45px;"><mat-icon>clear</mat-icon></button>
+                                        </div>
+                                    </div>
+                                    <div class="sub-action-variables" *ngIf="subAction.variableValues?.length > 0">
+                                        <div class="header-info"><label>Variable Assignment (<app-link-button (click)="helpVariableAssignment()">What is this?</app-link-button>)</label></div>
+                                        <div *ngFor="let nameValue of subAction.variableValues; let vvi = index"><label>{{nameValue.name}}</label><input type="text" [(ngModel)]="nameValue.value" name="variableValue_{{i}}_{{vvi}}" /></div>
+                                    </div>
+                                </ng-container>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
             <!-- Show Timer -->
             <div class="card-property" *ngIf="action.hideTimer && action.ifEndingSoon && action.endingDuration > 0">
 
@@ -234,7 +270,43 @@
 
             <!-- Enable actions -->
             <div class="card-property">
-                <div class="content-middle"><mat-checkbox [(ngModel)]="action.notifyWhenEnded" name="cbxNotifyWhenEnded">Execute actions when timer ends.</mat-checkbox></div>
+                <div class="content-middle"><mat-checkbox [(ngModel)]="action.notifyWhenEnded" name="cbxNotifyWhenEnded">Enable ended notifications.</mat-checkbox></div>
+            </div>
+
+            <div class="card-property" *ngIf="action.notifyWhenEnded" style="padding: 0;">
+                <div class="full-width content-top" style="padding: 0;">
+                    <div style="display: flex; flex-direction: row; padding: 0 42px;">
+                        <div class="content-top" style="padding-top: 22px;"><label>Execute actions when ended.</label></div>
+                        <div class="content-top content-vertical content-right" style="padding-top: 9px; flex: 1 1 auto;">
+                            <div style="text-align: right;"><button mat-icon-button color="accent" (click)="addSubAction(action.endedSubActions)"><mat-icon>add</mat-icon></button></div>
+                        </div>
+                    </div>
+                    <div style="padding-bottom: 25px;" *ngIf="action.endedSubActions?.length > 0">
+                        <div class="full-width content-top content-left" style="padding-top: 5px;" *ngFor="let subAction of action.endedSubActions; let i = index">
+                            <div class="sub-action-options-container" *ngIf="!subAction.actionId">
+                                <div class="hr"></div>
+                                <app-trigger-action-option *ngFor="let action of actionOptions; let i = index" [action]="action" (click)="assignSubAction(subAction, action)"></app-trigger-action-option>
+                            </div>
+                            <div class="sub-action-container" *ngIf="subAction.actionId">
+                                <ng-container *ngIf="getSubActionAction(subAction.actionId) as subActionAction">
+                                    <div class="sub-action">
+                                        <div class="sub-action-icon"><mat-icon>{{actionTypeIcons(subActionAction.actionType)}}</mat-icon></div>
+                                        <div class="sub-action-desc">
+                                            <h4>{{actionTypeLabels(subActionAction.actionType)}}</h4>
+                                            <p>{{subActionAction.displayText}}</p>
+                                            <button class="color-red" mat-icon-button (click)="removeSubAction(action.endedSubActions, i)" style="float: right; margin-top: -45px;"><mat-icon>clear</mat-icon></button>
+                                        </div>
+                                    </div>
+                                    <div class="sub-action-variables" *ngIf="subAction.variableValues?.length > 0">
+                                        <div class="header-info"><label>Variable Assignment (<app-link-button (click)="helpVariableAssignment()">What is this?</app-link-button>)</label></div>
+                                        <div *ngFor="let nameValue of subAction.variableValues; let vvi = index"><label>{{nameValue.name}}</label><input type="text" [(ngModel)]="nameValue.value" name="variableValue_{{i}}_{{vvi}}" /></div>
+                                    </div>
+                                </ng-container>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
             </div>
 
             <!-- Display text -->

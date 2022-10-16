@@ -63,4 +63,13 @@ export class TriggerActionsComponent implements OnInit {
             } );
     }
 
+    /**
+     * Returns a list of trigger actions not matching the given id.
+     * 
+     * @param actionId The action id to exclude.
+     */
+    public getOtherActions( actionId: string ): TriggerAction[] {
+        return this.actions.filter( f => f.actionId !== actionId );
+    }
+
 }

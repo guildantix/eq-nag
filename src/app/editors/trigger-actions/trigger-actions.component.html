@@ -122,19 +122,19 @@
 
             <div *ngIf="action.actionType === actionTypes.Timer">
 
-                <app-trigger-action-timer [action]="action" [overlayOptions]="timerOverlays" [alertOverlays]="alertOverlays"></app-trigger-action-timer>
+                <app-trigger-action-timer [action]="action" [overlayOptions]="timerOverlays" [alertOverlays]="alertOverlays" [triggerActions]="getOtherActions(action.actionId)" [phrases]="capturePhrases"></app-trigger-action-timer>
 
             </div>
 
             <div *ngIf="action.actionType === actionTypes.Countdown">
 
-                <app-trigger-action-timer [action]="action" [overlayOptions]="timerOverlays" [alertOverlays]="alertOverlays"></app-trigger-action-timer>
+                <app-trigger-action-timer [action]="action" [overlayOptions]="timerOverlays" [alertOverlays]="alertOverlays" [triggerActions]="getOtherActions(action.actionId)" [phrases]="capturePhrases"></app-trigger-action-timer>
 
             </div>
 
             <div *ngIf="action.actionType === actionTypes.BeneficialTimer">
 
-                <app-trigger-action-timer [action]="action" [overlayOptions]="timerOverlays" [alertOverlays]="alertOverlays"></app-trigger-action-timer>
+                <app-trigger-action-timer [action]="action" [overlayOptions]="timerOverlays" [alertOverlays]="alertOverlays" [triggerActions]="getOtherActions(action.actionId)" [phrases]="capturePhrases"></app-trigger-action-timer>
 
             </div>
 
