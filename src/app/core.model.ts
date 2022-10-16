@@ -1,5 +1,5 @@
 import { StringProtocolResponse } from 'electron';
-import { Color } from './utilities';
+import { Color, StringUtility } from './utilities';
 import * as _ from 'lodash-es';
 import { nagId } from './core/nag-id.util';
 import { TriggerPackageExportTypes, TriggerPackageProperty } from './core.decorators';
@@ -60,6 +60,22 @@ export function ActionTypeLabels(actionType: ActionTypes): string {
         actionType === ActionTypes.DisplayDeathRecap ? 'Display Death Recap' :
         'Unset Action';
     
+}
+
+export function ActionTypeIcons( actionType: ActionTypes ): string {
+    return actionType === ActionTypes.DisplayText ? 'text_format' :
+        actionType === ActionTypes.PlayAudio ? 'audiotrack' :
+        actionType === ActionTypes.Speak ? 'volume_up' :
+        actionType === ActionTypes.Timer ? 'timer' :
+        actionType === ActionTypes.Countdown ? 'watch' :
+        actionType === ActionTypes.StoreVariable ? 'sd_storage' :
+        actionType === ActionTypes.DotTimer ? 'watch_later' :
+        actionType === ActionTypes.ClearVariable ? 'sd_storage' :
+        actionType === ActionTypes.Counter ? 'exposure_plus_1' :
+        actionType === ActionTypes.Clipboard ? 'content_copy' :
+        actionType === ActionTypes.BeneficialTimer ? 'watch_later' :
+        actionType === ActionTypes.DisplayDeathRecap ? 'sick' :
+        'block';
 }
 
 export enum MediaTypes {
@@ -449,6 +465,18 @@ export class DataTickModel {
     
 }
 
+export class VariableAssignment {
+    public name: string;
+    public value: string;
+}
+
+export class TriggerSubAction {
+    
+    public actionId: string;
+    public variableValues: VariableAssignment[] = [];
+
+}
+
 export class TriggerActionProperties {
     
     @TriggerPackageProperty( {
@@ -481,6 +509,9 @@ export class TriggerActionProperties {
     public onlyUseAaBeneficialFocus: boolean = false;
     public skipBenCastingTimeFocus: boolean = false;
     public variableStorageType: string = 'localVariable';
+
+    public endingSoonSubActions: TriggerSubAction[] = [];
+    public endedSubActions: TriggerSubAction[] = [];
 
     public ifEndingSoon: boolean = false;
     public endingSoonShowTimer: boolean = false;
@@ -588,6 +619,37 @@ export class TriggerAction extends TriggerActionProperties {
     public phrases: string[] = [];
     public name: string;
     public displayText: string;
+
+
+
+
+
+
+
+
+
+    
+    /**
+     * Returns a list of all variable names used in the given action.
+     * 
+     * @param action The action to query.
+     */
+    public static findVariableNames( action: TriggerAction ): string[] {
+        let r = /(?<variableName>[$|#]\{\S+?\})/gi;
+
+        let variableNames = StringUtility.MatchAll( action.displayText, r, 'variableName' );
+        action.excludeTargets.forEach( f => {
+            variableNames = Array.prototype.concat( variableNames, StringUtility.MatchAll( f.phrase, r, 'variableName' ) );
+        } );
+        action.endEarlyPhrases.forEach( f => {
+            variableNames = Array.prototype.concat( variableNames, StringUtility.MatchAll( f.phrase, r, 'variableName' ) );
+        } );
+        action.resetCounterPhrases.forEach( f => {
+            variableNames = Array.prototype.concat( variableNames, StringUtility.MatchAll( f.phrase, r, 'variableName' ) );
+        } );
+
+        return _.uniq( variableNames );
+    }
 }
 
 export class OutsideResource {
