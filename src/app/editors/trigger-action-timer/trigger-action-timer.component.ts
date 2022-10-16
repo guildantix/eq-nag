@@ -43,10 +43,6 @@ export class TriggerActionTimerComponent implements OnInit {
     public actionLabel( action: TriggerAction ): string {
         let actionTypeLabel = ActionTypeLabels( action.actionType );
         return actionTypeLabel;
-        // let timerTypes = [ ActionTypes.BeneficialTimer, ActionTypes.Countdown, ActionTypes.DotTimer, ActionTypes.Timer ];
-        // let displayTextTypes = [ActionTypes.];
-        // if(action.actionType === )
-        // return `${actionTypeLabel} ${action.displayText}`;
     }
 
     public actionDesc( action: TriggerAction ): String {
@@ -93,43 +89,6 @@ export class TriggerActionTimerComponent implements OnInit {
             } );
         } );
         
-        // let snippetRegex = /[^$]\{(?<variableName>\S+?)\}/gi;
-        // let explicitGroup = /(?:\(\?\<(?<variableName>\S+?)\>.+?\))/gi;
-        // let subActionPhrases = this.phrases.filter( f => action.phrases.indexOf( f.phraseId ) > -1 );
-        // let myPhrases = this.phrases.filter( f => this.action.phrases.indexOf( f.phraseId ) > -1 );
-        // let subActionVariableNames: string[] = [];
-        // let actionVariableNames: string[] = [];
-        
-        // subActionPhrases.forEach( phrase => {
-        //     let s = StringUtility.MatchAll( phrase.phrase, snippetRegex, 'variableName' );
-        //     let e = StringUtility.MatchAll( phrase.phrase, explicitGroup, 'variableName' );
-        //     subActionVariableNames = _.uniq( Array.prototype.concat( subActionVariableNames, s, e ) );
-        // } );
-        // myPhrases.forEach( phrase => {
-        //     let s = StringUtility.MatchAll( phrase.phrase, snippetRegex, 'variableName' );
-        //     let e = StringUtility.MatchAll( phrase.phrase, explicitGroup, 'variableName' );
-        //     actionVariableNames = _.uniq( Array.prototype.concat( actionVariableNames, s, e ) );
-        // } );
-
-        // let missingVariableNames = subActionVariableNames.filter( f => actionVariableNames.indexOf( f ) === -1 );
-
-        // missingVariableNames.forEach( v => {
-        //     subAction.variableValues.push( {
-        //         name: v,
-        //         value: '',
-        //     } );
-        // } );
-        
-        // let subActionVariables = Array.prototype.concat( snippetResults, explicitResults );
-
-        // let snippetResults = StringUtility.MatchAll( subActionPhrases[ 0 ].phrase, snippetRegex, 'variableName' );
-        // let explicitResults = StringUtility.MatchAll( subActionPhrases[ 0 ].phrase, explicitGroup, 'variableName' );
-        
-        
-        // let snippetResults = [ ...(' ' + phrases[ 0 ].phrase).matchAll( snippetRegex ) ];
-        // let explicitResults = [ ...( ' ' + phrases[ 0 ].phrase ).matchAll( explicitGroup ) ];
-        
-        // console.log( 'testing', subActionVariables );
     }
 
     public getSubActionAction( actionId: string ): TriggerAction {

@@ -31,9 +31,6 @@ export class StringUtility {
         limit = limit > 0 ? limit : 50;
         let output: string[] = [];
         // x = /(?:\(\?\<(?<variableName>\S+?)\>.+?\))/gi;
-        // console.log(x.exec(' ^${Character} starts a {TS} timer for (?<timerName>.*) (?<timerName2>.*)\.$')?.groups?.variableName);
-        // console.log(x.exec(' ^${Character} starts a {TS} timer for (?<timerName>.*) (?<timerName2>.*)\.$')?.groups?.variableName);
-        // console.log(x.exec(' ^${Character} starts a {TS} timer for (?<timerName>.*) (?<timerName2>.*)\.$')?.groups?.variableName);
 
         regex.lastIndex = 0;
         let currentValue = regex.exec( value )?.groups[ groupName ];

@@ -1,6 +1,5 @@
 import { HttpClient } from '@angular/common/http';
-import { Component, OnDestroy, OnInit } from '@angular/core';
-import { IpcService } from 'src/app/ipc.service';
+import { Component, OnInit } from '@angular/core';
 
 // 'https://api.github.com/repos/guildantix/eq-nag/releases/79376270';
 const releaseUrl: string = 'https://api.github.com/repositories/276931539/releases/latest'; 
@@ -22,7 +21,7 @@ declare let browserWindow: {
     templateUrl: 'update-notes-window.component.html',
     styleUrls: [ './update-notes-window.component.scss', '../../core.scss', '../../modal.scss' ]
 } )
-export class UpdateNotesWindowComponent implements OnInit, OnDestroy {
+export class UpdateNotesWindowComponent implements OnInit {
 
     public updateNotes: string;
     public updateLink: string;
@@ -31,12 +30,7 @@ export class UpdateNotesWindowComponent implements OnInit, OnDestroy {
 
     constructor(
         private httpClient: HttpClient,
-        // private ipcService: IpcService, // Disabled in this view because nodeIntegration is turned off because this view loads outside data.
     ) { }
-
-    ngOnDestroy(): void {
-        // console.log( 'closing' );
-    }
 
     ngOnInit() {
         this.httpClient.get<IReleaseInfo>( releaseUrl ).subscribe( data => {
@@ -48,8 +42,6 @@ export class UpdateNotesWindowComponent implements OnInit, OnDestroy {
     }
 
     public close() {
-        // this.ipcService.setLastUpdatedNotesViewed( this.versionNumber );
-        // this.ipcService.closeThisChild();
         browserWindow.setVersionNumberViewed( this.versionNumber );
         browserWindow.close();
     }
