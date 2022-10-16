@@ -18,6 +18,35 @@ export class StringUtility {
         return string.substr( 0, position ) + value + string.substr( position );
     }
 
+    /**
+     * Returns an array of all named group matches in the given string against the given regexp.
+     * 
+     * @param value The string value to execute regex against.
+     * @param regex The regex to execute.
+     * @param groupName The capture group name to catch.
+     * @param limit The maximum number of times to search string.
+     * @returns 
+     */
+    public static MatchAll( value: string, regex: RegExp, groupName: string, limit: number = 50 ): string[] {
+        limit = limit > 0 ? limit : 50;
+        let output: string[] = [];
+        // x = /(?:\(\?\<(?<variableName>\S+?)\>.+?\))/gi;
+        // console.log(x.exec(' ^${Character} starts a {TS} timer for (?<timerName>.*) (?<timerName2>.*)\.$')?.groups?.variableName);
+        // console.log(x.exec(' ^${Character} starts a {TS} timer for (?<timerName>.*) (?<timerName2>.*)\.$')?.groups?.variableName);
+        // console.log(x.exec(' ^${Character} starts a {TS} timer for (?<timerName>.*) (?<timerName2>.*)\.$')?.groups?.variableName);
+
+        regex.lastIndex = 0;
+        let currentValue = regex.exec( value )?.groups[ groupName ];
+        let crazy = 0;
+        while ( currentValue && crazy < limit ) {
+            crazy++;
+            output.push( currentValue );
+            currentValue = regex.exec( value )?.groups[ groupName ];
+        }
+        
+        return output;
+    }
+
 
 
 
