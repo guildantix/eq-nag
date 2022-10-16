@@ -4,7 +4,7 @@ const path = require( 'path' );
 const process = require( 'process' );
 const fs = require( 'fs' );
 const DkpEntryModel = require( '../data/models/dkp-entry' );
-const { TriggerAction, ActionTypes, TriggerConditionTypes, OperatorTypes, CharacterClassLevel } = require( '../data/models/trigger' );
+const { TriggerAction, ActionTypes, TriggerConditionTypes, OperatorTypes, CharacterClassLevel, TriggerSubAction } = require( '../data/models/trigger' );
 const { PhraseParse, LogTrigger } = require( './log.model' );
 const { OverlayComponent, OverlayWindow } = require( '../data/models/overlay-window' );
 const CharacterModel = require( '../data/models/character' );
@@ -67,6 +67,9 @@ var persistentDictionary = {};
 var detrimentalOverlayId = null;
 /** @type {string} */
 var characterId = null;
+
+/** @type {Record<string, {trigger: LogTrigger, res: PhraseParse}>} */
+let actionInstances = {};
 
 // Common errors: 
 //  ${C} instead of {C}
@@ -317,6 +320,8 @@ function LogWatcher(character, logPosition) {
             // Remove the cancelled items.
             _.remove( cancellableComponents, token => token.instanceId === instanceId );
         }
+        
+        actionInstances[ instanceId ] = null;
 
     } );
 
@@ -346,6 +351,62 @@ function LogWatcher(character, logPosition) {
         persistentDictionary = v;
         console.log( 'new dictionary', v );
     } );
+
+    ipcRenderer.on( 'log:action:execute-sub-action',
+        /**
+         * 
+         * @param {any} e Event args.
+         * @param {{subAction: TriggerSubAction, instanceId: string}} v The values.
+         */
+        ( e, v ) => {
+            let instanceData = actionInstances[ v.instanceId ];
+            if ( instanceData ) {
+                let action = instanceData.trigger.actions.find( f => f.actionId === v.subAction.actionId );
+                let deltaTime = 0;
+
+                if ( v.subAction ) {
+                    
+                    instanceData.res.result.groups = instanceData.res.result.groups ? instanceData.res.result.groups : {};
+                    let expectedDuration = 0;
+            
+                    if ( instanceData.res.result?.groups?.timerDuration ) {
+                        expectedDuration = StringUtilities.getDurationFromLabel( instanceData.res.result?.groups?.timerDuration );
+        
+                    } else {
+                
+                        if ( action.storageDuration ) {
+                            let dur = +action.duration;
+                            dur = +getPersistentDictionaryValue( action.storageDuration, instanceData.res, timestamp, action, deltaTime, trigger );
+                            expectedDuration = dur > 0 ? dur / 1000 : +action.duration;
+                        } else {
+                            expectedDuration = +action.duration;
+                        }
+                    }
+
+                    v.subAction.variableValues?.forEach( f => {
+                        
+                        let value = f.value;
+                        let name = /\{(?<name>.+?)\}/gi.exec( f.name )?.groups?.name;
+                        
+                        if ( name ) {
+                            value = StringUtilities.parseShortCodeValuesToLiteral( value, characterName, expectedDuration, instanceData.res.result?.groups, instanceData.res.result ? instanceData.res.result[ 0 ] : null );
+                            value = StringUtilities.parseStoredVariablesToLiteral( value, storedVariables );
+                            value = StringUtilities.parseConditionResultsToLiteral( value, instanceData.trigger._conditionResults );
+                            value = StringUtilities.parseMatchesToLiteral( value, instanceData.res.result, deltaTime );
+                            value = StringUtilities.parseCountersToLiteral( value, counters );
+
+                            instanceData.res.result.groups[ name ] = value;
+                        }
+            
+                    } );
+
+                }
+
+                enableLogging && sendInformationToLog( `Execute trigger sub-action [${v.instanceId}] : ${ActionTypes[ action.actionType ]}`, 24 );
+
+                executeTriggerAction( instanceData.trigger, action, new Date(), instanceData.res, deltaTime );
+            }
+        } );
 
     ipcRenderer.send( 'settings:get:persistent-storage', null );
 
@@ -994,103 +1055,14 @@ function parseLogEntries( raw, simulating, padTime ) {
         if ( !!trigger.enabled ) {
             trigger._parse( log, (res, deltaTime) => {
                 trigger.actions.forEach( action => {
-                    if ( ( isDev || !action.onlyExecuteInDev ) && ( action.phrases == null || action.phrases?.length === 0 || action.phrases?.indexOf( res.phraseId ) > -1 ) ) {
+                    // This used to execute actions if there are no phrases on the action, but now it doesn't because the action may exist only as a subaction
+                    // ( action.phrases == null || action.phrases?.length === 0 || action.phrases?.indexOf( res.phraseId ) > -1 )
+                    if ( ( isDev || !action.onlyExecuteInDev ) && action.phrases?.indexOf( res.phraseId ) > -1 ) {
+
                         enableLogging && sendInformationToLog( `Execute trigger action [${trigger.name}] : ${ActionTypes[ action.actionType ]}`, 24 );
                         enableLogging && sendInformationToLog( `    ||${raw}||`, 24 );
-                        if ( action.actionType === ActionTypes.DisplayText ) {
-                            /* --== Display Text ==-- */
-                        
-                            displayTextComponent( res, timestamp, action, deltaTime );
-                        
-                        } else if ( action.actionType === ActionTypes.PlayAudio ) {
-                            /* --== Play Audio ==-- */
-                        
-                            playAudioFile( action.audioFileId );
 
-                        } else if ( action.actionType === ActionTypes.Clipboard ) {
-                            /* --== Copy text to clipboard ==-- */
-                            
-                            sendToClipboard( res, action, trigger._conditionResults, deltaTime );
-                        
-                        } else if ( action.actionType === ActionTypes.StoreVariable ) {
-                            /* --== Store Variable ==-- */
-                        
-                            if ( action.variableStorageType === 'persistentDictionary' ) {
-                                savePersistentDictionary( action.variableName, res, timestamp, action, deltaTime, trigger );
-                            } else {
-                                if ( res.result.length === 1 ) {
-                                    saveVariable( action.variableName, res.result[ 0 ], action.onlyStoreUsedValues );
-                                } else {
-                                    saveVariable( action.variableName, res.result[ 1 ], action.onlyStoreUsedValues );
-                                }
-                            }
-
-                        } else if ( action.actionType === ActionTypes.ClearVariable ) {
-                            /* --== Clear Variable ==-- */
-
-                            if ( res.result.groups && res.result.groups[ action.variableName ] ) {
-                                clearStoredVariable( action.variableName, res.result.groups[ action.variableName ] );
-                            } else if ( trigger._conditionResults && trigger._conditionResults[ action.variableName ] ) {
-                                clearStoredVariable( action.variableName, trigger._conditionResults[ action.variableName ] );
-                            } else {
-                                clearAllStoredValuesInVariable( action.variableName );
-                            }
-
-                        } else if ( action.actionType === ActionTypes.Counter ) {
-                            /* --== Clear Variable ==-- */
-
-                            incrementCounter( action.displayText );
-    
-                        } else if ( action.actionType === ActionTypes.Timer || action.actionType === ActionTypes.Countdown ) {
-                            /* --== Start a Timer/Countdown ==-- */
-                        
-                            displayTimerCountdownComponent( res, timestamp, action, deltaTime, trigger );
-
-                        } else if ( action.actionType === ActionTypes.DotTimer ) {
-                            /* --== DOT Timers ==-- */
-                        
-                            displayDotTimerComponent( res, timestamp, action, deltaTime, trigger );
-
-                        } else if ( action.actionType === ActionTypes.BeneficialTimer ) {
-                            /* --== Buff Timers ==-- */
-                        
-                            let spellName = trigger?._conditionResults?.SpellBeingCast ?? action.displayText;
-                            let rgx = new RegExp( `^You begin casting ${spellName}\\.$`, 'gmi' );
-                            let time = timestamp.getTime();
-                            let _t = timestamp.getTime();
-                            if ( action.castTime >= 3000 && charModel.hasBeneficialCastingSpeedFocus && !action.skipBenCastingTimeFocus ) {
-                                let tMod = calculateCastingMilliseconds( action.castTime, trigger.classLevels, charModel.beneficialCastingSpeedFocusPercent, charModel.beneficialCastingSpeedFocusDecayLevel );
-                                time -= tMod;
-                            } else {
-                                time -= action.castTime;
-                            }
-
-                            // This checks the cast time to limit the chances that we're not capturing another player's buff.
-                            let m = checkParseHistory( rgx, { time: [ time, time + 1000 ] } );
-                            // If the cast time is zero, there's no need for this check.
-                            if ( m?.length > 0 || action.castTime === 0 ) {
-                                action.displayText = spellName;
-                                displayBeneficialTimerComponent( res, timestamp, action, trigger, spellName );
-                            }
-
-                        } else if ( action.actionType === ActionTypes.Speak ) {
-                            /* --== TTS Speak ==-- */
-                            let duration = null;
-
-                            if ( res.result?.groups?.timerDuration ) {
-                                duration = StringUtilities.getDurationFromLabel( res.result?.groups?.timerDuration );
-                            } else if ( action.duration ) {
-                                duration = +action.duration;
-                            }
-
-                            speakPhrase( action.displayText, action.interruptSpeech, trigger._conditionResults, simulating, res.result, duration, deltaTime );
-                        
-                        } else if ( action.actionType === ActionTypes.DisplayDeathRecap ) {
-                            console.log( 'death recap called for' );
-                            loadLastDeathRecap();
-                            
-                        }
-
+                        executeTriggerAction(trigger, action, timestamp, res, deltaTime);
                     }
                 } );
                 entryMatched = true;
@@ -1123,6 +1095,145 @@ function parseLogEntries( raw, simulating, padTime ) {
 
 
 /**
+ * 
+ * @param {LogTrigger} trigger 
+ * @param {TriggerAction} action 
+ * @param {Date} timestamp 
+ * @param {PhraseParse} res 
+ * @param {number} deltaTime 
+ */
+function executeTriggerAction( trigger, action, timestamp, res, deltaTime ) {
+
+    if ( action.actionType === ActionTypes.DisplayText ) {
+        /* --== Display Text ==-- */
+    
+        displayTextComponent( res, timestamp, action, deltaTime );
+    
+    } else if ( action.actionType === ActionTypes.PlayAudio ) {
+        /* --== Play Audio ==-- */
+    
+        playAudioFile( action.audioFileId );
+
+    } else if ( action.actionType === ActionTypes.Clipboard ) {
+        /* --== Copy text to clipboard ==-- */
+        
+        sendToClipboard( res, action, trigger._conditionResults, deltaTime );
+    
+    } else if ( action.actionType === ActionTypes.StoreVariable ) {
+        /* --== Store Variable ==-- */
+    
+        if ( action.variableStorageType === 'persistentDictionary' ) {
+            savePersistentDictionary( action.variableName, res, timestamp, action, deltaTime, trigger );
+        } else {
+            if ( res.result.length === 1 ) {
+                saveVariable( action.variableName, res.result[ 0 ], action.onlyStoreUsedValues );
+            } else {
+                saveVariable( action.variableName, res.result[ 1 ], action.onlyStoreUsedValues );
+            }
+        }
+
+    } else if ( action.actionType === ActionTypes.ClearVariable ) {
+        /* --== Clear Variable ==-- */
+
+        if ( res.result.groups && res.result.groups[ action.variableName ] ) {
+            clearStoredVariable( action.variableName, res.result.groups[ action.variableName ] );
+        } else if ( trigger._conditionResults && trigger._conditionResults[ action.variableName ] ) {
+            clearStoredVariable( action.variableName, trigger._conditionResults[ action.variableName ] );
+        } else {
+            clearAllStoredValuesInVariable( action.variableName );
+        }
+
+    } else if ( action.actionType === ActionTypes.Counter ) {
+        /* --== Clear Variable ==-- */
+
+        incrementCounter( action.displayText );
+
+    } else if ( action.actionType === ActionTypes.Timer || action.actionType === ActionTypes.Countdown ) {
+        /* --== Start a Timer/Countdown ==-- */
+    
+        let instanceId = displayTimerCountdownComponent( res, timestamp, action, deltaTime, trigger );
+
+        let subRes = _.cloneDeep( res );
+        subRes.result.groups = _.cloneDeep( res.result.groups );
+
+        actionInstances[ instanceId ] = {
+            trigger: trigger,
+            res: subRes,
+        };
+
+    } else if ( action.actionType === ActionTypes.DotTimer ) {
+        /* --== DOT Timers ==-- */
+    
+        let instanceId = displayDotTimerComponent( res, timestamp, action, deltaTime, trigger );
+
+        let subRes = _.cloneDeep( res );
+        subRes.result.groups = _.cloneDeep( res.result.groups );
+
+        actionInstances[ instanceId ] = {
+            trigger: trigger,
+            res: subRes,
+        };
+
+    } else if ( action.actionType === ActionTypes.BeneficialTimer ) {
+        /* --== Buff Timers ==-- */
+    
+        let spellName = trigger?._conditionResults?.SpellBeingCast ?? action.displayText;
+        let rgx = new RegExp( `^You begin casting ${spellName}\\.$`, 'gmi' );
+        let time = timestamp.getTime();
+        let _t = timestamp.getTime();
+        if ( action.castTime >= 3000 && charModel.hasBeneficialCastingSpeedFocus && !action.skipBenCastingTimeFocus ) {
+            let tMod = calculateCastingMilliseconds( action.castTime, trigger.classLevels, charModel.beneficialCastingSpeedFocusPercent, charModel.beneficialCastingSpeedFocusDecayLevel );
+            time -= tMod;
+        } else {
+            time -= action.castTime;
+        }
+
+        // This checks the cast time to limit the chances that we're not capturing another player's buff.
+        let m = checkParseHistory( rgx, { time: [ time, time + 1000 ] } );
+        // If the cast time is zero, there's no need for this check.
+        if ( m?.length > 0 || action.castTime === 0 ) {
+            action.displayText = spellName;
+            let instanceId = displayBeneficialTimerComponent( res, timestamp, action, trigger, spellName );
+
+            let subRes = _.cloneDeep( res );
+            subRes.result.groups = _.cloneDeep( res.result.groups );
+    
+            actionInstances[ instanceId ] = {
+                trigger: trigger,
+                res: subRes,
+            };
+        }
+
+    } else if ( action.actionType === ActionTypes.Speak ) {
+        /* --== TTS Speak ==-- */
+        let duration = null;
+
+        if ( res.result?.groups?.timerDuration ) {
+            duration = StringUtilities.getDurationFromLabel( res.result?.groups?.timerDuration );
+        } else if ( action.duration ) {
+            duration = +action.duration;
+        }
+
+        speakPhrase( action.displayText, action.interruptSpeech, trigger._conditionResults, simulating, res.result, duration, deltaTime );
+    
+    } else if ( action.actionType === ActionTypes.DisplayDeathRecap ) {
+        /* --== Death Recap ==-- */
+        
+        loadLastDeathRecap();
+        
+    }
+}
+
+
+
+
+
+
+
+
+
+
+/**
  * Builds and sends a dot timer overlay component.
  * 
  * @param {PhraseParse} res The information from the parsed phrase.
@@ -1130,6 +1241,8 @@ function parseLogEntries( raw, simulating, padTime ) {
  * @param {TriggerAction} action The trigger's display text action.
  * @param {LogTrigger} trigger If true the component is written to the console instead of sent to the overlay window.
  * @param {string} spellName The literal name of the spell that was cast.  This will usually include what rank the spell was.
+ * 
+ * @return {string} Returns the instance id of the renderer component
  */
 function displayBeneficialTimerComponent( res, timestamp, action, trigger, spellName ) {
     
@@ -1202,6 +1315,8 @@ function displayBeneficialTimerComponent( res, timestamp, action, trigger, spell
         } );
     }
 
+    return comp.instanceId;
+
 }
 
 
@@ -1221,6 +1336,8 @@ function displayBeneficialTimerComponent( res, timestamp, action, trigger, spell
  * @param {TriggerAction} action The trigger's display text action.
  * @param {number} deltaTime The change in time, in milliseconds, since the previous sequential capture.
  * @param {LogTrigger} trigger If true the component is written to the console instead of sent to the overlay window.
+ * 
+ * @return {string} Returns the instance id of the renderer component
  */
 function displayDotTimerComponent( res, timestamp, action, deltaTime, trigger ) {
                         
@@ -1346,6 +1463,7 @@ function displayDotTimerComponent( res, timestamp, action, deltaTime, trigger ) 
         } );
     }
 
+    return comp.instanceId;
 }
 
 
@@ -1365,6 +1483,8 @@ function displayDotTimerComponent( res, timestamp, action, deltaTime, trigger ) 
  * @param {TriggerAction} action The trigger's display text action.
  * @param {number} deltaTime The change in time, in milliseconds, since the previous sequential capture.
  * @param {LogTrigger} trigger If true the component is written to the console instead of sent to the overlay window.
+ * 
+ * @return {string} Returns the instance id of the renderer component
  */
 function displayTimerCountdownComponent(res, timestamp, action, deltaTime, trigger) {
       
@@ -1450,7 +1570,6 @@ function displayTimerCountdownComponent(res, timestamp, action, deltaTime, trigg
     // reset the trigger.
     trigger._reset();
 
-    console.log( 'sending comp', comp );
     ipcRenderer.send( 'overlay:send:component', comp );
 
     if ( comp.action.endEarlyPhrases?.length > 0 ) {
@@ -1473,6 +1592,8 @@ function displayTimerCountdownComponent(res, timestamp, action, deltaTime, trigg
             instanceId: comp.instanceId
         } );
     }
+
+    return comp.instanceId;
     
 }
 
@@ -1523,6 +1644,8 @@ function sendToClipboard( res, action, conditionResults, deltaTime ) {
  * @param {Date} timestamp The timestamp of the log entry.
  * @param {number} deltaTime The change in time, in milliseconds, since the previous sequential capture.
  * @param {boolean} simulating If true the component is written to the console instead of sent to the overlay window.
+ * 
+ * @return {string} Returns the instance id of the renderer component
  */
 function displayTextComponent( res, timestamp, action, deltaTime, simulating ) {
     
@@ -1545,6 +1668,7 @@ function displayTextComponent( res, timestamp, action, deltaTime, simulating ) {
     else
         console.log( 'overlay:send:component', comp );
     
+    return comp.instanceId;
 }
 
 
@@ -1561,6 +1685,8 @@ function displayTextComponent( res, timestamp, action, deltaTime, simulating ) {
  * 
  * @param {any} info The information to send to the log.
  * @param {number} duration The duration to leave in the log overlay.
+ * 
+ * @return {string} Returns the instance id of the renderer component
  */
 function sendInformationToLog( info, duration ) {
     
@@ -1588,6 +1714,8 @@ function sendInformationToLog( info, duration ) {
         comp.timestamp = new Date();
 
         ipcRenderer.send( 'overlay:send:component', comp );
+
+        return comp.instanceId;
     }
 }
 
@@ -2101,7 +2229,6 @@ function checkParseHistory( phrase, options ) {
 function backfind( log, callback ) {
 
     let _triggers = _.filter( triggers, t => _.some( t.actions, a => a.loopBackForValue === true ) );
-    console.log( 'backfind triggers', _triggers );
 
     /**
      * Returns false if there is a trigger requiring loopback and still missing a value.
