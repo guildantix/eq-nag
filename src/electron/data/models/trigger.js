@@ -137,6 +137,24 @@ class Tag {
 
 }
 
+class VariableAssignment {
+
+    /** @type {string} */
+    name;
+    /** @type {string} */
+    value;
+
+}
+
+class TriggerSubAction {
+    
+    /** @type {string} */
+    actionId;
+    /** @type {VariableAssignment[]} */
+    variableValues = [];
+
+}
+
 class TriggerAction {
 
     actionId = null;
@@ -193,6 +211,11 @@ class TriggerAction {
     skipBenCastingTimeFocus = false;
     /** @type {string} */
     variableStorageType = 'localVariable';
+
+    /** @type {TriggerSubAction[]} */
+    endingSoonSubActions = [];
+    /** @type {TriggerSubAction[]} */
+    endedSubActions = [];
 
     /** @type boolean */
     ifEndingSoon = false;
@@ -604,4 +627,6 @@ module.exports = {
     QuickShareVersion,
     QuickShareModel,
     QuickShareMetaModel,
+    TriggerSubAction,
+    VariableAssignment,
 };
