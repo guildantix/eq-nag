@@ -119,6 +119,10 @@ const delayVariance = 0.50;
 let delayAdd = 0;
 const criticalPadding = 0;
 var mouseForwardingPaused = false;
+/** @type {HTMLDivElement} */
+var screenGlower = null;
+/** @type {number} */
+var screenGlowTimerId = null;
 
 
 
@@ -145,6 +149,10 @@ function Renderer( originX, originY ) {
         fctCriticalTemplate = Handlebars.compile( document.querySelector( '#fctCriticalTemplate' ).innerHTML );
         targetGroupTemplate = Handlebars.compile( document.querySelector( '#targetGroupTemplate' ).innerHTML );
         targetGroupTimerTemplate = Handlebars.compile( document.querySelector( '#targetGroupTimerTemplate' ).innerHTML );
+
+        // renderGlow( '#f0c669', 10000, true );
+        // window.setTimeout( () => renderGlow('#f44336', 10000, true), 5000 );
+        // renderGlow( '#c269f0', 2000, true );
     } );
 
     ipcRenderer.on( 'renderer:resolution-changed',
@@ -951,6 +959,10 @@ function render( overlayId, comp ) {
             sortOverlayComponents( overlayId );
             
         }
+
+    } else if ( comp?.action?.actionType === ActionTypes.ScreenGlow ) {
+        renderGlow( comp.action.textColor, comp.action.duration, comp.action.flash );
+
     }
 }
 
@@ -2150,6 +2162,55 @@ function playAudioFile( fileId ) {
         }
     } );
     ipcRenderer.send( 'audio-file:get:url', fileId );
+}
+
+const scr = require( 'electron' ).remote.screen;
+
+/**
+ * Shows a full screen glow on the primary monitor.
+ * 
+ * @param {string} color The color hex code.
+ * @param {number} duration The duration, in milliseconds.
+ * @param {boolean} flash If true, the glow will flash.
+ */
+function renderGlow( color, duration, flash ) {
+    duration = duration > 0 ? duration : 5000;
+
+    if ( !screenGlower ) {
+        let bounds = scr.getPrimaryDisplay().bounds;
+        let content = document.createElement( 'div' );
+
+        // box-shadow: inset 0 0 30px #00f;
+        content.classList.add( 'screen-glow' );
+        if ( flash ) {
+            content.classList.add( 'animate-fadeinout-inf' );
+        }
+        // 
+        content.style.boxShadow = `inset 0 0 133px ${color}`;
+        content.style.position = 'absolute';
+        content.style.left = `${origin.x}px`;
+        content.style.top = `${origin.y}px`;
+        content.style.width = `${bounds.width}px`;
+        content.style.height = `${bounds.height}px`;
+
+        document.body.appendChild( content );
+        screenGlower = content;
+
+        screenGlowTimerId = window.setTimeout( () => {
+            screenGlower = null;
+            document.body.removeChild( content );
+        }, duration );
+    } else {
+        window.clearTimeout( screenGlowTimerId );
+        
+        screenGlower.style.boxShadow = `inset 0 0 133px ${color}`;
+        
+        screenGlowTimerId = window.setTimeout( () => {
+            document.body.removeChild( screenGlower );
+            screenGlower = null;
+        }, duration );
+
+    }
 }
 
 
