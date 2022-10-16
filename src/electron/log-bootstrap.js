@@ -115,6 +115,14 @@ class LogBootstrapper {
                 }
             }
         } );
+
+        ipcMain.on( 'log:action:execute-sub-action', function ( event, data ) {
+            for ( let key in logWatchers ) {
+                if ( logWatchers.hasOwnProperty( key ) && logWatchers[ key ].window != null ) {
+                    logWatchers[ key ].window.webContents.send( 'log:action:execute-sub-action', data );
+                }
+            }
+        } );
         
         let characters = characterDatabase.getAll();
         characters.forEach( chr => {

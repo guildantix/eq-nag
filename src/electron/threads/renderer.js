@@ -1716,44 +1716,63 @@ function applyTimerSettings( overlayId, contentArea, comp, group ) {
                 sendDisplayTextToOverlay( comp.action.endingSoonTextOverlayId, comp.action.endingSoonText, comp.action.endingSoonTextDuration );
             }
 
-        }
-        
-        if ( comp.timeRemaining <= 0 && !comp.action.repeatTimer && ( comp.action.remainAfterEnded || comp.action.notifyWhenEnded ) ) {
-            // If the timer has ended, but is required to remain for a 
-            // duration, apply the ended conditions to the timer.
-
-            if ( comp.action.endedChangeColor ) {
-                comp.dom.querySelector( 'div.determinate' ).style.backgroundColor = comp.action.endedColor;
-                comp.dom.querySelector( 'div.progress' ).style.backgroundColor = comp.action.endedBackgroundColor;
+            // Execute ending soon sub actions.
+            if ( !comp.endingSoonSubActionsExecuted && comp.action.endingSoonSubActions?.length > 0 ) {
+                comp.action.endingSoonSubActions.forEach( f => {
+                    ipcRenderer.send( 'log:action:execute-sub-action', { subAction: f, instanceId: comp.instanceId } );
+                } );
+                comp.endingSoonSubActionsExecuted = true;
             }
 
-            if ( comp.hidden && comp.action.remainAfterEnded ) {
-                comp.hidden = false;
-                comp.dom.style.display = null;
-                if ( overlayInstances[ overlayId ].groupByTarget && group ) {
-                    group.updateVisibility();
+        }
+        
+        if ( comp.timeRemaining <= 0 ) {
+            // If the timer has ended, but is required to remain for a
+            // duration, apply the ended conditions to the timer.
+
+            if ( !comp.action.repeatTimer && ( comp.action.remainAfterEnded || comp.action.notifyWhenEnded ) ) {
+                if ( comp.action.endedChangeColor ) {
+                    comp.dom.querySelector( 'div.determinate' ).style.backgroundColor = comp.action.endedColor;
+                    comp.dom.querySelector( 'div.progress' ).style.backgroundColor = comp.action.endedBackgroundColor;
+                }
+
+                if ( comp.hidden && comp.action.remainAfterEnded ) {
+                    comp.hidden = false;
+                    comp.dom.style.display = null;
+                    if ( overlayInstances[ overlayId ].groupByTarget && group ) {
+                        group.updateVisibility();
+                    }
+                }
+
+                if ( !comp.endedSpoken && comp.action.endedSpeak ) {
+                    comp.endedSpoken = true;
+                    speakPhrase( comp.action.endedSpeakPhrase, comp.action.endedInterruptSpeech, comp.matches, comp.action.duration );
+                }
+
+                if ( !comp.endedAudioPlayed && comp.action.endedPlayAudio ) {
+                    comp.endedAudioPlayed = true;
+                    playAudioFile( comp.action.endedPlayAudioFileId );
+                }
+
+                if ( !comp.endedCopied && comp.action.endedClipboard ) {
+                    comp.endedCopied = true;
+                    ipcRenderer.send( 'clipboard:writeText', comp.action.endedClipboardText );
+                }
+
+                if ( !comp.endedTextDisplayed && comp.action.endedDisplayText ) {
+                    comp.endedTextDisplayed = true;
+                    sendDisplayTextToOverlay( comp.action.endedTextOverlayId, comp.action.endedText, comp.action.endedTextDuration );
                 }
             }
 
-            if ( !comp.endedSpoken && comp.action.endedSpeak ) {
-                comp.endedSpoken = true;
-                speakPhrase( comp.action.endedSpeakPhrase, comp.action.endedInterruptSpeech, comp.matches, comp.action.duration );
+            // Execute ended sub actions or clear stored instance data in the log watcher.
+            if ( comp.action.notifyWhenEnded && !comp.endedSubActionsExecuted && comp.action.endedSubActions?.length > 0 ) {
+                comp.action.endedSubActions.forEach( f => {
+                    ipcRenderer.send( 'log:action:execute-sub-action', { subAction: f, instanceId: comp.instanceId } );
+                } );
+                comp.endedSubActionsExecuted = true;
             }
 
-            if ( !comp.endedAudioPlayed && comp.action.endedPlayAudio ) {
-                comp.endedAudioPlayed = true;
-                playAudioFile( comp.action.endedPlayAudioFileId );
-            }
-
-            if ( !comp.endedCopied && comp.action.endedClipboard ) {
-                comp.endedCopied = true;
-                ipcRenderer.send( 'clipboard:writeText', comp.action.endedClipboardText );
-            }
-
-            if ( !comp.endedTextDisplayed && comp.action.endedDisplayText ) {
-                comp.endedTextDisplayed = true;
-                sendDisplayTextToOverlay( comp.action.endedTextOverlayId, comp.action.endedText, comp.action.endedTextDuration );
-            }
         }
 
         if ( ( comp.timeRemaining <= 0 && !comp.action.remainAfterEnded && !comp.action.repeatTimer ) || ( comp.timeRemaining <= -1 * comp.action.remainDuration && !comp.action.repeatTimer ) ) {
@@ -1839,6 +1858,8 @@ function resetTimerComponentClock( overlayId, comp, repeatCount ) {
     comp.endedSpoken = false;
     comp.endedTextDisplayed = false;
     comp.instanceId = comp.instanceId;
+    comp.endingSoonSubActionsExecuted = false;
+    comp.endedSubActionsExecuted = false;
 
     // Reset the background color
     if ( comp.action.overrideTimerColor ) {
