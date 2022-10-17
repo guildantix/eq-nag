@@ -404,7 +404,7 @@ function LogWatcher(character, logPosition) {
 
                 enableLogging && sendInformationToLog( `Execute trigger sub-action [${v.instanceId}] : ${ActionTypes[ action.actionType ]}`, 24 );
 
-                executeTriggerAction( instanceData.trigger, action, new Date(), instanceData.res, deltaTime );
+                executeTriggerAction( instanceData.trigger, action, new Date(), instanceData.res, deltaTime, false );
             }
         } );
 
@@ -1062,7 +1062,7 @@ function parseLogEntries( raw, simulating, padTime ) {
                         enableLogging && sendInformationToLog( `Execute trigger action [${trigger.name}] : ${ActionTypes[ action.actionType ]}`, 24 );
                         enableLogging && sendInformationToLog( `    ||${raw}||`, 24 );
 
-                        executeTriggerAction(trigger, action, timestamp, res, deltaTime);
+                        executeTriggerAction(trigger, action, timestamp, res, deltaTime, simulating);
                     }
                 } );
                 entryMatched = true;
@@ -1101,8 +1101,9 @@ function parseLogEntries( raw, simulating, padTime ) {
  * @param {Date} timestamp 
  * @param {PhraseParse} res 
  * @param {number} deltaTime 
+ * @param {boolean} simulating
  */
-function executeTriggerAction( trigger, action, timestamp, res, deltaTime ) {
+function executeTriggerAction( trigger, action, timestamp, res, deltaTime, simulating ) {
 
     if ( action.actionType === ActionTypes.DisplayText ) {
         /* --== Display Text ==-- */
