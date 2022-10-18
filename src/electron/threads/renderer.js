@@ -1935,7 +1935,8 @@ function restartTimerComponent( overlayId, comp ) {
         
     } else if ( comp.action.restartBehavior === TimerRestartBehaviors.DoNothing ) {
         // I realize this is bad practice, I'm tired, it's late, and it's documented.
-        return true;
+        // If the timer exists, then we tell the caller that the timer was restarted so that the timer isn't recreated.
+        return timerExists( overlayId, c => c.action.actionId == comp.action.actionId );
     }
 
     return false;
@@ -2041,6 +2042,46 @@ function destroyComponents( overlayId, predicate ) {
     } );
     
     ocs = null;
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Returns true if the specified overlay component exists on the specified overlay.
+ * 
+ * @param {string} overlayId The id of the desired overlay.
+ * @param {(component: OverlayComponent) => boolean} predicate Executed per iteration, passing in the overlay component as the first argument.
+ */
+function timerExists( overlayId, predicate ) {
+
+    if ( overlayInstances[ overlayId ].groupByTarget ) {
+
+        for ( let key of Object.keys( overlayInstances[ overlayId ].overlayGroups ) ) {
+            overlayInstances[ overlayId ].overlayGroups[ key ].components?.forEach( c => {
+                if ( predicate( c ) ) {
+                    return true;
+                }
+            } );
+        }
+
+    } else {
+
+        overlayInstances[ overlayId ].overlayComponents?.forEach( c => {
+            if ( predicate( c ) ) {
+                return true;
+            }
+        } );
+
+    }
+
+    return false;
 }
 
 
