@@ -1,7 +1,12 @@
 {
   "name": "electron-angular-eq-parse",
-  "version": "0.1.15",
+  "version": "0.1.16",
   "main": "main.js",
+  "description":"An EverQuest Notification AGent",
+  "author":{
+    "name":"Guild Antix",
+    "email":"srbmmo@gmail.com"
+  },
   "scripts": {
     "copy-source-maps": "copyfiles --flat dist/*.map source-maps/%npm_package_version%",
     "tsc": "tsc",
