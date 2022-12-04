@@ -1,0 +1,31 @@
+<h2 mat-dialog-title>Select Monitor</h2>
+
+<mat-dialog-content>
+
+    <p style="margin: 15px 0px 15px 0px; align-self: flex-start;" *ngFor="let msg of messages" [innerHtml]="msg | coloredString"></p>
+
+    <div #renderBox class="renderBox">
+        <div [style.width.px]="renderWidth" [style.height.px]="renderHeight" class="renderArea">
+            <!-- <div style="width: 400px; height: 167px; left: 0; top: 126px;" [ngClass]="{'selected': selectedMonitorIndex === 0}" (click)="selectedMonitorIndex = 0"><h1>1</h1></div> -->
+            <!-- <div style="width: 223px; height: 126px; left: 89px; top: 0;" [ngClass]="{'selected': selectedMonitorIndex === 1}" (click)="selectedMonitorIndex = 1"><h1>2</h1></div> -->
+
+            <div *ngFor="let display of displays; let i = index"
+                [ngClass]="{'selected': selectedMonitorIndex === i}"
+                (click)="selectedMonitorIndex = i"
+                [style.width.px]="getDisplayWidth(display.bounds.width)"
+                [style.height.px]="getDisplayHeight(display.bounds.height)"
+                [style.left.px]="getDisplayLeft(display.bounds.x)"
+                [style.top.px]="getDisplayTop(display.bounds.y)"
+            ><h1>{{i + 1}}</h1></div>
+
+        </div>
+    </div>
+
+</mat-dialog-content>
+
+<mat-dialog-actions>
+    
+    <button mat-button (click)="cancel()" class="t-confirm-no" color="warn">Cancel</button>
+    <button mat-button (click)="accept()" class="t-confirm-no">OK</button>
+
+</mat-dialog-actions>

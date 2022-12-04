@@ -32,6 +32,7 @@ import { DeathRecapDialogComponent } from './death-recap-dialog/death-recap-dial
 import { MapPackageOverlayDialogComponent } from './map-package-overlay-dialog/map-package-overlay-dialog.component';
 import { WebComponentsModule } from '../web-components/web-components.module';
 import { ActionOverlayReassignmentDialogComponent } from './action-overlay-reassignment-dialog/action-overlay-reassignment-dialog.component';
+import { MonitorSelectDialogComponent } from './monitor-select-dialog/monitor-select-dialog.component';
 
 @NgModule( {
     imports: [
@@ -68,6 +69,7 @@ import { ActionOverlayReassignmentDialogComponent } from './action-overlay-reass
         AuthorDialogComponent,
         MapPackageOverlayDialogComponent,
         ActionOverlayReassignmentDialogComponent,
+        MonitorSelectDialogComponent,
     ],
     declarations: [
         ColoredStringPipe,
@@ -94,6 +96,7 @@ import { ActionOverlayReassignmentDialogComponent } from './action-overlay-reass
         DeathRecapDialogComponent,
         MapPackageOverlayDialogComponent,
         ActionOverlayReassignmentDialogComponent,
+        MonitorSelectDialogComponent,
     ],
     providers: [
         DialogService,

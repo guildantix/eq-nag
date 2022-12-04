@@ -28,11 +28,39 @@ import { MapPackageOverlayDialogComponent } from './map-package-overlay-dialog/m
 import { ActionOverlayReviewModel, ActionOverlayUseModel, OverlayReassignments } from './action-overlay-reassignment-dialog/action-overlay-reassignment.model';
 import { ActionOverlayReassignmentDialogComponent } from './action-overlay-reassignment-dialog/action-overlay-reassignment-dialog.component';
 import * as _ from 'lodash';
+import { MonitorSelectDialogComponent } from './monitor-select-dialog/monitor-select-dialog.component';
 
 @Injectable()
 export class DialogService {
 
     constructor( private dialog: MatDialog ) { }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Displays the trigger action wizard.
+     * 
+     * @param model The trigger action to edit/create.
+     * @param onClose This function is executed after the user makes changes.  If the model is null, the user cancelled their changes.
+     */
+    public showMonitorSelect( messages: ( string | ColoredString )[] | string | ColoredString ): Observable<number> {
+        
+        return this.dialog.open<MonitorSelectDialogComponent, any, number>( MonitorSelectDialogComponent, {
+            width: '750px',
+            data: {
+                message: messages,
+            },
+            panelClass: 'app-dialog',
+        } ).afterClosed();
+
+    }
 
 
 

@@ -6,6 +6,8 @@ import { ThemePalette } from '@angular/material/core';
 import { AbstractControl, FormControl } from '@angular/forms';
 import { ColorUtility, Color } from '../../utilities';
 import { customAlphabet } from 'nanoid';
+import { MonitorSelectDialogComponent } from '../monitor-select-dialog/monitor-select-dialog.component';
+import { MatDialog } from '@angular/material/dialog';
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const nanoid = customAlphabet( alphabet, 16 );
 // import { Color } from '@angular-material-components/color-picker';
@@ -65,7 +67,7 @@ export class OverlayEditorDialogComponent implements OnInit {
         this.ipcService.disableOverlayEditMode( this.overlayId );
     }
 
-    constructor( private ipcService: IpcService, private route: ActivatedRoute ) { }
+    constructor( private ipcService: IpcService, private route: ActivatedRoute, private dialog: MatDialog ) { }
 
     ngOnInit() {
         this.model = new OverlayWindowModel();
@@ -204,9 +206,16 @@ export class OverlayEditorDialogComponent implements OnInit {
     }
 
     sendToOrigin() {
-        if ( this.overlayId != null ) {
-            this.ipcService.sendOverlayToOrigin( this.overlayId );
-        }
+        this.dialog.open<MonitorSelectDialogComponent, any, number>( MonitorSelectDialogComponent, {
+            width: '750px',
+            data: {
+                message: ['Select which monitor to move this overlay to.'],
+            },
+            panelClass: 'app-dialog',
+        } ).afterClosed().subscribe( selection => console.log( 'selection', selection ) );
+        // if ( this.overlayId != null ) {
+        //     this.ipcService.sendOverlayToOrigin( this.overlayId );
+        // }
     }
     
     public sendDisplayTextTest(): void {

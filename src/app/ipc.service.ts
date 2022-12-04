@@ -321,6 +321,22 @@ export class IpcService {
         return obs;
     }
 
+    public getAllDisplays(): Observable<Electron.Display[]> {
+        let obs: Observable<Electron.Display[]> = new Observable<Electron.Display[]>( ( observer: Observer<Electron.Display[]> ) => {
+
+            this.ipc.once( 'app:get:all-display', ( e, displays: Electron.Display[] ) => {
+                this.ngZone.run( () => {
+                    observer.next( displays );
+                    observer.complete();
+                } );
+            } );
+            this.ipc.send( 'app:get:all-display' );
+
+        } );
+
+        return obs;
+    }
+
     public getPrimaryDisplay(): Observable<Electron.Display> {
         let obs: Observable<Electron.Display> = new Observable<Electron.Display>( ( observer: Observer<Electron.Display> ) => {
             

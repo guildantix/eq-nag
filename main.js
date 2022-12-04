@@ -234,6 +234,10 @@ ipcMain.on( 'app:get:primary-display', ( event ) => {
     event.sender.send( 'app:get:primary-display', screen.getPrimaryDisplay() );
 } );
 
+ipcMain.on( 'app:get:all-display', ( event ) => {
+    event.sender.send( 'app:get:all-display', screen.getAllDisplays() );
+} );
+
 ipcMain.on( 'main:console:log', ( event, data ) => { mainWindow.webContents.send( 'console:log', data ); } );
 
 function sendTick() {

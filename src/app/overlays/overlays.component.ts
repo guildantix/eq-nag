@@ -337,7 +337,10 @@ export class OverlaysComponent implements OnInit {
      * @param overlayId The id of the desired overlay.
      */
     sendToOrigin( overlayId: string ) {
-        this.ipcService.sendOverlayToOrigin( overlayId );
+        this.dialogService.showMonitorSelect( 'Select which monitor to move this overlay to.' ).subscribe( selected => {
+            console.log( 'selected', selected );
+        } );
+        // this.ipcService.sendOverlayToOrigin( overlayId );
     }
 
 }
