@@ -44,15 +44,47 @@ export class MonitorSelectDialogComponent implements OnInit {
         } );
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Closes the monitor select dialog and sends the monitor id.
+     */
     accept() {
-        let d = this.displays[ this.selectedMonitorIndex ];
         this.dialogRef.close( this.displays[ this.selectedMonitorIndex ].id );
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Closes the monitor select dialog without selecting a monitor.
+     */
     cancel() {
         this.dialogRef.close( null );
     }
 
+
+
+
+
+
+
+
+
+    
     /**
      * Calculates the full screen space of all monitors.
      */
@@ -83,22 +115,87 @@ export class MonitorSelectDialogComponent implements OnInit {
         };
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Returns the width by ratio of display.
+     * 
+     * @param realWidth The real width.
+     */
     getDisplayWidth( realWidth: number ): number {
         return ( this.renderWidth / this.screenSpace?.width ) * realWidth ?? 0;
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Returns the height by ratio of display.
+     * 
+     * @param realWidth The real height.
+     */
     getDisplayHeight( realHeight: number ): number {
         return ( this.renderWidth / this.screenSpace?.width ) * realHeight ?? 0;
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Returns the x-position by ratio of display.
+     * 
+     * @param realWidth The real x-position.
+     */
     getDisplayLeft( realLeft: number ): number {
         let realPosLeft = this.screenOrigin.x + realLeft;
         return ( this.renderWidth / this.screenSpace?.width ) * realPosLeft ?? 0;
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Returns the y-position by ratio of display.
+     * 
+     * @param realWidth The real y-position.
+     */
     getDisplayTop( realTop: number ): number {
         let realPosTop = this.screenOrigin.y + realTop;
         return ( this.renderWidth / this.screenSpace?.width ) * realPosTop ?? 0;
     }
+
+
+
+
+
+
+
+
+
 
 }
