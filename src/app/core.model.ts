@@ -424,6 +424,7 @@ export class OverlayWindowModel {
     public borderTransparency: number = 0.0;
     public timerSortType: TimerSortTypes = TimerSortTypes.Ascending;
     public timerColor: string = '#008000';
+    public monitorId: number;
     
     public showTextBorder: boolean = false;
     public textBorderColor: string = '#000000';
