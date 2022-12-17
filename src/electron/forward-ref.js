@@ -20,9 +20,17 @@ class ForwardRef {
     }
 
     /**
+     * Sets the ref function.
+     * @param {() => T} refFn The function to pull a reference to an object.
+     */
+    setRefFn( refFn ) {
+        this.#refFn = refFn;
+    }
+
+    /**
      * Executes the given function when the reference is loaded.
      * 
-     * @param {() => void)} fn The callback function to execute.
+     * @param {(fn: T) => void} fn The callback function to execute.
      */
     whenReady( fn ) {
         setTimeout( () => this.checkRef( fn ) );
