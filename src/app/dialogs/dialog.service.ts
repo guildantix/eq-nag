@@ -50,9 +50,9 @@ export class DialogService {
      * @param model The trigger action to edit/create.
      * @param onClose This function is executed after the user makes changes.  If the model is null, the user cancelled their changes.
      */
-    public showMonitorSelect( messages: ( string | ColoredString )[] | string | ColoredString ): Observable<number> {
+    public showMonitorSelect( messages: ( string | ColoredString )[] | string | ColoredString ): Observable<number|null> {
         
-        return this.dialog.open<MonitorSelectDialogComponent, any, number>( MonitorSelectDialogComponent, {
+        return this.dialog.open<MonitorSelectDialogComponent, any, number|null>( MonitorSelectDialogComponent, {
             width: '750px',
             data: {
                 message: messages,
