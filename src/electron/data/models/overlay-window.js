@@ -20,6 +20,8 @@ class OverlayDimensions {
     x;
     /** @type {number} */
     y;
+    /** @type {Electron.Rectangle} */
+    displayBounds = null;
 }
 
 class OverlayWindow {
@@ -47,6 +49,12 @@ class OverlayWindow {
     timerSortType = TimerSortTypes.None;
     /** @type string */
     timerColor = '#008000';
+    /** @type {number|null} */
+    displayId = null;
+    /** @type {Electron.Rectangle} */
+    displayBounds = null;
+    /** @type {{x: number, y: number}|null} */
+    position = null;
     
     /** @type {boolean} */
     showTextBorder = false;
