@@ -14,6 +14,8 @@ const nanoid = customAlphabet( alphabet, 16 );
 const StyleSheetUtil = require( '../utilities/style-sheet' );
 const { FctStylesModel, FctModel, FctTypes } = require( '../data/models/fct' );
 
+// TODO: Update the overlayd rag and drop routine to determine the parent display.
+
 window.onerror = ( error, url, line ) => {
     ipcRenderer.send( 'app:log:exception', `$${error}\r\n    at ${url}:${line}` );
 };
@@ -153,6 +155,10 @@ function Renderer( originX, originY, glowOnStart ) {
         if ( glowOnStart ) {
             renderGlow( '#4c0e67', 4000, false );
         }
+    
+        /** Tell the main thread that we need a list of all overlays. */
+        ipcRenderer.send( 'overlay:get', null );
+
     } );
 
     ipcRenderer.on( 'renderer:resolution-changed',
@@ -168,8 +174,8 @@ function Renderer( originX, originY, glowOnStart ) {
             data.overlays.forEach( function ( overlay ) {
                 let div = overlayInstances[ overlay.overlayId ].dom;
 
-                div.style.left = ( overlay.x + origin.x ) + 'px';
-                div.style.top = ( overlay.y + origin.y ) + 'px';
+                div.style.left = ( overlay.x + origin.x + overlay.displayBounds.x ) + 'px';
+                div.style.top = ( overlay.y + origin.y + overlay.displayBounds.y ) + 'px';
                 div.style.height = ( overlay.windowHeight ) + 'px';
                 div.style.width = ( overlay.windowWidth ) + 'px';
             } );
@@ -210,9 +216,6 @@ function Renderer( originX, originY, glowOnStart ) {
         ( event, overlayId ) => {
             deleteOverlay( overlayId );
         } );
-    
-    /** Tell the main thread that we need a list of all overlays. */
-    ipcRenderer.send( 'overlay:get', null );
 
     ipcRenderer.on( 'renderer:receive:component',
         /**
@@ -248,8 +251,8 @@ function Renderer( originX, originY, glowOnStart ) {
          * @param {{overlayId: string, x: number, y: number}} data The event data.
          */
         function ( event, data ) {
-            overlayInstances[ data.overlayId ].dom.style.left = `${data.x + origin.x}px`;
-            overlayInstances[ data.overlayId ].dom.style.top = `${data.y + origin.y}px`;
+            overlayInstances[ data.overlayId ].dom.style.left = `${data.x + origin.x + data.displayBounds.x}px`; // TODO: $Uncaught TypeError: Cannot read property 'dom' of undefined
+            overlayInstances[ data.overlayId ].dom.style.top = `${data.y + origin.y + data.displayBounds.y}px`;
         } );
 
     ipcRenderer.on( 'renderer:window:disable-edit', function ( event, overlayId ) {
@@ -374,8 +377,8 @@ function Renderer( originX, originY, glowOnStart ) {
          */
         function ( event, overlayDimensions ) {
             overlayDimensions.forEach( d => {
-                overlayInstances[ d.overlayId ].dom.style.left = `${d.x + origin.x}px`;
-                overlayInstances[ d.overlayId ].dom.style.top = `${d.y + origin.y}px`;
+                overlayInstances[ d.overlayId ].dom.style.left = `${d.x + origin.x + d.displayBounds.x}px`; // TODO: $Uncaught TypeError: Cannot read property 'dom' of undefined
+                overlayInstances[ d.overlayId ].dom.style.top = `${d.y + origin.y + d.displayBounds.y}px`;
                 overlayInstances[ d.overlayId ].dom.style.width = `${d.windowWidth}px`;
                 overlayInstances[ d.overlayId ].dom.style.height = `${d.windowHeight}px`;
             } );
@@ -406,10 +409,11 @@ function Renderer( originX, originY, glowOnStart ) {
                 if ( overlayInstances.hasOwnProperty( overlayId ) ) {
                     let d = new OverlayDimensions();
                     d.overlayId = overlayId;
-                    d.x = overlayInstances[ overlayId ].dom.offsetLeft - origin.x;
-                    d.y = overlayInstances[ overlayId ].dom.offsetTop - origin.y;
+                    d.x = overlayInstances[ overlayId ].dom.offsetLeft - overlayInstances[ overlayId ].model.displayBounds.x - origin.x;
+                    d.y = overlayInstances[ overlayId ].dom.offsetTop - overlayInstances[ overlayId ].model.displayBounds.y - origin.y;
                     d.windowWidth = overlayInstances[ overlayId ].dom.offsetWidth;
                     d.windowHeight = overlayInstances[ overlayId ].dom.offsetHeight;
+                    d.displayBounds = overlayInstances[ overlayId ].model.displayBounds;
                     model.push( d );
                 }
             }
@@ -445,14 +449,14 @@ function initializeOverlay( overlay ) {
         content = overlayFctTemplate( {} );
         div.setAttribute( fctCssEncapsulationId, '' );
     } else {
-        content = overlayTemplate( {} );
+        content = overlayTemplate( {} ); // TODO: $Uncaught TypeError: overlayTemplate is not a function
     }
 
     div.innerHTML = content;
     div.style.position = 'absolute';
-            
-    div.style.left = ( overlay.x + origin.x ) + 'px';
-    div.style.top = ( overlay.y + origin.y ) + 'px';
+
+    div.style.left = ( overlay.x + overlay.displayBounds.x + origin.x ) + 'px';
+    div.style.top = ( overlay.y + overlay.displayBounds.y + origin.y ) + 'px';
     div.style.height = ( overlay.windowHeight ) + 'px';
     div.style.width = ( overlay.windowWidth ) + 'px';
                 
@@ -525,8 +529,8 @@ function updateOverlay( overlayId, model ) {
     overlayInstances[ overlayId ].model = model;
     overlayInstances[ overlayId ].title.innerText = model.name ? model.name : 'Overlay';
 
-    overlayInstances[ overlayId ].dom.style.left = `${model.x + origin.x}px`;
-    overlayInstances[ overlayId ].dom.style.top = `${model.y + origin.y}px`;
+    overlayInstances[ overlayId ].dom.style.left = `${model.x + origin.x + model.displayBounds.x}px`;
+    overlayInstances[ overlayId ].dom.style.top = `${model.y + origin.y + model.displayBounds.y}px`;
     overlayInstances[ overlayId ].dom.style.width = `${model.windowWidth}px`;
     overlayInstances[ overlayId ].dom.style.height = `${model.windowHeight}px`;
 
@@ -1132,8 +1136,8 @@ function enableMoveResize( dom ) {
                 if ( dom === overlayInstances[ overlayId ].dom ) {
                     let changes = false;
 
-                    changes = changes ? changes : overlayInstances[ overlayId ].model.x !== ( bounds.x - origin.x );
-                    changes = changes ? changes : overlayInstances[ overlayId ].model.y !== ( bounds.y - origin.y );
+                    changes = changes ? changes : overlayInstances[ overlayId ].model.x !== ( bounds.x - origin.x - overlayInstances[ overlayId ].model.displayBounds.x );
+                    changes = changes ? changes : overlayInstances[ overlayId ].model.y !== ( bounds.y - origin.y - overlayInstances[ overlayId ].model.displayBounds.y );
                     changes = changes ? changes : overlayInstances[ overlayId ].model.windowWidth !== bounds.width;
                     changes = changes ? changes : overlayInstances[ overlayId ].model.windowHeight !== bounds.height;
 
