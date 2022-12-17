@@ -324,7 +324,14 @@ class WindowManager {
             this.#renderer.webContents.send( 'renderer:save:overlayDimensions', null );
         } );
 
-        ipcMain.on( 'overlay:send-to-origin', ( event, overlayId ) => this.sendOverlayToMiddle( overlayId ) );
+        ipcMain.on( 'overlay:send-to-origin',
+            /**
+             * Moves the specified overlay to the specified display.
+             * 
+             * @param {any} event The event arguments.
+             * @param {{overlayId: string, displayId: number}} data The display move data.
+             */
+            ( event, data ) => this.sendOverlayToMiddle( data.overlayId, data.displayId ) );
 
         ipcMain.on( 'overlay:event:bounds-changed', ( event, d ) => {
             this.#mainWindow.reference.webContents.send( 'overlay:event:bounds-changed', d );
@@ -869,7 +876,30 @@ class WindowManager {
         showWarning = showWarning === true;
         var currentSize = this.#renderer.getBounds();
         let newSize = this.calculateRendererBounds();
+        let displays = screen.getAllDisplays();
+        let overlays = this.#overlayDatabase.getAll();
 
+        overlays.forEach( overlay => {
+            const display = displays.find( f => f.id === overlay.displayId );
+
+            if ( display ) {
+                let boundsChanged = overlay.displayBounds.x !== display.bounds.x || overlay.displayBounds.y !== display.bounds.y || overlay.displayBounds.width !== display.bounds.width || overlay.displayBounds.height !== display.bounds.height;
+                if ( boundsChanged ) {
+                    let hRatio = display.bounds.width / overlay.displayBounds.width;
+                    let vRatio = display.bounds.height / overlay.displayBounds.height;
+                    
+                    overlay.x = overlay.x * hRatio;
+                    overlay.width = overlay.width * hRatio;
+                    overlay.y = overlay.y * vRatio;
+                    overlay.height = overlay.height * vRatio;
+                    overlay.displayBounds = display.bounds;
+                }
+            } else {
+                // If the display no longer exists, then do nothing and the renderer will render it offscreen based on the previous relative display position to origin.
+            }
+
+        } );
+        
         // If the current size of the renderer doesn't match the calculated size, then we need to resize/move our overlays.
         if ( currentSize.x !== newSize.x || currentSize.y !== newSize.y || currentSize.width !== newSize.width || currentSize.height !== newSize.height ) {
             
@@ -887,41 +917,42 @@ class WindowManager {
             // Changing the resolution of one monitor doesn't mean that the 
             // relative positions or sizes of overlays on the other monitor should 
             // stay the same or change.
-        
-            let overlays = this.#overlayDatabase.getAll();
+            
+            // TODO: Is this required anylonger?
+            
 
-            overlays.forEach( overlay => {
-                /** @type {{left: number, top: number, right: number, bottom: number}} */
-                let originalBoundaries = {
-                    left: overlay.x,
-                    top: overlay.y,
-                    right: currentSize.width - ( overlay.x + currentOrigin.x + overlay.width ),
-                    bottom: currentSize.height - ( overlay.y + currentOrigin.y + overlay.height ),
-                };
+            // overlays.forEach( overlay => {
+            //     /** @type {{left: number, top: number, right: number, bottom: number}} */
+            //     let originalBoundaries = {
+            //         left: overlay.x,
+            //         top: overlay.y,
+            //         right: currentSize.width - ( overlay.x + currentOrigin.x + overlay.width ),
+            //         bottom: currentSize.height - ( overlay.y + currentOrigin.y + overlay.height ),
+            //     };
 
-                // Let's calculate the new boundaries for the new resolution.  We
-                // can compare the right/bottom values to determine if the monitor 
-                // that contains the overlay has had its resolution changed.
+            //     // Let's calculate the new boundaries for the new resolution.  We
+            //     // can compare the right/bottom values to determine if the monitor 
+            //     // that contains the overlay has had its resolution changed.
 
-                /** @type {{left: number, top: number, right: number, bottom: number}} */
-                let newBoundaries = {
-                    left: overlay.x,
-                    top: overlay.y,
-                    right: newSize.width - ( overlay.x + newOrigin.x + overlay.width ),
-                    bottom: newSize.height - ( overlay.y + newOrigin.y + overlay.height ),
-                };
+            //     /** @type {{left: number, top: number, right: number, bottom: number}} */
+            //     let newBoundaries = {
+            //         left: overlay.x,
+            //         top: overlay.y,
+            //         right: newSize.width - ( overlay.x + newOrigin.x + overlay.width ),
+            //         bottom: newSize.height - ( overlay.y + newOrigin.y + overlay.height ),
+            //     };
 
-                if ( originalBoundaries.bottom !== newBoundaries.bottom || originalBoundaries.right !== newBoundaries.right ) {
-                    // The quadrant containing this overlay has had it's resolution changed, and the overlay needs to update to match.
-                    let hRatio = ( newSize.x + newOrigin.x ) / ( currentSize.x + currentOrigin.x );
-                    let vRatio = ( newSize.y + newOrigin.y ) / ( currentSize.y + currentOrigin.y );
+            //     if ( originalBoundaries.bottom !== newBoundaries.bottom || originalBoundaries.right !== newBoundaries.right ) {
+            //         // The quadrant containing this overlay has had it's resolution changed, and the overlay needs to update to match.
+            //         let hRatio = ( newSize.x + newOrigin.x ) / ( currentSize.x + currentOrigin.x );
+            //         let vRatio = ( newSize.y + newOrigin.y ) / ( currentSize.y + currentOrigin.y );
 
-                    overlay.x = overlay.x * hRatio;
-                    overlay.height = overlay.height * hRatio;
-                    overlay.y = overlay.y * vRatio;
-                    overlay.width = overlay.width * vRatio;
-                }
-            } );
+            //         overlay.x = overlay.x * hRatio;
+            //         overlay.height = overlay.height * hRatio;
+            //         overlay.y = overlay.y * vRatio;
+            //         overlay.width = overlay.width * vRatio;
+            //     }
+            // } );
 
             this.#renderer.webContents.send( 'renderer:resolution-changed', { overlays: overlays, origin: newOrigin } );
 
@@ -946,17 +977,23 @@ class WindowManager {
      * Sends the specified overlay to the middle of the main monitor.
      * 
      * @param {string} overlayId The id of the desired overlay.
+     * @param {number} displayId The id of the desired display.
      */
-    sendOverlayToMiddle( overlayId ) {
-        const primarySize = screen.getPrimaryDisplay().size;
-        let overlay = this.#overlayDatabase.find( overlayId );
-        
-        overlay.x = ( primarySize.width - overlay.windowWidth ) / 2;
-        overlay.y = ( primarySize.height - overlay.windowHeight ) / 2;
-
-        this.#overlayDatabase.update( overlay );
-
-        this.#renderer.webContents.send( 'renderer:overlay:move', { overlayId: overlayId, x: overlay.x, y: overlay.y } );
+    sendOverlayToMiddle( overlayId, displayId ) {
+        const display = screen.getAllDisplays().find( f => f.id === displayId );
+        if ( display != null ) {
+            let overlay = this.#overlayDatabase.find( overlayId );
+            
+            overlay.x = ( display.size.width - overlay.windowWidth ) / 2;
+            overlay.y = ( display.size.height - overlay.windowHeight ) / 2;
+            overlay.displayId = displayId;
+            overlay.displayBounds = display.bounds;
+    
+            this.#overlayDatabase.update( overlay );
+    
+            // TODO: Refigure how to move this overlay.
+            this.#renderer.webContents.send( 'renderer:overlay:move', { overlayId: overlayId, x: overlay.x, y: overlay.y, displayBounds: display.bounds } );
+        }
     }
 
 
