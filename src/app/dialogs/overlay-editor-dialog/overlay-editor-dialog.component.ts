@@ -206,16 +206,17 @@ export class OverlayEditorDialogComponent implements OnInit {
     }
 
     sendToOrigin() {
-        this.dialog.open<MonitorSelectDialogComponent, any, number>( MonitorSelectDialogComponent, {
+        this.dialog.open<MonitorSelectDialogComponent, any, number|null>( MonitorSelectDialogComponent, {
             width: '750px',
             data: {
-                message: ['Select which monitor to move this overlay to.'],
+                message: [ 'Select which monitor to move this overlay to.' ],
             },
             panelClass: 'app-dialog',
-        } ).afterClosed().subscribe( selection => console.log( 'selection', selection ) );
-        // if ( this.overlayId != null ) {
-        //     this.ipcService.sendOverlayToOrigin( this.overlayId );
-        // }
+        } ).afterClosed().subscribe( displayId => {
+            if ( displayId !== null ) {
+                this.ipcService.sendOverlayToOrigin( this.overlayId, displayId );
+            }
+        } );
     }
     
     public sendDisplayTextTest(): void {

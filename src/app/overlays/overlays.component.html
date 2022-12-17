@@ -21,7 +21,7 @@
             <th mat-header-cell *matHeaderCellDef style="text-align: center; width: 90px;">  </th>
             <td mat-cell *matCellDef="let element; let i = index" style="text-align: center; width: 90px;">
                 <button mat-icon-button color="accent" aria-label="Edit this overlay" (click)="enableOverlayEdit(element.overlayId)" matTooltip="Edit this overlay" matTooltipShowDelay="500" matTooltipPosition="above"><mat-icon>display_settings</mat-icon></button>
-                <button mat-icon-button color="accent" aria-label="Send overlay to the middle of your monitor" (click)="sendToOrigin(element.overlayId)" matTooltip="Send this overlay to the center of your primary monitor." matTooltipShowDelay="500" matTooltipPosition="right"><mat-icon>filter_center_focus</mat-icon></button>
+                <button mat-icon-button color="accent" aria-label="Send overlay to the middle of the selected monitor" (click)="sendToOrigin(element.overlayId)" matTooltip="Send overlay to the middle of the selected monitor." matTooltipShowDelay="500" matTooltipPosition="right"><mat-icon>filter_center_focus</mat-icon></button>
             </td>
         </ng-container>
 
