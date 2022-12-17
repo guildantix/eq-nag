@@ -424,7 +424,8 @@ export class OverlayWindowModel {
     public borderTransparency: number = 0.0;
     public timerSortType: TimerSortTypes = TimerSortTypes.Ascending;
     public timerColor: string = '#008000';
-    public monitorId: number;
+    public displayId: number;
+    public displayBounds: Electron.Rectangle;
     
     public showTextBorder: boolean = false;
     public textBorderColor: string = '#000000';
@@ -1120,6 +1121,9 @@ export class VersionNumber {
     public revision: number;
 
     constructor( private version: string ) {
+        if ( version == null )
+            throw 'Version number not provided!';
+        
         let parts = version.split( /\./gi );
         if ( parts?.length !== 3 ) {
             throw 'Invalid version number!';
