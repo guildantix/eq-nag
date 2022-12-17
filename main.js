@@ -145,10 +145,6 @@ function createWindow() {
             mainWindow.show();
         }
     } );
-
-    winManager.configureRendererMouseBlockingOnMoveResize( mainWindow );
-
-    winManager.loadRenderer();
     
 };
 
@@ -167,6 +163,7 @@ app.on( 'ready', function () {
     screen.on( 'display-metrics-changed', ( e, newDisplay ) => {
         log.info( 'screen metrics have changed.', e, newDisplay );
         winManager.checkWindowPosition();
+        console.log( 'screen metrics changed' );
     } );
     protocol.interceptFileProtocol( 'file', ( req, callback ) => {
         let filePath = new url.URL( req.url ).pathname;
@@ -271,6 +268,7 @@ function sendTick() {
         winManager.ginaImportWindow.send( 'tick', tickData );
     }
 
+    console.log( 'tick sent' );
 }
 
 /** @type {import("electron-updater").UpdateInfo} */
@@ -356,17 +354,24 @@ ipcMain.on( 'death-recap:find-deaths:results',
 var mainWindowRef = new ForwardRef( () => mainWindow ? mainWindow : null );
 var logBootstrapRef = new ForwardRef( () => logBootstrap ? logBootstrap : null );
 
-userPreferences.attachIpcEvents( mainWindowRef, sendTick, logBootstrapRef );
-winManager.attachIpcEvents( mainWindowRef, overlayDatabase, userPreferences );
-dkpDatabase.attachIpcEvents( mainWindowRef, sendTick );
-fileDatabase.attachIpcEvents( mainWindowRef );
-triggerDatabase.attachIpcEvents( mainWindowRef, sendTick, fileDatabase, userPreferences );
-overlayDatabase.attachIpcEvents( mainWindowRef, sendTick, triggerDatabase );
-characterDatabase.attachIpcEvents( mainWindowRef, sendTick );
-logBootstrap.boostrapLogWatchers( mainWindowRef, app.isDev(), characterDatabase, sendTick );
-gameResources.attachIpcEvents( mainWindowRef, userPreferences );
-ginaImporter.initGinaImporter( mainWindowRef, app.isDev() );
-verifiedPlayersDatabase.attachIpcEvents( mainWindowRef, sendTick );
+app.on( 'ready', function () {
+
+    userPreferences.attachIpcEvents( mainWindowRef, sendTick, logBootstrapRef );
+    winManager.attachIpcEvents( mainWindowRef, overlayDatabase, userPreferences );
+    dkpDatabase.attachIpcEvents( mainWindowRef, sendTick );
+    fileDatabase.attachIpcEvents( mainWindowRef );
+    triggerDatabase.attachIpcEvents( mainWindowRef, sendTick, fileDatabase, userPreferences );
+    overlayDatabase.attachIpcEvents( mainWindowRef, sendTick, triggerDatabase );
+    characterDatabase.attachIpcEvents( mainWindowRef, sendTick );
+    logBootstrap.boostrapLogWatchers( mainWindowRef, app.isDev(), characterDatabase, sendTick );
+    gameResources.attachIpcEvents( mainWindowRef, userPreferences );
+    ginaImporter.initGinaImporter( mainWindowRef, app.isDev() );
+    verifiedPlayersDatabase.attachIpcEvents( mainWindowRef, sendTick );
+
+    winManager.configureRendererMouseBlockingOnMoveResize( mainWindow );
+
+    winManager.loadRenderer();
+} );
 
 // let x = userPreferences.everquestInstallFolder;
 
