@@ -114,7 +114,6 @@ export class IpcService {
 
                 this.ipc.on( 'dialog:warning', ( event: any, data: DialogEventArgs ) => {
                     ngZone.run( () => {
-                        console.log( 'caught', data );
                         this._warningDialogObservers?.forEach( f => {
                             f.next( data );
                         } );
@@ -988,8 +987,8 @@ export class IpcService {
         this.ipc.send( 'log:send:raw', rawLogLine );
     }
 
-    public sendOverlayToOrigin( overlayId: string ): void {
-        this.ipc.send( 'overlay:send-to-origin', overlayId );
+    public sendOverlayToOrigin( overlayId: string, displayId: number ): void {
+        this.ipc.send( 'overlay:send-to-origin', { overlayId: overlayId, displayId: displayId } );
     }
 
     public getAudioFiles(): Observable<FileModel[]> {
