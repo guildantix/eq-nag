@@ -21,7 +21,7 @@ export class DisplaySelectorComponent implements OnInit {
         return this.screenSpace?.width > 0 ? ( this.renderWidth / this.screenSpace.width ) * this.screenSpace.height : 0;
     }
 
-    private _selectedIndex: number = 1;
+    private _selectedIndex: number = 0;
     public get selectedMonitorIndex(): number {
         return this._selectedIndex;
     }
