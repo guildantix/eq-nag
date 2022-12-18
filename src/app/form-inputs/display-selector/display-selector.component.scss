@@ -1,0 +1,45 @@
+.renderBox {
+    outline: 3px solid #909090;
+    background-color: #00000052; // #191919;
+    padding: 10px;
+    // margin-top: 20px;
+    display: flex;
+    justify-content: center;
+    align-content: center;
+    flex-direction: row;
+
+    > .renderArea {
+        position: relative;
+
+        > div {
+            position: absolute;
+            border: 3px solid #ffffffa8;
+            background-color: #ffffff0d; // #242424;
+            box-sizing: border-box;
+            display: flex;
+            justify-content: center;
+            align-content: center;
+            flex-direction: column;
+            color: #ffffffcf;
+            
+            > h1 {
+                text-align: center;
+                font-size: 64px;
+            }
+
+            &.selected {
+                border: 3px solid #69f0ae;
+                color: #69f0ae;
+            }
+
+            &:not(.selected) {
+                cursor: pointer;
+            }
+
+            &:hover:not(.selected) {
+                border: 3px solid #69b2f0;
+                color: #69b2f0;
+            }
+        }
+    }
+}

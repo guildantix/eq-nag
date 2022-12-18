@@ -6,6 +6,7 @@ import { MaterialModule } from '../material.module';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { CommonModule } from '@angular/common';
 import { DurationComponent } from './duration/duration.component';
+import { DisplaySelectorComponent } from './display-selector/display-selector.component';
 
 @NgModule({
     imports: [
@@ -14,13 +15,15 @@ import { DurationComponent } from './duration/duration.component';
         MaterialModule,
         BrowserAnimationsModule,
     ],
-    exports: [
-        ColorPickerComponent,
-        DurationComponent,
-    ],
     declarations: [
         ColorPickerComponent,
         DurationComponent,
+        DisplaySelectorComponent,
+    ],
+    exports: [
+        ColorPickerComponent,
+        DurationComponent,
+        DisplaySelectorComponent,
     ],
     providers: [],
 })
