@@ -11,6 +11,8 @@ const { StyleProperties } = require( './models/common' );
 const TriggerDatabaseStore = require( "./trigger-database" );
 const ElectronUtilities = require( "../utilities/electron" );
 
+const currentOverlayDbVersion = 14;
+
 class OverlayDatabaseStore extends Store {
 
     /** 
@@ -78,210 +80,219 @@ class OverlayDatabaseStore extends Store {
         this.#data = this.parseDataFile();
 
         app.on( 'ready', () => {
-            let changes = false;
 
-            if ( !this.#data.version || this.#data.version < 3 ) {
-                this.#data?.overlays?.forEach( f => {
-                    f.timerSortType = f.overlayType === 'Timer' ? 1 : 0;
+            if ( this.#data.version < currentOverlayDbVersion ) {
+                this.backupDatafile( backupFile => {
+                    migrateData();
                 } );
-                this.#data.version = 3;
-                this.storeDataFile( this.#data );
-                changes = true;
             }
-            if ( !this.#data.version || this.#data.version < 4 ) {
-                this.#data?.overlays?.forEach( f => {
-                    f.timerColor = '#008000';
-                } );
-                this.#data.version = 4;
-                this.storeDataFile( this.#data );
-                changes = true;
-            }
-            if ( !this.#data.version || this.#data.version < 5 ) {
-                this.#data?.overlays?.forEach( f => {
+
+            const migrateData = () => {
+                let changes = false;
+
+                if ( !this.#data.version || this.#data.version < 3 ) {
+                    this.#data?.overlays?.forEach( f => {
+                        f.timerSortType = f.overlayType === 'Timer' ? 1 : 0;
+                    } );
+                    this.#data.version = 3;
+                    this.storeDataFile( this.#data );
+                    changes = true;
+                }
+                if ( !this.#data.version || this.#data.version < 4 ) {
+                    this.#data?.overlays?.forEach( f => {
+                        f.timerColor = '#008000';
+                    } );
+                    this.#data.version = 4;
+                    this.storeDataFile( this.#data );
+                    changes = true;
+                }
+                if ( !this.#data.version || this.#data.version < 5 ) {
+                    this.#data?.overlays?.forEach( f => {
     
-                    f.showTextBorder = false;
-                    f.textBorderColor = '#000000';
-                    f.textBorderIntensity = 1;
+                        f.showTextBorder = false;
+                        f.textBorderColor = '#000000';
+                        f.textBorderIntensity = 1;
             
-                    f.showTextGlow = false;
-                    f.textGlowColor = '#000000';
-                    f.textGlowIntensity = 1;
-                    f.textGlowSize = 10;
+                        f.showTextGlow = false;
+                        f.textGlowColor = '#000000';
+                        f.textGlowIntensity = 1;
+                        f.textGlowSize = 10;
                 
-                } );
-                this.#data.version = 5;
-                this.storeDataFile( this.#data );
-                changes = true;
-            }
-            if ( !this.#data.version || this.#data.version < 6 ) {
-                this.#data?.overlays?.forEach( f => {
-                    f.showOnlyDotIcons = false;
-                    f.dotIconSize = 40;
-                    f.showTimeRemaining = false;
-                } );
-                this.#data.version = 6;
-                this.storeDataFile( this.#data );
-                changes = true;
-            }
-            if ( !this.#data.version || this.#data.version < 7 ) {
-                this.#data?.overlays?.forEach( f => {
-                    f.groupByTarget = f.showOnlyDotIcons;
-                    delete f.showOnlyDotIcons;
-                } );
-                this.#data.version = 7;
-                this.storeDataFile( this.#data );
-                changes = true;
-            }
-            if ( !this.#data.version || this.#data.version < 8 ) {
-                this.#data?.overlays?.forEach( f => {
-                    f.groupHeaderSize = f.dotIconSize;
-                    delete f.dotIconSize;
-                } );
-                this.#data.version = 8;
-                this.storeDataFile( this.#data );
-                changes = true;
-            }
-            if ( !this.#data.version || this.#data.version < 9 ) {
-                this.#data?.overlays?.forEach( f => {
-                    f.groupHeaderWeight = 400;
-                    f.groupHeaderColor = '#ffffff';
-                } );
-                this.#data.version = 9;
-                this.storeDataFile( this.#data );
-                changes = true;
-            }
-            if ( !this.#data.version || this.#data.version < 10 ) {
-                this.#data?.overlays?.forEach( f => {
-                    f.hideTargetLabel = false;
-                } );
-                this.#data.version = 10;
-                this.storeDataFile( this.#data );
-                changes = true;
-            }
-            if ( !this.#data.version || this.#data.version < 11 ) {
+                    } );
+                    this.#data.version = 5;
+                    this.storeDataFile( this.#data );
+                    changes = true;
+                }
+                if ( !this.#data.version || this.#data.version < 6 ) {
+                    this.#data?.overlays?.forEach( f => {
+                        f.showOnlyDotIcons = false;
+                        f.dotIconSize = 40;
+                        f.showTimeRemaining = false;
+                    } );
+                    this.#data.version = 6;
+                    this.storeDataFile( this.#data );
+                    changes = true;
+                }
+                if ( !this.#data.version || this.#data.version < 7 ) {
+                    this.#data?.overlays?.forEach( f => {
+                        f.groupByTarget = f.showOnlyDotIcons;
+                        delete f.showOnlyDotIcons;
+                    } );
+                    this.#data.version = 7;
+                    this.storeDataFile( this.#data );
+                    changes = true;
+                }
+                if ( !this.#data.version || this.#data.version < 8 ) {
+                    this.#data?.overlays?.forEach( f => {
+                        f.groupHeaderSize = f.dotIconSize;
+                        delete f.dotIconSize;
+                    } );
+                    this.#data.version = 8;
+                    this.storeDataFile( this.#data );
+                    changes = true;
+                }
+                if ( !this.#data.version || this.#data.version < 9 ) {
+                    this.#data?.overlays?.forEach( f => {
+                        f.groupHeaderWeight = 400;
+                        f.groupHeaderColor = '#ffffff';
+                    } );
+                    this.#data.version = 9;
+                    this.storeDataFile( this.#data );
+                    changes = true;
+                }
+                if ( !this.#data.version || this.#data.version < 10 ) {
+                    this.#data?.overlays?.forEach( f => {
+                        f.hideTargetLabel = false;
+                    } );
+                    this.#data.version = 10;
+                    this.storeDataFile( this.#data );
+                    changes = true;
+                }
+                if ( !this.#data.version || this.#data.version < 11 ) {
 
-                this.#data?.overlays?.forEach( f => {
-                    if ( f.overlayType === 'FCT' ) {
+                    this.#data?.overlays?.forEach( f => {
+                        if ( f.overlayType === 'FCT' ) {
 
-                        f.fctDmgOutStyle = new StyleProperties();
-                        f.fctDmgOutStyle.fontSize = 32;
-                        f.fctDmgOutStyle.lineHeight = 95;
-                        f.fctDmgOutStyle.fontWeight = 700;
-                        f.fctDmgOutStyle.glowSize = 10;
+                            f.fctDmgOutStyle = new StyleProperties();
+                            f.fctDmgOutStyle.fontSize = 32;
+                            f.fctDmgOutStyle.lineHeight = 95;
+                            f.fctDmgOutStyle.fontWeight = 700;
+                            f.fctDmgOutStyle.glowSize = 10;
 
-                        f.fctDmgInStyle = new StyleProperties();
-                        f.fctDmgInStyle.fontSize = 32;
-                        f.fctDmgInStyle.lineHeight = 95;
-                        f.fctDmgInStyle.fontWeight = 700;
-                        f.fctDmgInStyle.fontColor = '#b71c1c';
-                        f.fctDmgInStyle.glowSize = 10;
+                            f.fctDmgInStyle = new StyleProperties();
+                            f.fctDmgInStyle.fontSize = 32;
+                            f.fctDmgInStyle.lineHeight = 95;
+                            f.fctDmgInStyle.fontWeight = 700;
+                            f.fctDmgInStyle.fontColor = '#b71c1c';
+                            f.fctDmgInStyle.glowSize = 10;
 
-                        f.fctSpellDmgOutStyle = new StyleProperties();
-                        f.fctSpellDmgOutStyle.fontSize = 32;
-                        f.fctSpellDmgOutStyle.lineHeight = 95;
-                        f.fctSpellDmgOutStyle.fontWeight = 700;
-                        f.fctSpellDmgOutStyle.glowSize = 10;
+                            f.fctSpellDmgOutStyle = new StyleProperties();
+                            f.fctSpellDmgOutStyle.fontSize = 32;
+                            f.fctSpellDmgOutStyle.lineHeight = 95;
+                            f.fctSpellDmgOutStyle.fontWeight = 700;
+                            f.fctSpellDmgOutStyle.glowSize = 10;
 
-                        f.fctSpellDmgInStyle = new StyleProperties();
-                        f.fctSpellDmgInStyle.fontSize = 32;
-                        f.fctSpellDmgInStyle.lineHeight = 95;
-                        f.fctSpellDmgInStyle.fontWeight = 700;
-                        f.fctSpellDmgInStyle.fontColor = '#b71c1c';
-                        f.fctSpellDmgInStyle.glowSize = 10;
+                            f.fctSpellDmgInStyle = new StyleProperties();
+                            f.fctSpellDmgInStyle.fontSize = 32;
+                            f.fctSpellDmgInStyle.lineHeight = 95;
+                            f.fctSpellDmgInStyle.fontWeight = 700;
+                            f.fctSpellDmgInStyle.fontColor = '#b71c1c';
+                            f.fctSpellDmgInStyle.glowSize = 10;
 
-                        f.fctHealingOutStyle = new StyleProperties();
-                        f.fctHealingOutStyle.fontSize = 32;
-                        f.fctHealingOutStyle.lineHeight = 95;
-                        f.fctHealingOutStyle.fontWeight = 700;
-                        f.fctHealingOutStyle.fontColor = '#42a5f5';
-                        f.fctHealingOutStyle.glowSize = 10;
+                            f.fctHealingOutStyle = new StyleProperties();
+                            f.fctHealingOutStyle.fontSize = 32;
+                            f.fctHealingOutStyle.lineHeight = 95;
+                            f.fctHealingOutStyle.fontWeight = 700;
+                            f.fctHealingOutStyle.fontColor = '#42a5f5';
+                            f.fctHealingOutStyle.glowSize = 10;
 
-                        f.fctHealingInStyle = new StyleProperties();
-                        f.fctHealingInStyle.fontSize = 32;
-                        f.fctHealingInStyle.lineHeight = 95;
-                        f.fctHealingInStyle.fontWeight = 700;
-                        f.fctHealingInStyle.fontColor = '#42a5f5';
-                        f.fctHealingInStyle.glowSize = 10;
+                            f.fctHealingInStyle = new StyleProperties();
+                            f.fctHealingInStyle.fontSize = 32;
+                            f.fctHealingInStyle.lineHeight = 95;
+                            f.fctHealingInStyle.fontWeight = 700;
+                            f.fctHealingInStyle.fontColor = '#42a5f5';
+                            f.fctHealingInStyle.glowSize = 10;
 
-                        f.fctSkillStyle = new StyleProperties();
-                        f.fctSkillStyle.fontSize = 12;
-                        f.fctSkillStyle.fontWeight = 400;
-                        f.fctSkillStyle.fontColor = '#005aff';
-                    }
-                } );
+                            f.fctSkillStyle = new StyleProperties();
+                            f.fctSkillStyle.fontSize = 12;
+                            f.fctSkillStyle.fontWeight = 400;
+                            f.fctSkillStyle.fontColor = '#005aff';
+                        }
+                    } );
 
-                this.#data.version = 11;
-                this.storeDataFile( this.#data );
-                changes = true;
-            }
-            if ( !this.#data.version || this.#data.version < 12 ) {
+                    this.#data.version = 11;
+                    this.storeDataFile( this.#data );
+                    changes = true;
+                }
+                if ( !this.#data.version || this.#data.version < 12 ) {
 
-                this.#data?.overlays?.forEach( f => {
-                    if ( f.overlayType === 'FCT' ) {
+                    this.#data?.overlays?.forEach( f => {
+                        if ( f.overlayType === 'FCT' ) {
 
-                        delete f.fctDmgOutStyle;
-                        delete f.fctDmgInStyle;
-                        delete f.fctSpellDmgOutStyle;
-                        delete f.fctSpellDmgInStyle;
-                        delete f.fctHealingOutStyle;
-                        delete f.fctHealingInStyle;
-                        delete f.fctSkillStyle;
-                    }
-                } );
+                            delete f.fctDmgOutStyle;
+                            delete f.fctDmgInStyle;
+                            delete f.fctSpellDmgOutStyle;
+                            delete f.fctSpellDmgInStyle;
+                            delete f.fctHealingOutStyle;
+                            delete f.fctHealingInStyle;
+                            delete f.fctSkillStyle;
+                        }
+                    } );
 
-                this.#data.version = 12;
-                this.storeDataFile( this.#data );
-                changes = true;
-            }
-            if ( !this.#data.version || this.#data.version < 13 ) {
+                    this.#data.version = 12;
+                    this.storeDataFile( this.#data );
+                    changes = true;
+                }
+                if ( !this.#data.version || this.#data.version < 13 ) {
 
-                this.#data?.overlays?.forEach( f => {
-                    f.monitorId = null;
-                } );
+                    this.#data?.overlays?.forEach( f => {
+                        f.monitorId = null;
+                    } );
 
-                this.#data.version = 13;
-                this.storeDataFile( this.#data );
-                changes = true;
-            }
-            if ( !this.#data.version || this.#data.version < 14 ) {
+                    this.#data.version = 13;
+                    this.storeDataFile( this.#data );
+                    changes = true;
+                }
+                if ( !this.#data.version || this.#data.version < 14 ) {
             
-                this.#data?.overlays?.forEach( overlay => {
+                    this.#data?.overlays?.forEach( overlay => {
 
-                    delete overlay.monitorId;
+                        delete overlay.monitorId;
                     
-                    let overlayBounds = {
-                        x: overlay.x,
-                        y: overlay.y,
-                        width: overlay.windowWidth,
-                        height: overlay.windowHeight,
-                    };
-                    const display = ElectronUtilities.determineContainingDisplay( overlayBounds );
+                        let overlayBounds = {
+                            x: overlay.x,
+                            y: overlay.y,
+                            width: overlay.windowWidth,
+                            height: overlay.windowHeight,
+                        };
+                        const display = ElectronUtilities.determineContainingDisplay( overlayBounds );
 
-                    if ( !display ) {
-                        const primaryDisplay = screen.getPrimaryDisplay();
+                        if ( !display ) {
+                            const primaryDisplay = screen.getPrimaryDisplay();
 
-                        overlay.x = ( primaryDisplay.size.width - overlay.windowWidth ) / 2;
-                        overlay.y = ( primaryDisplay.size.height - overlay.windowHeight ) / 2;
-                        overlay.displayId = primaryDisplay.id;
-                        overlay.displayBounds = primaryDisplay.bounds;
+                            overlay.x = ( primaryDisplay.size.width - overlay.windowWidth ) / 2;
+                            overlay.y = ( primaryDisplay.size.height - overlay.windowHeight ) / 2;
+                            overlay.displayId = primaryDisplay.id;
+                            overlay.displayBounds = primaryDisplay.bounds;
 
-                    } else {
+                        } else {
 
-                        overlay.displayId = display.id;
-                        overlay.displayBounds = display.bounds;
-                        overlay.x = overlay.x - display.bounds.x;
-                        overlay.y = overlay.y - display.bounds.y;
+                            overlay.displayId = display.id;
+                            overlay.displayBounds = display.bounds;
+                            overlay.x = overlay.x - display.bounds.x;
+                            overlay.y = overlay.y - display.bounds.y;
                         
-                    }
+                        }
 
-                } );
+                    } );
 
-                this.#data.version = 14;
-                this.storeDataFile( this.#data );
-                changes = true;
+                    this.#data.version = 14;
+                    this.storeDataFile( this.#data );
+                    changes = true;
+                }
             }
-        } );
 
+        } );
     }
     
     /**
