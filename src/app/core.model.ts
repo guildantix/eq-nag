@@ -1079,6 +1079,8 @@ export class OverlayBoundsChangedEventArgs {
 
     public overlayId: string;
     public bounds: Rectangle;
+    public displayId: number;
+    public displayBounds: Electron.Rectangle;
 
 }
 
