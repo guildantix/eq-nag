@@ -1,6 +1,7 @@
 const electron = require( 'electron' );
 const path = require( 'path' );
 const fs = require( 'fs' );
+const archiver = require( 'archiver' );
 
 class Store {
     /** The stored file path and location for this object. */
@@ -44,6 +45,26 @@ class Store {
         } catch ( error ) {
             console.error( 'Error storing ' + this.#configName, error );
         }
+    }
+
+    /**
+     * Creates a backup of the database.
+     * 
+     * @param {(string) => void)} onComplete Callback function executed when the backup file is created that receives the backup file location.
+     */
+    backupDatafile( onComplete ) {
+        let now = new Date( Date.now() );
+        let backupFile = path.join( this.userDataPath, `${now.getFullYear()}${now.getMonth() + 1}${now.getDay() + 1}${now.getSeconds()}-${this.#configName}-backup.zip` );
+        let output = fs.createWriteStream( backupFile );
+        let zip = archiver( 'zip' );
+
+        output.on( 'close', () => {
+            onComplete( backupFile );
+        } );
+
+        zip.pipe( output );
+        zip.file( this.#path, { name: this.#configName + '.json' } );
+        zip.finalize();
     }
 
 }
