@@ -409,11 +409,10 @@ function Renderer( originX, originY, glowOnStart ) {
                 if ( overlayInstances.hasOwnProperty( overlayId ) ) {
                     let d = new OverlayDimensions();
                     d.overlayId = overlayId;
-                    d.x = overlayInstances[ overlayId ].dom.offsetLeft - overlayInstances[ overlayId ].model.displayBounds.x - origin.x;
-                    d.y = overlayInstances[ overlayId ].dom.offsetTop - overlayInstances[ overlayId ].model.displayBounds.y - origin.y;
+                    d.x = overlayInstances[ overlayId ].dom.offsetLeft - origin.x;
+                    d.y = overlayInstances[ overlayId ].dom.offsetTop - origin.y;
                     d.windowWidth = overlayInstances[ overlayId ].dom.offsetWidth;
                     d.windowHeight = overlayInstances[ overlayId ].dom.offsetHeight;
-                    d.displayBounds = overlayInstances[ overlayId ].model.displayBounds;
                     model.push( d );
                 }
             }
@@ -1149,6 +1148,7 @@ function enableMoveResize( dom ) {
                         
                         ipcRenderer.send( 'overlay:event:bounds-changed', {
                             overlayId: overlayId,
+                            displayId: null, // This is not known at this point, as the coordinates are in renderer space.  This will be calculated and bounds translated by the window manager.
                             bounds: {
                                 x: overlayInstances[ overlayId ].model.x,
                                 y: overlayInstances[ overlayId ].model.y,
