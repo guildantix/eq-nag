@@ -212,6 +212,7 @@ export class OverlayEditorDialogComponent implements OnInit {
             width: '750px',
             data: {
                 message: [ 'Select which monitor to move this overlay to.' ],
+                displayId: this.model.displayId ?? null,
             },
             panelClass: 'app-dialog',
         } ).afterClosed().subscribe( displayId => {
