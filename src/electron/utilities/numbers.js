@@ -51,10 +51,25 @@ function randomBounded( min, max ) {
     return Math.floor( Math.random() * ( max - min ) ) + min;
 }
 
+/**
+ * Returns true if the given rectangle contains the specified point.
+ * 
+ * @param {Electron.Rectangle} rect The containing rectangle
+ * @param {number} x The x position.
+ * @param {number} y The y position.
+ */
+function rectContainsPoint( rect, x, y ) {
+    let xContained = x >= rect.x && y <= ( rect.x + rect.width );
+    let yContained = y >= rect.y && y <= ( rect.y + rect.height );
+
+    return xContained && yContained;
+}
+
 let NumberUtilities = {
     round: round,
     toShorthandString: toShorthandString,
     randomBounded: randomBounded,
+    rectContainsPoint: rectContainsPoint,
 };
 
 module.exports = NumberUtilities;
