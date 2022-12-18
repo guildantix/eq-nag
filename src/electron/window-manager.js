@@ -9,6 +9,7 @@ const CharacterModel = require( './data/models/character' );
 const { IpcMessage } = require( "./data/models/common" );
 const { LogFileLocation } = require( "./data/log-file-location" );
 const path = require( "path" );
+const ElectronUtilities = require( "./utilities/electron" );
 
 /** 
  * We will occassionally need to disable the 'force on top' of the renderer, so 
@@ -333,12 +334,30 @@ class WindowManager {
              */
             ( event, data ) => this.sendOverlayToMiddle( data.overlayId, data.displayId ) );
 
-        ipcMain.on( 'overlay:event:bounds-changed', ( event, d ) => {
-            this.#mainWindow.reference.webContents.send( 'overlay:event:bounds-changed', d );
-            this.#openOverlayEditors.forEach( window => {
-                window?.webContents.send( 'overlay:event:bounds-changed', d );
+        ipcMain.on( 'overlay:event:bounds-changed',
+            /**
+             * Handles the renderer's bounds changed event, converting renderer 
+             * coords to display coords and sending the translated coords to 
+             * subscribers.
+             * 
+             * @param {any} event The event args.
+             * @param {{overlayId: string, bounds: Electron.Rectangle, displayId: number|null}} d Renderer bounds event data.
+             */
+            ( event, d ) => {
+            
+                const display = ElectronUtilities.determineContainingDisplay( d.bounds );
+                
+                d.displayId = display.id;
+                
+                d.displayBounds = display.bounds;
+                d.bounds.x = d.bounds.x - display.bounds.x;
+                d.bounds.y = d.bounds.y - display.bounds.y;
+
+                this.#mainWindow.reference.webContents.send( 'overlay:event:bounds-changed', d );
+                this.#openOverlayEditors.forEach( window => {
+                    window?.webContents.send( 'overlay:event:bounds-changed', d );
+                } );
             } );
-        } );
 
         ipcMain.on( 'gina:dialog:import', ( event, arg ) => {
             this.ginaImportWindow = new BrowserWindow( {
