@@ -245,18 +245,34 @@ class OverlayDatabaseStore extends Store {
             }
             if ( !this.#data.version || this.#data.version < 14 ) {
             
-                let displays = screen.getAllDisplays();
-
                 this.#data?.overlays?.forEach( overlay => {
-                    const displayId = this.determineOverlayDisplay( displays, overlay );
-                    const display = displays.find( f => f.id === displayId );
 
                     delete overlay.monitorId;
+                    
+                    let overlayBounds = {
+                        x: overlay.x,
+                        y: overlay.y,
+                        width: overlay.windowWidth,
+                        height: overlay.windowHeight,
+                    };
+                    const display = ElectronUtilities.determineContainingDisplay( overlayBounds );
 
-                    overlay.displayId = displayId;
-                    overlay.displayBounds = display.bounds;
-                    overlay.x = overlay.x - display.bounds.x;
-                    overlay.y = overlay.y - display.bounds.y;
+                    if ( !display ) {
+                        const primaryDisplay = screen.getPrimaryDisplay();
+
+                        overlay.x = ( primaryDisplay.size.width - overlay.windowWidth ) / 2;
+                        overlay.y = ( primaryDisplay.size.height - overlay.windowHeight ) / 2;
+                        overlay.displayId = primaryDisplay.id;
+                        overlay.displayBounds = primaryDisplay.bounds;
+
+                    } else {
+
+                        overlay.displayId = display.id;
+                        overlay.displayBounds = display.bounds;
+                        overlay.x = overlay.x - display.bounds.x;
+                        overlay.y = overlay.y - display.bounds.y;
+                        
+                    }
 
                 } );
 
@@ -391,37 +407,6 @@ class OverlayDatabaseStore extends Store {
 
 
     /**
-     * Returns the monitor id for the given display, by it's relative position to the screenspace.
-     * 
-     * @param {Electron.Display[]} displays The displays connected to this session.
-     * @param {OverlayWindow} overlay The overlay window to process.
-     */
-    determineOverlayDisplay( displays, overlay ) {
-
-        for ( let i = 0; i < displays.length; i++ ) {
-            const display = displays[ i ];
-
-            let xContained = overlay.x >= display.bounds.x && overlay.y <= ( display.bounds.x + display.bounds.width );
-            let yContained = overlay.y >= display.bounds.y && overlay.y <= ( display.bounds.y + display.bounds.height );
-
-            if ( xContained && yContained ) {
-                return display.id;
-            }
-
-        }
-
-    }
-
-
-
-
-
-
-
-
-
-
-    /**
      * Attaches store events to ipc main and dispatches react events to the main window.
      * 
      * @param {ForwardRef} mainWindowRef The main window of the application.
@@ -429,12 +414,29 @@ class OverlayDatabaseStore extends Store {
      * @param {TriggerDatabaseStore} triggerDb Trigger database.
      */
     attachIpcEvents( mainWindowRef, sendTick, triggerDb ) {
-        ipcMain.on( 'overlay:create', ( event, overlay ) => {
-            let overlayId = this.add( overlay );
-            event.sender.webContents.send( 'overlay:create', overlayId );
-            this.#newOverlayHandlers.forEach( fn => fn( overlay ) );
-            sendTick();
-        } );
+        ipcMain.on( 'overlay:create',
+            /**
+             * Creates the given overlay window.
+             * 
+             * @param {any} event The event args.
+             * @param {OverlayWindow} overlay The overlay window model to create.
+             */
+            ( event, overlay ) => {
+
+                // New overlays should be centered on the selected/primary display.
+                let displays = screen.getAllDisplays();
+                const display = displays.find( f => f.id === overlay.displayId ) ?? screen.getPrimaryDisplay();
+
+                overlay.x = ( display.size.width - overlay.windowWidth ) / 2;
+                overlay.y = ( display.size.height - overlay.windowHeight ) / 2;
+                overlay.displayId = display.id;
+                overlay.displayBounds = display.bounds;
+
+                let overlayId = this.add( overlay );
+                event.sender.webContents.send( 'overlay:create', overlayId );
+                this.#newOverlayHandlers.forEach( fn => fn( overlay ) );
+                sendTick();
+            } );
 
         ipcMain.on( 'overlay:get', ( event, overlayId ) => {
             if ( overlayId != null && overlayId.length > 0 ) {
@@ -523,7 +525,7 @@ class OverlayDatabaseStore extends Store {
                     d.windowWidth = o.windowWidth;
                     d.windowHeight = o.windowHeight;
                     d.displayBounds = o.displayBounds;
-                    d.overlayId === 'LkYwqNMeMuubDtqE' && console.log( 'display bounds', d );
+                    
                     dims.push( d );
                 } );
                 event.sender.webContents.send( 'renderer:get:overlayDimensions', dims );
