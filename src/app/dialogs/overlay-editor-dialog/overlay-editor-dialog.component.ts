@@ -105,6 +105,8 @@ export class OverlayEditorDialogComponent implements OnInit {
                         this.model.y = e.bounds.y;
                         this.model.windowWidth = e.bounds.width;
                         this.model.windowHeight = e.bounds.height;
+                        this.model.displayBounds = e.displayBounds;
+                        this.model.displayId = e.displayId;
                     }
                 } );
             }
