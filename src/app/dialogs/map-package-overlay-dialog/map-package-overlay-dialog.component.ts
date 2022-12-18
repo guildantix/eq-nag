@@ -106,6 +106,8 @@ export class MapPackageOverlayDialogComponent implements OnInit, OnDestroy {
                         this.mappedOverlay.y = e.bounds.y;
                         this.mappedOverlay.windowWidth = e.bounds.width;
                         this.mappedOverlay.windowHeight = e.bounds.height;
+                        this.mappedOverlay.displayBounds = e.displayBounds;
+                        this.mappedOverlay.displayId = e.displayId;
                     }
                 } );
             } );
