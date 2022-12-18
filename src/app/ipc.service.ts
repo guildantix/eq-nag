@@ -1508,13 +1508,6 @@ export class IpcService {
     }
 
     public sendTestModel( displayText: string ): void {
-        // let comp = new OverlayComponent();
-        // let comp: any = {
-        //     action: Object.assign( new TriggerAction(), action ),
-        //     action.displayText : `${f.name} --== {1} ==--`,
-        //     overlayId : action.overlayId,
-        //     matches : res.result,
-        // };
         this.ipc.send( 'overlay:send:component', {
             action: {
                 displayText: displayText, // `Target Name --== Dot Name ==--`,

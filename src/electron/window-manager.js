@@ -925,53 +925,10 @@ class WindowManager {
             // Because the size includes the relative position to the primary 
             // display, we can find the (x0,y0) point of the primary display using 
             // this simple formula.
-            let currentOrigin = { x: 0 - currentSize.x, y: 0 - currentSize.y };
             let newOrigin = { x: 0 - newSize.x, y: 0 - newSize.y };
         
             this.#renderer?.setSize( newSize.width, newSize.height );
             this.#renderer?.setPosition( newSize.x, newSize.y );
-
-            // We need to recalculate the x,y coordinates of each overlay, from the
-            // origin.
-            // Changing the resolution of one monitor doesn't mean that the 
-            // relative positions or sizes of overlays on the other monitor should 
-            // stay the same or change.
-            
-            // TODO: Is this required anylonger?
-            
-
-            // overlays.forEach( overlay => {
-            //     /** @type {{left: number, top: number, right: number, bottom: number}} */
-            //     let originalBoundaries = {
-            //         left: overlay.x,
-            //         top: overlay.y,
-            //         right: currentSize.width - ( overlay.x + currentOrigin.x + overlay.width ),
-            //         bottom: currentSize.height - ( overlay.y + currentOrigin.y + overlay.height ),
-            //     };
-
-            //     // Let's calculate the new boundaries for the new resolution.  We
-            //     // can compare the right/bottom values to determine if the monitor 
-            //     // that contains the overlay has had its resolution changed.
-
-            //     /** @type {{left: number, top: number, right: number, bottom: number}} */
-            //     let newBoundaries = {
-            //         left: overlay.x,
-            //         top: overlay.y,
-            //         right: newSize.width - ( overlay.x + newOrigin.x + overlay.width ),
-            //         bottom: newSize.height - ( overlay.y + newOrigin.y + overlay.height ),
-            //     };
-
-            //     if ( originalBoundaries.bottom !== newBoundaries.bottom || originalBoundaries.right !== newBoundaries.right ) {
-            //         // The quadrant containing this overlay has had it's resolution changed, and the overlay needs to update to match.
-            //         let hRatio = ( newSize.x + newOrigin.x ) / ( currentSize.x + currentOrigin.x );
-            //         let vRatio = ( newSize.y + newOrigin.y ) / ( currentSize.y + currentOrigin.y );
-
-            //         overlay.x = overlay.x * hRatio;
-            //         overlay.height = overlay.height * hRatio;
-            //         overlay.y = overlay.y * vRatio;
-            //         overlay.width = overlay.width * vRatio;
-            //     }
-            // } );
 
             this.#renderer.webContents.send( 'renderer:resolution-changed', { overlays: overlays, origin: newOrigin } );
 
@@ -1010,7 +967,6 @@ class WindowManager {
     
             this.#overlayDatabase.update( overlay );
     
-            // TODO: Refigure how to move this overlay.
             this.#renderer.webContents.send( 'renderer:overlay:move', { overlayId: overlayId, x: overlay.x, y: overlay.y, displayBounds: display.bounds } );
         }
     }

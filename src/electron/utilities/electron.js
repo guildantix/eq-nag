@@ -50,8 +50,33 @@ function determineContainingDisplay( bounds ) {
     }
 }
 
+/**
+ * Returns an array of keys on the given object.
+ * 
+ * @template T
+ * 
+ * @param {Record<T, any>} record The object.
+ */
+function getRecordKeys( record ) {
+    if ( !record ) {
+        return [];
+    }
+
+    /** @type {T[]} */
+    let output = [];
+
+    for ( let key in record ) {
+        if ( record.hasOwnProperty( key ) ) {
+            output.push( key );
+        }
+    }
+
+    return output;
+}
+
 let ElectronUtilities = {
     determineContainingDisplay: determineContainingDisplay,
+    getRecordKeys: getRecordKeys,
 };
 
 module.exports = ElectronUtilities;

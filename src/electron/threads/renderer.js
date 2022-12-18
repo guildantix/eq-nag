@@ -13,8 +13,7 @@ const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz
 const nanoid = customAlphabet( alphabet, 16 );
 const StyleSheetUtil = require( '../utilities/style-sheet' );
 const { FctStylesModel, FctModel, FctTypes } = require( '../data/models/fct' );
-
-// TODO: Update the overlayd rag and drop routine to determine the parent display.
+const ElectronUtilities = require( '../utilities/electron' );
 
 window.onerror = ( error, url, line ) => {
     ipcRenderer.send( 'app:log:exception', `$${error}\r\n    at ${url}:${line}` );
@@ -141,7 +140,7 @@ function Renderer( originX, originY, glowOnStart ) {
     origin.y = originY;
 
     DomUtilities.docReady( f => {
-        // TODO: Sometimes (rarely?) getting overlayTemplate is not a function
+        
         overlayTemplate = Handlebars.compile( document.querySelector( '#overlay' ).innerHTML );
         overlayFctTemplate = Handlebars.compile( document.querySelector( '#overlayFct' ).innerHTML );
         displayTextTemplate = Handlebars.compile( document.querySelector( '#displayTextTemplate' ).innerHTML );
@@ -151,6 +150,8 @@ function Renderer( originX, originY, glowOnStart ) {
         fctCriticalTemplate = Handlebars.compile( document.querySelector( '#fctCriticalTemplate' ).innerHTML );
         targetGroupTemplate = Handlebars.compile( document.querySelector( '#targetGroupTemplate' ).innerHTML );
         targetGroupTimerTemplate = Handlebars.compile( document.querySelector( '#targetGroupTimerTemplate' ).innerHTML );
+
+        logInfo( '[Info:Renderer:Templates] (Renderer docReady) Templates have been compiled!' );
 
         if ( glowOnStart ) {
             renderGlow( '#4c0e67', 4000, false );
@@ -251,7 +252,14 @@ function Renderer( originX, originY, glowOnStart ) {
          * @param {{overlayId: string, x: number, y: number}} data The event data.
          */
         function ( event, data ) {
-            overlayInstances[ data.overlayId ].dom.style.left = `${data.x + origin.x + data.displayBounds.x}px`; // TODO: $Uncaught TypeError: Cannot read property 'dom' of undefined
+
+            if ( !overlayInstances[ data.overlayId ] ) {
+                logInfo( `[Error:Undefined:Overlay] (renderer:overlay:move) Overlay does not exit! {overlayId: '${data.overlayId}'}` );
+                logInfo( ElectronUtilities.getRecordKeys( overlayInstances ) );
+                return;
+            }
+            
+            overlayInstances[ data.overlayId ].dom.style.left = `${data.x + origin.x + data.displayBounds.x}px`;
             overlayInstances[ data.overlayId ].dom.style.top = `${data.y + origin.y + data.displayBounds.y}px`;
         } );
 
@@ -377,7 +385,14 @@ function Renderer( originX, originY, glowOnStart ) {
          */
         function ( event, overlayDimensions ) {
             overlayDimensions.forEach( d => {
-                overlayInstances[ d.overlayId ].dom.style.left = `${d.x + origin.x + d.displayBounds.x}px`; // TODO: $Uncaught TypeError: Cannot read property 'dom' of undefined
+
+                if ( !overlayInstances[ d.overlayId ] ) {
+                    logInfo( `[Error:Undefined:Overlay] (renderer:get:overlayDimensions) Overlay does not exit! {overlayId: '${d.overlayId}'}` );
+                    logInfo( ElectronUtilities.getRecordKeys( overlayInstances ) );
+                    return;
+                }
+                
+                overlayInstances[ d.overlayId ].dom.style.left = `${d.x + origin.x + d.displayBounds.x}px`;
                 overlayInstances[ d.overlayId ].dom.style.top = `${d.y + origin.y + d.displayBounds.y}px`;
                 overlayInstances[ d.overlayId ].dom.style.width = `${d.windowWidth}px`;
                 overlayInstances[ d.overlayId ].dom.style.height = `${d.windowHeight}px`;
@@ -448,7 +463,12 @@ function initializeOverlay( overlay ) {
         content = overlayFctTemplate( {} );
         div.setAttribute( fctCssEncapsulationId, '' );
     } else {
-        content = overlayTemplate( {} ); // TODO: $Uncaught TypeError: overlayTemplate is not a function
+        if ( !overlayTemplate ) {
+            logInfo( '[Error:Undefined:Template] (initializeOverlay) overlayTemplate fn is not a function!' );
+            return;
+        }
+
+        content = overlayTemplate( {} );
     }
 
     div.innerHTML = content;

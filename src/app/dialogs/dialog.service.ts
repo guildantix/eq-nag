@@ -45,10 +45,10 @@ export class DialogService {
 
 
     /**
-     * Displays the trigger action wizard.
+     * Displays the display selector dialog.
      * 
-     * @param model The trigger action to edit/create.
-     * @param onClose This function is executed after the user makes changes.  If the model is null, the user cancelled their changes.
+     * @param messages The messages to display to the user.
+     * @param displayId The id of the selected display.
      */
     public showMonitorSelect( messages: ( string | ColoredString )[] | string | ColoredString, displayId: number | null ): Observable<number|null> {
         

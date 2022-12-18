@@ -163,7 +163,6 @@ app.on( 'ready', function () {
     screen.on( 'display-metrics-changed', ( e, newDisplay ) => {
         log.info( 'screen metrics have changed.', e, newDisplay );
         winManager.checkWindowPosition();
-        console.log( 'screen metrics changed' );
     } );
     protocol.interceptFileProtocol( 'file', ( req, callback ) => {
         let filePath = new url.URL( req.url ).pathname;
@@ -267,8 +266,7 @@ function sendTick() {
     if ( winManager.ginaImportWindow != null ) {
         winManager.ginaImportWindow.send( 'tick', tickData );
     }
-
-    console.log( 'tick sent' );
+    
 }
 
 /** @type {import("electron-updater").UpdateInfo} */
