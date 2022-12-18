@@ -42,7 +42,7 @@ export class OverlaysComponent implements OnInit {
             let dialogArgs = new NotificationDialogModel();
             if ( e.code === 'Renderer:ResolutionChanged' ) {
                 dialogArgs.message = [
-                    new ColoredString('The resolution of one or more of your monitors has changed.', '#f0e069', true),
+                    new ColoredString( 'The resolution of one or more of your monitors has changed.', '#f0e069', true ),
                     'Your overlay positions have been automatically moved to match.',
                     'To manually arrange your overlays, click on the Arrange button below.' ];
                 dialogArgs.title = 'Your resolution has changed!';
@@ -98,8 +98,6 @@ export class OverlaysComponent implements OnInit {
             .showOverlayDetailsDialog( new OverlayWindowModel() )
             .subscribe( model => {
                 if ( model?.isValid() === true ) {
-                    model.x = 100;
-                    model.y = 100;
                     model.windowWidth = 500;
                     model.windowHeight = 400;
                     this.ipcService.createNewOverlayWindow( model ).subscribe( overlayId => {
@@ -277,7 +275,7 @@ export class OverlaysComponent implements OnInit {
                                     trigger: trigger,
                                     actionId: action.actionId,
                                     overlayKey: overlayKey,
-                                    propertyName: propertyDescriptors[overlayKey].name,
+                                    propertyName: propertyDescriptors[ overlayKey ].name,
                                     propertyDesc: propertyDescriptors[ overlayKey ].description,
                                     actionType: action.actionType,
                                 } );
@@ -337,7 +335,8 @@ export class OverlaysComponent implements OnInit {
      * @param overlayId The id of the desired overlay.
      */
     sendToOrigin( overlayId: string ) {
-        this.dialogService.showMonitorSelect( 'Select which monitor to move this overlay to.' ).subscribe( displayId => {
+        const overlay = this.overlays.find( f => f.overlayId === overlayId );
+        this.dialogService.showMonitorSelect( 'Select which monitor to move this overlay to.', overlay?.displayId ?? null ).subscribe( displayId => {
             if ( displayId !== null ) {
                 this.ipcService.sendOverlayToOrigin( overlayId, displayId );
             }
