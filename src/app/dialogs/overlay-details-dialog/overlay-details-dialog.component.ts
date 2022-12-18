@@ -11,6 +11,7 @@ export class OverlayDetailsDialogComponent implements OnInit {
 
     public model: OverlayWindowModel;
     public enterDescription: boolean;
+    public selectedDisplay: Electron.Display | null = null;
 
     constructor(
         public dialogRef: MatDialogRef<OverlayDetailsDialogComponent>,
@@ -22,6 +23,12 @@ export class OverlayDetailsDialogComponent implements OnInit {
 
     cancel (): void {
         this.dialogRef.close( null );
+    }
+
+    onDisplaySelected( display: Electron.Display ): void {
+        this.selectedDisplay = display;
+        this.model.displayId = display.id;
+        this.model.displayBounds = display.bounds;
     }
 
 }
