@@ -785,21 +785,22 @@ export class IpcService {
         this.ipc.send( 'renderer:save:overlayDimensions', null );
     }
 
-    public updateOverlaysPositions( overlays: OverlayWindowModel[] ): Observable<boolean> {
-        let obs: Observable<boolean> = new Observable<boolean>( ( observer: Observer<boolean> ) => {
+    // TODO: Determine wtf this was?
+    // public updateOverlaysPositions( overlays: OverlayWindowModel[] ): Observable<boolean> {
+    //     let obs: Observable<boolean> = new Observable<boolean>( ( observer: Observer<boolean> ) => {
             
-            this.ipc.once( 'overlays:update:position', ( e, updated: boolean ) => {
-                this.ngZone.run( () => {
-                    observer.next( updated );
-                    observer.complete();
-                } );
-            } );
-            this.ipc.send( 'overlays:update:position', overlays );
+    //         this.ipc.once( 'overlays:update:position', ( e, updated: boolean ) => {
+    //             this.ngZone.run( () => {
+    //                 observer.next( updated );
+    //                 observer.complete();
+    //             } );
+    //         } );
+    //         this.ipc.send( 'overlays:update:position', overlays );
 
-        } );
+    //     } );
 
-        return obs;
-    }
+    //     return obs;
+    // }
 
     public deleteOverlayWindow( overlayId: string ): Observable<boolean> {
         let obs: Observable<boolean> = new Observable<boolean>( ( observer: Observer<boolean> ) => {
