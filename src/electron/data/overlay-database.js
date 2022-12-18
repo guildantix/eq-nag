@@ -9,6 +9,7 @@ const nanoid = customAlphabet( alphabet, 16 );
 const { OverlayDimensions, OverlayWindow } = require( './models/overlay-window' );
 const { StyleProperties } = require( './models/common' );
 const TriggerDatabaseStore = require( "./trigger-database" );
+const ElectronUtilities = require( "../utilities/electron" );
 
 class OverlayDatabaseStore extends Store {
 
@@ -450,19 +451,20 @@ class OverlayDatabaseStore extends Store {
             sendTick();
         } );
         
-        ipcMain.on( 'overlays:update:position', ( event, overlays ) => {
-            overlays.forEach( overlay => {
-                let model = this.find( overlay.overlayId );
-                model.x = overlay.x;
-                model.y = overlay.y;
-                model.windowWidth = overlay.windowWidth;
-                model.windowHeight = overlay.windowHeight;
-                this.update( model );
-            } );
-            this.#overlayUpdateHandlers.forEach( fn => fn( this.getAll() ) );
-            event.sender.webContents.send( 'overlays:update:position', true );
-            sendTick();
-        } );
+        // TODO: Figure out wtf this was?
+        // ipcMain.on( 'overlays:update:position', ( event, overlays ) => {
+        //     overlays.forEach( overlay => {
+        //         let model = this.find( overlay.overlayId );
+        //         model.x = overlay.x;
+        //         model.y = overlay.y;
+        //         model.windowWidth = overlay.windowWidth;
+        //         model.windowHeight = overlay.windowHeight;
+        //         this.update( model );
+        //     } );
+        //     this.#overlayUpdateHandlers.forEach( fn => fn( this.getAll() ) );
+        //     event.sender.webContents.send( 'overlays:update:position', true );
+        //     sendTick();
+        // } );
 
         ipcMain.on( 'overlay:delete', ( event, overlayId ) => {
             let deleted = this.remove( overlayId );
@@ -482,17 +484,25 @@ class OverlayDatabaseStore extends Store {
              * @param {OverlayDimensions[]} dims The overlay dimensions
              */
             ( event, dims ) => {
+
                 dims.forEach( d => {
                     let model = this.find( d.overlayId );
                     if ( model ) {
-                        model.x = d.x;
-                        model.y = d.y;
+
+                        const display = ElectronUtilities.determineContainingDisplay( d );
+    
+                        model.displayId = display.id;
+                        model.displayBounds = display.bounds;
+                        model.x = d.x - display.bounds.x;
+                        model.y = d.y - display.bounds.y;
                         model.windowWidth = d.windowWidth;
                         model.windowHeight = d.windowHeight;
+
                         this.update( model );
                     }
                 } );
-                event.sender.webContents.send( 'overlays:update:position', true );
+                sendTick();
+                // event.sender.webContents.send( 'overlays:update:position', true );
             } );
         
         ipcMain.on( 'overlay:get:overlayDimensions',
@@ -513,6 +523,7 @@ class OverlayDatabaseStore extends Store {
                     d.windowWidth = o.windowWidth;
                     d.windowHeight = o.windowHeight;
                     d.displayBounds = o.displayBounds;
+                    d.overlayId === 'LkYwqNMeMuubDtqE' && console.log( 'display bounds', d );
                     dims.push( d );
                 } );
                 event.sender.webContents.send( 'renderer:get:overlayDimensions', dims );
