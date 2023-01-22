@@ -107,7 +107,7 @@ function createWindow() {
     );
     // Open the DevTools.
     if ( app.isDev() ) {
-        mainWindow.webContents.openDevTools();
+        mainWindow.webContents.openDevTools( { mode: 'undocked' } );
     }
 
     mainWindow.on( 'closed', function () {

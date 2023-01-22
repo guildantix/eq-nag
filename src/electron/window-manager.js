@@ -403,7 +403,7 @@ class WindowManager {
                 }
             } );
             if ( app.isDev() ) {
-                this.triggerLibraryWindow.webContents.openDevTools();
+                this.triggerLibraryWindow.webContents.openDevTools( { mode: 'undocked' } );
             }
             let url = `file://${this.#dirname}/dist/index.html#/trigger/library`;
             if ( arg ) {
@@ -438,7 +438,7 @@ class WindowManager {
                 }
             } );
             if ( app.isDev() ) {
-                this.updateNotesWindow.webContents.openDevTools();
+                this.updateNotesWindow.webContents.openDevTools( { mode: 'undocked' } );
             }
             let url = `file://${this.#dirname}/dist/index.html#/update-notes`;
             if ( arg ) {
@@ -538,7 +538,7 @@ class WindowManager {
         
         // Open the DevTools.
         if ( app.isDev() ) {
-            renderer.webContents.openDevTools();
+            renderer.webContents.openDevTools( { mode: 'undocked' } );
         }
 
         this.#renderer = renderer;
@@ -599,7 +599,7 @@ class WindowManager {
         
         // Open the DevTools.
         if ( app.isDev() ) {
-            deathRecap.webContents.openDevTools();
+            deathRecap.webContents.openDevTools( { mode: 'undocked' } );
         }
         
     }
@@ -692,7 +692,7 @@ class WindowManager {
         
         // Open the DevTools.
         if ( app.isDev() ) {
-            deathRecap.webContents.openDevTools();
+            deathRecap.webContents.openDevTools( { mode: 'undocked' } );
         }
 
         deathRecap.webContents.once( 'dom-ready', () => {
