@@ -280,6 +280,7 @@ function LogWatcher(character, logPosition) {
 
             let fudge = 0;
             let simDuration = lineData[ lineData.length - 1 ].delay + lineData.length * fudge;
+            simDuration = simDuration >= 1 ? simDuration : 1;
             let padTime = DateUtilities.timeSince( start, new Date() ).totalSeconds;
             for ( let i = lineData.length - 1; i >= 0; i-- ) {
                 window.setTimeout( () => simulateLogEntries( lineData[ i ].lines, lineData[ i ].timestamp, i === lineData.length - 1, padTime ), lineData[ i ].delay * 1000 + i * fudge );
