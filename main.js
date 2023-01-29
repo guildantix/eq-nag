@@ -137,7 +137,11 @@ function createWindow() {
         setInterval( () => {
             autoUpdater.checkForUpdates();
         }, updateCheckInterval );
-        
+
+        let overlays = overlayDatabase.getAll();
+        overlays.forEach( overlay => {
+            mainWindow.webContents.send( 'color:darken', { overlayId: overlay.overlayId, color: overlay.timerColor } );
+        } );
     } );
 
     mainWindow.once( 'ready-to-show', () => {
@@ -202,6 +206,13 @@ app.on( 'window-all-closed', function () {
 
 app.on( 'activate', function () {
     if ( mainWindow === null ) createWindow()
+} );
+
+// TODO: Remove this in a few versions.
+ipcMain.on( `color:darken`, ( e, data ) => {
+    let overlay = overlayDatabase.find( data.overlayId );
+    overlay.timerBackgroundColor = data.color;
+    overlayDatabase.update( overlay );
 } );
 
 ipcMain.on( 'app:log:exception', ( event, data ) => {

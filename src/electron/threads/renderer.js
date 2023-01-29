@@ -1652,6 +1652,16 @@ function applyTimerSettings( overlayId, contentArea, comp, group ) {
     if ( comp.action.overrideTimerColor ) {
         comp.dom.querySelector( '.determinate' ).style.backgroundColor = comp.action.overrideTimerColor;
         comp.dom.querySelector( '.progress' ).style.backgroundColor = comp.action.timerBackgroundColor;
+    } else {
+        let overlayInstance = overlayInstances[ comp.action.overlayId ];
+        
+        if ( overlayInstance?.model?.timerColor && overlayInstance?.model?.timerBackgroundColor ) {
+            comp.dom.querySelector( '.determinate' ).style.backgroundColor = overlayInstance.model.timerColor;
+            comp.dom.querySelector( '.progress' ).style.backgroundColor = overlayInstance.model.timerBackgroundColor;
+        } else {
+            comp.dom.querySelector( '.determinate' ).style.backgroundColor = '#008000';
+            comp.dom.querySelector( '.progress' ).style.backgroundColor = 'rgba(0,33,0,.75)';
+        }
     }
 
     if ( overlayInstances[ overlayId ].showRemainingDuration || comp.action.showRemainingDuration ) {
@@ -1912,8 +1922,15 @@ function resetTimerComponentClock( overlayId, comp, repeatCount ) {
         comp.dom.querySelector( '.determinate' ).style.backgroundColor = comp.action.overrideTimerColor;
         comp.dom.querySelector( '.progress' ).style.backgroundColor = comp.action.timerBackgroundColor;
     } else {
-        comp.dom.querySelector( '.determinate' ).style.backgroundColor = '#008000';
-        comp.dom.querySelector( '.progress' ).style.backgroundColor = 'rgba(0,33,0,.75)';
+        let overlayInstance = overlayInstances[ comp.action.overlayId ];
+        
+        if ( overlayInstance?.model?.timerColor && overlayInstance?.model?.timerBackgroundColor ) {
+            comp.dom.querySelector( '.determinate' ).style.backgroundColor = overlayInstance.model.timerColor;
+            comp.dom.querySelector( '.progress' ).style.backgroundColor = overlayInstance.model.timerBackgroundColor;
+        } else {
+            comp.dom.querySelector( '.determinate' ).style.backgroundColor = '#008000';
+            comp.dom.querySelector( '.progress' ).style.backgroundColor = 'rgba(0,33,0,.75)';
+        }
     }
 
     return comp;

@@ -5,6 +5,7 @@ import { Observable, Observer } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
 import { DataTickModel, DkpEntryModel, TriggerModel, OverlayWindowModel, ActionTypes, FocusEffectSettings, CharacterModel, BasicError, TriggerFolder, FileModel, Tag, AuthorModel, PackageFileModel, TriggerPackageMetaModel, TriggerPackageVersion, FctStylesModel, OverlayBoundsChangedEventArgs, DialogEventArgs, QuickShareMetaModel, LogFileLocation, IpcMessage, DeathRecapPreferences } from './core.model';
 import { GinaConfiguration, GinaTriggerGroups } from './gina.model';
+import { ColorUtility } from './utilities';
 
 @Injectable( { providedIn: 'root' })
 export class IpcService {
@@ -63,6 +64,12 @@ export class IpcService {
                 this._webFrame = ( <any>window ).require( 'electron' ).webFrame;
                 this._clipboard = ( <any>window ).require( 'electron' ).clipboard;
                 this._crashReporter = ( <any>window ).require( 'electron' ).crashReporter;
+
+                this.ipc.on( 'color:darken', ( event: any, data: { overlayId: string, color: string } ) => {
+                    data.color = ColorUtility.FromHex( data.color ).darken( 0.93 ).toString( 0.75 );
+                    console.log( data );
+                    this.ipc.send( `color:darken`, data );
+                } );
 
                 this.ipc.on( 'pkg:missing-overlay', ( event: any, data: OverlayWindowModel ) => {
                     ngZone.run( () => {

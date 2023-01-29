@@ -49,6 +49,8 @@ class OverlayWindow {
     timerSortType = TimerSortTypes.None;
     /** @type string */
     timerColor = '#008000';
+    /** @type string */
+    timerBackgroundColor = '#0080004b';
     /** @type {number|null} */
     displayId = null;
     /** @type {Electron.Rectangle} */

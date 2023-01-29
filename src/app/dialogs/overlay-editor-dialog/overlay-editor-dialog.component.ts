@@ -202,6 +202,9 @@ export class OverlayEditorDialogComponent implements OnInit {
         if ( this.overlayId == null ) {
             this.closeModal();
         } else {
+            if ( this.model.timerColor?.length > 0 ) {
+                this.model.timerBackgroundColor = ColorUtility.FromHex( this.model.timerColor ).darken( 0.93 ).toString( 0.75 );
+            }
             this.ipcService.updateOverlayWindow( this.model ).subscribe( success => { } );
             this.closeModal();
         }
