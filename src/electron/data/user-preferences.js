@@ -24,6 +24,9 @@ const possibleEqFolders = [
     '\\steamapps\\Everquest Live',
 ];
 
+/** @type {(() => void)[]} */
+const prefChangeListeners = [];
+
 /**
  * Get windows drives
  * */
@@ -199,6 +202,14 @@ class UserPreferencesStore extends Store {
     }
     set enableFct( val ) {
         this.#data.enableFct = val === true;
+        this.storeDataFile( this.#data );
+    }
+
+    get fctShowCriticalsInline() {
+        return this.#data.fctShowCriticalsInline === true;
+    }
+    set fctShowCriticalsInline( val ) {
+        this.#data.fctShowCriticalsInline = val === true;
         this.storeDataFile( this.#data );
     }
 
@@ -403,6 +414,40 @@ class UserPreferencesStore extends Store {
 
 
     /**
+     * Executes handler when specific changes have been made.
+     * 
+     * @param {() => void} fn Handler method executed after changes have been made.
+     */
+    onChanges( fn ) {
+        prefChangeListeners.push( fn );
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Emits changes via the change listeners.
+     */
+    emitChanges() {
+        prefChangeListeners.forEach( fn => fn() );
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
      * Returns the x and y position of the overlay editor window.
      * 
      * @param {string} overlayId The id of the overlay.
@@ -464,6 +509,11 @@ class UserPreferencesStore extends Store {
         
         ipcMain.on( 'settings:set:fct', ( event, arg ) => {
             this.enableFct = arg;
+        } );
+
+        ipcMain.on( 'settings:set:fctShowCriticalsInline', ( event, arg ) => {
+            this.fctShowCriticalsInline = arg;
+            this.emitChanges();
         } );
         
         ipcMain.on( 'settings:set:quickShareImports', ( event, arg ) => {

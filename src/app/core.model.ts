@@ -458,6 +458,7 @@ export class DataTickModel {
     public triggers: TriggerModel[] = [];
     public overlays: OverlayWindowModel[] = [];
     public enableFct: boolean = false;
+    public fctShowCriticalsInline: boolean = false;
     public damageDealtOverlayId: string;
     public damageReceivedOverlayId: string;
     public hasExtendedDotFocus: boolean = false;

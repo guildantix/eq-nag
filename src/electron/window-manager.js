@@ -93,6 +93,12 @@ class WindowManager {
         this.#mainWindow = mainWindowRef;
         this.#overlayDatabase = overlayDatabase;
 
+        userPreferencesDatabase.onChanges( () => {
+            if ( this.#renderer ) {
+                this.#renderer.webContents.send( 'fct:change:fctShowCriticalsInline', userPreferencesDatabase.fctShowCriticalsInline );
+            }
+        } );
+
         this.#overlayDatabase.registerNewOverlayHandler( overlay => {
             this.#renderer.webContents.send( 'renderer:overlay:new', overlay );
         } );
@@ -540,6 +546,10 @@ class WindowManager {
         if ( app.isDev() ) {
             renderer.webContents.openDevTools( { mode: 'undocked' } );
         }
+
+        renderer.webContents.once( 'dom-ready', () => {
+            renderer.webContents.send( 'fct:change:fctShowCriticalsInline', this.#userPrefDb.fctShowCriticalsInline );
+        } );
 
         this.#renderer = renderer;
 

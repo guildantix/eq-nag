@@ -259,6 +259,7 @@ function sendTick() {
         damageDealtOverlayId: userPreferences.damageDealtOverlayId,
         damageReceivedOverlayId: userPreferences.damageReceivedOverlayId,
         enableFct: userPreferences.enableFct,
+        fctShowCriticalsInline: userPreferences.fctShowCriticalsInline,
         hasExtendedDotFocus: userPreferences.hasExtendedDotFocus,
         extendedDotFocusPercent: userPreferences.extendedDotFocusPercent,
         extendedDotFocusDecayLevel: userPreferences.extendedDotFocusDecayLevel,

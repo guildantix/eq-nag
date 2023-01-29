@@ -52,7 +52,8 @@
                 <fieldset>
                     <legend><span class="title">General</span></legend>
                     <p>
-                        <mat-checkbox [(ngModel)]="enableFct" (change)="onEnableFctChange()">Enable</mat-checkbox>
+                        <mat-checkbox [(ngModel)]="enableFct" (change)="onEnableFctChange()">Enable</mat-checkbox><br />
+                        <mat-checkbox [(ngModel)]="showCriticalsInline" (change)="onShowCriticalsInlineChange()">Display critical damage inline with regular damage</mat-checkbox>
                     </p>
                     
                     <p>

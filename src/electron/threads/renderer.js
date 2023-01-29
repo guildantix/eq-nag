@@ -14,6 +14,7 @@ const nanoid = customAlphabet( alphabet, 16 );
 const StyleSheetUtil = require( '../utilities/style-sheet' );
 const { FctStylesModel, FctModel, FctTypes } = require( '../data/models/fct' );
 const ElectronUtilities = require( '../utilities/electron' );
+const { StyleProperties } = require( '../data/models/common' );
 
 window.onerror = ( error, url, line ) => {
     ipcRenderer.send( 'app:log:exception', `$${error}\r\n    at ${url}:${line}` );
@@ -124,6 +125,7 @@ var mouseForwardingPaused = false;
 var screenGlower = null;
 /** @type {number} */
 var screenGlowTimerId = null;
+let showCriticalsInline = false;
 
 
 
@@ -374,6 +376,8 @@ function Renderer( originX, originY, glowOnStart ) {
             style.sheet.insertRule( styleSheetUtil.createTextRule( fctStyles.fctHealingInStyle, 'fct-healing-in', fctCssEncapsulationId ) );
             style.sheet.insertRule( styleSheetUtil.createTextRule( fctStyles.fctSkillStyle, 'fct-skill', fctCssEncapsulationId ) );
             
+            // textShadow += `0px 0px ${comp.action.textGlowSize}px ${comp.action.textGlowColor}, -1px -1px ${comp.action.textGlowSize}px ${comp.action.textGlowColor}, 1px -1px ${comp.action.textGlowSize}px ${comp.action.textGlowColor}, -1px 1px ${comp.action.textGlowSize}px ${comp.action.textGlowColor}, 1px 1px ${comp.action.textGlowSize}px ${comp.action.textGlowColor}`;
+            
         } );
 
     ipcRenderer.on( 'renderer:get:overlayDimensions',
@@ -434,7 +438,12 @@ function Renderer( originX, originY, glowOnStart ) {
 
             ipcRenderer.send( 'overlay:set:overlayDimensions', model );
         } );
-
+    
+    ipcRenderer.on( 'fct:change:fctShowCriticalsInline',
+        ( event, fctShowCriticalsInline ) => {
+            showCriticalsInline = fctShowCriticalsInline === true;
+        } );
+    
     speechSynthesis.onvoiceschanged = () => {
         voiceOptions = speechSynthesis.getVoices();
     };
@@ -793,7 +802,8 @@ function updateOverlay( overlayId, model ) {
  * @param {FctModel} comp Tells the renderer to forcefully redraw the overlayComponents.
  */
 function renderFct( overlayId, comp ) {
-    let contentArea = overlayInstances[ overlayId ].dom.querySelector( '.overlay-content-area' );
+    let fctOverlay = overlayInstances[ overlayId ];
+    let contentArea = fctOverlay.dom.querySelector( '.overlay-content-area' );
     let div = document.createElement( 'div' );
 
     if ( comp.fctType === FctTypes.dmgOut ) {
@@ -819,7 +829,7 @@ function renderFct( overlayId, comp ) {
 
     }
 
-    if ( comp.critical ) {
+    if ( comp.critical && !showCriticalsInline ) {
         let content = fctCriticalTemplate( { value: comp.text, damageSource: comp.attack } );
         div.innerHTML = content;
 
@@ -855,10 +865,20 @@ function renderFct( overlayId, comp ) {
         delayAdd += comp.delayAmount;
 
     } else {
-        let content = fctTemplate( { value: comp.text, damageSource: comp.attack } );
+        let damageSourceText = comp.attack;
+
+        if ( comp.critical ) {
+            damageSourceText = `Critical, ${damageSourceText}`;
+        }
+        
+        let content = fctTemplate( { value: comp.text, damageSource: damageSourceText } );
         div.innerHTML = content;
 
         div.classList.add( 'animate-fade-out' );
+
+        if ( comp.critical ) {
+            div.classList.add( 'fct-dmg-out-critical' );
+        }
 
         comp.dom = div;
 
