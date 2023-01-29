@@ -27,7 +27,7 @@ import { DeathRecapDialogComponent } from './death-recap-dialog/death-recap-dial
 import { MapPackageOverlayDialogComponent } from './map-package-overlay-dialog/map-package-overlay-dialog.component';
 import { ActionOverlayReviewModel, ActionOverlayUseModel, OverlayReassignments } from './action-overlay-reassignment-dialog/action-overlay-reassignment.model';
 import { ActionOverlayReassignmentDialogComponent } from './action-overlay-reassignment-dialog/action-overlay-reassignment-dialog.component';
-import * as _ from 'lodash';
+import * as _ from 'lodash-es';
 import { MonitorSelectDialogComponent } from './monitor-select-dialog/monitor-select-dialog.component';
 
 @Injectable()
