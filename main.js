@@ -255,6 +255,7 @@ function sendTick() {
         dkpEntries: dkpDatabase.getAllUnentered(),
         logFile: userPreferences.logFile,
         voiceIndex: userPreferences.voiceIndex,
+        masterVolume: userPreferences.masterVolume,
         triggers: _triggers,
         overlays: overlayDatabase.getAll(),
         damageDealtOverlayId: userPreferences.damageDealtOverlayId,

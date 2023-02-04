@@ -47,6 +47,7 @@ var damageDealtOverlayId = null;
 var damageReceivedOverlayId = null;
 var voiceOptions = [];
 var voiceIndex = -1;
+var masterVolume = 100;
 var logParseTimeoutId = null;
 var logParseTimer = 50;
 var changingLogFile = false;
@@ -304,6 +305,7 @@ function LogWatcher(character, logPosition) {
         damageDealtOverlayId = data.damageDealtOverlayId;
         damageReceivedOverlayId = data.damageReceivedOverlayId;
         voiceIndex = data.voiceIndex;
+        masterVolume = data.masterVolume;
         isDev = data.isDev;
         phoneticTransforms = data.phoneticTransforms;
         charModel = data.characterModel ? data.characterModel : charModel;
@@ -2062,7 +2064,7 @@ function speakPhrase( phrase, interrupt, conditionResults, simulating, parseResu
         utter.text = StringUtilities.parseCountersToLiteral( utter.text, counters );
         utter.text = StringUtilities.parsePhoneticTransformsToLiteral( utter.text, phoneticTransforms );
         utter.voice = voiceOptions[ voiceIndex ];
-        utter.volume = speechVolume > 0 ? speechVolume / 100 : 1;
+        utter.volume = ( masterVolume * ( speechVolume > 0 ? speechVolume / 100 : 1 ) ) / 100;
         
         utter.onend = function ( event ) {
             let i = utterances.indexOf( this );
@@ -2197,7 +2199,7 @@ function playAudioFile( fileId, audioVolume ) {
     ipcRenderer.once( 'audio-file:get:url', ( e, url ) => {
         if ( url ) {
             let player = new Audio( url );
-            player.volume = audioVolume > 0 ? audioVolume / 100 : 1;
+            player.volume = ( masterVolume * ( audioVolume > 0 ? audioVolume / 100 : 1 ) ) / 100;
             player.play();
         }
     } );

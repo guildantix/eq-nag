@@ -29,6 +29,7 @@ export class SettingsComponent implements OnInit {
     public phoneticTransforms: IPhoneticTransform[] = [];
     public phoneticTransformsModified: boolean = false;
     public version: string;
+    public masterVolume: number = 100;
     public voiceOptions: SpeechSynthesisVoice[] = [];
     public voiceIndex: number = null;
     public loadingGinaConfig: boolean = false;
@@ -65,6 +66,7 @@ export class SettingsComponent implements OnInit {
         this.ipcService.getAppVersion().subscribe( version => this.version = version );
         
         this.ipcService.tickReceived().subscribe( data => {
+            this.masterVolume = data.masterVolume;
             this.voiceIndex = data.voiceIndex;
             this.overlays = data.overlays;
             
@@ -375,6 +377,22 @@ export class SettingsComponent implements OnInit {
      */
     onChangeVoice(): void {
         this.ipcService.updateVoiceIndex( this.voiceIndex );
+    }
+
+
+
+
+
+
+
+
+
+    
+    /**
+     * Stores the new master volume setting.
+     */
+    onChangeMasterVolume(): void {
+        this.ipcService.updateMasterVolume( this.masterVolume );
     }
 
 

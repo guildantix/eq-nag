@@ -455,6 +455,7 @@ export class DataTickModel {
     public dkpEntries: DkpEntryModel[] = [];
     public logFile: string;
     public voiceIndex: number;
+    public masterVolume: number = 100;
     public triggers: TriggerModel[] = [];
     public overlays: OverlayWindowModel[] = [];
     public enableFct: boolean = false;

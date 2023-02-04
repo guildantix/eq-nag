@@ -197,6 +197,18 @@ class UserPreferencesStore extends Store {
         this.storeDataFile( this.#data );
     }
 
+    get masterVolume() {
+        if ( this.#data && this.#data.masterVolume > -1 ) {
+            return this.#data.masterVolume;
+        } else {
+            return 100;
+        }
+    }
+    set masterVolume( val ) {
+        this.#data.masterVolume = val <= 100 && val >= 0 ? val : 100;
+        this.storeDataFile( this.#data );
+    }
+
     get enableFct() {
         return this.#data.enableFct === true;
     }
@@ -401,6 +413,14 @@ class UserPreferencesStore extends Store {
             this.storeDataFile( this.#data );
 
         }
+        if ( !this.#data.version || this.#data.version < 6 ) {
+            
+            // Set the master volume to 100%.
+            this.#data.masterVolume = 100;
+            this.#data.version = 6;
+            this.storeDataFile( this.#data );
+
+        }
         
     }
 
@@ -505,6 +525,12 @@ class UserPreferencesStore extends Store {
         
         ipcMain.on( 'voice:select', ( event, arg ) => {
             this.voiceIndex = arg;
+            sendTick();
+        } );
+        
+        ipcMain.on( 'settings:set:masterVolume', ( event, arg ) => {
+            this.masterVolume = arg;
+            sendTick();
         } );
         
         ipcMain.on( 'settings:set:fct', ( event, arg ) => {

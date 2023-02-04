@@ -20,6 +20,14 @@
     </fieldset>
 
     <fieldset>
+        <legend><span class="title">Sound</span></legend>
+        <div class="card-property">
+            <div class="content-middle">Master Volume</div>
+            <div class="content-right"><mat-slider [(ngModel)]="masterVolume" thumbLabel tickInterval="1" min="1" max="100" style="width: 100%;" (change)="onChangeMasterVolume()" ></mat-slider></div>
+        </div>
+    </fieldset>
+
+    <fieldset>
         <legend><span class="title">Text to Speech</span></legend>
         <mat-form-field style="width: 50%;">
             <mat-label></mat-label>

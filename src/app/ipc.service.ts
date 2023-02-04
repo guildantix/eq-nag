@@ -423,6 +423,10 @@ export class IpcService {
         this.ipc.send( 'voice:select', index );
     }
 
+    public updateMasterVolume( masterVolume: number ): void {
+        this.ipc.send( 'settings:set:masterVolume', masterVolume );
+    }
+
     public updateFocusEffectSettings( model: FocusEffectSettings ): void {
         this.ipc.send( 'settings:set:focus-effects', model );
     }
