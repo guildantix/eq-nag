@@ -2016,7 +2016,7 @@ function renderPhrases( phrases, conditionResults, parseResult, deltaTime ) {
         if ( phrases[ phraseIndex ].useRegEx ) {
             renderedPhrases.push( renderedPhrase );
         } else {
-            renderedPhrases.push( '^' + renderedPhrase.replace( /[.*+?^${}()|[\]\\]/g, '\\$&' ) + '$' );
+            renderedPhrases.push( renderedPhrase.replace( /[.*+?^${}()|[\]\\]/g, '\\$&' ) );
         }
     }
 
