@@ -503,6 +503,10 @@ class OverlayDatabaseStore extends Store {
                     if ( model ) {
 
                         const display = ElectronUtilities.determineContainingDisplay( d );
+
+                        if ( !display ) {
+                            throw `Could not locate display for overlay ${d.overlayId}, dims: ${d.x}, ${d.y}, ${d.windowWidth}, ${d.windowHeight}. displayBounds: ${d.displayBounds}`;
+                        }
     
                         model.displayId = display.id;
                         model.displayBounds = display.bounds;
