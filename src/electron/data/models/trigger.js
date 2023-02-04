@@ -316,6 +316,9 @@ class TriggerAction {
     /** @type {string} */
     audioFileId = null;
 
+    /** @type {number} */
+    audioVolume = 100;
+
     /** @type {boolean} */
     textUseCustomFont = false;
 

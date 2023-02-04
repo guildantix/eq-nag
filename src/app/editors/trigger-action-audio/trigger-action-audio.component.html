@@ -26,6 +26,11 @@
                 
             </div>
 
+            <div class="card-property">
+                <div class="content-middle">Volume</div>
+                <div class="content-right"><mat-slider [(ngModel)]="action.audioVolume" thumbLabel tickInterval="1" min="1" max="100" style="width: 100%;" ></mat-slider></div>
+            </div>
+
             <!-- <p>Select an audio file from the list or upload a new file.</p>
 
             <mat-form-field>

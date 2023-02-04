@@ -598,6 +598,7 @@ export class TriggerActionProperties {
         description: 'For audio actions, this is the audio file that plays.'
     } )
     public audioFileId: string = null;
+    public audioVolume: number = 100;
 
     public textUseCustomFont: boolean = false;
     public textFont: string = null;

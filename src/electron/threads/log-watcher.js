@@ -1131,7 +1131,7 @@ function executeTriggerAction( trigger, action, timestamp, res, deltaTime, simul
     } else if ( action.actionType === ActionTypes.PlayAudio ) {
         /* --== Play Audio ==-- */
     
-        playAudioFile( action.audioFileId );
+        playAudioFile( action.audioFileId, action.audioVolume );
 
     } else if ( action.actionType === ActionTypes.Clipboard ) {
         /* --== Copy text to clipboard ==-- */
@@ -2193,10 +2193,11 @@ function calculateCastingMilliseconds( duration, triggerClasses, extFocusPercent
  * 
  * @param {string} fileId The id of the desired file.
  */
-function playAudioFile( fileId ) {
+function playAudioFile( fileId, audioVolume ) {
     ipcRenderer.once( 'audio-file:get:url', ( e, url ) => {
         if ( url ) {
             let player = new Audio( url );
+            player.volume = audioVolume > 0 ? audioVolume / 100 : 1;
             player.play();
         }
     } );
