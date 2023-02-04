@@ -510,6 +510,7 @@ export class TriggerActionProperties {
     public timerIcon: string = null;
     public timerIconDef: string = null;
     public interruptSpeech: boolean = false;
+    public speechVolume: number = 100;
     public hideTimer: boolean = false;
     public hideConditions: TriggerCondition[] = [];
     public castTime: number = null;

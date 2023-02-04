@@ -201,6 +201,8 @@ class TriggerAction {
     timerIconDef = null;
     /** @type boolean */
     interruptSpeech = false;
+    /** @type {number} */
+    speechVolume = 100;
     /** @type boolean */
     hideTimer = false;
     /** @type {TriggerCondition[]} */
@@ -606,6 +608,25 @@ class QuickShareMetaModel {
 
 }
 
+class TriggerStoreModel {
+    /** @type {number} */
+    version;
+    /** @type {Trigger[]} */
+    triggers;
+    /** @type {TriggerFolder[]} */
+    folders;
+    /** @type {Tag[]} */
+    tags;
+    /** @type {TriggerPackageVersion[]} */
+    installedPackages;
+    /** @type {QuickShareVersion[]} */
+    installedQuickShares;
+    /** @type {Record<string, string>} This maps user overlay ids to author overlay ids. */
+    packageOverlayMap;
+    /** @type {Record<string, string[]>} This is a record of all package original overlay ids. */
+    packageOverlays;
+}
+
 module.exports = {
     Trigger,
     TriggerAction,
@@ -633,4 +654,5 @@ module.exports = {
     QuickShareMetaModel,
     TriggerSubAction,
     VariableAssignment,
+    TriggerStoreModel,
 };
