@@ -11,7 +11,7 @@ class Store {
     /** This object's default values. */
     #defaults;
     /** The config name of this object. */
-    #configName;
+    configName;
 
     constructor( opts ) {
         // Renderer process has to get `app` module via `remote`, whereas the main process can get it directly
@@ -20,7 +20,7 @@ class Store {
         // We'll use the `configName` property to set the file name and path.join to bring it all together as a string
         this.#path = path.join( this.userDataPath, opts.configName + '.json' );
         this.#defaults = opts.defaults;
-        this.#configName = opts.configName;
+        this.configName = opts.configName;
         // this.data = parseDataFile( this.path, opts.defaults );
     }
     
@@ -43,7 +43,7 @@ class Store {
         try {
             fs.writeFileSync( this.#path, JSON.stringify( data ) );
         } catch ( error ) {
-            console.error( 'Error storing ' + this.#configName, error );
+            console.error( 'Error storing ' + this.configName, error );
         }
     }
 
@@ -54,7 +54,7 @@ class Store {
      */
     backupDatafile( onComplete ) {
         let now = new Date( Date.now() );
-        let backupFile = path.join( this.userDataPath, `${now.getFullYear()}${now.getMonth() + 1}${now.getDay() + 1}${now.getSeconds()}-${this.#configName}-backup.zip` );
+        let backupFile = path.join( this.userDataPath, `${now.getFullYear()}${now.getMonth() + 1}${now.getDay() + 1}${now.getSeconds()}-${this.configName}-backup.zip` );
         let output = fs.createWriteStream( backupFile );
         let zip = archiver( 'zip' );
 
@@ -63,7 +63,7 @@ class Store {
         } );
 
         zip.pipe( output );
-        zip.file( this.#path, { name: this.#configName + '.json' } );
+        zip.file( this.#path, { name: this.configName + '.json' } );
         zip.finalize();
     }
 
