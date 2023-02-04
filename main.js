@@ -138,6 +138,7 @@ function createWindow() {
             autoUpdater.checkForUpdates();
         }, updateCheckInterval );
 
+        // TODO: Remove this in a few versions.
         let overlays = overlayDatabase.getAll();
         overlays.forEach( overlay => {
             mainWindow.webContents.send( 'color:darken', { overlayId: overlay.overlayId, color: overlay.timerColor } );
