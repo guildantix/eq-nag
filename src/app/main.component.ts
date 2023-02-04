@@ -30,6 +30,7 @@ export class MainComponent implements OnInit {
     public logFile: string = 'Not Selected';
     public showConsole: boolean = true;
     public enableFct: boolean = false;
+    public showCriticalsInline: boolean = false;
     public overlays: OverlayWindowModel[] = [];
     public damageDealtOverlayId: string;
     public damageTakenOverlayId: string;
@@ -98,6 +99,7 @@ export class MainComponent implements OnInit {
             this.logFile = data.logFile;
             this.overlays = data.overlays;
             this.enableFct = data.enableFct;
+            this.showCriticalsInline = data.fctShowCriticalsInline;
             this.damageDealtOverlayId = data.damageDealtOverlayId;
             this.damageTakenOverlayId = data.damageReceivedOverlayId;
             this.fctStyles = data.fctStyles;
@@ -345,6 +347,10 @@ export class MainComponent implements OnInit {
 
     onEnableFctChange(): void {
         this.ipcService.updateEnableFct( this.enableFct );
+    }
+
+    onShowCriticalsInlineChange(): void {
+        this.ipcService.updateEnableFctShowCriticalsInline( this.showCriticalsInline );
     }
 
     onChangeDealtFctOverylays(): void {

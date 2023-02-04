@@ -280,6 +280,7 @@ function LogWatcher(character, logPosition) {
 
             let fudge = 0;
             let simDuration = lineData[ lineData.length - 1 ].delay + lineData.length * fudge;
+            simDuration = simDuration >= 1 ? simDuration : 1;
             let padTime = DateUtilities.timeSince( start, new Date() ).totalSeconds;
             for ( let i = lineData.length - 1; i >= 0; i-- ) {
                 window.setTimeout( () => simulateLogEntries( lineData[ i ].lines, lineData[ i ].timestamp, i === lineData.length - 1, padTime ), lineData[ i ].delay * 1000 + i * fudge );
@@ -690,10 +691,11 @@ function generateTriggerFns() {
                         let _res = _phraseParsers[ 0 ]( value );
 
                         // This checks the first phrase, and if no matches are 
-                        // found, then any active sequences are checked agains 
+                        // found, then any active sequences are checked against 
                         // the log value.
                         if ( _res?.match ) {
                             let _newSeqMatch = {
+                                sequenceId: nanoid(),
                                 groups: {},
                                 hasGroups: false,
                                 captureIndex: 1,
@@ -726,6 +728,10 @@ function generateTriggerFns() {
                         }
                             
                         if ( _sequentialMatchs?.length > 0 ) {
+
+                            /** @type {number[]} */
+                            let removeSequenceIndices = [];
+
                             for ( let i = 0; i < _sequentialMatchs.length; i++ ) {
                                 if ( _sequentialMatchs[ i ].captureIndex < _phraseParsers?.length ) {
                                     let _res = _phraseParsers[ _sequentialMatchs[ i ].captureIndex ]( value, _sequentialMatchs[ i ].hasGroups, _sequentialMatchs[ i ].groups );
@@ -746,10 +752,22 @@ function generateTriggerFns() {
                                         _sequentialMatchs[ i ].hasGroups = _sequentialMatchs[ i ].hasGroups || groupKeys.length > 0;
                 
                                         onMatch( _res, trigger._deltaTime );
-                                        
+
+                                        // we've already checked the first match condition, if
+                                        // the sequence restart behavior is 'afterFirstMatch' 
+                                        // then we need to reset the sequence on this trigger.
+                                        if ( trigger.sequentialRestartBehavior === 'afterFirstMatch' && _sequentialMatchs?.length > 0 ) {
+                                            removeSequenceIndices.push( i );
+                                        }
                                     }
                                 }
                             }
+
+                            // Remove any sequences.
+                            for ( let i = removeSequenceIndices.length - 1; i >= 0; i-- ) {
+                                _sequentialMatchs.splice( i, 1 );
+                            }
+                            
                         }
                         
                     } else {

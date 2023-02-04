@@ -93,6 +93,12 @@ class WindowManager {
         this.#mainWindow = mainWindowRef;
         this.#overlayDatabase = overlayDatabase;
 
+        userPreferencesDatabase.onChanges( () => {
+            if ( this.#renderer ) {
+                this.#renderer.webContents.send( 'fct:change:fctShowCriticalsInline', userPreferencesDatabase.fctShowCriticalsInline );
+            }
+        } );
+
         this.#overlayDatabase.registerNewOverlayHandler( overlay => {
             this.#renderer.webContents.send( 'renderer:overlay:new', overlay );
         } );
@@ -403,7 +409,7 @@ class WindowManager {
                 }
             } );
             if ( app.isDev() ) {
-                this.triggerLibraryWindow.webContents.openDevTools();
+                this.triggerLibraryWindow.webContents.openDevTools( { mode: 'undocked' } );
             }
             let url = `file://${this.#dirname}/dist/index.html#/trigger/library`;
             if ( arg ) {
@@ -438,7 +444,7 @@ class WindowManager {
                 }
             } );
             if ( app.isDev() ) {
-                this.updateNotesWindow.webContents.openDevTools();
+                this.updateNotesWindow.webContents.openDevTools( { mode: 'undocked' } );
             }
             let url = `file://${this.#dirname}/dist/index.html#/update-notes`;
             if ( arg ) {
@@ -538,8 +544,12 @@ class WindowManager {
         
         // Open the DevTools.
         if ( app.isDev() ) {
-            renderer.webContents.openDevTools();
+            renderer.webContents.openDevTools( { mode: 'undocked' } );
         }
+
+        renderer.webContents.once( 'dom-ready', () => {
+            renderer.webContents.send( 'fct:change:fctShowCriticalsInline', this.#userPrefDb.fctShowCriticalsInline );
+        } );
 
         this.#renderer = renderer;
 
@@ -599,7 +609,7 @@ class WindowManager {
         
         // Open the DevTools.
         if ( app.isDev() ) {
-            deathRecap.webContents.openDevTools();
+            deathRecap.webContents.openDevTools( { mode: 'undocked' } );
         }
         
     }
@@ -692,7 +702,7 @@ class WindowManager {
         
         // Open the DevTools.
         if ( app.isDev() ) {
-            deathRecap.webContents.openDevTools();
+            deathRecap.webContents.openDevTools( { mode: 'undocked' } );
         }
 
         deathRecap.webContents.once( 'dom-ready', () => {

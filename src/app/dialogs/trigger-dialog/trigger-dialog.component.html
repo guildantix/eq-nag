@@ -47,9 +47,12 @@
                                 <mat-select [(ngModel)]="model.sequentialRestartBehavior" name="ddlSequentialRestartBehavior">
                                     <mat-option value="none">None</mat-option>
                                     <mat-option value="exactFirstMatch">Restart on Phrase #1</mat-option>
+                                    <mat-option value="afterFirstMatch">Restart on any Phrase after #1</mat-option>
+                                    <!-- <mat-option value="lastMatch">Restart on only the last phrase</mat-option> -->
                                 </mat-select>
                                 <mat-hint *ngIf="model.sequentialRestartBehavior === 'none'">Always begin a new sequence.</mat-hint>
                                 <mat-hint *ngIf="model.sequentialRestartBehavior === 'exactFirstMatch'">Restart the sequence when phrase #1 matches exactly.</mat-hint>
+                                <mat-hint *ngIf="model.sequentialRestartBehavior === 'afterFirstMatch'">Restart the sequence when any phrase after the first matches exactly.</mat-hint>
                             </mat-form-field>
 
                         </fieldset>

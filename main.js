@@ -107,7 +107,7 @@ function createWindow() {
     );
     // Open the DevTools.
     if ( app.isDev() ) {
-        mainWindow.webContents.openDevTools();
+        mainWindow.webContents.openDevTools( { mode: 'undocked' } );
     }
 
     mainWindow.on( 'closed', function () {
@@ -137,7 +137,12 @@ function createWindow() {
         setInterval( () => {
             autoUpdater.checkForUpdates();
         }, updateCheckInterval );
-        
+
+        // TODO: Remove this in a few versions.
+        let overlays = overlayDatabase.getAll();
+        overlays.forEach( overlay => {
+            mainWindow.webContents.send( 'color:darken', { overlayId: overlay.overlayId, color: overlay.timerColor } );
+        } );
     } );
 
     mainWindow.once( 'ready-to-show', () => {
@@ -204,6 +209,13 @@ app.on( 'activate', function () {
     if ( mainWindow === null ) createWindow()
 } );
 
+// TODO: Remove this in a few versions.
+ipcMain.on( `color:darken`, ( e, data ) => {
+    let overlay = overlayDatabase.find( data.overlayId );
+    overlay.timerBackgroundColor = data.color;
+    overlayDatabase.update( overlay );
+} );
+
 ipcMain.on( 'app:log:exception', ( event, data ) => {
     log.error( data );
 } );
@@ -248,6 +260,7 @@ function sendTick() {
         damageDealtOverlayId: userPreferences.damageDealtOverlayId,
         damageReceivedOverlayId: userPreferences.damageReceivedOverlayId,
         enableFct: userPreferences.enableFct,
+        fctShowCriticalsInline: userPreferences.fctShowCriticalsInline,
         hasExtendedDotFocus: userPreferences.hasExtendedDotFocus,
         extendedDotFocusPercent: userPreferences.extendedDotFocusPercent,
         extendedDotFocusDecayLevel: userPreferences.extendedDotFocusDecayLevel,

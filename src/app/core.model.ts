@@ -424,6 +424,7 @@ export class OverlayWindowModel {
     public borderTransparency: number = 0.0;
     public timerSortType: TimerSortTypes = TimerSortTypes.Ascending;
     public timerColor: string = '#008000';
+    public timerBackgroundColor: string = '#0080004b';
     public displayId: number;
     public displayBounds: Electron.Rectangle;
     
@@ -457,6 +458,7 @@ export class DataTickModel {
     public triggers: TriggerModel[] = [];
     public overlays: OverlayWindowModel[] = [];
     public enableFct: boolean = false;
+    public fctShowCriticalsInline: boolean = false;
     public damageDealtOverlayId: string;
     public damageReceivedOverlayId: string;
     public hasExtendedDotFocus: boolean = false;

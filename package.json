@@ -1,11 +1,11 @@
 {
   "name": "electron-angular-eq-parse",
-  "version": "0.1.18",
+  "version": "0.1.19",
   "main": "main.js",
-  "description":"An EverQuest Notification AGent",
-  "author":{
-    "name":"Guild Antix",
-    "email":"srbmmo@gmail.com"
+  "description": "An EverQuest Notification AGent",
+  "author": {
+    "name": "Guild Antix",
+    "email": "srbmmo@gmail.com"
   },
   "scripts": {
     "copy-source-maps": "copyfiles --flat dist/*.map source-maps/%npm_package_version%",
@@ -48,7 +48,6 @@
     "rxjs": "~6.5.5",
     "tga2png": "^0.1.3",
     "tslib": "^2.0.0",
-    "uuid": "^8.2.0",
     "xml2js": "^0.4.23",
     "zone.js": "~0.11.4"
   },
@@ -101,7 +100,30 @@
     "directories": {
       "output": "electron/output",
       "buildResources": "electron/buildResources"
-    }
+    },
+    "files": [
+      "**/*",
+      "!**/node_modules/*/{CHANGELOG.md,README.md,README,readme.md,readme}",
+      "!**/node_modules/*/{test,__tests__,tests,powered-test,example,examples}",
+      "!**/node_modules/*.d.ts",
+      "!**/node_modules/.bin",
+      "!**/*.{iml,o,hprof,orig,pyc,pyo,rbc,swp,csproj,sln,xproj}",
+      "!.editorconfig",
+      "!.angular",
+      "!.vscode",
+      "!e2e",
+      "!source-maps",
+      "package.json",
+      "!tsconfig*",
+      "!tslint*",
+      "!readme*",
+      "!angular.json",
+      "!**/._*",
+      "!**/{.DS_Store,.git,.hg,.svn,CVS,RCS,SCCS,.gitignore,.gitattributes}",
+      "!**/{__pycache__,thumbs.db,.flowconfig,.idea,.vs,.nyc_output}",
+      "!**/{appveyor.yml,.travis.yml,circle.yml}",
+      "!**/{npm-debug.log,yarn.lock,.yarn-integrity,.yarn-metadata.json}"
+    ]
   },
   "browser": {
     "fs": false,
