@@ -250,7 +250,7 @@ function LogWatcher(character, logPosition) {
                     parseLogEntries( lines[ i ], false, padTime );
                 }
                 if ( lastBlock ) {
-                    speakPhrase( 'Simulation ended', false, {}, false, {}, 0, 0, () => ipcRenderer.send( 'log:simulate:done', characterId ) );
+                    speakPhrase( 'Simulation ended', false, {}, false, {}, 0, 0, 100, () => ipcRenderer.send( 'log:simulate:done', characterId ) );
                 }
             };
         
@@ -1233,7 +1233,7 @@ function executeTriggerAction( trigger, action, timestamp, res, deltaTime, simul
             duration = +action.duration;
         }
 
-        speakPhrase( action.displayText, action.interruptSpeech, trigger._conditionResults, simulating, res.result, duration, deltaTime );
+        speakPhrase( action.displayText, action.interruptSpeech, trigger._conditionResults, simulating, res.result, duration, deltaTime, action.speechVolume );
     
     } else if ( action.actionType === ActionTypes.DisplayDeathRecap ) {
         /* --== Death Recap ==-- */
@@ -2042,9 +2042,10 @@ function renderPhrases( phrases, conditionResults, parseResult, deltaTime ) {
  * @param {RegExpExecArray} parseResult The regexp exec array of the parsed log entry.
  * @param {number} timerDuration The duration in seconds of the timer, if applicable.
  * @param {number} deltaTime The change in time, in milliseconds, since the previous sequential capture.
+ * @param {number} speechVolume The volume which to speak.
  * @param {() => void} afterSpeech Executes function after speech ended.
  */
-function speakPhrase( phrase, interrupt, conditionResults, simulating, parseResult, timerDuration, deltaTime, afterSpeech ) {
+function speakPhrase( phrase, interrupt, conditionResults, simulating, parseResult, timerDuration, deltaTime, speechVolume, afterSpeech ) {
     
     if ( !simulating && phrase && voiceIndex > -1 ) {
 
@@ -2061,6 +2062,7 @@ function speakPhrase( phrase, interrupt, conditionResults, simulating, parseResu
         utter.text = StringUtilities.parseCountersToLiteral( utter.text, counters );
         utter.text = StringUtilities.parsePhoneticTransformsToLiteral( utter.text, phoneticTransforms );
         utter.voice = voiceOptions[ voiceIndex ];
+        utter.volume = speechVolume > 0 ? speechVolume / 100 : 1;
         
         utter.onend = function ( event ) {
             let i = utterances.indexOf( this );
