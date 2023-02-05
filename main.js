@@ -273,6 +273,8 @@ function sendTick() {
         persistentStorage: userPreferences.persistentStorage,
         enableQuickShareImports: userPreferences.enableQuickShareImports,
         detrimentalOverlayId: userPreferences.detrimentalOverlayId,
+        quickShareAuthorsListType: userPreferences.quickShareAuthorsListType,
+        quickShareAuthorsList: userPreferences.quickShareAuthorsList,
     };
     mainWindow.webContents.send( 'tick', tickData );
     logBootstrap.tick( tickData, characterDatabase );
