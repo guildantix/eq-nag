@@ -192,7 +192,9 @@ class FilesDatabaseStore extends Store {
         let existingIndex = this.#data.files.findIndex( f => f.fileId === file.fileId );
         if ( existingIndex > -1 ) {
             let existing = this.#data.files.splice( existingIndex, 1 )[ 0 ];
-            fs.unlinkSync( existing.physicalName );
+            if ( fs.existsSync( existing.physicalName ) ) {
+                fs.unlinkSync( existing.physicalName );
+            }
         }
 
         let model = new FileModel();
