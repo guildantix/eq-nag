@@ -3,7 +3,7 @@ import * as Electron from 'electron';
 import { UpdateInfo } from 'electron-updater';
 import { Observable, Observer } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
-import { DataTickModel, DkpEntryModel, TriggerModel, OverlayWindowModel, ActionTypes, FocusEffectSettings, CharacterModel, BasicError, TriggerFolder, FileModel, Tag, AuthorModel, PackageFileModel, TriggerPackageMetaModel, TriggerPackageVersion, FctStylesModel, OverlayBoundsChangedEventArgs, DialogEventArgs, QuickShareMetaModel, LogFileLocation, IpcMessage, DeathRecapPreferences } from './core.model';
+import { DataTickModel, DkpEntryModel, TriggerModel, OverlayWindowModel, ActionTypes, FocusEffectSettings, CharacterModel, BasicError, TriggerFolder, FileModel, Tag, AuthorModel, PackageFileModel, TriggerPackageMetaModel, TriggerPackageVersion, FctStylesModel, OverlayBoundsChangedEventArgs, DialogEventArgs, QuickShareMetaModel, LogFileLocation, IpcMessage, DeathRecapPreferences, QuickShareAuthorListTypes } from './core.model';
 import { GinaConfiguration, GinaTriggerGroups } from './gina.model';
 import { ColorUtility } from './utilities';
 
@@ -1569,6 +1569,46 @@ export class IpcService {
                 } );
             } );
             this.ipc.send( 'settings:get:glowOnStartup', null );
+
+        } );
+
+        return obs;
+    }
+
+    public updateQuickShareAuthorsListType( listType: QuickShareAuthorListTypes ): void {
+        this.ipc.send( 'settings:set:quickShareAuthorsListType', listType );
+    }
+
+    public getQuickShareAuthorsListType(): Observable<QuickShareAuthorListTypes> {
+        let obs: Observable<QuickShareAuthorListTypes> = new Observable<QuickShareAuthorListTypes>( ( observer: Observer<QuickShareAuthorListTypes> ) => {
+            
+            this.ipc.once( 'settings:get:quickShareAuthorsListType', ( e, enabled: QuickShareAuthorListTypes ) => {
+                this.ngZone.run( () => {
+                    observer.next( enabled );
+                    observer.complete();
+                } );
+            } );
+            this.ipc.send( 'settings:get:quickShareAuthorsListType', null );
+
+        } );
+
+        return obs;
+    }
+
+    public updateQuickShareAuthorsList( list: string[] ): void {
+        this.ipc.send( 'settings:set:quickShareAuthorsList', list );
+    }
+
+    public getQuickShareAuthorsList(): Observable<string[]> {
+        let obs: Observable<string[]> = new Observable<string[]>( ( observer: Observer<string[]> ) => {
+            
+            this.ipc.once( 'settings:get:quickShareAuthorsList', ( e, enabled: string[] ) => {
+                this.ngZone.run( () => {
+                    observer.next( enabled );
+                    observer.complete();
+                } );
+            } );
+            this.ipc.send( 'settings:get:quickShareAuthorsList', null );
 
         } );
 

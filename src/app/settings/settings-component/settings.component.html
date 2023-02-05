@@ -69,28 +69,48 @@
     <fieldset>
         <legend><span class="title">Sharing</span> <button mat-icon-button color="accent" (click)="showVerifiedUserInfo()" *ngIf="trustedAuthor"><mat-icon class="material-icons-outlined">verified_user</mat-icon></button></legend>
 
-        <div>
-            <div class="formless-hint half-width">
-                <div class="formless-input"><mat-checkbox [(ngModel)]="enableQuickShareImports" (change)="onQuickShareImportsChange()">Enable importing QuickShare triggers.</mat-checkbox></div>
-                <mat-hint>If enabled, will listen for and respond to quick share triggers in the log file.</mat-hint>
+        <div style="display: flex; flex-direction: row;">
+            <div style="width: 50%; padding: 0 15px 0 0;">
+                <h2 class="header-glow">Quickshare</h2>
+                <div>
+                    <div class="formless-hint full-width" style="margin-top: 5px;">
+                        <div class="formless-input"><mat-checkbox [(ngModel)]="enableQuickShareImports" (change)="onQuickShareImportsChange()">Enable importing QuickShare triggers.</mat-checkbox></div>
+                        <mat-hint>If enabled, will listen for and respond to quick share triggers in the log file.</mat-hint>
+                    </div>
+                </div>
+                <div style="margin-top: 35px;">
+                    <mat-radio-group class="inline" [(ngModel)]="quickShareAuthorListType" name="rdoQuickShareAuthorListType" (change)="onQuickShareImportsChange()">
+                        <mat-radio-button [value]="quickShareAuthorListTypes.Disabled">Disabled</mat-radio-button>
+                        <mat-radio-button [value]="quickShareAuthorListTypes.Whitelist">White List</mat-radio-button>
+                        <mat-radio-button [value]="quickShareAuthorListTypes.Blacklist">Black List</mat-radio-button>
+                    </mat-radio-group>
+                    <mat-form-field style="width:100%;">
+                        <mat-label></mat-label>
+                        <textarea matInput [(ngModel)]="quickShareAuthorList" name="txtQuickShareAuthorList" rows="5" [disabled]="quickShareAuthorListType == quickShareAuthorListTypes.Disabled" (change)="onQuickShareImportsChange()"></textarea>
+                        <mat-hint>Characters List</mat-hint>
+                    </mat-form-field>
+                </div>
+            </div>
+            <div style="width: 50%; padding: 0 0 0 15px;">
+                <h2 class="header-glow">Author Info</h2>
+                <div>
+                    <mat-form-field style="width: 100%;">
+                        <mat-label>Author Name</mat-label>
+                        <input matInput type="text" [(ngModel)]="author.name" />
+                        <mat-hint>Enter whatever name you would like to have attached to any shared triggers.</mat-hint>
+                    </mat-form-field>
+                </div>
+        
+                <div>
+                    <mat-form-field style="width: 100%;">
+                        <mat-label>Discord</mat-label>
+                        <input matInput type="text" [(ngModel)]="author.discord" />
+                        <mat-hint>(Optional) Enter your discord name, or discord server.</mat-hint>
+                    </mat-form-field>
+                </div>
             </div>
         </div>
 
-        <div>
-            <mat-form-field style="width: 50%;">
-                <mat-label>Author Name</mat-label>
-                <input matInput type="text" [(ngModel)]="author.name" />
-                <mat-hint>Enter whatever name you would like to have attached to any shared triggers.</mat-hint>
-            </mat-form-field>
-        </div>
-
-        <div>
-            <mat-form-field style="width: 50%;">
-                <mat-label>Discord</mat-label>
-                <input matInput type="text" [(ngModel)]="author.discord" />
-                <mat-hint>(Optional) Enter your discord name, or discord server.</mat-hint>
-            </mat-form-field>
-        </div>
 
         <ng-template [ngIf]="author?.authorId != null" [ngIfElse]="noAuthorFile">
             <button mat-button (click)="updateAuthor()">Save Changes</button>

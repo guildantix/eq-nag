@@ -3,7 +3,7 @@ import { DialogService } from 'src/app/dialogs/dialog.service';
 import { IpcService } from 'src/app/ipc.service';
 import { MatTable } from '@angular/material/table';
 import { customAlphabet } from 'nanoid';
-import { ActionTypes, AuthorModel, CapturePhrase, DeathRecapPreferences, OverlayWindowModel, TriggerAction, TriggerModel } from 'src/app/core.model';
+import { ActionTypes, AuthorModel, CapturePhrase, DeathRecapPreferences, OverlayWindowModel, QuickShareAuthorListTypes, TriggerAction, TriggerModel } from 'src/app/core.model';
 import { SettingsService } from '../settings-http.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { SetupService } from 'src/app/setup/setup.service';
@@ -42,6 +42,9 @@ export class SettingsComponent implements OnInit {
     public deathRecapPreferences: DeathRecapPreferences = new DeathRecapPreferences();
     public minimizeToTrayOnLoad: boolean = false;
     public glowOnStartup: boolean = true;
+    public quickShareAuthorListTypes: typeof QuickShareAuthorListTypes = QuickShareAuthorListTypes;
+    public quickShareAuthorListType: QuickShareAuthorListTypes;
+    public quickShareAuthorList: string = '';
 
     public get timerOverlays(): OverlayWindowModel[] {
         return this.overlays?.filter( m => m.overlayType === 'Timer' );
@@ -119,6 +122,10 @@ export class SettingsComponent implements OnInit {
         this.ipcService.getMinimizeToTrayOnLoad().subscribe( enabled => this.minimizeToTrayOnLoad = enabled );
         this.ipcService.getDeathRecapPreferences().subscribe( recapPrefs => this.deathRecapPreferences = recapPrefs ?? new DeathRecapPreferences() );
         this.ipcService.getEnableGlowOnStartup().subscribe( f => this.glowOnStartup = f );
+        this.ipcService.getQuickShareAuthorsListType().subscribe( f => this.quickShareAuthorListType = f );
+        this.ipcService.getQuickShareAuthorsList().subscribe( f => {
+            this.quickShareAuthorList = f == null ? '' : f.join( '\r\n' );
+        } );
 
     }
 
@@ -135,7 +142,14 @@ export class SettingsComponent implements OnInit {
      * Saves changes to the user preference.
      */
     onQuickShareImportsChange(): void {
+        if ( this.quickShareAuthorList ) {
+            let list = this.quickShareAuthorList.split( /\r\n|\n|\r/g ).filter( f => f != '' );
+            this.ipcService.updateQuickShareAuthorsList( list );
+        } else {
+            this.ipcService.updateQuickShareAuthorsList( [] );
+        }
         this.ipcService.updateEnableQuickShareImports( this.enableQuickShareImports );
+        this.ipcService.updateQuickShareAuthorsListType( this.quickShareAuthorListType ?? QuickShareAuthorListTypes.Disabled );
     }
 
 
