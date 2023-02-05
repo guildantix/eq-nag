@@ -5,6 +5,7 @@ const process = require( 'process' );
 const fs = require( 'fs' );
 const DkpEntryModel = require( '../data/models/dkp-entry' );
 const { TriggerAction, ActionTypes, TriggerConditionTypes, OperatorTypes, CharacterClassLevel, TriggerSubAction } = require( '../data/models/trigger' );
+const { QuickShareAuthorListTypes } = require( '../data/models/common' );
 const { PhraseParse, LogTrigger } = require( './log.model' );
 const { OverlayComponent, OverlayWindow } = require( '../data/models/overlay-window' );
 const CharacterModel = require( '../data/models/character' );
@@ -72,6 +73,11 @@ var characterId = null;
 /** @type {Record<string, {trigger: LogTrigger, res: PhraseParse}>} */
 let actionInstances = {};
 
+/** @type {QuickShareAuthorListTypes} */
+let quickShareAuthorsListType = QuickShareAuthorListTypes.Disabled;
+
+/** @type {string[]} */
+let quickShareAuthorsList = [];
 // Common errors: 
 //  ${C} instead of {C}
 //  ${CharacterName} isntead of ${Character}
@@ -312,6 +318,8 @@ function LogWatcher(character, logPosition) {
         overlays = data.overlays;
         enableQuickShareImports = data.enableQuickShareImports;
         detrimentalOverlayId = data.detrimentalOverlayId;
+        quickShareAuthorsListType = data.quickShareAuthorsListType;
+        quickShareAuthorsList = data.quickShareAuthorsList;
 
         generateTriggerFns();
         initCounters();
@@ -873,7 +881,12 @@ function parseLogEntries( raw, simulating, padTime ) {
     // https://regex101.com/r/FvGiGC/2
     // {NAG:(?<quickShareId>.+?)}
     // TODO: Remove the negative lookahead for package after a few versions.
-    let quickShareRegx = /{NAG:(?!package\/)(quick-share\/)?(?<quickShareId>.+?)}/g;
+    // let quickShareRegx = /{NAG:(?!package\/)(quick-share\/)?(?<quickShareId>.+?)}/g;
+    
+    // https://regex101.com/r/ZrNaZM/2
+    let quickShareRegx = /^(:?(?<author>\w+) .*)?{NAG:(?!package\/)(quick-share\/)?(?<quickShareId>.+?)}/g;
+
+
     // https://regex101.com/r/RwCLkN/1
     let packageShareRegx = /{NAG:package\/(?<packageId>.+?)}/g;
     // {NAG:OVtf9VzRSjykb1xx}
@@ -886,7 +899,28 @@ function parseLogEntries( raw, simulating, padTime ) {
     // Capture quickshares, when enabled.
     let quickShare = !enableQuickShareImports ? null : quickShareRegx.exec( log );
     if ( quickShare && quickShare.groups?.quickShareId ) {
-        ipcRenderer.send( 'quickshare_captured', quickShare.groups.quickShareId );
+        console.log( 'quickshare deets', quickShare, quickShareAuthorsList, quickShareAuthorsListType );
+        if ( quickShareAuthorsListType === QuickShareAuthorListTypes.Whitelist && quickShare.groups?.author ) {
+            // Whitelist will only share if the author is known and in the
+            // authors list.  Unknown is in terms of captured by the regular 
+            // expression.
+            if ( quickShareAuthorsList.findIndex( f => f.toLowerCase() === quickShare.groups.author.toLowerCase() ) > -1 ) {
+                ipcRenderer.send( 'quickshare_captured', quickShare.groups.quickShareId );
+            }
+
+        } else if ( quickShareAuthorsListType === QuickShareAuthorListTypes.Blacklist ) {
+            // Blacklist will only share if the author is either unknown or the
+            // author is known and not in the list.  Unknown is in terms of 
+            // captured by the regular expression.
+            if ( !quickShare.groups?.author || quickShareAuthorsList.findIndex( f => f.toLowerCase() === quickShare.groups.author.toLowerCase() ) === -1 ) {
+                ipcRenderer.send( 'quickshare_captured', quickShare.groups.quickShareId );
+            }
+
+        } else {
+            ipcRenderer.send( 'quickshare_captured', quickShare.groups.quickShareId );
+
+        }
+
     }
     
     let quickSharePackage = packageShareRegx.exec( log );
