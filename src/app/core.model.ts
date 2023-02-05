@@ -28,6 +28,14 @@ export enum ActionTypes {
     ScreenGlow = 12,
 }
 
+export enum QuickShareAuthorListTypes {
+    
+    Disabled = 0,
+    Whitelist = 1,
+    Blacklist = 2,
+
+}
+
 export const actionOverlayMap: Record<number, 'Log' | 'Alert' | 'Timer' | 'FCT' | 'Chart' | ''> = {
     0: 'Alert',
     1: '',
@@ -470,6 +478,8 @@ export class DataTickModel {
     public folders: TriggerFolder[] = [];
     public fctStyles: FctStylesModel;
     public enableQuickShareImports: boolean = true;
+    public quickShareAuthorsListType: QuickShareAuthorListTypes;
+    public quickShareAuthorsList: string[] = [];
     
 }
 

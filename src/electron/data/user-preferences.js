@@ -9,6 +9,7 @@ const { StyleProperties } = require( './models/common' );
 const archiver = require( 'archiver' );
 const LogBootstrapper = require( "../log-bootstrap" );
 const { DeathRecapPreferences } = require( '../data/models/death-recap' );
+const { QuickShareAuthorListTypes } = require( '../data/models/common' );
 
 const possibleEqFolders = [
     '\\users\\public\\Everquest',
@@ -330,6 +331,24 @@ class UserPreferencesStore extends Store {
         this.storeDataFile( this.#data );
     }
 
+    /** @type {QuickShareAuthorListTypes} */
+    get quickShareAuthorsListType() {
+        return this.#data.quickShareAuthorsListType;
+    }
+    set quickShareAuthorsListType( val ) {
+        this.#data.quickShareAuthorsListType = val;
+        this.storeDataFile( this.#data );
+    }
+
+    /** @type {string[]} */
+    get quickShareAuthorsList() {
+        return this.#data.quickShareAuthorsList ?? [];
+    }
+    set quickShareAuthorsList( val ) {
+        this.#data.quickShareAuthorsList = val ?? [];
+        this.storeDataFile( this.#data );
+    }
+
     /** @type {(fctStyles: FctStylesModel) => void[]} */
     onFctStyleChanges = [];
 
@@ -418,6 +437,15 @@ class UserPreferencesStore extends Store {
             // Set the master volume to 100%.
             this.#data.masterVolume = 100;
             this.#data.version = 6;
+            this.storeDataFile( this.#data );
+
+        }
+        if ( !this.#data.version || this.#data.version < 7 ) {
+            
+            // Set the master volume to 100%.
+            this.#data.quickShareAuthorsList = [];
+            this.#data.quickShareAuthorsListType = QuickShareAuthorListTypes.Disabled;
+            this.#data.version = 7;
             this.storeDataFile( this.#data );
 
         }
@@ -558,6 +586,24 @@ class UserPreferencesStore extends Store {
 
         ipcMain.on( 'settings:get:glowOnStartup', ( event ) => {
             event.sender.webContents.send( 'settings:get:glowOnStartup', this.glowOnStartup );
+        } );
+        
+        ipcMain.on( 'settings:set:quickShareAuthorsListType', ( event, arg ) => {
+            this.quickShareAuthorsListType = arg;
+            sendTick();
+        } );
+
+        ipcMain.on( 'settings:get:quickShareAuthorsListType', ( event ) => {
+            event.sender.webContents.send( 'settings:get:quickShareAuthorsListType', this.quickShareAuthorsListType );
+        } );
+        
+        ipcMain.on( 'settings:set:quickShareAuthorsList', ( event, arg ) => {
+            this.quickShareAuthorsList = arg;
+            sendTick();
+        } );
+
+        ipcMain.on( 'settings:get:quickShareAuthorsList', ( event ) => {
+            event.sender.webContents.send( 'settings:get:quickShareAuthorsList', this.quickShareAuthorsList );
         } );
         
         ipcMain.on( 'settings:set:focus-effects', ( event, arg ) => {

@@ -95,4 +95,13 @@ class PlayerPet {
     name;
 }
 
-module.exports = { StyleProperties, BasicError, ErrorCodes, IpcMessage, PlayerCharacter, PlayerPet };
+const QuickShareAuthorListTypes = {
+    '0': 'Disabled',
+    '1': 'Whitelist',
+    '2': 'Blacklist',
+    Disabled: 0,
+    Whitelist: 1,
+    Blacklist: 2,
+}
+
+module.exports = { StyleProperties, BasicError, ErrorCodes, IpcMessage, PlayerCharacter, PlayerPet, QuickShareAuthorListTypes };
