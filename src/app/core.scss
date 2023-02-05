@@ -444,6 +444,15 @@ fieldset.trigger-property-group {
     margin: 10px 0;
 }
 
+mat-radio-group {
+    &.inline {
+        .mat-radio-button {
+            display: inline-block;
+            margin: 10px;
+        }
+    }
+}
+
 ::ng-deep .mat-form-field-subscript-wrapper {
     mat-hint {
         margin-top: .7em;
