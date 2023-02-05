@@ -1371,6 +1371,25 @@ export class TriggersComponent implements OnInit {
         
     }
 
+    // TODO: Remove when recovery options built-in.
+    // getAllTriggerfiles(): void {
+    //     this.libraryService.getAllFiles().subscribe( files => {
+    //         // Adding a timer makes the following easier and I'm being lazy forever-today-.
+    //         let importTasks: Observable<any>[] = [ timer( 1 ) ];
+
+    //         // Install all of the package files first.
+    //         files?.forEach( file => {
+    //             importTasks.push( this.ipcService.importPackageFile( file ) );
+    //         } );
+
+    //         // Finally, we can install the package itself after all of the package files have been installed.
+    //         forkJoin( importTasks ).subscribe( results => {
+    //             this.snackBar.open( 'All files downloaded!', 'Dismiss', { duration: 5000 } );
+    //         } );
+
+    //     } );
+    // }
+
 
 
 

@@ -197,6 +197,14 @@ export class TriggerLibraryService {
             .pipe( catchError( error => this.handleError( error ) ) );
     }
 
+    // TODO: Remove when recovery options are built-in.
+    // getAllFiles(): Observable<PackageFileModel[]> {
+        
+    //     return this.httpClient.get<PackageFileModel[]>( `${environment.shareServiceUrl}/triggers/all/files` )
+    //         .pipe( catchError( error => this.handleError( error ) ) );
+        
+    // }
+
 
 
 
