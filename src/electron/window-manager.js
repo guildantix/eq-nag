@@ -591,10 +591,10 @@ class WindowManager {
         
         // TODO: Put the padding in the size calculations and not here.
         renderer.setBounds( {
-            width: bounds.width - 20,
-            height: bounds.height - 20,
-            x: bounds.x + 40,
-            y: bounds.y + 40,
+            width: bounds.width,
+            height: bounds.height,
+            x: bounds.x,
+            y: bounds.y,
         } );
         
         renderer.loadURL( `file://${__dirname}/threads/renderer.html?originX=${0 - bounds.x}&originY=${0 - bounds.y}&glowOnStart=${this.#userPrefDb.glowOnStartup === true ? 'true' : 'false'}` );
@@ -1023,6 +1023,9 @@ class WindowManager {
             }
         }
 
+        console.log( 'this.#renderer.getBounds()', this.#renderer.getBounds() );
+        console.log( 'this.#userPrefDb.rendererBounds', this.#userPrefDb.rendererBounds );
+        console.log( 'currentSize', currentSize );
         this.#userPrefDb.rendererBounds = this.#renderer.getBounds();
     }
 
