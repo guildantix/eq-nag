@@ -40,43 +40,18 @@ export class DeathRecapDialogComponent implements OnInit {
         
         let logsPath: string = this.eqFolder + '\\Logs';
             
-        // get filename regex: \\{0,1}((?:.(?!\\))+)$
-        // get file ext regex: \.((?:.(?!\\))+)$
-        // get name only regex: \\{0,1}((?:.(?!\\))+)\.(?:.(?!\\))+$
-        // get char dets regex: eqlog_(?<Character>.*)_(?<Server>[a-z]*)\.txt$
-        
-        let fs: any = this.ipcService.remote.require( 'fs' );
-        if ( fs.existsSync( logsPath ) ) {
-            fs.readdir( logsPath, ( err, files ) => {
-                let dictionary: any = {};
-                files.forEach( file => {
-                    let results = /eqlog_(?<Character>.*)_(?<Server>[a-z]*)\.txt$/gi.exec( file );
-                    if ( results != null && results?.groups?.Character != null && results?.groups?.Server != null ) {
-                        if ( dictionary[ results.groups.Server ] == null ) {
-                            dictionary[ results.groups.Server ] = [];
-                        }
-                        let option: CharacterModel = new CharacterModel();
 
-                        option.name = results.groups.Character;
-                        option.server = results.groups.Server;
-                        option.logFile = `${logsPath}\\${file}`;
-                        option.characterId = null;
-                        
-                        dictionary[ results.groups.Server ].push( option );
-                    }
-                } );
-
-                for ( let key in dictionary ) {
-                    if ( dictionary.hasOwnProperty( key ) ) {
-                        let option: NewCharacterOptionModel = new NewCharacterOptionModel();
-                        option.server = key;
-                        option.options = dictionary[ key ];
-                        this.serverOptions.push( option );
-                    }
+        this.ipcService.getCharacterOptions( logsPath ).subscribe( options => {
+            for ( let key in options ) {
+                if ( options.hasOwnProperty( key ) ) {
+                    let option: NewCharacterOptionModel = new NewCharacterOptionModel();
+                    option.server = key;
+                    option.options = options[ key ];
+                    this.serverOptions.push( option );
                 }
-
-            } );
-        }
+            }
+        } );
+        
     }
 
     selectModel( e: MatSelectChange ): void {
