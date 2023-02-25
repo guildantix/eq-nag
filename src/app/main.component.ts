@@ -186,12 +186,12 @@ export class MainComponent implements OnInit {
             } );
         } );
 
-        this.ipcService.getAppVersion().subscribe( version => {
+        this.ipcService.getAppVersion().subscribe( currentVersion => {
             this.ipcService.getLastUpdateNotesViewed().subscribe( updateNotesVersion => {
-                let versionSeen = new VersionNumber( version );
-                let versionLatest = new VersionNumber( updateNotesVersion );
+                let versionCurrent = new VersionNumber( currentVersion );
+                let versionNotesLastSeen = new VersionNumber( updateNotesVersion );
 
-                if ( VersionNumber.CompareVersions( versionSeen, versionLatest ) === -1 ) {
+                if ( VersionNumber.CompareVersions( versionCurrent, versionNotesLastSeen ) === -1 ) {
                     // If the version seen is less than version latest, show the update notes.
                     this.showLatestUpdateNotes();
                 }
