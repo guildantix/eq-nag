@@ -637,7 +637,6 @@ class UserPreferencesStore extends Store {
 
         ipcMain.on( 'settings:get:everquest-folder', ( event, arg ) => {
             if ( this.#data.everquestInstallFolder != null && fs.existsSync( this.#data.everquestInstallFolder ) ) {
-                // event.sender.send( 'settings:get:everquest-folder', this.#data.everquestInstallFolder );
                 event.sender.send( 'settings:get:everquest-folder', this.#data.everquestInstallFolder );
             } else {
                 get_win_drives( drives => {

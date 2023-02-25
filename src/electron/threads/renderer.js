@@ -1,5 +1,4 @@
 ; 'use strict'
-// const { screen } = require( '@electron/remote' );
 const DomUtilities = require( '../utilities/dom' );
 const StringUtilities = require( '../utilities/string' );
 const NumberUtilities = require( '../utilities/numbers' );
@@ -2288,7 +2287,6 @@ function playAudioFile( fileId ) {
  * @param {boolean} flash If true, the glow will flash.
  */
 function renderGlow( color, duration, flash ) {
-    console.log('renderGlow')
     duration = duration > 0 ? duration : 5000;
     duration = flash ? duration : duration - 1000;
     duration = duration < 2000 ? 2000 : duration;

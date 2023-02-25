@@ -472,6 +472,21 @@ class WindowManager {
         } );
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Shows the update notes window.
+     * 
+     * @param {any} event The ipc message event object.
+     * @param {any} arg Passed as a query string to the url.
+     */
     showUpdateNotes( event, arg ) {
         this.updateNotesWindow = new BrowserWindow( {
             parent: this.#mainWindow.reference,

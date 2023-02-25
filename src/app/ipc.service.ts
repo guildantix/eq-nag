@@ -29,7 +29,7 @@ export class IpcService {
     private _ginaConfigCache: GinaConfiguration = null;
 
     constructor( private ngZone: NgZone ) {
-        if ( true ) {
+        if ( window.api ) {
             try {
 
                 window.api.ipc.on( 'color:darken', ( event: any, data: { overlayId: string, color: string } ) => {

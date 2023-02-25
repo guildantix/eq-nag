@@ -300,6 +300,7 @@ function startLogWatcherWindow( logFile, isDev, sendTick, character, logPosition
         //   width: 800,
         //   height: 600,
         show: isDev === true,
+        // TODO: use preloaders.
         webPreferences: { nodeIntegration: true, contextIsolation: false, webSecurity: false, devTools: isDev === true },
     } );
     logWatcherWindow.webContents.openDevTools( { mode: 'undocked' } );

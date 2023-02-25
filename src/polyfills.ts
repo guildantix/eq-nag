@@ -53,4 +53,4 @@ import 'zone.js';  // Included with Angular CLI.
  */
 
 /* Hack for extending the global scope, see types/custom.ts */
-(window as any).global = window;
+( window as any ).global = window;
