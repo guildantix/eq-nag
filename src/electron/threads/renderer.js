@@ -1,4 +1,5 @@
 ; 'use strict'
+// const { screen } = require( '@electron/remote' );
 const DomUtilities = require( '../utilities/dom' );
 const StringUtilities = require( '../utilities/string' );
 const NumberUtilities = require( '../utilities/numbers' );
@@ -15,6 +16,7 @@ const StyleSheetUtil = require( '../utilities/style-sheet' );
 const { FctStylesModel, FctModel, FctTypes } = require( '../data/models/fct' );
 const ElectronUtilities = require( '../utilities/electron' );
 const { StyleProperties } = require( '../data/models/common' );
+const { screen } = require( '@electron/remote' );
 
 window.onerror = ( error, url, line ) => {
     ipcRenderer.send( 'app:log:exception', `$${error}\r\n    at ${url}:${line}` );
@@ -137,7 +139,7 @@ let showCriticalsInline = false;
 
 
 function Renderer( originX, originY, glowOnStart ) {
-    
+    console.log( 'renderer loaded' );
     origin.x = originX;
     origin.y = originY;
 
@@ -175,12 +177,15 @@ function Renderer( originX, originY, glowOnStart ) {
             origin = data.origin;
             
             data.overlays.forEach( function ( overlay ) {
-                let div = overlayInstances[ overlay.overlayId ].dom;
+                let div = overlayInstances[ overlay.overlayId ]?.dom;
 
-                div.style.left = ( overlay.x + origin.x + overlay.displayBounds.x ) + 'px';
-                div.style.top = ( overlay.y + origin.y + overlay.displayBounds.y ) + 'px';
-                div.style.height = ( overlay.windowHeight ) + 'px';
-                div.style.width = ( overlay.windowWidth ) + 'px';
+                // TODO: This runs too early when the overlays haven't been loaded yet.
+                if ( div ) {
+                    div.style.left = ( overlay.x + origin.x + overlay.displayBounds.x ) + 'px';
+                    div.style.top = ( overlay.y + origin.y + overlay.displayBounds.y ) + 'px';
+                    div.style.height = ( overlay.windowHeight ) + 'px';
+                    div.style.width = ( overlay.windowWidth ) + 'px';
+                }
             } );
         } );
 
@@ -1399,7 +1404,7 @@ function createGroupedDotTimer( overlayId, contentArea, group, comp ) {
     comp.dom = div;
     comp.description = displayText;
 
-    // Create a method that will remove the component from the screen.
+    // Create a method that will remove the component from the overlay.
     let groupKey = group.name;
     comp.removeComponent = () => {
         comp.dom.parentNode && comp.dom.parentNode.removeChild( comp.dom );
@@ -1455,7 +1460,7 @@ function createGroupedTimer( overlayId, contentArea, group, comp ) {
     comp.dom = div;
     comp.description = displayText;
 
-    // Create a method that will remove the component from the screen.
+    // Create a method that will remove the component from the overlay.
     let groupKey = group.name;
     comp.removeComponent = () => {
         comp.dom.parentNode && comp.dom.parentNode.removeChild( comp.dom );
@@ -1587,7 +1592,7 @@ function createUngroupedDotTimer( overlayId, contentArea, comp ) {
     comp.dom = div;
     comp.description = displayText;
 
-    // Create a method that will remove the component from the screen.
+    // Create a method that will remove the component from the overlay.
     comp.removeComponent = () => {
         comp.dom.parentNode && comp.dom.parentNode.removeChild( comp.dom );
         window.clearInterval( comp.intervalId );
@@ -1632,7 +1637,7 @@ function createUngroupedTimer( overlayId, contentArea, comp ) {
     comp.dom = div;
     comp.description = displayText;
 
-    // Create a method that will remove the component from the screen.
+    // Create a method that will remove the component from the overlay.
     comp.removeComponent = () => {
         comp.dom.parentNode && comp.dom.parentNode.removeChild( comp.dom );
         window.clearInterval( comp.intervalId );
@@ -1851,7 +1856,7 @@ function applyTimerSettings( overlayId, contentArea, comp, group ) {
 
         if ( ( comp.timeRemaining <= 0 && !comp.action.remainAfterEnded && !comp.action.repeatTimer ) || ( comp.timeRemaining <= -1 * comp.action.remainDuration && !comp.action.repeatTimer ) ) {
             // When conditions met that require the timer be removed from the 
-            // screen, then call the remove comonponent method.
+            // overlay, then call the remove comonponent method.
             
             delayRemoveComponent( overlayId, comp );
 
@@ -2274,23 +2279,23 @@ function playAudioFile( fileId ) {
     ipcRenderer.send( 'audio-file:get:url', fileId );
 }
 
-const scr = require( 'electron' ).remote.screen;
 
 /**
- * Shows a full screen glow on the primary monitor.
+ * Shows a full glow on the primary monitor.
  * 
  * @param {string} color The color hex code.
  * @param {number} duration The duration, in milliseconds.
  * @param {boolean} flash If true, the glow will flash.
  */
 function renderGlow( color, duration, flash ) {
+    console.log('renderGlow')
     duration = duration > 0 ? duration : 5000;
     duration = flash ? duration : duration - 1000;
     duration = duration < 2000 ? 2000 : duration;
     duration = flash && duration % 2000 > 0 ? duration + ( 2000 - duration % 2000 ) : duration;
 
     if ( !screenGlower ) {
-        let bounds = scr.getPrimaryDisplay().bounds;
+        let bounds = screen.getPrimaryDisplay().bounds;
         let content = document.createElement( 'div' );
 
         // box-shadow: inset 0 0 30px #00f;
@@ -2402,7 +2407,7 @@ function getRandomLocation( overlayId ) {
 
 
 /**
- * Returns the total number of criticals on the screen.
+ * Returns the total number of criticals on the display.
  * 
  * @param {string} overlayId The overlay id.
  * @returns 

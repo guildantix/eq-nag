@@ -346,22 +346,20 @@
 
     <script type="text/javascript">
         const urlParams = new URLSearchParams( window.location.search );
-        var Renderer = require( './renderer' );
-        console.log("urlParams.get('glowOnStart')", urlParams.get('glowOnStart'));
+        var Renderer = window.api.getRenderer();
         Renderer( +urlParams.get( 'originX' ), +urlParams.get( 'originY' ), urlParams.get('glowOnStart') === 'true' );
-
-        const remote = require( "electron" ).remote;
-        let win = remote.getCurrentWindow();
+        
         window.addEventListener( "mousemove", event => {
 
             if ( event.target && event.target.classList && event.target.classList.contains( 'mouse-enabled' ) === true ) {
-                win.setIgnoreMouseEvents( false );
+                window.api.setHandleMouseEvents();
 
             } else {
-                win.setIgnoreMouseEvents( true, { forward: true } );
+                window.api.setIgnoreMouseEvents();
                 
             }
         } );
+        
     </script>
 
     <!-- =========================== -->
