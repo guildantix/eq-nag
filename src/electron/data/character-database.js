@@ -7,6 +7,7 @@ const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz
 const idLen = 16;
 const nanoid = customAlphabet( alphabet, 16 );
 const CharacterModel = require( "./models/character" );
+const fs = require( 'fs' );
 
 /** @type {((character: CharacterModel) => void)[]} */
 var onCreatedHandlers = [];
@@ -133,6 +134,19 @@ class CharacterDatabaseStore extends Store {
         }
     }
 
+    findCharacterIdByLogFile( logFile ) {
+        
+        // Find the index of the character by Id.
+        let i = _.findIndex( this.#data.characters, ( e ) => e.logFile === logFile );
+
+        // If the index is valid, then return the found character.
+        if ( i > -1 && i < this.#data?.characters?.length ) {
+            return this.#data.characters[ i ].characterId;
+        } else {
+            return null;
+        }
+    }
+
     /**
      * Updates the given character in the store.
      * 
@@ -187,29 +201,65 @@ class CharacterDatabaseStore extends Store {
 
         ipcMain.on( 'character:create', ( event, character ) => {
             let characterId = this.add( character );
-            event.sender.webContents.send( 'character:create', characterId );
+            event.sender.send( 'character:create', characterId );
             sendTick();
         } );
 
         ipcMain.on( 'character:get', ( event, characterId ) => {
             if ( characterId != null && characterId.length > 0 ) {
-                event.sender.webContents.send( 'character:get', this.find( characterId ) );
+                event.sender.send( 'character:get', this.find( characterId ) );
             } else {
-                event.sender.webContents.send( 'character:get', this.getAll() );
+                event.sender.send( 'character:get', this.getAll() );
             }
         } );
 
         ipcMain.on( 'character:update', ( event, character ) => {
-            event.sender.webContents.send( 'character:update', this.update( character ) );
+            event.sender.send( 'character:update', this.update( character ) );
             sendTick();
         } );
 
         ipcMain.on( 'character:delete', ( event, characterId ) => {
             let deleted = this.remove( characterId );
-            event.sender.webContents.send( 'character:delete', deleted );
+            event.sender.send( 'character:delete', deleted );
             sendTick();
         } );
 
+        ipcMain.handle( 'character:get:options', async ( event, logsPath ) => {
+            return await this.getCharacterOptions( logsPath );
+        } );
+
+    }
+
+    /**
+     * Returns a list of options available from the known eq log file path.
+     * 
+     * @param {string} logsPath The path to the logs file.
+     */
+    async getCharacterOptions( logsPath ) {
+        let dictionary = {};
+
+        if ( fs.existsSync( logsPath ) ) {
+            var files = await fs.promises.readdir( logsPath );
+            files.forEach( file => {
+                let results = /eqlog_(?<Character>.*)_(?<Server>[a-z]*)\.txt$/gi.exec( file );
+                if ( results != null && results?.groups?.Character != null && results?.groups?.Server != null ) {
+                    if ( dictionary[ results.groups.Server ] == null ) {
+                        dictionary[ results.groups.Server ] = [];
+                    }
+                    let option = {};
+
+                    option.name = results.groups.Character;
+                    option.server = results.groups.Server;
+                    option.logFile = `${logsPath}\\${file}`;
+                    option.characterId = this.findCharacterIdByLogFile( option.logFile );
+                    
+                    dictionary[ results.groups.Server ].push( option );
+                }
+
+            } );
+        }
+        
+        return dictionary;
     }
 
     /**
