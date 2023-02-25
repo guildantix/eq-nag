@@ -1156,8 +1156,8 @@ export class VersionNumber {
      * @param b Version number b.
      */
     public static CompareVersions( a: VersionNumber, b: VersionNumber ): number {
-        let aMj = a.major * 100000;
-        let bMj = b.major * 100000;
+        let aMj = a.major * 1000000;
+        let bMj = b.major * 1000000;
         let aMn = a.minor * 1000;
         let bMn = b.minor * 1000;
         let aRv = a.revision;
