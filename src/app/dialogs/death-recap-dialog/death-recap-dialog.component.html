@@ -18,7 +18,7 @@
                     <mat-form-field style="width: 50%;">
                         <mat-label></mat-label>
                         <mat-select (selectionChange)="selectModel($event)" [disabled]="server == null">
-                            <mat-option *ngFor="let chr of server?.options" [value]="chr" [disabled]="chr.characterId?.length > 0">{{chr.name}} <small *ngIf="chr.characterId?.length > 0">Added</small></mat-option>
+                            <mat-option *ngFor="let chr of server?.options" [value]="chr">{{chr.name}}</mat-option>
                         </mat-select>
                         <mat-hint>Character</mat-hint>
                     </mat-form-field>
