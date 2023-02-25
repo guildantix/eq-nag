@@ -9,7 +9,7 @@
         <button mat-button color="accent" (click)="showFileSelector()">Select Log File</button>
 
     </p>
-    <ng-template [ngIf]="eqFolder !== null && eqFolder !== undefined">
+    <ng-template [ngIf]="eqFolder !== null && eqFolder !== undefined && model == null">
         
         <p>Please select the server of the character you are adding.</p>
 
@@ -24,7 +24,7 @@
             
             <mat-form-field style="width: 50%;">
                 <mat-label></mat-label>
-                <mat-select (selectionChange)="selectModel($event)" [disabled]="server == null">
+                <mat-select (selectionChange)="selectModel($event, false, true)" [disabled]="server == null">
                     <mat-option *ngFor="let chr of server?.options" [value]="chr" [disabled]="chr.characterId?.length > 0">{{chr.name}} <small *ngIf="chr.characterId?.length > 0">Added</small></mat-option>
                 </mat-select>
                 <mat-hint>Character</mat-hint>
@@ -35,13 +35,31 @@
         <button mat-button color="accent" (click)="showFileSelector()">Select Log File</button>
 
     </ng-template>
+    <ng-template [ngIf]="model != null">
+
+        <p></p>
+
+        <fieldset class="trigger-property-group">
+            <legend>Character Information</legend>
+            
+            <div class="field-list">
+                <div class="field-line"><label>Character Name</label><span>{{model.name}}</span></div>
+                <div class="field-line"><label>Service</label><span *ngIf="model.p99">P1999</span><span *ngIf="model.daybreak">Daybreak</span></div>
+                <div class="field-line"><label>Server</label><span style="text-transform: capitalize;">{{model.server}}</span></div>
+                <div class="field-line"><label>Log file</label><span>{{model.logFile}}</span></div>
+            </div>
+
+        </fieldset>
+
+    </ng-template>
 
     <input type="file" #fileSelector style="display:none;" accept="*.txt" (change)="fileSelected($event)" />
 </mat-dialog-content>
 
 <mat-dialog-actions>
 
-  <button mat-button mat-dialog-close class="t-confirm-no" color="warn">Cancel</button>
-  <button mat-button (click)="create()" class="t-confirm-yes" color="accent" [disabled]="model == null">Create</button>
+    <button mat-button class="color-orange" (click)="cancelCharacter()" *ngIf="model != null"><mat-icon>chevron_left</mat-icon>&nbsp;Back</button>
+    <button mat-button mat-dialog-close class="t-confirm-no" color="warn">Cancel</button>
+    <button mat-button (click)="create()" class="t-confirm-yes" color="accent" [disabled]="model == null">Create</button>
 
 </mat-dialog-actions>

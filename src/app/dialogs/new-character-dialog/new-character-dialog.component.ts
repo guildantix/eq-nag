@@ -13,7 +13,7 @@ const nanoid = customAlphabet( alphabet, 16 );
 @Component( {
     selector: 'app-new-character-dialog',
     templateUrl: 'new-character-dialog.component.html',
-    styleUrls: [ 'new-character-dialog.component.scss' ]
+    styleUrls: [ '../../core.scss', '../../modal.scss', 'new-character-dialog.component.scss' ]
 } )
 export class NewCharacterDialogComponent implements OnInit {
 
@@ -78,8 +78,10 @@ export class NewCharacterDialogComponent implements OnInit {
         return null;
     }
 
-    selectModel( e: MatSelectChange ): void {
+    selectModel( e: MatSelectChange, p99: boolean = false, daybreak: boolean = false ): void {
         this.model = e.value;
+        this.model.p99 = p99 === true;
+        this.model.daybreak = daybreak === true;
     }
 
     selectServerModel( e: MatSelectChange ): void {
@@ -99,12 +101,15 @@ export class NewCharacterDialogComponent implements OnInit {
         this.fileSelector.nativeElement.click();
     }
 
+    cancelCharacter() {
+        this.model = null;
+        this.fileSelector.nativeElement.value = null;
+    }
+
     fileSelected( e: any ) {
         if ( this.fileSelector.nativeElement.files?.length > 0 ) {
             let characterLogPath: string = this.fileSelector.nativeElement.files[ 0 ].path;
             let eqInstallFolder: string = characterLogPath.split( '\\Logs' )[ 0 ];
-
-            this.ipcService.setEqInstallFolder( eqInstallFolder );
 
             let results = /eqlog_(?<Character>.*)_(?<Server>[a-z]*)\.txt$/gi.exec( characterLogPath );
             if ( results != null && results?.groups?.Character != null && results?.groups?.Server != null ) {
@@ -114,10 +119,30 @@ export class NewCharacterDialogComponent implements OnInit {
                 option.name = results.groups.Character;
                 option.server = results.groups.Server;
                 option.logFile = `${characterLogPath}`;
+                option.p99 = false;
+                option.daybreak = true;
 
                 this.model = option;
+
+                this.ipcService.setEqInstallFolder( eqInstallFolder );
             }
 
+            // eqlog_Halindar_P1999Green.txt
+            let p99Results = /eqlog_(?<Character>.*)_P1999(?<Server>[a-z]*)\.txt$/gi.exec( characterLogPath );
+            if ( p99Results != null && p99Results?.groups?.Character != null && p99Results?.groups?.Server != null ) {
+
+                let option: CharacterModel = new CharacterModel();
+
+                option.name = p99Results.groups.Character;
+                option.server = p99Results.groups.Server;
+                option.logFile = `${characterLogPath}`;
+                option.p99 = true;
+                option.daybreak = false;
+
+                this.model = option;
+
+                // this.ipcService.setEqInstallFolder( eqInstallFolder );
+            }
         }
     }
     
