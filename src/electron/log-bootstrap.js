@@ -300,7 +300,7 @@ function startLogWatcherWindow( logFile, isDev, sendTick, character, logPosition
         //   width: 800,
         //   height: 600,
         show: isDev === true,
-        webPreferences: { nodeIntegration: true, webSecurity: false, devTools: isDev === true },
+        webPreferences: { nodeIntegration: true, contextIsolation: false, webSecurity: false, devTools: isDev === true },
     } );
     logWatcherWindow.webContents.openDevTools( { mode: 'undocked' } );
     logWatcherWindow.loadURL( `file://${__dirname}/threads/log-watcher.html?character=${encodeURI(JSON.stringify(character))}&logPosition=${logPosition}` );
