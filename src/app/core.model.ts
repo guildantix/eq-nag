@@ -766,6 +766,8 @@ export class CharacterModel {
     public hasBeneficialCastingSpeedFocus: boolean;
     public beneficialCastingSpeedFocusPercent: number;
     public beneficialCastingSpeedFocusDecayLevel: number;
+    public p99: boolean = false;
+    public daybreak: boolean = false;
     
 }
 

@@ -6,8 +6,9 @@ const customAlphabet = require( 'nanoid' ).customAlphabet;
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const idLen = 16;
 const nanoid = customAlphabet( alphabet, 16 );
-const CharacterModel = require( "./models/character" );
+const { CharacterModel, CharacterStoreModel } = require( "./models/character" );
 const fs = require( 'fs' );
+const { migrateCharacterData } = require( "./migrations/character-database-migration" );
 
 /** @type {((character: CharacterModel) => void)[]} */
 var onCreatedHandlers = [];
@@ -17,7 +18,7 @@ var onRemovedHandlers = [];
 class CharacterDatabaseStore extends Store {
 
     /** The data store for this object.
-     * @type {{characters: CharacterModel[]}}
+     * @type {CharacterStoreModel}
      * */
     #data;
 
@@ -30,25 +31,16 @@ class CharacterDatabaseStore extends Store {
             configName: "characters-database",
             defaults: { characters: [], version: 1 },
         } );
-
-        this.#data = this.parseDataFile();
-        if ( !this.#data.version || this.#data.version < 3 ) {
-            this.#data?.characters?.forEach( f => {
-                f.hasExtendedBeneficialFocus = false;
-                f.extendedBeneficialFocusDecayLevel = null;
-                f.extendedBeneficialFocusPercent = null;
-            } );
-            this.#data.version = 3;
-            this.storeDataFile( this.#data );
-        }
-        if ( !this.#data.version || this.#data.version < 4 ) {
-            this.#data?.characters?.forEach( f => {
-                f.extendedBeneficialFocusAaPercent = null;
-            } );
-            this.#data.version = 4;
-            this.storeDataFile( this.#data );
-        }
         
+        this.#data = this.parseDataFile();
+
+        app.on( 'ready', () => {
+            migrateCharacterData( this.#data, this.configName, data => {
+                this.#data = data;
+                this.storeDataFile( this.#data );
+            } );
+        } );
+
     }
     
     /**

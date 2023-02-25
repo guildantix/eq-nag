@@ -45,6 +45,19 @@ class CharacterModel {
     /** @type {number} The level at which the extended dot focus effect will begin to decay. */
     beneficialCastingSpeedFocusDecayLevel = null;
 
+    /** @type {boolean} If true, this character is on a P1999 server. */
+    p99 = false;
+
+    /** @type {boolean} If true, this character is on a P1999 server. */
+    daybreak = false;
 }
 
-module.exports = CharacterModel;
+class CharacterStoreModel {
+    /** @type {number} */
+    version;
+    
+    /** @type {CharacterModel[]} */
+    characters;
+}
+
+module.exports = { CharacterModel, CharacterStoreModel };
