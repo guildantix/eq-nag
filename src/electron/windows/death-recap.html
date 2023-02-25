@@ -258,7 +258,7 @@
 
     <script type="text/javascript">
         const urlParams = new URLSearchParams(window.location.search);
-        var DeathRecap = require('./death-recap');
+        var DeathRecap = window.api.getDeathRecap();
         let lineNo = urlParams.get('lineNo') === 'last' ? null : +urlParams.get('lineNo');
         DeathRecap(decodeURI(urlParams.get('logFilePath')), lineNo > 0 || lineNo === null ? lineNo : -1, decodeURI(urlParams.get('messageId')), decodeURI(urlParams.get('characterName')));
     </script>
