@@ -43,6 +43,18 @@ export class NewCharacterDialogComponent implements OnInit {
         } );
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Retrieves and populates the character options.
+     */
     populateCharacterOptions(): void {
         
         let logsPath: string = this.eqFolder + '\\Logs';
@@ -60,6 +72,15 @@ export class NewCharacterDialogComponent implements OnInit {
         
     }
 
+
+
+
+
+
+
+
+
+    
     /**
      * Returns the character id of the character specified by their log file.
      * 
@@ -78,16 +99,57 @@ export class NewCharacterDialogComponent implements OnInit {
         return null;
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * 
+     * @param e The mat select change event args.
+     * @param p99 If true, the selected character is on the p99 service.
+     * @param daybreak If  true, the selected character is on the daybreak service.
+     */
     selectModel( e: MatSelectChange, p99: boolean = false, daybreak: boolean = false ): void {
         this.model = e.value;
         this.model.p99 = p99 === true;
         this.model.daybreak = daybreak === true;
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Changes the selected server.
+     * 
+     * @param e The mat select change event args.
+     */
     selectServerModel( e: MatSelectChange ): void {
         this.server = e.value;
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Submits the current model to the service to create the character.
+     */
     create(): void {
         this.ipcService.createCharacter( this.model ).subscribe( characterId => {
             if ( characterId != null ) {
@@ -97,15 +159,53 @@ export class NewCharacterDialogComponent implements OnInit {
         } );
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Shows the file selector dialog.
+     */
     showFileSelector() {
         this.fileSelector.nativeElement.click();
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Clears the selected character.
+     */
     cancelCharacter() {
         this.model = null;
         this.fileSelector.nativeElement.value = null;
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Handles the file select event and parses the selected log file for character import.
+     * 
+     * @param e The event args.
+     */
     fileSelected( e: any ) {
         if ( this.fileSelector.nativeElement.files?.length > 0 ) {
             let characterLogPath: string = this.fileSelector.nativeElement.files[ 0 ].path;
@@ -127,7 +227,6 @@ export class NewCharacterDialogComponent implements OnInit {
                 this.ipcService.setEqInstallFolder( eqInstallFolder );
             }
 
-            // eqlog_Halindar_P1999Green.txt
             let p99Results = /eqlog_(?<Character>.*)_P1999(?<Server>[a-z]*)\.txt$/gi.exec( characterLogPath );
             if ( p99Results != null && p99Results?.groups?.Character != null && p99Results?.groups?.Server != null ) {
 
@@ -141,7 +240,6 @@ export class NewCharacterDialogComponent implements OnInit {
 
                 this.model = option;
 
-                // this.ipcService.setEqInstallFolder( eqInstallFolder );
             }
         }
     }
