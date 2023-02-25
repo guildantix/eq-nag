@@ -10,13 +10,11 @@ import { nagId } from '../core/nag-id.util';
 @Injectable()
 export class ContextService {
 
-    private ipc: IpcRenderer;
     private actionEndedProperties: TriggerEndedProperties = null;
     private actionProperties: TriggerActionProperties = null;
     private openedMenu: ContextMenuComponent;
 
     constructor( private ngZone: NgZone ) {
-        this.ipc = ( <any>window ).require( 'electron' ).ipcRenderer;
         this.get<TriggerEndedProperties>( 'action-ended' ).subscribe( model => this.actionEndedProperties = model );
         this.get<TriggerActionProperties>( 'action-properties' ).subscribe( model => {
             this.actionProperties = model;
@@ -230,13 +228,13 @@ export class ContextService {
     private get<T>( key: string ): Observable<T> {
         let obs: Observable<T> = new Observable<T>( ( observer: Observer<T> ) => {
             
-            this.ipc.once( `context:get:pseudo-clipboard:${key}`, ( e, model ) => {
+            window.api.ipc.once( `context:get:pseudo-clipboard:${key}`, ( e, model ) => {
                 this.ngZone.run( () => {
                     observer.next( model );
                     observer.complete();
                 } );
             } );
-            this.ipc.send( 'context:get:pseudo-clipboard', key );
+            window.api.ipc.send( 'context:get:pseudo-clipboard', key );
 
         } );
 
@@ -259,7 +257,7 @@ export class ContextService {
      * @param value The value to keep.
      */
     private store( key: string, value: any ): void {
-        this.ipc.send( 'context:store:pseudo-clipboard', { key: key, value: value } );
+        window.api.ipc.send( 'context:store:pseudo-clipboard', { key: key, value: value } );
     }
 
 

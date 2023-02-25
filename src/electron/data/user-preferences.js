@@ -576,7 +576,7 @@ class UserPreferencesStore extends Store {
         } );
 
         ipcMain.on( 'settings:get:quickShareImports', ( event ) => {
-            event.sender.webContents.send( 'settings:get:quickShareImports', this.enableQuickShareImports );
+            event.sender.send( 'settings:get:quickShareImports', this.enableQuickShareImports );
         } );
         
         ipcMain.on( 'settings:set:glowOnStartup', ( event, arg ) => {
@@ -585,7 +585,7 @@ class UserPreferencesStore extends Store {
         } );
 
         ipcMain.on( 'settings:get:glowOnStartup', ( event ) => {
-            event.sender.webContents.send( 'settings:get:glowOnStartup', this.glowOnStartup );
+            event.sender.send( 'settings:get:glowOnStartup', this.glowOnStartup );
         } );
         
         ipcMain.on( 'settings:set:quickShareAuthorsListType', ( event, arg ) => {
@@ -594,7 +594,7 @@ class UserPreferencesStore extends Store {
         } );
 
         ipcMain.on( 'settings:get:quickShareAuthorsListType', ( event ) => {
-            event.sender.webContents.send( 'settings:get:quickShareAuthorsListType', this.quickShareAuthorsListType );
+            event.sender.send( 'settings:get:quickShareAuthorsListType', this.quickShareAuthorsListType );
         } );
         
         ipcMain.on( 'settings:set:quickShareAuthorsList', ( event, arg ) => {
@@ -603,7 +603,7 @@ class UserPreferencesStore extends Store {
         } );
 
         ipcMain.on( 'settings:get:quickShareAuthorsList', ( event ) => {
-            event.sender.webContents.send( 'settings:get:quickShareAuthorsList', this.quickShareAuthorsList );
+            event.sender.send( 'settings:get:quickShareAuthorsList', this.quickShareAuthorsList );
         } );
         
         ipcMain.on( 'settings:set:focus-effects', ( event, arg ) => {
@@ -637,8 +637,8 @@ class UserPreferencesStore extends Store {
 
         ipcMain.on( 'settings:get:everquest-folder', ( event, arg ) => {
             if ( this.#data.everquestInstallFolder != null && fs.existsSync( this.#data.everquestInstallFolder ) ) {
-                // event.sender.webContents.send( 'settings:get:everquest-folder', this.#data.everquestInstallFolder );
-                event.sender.webContents.send( 'settings:get:everquest-folder', this.#data.everquestInstallFolder );
+                // event.sender.send( 'settings:get:everquest-folder', this.#data.everquestInstallFolder );
+                event.sender.send( 'settings:get:everquest-folder', this.#data.everquestInstallFolder );
             } else {
                 get_win_drives( drives => {
                     this.#data.everquestInstallFolder = null;
@@ -652,13 +652,13 @@ class UserPreferencesStore extends Store {
                     } );
 
                     this.storeDataFile( this.#data );
-                    event.sender.webContents.send( 'settings:get:everquest-folder', this.#data.everquestInstallFolder );
+                    event.sender.send( 'settings:get:everquest-folder', this.#data.everquestInstallFolder );
                 } );
             }
         } );
 
         ipcMain.on( 'settings:get:phonetic-transforms', ( event ) => {
-            event.sender.webContents.send( 'settings:get:phonetic-transforms', this.#data.phoneticTransforms );
+            event.sender.send( 'settings:get:phonetic-transforms', this.#data.phoneticTransforms );
         } );
 
         ipcMain.on( 'settings:set:author', ( event, author ) => {
@@ -666,7 +666,7 @@ class UserPreferencesStore extends Store {
         } );
 
         ipcMain.on( 'settings:get:author', ( event ) => {
-            event.sender.webContents.send( 'settings:get:author', this.author );
+            event.sender.send( 'settings:get:author', this.author );
         } );
 
         ipcMain.on( 'settings:set:minimizeToTrayOnLoad', ( event, minimizeToTrayOnLoad ) => {
@@ -674,7 +674,7 @@ class UserPreferencesStore extends Store {
         } );
 
         ipcMain.on( 'settings:get:minimizeToTrayOnLoad', ( event ) => {
-            event.sender.webContents.send( 'settings:get:minimizeToTrayOnLoad', this.minimizeToTrayOnLoad );
+            event.sender.send( 'settings:get:minimizeToTrayOnLoad', this.minimizeToTrayOnLoad );
         } );
 
         ipcMain.on( 'settings:set:lastViewedUpdateNotes', ( event, lastViewedUpdateNotes ) => {
@@ -682,7 +682,7 @@ class UserPreferencesStore extends Store {
         } );
 
         ipcMain.on( 'settings:get:lastViewedUpdateNotes', ( event ) => {
-            event.sender.webContents.send( 'settings:get:lastViewedUpdateNotes', this.lastViewedUpdateNotes );
+            event.sender.send( 'settings:get:lastViewedUpdateNotes', this.lastViewedUpdateNotes );
         } );
 
         ipcMain.on( 'settings:set:deathRecap', ( event, deathRecap ) => {
@@ -690,7 +690,7 @@ class UserPreferencesStore extends Store {
         } );
 
         ipcMain.on( 'settings:get:deathRecap', ( event ) => {
-            event.sender.webContents.send( 'settings:get:deathRecap', this.deathRecap );
+            event.sender.send( 'settings:get:deathRecap', this.deathRecap );
         } );
 
         ipcMain.on( 'settings:set:detrimentalOverlayId', ( event, detrimentalOverlayId ) => {
@@ -698,7 +698,7 @@ class UserPreferencesStore extends Store {
         } );
 
         ipcMain.on( 'settings:get:detrimentalOverlayId', ( event ) => {
-            event.sender.webContents.send( 'settings:get:detrimentalOverlayId', this.detrimentalOverlayId );
+            event.sender.send( 'settings:get:detrimentalOverlayId', this.detrimentalOverlayId );
         } );
 
         ipcMain.on( 'settings:set:beneficialOverlayId', ( event, beneficialOverlayId ) => {
@@ -706,7 +706,7 @@ class UserPreferencesStore extends Store {
         } );
 
         ipcMain.on( 'settings:get:beneficialOverlayId', ( event ) => {
-            event.sender.webContents.send( 'settings:get:beneficialOverlayId', this.beneficialOverlayId );
+            event.sender.send( 'settings:get:beneficialOverlayId', this.beneficialOverlayId );
         } );
 
         ipcMain.on( 'settings:set:alertOverlayId', ( event, alertOverlayId ) => {
@@ -714,7 +714,7 @@ class UserPreferencesStore extends Store {
         } );
 
         ipcMain.on( 'settings:get:alertOverlayId', ( event ) => {
-            event.sender.webContents.send( 'settings:get:alertOverlayId', this.alertOverlayId );
+            event.sender.send( 'settings:get:alertOverlayId', this.alertOverlayId );
         } );
 
         ipcMain.on( 'settings:set:damageDealtOverlayId', ( event, damageDealtOverlayId ) => {
@@ -722,23 +722,23 @@ class UserPreferencesStore extends Store {
         } );
 
         ipcMain.on( 'settings:get:damageDealtOverlayId', ( event ) => {
-            event.sender.webContents.send( 'settings:get:damageDealtOverlayId', this.damageDealtOverlayId );
+            event.sender.send( 'settings:get:damageDealtOverlayId', this.damageDealtOverlayId );
         } );
 
         ipcMain.on( 'settings:get:damageReceivedOverlayId', ( event ) => {
-            event.sender.webContents.send( 'settings:get:damageReceivedOverlayId', this.damageReceivedOverlayId );
+            event.sender.send( 'settings:get:damageReceivedOverlayId', this.damageReceivedOverlayId );
         } );
 
         ipcMain.on( 'settings:get:fctStyles', ( event ) => {
-            event.sender.webContents.send( 'settings:get:fctStyles', this.fctStyles );
+            event.sender.send( 'settings:get:fctStyles', this.fctStyles );
         } );
 
         ipcMain.on( 'settings:set:setupCompleted', ( event, setupCompleted ) => {
             this.setupCompleted = setupCompleted;
         } );
 
-        ipcMain.on( 'settings:get:setupCompleted', ( event ) => {
-            event.sender.webContents.send( 'settings:get:setupCompleted', this.setupCompleted );
+        ipcMain.handle( 'settings:get:setupCompleted', ( event, arg ) => {
+            return this.setupCompleted;
         } );
 
         ipcMain.on( 'settings:set:phonetic-transforms',
@@ -752,7 +752,7 @@ class UserPreferencesStore extends Store {
             } );
 
         ipcMain.on( 'settings:get:ignore-gina-objects', ( event ) => {
-            event.sender.webContents.send( 'settings:get:ignore-gina-objects', this.#data.ignoreGinaObjects );
+            event.sender.send( 'settings:get:ignore-gina-objects', this.#data.ignoreGinaObjects );
         } );
 
         ipcMain.on( 'settings:download-log', () => {
@@ -810,7 +810,7 @@ class UserPreferencesStore extends Store {
         
 
         ipcMain.on( 'settings:get:persistent-storage', ( event ) => {
-            event.sender.webContents.send( 'settings:get:persistent-storage', this.persistentStorage );
+            event.sender.send( 'settings:get:persistent-storage', this.persistentStorage );
         } );
 
         ipcMain.on( 'settings:set:persistent-storage-value',

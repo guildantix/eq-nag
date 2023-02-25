@@ -318,68 +318,68 @@ class TriggerDatabaseStore extends Store {
 
         ipcMain.on( 'trigger:create', ( event, trigger ) => {
             let triggerId = this.add( trigger );
-            event.sender.webContents.send( 'trigger:create', triggerId );
+            event.sender.send( 'trigger:create', triggerId );
             sendTick();
         } );
 
         ipcMain.on( 'trigger:get', ( event, triggerId ) => {
             if ( triggerId != null && triggerId.length > 0 ) {
-                event.sender.webContents.send( 'trigger:get', this.find( triggerId ) );
+                event.sender.send( 'trigger:get', this.find( triggerId ) );
             } else {
-                event.sender.webContents.send( 'trigger:get', this.getAll() );
+                event.sender.send( 'trigger:get', this.getAll() );
             }
         } );
 
         ipcMain.on( 'trigger:update', ( event, trigger ) => {
             let updated = this.update( trigger );
-            event.sender.webContents.send( 'trigger:update', updated );
+            event.sender.send( 'trigger:update', updated );
             sendTick();
         } );
 
         ipcMain.on( 'trigger:update:batch', ( event, triggers ) => {
             let failed = this.updateAll( triggers );
-            event.sender.webContents.send( 'trigger:update:batch', failed );
+            event.sender.send( 'trigger:update:batch', failed );
             sendTick();
         } );
 
         ipcMain.on( 'trigger:delete', ( event, triggerId ) => {
             let deleted = this.remove( triggerId );
-            event.sender.webContents.send( 'trigger:delete', deleted );
+            event.sender.send( 'trigger:delete', deleted );
             sendTick();
         } );
 
         ipcMain.on( 'trigger:get:stored-variables', ( event, data ) => {
-            event.sender.webContents.send( 'trigger:get:stored-variables', this.getVariableNames() );
+            event.sender.send( 'trigger:get:stored-variables', this.getVariableNames() );
         } );
         
         // Folder methods.
         ipcMain.on( 'folders:get', ( event, args ) => {
-            event.sender.webContents.send( 'folders:get', this.getFolders() );
+            event.sender.send( 'folders:get', this.getFolders() );
         } );
 
         ipcMain.on( 'folders:update', ( event, folders ) => {
-            event.sender.webContents.send( 'folders:update', this.updateFolders( folders ) );
+            event.sender.send( 'folders:update', this.updateFolders( folders ) );
             sendTick();
         } );
 
         ipcMain.on( 'trigger:search', ( event, args ) => {
-            event.sender.webContents.send( 'trigger:search', this.searchTriggers( args.term, args.folderIds ) );
+            event.sender.send( 'trigger:search', this.searchTriggers( args.term, args.folderIds ) );
         } );
 
         ipcMain.on( 'trigger:search:properties', ( event, args ) => {
-            event.sender.webContents.send( 'trigger:search:properties', this.searchTriggerProperties( args.phrase, args.speakText, args.displayText, args.clipboardText, args.name, args.comment ) );
+            event.sender.send( 'trigger:search:properties', this.searchTriggerProperties( args.phrase, args.speakText, args.displayText, args.clipboardText, args.name, args.comment ) );
         } );
         
         ipcMain.on( 'zones:get:everquest', ( event, args ) => {
-            event.sender.webContents.send( 'zones:get:everquest', _.uniq( eqZones ) );
+            event.sender.send( 'zones:get:everquest', _.uniq( eqZones ) );
         } );
         
         // Tag methods.
         ipcMain.on( 'tags:get', ( event, args ) => {
-            event.sender.webContents.send( 'tags:get', this.getTags() );
+            event.sender.send( 'tags:get', this.getTags() );
         } );
         ipcMain.on( 'tags:create', ( event, tag ) => {
-            event.sender.webContents.send( 'tags:create', this.createTag( tag ) );
+            event.sender.send( 'tags:create', this.createTag( tag ) );
             sendTick();
         } );
         ipcMain.on( 'tags:update', ( event, tag ) => {
@@ -396,20 +396,20 @@ class TriggerDatabaseStore extends Store {
         } );
 
         ipcMain.on( 'pkg:uninstall', ( event, packageId ) => {
-            event.sender.webContents.send( 'pkg:uninstall', this.uninstallTriggerPkg( packageId ) );
+            event.sender.send( 'pkg:uninstall', this.uninstallTriggerPkg( packageId ) );
         } );
 
         ipcMain.on( 'pkg:isInstalled', ( event, packageId ) => {
             // TODO: All possible methods should specify a contextual return key in the get methods.
-            event.sender.webContents.send( `pkg:isInstalled:${packageId}`, this.isPackageInstalled( packageId ) );
+            event.sender.send( `pkg:isInstalled:${packageId}`, this.isPackageInstalled( packageId ) );
         } );
 
         ipcMain.on( 'pkg:get:installed', ( event ) => {
-            event.sender.webContents.send( 'pkg:get:installed', this.getInstalledPackages() );
+            event.sender.send( 'pkg:get:installed', this.getInstalledPackages() );
         } );
 
         ipcMain.on( 'quickShare:install', ( event, quickShare ) => {
-            event.sender.webContents.send( 'quickShare:install', this.installQuickshare( quickShare ) );
+            event.sender.send( 'quickShare:install', this.installQuickshare( quickShare ) );
         } );
 
         if ( this.#orphanedFound ) {
@@ -1343,7 +1343,7 @@ class TriggerDatabaseStore extends Store {
                         }
                     }
                     
-                    event.sender.webContents.send( 'pkg:missing-overlay', missingOverlays[ i ] );
+                    event.sender.send( 'pkg:missing-overlay', missingOverlays[ i ] );
 
                 } else {
                     // We're done, let's continue the normal process.
@@ -1425,7 +1425,7 @@ class TriggerDatabaseStore extends Store {
             this.processPredefinedTriggers();
             this.storeDataFile( this.#data );
             
-            event.sender.webContents.send( 'pkg:install', true );
+            event.sender.send( 'pkg:install', true );
         } );
 
     }

@@ -63,29 +63,29 @@ class FilesDatabaseStore extends Store {
 
         ipcMain.on( 'audio-file:save', ( event, file ) => {
             let fileId = this.storeFile( file.buffer, file.name );
-            event.sender.webContents.send( 'audio-file:save', fileId );
+            event.sender.send( 'audio-file:save', fileId );
         } );
 
         ipcMain.on( 'audio-file:import', ( event, filename ) => {
             let fileId = this.storeFileByName( filename );
-            event.sender.webContents.send( 'audio-file:import', fileId );
+            event.sender.send( 'audio-file:import', fileId );
         } );
 
         ipcMain.on( 'audio-file:get:url', ( event, fileId ) => {
             let url = this.getAudioFileUrl( fileId );
-            event.sender.webContents.send( 'audio-file:get:url', url );
+            event.sender.send( 'audio-file:get:url', url );
         } );
 
         ipcMain.on( 'audio-file:get', ( event ) => {
-            event.sender.webContents.send( 'audio-file:get', this.getAudioFiles() );
+            event.sender.send( 'audio-file:get', this.getAudioFiles() );
         } );
 
         ipcMain.on( 'audio-file:getData', ( event ) => {
-            event.sender.webContents.send( 'audio-file:getData', this.getAudioFileData() );
+            event.sender.send( 'audio-file:getData', this.getAudioFileData() );
         } );
 
         ipcMain.on( 'file:importFromPackage', ( event, packageFile ) => {
-            event.sender.webContents.send( 'file:importFromPackage', this.importPackageFile( packageFile ) );
+            event.sender.send( 'file:importFromPackage', this.importPackageFile( packageFile ) );
         } );
 
     }

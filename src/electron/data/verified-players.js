@@ -62,11 +62,11 @@ class VerifiedPlayersStore extends Store {
      attachIpcEvents( mainWindowRef, sendTick ) {
 
          ipcMain.on( 'verified-players:get', ( event ) => {
-             event.sender.webContents.send( 'verified-players:get', this.#data );
+             event.sender.send( 'verified-players:get', this.#data );
          } );
 
          ipcMain.on( 'verified-players:is-player', ( event, name ) => {
-             event.sender.webContents.send( `verified-players:get:${name}`, this.isPlayer( name ) );
+             event.sender.send( `verified-players:get:${name}`, this.isPlayer( name ) );
          } );
 
     }

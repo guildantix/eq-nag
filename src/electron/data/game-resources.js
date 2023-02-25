@@ -28,14 +28,14 @@ class GameResources {
         ipcMain.on( 'game-resources:get:eq:icons', ( event, character ) => {
             try {
                 let spellIcons = this.getEqSpellIcons( userPreferences.everquestInstallFolder );
-                event.sender.webContents.send( 'game-resources:get:eq:icons', spellIcons );
+                event.sender.send( 'game-resources:get:eq:icons', spellIcons );
             } catch ( error ) {
                 let model = new BasicError();
                 model.errorCode = error;
 
                 if ( error === ErrorCodes.EqFolderNotFound.code ) {
                     model.message = ErrorCodes.EqFolderNotFound.message;
-                    event.sender.webContents.send( 'game-resources:get:eq:icons:error', model );
+                    event.sender.send( 'game-resources:get:eq:icons:error', model );
                 }
             }
         } );

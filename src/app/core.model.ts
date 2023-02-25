@@ -1,4 +1,3 @@
-import { StringProtocolResponse } from 'electron';
 import { Color, StringUtility } from './utilities';
 import * as _ from 'lodash-es';
 import { nagId } from './core/nag-id.util';

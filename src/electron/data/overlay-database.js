@@ -444,23 +444,23 @@ class OverlayDatabaseStore extends Store {
                 overlay.displayBounds = display.bounds;
 
                 let overlayId = this.add( overlay );
-                event.sender.webContents.send( 'overlay:create', overlayId );
+                event.sender.send( 'overlay:create', overlayId );
                 this.#newOverlayHandlers.forEach( fn => fn( overlay ) );
                 sendTick();
             } );
 
         ipcMain.on( 'overlay:get', ( event, overlayId ) => {
             if ( overlayId != null && overlayId.length > 0 ) {
-                event.sender.webContents.send( 'overlay:get', this.find( overlayId ) );
+                event.sender.send( 'overlay:get', this.find( overlayId ) );
             } else {
-                event.sender.webContents.send( 'overlay:get', this.getAll() );
+                event.sender.send( 'overlay:get', this.getAll() );
             }
         } );
 
         ipcMain.on( 'overlay:update', ( event, overlay ) => {
             let updated = this.update( overlay );
             this.#overlayUpdateHandlers.forEach( fn => fn( [ overlay ] ) );
-            event.sender.webContents.send( 'overlay:update', updated );
+            event.sender.send( 'overlay:update', updated );
             sendTick();
         } );
         
@@ -475,7 +475,7 @@ class OverlayDatabaseStore extends Store {
         //         this.update( model );
         //     } );
         //     this.#overlayUpdateHandlers.forEach( fn => fn( this.getAll() ) );
-        //     event.sender.webContents.send( 'overlays:update:position', true );
+        //     event.sender.send( 'overlays:update:position', true );
         //     sendTick();
         // } );
 
@@ -485,7 +485,7 @@ class OverlayDatabaseStore extends Store {
                 triggerDb.removeOverlayMapping( overlayId );
             }
             this.#overlayDeleteHandlers.forEach( fn => fn( overlayId ) );
-            event.sender.webContents.send( 'overlay:delete', deleted );
+            event.sender.send( 'overlay:delete', deleted );
             sendTick();
         } );
 
@@ -519,7 +519,7 @@ class OverlayDatabaseStore extends Store {
                     }
                 } );
                 sendTick();
-                // event.sender.webContents.send( 'overlays:update:position', true );
+                // event.sender.send( 'overlays:update:position', true );
             } );
         
         ipcMain.on( 'overlay:get:overlayDimensions',
@@ -543,7 +543,7 @@ class OverlayDatabaseStore extends Store {
                     
                     dims.push( d );
                 } );
-                event.sender.webContents.send( 'renderer:get:overlayDimensions', dims );
+                event.sender.send( 'renderer:get:overlayDimensions', dims );
             } );
 
         this.#sendTickRef.setRefFn( () => sendTick );

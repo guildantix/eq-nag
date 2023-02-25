@@ -58,9 +58,9 @@ class GinaImporter {
         ipcMain.on( 'gina:get:configuration', ( event, triggerId ) => {
             getGinaConfig( jsonData => {
                 if ( jsonData ) {
-                    event.sender.webContents.send( 'gina:get:configuration', jsonData.Configuration );
+                    event.sender.send( 'gina:get:configuration', jsonData.Configuration );
                 } else {
-                    event.sender.webContents.send( 'gina:get:configuration', null );
+                    event.sender.send( 'gina:get:configuration', null );
                 }
             } );
         } );

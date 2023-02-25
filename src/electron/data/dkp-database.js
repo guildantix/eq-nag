@@ -78,13 +78,13 @@ class DkpDatabaseStore extends Store {
         } );
         
         ipcMain.on( 'dkp:get', ( event, data ) => {
-            event.sender.webContents.send( 'dkp:event:transmit', this.getAllUnentered() );
+            event.sender.send( 'dkp:event:transmit', this.getAllUnentered() );
         } );
         
         ipcMain.on( 'dkp:remove', ( event, data ) => {
             let success = this.remove( data );
             if ( success ) {
-                event.sender.webContents.send( 'dkp:event:removed', data.entryId );
+                event.sender.send( 'dkp:event:removed', data.entryId );
             }
         } );
 

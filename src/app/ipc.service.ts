@@ -10,12 +10,6 @@ import { ColorUtility } from './utilities';
 @Injectable( { providedIn: 'root' })
 export class IpcService {
     
-    private _remote: Electron.Remote;
-    private _desktopCapturer: Electron.DesktopCapturer;
-    private _webFrame: Electron.WebFrame;
-    private _clipboard: Electron.Clipboard;
-    private _crashReporter: Electron.CrashReporter;
-    private ipc: Electron.IpcRenderer;
     private _tickObservers: Observer<DataTickModel>[] = [];
     private _transmitObservers: Observer<DkpEntryModel[]>[] = [];
     private _logFileChangeObservers: Observer<string>[] = [];
@@ -34,44 +28,16 @@ export class IpcService {
 
     private _ginaConfigCache: GinaConfiguration = null;
 
-    public get remote(): Electron.Remote {
-        return this._remote;
-    }
-
-    public get desktopCapturer(): Electron.DesktopCapturer {
-        return this._desktopCapturer;
-    }
-
-    public get webFrame(): Electron.WebFrame {
-        return this._webFrame;
-    }
-
-    public get clipboard(): Electron.Clipboard {
-        return this._clipboard;
-    }
-
-    public get crashReporter(): Electron.CrashReporter {
-        return this._crashReporter;
-    }
-
     constructor( private ngZone: NgZone ) {
-        if ( ( <any>window ).require ) {
+        if ( true ) {
             try {
 
-                this.ipc = ( <any>window ).require( 'electron' ).ipcRenderer;
-                this._remote = ( <any>window ).require( 'electron' ).remote;
-                this._desktopCapturer = ( <any>window ).require( 'electron' ).desktopCapturer;
-                this._webFrame = ( <any>window ).require( 'electron' ).webFrame;
-                this._clipboard = ( <any>window ).require( 'electron' ).clipboard;
-                this._crashReporter = ( <any>window ).require( 'electron' ).crashReporter;
-
-                this.ipc.on( 'color:darken', ( event: any, data: { overlayId: string, color: string } ) => {
+                window.api.ipc.on( 'color:darken', ( event: any, data: { overlayId: string, color: string } ) => {
                     data.color = ColorUtility.FromHex( data.color ).darken( 0.93 ).toString( 0.75 );
-                    console.log( data );
-                    this.ipc.send( `color:darken`, data );
+                    window.api.ipc.send( `color:darken`, data );
                 } );
 
-                this.ipc.on( 'pkg:missing-overlay', ( event: any, data: OverlayWindowModel ) => {
+                window.api.ipc.on( 'pkg:missing-overlay', ( event: any, data: OverlayWindowModel ) => {
                     ngZone.run( () => {
                         this._onMissingPackageOverlay?.forEach( f => {
                             f.next( data );
@@ -79,7 +45,7 @@ export class IpcService {
                     } );
                 } );
 
-                this.ipc.on( 'orphaned_trigger_warning', ( event: any, data: boolean ) => {
+                window.api.ipc.on( 'orphaned_trigger_warning', ( event: any, data: boolean ) => {
                     ngZone.run( () => {
                         this._onOrphanedTriggerWarning?.forEach( f => {
                             f.next( data );
@@ -87,7 +53,7 @@ export class IpcService {
                     } );
                 } );
 
-                this.ipc.on( 'quickshare_captured', ( event: any, quickShareId: string ) => {
+                window.api.ipc.on( 'quickshare_captured', ( event: any, quickShareId: string ) => {
                     ngZone.run( () => {
                         this._onReceivedQuickShare?.forEach( f => {
                             f.next( quickShareId );
@@ -95,7 +61,7 @@ export class IpcService {
                     } );
                 } );
 
-                this.ipc.on( 'quicksharePackage_captured', ( event: any, packageId: string ) => {
+                window.api.ipc.on( 'quicksharePackage_captured', ( event: any, packageId: string ) => {
                     ngZone.run( () => {
                         this._onReceivedQuickSharePackage?.forEach( f => {
                             f.next( packageId );
@@ -103,7 +69,7 @@ export class IpcService {
                     } );
                 } );
 
-                this.ipc.on( 'update_downloaded', ( event: any, data: UpdateInfo ) => {
+                window.api.ipc.on( 'update_downloaded', ( event: any, data: UpdateInfo ) => {
                     ngZone.run( () => {
                         this._updateAvailableObservers?.forEach( f => {
                             f.next( data );
@@ -111,7 +77,7 @@ export class IpcService {
                     } );
                 } );
 
-                this.ipc.on( 'overlay:event:bounds-changed', ( event: any, data: OverlayBoundsChangedEventArgs ) => {
+                window.api.ipc.on( 'overlay:event:bounds-changed', ( event: any, data: OverlayBoundsChangedEventArgs ) => {
                     ngZone.run( () => {
                         this._overlayBoundsChangedObservers?.forEach( f => {
                             f.next( data );
@@ -119,7 +85,7 @@ export class IpcService {
                     } );
                 } );
 
-                this.ipc.on( 'dialog:warning', ( event: any, data: DialogEventArgs ) => {
+                window.api.ipc.on( 'dialog:warning', ( event: any, data: DialogEventArgs ) => {
                     ngZone.run( () => {
                         this._warningDialogObservers?.forEach( f => {
                             f.next( data );
@@ -127,7 +93,7 @@ export class IpcService {
                     } );
                 } );
 
-                this.ipc.on( 'tick', ( event: any, data: DataTickModel ) => {
+                window.api.ipc.on( 'tick', ( event: any, data: DataTickModel ) => {
                     ngZone.run( () => {
                         this._tickObservers?.forEach( f => {
                             f.next( data );
@@ -135,7 +101,7 @@ export class IpcService {
                     } );
                 } );
                 
-                this.ipc.on( 'dkp:event:transmit', ( event: any, data: DkpEntryModel[] ) => {
+                window.api.ipc.on( 'dkp:event:transmit', ( event: any, data: DkpEntryModel[] ) => {
                     ngZone.run( () => {
                         this._transmitObservers?.forEach( f => {
                             f.next( data );
@@ -143,7 +109,7 @@ export class IpcService {
                     } );
                 } );
 
-                this.ipc.on( 'log:changed', ( event: any, data: string ) => {
+                window.api.ipc.on( 'log:changed', ( event: any, data: string ) => {
                     ngZone.run( () => {
                         this._logFileChangeObservers?.forEach( f => {
                             f.next( data );
@@ -151,7 +117,7 @@ export class IpcService {
                     } );
                 } );
 
-                this.ipc.on( 'dkp:add', ( event: any, data: DkpEntryModel ) => {
+                window.api.ipc.on( 'dkp:add', ( event: any, data: DkpEntryModel ) => {
                     ngZone.run( () => {
                         this._dkpAddedObservers?.forEach( f => {
                             f.next( data );
@@ -159,7 +125,7 @@ export class IpcService {
                     } );
                 } );
 
-                this.ipc.on( 'dkp:event:removed', ( event: any, data: any ) => {
+                window.api.ipc.on( 'dkp:event:removed', ( event: any, data: any ) => {
                     ngZone.run( () => {
                         this._dkpRemovedObservers?.forEach( f => {
                             f.next( data );
@@ -167,11 +133,11 @@ export class IpcService {
                     } );
                 } );
 
-                this.ipc.on( 'console:log', ( event: any, data: any ) => {
+                window.api.ipc.on( 'console:log', ( event: any, data: any ) => {
                     console.log( data );
                 } );
 
-                this.ipc.on( 'log:character:activated', ( event: any, data: any ) => {
+                window.api.ipc.on( 'log:character:activated', ( event: any, data: any ) => {
                     ngZone.run( () => {
                         this._logActivatedObservers?.forEach( f => {
                             f.next( data );
@@ -179,7 +145,7 @@ export class IpcService {
                     } );
                 } );
 
-                this.ipc.on( 'log:character:deactivated', ( event: any, data: any ) => {
+                window.api.ipc.on( 'log:character:deactivated', ( event: any, data: any ) => {
                     ngZone.run( () => {
                         this._logDeactivatedObservers?.forEach( f => {
                             f.next( data );
@@ -204,7 +170,7 @@ export class IpcService {
     }
 
     public packageOverlayMapped( packageOverlayId: string, mappedOverlayId: string ): void {
-        this.ipc.send( `trigger:missing-overlay:${packageOverlayId}`, mappedOverlayId );
+        window.api.ipc.send( `trigger:missing-overlay:${packageOverlayId}`, mappedOverlayId );
     }
 
     public orphanedTriggersFound(): Observable<boolean> {
@@ -314,13 +280,13 @@ export class IpcService {
     public getAppVersion(): Observable<string> {
         let obs: Observable<string> = new Observable<string>( ( observer: Observer<string> ) => {
             
-            this.ipc.once( 'app:version', ( e, v ) => {
+            window.api.ipc.once( 'app:version', ( e, v ) => {
                 this.ngZone.run( () => {
                     observer.next( v.version );
                     observer.complete();
                 } );
             } );
-            this.ipc.send( 'app:version' );
+            window.api.ipc.send( 'app:version' );
 
         } );
 
@@ -330,13 +296,13 @@ export class IpcService {
     public getAllDisplays(): Observable<Electron.Display[]> {
         let obs: Observable<Electron.Display[]> = new Observable<Electron.Display[]>( ( observer: Observer<Electron.Display[]> ) => {
 
-            this.ipc.once( 'app:get:all-display', ( e, displays: Electron.Display[] ) => {
+            window.api.ipc.once( 'app:get:all-display', ( e, displays: Electron.Display[] ) => {
                 this.ngZone.run( () => {
                     observer.next( displays );
                     observer.complete();
                 } );
             } );
-            this.ipc.send( 'app:get:all-display' );
+            window.api.ipc.send( 'app:get:all-display' );
 
         } );
 
@@ -346,13 +312,13 @@ export class IpcService {
     public getPrimaryDisplay(): Observable<Electron.Display> {
         let obs: Observable<Electron.Display> = new Observable<Electron.Display>( ( observer: Observer<Electron.Display> ) => {
             
-            this.ipc.once( 'app:get:primary-display', ( e, display ) => {
+            window.api.ipc.once( 'app:get:primary-display', ( e, display ) => {
                 this.ngZone.run( () => {
                     observer.next( display );
                     observer.complete();
                 } );
             } );
-            this.ipc.send( 'app:get:primary-display' );
+            window.api.ipc.send( 'app:get:primary-display' );
 
         } );
 
@@ -362,13 +328,13 @@ export class IpcService {
     public getAppIsDev(): Observable<boolean> {
         let obs: Observable<boolean> = new Observable<boolean>( ( observer: Observer<boolean> ) => {
             
-            this.ipc.once( 'app:isDev', ( e, isDev ) => {
+            window.api.ipc.once( 'app:isDev', ( e, isDev ) => {
                 this.ngZone.run( () => {
                     observer.next( isDev );
                     observer.complete();
                 } );
             } );
-            this.ipc.send( 'app:isDev' );
+            window.api.ipc.send( 'app:isDev' );
 
         } );
 
@@ -384,99 +350,99 @@ export class IpcService {
     }
 
     public quitAndInstallUpdate(): void {
-        this.ipc.send( 'app:restart', null );
+        window.api.ipc.send( 'app:restart', null );
     }
 
     public logException( ex: any ): void {
-        this.ipc.send( 'app:log:exception', ex );
+        window.api.ipc.send( 'app:log:exception', ex );
     }
 
     public logInfo( info: string ): void {
-        this.ipc.send( 'app:log:info', info );
+        window.api.ipc.send( 'app:log:info', info );
     }
 
     public downloadLogZip(): void {
-        this.ipc.send( 'settings:download-log' );
+        window.api.ipc.send( 'settings:download-log' );
     }
 
     public removeDkpAward( entry: DkpEntryModel ): void {
-        this.ipc.send( 'dkp:remove', entry );
+        window.api.ipc.send( 'dkp:remove', entry );
     }
 
     public quitApp(): void {
-        this.ipc.send( 'app:quit' );
+        window.api.ipc.send( 'app:quit' );
     }
 
     public minimizeApp(): void {
-        this.ipc.send( 'app:minimize' );
+        window.api.ipc.send( 'app:minimize' );
     }
 
     public sendToTray(): void {
-        this.ipc.send( 'app:minimize:tray' );
+        window.api.ipc.send( 'app:minimize:tray' );
     }
 
     public updateLogFile( logFile: string ): void {
-        this.ipc.send( 'log:select', logFile );
+        window.api.ipc.send( 'log:select', logFile );
     }
 
     public updateVoiceIndex( index: number ): void {
-        this.ipc.send( 'voice:select', index );
+        window.api.ipc.send( 'voice:select', index );
     }
 
     public updateMasterVolume( masterVolume: number ): void {
-        this.ipc.send( 'settings:set:masterVolume', masterVolume );
+        window.api.ipc.send( 'settings:set:masterVolume', masterVolume );
     }
 
     public updateFocusEffectSettings( model: FocusEffectSettings ): void {
-        this.ipc.send( 'settings:set:focus-effects', model );
+        window.api.ipc.send( 'settings:set:focus-effects', model );
     }
 
     public updateEnableFct( enabled: boolean ): void {
-        this.ipc.send( 'settings:set:fct', enabled );
+        window.api.ipc.send( 'settings:set:fct', enabled );
     }
 
     public updateEnableFctShowCriticalsInline( enabled: boolean ): void {
-        this.ipc.send( 'settings:set:fctShowCriticalsInline', enabled );
+        window.api.ipc.send( 'settings:set:fctShowCriticalsInline', enabled );
     }
 
     public updateDamageDealtOverlayId( overlayId: string ): void {
-        this.ipc.send( 'settings:set:damageDealtOverlayId', overlayId );
+        window.api.ipc.send( 'settings:set:damageDealtOverlayId', overlayId );
     }
 
     public updateDamageReceivedOverlayId( overlayId: string ): void {
-        this.ipc.send( 'settings:set:damageReceivedOverlayId', overlayId );
+        window.api.ipc.send( 'settings:set:damageReceivedOverlayId', overlayId );
     }
 
     public sendTextToClipboard( value: string ): void {
-        this.ipc.send( 'clipboard:writeText', value );
+        window.api.ipc.send( 'clipboard:writeText', value );
     }
 
     public markDkpEntriesAsEntered( entries: DkpEntryModel[] ): void {
-        this.ipc.send( 'dkp:markAsEntered', entries );
+        window.api.ipc.send( 'dkp:markAsEntered', entries );
     }
 
     public clearDkpLog(): void {
-        this.ipc.send( 'dkp:reset' );
+        window.api.ipc.send( 'dkp:reset' );
     }
 
     public showNewTriggerDialog( folderId?: string ): void {
-        this.ipc.send( 'trigger:dialog:new', folderId );
+        window.api.ipc.send( 'trigger:dialog:new', folderId );
     }
 
     public showEditTriggerDialog( triggerId: string ): void {
-        this.ipc.send( 'trigger:dialog:edit', triggerId );
+        window.api.ipc.send( 'trigger:dialog:edit', triggerId );
     }
 
     public closeThisChild(): void {
-        this.ipc.send( 'window:child:close' );
+        window.api.ipc.send( 'window:child:close' );
     }
 
     public resizeTriggerWindow( width: number = null, height: number = null ): void {
-        this.ipc.send( 'trigger:dialog:resize', { width: width, height: height } );
+        window.api.ipc.send( 'trigger:dialog:resize', { width: width, height: height } );
     }
 
     public mainWindowAngularReady(): void {
-        this.ipc.send( 'main:angular-ready' );
+        window.api.ipc.send( 'main:angular-ready' );
     }
 
     public findPlayerCharacterDeaths( logFile: string ): Observable<LogFileLocation[]> {
@@ -484,13 +450,13 @@ export class IpcService {
             
             let message = new IpcMessage( logFile );
 
-            this.ipc.once( `death-recap:find-deaths:${message.id}`, ( e, deathsFound ) => {
+            window.api.ipc.once( `death-recap:find-deaths:${message.id}`, ( e, deathsFound ) => {
                 this.ngZone.run( () => {
                     observer.next( deathsFound );
                     observer.complete();
                 } );
             } );
-            this.ipc.send( 'death-recap:find-deaths', message );
+            window.api.ipc.send( 'death-recap:find-deaths', message );
 
         } );
 
@@ -499,19 +465,19 @@ export class IpcService {
 
     public showDeathRecap( logFileLoc: LogFileLocation, characterName: string ) {
         let message = new IpcMessage( { logFileLoc: logFileLoc, characterName: characterName } );
-        this.ipc.send( 'window:death-recap', message );
+        window.api.ipc.send( 'window:death-recap', message );
     }
 
     public showGinaImportWindow(): Observable<boolean> {
         let obs: Observable<boolean> = new Observable<boolean>( ( observer: Observer<boolean> ) => {
             
-            this.ipc.once( 'gina:dialog:import', ( e, loaded ) => {
+            window.api.ipc.once( 'gina:dialog:import', ( e, loaded ) => {
                 this.ngZone.run( () => {
                     observer.next( loaded );
                     observer.complete();
                 } );
             } );
-            this.ipc.send( 'gina:dialog:import', null );
+            window.api.ipc.send( 'gina:dialog:import', null );
 
         } );
 
@@ -521,13 +487,13 @@ export class IpcService {
     public showTriggerLibrary(): Observable<boolean> {
         let obs: Observable<boolean> = new Observable<boolean>( ( observer: Observer<boolean> ) => {
             
-            this.ipc.once( 'trigger:dialog:library', ( e, loaded ) => {
+            window.api.ipc.once( 'trigger:dialog:library', ( e, loaded ) => {
                 this.ngZone.run( () => {
                     observer.next( loaded );
                     observer.complete();
                 } );
             } );
-            this.ipc.send( 'trigger:dialog:library', null );
+            window.api.ipc.send( 'trigger:dialog:library', null );
 
         } );
 
@@ -535,23 +501,23 @@ export class IpcService {
     }
 
     public simulateLogParse( file: string ): void {
-        this.ipc.send( 'log:simulate:file', file );
+        window.api.ipc.send( 'log:simulate:file', file );
     }
 
     public simulateLogLines( lines: string[] ): void {
-        this.ipc.send( 'log:simulate:lines', lines );
+        window.api.ipc.send( 'log:simulate:lines', lines );
     }
 
     public createNewTrigger( model: TriggerModel ): Observable<string> {
         let obs: Observable<string> = new Observable<string>( ( observer: Observer<string> ) => {
             
-            this.ipc.once( 'trigger:create', ( e, triggerId ) => {
+            window.api.ipc.once( 'trigger:create', ( e, triggerId ) => {
                 this.ngZone.run( () => {
                     observer.next( triggerId );
                     observer.complete();
                 } );
             } );
-            this.ipc.send( 'trigger:create', model );
+            window.api.ipc.send( 'trigger:create', model );
 
         } );
 
@@ -561,13 +527,13 @@ export class IpcService {
     public getTriggers(): Observable<TriggerModel[]> {
         let obs: Observable<TriggerModel[]> = new Observable<TriggerModel[]>( ( observer: Observer<TriggerModel[]> ) => {
             
-            this.ipc.once( 'trigger:get', ( e, triggers: TriggerModel[] ) => {
+            window.api.ipc.once( 'trigger:get', ( e, triggers: TriggerModel[] ) => {
                 this.ngZone.run( () => {
                     observer.next( triggers );
                     observer.complete();
                 } );
             } );
-            this.ipc.send( 'trigger:get', null );
+            window.api.ipc.send( 'trigger:get', null );
 
         } );
 
@@ -577,13 +543,13 @@ export class IpcService {
     public getTrigger( triggerId: string ): Observable<TriggerModel> {
         let obs: Observable<TriggerModel> = new Observable<TriggerModel>( ( observer: Observer<TriggerModel> ) => {
             
-            this.ipc.once( 'trigger:get', ( e, trigger: TriggerModel ) => {
+            window.api.ipc.once( 'trigger:get', ( e, trigger: TriggerModel ) => {
                 this.ngZone.run( () => {
                     observer.next( trigger );
                     observer.complete();
                 } );
             } );
-            this.ipc.send( 'trigger:get', triggerId );
+            window.api.ipc.send( 'trigger:get', triggerId );
 
         } );
 
@@ -593,13 +559,13 @@ export class IpcService {
     public searchTriggers( term: string, restrictByFolderIds?: string[] ): Observable<TriggerModel[]> {
         let obs: Observable<TriggerModel[]> = new Observable<TriggerModel[]>( ( observer: Observer<TriggerModel[]> ) => {
             
-            this.ipc.once( 'trigger:search', ( e, triggers: TriggerModel[] ) => {
+            window.api.ipc.once( 'trigger:search', ( e, triggers: TriggerModel[] ) => {
                 this.ngZone.run( () => {
                     observer.next( triggers );
                     observer.complete();
                 } );
             } );
-            this.ipc.send( 'trigger:search', { term: term, folderIds: restrictByFolderIds } );
+            window.api.ipc.send( 'trigger:search', { term: term, folderIds: restrictByFolderIds } );
 
         } );
 
@@ -609,13 +575,13 @@ export class IpcService {
     public searchTriggerProperties( phrase: string[], speakText: string[], displayText: string[], clipboardText: string[], name: string, comment: string ): Observable<TriggerModel[]> {
         let obs: Observable<TriggerModel[]> = new Observable<TriggerModel[]>( ( observer: Observer<TriggerModel[]> ) => {
             
-            this.ipc.once( 'trigger:search:properties', ( e, triggers: TriggerModel[] ) => {
+            window.api.ipc.once( 'trigger:search:properties', ( e, triggers: TriggerModel[] ) => {
                 this.ngZone.run( () => {
                     observer.next( triggers );
                     observer.complete();
                 } );
             } );
-            this.ipc.send( 'trigger:search:properties', { phrase: phrase, speakText: speakText, displayText: displayText, clipboardText: clipboardText, name: name, comment: comment } );
+            window.api.ipc.send( 'trigger:search:properties', { phrase: phrase, speakText: speakText, displayText: displayText, clipboardText: clipboardText, name: name, comment: comment } );
 
         } );
 
@@ -625,13 +591,13 @@ export class IpcService {
     public updateTrigger( model: TriggerModel ): Observable<boolean> {
         let obs: Observable<boolean> = new Observable<boolean>( ( observer: Observer<boolean> ) => {
             
-            this.ipc.once( 'trigger:update', ( e, updated: boolean ) => {
+            window.api.ipc.once( 'trigger:update', ( e, updated: boolean ) => {
                 this.ngZone.run( () => {
                     observer.next( updated );
                     observer.complete();
                 } );
             } );
-            this.ipc.send( 'trigger:update', model );
+            window.api.ipc.send( 'trigger:update', model );
 
         } );
 
@@ -648,13 +614,13 @@ export class IpcService {
     public updateTriggers( triggers: TriggerModel[] ): Observable<TriggerModel[]> {
         let obs: Observable<TriggerModel[]> = new Observable<TriggerModel[]>( ( observer: Observer<TriggerModel[]> ) => {
             
-            this.ipc.once( 'trigger:update:batch', ( e, failed: TriggerModel[] ) => {
+            window.api.ipc.once( 'trigger:update:batch', ( e, failed: TriggerModel[] ) => {
                 this.ngZone.run( () => {
                     observer.next( failed );
                     observer.complete();
                 } );
             } );
-            this.ipc.send( 'trigger:update:batch', triggers );
+            window.api.ipc.send( 'trigger:update:batch', triggers );
 
         } );
 
@@ -664,13 +630,13 @@ export class IpcService {
     public deleteTrigger( triggerId: string ): Observable<boolean> {
         let obs: Observable<boolean> = new Observable<boolean>( ( observer: Observer<boolean> ) => {
             
-            this.ipc.once( 'trigger:delete', ( e, deleted: boolean ) => {
+            window.api.ipc.once( 'trigger:delete', ( e, deleted: boolean ) => {
                 this.ngZone.run( () => {
                     observer.next( deleted );
                     observer.complete();
                 } );
             } );
-            this.ipc.send( 'trigger:delete', triggerId );
+            window.api.ipc.send( 'trigger:delete', triggerId );
 
         } );
 
@@ -680,13 +646,13 @@ export class IpcService {
     public getTriggerFolders(): Observable<TriggerFolder[]> {
         let obs: Observable<TriggerFolder[]> = new Observable<TriggerFolder[]>( ( observer: Observer<TriggerFolder[]> ) => {
             
-            this.ipc.once( 'folders:get', ( e, folders: TriggerFolder[] ) => {
+            window.api.ipc.once( 'folders:get', ( e, folders: TriggerFolder[] ) => {
                 this.ngZone.run( () => {
                     observer.next( folders );
                     observer.complete();
                 } );
             } );
-            this.ipc.send( 'folders:get', null );
+            window.api.ipc.send( 'folders:get', null );
 
         } );
 
@@ -696,13 +662,13 @@ export class IpcService {
     public updateTriggerFolders( folders: TriggerFolder[] ): Observable<TriggerFolder[]> {
         let obs: Observable<TriggerFolder[]> = new Observable<TriggerFolder[]>( ( observer: Observer<TriggerFolder[]> ) => {
             
-            this.ipc.once( 'folders:update', ( e, updatedFolders: TriggerFolder[] ) => {
+            window.api.ipc.once( 'folders:update', ( e, updatedFolders: TriggerFolder[] ) => {
                 this.ngZone.run( () => {
                     observer.next( updatedFolders );
                     observer.complete();
                 } );
             } );
-            this.ipc.send( 'folders:update', folders );
+            window.api.ipc.send( 'folders:update', folders );
 
         } );
 
@@ -715,13 +681,13 @@ export class IpcService {
     public getStoredVariables(): Observable<string[]> {
         let obs: Observable<string[]> = new Observable<string[]>( ( observer: Observer<string[]> ) => {
             
-            this.ipc.once( 'trigger:get:stored-variables', ( e, storedVariables: string[] ) => {
+            window.api.ipc.once( 'trigger:get:stored-variables', ( e, storedVariables: string[] ) => {
                 this.ngZone.run( () => {
                     observer.next( storedVariables );
                     observer.complete();
                 } );
             } );
-            this.ipc.send( 'trigger:get:stored-variables', null );
+            window.api.ipc.send( 'trigger:get:stored-variables', null );
 
         } );
 
@@ -731,13 +697,13 @@ export class IpcService {
     public createNewOverlayWindow( model: OverlayWindowModel ): Observable<string> {
         let obs: Observable<string> = new Observable<string>( ( observer: Observer<string> ) => {
             
-            this.ipc.once( 'overlay:create', ( e, overlayId ) => {
+            window.api.ipc.once( 'overlay:create', ( e, overlayId ) => {
                 this.ngZone.run( () => {
                     observer.next( overlayId );
                     observer.complete();
                 } );
             } );
-            this.ipc.send( 'overlay:create', model );
+            window.api.ipc.send( 'overlay:create', model );
 
         } );
 
@@ -747,13 +713,13 @@ export class IpcService {
     public getOverlayWindows(): Observable<OverlayWindowModel[]> {
         let obs: Observable<OverlayWindowModel[]> = new Observable<OverlayWindowModel[]>( ( observer: Observer<OverlayWindowModel[]> ) => {
             
-            this.ipc.once( 'overlay:get', ( e, overlays: OverlayWindowModel[] ) => {
+            window.api.ipc.once( 'overlay:get', ( e, overlays: OverlayWindowModel[] ) => {
                 this.ngZone.run( () => {
                     observer.next( overlays );
                     observer.complete();
                 } );
             } );
-            this.ipc.send( 'overlay:get', null );
+            window.api.ipc.send( 'overlay:get', null );
 
         } );
 
@@ -763,13 +729,13 @@ export class IpcService {
     public getOverlayWindow( overlayId: string ): Observable<OverlayWindowModel> {
         let obs: Observable<OverlayWindowModel> = new Observable<OverlayWindowModel>( ( observer: Observer<OverlayWindowModel> ) => {
             
-            this.ipc.once( 'overlay:get', ( e, overlay: OverlayWindowModel ) => {
+            window.api.ipc.once( 'overlay:get', ( e, overlay: OverlayWindowModel ) => {
                 this.ngZone.run( () => {
                     observer.next( overlay );
                     observer.complete();
                 } );
             } );
-            this.ipc.send( 'overlay:get', overlayId );
+            window.api.ipc.send( 'overlay:get', overlayId );
 
         } );
 
@@ -779,13 +745,13 @@ export class IpcService {
     public updateOverlayWindow( model: OverlayWindowModel ): Observable<boolean> {
         let obs: Observable<boolean> = new Observable<boolean>( ( observer: Observer<boolean> ) => {
             
-            this.ipc.once( 'overlay:update', ( e, updated: boolean ) => {
+            window.api.ipc.once( 'overlay:update', ( e, updated: boolean ) => {
                 this.ngZone.run( () => {
                     observer.next( updated );
                     observer.complete();
                 } );
             } );
-            this.ipc.send( 'overlay:update', model );
+            window.api.ipc.send( 'overlay:update', model );
 
         } );
 
@@ -793,24 +759,24 @@ export class IpcService {
     }
 
     public undoOverlayPositionChanges(): void {
-        this.ipc.send( 'renderer:reset:overlayDimensions', null );
+        window.api.ipc.send( 'renderer:reset:overlayDimensions', null );
     }
 
     public saveUpdatedOverlayPositions(): void {
-        this.ipc.send( 'renderer:save:overlayDimensions', null );
+        window.api.ipc.send( 'renderer:save:overlayDimensions', null );
     }
 
     // TODO: Determine wtf this was?
     // public updateOverlaysPositions( overlays: OverlayWindowModel[] ): Observable<boolean> {
     //     let obs: Observable<boolean> = new Observable<boolean>( ( observer: Observer<boolean> ) => {
             
-    //         this.ipc.once( 'overlays:update:position', ( e, updated: boolean ) => {
+    //         window.api.ipc.once( 'overlays:update:position', ( e, updated: boolean ) => {
     //             this.ngZone.run( () => {
     //                 observer.next( updated );
     //                 observer.complete();
     //             } );
     //         } );
-    //         this.ipc.send( 'overlays:update:position', overlays );
+    //         window.api.ipc.send( 'overlays:update:position', overlays );
 
     //     } );
 
@@ -820,13 +786,13 @@ export class IpcService {
     public deleteOverlayWindow( overlayId: string ): Observable<boolean> {
         let obs: Observable<boolean> = new Observable<boolean>( ( observer: Observer<boolean> ) => {
             
-            this.ipc.once( 'overlay:delete', ( e, deleted: boolean ) => {
+            window.api.ipc.once( 'overlay:delete', ( e, deleted: boolean ) => {
                 this.ngZone.run( () => {
                     observer.next( deleted );
                     observer.complete();
                 } );
             } );
-            this.ipc.send( 'overlay:delete', overlayId );
+            window.api.ipc.send( 'overlay:delete', overlayId );
 
         } );
 
@@ -836,13 +802,13 @@ export class IpcService {
     public createCharacter( model: CharacterModel ): Observable<string> {
         let obs: Observable<string> = new Observable<string>( ( observer: Observer<string> ) => {
             
-            this.ipc.once( 'character:create', ( e, characterId: string ) => {
+            window.api.ipc.once( 'character:create', ( e, characterId: string ) => {
                 this.ngZone.run( () => {
                     observer.next( characterId );
                     observer.complete();
                 } );
             } );
-            this.ipc.send( 'character:create', model );
+            window.api.ipc.send( 'character:create', model );
 
         } );
 
@@ -852,13 +818,13 @@ export class IpcService {
     public getCharacters(): Observable<CharacterModel[]> {
         let obs: Observable<CharacterModel[]> = new Observable<CharacterModel[]>( ( observer: Observer<CharacterModel[]> ) => {
             
-            this.ipc.once( 'character:get', ( e, overlays: CharacterModel[] ) => {
+            window.api.ipc.once( 'character:get', ( e, overlays: CharacterModel[] ) => {
                 this.ngZone.run( () => {
                     observer.next( overlays );
                     observer.complete();
                 } );
             } );
-            this.ipc.send( 'character:get', null );
+            window.api.ipc.send( 'character:get', null );
 
         } );
 
@@ -868,13 +834,13 @@ export class IpcService {
     public getCharacter( characterId: string ): Observable<CharacterModel> {
         let obs: Observable<CharacterModel> = new Observable<CharacterModel>( ( observer: Observer<CharacterModel> ) => {
             
-            this.ipc.once( 'character:get', ( e, character: CharacterModel ) => {
+            window.api.ipc.once( 'character:get', ( e, character: CharacterModel ) => {
                 this.ngZone.run( () => {
                     observer.next( character );
                     observer.complete();
                 } );
             } );
-            this.ipc.send( 'character:get', characterId );
+            window.api.ipc.send( 'character:get', characterId );
 
         } );
 
@@ -884,13 +850,13 @@ export class IpcService {
     public updateCharacter( model: CharacterModel ): Observable<boolean> {
         let obs: Observable<boolean> = new Observable<boolean>( ( observer: Observer<boolean> ) => {
             
-            this.ipc.once( 'character:update', ( e, updated: boolean ) => {
+            window.api.ipc.once( 'character:update', ( e, updated: boolean ) => {
                 this.ngZone.run( () => {
                     observer.next( updated );
                     observer.complete();
                 } );
             } );
-            this.ipc.send( 'character:update', model );
+            window.api.ipc.send( 'character:update', model );
 
         } );
 
@@ -900,13 +866,13 @@ export class IpcService {
     public deleteCharacter( characterId: string ): Observable<boolean> {
         let obs: Observable<boolean> = new Observable<boolean>( ( observer: Observer<boolean> ) => {
             
-            this.ipc.once( 'character:delete', ( e, deleted: boolean ) => {
+            window.api.ipc.once( 'character:delete', ( e, deleted: boolean ) => {
                 this.ngZone.run( () => {
                     observer.next( deleted );
                     observer.complete();
                 } );
             } );
-            this.ipc.send( 'character:delete', characterId );
+            window.api.ipc.send( 'character:delete', characterId );
 
         } );
 
@@ -916,13 +882,13 @@ export class IpcService {
     public getEqInstallFolder(): Observable<string> {
         let obs: Observable<string> = new Observable<string>( ( observer: Observer<string> ) => {
             
-            this.ipc.once( 'settings:get:everquest-folder', ( e, folder: string ) => {
+            window.api.ipc.once( 'settings:get:everquest-folder', ( e, folder: string ) => {
                 this.ngZone.run( () => {
                     observer.next( folder );
                     observer.complete();
                 } );
             } );
-            this.ipc.send( 'settings:get:everquest-folder', null );
+            window.api.ipc.send( 'settings:get:everquest-folder', null );
 
         } );
 
@@ -932,19 +898,19 @@ export class IpcService {
     public getEqSpellIcons(): Observable<string[]> {
         let obs: Observable<string[]> = new Observable<string[]>( ( observer: Observer<string[]> ) => {
             
-            this.ipc.once( 'game-resources:get:eq:icons', ( e, icons: string[] ) => {
+            window.api.ipc.once( 'game-resources:get:eq:icons', ( e, icons: string[] ) => {
                 this.ngZone.run( () => {
                     observer.next( icons );
                     observer.complete();
                 } );
             } );
-            this.ipc.once( 'game-resources:get:eq:icons:error', ( e, error: BasicError ) => {
+            window.api.ipc.once( 'game-resources:get:eq:icons:error', ( e, error: BasicError ) => {
                 this.ngZone.run( () => {
                     observer.error( error );
                     observer.complete();
                 } );
             } );
-            this.ipc.send( 'game-resources:get:eq:icons', null );
+            window.api.ipc.send( 'game-resources:get:eq:icons', null );
 
         } );
 
@@ -952,71 +918,71 @@ export class IpcService {
     }
 
     public setEqInstallFolder( folder: string ): void {
-        this.ipc.send( 'settings:set:everquest-folder', folder );
+        window.api.ipc.send( 'settings:set:everquest-folder', folder );
     }
 
     public enableOverlayEditMode( overlayId: string ): void {
-        this.ipc.send( 'overlay:enable-edit', overlayId );
+        window.api.ipc.send( 'overlay:enable-edit', overlayId );
     }
 
     public arrangeOverlays(): void {
-        this.ipc.send( 'renderer:arrange-overlays' );
+        window.api.ipc.send( 'renderer:arrange-overlays' );
     }
 
     public endArrangeOverlays(): void {
-        this.ipc.send( 'renderer:end-arrange-overlays' );
+        window.api.ipc.send( 'renderer:end-arrange-overlays' );
     }
 
     public disableOverlayEditMode( overlayId: string ): void {
-        this.ipc.send( 'overlay:disable-edit', overlayId );
+        window.api.ipc.send( 'overlay:disable-edit', overlayId );
     }
 
     public showEditOverlayDialog( overlayId: string ): void {
-        this.ipc.send( 'overlay:dialog:edit', overlayId );
+        window.api.ipc.send( 'overlay:dialog:edit', overlayId );
     }
 
     public showArrangeOverlaysDialog(): void {
-        this.ipc.send( 'overlay:dialog:arrange' );
+        window.api.ipc.send( 'overlay:dialog:arrange' );
     }
 
     public broadcastOverlayModel( overlay: OverlayWindowModel ): void {
-        this.ipc.send( 'overlay:broadcast', overlay );
+        window.api.ipc.send( 'overlay:broadcast', overlay );
     }
 
     public sendOverlayComponent( component: any ): void {
-        this.ipc.send( 'overlay:send:component', component );
+        window.api.ipc.send( 'overlay:send:component', component );
     }
 
     public highlightOverlay( overlayId: string ): void {
-        this.ipc.send( 'overlay:highlight', overlayId );
+        window.api.ipc.send( 'overlay:highlight', overlayId );
     }
 
     public dimOverlay( overlayId: string ): void {
-        this.ipc.send( 'overlay:dim', overlayId );
+        window.api.ipc.send( 'overlay:dim', overlayId );
     }
 
     public requestTick(): void {
-        this.ipc.send( 'app:request:tick', null );
+        window.api.ipc.send( 'app:request:tick', null );
     }
 
     public sendTestFn( rawLogLine: string ): void {
-        this.ipc.send( 'log:send:raw', rawLogLine );
+        window.api.ipc.send( 'log:send:raw', rawLogLine );
     }
 
     public sendOverlayToOrigin( overlayId: string, displayId: number ): void {
-        this.ipc.send( 'overlay:send-to-origin', { overlayId: overlayId, displayId: displayId } );
+        window.api.ipc.send( 'overlay:send-to-origin', { overlayId: overlayId, displayId: displayId } );
     }
 
     public getAudioFiles(): Observable<FileModel[]> {
         let obs: Observable<FileModel[]> = new Observable<FileModel[]>( ( observer: Observer<FileModel[]> ) => {
             
-            this.ipc.once( 'audio-file:get', ( e, audioFiles: FileModel[] ) => {
+            window.api.ipc.once( 'audio-file:get', ( e, audioFiles: FileModel[] ) => {
                 this.ngZone.run( () => {
                     observer.next( audioFiles );
                     observer.complete();
                 } );
             } );
-            this.ipc.send( 'audio-file:get', null );
+            window.api.ipc.send( 'audio-file:get', null );
 
         } );
 
@@ -1026,13 +992,13 @@ export class IpcService {
     public getAudioFileData(): Observable<PackageFileModel[]> {
         let obs: Observable<PackageFileModel[]> = new Observable<PackageFileModel[]>( ( observer: Observer<PackageFileModel[]> ) => {
             
-            this.ipc.once( 'audio-file:getData', ( e, audioFiles: PackageFileModel[] ) => {
+            window.api.ipc.once( 'audio-file:getData', ( e, audioFiles: PackageFileModel[] ) => {
                 this.ngZone.run( () => {
                     observer.next( audioFiles );
                     observer.complete();
                 } );
             } );
-            this.ipc.send( 'audio-file:getData', null );
+            window.api.ipc.send( 'audio-file:getData', null );
 
         } );
 
@@ -1042,13 +1008,13 @@ export class IpcService {
     public getAudioFileUrl( fileId: string ): Observable<string> {
         let obs: Observable<string> = new Observable<string>( ( observer: Observer<string> ) => {
             
-            this.ipc.once( 'audio-file:get:url', ( e, fileUrl: string ) => {
+            window.api.ipc.once( 'audio-file:get:url', ( e, fileUrl: string ) => {
                 this.ngZone.run( () => {
                     observer.next( fileUrl );
                     observer.complete();
                 } );
             } );
-            this.ipc.send( 'audio-file:get:url', fileId );
+            window.api.ipc.send( 'audio-file:get:url', fileId );
 
         } );
 
@@ -1058,13 +1024,13 @@ export class IpcService {
     public importPackageFile( file: PackageFileModel ): Observable<string> {
         let obs: Observable<string> = new Observable<string>( ( observer: Observer<string> ) => {
 
-            this.ipc.once( 'file:importFromPackage', ( e, fileId: string ) => {
+            window.api.ipc.once( 'file:importFromPackage', ( e, fileId: string ) => {
                 this.ngZone.run( () => {
                     observer.next( fileId );
                     observer.complete();
                 } );
             } );
-            this.ipc.send( 'file:importFromPackage', file );
+            window.api.ipc.send( 'file:importFromPackage', file );
 
         } );
 
@@ -1074,13 +1040,13 @@ export class IpcService {
     public installTriggerPackage( triggerPackage: TriggerPackageMetaModel ): Observable<boolean> {
         let obs: Observable<boolean> = new Observable<boolean>( ( observer: Observer<boolean> ) => {
 
-            this.ipc.once( 'pkg:install', ( e, installComplete: boolean ) => {
+            window.api.ipc.once( 'pkg:install', ( e, installComplete: boolean ) => {
                 this.ngZone.run( () => {
                     observer.next( installComplete );
                     observer.complete();
                 } );
             } );
-            this.ipc.send( 'pkg:install', triggerPackage );
+            window.api.ipc.send( 'pkg:install', triggerPackage );
 
         } );
 
@@ -1090,13 +1056,13 @@ export class IpcService {
     public uninstallTriggerPackage( packageId: string ): Observable<boolean> {
         let obs: Observable<boolean> = new Observable<boolean>( ( observer: Observer<boolean> ) => {
 
-            this.ipc.once( 'pkg:uninstall', ( e, complete: boolean ) => {
+            window.api.ipc.once( 'pkg:uninstall', ( e, complete: boolean ) => {
                 this.ngZone.run( () => {
                     observer.next( complete );
                     observer.complete();
                 } );
             } );
-            this.ipc.send( 'pkg:uninstall', packageId );
+            window.api.ipc.send( 'pkg:uninstall', packageId );
 
         } );
 
@@ -1106,13 +1072,13 @@ export class IpcService {
     public isPackageInstalled( packageId: string ): Observable<boolean> {
         let obs: Observable<boolean> = new Observable<boolean>( ( observer: Observer<boolean> ) => {
 
-            this.ipc.once( `pkg:isInstalled:${packageId}`, ( e, installed: boolean ) => {
+            window.api.ipc.once( `pkg:isInstalled:${packageId}`, ( e, installed: boolean ) => {
                 this.ngZone.run( () => {
                     observer.next( installed );
                     observer.complete();
                 } );
             } );
-            this.ipc.send( 'pkg:isInstalled', packageId );
+            window.api.ipc.send( 'pkg:isInstalled', packageId );
 
         } );
 
@@ -1122,13 +1088,13 @@ export class IpcService {
     public getInstalledPackages(): Observable<TriggerPackageVersion[]> {
         let obs: Observable<TriggerPackageVersion[]> = new Observable<TriggerPackageVersion[]>( ( observer: Observer<TriggerPackageVersion[]> ) => {
 
-            this.ipc.once( 'pkg:get:installed', ( e, installed: TriggerPackageVersion[] ) => {
+            window.api.ipc.once( 'pkg:get:installed', ( e, installed: TriggerPackageVersion[] ) => {
                 this.ngZone.run( () => {
                     observer.next( installed );
                     observer.complete();
                 } );
             } );
-            this.ipc.send( 'pkg:get:installed' );
+            window.api.ipc.send( 'pkg:get:installed' );
 
         } );
 
@@ -1138,13 +1104,13 @@ export class IpcService {
     public installQuickShare( quickShare: QuickShareMetaModel ): Observable<boolean> {
         let obs: Observable<boolean> = new Observable<boolean>( ( observer: Observer<boolean> ) => {
 
-            this.ipc.once( 'quickShare:install', ( e, installComplete: boolean ) => {
+            window.api.ipc.once( 'quickShare:install', ( e, installComplete: boolean ) => {
                 this.ngZone.run( () => {
                     observer.next( installComplete );
                     observer.complete();
                 } );
             } );
-            this.ipc.send( 'quickShare:install', quickShare );
+            window.api.ipc.send( 'quickShare:install', quickShare );
 
         } );
 
@@ -1161,13 +1127,14 @@ export class IpcService {
             let reader = new FileReader();
             reader.onload = () => {
                 if ( reader.readyState === 2 ) {
-                    let buffer = Buffer.from( reader.result );
-                    this.ipc.send( 'audio-file:save', { name: name, buffer: buffer } );
+                    // TODO: Test to make sure upgrading electron didn't break js file handling.
+                    let buffer = Buffer.from( <any>reader.result );
+                    window.api.ipc.send( 'audio-file:save', { name: name, buffer: buffer } );
                 }
             };
             reader.readAsArrayBuffer( file );
 
-            this.ipc.once( 'audio-file:save', ( e, fileId: string ) => {
+            window.api.ipc.once( 'audio-file:save', ( e, fileId: string ) => {
                 this.ngZone.run( () => {
                     observer.next( fileId );
                     observer.complete();
@@ -1182,13 +1149,13 @@ export class IpcService {
     public importAudioFile( filename: string ): Observable<string> {
         let obs: Observable<string> = new Observable<string>( ( observer: Observer<string> ) => {
 
-            this.ipc.once( 'audio-file:import', ( e, fileId: string ) => {
+            window.api.ipc.once( 'audio-file:import', ( e, fileId: string ) => {
                 this.ngZone.run( () => {
                     observer.next( fileId );
                     observer.complete();
                 } );
             } );
-            this.ipc.send( 'audio-file:import', filename );
+            window.api.ipc.send( 'audio-file:import', filename );
 
         } );
 
@@ -1198,13 +1165,13 @@ export class IpcService {
     public getPhoneticTransforms(): Observable<Record<string, string>> {
         let obs: Observable<Record<string, string>> = new Observable<Record<string, string>>( ( observer: Observer<Record<string, string>> ) => {
             
-            this.ipc.once( 'settings:get:phonetic-transforms', ( e, phoneticTransforms: Record<string, string> ) => {
+            window.api.ipc.once( 'settings:get:phonetic-transforms', ( e, phoneticTransforms: Record<string, string> ) => {
                 this.ngZone.run( () => {
                     observer.next( phoneticTransforms );
                     observer.complete();
                 } );
             } );
-            this.ipc.send( 'settings:get:phonetic-transforms', null );
+            window.api.ipc.send( 'settings:get:phonetic-transforms', null );
 
         } );
 
@@ -1212,19 +1179,19 @@ export class IpcService {
     }
 
     public savePhoneticTransforms( transforms: Record<string, string> ): void {
-        this.ipc.send( 'settings:set:phonetic-transforms', transforms );
+        window.api.ipc.send( 'settings:set:phonetic-transforms', transforms );
     }
 
     public getAuthor(): Observable<AuthorModel> {
         let obs: Observable<AuthorModel> = new Observable<AuthorModel>( ( observer: Observer<AuthorModel> ) => {
             
-            this.ipc.once( 'settings:get:author', ( e, author: AuthorModel ) => {
+            window.api.ipc.once( 'settings:get:author', ( e, author: AuthorModel ) => {
                 this.ngZone.run( () => {
                     observer.next( author );
                     observer.complete();
                 } );
             } );
-            this.ipc.send( 'settings:get:author', null );
+            window.api.ipc.send( 'settings:get:author', null );
 
         } );
 
@@ -1232,19 +1199,19 @@ export class IpcService {
     }
 
     public saveDetrimentalOverlayId( detrimentalOverlayId: string ): void {
-        this.ipc.send( 'settings:set:detrimentalOverlayId', detrimentalOverlayId );
+        window.api.ipc.send( 'settings:set:detrimentalOverlayId', detrimentalOverlayId );
     }
 
     public getDetrimentalOverlayId(): Observable<string> {
         let obs: Observable<string> = new Observable<string>( ( observer: Observer<string> ) => {
             
-            this.ipc.once( 'settings:get:detrimentalOverlayId', ( e, detrimentalOverlayId: string ) => {
+            window.api.ipc.once( 'settings:get:detrimentalOverlayId', ( e, detrimentalOverlayId: string ) => {
                 this.ngZone.run( () => {
                     observer.next( detrimentalOverlayId );
                     observer.complete();
                 } );
             } );
-            this.ipc.send( 'settings:get:detrimentalOverlayId', null );
+            window.api.ipc.send( 'settings:get:detrimentalOverlayId', null );
 
         } );
 
@@ -1252,19 +1219,19 @@ export class IpcService {
     }
 
     public saveBeneficialOverlayId( beneficialOverlayId: string ): void {
-        this.ipc.send( 'settings:set:beneficialOverlayId', beneficialOverlayId );
+        window.api.ipc.send( 'settings:set:beneficialOverlayId', beneficialOverlayId );
     }
 
     public getBeneficialOverlayId(): Observable<string> {
         let obs: Observable<string> = new Observable<string>( ( observer: Observer<string> ) => {
             
-            this.ipc.once( 'settings:get:beneficialOverlayId', ( e, beneficialOverlayId: string ) => {
+            window.api.ipc.once( 'settings:get:beneficialOverlayId', ( e, beneficialOverlayId: string ) => {
                 this.ngZone.run( () => {
                     observer.next( beneficialOverlayId );
                     observer.complete();
                 } );
             } );
-            this.ipc.send( 'settings:get:beneficialOverlayId', null );
+            window.api.ipc.send( 'settings:get:beneficialOverlayId', null );
 
         } );
 
@@ -1272,19 +1239,19 @@ export class IpcService {
     }
 
     public saveAlertOverlayId( alertOverlayId: string ): void {
-        this.ipc.send( 'settings:set:alertOverlayId', alertOverlayId );
+        window.api.ipc.send( 'settings:set:alertOverlayId', alertOverlayId );
     }
 
     public getAlertOverlayId(): Observable<string> {
         let obs: Observable<string> = new Observable<string>( ( observer: Observer<string> ) => {
             
-            this.ipc.once( 'settings:get:alertOverlayId', ( e, alertOverlayId: string ) => {
+            window.api.ipc.once( 'settings:get:alertOverlayId', ( e, alertOverlayId: string ) => {
                 this.ngZone.run( () => {
                     observer.next( alertOverlayId );
                     observer.complete();
                 } );
             } );
-            this.ipc.send( 'settings:get:alertOverlayId', null );
+            window.api.ipc.send( 'settings:get:alertOverlayId', null );
 
         } );
 
@@ -1292,19 +1259,19 @@ export class IpcService {
     }
 
     public saveDamageDealtOverlayId( damageDealtOverlayId: string ): void {
-        this.ipc.send( 'settings:set:damageDealtOverlayId', damageDealtOverlayId );
+        window.api.ipc.send( 'settings:set:damageDealtOverlayId', damageDealtOverlayId );
     }
 
     public getDamageDealtOverlayId(): Observable<string> {
         let obs: Observable<string> = new Observable<string>( ( observer: Observer<string> ) => {
             
-            this.ipc.once( 'settings:get:damageDealtOverlayId', ( e, damageDealtOverlayId: string ) => {
+            window.api.ipc.once( 'settings:get:damageDealtOverlayId', ( e, damageDealtOverlayId: string ) => {
                 this.ngZone.run( () => {
                     observer.next( damageDealtOverlayId );
                     observer.complete();
                 } );
             } );
-            this.ipc.send( 'settings:get:damageDealtOverlayId', null );
+            window.api.ipc.send( 'settings:get:damageDealtOverlayId', null );
 
         } );
 
@@ -1312,19 +1279,19 @@ export class IpcService {
     }
 
     public saveDamageReceivedOverlayId( damageReceivedOverlayId: string ): void {
-        this.ipc.send( 'settings:set:damageReceivedOverlayId', damageReceivedOverlayId );
+        window.api.ipc.send( 'settings:set:damageReceivedOverlayId', damageReceivedOverlayId );
     }
 
     public getDamageReceivedOverlayId(): Observable<string> {
         let obs: Observable<string> = new Observable<string>( ( observer: Observer<string> ) => {
             
-            this.ipc.once( 'settings:get:damageReceivedOverlayId', ( e, damageReceivedOverlayId: string ) => {
+            window.api.ipc.once( 'settings:get:damageReceivedOverlayId', ( e, damageReceivedOverlayId: string ) => {
                 this.ngZone.run( () => {
                     observer.next( damageReceivedOverlayId );
                     observer.complete();
                 } );
             } );
-            this.ipc.send( 'settings:get:damageReceivedOverlayId', null );
+            window.api.ipc.send( 'settings:get:damageReceivedOverlayId', null );
 
         } );
 
@@ -1332,19 +1299,19 @@ export class IpcService {
     }
 
     public saveFctStyles( fctStyles: FctStylesModel ): void {
-        this.ipc.send( 'settings:set:fctStyles', fctStyles );
+        window.api.ipc.send( 'settings:set:fctStyles', fctStyles );
     }
 
     public getFctStyles(): Observable<FctStylesModel> {
         let obs: Observable<FctStylesModel> = new Observable<FctStylesModel>( ( observer: Observer<FctStylesModel> ) => {
             
-            this.ipc.once( 'settings:get:fctStyles', ( e, fctStyles: FctStylesModel ) => {
+            window.api.ipc.once( 'settings:get:fctStyles', ( e, fctStyles: FctStylesModel ) => {
                 this.ngZone.run( () => {
                     observer.next( fctStyles );
                     observer.complete();
                 } );
             } );
-            this.ipc.send( 'settings:get:fctStyles', null );
+            window.api.ipc.send( 'settings:get:fctStyles', null );
 
         } );
 
@@ -1353,19 +1320,36 @@ export class IpcService {
 
     public saveSetupCompleted( completed: boolean ): void {
         completed = !!completed;
-        this.ipc.send( 'settings:set:setupCompleted', completed );
+        window.api.ipc.send( 'settings:set:setupCompleted', completed );
     }
 
     public getSetupCompleted(): Observable<boolean> {
         let obs: Observable<boolean> = new Observable<boolean>( ( observer: Observer<boolean> ) => {
-            
-            this.ipc.once( 'settings:get:setupCompleted', ( e, setupCompleted: boolean ) => {
-                this.ngZone.run( () => {
-                    observer.next( setupCompleted );
-                    observer.complete();
+
+            window.api.ipc.invoke<boolean>( 'settings:get:setupCompleted' )
+                .then( setupCompleted => {
+                    this.ngZone.run( () => {
+                        observer.next( setupCompleted );
+                        observer.complete();
+                    } );
                 } );
-            } );
-            this.ipc.send( 'settings:get:setupCompleted', null );
+
+        } );
+
+        return obs;
+    }
+
+    public getCharacterOptions(logsPath: string): Observable<Record<string, CharacterModel[]>> {
+        let obs: Observable<Record<string, CharacterModel[]>> = new Observable<Record<string, CharacterModel[]>>( ( observer: Observer<Record<string, CharacterModel[]>> ) => {
+
+            window.api.ipc.invoke<Record<string, CharacterModel[]>>( 'character:get:options', logsPath )
+                .then( characterOptions => {
+                    console.log( 'characterOptions', characterOptions );
+                    this.ngZone.run( () => {
+                        observer.next( characterOptions );
+                        observer.complete();
+                    } );
+                } );
 
         } );
 
@@ -1373,19 +1357,19 @@ export class IpcService {
     }
 
     public saveAuthor( author: AuthorModel ): void {
-        this.ipc.send( 'settings:set:author', author );
+        window.api.ipc.send( 'settings:set:author', author );
     }
 
     public getIgnoredGinaObjects(): Observable<string[]> {
         let obs: Observable<string[]> = new Observable<string[]>( ( observer: Observer<string[]> ) => {
             
-            this.ipc.once( 'settings:get:ignore-gina-objects', ( e, ignoredGinaObjects: string[] ) => {
+            window.api.ipc.once( 'settings:get:ignore-gina-objects', ( e, ignoredGinaObjects: string[] ) => {
                 this.ngZone.run( () => {
                     observer.next( ignoredGinaObjects );
                     observer.complete();
                 } );
             } );
-            this.ipc.send( 'settings:get:ignoredGinaObjects', null );
+            window.api.ipc.send( 'settings:get:ignoredGinaObjects', null );
 
         } );
 
@@ -1393,7 +1377,7 @@ export class IpcService {
     }
 
     public saveIgnoredGinaObjects( ignoredGinaObjects: string[] ): void {
-        this.ipc.send( 'settings:set:ignore-gina-objects', ignoredGinaObjects );
+        window.api.ipc.send( 'settings:set:ignore-gina-objects', ignoredGinaObjects );
     }
 
     /**
@@ -1402,7 +1386,7 @@ export class IpcService {
     public getGinaConfiguration(): Observable<GinaConfiguration> {
         let obs: Observable<GinaConfiguration> = new Observable<GinaConfiguration>( ( observer: Observer<GinaConfiguration> ) => {
             if ( this._ginaConfigCache === null ) {
-                this.ipc.once( 'gina:get:configuration', ( e, ginaConfig: GinaConfiguration ) => {
+                window.api.ipc.once( 'gina:get:configuration', ( e, ginaConfig: GinaConfiguration ) => {
                     this.ngZone.run( () => {
 
                         // Because the source is XML, we need to process all arrays so that even if an array has a single element it's still an array.  I just don't want a bunch of "if property is array" statements in other areas of the code.
@@ -1422,7 +1406,7 @@ export class IpcService {
 
                     } );
                 } );
-                this.ipc.send( 'gina:get:configuration', null );
+                window.api.ipc.send( 'gina:get:configuration', null );
             } else {
                 
                 observer.next( this._ginaConfigCache );
@@ -1465,7 +1449,7 @@ export class IpcService {
     public getTags(): Observable<Record<string, Tag>> {
         let obs: Observable<Record<string, Tag>> = new Observable<Record<string, Tag>>( ( observer: Observer<Record<string, Tag>> ) => {
             
-            this.ipc.once( 'tags:get', ( e, tags: Tag[] ) => {
+            window.api.ipc.once( 'tags:get', ( e, tags: Tag[] ) => {
                 this.ngZone.run( () => {
 
                     let tagDictionary: Record<string, Tag> = {};
@@ -1475,7 +1459,7 @@ export class IpcService {
                     observer.complete();
                 } );
             } );
-            this.ipc.send( 'tags:get', null );
+            window.api.ipc.send( 'tags:get', null );
 
         } );
 
@@ -1485,13 +1469,13 @@ export class IpcService {
     public createTag( model: Tag ): Observable<string> {
         let obs: Observable<string> = new Observable<string>( ( observer: Observer<string> ) => {
             
-            this.ipc.once( 'tags:create', ( e, tagId: string ) => {
+            window.api.ipc.once( 'tags:create', ( e, tagId: string ) => {
                 this.ngZone.run( () => {
                     observer.next( tagId );
                     observer.complete();
                 } );
             } );
-            this.ipc.send( 'tags:create', model );
+            window.api.ipc.send( 'tags:create', model );
 
         } );
 
@@ -1499,23 +1483,23 @@ export class IpcService {
     }
 
     public updateTag( model: Tag ): void {
-        this.ipc.send( 'tags:update', model );
+        window.api.ipc.send( 'tags:update', model );
     }
 
     public deleteTag( tagId: string ): void {
-        this.ipc.send( 'tags:delete', tagId );
+        window.api.ipc.send( 'tags:delete', tagId );
     }
 
     public getEverquestZones(): Observable<string[]> {
         let obs: Observable<string[]> = new Observable<string[]>( ( observer: Observer<string[]> ) => {
             
-            this.ipc.once( 'zones:get:everquest', ( e, zones: string[] ) => {
+            window.api.ipc.once( 'zones:get:everquest', ( e, zones: string[] ) => {
                 this.ngZone.run( () => {
                     observer.next( zones );
                     observer.complete();
                 } );
             } );
-            this.ipc.send( 'zones:get:everquest', null );
+            window.api.ipc.send( 'zones:get:everquest', null );
 
         } );
 
@@ -1523,7 +1507,7 @@ export class IpcService {
     }
 
     public sendTestModel( displayText: string ): void {
-        this.ipc.send( 'overlay:send:component', {
+        window.api.ipc.send( 'overlay:send:component', {
             action: {
                 displayText: displayText, // `Target Name --== Dot Name ==--`,
                 actionType: ActionTypes.DotTimer,
@@ -1536,19 +1520,19 @@ export class IpcService {
     }
 
     public updateEnableQuickShareImports( enabled: boolean ): void {
-        this.ipc.send( 'settings:set:quickShareImports', enabled );
+        window.api.ipc.send( 'settings:set:quickShareImports', enabled );
     }
 
     public getEnableQuickShareImports(): Observable<boolean> {
         let obs: Observable<boolean> = new Observable<boolean>( ( observer: Observer<boolean> ) => {
             
-            this.ipc.once( 'settings:get:quickShareImports', ( e, enabled: boolean ) => {
+            window.api.ipc.once( 'settings:get:quickShareImports', ( e, enabled: boolean ) => {
                 this.ngZone.run( () => {
                     observer.next( enabled );
                     observer.complete();
                 } );
             } );
-            this.ipc.send( 'settings:get:quickShareImports', null );
+            window.api.ipc.send( 'settings:get:quickShareImports', null );
 
         } );
 
@@ -1556,19 +1540,19 @@ export class IpcService {
     }
 
     public updateEnableGlowOnStartup( enabled: boolean ): void {
-        this.ipc.send( 'settings:set:glowOnStartup', enabled );
+        window.api.ipc.send( 'settings:set:glowOnStartup', enabled );
     }
 
     public getEnableGlowOnStartup(): Observable<boolean> {
         let obs: Observable<boolean> = new Observable<boolean>( ( observer: Observer<boolean> ) => {
             
-            this.ipc.once( 'settings:get:glowOnStartup', ( e, enabled: boolean ) => {
+            window.api.ipc.once( 'settings:get:glowOnStartup', ( e, enabled: boolean ) => {
                 this.ngZone.run( () => {
                     observer.next( enabled );
                     observer.complete();
                 } );
             } );
-            this.ipc.send( 'settings:get:glowOnStartup', null );
+            window.api.ipc.send( 'settings:get:glowOnStartup', null );
 
         } );
 
@@ -1576,19 +1560,19 @@ export class IpcService {
     }
 
     public updateQuickShareAuthorsListType( listType: QuickShareAuthorListTypes ): void {
-        this.ipc.send( 'settings:set:quickShareAuthorsListType', listType );
+        window.api.ipc.send( 'settings:set:quickShareAuthorsListType', listType );
     }
 
     public getQuickShareAuthorsListType(): Observable<QuickShareAuthorListTypes> {
         let obs: Observable<QuickShareAuthorListTypes> = new Observable<QuickShareAuthorListTypes>( ( observer: Observer<QuickShareAuthorListTypes> ) => {
             
-            this.ipc.once( 'settings:get:quickShareAuthorsListType', ( e, enabled: QuickShareAuthorListTypes ) => {
+            window.api.ipc.once( 'settings:get:quickShareAuthorsListType', ( e, enabled: QuickShareAuthorListTypes ) => {
                 this.ngZone.run( () => {
                     observer.next( enabled );
                     observer.complete();
                 } );
             } );
-            this.ipc.send( 'settings:get:quickShareAuthorsListType', null );
+            window.api.ipc.send( 'settings:get:quickShareAuthorsListType', null );
 
         } );
 
@@ -1596,19 +1580,19 @@ export class IpcService {
     }
 
     public updateQuickShareAuthorsList( list: string[] ): void {
-        this.ipc.send( 'settings:set:quickShareAuthorsList', list );
+        window.api.ipc.send( 'settings:set:quickShareAuthorsList', list );
     }
 
     public getQuickShareAuthorsList(): Observable<string[]> {
         let obs: Observable<string[]> = new Observable<string[]>( ( observer: Observer<string[]> ) => {
             
-            this.ipc.once( 'settings:get:quickShareAuthorsList', ( e, enabled: string[] ) => {
+            window.api.ipc.once( 'settings:get:quickShareAuthorsList', ( e, enabled: string[] ) => {
                 this.ngZone.run( () => {
                     observer.next( enabled );
                     observer.complete();
                 } );
             } );
-            this.ipc.send( 'settings:get:quickShareAuthorsList', null );
+            window.api.ipc.send( 'settings:get:quickShareAuthorsList', null );
 
         } );
 
@@ -1616,19 +1600,19 @@ export class IpcService {
     }
 
     public updateMinimizeToTrayOnLoad( enabled: boolean ): void {
-        this.ipc.send( 'settings:set:minimizeToTrayOnLoad', enabled );
+        window.api.ipc.send( 'settings:set:minimizeToTrayOnLoad', enabled );
     }
 
     public getMinimizeToTrayOnLoad(): Observable<boolean> {
         let obs: Observable<boolean> = new Observable<boolean>( ( observer: Observer<boolean> ) => {
             
-            this.ipc.once( 'settings:get:minimizeToTrayOnLoad', ( e, enabled: boolean ) => {
+            window.api.ipc.once( 'settings:get:minimizeToTrayOnLoad', ( e, enabled: boolean ) => {
                 this.ngZone.run( () => {
                     observer.next( enabled );
                     observer.complete();
                 } );
             } );
-            this.ipc.send( 'settings:get:minimizeToTrayOnLoad', null );
+            window.api.ipc.send( 'settings:get:minimizeToTrayOnLoad', null );
 
         } );
 
@@ -1636,19 +1620,19 @@ export class IpcService {
     }
 
     public setLastUpdatedNotesViewed( version: string ): void {
-        this.ipc.send( 'settings:set:lastViewedUpdateNotes', version );
+        window.api.ipc.send( 'settings:set:lastViewedUpdateNotes', version );
     }
 
     public getLastUpdateNotesViewed(): Observable<string> {
         let obs: Observable<string> = new Observable<string>( ( observer: Observer<string> ) => {
             
-            this.ipc.once( 'settings:get:lastViewedUpdateNotes', ( e, version: string ) => {
+            window.api.ipc.once( 'settings:get:lastViewedUpdateNotes', ( e, version: string ) => {
                 this.ngZone.run( () => {
                     observer.next( version );
                     observer.complete();
                 } );
             } );
-            this.ipc.send( 'settings:get:lastViewedUpdateNotes', null );
+            window.api.ipc.send( 'settings:get:lastViewedUpdateNotes', null );
 
         } );
 
@@ -1656,23 +1640,23 @@ export class IpcService {
     }
 
     public showUpdateNotesWindow(): void {
-        this.ipc.send( 'window:update-notes:show' );
+        window.api.ipc.send( 'window:update-notes:show' );
     }
     
     public updateDeathRecapPreferences( model: DeathRecapPreferences ): void {
-        this.ipc.send( 'settings:set:deathRecap', model );
+        window.api.ipc.send( 'settings:set:deathRecap', model );
     }
 
     public getDeathRecapPreferences(): Observable<DeathRecapPreferences> {
         let obs: Observable<DeathRecapPreferences> = new Observable<DeathRecapPreferences>( ( observer: Observer<DeathRecapPreferences> ) => {
             
-            this.ipc.once( 'settings:get:deathRecap', ( e, model: DeathRecapPreferences ) => {
+            window.api.ipc.once( 'settings:get:deathRecap', ( e, model: DeathRecapPreferences ) => {
                 this.ngZone.run( () => {
                     observer.next( model );
                     observer.complete();
                 } );
             } );
-            this.ipc.send( 'settings:get:deathRecap', null );
+            window.api.ipc.send( 'settings:get:deathRecap', null );
 
         } );
 
