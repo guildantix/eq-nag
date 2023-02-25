@@ -120,10 +120,16 @@ class WindowManager {
                 height: 870,
                 frame: false,
                 webPreferences: {
-                    nodeIntegration: true,
+                    nodeIntegration: false,
+                    contextIsolation: true,
                     devTools: app.isDev(),
+                    sandbox: false,
+                    preload: path.join( __dirname, '/preloaders/main.js' ),
                 }
             } );
+
+            require( "@electron/remote/main" ).enable( triggerWindow.webContents );
+
             let url = `file://${this.#dirname}/dist/index.html#/trigger/new`;
             if ( arg ) {
                 url += `/${arg}`;
@@ -145,10 +151,16 @@ class WindowManager {
                 height: 870,
                 frame: false,
                 webPreferences: {
-                    nodeIntegration: true,
+                    nodeIntegration: false,
+                    contextIsolation: true,
                     devTools: app.isDev(),
+                    sandbox: false,
+                    preload: path.join( __dirname, '/preloaders/main.js' ),
                 }
             } );
+
+            require( "@electron/remote/main" ).enable( triggerWindow.webContents );
+
             triggerWindow.loadURL( `file://${this.#dirname}/dist/index.html#/trigger/${arg}` );
             triggerWindow.once( "ready-to-show", () => {
                 triggerWindow.show();
@@ -244,10 +256,16 @@ class WindowManager {
                 x: posData == null ? null : posData.x,
                 y: posData == null ? null : posData.y,
                 webPreferences: {
-                    nodeIntegration: true,
+                    nodeIntegration: false,
+                    contextIsolation: true,
                     devTools: app.isDev(),
+                    sandbox: false,
+                    preload: path.join( __dirname, '/preloaders/main.js' ),
                 }
             } );
+
+            require( "@electron/remote/main" ).enable( overlayEditorDialog.webContents );
+
             overlayEditorDialog.setBackgroundColor( '#1a1a1a' );
             overlayEditorDialog.loadURL( `file://${this.#dirname}/dist/index.html#/overlay/${overlayId}` );
             overlayEditorDialog.once( 'dom-read', () => {
@@ -281,10 +299,16 @@ class WindowManager {
                 resizable: false,
                 movable: true,
                 webPreferences: {
-                    nodeIntegration: true,
+                    nodeIntegration: false,
+                    contextIsolation: true,
                     devTools: app.isDev(),
+                    sandbox: false,
+                    preload: path.join( __dirname, '/preloaders/main.js' ),
                 }
             } );
+
+            require( "@electron/remote/main" ).enable( overlayMoveDialog.webContents );
+
             overlayMoveDialog.loadURL( `file://${this.#dirname}/dist/index.html#/overlay/arrange` );
             overlayMoveDialog.once( 'dom-read', () => {
                 
@@ -374,10 +398,16 @@ class WindowManager {
                 height: 800,
                 frame: false,
                 webPreferences: {
-                    nodeIntegration: true,
+                    nodeIntegration: false,
+                    contextIsolation: true,
                     devTools: app.isDev(),
+                    sandbox: false,
+                    preload: path.join( __dirname, '/preloaders/main.js' ),
                 }
             } );
+
+            require( "@electron/remote/main" ).enable( this.ginaImportWindow.webContents );
+
             let url = `file://${this.#dirname}/dist/index.html#/gina/import`;
             if ( arg ) {
                 url += `/${arg}`;
@@ -385,7 +415,7 @@ class WindowManager {
             this.ginaImportWindow.loadURL( url );
             this.ginaImportWindow.once( "ready-to-show", () => {
                 this.ginaImportWindow.show();
-                event.sender.webContents.send( 'gina:dialog:import', true );
+                event.sender.send( 'gina:dialog:import', true );
             } );
             this.ginaImportWindow.on( 'closed', () => {
                 this.ginaImportWindow = null;
@@ -404,10 +434,16 @@ class WindowManager {
                 height: 800,
                 frame: false,
                 webPreferences: {
-                    nodeIntegration: true,
+                    nodeIntegration: false,
+                    contextIsolation: true,
                     devTools: app.isDev(),
+                    sandbox: false,
+                    preload: path.join( __dirname, '/preloaders/main.js' ),
                 }
             } );
+
+            require( "@electron/remote/main" ).enable( this.triggerLibraryWindow.webContents );
+
             if ( app.isDev() ) {
                 this.triggerLibraryWindow.webContents.openDevTools( { mode: 'undocked' } );
             }
@@ -418,7 +454,7 @@ class WindowManager {
             this.triggerLibraryWindow.loadURL( url );
             this.triggerLibraryWindow.once( "ready-to-show", () => {
                 this.triggerLibraryWindow.show();
-                event.sender.webContents.send( 'trigger:dialog:library', true );
+                event.sender.send( 'trigger:dialog:library', true );
             } );
             this.triggerLibraryWindow.on( 'closed', () => {
                 this.triggerLibraryWindow = null;
@@ -428,44 +464,51 @@ class WindowManager {
         } );
 
         ipcMain.on( 'window:update-notes:show', ( event, arg ) => {
-            
-            this.updateNotesWindow = new BrowserWindow( {
-                parent: mainWindowRef.reference,
-                modal: false,
-                show: false,
-                width: 1000,
-                height: 800,
-                frame: false,
-                webPreferences: {
-                    nodeIntegration: false,
-                    devTools: app.isDev(),
-                    preload: path.join( __dirname, '/preloaders/update-notes.js' ),
-                    contextIsolation: true,
-                }
-            } );
-            if ( app.isDev() ) {
-                this.updateNotesWindow.webContents.openDevTools( { mode: 'undocked' } );
-            }
-            let url = `file://${this.#dirname}/dist/index.html#/update-notes`;
-            if ( arg ) {
-                url += `/${arg}`;
-            }
-            this.updateNotesWindow.loadURL( url );
-            this.updateNotesWindow.once( "ready-to-show", () => {
-                this.updateNotesWindow.show();
-                event.sender.webContents.send( 'window:update-notes:show', true );
-            } );
-            this.updateNotesWindow.on( 'closed', () => {
-                this.updateNotesWindow = null;
-            } );
-            this.updateNotesWindow.setBackgroundColor( '#1a1a1a' );
-            this.configureRendererMouseBlockingOnMoveResize( this.updateNotesWindow );
-            this.centerBrowserWindowOn( this.updateNotesWindow, mainWindowRef.reference );
+            this.showUpdateNotes(event, arg);
         } );
         
         userPreferencesDatabase.onFctStyleChanges.push( fctStyles => {
             this.#renderer.webContents.send( 'fctStyles', fctStyles );
         } );
+    }
+
+    showUpdateNotes( event, arg ) {
+        this.updateNotesWindow = new BrowserWindow( {
+            parent: this.#mainWindow.reference,
+            modal: false,
+            show: false,
+            width: 1000,
+            height: 800,
+            frame: false,
+            webPreferences: {
+                nodeIntegration: false,
+                devTools: app.isDev(),
+                preload: path.join( __dirname, '/preloaders/main.js' ),
+                contextIsolation: true,
+                sandbox: false,
+            }
+        } );
+
+        require( "@electron/remote/main" ).enable( this.updateNotesWindow.webContents );
+
+        if ( app.isDev() ) {
+            this.updateNotesWindow.webContents.openDevTools( { mode: 'undocked' } );
+        }
+        let url = `file://${this.#dirname}/dist/index.html#/update-notes`;
+        if ( arg ) {
+            url += `/${arg}`;
+        }
+        this.updateNotesWindow.loadURL( url );
+        this.updateNotesWindow.once( "ready-to-show", () => {
+            this.updateNotesWindow.show();
+            event && event.sender.send( 'window:update-notes:show', true );
+        } );
+        this.updateNotesWindow.on( 'closed', () => {
+            this.updateNotesWindow = null;
+        } );
+        this.updateNotesWindow.setBackgroundColor( '#1a1a1a' );
+        this.configureRendererMouseBlockingOnMoveResize( this.updateNotesWindow );
+        this.centerBrowserWindowOn( this.updateNotesWindow, this.#mainWindow.reference );
     }
 
 
@@ -518,21 +561,29 @@ class WindowManager {
             resizable: false,
             movable: false,
             webPreferences: {
-                nodeIntegration: true,
+                nodeIntegration: false,
                 devTools: app.isDev(),
+                preload: path.join( __dirname, '/preloaders/renderer.js' ),
+                contextIsolation: true,
+                sandbox: false,
             },
             skipTaskbar: true,
             maximizable: false,
+            enableLargerThanScreen: true,
         } );
+
+        require( "@electron/remote/main" ).enable( renderer.webContents );
         
+        // TODO: Put the padding in the size calculations and not here.
         renderer.setBounds( {
-            width: bounds.width,
-            height: bounds.height,
-            x: bounds.x,
-            y: bounds.y,
+            width: bounds.width - 20,
+            height: bounds.height - 20,
+            x: bounds.x + 40,
+            y: bounds.y + 40,
         } );
         
         renderer.loadURL( `file://${__dirname}/threads/renderer.html?originX=${0 - bounds.x}&originY=${0 - bounds.y}&glowOnStart=${this.#userPrefDb.glowOnStartup === true ? 'true' : 'false'}` );
+        // renderer.loadURL( `file://${__dirname}/threads/renderer.html` );
         renderer.setIgnoreMouseEvents( true, { forward: true } );
 
         // https://github.com/electron/electron/issues/10078#issuecomment-331581160
@@ -587,13 +638,18 @@ class WindowManager {
             resizable: true,
             movable: true,
             webPreferences: {
-                nodeIntegration: true,
+                nodeIntegration: false,
+                contextIsolation: true,
                 devTools: app.isDev(),
+                sandbox: false,
+                preload: path.join( __dirname, '/preloaders/death-recap.js' ),
             },
             skipTaskbar: true,
             maximizable: false,
         } );
-        
+
+        require( "@electron/remote/main" ).enable( deathRecap.webContents );
+
         let size = { width: 1100, height: 800 };
         let workAreaSize = screen.getPrimaryDisplay().workAreaSize;
 
@@ -679,14 +735,19 @@ class WindowManager {
             resizable: true,
             movable: true,
             webPreferences: {
-                nodeIntegration: true,
+                nodeIntegration: false,
+                contextIsolation: true,
                 devTools: app.isDev(),
+                sandbox: false,
+                preload: path.join( __dirname, '/preloaders/death-recap.js' ),
             },
             skipTaskbar: false,
             maximizable: true,
             minimizable: true,
         } );
-        
+
+        require( "@electron/remote/main" ).enable( deathRecap.webContents );
+
         let size = { width: 1100, height: 800 };
         let workAreaSize = screen.getPrimaryDisplay().workAreaSize;
 
