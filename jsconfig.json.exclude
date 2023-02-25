@@ -1,0 +1,11 @@
+{
+    "compilerOptions": {
+      "target": "ES5"
+    },
+    "files": [
+      "demo.js"
+    ],
+    "include": [
+      "./**/*.js"
+    ]
+}
