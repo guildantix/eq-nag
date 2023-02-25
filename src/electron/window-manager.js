@@ -1023,9 +1023,6 @@ class WindowManager {
             }
         }
 
-        console.log( 'this.#renderer.getBounds()', this.#renderer.getBounds() );
-        console.log( 'this.#userPrefDb.rendererBounds', this.#userPrefDb.rendererBounds );
-        console.log( 'currentSize', currentSize );
         this.#userPrefDb.rendererBounds = this.#renderer.getBounds();
     }
 
