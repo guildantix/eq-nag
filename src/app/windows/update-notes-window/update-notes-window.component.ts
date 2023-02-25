@@ -11,11 +11,6 @@ interface IReleaseInfo {
     name: string;
 }
 
-declare let browserWindow: {
-    close(): void;
-    setVersionNumberViewed(value: string): void;
-};
-
 @Component( {
     selector: 'app-update-notes-window',
     templateUrl: 'update-notes-window.component.html',
@@ -42,8 +37,8 @@ export class UpdateNotesWindowComponent implements OnInit {
     }
 
     public close() {
-        browserWindow.setVersionNumberViewed( this.versionNumber );
-        browserWindow.close();
+        window.api.setVersionNumberViewed( this.versionNumber );
+        window.api.close();
     }
 
 }
