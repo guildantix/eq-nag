@@ -6,9 +6,6 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { FormInputModule } from '../form-inputs/form-inputs.module';
 import { ContextMenuModule } from '../context-menu/context-menu.module';
 
-// Services imports
-import { EditorsService } from './editors.service';
-
 // Component imports
 import { ConditionsComponent } from './conditions/conditions.component';
 import { CapturePhrasesComponent } from './capture-phrases/capture-phrases.component';
