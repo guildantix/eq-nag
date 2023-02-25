@@ -43,6 +43,8 @@ GH_TOKEN = "e3460400ae1273a5cac83e1b86a5aceae7f8bab7";
 
 autoUpdater.logger = log;
 
+require( '@electron/remote/main' ).initialize();
+
 unhandled({
     logger: log.error,
     showDialog: false,
@@ -88,11 +90,16 @@ function createWindow() {
         //   transparent: true,
         frame: false,
         webPreferences: {
-            nodeIntegration: true,
+            nodeIntegration: false,
+            contextIsolation: true,
             devTools: app.isDev(),
+            sandbox: false,
+            preload: path.join( __dirname, '/src/electron/preloaders/main.js' ),
         },
         show: false,
     } );
+
+    require( "@electron/remote/main" ).enable( mainWindow.webContents );
 
     mainWindow.setBackgroundColor( '#1a1a1a' );
 
@@ -171,29 +178,33 @@ app.on( 'ready', function () {
     } );
     protocol.interceptFileProtocol( 'file', ( req, callback ) => {
         let filePath = new url.URL( req.url ).pathname;
-        if ( process.platform === 'win32' ) {
 
-            if ( filePath.match( /^\/[A-Za-z]:/ ) ) {
-                // If it begins with a slash, remove it.
-                filePath = filePath.slice( 1 );
+        if ( !filePath.match( /electron/ ) ) {
+            if ( process.platform === 'win32' ) {
+
+                if ( filePath.match( /^\/[A-Za-z]:/ ) ) {
+                    // If it begins with a slash, remove it.
+                    filePath = filePath.slice( 1 );
+                }
+
+                if ( filePath.match( /^[A-Za-z]:\/(css|img|js|fonts)/ ) ) {
+                    filePath = path.join( app.getAppPath(), 'dist', filePath.slice( 3 ) );
+
+                } else if ( filePath.match( /^[A-Za-z]:\/.*\.(js|css|png|jpeg|jpg|ico|svg|woff|woff2|ttf)$/ ) ) {
+                    // case of "vue-cli-service build --mode development"
+                    filePath = path.join( app.getAppPath(), 'dist', filePath.slice( 3 ) );
+                }
+
+            } else {
+
+                if ( filePath.match( /^\/(css|img|js)/ ) ) {
+                    filePath = path.join( app.getAppPath(), 'dist', filePath.slice( 1 ) );
+                } else if ( filePath.match( /^\/[^/\\]+?\.(js|css|png|jpeg|jpg|ico|svg)$/ ) ) {
+                    // case of "vue-cli-service build --mode development"
+                    filePath = path.join( app.getAppPath(), 'dist', filePath.slice( 1 ) );
+                }
+
             }
-
-            if ( filePath.match( /^[A-Za-z]:\/(css|img|js|fonts)/ ) ) {
-                filePath = path.join( app.getAppPath(), 'dist', filePath.slice( 3 ) );
-            } else if ( filePath.match( /^[A-Za-z]:\/.*\.(js|css|png|jpeg|jpg|ico|svg|woff|woff2|ttf)$/ ) ) {
-                // case of "vue-cli-service build --mode development"
-                filePath = path.join( app.getAppPath(), 'dist', filePath.slice( 3 ) );
-            }
-
-        } else {
-
-            if ( filePath.match( /^\/(css|img|js)/ ) ) {
-                filePath = path.join( app.getAppPath(), 'dist', filePath.slice( 1 ) );
-            } else if ( filePath.match( /^\/[^/\\]+?\.(js|css|png|jpeg|jpg|ico|svg)$/ ) ) {
-                // case of "vue-cli-service build --mode development"
-                filePath = path.join( app.getAppPath(), 'dist', filePath.slice( 1 ) );
-            }
-
         }
 
         callback( path.normalize( filePath ) );
