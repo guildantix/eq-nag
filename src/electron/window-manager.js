@@ -1013,17 +1013,58 @@ class WindowManager {
             // this simple formula.
             let newOrigin = { x: 0 - newSize.x, y: 0 - newSize.y };
         
-            this.#renderer?.setSize( newSize.width, newSize.height );
-            this.#renderer?.setPosition( newSize.x, newSize.y );
+            if ( this.#resizeRenderer( newSize ) ) {
 
-            this.#renderer.webContents.send( 'renderer:resolution-changed', { overlays: overlays, origin: newOrigin } );
-
-            if ( showWarning ) {
-                this.#mainWindow.reference.webContents.send( 'dialog:warning', { code: 'Renderer:ResolutionChanged' } );
+                this.#renderer.webContents.send( 'renderer:resolution-changed', { overlays: overlays, origin: newOrigin } );
+    
+                if ( showWarning ) {
+                    this.#mainWindow.reference.webContents.send( 'dialog:warning', { code: 'Renderer:ResolutionChanged' } );
+                }
             }
         }
 
         this.#userPrefDb.rendererBounds = this.#renderer.getBounds();
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Resizes the renderer window.
+     * 
+     * @returns {boolean} Returns true if the resize was successful.
+     * 
+     * @param {Electron.Rectangle} newSize The new size for the renderer.
+     */
+    #resizeRenderer( newSize ) {
+
+        let original = this.#renderer?.getBounds();
+
+        // setSize and setPosition will not work if the window is not movable and resizable.
+        this.#renderer.movable = true;
+        this.#renderer.resizable = true;
+
+        this.#renderer?.setSize( newSize.width, newSize.height );
+        this.#renderer?.setPosition( newSize.x, newSize.y );
+
+        // Lock this window back down.
+        this.#renderer.movable = false;
+        this.#renderer.resizable = false;
+
+        let resized = this.#renderer?.getBounds();
+
+        // We only want to return true if the window was actually moved/resized,
+        // not if the setSize/setPosition calls didn't cause an exception.
+        return ( original?.x !== resized?.x && newSize?.x === resized?.x ) ||
+            ( original?.y !== resized?.y && newSize?.y === resized?.y ) ||
+            ( original?.width !== resized?.width && newSize?.width === resized?.width ) ||
+            ( original?.height !== resized?.height && newSize?.height === resized?.height );
     }
 
 
