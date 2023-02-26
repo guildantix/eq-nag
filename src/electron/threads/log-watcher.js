@@ -26,8 +26,11 @@ window.onerror = ( error, url, line ) => {
     ipcRenderer.send( 'app:log:exception', `$${error}\r\n    at ${url}:${line}` );
 };
 
+function logInfo( data ) {
+    ipcRenderer.send( 'app:log:info', data );
+}
+
 var currentPosition = null;
-var startLogPosition = null;
 
 var watcher = null;
 /** @type {OverlayWindow} */
@@ -50,7 +53,7 @@ var voiceOptions = [];
 var voiceIndex = -1;
 var masterVolume = 100;
 var logParseTimeoutId = null;
-var logParseTimer = 50;
+const logParseTimer = 50;
 var changingLogFile = false;
 var isDev = false;
 var enableLogging = true;
@@ -78,13 +81,111 @@ let quickShareAuthorsListType = QuickShareAuthorListTypes.Disabled;
 
 /** @type {string[]} */
 let quickShareAuthorsList = [];
-// Common errors: 
+// Common errors:
 //  ${C} instead of {C}
 //  ${CharacterName} isntead of ${Character}
 //  ending with a '.' in regex instead of a '\.'
 //  Forgetting to check the box for regex.
 //  Choosing the wrong phrase for an action.
 //      If the display text has {C} or {TS} in it, but the trigger phrase selected doesn't contain either option.
+
+
+
+
+
+
+
+
+
+
+/**
+ * Waits until the specified file exists and executes the startParsingLogFile 
+ * method, starting at the beginning of the file.
+ * 
+ * @param {string} logPath The full path to the log file.
+ */
+function waitForLogFile( logPath ) {
+    
+    if ( logParseTimeoutId > 0 ) {
+        window.clearTimeout( logParseTimeoutId );
+        logParseTimeoutId = null;
+        currentPosition = null;
+    }
+
+    if ( fs.existsSync( logPath ) ) {
+        logInfo( '++++ Log file found, starting up again.' );
+        startParsingLogFile( logPath, 0 );
+    } else {
+        window.setTimeout( () => waitForLogFile( logPath ), logParseTimer );
+    }
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Starts parsing and watching log file changes for the specified file.
+ * 
+ * @param {string} logPath The file path to the log file.
+ * @param {number} startLogPosition If a value is provided, will start parsing the log file at the given position.
+ */
+function startParsingLogFile( logPath, startLogPosition ) {
+    fs.open( logPath, 'r', function ( err, fd ) {
+
+        if ( fd ) {
+            var file = fd;
+            if ( startLogPosition != null && startLogPosition >= 0 ) {
+                currentPosition = startLogPosition;
+                startLogPosition = null;
+            }
+            currentPosition = currentPosition === null ? fs.fstatSync( file ).size : currentPosition;
+            function parseLogFile() {
+
+                if ( !fs.existsSync( logPath ) ) {
+                    logInfo( '!!!! File does not exist, waiting for new log file.' );
+                    waitForLogFile( logPath );
+                    return;
+                }
+
+                var stats = fs.fstatSync( fd );
+                var file = fd;
+
+                fs.read( file, Buffer.alloc( stats.size - currentPosition ), 0, stats.size - currentPosition, currentPosition, ( err, bytecount, buff ) => {
+                
+                    currentPosition += bytecount;
+                    let read = buff.toString( 'utf-8', 0, bytecount );
+                    let lines = read.split( /\r\n|\r|\n/gmi );
+                
+                    lines.forEach( line => {
+                        if ( line && line.length > 0 ) {
+                            parseLogEntries( line );
+                        }
+                    } );
+
+                } );
+
+                // Wait logParseTimer milliseconds and poll again.
+                if ( !changingLogFile ) {
+                    logParseTimeoutId = window.setTimeout( parseLogFile, logParseTimer );
+                }
+            }
+
+            // Start polling the log file every logParseTimer milliseconds.
+            logParseTimeoutId = window.setTimeout( parseLogFile, logParseTimer );
+
+        } else {
+            // If the log file was not found, then let's wait for it to show up.
+            waitForLogFile( logPath );
+
+        }
+    } );
+}
 
 
 
@@ -110,86 +211,33 @@ function LogWatcher(character, logPosition) {
     }
     saveScalarVariable( "Character", characterName );
 
-    if ( logPosition >= 0 ) {
-        startLogPosition = logPosition;
-    }
+    ipcRenderer.on( 'log:changed',
+        /**
+         * Handles the log:changed event.
+         * 
+         * @param {any} event The event args.
+         * @param {string} data The log file path.
+         */
+        function ( event, data ) {
 
-    ipcRenderer.on( 'log:changed', function ( event, data ) {
-        function startParsingLogFile() {
-            fs.open( data, 'r', function ( err, fd ) {
-
-                if ( fd ) {
-                    var file = fd;
-                    if ( startLogPosition != null && startLogPosition >= 0 ) {
-                        currentPosition = startLogPosition;
-                        startLogPosition = null;
-                    }
-                    currentPosition = currentPosition === null ? fs.fstatSync( file ).size : currentPosition;
-                    function parseLogFile() {
-                        var stats = fs.fstatSync( fd );
-                        var file = fd;
-        
-                        // When another application deletes the file (Gina/GamParse).
-                        if ( currentPosition > stats.size || !fs.existsSync( data ) ) {
-                            
-                            // Reset the current position.
-                            currentPosition = null;
-
-                            // Start over after logParseTimer milliseconds.
-                            logParseTimeoutId = window.setTimeout( startParsingLogFile, logParseTimer );
-
-                            return;
-                        }
-                            
-                        fs.read( file, Buffer.alloc( stats.size - currentPosition ), 0, stats.size - currentPosition, currentPosition, ( err, bytecount, buff ) => {
-                            
-                            currentPosition += bytecount;
-                            let read = buff.toString( 'utf-8', 0, bytecount );
-                            let lines = read.split( /\r\n|\r|\n/gmi );
-                            
-                            lines.forEach( line => {
-                                if ( line && line.length > 0 ) {
-                                    parseLogEntries( line );
-                                }
-                            } );
-
-                        } );
-
-                        // Wait logParseTimer milliseconds and poll again.
-                        if ( !changingLogFile ) {
-                            logParseTimeoutId = window.setTimeout( parseLogFile, logParseTimer );
-                        }
-                    }
-
-                    // Start polling the log file every logParseTimer milliseconds.
-                    logParseTimeoutId = window.setTimeout( parseLogFile, logParseTimer );
-
-                } else {
-                    // If the log file was not found, then start over.
-                    logParseTimeoutId = window.setTimeout( startParsingLogFile, logParseTimer );
-                }
-            } );
-        }
-
-
-        if ( logParseTimeoutId > 0 ) {
-            window.clearTimeout( logParseTimeoutId );
-            currentPosition = null;
-            backfind( data, () => startParsingLogFile() );
-        } else {
-            changingLogFile = true;
-            window.setTimeout( () => { 
-                changingLogFile = false;
+            if ( logParseTimeoutId > 0 ) {
+                window.clearTimeout( logParseTimeoutId );
                 currentPosition = null;
-                backfind( data, () => startParsingLogFile() );
-            }, logParseTimer );
-        }
+                backfind( data, () => startParsingLogFile( data, logPosition >= 0 ? logPosition : null ) );
+            } else {
+                changingLogFile = true;
+                window.setTimeout( () => {
+                    changingLogFile = false;
+                    currentPosition = null;
+                    backfind( data, () => startParsingLogFile( data, logPosition >= 0 ? logPosition : null ) );
+                }, logParseTimer );
+            }
 
-        if ( watcher != null ) {
-            watcher.close();
-        }
+            if ( watcher != null ) {
+                watcher.close();
+            }
         
-    } );
+        } );
 
     ipcRenderer.on( 'log:simulate:file', function ( event, data ) {
         fs.open( data, 'r', function ( err, fd ) {
