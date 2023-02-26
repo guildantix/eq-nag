@@ -14,7 +14,7 @@ const currentCharacterDbVersion = 5;
  */
 function migrateCharacterData( data, configName, migrationComplete ) {
     
-    if ( data.version < currentCharacterDbVersion ) {
+    if ( !data.version || data.version < currentCharacterDbVersion ) {
         backupDatafile( configName, () => {
             if ( executeDataMigration( data ) ) {
                 migrationComplete( data );
@@ -32,28 +32,31 @@ function migrateCharacterData( data, configName, migrationComplete ) {
  * @param {CharacterStoreModel} data The data store model for triggers.
  */
 function executeDataMigration( data ) {
-    let startVersion = data.version;
+    let startVersion = data.version ?? 0;
 
     if ( !data.version || data.version < 3 ) {
         data?.characters?.forEach( f => {
-            f.hasExtendedBeneficialFocus = false;
-            f.extendedBeneficialFocusDecayLevel = null;
-            f.extendedBeneficialFocusPercent = null;
+            f.hasExtendedBeneficialFocus = f.hasExtendedBeneficialFocus === true;
+            f.extendedBeneficialFocusDecayLevel = f.extendedBeneficialFocusDecayLevel ?? null;
+            f.extendedBeneficialFocusPercent = f.extendedBeneficialFocusPercent ?? null;
         } );
         data.version = 3;
+
     }
     if ( !data.version || data.version < 4 ) {
         data?.characters?.forEach( f => {
-            f.extendedBeneficialFocusAaPercent = null;
+            f.extendedBeneficialFocusAaPercent = f.extendedBeneficialFocusAaPercent ? f.extendedBeneficialFocusAaPercent : null;
         } );
         data.version = 4;
+
     }
     if ( !data.version || data.version < 5 ) {
         data?.characters?.forEach( f => {
-            f.p99 = false;
-            f.daybreak = true;
+            f.p99 = f.p99 === true;
+            f.daybreak = f.p99 !== true;
         } );
         data.version = 5;
+
     }
 
     return data.version !== startVersion;
