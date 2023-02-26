@@ -28,6 +28,9 @@ const possibleEqFolders = [
 /** @type {(() => void)[]} */
 const prefChangeListeners = [];
 
+const defaultLogFileSizeMb = 100;
+const defaultLogMaintenanceDelaySeconds = 20;
+
 /**
  * Get windows drives
  * */
@@ -346,6 +349,33 @@ class UserPreferencesStore extends Store {
     }
     set quickShareAuthorsList( val ) {
         this.#data.quickShareAuthorsList = val ?? [];
+        this.storeDataFile( this.#data );
+    }
+
+    /** @type {boolean} */
+    get enableLogFileMaintenance() {
+        return this.#data.enableLogFileMaintenance === true;
+    }
+    set enableLogFileMaintenance( val ) {
+        this.#data.enableLogFileMaintenance = val === true;
+        this.storeDataFile( this.#data );
+    }
+
+    /** @type {number} The max log file size, in megabytes. */
+    get maxLogFileSizeMb() {
+        return this.#data.maxLogFileSizeMb > 0 ? this.#data.maxLogFileSizeMb : defaultLogFileSizeMb;
+    }
+    set maxLogFileSizeMb( val ) {
+        this.#data.maxLogFileSizeMb = val > 0 ? val : defaultLogFileSizeMb;
+        this.storeDataFile( this.#data );
+    }
+
+    /** @type {number} The number of seconds of inactivity before performing maintenance. */
+    get logMaintenanceDelaySeconds() {
+        return this.#data.logMaintenanceDelaySeconds >= 0 ? this.#data.logMaintenanceDelaySeconds : defaultLogMaintenanceDelaySeconds;
+    }
+    set logMaintenanceDelaySeconds( val ) {
+        this.#data.logMaintenanceDelaySeconds = val >= 0 ? val : defaultLogMaintenanceDelaySeconds;
         this.storeDataFile( this.#data );
     }
 
