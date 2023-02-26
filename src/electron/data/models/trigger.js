@@ -392,14 +392,14 @@ class Trigger {
     /** @type {string} */
     packageId = null;
     name = '';
-    /** @type CapturePhrase[] */
+    /** @type {CapturePhrase[]} */
     capturePhrases = [];
     useRegEx = false;
     comments = '';
     /** @type {TriggerAction[]} */
     actions = [];
     captureMethod = 'Any match';
-    /** @type TriggerCondition[] */
+    /** @type {TriggerCondition[]} */
     conditions = [];
     /** @type {CharacterClassLevel[]} */
     classLevels = [];
