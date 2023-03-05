@@ -49,7 +49,14 @@ class GinaImporter {
             mainWindowRef.reference.webContents.once( 'did-finish-load', () => {
                 queryGina( app.getPath( 'home' ), ginaPath => {
                     ginaDataPath = ginaPath;
-                    log.info( `gina path: ${ginaPath}` );
+                    var nameMatch = /\\Users\\(?<userName>.*)\\AppData/gi.exec( ginaDataPath );
+                    
+                    var logPath = ginaPath + '';
+                    if ( nameMatch?.groups?.userName ) {
+                        logPath = ginaPath.replace( nameMatch.groups.userName, '****' );
+                    }
+                    
+                    log.info( `gina path: ${logPath}` );
                 } );
             } );
 
