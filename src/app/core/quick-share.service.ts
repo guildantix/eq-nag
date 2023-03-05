@@ -193,7 +193,7 @@ export class QuickShareService {
      private handleError( error: HttpErrorResponse ) {
 
         // Log the error to the user log file.
-        this.ipcService.logException( error );
+        this.ipcService.logException( error.error );
 
         if ( error.status === 0 ) {
             // A client-side or network error occurred. Handle it accordingly.
