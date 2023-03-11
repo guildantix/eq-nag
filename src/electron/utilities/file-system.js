@@ -1,3 +1,4 @@
+const fs = require( 'fs' );
 
 /**
  * Combines the given path segments into a system file path.
@@ -18,6 +19,27 @@ function pathCombine( ...segments ) {
             path += '\\' + segments[ i ];
         }
     }
+}
+
+/**
+ * Returns true if the file exists.
+ * 
+ * @returns {Promise<boolean>}
+ * 
+ * @param {string} path The full file path.
+ */
+function exists( path ) {
+    
+    /** @type {Promise<boolean>} */
+    let p = new Promise( resolve => {
+        
+        fs.exists( path, fileExists => {
+            resolve( fileExists );
+        } );
+
+    } );
+
+    return p;
 }
 
 function pathGetFilename( filePath ) {
@@ -96,6 +118,7 @@ const Path = {
 const FsUtilities = {
     Path: Path,
     getFileTimestamp: getFileTimestamp,
+    existsAsync: exists,
 };
 
 module.exports = FsUtilities;
