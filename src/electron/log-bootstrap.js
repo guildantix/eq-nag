@@ -32,7 +32,7 @@ class LogBootstrapper {
     /** @type {boolean} */
     #isDev = false;
 
-    /** @type {number]} */
+    /** @type {number} */
     #backupWaitId = null;
 
 
