@@ -388,7 +388,7 @@ app.on( 'ready', function () {
     triggerDatabase.attachIpcEvents( mainWindowRef, sendTick, fileDatabase, userPreferences );
     overlayDatabase.attachIpcEvents( mainWindowRef, sendTick, triggerDatabase );
     characterDatabase.attachIpcEvents( mainWindowRef, sendTick );
-    logBootstrap.boostrapLogWatchers( mainWindowRef, app.isDev(), characterDatabase, sendTick );
+    logBootstrap.boostrapLogWatchers( mainWindowRef, app.isDev(), characterDatabase, sendTick, userPreferences );
     gameResources.attachIpcEvents( mainWindowRef, userPreferences );
     ginaImporter.initGinaImporter( mainWindowRef, app.isDev() );
     verifiedPlayersDatabase.attachIpcEvents( mainWindowRef, sendTick );
