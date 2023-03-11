@@ -157,11 +157,11 @@ class LogBootstrapper {
         
         let characters = characterDatabase.getAll();
         characters.forEach( chr => {
-            this.startWatcher( mainWindowRef, chr, isDev, characterDatabase, sendTick );
+            this.startWatcher( mainWindowRef, chr, isDev, characterDatabase, sendTick ).then( () => { } );
         } );
 
         characterDatabase.onCharacterCreated( chr => {
-            this.startWatcher( mainWindowRef, chr, isDev, characterDatabase, sendTick );
+            this.startWatcher( mainWindowRef, chr, isDev, characterDatabase, sendTick ).then( () => { } );
         } );
 
         characterDatabase.onCharacterRemoved( chr => {
@@ -213,177 +213,6 @@ class LogBootstrapper {
 
     }
 
-    // async #executeArchiveTransfer() {
-    //     log.info( 'Execute has been called' );
-
-    //     if ( this.#processingArchive ) {
-    //         return;
-    //     }
-
-    //     this.#processingArchive = true;
-
-    //     // Next, we need to add it to the log archive.
-    //     const logArchivePath = path.join( this.#userPreferences.everquestInstallFolder, 'Logs', 'LogArchive.zip' );
-    //     const archiveExists = fs.existsSync( logArchivePath );
-    //     const archive = archiveExists ? new AdmZip( logArchivePath ) : new AdmZip();
-
-    //     console.log( 'values', archiveExists, archive.getEntryCount() );
-    //     // if ( archiveExists ) {
-    //     //     archive.getEntries().forEach( entry => {
-    //     //         console.log( 'adding', entry.entryName );
-    //     //         // var entryName = entry.entryName;
-    //     //         // var zo = archive.getEntry( entryName );
-    //     //         archive.addFile( entry.entryName, archive.readFile( entry ) );
-    //     //         // var decompressedData = archive.readFile( entry ); // decompressed buffer of the entry
-    //     //         // console.log( zip.readAsText( entry ) ); // outputs the decompressed content of the entry  
-    //     //     } );
-    //     // }
-
-    //     // const tempDir = path.join( this.#userPreferences.everquestInstallFolder, 'Logs', 'LogArchive-unpack' );
-    //     // await fsp.mkdir( tempDir, { recursive: true } );
-
-    //     // if ( fs.existsSync( logArchivePath ) ) {
-
-    //     //     await extract( logArchivePath, { dir: tempDir } );
-
-    //     //     await fsp.unlink( logArchivePath );
-    //     // }
-
-    //     // const output = fs.createWriteStream( logArchivePath );
-    //     // const zip = archiver( 'zip', { zlib: { level: 9 } } );
-        
-    //     // // Before we start, let's catch some archiver errors.
-    //     // zip.on( 'warning', function ( err ) {
-    //     //     if ( err.code === 'ENOENT' ) {
-    //     //         log.warn( err );
-    //     //     } else {
-    //     //         log.error( err );
-    //     //     }
-    //     // } );
-
-    //     // zip.on( 'entry', function ( e ) {
-    //     //     log.info( `${e.name} has been added to the archive.` );
-    //     // } );
-
-    //     // zip.on( 'progress', function ( e ) {
-    //     //     log.info( `Archive progress -> {totalEntries: ${e.entries.total}, completedEntries: ${e.entries.processed}}` );
-    //     // } );
-
-    //     // zip.on( 'error', function ( err ) {
-    //     //     log.error( err );
-    //     // } );
-
-    //     // zip.pipe( output );
-        
-    //     /** @type {{logFile: string, callback: () => void}[]} */
-    //     let processedFiles = [];
-    //     while ( this.#filesForArchive.length > 0 ) {
-    //         const logFileMeta = this.#filesForArchive.pop();
-    //         log.info( `Adding ${logFileMeta.logFile} to the archive.` );
-    //         // archive.addFile( FsUtilities.Path.getFilename( logFileMeta.logFile ), fs.readFileSync( logFileMeta.logFile ) );
-    //         archive.addLocalFile( logFileMeta.logFile, '', FsUtilities.Path.getFilename( logFileMeta.logFile ) );
-    //         // zip.append( fs.createReadStream( logFileMeta.logFile ), { name: FsUtilities.Path.getFilename( logFileMeta.logFile ) } );
-    //         processedFiles.push( logFileMeta );
-    //     }
-
-    //     // // zip.directory(tempDir, false);
-    //     // await zip.finalize();
-    //     // await archive.writeZipPromise( logArchivePath );
-
-    //     archive.writeZip( logArchivePath, error => {
-    //         if ( error ) {
-    //             console.log( 'error', error );
-    //         }
-
-
-    //         processedFiles.forEach( async logFileMeta => {
-    //             if ( logFileMeta.callback ) {
-    //                 logFileMeta.callback();
-    //             }
-    //             log.info( `Deleting temporary file ${logFileMeta.logFile}` );
-    //             // await fsp.rm( logFileMeta.logFile );
-    //         } );
-    
-    //         // fs.rmdirSync( tempDir, { recursive: true } );
-            
-    //         this.#processingArchive = false;
-
-    //     } );
-    // }
-
-    // async #executeArchiveTransferArchiver() {
-    //     log.info( 'Execute has been called' );
-
-    //     if ( this.#processingArchive ) {
-    //         return;
-    //     }
-
-    //     this.#processingArchive = true;
-
-    //     // Next, we need to add it to the log archive.
-    //     const logArchivePath = path.join( this.#userPreferences.everquestInstallFolder, 'Logs', 'LogArchive.zip' );
-
-    //     const tempDir = path.join( this.#userPreferences.everquestInstallFolder, 'Logs', 'LogArchive-unpack' );
-    //     await fsp.mkdir( tempDir, { recursive: true } );
-
-    //     if ( fs.existsSync( logArchivePath ) ) {
-
-    //         await extract( logArchivePath, { dir: tempDir } );
-
-    //         await fsp.unlink( logArchivePath );
-    //     }
-
-    //     const output = fs.createWriteStream( logArchivePath );
-    //     const zip = archiver( 'zip' ); // , { zlib: { level: 9 } }
-        
-    //     // Before we start, let's catch some archiver errors.
-    //     zip.on( 'warning', function ( err ) {
-    //         if ( err.code === 'ENOENT' ) {
-    //             log.warn( err );
-    //         } else {
-    //             log.error( err );
-    //         }
-    //     } );
-
-    //     zip.on( 'entry', function ( e ) {
-    //         log.info( `${e.name} has been added to the archive.` );
-    //     } );
-
-    //     zip.on( 'progress', function ( e ) {
-    //         log.info( `Archive progress -> {totalEntries: ${e.entries.total}, completedEntries: ${e.entries.processed}}` );
-    //     } );
-
-    //     zip.on( 'error', function ( err ) {
-    //         log.error( err );
-    //     } );
-
-    //     zip.pipe( output );
-        
-    //     /** @type {{logFile: string, callback: () => void}[]} */
-    //     let processedFiles = [];
-    //     while ( this.#filesForArchive.length > 0 ) {
-    //         const logFileMeta = this.#filesForArchive.pop();
-    //         log.info( `Adding ${logFileMeta.logFile} to the archive.` );
-    //         zip.append( fs.createReadStream( logFileMeta.logFile ), { name: FsUtilities.Path.getFilename( logFileMeta.logFile ) } );
-    //         processedFiles.push( logFileMeta );
-    //     }
-
-    //     zip.directory(tempDir, false);
-    //     await zip.finalize();
-
-    //     processedFiles.forEach( async logFileMeta => {
-    //         log.info( `Deleting temporary file ${logFileMeta.logFile}` );
-    //         // await fsp.rm( logFileMeta.logFile );
-    //         if ( logFileMeta.callback ) {
-    //             logFileMeta.callback();
-    //         }
-    //     } );
-
-    //     fs.rmdirSync( tempDir, { recursive: true } );
-        
-    //     this.#processingArchive = false;
-    // }
-
 
 
 
@@ -402,9 +231,9 @@ class LogBootstrapper {
      * @param {CharacterDatabaseStore} characterDatabase The character database.
      * @param {function} sendTick The send tick method.
      */
-    startWatcher( mainWindowRef, chr, isDev, characterDatabase, sendTick ) {
+    async startWatcher( mainWindowRef, chr, isDev, characterDatabase, sendTick ) {
         let characterId = chr.characterId;
-        let startingStats = fs.existsSync( chr.logFile ) ? fs.statSync( chr.logFile ) : null;
+        let startingStats = await FsUtilities.existsAsync( chr.logFile ) ? await fsp.stat( chr.logFile ) : null;
         logWatchers[ characterId ] = {
             /** @type {BrowserWindow} */
             window: null,
@@ -414,13 +243,13 @@ class LogBootstrapper {
             model: chr,
         };
 
-        const waitForLogFile = () => {
-            if ( fs.existsSync( chr.logFile ) ) {
+        const waitForLogFile = async () => {
+            if ( await FsUtilities.existsAsync( chr.logFile ) ) {
                 // Log file's back, let's start watching again.
-                logWatchers[ characterId ].intervalId = setInterval( checkFn, checkInterval );
+                logWatchers[ characterId ].intervalId = setInterval( () => checkFn().then( () => { } ), checkInterval );
                 
             } else {
-                setTimeout( () => waitForLogFile( chr.logFile ), checkInterval );
+                setTimeout( () => waitForLogFile().then( () => { } ), checkInterval );
             }
         }
 
@@ -429,39 +258,21 @@ class LogBootstrapper {
 
             // First, let's rename the log file with a timestamp.
             const logFilePath = FsUtilities.Path.appendFilename( chr.logFile, FsUtilities.getFileTimestamp() );
-            fs.rename( chr.logFile, logFilePath, async ( error ) => {
-                if ( error ) {
-                    log.error( error );
-                } else {
-                    log.info( `Log file renamed to: ${logFilePath}` );
-                    logWatchers[ characterId ].logSize = 0;
-
-                    this.#addToArchive( logFilePath );
-                    // this.#addToArchive( logFilePath, () => {
-                    //     log.info( 'Log added to archive' );
-                    //     logWatchers[ characterId ].logSize = 0;
-                    // } );
+            await fsp.rename( chr.logFile, logFilePath );
             
-                    // let fn = async () => {
-                        
-                    //     log.info( 'Log added to archive' );
-                    //     
-    
-                    //     // Reset the log size.
-                    //     logWatchers[ characterId ].logSize = 0;
-                    // }
-                    
-                    waitForLogFile();
-                }
+            log.info( `Log file renamed to: ${logFilePath}` );
+            logWatchers[ characterId ].logSize = 0;
 
-            } );
+            this.#addToArchive( logFilePath );
+            
+            waitForLogFile().then( () => { } );
         }
 
-        const checkFn = () => {
+        const checkFn = async () => {
 
             // Ensure we have the latest information.
             let _chr = characterDatabase.find( characterId );
-            let _stats = fs.existsSync( chr.logFile ) ? fs.statSync( _chr.logFile ) : null;
+            let _stats = await FsUtilities.existsAsync( chr.logFile ) ? await fsp.stat( _chr.logFile ) : null;
             
             if ( _chr.logFile !== logWatchers[ characterId ].logFile ) {
 
@@ -533,7 +344,7 @@ class LogBootstrapper {
 
         }
         
-        logWatchers[ characterId ].intervalId = setInterval( checkFn, checkInterval );
+        logWatchers[ characterId ].intervalId = setInterval( () => checkFn().then( () => { } ), checkInterval );
 
     }
 
