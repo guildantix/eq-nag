@@ -2,6 +2,7 @@ const electron = require( 'electron' );
 const path = require( 'path' );
 const fs = require( 'fs' );
 const archiver = require( 'archiver' );
+const FsUtilities = require( '../utilities/file-system' );
 
 class Store {
     /** The stored file path and location for this object. */
@@ -53,8 +54,7 @@ class Store {
      * @param {(string) => void)} onComplete Callback function executed when the backup file is created that receives the backup file location.
      */
     backupDatafile( onComplete ) {
-        let now = new Date( Date.now() );
-        let backupFile = path.join( this.userDataPath, `${now.getFullYear()}${now.getMonth() + 1}${now.getDay() + 1}${now.getSeconds()}-${this.configName}-backup.zip` );
+        let backupFile = path.join( this.userDataPath, `${FsUtilities.getFileTimestamp()}-backup.zip` );
         let output = fs.createWriteStream( backupFile );
         let zip = archiver( 'zip' );
 
