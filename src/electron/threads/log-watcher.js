@@ -1,9 +1,6 @@
 // const ipc = require( 'electron' ).ipcMain;
-const { ipcRenderer, ipcMain } = require( 'electron' );
-const path = require( 'path' );
-const process = require( 'process' );
+const { ipcRenderer } = require( 'electron' );
 const fs = require( 'fs' );
-const DkpEntryModel = require( '../data/models/dkp-entry' );
 const { TriggerAction, ActionTypes, TriggerConditionTypes, OperatorTypes, CharacterClassLevel, TriggerSubAction } = require( '../data/models/trigger' );
 const { QuickShareAuthorListTypes } = require( '../data/models/common' );
 const { PhraseParse, LogTrigger } = require( './log.model' );
@@ -14,7 +11,6 @@ const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz
 const nanoid = customAlphabet( alphabet, 16 );
 const _ = require( 'lodash' );
 
-const chokidar = require( "chokidar" );
 const StringUtilities = require( '../utilities/string' );
 const NumberUtilities = require( '../utilities/numbers' );
 const { FctModel, FctTypes } = require( '../data/models/fct' );
@@ -113,7 +109,7 @@ function waitForLogFile( logPath ) {
     }
 
     if ( fs.existsSync( logPath ) ) {
-        logInfo( '++++ Log file found, starting up again.' );
+        logInfo( `LogWatcher > ${logPath} file found, starting up again.` );
         startParsingLogFile( logPath, 0 );
     } else {
         window.setTimeout( () => waitForLogFile( logPath ), logParseTimer );
@@ -148,13 +144,19 @@ function startParsingLogFile( logPath, startLogPosition ) {
             function parseLogFile() {
 
                 if ( !fs.existsSync( logPath ) ) {
-                    logInfo( '!!!! File does not exist, waiting for new log file.' );
+                    logInfo( `LogWatcher > ${logPath} does not exist, waiting for new log file.` );
                     waitForLogFile( logPath );
                     return;
                 }
 
                 var stats = fs.fstatSync( fd );
                 var file = fd;
+                var thisChunkSize = stats.size - currentPosition;
+                
+                // Prevent some overflows, if this is greater than the chunk size, the something fucky happened with the log file, let's just start at the end of the file.
+                if ( thisChunkSize > chunkSize ) {
+                    currentPosition = stats.size;
+                }
 
                 fs.read( file, Buffer.alloc( stats.size - currentPosition ), 0, stats.size - currentPosition, currentPosition, ( err, bytecount, buff ) => {
                 
