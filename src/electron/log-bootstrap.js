@@ -1,16 +1,12 @@
 const { app, BrowserWindow, ipcMain, screen } = require( "electron" );
 const fs = require('fs');
 const fsp = fs.promises;
-const archiver = require( 'archiver' );
-const extract = require( 'extract-zip' );
 const CharacterDatabaseStore = require( './data/character-database' );
 const CharacterModel = require( './data/models/character' );
 const _ = require( 'lodash' );
 const UserPreferencesStore = require( "./data/user-preferences" );
 const FsUtilities = require( "./utilities/file-system" );
 const log = require( 'electron-log' );
-const path = require( "path" );
-const AdmZip = require( "adm-zip" );
 
 /** @type {any} Dictionary of log watcher windows. */
 var logWatchers = {};
