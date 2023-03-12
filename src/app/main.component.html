@@ -2,6 +2,7 @@
     <mat-toolbar class="titlebar" color="primary">
         <span>NAG<span class="hover-only">: An EverQuest Notification Agent</span></span>
         <span class="spacer"></span>
+        <div class="progress-bar" *ngIf="archivePercent !== null"><mat-progress-bar mode="determinate" [value]="archivePercent * 100" color="accent" class="color-green"></mat-progress-bar><div>{{archiveLabel}}</div></div>
         <button mat-icon-button aria-label="Run Setup Wizard" (click)="runSetupWizard()" *ngIf="!setupCompleted">
             <mat-icon class="material-icons-outlined color-green" style="font-size: 32px; line-height: 32px; width: 32px; height: 32px;">settings_suggest</mat-icon>
         </button>
