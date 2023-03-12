@@ -53,6 +53,10 @@ export class MainComponent implements OnInit {
     public combatType: string = 'DmgOut';
     public fctStyles: FctStylesModel = null;
 
+    public archivePercent: number |  null = null;
+    public archiveLabel: string = null;
+    public closeAfterArchive: boolean = false;
+
     @ViewChild( 'fileSelector' ) private fileSelector: ElementRef<HTMLInputElement>;
     @ViewChild( 'characterList', { static: true } ) private characterList: CharactersListComponent;
     @ViewChild( 'settingsPanel', { static: true } ) private settingsPanel: SettingsComponent;
@@ -199,6 +203,65 @@ export class MainComponent implements OnInit {
             } );
         } );
 
+        this.ipcService.onBackupProgress().subscribe( progress => {
+            
+            this.archiveLabel = progress.label;
+            this.archivePercent = progress.completePercent;
+
+            if ( progress.completePercent >= 1 ) {
+                setTimeout( () => {
+                    this.archiveLabel = null;
+                    this.archivePercent = null;
+
+                    if ( this.closeAfterArchive ) {
+                        this.quitApp();
+                    }
+                }, 2500 );
+            }
+        } );
+
+        this.ipcService.onQuitFalure().subscribe( data => {
+            if ( data.code === 'backup' ) {
+                this.dialogService.showQuestionDialog( 'Archive in Progress',
+                    [ 'There is an archive in progress', 'Ending the application may corrupt your archive file.' ],
+                    [
+                        {
+                            question: [ 'Wait for the archive process to complete.' ],
+                            buttonText: 'Close after Archiving',
+                            action: () => {
+                                if ( this.archivePercent > 0 ) {
+                                    this.closeAfterArchive = true;
+                                } else {
+                                    this.quitApp();
+                                }
+                            },
+                            cssClass: 'color-green',
+                        },
+                        // TODO: Add option to safely interrupt the archive process.
+                        // {
+                        //     question: [ 'Close Nag after the current file is archived.', 'If there are multiple files queued for archive, or a file is in the middle of archiving, those will be interrupted.', 'This will still leave the archive valid.' ],
+                        //     buttonText: 'Safely Close Now',
+                        //     action: () => {
+                        //         if ( this.archivePercent > 0 ) {
+                        //             this.closeAfterArchive = true;
+                        //         } else {
+                        //             this.quitApp();
+                        //         }
+                        //     },
+                        //     cssClass: '',
+                        // },
+                        {
+                            question: [ 'Close Nag immediately, without waiting to stop the archive process.', new ColoredString( 'This ~~may~~ corrupt your archive file.', '#f0c669', true ) ],
+                            buttonText: 'Close Immediately',
+                            action: () => this.quitApp( true ),
+                            cssClass: 'color-orange',
+                        },
+                    ],
+                    true
+                );
+            }
+        } );
+        
     }
 
 
@@ -317,8 +380,8 @@ export class MainComponent implements OnInit {
         this.ipcService.removeDkpAward( entry );
     }
 
-    quitApp(): void {
-        this.ipcService.quitApp();
+    quitApp( forceQuit: boolean = false ): void {
+        this.ipcService.quitApp( forceQuit === true ? true : false );
     }
 
     minimizeTaskbar(): void {
