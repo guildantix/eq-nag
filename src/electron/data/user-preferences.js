@@ -585,6 +585,28 @@ class UserPreferencesStore extends Store {
             this.voiceIndex = arg;
             sendTick();
         } );
+
+        ipcMain.on( 'settings:set',
+            /**
+             * Updates the specified setting value.
+             * 
+             * @param {any} event The Event args.
+             * @param {{key: string, value: any}} arg The setting data.
+             */
+            ( event, arg ) => {
+                this[ arg.key ] = arg.value;
+                sendTick();
+            } );
+
+        ipcMain.on( 'settings:get',
+            /**
+             * 
+             * @param {any} event The Event args.
+             * @param {{key: string}} arg The setting data.
+             */
+            ( event, arg ) => {
+                event.sender.send( `settings:get:${arg.key}:generic`, this[ arg.key ] );
+            } );
         
         ipcMain.on( 'settings:set:masterVolume', ( event, arg ) => {
             this.masterVolume = arg;

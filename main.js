@@ -17,7 +17,7 @@ const GameResources = require( './src/electron/data/game-resources' );
 const FilesDatabaseStore = require( './src/electron/data/files-database' );
 const GinaImporter = require( "./src/electron/gina-importer" );
 const CombatParser = require( "./src/electron/utilities/combat-parser" );
-const { IpcMessage } = require( "./src/electron/data/models/common" );
+const { IpcMessage, Progress } = require( "./src/electron/data/models/common" );
 const { LogFileLocation } = require( "./src/electron/data/log-file-location" );
 const VerifiedPlayersStore = require( "./src/electron/data/verified-players" );
 
@@ -235,7 +235,15 @@ ipcMain.on( 'app:log:info', ( event, data ) => {
     log.info( data );
 } );
 
-ipcMain.on( 'app:quit', ( event, data ) => { app.quit(); } );
+ipcMain.on( 'app:quit', ( event, forceQuit ) => {
+    if ( forceQuit === true || !logBootstrap.isBackupProcessing ) {
+        app.quit();
+    } else {
+        event.sender.send( 'app:quit:failure', {
+            code: 'backup'
+        } );
+    }
+} );
 
 ipcMain.on( 'app:minimize', ( event, data ) => {
     mainWindow.minimize();
@@ -373,6 +381,18 @@ ipcMain.on( 'death-recap:find-deaths:results',
      */
      ( event, message ) => {
         mainWindow.webContents.send( `death-recap:find-deaths:${message.id}`, message.value );
+    }
+);
+
+ipcMain.on( 'main:archive:progress',
+    /**
+     * Passes the backup progress event to the main window.
+     * 
+     * @param {any} event Event args.
+     * @param {Progress} progress The current backup progress.
+     */
+    ( event, progress ) => {
+        mainWindow.webContents.send( 'archive:progress', progress );
     }
 );
 
