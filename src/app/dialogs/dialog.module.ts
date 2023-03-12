@@ -33,6 +33,7 @@ import { MapPackageOverlayDialogComponent } from './map-package-overlay-dialog/m
 import { WebComponentsModule } from '../web-components/web-components.module';
 import { ActionOverlayReassignmentDialogComponent } from './action-overlay-reassignment-dialog/action-overlay-reassignment-dialog.component';
 import { MonitorSelectDialogComponent } from './monitor-select-dialog/monitor-select-dialog.component';
+import { QuestionDialogComponent } from './question-dialog/question-dialog.component';
 
 @NgModule( {
     imports: [
@@ -49,6 +50,7 @@ import { MonitorSelectDialogComponent } from './monitor-select-dialog/monitor-se
     exports: [
         TriggerDialogComponent,
         ConfirmDialogComponent,
+        QuestionDialogComponent,
         OverlayDetailsDialogComponent,
         OverlayEditorDialogComponent,
         TriggerActionWizardModalComponent,
@@ -75,6 +77,7 @@ import { MonitorSelectDialogComponent } from './monitor-select-dialog/monitor-se
         ColoredStringPipe,
         TriggerDialogComponent,
         ConfirmDialogComponent,
+        QuestionDialogComponent,
         OverlayDetailsDialogComponent,
         OverlayEditorDialogComponent,
         TriggerActionWizardModalComponent,
