@@ -13,6 +13,14 @@ import * as _ from 'lodash-es';
 import { CharactersListComponent } from 'src/app/characters-list/characters-list.component';
 import { nagId } from 'src/app/core/nag-id.util';
 
+enum SettingsKeys {
+    
+    enableLogFileMaintenance = 'enableLogFileMaintenance',
+    maxLogFileSizeMb = 'maxLogFileSizeMb',
+    logMaintenanceDelaySeconds = 'logMaintenanceDelaySeconds',
+
+};
+
 interface IPhoneticTransform {
     id: string;
     originalText?: string;
@@ -45,6 +53,9 @@ export class SettingsComponent implements OnInit {
     public quickShareAuthorListTypes: typeof QuickShareAuthorListTypes = QuickShareAuthorListTypes;
     public quickShareAuthorListType: QuickShareAuthorListTypes;
     public quickShareAuthorList: string = '';
+    public settingsKeys: typeof SettingsKeys = SettingsKeys;
+    public enableLogFileMaintenance: boolean = true;
+    public maxLogFileSizeMb: number = null;
 
     public get timerOverlays(): OverlayWindowModel[] {
         return this.overlays?.filter( m => m.overlayType === 'Timer' );
@@ -126,7 +137,28 @@ export class SettingsComponent implements OnInit {
         this.ipcService.getQuickShareAuthorsList().subscribe( f => {
             this.quickShareAuthorList = f == null ? '' : f.join( '\r\n' );
         } );
+        this.ipcService.getSetting<number>( SettingsKeys.maxLogFileSizeMb ).subscribe( f => this.maxLogFileSizeMb = f );
+        this.ipcService.getSetting<boolean>( SettingsKeys.enableLogFileMaintenance ).subscribe( f => this.enableLogFileMaintenance = f );
 
+    }
+
+
+
+
+
+
+
+
+
+    
+    /**
+     * Generic setting update function.
+     * 
+     * @param key The setting key.
+     * @param value The setting value.
+     */
+    public updateSetting<T>( key: SettingsKeys, value: T ) {
+        this.ipcService.updateSetting( key, value );
     }
 
 
