@@ -7,6 +7,7 @@ const _ = require( 'lodash' );
 const UserPreferencesStore = require( "./data/user-preferences" );
 const FsUtilities = require( "./utilities/file-system" );
 const log = require( 'electron-log' );
+const ForwardRef = require( './forward-ref' );
 
 /** @type {any} Dictionary of log watcher windows. */
 var logWatchers = {};
@@ -23,7 +24,7 @@ class LogBootstrapper {
     #userPreferences;
 
     // /** @type {{logFile: string, callback: () => void}[]} */
-    /** @type {string[]} */
+    /** @type {{logFile: string, size: number}[]} */
     #filesForArchive = [];
 
     /** @type {BrowserWindow} */
@@ -34,6 +35,11 @@ class LogBootstrapper {
 
     /** @type {number} */
     #backupWaitId = null;
+
+    /** @type {boolean]} */
+    get isBackupProcessing() {
+        return this.#logBackupWindow != null;
+    }
 
 
 
@@ -47,7 +53,7 @@ class LogBootstrapper {
     /**
      * Begins the process of checking and running log file watchers.
      * 
-     * @param {ForwardRef} mainWindowRef The main window of the application.
+     * @param {ForwardRef<BrowserWindow>} mainWindowRef The main window of the application.
      * @param {boolean} isDev Sets up the log watcher window for development environment if true.
      * @param {CharacterDatabaseStore} characterDatabase The character database.
      * @param {function} sendTick The send tick method.
@@ -178,9 +184,15 @@ class LogBootstrapper {
         } );
     }
 
-    #addToArchive( logFile ) {
+    /**
+     * Adds the given log file to the backup list and checks if backups can start.
+     * 
+     * @param {string} logFile The full path to the log file.
+     * @param {number} fileSize The current file size.
+     */
+    #addToArchive( logFile, fileSize ) {
 
-        this.#filesForArchive.push( logFile );
+        this.#filesForArchive.push( { logFile: logFile, size: fileSize } );
 
         if ( this.#backupWaitId > 0 ) {
             clearTimeout( this.#backupWaitId );
@@ -196,7 +208,7 @@ class LogBootstrapper {
 
         if ( this.#logBackupWindow == null ) {
 
-            this.#logBackupWindow = startLogBackup( this.#filesForArchive, this.#userPreferences.everquestInstallFolder, this.#isDev );
+            this.#logBackupWindow = startLogBackup( this.#filesForArchive.map( f => f.logFile ), this.#userPreferences.everquestInstallFolder, this.#isDev );
 
             // Reset the archive files.
             this.#filesForArchive = [];
@@ -253,17 +265,22 @@ class LogBootstrapper {
             }
         }
 
-        const backupFn = async () => {
-            log.info( `Backing up log file: ${chr.logFile}` );
+        /**
+         * Starts the backup for the current character file.
+         * 
+         * @param {number} fileSize The file size.
+         */
+        const backupFn = async ( fileSize ) => {
+            log.info( `LogBootstrap > Initializing backup for: ${chr.logFile}` );
 
             // First, let's rename the log file with a timestamp.
             const logFilePath = FsUtilities.Path.appendFilename( chr.logFile, FsUtilities.getFileTimestamp() );
             await fsp.rename( chr.logFile, logFilePath );
             
-            log.info( `Log file renamed to: ${logFilePath}` );
+            log.info( `LogBootstrap > Log file renamed to: ${logFilePath}` );
             logWatchers[ characterId ].logSize = 0;
 
-            this.#addToArchive( logFilePath );
+            this.#addToArchive( logFilePath, fileSize );
             
             waitForLogFile().then( () => { } );
         }
@@ -305,13 +322,13 @@ class LogBootstrapper {
 
                 }
                 
-            } else if ( _stats != null && this.#userPreferences.everquestInstallFolder?.length > 0 && _stats.size / ( 1024 * 1024 ) > this.#userPreferences.maxLogFileSizeMb ) {
+            } else if ( _stats != null && this.#userPreferences.enableLogFileMaintenance && this.#userPreferences.everquestInstallFolder?.length > 0 && _stats.size / ( 1024 * 1024 ) > this.#userPreferences.maxLogFileSizeMb ) {
                 
                 // Clear the watch interval.
                 clearInterval( logWatchers[ characterId ].intervalId );
 
                 // Execute the backup function.
-                backupFn();
+                backupFn( _stats.size );
 
             } else if ( logWatchers[ characterId ].window != null ) {
 
