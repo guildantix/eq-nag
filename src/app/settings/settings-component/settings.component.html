@@ -20,16 +20,9 @@
                         <mat-option [value]="100">100 MB</mat-option>
                         <mat-option [value]="500">500 MB</mat-option>
                         <mat-option [value]="1000">1 GB (Why!?)</mat-option>
-                        <!-- <mat-option *ngFor="let option of voiceOptions; let i = index" [value]="i">{{option.name}}</mat-option> -->
                     </mat-select>
                     <mat-hint>Select the file size required before the log file will be archived.</mat-hint>
                 </mat-form-field>
-                <!-- <mat-slider min="20" max="1000" step="20" showTickMarks discrete></mat-slider> -->
-                <!-- <mat-form-field style="width: 100%;">
-                    <mat-label></mat-label>
-                    <input matInput type="number" [(ngModel)]="maxLogFileSizeMb" name="maxLogFileSizeMb" [disabled]="!enableLogFileMaintenance" (change)="updateSetting(settingsKeys.maxLogFileSizeMb, maxLogFileSizeMb)" />
-                    <mat-hint>Enter the file size required before the log file will be archived (in MB).</mat-hint>
-                </mat-form-field> -->
             </div>
 
             <!-- TODO: Add more logging options. 1. Backup when Nag closes/daily.  Keep a backup file for each log day.  Would be nice to allow the user to search backedup log files for zones/raids. -->
