@@ -34,6 +34,7 @@ const channelPrefixes = [
     'tick',
     'console',
     'context',
+    'archive',
 ];
 
 function validChannel( channel ) {
