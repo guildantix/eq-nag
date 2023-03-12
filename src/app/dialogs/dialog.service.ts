@@ -65,6 +65,23 @@ export class DialogService {
 
     }
     
+
+
+
+
+
+
+
+
+    
+    /**
+     * Displays the Quetion dialog to the user.
+     * 
+     * @param title The dialog title.
+     * @param messages The general question to ask the user.
+     * @param questions The question answers with descriptions.
+     * @param cancellable If true, the user can cancel out of the dialog.
+     */
     public showQuestionDialog( title: string, messages: ( string | ColoredString )[], questions: QuestionDialogAnswerModel[], cancellable: boolean = true ): void {
         
         let m = new QuestionDialogModel();
