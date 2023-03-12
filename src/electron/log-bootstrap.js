@@ -184,6 +184,15 @@ class LogBootstrapper {
         } );
     }
 
+
+
+
+
+
+
+
+
+
     /**
      * Adds the given log file to the backup list and checks if backups can start.
      * 
@@ -204,6 +213,19 @@ class LogBootstrapper {
 
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Checks for an active archive process to complete before beginning a new 
+     * one.
+     */
     #waitForArchive() {
 
         if ( this.#logBackupWindow == null ) {
