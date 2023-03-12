@@ -218,6 +218,7 @@ const backup = async ( logFilePaths, everquestInstallFolder ) => {
 
     processedFiles.forEach( logFile => {
         log.info( `LogBackup > Deleting file ${logFile}` );
+        // TODO: Enable file deletion.
         // fsp.rm( logFile );
     } );
 
