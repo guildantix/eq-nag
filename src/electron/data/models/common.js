@@ -104,4 +104,13 @@ const QuickShareAuthorListTypes = {
     Blacklist: 2,
 }
 
-module.exports = { StyleProperties, BasicError, ErrorCodes, IpcMessage, PlayerCharacter, PlayerPet, QuickShareAuthorListTypes };
+class Progress {
+    
+    /** @type {number} */
+    completePercent;
+    /** @type {string} */
+    label;
+
+}
+
+module.exports = { StyleProperties, BasicError, ErrorCodes, IpcMessage, PlayerCharacter, PlayerPet, QuickShareAuthorListTypes, Progress };

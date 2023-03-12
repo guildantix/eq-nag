@@ -1177,3 +1177,14 @@ export class VersionNumber {
 
     }
 }
+
+export class QuitFailureData {
+    code: 'backup' | null;
+}
+
+export class Progress {
+    
+    public completePercent: number;
+    public label: string;
+
+}
