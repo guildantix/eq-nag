@@ -523,8 +523,6 @@ function startLogWatcherWindow( logFile, isDev, sendTick, character, logPosition
 function startLogBackup( logFiles, everquestInstallFolder, isDev ) {
     
     let logBackupWindow = new BrowserWindow( {
-        //   width: 800,
-        //   height: 600,
         show: isDev === true,
         // TODO: use preloaders.
         webPreferences: { nodeIntegration: true, contextIsolation: false, webSecurity: false, devTools: isDev === true },
