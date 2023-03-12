@@ -5,7 +5,10 @@ const FsUtilities = require( "../utilities/file-system" );
 const log = require( 'electron-log' );
 const path = require( "path" );
 const AdmZip = require( "adm-zip" );
+const ThreadUtilities = require( '../utilities/threading' );
 const maxArchiveFileSize = 512 * 1024 * 1024; // 500 MiB
+const _ = require( 'lodash' );
+const progressCommChannel = 'main:archive:progress';
 
 
 
@@ -72,72 +75,156 @@ const readChunk = ( logFile, fileStats, startPos ) => {
 
 
 /**
+ * Writes the current chunk data.
+ * 
+ * @returns Returns an error object if an error was thrown.
+ * 
+ * @param {AdmZip} archive The AdmZip object.
+ * @param {string} logArchivePath The full file path to the archive.
+ */
+const writeChunk = ( archive, logArchivePath ) => {
+
+    let p = new Promise( resolve => {
+
+        archive.writeZip( logArchivePath, error => {
+    
+            if ( error ) {
+                log.error( error );
+    
+            }
+        
+            resolve( { error: error } );
+
+        } );
+
+    } );
+
+    return p;
+};
+
+
+
+
+
+
+
+
+
+
+let progressLabel = 'Archiving Log Files ...';
+
+/**
+ * Reports progress to the main thread.
+ * 
+ * @param {number} current The current operation count.
+ * @param {number} max The maximum number of operations.
+ * @param {string | void} label The current progress label.  If not provided, uses the previous operation label.
+ */
+const reportProgress = ( current, max, label ) => {
+    progressLabel = label ?? progressLabel;
+    ipcRenderer.send( progressCommChannel, { completePercent: current / max, label: progressLabel } );
+}
+
+
+
+
+
+
+
+
+
+
+/**
  * Backups the given list of log files.
  * 
- * @param {string[]} logFiles The list of log files to archive.
+ * @param {string[]} logFilePaths The list of log files to archive.
  * @param {string} everquestInstallFolder The everquest installation folder.
  */
-const backup = async ( logFiles, everquestInstallFolder ) => {
+const backup = async ( logFilePaths, everquestInstallFolder ) => {
 
     const logArchivePath = path.join( everquestInstallFolder, 'Logs', 'LogArchive.zip' );
     const archiveExists = fs.existsSync( logArchivePath );
-    const archive = archiveExists ? new AdmZip( logArchivePath ) : new AdmZip();
+    let archive = archiveExists ? new AdmZip( logArchivePath ) : new AdmZip();
+
+    /** @type {{logFile: string, stats: fs.Stats & fs.BigIntStats}[]} */
+    let logFilesMeta = [];
+
+    for ( let li = 0; li < logFilePaths.length; li++ ) {
+        logFilesMeta.push( {
+            logFile: logFilePaths[ li ],
+            stats: await fsp.stat( logFilePaths[ li ] )
+        } );
+    }
+
+    // Count the number of write operations.
+    let writeOperationCount = _.sum( logFilesMeta.map( f => f.stats.size > ( maxArchiveFileSize * 1.2 ) ? Math.ceil( f.stats.size / maxArchiveFileSize ) : 1 ) );
+    let writeCount = 0;
+
+    reportProgress( writeCount, writeOperationCount, 'Backup Starting' );
 
     /** @type {string[]} */
     let processedFiles = [];
-    while ( logFiles.length > 0 ) {
-        const logFile = logFiles.pop();
+    while ( logFilesMeta.length > 0 ) {
 
-        let stats = await fsp.stat( logFile );
+        const logFileMeta = logFilesMeta.pop();
+        
+        reportProgress( writeCount, writeOperationCount, FsUtilities.Path.getFilename( logFileMeta.logFile ) );
 
         // If the file is greater than the max archive size, we need to stream
         // it into the archive in chunks.
         // However, if the file is just barely over we can still put the whole 
         // thing in the archive.
-        if ( stats.size > ( maxArchiveFileSize * 1.2 ) ) {
+        if ( logFileMeta.stats.size > ( maxArchiveFileSize * 1.2 ) ) {
             
             let pos = 0;
             let counter = 0;
-            let fileName = FsUtilities.Path.getFilename( logFile );
+            let fileName = FsUtilities.Path.getFilename( logFileMeta.logFile );
 
-            let max = Math.ceil( stats.size / maxArchiveFileSize );
+            let max = Math.ceil( logFileMeta.stats.size / maxArchiveFileSize );
             for ( let i = 0; i < max; i++ ) {
                 
-                let chunkBuffer = await readChunk( logFile, stats, pos );
+                let chunkBuffer = await readChunk( logFileMeta.logFile, logFileMeta.stats, pos );
                 pos += chunkBuffer.length;
 
                 const archiveName = FsUtilities.Path.appendFilename( fileName, `-${++counter}` );
-                log.info( `Adding ${archiveName} to the archive.` );
+
+                log.info( `LogBackup > Adding to the archive: ${archiveName}.` );
                 archive.addFile( archiveName, chunkBuffer );
+                await writeChunk( archive, logArchivePath );
+                writeCount++;
+                archive = new AdmZip( logArchivePath );
+
+                reportProgress( writeCount, writeOperationCount );
             }
 
         } else {
-            const archiveName = FsUtilities.Path.getFilename( logFile );
-            log.info( `Adding ${archiveName} to the archive.` );
-            archive.addLocalFile( logFile, '', archiveName );
+            const archiveName = FsUtilities.Path.getFilename( logFileMeta.logFile );
+
+            log.info( `LogBackup > Adding to the archive: ${archiveName}.` );
+            archive.addLocalFile( logFileMeta.logFile, '', archiveName );
+            await writeChunk( archive, logArchivePath );
+            archive = new AdmZip( logArchivePath );
+            writeCount++;
+
+            reportProgress( writeCount, writeOperationCount );
         }
 
         // Make sure we track the processed files to perform cleanup.
-        processedFiles.push( logFile );
+        processedFiles.push( logFileMeta.logFile );
 
     }
 
-    archive.writeZip( logArchivePath, error => {
+    log.info( 'LogBackup > Backup done, beginning cleanup.' );
 
-        if ( error ) {
-            log.error( error );
-        } else {
-
-            processedFiles.forEach( logFile => {
-                log.info( `Deleting file ${logFile}` );
-            } );
-
-        }
-
-        ipcRenderer.send( 'window:child:close' );
-    
+    processedFiles.forEach( logFile => {
+        log.info( `LogBackup > Deleting file ${logFile}` );
+        // fsp.rm( logFile );
     } );
 
+    log.info( 'LogBackup > Clean up done.' );
+
+    reportProgress( writeOperationCount, writeOperationCount, 'Archiving complete' );
+    ipcRenderer.send( 'window:child:close' );
 }
 
 
@@ -156,8 +243,16 @@ const backup = async ( logFiles, everquestInstallFolder ) => {
  * @param {string} logPosition The starting log position.
  */
 function LogBackup( logFiles, everquestInstallFolder ) {
-    log.info( 'Backup execution.', logFiles );
     backup( logFiles, everquestInstallFolder ).then( () => { } );
 }
+
+
+
+
+
+
+
+
+
 
 module.exports = LogBackup;
