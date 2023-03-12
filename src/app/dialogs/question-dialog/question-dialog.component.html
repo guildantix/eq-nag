@@ -1,0 +1,24 @@
+<h2 mat-dialog-title>{{title}}</h2>
+
+<mat-dialog-content>
+
+    <p *ngFor="let msg of messages" [innerHtml]="msg | coloredString"></p>
+    <div class="btn-info">
+        <table>
+            <tr *ngFor="let q of data.questions">
+                <td><strong>{{q.buttonText}}</strong></td>
+                <td>
+                    <div *ngFor="let msg of q.question"><span [innerHtml]="msg | coloredString"></span></div>
+                </td>
+            </tr>
+            &nbsp;
+        </table>
+    </div>
+</mat-dialog-content>
+
+<mat-dialog-actions>
+
+  <button mat-button  *ngFor="let q of data.questions" (click)="executeAnswer(q)" class="t-confirm-yes {{q.cssClass}}">{{q.buttonText}}</button>
+  <button mat-button mat-dialog-close class="t-confirm-no" color="warn" *ngIf="data.cancellable">Cancel</button>
+
+</mat-dialog-actions>

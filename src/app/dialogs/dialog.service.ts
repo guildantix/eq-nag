@@ -29,6 +29,8 @@ import { ActionOverlayReviewModel, ActionOverlayUseModel, OverlayReassignments }
 import { ActionOverlayReassignmentDialogComponent } from './action-overlay-reassignment-dialog/action-overlay-reassignment-dialog.component';
 import * as _ from 'lodash-es';
 import { MonitorSelectDialogComponent } from './monitor-select-dialog/monitor-select-dialog.component';
+import { QuestionDialogAnswerModel, QuestionDialogModel } from './question-dialog/question-dialog.model';
+import { QuestionDialogComponent } from './question-dialog/question-dialog.component';
 
 @Injectable()
 export class DialogService {
@@ -61,6 +63,40 @@ export class DialogService {
             panelClass: 'app-dialog',
         } ).afterClosed();
 
+    }
+    
+    public showQuestionDialog( title: string, messages: ( string | ColoredString )[], questions: QuestionDialogAnswerModel[], cancellable: boolean = true ): void {
+        
+        let m = new QuestionDialogModel();
+
+        m.title = title;
+        m.message = messages;
+        m.cancellable = cancellable === false ? false : true;
+        m.questions = questions;
+        
+        let dialogRef: MatDialogRef<QuestionDialogComponent> = this.dialog.open( QuestionDialogComponent, {
+            width: '650px',
+            data: m,
+            panelClass: 'app-dialog',
+        } );
+
+        dialogRef.afterClosed().subscribe( e => {
+
+            if ( document.activeElement instanceof HTMLElement ) {
+                // This is a workaround to prevent the error:
+                // 
+                //      ExpressionChangedAfterItHasBeenCheckedError: Expression has changed after it was checked. Previous value for 'mat-form-field-should-float': 'false'. Current value: 'true'.
+                //
+                // I'm sure there's some deeper meaning behind it, but for some 
+                // reason when the confirm dialog's `Yes` button is still the 
+                // active element at this point, that error is written to the 
+                // console.
+                // This error only happens when a list is reloaded after.
+                document.activeElement.blur();
+            }
+
+        } );
+        
     }
 
 
