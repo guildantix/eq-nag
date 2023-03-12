@@ -3,7 +3,7 @@ import * as Electron from 'electron';
 import { UpdateInfo } from 'electron-updater';
 import { Observable, Observer } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
-import { DataTickModel, DkpEntryModel, TriggerModel, OverlayWindowModel, ActionTypes, FocusEffectSettings, CharacterModel, BasicError, TriggerFolder, FileModel, Tag, AuthorModel, PackageFileModel, TriggerPackageMetaModel, TriggerPackageVersion, FctStylesModel, OverlayBoundsChangedEventArgs, DialogEventArgs, QuickShareMetaModel, LogFileLocation, IpcMessage, DeathRecapPreferences, QuickShareAuthorListTypes } from './core.model';
+import { DataTickModel, DkpEntryModel, TriggerModel, OverlayWindowModel, ActionTypes, FocusEffectSettings, CharacterModel, BasicError, TriggerFolder, FileModel, Tag, AuthorModel, PackageFileModel, TriggerPackageMetaModel, TriggerPackageVersion, FctStylesModel, OverlayBoundsChangedEventArgs, DialogEventArgs, QuickShareMetaModel, LogFileLocation, IpcMessage, DeathRecapPreferences, QuickShareAuthorListTypes, Progress, QuitFailureData } from './core.model';
 import { GinaConfiguration, GinaTriggerGroups } from './gina.model';
 import { ColorUtility } from './utilities';
 
@@ -25,12 +25,30 @@ export class IpcService {
     private _onReceivedQuickSharePackage: Observer<string>[] = [];
     private _onOrphanedTriggerWarning: Observer<boolean>[] = [];
     private _onMissingPackageOverlay: Observer<OverlayWindowModel>[] = [];
+    private _onQuitFalure: Observer<QuitFailureData>[] = [];
+    private _onBackupProgress: Observer<Progress>[] = [];
 
     private _ginaConfigCache: GinaConfiguration = null;
 
     constructor( private ngZone: NgZone ) {
         if ( window.api ) {
             try {
+
+                window.api.ipc.on( 'archive:progress', ( event: any, data: Progress ) => {
+                    ngZone.run( () => {
+                        this._onBackupProgress?.forEach( f => {
+                            f.next( data );
+                        } );
+                    } );
+                } );
+
+                window.api.ipc.on( 'app:quit:failure', ( event: any, data: QuitFailureData ) => {
+                    ngZone.run( () => {
+                        this._onQuitFalure?.forEach( f => {
+                            f.next( data );
+                        } );
+                    } );
+                } );
 
                 window.api.ipc.on( 'color:darken', ( event: any, data: { overlayId: string, color: string } ) => {
                     data.color = ColorUtility.FromHex( data.color ).darken( 0.93 ).toString( 0.75 );
@@ -159,6 +177,22 @@ export class IpcService {
         } else {
             console.warn( 'App not running inside Electron!' );
         }
+    }
+
+    public onBackupProgress(): Observable<Progress> {
+        let obs: Observable<Progress> = new Observable<Progress>( ( observer: Observer<Progress> ) => {
+            this._onBackupProgress.push( observer );
+        } );
+
+        return obs;
+    }
+
+    public onQuitFalure(): Observable<QuitFailureData> {
+        let obs: Observable<QuitFailureData> = new Observable<QuitFailureData>( ( observer: Observer<QuitFailureData> ) => {
+            this._onQuitFalure.push( observer );
+        } );
+
+        return obs;
     }
 
     public missingPackageOverlayFound(): Observable<OverlayWindowModel> {
@@ -369,8 +403,8 @@ export class IpcService {
         window.api.ipc.send( 'dkp:remove', entry );
     }
 
-    public quitApp(): void {
-        window.api.ipc.send( 'app:quit' );
+    public quitApp( forceQuit: boolean = false ): void {
+        window.api.ipc.send( 'app:quit', forceQuit === true ? true : false );
     }
 
     public minimizeApp(): void {
@@ -387,6 +421,26 @@ export class IpcService {
 
     public updateVoiceIndex( index: number ): void {
         window.api.ipc.send( 'voice:select', index );
+    }
+
+    public updateSetting<T>( key: string, value: T ): void {
+        window.api.ipc.send( 'settings:set', { key: key, value: value } );
+    }
+
+    public getSetting<T>( key: string ): Observable<T> {
+        let obs: Observable<T> = new Observable<T>( ( observer: Observer<T> ) => {
+            
+            window.api.ipc.once( `settings:get:${key}:generic`, ( e, value: T ) => {
+                this.ngZone.run( () => {
+                    observer.next( value );
+                    observer.complete();
+                } );
+            } );
+            window.api.ipc.send( 'settings:get', { key: key } );
+
+        } );
+
+        return obs;
     }
 
     public updateMasterVolume( masterVolume: number ): void {
@@ -1344,7 +1398,6 @@ export class IpcService {
 
             window.api.ipc.invoke<Record<string, CharacterModel[]>>( 'character:get:options', logsPath )
                 .then( characterOptions => {
-                    console.log( 'characterOptions', characterOptions );
                     this.ngZone.run( () => {
                         observer.next( characterOptions );
                         observer.complete();
