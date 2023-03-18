@@ -1,9 +1,12 @@
 const { OverlayStoreModel } = require( '../models/overlay-window' );
 const { backupDatafile } = require( './backup-data-file' );
+const log = require( 'electron-log' );
+const { screen } = require( "electron" );
 const customAlphabet = require( 'nanoid' ).customAlphabet;
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const nanoid = customAlphabet( alphabet, 16 );
-const log = require( 'electron-log' );
+const { StyleProperties } = require( '../models/common' );
+const ElectronUtilities = require( '../../utilities/electron' );
 
 const currentOverlayDbVersion = 15;
 
@@ -14,7 +17,7 @@ const currentOverlayDbVersion = 15;
  * @param {(data: OverlayStoreModel) => void} migrationComplete Callback executed when data migration succeeds.
  */
 function migrateOverlayData( data, configName, migrationComplete ) {
-    console.log( 'overlay version ', data.version );
+    
     if ( !data.version || data.version < currentOverlayDbVersion ) {
         backupDatafile( configName, () => {
             if ( executeDataMigration( data ) ) {
