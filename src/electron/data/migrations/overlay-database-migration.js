@@ -8,7 +8,7 @@ const nanoid = customAlphabet( alphabet, 16 );
 const { StyleProperties } = require( '../models/common' );
 const ElectronUtilities = require( '../../utilities/electron' );
 
-const currentOverlayDbVersion = 15;
+const currentOverlayDbVersion = 16;
 
 /**
  * 
@@ -249,12 +249,35 @@ function executeDataMigration( data ) {
         data.version = 14;
 
     }
-    if ( !data.version || data.version < 15 ) {
-        log.log( '[Migrations] Migrating overlay database to version -> 15.' );
+    // skip version 15
+    if ( !data.version || data.version < 16 ) {
+        log.log( '[Migrations] Migrating overlay database to version -> 16.' );
         
+        const displays = screen.getAllDisplays();
+
+        data?.overlays?.forEach( overlay => {
+            var refDisplay = displays.find( f => f.id == overlay.displayId );
+
+            // The OS/Electron can report minor fluctuations in the x/y
+            // component, so we need to be nearly equal but not necessarily 
+            // exactly equal.  For our purposes in particular, close is good 
+            // enough.
+            var matches = ElectronUtilities.compareRectangles( overlay.displayBounds, refDisplay.bounds, true );
+
+            if ( matches ) {
+                overlay.displayLabel = refDisplay.label;
+
+            } else {
+                var matchingDisplay = displays.find( f => ElectronUtilities.compareRectangles( overlay.displayBounds, f.bounds, true ) );
+                overlay.displayId = matchingDisplay.id;
+                overlay.displayBounds = matchingDisplay.bounds;
+                overlay.displayLabel = matchingDisplay.label;
+
+            }
+        } );
         
         // Testing the new migration script.
-        data.version = 15;
+        data.version = 16;
 
     }
 

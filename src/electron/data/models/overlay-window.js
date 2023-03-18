@@ -53,6 +53,8 @@ class OverlayWindow {
     timerBackgroundColor = '#0080004b';
     /** @type {number|null} */
     displayId = null;
+    /** @type {string|null} */
+    displayLabel = null;
     /** @type {Electron.Rectangle} */
     displayBounds = null;
     /** @type {{x: number, y: number}|null} */
