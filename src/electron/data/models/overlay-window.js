@@ -134,4 +134,11 @@ class OverlayComponent {
     removeComponent;
 }
 
-module.exports = { OverlayDimensions, OverlayWindow, OverlayComponent, TimerSortTypes };
+class OverlayStoreModel {
+    /** @type {number} */
+    version;
+    /** @type {OverlayWindow[]} */
+    overlays;
+}
+
+module.exports = { OverlayDimensions, OverlayWindow, OverlayComponent, TimerSortTypes, OverlayStoreModel };
