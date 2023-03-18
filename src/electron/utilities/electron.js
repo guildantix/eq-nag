@@ -1,6 +1,39 @@
 const { screen } = require( "electron" );
 const NumberUtilities = require( "./numbers" );
 
+
+
+
+
+
+
+
+
+
+/**
+ * Returns true if the given rectangles match.
+ * 
+ * @param {Electron.Rectangle} a The first rectangle.
+ * @param {Electron.Rectangle} b The second rectangle.
+ * @param {boolean|null} nearlyEqual If true, returns true if the x/y coords are close "enough".  If false|null, only returns true if a and b are exactly equal.
+ */
+function compareRectangles( a, b, nearlyEqual ) {
+    if ( nearlyEqual ) {
+        return a.height === b.height && a.width === b.width && Math.abs( a.x - b.x ) < 5 && Math.abs( a.y - b.y ) < 5;
+    } else {
+        return a.height === b.height && a.width === b.width && a.x === b.x && a.y === b.y;
+    }
+}
+
+
+
+
+
+
+
+
+
+
 /**
  * Returns the display that contains the given bounding area.
  * 
@@ -50,6 +83,15 @@ function determineContainingDisplay( bounds ) {
     }
 }
 
+
+
+
+
+
+
+
+
+
 /**
  * Returns an array of keys on the given object.
  * 
@@ -74,9 +116,19 @@ function getRecordKeys( record ) {
     return output;
 }
 
+
+
+
+
+
+
+
+
+
 let ElectronUtilities = {
     determineContainingDisplay: determineContainingDisplay,
     getRecordKeys: getRecordKeys,
+    compareRectangles: compareRectangles,
 };
 
 module.exports = ElectronUtilities;
