@@ -976,19 +976,41 @@ class WindowManager {
     /**
      * Checks all window positions and moves then back if the window isn't in 
      * edit  mode.
+     * 
+     * @description 
+     *      NOTES:
+     *      We won't save changes to the overlay positions here.  If changes 
+     *      are made, those changes are sent to the renderer.  If show warning 
+     *      is true, then we will display the warning and allow the user to use 
+     *      the arrainge window to tweak/save changes to the overlays.
      */
     checkWindowPosition( showWarning ) {
         showWarning = showWarning === true;
         var currentSize = this.#renderer.getBounds();
         let newSize = this.calculateRendererBounds();
-        let displays = screen.getAllDisplays();
+        const displays = screen.getAllDisplays();
         let overlays = this.#overlayDatabase.getAll();
 
         overlays.forEach( overlay => {
             const display = displays.find( f => f.id === overlay.displayId );
 
             if ( display ) {
-                let boundsChanged = overlay.displayBounds.x !== display.bounds.x || overlay.displayBounds.y !== display.bounds.y || overlay.displayBounds.width !== display.bounds.width || overlay.displayBounds.height !== display.bounds.height;
+                let boundsChanged = !ElectronUtilities.compareRectangles( overlay.displayBounds, display.bounds, true );
+
+                // First, let's see if the OS has just swapped the display id's around.
+                if ( boundsChanged ) {
+                    const matchingDisplay = displays.find( f => ElectronUtilities.compareRectangles( overlay.displayBounds, f.bounds, true ) );
+                    if ( matchingDisplay != null ) {
+                        overlay.displayId = matchingDisplay.id;
+                        overlay.displayBounds = matchingDisplay.bounds;
+                        overlay.displayLabel = matchingDisplay.label;
+
+                        boundsChanged = false;
+                        
+                    }
+                }
+
+                // If the bounds have changed, and we couldn't find a matching display, then let's attempt to fix the issue.
                 if ( boundsChanged ) {
                     let hRatio = display.bounds.width / overlay.displayBounds.width;
                     let vRatio = display.bounds.height / overlay.displayBounds.height;
@@ -998,6 +1020,7 @@ class WindowManager {
                     overlay.y = overlay.y * vRatio;
                     overlay.height = overlay.height * vRatio;
                     overlay.displayBounds = display.bounds;
+                    
                 }
             } else {
                 // If the display no longer exists, then do nothing and the renderer will render it offscreen based on the previous relative display position to origin.
@@ -1006,7 +1029,7 @@ class WindowManager {
         } );
         
         // If the current size of the renderer doesn't match the calculated size, then we need to resize/move our overlays.
-        if ( currentSize.x !== newSize.x || currentSize.y !== newSize.y || currentSize.width !== newSize.width || currentSize.height !== newSize.height ) {
+        if ( !ElectronUtilities.compareRectangles( currentSize, newSize, false ) ) {
             
             // Because the size includes the relative position to the primary 
             // display, we can find the (x0,y0) point of the primary display using 
