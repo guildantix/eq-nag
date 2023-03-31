@@ -18,6 +18,30 @@ const { DateUtilities } = require( '../utilities/dates' );
 const { IpcMessage } = require( '../data/models/common' );
 const chunkSize = 512 * 1024;
 
+/**
+ * Sends the error information to the main thread for logging.
+ * 
+ * @param {any} err The error object.
+ * @param {string} raw The log entry currently processing.
+ * @param {boolean} simulating True if we're simulating a log file.
+ * @param {number} padTime The number of seconds to add to log time.
+ */
+const logError = ( err, raw, simulating, padTime ) => {
+    if ( raw ) {
+        ipcRenderer.send( 'app:log:exception', {
+            source: 'log-watcher.js',
+            error: err,
+            logEntry: raw,
+            simulating: simulating === true,
+            padTime: padTime === undefined ? 'undefined' :
+                     padTime === null ? 'null' : 
+                     padTime,
+        } );
+    } else {
+        ipcRenderer.send( 'app:log:exception', err );
+    }
+};
+
 window.onerror = ( error, url, line ) => {
     ipcRenderer.send( 'app:log:exception', `$${error}\r\n    at ${url}:${line}` );
 };
@@ -153,7 +177,9 @@ function startParsingLogFile( logPath, startLogPosition ) {
                 var file = fd;
                 var thisChunkSize = stats.size - currentPosition;
                 
-                // Prevent some overflows, if this is greater than the chunk size, the something fucky happened with the log file, let's just start at the end of the file.
+                // Prevent some overflows, if this is greater than the chunk
+                // size, the something fucky happened with the log file, let's 
+                // just start at the end of the file.
                 if ( thisChunkSize > chunkSize ) {
                     currentPosition = stats.size;
                 }
@@ -227,6 +253,9 @@ function LogWatcher(character, logPosition) {
                 currentPosition = null;
                 backfind( data, () => startParsingLogFile( data, logPosition >= 0 ? logPosition : null ) );
             } else {
+                // If there is a timeout id, then we're in the middle of
+                // processing a chunk of log file entries, let's give a 
+                // millisecond for that to complete.
                 changingLogFile = true;
                 window.setTimeout( () => {
                     changingLogFile = false;
@@ -869,322 +898,329 @@ function generateTriggerFns() {
  * @param {padTime} padTime The amount of time to add to the timestamps of log entries.
  */
 function parseLogEntries( raw, simulating, padTime ) {
-    
-    simulating = simulating === true ? true : false;
-    
-    // let rgxTrigger = /grats;/gi;
-    let rgxTimestamp = /^\[(.*?)\]\s*/gi;
-    // let rgxGrabText = /\'(.*?)\'$/gi;
-    // let rgxDelimiter = /;/gi;
-    // let rgxNum = /(\d+)/gi;
-    let rgxCombatText = /hit|damage|miss|dodge|riposte|parry|become better|backstab|stun|attack/gi;
-    let rgxFctCritical = /\. \(.*(Critical).*\)/gi;
-    let tempDeathRecap = new RegExp( `Israphel death recap`, 'gi' );
 
-    if ( raw.match( tempDeathRecap )?.length > 0 ) {
-        ipcRenderer.send( 'window:death-recap', charModel );
-        return;
-    }
-
-    // Someone healed you.
-    // https://regex101.com/r/Jdtzsf/3
-    // ^(?<healer>.+?) healed you (over time for|for) (?<healAmount>[0-9]*) (\(([0-9]*)\) )?hit points by (?<healType>.+?)\.
-
-    // You healed someone else.
-    // https://regex101.com/r/0btqKz/1
-    // ^(?<healer>You) healed (?<target>.+?) (over time for|for) (?<healAmount>[0-9]*) (\(([0-9]*)\) )?hit points by (?<healType>.+?)\.
-    
-    let fctRegExs = [
-        // 0: rgxMelee
-        /You ([a-zA-Z0-9_]*) (.*) for ([0-9]*) points of damage\./gi,
-        // 1: rgxMeleeMiss
-        /You try to ([a-zA-Z0-9_]*) (.*),/gi,
-        // 2: rgxSpellDmg
-        /(.*) has taken ([0-9]*) damage from your (.*)\./gi,
-        // 3: rgxThorns
-        /(.*) is pierced by YOUR thorns for ([0-9]*) points of non-melee damage\./gi,
-        // 4: rgxSkillUp
-        /You have become better at ([a-zA-Z0-9_]*)! \(([0-9]*)\)/gi,
-        // 5: rgxTakeMeleeDmg
-        /(.*) ([a-zA-Z0-9_]*) YOU for ([0-9]*) points of damage\./gi,
-        // 6: rgxAvoidMeleeDmg
-        /(.*) tries to ([a-zA-Z0-9_]*) YOU, but ([a-zA-Z0-9_\s]*)/gi,
-        // 7: rgxTakeSpellDmg
-        /(.*) hit you for ([0-9]*) points of ([a-zA-Z0-9_]*) damage by (.*)\./gi,
-        // 8: rgxSpellDmg
-        /You ([a-zA-Z0-9_]*) (.*) for ([0-9]*) points of (.*) damage by (.*)\./gi,
-        // 9: Other heal you
-        /^(?<healer>.+?) healed (?<target>you) (over time for|for) (?<healAmount>[0-9]*) (\(([0-9]*)\) )?hit points by (?<healType>.+?)\./gi,
-        // 10: You heal other
-        /^(?<healer>You) healed (?<target>.+?) (over time for|for) (?<healAmount>[0-9]*) (\(([0-9]*)\) )?hit points by (?<healType>.+?)\./gi,
-    ];
-
-    let timestamp = new Date( rgxTimestamp.exec( raw )[ 1 ] );
-
-    if ( !timestamp || timestamp.length === 0 || timestamp.length === 1 )
-        console.log( 'failed parse', raw );
-    else if ( padTime > 0 )
-        timestamp = new Date( timestamp.getTime() + ( padTime * 1000 ) );
-    
-    let log = raw.replace( rgxTimestamp, '' );
+    try {
         
-    // https://regex101.com/r/FvGiGC/2
-    // {NAG:(?<quickShareId>.+?)}
-    // TODO: Remove the negative lookahead for package after a few versions.
-    // let quickShareRegx = /{NAG:(?!package\/)(quick-share\/)?(?<quickShareId>.+?)}/g;
+        simulating = simulating === true ? true : false;
     
-    // https://regex101.com/r/ZrNaZM/2
-    let quickShareRegx = /^(:?(?<author>\w+) .*)?{NAG:(?!package\/)(quick-share\/)?(?<quickShareId>.+?)}/g;
+        // let rgxTrigger = /grats;/gi;
+        let rgxTimestamp = /^\[(.*?)\]\s*/gi;
+        // let rgxGrabText = /\'(.*?)\'$/gi;
+        // let rgxDelimiter = /;/gi;
+        // let rgxNum = /(\d+)/gi;
+        let rgxCombatText = /hit|damage|miss|dodge|riposte|parry|become better|backstab|stun|attack/gi;
+        let rgxFctCritical = /\. \(.*(Critical).*\)/gi;
+        // TODO: Remove temp death recap for israphel.
+        let tempDeathRecap = new RegExp( `Israphel death recap`, 'gi' );
 
-
-    // https://regex101.com/r/RwCLkN/1
-    let packageShareRegx = /{NAG:package\/(?<packageId>.+?)}/g;
-    // {NAG:OVtf9VzRSjykb1xx}
-    // {NAG:quick-share/OVtf9VzRSjykb1xx}
-    // {NAG:package/X0VJh1fjkddZCl9r}
-
-    // https://regex101.com/r/n9aOlR/1
-    // ^(?<author>Name|Name2) .*{NAG:(?<quickShareId>.+?)}
-
-    // Capture quickshares, when enabled.
-    let quickShare = !enableQuickShareImports ? null : quickShareRegx.exec( log );
-    if ( quickShare && quickShare.groups?.quickShareId ) {
-        console.log( 'quickshare deets', quickShare, quickShareAuthorsList, quickShareAuthorsListType );
-        if ( quickShareAuthorsListType === QuickShareAuthorListTypes.Whitelist && quickShare.groups?.author ) {
-            // Whitelist will only share if the author is known and in the
-            // authors list.  Unknown is in terms of captured by the regular 
-            // expression.
-            if ( quickShareAuthorsList.findIndex( f => f.toLowerCase() === quickShare.groups.author.toLowerCase() ) > -1 ) {
-                ipcRenderer.send( 'quickshare_captured', quickShare.groups.quickShareId );
-            }
-
-        } else if ( quickShareAuthorsListType === QuickShareAuthorListTypes.Blacklist ) {
-            // Blacklist will only share if the author is either unknown or the
-            // author is known and not in the list.  Unknown is in terms of 
-            // captured by the regular expression.
-            if ( !quickShare.groups?.author || quickShareAuthorsList.findIndex( f => f.toLowerCase() === quickShare.groups.author.toLowerCase() ) === -1 ) {
-                ipcRenderer.send( 'quickshare_captured', quickShare.groups.quickShareId );
-            }
-
-        } else {
-            ipcRenderer.send( 'quickshare_captured', quickShare.groups.quickShareId );
-
+        if ( raw.match( tempDeathRecap )?.length > 0 ) {
+            ipcRenderer.send( 'window:death-recap', charModel );
+            return;
         }
 
-    }
+        // Someone healed you.
+        // https://regex101.com/r/Jdtzsf/3
+        // ^(?<healer>.+?) healed you (over time for|for) (?<healAmount>[0-9]*) (\(([0-9]*)\) )?hit points by (?<healType>.+?)\.
+
+        // You healed someone else.
+        // https://regex101.com/r/0btqKz/1
+        // ^(?<healer>You) healed (?<target>.+?) (over time for|for) (?<healAmount>[0-9]*) (\(([0-9]*)\) )?hit points by (?<healType>.+?)\.
     
-    let quickSharePackage = packageShareRegx.exec( log );
-    if ( quickSharePackage && quickSharePackage.groups?.packageId ) {
-        ipcRenderer.send( 'quicksharePackage_captured', quickSharePackage.groups.packageId );
-    }
+        let fctRegExs = [
+            // 0: rgxMelee
+            /You ([a-zA-Z0-9_]*) (.*) for ([0-9]*) points of damage\./gi,
+            // 1: rgxMeleeMiss
+            /You try to ([a-zA-Z0-9_]*) (.*),/gi,
+            // 2: rgxSpellDmg
+            /(.*) has taken ([0-9]*) damage from your (.*)\./gi,
+            // 3: rgxThorns
+            /(.*) is pierced by YOUR thorns for ([0-9]*) points of non-melee damage\./gi,
+            // 4: rgxSkillUp
+            /You have become better at ([a-zA-Z0-9_]*)! \(([0-9]*)\)/gi,
+            // 5: rgxTakeMeleeDmg
+            /(.*) ([a-zA-Z0-9_]*) YOU for ([0-9]*) points of damage\./gi,
+            // 6: rgxAvoidMeleeDmg
+            /(.*) tries to ([a-zA-Z0-9_]*) YOU, but ([a-zA-Z0-9_\s]*)/gi,
+            // 7: rgxTakeSpellDmg
+            /(.*) hit you for ([0-9]*) points of ([a-zA-Z0-9_]*) damage by (.*)\./gi,
+            // 8: rgxSpellDmg
+            /You ([a-zA-Z0-9_]*) (.*) for ([0-9]*) points of (.*) damage by (.*)\./gi,
+            // 9: Other heal you
+            /^(?<healer>.+?) healed (?<target>you) (over time for|for) (?<healAmount>[0-9]*) (\(([0-9]*)\) )?hit points by (?<healType>.+?)\./gi,
+            // 10: You heal other
+            /^(?<healer>You) healed (?<target>.+?) (over time for|for) (?<healAmount>[0-9]*) (\(([0-9]*)\) )?hit points by (?<healType>.+?)\./gi,
+        ];
+
+        let timestamp = new Date( rgxTimestamp.exec( raw )[ 1 ] );
+
+        if ( !timestamp || timestamp.length === 0 || timestamp.length === 1 )
+            console.log( 'failed parse', raw );
+        else if ( padTime > 0 )
+            timestamp = new Date( timestamp.getTime() + ( padTime * 1000 ) );
     
-    if ( enableFct && raw.match( rgxCombatText )?.length > 0 ) {
-        for ( let i = 0; i < fctRegExs.length; i++ ) {
-            let results = fctRegExs[ i ].exec( log );
-            
-            if ( results && results.length > 1 ) {
-                let model = new FctModel();
-                model.dealt = ( i >= 0 && i <= 4 ) || i === 8 ? true : false;
+        let log = raw.replace( rgxTimestamp, '' );
+        
+        // https://regex101.com/r/FvGiGC/2
+        // {NAG:(?<quickShareId>.+?)}
+        // TODO: Remove the negative lookahead for package after a few versions.
+        // let quickShareRegx = /{NAG:(?!package\/)(quick-share\/)?(?<quickShareId>.+?)}/g;
+    
+        // https://regex101.com/r/ZrNaZM/2
+        let quickShareRegx = /^(:?(?<author>\w+) .*)?{NAG:(?!package\/)(quick-share\/)?(?<quickShareId>.+?)}/g;
 
-                if ( i === 0 ) {
-                    /* --== My melee damage ==-- */
-                    
-                    let type = results[ 1 ];
-                    let target = results[ 2 ];
-                    let dmg = NumberUtilities.toShorthandString( results[ 3 ] );
 
-                    model.text = `${dmg}`;
-                    model.attack = type;
-                    model.fctType = FctTypes.dmgOut;
+        // https://regex101.com/r/RwCLkN/1
+        let packageShareRegx = /{NAG:package\/(?<packageId>.+?)}/g;
+        // {NAG:OVtf9VzRSjykb1xx}
+        // {NAG:quick-share/OVtf9VzRSjykb1xx}
+        // {NAG:package/X0VJh1fjkddZCl9r}
 
-                } else if ( i === 1 ) {
-                    /* --== My melee misses ==-- */
-                    
-                    let dmg = 'miss';
+        // https://regex101.com/r/n9aOlR/1
+        // ^(?<author>Name|Name2) .*{NAG:(?<quickShareId>.+?)}
 
-                    model.attack = 'Melee';
-                    model.fctType = FctTypes.dmgOut;
-                    break;
-
-                } else if ( i === 2 ) {
-                    /* --== My spell hits ==-- */
-                    
-                    let target = results[ 1 ];
-                    let dmg = NumberUtilities.toShorthandString( results[ 2 ] );
-                    let spell = results[ 3 ];
-
-                    model.text = `${dmg}`;
-                    model.attack = spell;
-                    model.fctType = FctTypes.spellDmgOut;
-
-                } else if ( i === 3 ) {
-                    /* --== My thorns dmg ==-- */
-                    
-                    let target = results[ 1 ];
-                    let dmg = NumberUtilities.toShorthandString( results[ 2 ] );
-
-                    model.text = `${dmg}`;
-                    model.attack = 'Thorns';
-                    model.fctType = FctTypes.dmgOut;
-
-                } else if ( i === 4 ) {
-                    /* --== My skill up ==-- */
-                    
-                    let skill = results[ 1 ];
-                    let level = results[ 2 ];
-
-                    model.text = skill;
-                    model.attack = level;
-                    model.fctType = FctTypes.skill;
-
-                } else if ( i === 5 ) {
-                    /* --== Melee damage taken ==-- */
-                    
-                    let attacker = results[ 1 ];
-                    let type = results[ 2 ];
-                    let dmg = NumberUtilities.toShorthandString( results[ 3 ] );
-
-                    model.text = `${dmg}`;
-                    model.attack = type;
-                    model.fctType = FctTypes.dmgIn;
-
-                } else if ( i === 6 ) {
-                    /* --== Me avoiding melee ==-- */
-                    
-                    let attacker = results[ 1 ];
-                    let type = results[ 2 ];
-                    let miss = results[ 3 ];
-
-                    model.attack = type;
-                    model.fctType = FctTypes.dmgIn;
-                    break;
-
-                } else if ( i === 7 ) {
-                    /* --== Me taking spell damage ==-- */
-                    
-                    let attacker = results[ 1 ];
-                    let dmg = NumberUtilities.toShorthandString( results[ 2 ] );
-                    let resist = results[ 3 ];
-                    let spell = results[ 4 ];
-
-                    model.text = `${dmg}`;
-                    model.attack = spell;
-                    model.fctType = FctTypes.spellDmgIn;
-
-                } else if ( i === 8 ) {
-                    /* --== My spell hits ==-- */
-                    
-                    let target = results[ 2 ];
-                    let dmg = NumberUtilities.toShorthandString( results[ 3 ] );
-                    let spell = results[ 5 ];
-
-                    model.text = `${dmg}`;
-                    model.attack = spell;
-                    model.fctType = FctTypes.spellDmgOut;
-
-                } else if ( i === 9 || i === 10 ) {
-
-                    let healer = results.groups?.healer;
-                    let target = results.groups?.target;
-                    let healAmount = results.groups?.healAmount;
-                    let spell = results.groups?.healType;
-
-                    model.text = `${healAmount}`;
-                    model.dealt = i === 10;
-                    model.attack = model.dealt ? spell : healer;
-                    model.fctType = i === 10 ? FctTypes.healingOut : FctTypes.healingIn;
-
+        // Capture quickshares, when enabled.
+        let quickShare = !enableQuickShareImports ? null : quickShareRegx.exec( log );
+        if ( quickShare && quickShare.groups?.quickShareId ) {
+            console.log( 'quickshare deets', quickShare, quickShareAuthorsList, quickShareAuthorsListType );
+            if ( quickShareAuthorsListType === QuickShareAuthorListTypes.Whitelist && quickShare.groups?.author ) {
+                // Whitelist will only share if the author is known and in the
+                // authors list.  Unknown is in terms of captured by the regular 
+                // expression.
+                if ( quickShareAuthorsList.findIndex( f => f.toLowerCase() === quickShare.groups.author.toLowerCase() ) > -1 ) {
+                    ipcRenderer.send( 'quickshare_captured', quickShare.groups.quickShareId );
                 }
 
-                model.critical = raw.match( rgxFctCritical );
-                model.timestamp = timestamp;
-                model.overlayId = model.dealt ? damageDealtOverlayId : damageReceivedOverlayId;
+            } else if ( quickShareAuthorsListType === QuickShareAuthorListTypes.Blacklist ) {
+                // Blacklist will only share if the author is either unknown or the
+                // author is known and not in the list.  Unknown is in terms of 
+                // captured by the regular expression.
+                if ( !quickShare.groups?.author || quickShareAuthorsList.findIndex( f => f.toLowerCase() === quickShare.groups.author.toLowerCase() ) === -1 ) {
+                    ipcRenderer.send( 'quickshare_captured', quickShare.groups.quickShareId );
+                }
 
-                ipcRenderer.send( 'overlay:send:fct-component', model );
+            } else {
+                ipcRenderer.send( 'quickshare_captured', quickShare.groups.quickShareId );
 
-                // leave the loop, we found the correct FCT type.
-                break;
+            }
 
-            } // if ( results && results.length > 1 )
+        }
+    
+        let quickSharePackage = packageShareRegx.exec( log );
+        if ( quickSharePackage && quickSharePackage.groups?.packageId ) {
+            ipcRenderer.send( 'quicksharePackage_captured', quickSharePackage.groups.packageId );
+        }
+    
+        if ( enableFct && raw.match( rgxCombatText )?.length > 0 ) {
+            for ( let i = 0; i < fctRegExs.length; i++ ) {
+                let results = fctRegExs[ i ].exec( log );
+            
+                if ( results && results.length > 1 ) {
+                    let model = new FctModel();
+                    model.dealt = ( i >= 0 && i <= 4 ) || i === 8 ? true : false;
 
-        } // for ( let i = 0; i < fctRegExs.length; i++ )
+                    if ( i === 0 ) {
+                        /* --== My melee damage ==-- */
+                    
+                        let type = results[ 1 ];
+                        let target = results[ 2 ];
+                        let dmg = NumberUtilities.toShorthandString( results[ 3 ] );
+
+                        model.text = `${dmg}`;
+                        model.attack = type;
+                        model.fctType = FctTypes.dmgOut;
+
+                    } else if ( i === 1 ) {
+                        /* --== My melee misses ==-- */
+                    
+                        let dmg = 'miss';
+
+                        model.attack = 'Melee';
+                        model.fctType = FctTypes.dmgOut;
+                        break;
+
+                    } else if ( i === 2 ) {
+                        /* --== My spell hits ==-- */
+                    
+                        let target = results[ 1 ];
+                        let dmg = NumberUtilities.toShorthandString( results[ 2 ] );
+                        let spell = results[ 3 ];
+
+                        model.text = `${dmg}`;
+                        model.attack = spell;
+                        model.fctType = FctTypes.spellDmgOut;
+
+                    } else if ( i === 3 ) {
+                        /* --== My thorns dmg ==-- */
+                    
+                        let target = results[ 1 ];
+                        let dmg = NumberUtilities.toShorthandString( results[ 2 ] );
+
+                        model.text = `${dmg}`;
+                        model.attack = 'Thorns';
+                        model.fctType = FctTypes.dmgOut;
+
+                    } else if ( i === 4 ) {
+                        /* --== My skill up ==-- */
+                    
+                        let skill = results[ 1 ];
+                        let level = results[ 2 ];
+
+                        model.text = skill;
+                        model.attack = level;
+                        model.fctType = FctTypes.skill;
+
+                    } else if ( i === 5 ) {
+                        /* --== Melee damage taken ==-- */
+                    
+                        let attacker = results[ 1 ];
+                        let type = results[ 2 ];
+                        let dmg = NumberUtilities.toShorthandString( results[ 3 ] );
+
+                        model.text = `${dmg}`;
+                        model.attack = type;
+                        model.fctType = FctTypes.dmgIn;
+
+                    } else if ( i === 6 ) {
+                        /* --== Me avoiding melee ==-- */
+                    
+                        let attacker = results[ 1 ];
+                        let type = results[ 2 ];
+                        let miss = results[ 3 ];
+
+                        model.attack = type;
+                        model.fctType = FctTypes.dmgIn;
+                        break;
+
+                    } else if ( i === 7 ) {
+                        /* --== Me taking spell damage ==-- */
+                    
+                        let attacker = results[ 1 ];
+                        let dmg = NumberUtilities.toShorthandString( results[ 2 ] );
+                        let resist = results[ 3 ];
+                        let spell = results[ 4 ];
+
+                        model.text = `${dmg}`;
+                        model.attack = spell;
+                        model.fctType = FctTypes.spellDmgIn;
+
+                    } else if ( i === 8 ) {
+                        /* --== My spell hits ==-- */
+                    
+                        let target = results[ 2 ];
+                        let dmg = NumberUtilities.toShorthandString( results[ 3 ] );
+                        let spell = results[ 5 ];
+
+                        model.text = `${dmg}`;
+                        model.attack = spell;
+                        model.fctType = FctTypes.spellDmgOut;
+
+                    } else if ( i === 9 || i === 10 ) {
+
+                        let healer = results.groups?.healer;
+                        let target = results.groups?.target;
+                        let healAmount = results.groups?.healAmount;
+                        let spell = results.groups?.healType;
+
+                        model.text = `${healAmount}`;
+                        model.dealt = i === 10;
+                        model.attack = model.dealt ? spell : healer;
+                        model.fctType = i === 10 ? FctTypes.healingOut : FctTypes.healingIn;
+
+                    }
+
+                    model.critical = raw.match( rgxFctCritical );
+                    model.timestamp = timestamp;
+                    model.overlayId = model.dealt ? damageDealtOverlayId : damageReceivedOverlayId;
+
+                    ipcRenderer.send( 'overlay:send:fct-component', model );
+
+                    // leave the loop, we found the correct FCT type.
+                    break;
+
+                } // if ( results && results.length > 1 )
+
+            } // for ( let i = 0; i < fctRegExs.length; i++ )
         
-    }
+        }
 
-    // If there are any cancellable actions, evaluate them here.
-    if ( cancellableComponents?.length > 0 ) {
-        let tokenIds = [];
-        cancellableComponents.forEach( token => {
-            if ( token._parse( log ) ) {
-                // Broadcast the remove action.
-                ipcRenderer.send( 'overlay:destroy:component', token.instanceId );
+        // If there are any cancellable actions, evaluate them here.
+        if ( cancellableComponents?.length > 0 ) {
+            let tokenIds = [];
+            cancellableComponents.forEach( token => {
+                if ( token._parse( log ) ) {
+                    // Broadcast the remove action.
+                    ipcRenderer.send( 'overlay:destroy:component', token.instanceId );
 
-                // Mark the item for removal.
-                tokenIds.push( token.instanceId );
+                    // Mark the item for removal.
+                    tokenIds.push( token.instanceId );
+                }
+            } );
+
+            // Remove the cancelled items.
+            _.remove( cancellableComponents, token => tokenIds.indexOf( token.instanceId ) > -1 );
+        }
+
+        if ( counters ) {
+            for ( let key of Object.keys( counters ) ) {
+
+                // Skip counter reset conditions if the counter is at 0.
+                if ( counters[ key ].value > 0 ) {
+
+                    // check how long the value has existed and reset it if that 
+                    // duration is greater than the reset delay specified by the 
+                    // user.
+                    let timeSinceLastUpdate = Math.abs( ( new Date() ) - counters[ key ].lastUpdate ) / 1000;
+                    if ( timeSinceLastUpdate >= counters[ key ].resetDelay ) {
+                        counters[ key ].value = 0;
+                        // If the timer is reset, no need to check the reset 
+                        // phrases.
+                        continue;
+                    }
+
+                    // Parse the current log entry for any reset phrase matches.
+                    if ( counters[ key ]._parse( log ) ) {
+                        counters[ key ].value = 0;
+                    }
+                }
+
+            }
+        }
+
+        let entryMatched = false;
+        triggers.forEach( trigger => {
+            if ( !!trigger.enabled ) {
+                trigger._parse( log, ( res, deltaTime ) => {
+                    trigger.actions.forEach( action => {
+                        // This used to execute actions if there are no phrases on the action, but now it doesn't because the action may exist only as a subaction
+                        // ( action.phrases == null || action.phrases?.length === 0 || action.phrases?.indexOf( res.phraseId ) > -1 )
+                        if ( ( isDev || !action.onlyExecuteInDev ) && action.phrases?.indexOf( res.phraseId ) > -1 ) {
+
+                            enableLogging && sendInformationToLog( `Execute trigger action [${trigger.name}] : ${ActionTypes[ action.actionType ]}`, 24 );
+                            enableLogging && sendInformationToLog( `    ||${raw}||`, 24 );
+
+                            executeTriggerAction( trigger, action, timestamp, res, deltaTime, simulating );
+                        }
+                    } );
+                    entryMatched = true;
+
+                    // If the trigger has a cooldown, start the cooldown now.
+                    if ( trigger.useCooldown ) {
+                        trigger._onCooldown = true;
+                        trigger._cooldownStart = new Date();
+                    }
+
+                } );
             }
         } );
 
-        // Remove the cancelled items.
-        _.remove( cancellableComponents, token => tokenIds.indexOf( token.instanceId ) > -1 );
-    }
-
-    if ( counters ) {
-        for ( let key of Object.keys( counters ) ) {
-
-            // Skip counter reset conditions if the counter is at 0.
-            if ( counters[ key ].value > 0 ) {
-
-                // check how long the value has existed and reset it if that 
-                // duration is greater than the reset delay specified by the 
-                // user.
-                let timeSinceLastUpdate = Math.abs( ( new Date() ) - counters[ key ].lastUpdate ) / 1000;
-                if ( timeSinceLastUpdate >= counters[ key ].resetDelay ) {
-                    counters[ key ].value = 0;
-                    // If the timer is reset, no need to check the reset 
-                    // phrases.
-                    continue;
-                }
-
-                // Parse the current log entry for any reset phrase matches.
-                if ( counters[ key ]._parse( log ) ) {
-                    counters[ key ].value = 0;
-                }
-            }
-
+        if ( entryMatched ) {
+            let t = timestamp.getTime();
+            parsedLogEntries[ t ] = parsedLogEntries[ t ]?.length > 0 ? parsedLogEntries[ t ] : [];
+            parsedLogEntries[ t ].push( log );
         }
-    }
 
-    let entryMatched = false;
-    triggers.forEach( trigger => {
-        if ( !!trigger.enabled ) {
-            trigger._parse( log, (res, deltaTime) => {
-                trigger.actions.forEach( action => {
-                    // This used to execute actions if there are no phrases on the action, but now it doesn't because the action may exist only as a subaction
-                    // ( action.phrases == null || action.phrases?.length === 0 || action.phrases?.indexOf( res.phraseId ) > -1 )
-                    if ( ( isDev || !action.onlyExecuteInDev ) && action.phrases?.indexOf( res.phraseId ) > -1 ) {
-
-                        enableLogging && sendInformationToLog( `Execute trigger action [${trigger.name}] : ${ActionTypes[ action.actionType ]}`, 24 );
-                        enableLogging && sendInformationToLog( `    ||${raw}||`, 24 );
-
-                        executeTriggerAction(trigger, action, timestamp, res, deltaTime, simulating);
-                    }
-                } );
-                entryMatched = true;
-
-                // If the trigger has a cooldown, start the cooldown now.
-                if ( trigger.useCooldown ) {
-                    trigger._onCooldown = true;
-                    trigger._cooldownStart = new Date();
-                }
-
-            } );
-        }
-    } );
-
-    if ( entryMatched ) {
-        let t = timestamp.getTime();
-        parsedLogEntries[ t ] = parsedLogEntries[ t ]?.length > 0 ? parsedLogEntries[ t ] : [];
-        parsedLogEntries[ t ].push( log );
+    } catch ( error ) {
+        logError( error, raw, simulating, padTime );
     }
 
 }
@@ -2366,6 +2402,7 @@ function backfind( log, callback ) {
 
     let _triggers = _.filter( triggers, t => _.some( t.actions, a => a.loopBackForValue === true ) );
 
+    // TODO: Loopback check, wat!?
     /**
      * Returns false if there is a trigger requiring loopback and still missing a value.
      */

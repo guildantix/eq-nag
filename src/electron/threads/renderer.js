@@ -17,6 +17,39 @@ const ElectronUtilities = require( '../utilities/electron' );
 const { StyleProperties } = require( '../data/models/common' );
 const { screen } = require( '@electron/remote' );
 
+/**
+ * Sends the error information to the main thread for logging.
+ * 
+ * @param {any} err The error object.
+ * @param {'fct'|'trigger'|null} renderType The render type is either fct or trigger.
+ * @param {string} overlayId The id of the overlay.
+ * @param {FctModel|OverlayComponent} component True if we're simulating a log file.
+ */
+const logError = ( err, renderType, overlayId, component ) => {
+
+    if ( renderType === 'fct' ) {
+        ipcRenderer.send( 'app:log:exception', {
+            source: 'renderer.js',
+            error: err,
+            overlayId: overlayId,
+            fctModel: component,
+        } );
+
+    } else if ( renderType === 'trigger' ) {
+        ipcRenderer.send( 'app:log:exception', {
+            source: 'renderer.js',
+            error: err,
+            overlayId: overlayId,
+            overlayComponent: component,
+        } );
+
+    } else {
+        ipcRenderer.send( 'app:log:exception', err );
+
+    }
+
+};
+
 window.onerror = ( error, url, line ) => {
     ipcRenderer.send( 'app:log:exception', `$${error}\r\n    at ${url}:${line}` );
 };
@@ -138,7 +171,7 @@ let showCriticalsInline = false;
 
 
 function Renderer( originX, originY, glowOnStart ) {
-    console.log( 'renderer loaded' );
+
     origin.x = originX;
     origin.y = originY;
 
@@ -804,96 +837,105 @@ function updateOverlay( overlayId, model ) {
  * @param {FctModel} comp Tells the renderer to forcefully redraw the overlayComponents.
  */
 function renderFct( overlayId, comp ) {
-    let fctOverlay = overlayInstances[ overlayId ];
-    let contentArea = fctOverlay.dom.querySelector( '.overlay-content-area' );
-    let div = document.createElement( 'div' );
 
-    if ( comp.fctType === FctTypes.dmgOut ) {
-        div.classList.add( 'fct-dmg-out' );
-
-    } else if ( comp.fctType === FctTypes.dmgIn ) {
-        div.classList.add( 'fct-dmg-in' );
-
-    } else if ( comp.fctType === FctTypes.spellDmgOut ) {
-        div.classList.add( 'fct-spell-dmg-out' );
-
-    } else if ( comp.fctType === FctTypes.spellDmgIn ) {
-        div.classList.add( 'fct-spell-dmg-in' );
-
-    } else if ( comp.fctType === FctTypes.healingOut ) {
-        div.classList.add( 'fct-healing-out' );
-
-    } else if ( comp.fctType === FctTypes.healingIn ) {
-        div.classList.add( 'fct-healing-in' );
-
-    } else if ( comp.fctType === FctTypes.skill ) {
-        div.classList.add( 'fct-skill' );
-
-    }
-
-    if ( comp.critical && !showCriticalsInline ) {
-        let content = fctCriticalTemplate( { value: comp.text, damageSource: comp.attack } );
-        div.innerHTML = content;
-
-        div.classList.add( 'animate-fade-shrink' );
-
-        comp.dom = div;
-        comp.delayAmount = NumberUtilities.randomBounded( delayBetweenCrits - ( delayBetweenCrits * delayVariance ), delayBetweenCrits + ( delayBetweenCrits * delayVariance ) + 1 );
+    try {
         
-        window.setTimeout( () => {
-            contentArea.appendChild( div );
-    
-            comp.pos = getRandomLocation( overlayId );
-            overlayInstances[ overlayId ].criticals[ comp.pos.x ][ comp.pos.y ] = true;
+        let fctOverlay = overlayInstances[ overlayId ];
+        let contentArea = fctOverlay.dom.querySelector( '.overlay-content-area' );
+        let div = document.createElement( 'div' );
 
-            try {
-                div.style.left = `${overlayInstances[ overlayId ].quadrants[ comp.pos.x ][ comp.pos.y ].x + ( div.clientWidth / 2 )}px`; // Cannot read property 'x' of undefined
-                div.style.top = `${overlayInstances[ overlayId ].quadrants[ comp.pos.x ][ comp.pos.y ].y - ( div.clientHeight * 1.25 )}px`;
-            } catch ( error ) {
-                logInfo( `criticals: ${JSON.stringify( overlayInstances[ overlayId ].criticals ?? '' )}` );
-                logInfo( `quadrants: ${JSON.stringify( overlayInstances[ overlayId ].quadrants ?? '' )}` );
-            }
+        if ( comp.fctType === FctTypes.dmgOut ) {
+            div.classList.add( 'fct-dmg-out' );
+
+        } else if ( comp.fctType === FctTypes.dmgIn ) {
+            div.classList.add( 'fct-dmg-in' );
+
+        } else if ( comp.fctType === FctTypes.spellDmgOut ) {
+            div.classList.add( 'fct-spell-dmg-out' );
+
+        } else if ( comp.fctType === FctTypes.spellDmgIn ) {
+            div.classList.add( 'fct-spell-dmg-in' );
+
+        } else if ( comp.fctType === FctTypes.healingOut ) {
+            div.classList.add( 'fct-healing-out' );
+
+        } else if ( comp.fctType === FctTypes.healingIn ) {
+            div.classList.add( 'fct-healing-in' );
+
+        } else if ( comp.fctType === FctTypes.skill ) {
+            div.classList.add( 'fct-skill' );
+
+        }
+
+        if ( comp.critical && !showCriticalsInline ) {
+            let content = fctCriticalTemplate( { value: comp.text, damageSource: comp.attack } );
+            div.innerHTML = content;
+
+            div.classList.add( 'animate-fade-shrink' );
+
+            comp.dom = div;
+            comp.delayAmount = NumberUtilities.randomBounded( delayBetweenCrits - ( delayBetweenCrits * delayVariance ), delayBetweenCrits + ( delayBetweenCrits * delayVariance ) + 1 );
+        
+            window.setTimeout( () => {
+                contentArea.appendChild( div );
+    
+                comp.pos = getRandomLocation( overlayId );
+                overlayInstances[ overlayId ].criticals[ comp.pos.x ][ comp.pos.y ] = true;
+
+                try {
+                    div.style.left = `${overlayInstances[ overlayId ].quadrants[ comp.pos.x ][ comp.pos.y ].x + ( div.clientWidth / 2 )}px`; // Cannot read property 'x' of undefined
+                    div.style.top = `${overlayInstances[ overlayId ].quadrants[ comp.pos.x ][ comp.pos.y ].y - ( div.clientHeight * 1.25 )}px`;
+                } catch ( error ) {
+                    logInfo( `criticals: ${JSON.stringify( overlayInstances[ overlayId ].criticals ?? '' )}` );
+                    logInfo( `quadrants: ${JSON.stringify( overlayInstances[ overlayId ].quadrants ?? '' )}` );
+                }
                 
+                comp.intervalId = window.setTimeout( () => {
+                    comp.dom.parentNode.removeChild( comp.dom );
+                    if ( overlayInstances[ overlayId ].criticals.length > comp.pos.x && overlayInstances[ overlayId ].criticals[ comp.pos.x ]?.length > comp.pos.y ) {
+                        overlayInstances[ overlayId ].criticals[ comp.pos.x ][ comp.pos.y ] = false;
+                    }
+                }, 4000 );
+
+                delayAdd -= comp.delayAmount;
+            }, delayAdd );
+
+            delayAdd += comp.delayAmount;
+
+        } else {
+            let damageSourceText = comp.attack;
+
+            if ( comp.critical ) {
+                damageSourceText = `Critical, ${damageSourceText}`;
+            }
+        
+            let content = fctTemplate( { value: comp.text, damageSource: damageSourceText } );
+            div.innerHTML = content;
+
+            div.classList.add( 'animate-fade-out' );
+
+            if ( comp.critical ) {
+                div.classList.add( 'fct-dmg-out-critical' );
+            }
+
+            comp.dom = div;
+
+            if ( comp.fctType === FctTypes.healingOut || comp.fctType === FctTypes.healingIn ) {
+                overlayInstances[ overlayId ].dom.querySelector( '.healing-content-area' ).appendChild( div );
+            } else {
+                contentArea.appendChild( div );
+            }
             comp.intervalId = window.setTimeout( () => {
                 comp.dom.parentNode.removeChild( comp.dom );
-                if ( overlayInstances[ overlayId ].criticals.length > comp.pos.x && overlayInstances[ overlayId ].criticals[ comp.pos.x ]?.length > comp.pos.y ) {
-                    overlayInstances[ overlayId ].criticals[ comp.pos.x ][ comp.pos.y ] = false;
-                }
-            }, 4000 );
+            }, 7000 );
 
-            delayAdd -= comp.delayAmount;
-        }, delayAdd );
-
-        delayAdd += comp.delayAmount;
-
-    } else {
-        let damageSourceText = comp.attack;
-
-        if ( comp.critical ) {
-            damageSourceText = `Critical, ${damageSourceText}`;
-        }
-        
-        let content = fctTemplate( { value: comp.text, damageSource: damageSourceText } );
-        div.innerHTML = content;
-
-        div.classList.add( 'animate-fade-out' );
-
-        if ( comp.critical ) {
-            div.classList.add( 'fct-dmg-out-critical' );
         }
 
-        comp.dom = div;
-
-        if ( comp.fctType === FctTypes.healingOut || comp.fctType === FctTypes.healingIn ) {
-            overlayInstances[ overlayId ].dom.querySelector( '.healing-content-area' ).appendChild( div );
-        } else {
-            contentArea.appendChild( div );
-        }
-        comp.intervalId = window.setTimeout( () => {
-            comp.dom.parentNode.removeChild( comp.dom );
-        }, 7000 );
+    } catch ( error ) {
+        logError( error, 'fct', overlayId, comp );
 
     }
+
 }
 
 
@@ -913,112 +955,120 @@ function renderFct( overlayId, comp ) {
  */
 function render( overlayId, comp ) {
 
-    if ( comp?.action?.actionType === ActionTypes.ScreenGlow ) {
-        // Non overlay components
+    try {
 
         if ( comp?.action?.actionType === ActionTypes.ScreenGlow ) {
-            renderGlow( comp.action.textColor, comp.action.duration * 1000, comp.action.flash );
+            // Non overlay components
 
-        }
-    } else {
+            if ( comp?.action?.actionType === ActionTypes.ScreenGlow ) {
+                renderGlow( comp.action.textColor, comp.action.duration * 1000, comp.action.flash );
 
-        if ( overlayInstances[ overlayId ] == null ) {
-            console.error( 'Could not render to overlay, overlay not found!', comp, overlayId );
-            return;
-        }
-
-        let contentArea = overlayInstances[ overlayId ].dom.querySelector( '.overlay-content-area' );
-        let now = new Date();
-
-        if ( comp?.action?.actionType === ActionTypes.DisplayText ) {
-            comp.removeAt = new Date( now.setSeconds( comp.action.duration ) );
-            let content = displayTextTemplate( { value: StringUtilities.format( comp.action.displayText, comp.matches ) } );
-            let div = document.createElement( 'div' );
-            div.innerHTML = content;
-            div.style.animation = `animate-fadeout ${comp.action.duration * 1.05}s ease`;
-            comp.dom = div;
-
-            // Custom display logic.
-            if ( comp.action.textUseCustomFont ) {
-                div.style.fontFamily = `"${comp.action.textFont}"`;
-
-                if ( comp.action.textWeight ) {
-                    div.style.fontWeight = comp.action.textWeight > 0 ? comp.action.textWeight : 300;
-                }
             }
+        } else {
 
-            if ( comp.action.textUseCustomSize ) {
-                div.style.fontSize = `${comp.action.textSize}px`;
-
-                if ( comp.action.textSpacing ) {
-                    div.style.lineHeight = `${( comp.action.textSpacing > 10 ? comp.action.textSpacing : 90 ) / 100}em`;
-                }
-            }
-            if ( comp.action.textUseCustomColor ) {
-                div.style.color = `${comp.action.textColor}`;
-            }
-            let textShadow = null;
-            if ( comp.action.textUseCustomBorder ) {
-                textShadow = `0px 0px 1px ${comp.action.textBorderColor}, -1px -1px 0 ${comp.action.textBorderColor}, 1px -1px 0 ${comp.action.textBorderColor}, -1px 1px 0 ${comp.action.textBorderColor}, 1px 1px 0 ${comp.action.textBorderColor}`;
-            }
-            if ( comp.action.textUseCustomGlow ) {
-                textShadow = textShadow ? textShadow + ',' : '';
-                textShadow += `0px 0px ${comp.action.textGlowSize}px ${comp.action.textGlowColor}, -1px -1px ${comp.action.textGlowSize}px ${comp.action.textGlowColor}, 1px -1px ${comp.action.textGlowSize}px ${comp.action.textGlowColor}, -1px 1px ${comp.action.textGlowSize}px ${comp.action.textGlowColor}, 1px 1px ${comp.action.textGlowSize}px ${comp.action.textGlowColor}`;
-            }
-            if ( textShadow ) {
-                div.style.textShadow = textShadow;
-            }
-
-            contentArea.appendChild( comp.dom );
-            comp.intervalId = window.setTimeout( () => {
-                comp.dom.parentNode.removeChild( comp.dom );
-                ArrayUtilities.remove( overlayInstances[ overlayId ].overlayComponents, f => f.instanceId == comp.instanceId );
-            }, comp.action.duration * 1000 );
-            overlayInstances[ overlayId ].overlayComponents.push( comp );
-
-        } else if ( comp?.action?.actionType === ActionTypes.Timer
-            || comp?.action?.actionType === ActionTypes.Countdown
-            || comp?.action?.actionType === ActionTypes.DotTimer
-            || comp?.action?.actionType === ActionTypes.BeneficialTimer ) {
-        
-            if ( restartTimerComponent( overlayId, comp ) ) {
+            if ( overlayInstances[ overlayId ] == null ) {
+                console.error( 'Could not render to overlay, overlay not found!', comp, overlayId );
                 return;
             }
+
+            let contentArea = overlayInstances[ overlayId ].dom.querySelector( '.overlay-content-area' );
+            let now = new Date();
+
+            if ( comp?.action?.actionType === ActionTypes.DisplayText ) {
+                comp.removeAt = new Date( now.setSeconds( comp.action.duration ) );
+                let content = displayTextTemplate( { value: StringUtilities.format( comp.action.displayText, comp.matches ) } );
+                let div = document.createElement( 'div' );
+                div.innerHTML = content;
+                div.style.animation = `animate-fadeout ${comp.action.duration * 1.05}s ease`;
+                comp.dom = div;
+
+                // Custom display logic.
+                if ( comp.action.textUseCustomFont ) {
+                    div.style.fontFamily = `"${comp.action.textFont}"`;
+
+                    if ( comp.action.textWeight ) {
+                        div.style.fontWeight = comp.action.textWeight > 0 ? comp.action.textWeight : 300;
+                    }
+                }
+
+                if ( comp.action.textUseCustomSize ) {
+                    div.style.fontSize = `${comp.action.textSize}px`;
+
+                    if ( comp.action.textSpacing ) {
+                        div.style.lineHeight = `${( comp.action.textSpacing > 10 ? comp.action.textSpacing : 90 ) / 100}em`;
+                    }
+                }
+                if ( comp.action.textUseCustomColor ) {
+                    div.style.color = `${comp.action.textColor}`;
+                }
+                let textShadow = null;
+                if ( comp.action.textUseCustomBorder ) {
+                    textShadow = `0px 0px 1px ${comp.action.textBorderColor}, -1px -1px 0 ${comp.action.textBorderColor}, 1px -1px 0 ${comp.action.textBorderColor}, -1px 1px 0 ${comp.action.textBorderColor}, 1px 1px 0 ${comp.action.textBorderColor}`;
+                }
+                if ( comp.action.textUseCustomGlow ) {
+                    textShadow = textShadow ? textShadow + ',' : '';
+                    textShadow += `0px 0px ${comp.action.textGlowSize}px ${comp.action.textGlowColor}, -1px -1px ${comp.action.textGlowSize}px ${comp.action.textGlowColor}, 1px -1px ${comp.action.textGlowSize}px ${comp.action.textGlowColor}, -1px 1px ${comp.action.textGlowSize}px ${comp.action.textGlowColor}, 1px 1px ${comp.action.textGlowSize}px ${comp.action.textGlowColor}`;
+                }
+                if ( textShadow ) {
+                    div.style.textShadow = textShadow;
+                }
+
+                contentArea.appendChild( comp.dom );
+                comp.intervalId = window.setTimeout( () => {
+                    comp.dom.parentNode.removeChild( comp.dom );
+                    ArrayUtilities.remove( overlayInstances[ overlayId ].overlayComponents, f => f.instanceId == comp.instanceId );
+                }, comp.action.duration * 1000 );
+                overlayInstances[ overlayId ].overlayComponents.push( comp );
+
+            } else if ( comp?.action?.actionType === ActionTypes.Timer
+                || comp?.action?.actionType === ActionTypes.Countdown
+                || comp?.action?.actionType === ActionTypes.DotTimer
+                || comp?.action?.actionType === ActionTypes.BeneficialTimer ) {
         
-            if ( overlayInstances[ overlayId ].groupByTarget ) {
-            
-                /** @type {TimerGroup} */
-                let group;
-            
-                if ( comp.action.actionType === ActionTypes.DotTimer || comp.action.actionType === ActionTypes.BeneficialTimer ) {
-                    group = getTimerGroup( overlayId, contentArea, comp.matches.groups.target );
-            
-                    createGroupedDotTimer( overlayId, contentArea, group, comp );
-
-                } else {
-                    group = getTimerGroup( overlayId, contentArea, 'General' );
-                
-                    createGroupedTimer( overlayId, contentArea, group, comp );
-                
+                if ( restartTimerComponent( overlayId, comp ) ) {
+                    return;
                 }
+        
+                if ( overlayInstances[ overlayId ].groupByTarget ) {
             
-                sortGroupComponents( overlayId, group );
-                group.updateVisibility();
+                    /** @type {TimerGroup} */
+                    let group;
             
-            } else {
+                    if ( comp.action.actionType === ActionTypes.DotTimer || comp.action.actionType === ActionTypes.BeneficialTimer ) {
+                        group = getTimerGroup( overlayId, contentArea, comp.matches.groups.target );
+            
+                        createGroupedDotTimer( overlayId, contentArea, group, comp );
 
-                if ( comp.action.actionType === ActionTypes.DotTimer || comp.action.actionType === ActionTypes.BeneficialTimer ) {
-                    createUngroupedDotTimer( overlayId, contentArea, comp );
+                    } else {
+                        group = getTimerGroup( overlayId, contentArea, 'General' );
+                
+                        createGroupedTimer( overlayId, contentArea, group, comp );
+                
+                    }
+            
+                    sortGroupComponents( overlayId, group );
+                    group.updateVisibility();
+            
                 } else {
-                    createUngroupedTimer( overlayId, contentArea, comp );
+
+                    if ( comp.action.actionType === ActionTypes.DotTimer || comp.action.actionType === ActionTypes.BeneficialTimer ) {
+                        createUngroupedDotTimer( overlayId, contentArea, comp );
+                    } else {
+                        createUngroupedTimer( overlayId, contentArea, comp );
+                    }
+            
+                    sortOverlayComponents( overlayId );
+            
                 }
-            
-                sortOverlayComponents( overlayId );
-            
+
             }
-
         }
+        
+    } catch ( error ) {
+        logError( error, 'trigger', overlayId, comp );
+    
     }
+    
 }
 
 
