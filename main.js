@@ -228,7 +228,25 @@ ipcMain.on( `color:darken`, ( e, data ) => {
 } );
 
 ipcMain.on( 'app:log:exception', ( event, data ) => {
-    log.error( data );
+    if ( data?.source === 'log-watcher.js' ) {
+        log.error( data.error,
+            '\r\n						  [error] (log entry)  "' + data.logEntry + '"',
+            '\r\n						  [error] (simulating) ' + ( data.simulating ? 'true' : 'false' ),
+            '\r\n						  [error] (pad time)   ' + data.padTime );
+        
+    } else if ( data?.source === 'renderer.js' && data?.fctModel ) {
+        log.error( data.error,
+            '\r\n						  [error] (fct model)  ' + JSON.stringify(data.fctModel),
+            '\r\n						  [error] (overlay id) ' + data.overlayId );
+        
+    } else if ( data?.source === 'renderer.js' && data?.overlayComponent ) {
+        log.error( data.error,
+            '\r\n						  [error] (overlay component)  ' + JSON.stringify(data.overlayComponent),
+            '\r\n						  [error] (overlay id)         ' + data.overlayId );
+        
+    } else {
+        log.error( data );
+    }
 } );
 
 ipcMain.on( 'app:log:info', ( event, data ) => {
