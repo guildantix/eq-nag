@@ -1188,3 +1188,65 @@ export class Progress {
     public label: string;
 
 }
+
+export class Range {
+    
+    constructor( public start?: number, public end?: number ) {
+        this.start = this.start === null || this.start === undefined ? 0 : this.start;
+        this.end = this.end === null || this.end === undefined ? 0 : this.end;
+    }
+    public inclusive: boolean = true;
+
+    public static toArray(value: Range): number[] {
+        let n: number[] = [];
+
+        for ( let i = value.start ?? 0; i <= value.end ?? 0; i++ ) {
+            n.push( i );
+        }
+
+        return n;
+    }
+}
+
+export class ScheduledTask {
+
+    public label: string;
+
+    public second: undefined | number | number[] | Range;
+    public secondNth: undefined | number;
+
+    public minute: undefined | number | number[] | Range;
+    public minuteNth: undefined | number;
+
+    public hour: undefined | number | number[] | Range;
+    public hourNth: undefined | number;
+
+    public dayOfMonth: undefined | number | number[] | Range;
+    public dayOfMonthNth: undefined | number;
+
+    public month: undefined | number | number[] | Range;
+    public monthNth: undefined | number;
+
+    public dayOfWeek: undefined | number | number[] | Range;
+    public dayOfWeekNth: undefined | number;
+
+}
+
+export enum LogMaintenancePlanTypes {
+    
+    BySize = 0,
+    BySchedule = 1,
+
+}
+
+export class LogMaintenanceRules {
+
+    public enableLogFileMaintenance: boolean = false;
+    public maintenancePlan: LogMaintenancePlanTypes = LogMaintenancePlanTypes.BySize;
+    public includeAllWatched: boolean = true;
+    public includeLogFiles: string[] = [];
+    public excludeLogFiles: string[] = [];
+    public logSchedule: ScheduledTask | null;
+    public maxLogFileSizeMb: number = 50;
+
+}
