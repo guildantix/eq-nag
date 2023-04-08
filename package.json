@@ -1,6 +1,6 @@
 {
   "name": "electron-angular-eq-parse",
-  "version": "0.1.27",
+  "version": "0.1.28",
   "main": "main.js",
   "description": "An EverQuest Notification AGent",
   "author": {
@@ -47,6 +47,7 @@
     "nanoid": "^3.1.10",
     "ng-table-virtual-scroll": "^1.4.1",
     "ngx-markdown": "^14.0.1",
+    "ngx-mat-timepicker": "^14.0.8",
     "reflect-metadata": "^0.1.13",
     "rxjs": "~6.5.5",
     "tga2png": "^0.1.3",
