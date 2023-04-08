@@ -8,25 +8,71 @@
     <fieldset>
         <legend><span class="title">Log File Maintenance</span></legend>
         <div class="card-property">
-            <div class="content-middle">
-                <mat-checkbox [(ngModel)]="enableLogFileMaintenance" (change)="updateSetting(settingsKeys.enableLogFileMaintenance, enableLogFileMaintenance)">Enable Log File Maintenance.</mat-checkbox>
+            <div class="content-middle content-top">
+                <mat-checkbox [(ngModel)]="logMaintenanceRules.enableLogFileMaintenance" (change)="updateSetting(settingsKeys.logMaintenanceRules, logMaintenanceRules)">Enable Log File Maintenance.</mat-checkbox>
             </div>
-            <div class="content-right">
-                <mat-form-field style="width: 100%;">
-                    <mat-label></mat-label>
-                    <mat-select [(ngModel)]="maxLogFileSizeMb" name="maxLogFileSizeMb" [disabled]="!enableLogFileMaintenance" (selectionChange)="updateSetting(settingsKeys.maxLogFileSizeMb, maxLogFileSizeMb)">
-                        <mat-option [value]="20">20 MB</mat-option>
-                        <mat-option [value]="50">50 MB</mat-option>
-                        <mat-option [value]="100">100 MB</mat-option>
-                        <mat-option [value]="500">500 MB</mat-option>
-                        <mat-option [value]="1000">1 GB (Why!?)</mat-option>
-                    </mat-select>
-                    <mat-hint>Select the file size required before the log file will be archived.</mat-hint>
-                </mat-form-field>
+            <div class="content-left" style="min-width: 560px;">
+                <p>How would you like to execute log file archiving?</p>
+                <mat-radio-group [(ngModel)]="logMaintenanceRules.maintenancePlan">
+                    <mat-radio-button [value]="logMaintenancePlanTypes.BySize">When a log file reaches a certain size.</mat-radio-button>
+                    <mat-radio-button [value]="logMaintenancePlanTypes.BySchedule">On a schedule.</mat-radio-button>
+                </mat-radio-group>
+                <div *ngIf="logMaintenanceRules.maintenancePlan === logMaintenancePlanTypes.BySize">
+                    <mat-form-field style="width: 100%;">
+                        <mat-label></mat-label>
+                        <mat-select [(ngModel)]="logMaintenanceRules.maxLogFileSizeMb" name="maxLogFileSizeMb" [disabled]="!logMaintenanceRules.enableLogFileMaintenance" (selectionChange)="updateSetting(settingsKeys.logMaintenanceRules, logMaintenanceRules)">
+                            <mat-option [value]="20">20 MB</mat-option>
+                            <mat-option [value]="50">50 MB</mat-option>
+                            <mat-option [value]="100">100 MB</mat-option>
+                            <mat-option [value]="500">500 MB</mat-option>
+                            <mat-option [value]="1000">1 GB (Why!?)</mat-option>
+                        </mat-select>
+                        <mat-hint>Select the file size required before the log file will be archived.</mat-hint>
+                    </mat-form-field>
+                </div>
+                <div *ngIf="logMaintenanceRules.maintenancePlan === logMaintenancePlanTypes.BySchedule">
+
+                    <mat-button-toggle-group name="daysOfWeek" aria-label="Days of the week to perform log maintenance" multiple class="daysOfWeekToggleGroup" (change)="saveLogMaintenance()" [(ngModel)]="logDays">
+                        <mat-button-toggle [value]="0">Sun</mat-button-toggle>
+                        <mat-button-toggle [value]="1">Mon</mat-button-toggle>
+                        <mat-button-toggle [value]="2">Tue</mat-button-toggle>
+                        <mat-button-toggle [value]="3">Wed</mat-button-toggle>
+                        <mat-button-toggle [value]="4">Thu</mat-button-toggle>
+                        <mat-button-toggle [value]="5">Fri</mat-button-toggle>
+                        <mat-button-toggle [value]="6">Sat</mat-button-toggle>
+                    </mat-button-toggle-group>
+                      
+                    <ng-template #timePickerCancel>
+                        <button mat-button color="default">Cancel</button>
+                    </ng-template>
+                    <ng-template #timePickerConfirm>
+                        <button mat-flat-button color="accent">OK</button>
+                    </ng-template>
+                    <mat-form-field class="archiveTimeOfDay">
+                        <mat-label></mat-label>
+                        <input matInput [ngxMatTimepicker]="picker" [(ngModel)]="logTime" (ngModelChange)="saveLogMaintenance()">
+                        <button mat-icon-button matSuffix >
+                            <mat-icon matSuffix
+                            (click)="picker.open()">
+                                watch_later
+                            </mat-icon>
+                        </button>
+                        <mat-hint>Archive time of day</mat-hint>
+                        <ngx-mat-timepicker #picker [cancelBtnTmpl]="timePickerCancel" [confirmBtnTmpl]="timePickerConfirm" [format]="12"></ngx-mat-timepicker>
+                    </mat-form-field>
+                    
+                </div>
             </div>
 
             <!-- TODO: Add more logging options. 1. Backup when Nag closes/daily.  Keep a backup file for each log day.  Would be nice to allow the user to search backedup log files for zones/raids. -->
 
+        </div>
+        <div class="card-property">
+            <div class="content-right">
+
+
+
+            </div>
         </div>
     </fieldset>
 

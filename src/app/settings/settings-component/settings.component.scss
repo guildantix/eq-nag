@@ -32,3 +32,17 @@ h2 {
         font-weight: 300;
     }
 }
+
+.daysOfWeekToggleGroup {
+    margin-top: 7px;
+    
+    > mat-button-toggle { 
+        width: 57px;
+    }
+}
+
+.archiveTimeOfDay {
+    width: 125px; 
+    margin-left: 15px;
+    float: right;
+}
