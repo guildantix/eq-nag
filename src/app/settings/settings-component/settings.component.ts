@@ -3,7 +3,7 @@ import { DialogService } from 'src/app/dialogs/dialog.service';
 import { IpcService } from 'src/app/ipc.service';
 import { MatTable } from '@angular/material/table';
 import { customAlphabet } from 'nanoid';
-import { ActionTypes, AuthorModel, CapturePhrase, DeathRecapPreferences, OverlayWindowModel, QuickShareAuthorListTypes, TriggerAction, TriggerModel } from 'src/app/core.model';
+import { ActionTypes, AuthorModel, CapturePhrase, DeathRecapPreferences, LogMaintenanceRules, LogMaintenancePlanTypes, OverlayWindowModel, QuickShareAuthorListTypes, TriggerAction, TriggerModel, ScheduledTask, Range } from 'src/app/core.model';
 import { SettingsService } from '../settings-http.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { SetupService } from 'src/app/setup/setup.service';
@@ -12,12 +12,11 @@ const nanoid = customAlphabet( alphabet, 16 );
 import * as _ from 'lodash-es';
 import { CharactersListComponent } from 'src/app/characters-list/characters-list.component';
 import { nagId } from 'src/app/core/nag-id.util';
+import { DateUtilities } from 'src/app/utilities/date.utilities';
 
 enum SettingsKeys {
     
-    enableLogFileMaintenance = 'enableLogFileMaintenance',
-    maxLogFileSizeMb = 'maxLogFileSizeMb',
-    logMaintenanceDelaySeconds = 'logMaintenanceDelaySeconds',
+    logMaintenanceRules = 'logMaintenanceRules',
 
 };
 
@@ -54,8 +53,10 @@ export class SettingsComponent implements OnInit {
     public quickShareAuthorListType: QuickShareAuthorListTypes;
     public quickShareAuthorList: string = '';
     public settingsKeys: typeof SettingsKeys = SettingsKeys;
-    public enableLogFileMaintenance: boolean = true;
-    public maxLogFileSizeMb: number = null;
+    public logMaintenancePlanTypes: typeof LogMaintenancePlanTypes = LogMaintenancePlanTypes; 
+    public logMaintenanceRules: LogMaintenanceRules = new LogMaintenanceRules();
+    public logTime: string|null;
+    public logDays: number[] = [];
 
     public get timerOverlays(): OverlayWindowModel[] {
         return this.overlays?.filter( m => m.overlayType === 'Timer' );
@@ -109,6 +110,7 @@ export class SettingsComponent implements OnInit {
      * Loads the settings data.
      */
     public loadSettings() {
+        
         this.ipcService.getPhoneticTransforms().subscribe( transforms => {
             this.phoneticTransforms = [];
             if ( transforms ) {
@@ -137,9 +139,52 @@ export class SettingsComponent implements OnInit {
         this.ipcService.getQuickShareAuthorsList().subscribe( f => {
             this.quickShareAuthorList = f == null ? '' : f.join( '\r\n' );
         } );
-        this.ipcService.getSetting<number>( SettingsKeys.maxLogFileSizeMb ).subscribe( f => this.maxLogFileSizeMb = f );
-        this.ipcService.getSetting<boolean>( SettingsKeys.enableLogFileMaintenance ).subscribe( f => this.enableLogFileMaintenance = f );
 
+        this.ipcService.getSetting<LogMaintenanceRules>( SettingsKeys.logMaintenanceRules ).subscribe( f => {
+
+            this.logMaintenanceRules = f;
+            this.logTime = `${f.logSchedule?.hour ?? 0}:${f.logSchedule?.minute ?? 0}`;
+
+            if ( f.logSchedule?.dayOfWeek instanceof Array ) {
+                this.logDays = f.logSchedule.dayOfWeek;
+            } else if ( f.logSchedule?.dayOfWeek.hasOwnProperty( 'start' ) && f.logSchedule.dayOfWeek.hasOwnProperty( 'end' ) ) {
+                this.logDays = Range.toArray( f.logSchedule.dayOfWeek as Range );
+            } else if ( f.logSchedule?.dayOfWeek > 0 ) {
+                this.logDays.push( +f.logSchedule.dayOfWeek );
+            }
+
+        } );
+
+    }
+
+    public saveLogMaintenance(): void {
+
+        if ( this.logMaintenanceRules.maintenancePlan === LogMaintenancePlanTypes.BySize ) {
+
+            if ( !this.logMaintenanceRules.maxLogFileSizeMb || +this.logMaintenanceRules.maxLogFileSizeMb < 1 ) {
+                this.logMaintenanceRules.maxLogFileSizeMb = 50;
+            }
+
+        } else if ( this.logMaintenanceRules.maintenancePlan === LogMaintenancePlanTypes.BySchedule ) {
+            
+            if ( !this.logTime && this.logDays.length > 0 ) {
+                // If the user selects a day without selecting a time, default time is midnight.
+                this.logTime = '12:00 AM';
+            }
+
+            if ( this.logTime ) {
+                let logMaintenanceTime = DateUtilities.parseTimeString( this.logTime );
+                this.logMaintenanceRules.logSchedule = new ScheduledTask();
+                this.logMaintenanceRules.logSchedule.second = logMaintenanceTime.seconds;
+                this.logMaintenanceRules.logSchedule.minute = logMaintenanceTime.minute;
+                this.logMaintenanceRules.logSchedule.hour = logMaintenanceTime.hour;
+                this.logMaintenanceRules.logSchedule.dayOfWeek = this.logDays;
+            }
+
+        }
+        
+        console.log( 'saving', this.logMaintenanceRules );
+        this.updateSetting( this.settingsKeys.logMaintenanceRules, this.logMaintenanceRules );
     }
 
 
