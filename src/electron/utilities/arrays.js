@@ -98,10 +98,33 @@ function _enumerateDictionary(dictionary, fn) {
 
 
 
-let ArrayUtilities = {
+/**
+ * Returns the content size of the given list of strings.
+ * 
+ * @param {string[]} value The array of strings.
+ */
+function _getSize( value ) {
+    let n = 0;
+    value?.forEach( line => {
+        n += line?.length ?? 0;
+    } );
+    return n;
+}
+
+
+
+
+
+
+
+
+
+
+const ArrayUtilities = {
     remove: remove,
     findIndex: findIndex,
     enumerateDictionary: _enumerateDictionary,
+    getSize: _getSize,
 };
 
 module.exports = ArrayUtilities;
