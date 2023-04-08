@@ -1,0 +1,52 @@
+
+export class TimeModel {
+
+    constructor(
+        public hour: number,
+        public minute: number,
+        public seconds: number = 0,
+        public milliseconds: number = 0,
+        private meridiem: 'AM' | 'PM' | null = null, ) {
+        
+        this.seconds = this.seconds > 0 ? 0 : 0;
+        this.milliseconds = this.milliseconds > 0 ? 0 : 0;
+        this.hour = this.meridiem == null || this.meridiem === 'AM' ? hour : hour + 12;
+
+        //            ___
+        //          .';:;'.
+        //         /_' _' /\   __
+        //         ;a/ e= J/-'"  '.
+        //         \ ~_   (  -'  ( ;_ ,.
+        //          L~"'_.    -.  \ ./  )
+        //          ,'-' '-._  _;  )'   (
+        //        .' .'   _.'")  \  \(  |
+        //       /  (  .-'   __\{`', \  |
+        //      / .'  /  _.-'   "  ; /  |
+        //     / /    '-._'-,     / / \ (
+        //  __/ (_    ,;' .-'    / /  /_'-._
+        // `"-'` ~`  ccc.'   __.','     \j\L\
+        //                  .='/|\7      
+        delete this.meridiem;
+
+    }
+
+}
+
+export class DateUtilities {
+
+    public static parseTimeString( value: string, format: 12 | 24 = 12 ): TimeModel|null {
+        
+        format = format === 24 ? 24 : 12;
+
+        if ( format === 12 && value ) {
+            let parts = /^(?<hour>\d+):(?<minute>\d+)(?::(?<second>\d+))?\s(?<period>AM|PM)/gi.exec( value );
+            return new TimeModel( +parts.groups.hour, +parts.groups.minute, +( parts.groups.second ?? 0 ), 0, <'AM'|'PM'>parts.groups.period );
+        } else if ( format === 24 && value ) {
+            let parts = /^(?<hour>\d+):(?<minute>\d+)(?::(?<second>\d+))?/gi.exec( value );
+            return new TimeModel( +parts.groups.hour, +parts.groups.minute, +( parts.groups.second ?? 0 ), 0, null );
+        } else {
+            return null;
+        }
+    }
+    
+}
