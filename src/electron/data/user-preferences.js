@@ -5,7 +5,7 @@ const path = require( 'path' );
 const fs = require( 'fs' );
 const { AuthorModel } = require( './models/sharing-service' );
 const { FctStylesModel } = require( './models/fct' );
-const { StyleProperties } = require( './models/common' );
+const { StyleProperties, LogMaintenanceRules } = require( './models/common' );
 const archiver = require( 'archiver' );
 const LogBootstrapper = require( "../log-bootstrap" );
 const { DeathRecapPreferences } = require( '../data/models/death-recap' );
@@ -73,6 +73,7 @@ class UserPreferencesStore extends Store {
      * deathRecap: DeathRecapPreferences,
      * minimizeToTrayOnLoad: boolean,
      * lastViewedUpdateNotes: string,
+     * logMaintenanceRules: LogMaintenanceRules,
      * }}
      */
     #data;
@@ -378,6 +379,17 @@ class UserPreferencesStore extends Store {
         this.#data.logMaintenanceDelaySeconds = val >= 0 ? val : defaultLogMaintenanceDelaySeconds;
         this.storeDataFile( this.#data );
     }
+
+    /** @type {LogMaintenanceRules} The log maintenance rules. */
+    get logMaintenanceRules() {
+        return this.#data.logMaintenanceRules ? this.#data.logMaintenanceRules : new LogMaintenanceRules();
+    }
+    set logMaintenanceRules( val ) {
+        this.#data.logMaintenanceRules = val;
+        this.storeDataFile( this.#data );
+    }
+
+    // We need to keep the schedule definition, when the schedule started, and a history of executed backup dates.  
 
     /** @type {(fctStyles: FctStylesModel) => void[]} */
     onFctStyleChanges = [];
