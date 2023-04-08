@@ -24,6 +24,7 @@ import { SetupWizardComponent } from './setup/setup-wizard/setup-wizard.componen
 import { SetupService } from './setup/setup.service';
 import { EditorsModule } from './editors/editors.module';
 import { OverlaysComponent } from './overlays/overlays.component';
+import { NgxMatTimepickerModule } from 'ngx-mat-timepicker';
 
 @NgModule( {
     imports: [
@@ -39,6 +40,7 @@ import { OverlaysComponent } from './overlays/overlays.component';
         WindowsModule,
         // SetupModule,
         EditorsModule,
+        NgxMatTimepickerModule,
     ],
     declarations: [
         AppComponent,
