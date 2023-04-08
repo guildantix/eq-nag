@@ -10,7 +10,15 @@ export class TimeModel {
         
         this.seconds = this.seconds > 0 ? 0 : 0;
         this.milliseconds = this.milliseconds > 0 ? 0 : 0;
-        this.hour = this.meridiem == null || this.meridiem === 'AM' ? hour : hour + 12;
+        if ( this.meridiem == null ) {
+            this.hour = hour;
+        } else {
+            if ( this.hour === 12 ) {
+                this.hour = this.meridiem === 'AM' ? 0 : 12;
+            } else {
+                this.hour = this.meridiem === 'AM' ? this.hour : this.hour + 12;
+            }
+        }
 
         //            ___
         //          .';:;'.
