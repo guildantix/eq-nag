@@ -60,11 +60,14 @@ function pathGetFilename( filePath ) {
  * @param {string} filePath The full or filename of the file.
  */
 function pathAppendFilename( filePath, suffix ) {
+
+    // Matches the full path, ex: C:\EverQuest\Logs\filename.ext
     const matches = /^.*\\(.+\\)*(.+)\.(.+)$/.exec( filePath );
     if ( matches ) {
         return filePath.replace( matches[ 2 ], matches[ 2 ] + suffix );
     }
     
+    // Matches the filename only, ex: filename.ext
     const exactFilename = /^(.+)\.(.+)$/.exec( filePath );
     if ( exactFilename ) {
         return filePath.replace( exactFilename[ 1 ], exactFilename[ 1 ] + suffix );
