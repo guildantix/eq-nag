@@ -1,3 +1,5 @@
+const StringUtilities = require( '../../utilities/string' );
+
 const customAlphabet = require( 'nanoid' ).customAlphabet;
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const nanoid = customAlphabet( alphabet, 16 );
@@ -113,4 +115,151 @@ class Progress {
 
 }
 
-module.exports = { StyleProperties, BasicError, ErrorCodes, IpcMessage, PlayerCharacter, PlayerPet, QuickShareAuthorListTypes, Progress };
+class Range {
+    
+    /** @type {number} */
+    start;
+    /** @type {number} */
+    end;
+    /** @type {boolean} */
+    inclusive = true;
+
+}
+
+/**
+ *  https://github.com/harrisiirak/cron-parser
+ * 
+ *      *    *    *    *    *    *
+ *      ┬    ┬    ┬    ┬    ┬    ┬
+ *      │    │    │    │    │    |
+ *      │    │    │    │    │    └ day of week (0 - 7, 1L - 7L) (0 or 7 is Sun)
+ *      │    │    │    │    └───── month (1 - 12)
+ *      │    │    │    └────────── day of month (1 - 31, L)
+ *      │    │    └─────────────── hour (0 - 23)
+ *      │    └──────────────────── minute (0 - 59)
+ *      └───────────────────────── second (0 - 59, optional)
+ */
+class ScheduledTask {
+
+    /** @type {string} */
+    label;
+
+    /** @type {undefined | number | number[] | Range} */
+    second;
+    /** @type {undefined | number} */
+    secondNth;
+
+    /** @type {undefined | number | number[] | Range} */
+    minute;
+    /** @type {undefined | number} */
+    minuteNth;
+
+    /** @type {undefined | number | number[] | Range} */
+    hour;
+    /** @type {undefined | number} */
+    hourNth;
+
+    /** @type {undefined | number | number[] | Range} */
+    dayOfMonth;
+    /** @type {undefined | number} */
+    dayOfMonthNth;
+
+    /** @type {undefined | number | number[] | Range} */
+    month;
+    /** @type {undefined | number} */
+    monthNth;
+
+    /** @type {undefined | number | number[] | Range} */
+    dayOfWeek;
+    /** @type {undefined | number} */
+    dayOfWeekNth;
+
+    /**
+     * Converts this scheduled task into a cron-like schedule.
+     * @returns {string}
+     */
+    toCronSchedule() {
+        let s = this.#getCronComponent(this.second, this.secondNth, '');
+        let m = this.#getCronComponent(this.minute, this.minuteNth, '*');
+        let h = this.#getCronComponent(this.hour, this.hourNth, '*');
+        let dM = this.#getCronComponent(this.dayOfMonth, this.dayOfMonthNth, '*');
+        let M = this.#getCronComponent(this.month, this.monthNth, '*');
+        let dw = this.#getCronComponent(this.dayOfWeek, this.dayOfWeekNth, '*');
+
+        return `${s} ${m} ${h} ${dM} ${M} ${dw}`.trim();
+    }
+    
+    /**
+     * Returns the cron schedule component for the given scheduled task component.
+     * 
+     * @param {undefined | number | number[] | Range} component The scheduled task component.
+     * @param {undefined | number} nth The nth value of the component.
+     * @param {string} emptyValue The empty value to use if component is empty or whitespace.
+     * @returns {string}
+     */
+    #getCronComponent( component, nth, emptyValue ) {
+
+        if ( !StringUtilities.isNullOrWhitespace( component ) ) {
+            let cronComp = '';
+
+            if ( component instanceof Array ) {
+                cronComp += component.join( ',' );
+            } else if ( component instanceof Range ) {
+                cronComp += ``;
+            } else if ( component > 0 ) {
+                cronComp += '' + component;
+            }
+
+            if ( nth > 0 ) {
+                cronComp += `/${nth}`;
+            }
+
+            return cronComp.length > 0 ? cronComp : emptyValue;
+        } else {
+            return emptyValue;
+        }
+
+    }
+
+}
+
+const LogMaintenancePlanTypes = {
+    '0': 'BySize',
+    '1': 'BySchedule',
+    BySize: 0,
+    BySchedule: 1,
+}
+
+class LogMaintenanceRules {
+
+    /** @type {boolean} */
+    enableLogFileMaintenance = false;
+    /** @type {LogMaintenancePlanTypes} */
+    maintenancePlan = LogMaintenancePlanTypes.BySize;
+    /** @type {boolean} */
+    includeAllWatched = true;
+    /** @type {string[]} */
+    includeLogFiles = [];
+    /** @type {string[]} */
+    excludeLogFiles = [];
+    /** @type {ScheduledTask | null} */
+    logSchedule;
+    /** @type {number} */
+    maxLogFileSizeMb = 50;
+
+}
+
+module.exports = {
+    StyleProperties,
+    BasicError,
+    ErrorCodes,
+    IpcMessage,
+    PlayerCharacter,
+    PlayerPet,
+    QuickShareAuthorListTypes,
+    Progress,
+    Range,
+    ScheduledTask,
+    LogMaintenancePlanTypes, 
+    LogMaintenanceRules, 
+};
