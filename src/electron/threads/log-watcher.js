@@ -182,6 +182,8 @@ function startParsingLogFile( logPath, startLogPosition ) {
                 // just start at the end of the file.
                 if ( thisChunkSize > chunkSize ) {
                     currentPosition = stats.size;
+                } else if ( currentPosition > stats.size ) {
+                    currentPosition = stats.size;
                 }
 
                 fs.read( file, Buffer.alloc( stats.size - currentPosition ), 0, stats.size - currentPosition, currentPosition, ( err, bytecount, buff ) => {
