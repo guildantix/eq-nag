@@ -645,3 +645,18 @@ p.notice {
         }
     }
 }
+
+mat-button-toggle-group {
+    border-color: #ffffff17 !important;
+
+    mat-button-toggle {
+        border-color: #00000038 !important;
+    
+        &.mat-button-toggle-checked {
+            button {
+                color: #69f0ae;
+                text-shadow: 0 0 10px #69f0ae29, 0 0 20px #69f0ae29, 0 0 30px #69f0ae29, 0 0 40px #69f0ae29, 0 0 50px #69f0ae29, 0 0 60px #69f0ae29, 0 0 70px #69f0ae29;
+            }
+        }
+    }
+}
