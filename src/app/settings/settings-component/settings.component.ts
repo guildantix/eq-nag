@@ -183,8 +183,7 @@ export class SettingsComponent implements OnInit {
 
         }
         
-        console.log( 'saving', this.logMaintenanceRules );
-        this.updateSetting( this.settingsKeys.logMaintenanceRules, this.logMaintenanceRules );
+        this.updateSetting( this.settingsKeys.logMaintenanceRules, this.logMaintenanceRules, 5 * 1000 );
     }
 
 
@@ -201,9 +200,10 @@ export class SettingsComponent implements OnInit {
      * 
      * @param key The setting key.
      * @param value The setting value.
+     * @param delay Wait the given milliseconds before submitting changes.  If another change for the same key comes, the timeout is restarted.
      */
-    public updateSetting<T>( key: SettingsKeys, value: T ) {
-        this.ipcService.updateSetting( key, value );
+    public updateSetting<T>( key: SettingsKeys, value: T, delay: number = null ) {
+        this.ipcService.updateSetting( key, value, delay );
     }
 
 
