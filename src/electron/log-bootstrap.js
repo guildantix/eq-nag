@@ -8,8 +8,32 @@ const UserPreferencesStore = require( "./data/user-preferences" );
 const FsUtilities = require( "./utilities/file-system" );
 const log = require( 'electron-log' );
 const ForwardRef = require( './forward-ref' );
+const { LogMaintenancePlanTypes, LogMaintenanceRules, ArchiveFilePrefix } = require( "./data/models/common" );
 
-/** @type {any} Dictionary of log watcher windows. */
+class LogWatcherMeta {
+    /** @type {BrowserWindow|null} */
+    window;
+
+    /** @type {string} */
+    logFile;
+
+    /** @type {number} */
+    logSize;
+
+    /** @type {number} */
+    nullAttemptCount;
+
+    /** @type {CharacterModel} */
+    model;
+
+    /** @type {() => void} */
+    interrupt;
+
+    /** @type {() => void} */
+    start;
+}
+
+/** @type {Record<string, LogWatcherMeta>} Dictionary of log watcher windows. */
 var logWatchers = {};
 
 /** @type {number} The duration to wait between checking for activity on a log file. */
@@ -230,7 +254,7 @@ class LogBootstrapper {
 
         if ( this.#logBackupWindow == null ) {
 
-            this.#logBackupWindow = startLogBackup( this.#filesForArchive.map( f => f.logFile ), this.#userPreferences.everquestInstallFolder, this.#isDev );
+            this.#logBackupWindow = startLogBackup( this.#filesForArchive.map( f => f.logFile ), this.#userPreferences.everquestInstallFolder, this.#isDev, null, 0 );
 
             // Reset the archive files.
             this.#filesForArchive = [];
@@ -245,6 +269,87 @@ class LogBootstrapper {
             
         }
 
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Starts the backup process for all tracked log files.
+     * @param {LogMaintenanceRules} logMaintenanceRules The log maintenance rules.
+     * @param {number} backupIndex The index of this backup event in the history.
+     */
+    backupLogFiles( logMaintenanceRules, backupIndex ) {
+
+        let p = new Promise( async ( resolve, reject ) => {
+            
+            try {
+                
+                /** @type {string[]} */
+                let logFiles = [];
+                
+                // Stop all running watchers and add to the archive queue
+                for ( let characterId in logWatchers ) {
+                    if ( logWatchers.hasOwnProperty( characterId ) ) {
+                        logWatchers[ characterId ].interrupt();
+                
+                        // Lets only operate on existing files. This operation is
+                        // executed outside the check loop, we need to ensure that the 
+                        // file actually exists.
+                        if ( await FsUtilities.existsAsync( logWatchers[ characterId ].logFile ) ) {
+                    
+                            // First, let's rename the log file with the archive prefix.
+                            const logFilePath = FsUtilities.Path.prependFilename( logWatchers[ characterId ].logFile, ArchiveFilePrefix );
+                            await fsp.rename( logWatchers[ characterId ].logFile, logFilePath );
+                
+                            // Next, let's reset the current log file size.
+                            log.info( `LogBootstrap > Log file renamed to: ${logFilePath}` );
+                            logWatchers[ characterId ].logSize = 0;
+
+                            // Finally, add it to the list of files to archive.
+                            logFiles.push( logFilePath );
+                    
+                        }
+                    }
+                }
+
+                this.#logBackupWindow = startLogBackup( logFiles, this.#userPreferences.everquestInstallFolder, this.#isDev, logMaintenanceRules.logSchedule.dayOfWeek, backupIndex ?? 0 );
+
+                // Reset the archive files.
+                this.#filesForArchive = [];
+        
+                this.#logBackupWindow.on( 'closed', () => {
+                    this.#logBackupWindow = null;
+                    resolve();
+                } );
+        
+                // Once the files have been renamed and the backup process has started,
+                // let's restart the watchers.
+                for ( let characterId in logWatchers ) {
+                    if ( logWatchers.hasOwnProperty( characterId ) ) {
+                        logWatchers[ characterId ].start();
+                    }
+                }
+                
+            } catch ( error ) {
+                
+                if ( this.#logBackupWindow ) {
+                    this.#logBackupWindow.close();
+                    this.#logBackupWindow = null;
+                }
+
+                reject( error );
+            }
+
+        } );
+
+        return p;
     }
 
 
@@ -275,6 +380,12 @@ class LogBootstrapper {
             logSize: startingStats == null ? 0 : startingStats.size,
             nullAttemptCount: 0,
             model: chr,
+            interrupt: () => {
+                clearInterval( logWatchers[ characterId ].intervalId );
+            },
+            start: () => {
+                waitForLogFile().then( () => { } );
+            }
         };
 
         const waitForLogFile = async () => {
@@ -329,6 +440,9 @@ class LogBootstrapper {
 
             }
 
+            let enableLogFileMaintenance = this.#userPreferences.logMaintenanceRules?.enableLogFileMaintenance === true;
+            let enableLogFileMaintenanceBySize = enableLogFileMaintenance && this.#userPreferences.logMaintenanceRules.maintenancePlan === LogMaintenancePlanTypes.BySize && +( this.#userPreferences.logMaintenanceRules?.maxLogFileSizeMb ?? 0 ) > 0;
+
             if ( _stats != null && _stats.size !== logWatchers[ characterId ].logSize ) {
 
                 // Reset the null attempt count.
@@ -344,7 +458,7 @@ class LogBootstrapper {
 
                 }
                 
-            } else if ( _stats != null && this.#userPreferences.enableLogFileMaintenance && this.#userPreferences.everquestInstallFolder?.length > 0 && _stats.size / ( 1024 * 1024 ) > this.#userPreferences.maxLogFileSizeMb ) {
+            } else if ( enableLogFileMaintenanceBySize && _stats != null && this.#userPreferences.everquestInstallFolder?.length > 0 && _stats.size / ( 1024 * 1024 ) > this.#userPreferences.logMaintenanceRules?.maxLogFileSizeMb ) {
                 
                 // Clear the watch interval.
                 clearInterval( logWatchers[ characterId ].intervalId );
@@ -519,8 +633,10 @@ function startLogWatcherWindow( logFile, isDev, sendTick, character, logPosition
  * @param {string[]} logFiles 
  * @param {string} everquestInstallFolder
  * @param {boolean} isDev
+ * @param {number[]|null} daysOfWeek
+ * @param {number} backupIndex
  */
-function startLogBackup( logFiles, everquestInstallFolder, isDev ) {
+function startLogBackup( logFiles, everquestInstallFolder, isDev, daysOfWeek, backupIndex ) {
     
     let logBackupWindow = new BrowserWindow( {
         show: isDev === true,
@@ -531,7 +647,7 @@ function startLogBackup( logFiles, everquestInstallFolder, isDev ) {
     if ( isDev ) {
         logBackupWindow.webContents.openDevTools( { mode: 'undocked' } );
     }
-    logBackupWindow.loadURL( `file://${__dirname}/threads/log-backup.html?logFiles=${encodeURI(JSON.stringify(logFiles))}&eqFolder=${encodeURI(everquestInstallFolder)}` );
+    logBackupWindow.loadURL( `file://${__dirname}/threads/log-backup.html?logFiles=${encodeURI(JSON.stringify(logFiles))}&eqFolder=${encodeURI(everquestInstallFolder)}&daysOfWeek=${encodeURI(JSON.stringify(daysOfWeek ?? []))}&i=${backupIndex}` );
 
     return logBackupWindow;
 }
