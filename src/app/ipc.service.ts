@@ -30,6 +30,8 @@ export class IpcService {
 
     private _ginaConfigCache: GinaConfiguration = null;
 
+    private _timeoutIds: Record<string, number> = {};
+
     constructor( private ngZone: NgZone ) {
         if ( window.api ) {
             try {
@@ -423,8 +425,32 @@ export class IpcService {
         window.api.ipc.send( 'voice:select', index );
     }
 
-    public updateSetting<T>( key: string, value: T ): void {
-        window.api.ipc.send( 'settings:set', { key: key, value: value } );
+    /**
+     * Generic setting update function.
+     * 
+     * @param key The setting key.
+     * @param value The setting value.
+     * @param delay Wait the given milliseconds before sending changes.  If another change for the same key comes, the timeout is restarted.
+     */
+    public updateSetting<T>( key: string, value: T, delay: number = null ): void {
+        
+        if ( delay > 0 ) {
+
+            // If there's a timer, clear it.
+            if ( this._timeoutIds[ key ] > 0 ) {
+                window.clearTimeout( this._timeoutIds[ key ] );
+            }
+
+            // Start a new timer.
+            this._timeoutIds[ key ] = window.setTimeout( () => {
+                window.api.ipc.send( 'settings:set', { key: key, value: value } );
+            }, delay );
+            
+        } else {
+            window.api.ipc.send( 'settings:set', { key: key, value: value } );
+
+        }
+
     }
 
     public getSetting<T>( key: string ): Observable<T> {
