@@ -120,11 +120,34 @@ function _getSize( value ) {
 
 
 
+/**
+ * Pushes value into values, if values doesn't already contain value.
+ * 
+ * @template T
+ * @param {T[]} values The array of T.
+ * @param {T} value The value to push.
+ */
+function _distinctPush( values, value ) {
+    if ( values != null && values.indexOf( value ) === -1 ) {
+        values.push( value );
+    }
+}
+
+
+
+
+
+
+
+
+
+
 const ArrayUtilities = {
     remove: remove,
     findIndex: findIndex,
     enumerateDictionary: _enumerateDictionary,
     getSize: _getSize,
+    distinctPush: _distinctPush,
 };
 
 module.exports = ArrayUtilities;
