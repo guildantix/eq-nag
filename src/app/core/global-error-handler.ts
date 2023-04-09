@@ -9,6 +9,12 @@ export class GlobalErrorHandler implements ErrorHandler {
     ) { }
 
     handleError( error: Error | any ) {
-        this.ipcService.logException( error );
+        if ( error instanceof Error ) {
+            this.ipcService.logException( error.stack );
+        } else {
+            this.ipcService.logException( error );
+        }
+
+        console.error( error );
     }
 }
