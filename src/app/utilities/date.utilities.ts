@@ -42,9 +42,9 @@ export class TimeModel {
 
 export class DateUtilities {
 
-    public static parseTimeString( value: string, format: 12 | 24 = 12 ): TimeModel|null {
+    public static parseTimeString( value: string ): TimeModel|null {
         
-        format = format === 24 ? 24 : 12;
+        var format = value.match( /AM|PM/gi ) ? 12 : 24;
 
         if ( format === 12 && value ) {
             let parts = /^(?<hour>\d+):(?<minute>\d+)(?::(?<second>\d+))?\s(?<period>AM|PM)/gi.exec( value );
