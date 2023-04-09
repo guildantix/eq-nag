@@ -5,7 +5,7 @@ const path = require( 'path' );
 const fs = require( 'fs' );
 const { AuthorModel } = require( './models/sharing-service' );
 const { FctStylesModel } = require( './models/fct' );
-const { StyleProperties, LogMaintenanceRules } = require( './models/common' );
+const { StyleProperties, LogMaintenanceRules, LogMaintenanceHistory } = require( './models/common' );
 const archiver = require( 'archiver' );
 const LogBootstrapper = require( "../log-bootstrap" );
 const { DeathRecapPreferences } = require( '../data/models/death-recap' );
@@ -74,6 +74,7 @@ class UserPreferencesStore extends Store {
      * minimizeToTrayOnLoad: boolean,
      * lastViewedUpdateNotes: string,
      * logMaintenanceRules: LogMaintenanceRules,
+     * logMaintenanceHistory: LogMaintenanceHistory[],
      * }}
      */
     #data;
@@ -353,33 +354,6 @@ class UserPreferencesStore extends Store {
         this.storeDataFile( this.#data );
     }
 
-    /** @type {boolean} */
-    get enableLogFileMaintenance() {
-        return this.#data.enableLogFileMaintenance === true;
-    }
-    set enableLogFileMaintenance( val ) {
-        this.#data.enableLogFileMaintenance = val === true;
-        this.storeDataFile( this.#data );
-    }
-
-    /** @type {number} The max log file size, in megabytes. */
-    get maxLogFileSizeMb() {
-        return this.#data.maxLogFileSizeMb > 0 ? this.#data.maxLogFileSizeMb : defaultLogFileSizeMb;
-    }
-    set maxLogFileSizeMb( val ) {
-        this.#data.maxLogFileSizeMb = val > 0 ? val : defaultLogFileSizeMb;
-        this.storeDataFile( this.#data );
-    }
-
-    /** @type {number} The number of seconds of inactivity before performing maintenance. */
-    get logMaintenanceDelaySeconds() {
-        return this.#data.logMaintenanceDelaySeconds >= 0 ? this.#data.logMaintenanceDelaySeconds : defaultLogMaintenanceDelaySeconds;
-    }
-    set logMaintenanceDelaySeconds( val ) {
-        this.#data.logMaintenanceDelaySeconds = val >= 0 ? val : defaultLogMaintenanceDelaySeconds;
-        this.storeDataFile( this.#data );
-    }
-
     /** @type {LogMaintenanceRules} The log maintenance rules. */
     get logMaintenanceRules() {
         return this.#data.logMaintenanceRules ? this.#data.logMaintenanceRules : new LogMaintenanceRules();
@@ -389,7 +363,19 @@ class UserPreferencesStore extends Store {
         this.storeDataFile( this.#data );
     }
 
-    // We need to keep the schedule definition, when the schedule started, and a history of executed backup dates.  
+    /** @type {Date[]} The last date the scheduler has executed log maintenance. */
+    get logMaintenanceHistory() {
+        return this.#data.logMaintenanceHistory ? this.#data.logMaintenanceHistory : [];
+    }
+    set logMaintenanceHistory( val ) {
+        this.#data.logMaintenanceHistory = val;
+        this.storeDataFile( this.#data );
+    }
+
+    /** @type {Date} The last date the scheduler has executed log maintenance. */
+    get lastMaintenanceCycleDate() {
+        return this.#data.logMaintenanceHistory?.length > 0 ? new Date( this.#data.logMaintenanceHistory[ this.#data.logMaintenanceHistory.length - 1 ].timestamp ) : null;
+    }
 
     /** @type {(fctStyles: FctStylesModel) => void[]} */
     onFctStyleChanges = [];
@@ -492,6 +478,34 @@ class UserPreferencesStore extends Store {
 
         }
         
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Adds a new log maintenance history event.
+     * 
+     * @param {Date} timestamp The timestamp of the log.
+     * @param {string} logSchedule The event's cron schedule.
+     * @param {boolean} success True if the backup succeeded.
+     */
+    addLogMaintenanceHistory( timestamp, logSchedule, success ) {
+
+        let d = new LogMaintenanceHistory();
+        d.timestamp = timestamp;
+        d.logSchedule = logSchedule;
+        d.success = success;
+
+        this.#data.logMaintenanceHistory = this.#data.logMaintenanceHistory ? this.#data.logMaintenanceHistory : [];
+        this.#data.logMaintenanceHistory.push( d );
+        this.storeDataFile( this.#data );
     }
 
 
