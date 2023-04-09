@@ -199,14 +199,14 @@ class ScheduledTask {
      */
     #getCronComponent( component, nth, emptyValue ) {
 
-        if ( !StringUtilities.isNullOrWhitespace( component ) ) {
+        if ( component !== null && component !== undefined ) {
             let cronComp = '';
 
             if ( component instanceof Array ) {
                 cronComp += component.join( ',' );
             } else if ( component instanceof Range ) {
                 cronComp += ``;
-            } else if ( component > 0 ) {
+            } else if ( component >= 0 ) {
                 cronComp += '' + component;
             }
 
@@ -230,6 +230,8 @@ const LogMaintenancePlanTypes = {
     BySchedule: 1,
 }
 
+const ArchiveFilePrefix = 'archive_';
+
 class LogMaintenanceRules {
 
     /** @type {boolean} */
@@ -249,6 +251,17 @@ class LogMaintenanceRules {
 
 }
 
+class LogMaintenanceHistory {
+
+    /** @type {Date} */
+    timestamp;
+    /** @type {string} */
+    logSchedule;
+    /** @type {boolean} */
+    success;
+
+}
+
 module.exports = {
     StyleProperties,
     BasicError,
@@ -262,4 +275,6 @@ module.exports = {
     ScheduledTask,
     LogMaintenancePlanTypes, 
     LogMaintenanceRules, 
+    ArchiveFilePrefix, 
+    LogMaintenanceHistory, 
 };
