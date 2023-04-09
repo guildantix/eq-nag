@@ -90,9 +90,30 @@ function _addSeconds( value, seconds ) {
 
 
 
+/**
+ * Adds the given days to the given date value.
+ * 
+ * @param {Date} value The original date value.
+ * @param {number} seconds The number of seconds to add.
+ * @returns Returns a new Date instance.
+ */
+function _addDays( value, days ) {
+    return new Date( value.getTime() + days * 1000 * 60 * 60 * 24 );
+}
+
+
+
+
+
+
+
+
+
+
 const DateUtilities = {
     timeSince: _timeSince,
     addSeconds: _addSeconds,
+    addDays: _addDays,
 };
 
 module.exports = { DateUtilities, TimeSpan };
