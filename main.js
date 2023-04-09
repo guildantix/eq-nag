@@ -17,9 +17,11 @@ const GameResources = require( './src/electron/data/game-resources' );
 const FilesDatabaseStore = require( './src/electron/data/files-database' );
 const GinaImporter = require( "./src/electron/gina-importer" );
 const CombatParser = require( "./src/electron/utilities/combat-parser" );
-const { IpcMessage, Progress } = require( "./src/electron/data/models/common" );
+const { IpcMessage, Progress, ScheduledTask, LogMaintenanceRules } = require( "./src/electron/data/models/common" );
 const { LogFileLocation } = require( "./src/electron/data/log-file-location" );
 const VerifiedPlayersStore = require( "./src/electron/data/verified-players" );
+const cronParser = require( 'cron-parser' );
+const { DateUtilities } = require( "./src/electron/utilities/dates" );
 
 /** @type {BrowserWindow} */
 var mainWindow, logWatcherWindow, testWindow;
@@ -236,12 +238,12 @@ ipcMain.on( 'app:log:exception', ( event, data ) => {
         
     } else if ( data?.source === 'renderer.js' && data?.fctModel ) {
         log.error( data.error,
-            '\r\n						  [error] (fct model)  ' + JSON.stringify(data.fctModel),
+            '\r\n						  [error] (fct model)  ' + JSON.stringify( data.fctModel ),
             '\r\n						  [error] (overlay id) ' + data.overlayId );
         
     } else if ( data?.source === 'renderer.js' && data?.overlayComponent ) {
         log.error( data.error,
-            '\r\n						  [error] (overlay component)  ' + JSON.stringify(data.overlayComponent),
+            '\r\n						  [error] (overlay component)  ' + JSON.stringify( data.overlayComponent ),
             '\r\n						  [error] (overlay id)         ' + data.overlayId );
         
     } else {
@@ -417,6 +419,70 @@ ipcMain.on( 'main:archive:progress',
 var mainWindowRef = new ForwardRef( () => mainWindow ? mainWindow : null );
 var logBootstrapRef = new ForwardRef( () => logBootstrap ? logBootstrap : null );
 
+// try {
+//     var interval = cronParser.parseExpression( '*/2 * * * *' );
+//     if ( interval.hasNext() ) {
+//         var n = interval.next();
+//         var delay = DateUtilities.timeSince( new Date( Date.now() ), n.toDate() );
+//         console.log( 'delay.totalMilliseconds', delay.totalMilliseconds, new Date( Date.now() ), n.toDate() );
+//         setTimeout(() => {
+//             console.log( '!!!!!!!!!! Execute works normally !!!!!!!!!!' );
+//         }, delay.totalMilliseconds);
+//     }
+    
+//     // console.log( 'Date: ', interval.next().toString() ); // Sat Dec 29 2012 00:42:00 GMT+0200 (EET)
+//     // console.log( 'Date: ', interval.next().toString() ); // Sat Dec 29 2012 00:44:00 GMT+0200 (EET)
+  
+//     // console.log( 'Date: ', interval.prev().toString() ); // Sat Dec 29 2012 00:42:00 GMT+0200 (EET)
+//     // console.log( 'Date: ', interval.prev().toString() ); // Sat Dec 29 2012 00:40:00 GMT+0200 (EET)
+// } catch ( err ) {
+//     // console.log( 'Error: ' + err.message );
+// }
+
+/**
+ * Executes the scheduled backup.
+ * 
+ * @param {Date} intervalDate The interval date.
+ * @param {LogMaintenanceRules} rules The log maintenance rules.
+ * @param {string} cronSchedule The log cron schedule.
+ */
+const executeScheduledLogMaintenance = async ( intervalDate, rules, cronSchedule ) => {
+    
+    try {
+        console.log( '!!!!! START' );
+        await logBootstrap.backupLogFiles( rules, userPreferences.logMaintenanceHistory?.length ?? 0 );
+        userPreferences.addLogMaintenanceHistory( intervalDate, cronSchedule, true );
+        console.log( '!!!!! COMPLETE' );
+    } catch ( error ) {
+        log.error( error );
+        console.log( '!!!!! ERROR' );
+    }
+
+}
+
+const scheduler = async () => {
+    if ( userPreferences.logMaintenanceRules?.enableLogFileMaintenance === true && userPreferences.logMaintenanceRules?.logSchedule != null && !logBootstrap.isBackupProcessing ) {
+        const logSchedule = Object.assign( new ScheduledTask(), userPreferences.logMaintenanceRules.logSchedule );
+        const lastMaintained = userPreferences.lastMaintenanceCycleDate;
+        var interval = cronParser.parseExpression( logSchedule.toCronSchedule() );
+
+        if ( interval.hasPrev() ) {
+            var prevInterval = interval.prev().toDate();
+            
+            if ( lastMaintained == null || lastMaintained.getTime() < prevInterval.getTime() ) {
+                // Time to execute a backup!
+                executeScheduledLogMaintenance( prevInterval, userPreferences.logMaintenanceRules, logSchedule.toCronSchedule() );
+            }
+            
+        }
+
+    }
+
+    setTimeout( () => {
+        scheduler();
+    }, 1000 * 60 );
+};
+
 app.on( 'ready', function () {
 
     userPreferences.attachIpcEvents( mainWindowRef, sendTick, logBootstrapRef );
@@ -434,6 +500,10 @@ app.on( 'ready', function () {
     winManager.configureRendererMouseBlockingOnMoveResize( mainWindow );
 
     winManager.loadRenderer();
+
+    setTimeout( () => {
+        scheduler();
+    }, 1000 );
 } );
 
 // let x = userPreferences.everquestInstallFolder;
