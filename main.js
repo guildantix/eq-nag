@@ -419,26 +419,6 @@ ipcMain.on( 'main:archive:progress',
 var mainWindowRef = new ForwardRef( () => mainWindow ? mainWindow : null );
 var logBootstrapRef = new ForwardRef( () => logBootstrap ? logBootstrap : null );
 
-// try {
-//     var interval = cronParser.parseExpression( '*/2 * * * *' );
-//     if ( interval.hasNext() ) {
-//         var n = interval.next();
-//         var delay = DateUtilities.timeSince( new Date( Date.now() ), n.toDate() );
-//         console.log( 'delay.totalMilliseconds', delay.totalMilliseconds, new Date( Date.now() ), n.toDate() );
-//         setTimeout(() => {
-//             console.log( '!!!!!!!!!! Execute works normally !!!!!!!!!!' );
-//         }, delay.totalMilliseconds);
-//     }
-    
-//     // console.log( 'Date: ', interval.next().toString() ); // Sat Dec 29 2012 00:42:00 GMT+0200 (EET)
-//     // console.log( 'Date: ', interval.next().toString() ); // Sat Dec 29 2012 00:44:00 GMT+0200 (EET)
-  
-//     // console.log( 'Date: ', interval.prev().toString() ); // Sat Dec 29 2012 00:42:00 GMT+0200 (EET)
-//     // console.log( 'Date: ', interval.prev().toString() ); // Sat Dec 29 2012 00:40:00 GMT+0200 (EET)
-// } catch ( err ) {
-//     // console.log( 'Error: ' + err.message );
-// }
-
 /**
  * Executes the scheduled backup.
  * 
