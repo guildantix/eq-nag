@@ -17,6 +17,7 @@ import { DateUtilities } from 'src/app/utilities/date.utilities';
 enum SettingsKeys {
     
     logMaintenanceRules = 'logMaintenanceRules',
+    allowPrerelease = 'allowPrerelease',
 
 };
 
@@ -57,6 +58,7 @@ export class SettingsComponent implements OnInit {
     public logMaintenanceRules: LogMaintenanceRules = new LogMaintenanceRules();
     public logTime: string|null;
     public logDays: number[] = [];
+    public allowPrerelease: boolean = false;
 
     public get timerOverlays(): OverlayWindowModel[] {
         return this.overlays?.filter( m => m.overlayType === 'Timer' );
@@ -140,6 +142,7 @@ export class SettingsComponent implements OnInit {
             this.quickShareAuthorList = f == null ? '' : f.join( '\r\n' );
         } );
 
+        this.ipcService.getSetting<boolean>( SettingsKeys.allowPrerelease ).subscribe( f => this.allowPrerelease = f );
         this.ipcService.getSetting<LogMaintenanceRules>( SettingsKeys.logMaintenanceRules ).subscribe( f => {
 
             this.logMaintenanceRules = f;
