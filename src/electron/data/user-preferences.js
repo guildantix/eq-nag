@@ -377,6 +377,15 @@ class UserPreferencesStore extends Store {
         return this.#data.logMaintenanceHistory?.length > 0 ? new Date( this.#data.logMaintenanceHistory[ this.#data.logMaintenanceHistory.length - 1 ].timestamp ) : null;
     }
 
+    /** @type {boolean} */
+    get allowPrerelease() {
+        return this.#data.allowPrerelease === true;
+    }
+    set allowPrerelease( val ) {
+        this.#data.allowPrerelease = val === true;
+        this.storeDataFile( this.#data );
+    }
+
     /** @type {(fctStyles: FctStylesModel) => void[]} */
     onFctStyleChanges = [];
 
@@ -622,6 +631,7 @@ class UserPreferencesStore extends Store {
             ( event, arg ) => {
                 this[ arg.key ] = arg.value;
                 sendTick();
+                this.emitChanges();
             } );
 
         ipcMain.on( 'settings:get',
