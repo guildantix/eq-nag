@@ -83,6 +83,11 @@ function createTray() {
     return appTrayMenu;
 }
 
+const checkForUpdates = () => {
+    autoUpdater.allowPrerelease = userPreferences.allowPrerelease;
+    autoUpdater.checkForUpdates();
+}
+
 function createWindow() {
     mainWindow = new BrowserWindow( {
         width: userPreferences.windowWidth,
@@ -142,11 +147,9 @@ function createWindow() {
 
     mainWindow.webContents.once( 'dom-ready', () => {
         sendTick();
-        autoUpdater.allowPrerelease = userPreferences.allowPrerelease;
-        autoUpdater.checkForUpdates();
+        checkForUpdates();
         setInterval( () => {
-            autoUpdater.allowPrerelease = userPreferences.allowPrerelease;
-            autoUpdater.checkForUpdates();
+            checkForUpdates();
         }, updateCheckInterval );
 
         // TODO: Remove this in a few versions.
@@ -342,6 +345,7 @@ autoUpdater.on( 'update-downloaded', () => {
         clearInterval( updateCheckInterval );
     }
 } );
+
 
 autoUpdater.on( 'update-available', info => {
     log.info( info );
