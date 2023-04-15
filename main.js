@@ -429,13 +429,12 @@ var logBootstrapRef = new ForwardRef( () => logBootstrap ? logBootstrap : null )
 const executeScheduledLogMaintenance = async ( intervalDate, rules, cronSchedule ) => {
     
     try {
-        console.log( '!!!!! START' );
         await logBootstrap.backupLogFiles( rules, userPreferences.logMaintenanceHistory?.length ?? 0 );
         userPreferences.addLogMaintenanceHistory( intervalDate, cronSchedule, true );
-        console.log( '!!!!! COMPLETE' );
+        
     } catch ( error ) {
         log.error( error );
-        console.log( '!!!!! ERROR' );
+
     }
 
 }
