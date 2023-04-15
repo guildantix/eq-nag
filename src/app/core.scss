@@ -228,6 +228,17 @@ table {
     padding-right: 15px;
 }
 
+::ng-deep .fifty-grid {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+
+    > * {
+        flex: 0 0 calc(50% - 20px);
+        margin: 10px;
+    }
+}
+
 ::ng-deep .card-property {
     >div {
         .fill-width {
