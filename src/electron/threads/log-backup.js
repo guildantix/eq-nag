@@ -298,9 +298,9 @@ const backupBySchedule = async ( logFilePaths, everquestInstallFolder, daysOfWee
                 const fullPath = path.join( logArchiveProcDir, sFileName );
 
                 updateProgressLabel( 'Writing Data ...' );
-                console.log( 'streaming data' );
+                
                 if ( !fs.existsSync( fullPath ) ) {
-                    console.log( 'streaming data 1' );
+                    
                     let writer = fs.createWriteStream( fullPath );
                     writer.on( 'open', fd => {
                         for ( let i = 0; i < lines.length; i++ ) {
@@ -312,7 +312,7 @@ const backupBySchedule = async ( logFilePaths, everquestInstallFolder, daysOfWee
                     } );
 
                 } else if ( await fsp.access( fullPath, fs.constants.F_OK | fs.constants.R_OK | fs.constants.W_OK ) ) {
-                    console.log( 'streaming data 1' );
+                    
                     let start = await fsp.stat( fullPath );
                     let writer = fs.createWriteStream( fullPath, { start: start } );
                     writer.on( 'open', fd => {
@@ -325,12 +325,12 @@ const backupBySchedule = async ( logFilePaths, everquestInstallFolder, daysOfWee
                     } );
                 
                 } else if ( retryCount < 5 ) {
-                    console.log( 'streaming data retry' );
+                    
                     await ThreadUtilities.sleep( 1000 );
                     return await streamData( sFileName, lines, ++retryCount );
 
                 } else {
-                    console.log( `Could not gain write access to the file: ${fullPath}` );
+                    
                     logError( new Error( `Could not gain write access to the file: ${fullPath}` ) );
                     return false;
 
@@ -350,22 +350,17 @@ const backupBySchedule = async ( logFilePaths, everquestInstallFolder, daysOfWee
             retryCount = retryCount >= 0 ? retryCount : 0;
             const fullPath = path.join( logArchiveProcDir, wFileName );
 
-            console.log( 'writing data' );
             if ( !fs.existsSync( fullPath ) ) {
-                console.log( 'writing data 1' );
                 await fsp.writeFile( fullPath, lines );
 
             } else if ( await fsp.access( fullPath, fs.constants.F_OK | fs.constants.R_OK | fs.constants.W_OK ) ) {
-                console.log( 'writing data 1' );
                 await fsp.appendFile( fullPath, lines );
                 
             } else if ( retryCount < 5 ) {
-                console.log( 'writing data retry' );
                 await ThreadUtilities.sleep( 1000 );
                 return await writeData( wFileName, lines, ++retryCount );
 
             } else {
-                console.log( `Could not gain write access to the file: ${fullPath}` );
                 logError( new Error( `Could not gain write access to the file: ${fullPath}` ) );
                 return false;
 
@@ -436,15 +431,12 @@ const backupBySchedule = async ( logFilePaths, everquestInstallFolder, daysOfWee
             // We're done processing this chunk, let's flush what we have
             // before moving on to the next chunk.
             await streamData( FsUtilities.Path.prependFilename( fileName, `${logDate.getTime()}_` ), logLines, stats.size );
-            console.log( '!!!! Last Stream Read' );
-            // await writeData( FsUtilities.Path.prependFilename( fileName, `${logDate.getTime()}_` ), logLines, stats.size );
+            
             reportProgress( processedSize, stats.size, `Reading Log: ${fileName}` );
 
         } // Next Chunk
 
     }
-
-    console.log( 'Done writing temp files' );
 
     /** @type {{logFile: string, stats: fs.Stats & fs.BigIntStats}[]} */
     let logFilesMeta = [];
@@ -487,7 +479,6 @@ const backupBySchedule = async ( logFilePaths, everquestInstallFolder, daysOfWee
             let max = Math.ceil( logFileMeta.stats.size / maxArchiveFileSize );
             
             for ( let i = 0; i < max; i++ ) {
-                console.log( 'Writing to partial 1' );
                 
                 let chunkBuffer = await readChunk( path.join( logArchiveProcDir, logFileMeta.logFile ), logFileMeta.stats, pos );
                 pos += chunkBuffer.length;
@@ -504,7 +495,6 @@ const backupBySchedule = async ( logFilePaths, everquestInstallFolder, daysOfWee
             }
 
         } else {
-            console.log( 'Writing to full 1' );
             const archiveName = datePrefix + `[${backupIndex}]` + FsUtilities.Path.getFilename( aFileName ).replace('archive_','');
 
             log.info( `LogBackup > Adding to the archive: ${_fileName}.` );
