@@ -142,8 +142,10 @@ function createWindow() {
 
     mainWindow.webContents.once( 'dom-ready', () => {
         sendTick();
+        autoUpdater.allowPrerelease = userPreferences.allowPrerelease;
         autoUpdater.checkForUpdates();
         setInterval( () => {
+            autoUpdater.allowPrerelease = userPreferences.allowPrerelease;
             autoUpdater.checkForUpdates();
         }, updateCheckInterval );
 
