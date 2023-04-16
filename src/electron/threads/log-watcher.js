@@ -1,7 +1,7 @@
 // const ipc = require( 'electron' ).ipcMain;
 const { ipcRenderer } = require( 'electron' );
 const fs = require( 'fs' );
-const { TriggerAction, ActionTypes, TriggerConditionTypes, OperatorTypes, CharacterClassLevel, TriggerSubAction } = require( '../data/models/trigger' );
+const { TriggerAction, ActionTypes, TriggerConditionTypes, OperatorTypes, CharacterClassLevel, TriggerSubAction, TriggerFolder, TriggerCondition } = require( '../data/models/trigger' );
 const { QuickShareAuthorListTypes } = require( '../data/models/common' );
 const { PhraseParse, LogTrigger } = require( './log.model' );
 const { OverlayComponent, OverlayWindow } = require( '../data/models/overlay-window' );
@@ -57,6 +57,8 @@ var watcher = null;
 var overlays = [];
 /** @type {LogTrigger[]} */
 var triggers = [];
+/** @type {TriggerFolder[]} */
+var triggerFolders = [];
 /** @type {Record<string, string[]>} */
 var storedVariables = {};
 /** @type {Record<string, {value: number, lastUpdate: Date, resetDelay: number, _parse: (logEntry: string) => boolean}>} */
@@ -388,6 +390,7 @@ function LogWatcher(character, logPosition) {
 
     ipcRenderer.on( 'tick', function ( event, data ) {
         triggers = data.triggers;
+        triggerFolders = data.folders;
         enableFct = data.enableFct;
         damageDealtOverlayId = data.damageDealtOverlayId;
         damageReceivedOverlayId = data.damageReceivedOverlayId;
@@ -402,6 +405,7 @@ function LogWatcher(character, logPosition) {
         quickShareAuthorsListType = data.quickShareAuthorsListType;
         quickShareAuthorsList = data.quickShareAuthorsList;
 
+        applyFolderConditions( triggerFolders );
         generateTriggerFns();
         initCounters();
     } );
@@ -666,8 +670,12 @@ function generateTriggerFns() {
 
                 trigger._conditionResults = {};
 
-                // The trigger must pass each condition.
-                trigger.conditions?.forEach( condition => {
+                /**
+                 * Executes the given trigger condition checks and evaluations.
+                 * 
+                 * @param {TriggerCondition} condition The condition to check.
+                 */
+                const checkCondition = condition => {
                     if ( condition.conditionType === TriggerConditionTypes.VariableValue ) {
                         if ( condition.operatorType === OperatorTypes.Equals ) {
                             
@@ -720,7 +728,13 @@ function generateTriggerFns() {
                             
                         }
                     }
-                } );
+                }
+
+                // The trigger must pass each condition.
+                trigger.conditions?.forEach( condition => checkCondition( condition ) );
+
+                // Check folder conditions as well.
+                trigger._folderConditions?.forEach( condition => checkCondition( condition ) );
 
                 return conditionsPassed;
             }
@@ -2507,6 +2521,37 @@ function backfind( log, callback ) {
 
     }
 
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Applies folder conditions to each trigger.
+ * 
+ * @param {TriggerFolder[]} folders The trigger folders.
+ * @param {TriggerCondition[] | null} conditionAncestry The conditions for each direct parent.
+ */
+function applyFolderConditions( folders, conditionAncestry ) {
+    for ( let i = 0; i < folders?.length; i++ ) {
+        const folder = folders[ i ];
+        let generationConditions = [].concat( conditionAncestry, folder.folderConditions );
+
+        for ( let ti = 0; ti < triggers?.length; ti++ ) {
+            const trigger = triggers[ ti ];
+            if ( trigger.folderId === folder.folderId ) {
+                trigger._folderConditions = generationConditions;
+            }
+        }
+
+        applyFolderConditions( folder.children ?? [], [].concat( conditionAncestry, folder.folderConditions ) );
+    }
 }
 
 
