@@ -1207,8 +1207,8 @@ class WindowManager {
      * Resumes mouse forwarding for the renderer.
      */
     resumeRendererMouseForwarding() {
-        this.#renderer.webContents.send( 'renderer:mouse-forwarding:resume', {} );
-        this.#renderer.setIgnoreMouseEvents( true, { forward: true } );
+        this.#renderer?.webContents.send( 'renderer:mouse-forwarding:resume', {} );
+        this.#renderer?.setIgnoreMouseEvents( true, { forward: true } );
     }
     
 
