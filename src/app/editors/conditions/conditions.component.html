@@ -1,4 +1,4 @@
-<fieldset>
+<fieldset [ngClass]="{'lighter': lighter}">
     <legend class="full-width"><span class="title">Conditions</span><span class="spacer"></span><button mat-button (click)="addNewCondition()" color="accent"><mat-icon>add</mat-icon>New</button><small>If any condition fails, the trigger will not be loaded.</small></legend>
     <table mat-table #conditionsTable="matTable" *ngIf="conditions?.length > 0"
         [dataSource]="conditions"
