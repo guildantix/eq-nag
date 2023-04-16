@@ -1,4 +1,4 @@
-const { Trigger } = require( "../data/models/trigger" );
+const { Trigger, TriggerFolder, TriggerCondition } = require( "../data/models/trigger" );
 
 class PhraseParse {
     /** @type {string} */
@@ -42,6 +42,9 @@ class LogTrigger extends Trigger {
     
     /** @type {number} */
     _deltaTime = null;
+
+    /** @type {TriggerCondition[]} */
+    _folderConditions = [];
 }
 
 module.exports = { PhraseParse, LogTrigger };
