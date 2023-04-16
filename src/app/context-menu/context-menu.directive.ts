@@ -5,14 +5,6 @@ import { ContextMenuModel } from './context-menu.model';
 @Directive( { selector: '[appContextMenu]' } )
 export class ContextMenuDirective implements AfterViewInit {
 
-    // private _menu: Record<string, () => void>;
-    // public get menu(): Record<string, () => void> {
-    //     return this._menu;
-    // }
-    // @Input( 'appContextMenu' ) public set menu( value: Record<string, () => void> ) {
-    //     this._menu = value;
-    // }
-
     private _menu: ContextMenuModel[];
     public get menu(): ContextMenuModel[] {
         return this._menu;
@@ -29,8 +21,6 @@ export class ContextMenuDirective implements AfterViewInit {
   
     constructor(
         private viewContainerRef: ViewContainerRef,
-        private elRef: ElementRef,
-        private renderer: Renderer2
     ) { }
   
     ngAfterViewInit() {
