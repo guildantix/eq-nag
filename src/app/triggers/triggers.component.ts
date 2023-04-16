@@ -1113,6 +1113,56 @@ export class TriggersComponent implements OnInit {
 
 
 
+
+    /**
+     * Find's the specified folder's parent.  Returns null if the given folder is a root folder.
+     * 
+     * @param folderId The id of the folder.
+     * @param searchFolder The current folder to search.
+     */
+    private findFolderParent( folderId: string, searchFolder: TriggerFolder|null = null ): TriggerFolder|null {
+
+        if ( searchFolder == null ) {
+            
+            for ( let i = 0; i < this.triggerFolders?.length; i++ ) {
+                if ( this.triggerFolders[ i ].folderId === folderId ) {
+                    return null;
+                }
+            }
+            
+            for ( let i = 0; i < this.triggerFolders?.length; i++ ) {
+                let parentq = this.findFolderParent( folderId, this.triggerFolders[ i ] );
+                if ( parentq ) {
+                    return parentq;
+                }
+            }
+
+        } else if ( searchFolder.children?.length > 0 ) {
+            
+            for ( let i = 0; i < searchFolder.children?.length; i++ ) {
+                if ( searchFolder.children[ i ].folderId === folderId ) {
+                    return searchFolder;
+                }
+            }
+
+            for ( let i = 0; i < searchFolder.children?.length; i++ ) {
+                let parentq = this.findFolderParent( folderId, searchFolder.children[ i ] );
+                if ( parentq ) {
+                    return parentq;
+                }
+            }
+        }
+
+    }
+
+
+
+
+
+
+
+
+
     
     /**
      * Returns a list of all descendant triggers for the given folder.
@@ -1164,6 +1214,76 @@ export class TriggersComponent implements OnInit {
 
 
     /**
+     * Sorts the specified folder and siblings alphabetically.
+     * 
+     * @param folderId The folder id to sort.
+     */
+    private sortAlphabetically( folderId: string ): void {
+        let parent = this.findFolderParent( folderId );
+        let targetFolders = parent == null ? this.triggerFolders : parent.children;
+        let currentSort = targetFolders.map( f => f?.name ?? '' ).join( '' );
+        targetFolders = _.orderBy( targetFolders, [ f => f.name ], [ 'asc' ] );
+        if ( currentSort === targetFolders.map( f => f?.name ?? '' ).join( '' ) ) {
+            targetFolders = _.orderBy( targetFolders, [ f => f.name ], [ 'desc' ] );
+        }
+
+        if ( parent == null ) {
+            this.triggerFolders = targetFolders;
+        } else {
+            parent.children = targetFolders;
+        }
+
+        this.updateViewTriggerData( this.triggerFolders );
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Moves the given folder up or down in the parent's folder list, based on the given direction.
+     * 
+     * @param folderId The desired folder to move.
+     * @param direction The direction of movement.
+     */
+    private translateFolder( folderId: string, direction: number ): void {
+        let parent = this.findFolderParent( folderId );
+        let targetFolders = parent == null ? this.triggerFolders : parent.children;
+        let i = targetFolders.findIndex( f => f.folderId === folderId );
+        
+        if ( i + direction < 0 ) {
+            direction = -1 * i;
+
+        } else if ( i + direction >= targetFolders.length ) {
+            direction = targetFolders.length - i - 1;
+
+        }
+        
+        if ( direction !== 0 ) {
+            let ni = i + direction;
+            let folder = targetFolders.splice( i, 1 )[ 0 ];
+            targetFolders.splice( ni, 0, folder );
+
+            this.updateViewTriggerData( this.triggerFolders );
+
+        }
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
      * Returns a context menu definition for the specified folder.
      * 
      * @param folderId The id of the folder.
@@ -1176,12 +1296,6 @@ export class TriggersComponent implements OnInit {
             hide: () => false,
             matIcon: 'label',
         }, {
-            label: 'Change parent',
-            action: () => this.selectParentFolder( folderId ),
-            disabled: () => false,
-            hide: () => false,
-            matIcon: 'sort',
-        }, {
             label: 'New sub-folder',
             action: () => this.addTriggerFolderDialog( folderId ),
             disabled: () => false,
@@ -1193,6 +1307,62 @@ export class TriggersComponent implements OnInit {
             disabled: () => false,
             hide: () => false,
             matIcon: 'label_important',
+        }, {
+            label: 'Sorting',
+            action: () => { },
+            disabled: () => false,
+            hide: () => false,
+            matIcon: 'sort',
+            children: [
+                {
+                    label: 'Sort Alphabetically',
+                    action: () => this.sortAlphabetically( folderId ),
+                    disabled: () => false,
+                    hide: () => false,
+                    matIcon: 'sort_by_alpha',
+                }, {
+                    label: 'Top',
+                    action: () => this.translateFolder( folderId, -10000 ),
+                    disabled: () => false,
+                    hide: () => false,
+                    matIcon: 'vertical_align_top',
+                    keepOpen: true,
+                }, {
+                    label: 'Move up',
+                    action: () => this.translateFolder( folderId, -1 ),
+                    disabled: () => false,
+                    hide: () => false,
+                    matIcon: 'arrow_upward',
+                    keepOpen: true,
+                }, {
+                    label: 'Move down',
+                    action: () => this.translateFolder( folderId, 1 ),
+                    disabled: () => false,
+                    hide: () => false,
+                    matIcon: 'arrow_downward',
+                    keepOpen: true,
+                }, {
+                    label: 'Bottom',
+                    action: () => this.translateFolder( folderId, 10000 ),
+                    disabled: () => false,
+                    hide: () => false,
+                    matIcon: 'vertical_align_bottom',
+                    keepOpen: true,
+                }, <ContextMenuModel>{
+                    label: '-',
+                    action: () => { },
+                    disabled: () => false,
+                    hide: () => false,
+                    // matIcon: 'content_paste',
+                },
+                {
+                    label: 'Change parent',
+                    action: () => this.selectParentFolder( folderId ),
+                    disabled: () => false,
+                    hide: () => false,
+                    matIcon: 'sort',
+                },
+            ]
         }, <ContextMenuModel>{
             label: '-',
             action: () => { },
@@ -1449,6 +1619,16 @@ export class TriggersComponent implements OnInit {
         } );
 
     }
+
+    // public nodeHover( elRef: HTMLElement ): void {
+    //     this.folderTools.nativeElement.classList.add( 'shown' );
+    //     this.folderTools.nativeElement.style.left = `${elRef.offsetLeft + elRef.offsetWidth + 13}px`;
+    //     this.folderTools.nativeElement.style.top = `${elRef.offsetTop + 83}px`;
+    // }
+
+    // public nodeLeave(): void {
+    //     // this.folderTools.nativeElement.classList.remove( 'shown' );
+    // }
 
 
 
