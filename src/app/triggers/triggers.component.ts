@@ -14,6 +14,8 @@ import { CdkVirtualScrollViewport } from '@angular/cdk/scrolling';
 import { BehaviorSubject, forkJoin, Observable, timer } from 'rxjs';
 import { TriggerLibraryService } from '../windows/trigger-library.service';
 import { QuickShareService } from '../core/quick-share.service';
+import { FolderConditionsDialogComponent } from './folder-conditions-dialog/folder-conditions-dialog.component';
+import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const nanoid = customAlphabet( alphabet, 16 );
 
@@ -98,6 +100,7 @@ export class TriggersComponent implements OnInit {
         private ngZone: NgZone,
         private libraryService: TriggerLibraryService,
         private quickShareService: QuickShareService,
+        private dialog: MatDialog,
     ) {
         
         this.dataSource.data = [];
@@ -1370,6 +1373,44 @@ export class TriggersComponent implements OnInit {
         }
     }
 
+    /**
+     * Allows the user to add/edit/delete folder conditions.
+     * 
+     * @param folderId The id of the desired folder.
+     */
+    private editFolderConditions( folderId: string ): void {
+        let folder = this.findFolderById( folderId );
+
+        let dialogRef: MatDialogRef<FolderConditionsDialogComponent> = this.dialog.open( FolderConditionsDialogComponent, {
+            width: '750px',
+            data: folder,
+            panelClass: 'app-dialog',
+        } );
+
+        dialogRef.afterClosed().subscribe( confirmed => {
+
+            if ( confirmed ) {
+                this.updateViewTriggerData( this.triggerFolders );
+                this.updateTriggerFolders();
+            }
+
+            if ( document.activeElement instanceof HTMLElement ) {
+                // This is a workaround to prevent the error:
+                // 
+                //      ExpressionChangedAfterItHasBeenCheckedError: Expression has changed after it was checked. Previous value for 'mat-form-field-should-float': 'false'. Current value: 'true'.
+                //
+                // I'm sure there's some deeper meaning behind it, but for some 
+                // reason when the confirm dialog's `Yes` button is still the 
+                // active element at this point, that error is written to the 
+                // console.
+                // This error only happens when a list is reloaded after.
+                document.activeElement.blur();
+            }
+
+        } );
+
+    }
+
 
 
 
@@ -1471,6 +1512,18 @@ export class TriggersComponent implements OnInit {
             disabled: () => false,
             hide: () => false,
             matIcon: 'publish',
+        }, <ContextMenuModel>{
+            label: '-',
+            action: () => { },
+            disabled: () => false,
+            hide: () => false,
+            // matIcon: 'content_paste',
+        }, {
+            label: 'Folder Conditions',
+            action: () => this.editFolderConditions( folderId ),
+            disabled: () => false,
+            hide: () => false,
+            matIcon: 'published_with_changes',
         }, <ContextMenuModel>{
             label: '-',
             action: () => { },
