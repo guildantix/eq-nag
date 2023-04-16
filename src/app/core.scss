@@ -226,6 +226,7 @@ table {
     display: flex;
     flex-direction: row;
     padding-right: 15px;
+    position: relative;
 }
 
 ::ng-deep .fifty-grid {
@@ -495,6 +496,14 @@ button.mat-icon-button.small {
     font-size: 15px;
     width: 25px;
     height: 25px;
+}
+
+mat-icon {
+    &.small {
+        font-size: 15px;
+        width: 25px;
+        height: 25px;
+    }
 }
 
 .instructions {
