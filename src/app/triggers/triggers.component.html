@@ -62,7 +62,7 @@
                 <div class="trigger-categories-header">
                     <span>Trigger folders</span>
                     <span class="spacer"></span>
-                    <!-- <button mat-icon-button class="small" class="color-red" matTooltip="Undo changes to the folder hierarchy."><mat-icon [inline]="true">replay</mat-icon></button> -->
+                    <button mat-icon-button class="small" class="color-red" (click)="restoreFolderHierarchy()" *ngIf="restoreFolderHierarchy != null" matTooltip="Undo changes to the folder hierarchy."><mat-icon [inline]="true">replay</mat-icon></button>
                     <button mat-icon-button class="small" (click)="addTriggerFolderDialog()"><mat-icon [inline]="true">add</mat-icon></button>
                     <button mat-icon-button class="small" (click)="toggleTree()"><mat-icon *ngIf="!allExpanded" [inline]="true">unfold_more</mat-icon><mat-icon *ngIf="allExpanded" [inline]="true">unfold_less</mat-icon></button>
                 </div>

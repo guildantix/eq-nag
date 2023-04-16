@@ -48,6 +48,8 @@ export class TriggersComponent implements OnInit {
     public selectedFolderId: string;
     public triggers: TriggerModel[] = [];
     public processing: boolean = false;
+    private restoreFolderHierarchyTimeoutId: number | null = null;
+    public restoreFolderHierarchy: () => void | null = null;
 
     private _indexRecords: number = 0;
     private _maxRecords: number = 0;
@@ -1214,13 +1216,86 @@ export class TriggersComponent implements OnInit {
 
 
     /**
+     * Creates a restore function that executes the given function.  The given function should return true if the restoration was successful.
+     * 
+     * @param restoreFn The restore function that will undo changes done, returning true if the restoration was successful.
+     * @param timeoutDelayMs The duration to leave the restore button available for click.
+     */
+    private createFolderHierarchyRestore( restoreFn: () => boolean, timeoutDelayMs: number = 15000, overwriteExistingFn: boolean = false ): void {
+
+        const createTimeout = () => {
+            this.restoreFolderHierarchyTimeoutId = window.setTimeout( () => {
+                this.restoreFolderHierarchy = null;
+            }, timeoutDelayMs );
+        }
+
+        if ( overwriteExistingFn === true || this.restoreFolderHierarchy == null ) {
+            
+            // Create the restore function.
+            this.restoreFolderHierarchy = () => {
+
+                // On executing the restore, start by clearing the timeout.
+                window.clearTimeout( this.restoreFolderHierarchyTimeoutId );
+                this.restoreFolderHierarchyTimeoutId = null;
+
+                // Execute the restore function.
+                if ( restoreFn() ) {
+                    // If successful, clear the restore function and we're done.
+                    this.restoreFolderHierarchy = null;
+                } else {
+                    // If it fails, then we need to reset the timeout.  The restoreFn function is responsible for displaying errors.
+                    createTimeout();
+                }
+            }
+
+            // If there is already a timeout, cancel it.
+            if ( this.restoreFolderHierarchyTimeoutId ) {
+                window.clearTimeout( this.restoreFolderHierarchyTimeoutId );
+            }
+
+            // Create a timeout that will clear the restore history.
+            createTimeout();
+        }
+
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
      * Sorts the specified folder and siblings alphabetically.
      * 
      * @param folderId The folder id to sort.
      */
     private sortAlphabetically( folderId: string ): void {
+
         let parent = this.findFolderParent( folderId );
         let targetFolders = parent == null ? this.triggerFolders : parent.children;
+
+        // Before we operate, let's start by creating a restore point.
+        let restorePoint = [].concat( targetFolders );
+        this.createFolderHierarchyRestore( () => {
+            let restoreParent = this.findFolderParent( folderId );
+
+            // We're either updating the root node or the children property of a node.
+            if ( restoreParent == null ) {
+                this.triggerFolders = restorePoint;
+            } else {
+                restoreParent.children = restorePoint;
+            }
+
+            this.updateViewTriggerData( this.triggerFolders );
+            this.updateTriggerFolders();
+
+            return true;
+        } );
+
         let currentSort = targetFolders.map( f => f?.name ?? '' ).join( '' );
         targetFolders = _.orderBy( targetFolders, [ f => f.name ], [ 'asc' ] );
         if ( currentSort === targetFolders.map( f => f?.name ?? '' ).join( '' ) ) {
@@ -1234,6 +1309,7 @@ export class TriggersComponent implements OnInit {
         }
 
         this.updateViewTriggerData( this.triggerFolders );
+        this.updateTriggerFolders();
     }
 
 
@@ -1265,11 +1341,31 @@ export class TriggersComponent implements OnInit {
         }
         
         if ( direction !== 0 ) {
+
+            // Before we operate, let's start by creating a restore point.
+            let restorePoint: TriggerFolder[] = [].concat( targetFolders );
+            this.createFolderHierarchyRestore( () => {
+                let restoreParent = this.findFolderParent( folderId );
+                
+                // We're either updating the root node or the children property of a node.
+                if ( restoreParent == null ) {
+                    this.triggerFolders = restorePoint;
+                } else {
+                    restoreParent.children = restorePoint;
+                }
+
+                this.updateViewTriggerData( this.triggerFolders );
+                this.updateTriggerFolders();
+
+                return true;
+            } );
+
             let ni = i + direction;
             let folder = targetFolders.splice( i, 1 )[ 0 ];
             targetFolders.splice( ni, 0, folder );
 
             this.updateViewTriggerData( this.triggerFolders );
+            this.updateTriggerFolders();
 
         }
     }
@@ -1619,16 +1715,6 @@ export class TriggersComponent implements OnInit {
         } );
 
     }
-
-    // public nodeHover( elRef: HTMLElement ): void {
-    //     this.folderTools.nativeElement.classList.add( 'shown' );
-    //     this.folderTools.nativeElement.style.left = `${elRef.offsetLeft + elRef.offsetWidth + 13}px`;
-    //     this.folderTools.nativeElement.style.top = `${elRef.offsetTop + 83}px`;
-    // }
-
-    // public nodeLeave(): void {
-    //     // this.folderTools.nativeElement.classList.remove( 'shown' );
-    // }
 
 
 
