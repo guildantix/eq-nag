@@ -86,6 +86,21 @@ var TimerRestartBehaviors = {
     DoNothing: 3,
 }
 
+class TriggerCondition {
+    
+    /** @type string */
+    conditionId;
+    /** @type TriggerConditionTypes */
+    conditionType;
+    /** @type OperatorTypes */
+    operatorType;
+    /** @type string */
+    variableName;
+    /** @type string */
+    variableValue;
+
+}
+
 class TriggerFolder {
     /** @type {string} */
     folderId;
@@ -99,6 +114,8 @@ class TriggerFolder {
     comments;
     /** @type {TriggerFolder[]} */
     children = [];
+    /** @type {TriggerCondition[]} */
+    folderConditions = [];
 }
 
 class CharacterClassLevel {
@@ -366,21 +383,6 @@ class TriggerAction {
     
     /** @type {number} */
     textGlowSize = null;
-}
-
-class TriggerCondition {
-    
-    /** @type string */
-    conditionId;
-    /** @type TriggerConditionTypes */
-    conditionType;
-    /** @type OperatorTypes */
-    operatorType;
-    /** @type string */
-    variableName;
-    /** @type string */
-    variableValue;
-
 }
 
 class Trigger {

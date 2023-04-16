@@ -162,6 +162,7 @@ export class TriggerFolder {
     public active: boolean = true;
     public comments: string;
     public children: TriggerFolder[] = [];
+    public folderConditions: TriggerCondition[] = [];
 
     /**
      * Returns the specified trigger folder in the given hierarchy.
