@@ -1,4 +1,4 @@
-import { AfterViewInit, ComponentFactoryResolver, ComponentRef, Directive, ElementRef, HostListener, Input, Renderer2, ViewContainerRef } from '@angular/core';
+import { AfterViewInit, ComponentRef, Directive, ElementRef, HostListener, Input, Renderer2, ViewContainerRef } from '@angular/core';
 import { ContextMenuComponent } from './context-menu.component';
 import { ContextMenuModel } from './context-menu.model';
 
@@ -29,19 +29,13 @@ export class ContextMenuDirective implements AfterViewInit {
   
     constructor(
         private viewContainerRef: ViewContainerRef,
-        private resolver: ComponentFactoryResolver,
         private elRef: ElementRef,
         private renderer: Renderer2
     ) { }
   
     ngAfterViewInit() {
-        // this.renderer.addClass( this.elRef.nativeElement, 'context-menu-container' );
-  
-        // factory comp resolver
-        let factory = this.resolver.resolveComponentFactory( ContextMenuComponent );
-  
         // create component
-        this.contextMenu = this.viewContainerRef.createComponent( factory );
+        this.contextMenu = this.viewContainerRef.createComponent( ContextMenuComponent );
         this.contextMenu.instance.menu = this.menu;
         this.contextMenu.changeDetectorRef.detectChanges();
     }
