@@ -7,7 +7,8 @@ export class ContextMenuModel {
     public hide: () => boolean;
     public matIcon: string;
     public cssClass?: string;
-    // public children: ContextMenuModel[];
+    public children?: ContextMenuModel[] | undefined;
+    public keepOpen?: boolean = false;
 }
 
 export class TriggerEndedProperties {

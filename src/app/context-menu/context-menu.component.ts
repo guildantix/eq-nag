@@ -1,6 +1,6 @@
 import { Overlay, OverlayRef } from '@angular/cdk/overlay';
 import { TemplatePortal } from '@angular/cdk/portal';
-import { Component, Input, OnInit, TemplateRef, ViewChild, ViewContainerRef } from '@angular/core';
+import { Component, ElementRef, Input, OnInit, TemplateRef, ViewChild, ViewContainerRef } from '@angular/core';
 import { fromEvent, Subscription } from 'rxjs';
 import { filter, take } from 'rxjs/operators';
 import { ContextMenuModel } from './context-menu.model';
@@ -19,15 +19,9 @@ export class ContextMenuComponent implements OnInit {
     public scrollSub: Subscription;
     public isOpen: boolean = false;
     @ViewChild( 'contextMenuTemplate' ) menuTemplate: TemplateRef<any>;
+    @ViewChild( 'mainBackground' ) mainBackground: ElementRef<HTMLElement>;
     
-    // private _menu: Record<string, () => void>;
-    // public get menu(): Record<string, () => void> {
-    //     return this._menu;
-    // }
-    // @Input( 'menu' ) public set menu( value: Record<string, () => void> ) {
-    //     this.keys = Object.keys( value );
-    //     this._menu = value;
-    // }
+    public keepOpen: boolean = false;
     
     private _menu: ContextMenuModel[];
     public get menu(): ContextMenuModel[] {
@@ -80,14 +74,13 @@ export class ContextMenuComponent implements OnInit {
         } ) );
 
         this.clickSub = fromEvent<MouseEvent>( document, 'click' )
-            .subscribe( () => this.close() );
-            // .pipe(
-            //     filter( event => {
-            //         const clickTarget = event.target as HTMLElement;
-            //         return !!this.overlayRef && !this.overlayRef.overlayElement.contains( clickTarget );
-            //     } ),
-            //     take( 1 )
-            // ).subscribe( () => this.close() );
+            .subscribe( () => {
+                if ( !this.keepOpen ) {
+                    this.close();
+                } else {
+                    this.keepOpen = false;
+                }
+            } );
 
         this.scrollSub = fromEvent<MouseEvent>( document, 'mousewheel' )
             .subscribe( () => this.close() );
@@ -103,6 +96,29 @@ export class ContextMenuComponent implements OnInit {
         if ( this.overlayRef ) {
             this.overlayRef.dispose();
             this.overlayRef = null;
+        }
+    }
+
+    public executeAction( menuItem: ContextMenuModel, subMenu?: HTMLElement ): void {
+        if ( menuItem.children?.length > 0 ) {
+            this.keepOpen = true;
+            let padding = 5;
+            let left = this.mainBackground.nativeElement.offsetLeft + this.mainBackground.nativeElement.offsetWidth;
+            if ( left + subMenu.offsetWidth > window.innerWidth - padding ) {
+                left = left - ( left + subMenu.offsetWidth - window.innerWidth ) - padding;
+            }
+            subMenu.style.left = `${left}px`;
+            
+            let topMargin = -41;
+            let bottom = subMenu.offsetTop + subMenu.offsetHeight + this.mainBackground.nativeElement.offsetTop + this.overlayRef.overlayElement.offsetTop;
+            if ( bottom > window.innerHeight - padding ) {
+                topMargin = topMargin - ( bottom - window.innerHeight ) - padding;
+            }
+            subMenu.style.marginTop = `${topMargin}px`;
+            
+        } else {
+            this.keepOpen = menuItem.keepOpen === true;
+            menuItem.action();
         }
     }
 

@@ -5,18 +5,55 @@
         </div>
     </div> -->
     <div class="context-menu-container">
-        <div class="context-menu-background">
-            <div *ngFor="let menuItem of menu" [style.display]="menuItem.hide() ? 'none' : 'block'">
-                <ng-template [ngIf]="menuItem.label === '-'" [ngIfElse]="buttonMenuItem">
+        <div class="context-menu-background" #mainBackground>
+            <div *ngFor="let menuItem of menu" [style.display]="menuItem.hide() ? 'none' : 'block'" class="primary-menu-item">
+
+
+
+                <ng-template [ngIf]="menuItem.label === '-'">
                     <hr />
                 </ng-template>
-                <ng-template #buttonMenuItem>
-                    <button mat-button (click)="menuItem.action()" [disabled]="menuItem.disabled()" [class]="menuItem.cssClass">
+
+
+
+                <ng-template [ngIf]="menuItem.label !== '-' && menuItem.children == undefined">
+                    <button mat-button (click)="executeAction(menuItem)" [disabled]="menuItem.disabled()" [class]="menuItem.cssClass">
                         <mat-icon *ngIf="menuItem.matIcon != null; else iconSpacer" [inline]="true">{{menuItem.matIcon}}</mat-icon>
                         <ng-template #iconSpacer><span class="icon-spacer"></span></ng-template>
                         {{menuItem.label}}
                     </button>
                 </ng-template>
+
+
+
+                <ng-template [ngIf]="menuItem.label !== '-' && menuItem.children != undefined">
+
+                    <button mat-button (mouseenter)="executeAction(menuItem, subMenu)" (mouseleave)="keepOpen = false" [disabled]="menuItem.disabled()" [class]="menuItem.cssClass">
+                        <mat-icon *ngIf="menuItem.matIcon != null; else iconSpacer" [inline]="true">{{menuItem.matIcon}}</mat-icon>
+                        <ng-template #iconSpacer><span class="icon-spacer"></span></ng-template>
+                        {{menuItem.label}}
+                        <mat-icon [inline]="true" style="float: right; margin-right: 0;">arrow_forward_ios</mat-icon>
+                    </button>
+
+                    <div class="context-menu-background sub-menu" #subMenu>
+                        <div *ngFor="let subMenuItem of menuItem.children" [style.display]="subMenuItem.hide() ? 'none' : 'block'">
+                            <ng-template [ngIf]="subMenuItem.label === '-'">
+                                <hr />
+                            </ng-template>
+                            <ng-template [ngIf]="subMenuItem.label !== '-'">
+                                <button mat-button (click)="executeAction(subMenuItem)" [disabled]="subMenuItem.disabled()" [class]="subMenuItem.cssClass">
+                                    <mat-icon *ngIf="subMenuItem.matIcon != null; else iconSpacer" [inline]="true">{{subMenuItem.matIcon}}</mat-icon>
+                                    <ng-template #iconSpacer><span class="icon-spacer"></span></ng-template>
+                                    {{subMenuItem.label}}
+                                </button>
+                            </ng-template>
+                        </div>
+                    </div>
+
+                </ng-template>
+
+
+
             </div>
         </div>
     </div>
