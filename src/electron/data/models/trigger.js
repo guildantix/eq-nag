@@ -29,6 +29,7 @@ var ActionTypes = {
     ScreenGlow: 12,
 }
 
+// TODO: Why wasn't this updated?
 var TriggerConditionTypes = {
     '0': 'Unknown',
     '1': 'VariableValue',
@@ -88,15 +89,15 @@ var TimerRestartBehaviors = {
 
 class TriggerCondition {
     
-    /** @type string */
+    /** @type {string} */
     conditionId;
-    /** @type TriggerConditionTypes */
+    /** @type {TriggerConditionTypes} */
     conditionType;
-    /** @type OperatorTypes */
+    /** @type {OperatorTypes} */
     operatorType;
-    /** @type string */
+    /** @type {string} */
     variableName;
-    /** @type string */
+    /** @type {string} */
     variableValue;
 
 }
@@ -660,4 +661,5 @@ module.exports = {
     TriggerSubAction,
     VariableAssignment,
     TriggerStoreModel,
+    TriggerCondition,
 };
