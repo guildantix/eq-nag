@@ -3,6 +3,7 @@ const {
     ImportTypes,
     TimerRestartBehaviors,
     TriggerStoreModel,
+    TriggerFolder,
 } = require( '../models/trigger' );
 const { backupDatafile } = require( './backup-data-file' );
 const customAlphabet = require( 'nanoid' ).customAlphabet;
@@ -36,6 +37,29 @@ function migrateTriggerData( data, configName, migrationComplete ) {
             }
         } );
     }
+
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Recursively updates trigger folders and initializes folder conditions.
+ * 
+ * @param {TriggerFolder[]} folders The trigger folders to update.
+ */
+function createFolderConditions( folders ) {
+    
+    folders?.forEach( folder => {
+        folder.folderConditions = folder.folderConditions?.length > 0 ? folder.folderConditions : [];
+        createFolderConditions( folder?.children ?? [] );
+    } );
 
 }
 
@@ -610,9 +634,7 @@ function executeDataMigration( data ) {
         
     }
     if ( data.version < 76 ) {
-        data?.folders?.forEach( folder => {
-            folder.folderConditions = folder.folderConditions?.length > 0 ? folder.folderConditions : [];
-        } );
+        createFolderConditions( data?.folders ?? [] );
         
         data.version = 76;
         
