@@ -386,6 +386,15 @@ class UserPreferencesStore extends Store {
         this.storeDataFile( this.#data );
     }
 
+    /** @type {string} */
+    get defaultPaletteName() {
+        return this.#data.defaultPaletteName;
+    }
+    set defaultPaletteName( val ) {
+        this.#data.defaultPaletteName = val;
+        this.storeDataFile( this.#data );
+    }
+
     /** @type {(fctStyles: FctStylesModel) => void[]} */
     onFctStyleChanges = [];
 
