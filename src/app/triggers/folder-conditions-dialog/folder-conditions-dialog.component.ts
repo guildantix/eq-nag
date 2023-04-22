@@ -21,7 +21,6 @@ export class FolderConditionsDialogComponent implements OnInit {
 
     ngOnInit() {
         this.title = this.data.name ?? this.title;
-        console.log( 'this.data.folderConditions', this.data.folderConditions );
         this.conditions = [].concat( this.data.folderConditions );
     }
 
