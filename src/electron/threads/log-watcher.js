@@ -16,6 +16,7 @@ const NumberUtilities = require( '../utilities/numbers' );
 const { FctModel, FctTypes } = require( '../data/models/fct' );
 const { DateUtilities } = require( '../utilities/dates' );
 const { IpcMessage } = require( '../data/models/common' );
+const ArrayUtilities = require( '../utilities/arrays' );
 const chunkSize = 512 * 1024;
 
 /**
@@ -2541,7 +2542,7 @@ function backfind( log, callback ) {
 function applyFolderConditions( folders, conditionAncestry ) {
     for ( let i = 0; i < folders?.length; i++ ) {
         const folder = folders[ i ];
-        let generationConditions = [].concat( conditionAncestry, folder.folderConditions );
+        let generationConditions = ArrayUtilities.concat( conditionAncestry, folder.folderConditions );
 
         for ( let ti = 0; ti < triggers?.length; ti++ ) {
             const trigger = triggers[ ti ];
@@ -2550,7 +2551,7 @@ function applyFolderConditions( folders, conditionAncestry ) {
             }
         }
 
-        applyFolderConditions( folder.children ?? [], [].concat( conditionAncestry, folder.folderConditions ) );
+        applyFolderConditions( folder.children ?? [], ArrayUtilities.concat( conditionAncestry, folder.folderConditions ) );
     }
 }
 
