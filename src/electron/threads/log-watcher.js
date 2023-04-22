@@ -641,9 +641,18 @@ function generateTriggerFns() {
                 }
             } );
 
-            /** @type {Record<string, string[]>} */
+            /** @type {Record<string, string[]>} This object stores values converted from user input for condition checks.  Ex: Knowledge|Tranquility => ['Knowledge', 'Tranquility'] */
             let _conditionValues = {};
             trigger.conditions?.forEach( condition => {
+                if ( condition.variableValue ) {
+                    _conditionValues[ condition.variableName ] = condition.variableValue.split( /\|/gi ) ?? [];
+                    _conditionValues[ condition.variableName ].forEach( v => v = v?.trim() );
+                } else {
+                    _conditionValues[ condition.variableName ] = null;
+                }
+            } );
+
+            trigger._folderConditions?.forEach( condition => {
                 if ( condition.variableValue ) {
                     _conditionValues[ condition.variableName ] = condition.variableValue.split( /\|/gi ) ?? [];
                     _conditionValues[ condition.variableName ].forEach( v => v = v?.trim() );
@@ -715,7 +724,6 @@ function generateTriggerFns() {
                             }
 
                         } else if ( condition.operatorType === OperatorTypes.Contains ) {
-
                             let storedValue = storeContainsValue( condition.variableName, _conditionValues[ condition.variableName ] );
 
                             if ( !storedValue.exists ) {
@@ -742,6 +750,19 @@ function generateTriggerFns() {
 
             // Grab condition values and store them
             trigger.conditions.forEach( condition => {
+                if ( !StringUtilities.isNullOrWhitespace( condition.variableValue ) ) {
+                    let values = condition.variableValue.split( /\|/gi ) ?? [];
+                    usedConditionValues[ condition.variableName ] = usedConditionValues[ condition.variableName ] ? usedConditionValues[ condition.variableName ] : [];
+                    for ( let i = 0; i < values?.length; i++ ) {
+                        if ( usedConditionValues[ condition.variableName ].indexOf( values[ i ] ) == -1 ) {
+                            usedConditionValues[ condition.variableName ].push( values[ i ] );
+                        }
+                    }
+                }
+            } );
+            
+            // Store folder condition values as well
+            trigger._folderConditions?.forEach( condition => {
                 if ( !StringUtilities.isNullOrWhitespace( condition.variableValue ) ) {
                     let values = condition.variableValue.split( /\|/gi ) ?? [];
                     usedConditionValues[ condition.variableName ] = usedConditionValues[ condition.variableName ] ? usedConditionValues[ condition.variableName ] : [];
