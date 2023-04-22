@@ -551,6 +551,7 @@ class TriggerDatabaseStore extends Store {
             }
 
             folders[ i ].folderId = folders[ i ].folderId == null ? nanoid() : folders[ i ].folderId;
+            folders[ i ].folderConditions?.forEach( f => f.conditionId = f.conditionId ? f.conditionId : nanoid() );
         }
     }
 
