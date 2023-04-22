@@ -1,6 +1,14 @@
 .btn-info {
     display: flex;
     flex-direction: column;
-    padding: 10px 50px;
+    margin: 10px 50px;
     margin-bottom: 10px;
+    outline: 10px solid #00000021;
+
+    small {
+        padding: 3px 6px;
+        &:nth-of-type(even){
+            background-color: #00000038;
+        }
+    }
 }
