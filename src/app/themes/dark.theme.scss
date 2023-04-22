@@ -1,6 +1,8 @@
 $color-grey-80: #808080;
 $color-light-grey: #eeeeee;
-$text: #ffffff;
+// $text: #ffffff;
+$text: #ebebeb;
+// $text: #e3e3e3;
 
 $color-light: #ffffffde;
 $color-dark: #373737de;
@@ -141,7 +143,7 @@ $bg-extreme-dark: #191919;
                 color: $color-grey-80;
             }
             input {
-                color: white;
+                color: $text;
             }
             color: $color-grey-80;
         }
@@ -421,7 +423,7 @@ $bg-extreme-dark: #191919;
     .modal {
 
         .titlebar {
-            color: white;
+            color: $text;
         }
     
         footer {
@@ -524,7 +526,7 @@ fieldset.trigger-property-group {
     input[type=number] {
         background-color: unset;
         border: none;
-        color: #fff;
+        color: $text;
     }
 
     .time-element {
