@@ -35,6 +35,24 @@ import { QuestionDialogComponent } from './question-dialog/question-dialog.compo
 @Injectable()
 export class DialogService {
 
+    /**
+     * Workaround to prevent expression error when modals are closed.
+     */
+    private _afc = () => {
+        if ( document.activeElement instanceof HTMLElement ) {
+            // This is a workaround to prevent the error:
+            // 
+            //      ExpressionChangedAfterItHasBeenCheckedError: Expression has changed after it was checked. Previous value for 'mat-form-field-should-float': 'false'. Current value: 'true'.
+            //
+            // I'm sure there's some deeper meaning behind it, but for some 
+            // reason when the confirm dialog's `Yes` button is still the 
+            // active element at this point, that error is written to the 
+            // console.
+            // This error only happens when a list is reloaded after.
+            document.activeElement.blur();
+        }
+    };
+
     constructor( private dialog: MatDialog ) { }
 
 
@@ -126,7 +144,46 @@ export class DialogService {
 
     
     /**
+     * Displays a confirmation dialog to the user.  The observable resolves to, yes = true, no = false, cancel = null.
+     * 
+     * @param message The question to display to the user.
+     * @param yesText The description of the action taken when the user confirms the question.
+     * @param noText The description of the action taken when the user declines the question.
+     * @param cancelText The description of the action taken when the user declines the question. If no value is provided, the cancel button is not rendered.
+     */
+    public showConfirmationDialog( message: string | (string|ColoredString)[], yesText: string, noText: string, cancelText: string|null = null ): Observable<boolean|null> {
+        
+        let dialogRef: MatDialogRef<ConfirmDialogComponent, boolean|null> = this.dialog.open<ConfirmDialogComponent, any, boolean|null>( ConfirmDialogComponent, {
+            width: '550px',
+            data: {
+                message: message,
+                yesMessage: yesText,
+                noMessage: noText,
+                cancelMessage: cancelText,
+            },
+            panelClass: 'app-dialog',
+        } );
+
+        let af = dialogRef.afterClosed();
+
+        af.subscribe( this._afc );
+
+        return af;
+    }
+
+
+
+
+
+
+
+
+
+    
+    /**
      * Displays a confirmation dialog to the user.
+     * 
+     * @deprecated Use showConfirmationDialog instead.
      * 
      * @param message The question to display to the user.
      * @param yesText The description of the action taken when the user confirms the question.
@@ -147,7 +204,9 @@ export class DialogService {
 
         let af = dialogRef.afterClosed();
 
-        af.subscribe( onClose );
+        af.subscribe( confirmed => {
+            onClose( confirmed === true ? true : undefined );
+        } );
         af.subscribe( e => {
 
             if ( document.activeElement instanceof HTMLElement ) {
