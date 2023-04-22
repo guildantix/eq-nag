@@ -319,6 +319,12 @@ class LogBootstrapper {
                     }
                 }
 
+                if ( logFiles.length === 0 ) {
+                    log.info( 'LogBootstrap > No log files to backup, exiting.' );
+                    resolve();
+                    return;
+                }
+
                 this.#logBackupWindow = startLogBackup( logFiles, this.#userPreferences.everquestInstallFolder, this.#isDev, logMaintenanceRules.logSchedule.dayOfWeek, backupIndex ?? 0 );
 
                 // Reset the archive files.
