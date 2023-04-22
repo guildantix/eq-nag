@@ -151,15 +151,16 @@ export class DialogService {
      * @param noText The description of the action taken when the user declines the question.
      * @param cancelText The description of the action taken when the user declines the question. If no value is provided, the cancel button is not rendered.
      */
-    public showConfirmationDialog( message: string | (string|ColoredString)[], yesText: string, noText: string, cancelText: string|null = null ): Observable<boolean|null> {
-        
+    public showConfirmationDialog( message: string | (string|ColoredString)[], yesText: string, noText: string, cancelText: string|null = null, size: 'narrow'|'normal'|'wide' = 'normal', moreInfo: () => void|null = null ): Observable<boolean|null> {
+        size = size ? size : 'normal';
         let dialogRef: MatDialogRef<ConfirmDialogComponent, boolean|null> = this.dialog.open<ConfirmDialogComponent, any, boolean|null>( ConfirmDialogComponent, {
-            width: '550px',
+            width: size === 'narrow' ? '450px' : size === 'wide' ? '650px' : '550px',
             data: {
                 message: message,
                 yesMessage: yesText,
                 noMessage: noText,
                 cancelMessage: cancelText,
+                moreInfo: moreInfo,
             },
             panelClass: 'app-dialog',
         } );
@@ -745,7 +746,9 @@ export class DialogService {
      * @param title The dialog title.
      * @param message The message(s) to display to the user.
      */
-    public showInfoDialog( title: string, message: string | ( string | ColoredString )[] ): MatDialogRef<NotificationDialogComponent> {
+    public showInfoDialog( title: string, message: string | ( string | ColoredString )[], size: 'narrow' | 'normal' | 'wide' = 'narrow' ): MatDialogRef<NotificationDialogComponent> {
+        size = size ? size : 'narrow';
+
         let data: NotificationDialogModel = new NotificationDialogModel();
         
         data.title = title;
@@ -753,7 +756,7 @@ export class DialogService {
         data.notificationType = NotificationTypes.Information;
 
         let ref = this.dialog.open( NotificationDialogComponent, {
-            width: '450px',
+            width: size === 'narrow' ? '450px' : size === 'wide' ? '650px' : '550px',
             data: data,
             panelClass: 'app-dialog',
         } );
