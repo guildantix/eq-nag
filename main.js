@@ -17,7 +17,7 @@ const GameResources = require( './src/electron/data/game-resources' );
 const FilesDatabaseStore = require( './src/electron/data/files-database' );
 const GinaImporter = require( "./src/electron/gina-importer" );
 const CombatParser = require( "./src/electron/utilities/combat-parser" );
-const { IpcMessage, Progress, ScheduledTask, LogMaintenanceRules } = require( "./src/electron/data/models/common" );
+const { IpcMessage, Progress, ScheduledTask, LogMaintenanceRules, Version } = require( "./src/electron/data/models/common" );
 const { LogFileLocation } = require( "./src/electron/data/log-file-location" );
 const VerifiedPlayersStore = require( "./src/electron/data/verified-players" );
 const cronParser = require( 'cron-parser' );
@@ -334,12 +334,19 @@ var updateInfo = null;
 
 autoUpdater.on( 'update-downloaded', () => {
     log.info( 'update-downloaded executed' );
-    mainWindow.webContents.send( 'update_downloaded', updateInfo );
-    winManager.eachWindow( ( window, identifier ) => {
-        log.info( `Sending update to ${identifier}` );
-        // TODO: Load update notes markdown.
-        window.webContents.send( 'update_downloaded', updateInfo );
-    } );
+
+    // TODO: Test this feature.
+    if ( !userPreferences.allowPrerelease || Version.compareVersions( updateInfo.version, app.getVersion() ) === 1 ) {
+
+        mainWindow.webContents.send( 'update_downloaded', updateInfo );
+        winManager.eachWindow( ( window, identifier ) => {
+            log.info( `Sending update to ${identifier}` );
+            // TODO: Load update notes markdown.
+            window.webContents.send( 'update_downloaded', updateInfo );
+        } );
+
+    }
+
     if ( updateCheckInterval > 0 ) {
         // Once an update is loaded, stop checking for updates.
         clearInterval( updateCheckInterval );
