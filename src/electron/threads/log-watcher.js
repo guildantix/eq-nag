@@ -1,10 +1,10 @@
 // const ipc = require( 'electron' ).ipcMain;
 const { ipcRenderer } = require( 'electron' );
 const fs = require( 'fs' );
-const { TriggerAction, ActionTypes, TriggerConditionTypes, OperatorTypes, CharacterClassLevel, TriggerSubAction, TriggerFolder, TriggerCondition } = require( '../data/models/trigger' );
+const { TriggerAction, ActionTypes, TriggerConditionTypes, OperatorTypes, CharacterClassLevel, TriggerSubAction, TriggerFolder, TriggerCondition, CapturePhrase, Phrase } = require( '../data/models/trigger' );
 const { QuickShareAuthorListTypes } = require( '../data/models/common' );
 const { PhraseParse, LogTrigger } = require( './log.model' );
-const { OverlayComponent, OverlayWindow } = require( '../data/models/overlay-window' );
+const { OverlayComponent, OverlayWindow, TriggerSecondaryActionModel } = require( '../data/models/overlay-window' );
 const CharacterModel = require( '../data/models/character' );
 const customAlphabet = require( 'nanoid' ).customAlphabet;
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
@@ -64,8 +64,10 @@ var triggerFolders = [];
 var storedVariables = {};
 /** @type {Record<string, {value: number, lastUpdate: Date, resetDelay: number, _parse: (logEntry: string) => boolean}>} */
 var counters = {};
-/** @type {{_parse: (logEntry: string) => boolean, instanceId: string}} */
+/** @type {{_parse: (logEntry: string) => boolean, instanceId: string}[]} */
 var cancellableComponents = [];
+/** @type {{_parse: (logEntry: string) => boolean, _trigger: (timestamp: Date) => void, instanceId: string}[]} */
+var secondaryTriggerActions = [];
 /** @type {Record<string, string[]>} */
 var usedConditionValues = {};
 var enableFct = false;
@@ -413,9 +415,13 @@ function LogWatcher(character, logPosition) {
 
     ipcRenderer.on( 'component:destroy', function ( event, instanceId ) {
 
+        // Let's remove the destroyed instance from any cancellation or secondary action tracking.
         if ( cancellableComponents?.length > 0 ) {
-            // Remove the cancelled items.
             _.remove( cancellableComponents, token => token.instanceId === instanceId );
+        }
+
+        if ( secondaryTriggerActions?.length > 0 ) {
+            secondaryTriggerActions = secondaryTriggerActions.filter( t => t.instanceId !== instanceId );
         }
         
         actionInstances[ instanceId ] = null;
@@ -434,7 +440,7 @@ function LogWatcher(character, logPosition) {
             }
         }
 
-        if ( activeCounters || cancellableComponents?.length > 0 ) {
+        if ( activeCounters || cancellableComponents?.length > 0 || secondaryTriggerActions?.length > 0 ) {
             // We're still alive, don't kill us!
             e.sender.send( 'log:pulse', true );
         } else {
@@ -1198,6 +1204,19 @@ function parseLogEntries( raw, simulating, padTime ) {
             _.remove( cancellableComponents, token => tokenIds.indexOf( token.instanceId ) > -1 );
         }
 
+        if ( secondaryTriggerActions?.length > 0 ) {
+            
+            // Iterate backwards so we can safely remove triggered actions as we go.
+            for ( let i = secondaryTriggerActions.length - 1; i >= 0; i-- ){
+                const token = secondaryTriggerActions[ i ];
+                if ( token._parse( log ) ) {
+                    token._trigger( token.instanceId, timestamp );
+                    secondaryTriggerActions.splice( i, 1 );
+                }
+            }
+            
+        }
+
         if ( counters ) {
             for ( let key of Object.keys( counters ) ) {
 
@@ -1574,7 +1593,7 @@ function displayDotTimerComponent( res, timestamp, action, deltaTime, trigger ) 
     comp.action.displayText = `${trigger.name} --== ${res.result.groups.target} ==--`;
     comp.overlayId = action.overlayId;
     comp.matches = res.result;
-    comp.timestamp = timestamp;
+    comp.timestamp = comp.action.secondaryPhrases?.length > 0 ? null : timestamp;
     comp.voiceIndex = voiceIndex;
     
     if ( comp.action.endingSoonDisplayText ) {
@@ -1668,6 +1687,47 @@ function displayDotTimerComponent( res, timestamp, action, deltaTime, trigger ) 
             },
             instanceId: comp.instanceId
         } );
+    }
+
+    if ( comp.action.secondaryPhrases?.length > 0 ) {
+        let phrases = trigger.capturePhrases.filter( f => comp.action.secondaryPhrases.indexOf( f.phraseId ) > -1 );
+        let renderedPhrases = renderPhrases( phrases, trigger._conditionResults, res.result, deltaTime, true );
+        
+        secondaryTriggerActions.push( {
+            /**
+             * Returns true if the given log entry matches the phrases.
+             * 
+             * @param {string} logEntry The log entry to parse.
+             * @returns {boolean}
+             */
+            _parse: ( logEntry ) => {
+                let matched = false;
+                
+                renderedPhrases.forEach( phrase => {
+                    let _res = new RegExp( phrase, 'gi' ).exec( logEntry );
+                    if ( _res?.length > 0 ) {
+                        enableLogging && sendInformationToLog( `DoT Timer secondary action: [${logEntry}]` );
+                        matched = true;
+                    }
+                } );
+
+                return matched;
+            },
+            /**
+             * Executes this component's secondary action.
+             * 
+             * @param {string} instanceId The instance id of the component.
+             * @param {Date} timestamp The timestamp of the log entry.
+             */
+            _trigger: ( instanceId, timestamp ) => {
+                let m = new TriggerSecondaryActionModel();
+                m.instanceId = instanceId;
+                m.timestamp = timestamp;
+                ipcRenderer.send( 'overlay:send:secondary-action', m );
+            },
+            instanceId: comp.instanceId
+        } );
+        
     }
 
     return comp.instanceId;
@@ -2154,12 +2214,15 @@ function clearAllStoredValuesInVariable( key ) {
 /**
  * Renders the given list of phrases into regular expressions.
  * 
- * @param {Phrase} phrases The list of phrases to render.
+ * @returns {string[]} Returns the rendered phrase regex.
+ * 
+ * @param {Phrase[]} phrases The list of phrases to render.
  * @param {Record<string,any>} conditionResults The value of condition checks for the executed trigger.
  * @param {RegExpExecArray} parseResult The regexp exec array of the parsed log entry.
  * @param {number} deltaTime The change in time, in milliseconds, since the previous sequential capture.
+ * @param {boolean} parseSequentialMatches If true, sequential group matches will be parsed.
  */
-function renderPhrases( phrases, conditionResults, parseResult, deltaTime ) {
+function renderPhrases( phrases, conditionResults, parseResult, deltaTime, parseSequentialMatches ) {
     let renderedPhrases = [];
     
     deltaTime = deltaTime != null ? deltaTime : 0;
@@ -2170,6 +2233,7 @@ function renderPhrases( phrases, conditionResults, parseResult, deltaTime ) {
         renderedPhrase = StringUtilities.parseShortCodeValuesToLiteral( renderedPhrase, characterName, 0, parseResult?.groups, parseResult ? parseResult[ 0 ] : null );
         renderedPhrase = StringUtilities.parseStoredVariablesToLiteral( renderedPhrase, storedVariables );
         renderedPhrase = conditionResults?.length > 0 ? StringUtilities.parseConditionResultsToLiteral( renderedPhrase, conditionResults ) : renderedPhrase;
+        renderedPhrase = parseSequentialMatches === true && parseResult?.groups ? StringUtilities.parseSequentialGroups( renderedPhrase, parseResult.groups ) : renderedPhrase;
         renderedPhrase = parseResult?.length > 0 ? StringUtilities.parseMatchesToLiteral( renderedPhrase, parseResult, deltaTime ) : renderedPhrase;
         renderedPhrase = StringUtilities.parseCountersToLiteral( renderedPhrase, counters );
 

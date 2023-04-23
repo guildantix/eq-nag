@@ -339,6 +339,10 @@ class WindowManager {
             this.#renderer.webContents.send( 'renderer:receive:component', component );
         } );
         
+        ipcMain.on( 'overlay:send:secondary-action', ( event, token ) => {
+            this.#renderer.webContents.send( 'renderer:receive:secondary-action', token );
+        } );
+        
         ipcMain.on( 'overlay:send:fct-component', ( event, component ) => {
             this.#renderer.webContents.send( 'renderer:receive:fct-component', component );
         } );
