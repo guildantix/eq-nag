@@ -66,8 +66,10 @@ var storedVariables = {};
 var counters = {};
 /** @type {{_parse: (logEntry: string) => boolean, instanceId: string}[]} */
 var cancellableComponents = [];
-/** @type {{_parse: (logEntry: string) => boolean, _trigger: (timestamp: Date) => void, instanceId: string}[]} */
+/** @type {{_parse: (logEntry: string) => boolean, _trigger: (instanceId: string, timestamp: Date) => void, instanceId: string}[]} */
 var secondaryTriggerActions = [];
+/** @type {{_parse: (logEntry: string) => boolean, _trigger: (instanceId: string, timestamp: Date) => void, instanceId: string}[]} */
+var dotWornOffTracking = [];
 /** @type {Record<string, string[]>} */
 var usedConditionValues = {};
 var enableFct = false;
@@ -97,6 +99,7 @@ var persistentDictionary = {};
 var detrimentalOverlayId = null;
 /** @type {string} */
 var characterId = null;
+const serverTickDuration = 6;
 
 /** @type {Record<string, {trigger: LogTrigger, res: PhraseParse}>} */
 let actionInstances = {};
@@ -1217,6 +1220,19 @@ function parseLogEntries( raw, simulating, padTime ) {
             
         }
 
+        if ( dotWornOffTracking?.length > 0 ) {
+            
+            // Iterate backwards so we can safely remove expired actions as we go.
+            for ( let i = dotWornOffTracking.length - 1; i >= 0; i-- ){
+                const token = dotWornOffTracking[ i ];
+                if ( token._parse( log ) ) {
+                    token._trigger( token.instanceId, timestamp );
+                    dotWornOffTracking.splice( i, 1 );
+                }
+            }
+            
+        }
+
         if ( counters ) {
             for ( let key of Object.keys( counters ) ) {
 
@@ -1692,7 +1708,8 @@ function displayDotTimerComponent( res, timestamp, action, deltaTime, trigger ) 
     if ( comp.action.secondaryPhrases?.length > 0 ) {
         let phrases = trigger.capturePhrases.filter( f => comp.action.secondaryPhrases.indexOf( f.phraseId ) > -1 );
         let renderedPhrases = renderPhrases( phrases, trigger._conditionResults, res.result, deltaTime, true );
-        
+
+        // TODO: Remove tracking when log:destroy:component => component:destroy.
         secondaryTriggerActions.push( {
             /**
              * Returns true if the given log entry matches the phrases.
@@ -1723,9 +1740,55 @@ function displayDotTimerComponent( res, timestamp, action, deltaTime, trigger ) 
                 let m = new TriggerSecondaryActionModel();
                 m.instanceId = instanceId;
                 m.timestamp = timestamp;
+                m.action = 'setStart';
                 ipcRenderer.send( 'overlay:send:secondary-action', m );
             },
             instanceId: comp.instanceId
+        } );
+
+        let wornOffPhrase = new Phrase();
+        // https://regex101.com/r/zp2l25/1
+        // ^Your Polybiad Venom(?:\sRk\. III?)? spell has worn off of Combat Dummy Azia\.
+        wornOffPhrase.phrase = `^Your ${trigger.name}(?:\\sRk\\. III?)? spell has worn off of ?{target}\\.`;
+        wornOffPhrase.useRegEx = true;
+        wornOffPhrase.phraseId = nanoid();
+        let renderedWornOffPhrases = renderPhrases( [ wornOffPhrase ], trigger._conditionResults, res.result, deltaTime, true );
+        
+        // TODO: Remove tracking when log:destroy:component => component:destroy.
+        dotWornOffTracking.push( {
+            /**
+             * Returns true if the given log entry matches the phrases.
+             * 
+             * @param {string} logEntry The log entry to parse.
+             * @returns {boolean}
+             */
+            _parse: ( logEntry ) => {
+                
+                for ( let i = 0; i < renderedWornOffPhrases.length; i++ ) {
+                    const phrase = renderedWornOffPhrases[ i ];
+                    let _res = new RegExp( phrase, 'gi' ).exec( logEntry );
+                    if ( _res?.length > 0 ) {
+                        enableLogging && sendInformationToLog( `DoT Timer worn off: [${logEntry}]` );
+                        return true;
+                    }
+                }
+
+                return false;
+            },
+            /**
+             * Executes this component's secondary action.
+             * 
+             * @param {string} instanceId The instance id of the component.
+             * @param {Date} timestamp The timestamp of the log entry.
+             */
+            _trigger: ( instanceId, timestamp ) => {
+                let m = new TriggerSecondaryActionModel();
+                m.instanceId = instanceId;
+                m.action = 'clipTimer';
+                m.timestamp = timestamp;
+                ipcRenderer.send( 'overlay:send:secondary-action', m );
+            },
+            instanceId: comp.instanceId,
         } );
         
     }
