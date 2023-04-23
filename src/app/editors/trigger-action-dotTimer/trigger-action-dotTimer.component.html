@@ -10,7 +10,7 @@
                         <mat-select [(ngModel)]="action.secondaryPhrases" name="ddlActionSecondaryPhrases" multiple>
                             <mat-option *ngFor="let phrase of capturePhrases" [value]="phrase.phraseId">{{phrase.phrase}}</mat-option>
                         </mat-select>
-                        <mat-hint>Start the timer duration on this phrase(s)</mat-hint>
+                        <mat-hint>Select the capture phrase for the dot's tick damage (not the initial damage).</mat-hint>
                     </mat-form-field>
                 </div>
             </div>
