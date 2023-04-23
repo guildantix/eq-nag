@@ -264,7 +264,7 @@ table {
     }
     >.full-width {
         max-width:100%;
-        width:100%;
+        width: calc(100% - 10px);
     }
     >.content-middle {
         align-self: center;
