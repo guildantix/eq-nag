@@ -177,55 +177,59 @@ class TriggerSubAction {
 
 class TriggerAction {
 
+    /** @type {string} */
     actionId = null;
+    /** @type {ActionTypes} */
     actionType = ActionTypes.DisplayText;
+    /** @type {string} */
     overlayId;
     /** @type {string} */
     name;
+    /** @type {string} */
     displayText;
-    /** @type number */
+    /** @type {number} */
     duration = null;
     /** @type {string} */
     storageDuration = null;
-    /** @type boolean */
+    /** @type {boolean} */
     showRemainingDuration = false;
-    /** @type boolean */
+    /** @type {boolean} */
     repeatTimer = false;
-    /** @type number */
+    /** @type {number} */
     repeatCount = null;
-    /** @type string */
+    /** @type {string} */
     variableName = null;
     /** @type {string} */
     storeLiteralDefinition = null;
-    /** @type boolean */
+    /** @type {boolean} */
     onlyStoreUsedValues = false;
-    /** @type boolean */
+    /** @type {boolean} */
     loopBackForValue = false;
-    /** @type number */
+    /** @type {number} */
     ticks = null;
-    /** @type string[] */
+    /** @type {string[]} */
     phrases;
     /** @type {number} */
     restartBehavior = TimerRestartBehaviors.StartNewTimer;
-    /** @type boolean */
+    /** @type {boolean} */
     onlyExecuteInDev = false;
-    /** @type string */
+    /** @type {string} */
     overrideTimerColor = null;
-    /** @type string */
+    /** @type {string} */
     timerBackgroundColor = null;
-    /** @type string */
+    /** @type {string} */
     timerIcon = null;
-    /** @type string */
+    /** @type {string} */
     timerIconDef = null;
-    /** @type boolean */
+    /** @type {boolean} */
     interruptSpeech = false;
     /** @type {number} */
     speechVolume = 100;
-    /** @type boolean */
+    /** @type {boolean} */
     hideTimer = false;
     /** @type {TriggerCondition[]} */
     hideConditions = [];
-    /** @type number */
+    /** @type {number} */
     castTime = null;
     /** @type {boolean} */
     onlyUseAaBeneficialFocus = false;
