@@ -132,7 +132,8 @@ export class NewTriggerDialogComponent implements OnInit {
         let endingSoonVals = originalDotAction != null && originalDotAction.ifEndingSoon;
         let remainAfterVals = originalDotAction != null && originalDotAction.remainAfterEnded;
         actions.push( <TriggerAction>{
-            phrases: [ trigger.capturePhrases[ 1 ].phraseId ],
+            phrases: [ trigger.capturePhrases[ 0 ].phraseId ],
+            secondaryPhrases: [ trigger.capturePhrases[ 1 ].phraseId ],
             actionType: ActionTypes.DotTimer,
             overlayId: this.overlayId,
             duration: this.spell.duration,
@@ -151,17 +152,17 @@ export class NewTriggerDialogComponent implements OnInit {
             endingSoonSpeak: endingSoonVals ? originalDotAction.endingSoonSpeak : false,
             endingSoonSpeakPhrase: endingSoonVals ? originalDotAction.endingSoonSpeakPhrase : null,
             
-            remainAfterEnded: remainAfterVals ? true : false,
-            remainDuration: remainAfterVals ? originalDotAction.remainDuration : null,
-            endedDisplayText: remainAfterVals ? originalDotAction.endedDisplayText : null,
-            endedTextOverlayId: remainAfterVals ? originalDotAction.endedTextOverlayId : null,
-            endedText: remainAfterVals ? originalDotAction.endedText : null,
-            endedTextDuration: remainAfterVals ? originalDotAction.endedTextDuration : null,
-            endedSpeak: remainAfterVals ? originalDotAction.endedSpeak : false,
-            endedSpeakPhrase: remainAfterVals ? originalDotAction.endedSpeakPhrase : null,
-            endedChangeColor: remainAfterVals ? originalDotAction.endedChangeColor : null,
-            endedColor: remainAfterVals ? originalDotAction.endedColor : null,
-            endedBackgroundColor: remainAfterVals ? originalDotAction.endedBackgroundColor : null,
+            remainAfterEnded: originalDotAction?.remainAfterEnded === false ? false : true,
+            remainDuration: originalDotAction?.remainAfterEnded === true ? originalDotAction.remainDuration : 12,
+            endedDisplayText: originalDotAction?.remainAfterEnded === true ? originalDotAction.endedDisplayText : null,
+            endedTextOverlayId: originalDotAction?.remainAfterEnded === true ? originalDotAction.endedTextOverlayId : null,
+            endedText: originalDotAction?.remainAfterEnded === true ? originalDotAction.endedText : null,
+            endedTextDuration: originalDotAction?.remainAfterEnded === true ? originalDotAction.endedTextDuration : null,
+            endedSpeak: originalDotAction?.remainAfterEnded === true ? originalDotAction.endedSpeak : false,
+            endedSpeakPhrase: originalDotAction?.remainAfterEnded === true ? originalDotAction.endedSpeakPhrase : null,
+            endedChangeColor: originalDotAction?.remainAfterEnded === true ? originalDotAction.endedChangeColor : true,
+            endedColor: originalDotAction?.remainAfterEnded === true ? originalDotAction.endedColor : '#b71c1c',
+            endedBackgroundColor: originalDotAction?.remainAfterEnded === true ? originalDotAction.endedBackgroundColor : 'rgba(48,7,7,0.75)',
         } );
 
         if ( this.onlyExecuteForRareEqTargets ) {
