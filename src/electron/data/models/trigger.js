@@ -209,6 +209,8 @@ class TriggerAction {
     ticks = null;
     /** @type {string[]} */
     phrases;
+    /** @type {string[]} */
+    secondaryPhrases;
     /** @type {number} */
     restartBehavior = TimerRestartBehaviors.StartNewTimer;
     /** @type {boolean} */

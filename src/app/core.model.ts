@@ -640,7 +640,7 @@ export class TriggerAction extends TriggerActionProperties {
     public phrases: string[] = [];
     public name: string;
     public displayText: string;
-
+    public secondaryPhrases: string[] = [];
 
 
 
