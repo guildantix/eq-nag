@@ -143,4 +143,11 @@ class OverlayStoreModel {
     overlays;
 }
 
-module.exports = { OverlayDimensions, OverlayWindow, OverlayComponent, TimerSortTypes, OverlayStoreModel };
+class TriggerSecondaryActionModel {
+    /** @type {Date} */
+    timestamp;
+    /** @type {string} */
+    instanceId;
+}
+
+module.exports = { OverlayDimensions, OverlayWindow, OverlayComponent, TimerSortTypes, OverlayStoreModel, TriggerSecondaryActionModel };
