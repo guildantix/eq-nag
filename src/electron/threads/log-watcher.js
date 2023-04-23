@@ -426,6 +426,10 @@ function LogWatcher(character, logPosition) {
         if ( secondaryTriggerActions?.length > 0 ) {
             secondaryTriggerActions = secondaryTriggerActions.filter( t => t.instanceId !== instanceId );
         }
+
+        if ( dotWornOffTracking?.length > 0 ) {
+            dotWornOffTracking = dotWornOffTracking.filter( t => t.instanceId !== instanceId );
+        }
         
         actionInstances[ instanceId ] = null;
 
@@ -1709,7 +1713,6 @@ function displayDotTimerComponent( res, timestamp, action, deltaTime, trigger ) 
         let phrases = trigger.capturePhrases.filter( f => comp.action.secondaryPhrases.indexOf( f.phraseId ) > -1 );
         let renderedPhrases = renderPhrases( phrases, trigger._conditionResults, res.result, deltaTime, true );
 
-        // TODO: Remove tracking when log:destroy:component => component:destroy.
         secondaryTriggerActions.push( {
             /**
              * Returns true if the given log entry matches the phrases.
@@ -1754,7 +1757,6 @@ function displayDotTimerComponent( res, timestamp, action, deltaTime, trigger ) 
         wornOffPhrase.phraseId = nanoid();
         let renderedWornOffPhrases = renderPhrases( [ wornOffPhrase ], trigger._conditionResults, res.result, deltaTime, true );
         
-        // TODO: Remove tracking when log:destroy:component => component:destroy.
         dotWornOffTracking.push( {
             /**
              * Returns true if the given log entry matches the phrases.
