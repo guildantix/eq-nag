@@ -90,6 +90,27 @@ function _addSeconds( value, seconds ) {
 
 
 
+
+/**
+ * Adds the given millseconds to the given date value.
+ * 
+ * @param {Date} value The original date value.
+ * @param {number} milliseconds The number of milliseconds to add.
+ * @returns Returns a new Date instance.
+ */
+function _addMilliseconds( value, milliseconds ) {
+    return new Date( value.getTime() + milliseconds );
+}
+
+
+
+
+
+
+
+
+
+
 /**
  * Adds the given days to the given date value.
  * 
@@ -113,6 +134,7 @@ function _addDays( value, days ) {
 const DateUtilities = {
     timeSince: _timeSince,
     addSeconds: _addSeconds,
+    addMilliseconds: _addMilliseconds,
     addDays: _addDays,
 };
 
