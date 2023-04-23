@@ -253,6 +253,30 @@
             100% { opacity: 0; }
         }
 
+        .notice-me {
+            transform-origin: center center;
+            animation: notice-me 3.33s 1 ease-in-out;
+            backface-visibility: hidden;
+            -webkit-font-smoothing: subpixel-antialiased;
+            transform: translateZ(0);
+        }
+
+        @keyframes notice-me {
+            0% { transform: scale(1.0); }
+            11.9% { transform: scale(1.25); }
+            28.6% { transform: scale(0.9); }
+
+            /* 33.4% { transform: scale(1.0); } */
+            45.3% { transform: scale(1.25); }
+            62% { transform: scale(0.9); }
+
+            /* 66.8% { transform: scale(1.0); } */
+            78.7% { transform: scale(1.25); }
+            95.4% { transform: scale(0.9); }
+
+            100% { transform: scale(1.0); }
+        }
+
         .fct-content {
             display: flex;
             flex-direction: column;
