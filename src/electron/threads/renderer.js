@@ -16,6 +16,7 @@ const { FctStylesModel, FctModel, FctTypes } = require( '../data/models/fct' );
 const ElectronUtilities = require( '../utilities/electron' );
 const { StyleProperties } = require( '../data/models/common' );
 const { screen } = require( '@electron/remote' );
+const { DateUtilities } = require( '../utilities/dates' );
 
 /**
  * Sends the error information to the main thread for logging.
@@ -277,10 +278,16 @@ function Renderer( originX, originY, glowOnStart ) {
          */
         function ( event, model ) {
             const component = findComponent( c => c.instanceId === model.instanceId );
-            console.log( 'received', model, component );
+            
             if ( component ) {
-                if ( component.action.actionType === ActionTypes.DotTimer ) {
+                if ( model.action === 'setStart' ) {
                     component.start = model.timestamp;
+                } else if ( model.action === 'extendDuration' ) {
+                    component.start = DateUtilities.addSeconds( component.start, model.duration );
+                } else if ( model.action === 'clipTimer' ) {
+                    component.start = DateUtilities.addSeconds( component.start, DateUtilities.timeSince( component.start, model.timestamp ).totalSeconds - component.action.duration );
+                    component.dom.classList.remove( 'notice-me' );
+                    component.dom.classList.add( 'notice-me' );
                 }
             }
         } );
