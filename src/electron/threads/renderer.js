@@ -3,7 +3,7 @@ const DomUtilities = require( '../utilities/dom' );
 const StringUtilities = require( '../utilities/string' );
 const NumberUtilities = require( '../utilities/numbers' );
 const ArrayUtilities = require( '../utilities/arrays' );
-const { OverlayDimensions, OverlayWindow, OverlayComponent, TimerSortTypes } = require( '../data/models/overlay-window' );
+const { OverlayDimensions, OverlayWindow, OverlayComponent, TimerSortTypes, TriggerSecondaryActionModel } = require( '../data/models/overlay-window' );
 const { ActionTypes, TriggerAction, TriggerConditionTypes, OperatorTypes, TimerRestartBehaviors } = require( '../data/models/trigger' );
 const { ipcRenderer } = require( 'electron' );
 const Handlebars = require( "handlebars" );
@@ -160,6 +160,7 @@ var screenGlower = null;
 /** @type {number} */
 var screenGlowTimerId = null;
 let showCriticalsInline = false;
+const intMaxValue = 9007199254740991;
 
 
 
@@ -266,6 +267,22 @@ function Renderer( originX, originY, glowOnStart ) {
         function ( event, model ) {
             model.added = new Date();
             render( model.overlayId, model );
+        } );
+
+    ipcRenderer.on( 'renderer:receive:secondary-action',
+        /**
+         * Handles receiving a secondary trigger action.
+         * @param {*} event The event object.
+         * @param {TriggerSecondaryActionModel} model The trigger secondary action token.
+         */
+        function ( event, model ) {
+            const component = findComponent( c => c.instanceId === model.instanceId );
+            console.log( 'received', model, component );
+            if ( component ) {
+                if ( component.action.actionType === ActionTypes.DotTimer ) {
+                    component.start = model.timestamp;
+                }
+            }
         } );
 
     ipcRenderer.on( 'renderer:receive:fct-component',
@@ -1736,15 +1753,17 @@ function applyTimerSettings( overlayId, contentArea, comp, group ) {
         }
     }
 
-    if ( overlayInstances[ overlayId ].showRemainingDuration || comp.action.showRemainingDuration ) {
+    // Set the starting conditions for the timer.
+    comp.start = comp.timestamp;
+    comp.timeRemaining = comp.action.duration;
+
+    if ( comp.start == null ) {
+        comp.dom.querySelector( 'span.time-remaining' ).innerHTML = `(??)&nbsp;`;
+    } else if ( overlayInstances[ overlayId ].showRemainingDuration || comp.action.showRemainingDuration ) {
         comp.dom.querySelector( 'span.time-remaining' ).innerHTML = `(${comp.action.duration})&nbsp;`;
     } else {
         comp.dom.querySelector( 'span.time-remaining' ).innerHTML = ``;
     }
-
-    // Set the starting conditions for the timer.
-    comp.start = comp.timestamp;
-    comp.timeRemaining = comp.action.duration;
 
     // Update visibility
     if ( comp.action.hideTimer ) {
@@ -1792,17 +1811,29 @@ function applyTimerSettings( overlayId, contentArea, comp, group ) {
 
     // Set the update method.
     comp.intervalId = window.setInterval( () => {
-        let perc = ( Math.abs( ( new Date() ) - comp.start ) / 1000 ) / comp.action.duration;
 
-        comp.timeRemaining = comp.action.duration - ( comp.action.duration * perc );
+        let perc = 0;
+        let infinite = false;
 
-        if ( comp.action.actionType === ActionTypes.Countdown || comp.action.actionType === ActionTypes.BeneficialTimer ) {
+        if ( comp.start == null ) {
+            infinite = true;
+            comp.timeRemaining = intMaxValue;
+        } else {
+            perc = ( Math.abs( ( new Date() ) - comp.start ) / 1000 ) / comp.action.duration;
+            comp.timeRemaining = comp.action.duration - ( comp.action.duration * perc );
+        }
+
+        if ( infinite ) {
+            // Do nothing.
+        } else if ( comp.action.actionType === ActionTypes.Countdown || comp.action.actionType === ActionTypes.BeneficialTimer ) {
             comp.dom.querySelector( 'div.determinate' ).style.width = `${100 - ( perc * 100 )}%`;
         } else {
             comp.dom.querySelector( 'div.determinate' ).style.width = `${perc * 100}%`;
         }
 
-        if ( overlayInstances[ overlayId ].showRemainingDuration || comp.action.showRemainingDuration ) {
+        if ( infinite ) {
+            comp.dom.querySelector( 'span.time-remaining' ).innerHTML = `(??)&nbsp;`;
+        } else if ( overlayInstances[ overlayId ].showRemainingDuration || comp.action.showRemainingDuration ) {
             comp.dom.querySelector( 'span.time-remaining' ).innerHTML = `(${getDurationLabel( overlayId, comp.timeRemaining )})&nbsp;`;
         } else {
             comp.dom.querySelector( 'span.time-remaining' ).innerHTML = ``;
@@ -2109,6 +2140,58 @@ function findComponents( predicate ) {
     }
 
     return results;
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Finds the first overlay component that satisfies the given predicate.
+ * 
+ * @description This method will search all overlays.
+ * 
+ * @returns {OverlayComponent|null} Returns the first overlay components that satisfies the predicate.  Searches all overlays.
+ * 
+ * @param {(component: OverlayComponent) => boolean} predicate Invoked per iteration, if true the component is immediately returned.
+ */
+function findComponent( predicate ) {
+    for ( let overlayId in overlayInstances ) {
+        if ( overlayInstances.hasOwnProperty( overlayId ) ) {
+
+            if ( overlayInstances[ overlayId ].groupByTarget ) {
+
+                for ( let key of Object.keys( overlayInstances[ overlayId ].overlayGroups ) ) {
+
+                    for ( let i = 0; i < overlayInstances[ overlayId ].overlayGroups[ key ].components?.length; i++ ){
+                        const c = overlayInstances[ overlayId ].overlayGroups[ key ].components[ i ];
+                        if ( predicate( c ) ) {
+                            return c;
+                        }
+                    }
+
+                }
+        
+            } else {
+        
+                for ( let i = 0; i < overlayInstances[ overlayId ].overlayComponents?.length; i++ ){
+                    const c = overlayInstances[ overlayId ].overlayComponents[ i ];
+                    if ( predicate( c ) ) {
+                        return c;
+                    }
+                }
+        
+            }
+
+        }
+    }
+
+    return null;
 }
 
 
