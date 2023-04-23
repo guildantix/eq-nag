@@ -285,9 +285,12 @@ function Renderer( originX, originY, glowOnStart ) {
                 } else if ( model.action === 'extendDuration' ) {
                     component.start = DateUtilities.addSeconds( component.start, model.duration );
                 } else if ( model.action === 'clipTimer' ) {
+                    let noticeMe = DateUtilities.timeSince( component.start, model.timestamp ).totalSeconds - component.action.duration < 0;
                     component.start = DateUtilities.addSeconds( component.start, DateUtilities.timeSince( component.start, model.timestamp ).totalSeconds - component.action.duration );
-                    component.dom.classList.remove( 'notice-me' );
-                    component.dom.classList.add( 'notice-me' );
+                    if ( noticeMe ) {
+                        component.dom.classList.remove( 'notice-me' );
+                        component.dom.classList.add( 'notice-me' );
+                    }
                 }
             }
         } );
