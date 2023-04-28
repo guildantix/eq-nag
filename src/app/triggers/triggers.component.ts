@@ -1769,6 +1769,17 @@ export class TriggersComponent implements OnInit {
 
     }
 
+    /**
+     * Opens the gina importer window.
+     */
+    ginaImporter() {
+        this.ipcService.showGinaImportWindow().subscribe( loaded => {
+            if ( !loaded ) {
+                this.dialogService.showErrorDialog( 'GINA Import', 'Could not load GINA data.' );
+            }
+        } );
+    }
+
 
 
 
