@@ -41,8 +41,6 @@ const verifiedPlayersDatabase = new VerifiedPlayersStore();
 /** @type {Tray} */
 var trayMenu = null;
 
-GH_TOKEN = "e3460400ae1273a5cac83e1b86a5aceae7f8bab7";
-
 autoUpdater.logger = log;
 
 require( '@electron/remote/main' ).initialize();
