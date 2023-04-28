@@ -15,6 +15,7 @@ import { customAlphabet } from 'nanoid';
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const nanoid = customAlphabet( alphabet, 16 );
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { nagId } from 'src/app/core/nag-id.util';
 
 interface GinaTreeNode {
     expandable: boolean;
@@ -24,6 +25,8 @@ interface GinaTreeNode {
     ginaName: string;
     imported: boolean;
     folders: string[];
+    selected: boolean;
+    id: string;
 }
 
 class GinaTreeObject {
@@ -34,6 +37,8 @@ class GinaTreeObject {
     ginaName: string;
     imported: boolean;
     folders: string[] = [];
+    selected: boolean;
+    id: string;
 }
 
 @Component( {
@@ -51,7 +56,7 @@ class GinaTreeObject {
 export class GinaImportWindowComponent implements OnInit {
 
     private _transformer = ( node: GinaTreeObject, level: number ) => {
-        return {
+        let m = {
             expandable: node.children?.length > 0,
             name: node.name,
             level: level,
@@ -59,7 +64,15 @@ export class GinaImportWindowComponent implements OnInit {
             ginaName: node.ginaName,
             imported: node.imported,
             folders: node.folders,
+            id: node.id,
         };
+
+        Object.defineProperty( m, 'selected', {
+            get: () => node.selected,
+            set: ( v: boolean ) => this.updateFolderHierarchySelectedState( node, v ),
+        } );
+
+        return m;
     }
     public treeControl = new FlatTreeControl<GinaTreeNode>( node => node ? node.level : 1, node => node.expandable );
     public treeFlattener = new MatTreeFlattener(this._transformer, node => node.level, node => node.expandable, node => node.children);
@@ -202,6 +215,8 @@ export class GinaImportWindowComponent implements OnInit {
                             ginaName: `${transform.ActualWord}`,
                             imported: this.ignoredGinaObjects.indexOf( transform.ActualWord ) > -1 || this.importedPhoneticTransforms.indexOf( transform.ActualWord ) > -1,
                             folders: [ 'Phonetic Transforms' ],
+                            selected: false,
+                            id: nagId(),
                         } );
                     } );
 
@@ -242,9 +257,11 @@ export class GinaImportWindowComponent implements OnInit {
         groups?.forEach( group => {
             let groupNode = new GinaTreeObject();
 
+            groupNode.id = nagId();
             groupNode.name = group.Name;
             groupNode.ginaName = `${ginaName}/${group.Name}`;
             groupNode.folders = ginaFolders.concat( [ group.Name ] );
+            groupNode.selected = false;
 
             if ( group.TriggerGroups?.TriggerGroup?.length > 0 ) {
                 groupNode.children = this.getGinaTriggerGroupNodes( group.TriggerGroups.TriggerGroup, groupNode.ginaName, groupNode.folders );
@@ -259,6 +276,8 @@ export class GinaImportWindowComponent implements OnInit {
                     ginaName: `${groupNode.ginaName}/${trigger.Name}`,
                     imported: this.ignoredGinaObjects.indexOf( `${groupNode.ginaName}/${trigger.Name}` ) > -1 || this.importedTriggerNames.indexOf( `${groupNode.ginaName}/${trigger.Name}` ) > -1,
                     folders: groupNode.folders,
+                    selected: false,
+                    id: nagId(),
                 } );
             } );
             
@@ -786,6 +805,11 @@ export class GinaImportWindowComponent implements OnInit {
 
     public closeModal(): void {
         this.ipcService.closeThisChild();
+    }
+
+    private updateFolderHierarchySelectedState( node: GinaTreeObject, selected: boolean ) {
+        node.selected = selected;
+        node.children?.forEach( c => this.updateFolderHierarchySelectedState( c, selected ) );
     }
 
 }

@@ -37,17 +37,19 @@
                                     <button mat-icon-button class="trigger-button">
                                         <mat-icon>label</mat-icon>
                                     </button>
+                                    <mat-checkbox [(ngModel)]="node.selected" name="nodeSelected_{{node.id}}"></mat-checkbox>
                                     <div class="tree-click-target" title="{{node.ginaName}}"><span>{{node.name}}</span></div>
                                 </mat-tree-node>
             
                                 <!-- This is the tree node template for expandable nodes -->
                                 <!-- [ngClass]="{selected: node.folderId === selectedFolderId}" [appContextMenu]="getFolderContextMenu(node.folderId, node.name)" -->
-                                <mat-tree-node *matTreeNodeDef="let node;when: hasChild" matTreeNodePadding matTreeNodePaddingIndent="20" [appContextMenu]="getGroupContextMenu(node)">
+                                <mat-tree-node *matTreeNodeDef="let node; when: hasChild" matTreeNodePadding matTreeNodePaddingIndent="20" [appContextMenu]="getGroupContextMenu(node)">
                                     <button mat-icon-button matTreeNodeToggle [attr.aria-label]="'Toggle ' + node.name" (click)="onExpand(node)">
                                         <mat-icon [inline]="true" class="mat-icon-rtl-mirror">
                                             {{treeControl.isExpanded(node) ? 'expand_more' : 'chevron_right'}}
                                         </mat-icon>
                                     </button>
+                                    <mat-checkbox [(ngModel)]="node.selected" name="nodeSelected_{{node.id}}"></mat-checkbox>
                                     <div class="tree-click-target"><span>{{node.name}}</span></div>
                                 </mat-tree-node>
                             </mat-tree>
