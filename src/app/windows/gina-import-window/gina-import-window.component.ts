@@ -56,7 +56,7 @@ class GinaTreeObject {
 export class GinaImportWindowComponent implements OnInit {
 
     private _transformer = ( node: GinaTreeObject, level: number ) => {
-        let m = {
+        let m = <GinaTreeNode>{
             expandable: node.children?.length > 0,
             name: node.name,
             level: level,
@@ -69,22 +69,31 @@ export class GinaImportWindowComponent implements OnInit {
 
         Object.defineProperty( m, 'selected', {
             get: () => node.selected,
-            set: ( v: boolean ) => this.updateFolderHierarchySelectedState( node, v ),
+            set: ( v: boolean ) => {
+                this.updateFolderHierarchySelectedState( node, v );
+                this.checkForMultipleSelects();
+                if ( this.hasMultipleSelected ) {
+                    this.generateFlatSelectData();
+                }
+            },
         } );
 
         return m;
     }
     public treeControl = new FlatTreeControl<GinaTreeNode>( node => node ? node.level : 1, node => node.expandable );
-    public treeFlattener = new MatTreeFlattener(this._transformer, node => node.level, node => node.expandable, node => node.children);
+    public treeFlattener = new MatTreeFlattener<GinaTreeObject, GinaTreeNode, GinaTreeNode>(this._transformer, node => node.level, node => node.expandable, node => node.children);
     public dataSource = new MatTreeFlatDataSource( this.treeControl, this.treeFlattener );
     public expandedNodes: string[] = [];
     public hasChild = ( _: number, node: GinaTreeNode ) => node.expandable;
+    public isSelected = ( _: number, node: GinaTreeNode ) => node.selected;
+    public hasChildIsSelected = ( _: number, node: GinaTreeNode ) => node.selected && node.expandable;
 
     public loadingGinaConfig: boolean = true;
     public showImported: boolean = false;
     public importedTriggerNames: string[] = [];
     public importedPhoneticTransforms: string[] = [];
     public ignoredGinaObjects: string[] = [];
+    public hasMultipleSelected: boolean = false;
 
     public selectedPhoneticTransform: GinaPhoneticTransform = null;
     public selectedTrigger: GinaTrigger = null;
@@ -812,4 +821,54 @@ export class GinaImportWindowComponent implements OnInit {
         node.children?.forEach( c => this.updateFolderHierarchySelectedState( c, selected ) );
     }
 
+    private checkForMultipleSelects( data: GinaTreeObject[] = null, count: number = 0 ) {
+        
+        if ( data == null ) {
+            data = this.dataSource.data;
+            this.hasMultipleSelected = false;
+        }
+
+        for ( let i = 0; i < data?.length; i++ ) {
+            if ( data[ i ].selected ) {
+                count += 1;
+            }
+            if ( count > 1 ) {
+                this.hasMultipleSelected = true;
+                break;
+            } else if ( data[ i ].children?.length > 0 ) {
+                this.checkForMultipleSelects( data[ i ].children, count );
+            }
+        }
+
+    }
+
+    public selectedGinaData: MultiSelectDataModel[] = [];
+    private generateFlatSelectData( data: GinaTreeObject[] = null, family: string = null ) {
+
+        let f = family ? family : '';
+
+        if ( data == null ) {
+            data = this.dataSource.data;
+            this.selectedGinaData = [];
+        }
+
+        for ( let i = 0; i < data?.length; i++ ) {
+            
+            if ( data[ i ].children?.length > 0 ) {
+                this.generateFlatSelectData( data[ i ].children, f + '/' + data[ i ].name );
+            } else if ( data[ i ].selected ) {
+                this.selectedGinaData.push( {
+                    model: data[ i ],
+                    folderFamily: f,
+                } );
+            }
+
+        }
+    }
+
+}
+
+interface MultiSelectDataModel {
+    model: GinaTreeObject;
+    folderFamily: string;
 }

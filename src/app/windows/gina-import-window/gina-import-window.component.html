@@ -59,7 +59,22 @@
                     
                     <div class="ft-item" style="margin: 3px; width: 66%;">
                         <div class="ft-content" style="min-height: 500px;">
-                            <div *ngIf="selectedPhoneticTransform != null">
+                            <div *ngIf="hasMultipleSelected">
+                                <mat-tab-group animationDuration="0ms" [selectedIndex]="0">
+                                    <mat-tab label="Import Multiple Triggers" style="background-color: #00000014;">
+                                        <div class="multiple-preview-list">
+                                            <div *ngFor="let item of selectedGinaData">
+                                                <span>{{item.folderFamily}}/</span><span>{{item.model.name}}</span>
+                                            </div>
+                                        </div>
+                                    </mat-tab>
+                                </mat-tab-group>
+                                <div class="import-actions">
+                                    <span class="spacer"></span>
+                                    <button mat-button color="accent" (click)="createTriggerModel()">Generate Models<mat-icon>double_arrow</mat-icon></button>
+                                </div>
+                            </div>
+                            <div *ngIf="!hasMultipleSelected && selectedPhoneticTransform != null">
                                 <mat-tab-group animationDuration="0ms" [selectedIndex]="0">
                                     <mat-tab label="Phonetic Transform">
                                         <p>Import phonetic transform?</p>
@@ -86,7 +101,7 @@
                                     </mat-tab>
                                 </mat-tab-group>
                             </div>
-                            <div *ngIf="selectedTrigger != null && nTrigger == null">
+                            <div *ngIf="!hasMultipleSelected && selectedTrigger != null && nTrigger == null">
                                 <mat-tab-group animationDuration="0ms" [selectedIndex]="0">
                                     <mat-tab label="GINA Trigger" style="background-color: #00000014;">
                                         <div style="padding-top:15px;">
@@ -188,7 +203,7 @@
                                     <button mat-button color="accent" (click)="createTriggerModel()">Generate <mat-icon>double_arrow</mat-icon></button>
                                 </div>
                             </div>
-                            <div *ngIf="nTrigger != null">
+                            <div *ngIf="!hasMultipleSelected && nTrigger != null">
                                 <mat-tab-group animationDuration="0ms" [selectedIndex]="0" #nTriggerTabs>
                                     <mat-tab label="Capture">
                                         <div>

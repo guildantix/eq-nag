@@ -10,6 +10,17 @@ div.loading-gina {
     align-items: center;
 }
 
+div.multiple-preview-list {
+    padding-top: 15px;
+    font-family: verdana;
+    font-size: 10px;
+    > div {
+        >span:first-of-type{
+            opacity: 0.6;
+        }
+    }
+}
+
 div.tab-content {
     overflow-y: scroll;
     position: fixed;
