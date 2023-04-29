@@ -74,15 +74,17 @@ export class GinaImporter {
                 let importObs = ipcService.importAudioFile( gina.MediaFileName );
                 tasks.push( importObs );
                 importObs.subscribe( fileId => {
-                    trigger.actions.push( <TriggerAction>{
-                        phrases: [ phraseId ],
-                        actionType: ActionTypes.PlayAudio,
-                        overlayId: null,
-                        duration: null,
-                        actionId: nanoid(),
-                        displayText: null,
-                        audioFileId: fileId,
-                    } );
+                    if ( fileId ) {
+                        trigger.actions.push( <TriggerAction>{
+                            phrases: [ phraseId ],
+                            actionType: ActionTypes.PlayAudio,
+                            overlayId: null,
+                            duration: null,
+                            actionId: nanoid(),
+                            displayText: null,
+                            audioFileId: fileId,
+                        } );
+                    }
                 } );
             }
             if ( gina.TimerType != GinaTimerTypes.NoTimer ) {
@@ -142,7 +144,9 @@ export class GinaImporter {
                         let endingAudioTask = ipcService.importAudioFile( gina.TimerEndingTrigger.MediaFileName );
                         tasks.push( endingAudioTask );
                         endingAudioTask.subscribe( fileId => {
-                            timerAction.endingPlayAudioFileId = fileId;
+                            if ( fileId ) {
+                                timerAction.endingPlayAudioFileId = fileId;
+                            }
                         } );
                     }
 
@@ -165,7 +169,9 @@ export class GinaImporter {
                         let endedAudioTask = ipcService.importAudioFile( gina.TimerEndedTrigger.MediaFileName );
                         tasks.push( endedAudioTask );
                         endedAudioTask.subscribe( fileId => {
-                            timerAction.endedPlayAudioFileId = fileId;
+                            if ( fileId ) {
+                                timerAction.endedPlayAudioFileId = fileId;
+                            }
                         } );
                     }
                     

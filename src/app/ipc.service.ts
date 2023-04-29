@@ -1226,12 +1226,12 @@ export class IpcService {
         return obs;
     }
 
-    public importAudioFile( filename: string ): Observable<string> {
-        let obs: Observable<string> = new Observable<string>( ( observer: Observer<string> ) => {
+    public importAudioFile( filename: string ): Observable<string|undefined> {
+        let obs: Observable<string|undefined> = new Observable<string|undefined>( ( observer: Observer<string|undefined> ) => {
 
-            window.api.ipc.once( 'audio-file:import', ( e, fileId: string ) => {
+            window.api.ipc.once( 'audio-file:import', ( e, fileId: string|undefined ) => {
                 this.ngZone.run( () => {
-                    observer.next( fileId );
+                    observer.next( fileId ?? 'asdf' );
                     observer.complete();
                 } );
             } );
