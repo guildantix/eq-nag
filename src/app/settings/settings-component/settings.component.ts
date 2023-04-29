@@ -150,7 +150,7 @@ export class SettingsComponent implements OnInit {
 
             if ( f.logSchedule?.dayOfWeek instanceof Array ) {
                 this.logDays = f.logSchedule.dayOfWeek;
-            } else if ( f.logSchedule?.dayOfWeek.hasOwnProperty( 'start' ) && f.logSchedule.dayOfWeek.hasOwnProperty( 'end' ) ) {
+            } else if ( ( f.logSchedule?.dayOfWeek.hasOwnProperty( 'start' ) && f.logSchedule.dayOfWeek.hasOwnProperty( 'end' ) ) || f.logSchedule?.dayOfWeek instanceof Range ) {
                 this.logDays = Range.toArray( f.logSchedule.dayOfWeek as Range );
             } else if ( f.logSchedule?.dayOfWeek > 0 ) {
                 this.logDays.push( +f.logSchedule.dayOfWeek );
