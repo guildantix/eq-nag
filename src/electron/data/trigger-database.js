@@ -578,7 +578,7 @@ class TriggerDatabaseStore extends Store {
         this.#data.triggers = this.#data.triggers ? this.#data.triggers : [];
 
         // Generate a new id for the trigger.
-        trigger.triggerId = nanoid();
+        trigger.triggerId = trigger.triggerId ? trigger.triggerId : nanoid();
         trigger.actions?.forEach( f => f.actionId = f.actionId ? f.actionId : nanoid() );
         trigger.capturePhrases?.forEach( f => f.phraseId = f.phraseId ? f.phraseId : nanoid() );
         trigger.conditions?.forEach(f => f.conditionId = f.conditionId ? f.conditionId : nanoid() );

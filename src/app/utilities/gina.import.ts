@@ -6,6 +6,7 @@ const nanoid = customAlphabet( alphabet, 16 );
 import * as _ from 'lodash-es';
 import { forkJoin, Observable, Observer } from 'rxjs';
 import { IpcService } from '../ipc.service';
+import { nagId } from '../core/nag-id.util';
 
 enum CaptureMethods {
     Any = 'Any match',
@@ -21,6 +22,7 @@ export class GinaImporter {
             let tasks: Observable<any>[] = [];
 
             // General information
+            trigger.triggerId = nagId();
             trigger.name = gina.Name;
             trigger.comments = gina.Comments;
             trigger.captureMethod = CaptureMethods.Any;
