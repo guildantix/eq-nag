@@ -157,11 +157,21 @@ export class TriggerReviewsComponent implements OnInit, ControlValueAccessor {
         this.ipcService.searchForDuplicates( _.map( this.triggers, f => f.nagTrigger ) ).subscribe( duplicateData => {
             console.log( 'duplicateData', duplicateData );
             
-            this.duplicates = duplicateData;
-            // this.tableData = new MatTableDataSource( this.triggers );
-            // this.tableData.paginator = this.paginator;
+            if ( duplicateData?.length > 0 ) {
+                this.duplicates = duplicateData;
+            } else {
+                this.panel = 'triggerList';
+            }
 
         } );
+    }
+
+    toggleFadeOut( el: HTMLElement ): void {
+        if ( el.classList.contains( 'shown' ) ) {
+            el.classList.remove( 'shown' );
+        } else {
+            el.classList.add( 'shown' );
+        }
     }
 
     writeValue( triggers: TriggerReviewModel[] ): void {
@@ -204,6 +214,8 @@ export class TriggerReviewsComponent implements OnInit, ControlValueAccessor {
     }
 
 }
+
+// TODO: Require the user to set the gina overlay mapping first, then the gina trigger converter can pull the overlay mapping when converting the trigger and apply the selected mapings.
 
 // TODO: Move the gina config loading into a new thread.
 // TODO: Using the gina config loading thread, also process finding duplicates in the same thread window.

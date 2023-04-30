@@ -46,6 +46,53 @@
     </form>
 </ng-template>
 
+<ng-template [ngIf]="panel === 'duplicatesCheck'">
+
+    <mat-card class="card action-card" style="margin: 20px; width: 550px;">
+        <mat-card-header>
+            <mat-card-title>Duplicate Triggers</mat-card-title>
+            <mat-card-subtitle>Check for trigger duplicates.</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+            <div class="fade-out" (click)="toggleFadeOut(pDuplicateDesc)" #pDuplicateDesc style="margin-top: -35px;">
+                <p>Triggers may show as duplicates in this list because the capture phrase used could trigger the same action type.  However this may be intended by the original author of the trigger(s).</p>
+                <p>If you have a 10 second effect, but need to notify the user at the 10 second mark and the 4 second mark, it was often necessary to create two similar triggers to accomplish this task.</p>
+                <p>In this scenario, it would be good to combine the two Gina triggers into a single Nag trigger.  That way, the capture phrases are only checked once every time a log entry is parsed.</p>
+            </div>
+            <div class="card-tab-content">
+
+                <ng-template ngFor let-mapping [ngForOf]="ginaOverlayMapping" let-i="index"></ng-template>
+
+                <!-- <ng-template ngFor let-mapping [ngForOf]="ginaOverlayMapping" let-i="index">
+
+                    <div class="card-property">
+                        <div class="content-middle">{{mapping.GinaOverlay}}</div>
+                        <div>
+                            <mat-form-field style="width: 100%;">
+                                <mat-label></mat-label>
+                                <mat-select [(ngModel)]="mapping.NagOverlay" name="ddlNagOverlay_{{i}}" required>
+                                    <ng-template [ngIf]="mapping.GinaOverlayType === 'text'"><mat-option *ngFor="let option of alertOverlays" [value]="option.overlayId">{{option.name}}</mat-option></ng-template>
+                                    <ng-template [ngIf]="mapping.GinaOverlayType === 'timer'"><mat-option *ngFor="let option of timerOverlays" [value]="option.overlayId">{{option.name}}</mat-option></ng-template>
+                                </mat-select>
+                                <mat-hint *ngIf="mapping.GinaOverlayType === 'text'">Text Overlay</mat-hint>
+                                <mat-hint *ngIf="mapping.GinaOverlayType === 'timer'">Timer Overlay</mat-hint>
+                            </mat-form-field>
+                        </div>
+                    </div>
+
+                </ng-template> -->
+
+            </div>
+        </mat-card-content>
+    </mat-card>
+        
+        <div class="import-actions">
+            <span class="spacer"></span>
+            <button mat-button color="accent">Continue<mat-icon>double_arrow</mat-icon></button>
+        </div>
+
+</ng-template>
+
 <ng-template [ngIf]="panel === 'triggerList'">
 
     <mat-paginator #paginator 

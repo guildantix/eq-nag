@@ -44,3 +44,17 @@ mat-card {
     z-index: 2;
     left: 32%;
 }
+
+.fade-out {
+    &:not(.shown) {
+        max-height: 84px;
+        overflow: hidden;
+        -webkit-mask-image: linear-gradient(180deg, #000 60%, transparent); // The electron version doesn't support mask-image yet.
+        mask-image: linear-gradient(180deg, #000 60%, transparent);
+    }
+    &:hover {
+        color: #efefef;
+    }
+    position: relative;
+    cursor: pointer;
+}

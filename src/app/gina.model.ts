@@ -218,6 +218,5 @@ export class TriggerIdNameModel {
 }
 
 export class TriggerReviewModel {
-    public possibleDuplicates: TriggerIdNameModel[] = [];
     constructor( public nagTrigger: TriggerModel, public ginaData: GinaTreeObject, public folderFamilyName: string ) { }
 }
