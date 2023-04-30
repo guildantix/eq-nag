@@ -392,12 +392,42 @@ class TriggerAction {
     textGlowSize = null;
 }
 
+class OwnedTriggerAction extends TriggerAction {
+
+    /** @type {string} */
+    triggerId;
+    /** @type {string} */
+    triggerName;
+    /** @type {string} */
+    phrase;
+    /** @type {'gina'|'nag'} */
+    storeLocation;
+
+    /**
+     * Creates a new owned trigger action object.
+     * 
+     * @param {string} targetTriggerId 
+     * @param {string} targetTriggerName 
+     * @param {string} targetPhrase 
+     * @param {'gina'|'nag'} targetStoreLocation 
+     * @param {TriggerAction} targetAction 
+     */
+    constructor( targetTriggerId, targetTriggerName, targetPhrase, targetStoreLocation, targetAction ) {
+        super();
+        Object.assign( this, targetAction );
+        this.triggerId = targetTriggerId;
+        this.triggerName = targetTriggerName;
+        this.phrase = targetPhrase;
+        this.storeLocation = targetStoreLocation;
+    }
+}
+
 class DuplicateTriggerAction {
     /** @type {string} */
     triggerId;
     /** @type {string} */
     phrase;
-    /** @type {TriggerAction[]} */
+    /** @type {OwnedTriggerAction[]} */
     actions;
     /** @type {TriggerAction} */
     subjectAction;
@@ -680,4 +710,5 @@ module.exports = {
     TriggerStoreModel,
     TriggerCondition,
     DuplicateTriggerAction,
+    OwnedTriggerAction,
 };

@@ -309,11 +309,18 @@ export class TriggerModel {
     
 }
 
+export class OwnedTriggerAction extends TriggerModel {
+    public triggerId: string;
+    public triggerName: string;
+    public phrase: string;
+    public storeLocation: 'gina' | 'nag';
+}
+
 export class DuplicateTriggerAction {
 
     public triggerId: string = null;
     public phrase: string = null;
-    public actions: TriggerAction[] = [];
+    public actions: OwnedTriggerAction[] = [];
     public subjectAction: TriggerAction;
 
 }

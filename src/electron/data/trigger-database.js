@@ -19,6 +19,7 @@ const {
     QuickShareMetaModel,
     TriggerStoreModel,
     DuplicateTriggerAction,
+    OwnedTriggerAction,
 } = require( './models/trigger' );
 const ForwardRef = require( '../forward-ref' );
 const customAlphabet = require( 'nanoid' ).customAlphabet;
@@ -1166,7 +1167,7 @@ class TriggerDatabaseStore extends Store {
     /**
      * Returns a map of trigger id to list of duplicate/existing trigger ids.
      * 
-     * @returns {Record<string, DuplicateTriggerAction[]>}
+     * @returns {DuplicateTriggerAction[]}
      * 
      * @param {Trigger[]} triggers The list of triggers to check if duplicates already exist.
      */
@@ -1180,21 +1181,21 @@ class TriggerDatabaseStore extends Store {
         // More example thoughts:
         // Sequentials, if gina capture matches any of the sequence.  The gina trigger will still fire even though the sequential may not if the first phrase was not captured.
 
-        /** @type {Record<string, DuplicateTriggerAction[]>} */
-        let output = {};
+        /** @type {DuplicateTriggerAction[]} */
+        let output = [];
 
         for ( let i = 0; i < triggers?.length; i++ ) {
             const subject = triggers[ i ];
 
-            output[ subject.triggerId ] = [];
+            // output[ subject.triggerId ] = [];
 
             // First, let's search through the given triggers for duplicates.
             for ( let ii = 0; ii < triggers?.length; ii++ ) {
                 const target = triggers[ ii ];
                 if ( target.triggerId !== subject.triggerId ) {
-                    let duplicates = this.getDuplicateActions( subject, target );
+                    let duplicates = this.getDuplicateActions( subject, target, 'gina' );
                     if ( duplicates?.length > 0 ) {
-                        output[ subject.triggerId ] = Array.prototype.concat( output[ subject.triggerId ], duplicates );
+                        output = Array.prototype.concat( output, duplicates );
                     }
                 }
             }
@@ -1203,9 +1204,9 @@ class TriggerDatabaseStore extends Store {
             for ( let ii = 0; ii < this.#data.triggers?.length; ii++ ) {
                 const target = this.#data.triggers[ ii ];
                 if ( target.triggerId !== subject.triggerId ) {
-                    let duplicates = this.getDuplicateActions( subject, target );
+                    let duplicates = this.getDuplicateActions( subject, target, 'nag' );
                     if ( duplicates?.length > 0 ) {
-                        output[ subject.triggerId ] = Array.prototype.concat( output[ subject.triggerId ], duplicates );
+                        output = Array.prototype.concat( output, duplicates );
                     }
                 }
             }
@@ -1221,8 +1222,9 @@ class TriggerDatabaseStore extends Store {
      * 
      * @param {Trigger} subject If duplicates are found, the subject will be the trigger reported as invalid.
      * @param {Trigger} target The target trigger is scanned against the actions and phrases of subject for possible duplicate actions.
+     * @param {'gina'|'nag'} storeLocation
      */
-    getDuplicateActions( subject, target ) {
+    getDuplicateActions( subject, target, storeLocation ) {
         
         /** @type {DuplicateTriggerAction[]} */
         let output = [];
@@ -1243,8 +1245,9 @@ class TriggerDatabaseStore extends Store {
                         const targetPhrase = target.capturePhrases[ ti ];
                         
                         let targetDuplicates = new DuplicateTriggerAction();
-                        targetDuplicates.triggerId = target.triggerId;
-                        targetDuplicates.phrase = targetPhrase.phrase;
+
+                        targetDuplicates.triggerId = subject.triggerId;
+                        targetDuplicates.phrase = phrase.phrase;
                         targetDuplicates.subjectAction = action;
                         targetDuplicates.actions = [];
 
@@ -1257,7 +1260,7 @@ class TriggerDatabaseStore extends Store {
 
                                 if ( targetAction.actionType === action.actionType ) {
                                     // If similar phrases can trigger the same action type, then we have a possible duplicate.
-                                    targetDuplicates.actions.push( targetAction );
+                                    targetDuplicates.actions.push( new OwnedTriggerAction( target.triggerId, target.name, targetPhrase.phrase, storeLocation, targetAction ) );
                                 }
                             }
                         }
