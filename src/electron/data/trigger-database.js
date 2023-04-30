@@ -18,6 +18,7 @@ const {
     QuickShareModel,
     QuickShareMetaModel,
     TriggerStoreModel,
+    DuplicateTriggerAction,
 } = require( './models/trigger' );
 const ForwardRef = require( '../forward-ref' );
 const customAlphabet = require( 'nanoid' ).customAlphabet;
@@ -368,6 +369,10 @@ class TriggerDatabaseStore extends Store {
 
         ipcMain.on( 'trigger:search:properties', ( event, args ) => {
             event.sender.send( 'trigger:search:properties', this.searchTriggerProperties( args.phrase, args.speakText, args.displayText, args.clipboardText, args.name, args.comment ) );
+        } );
+
+        ipcMain.on( 'trigger:strict-search:duplicates', ( event, triggers ) => {
+            event.sender.send( 'trigger:strict-search:duplicates', this.strictSearchDuplicates( triggers ) );
         } );
         
         ipcMain.on( 'zones:get:everquest', ( event, args ) => {
@@ -1156,6 +1161,118 @@ class TriggerDatabaseStore extends Store {
         } else {
             return [];
         }
+    }
+
+    /**
+     * Returns a map of trigger id to list of duplicate/existing trigger ids.
+     * 
+     * @returns {Record<string, DuplicateTriggerAction[]>}
+     * 
+     * @param {Trigger[]} triggers The list of triggers to check if duplicates already exist.
+     */
+    strictSearchDuplicates( triggers ) {
+        
+        // 2. We need a quicker duplicate check function.  To that end, we really only care if we're actually getting the same trigger multiple times.  Even moreso, that we're not getting duplicate timers and god forbid speaking alerts.
+        //  a. Here are some examples: Your skin freezes over => skin freeze, this will both operate with each other.  However, we really only care if the actions are also the same actions taken.  Not that the text/timer is the same, but they're both speaking actions?
+        //  b. We should also limit the results by the conditions, if the two triggers are in different zones then they won't conflict.
+        //  c. We need to send the entire list of trigger objects to the back-end for checking, and possibly spin up a new thread that performs the checks, and sends back status updates (0%-100% complete).
+    
+        // More example thoughts:
+        // Sequentials, if gina capture matches any of the sequence.  The gina trigger will still fire even though the sequential may not if the first phrase was not captured.
+
+        /** @type {Record<string, DuplicateTriggerAction[]>} */
+        let output = {};
+
+        for ( let i = 0; i < triggers?.length; i++ ) {
+            const subject = triggers[ i ];
+
+            output[ subject.triggerId ] = [];
+
+            // First, let's search through the given triggers for duplicates.
+            for ( let ii = 0; ii < triggers?.length; ii++ ) {
+                const target = triggers[ ii ];
+                if ( target.triggerId !== subject.triggerId ) {
+                    let duplicates = this.getDuplicateActions( subject, target );
+                    if ( duplicates?.length > 0 ) {
+                        output[ subject.triggerId ] = Array.prototype.concat( output[ subject.triggerId ], duplicates );
+                    }
+                }
+            }
+
+            // Finally, let's search through the trigger db
+            for ( let ii = 0; ii < this.#data.triggers?.length; ii++ ) {
+                const target = this.#data.triggers[ ii ];
+                if ( target.triggerId !== subject.triggerId ) {
+                    let duplicates = this.getDuplicateActions( subject, target );
+                    if ( duplicates?.length > 0 ) {
+                        output[ subject.triggerId ] = Array.prototype.concat( output[ subject.triggerId ], duplicates );
+                    }
+                }
+            }
+        }
+
+        return output;
+    }
+
+    /**
+     * Returns matching duplicate trigger actions.
+     * 
+     * @returns {DuplicateTriggerAction[]}
+     * 
+     * @param {Trigger} subject If duplicates are found, the subject will be the trigger reported as invalid.
+     * @param {Trigger} target The target trigger is scanned against the actions and phrases of subject for possible duplicate actions.
+     */
+    getDuplicateActions( subject, target ) {
+        
+        /** @type {DuplicateTriggerAction[]} */
+        let output = [];
+
+        for ( let i = 0; i < subject.capturePhrases?.length; i++ ) {
+            const phrase = subject.capturePhrases[ i ];
+            
+            if ( StringUtilities.isNullOrWhitespace( phrase.phrase ) ) {
+                continue;
+            }
+
+            for ( let j = 0; j < subject.actions?.length; j++ ) {
+                const action = subject.actions[ j ];
+
+                if ( action.phrases.indexOf( phrase.phraseId ) > -1 ) {
+                    // If phrase triggers action, then check for duplicates
+                    for ( let ti = 0; ti < target.capturePhrases?.length; ti++ ) {
+                        const targetPhrase = target.capturePhrases[ ti ];
+                        
+                        let targetDuplicates = new DuplicateTriggerAction();
+                        targetDuplicates.triggerId = target.triggerId;
+                        targetDuplicates.phrase = targetPhrase.phrase;
+                        targetDuplicates.subjectAction = action;
+                        targetDuplicates.actions = [];
+
+                        let ap = phrase.useRegEx ? phrase.phrase.replace( /^\^|\$$/gi, '' ) : phrase.phrase;
+                        let tp = targetPhrase.useRegEx ? targetPhrase.phrase.replace( /^\^|\$$/gi, '' ) : targetPhrase.phrase;
+                        if ( ap.indexOf( tp ) > -1 || tp.indexOf( ap ) > -1 ) {
+                            // If target has a phrase that will/could trigger off of the same phrase, check the target actions.
+                            for ( let tj = 0; tj < target.actions?.length; tj++ ) {
+                                const targetAction = target.actions[ tj ];
+
+                                if ( targetAction.actionType === action.actionType ) {
+                                    // If similar phrases can trigger the same action type, then we have a possible duplicate.
+                                    targetDuplicates.actions.push( targetAction );
+                                }
+                            }
+                        }
+
+                        if ( targetDuplicates.actions?.length > 0 ) {
+                            output.push( targetDuplicates );
+                        }
+                    }
+                }
+
+            }
+
+        }
+
+        return output;
     }
 
     /**

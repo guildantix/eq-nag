@@ -392,6 +392,17 @@ class TriggerAction {
     textGlowSize = null;
 }
 
+class DuplicateTriggerAction {
+    /** @type {string} */
+    triggerId;
+    /** @type {string} */
+    phrase;
+    /** @type {TriggerAction[]} */
+    actions;
+    /** @type {TriggerAction} */
+    subjectAction;
+}
+
 class Trigger {
     
     /** @type {string} */
@@ -668,4 +679,5 @@ module.exports = {
     VariableAssignment,
     TriggerStoreModel,
     TriggerCondition,
+    DuplicateTriggerAction,
 };

@@ -3,7 +3,7 @@ import * as Electron from 'electron';
 import { UpdateInfo } from 'electron-updater';
 import { Observable, Observer } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
-import { DataTickModel, DkpEntryModel, TriggerModel, OverlayWindowModel, ActionTypes, FocusEffectSettings, CharacterModel, BasicError, TriggerFolder, FileModel, Tag, AuthorModel, PackageFileModel, TriggerPackageMetaModel, TriggerPackageVersion, FctStylesModel, OverlayBoundsChangedEventArgs, DialogEventArgs, QuickShareMetaModel, LogFileLocation, IpcMessage, DeathRecapPreferences, QuickShareAuthorListTypes, Progress, QuitFailureData } from './core.model';
+import { DataTickModel, DkpEntryModel, TriggerModel, OverlayWindowModel, ActionTypes, FocusEffectSettings, CharacterModel, BasicError, TriggerFolder, FileModel, Tag, AuthorModel, PackageFileModel, TriggerPackageMetaModel, TriggerPackageVersion, FctStylesModel, OverlayBoundsChangedEventArgs, DialogEventArgs, QuickShareMetaModel, LogFileLocation, IpcMessage, DeathRecapPreferences, QuickShareAuthorListTypes, Progress, QuitFailureData, DuplicateTriggerAction } from './core.model';
 import { GinaConfiguration, GinaTriggerGroups } from './gina.model';
 import { ColorUtility } from './utilities';
 
@@ -662,6 +662,22 @@ export class IpcService {
                 } );
             } );
             window.api.ipc.send( 'trigger:search:properties', { phrase: phrase, speakText: speakText, displayText: displayText, clipboardText: clipboardText, name: name, comment: comment } );
+
+        } );
+
+        return obs;
+    }
+
+    public searchForDuplicates( triggers: TriggerModel[] ): Observable<Record<string, DuplicateTriggerAction[]>> {
+        let obs: Observable<Record<string, DuplicateTriggerAction[]>> = new Observable<Record<string, DuplicateTriggerAction[]>>( ( observer: Observer<Record<string, DuplicateTriggerAction[]>> ) => {
+            
+            window.api.ipc.once( 'trigger:strict-search:duplicates', ( e, result: Record<string, DuplicateTriggerAction[]> ) => {
+                this.ngZone.run( () => {
+                    observer.next( result );
+                    observer.complete();
+                } );
+            } );
+            window.api.ipc.send( 'trigger:strict-search:duplicates', triggers );
 
         } );
 
