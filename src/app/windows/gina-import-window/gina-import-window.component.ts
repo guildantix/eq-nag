@@ -2,9 +2,9 @@ import { animate, state, style, transition, trigger } from '@angular/animations'
 import { FlatTreeControl } from '@angular/cdk/tree';
 import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { MatTreeFlatDataSource, MatTreeFlattener } from '@angular/material/tree';
-import { forkJoin } from 'rxjs';
+import { forkJoin, Observable } from 'rxjs';
 import { DialogService } from 'src/app/dialogs/dialog.service';
-import { GinaPhoneticTransform, GinaTimerTypes, GinaTrigger, GinaTriggerGroup } from 'src/app/gina.model';
+import { GinaConfiguration, GinaMultiSelectDataModel, GinaOverlayIds, GinaPhoneticTransform, GinaTimerTypes, GinaTreeNode, GinaTreeObject, GinaTrigger, GinaTriggerGroup, TriggerReviewModel } from 'src/app/gina.model';
 import { IpcService } from 'src/app/ipc.service';
 import * as _ from 'lodash-es';
 import { ContextMenuModel } from 'src/app/context-menu/context-menu.model';
@@ -16,30 +16,7 @@ const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz
 const nanoid = customAlphabet( alphabet, 16 );
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { nagId } from 'src/app/core/nag-id.util';
-
-interface GinaTreeNode {
-    expandable: boolean;
-    name: string;
-    level: number;
-    item: GinaTrigger | GinaPhoneticTransform;
-    ginaName: string;
-    imported: boolean;
-    folders: string[];
-    selected: boolean;
-    id: string;
-}
-
-class GinaTreeObject {
-    name: string;
-    children: GinaTreeObject[] = [];
-    trigger: GinaTrigger;
-    phoneticTransform: GinaPhoneticTransform;
-    ginaName: string;
-    imported: boolean;
-    folders: string[] = [];
-    selected: boolean;
-    id: string;
-}
+import { map } from 'rxjs/operators';
 
 @Component( {
     selector: 'app-gina-import-window',
@@ -87,6 +64,9 @@ export class GinaImportWindowComponent implements OnInit {
     public hasChild = ( _: number, node: GinaTreeNode ) => node.expandable;
     public isSelected = ( _: number, node: GinaTreeNode ) => node.selected;
     public hasChildIsSelected = ( _: number, node: GinaTreeNode ) => node.selected && node.expandable;
+    public selectedGinaData: GinaMultiSelectDataModel[] = [];
+    public categoryOverlayMap: Record<string, GinaOverlayIds> = {};
+    public ginaConfig: GinaConfiguration = null;
 
     public loadingGinaConfig: boolean = true;
     public showImported: boolean = false;
@@ -121,6 +101,7 @@ export class GinaImportWindowComponent implements OnInit {
         return this.overlays.filter( f => f.overlayType === 'Timer' );
     }
 
+    public triggerReviews: TriggerReviewModel[] = [];
     public nTrigger: TriggerModel;
     public duplicateTriggers: TriggerModel[] = [];
     public skipDuplicateTriggerCheck: boolean = false;
@@ -210,7 +191,12 @@ export class GinaImportWindowComponent implements OnInit {
                 if ( ginaConfig == null ) {
                     this.dialogService.showWarningDialog( 'GINA failure', 'Could not find the GINA data directory' );
                 } else {
-                    
+                    this.ginaConfig = ginaConfig;
+
+                    // Build the category to overlay map
+                    ginaConfig.Categories.Category.forEach( category => {
+                        this.categoryOverlayMap[ category.Name ] = { textOverlayName: category.TextOverlay, timerOverlayName: category.TimerOverlay };
+                    } );
                     let transformsNode = new GinaTreeObject();
                     let data: GinaTreeObject[] = [];
                     transformsNode.name = 'Phonetic Transforms';
@@ -842,7 +828,6 @@ export class GinaImportWindowComponent implements OnInit {
 
     }
 
-    public selectedGinaData: MultiSelectDataModel[] = [];
     private generateFlatSelectData( data: GinaTreeObject[] = null, family: string = null ) {
 
         let f = family ? family : '';
@@ -866,9 +851,30 @@ export class GinaImportWindowComponent implements OnInit {
         }
     }
 
-}
+    public generateSelectedTriggerModels(): void {
+        if ( this.selectedGinaData?.length > 0 ) {
+            let observables: Observable<TriggerReviewModel>[] = [];
+            this.selectedGinaData.forEach( gd => {
+                observables.push( GinaImporter.GetTrigger( gd.model.trigger, this.ipcService ).pipe( map( value => new TriggerReviewModel( value, gd.model, gd.folderFamily ) ) ) );
+            } );
+            
+            // NOTE: For some reason, using concat() will stop processing
+            // triggers when the observable uses the forkJoin operator inside of 
+            // the subscriber.  When an audio file needs to be imported, the 
+            // observable waits for that observable(s) to complete before 
+            // completing the subscriber, and moving the concat to the next 
+            // observable. 
+            // ... observable observable observable.
+            
+            forkJoin( observables ).subscribe( triggers => {
+                this.triggerReviews = triggers;
+            } );
+            
+        }
+    }
 
-interface MultiSelectDataModel {
-    model: GinaTreeObject;
-    folderFamily: string;
+    public resetTriggerSelection(): void {
+        this.triggerReviews = [];
+    }
+
 }

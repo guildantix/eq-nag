@@ -37,7 +37,7 @@
                                     <button mat-icon-button class="trigger-button">
                                         <mat-icon>label</mat-icon>
                                     </button>
-                                    <mat-checkbox [(ngModel)]="node.selected" name="nodeSelected_{{node.id}}"></mat-checkbox>
+                                    <mat-checkbox [(ngModel)]="node.selected" name="nodeSelected_{{node.id}}" (ngModelChange)="resetTriggerSelection()"></mat-checkbox>
                                     <div class="tree-click-target" title="{{node.ginaName}}"><span>{{node.name}}</span></div>
                                 </mat-tree-node>
             
@@ -49,7 +49,7 @@
                                             {{treeControl.isExpanded(node) ? 'expand_more' : 'chevron_right'}}
                                         </mat-icon>
                                     </button>
-                                    <mat-checkbox [(ngModel)]="node.selected" name="nodeSelected_{{node.id}}"></mat-checkbox>
+                                    <mat-checkbox [(ngModel)]="node.selected" name="nodeSelected_{{node.id}}" (ngModelChange)="resetTriggerSelection()"></mat-checkbox>
                                     <div class="tree-click-target"><span>{{node.name}}</span></div>
                                 </mat-tree-node>
                             </mat-tree>
@@ -59,20 +59,33 @@
                     
                     <div class="ft-item" style="margin: 3px; width: 66%;">
                         <div class="ft-content" style="min-height: 500px;">
-                            <div *ngIf="hasMultipleSelected">
-                                <mat-tab-group animationDuration="0ms" [selectedIndex]="0">
-                                    <mat-tab label="Import Multiple Triggers" style="background-color: #00000014;">
-                                        <div class="multiple-preview-list">
-                                            <div *ngFor="let item of selectedGinaData">
-                                                <span>{{item.folderFamily}}/</span><span>{{item.model.name}}</span>
+                            <div *ngIf="hasMultipleSelected" style="height: 100%;">
+                                <ng-template [ngIf]="triggerReviews?.length == 0">
+                                    <mat-tab-group animationDuration="0ms" [selectedIndex]="0">
+                                        <mat-tab label="Import Multiple Triggers" style="background-color: #00000014;">
+                                            <div class="multiple-preview-list">
+                                                <div *ngFor="let item of selectedGinaData">
+                                                    <span>{{item.folderFamily}}/</span><span>{{item.model.name}}</span>
+                                                </div>
                                             </div>
-                                        </div>
-                                    </mat-tab>
-                                </mat-tab-group>
-                                <div class="import-actions">
-                                    <span class="spacer"></span>
-                                    <button mat-button color="accent" (click)="createTriggerModel()">Generate Models<mat-icon>double_arrow</mat-icon></button>
-                                </div>
+                                        </mat-tab>
+                                    </mat-tab-group>
+                                    <div class="import-actions">
+                                        <span class="spacer"></span>
+                                        <button mat-button color="accent" (click)="generateSelectedTriggerModels()">Generate Models<mat-icon>double_arrow</mat-icon></button>
+                                    </div>
+                                </ng-template>
+                                <ng-template [ngIf]="triggerReviews?.length > 0">
+                                    <mat-tab-group animationDuration="0ms" [selectedIndex]="0">
+                                        <mat-tab label="Review Trigger Import" style="background-color: #00000014;">
+                                            <app-trigger-reviews [alertOverlays]="alertOverlays" [timerOverlays]="timerOverlays" [logOverlays]="logOverlays" [categoryOverlayMap]="categoryOverlayMap" [ginaConfig]="ginaConfig" [(ngModel)]="triggerReviews" name="triggerReviews" ></app-trigger-reviews>
+                                        </mat-tab>
+                                    </mat-tab-group>
+                                    <div class="import-actions">
+                                        <span class="spacer"></span>
+                                        <!-- <button mat-button color="accent" (click)="generateSelectedTriggerModels()">Generate Models<mat-icon>double_arrow</mat-icon></button> -->
+                                    </div>
+                                </ng-template>
                             </div>
                             <div *ngIf="!hasMultipleSelected && selectedPhoneticTransform != null">
                                 <mat-tab-group animationDuration="0ms" [selectedIndex]="0">

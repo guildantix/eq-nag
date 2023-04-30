@@ -10,6 +10,14 @@ div.loading-gina {
     align-items: center;
 }
 
+:host ::ng-deep mat-tab-group {
+    height: 100%;
+
+    .mat-tab-body-wrapper {
+        height: 100%;
+    }
+}
+
 div.multiple-preview-list {
     padding-top: 15px;
     font-family: verdana;
