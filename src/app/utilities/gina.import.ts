@@ -1,5 +1,5 @@
 import { ActionTypes, CapturePhrase, Phrase, TimerRestartBehaviors, TriggerAction, TriggerModel } from '../core.model';
-import { GinaTimerStartBehaviors, GinaTimerTypes, GinaTrigger } from '../gina.model';
+import { GinaConfiguration, GinaTimerStartBehaviors, GinaTimerTypes, GinaToNagOverlay, GinaTrigger } from '../gina.model';
 import { customAlphabet } from 'nanoid';
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const nanoid = customAlphabet( alphabet, 16 );
@@ -15,7 +15,7 @@ enum CaptureMethods {
 }
 
 export class GinaImporter {
-    public static GetTrigger( gina: GinaTrigger, ipcService: IpcService ): Observable<TriggerModel> {
+    public static GetTrigger( gina: GinaTrigger, ipcService: IpcService, ginaOverlayMapping: GinaToNagOverlay[]|null = null, ginaConfig: GinaConfiguration | null = null ): Observable<TriggerModel> {
         let obs: Observable<TriggerModel> = new Observable<TriggerModel>( ( observer: Observer<TriggerModel> ) => {
 
             let trigger = new TriggerModel();
@@ -41,12 +41,16 @@ export class GinaImporter {
     
             // Actions
             trigger.actions = [];
+            let ginaCategory = ginaConfig?.Categories?.Category?.find( f => f.Name == gina.Category ) ?? null;
+            let textOverlayId = ginaOverlayMapping?.find( f => f.GinaOverlay == ginaCategory?.TextOverlay && f.GinaOverlayType === 'text' )?.NagOverlay ?? null;
+            let timerOverlayId = ginaOverlayMapping?.find( f => f.GinaOverlay == ginaCategory?.TimerOverlay && f.GinaOverlayType === 'timer' )?.NagOverlay ?? null;
+
             // Display Text action
             if ( gina.UseText === 'True' ) {
                 trigger.actions.push( <TriggerAction>{
                     phrases: [ phraseId ],
                     actionType: ActionTypes.DisplayText,
-                    overlayId: null,
+                    overlayId: textOverlayId,
                     duration: 6,
                     actionId: nanoid(),
                     displayText: gina.DisplayText,
@@ -96,7 +100,8 @@ export class GinaImporter {
                 timerAction.actionId = nanoid();
                 timerAction.duration = +gina.TimerDuration;
                 timerAction.displayText = gina.TimerName;
-                // overlayId: this.overlayId,
+                timerAction.overlayId = timerOverlayId;
+                
                 if ( gina.TimerType === GinaTimerTypes.Timer ) {
                     timerAction.actionType = ActionTypes.Timer;
                 } else if ( gina.TimerType === GinaTimerTypes.RepeatingTimer ) {
@@ -185,7 +190,7 @@ export class GinaImporter {
                 trigger.actions.push( <TriggerAction>{
                     phrases: [ phraseId ],
                     actionType: ActionTypes.Counter,
-                    overlayId: null,
+                    overlayId: timerOverlayId,
                     duration: +gina.CounterResetDuration,
                     actionId: nanoid(),
                     displayText: gina.Name,
