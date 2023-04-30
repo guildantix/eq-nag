@@ -668,10 +668,10 @@ export class IpcService {
         return obs;
     }
 
-    public searchForDuplicates( triggers: TriggerModel[] ): Observable<Record<string, DuplicateTriggerAction[]>> {
-        let obs: Observable<Record<string, DuplicateTriggerAction[]>> = new Observable<Record<string, DuplicateTriggerAction[]>>( ( observer: Observer<Record<string, DuplicateTriggerAction[]>> ) => {
+    public searchForDuplicates( triggers: TriggerModel[] ): Observable<DuplicateTriggerAction[]> {
+        let obs: Observable<DuplicateTriggerAction[]> = new Observable<DuplicateTriggerAction[]>( ( observer: Observer<DuplicateTriggerAction[]> ) => {
             
-            window.api.ipc.once( 'trigger:strict-search:duplicates', ( e, result: Record<string, DuplicateTriggerAction[]> ) => {
+            window.api.ipc.once( 'trigger:strict-search:duplicates', ( e, result: DuplicateTriggerAction[] ) => {
                 this.ngZone.run( () => {
                     observer.next( result );
                     observer.complete();
