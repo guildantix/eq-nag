@@ -151,7 +151,7 @@ export class TriggerReviewsComponent implements OnInit, ControlValueAccessor {
 
         this.duplicates = [];
         this.panel = 'duplicatesCheck';
-        
+
         this.ipcService.searchForDuplicates( _.map( this.triggers, f => f.nagTrigger ) ).subscribe( duplicateData => {
             console.log( 'duplicateData', duplicateData );
             

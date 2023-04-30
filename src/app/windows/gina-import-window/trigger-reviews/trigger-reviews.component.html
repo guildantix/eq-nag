@@ -7,9 +7,7 @@
 </ng-template>
 
 <ng-template [ngIf]="panel === 'overlayAssignment'">
-
-    <!-- <fieldset class="trigger-property-group">
-        <legend>Overlay Assignment</legend> -->
+    <form #mappingForm="ngForm">
         <mat-card class="card action-card" style="margin: 20px; width: 550px;">
             <mat-card-header>
                 <mat-card-title>Map GINA to Nag Overlays<!-- <button mat-button color="accent" style="float: right;">Auto Resolve</button> --></mat-card-title>
@@ -17,8 +15,7 @@
             </mat-card-header>
             <mat-card-content>
                 <div class="card-tab-content">
-                    <!-- <div class="field-line"><label>Gina Category Name</label><span>Overlay Name</span></div> -->
-                    
+
                     <ng-template ngFor let-mapping [ngForOf]="ginaOverlayMapping" let-i="index">
 
                         <div class="card-property">
@@ -26,8 +23,7 @@
                             <div>
                                 <mat-form-field style="width: 100%;">
                                     <mat-label></mat-label>
-                                    <!-- [(ngModel)]="action.overlayId" name="ddlAlertOverlay_test" -->
-                                    <mat-select>
+                                    <mat-select [(ngModel)]="mapping.NagOverlay" name="ddlNagOverlay_{{i}}" required>
                                         <ng-template [ngIf]="mapping.GinaOverlayType === 'text'"><mat-option *ngFor="let option of alertOverlays" [value]="option.overlayId">{{option.name}}</mat-option></ng-template>
                                         <ng-template [ngIf]="mapping.GinaOverlayType === 'timer'"><mat-option *ngFor="let option of timerOverlays" [value]="option.overlayId">{{option.name}}</mat-option></ng-template>
                                     </mat-select>
@@ -36,38 +32,18 @@
                                 </mat-form-field>
                             </div>
                         </div>
-            
-                                    <!-- [(ngModel)]="action.overlayId" name="ddlTimerOverlay_test" -->
-                        <!-- <div class="card-property" *ngIf="mapping.GinaTimerOverlay">
-                            <div class="content-middle">{{mapping.GinaCategoryName}}/{{mapping.GinaTimerOverlay}}</div>
-                            <div>
-                                <mat-form-field style="width: 100%;">
-                                    <mat-label></mat-label>
-                                    <mat-select >
-                                        <mat-option *ngFor="let option of timerOverlays" [value]="option.overlayId">{{option.name}}</mat-option>
-                                    </mat-select>
-                                    <mat-hint>Timer Overlay</mat-hint>
-                                </mat-form-field>
-                            </div>
-                        </div> -->
 
                     </ng-template>
-                    
-                    <!-- <div class="field-line" *ngIf="selectedTrigger.CopyToClipboard == 'True'"><label>Clipboard Text</label><span>{{selectedTrigger.ClipboardText}}</span></div> -->
-                    <!-- <div class="field-line" *ngIf="selectedTrigger.UseTextToVoice == 'True'"><label>Text to Speech</label><span>{{selectedTrigger.TextToVoiceText}}</span><button mat-icon-button (click)="speakPhrase(selectedTrigger.TextToVoiceText)"><mat-icon [inline]="true">play_arrow</mat-icon></button></div> -->
-                    <!-- <div class="field-line" *ngIf="selectedTrigger.PlayMediaFile == 'True'"><label>Play Audio</label><span>{{selectedTrigger.MediaFileName}}</span><button mat-icon-button (click)="playAudioFile(selectedTrigger.MediaFileName)"><mat-icon [inline]="true">play_arrow</mat-icon></button></div> -->
+
                 </div>
             </mat-card-content>
         </mat-card>
         
         <div class="import-actions">
             <span class="spacer"></span>
-            <button mat-button color="accent">Mapping Done<mat-icon>double_arrow</mat-icon></button>
+            <button mat-button color="accent" (click)="updateGinaOverlayMapping()">Mapping Done<mat-icon>double_arrow</mat-icon></button>
         </div>
-
-
-
-    <!-- </fieldset> -->
+    </form>
 </ng-template>
 
 <ng-template [ngIf]="panel === 'triggerList'">
