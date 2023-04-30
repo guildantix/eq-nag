@@ -10,6 +10,7 @@ const archiver = require( 'archiver' );
 const LogBootstrapper = require( "../log-bootstrap" );
 const { DeathRecapPreferences } = require( '../data/models/death-recap' );
 const { QuickShareAuthorListTypes } = require( '../data/models/common' );
+const { GinaToNagOverlay } = require( "./models/trigger" );
 
 const possibleEqFolders = [
     '\\users\\public\\Everquest',
@@ -392,6 +393,15 @@ class UserPreferencesStore extends Store {
     }
     set defaultPaletteName( val ) {
         this.#data.defaultPaletteName = val;
+        this.storeDataFile( this.#data );
+    }
+
+    /** @type {GinaToNagOverlay[]} */
+    get ginaOverlayMapping() {
+        return this.#data.ginaOverlayMapping;
+    }
+    set ginaOverlayMapping( val ) {
+        this.#data.ginaOverlayMapping = val;
         this.storeDataFile( this.#data );
     }
 

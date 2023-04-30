@@ -680,6 +680,15 @@ class TriggerStoreModel {
     packageOverlays;
 }
 
+class GinaToNagOverlay {
+    /** @type {'text' | 'timer'} */
+    GinaOverlayType;
+    /** @type {string} */
+    GinaOverlay;
+    /** @type {string} */
+    NagOverlay;
+}
+
 module.exports = {
     Trigger,
     TriggerAction,
@@ -711,4 +720,5 @@ module.exports = {
     TriggerCondition,
     DuplicateTriggerAction,
     OwnedTriggerAction,
+    GinaToNagOverlay,
 };
