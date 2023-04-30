@@ -106,44 +106,77 @@ export class TriggerReviewsComponent implements OnInit, ControlValueAccessor {
         this._onChange();
     }
 
+    showGinaOverlayMapping() {
+
+        this.ginaOverlayMapping = [];
+        this.panel = 'overlayAssignment';
+
+        this.ipcService.getSetting<GinaToNagOverlay[]>( 'ginaOverlayMapping' ).subscribe( data => {
+            this.ginaOverlayMapping = data;
+
+            if ( this.ginaConfig ) {
+                this.ginaOverlayMapping = [];
+                let textOverlays = _.uniq( this.ginaConfig?.Categories?.Category?.map( f => f.TextOverlay ) );
+
+                textOverlays.forEach( f => {
+                    let m = new GinaToNagOverlay();
+                    m.GinaOverlayType = 'text';
+                    m.GinaOverlay = f;
+                    this.ginaOverlayMapping.push( m );
+                } );
+                
+                let timerOverlays = _.uniq( this.ginaConfig?.Categories?.Category?.map( f => f.TimerOverlay ) );
+                timerOverlays.forEach( f => {
+                    let m = new GinaToNagOverlay();
+                    m.GinaOverlayType = 'timer';
+                    m.GinaOverlay = f;
+                    this.ginaOverlayMapping.push( m );
+                } );
+                
+            }
+
+        } );
+
+    }
+
+    updateGinaOverlayMapping() {
+
+        this.ipcService.updateSetting( 'ginaOverlayMapping', this.ginaOverlayMapping );
+
+        this.showDuplicates();
+
+    }
+
+    showDuplicates() {
+
+        this.duplicates = [];
+        this.panel = 'duplicatesCheck';
+        
+        this.ipcService.searchForDuplicates( _.map( this.triggers, f => f.nagTrigger ) ).subscribe( duplicateData => {
+            console.log( 'duplicateData', duplicateData );
+            
+            this.duplicates = duplicateData;
+            // this.tableData = new MatTableDataSource( this.triggers );
+            // this.tableData.paginator = this.paginator;
+
+        } );
+    }
+
     writeValue( triggers: TriggerReviewModel[] ): void {
         
         if ( triggers ) {
-            let observables: Observable<TriggerIdNameModel[]|any>[] = [ timer( 1 ) ];
-        
-            this.ipcService.searchForDuplicates( _.map( triggers, f => f.nagTrigger ) ).subscribe( duplicateData => {
-                console.log( 'duplicateData', duplicateData );
-                
-                this.triggers = triggers;
-                this.tableData = new MatTableDataSource( this.triggers );
-                this.tableData.paginator = this.paginator;
+            // let observables: Observable<TriggerIdNameModel[]|any>[] = [ timer( 1 ) ];
+            this.triggers = triggers;
+            this.showGinaOverlayMapping();
 
-                if ( this.ginaConfig ) {
-                    this.ginaOverlayMapping = [];
-                    let textOverlays = _.uniq( this.ginaConfig?.Categories?.Category?.map( f => f.TextOverlay ) );
-                    textOverlays.forEach( f => {
-                        let m = new GinaToNagOverlay();
-                        m.GinaOverlayType = 'text';
-                        m.GinaOverlay = f;
-                        this.ginaOverlayMapping.push( m );
-                    } );
-                    
-                    let timerOverlays = _.uniq( this.ginaConfig?.Categories?.Category?.map( f => f.TimerOverlay ) );
-                    timerOverlays.forEach( f => {
-                        let m = new GinaToNagOverlay();
-                        m.GinaOverlayType = 'timer';
-                        m.GinaOverlay = f;
-                        this.ginaOverlayMapping.push( m );
-                    } );
-                    // this.ginaConfig?.Categories?.Category?.forEach( ginaCategory => {
-                    //     let m = new GinaToNagOverlay();
-                    //     m.GinaCategoryName = ginaCategory.Name;
-                    //     m.GinaTextOverlay = ginaCategory.TextOverlay;
-                    //     m.GinaTimerOverlay = ginaCategory.TimerOverlay;
-                    //     this.ginaOverlayMapping.push( m );
-                    // } );
-                }
-            } );
+            // this.ipcService.searchForDuplicates( _.map( triggers, f => f.nagTrigger ) ).subscribe( duplicateData => {
+            //     console.log( 'duplicateData', duplicateData );
+                
+            //     this.triggers = triggers;
+            //     this.tableData = new MatTableDataSource( this.triggers );
+            //     this.tableData.paginator = this.paginator;
+
+            // } );
         
             // forkJoin( observables ).subscribe( doesntmatter => {
             //     console.log( 'done' );

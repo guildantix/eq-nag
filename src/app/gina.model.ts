@@ -170,11 +170,6 @@ export class GinaToNagOverlay {
     GinaOverlayType: 'text' | 'timer';
     GinaOverlay: string;
     NagOverlay: string;
-    // GinaCategoryName: string;
-    // GinaTextOverlay: string;
-    // GinaTimerOverlay: string;
-    // NagTimerOverlayId: string;
-    // NagTextOverlayId: string;
 }
 
 export interface GinaConfiguration {
