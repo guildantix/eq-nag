@@ -49,9 +49,9 @@
 <ng-template [ngIf]="panel === 'triggerList'">
 
     <mat-paginator #paginator 
-    [pageSize]="25"
-    [pageSizeOptions]="[25, 50, 100]">
-</mat-paginator>
+        [pageSize]="25"
+        [pageSizeOptions]="[25, 50, 100]">
+    </mat-paginator>
 <table mat-table style="width: 100%;" [dataSource]="triggers" #triggersTable>
 
     <ng-container matColumnDef="triggerName">

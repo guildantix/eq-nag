@@ -1,5 +1,5 @@
 import { Component, Input, OnInit, ViewChild, forwardRef } from '@angular/core';
-import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
+import { ControlValueAccessor, NG_VALUE_ACCESSOR, NgForm } from '@angular/forms';
 import { MatTable, MatTableDataSource } from '@angular/material/table';
 import { ActionTypes, CapturePhrase, DuplicateTriggerAction, OverlayWindowModel, TriggerModel } from 'src/app/core.model';
 import { GinaConfiguration, GinaOverlayIds, GinaToNagOverlay, TriggerIdNameModel, TriggerReviewModel } from 'src/app/gina.model';
@@ -44,6 +44,7 @@ export class TriggerReviewsComponent implements OnInit, ControlValueAccessor {
     
     @ViewChild( 'paginator', { static: false, read: MatPaginator } ) private paginator: MatPaginator;
     @ViewChild( 'triggersTable' ) private triggersTable: MatTable<any>;
+    @ViewChild( 'mappingForm' ) private mappingForm: NgForm;
 
     constructor(
         private ipcService: IpcService,
@@ -115,8 +116,8 @@ export class TriggerReviewsComponent implements OnInit, ControlValueAccessor {
             this.ginaOverlayMapping = data;
 
             if ( this.ginaConfig ) {
-                this.ginaOverlayMapping = [];
-                let textOverlays = _.uniq( this.ginaConfig?.Categories?.Category?.map( f => f.TextOverlay ) );
+                
+                let textOverlays = _.uniq( this.ginaConfig?.Categories?.Category?.filter( f => this.ginaOverlayMapping.find( x => x.GinaOverlay === f.TextOverlay && x.GinaOverlayType === 'text' ) == null ).map( f => f.TextOverlay ) );
 
                 textOverlays.forEach( f => {
                     let m = new GinaToNagOverlay();
@@ -125,7 +126,7 @@ export class TriggerReviewsComponent implements OnInit, ControlValueAccessor {
                     this.ginaOverlayMapping.push( m );
                 } );
                 
-                let timerOverlays = _.uniq( this.ginaConfig?.Categories?.Category?.map( f => f.TimerOverlay ) );
+                let timerOverlays = _.uniq( this.ginaConfig?.Categories?.Category?.filter( f => this.ginaOverlayMapping.find( x => x.GinaOverlay === f.TimerOverlay && x.GinaOverlayType === 'timer' ) == null ).map( f => f.TimerOverlay ) );
                 timerOverlays.forEach( f => {
                     let m = new GinaToNagOverlay();
                     m.GinaOverlayType = 'timer';
@@ -141,10 +142,11 @@ export class TriggerReviewsComponent implements OnInit, ControlValueAccessor {
 
     updateGinaOverlayMapping() {
 
-        this.ipcService.updateSetting( 'ginaOverlayMapping', this.ginaOverlayMapping );
+        if ( this.mappingForm.valid ) {
+            this.ipcService.updateSetting( 'ginaOverlayMapping', this.ginaOverlayMapping );
 
-        this.showDuplicates();
-
+            this.showDuplicates();
+        }
     }
 
     showDuplicates() {
