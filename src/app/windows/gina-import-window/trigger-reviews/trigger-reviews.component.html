@@ -1,0 +1,164 @@
+<!-- <button mat-button>Auto Resolve</button> -->
+<ng-template [ngIf]="panel === 'default'">
+    <div class="loading-gina">
+        <p>Loading ...</p>
+        <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+    </div>
+</ng-template>
+
+<ng-template [ngIf]="panel === 'overlayAssignment'">
+
+    <!-- <fieldset class="trigger-property-group">
+        <legend>Overlay Assignment</legend> -->
+        <mat-card class="card action-card" style="margin: 20px; width: 550px;">
+            <mat-card-header>
+                <mat-card-title>Map GINA to Nag Overlays<!-- <button mat-button color="accent" style="float: right;">Auto Resolve</button> --></mat-card-title>
+                <mat-card-subtitle>Map your GINA overlays to their equivalent overlay in Nag.</mat-card-subtitle>
+            </mat-card-header>
+            <mat-card-content>
+                <div class="card-tab-content">
+                    <!-- <div class="field-line"><label>Gina Category Name</label><span>Overlay Name</span></div> -->
+                    
+                    <ng-template ngFor let-mapping [ngForOf]="ginaOverlayMapping" let-i="index">
+
+                        <div class="card-property">
+                            <div class="content-middle">{{mapping.GinaOverlay}}</div>
+                            <div>
+                                <mat-form-field style="width: 100%;">
+                                    <mat-label></mat-label>
+                                    <!-- [(ngModel)]="action.overlayId" name="ddlAlertOverlay_test" -->
+                                    <mat-select>
+                                        <ng-template [ngIf]="mapping.GinaOverlayType === 'text'"><mat-option *ngFor="let option of alertOverlays" [value]="option.overlayId">{{option.name}}</mat-option></ng-template>
+                                        <ng-template [ngIf]="mapping.GinaOverlayType === 'timer'"><mat-option *ngFor="let option of timerOverlays" [value]="option.overlayId">{{option.name}}</mat-option></ng-template>
+                                    </mat-select>
+                                    <mat-hint *ngIf="mapping.GinaOverlayType === 'text'">Text Overlay</mat-hint>
+                                    <mat-hint *ngIf="mapping.GinaOverlayType === 'timer'">Timer Overlay</mat-hint>
+                                </mat-form-field>
+                            </div>
+                        </div>
+            
+                                    <!-- [(ngModel)]="action.overlayId" name="ddlTimerOverlay_test" -->
+                        <!-- <div class="card-property" *ngIf="mapping.GinaTimerOverlay">
+                            <div class="content-middle">{{mapping.GinaCategoryName}}/{{mapping.GinaTimerOverlay}}</div>
+                            <div>
+                                <mat-form-field style="width: 100%;">
+                                    <mat-label></mat-label>
+                                    <mat-select >
+                                        <mat-option *ngFor="let option of timerOverlays" [value]="option.overlayId">{{option.name}}</mat-option>
+                                    </mat-select>
+                                    <mat-hint>Timer Overlay</mat-hint>
+                                </mat-form-field>
+                            </div>
+                        </div> -->
+
+                    </ng-template>
+                    
+                    <!-- <div class="field-line" *ngIf="selectedTrigger.CopyToClipboard == 'True'"><label>Clipboard Text</label><span>{{selectedTrigger.ClipboardText}}</span></div> -->
+                    <!-- <div class="field-line" *ngIf="selectedTrigger.UseTextToVoice == 'True'"><label>Text to Speech</label><span>{{selectedTrigger.TextToVoiceText}}</span><button mat-icon-button (click)="speakPhrase(selectedTrigger.TextToVoiceText)"><mat-icon [inline]="true">play_arrow</mat-icon></button></div> -->
+                    <!-- <div class="field-line" *ngIf="selectedTrigger.PlayMediaFile == 'True'"><label>Play Audio</label><span>{{selectedTrigger.MediaFileName}}</span><button mat-icon-button (click)="playAudioFile(selectedTrigger.MediaFileName)"><mat-icon [inline]="true">play_arrow</mat-icon></button></div> -->
+                </div>
+            </mat-card-content>
+        </mat-card>
+        
+        <div class="import-actions">
+            <span class="spacer"></span>
+            <button mat-button color="accent">Mapping Done<mat-icon>double_arrow</mat-icon></button>
+        </div>
+
+
+
+    <!-- </fieldset> -->
+</ng-template>
+
+<ng-template [ngIf]="panel === 'triggerList'">
+
+    <mat-paginator #paginator 
+    [pageSize]="25"
+    [pageSizeOptions]="[25, 50, 100]">
+</mat-paginator>
+<table mat-table style="width: 100%;" [dataSource]="triggers" #triggersTable>
+
+    <ng-container matColumnDef="triggerName">
+        <th mat-header-cell *matHeaderCellDef style="padding-left: 15px;"> No. of Duplicates </th>
+        <td mat-cell *matCellDef="let triggerReviewModel; let i = index" style="padding-left: 15px;"> 
+            <span>{{triggerReviewModel.nagTrigger.name}}</span>
+        </td>
+    </ng-container>
+
+    <ng-container matColumnDef="folderName">
+        <th mat-header-cell *matHeaderCellDef style="padding-left: 15px;"> No. of Duplicates </th>
+        <td mat-cell *matCellDef="let triggerReviewModel; let i = index" style="padding-left: 15px;"> 
+            <span>{{triggerReviewModel.folderFamilyName}}</span>
+        </td>
+    </ng-container>
+
+    <ng-container matColumnDef="duplicates">
+        <th mat-header-cell *matHeaderCellDef style="padding-left: 15px;"> No. of Duplicates </th>
+        <td mat-cell *matCellDef="let triggerReviewModel; let i = index" style="padding-left: 15px;"> 
+            <ng-template [ngIf]="triggerReviewModel.possibleDuplicates?.length>0">
+                <span>{{triggerReviewModel.possibleDuplicates?.length}}</span>
+            </ng-template>
+        </td>
+    </ng-container>
+
+    <ng-container matColumnDef="capturePhrases">
+        <th mat-header-cell *matHeaderCellDef style="padding-left: 15px;"> Capture Phrases </th>
+        <td mat-cell *matCellDef="let triggerReviewModel; let i = index" style="padding-left: 15px;">
+        
+            <div *ngFor="let phrase of getInvalidCapturePhrases(triggerReviewModel.nagTrigger)">
+                {{phrase.phrase}}
+            </div>
+
+        </td>
+    </ng-container>
+
+    <ng-container matColumnDef="overlays">
+        <th mat-header-cell *matHeaderCellDef style="padding-left: 15px;"> Overlays </th>
+        <td mat-cell *matCellDef="let triggerReviewModel; let i = index" style="padding-left: 15px;">
+            <div *ngFor="let action of triggerReviewModel.nagTrigger?.actions;let i = index">
+
+                <mat-form-field *ngIf="action.actionType == actionTypes.DisplayText">
+                    <mat-label></mat-label>
+                    <mat-select [(ngModel)]="action.overlayId" name="ddlAlertOverlay_{{i}}">
+                        <mat-option *ngFor="let option of alertOverlays" [value]="option.overlayId">{{option.name}}</mat-option>
+                    </mat-select>
+                    <mat-hint>{{action.displayText}} text overlay.</mat-hint>
+                </mat-form-field>
+
+                <ng-template [ngIf]="action.actionType == actionTypes.Countdown || action.actionType == actionTypes.DotTimer || action.actionType == actionTypes.Timer">
+
+                    <mat-form-field>
+                        <mat-label></mat-label>
+                        <mat-select [(ngModel)]="action.overlayId" name="ddlTimerOverlay_{{i}}">
+                            <mat-option *ngFor="let option of timerOverlays" [value]="option.overlayId">{{option.name}}</mat-option>
+                        </mat-select>
+                        <mat-hint>{{action.displayText}} timer overlay.</mat-hint>
+                    </mat-form-field>
+
+                    <mat-form-field *ngIf="action.ifEndingSoon && action.endingSoonDisplayText">
+                        <mat-label></mat-label>
+                        <mat-select [(ngModel)]="action.endingSoonTextOverlayId" name="ddlEndingSoonOverlay_{{i}}">
+                            <mat-option *ngFor="let option of alertOverlays" [value]="option.overlayId">{{option.name}}</mat-option>
+                        </mat-select>
+                        <mat-hint>{{action.displayText}} ending soon text overlay.</mat-hint>
+                    </mat-form-field>
+
+                    <mat-form-field *ngIf="action.notifyWhenEnded && action.endedDisplayText">
+                        <mat-label></mat-label>
+                        <mat-select [(ngModel)]="action.endedTextOverlayId" name="ddlEndedOverlay_{{i}}">
+                            <mat-option *ngFor="let option of alertOverlays" [value]="option.overlayId">{{option.name}}</mat-option>
+                        </mat-select>
+                        <mat-hint>{{action.displayText}} ended text overlay.</mat-hint>
+                    </mat-form-field>
+
+                </ng-template>
+
+            </div>
+        </td>
+    </ng-container>
+
+    <tr mat-header-row *matHeaderRowDef="['triggerName', 'folderName', 'duplicates', 'capturePhrases', 'overlays']"></tr>
+    <tr mat-row *matRowDef="let element; columns: ['triggerName', 'folderName', 'duplicates', 'capturePhrases', 'overlays'];" style="cursor: pointer;"></tr>
+
+</table>
+</ng-template>

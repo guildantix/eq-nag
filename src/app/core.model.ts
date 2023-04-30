@@ -309,6 +309,15 @@ export class TriggerModel {
     
 }
 
+export class DuplicateTriggerAction {
+
+    public triggerId: string = null;
+    public phrase: string = null;
+    public actions: TriggerAction[] = [];
+    public subjectAction: TriggerAction;
+
+}
+
 export enum TriggerConditionTypes {
     
     VariableValue = 1,

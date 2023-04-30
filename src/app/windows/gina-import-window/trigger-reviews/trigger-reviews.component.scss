@@ -1,0 +1,46 @@
+.loading-gina {
+    padding: 0 61px;
+    text-align: center;
+    padding-top: 50px;
+}
+
+mat-form-field {
+    font-size: 12px;
+}
+
+mat-card {
+    mat-card-header {
+        > div {
+            width: 100%;
+        }
+    }
+    mat-card-content {
+        color: #cccccc;
+        padding-top: 50px;
+    }
+}
+
+:host ::ng-deep .mat-card-header-text {
+    width: 100% !important;
+}
+
+.import-actions {
+    .spacer {
+        display: flex;
+        flex: 1 0 auto;
+    }
+    button {
+        mat-icon {
+            margin-top: -4px;
+        }
+    }
+    display:flex;
+    flex-direction: row;
+    padding:15px;
+
+    position: fixed;
+    bottom: 4px;
+    right: 0;
+    z-index: 2;
+    left: 32%;
+}

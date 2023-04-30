@@ -1,3 +1,5 @@
+import { TriggerModel } from "./core.model";
+
 export interface GinaPhoneticTransform {
     ActualWord: string;
     PhoneticWord: string;
@@ -149,8 +151,78 @@ export interface GinaBehaviors {
     Behavior: GinaBehavior[];
 }
 
+export interface GinaCategory {
+    IsDefault: 'True' | 'False';
+    Name: string;
+    TextOverlay: string;
+    TextStyle: any;
+    TextStyleSource: string;
+    TimerOverlay: string;
+    TimerStyle: any;
+    TimerStyleSource: string;
+}
+
+export interface GinaCategories {
+    Category: GinaCategory[];
+}
+
+export class GinaToNagOverlay {
+    GinaOverlayType: 'text' | 'timer';
+    GinaOverlay: string;
+    NagOverlay: string;
+    // GinaCategoryName: string;
+    // GinaTextOverlay: string;
+    // GinaTimerOverlay: string;
+    // NagTimerOverlayId: string;
+    // NagTextOverlayId: string;
+}
+
 export interface GinaConfiguration {
     Settings: GinaSettings;
     TriggerGroups: GinaTriggerGroups;
     BehaviorGroups: GinaBehaviors;
+    Categories: GinaCategories;
+}
+
+export interface GinaTreeNode {
+    expandable: boolean;
+    name: string;
+    level: number;
+    item: GinaTrigger | GinaPhoneticTransform;
+    ginaName: string;
+    imported: boolean;
+    folders: string[];
+    selected: boolean;
+    id: string;
+}
+
+export class GinaTreeObject {
+    name: string;
+    children: GinaTreeObject[] = [];
+    trigger: GinaTrigger;
+    phoneticTransform: GinaPhoneticTransform;
+    ginaName: string;
+    imported: boolean;
+    folders: string[] = [];
+    selected: boolean;
+    id: string;
+}
+
+export interface GinaOverlayIds {
+    textOverlayName: string;
+    timerOverlayName: string;
+}
+
+export interface GinaMultiSelectDataModel {
+    model: GinaTreeObject;
+    folderFamily: string;
+}
+
+export class TriggerIdNameModel {
+    constructor( triggerId: string, name: string ) { }
+}
+
+export class TriggerReviewModel {
+    public possibleDuplicates: TriggerIdNameModel[] = [];
+    constructor( public nagTrigger: TriggerModel, public ginaData: GinaTreeObject, public folderFamilyName: string ) { }
 }
