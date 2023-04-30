@@ -1,36 +1,57 @@
-import { Component, Input, OnInit, ViewChild, forwardRef } from '@angular/core';
-import { ControlValueAccessor, NG_VALUE_ACCESSOR, NgForm } from '@angular/forms';
+import { Component, Input, OnInit, ViewChild } from '@angular/core';
+import { NgForm } from '@angular/forms';
 import { MatTable, MatTableDataSource } from '@angular/material/table';
 import { ActionTypes, CapturePhrase, DuplicateTriggerAction, OverlayWindowModel, TriggerModel } from 'src/app/core.model';
-import { GinaConfiguration, GinaOverlayIds, GinaToNagOverlay, TriggerIdNameModel, TriggerReviewModel } from 'src/app/gina.model';
+import { GinaConfiguration, GinaMultiSelectDataModel, GinaOverlayIds, GinaToNagOverlay, TriggerIdNameModel, TriggerReviewModel } from 'src/app/gina.model';
 import * as _ from 'lodash-es';
 import { IpcService } from 'src/app/ipc.service';
 import { DialogService } from 'src/app/dialogs/dialog.service';
 import { Observable, forkJoin, timer } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { MatPaginator } from '@angular/material/paginator';
+import { GinaImporter } from 'src/app/utilities/gina.import';
 
 @Component( {
     selector: 'app-trigger-reviews',
     templateUrl: 'trigger-reviews.component.html',
     styleUrls: [ './trigger-reviews.component.scss', '../../../core.scss', '../../../modal.scss' ],
-    providers: [
-        {
-            provide: NG_VALUE_ACCESSOR,
-            useExisting: forwardRef( () => TriggerReviewsComponent ),
-            multi: true
-        }
-    ],
 } )
-export class TriggerReviewsComponent implements OnInit, ControlValueAccessor {
+export class TriggerReviewsComponent implements OnInit {
 
+    // public selectedGinaTriggers: GinaMultiSelectDataModel[] = [];
+    private _selectedGinaTriggers: GinaMultiSelectDataModel[] = [];
+    public get selectedGinaTriggers(): GinaMultiSelectDataModel[] {
+        return this._selectedGinaTriggers;
+    }
+    @Input() public set selectedGinaTriggers( data: GinaMultiSelectDataModel[] ) {
+        if ( data ) {
+            // let observables: Observable<TriggerIdNameModel[]|any>[] = [ timer( 1 ) ];
+            // this.triggers = triggers;
+            this._selectedGinaTriggers = data;
+            this.showGinaOverlayMapping();
+
+            // this.ipcService.searchForDuplicates( _.map( triggers, f => f.nagTrigger ) ).subscribe( duplicateData => {
+            //     console.log( 'duplicateData', duplicateData );
+                
+            //     this.triggers = triggers;
+            //     this.tableData = new MatTableDataSource( this.triggers );
+            //     this.tableData.paginator = this.paginator;
+
+            // } );
+        
+            // forkJoin( observables ).subscribe( doesntmatter => {
+            //     console.log( 'done' );
+            //     this.triggers = triggers;
+            //     this.tableData = new MatTableDataSource( this.triggers );
+            //     this.tableData.paginator = this.paginator;
+            // } );
+        } else {
+            this._selectedGinaTriggers = [];
+        }
+    }
     public triggers: TriggerReviewModel[] = [];
     public tableData: MatTableDataSource<TriggerReviewModel> = new MatTableDataSource( [] );
 
-    _onChange: () => void = () => { }
-    _onTouch: () => void = () => { }
-    
-    public disabled: boolean = false;
     public actionTypes: typeof ActionTypes = ActionTypes;
     public panel: 'triggerList' | 'overlayAssignment' | 'duplicatesCheck' | 'default' = 'overlayAssignment';
     public ginaOverlayMapping: GinaToNagOverlay[] = [];
@@ -103,8 +124,39 @@ export class TriggerReviewsComponent implements OnInit, ControlValueAccessor {
         }
     }
 
-    public emitChange() {
-        this._onChange();
+    public generateTriggerModels(): Observable<any> {
+        
+        let obs = new Observable<any>( subscriber => {
+            
+            if ( this.selectedGinaTriggers?.length > 0 ) {
+                let observables: Observable<TriggerReviewModel>[] = [];
+                this.selectedGinaTriggers.forEach( gd => {
+                    observables.push( GinaImporter.GetTrigger( gd.model.trigger, this.ipcService, this.ginaOverlayMapping, this.ginaConfig ).pipe( map( value => new TriggerReviewModel( value, gd.model, gd.folderFamily ) ) ) );
+                } );
+            
+                // NOTE: For some reason, using concat() will stop processing
+                // triggers when the observable uses the forkJoin operator inside of 
+                // the subscriber.  When an audio file needs to be imported, the 
+                // observable waits for that observable(s) to complete before 
+                // completing the subscriber, and moving the concat to the next 
+                // observable. 
+                // ... observable observable observable.
+            
+                forkJoin( observables ).subscribe( triggers => {
+                    this.triggers = triggers;
+
+                    subscriber.next();
+                    subscriber.complete();
+                } );
+            
+            } else {
+                subscriber.next();
+                subscriber.complete();
+            }
+
+        } );
+        return obs;
+        
     }
 
     showGinaOverlayMapping() {
@@ -143,9 +195,11 @@ export class TriggerReviewsComponent implements OnInit, ControlValueAccessor {
     updateGinaOverlayMapping() {
 
         if ( this.mappingForm.valid ) {
+            this.panel = 'default';
             this.ipcService.updateSetting( 'ginaOverlayMapping', this.ginaOverlayMapping );
-
-            this.showDuplicates();
+            this.generateTriggerModels().subscribe( () => {
+                this.showDuplicates();
+            } );
         }
     }
 
@@ -174,44 +228,6 @@ export class TriggerReviewsComponent implements OnInit, ControlValueAccessor {
         }
     }
 
-    writeValue( triggers: TriggerReviewModel[] ): void {
-        
-        if ( triggers ) {
-            // let observables: Observable<TriggerIdNameModel[]|any>[] = [ timer( 1 ) ];
-            this.triggers = triggers;
-            this.showGinaOverlayMapping();
-
-            // this.ipcService.searchForDuplicates( _.map( triggers, f => f.nagTrigger ) ).subscribe( duplicateData => {
-            //     console.log( 'duplicateData', duplicateData );
-                
-            //     this.triggers = triggers;
-            //     this.tableData = new MatTableDataSource( this.triggers );
-            //     this.tableData.paginator = this.paginator;
-
-            // } );
-        
-            // forkJoin( observables ).subscribe( doesntmatter => {
-            //     console.log( 'done' );
-            //     this.triggers = triggers;
-            //     this.tableData = new MatTableDataSource( this.triggers );
-            //     this.tableData.paginator = this.paginator;
-            // } );
-        } else {
-            this.triggers = [];
-        }
-    }
-  
-    registerOnChange( fn: any ) {
-        this._onChange = fn
-    }
-  
-    registerOnTouched( fn: any ) {
-        this._onTouch = fn
-    }
-
-    setDisabledState?( isDisabled: boolean ): void {
-        this.disabled = isDisabled;
-    }
 
 }
 

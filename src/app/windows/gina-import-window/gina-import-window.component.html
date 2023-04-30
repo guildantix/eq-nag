@@ -60,9 +60,9 @@
                     <div class="ft-item" style="margin: 3px; width: 66%;">
                         <div class="ft-content" style="min-height: 500px;">
                             <div *ngIf="hasMultipleSelected" style="height: 100%;">
-                                <ng-template [ngIf]="triggerReviews?.length == 0">
+                                <ng-template [ngIf]="!startReview">
                                     <mat-tab-group animationDuration="0ms" [selectedIndex]="0">
-                                        <mat-tab label="Import Multiple Triggers" style="background-color: #00000014;">
+                                        <mat-tab label="Selected For Import" style="background-color: #00000014;">
                                             <div class="multiple-preview-list">
                                                 <div *ngFor="let item of selectedGinaData">
                                                     <span>{{item.folderFamily}}/</span><span>{{item.model.name}}</span>
@@ -72,13 +72,13 @@
                                     </mat-tab-group>
                                     <div class="import-actions">
                                         <span class="spacer"></span>
-                                        <button mat-button color="accent" (click)="generateSelectedTriggerModels()">Generate Models<mat-icon>double_arrow</mat-icon></button>
+                                        <button mat-button color="accent" (click)="startReviews()">Generate Models<mat-icon>double_arrow</mat-icon></button>
                                     </div>
                                 </ng-template>
-                                <ng-template [ngIf]="triggerReviews?.length > 0">
+                                <ng-template [ngIf]="selectedGinaData?.length > 0 && startReview">
                                     <mat-tab-group animationDuration="0ms" [selectedIndex]="0">
-                                        <mat-tab label="Review Trigger Import" style="background-color: #00000014;">
-                                            <app-trigger-reviews [alertOverlays]="alertOverlays" [timerOverlays]="timerOverlays" [logOverlays]="logOverlays" [categoryOverlayMap]="categoryOverlayMap" [ginaConfig]="ginaConfig" [(ngModel)]="triggerReviews" name="triggerReviews" ></app-trigger-reviews>
+                                        <mat-tab label="Import Triggers" style="background-color: #00000014;">
+                                            <app-trigger-reviews [alertOverlays]="alertOverlays" [timerOverlays]="timerOverlays" [logOverlays]="logOverlays" [categoryOverlayMap]="categoryOverlayMap" [ginaConfig]="ginaConfig" [selectedGinaTriggers]="selectedGinaData" name="selectedGinaDataReviews" ></app-trigger-reviews>
                                         </mat-tab>
                                     </mat-tab-group>
                                     <div class="import-actions">

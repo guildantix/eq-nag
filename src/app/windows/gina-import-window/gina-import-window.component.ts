@@ -65,6 +65,7 @@ export class GinaImportWindowComponent implements OnInit {
     public isSelected = ( _: number, node: GinaTreeNode ) => node.selected;
     public hasChildIsSelected = ( _: number, node: GinaTreeNode ) => node.selected && node.expandable;
     public selectedGinaData: GinaMultiSelectDataModel[] = [];
+    public startReview: boolean = false;
     public categoryOverlayMap: Record<string, GinaOverlayIds> = {};
     public ginaConfig: GinaConfiguration = null;
 
@@ -158,7 +159,7 @@ export class GinaImportWindowComponent implements OnInit {
 
     ngOnInit() {
 
-        this.ipcService.tickReceived().subscribe( data => {
+        let tickSub = this.ipcService.tickReceived().subscribe( data => {
             // this.dkpEntries = data.dkpEntries;
             // this.logFile = data.logFile;
             this.voiceIndex = data.voiceIndex;
@@ -172,6 +173,9 @@ export class GinaImportWindowComponent implements OnInit {
             this.importedPhoneticTransforms = Object.keys( data.phoneticTransforms ?? {} );
             
             this.loadGinaConfig();
+
+            // We need to ignore other ticks.
+            tickSub.unsubscribe();
 
         } );
         
@@ -835,6 +839,7 @@ export class GinaImportWindowComponent implements OnInit {
         if ( data == null ) {
             data = this.dataSource.data;
             this.selectedGinaData = [];
+            console.log( 'reset' );
         }
 
         for ( let i = 0; i < data?.length; i++ ) {
@@ -851,30 +856,15 @@ export class GinaImportWindowComponent implements OnInit {
         }
     }
 
-    public generateSelectedTriggerModels(): void {
-        if ( this.selectedGinaData?.length > 0 ) {
-            let observables: Observable<TriggerReviewModel>[] = [];
-            this.selectedGinaData.forEach( gd => {
-                observables.push( GinaImporter.GetTrigger( gd.model.trigger, this.ipcService ).pipe( map( value => new TriggerReviewModel( value, gd.model, gd.folderFamily ) ) ) );
-            } );
-            
-            // NOTE: For some reason, using concat() will stop processing
-            // triggers when the observable uses the forkJoin operator inside of 
-            // the subscriber.  When an audio file needs to be imported, the 
-            // observable waits for that observable(s) to complete before 
-            // completing the subscriber, and moving the concat to the next 
-            // observable. 
-            // ... observable observable observable.
-            
-            forkJoin( observables ).subscribe( triggers => {
-                this.triggerReviews = triggers;
-            } );
-            
-        }
+    public startReviews(): void {
+        this.startReview = true;
     }
 
     public resetTriggerSelection(): void {
-        this.triggerReviews = [];
+        if ( this.startReview ) {
+            this.triggerReviews = [];
+            this.startReview = false;
+        }
     }
 
 }
