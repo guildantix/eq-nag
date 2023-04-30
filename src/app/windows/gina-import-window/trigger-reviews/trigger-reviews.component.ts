@@ -1,7 +1,7 @@
 import { Component, Input, OnInit, ViewChild, forwardRef } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { MatTable, MatTableDataSource } from '@angular/material/table';
-import { ActionTypes, CapturePhrase, OverlayWindowModel, TriggerModel } from 'src/app/core.model';
+import { ActionTypes, CapturePhrase, DuplicateTriggerAction, OverlayWindowModel, TriggerModel } from 'src/app/core.model';
 import { GinaConfiguration, GinaOverlayIds, GinaToNagOverlay, TriggerIdNameModel, TriggerReviewModel } from 'src/app/gina.model';
 import * as _ from 'lodash-es';
 import { IpcService } from 'src/app/ipc.service';
@@ -34,6 +34,7 @@ export class TriggerReviewsComponent implements OnInit, ControlValueAccessor {
     public actionTypes: typeof ActionTypes = ActionTypes;
     public panel: 'triggerList' | 'overlayAssignment' | 'duplicatesCheck' | 'default' = 'overlayAssignment';
     public ginaOverlayMapping: GinaToNagOverlay[] = [];
+    public duplicates: DuplicateTriggerAction[] = [];
 
     @Input() public alertOverlays: OverlayWindowModel[] = [];
     @Input() public logOverlays: OverlayWindowModel[] = [];
@@ -110,53 +111,9 @@ export class TriggerReviewsComponent implements OnInit, ControlValueAccessor {
         if ( triggers ) {
             let observables: Observable<TriggerIdNameModel[]|any>[] = [ timer( 1 ) ];
         
-            // triggers.forEach( reviewModel => {
-            //     let phrases = [];
-            //     let speakText = [];
-            //     let displayText = [];
-            //     let clipboardText = [];
-
-            //     reviewModel.nagTrigger.capturePhrases.forEach( p => phrases.push( p.phrase ) );
-            //     reviewModel.nagTrigger.actions.forEach( action => {
-                
-            //         if ( action.actionType === ActionTypes.Speak ) {
-            //             speakText.push( action.displayText );
-            //         } else if ( action.actionType === ActionTypes.DisplayText ) {
-            //             displayText.push( action.displayText );
-            //         } else if ( action.actionType === ActionTypes.Clipboard ) {
-            //             clipboardText.push( action.displayText );
-            //         } else if ( action.actionType === ActionTypes.Countdown || action.actionType === ActionTypes.Timer || action.actionType === ActionTypes.DotTimer ) {
-            //             displayText.push( action.displayText );
-            //             if ( action.endingSoonDisplayText ) {
-            //                 displayText.push( action.endingSoonText );
-            //             }
-            //             if ( action.endedDisplayText ) {
-            //                 displayText.push( action.endedText );
-            //             }
-            //             if ( action.endingClipboard ) {
-            //                 clipboardText.push( action.endingClipboardText );
-            //             }
-            //             if ( action.endedClipboard ) {
-            //                 clipboardText.push( action.endedClipboardText );
-            //             }
-            //             if ( action.endingSoonSpeak ) {
-            //                 speakText.push( action.endingSoonSpeakPhrase );
-            //             }
-            //             if ( action.endedSpeak ) {
-            //                 speakText.push( action.endedSpeakPhrase );
-            //             }
-            //         }
-
-            //     } );
-            
-            //     let obs = this.ipcService
-            //         .searchTriggerProperties( phrases, speakText, displayText, clipboardText, reviewModel.nagTrigger.name, reviewModel.nagTrigger.comments )
-            //         .pipe( map( values => values?.map( x => new TriggerIdNameModel( x.triggerId, x.name ) ) ) );
-            //     observables.push( obs );
-            // } );
-
             this.ipcService.searchForDuplicates( _.map( triggers, f => f.nagTrigger ) ).subscribe( duplicateData => {
                 console.log( 'duplicateData', duplicateData );
+                
                 this.triggers = triggers;
                 this.tableData = new MatTableDataSource( this.triggers );
                 this.tableData.paginator = this.paginator;
