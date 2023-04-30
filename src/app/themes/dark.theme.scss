@@ -361,6 +361,19 @@ $bg-extreme-dark: #191919;
             border-color: #4848486b;
             background-color: #2222222e;
         }
+        &.mat-form-field-invalid {
+            .mat-form-field-ripple, 
+            .mat-form-field-ripple.mat-accent {
+                background-color: unset !important;
+            }
+            .mat-select.mat-select-invalid .mat-select-arrow {
+                color: unset !important;
+            }
+            .mat-form-field-underline {
+                background-color: rgba($color-red-warn, 0.09) !important;
+            }
+            border-color: rgba($color-red-warn, 0.4196078431);
+        }
         border: 2px solid #0000006b;
         background-color: #0000002e;
     }
