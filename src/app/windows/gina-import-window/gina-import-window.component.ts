@@ -839,7 +839,6 @@ export class GinaImportWindowComponent implements OnInit {
         if ( data == null ) {
             data = this.dataSource.data;
             this.selectedGinaData = [];
-            console.log( 'reset' );
         }
 
         for ( let i = 0; i < data?.length; i++ ) {
