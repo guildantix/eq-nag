@@ -309,22 +309,6 @@ export class TriggerModel {
     
 }
 
-export class OwnedTriggerAction extends TriggerModel {
-    public triggerId: string;
-    public triggerName: string;
-    public phrase: string;
-    public storeLocation: 'gina' | 'nag';
-}
-
-export class DuplicateTriggerAction {
-
-    public triggerId: string = null;
-    public phrase: string = null;
-    public actions: OwnedTriggerAction[] = [];
-    public subjectAction: TriggerAction;
-
-}
-
 export enum TriggerConditionTypes {
     
     VariableValue = 1,
@@ -687,6 +671,22 @@ export class TriggerAction extends TriggerActionProperties {
 
         return _.uniq( variableNames );
     }
+}
+
+export class OwnedTriggerAction extends TriggerAction {
+    public triggerId: string;
+    public triggerName: string;
+    public phrase: string;
+    public storeLocation: 'gina' | 'nag';
+}
+
+export class DuplicateTriggerAction {
+
+    public triggerId: string = null;
+    public phrase: string = null;
+    public actions: OwnedTriggerAction[] = [];
+    public subjectAction: TriggerAction;
+
 }
 
 export class OutsideResource {
