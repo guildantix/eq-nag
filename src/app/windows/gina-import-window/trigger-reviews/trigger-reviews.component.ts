@@ -1,7 +1,7 @@
-import { Component, Input, OnInit, ViewChild } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output, ViewChild } from '@angular/core';
 import { NgForm } from '@angular/forms';
 import { MatTable, MatTableDataSource } from '@angular/material/table';
-import { ActionTypes, CapturePhrase, DuplicateTriggerAction, OverlayWindowModel, TriggerModel } from 'src/app/core.model';
+import { ActionTypeLabels, ActionTypes, CapturePhrase, DuplicateTriggerAction, FileModel, OverlayWindowModel, OwnedTriggerAction, TimerRestartBehaviors, TriggerAction, TriggerModel } from 'src/app/core.model';
 import { GinaConfiguration, GinaMultiSelectDataModel, GinaOverlayIds, GinaToNagOverlay, TriggerIdNameModel, TriggerReviewModel } from 'src/app/gina.model';
 import * as _ from 'lodash-es';
 import { IpcService } from 'src/app/ipc.service';
@@ -10,6 +10,13 @@ import { Observable, forkJoin, timer } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { MatPaginator } from '@angular/material/paginator';
 import { GinaImporter } from 'src/app/utilities/gina.import';
+import { Dictionary } from 'lodash';
+
+interface DuplicateTriggerSubject {
+    triggerId: string;
+    phrase: string;
+    subjectAction: TriggerAction;
+}
 
 @Component( {
     selector: 'app-trigger-reviews',
@@ -20,6 +27,7 @@ export class TriggerReviewsComponent implements OnInit {
 
     // public selectedGinaTriggers: GinaMultiSelectDataModel[] = [];
     private _selectedGinaTriggers: GinaMultiSelectDataModel[] = [];
+    private audioFiles: FileModel[] = [];
     public get selectedGinaTriggers(): GinaMultiSelectDataModel[] {
         return this._selectedGinaTriggers;
     }
@@ -29,6 +37,12 @@ export class TriggerReviewsComponent implements OnInit {
             // this.triggers = triggers;
             this._selectedGinaTriggers = data;
             this.showGinaOverlayMapping();
+
+
+            this.importedGinaObjects = [];
+            data.forEach( t => {
+                this.importedGinaObjects.push( t.model.ginaName );
+            } );
 
             // this.ipcService.searchForDuplicates( _.map( triggers, f => f.nagTrigger ) ).subscribe( duplicateData => {
             //     console.log( 'duplicateData', duplicateData );
@@ -53,15 +67,27 @@ export class TriggerReviewsComponent implements OnInit {
     public tableData: MatTableDataSource<TriggerReviewModel> = new MatTableDataSource( [] );
 
     public actionTypes: typeof ActionTypes = ActionTypes;
-    public panel: 'triggerList' | 'overlayAssignment' | 'duplicatesCheck' | 'default' = 'overlayAssignment';
+    public timerRestartBehaviors: typeof TimerRestartBehaviors = TimerRestartBehaviors;
+    public panel: 'triggerList' | 'overlayAssignment' | 'duplicatesCheck' | 'foldersCheck' | 'default' = 'overlayAssignment';
     public ginaOverlayMapping: GinaToNagOverlay[] = [];
     public duplicates: DuplicateTriggerAction[] = [];
+    public duplicateGroups: Record<string, DuplicateTriggerSubject[]> = {};
+    public get duplicatePhrases(): string[] {
+        return Object.keys( this.duplicateGroups );
+    }
+    public duplicateDetailsShown: Record<string, boolean> = {};
+    public triggerMergeSelected: Record<string, Record<string, boolean>> = {};
+    public triggerIgnoreSelected: Record<string, Record<string, boolean>> = {};
+    public importedGinaObjects: string[] = [];
 
     @Input() public alertOverlays: OverlayWindowModel[] = [];
     @Input() public logOverlays: OverlayWindowModel[] = [];
     @Input() public timerOverlays: OverlayWindowModel[] = [];
     @Input() public categoryOverlayMap: Record<string, GinaOverlayIds> = {};
     @Input() public ginaConfig: GinaConfiguration;
+
+    @Output() public onSpeak: EventEmitter<string> = new EventEmitter<string>();
+    @Output() public onPlayAudioFileId: EventEmitter<string> = new EventEmitter<string>();
     
     @ViewChild( 'paginator', { static: false, read: MatPaginator } ) private paginator: MatPaginator;
     @ViewChild( 'triggersTable' ) private triggersTable: MatTable<any>;
@@ -70,7 +96,9 @@ export class TriggerReviewsComponent implements OnInit {
     constructor(
         private ipcService: IpcService,
         private dialogService: DialogService,
-    ) { }
+    ) {
+        this.ipcService.getAudioFiles().subscribe( files => this.audioFiles = files );
+    }
 
     ngOnInit() { }
 
@@ -97,6 +125,10 @@ export class TriggerReviewsComponent implements OnInit {
             } );
             return bad;
         }
+    }
+
+    public getAudioFilename( fileId: string ): string {
+        return this.audioFiles.find( f => f.fileId === fileId )?.fileName;
     }
 
     public getInvalidCapturePhrases( trigger: TriggerModel ): CapturePhrase[] {
@@ -206,6 +238,9 @@ export class TriggerReviewsComponent implements OnInit {
     showDuplicates() {
 
         this.duplicates = [];
+        this.duplicateDetailsShown = {};
+        this.triggerMergeSelected = {};
+        this.triggerIgnoreSelected = {};
         this.panel = 'duplicatesCheck';
 
         this.ipcService.searchForDuplicates( _.map( this.triggers, f => f.nagTrigger ) ).subscribe( duplicateData => {
@@ -213,8 +248,28 @@ export class TriggerReviewsComponent implements OnInit {
             
             if ( duplicateData?.length > 0 ) {
                 this.duplicates = duplicateData;
+
+                let subjectData: DuplicateTriggerSubject[] = [];
+                for ( let i = 0; i < duplicateData?.length; i++ ) {
+                    const d = duplicateData[ i ];
+                    if ( subjectData.findIndex( f => f.triggerId === d.triggerId ) === -1 ) {
+                        subjectData.push( {
+                            triggerId: d.triggerId,
+                            phrase: d.phrase,
+                            subjectAction: d.subjectAction,
+                        } );
+                    }
+                }
+
+                this.duplicateGroups = _.groupBy( subjectData, f => f.phrase );
+                let keys = this.duplicatePhrases;
+                for ( let i = 0; i < keys.length; i++ ) {
+                    this.triggerMergeSelected[ keys[ i ] ] = {};
+                    this.triggerIgnoreSelected[ keys[ i ] ] = {};
+                }
+                console.log( 'grouped duplicates', this.duplicateGroups );
             } else {
-                this.panel = 'triggerList';
+                this.panel = 'foldersCheck';
             }
 
         } );
@@ -228,10 +283,162 @@ export class TriggerReviewsComponent implements OnInit {
         }
     }
 
+    mergeSelected( phrase: string ): void {
+        let targetTriggerId: string = null;
+        for ( let i = this.duplicateGroups[ phrase ]?.length - 1; i >= 0; i-- ) {
+            const triggerId = this.duplicateGroups[ phrase ][ i ].triggerId;
+
+            if ( this.triggerMergeSelected[ phrase ][ triggerId ] === true ) {
+                if ( targetTriggerId == null ) {
+                    targetTriggerId = triggerId;
+                } else {
+
+                    if ( this.copyActionsToTrigger( targetTriggerId, triggerId ) ) {
+
+                        this.removeFromImport( triggerId );
+                
+                        this.duplicateGroups[ phrase ].splice( i, 1 );
+                        delete this.triggerMergeSelected[ phrase ][ triggerId ];
+                    }
+                }
+            }
+        }
+        
+        if ( this.duplicateGroups[ phrase ]?.length <= 1 ) {
+            delete this.duplicateGroups[ phrase ];
+        }
+        
+        if ( Object.keys( this.duplicateGroups )?.length === 0 ) {
+            this.panel = 'foldersCheck';
+        }
+    }
+
+    /**
+     * Copies the actions of subject trigger onto target trigger.
+     * 
+     * @returns Returns true if the target and subject triggers were found.
+     * 
+     * @param targetTriggerId The id of the trigger actions should be copied to.
+     * @param subjectTriggerId The id of the trigger actions should be copied from.
+     * 
+     */
+    copyActionsToTrigger( targetTriggerId: string, subjectTriggerId: string ): boolean {
+        // The copy action in the gina importer are simple because each trigger can execute only one capture phrase.
+        let targetTrigger = this.triggers?.find( f => f.nagTrigger.triggerId === targetTriggerId )?.nagTrigger;
+        let subjectTrigger = this.triggers?.find( f => f.nagTrigger.triggerId === subjectTriggerId )?.nagTrigger;
+
+        if ( targetTrigger && subjectTrigger ) {
+            let capturePhraseId = targetTrigger.capturePhrases[ 0 ].phraseId;
+            subjectTrigger.actions.forEach( action => {
+                action.phrases = [ capturePhraseId ];
+                targetTrigger.actions.push( action );
+            } );
+
+            return true;
+        }
+
+        return false;
+    }
+
+    ignoreSelected( phrase: string ): void {
+        for ( let i = this.duplicateGroups[ phrase ]?.length - 1; i >= 0; i-- ) {
+            const triggerId = this.duplicateGroups[ phrase ][ i ].triggerId;
+            if ( this.triggerIgnoreSelected[ phrase ][ triggerId ] === true ) {
+                console.log( 'checked', triggerId );
+                this.removeFromImport( triggerId );
+                
+                this.duplicateGroups[ phrase ].splice( i, 1 );
+                delete this.triggerIgnoreSelected[ phrase ][ triggerId ];
+            }
+        }
+
+        if ( this.duplicateGroups[ phrase ]?.length <= 1 ) {
+            delete this.duplicateGroups[ phrase ];
+        }
+        
+        if ( Object.keys( this.duplicateGroups )?.length === 0 ) {
+            this.panel = 'foldersCheck';
+        }
+    }
+
+    removeFromImport( triggerId: string ): void {
+        
+        // Remove this trigger from the triggers list.}
+        _.remove( this.triggers, t => t.nagTrigger.triggerId === triggerId );
+
+        // Remove this trigger from the duplicates list.
+        _.remove( this.duplicates, d => d.triggerId === triggerId );
+
+        // Remove all references of this trigger from the duplicates list.
+        this.duplicates.forEach( dup => {
+            _.remove( dup.actions, a => a.triggerId === triggerId );
+        } );
+
+    }
+
+    /**
+     * This will tell future Gina import runs to ignore all of the gina triggers in the current model.
+     */
+    updateGinaIgnoreList(): void {
+        this.ipcService.getIgnoredGinaObjects().subscribe( ignoredGinaObjects => {
+            let updatedList = _.uniq( Array.prototype.concat( ignoredGinaObjects, this.importedGinaObjects ) );
+            this.ipcService.saveIgnoredGinaObjects( updatedList );
+        } );
+    }
+
+    getTriggerName( triggerId: string ): string {
+        let trigger = this.triggers.find( f => f.nagTrigger.triggerId == triggerId );
+        return trigger?.nagTrigger.name ?? 'Unknown';
+    }
+
+    getTriggerFamily( triggerId: string ): string {
+        let trigger = this.triggers.find( f => f.nagTrigger.triggerId == triggerId );
+        return trigger?.folderFamilyName ?? 'Unknown';
+    }
+
+    getActionText( action: TriggerAction|OwnedTriggerAction ): string {
+        return (action as TriggerAction)?.displayText ?? 'UNKNOWN';
+    }
+
+    getActionTypeLabel( actionType: ActionTypes ): string {
+        return ActionTypeLabels( actionType );
+    }
+
+    isTimerType( actionType: ActionTypes ): boolean {
+        return actionType === ActionTypes.Timer || actionType === ActionTypes.DotTimer || actionType === ActionTypes.BeneficialTimer || actionType === ActionTypes.Countdown;
+    }
+
+    public getDurationLabel( seconds: number | string ): string {
+        
+        seconds = +seconds;
+
+        if ( seconds > 0 ) {
+            let hours = Math.floor( seconds / 3600 );
+            let mins = Math.floor( ( seconds % 3600 ) / 60 );
+            let secs = seconds % 3600 % 60;
+    
+            let label = '';
+    
+            if ( hours > 0 ) {
+                label += `${hours}h `;
+            }
+            if ( mins > 0 ) {
+                label +=  `${mins}m `;
+            }
+            if ( secs > 0 ) {
+                label +=  `${secs}s `;
+            }
+
+            return label;
+
+        } else {
+            return `${seconds}s`;
+
+        }
+
+    }
 
 }
-
-// TODO: Require the user to set the gina overlay mapping first, then the gina trigger converter can pull the overlay mapping when converting the trigger and apply the selected mapings.
 
 // TODO: Move the gina config loading into a new thread.
 // TODO: Using the gina config loading thread, also process finding duplicates in the same thread window.

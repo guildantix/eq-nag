@@ -54,33 +54,204 @@
             <mat-card-subtitle>Check for trigger duplicates.</mat-card-subtitle>
         </mat-card-header>
         <mat-card-content>
-            <div class="fade-out" (click)="toggleFadeOut(pDuplicateDesc)" #pDuplicateDesc style="margin-top: -35px;">
+            <div class="fade-out" (click)="toggleFadeOut(pDuplicateDesc)" #pDuplicateDesc style="margin-top: -35px; margin-bottom: 25px;">
                 <p>Triggers may show as duplicates in this list because the capture phrase used could trigger the same action type.  However this may be intended by the original author of the trigger(s).</p>
                 <p>If you have a 10 second effect, but need to notify the user at the 10 second mark and the 4 second mark, it was often necessary to create two similar triggers to accomplish this task.</p>
                 <p>In this scenario, it would be good to combine the two Gina triggers into a single Nag trigger.  That way, the capture phrases are only checked once every time a log entry is parsed.</p>
+                <p><span class="color-red">Important</span> Not all triggers that conflict should be combined, but instead, the best way to deal with them may be to add in conditions to further narrow when each trigger should be parsed.  Alternatively, you could choose to import only one of the conflicting triggers.</p>
             </div>
             <div class="card-tab-content">
 
-                <ng-template ngFor let-mapping [ngForOf]="ginaOverlayMapping" let-i="index"></ng-template>
-
-                <!-- <ng-template ngFor let-mapping [ngForOf]="ginaOverlayMapping" let-i="index">
-
-                    <div class="card-property">
-                        <div class="content-middle">{{mapping.GinaOverlay}}</div>
-                        <div>
-                            <mat-form-field style="width: 100%;">
-                                <mat-label></mat-label>
-                                <mat-select [(ngModel)]="mapping.NagOverlay" name="ddlNagOverlay_{{i}}" required>
-                                    <ng-template [ngIf]="mapping.GinaOverlayType === 'text'"><mat-option *ngFor="let option of alertOverlays" [value]="option.overlayId">{{option.name}}</mat-option></ng-template>
-                                    <ng-template [ngIf]="mapping.GinaOverlayType === 'timer'"><mat-option *ngFor="let option of timerOverlays" [value]="option.overlayId">{{option.name}}</mat-option></ng-template>
-                                </mat-select>
-                                <mat-hint *ngIf="mapping.GinaOverlayType === 'text'">Text Overlay</mat-hint>
-                                <mat-hint *ngIf="mapping.GinaOverlayType === 'timer'">Timer Overlay</mat-hint>
-                            </mat-form-field>
+                <ng-template ngFor let-duplicatePhrase [ngForOf]="duplicatePhrases" let-i="index">
+                    <div class="duplicate-phrase" [ngClass]="{'zero': i % 2 === 0, 'one': i % 2 > 0}"><div class="label" (click)="duplicateDetailsShown[duplicatePhrase] = !duplicateDetailsShown[duplicatePhrase]">{{duplicatePhrase}}</div><div class="button"></div></div>
+                    <div class="duplicate-phrase-details" *ngIf="duplicateDetailsShown[duplicatePhrase]">
+                        <div class="duplicate-info" >
+                            
                         </div>
+                        
+                        <table>
+                            <tr>
+                                <td></td>
+                                <td style="text-align: center;"><button mat-button class="color-red" *ngIf="duplicateDetailsShown[duplicatePhrase]" (click)="ignoreSelected(duplicatePhrase)">Ignore</button></td>
+                                <td style="text-align: center;"><button mat-button class="color-green" *ngIf="duplicateDetailsShown[duplicatePhrase]" (click)="mergeSelected(duplicatePhrase)">Merge</button></td>
+                            </tr>
+                            <tr *ngFor="let triggerDup of duplicateGroups[duplicatePhrase]">
+                                <td>
+                                    <div class="duplicate-info-header"><span class="trigger-family">{{getTriggerFamily(triggerDup.triggerId)}}/</span><span>{{getTriggerName(triggerDup.triggerId)}}</span><span class="spacer"></span></div>
+                                </td>
+                                <td style="text-align: center;"><mat-checkbox [(ngModel)]="triggerIgnoreSelected[duplicatePhrase][triggerDup.triggerId]" name="ignore_{{duplicatePhrase}}_{{i}}"></mat-checkbox></td>
+                                <td style="text-align: center;"><mat-checkbox [(ngModel)]="triggerMergeSelected[duplicatePhrase][triggerDup.triggerId]" name="merge_{{duplicatePhrase}}_{{i}}"></mat-checkbox></td>
+                            </tr>
+                        </table>
                     </div>
+                </ng-template>
 
-                </ng-template> -->
+                <ng-template [ngIf]="false">
+                    <ng-template ngFor let-triggerDup [ngForOf]="duplicates" let-i="index">
+
+                        <fieldset class="trigger-duplicates-detail">
+                            <legend class="color-green">{{getTriggerName(triggerDup.triggerId)}}</legend>
+
+                            <div class="trigger-action" *ngVar="triggerDup.subjectAction; let action">
+
+                                <fieldset class="trigger-property-group" *ngIf="!isTimerType(action.actionType)">
+                                    <legend>Basic properties</legend>
+                                
+                                    <div class="field-list">
+                                        <div class="field-line"><label>Capture Phrase</label><span>{{triggerDup.phrase}}</span></div>
+                                        <div class="field-line" *ngIf="action.actionType === actionTypes.DisplayText"><label>Display Text</label><span>{{action.displayText}}</span></div>
+                                        <div class="field-line" *ngIf="action.actionType === actionTypes.Clipboard"><label>Clipboard Text</label><span>{{action.displayText}}</span></div>
+                                        <div class="field-line" *ngIf="action.actionType === actionTypes.Speak"><label>Text to Speech</label><span>{{action.displayText}}</span><button mat-icon-button (click)="onSpeak.emit(action.displayText)"><mat-icon [inline]="true">play_arrow</mat-icon></button></div>
+                                        <div class="field-line" *ngIf="action.actionType === actionTypes.PlayAudio"><label>Play Audio</label><span>{{getAudioFilename(action.audioFileId)}}</span><button mat-icon-button (click)="onPlayAudioFileId.emit(action.audioFileId)"><mat-icon [inline]="true">play_arrow</mat-icon></button></div>
+                                    </div>
+
+                                </fieldset>
+                                    
+                                <fieldset *ngIf="isTimerType(action.actionType)" class="trigger-property-group">
+                                    <legend>Timer properties</legend>
+
+                                    <div class="field-list">
+                                        <div class="field-line"><label>Capture Phrase</label><span>{{triggerDup.phrase}}</span></div>
+                                        <div class="field-line"><label>Timer Type</label>
+                                            <span *ngIf="action.actionType == actionTypes.Timer">Timer</span>
+                                            <span *ngIf="action.actionType == actionTypes.BeneficialTimer">Beneficial Timer</span>
+                                            <span *ngIf="action.actionType == actionTypes.DotTimer">DDoT Timer</span>
+                                            <span *ngIf="action.actionType == actionTypes.Countdown">Countdown</span>
+                                        </div>
+                                        <div class="field-line"><label>Timer Name</label><span>{{action.displayText}}</span></div>
+                                        <div class="field-line" *ngIf="action.repeatTimer"><label>Timer Repeats</label><span>Yes</span></div>
+                                        <div class="field-line"><label>Timer Duration</label><span>{{getDurationLabel(action.duration)}}</span></div>
+                                        <div class="field-line" *ngIf="action.restartBehavior === timerRestartBehaviors.RestartOnDuplicate"><label>Restart</label><span>Only if timer name matches.</span></div>
+                                        <div class="field-line" *ngIf="action.restartBehavior === timerRestartBehaviors.RestartTimer"><label>Restart</label><span>Restart regardless of timer name.</span></div>
+                                        <div class="field-line" *ngFor="let endEarly of action.endEarlyPhrases"><label>End early condition<ng-container *ngIf="endEarly.useRegEx">&nbsp;(regex)</ng-container></label><span>{{endEarly.phrase}}</span></div>
+                                    </div>
+
+                                </fieldset>
+                                        
+                                <fieldset *ngIf="action.ifEndingSoon" class="trigger-property-group">
+                                    <legend>Timer ending properties</legend>
+
+                                    <div class="field-list">
+                                        <div class="field-line" *ngIf="action.endingDuration > 0"><label>Notify when timer is ending</label><span>{{getDurationLabel(action.endingDuration)}}</span></div>
+                                        <div class="field-line" *ngIf="action.endingSoonDisplayText"><label>Display Text</label><span>{{action.endingSoonDisplayText}}</span></div>
+                                        <div class="field-line" *ngIf="action.endingSoonSpeak"><label>Text to Speech</label><span>{{action.endingSoonSpeakPhrase}}</span><button mat-icon-button (click)="onSpeak.emit(action.endingSoonSpeakPhrase)"><mat-icon [inline]="true">play_arrow</mat-icon></button></div>
+                                        <div class="field-line" *ngIf="action.endingPlayAudio"><label>Play Audio</label><span>{{getAudioFilename(action.endingPlayAudioFileId)}}</span><button mat-icon-button (click)="onPlayAudioFileId.emit(action.endingPlayAudioFileId)"><mat-icon [inline]="true">play_arrow</mat-icon></button></div>
+                                    </div>
+
+                                </fieldset>
+                                
+                                <fieldset *ngIf="action.notifyWhenEnded" class="trigger-property-group">
+                                    <legend>Timer ended properties</legend>
+
+                                    <div class="field-list">
+                                        <div class="field-line" *ngIf="action.notifyWhenEnded"><label>Notify when timer ends</label><span>Yes</span></div>
+                                        <div class="field-line" *ngIf="action.endedDisplayText"><label>Display Text</label><span>{{action.endedDisplayText}}</span></div>
+                                        <div class="field-line" *ngIf="action.endedSpeak"><label>Text to Speech</label><span>{{action.endedSpeakPhrase}}</span><button mat-icon-button (click)="onSpeak.emit(action.endedSpeakPhrase)"><mat-icon [inline]="true">play_arrow</mat-icon></button></div>
+                                        <div class="field-line" *ngIf="action.endedPlayAudio"><label>Play Audio</label><span>{{getAudioFilename(action.endedPlayAudioFileId)}}</span><button mat-icon-button (click)="onPlayAudioFileId.emit(action.endedPlayAudioFileId)"><mat-icon [inline]="true">play_arrow</mat-icon></button></div>
+                                    </div>
+
+                                </fieldset>
+                                
+                                <fieldset *ngIf="action.actionType === actionTypes.Counter" class="trigger-property-group">
+                                    <legend>Counter properties</legend>
+
+                                    <div class="field-list">
+                                        <div class="field-line"><label>Use counter</label><span>Yes</span></div>
+                                        <div class="field-line" *ngIf="action.duration > 0"><label>Reset counter after</label><span>{{getDurationLabel(action.duration)}}</span></div>
+
+                                    </div>
+
+                                </fieldset>
+
+                            </div>
+                            
+                            <ng-template ngFor let-action [ngForOf]="triggerDup.actions" let-ii="index">
+
+                                <div class="trigger-action" *ngFor="let action of triggerDup.actions; let ii = index">
+
+                                    <h3>Conflict: <span class="color-orange">{{action.triggerName}}</span></h3>
+
+                                    <fieldset class="trigger-property-group" *ngIf="!isTimerType(action.actionType)">
+                                        <legend>Basic properties</legend>
+                                    
+                                        <div class="field-list">
+                                            <div class="field-line"><label>Capture Phrase</label><span>{{action.phrase}}</span></div>
+                                            <div class="field-line" *ngIf="action.actionType === actionTypes.DisplayText"><label>Display Text</label><span>{{action.displayText}}</span></div>
+                                            <div class="field-line" *ngIf="action.actionType === actionTypes.Clipboard"><label>Clipboard Text</label><span>{{action.displayText}}</span></div>
+                                            <div class="field-line" *ngIf="action.actionType === actionTypes.Speak"><label>Text to Speech</label><span>{{action.displayText}}</span><button mat-icon-button (click)="onSpeak.emit(action.displayText)"><mat-icon [inline]="true">play_arrow</mat-icon></button></div>
+                                            <div class="field-line" *ngIf="action.actionType === actionTypes.PlayAudio"><label>Play Audio</label><span>{{getAudioFilename(action.audioFileId)}}</span><button mat-icon-button (click)="onPlayAudioFileId.emit(action.audioFileId)"><mat-icon [inline]="true">play_arrow</mat-icon></button></div>
+                                        </div>
+        
+                                    </fieldset>
+                                        
+                                    <fieldset *ngIf="isTimerType(action.actionType)" class="trigger-property-group">
+                                        <legend>Timer properties</legend>
+
+                                        <div class="field-list">
+                                            <div class="field-line"><label>Capture Phrase</label><span>{{action.phrase}}</span></div>
+                                            <div class="field-line"><label>Timer Type</label>
+                                                <span *ngIf="action.actionType == actionTypes.Timer">Timer</span>
+                                                <span *ngIf="action.actionType == actionTypes.BeneficialTimer">Beneficial Timer</span>
+                                                <span *ngIf="action.actionType == actionTypes.DotTimer">DDoT Timer</span>
+                                                <span *ngIf="action.actionType == actionTypes.Countdown">Countdown</span>
+                                            </div>
+                                            <div class="field-line"><label>Timer Name</label><span>{{action.displayText}}</span></div>
+                                            <div class="field-line" *ngIf="action.repeatTimer"><label>Timer Repeats</label><span>Yes</span></div>
+                                            <div class="field-line"><label>Timer Duration</label><span>{{getDurationLabel(action.duration)}}</span></div>
+                                            <div class="field-line" *ngIf="action.restartBehavior === timerRestartBehaviors.RestartOnDuplicate"><label>Restart</label><span>Only if timer name matches.</span></div>
+                                            <div class="field-line" *ngIf="action.restartBehavior === timerRestartBehaviors.RestartTimer"><label>Restart</label><span>Restart regardless of timer name.</span></div>
+                                            <div class="field-line" *ngFor="let endEarly of action.endEarlyPhrases"><label>End early condition<ng-container *ngIf="endEarly.useRegEx">&nbsp;(regex)</ng-container></label><span>{{endEarly.phrase}}</span></div>
+                                        </div>
+
+                                    </fieldset>
+                                            
+                                    <fieldset *ngIf="action.ifEndingSoon" class="trigger-property-group">
+                                        <legend>Timer ending properties</legend>
+
+                                        <div class="field-list">
+                                            <div class="field-line" *ngIf="action.endingDuration > 0"><label>Notify when timer is ending</label><span>{{getDurationLabel(action.endingDuration)}}</span></div>
+                                            <div class="field-line" *ngIf="action.endingSoonDisplayText"><label>Display Text</label><span>{{action.endingSoonDisplayText}}</span></div>
+                                            <div class="field-line" *ngIf="action.endingSoonSpeak"><label>Text to Speech</label><span>{{action.endingSoonSpeakPhrase}}</span><button mat-icon-button (click)="onSpeak.emit(action.endingSoonSpeakPhrase)"><mat-icon [inline]="true">play_arrow</mat-icon></button></div>
+                                            <div class="field-line" *ngIf="action.endingPlayAudio"><label>Play Audio</label><span>{{getAudioFilename(action.endingPlayAudioFileId)}}</span><button mat-icon-button (click)="onPlayAudioFileId.emit(action.endingPlayAudioFileId)"><mat-icon [inline]="true">play_arrow</mat-icon></button></div>
+                                        </div>
+
+                                    </fieldset>
+                                    
+                                    <fieldset *ngIf="action.notifyWhenEnded" class="trigger-property-group">
+                                        <legend>Timer ended properties</legend>
+
+                                        <div class="field-list">
+                                            <div class="field-line" *ngIf="action.notifyWhenEnded"><label>Notify when timer ends</label><span>Yes</span></div>
+                                            <div class="field-line" *ngIf="action.endedDisplayText"><label>Display Text</label><span>{{action.endedDisplayText}}</span></div>
+                                            <div class="field-line" *ngIf="action.endedSpeak"><label>Text to Speech</label><span>{{action.endedSpeakPhrase}}</span><button mat-icon-button (click)="onSpeak.emit(action.endedSpeakPhrase)"><mat-icon [inline]="true">play_arrow</mat-icon></button></div>
+                                            <div class="field-line" *ngIf="action.endedPlayAudio"><label>Play Audio</label><span>{{getAudioFilename(action.endedPlayAudioFileId)}}</span><button mat-icon-button (click)="onPlayAudioFileId.emit(action.endedPlayAudioFileId)"><mat-icon [inline]="true">play_arrow</mat-icon></button></div>
+                                        </div>
+
+                                    </fieldset>
+                                    
+                                    <fieldset *ngIf="action.actionType === actionTypes.Counter" class="trigger-property-group">
+                                        <legend>Counter properties</legend>
+
+                                        <div class="field-list">
+                                            <div class="field-line"><label>Use counter</label><span>Yes</span></div>
+                                            <div class="field-line" *ngIf="action.duration > 0"><label>Reset counter after</label><span>{{getDurationLabel(action.duration)}}</span></div>
+
+                                        </div>
+
+                                    </fieldset>
+
+                                </div>
+
+
+                            </ng-template>
+                            
+
+                        </fieldset>
+
+                        <div class="trigger-duplicates-separator"></div>
+
+                    </ng-template>
+                </ng-template>
 
             </div>
         </mat-card-content>
