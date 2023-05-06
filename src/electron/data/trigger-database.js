@@ -20,6 +20,7 @@ const {
     TriggerStoreModel,
     DuplicateTriggerAction,
     OwnedTriggerAction,
+    TriggerConditionTypes,
 } = require( './models/trigger' );
 const ForwardRef = require( '../forward-ref' );
 const customAlphabet = require( 'nanoid' ).customAlphabet;
@@ -1200,16 +1201,16 @@ class TriggerDatabaseStore extends Store {
                 }
             }
 
-            // Finally, let's search through the trigger db
-            for ( let ii = 0; ii < this.#data.triggers?.length; ii++ ) {
-                const target = this.#data.triggers[ ii ];
-                if ( target.triggerId !== subject.triggerId ) {
-                    let duplicates = this.getDuplicateActions( subject, target, 'nag' );
-                    if ( duplicates?.length > 0 ) {
-                        output = Array.prototype.concat( output, duplicates );
-                    }
-                }
-            }
+            // // Finally, let's search through the trigger db
+            // for ( let ii = 0; ii < this.#data.triggers?.length; ii++ ) {
+            //     const target = this.#data.triggers[ ii ];
+            //     if ( target.triggerId !== subject.triggerId ) {
+            //         let duplicates = this.getDuplicateActions( subject, target, 'nag' );
+            //         if ( duplicates?.length > 0 ) {
+            //             output = Array.prototype.concat( output, duplicates );
+            //         }
+            //     }
+            // }
         }
 
         return output;
@@ -1228,6 +1229,33 @@ class TriggerDatabaseStore extends Store {
         
         /** @type {DuplicateTriggerAction[]} */
         let output = [];
+
+        // Check conditions, if subject or target contains no conditions then possible duplicate actions can be executed.
+        if ( subject.conditions?.length > 0 && target.conditions?.length > 0 ) {
+            let match = false;
+
+            for ( let i = 0; i < subject.conditions.length; i++ ) {
+                const subjectCondition = subject.conditions[ i ];
+
+                for ( let j = 0; j < subject.conditions.length; j++ ) {
+                    const targetCondition = subject.conditions[ j ];
+                    if ( subjectCondition.conditionType === targetCondition.conditionType && subjectCondition.conditionType !== TriggerConditionTypes.VariableValue && subjectCondition.variableName === targetCondition.variableName ) {
+                        let subjectValues = subjectCondition.variableValue.indexOf( '|' ) > -1 ? subjectCondition.variableValue.split( /|/gi ) : [ subjectCondition.variableValue ];
+                        let targetValues = targetCondition.variableValue.indexOf( '|' ) > -1 ? targetCondition.variableValue.split( /|/gi ) : [ targetCondition.variableValue ];
+                        for ( let k = 0; k < subjectValues.length; k++ ) {
+                            // If the subject and target have a condition against the same variable, and a value in the subject condition can match a value in the target condition, then there exists the possible duplicate action execution.
+                            if ( targetValues.indexOf( subjectValues[ k ] ) > -1 ) {
+                                match = true;
+                            }
+                        }
+                    }
+                }
+            }
+            
+            if ( !match ) {
+                return false;
+            }
+        }
 
         for ( let i = 0; i < subject.capturePhrases?.length; i++ ) {
             const phrase = subject.capturePhrases[ i ];
