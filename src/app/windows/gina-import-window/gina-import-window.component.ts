@@ -354,6 +354,13 @@ export class GinaImportWindowComponent implements OnInit {
         player.play();
     }
 
+    public playAudioFileId( fileId: string ): void {
+        this.ipcService.getAudioFileUrl( fileId ).subscribe( url => {
+            let player = new Audio( url );
+            player.play();
+        } );
+    }
+
     public getDurationLabel( seconds: number | string ): string {
         
         seconds = +seconds;
