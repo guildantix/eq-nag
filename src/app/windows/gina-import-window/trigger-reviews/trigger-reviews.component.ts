@@ -1,7 +1,7 @@
 import { Component, EventEmitter, Input, OnInit, Output, ViewChild } from '@angular/core';
 import { NgForm } from '@angular/forms';
 import { MatTable, MatTableDataSource } from '@angular/material/table';
-import { ActionTypeLabels, ActionTypes, CapturePhrase, DuplicateTriggerAction, FileModel, OverlayWindowModel, OwnedTriggerAction, TimerRestartBehaviors, TriggerAction, TriggerModel } from 'src/app/core.model';
+import { ActionTypeLabels, ActionTypes, CapturePhrase, DuplicateTriggerAction, FileModel, OverlayWindowModel, OwnedTriggerAction, TimerRestartBehaviors, TriggerAction, TriggerFolder, TriggerModel } from 'src/app/core.model';
 import { GinaConfiguration, GinaMultiSelectDataModel, GinaOverlayIds, GinaToNagOverlay, TriggerIdNameModel, TriggerReviewModel } from 'src/app/gina.model';
 import * as _ from 'lodash-es';
 import { IpcService } from 'src/app/ipc.service';
@@ -11,6 +11,9 @@ import { map } from 'rxjs/operators';
 import { MatPaginator } from '@angular/material/paginator';
 import { GinaImporter } from 'src/app/utilities/gina.import';
 import { Dictionary } from 'lodash';
+import { nagId } from 'src/app/core/nag-id.util';
+import { MatTreeFlatDataSource, MatTreeFlattener } from '@angular/material/tree';
+import { FlatTreeControl } from '@angular/cdk/tree';
 
 interface DuplicateTriggerSubject {
     triggerId: string;
@@ -18,12 +21,35 @@ interface DuplicateTriggerSubject {
     subjectAction: TriggerAction;
 }
 
+interface ExampleFlatNode {
+    expandable: boolean;
+    name: string;
+    level: number;
+    folderId: string;
+}
+  
 @Component( {
     selector: 'app-trigger-reviews',
     templateUrl: 'trigger-reviews.component.html',
     styleUrls: [ './trigger-reviews.component.scss', '../../../core.scss', '../../../modal.scss' ],
 } )
 export class TriggerReviewsComponent implements OnInit {
+
+    private _transformer = ( node: TriggerFolder, level: number ) => {
+        return {
+            expandable: !!node.children && node.children.length > 0,
+            name: node.name,
+            level: level,
+            active: node.active,
+            // selected: node.selected,
+            selected: false,
+            folderId: node.folderId,
+        };
+    }
+    public folderTreeControl = new FlatTreeControl<ExampleFlatNode>( node => node.level, node => node.expandable );
+    public treeFlattener = new MatTreeFlattener(this._transformer, node => node.level, node => node.expandable, node => node.children);
+    public folderDataSource = new MatTreeFlatDataSource(this.folderTreeControl, this.treeFlattener);
+    hasChild = (_: number, node: ExampleFlatNode) => node.expandable;
 
     // public selectedGinaTriggers: GinaMultiSelectDataModel[] = [];
     private _selectedGinaTriggers: GinaMultiSelectDataModel[] = [];
@@ -235,6 +261,106 @@ export class TriggerReviewsComponent implements OnInit {
         }
     }
 
+    public newFolderIds: string[] = [];
+    isNewFolder( folderId: string ): boolean {
+        return this.newFolderIds.indexOf( folderId ) > -1;
+    }
+
+    showFolderCheck() {
+        this.panel = 'foldersCheck';
+
+        this.ipcService.getTriggerFolders().subscribe( folders => {
+
+            this.newFolderIds = [];
+            let usedFolderIds: string[] = [];
+            this.folderDataSource.data = [];
+
+            this.triggers.forEach( trigger => {
+                let folder: TriggerFolder = null;
+                
+                for ( let i = 0; i < trigger.ginaData.folders?.length; i++ ){
+                    const folderName = trigger.ginaData.folders[ i ];
+
+                    let subFolder = folder ? folder.children.find( f => f.name.toLowerCase() === folderName.toLowerCase() ) : folders.find( f => f.name.toLowerCase() === folderName.toLowerCase() );
+
+                    if ( subFolder == null ) {
+                        subFolder = new TriggerFolder();
+
+                        subFolder.folderId = nagId();
+                        subFolder.name = folderName;
+                        subFolder.expanded = false;
+                        subFolder.active = true;
+                        subFolder.comments = 'Imported from Gina';
+                        subFolder.children = [];
+                        subFolder.folderConditions = [];
+
+                        this.newFolderIds.push( subFolder.folderId );
+
+                        if ( folder == null ) {
+                            folders.push( subFolder );
+                            // folderData.push( subFolder );
+                        } else {
+                            folder.children.push( subFolder );
+                        }
+                    }
+
+                    trigger.nagTrigger.folderId = subFolder.folderId;
+                    usedFolderIds.push( subFolder.folderId );
+                    folder = subFolder;
+                }
+                
+            } );
+
+            // let folderData: TriggerFolder[] = [];
+
+            this.folderDataSource.data = this.buildReviewFolderStructure( folders, usedFolderIds );
+            this.folderTreeControl.expandAll();
+        
+        } );
+        
+    }
+
+    buildReviewFolderStructure( folders: TriggerFolder[], usedIds: string[] ): TriggerFolder[] {
+        let output: TriggerFolder[] = [];
+
+        for ( let i = 0; i < folders?.length; i++ ) {
+            if ( usedIds.indexOf( folders[ i ].folderId ) > -1 ) {
+                let c = Object.assign( new TriggerFolder(), folders[ i ] );
+                c.children = this.buildReviewFolderStructure( folders[ i ].children, usedIds );
+                output.push( c );
+            }
+        }
+
+        return output;
+    }
+
+    public newFolderMap: Record<string, string> = {};
+    mapGinaFolder( newFolderId: string ): void {
+        this.dialogService.showSelectTriggerFolderDialog( null, 'Select an existing folder', 'Select an existing folder that you would like to use.' ).subscribe( folderId => {
+            let i = this.newFolderIds.indexOf( newFolderId );
+
+            if ( folderId ) {
+                this.newFolderMap[ newFolderId ] = folderId;
+                
+                if ( i > -1 ) {
+                    this.newFolderIds.splice( i, 1 );
+                }
+
+            } else if ( this.newFolderMap[ newFolderId ] ) {
+                delete this.newFolderMap[ newFolderId ];
+                if ( i === -1 ) {
+                    this.newFolderIds.push( newFolderId );
+                }
+            }
+
+        } );
+    }
+
+    importTriggers() {
+        // this.dialogService.showConfirmationDialog('Are you ready')
+        this.panel = 'default';
+    }
+
     showDuplicates() {
 
         this.duplicates = [];
@@ -269,7 +395,7 @@ export class TriggerReviewsComponent implements OnInit {
                 }
                 console.log( 'grouped duplicates', this.duplicateGroups );
             } else {
-                this.panel = 'foldersCheck';
+                this.showFolderCheck();
             }
 
         } );
@@ -309,7 +435,7 @@ export class TriggerReviewsComponent implements OnInit {
         }
         
         if ( Object.keys( this.duplicateGroups )?.length === 0 ) {
-            this.panel = 'foldersCheck';
+            this.showFolderCheck();
         }
     }
 
@@ -357,7 +483,7 @@ export class TriggerReviewsComponent implements OnInit {
         }
         
         if ( Object.keys( this.duplicateGroups )?.length === 0 ) {
-            this.panel = 'foldersCheck';
+            this.showFolderCheck();
         }
     }
 

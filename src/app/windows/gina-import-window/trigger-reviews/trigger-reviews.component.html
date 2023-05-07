@@ -6,6 +6,53 @@
     </div>
 </ng-template>
 
+<ng-template [ngIf]="panel === 'foldersCheck'">
+    <form #mappingForm="ngForm">
+        <mat-card class="card action-card" style="margin: 20px; width: 550px;">
+            <mat-card-header>
+                <mat-card-title>Map Gina Folders</mat-card-title>
+                <mat-card-subtitle>Map your GINA folders to their equivalent overlay in Nag.</mat-card-subtitle>
+            </mat-card-header>
+            <mat-card-content>
+                <div class="fade-out" (click)="toggleFadeOut(pDuplicateDesc)" #pDuplicateDesc style="margin-top: -35px; margin-bottom: 25px;">
+                    <p>New folders will be displayed in green.  To map new folders to existing Nag folders, click on the name and select the folder that it should map to.</p>
+                </div>
+                <div class="card-tab-content">
+
+                    <mat-tree [dataSource]="folderDataSource" [treeControl]="folderTreeControl">
+
+                        <!-- This is the tree node template for leaf nodes -->
+                        <mat-tree-node *matTreeNodeDef="let node" matTreeNodePadding matTreeNodePaddingIndent="20">
+                            <button mat-icon-button [disabled]="true">
+                                <span style="display:inline-block;width:18px;">&nbsp;</span>
+                            </button>
+                            <span class="spacer" [ngClass]="{'color-green': isNewFolder(node.folderId)}" (click)="mapGinaFolder(node.folderId)">{{node.name}}</span>
+                        </mat-tree-node>
+                
+                        <!-- This is the tree node template for expandable nodes -->
+                        <mat-tree-node *matTreeNodeDef="let node;when: hasChild" matTreeNodePadding matTreeNodePaddingIndent="20">
+                            <button mat-icon-button matTreeNodeToggle [attr.aria-label]="'Toggle ' + node.name">
+                                <mat-icon [inline]="true" class="mat-icon-rtl-mirror">
+                                    {{folderTreeControl.isExpanded(node) ? 'expand_more' : 'chevron_right'}}
+                                </mat-icon>
+                            </button>
+                            <span class="spacer" [ngClass]="{'color-green': isNewFolder(node.folderId)}" (click)="mapGinaFolder(node.folderId)">{{node.name}}</span>
+                        </mat-tree-node>
+                
+                    </mat-tree>
+
+                </div>
+            </mat-card-content>
+        </mat-card>
+        
+        <div class="import-actions">
+            <!-- <button mat-button color="warn" (click)="back()"><mat-icon style="transform-origin: center center; transform: rotate(180deg);">double_arrow</mat-icon>Import Triggers</button> -->
+            <span class="spacer"></span>
+            <button mat-button color="accent" (click)="importTriggers()">Import Triggers<mat-icon>double_arrow</mat-icon></button>
+        </div>
+    </form>
+</ng-template>
+
 <ng-template [ngIf]="panel === 'overlayAssignment'">
     <form #mappingForm="ngForm">
         <mat-card class="card action-card" style="margin: 20px; width: 550px;">
@@ -259,7 +306,7 @@
         
         <div class="import-actions">
             <span class="spacer"></span>
-            <button mat-button color="accent">Continue<mat-icon>double_arrow</mat-icon></button>
+            <button mat-button color="accent" (click)="showFolderCheck()">Continue<mat-icon>double_arrow</mat-icon></button>
         </div>
 
 </ng-template>
