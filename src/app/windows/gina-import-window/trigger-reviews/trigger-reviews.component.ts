@@ -1,5 +1,5 @@
 import { Component, EventEmitter, Input, OnInit, Output, ViewChild } from '@angular/core';
-import { NgForm } from '@angular/forms';
+import { FormControl, NgForm } from '@angular/forms';
 import { MatTable, MatTableDataSource } from '@angular/material/table';
 import { ActionTypeLabels, ActionTypes, CapturePhrase, DuplicateTriggerAction, FileModel, OverlayWindowModel, OwnedTriggerAction, TimerRestartBehaviors, TriggerAction, TriggerFolder, TriggerModel } from 'src/app/core.model';
 import { GinaConfiguration, GinaMultiSelectDataModel, GinaOverlayIds, GinaToNagOverlay, TriggerIdNameModel, TriggerReviewModel } from 'src/app/gina.model';
@@ -7,13 +7,14 @@ import * as _ from 'lodash-es';
 import { IpcService } from 'src/app/ipc.service';
 import { DialogService } from 'src/app/dialogs/dialog.service';
 import { Observable, forkJoin, timer } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { map, startWith } from 'rxjs/operators';
 import { MatPaginator } from '@angular/material/paginator';
 import { GinaImporter } from 'src/app/utilities/gina.import';
 import { Dictionary } from 'lodash';
 import { nagId } from 'src/app/core/nag-id.util';
 import { MatTreeFlatDataSource, MatTreeFlattener } from '@angular/material/tree';
 import { FlatTreeControl } from '@angular/cdk/tree';
+import Fuse from 'fuse.js';
 
 interface DuplicateTriggerSubject {
     triggerId: string;
@@ -92,9 +93,13 @@ export class TriggerReviewsComponent implements OnInit {
     public triggers: TriggerReviewModel[] = [];
     public tableData: MatTableDataSource<TriggerReviewModel> = new MatTableDataSource( [] );
 
+    public nagFolders: TriggerFolder[] = null;
+    public nagFolderMap: Record<string, string> = null;
+    public nagFolderNameMap: Record<string, string> = null;
+    public eqZones: string[] = [];
     public actionTypes: typeof ActionTypes = ActionTypes;
     public timerRestartBehaviors: typeof TimerRestartBehaviors = TimerRestartBehaviors;
-    public panel: 'triggerList' | 'overlayAssignment' | 'duplicatesCheck' | 'foldersCheck' | 'default' = 'overlayAssignment';
+    public panel: 'triggerList' | 'overlayAssignment' | 'duplicatesCheck' | 'foldersCheck' | 'zoneNameCheck' | 'default' = 'overlayAssignment';
     public ginaOverlayMapping: GinaToNagOverlay[] = [];
     public duplicates: DuplicateTriggerAction[] = [];
     public duplicateGroups: Record<string, DuplicateTriggerSubject[]> = {};
@@ -274,6 +279,8 @@ export class TriggerReviewsComponent implements OnInit {
             this.newFolderIds = [];
             let usedFolderIds: string[] = [];
             this.folderDataSource.data = [];
+            this.nagFolderMap = null;
+            this.nagFolderNameMap = null;
 
             this.triggers.forEach( trigger => {
                 let folder: TriggerFolder = null;
@@ -298,21 +305,19 @@ export class TriggerReviewsComponent implements OnInit {
 
                         if ( folder == null ) {
                             folders.push( subFolder );
-                            // folderData.push( subFolder );
                         } else {
                             folder.children.push( subFolder );
                         }
                     }
 
-                    trigger.nagTrigger.folderId = subFolder.folderId;
                     usedFolderIds.push( subFolder.folderId );
                     folder = subFolder;
                 }
                 
+                trigger.nagTrigger.folderId = folder.folderId;
             } );
 
-            // let folderData: TriggerFolder[] = [];
-
+            this.nagFolders = folders;
             this.folderDataSource.data = this.buildReviewFolderStructure( folders, usedFolderIds );
             this.folderTreeControl.expandAll();
         
@@ -332,6 +337,33 @@ export class TriggerReviewsComponent implements OnInit {
         }
 
         return output;
+    }
+
+    buildNagFolderMap( folders: TriggerFolder[], parentId: string ) {
+        for ( let i = 0; i < folders?.length; i++ ) {
+            this.nagFolderMap[ folders[ i ].folderId ] = parentId;
+            this.nagFolderNameMap[ folders[ i ].folderId ] = folders[ i ].name;
+            if ( folders[ i ].children?.length > 0 ) {
+                this.buildNagFolderMap( folders[ i ].children, folders[ i ].folderId );
+            }
+        }
+    }
+
+    updateGinaFolderMap() {
+        if ( this.nagFolderMap == null || this.nagFolderNameMap == null ) {
+            this.nagFolderMap = {};
+            this.nagFolderNameMap = {};
+            this.buildNagFolderMap( this.nagFolders, null );
+        }
+        this.triggers.forEach( t => {
+            let fid = t.nagTrigger.folderId;
+            t.folderFamilyName = '';
+            while ( fid != null ) {
+                t.folderFamilyName = this.nagFolderNameMap[ fid ] + '/' + t.folderFamilyName;
+                fid = this.nagFolderMap[ fid ];
+            }
+        } );
+        this.showZoneNameCheck();
     }
 
     public newFolderMap: Record<string, string> = {};
@@ -356,11 +388,54 @@ export class TriggerReviewsComponent implements OnInit {
         } );
     }
 
+    private _filterZoneName( value: string ): string[] {
+        const fuseConfig = {
+            includeScore: true
+        };
+          
+        const fuse = new Fuse( this.eqZones, fuseConfig );
+          
+        const result = fuse.search( value );
+
+        let scoreLimit = 0.85;
+        let scores = result.map( item => item.score );
+        let minScore = _.min( scores );
+
+        if ( minScore < 0.35 ) {
+            scoreLimit = 0.35;
+        } else if ( minScore < 0.50 ) {
+            scoreLimit = 0.50;
+        }
+
+        return result.filter( v => v.score < scoreLimit ).map( v => v.item );
+    }
+
+    showZoneNameCheck() {
+        this.panel = 'default';
+
+        this.ipcService.getEverquestZones().subscribe( zones => {
+            this.eqZones = zones;
+
+            this.triggers.forEach( t => {
+                t.zoneNameInputControl = new FormControl<string>( '' );
+                t.zoneNameFilteredOptions = t.zoneNameInputControl.valueChanges.pipe(
+                    startWith( '' ),
+                    map( value => this._filterZoneName( value ) )
+                );
+            } );
+
+            this.panel = 'zoneNameCheck';
+
+        } );
+    }
+
     back() {
         if ( this.panel === 'foldersCheck' ) {
             this.panel = 'duplicatesCheck';
         } else if ( this.panel === 'duplicatesCheck' ) {
             this.panel = 'overlayAssignment';
+        } else if ( this.panel === 'zoneNameCheck' ) {
+            this.panel = 'foldersCheck';
         }
     }
 

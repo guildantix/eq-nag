@@ -6,6 +6,48 @@
     </div>
 </ng-template>
 
+<ng-template [ngIf]="panel === 'zoneNameCheck'">
+    <form #mappingForm="ngForm">
+        <mat-card class="card action-card" style="margin: 20px; width: 550px;">
+            <mat-card-header>
+                <mat-card-title>Restrict by Zone</mat-card-title>
+                <mat-card-subtitle>Restrict the execution of capture phrases by zone names.</mat-card-subtitle>
+            </mat-card-header>
+            <mat-card-content>
+                <div class="fade-out" (click)="toggleFadeOut(pDuplicateDesc)" #pDuplicateDesc style="margin-top: -35px; margin-bottom: 25px;">
+                    <p>Some triggers may only be required while in specific zones, for example you may want to restrict Lady Vox's triggers to Permafrost.</p>
+                    <p>This step is <i>optional</i>, you may enter none or only enter a few.  But keep in mind, <span class="color-orange">if you create a lot of triggers without zone restrictions you may need to manually enable and disable unneeded triggers to maintain performance.</span></p>
+                    <p>You may enter the name of zones each trigger can be used, separated by a vertical bar.</p>
+                    <p>Example: <span class="code-block" style="background-color: #202020; margin-left: 40px;">Permafrost Keep|Nagafen's Lair</span></p>
+                    <p>NOTE: The zone names must be entered as they are written in the log.  Check your log files for "You have entered zonename". Additionally, these conditions will be checked loosly.  For example, you may enter "perma" as the name of the zone and it will enable the trigger when the player enters "Permafrost Keep".</p>
+                </div>
+                <div class="card-tab-content">
+
+                    <div *ngFor="let trigger of triggers">
+                        <mat-form-field style="width: 100%;">
+                            <mat-label></mat-label>
+                            <input matInput [(ngModel)]="trigger.zoneName" [formControl]="trigger.zoneNameInputControl" [matAutocomplete]="auto" />
+                            <mat-autocomplete autoActiveFirstOption #auto="matAutocomplete">
+                                <mat-option *ngFor="let option of trigger.zoneNameFilteredOptions | async" [value]="option">
+                                  {{option}}
+                                </mat-option>
+                            </mat-autocomplete>
+                            <mat-hint>{{trigger.folderFamilyName}}<span style="color: #ededed;">{{trigger.nagTrigger.name}}</span></mat-hint>
+                        </mat-form-field>
+                    </div>
+
+                </div>
+            </mat-card-content>
+        </mat-card>
+        
+        <div class="import-actions">
+            <button mat-button color="warn" (click)="back()"><mat-icon style="transform-origin: center center; transform: rotate(180deg);">double_arrow</mat-icon>Import Triggers</button>
+            <span class="spacer"></span>
+            <button mat-button color="accent" (click)="importTriggers()">Import Triggers<mat-icon>double_arrow</mat-icon></button>
+        </div>
+    </form>
+</ng-template>
+
 <ng-template [ngIf]="panel === 'foldersCheck'">
     <form #mappingForm="ngForm">
         <mat-card class="card action-card" style="margin: 20px; width: 550px;">
@@ -48,7 +90,7 @@
         <div class="import-actions">
             <button mat-button color="warn" (click)="back()"><mat-icon style="transform-origin: center center; transform: rotate(180deg);">double_arrow</mat-icon>Import Triggers</button>
             <span class="spacer"></span>
-            <button mat-button color="accent" (click)="importTriggers()">Import Triggers<mat-icon>double_arrow</mat-icon></button>
+            <button mat-button color="accent" (click)="updateGinaFolderMap()">Import Triggers<mat-icon>double_arrow</mat-icon></button>
         </div>
     </form>
 </ng-template>

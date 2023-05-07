@@ -1,4 +1,6 @@
+import { FormControl } from "@angular/forms";
 import { TriggerModel } from "./core.model";
+import { Observable } from "rxjs";
 
 export interface GinaPhoneticTransform {
     ActualWord: string;
@@ -218,5 +220,8 @@ export class TriggerIdNameModel {
 }
 
 export class TriggerReviewModel {
+    public zoneName: string;
+    public zoneNameInputControl: FormControl<string>;
+    public zoneNameFilteredOptions: Observable<string[]>;
     constructor( public nagTrigger: TriggerModel, public ginaData: GinaTreeObject, public folderFamilyName: string ) { }
 }
