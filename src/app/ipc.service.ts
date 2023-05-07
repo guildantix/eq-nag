@@ -588,6 +588,22 @@ export class IpcService {
         window.api.ipc.send( 'log:simulate:lines', lines );
     }
 
+    public createNewTriggers( model: TriggerModel[] ): Observable<string[]> {
+        let obs: Observable<string[]> = new Observable<string[]>( ( observer: Observer<string[]> ) => {
+            
+            window.api.ipc.once( 'trigger:mass-create', ( e, triggerIds ) => {
+                this.ngZone.run( () => {
+                    observer.next( triggerIds );
+                    observer.complete();
+                } );
+            } );
+            window.api.ipc.send( 'trigger:mass-create', model );
+
+        } );
+
+        return obs;
+    }
+
     public createNewTrigger( model: TriggerModel ): Observable<string> {
         let obs: Observable<string> = new Observable<string>( ( observer: Observer<string> ) => {
             
@@ -1460,11 +1476,12 @@ export class IpcService {
             
             window.api.ipc.once( 'settings:get:ignore-gina-objects', ( e, ignoredGinaObjects: string[] ) => {
                 this.ngZone.run( () => {
+                    console.log( 'ignoredGinaObjects', ignoredGinaObjects );
                     observer.next( ignoredGinaObjects );
                     observer.complete();
                 } );
             } );
-            window.api.ipc.send( 'settings:get:ignoredGinaObjects', null );
+            window.api.ipc.send( 'settings:get:ignore-gina-objects', null );
 
         } );
 
@@ -1478,7 +1495,12 @@ export class IpcService {
     /**
      * Returns the GINA configuration file if the GINA data folder was found.
      */
-    public getGinaConfiguration(): Observable<GinaConfiguration> {
+    public getGinaConfiguration( refreshCache: boolean = false ): Observable<GinaConfiguration> {
+        
+        if ( refreshCache === true ) {
+            this._ginaConfigCache = null;
+        }
+
         let obs: Observable<GinaConfiguration> = new Observable<GinaConfiguration>( ( observer: Observer<GinaConfiguration> ) => {
             if ( this._ginaConfigCache === null ) {
                 window.api.ipc.once( 'gina:get:configuration', ( e, ginaConfig: GinaConfiguration ) => {

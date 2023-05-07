@@ -319,6 +319,22 @@ class TriggerDatabaseStore extends Store {
         _fileStore = fileStore;
         _userPreferences = userPreferences;
 
+        ipcMain.on( 'trigger:mass-create',
+            /**
+             * Creates the givne list of triggers.
+             * 
+             * @param {any} event Event args.
+             * @param {Trigger[]} triggers The list of triggers to create.
+             */
+            ( event, triggers ) => {
+                let triggerIds = [];
+                for ( let i = 0; i < triggers?.length; i++ ) {
+                    triggerIds.push( this.add( triggers[ i ], i === triggers.length - 1 ) );
+                }
+                event.sender.send( 'trigger:mass-create', triggerIds );
+                sendTick();
+            } );
+
         ipcMain.on( 'trigger:create', ( event, trigger ) => {
             let triggerId = this.add( trigger );
             event.sender.send( 'trigger:create', triggerId );
