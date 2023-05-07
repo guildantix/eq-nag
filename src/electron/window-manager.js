@@ -427,6 +427,11 @@ class WindowManager {
             this.ginaImportWindow.setBackgroundColor( '#1a1a1a' );
             this.configureRendererMouseBlockingOnMoveResize( this.ginaImportWindow );
 
+            // Open the DevTools.
+            if ( app.isDev() ) {
+                this.ginaImportWindow.webContents.openDevTools( { mode: 'undocked' } );
+            }
+            
         } );
 
         ipcMain.on( 'trigger:dialog:library', ( event, arg ) => {
