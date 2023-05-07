@@ -86,7 +86,8 @@
                                                 [ginaConfig]="ginaConfig" 
                                                 [selectedGinaTriggers]="selectedGinaData" 
                                                 (onPlayAudioFileId)="playAudioFileId($event)"
-                                                (onSpeak)="speakPhrase($event)"></app-trigger-reviews>
+                                                (onSpeak)="speakPhrase($event)"
+                                                (onCompleted)="onMassImportComplete($event)"></app-trigger-reviews>
                                         </mat-tab>
                                     </mat-tab-group>
                                     <div class="import-actions">
@@ -140,7 +141,7 @@
                                                     <mat-label></mat-label>
                                                     <input matInput [(ngModel)]="selectedTrigger.TriggerText" name="txtTriggerText" [readOnly]="true" />
                                                     <mat-hint *ngIf="selectedTrigger.EnableRegex == 'True'">Uses regex</mat-hint>
-                                                    <mat-hint>Search Text</mat-hint>
+                                                    <mat-hint *ngIf="selectedTrigger.EnableRegex != 'True'">Search Text</mat-hint>
                                                 </mat-form-field>
 
                                                 <!-- <mat-checkbox [checked]="selectedTrigger.EnableRegex == 'True'" (click)="$event.preventDefault()">Use Regex</mat-checkbox> -->

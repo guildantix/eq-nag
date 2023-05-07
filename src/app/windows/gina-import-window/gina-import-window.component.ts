@@ -187,10 +187,16 @@ export class GinaImportWindowComponent implements OnInit {
 
     }
 
-    public loadGinaConfig(): void {
+    public loadGinaConfig( refreshCache: boolean = false ): void {
+
+        refreshCache = refreshCache === true;
+
+        if ( refreshCache ) {
+            this.loadingGinaConfig = true;
+        }
 
         this.ipcService
-            .getGinaConfiguration()
+            .getGinaConfiguration( refreshCache )
             .subscribe( ginaConfig => {
                 if ( ginaConfig == null ) {
                     this.dialogService.showWarningDialog( 'GINA failure', 'Could not find the GINA data directory' );
@@ -725,6 +731,11 @@ export class GinaImportWindowComponent implements OnInit {
                         this.skipDuplicateTriggerCheck = false;
                         this.duplicateTriggers = null;
                         this.nTrigger = null;
+                        
+                        this.dataSource.data = [];
+                        this.ignoredGinaObjects.push( this.selectedGinaName );
+                        this.loadGinaConfig( true );
+                        
                         this.snackBar.open( 'Trigger created.', 'Dismiss', { duration: 1500 } );
                     } else {
                         this.snackBar.open( 'Could not create trigger!', 'Dismiss', { duration: 5000 } );
@@ -871,6 +882,17 @@ export class GinaImportWindowComponent implements OnInit {
             this.triggerReviews = [];
             this.startReview = false;
         }
+    }
+
+    public onMassImportComplete( importedGinaNames: string[] ): void {
+        
+        this.resetTriggerSelection();
+        this.hasMultipleSelected = false;
+
+        this.ignoredGinaObjects = Array.prototype.concat( [], this.ignoredGinaObjects, importedGinaNames ?? [] );
+        this.dataSource.data = [];
+        this.loadGinaConfig( true );
+        
     }
 
 }
