@@ -96,6 +96,7 @@ export class TriggerReviewsComponent implements OnInit {
     public nagFolders: TriggerFolder[] = null;
     public nagFolderMap: Record<string, string> = null;
     public nagFolderNameMap: Record<string, string> = null;
+    public mergeGinaNameMap: Record<string, string> = {};
     public eqZones: string[] = [];
     public actionTypes: typeof ActionTypes = ActionTypes;
     public timerRestartBehaviors: typeof TimerRestartBehaviors = TimerRestartBehaviors;
@@ -119,6 +120,7 @@ export class TriggerReviewsComponent implements OnInit {
 
     @Output() public onSpeak: EventEmitter<string> = new EventEmitter<string>();
     @Output() public onPlayAudioFileId: EventEmitter<string> = new EventEmitter<string>();
+    @Output() public onCompleted: EventEmitter<string[]> = new EventEmitter<string[]>();
     
     @ViewChild( 'paginator', { static: false, read: MatPaginator } ) private paginator: MatPaginator;
     @ViewChild( 'triggersTable' ) private triggersTable: MatTable<any>;
@@ -440,8 +442,66 @@ export class TriggerReviewsComponent implements OnInit {
     }
 
     importTriggers() {
-        // this.dialogService.showConfirmationDialog('Are you ready')
-        this.panel = 'default';
+        this.dialogService
+            .showConfirmationDialog(
+                'Are you ready to import?',
+                'Click "Yes" to import all selected triggers.',
+                'Click "No" to cancel and go back to review.' )
+            .subscribe( confirmed => {
+                if ( confirmed ) {
+                    this.panel = 'default';
+
+                    // Create the new folders.
+                    this.ipcService.updateTriggerFolders( this.nagFolders ).subscribe( folders => {
+                        
+                        // Create each new trigger.
+                        this.triggers.forEach( trigger => {
+                            trigger.nagTrigger.importIdentifier = trigger.ginaData.ginaName;
+                        } );
+
+                        this.ipcService
+                            .createNewTriggers( this.triggers.map( f => f.nagTrigger ) )
+                            .subscribe( triggerIds => {
+                                let created: TriggerReviewModel[] = [];
+
+                                triggerIds?.forEach( tid => {
+                                    let i = this.triggers.findIndex( f => f.nagTrigger.triggerId === tid );
+                                    if ( i > -1 ) {
+                                        created.push( this.triggers.splice( i, 1 )[ 0 ] );
+                                    }
+                                } );
+
+                                this.ipcService.getIgnoredGinaObjects().subscribe( ignoredGinaObjects => {
+                                    
+                                    let newObjectNames: string[] = created.map( f => f.ginaData.ginaName );
+                                    this.importedGinaObjects = Array.prototype.concat( newObjectNames, ignoredGinaObjects );
+
+                                    let mergedGinaNames = Object.keys( this.mergeGinaNameMap );
+                                    for ( let i = 0; i < mergedGinaNames?.length; i++ ) {
+                                        const ginaName = mergedGinaNames[ i ];
+                                        if ( this.importedGinaObjects.indexOf( this.mergeGinaNameMap[ ginaName ] ) > -1 ) {
+                                            // If the name of the object that
+                                            // ginaName was merged with is contained 
+                                            // by the importedGinaObjects list, then 
+                                            // add ginaName to that list as well.
+                                            this.importedGinaObjects.push( ginaName );
+                                            newObjectNames.push( ginaName );
+                                        }
+                                    }
+                                    this.updateGinaIgnoreList();
+
+                                    if ( this.triggers?.length > 0 ) {
+                                        this.dialogService.showWarningDialog( 'Import Failure', [ 'Some or all triggers were unable to be imported.', 'Check the list on the left to see what triggers still remain.' ] );
+                                    }
+                                
+                                    this.onCompleted.emit( newObjectNames );
+
+                                } );
+                            } );
+                        
+                    } );
+                }
+            } );
     }
 
     resetDuplicates() {
@@ -460,6 +520,7 @@ export class TriggerReviewsComponent implements OnInit {
             this.duplicateDetailsShown = {};
             this.triggerMergeSelected = {};
             this.triggerIgnoreSelected = {};
+            this.mergeGinaNameMap = {};
 
             this.ipcService.searchForDuplicates( _.map( this.triggers, f => f.nagTrigger ) ).subscribe( duplicateData => {
                 console.log( 'duplicateData', duplicateData );
@@ -503,18 +564,26 @@ export class TriggerReviewsComponent implements OnInit {
         }
     }
 
+    getGinaName( triggerId: string ): string {
+        let trigger = this.triggers.find( f => f.nagTrigger.triggerId === triggerId );
+        return trigger?.ginaData.ginaName;
+    }
+
     mergeSelected( phrase: string ): void {
         let targetTriggerId: string = null;
+        let targetGinaName: string = null;
         for ( let i = this.duplicateGroups[ phrase ]?.length - 1; i >= 0; i-- ) {
             const triggerId = this.duplicateGroups[ phrase ][ i ].triggerId;
 
             if ( this.triggerMergeSelected[ phrase ][ triggerId ] === true ) {
                 if ( targetTriggerId == null ) {
                     targetTriggerId = triggerId;
+                    targetGinaName = this.getGinaName( targetTriggerId );
                 } else {
 
                     if ( this.copyActionsToTrigger( targetTriggerId, triggerId ) ) {
 
+                        this.mergeGinaNameMap[ this.getGinaName( triggerId ) ] = targetGinaName;
                         this.removeFromImport( triggerId );
                 
                         this.duplicateGroups[ phrase ].splice( i, 1 );
@@ -529,6 +598,7 @@ export class TriggerReviewsComponent implements OnInit {
         }
         
         if ( Object.keys( this.duplicateGroups )?.length === 0 ) {
+            // If there are no more duplicates to deal with, let's review our folders.
             this.showFolderCheck();
         }
     }
@@ -561,10 +631,31 @@ export class TriggerReviewsComponent implements OnInit {
     }
 
     ignoreSelected( phrase: string ): void {
+
+        let targetTriggerId: string = null;
+        let targetGinaName: string = null;
+
+        // If we're ignoring a set of triggers, but not all triggers with the
+        // same phrase then the assumption is that we're ignoring duplicate 
+        // triggers in favor of a specific trigger.  In this case, we need to 
+        // mark the ignored triggers as imported once the target is 
+        // successfully imported.  We can start by finding this trigger.
+        for ( let i = this.duplicateGroups[ phrase ]?.length - 1; i >= 0; i-- ) {
+            const triggerId = this.duplicateGroups[ phrase ][ i ].triggerId;
+            if ( this.triggerIgnoreSelected[ phrase ][ triggerId ] !== true && targetTriggerId == null ) {
+                
+                targetTriggerId = triggerId;
+                targetGinaName = this.getGinaName( targetTriggerId );
+
+                break;
+            }
+        }
+
         for ( let i = this.duplicateGroups[ phrase ]?.length - 1; i >= 0; i-- ) {
             const triggerId = this.duplicateGroups[ phrase ][ i ].triggerId;
             if ( this.triggerIgnoreSelected[ phrase ][ triggerId ] === true ) {
-                console.log( 'checked', triggerId );
+                
+                this.mergeGinaNameMap[ this.getGinaName( triggerId ) ] = targetGinaName;
                 this.removeFromImport( triggerId );
                 
                 this.duplicateGroups[ phrase ].splice( i, 1 );
@@ -577,6 +668,7 @@ export class TriggerReviewsComponent implements OnInit {
         }
         
         if ( Object.keys( this.duplicateGroups )?.length === 0 ) {
+            // If there are no more duplicates to deal with, let's review our folders.
             this.showFolderCheck();
         }
     }
