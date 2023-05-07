@@ -110,7 +110,8 @@ fieldset {
     text-align: center;
 }
 
-p.code-block {
+p.code-block,
+span.code-block {
     span {
         display: block;
         padding: 0;
