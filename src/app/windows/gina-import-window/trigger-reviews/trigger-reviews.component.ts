@@ -72,7 +72,6 @@ export class TriggerReviewsComponent implements OnInit {
             } );
 
             // this.ipcService.searchForDuplicates( _.map( triggers, f => f.nagTrigger ) ).subscribe( duplicateData => {
-            //     console.log( 'duplicateData', duplicateData );
                 
             //     this.triggers = triggers;
             //     this.tableData = new MatTableDataSource( this.triggers );
@@ -81,7 +80,6 @@ export class TriggerReviewsComponent implements OnInit {
             // } );
         
             // forkJoin( observables ).subscribe( doesntmatter => {
-            //     console.log( 'done' );
             //     this.triggers = triggers;
             //     this.tableData = new MatTableDataSource( this.triggers );
             //     this.tableData.paginator = this.paginator;
@@ -523,7 +521,6 @@ export class TriggerReviewsComponent implements OnInit {
             this.mergeGinaNameMap = {};
 
             this.ipcService.searchForDuplicates( _.map( this.triggers, f => f.nagTrigger ) ).subscribe( duplicateData => {
-                console.log( 'duplicateData', duplicateData );
             
                 if ( duplicateData?.length > 0 ) {
                     this.duplicates = duplicateData;
@@ -546,7 +543,7 @@ export class TriggerReviewsComponent implements OnInit {
                         this.triggerMergeSelected[ keys[ i ] ] = {};
                         this.triggerIgnoreSelected[ keys[ i ] ] = {};
                     }
-                    console.log( 'grouped duplicates', this.duplicateGroups );
+                    
                 } else {
                     this.showFolderCheck();
                 }

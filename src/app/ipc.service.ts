@@ -1476,7 +1476,6 @@ export class IpcService {
             
             window.api.ipc.once( 'settings:get:ignore-gina-objects', ( e, ignoredGinaObjects: string[] ) => {
                 this.ngZone.run( () => {
-                    console.log( 'ignoredGinaObjects', ignoredGinaObjects );
                     observer.next( ignoredGinaObjects );
                     observer.complete();
                 } );
