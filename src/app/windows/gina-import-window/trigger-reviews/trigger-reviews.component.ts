@@ -356,49 +356,68 @@ export class TriggerReviewsComponent implements OnInit {
         } );
     }
 
+    back() {
+        if ( this.panel === 'foldersCheck' ) {
+            this.panel = 'duplicatesCheck';
+        } else if ( this.panel === 'duplicatesCheck' ) {
+            this.panel = 'overlayAssignment';
+        }
+    }
+
     importTriggers() {
         // this.dialogService.showConfirmationDialog('Are you ready')
         this.panel = 'default';
     }
 
-    showDuplicates() {
+    resetDuplicates() {
+        this.generateTriggerModels().subscribe( () => {
+            this.duplicates = [];
+            this.showDuplicates();
+        } );
+    }
 
-        this.duplicates = [];
-        this.duplicateDetailsShown = {};
-        this.triggerMergeSelected = {};
-        this.triggerIgnoreSelected = {};
+    showDuplicates() {
+        
         this.panel = 'duplicatesCheck';
 
-        this.ipcService.searchForDuplicates( _.map( this.triggers, f => f.nagTrigger ) ).subscribe( duplicateData => {
-            console.log( 'duplicateData', duplicateData );
+        if ( !( this.duplicates?.length > 0 ) ) {
             
-            if ( duplicateData?.length > 0 ) {
-                this.duplicates = duplicateData;
+            this.duplicateDetailsShown = {};
+            this.triggerMergeSelected = {};
+            this.triggerIgnoreSelected = {};
 
-                let subjectData: DuplicateTriggerSubject[] = [];
-                for ( let i = 0; i < duplicateData?.length; i++ ) {
-                    const d = duplicateData[ i ];
-                    if ( subjectData.findIndex( f => f.triggerId === d.triggerId ) === -1 ) {
-                        subjectData.push( {
-                            triggerId: d.triggerId,
-                            phrase: d.phrase,
-                            subjectAction: d.subjectAction,
-                        } );
+            this.ipcService.searchForDuplicates( _.map( this.triggers, f => f.nagTrigger ) ).subscribe( duplicateData => {
+                console.log( 'duplicateData', duplicateData );
+            
+                if ( duplicateData?.length > 0 ) {
+                    this.duplicates = duplicateData;
+
+                    let subjectData: DuplicateTriggerSubject[] = [];
+                    for ( let i = 0; i < duplicateData?.length; i++ ) {
+                        const d = duplicateData[ i ];
+                        if ( subjectData.findIndex( f => f.triggerId === d.triggerId ) === -1 ) {
+                            subjectData.push( {
+                                triggerId: d.triggerId,
+                                phrase: d.phrase,
+                                subjectAction: d.subjectAction,
+                            } );
+                        }
                     }
+
+                    this.duplicateGroups = _.groupBy( subjectData, f => f.phrase );
+                    let keys = this.duplicatePhrases;
+                    for ( let i = 0; i < keys.length; i++ ) {
+                        this.triggerMergeSelected[ keys[ i ] ] = {};
+                        this.triggerIgnoreSelected[ keys[ i ] ] = {};
+                    }
+                    console.log( 'grouped duplicates', this.duplicateGroups );
+                } else {
+                    this.showFolderCheck();
                 }
 
-                this.duplicateGroups = _.groupBy( subjectData, f => f.phrase );
-                let keys = this.duplicatePhrases;
-                for ( let i = 0; i < keys.length; i++ ) {
-                    this.triggerMergeSelected[ keys[ i ] ] = {};
-                    this.triggerIgnoreSelected[ keys[ i ] ] = {};
-                }
-                console.log( 'grouped duplicates', this.duplicateGroups );
-            } else {
-                this.showFolderCheck();
-            }
+            } );
 
-        } );
+        }
     }
 
     toggleFadeOut( el: HTMLElement ): void {

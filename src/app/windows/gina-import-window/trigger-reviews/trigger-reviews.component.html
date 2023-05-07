@@ -46,7 +46,7 @@
         </mat-card>
         
         <div class="import-actions">
-            <!-- <button mat-button color="warn" (click)="back()"><mat-icon style="transform-origin: center center; transform: rotate(180deg);">double_arrow</mat-icon>Import Triggers</button> -->
+            <button mat-button color="warn" (click)="back()"><mat-icon style="transform-origin: center center; transform: rotate(180deg);">double_arrow</mat-icon>Import Triggers</button>
             <span class="spacer"></span>
             <button mat-button color="accent" (click)="importTriggers()">Import Triggers<mat-icon>double_arrow</mat-icon></button>
         </div>
@@ -87,6 +87,7 @@
         </mat-card>
         
         <div class="import-actions">
+            <!-- <button mat-button color="warn" (click)="back()"><mat-icon style="transform-origin: center center; transform: rotate(180deg);">double_arrow</mat-icon>Import Triggers</button> -->
             <span class="spacer"></span>
             <button mat-button color="accent" (click)="updateGinaOverlayMapping()">Mapping Done<mat-icon>double_arrow</mat-icon></button>
         </div>
@@ -97,7 +98,7 @@
 
     <mat-card class="card action-card" style="margin: 20px; width: 550px;">
         <mat-card-header>
-            <mat-card-title>Duplicate Triggers</mat-card-title>
+            <mat-card-title>Duplicate Triggers<button mat-button color="warn" (click)="resetDuplicates()" style="float: right;">Reset</button></mat-card-title>
             <mat-card-subtitle>Check for trigger duplicates.</mat-card-subtitle>
         </mat-card-header>
         <mat-card-content>
@@ -108,7 +109,7 @@
                 <p><span class="color-red">Important</span> Not all triggers that conflict should be combined, but instead, the best way to deal with them may be to add in conditions to further narrow when each trigger should be parsed.  Alternatively, you could choose to import only one of the conflicting triggers.</p>
             </div>
             <div class="card-tab-content">
-
+                
                 <ng-template ngFor let-duplicatePhrase [ngForOf]="duplicatePhrases" let-i="index">
                     <div class="duplicate-phrase" [ngClass]="{'zero': i % 2 === 0, 'one': i % 2 > 0}"><div class="label" (click)="duplicateDetailsShown[duplicatePhrase] = !duplicateDetailsShown[duplicatePhrase]">{{duplicatePhrase}}</div><div class="button"></div></div>
                     <div class="duplicate-phrase-details" *ngIf="duplicateDetailsShown[duplicatePhrase]">
@@ -305,6 +306,7 @@
     </mat-card>
         
         <div class="import-actions">
+            <button mat-button color="warn" (click)="back()"><mat-icon style="transform-origin: center center; transform: rotate(180deg);">double_arrow</mat-icon>Import Triggers</button>
             <span class="spacer"></span>
             <button mat-button color="accent" (click)="showFolderCheck()">Continue<mat-icon>double_arrow</mat-icon></button>
         </div>
