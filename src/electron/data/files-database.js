@@ -292,6 +292,7 @@ class FilesDatabaseStore extends Store {
     getAudioFileData() {
         /** @type {PackageFileModel[]} */
         let files = _.filter( this.#data.files, f => f.mediaType === MediaTypes.Audio )
+            .filter( f => fs.existsSync( f.physicalName ) )
             .map( f => {
                 let m = new PackageFileModel();
 
