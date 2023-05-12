@@ -688,7 +688,9 @@ function generateTriggerFns() {
                         trigger._onCooldown = false;
                     }
 
-                    return !trigger._onCooldown;
+                    if ( trigger._onCooldown ) {
+                        return false;
+                    }
                 }
 
                 trigger._conditionResults = {};
