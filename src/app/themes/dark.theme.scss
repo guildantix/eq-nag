@@ -611,11 +611,12 @@ p.notice {
         height: 35px;
         margin-right: 10px;
         margin-left: -10px;
-        width: 50px;
+        width: 35px;
     }
     span {
         display: inline;
         align-self: center;
+        max-width: calc(100% - 35px);
     }
     small {
         font-size: 12px;
