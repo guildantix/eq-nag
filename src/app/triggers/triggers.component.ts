@@ -268,7 +268,7 @@ export class TriggersComponent implements OnInit {
         this.ipcService.sendTextToClipboard( hotkeyText );
 
         this.snackBar.open( 'The command has been copied to your clipboard!', 'Dismiss', { duration: 5000 } );
-        this.dialogService.showInfoDialog( 'Hotkey Help', [ 'The command to create the hotkey has been copied to your clipboard.', 'Paste the command into EverQuest and hit "Enter" to create the hotkey and then place it into your hotbar.' ], 'normal' );
+        this.dialogService.showInfoDialog( 'Hotkey Help', [ 'The command to create the hotkey has been copied to your clipboard.', 'Paste the command into EverQuest and hit "Enter" to create the hotkey and then place it into your hotbar.' ], 'normal', 'triggers-component:copy-hotkey:success-modal' );
     }
 
 

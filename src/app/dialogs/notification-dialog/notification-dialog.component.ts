@@ -13,16 +13,19 @@ export class NotificationDialogComponent implements OnInit {
     public model: string;
     public messages: ( string | ColoredString )[] = [];
     public notificationTypes: typeof NotificationTypes = NotificationTypes;
+    public ignoreThisModal: boolean = false;
 
     constructor(
         public dialogRef: MatDialogRef<NotificationDialogComponent>,
         @Inject( MAT_DIALOG_DATA ) public data: NotificationDialogModel,
         public dialog: MatDialog ) {
+        
         if ( data.message instanceof Array ) {
             this.messages = data.message;
         } else {
             this.messages.push( data.message );
         }
+
     }
 
     ngOnInit() {
@@ -55,4 +58,34 @@ export class NotificationDialogComponent implements OnInit {
             this.dialogRef.close();
         }
     }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Closes the dialog.
+     */
+    public closeDialog(): void {
+        if ( this.ignoreThisModal ) {
+            this.dialogRef.close( this.data.modalId );
+        } else {
+            this.dialogRef.close();
+        }
+    }
+    
+
+
+
+
+
+
+
+
+    
 }

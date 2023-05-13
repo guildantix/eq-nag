@@ -18,10 +18,12 @@
 
 <mat-dialog-actions>
     
-    <button mat-button [mat-dialog-close]="model" class="t-confirm-no">Close</button>
+    <button mat-button (click)="closeDialog()" class="t-confirm-no">Close</button>
     <ng-template ngFor let-item [ngForOf]="data.customButtons">
         <button *ngIf="!item.matIconButton" (click)="onClickCustomButton(item)" mat-button class="{{item.cssClassString}}"><mat-icon *ngIf="item.showIcon" [ngClass]="{'material-icons-outlined': item.matIconsOutlined}">{{item.matIcon}}</mat-icon> {{item.text}}</button>
         <button *ngIf="item.matIconButton" (click)="onClickCustomButton(item)" mat-icon-button class="{{item.cssClassString}}"><mat-icon [ngClass]="{'material-icons-outlined': item.matIconsOutlined}">{{item.matIcon}}</mat-icon></button>
     </ng-template>
+    <span style="flex: 1 1 auto;"></span>
+    <mat-checkbox *ngIf="data.modalId && (data.customButtons == null || data.customButtons.length == 0)" [(ngModel)]="ignoreThisModal" name="ignoreThisModal">Ignore this modal</mat-checkbox>
 
 </mat-dialog-actions>

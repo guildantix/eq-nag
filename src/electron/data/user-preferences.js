@@ -405,6 +405,15 @@ class UserPreferencesStore extends Store {
         this.storeDataFile( this.#data );
     }
 
+    /** @type {string[]} */
+    get hiddenModalIds() {
+        return this.#data.hiddenModalIds ?? [];
+    }
+    set hiddenModalIds( val ) {
+        this.#data.hiddenModalIds = val ?? [];
+        this.storeDataFile( this.#data );
+    }
+
     /** @type {(fctStyles: FctStylesModel) => void[]} */
     onFctStyleChanges = [];
 
@@ -942,6 +951,21 @@ class UserPreferencesStore extends Store {
                 this.storeDataFile( this.#data );
                 logBootstrapRef.reference.sendToEach( 'settings:get:persistent-storage', this.persistentStorage );
             } );
+        
+        ipcMain.on( 'settings:get:hidden-modal-ids', ( event ) => {
+            event.sender.send( 'settings:get:hidden-modal-ids', this.hiddenModalIds );
+        } );
+
+        ipcMain.on( 'settings:set:hidden-modal-ids', ( event, data ) => {
+            this.hiddenModalIds = data;
+            mainWindowRef.reference.webContents.send( 'settings:changed:hidden-modal-ids', this.hiddenModalIds );
+        } );
+
+        ipcMain.on( 'settings:set:hidden-modal-ids:add', ( event, modalId ) => {
+            let data = this.hiddenModalIds;
+            data.push( modalId );
+            this.hiddenModalIds = data;
+        } );
 
     }
 

@@ -1310,6 +1310,34 @@ export class IpcService {
         return obs;
     }
 
+    public resetHiddenModalIds(): void {
+        window.api.ipc.send( 'settings:set:hidden-modal-ids', [] );
+    }
+
+    public saveHiddenModalIds( hiddenModalIds: string[] ): void {
+        window.api.ipc.send( 'settings:set:hidden-modal-ids', hiddenModalIds );
+    }
+
+    public addHiddenModalIds( modalId: string ): void {
+        window.api.ipc.send( 'settings:set:hidden-modal-ids:add', modalId );
+    }
+
+    public getHiddenModalIds(): Observable<string[]> {
+        let obs: Observable<string[]> = new Observable<string[]>( ( observer: Observer<string[]> ) => {
+            
+            window.api.ipc.once( 'settings:get:hidden-modal-ids', ( e, hiddenModalIds: string[] ) => {
+                this.ngZone.run( () => {
+                    observer.next( hiddenModalIds );
+                    observer.complete();
+                } );
+            } );
+            window.api.ipc.send( 'settings:get:hidden-modal-ids', null );
+
+        } );
+
+        return obs;
+    }
+
     public saveDetrimentalOverlayId( detrimentalOverlayId: string ): void {
         window.api.ipc.send( 'settings:set:detrimentalOverlayId', detrimentalOverlayId );
     }

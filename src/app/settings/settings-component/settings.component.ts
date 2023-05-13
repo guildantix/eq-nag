@@ -703,4 +703,30 @@ export class SettingsComponent implements OnInit {
         } );
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Resets all hidden modals, allowing them to appear again.
+     */
+    resetHiddenModals() {
+        this.ipcService.resetHiddenModalIds();
+        this.snackBar.open( 'All hidden modals will now appear again.', 'dismiss', { duration: 5000 } );
+    }
+
+
+
+
+
+
+
+
+
+
 }
