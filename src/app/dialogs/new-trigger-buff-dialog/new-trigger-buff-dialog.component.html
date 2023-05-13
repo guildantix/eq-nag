@@ -20,7 +20,48 @@
                 </div>
             </form>
         </mat-step>
-        <mat-step [stepControl]="stepTwoForm.control" label="Tracking">
+        <mat-step [stepControl]="stepTrackTypeForm.control" label="Tracking Type" *ngIf="!lockTrackType">
+            <form #stepTrackTypeForm="ngForm">
+                
+                <mat-radio-group aria-label="Select tracking type" [(ngModel)]="trackType" name="trackType">
+                    <mat-radio-button value="mine">I want to track the buffs that I cast.</mat-radio-button>
+                    <mat-radio-button value="others">I want to track the buffs that others cast on me.</mat-radio-button>
+                </mat-radio-group>
+
+                <p *ngIf="cannotTrack" class="notice border-red">
+                    <mat-icon class="material-icons-outlined color-red">info</mat-icon><span>This spell cannot be tracked because there is no "cast on you" phrase to track.</span>
+                </p>
+
+                <p *ngIf="trackType === 'others'" class="notice border-orange">
+                    <mat-icon class="material-icons-outlined color-orange">info</mat-icon><span>It is impossible to know the beneficial casting focus of other players. Some options are disabled when compared to tracking your own cast spells.</span>
+                </p>
+                
+                <div>
+                    <button mat-button matStepperPrevious>Prev</button>
+                    <button mat-button matStepperNext [disabled]="stepTrackTypeForm.invalid || cannotTrack">Next</button>
+                </div>
+
+            </form>
+        </mat-step>
+        <mat-step [stepControl]="stepTwoOthersForm.control" label="Tracking" *ngIf="trackType === 'others'">
+            <form #stepTwoOthersForm="ngForm">
+
+                <p><mat-slide-toggle [(ngModel)]="alertWhenBuffFades" name="togAlertWhenBuffFades_others">Notify me when the buff fades.</mat-slide-toggle></p>
+                <p><mat-slide-toggle [(ngModel)]="alertEndingSoon" name="togAlertEndingSoon_others">Notify me when the buff is ending in </mat-slide-toggle><app-duration [(ngModel)]="endingSoonDuration" name="durEndingSoon_others" [inline]="true" *ngIf="alertEndingSoon" required></app-duration></p>
+                <p><mat-slide-toggle [(ngModel)]="hideTimer" name="hideTimer_others">Hide timer until nearing its end.</mat-slide-toggle></p>
+
+                <p class="notice border-red" *ngIf="alertWhenBuffFades && spell?.effectFades == null">
+                    <mat-icon class="material-icons-outlined color-red">info</mat-icon><span>This buff <strong>does not have</strong> a log entry for fading.  Combined with not knowing the beneficial buff extension of the caster makes tracking this buff's duration imprecise.</span>
+                </p>
+                
+                <div>
+                    <button mat-button matStepperPrevious>Prev</button>
+                    <button mat-button matStepperNext [disabled]="stepTwoOthersForm.invalid">Next</button>
+                </div>
+
+            </form>
+        </mat-step>
+        <mat-step [stepControl]="stepTwoForm.control" label="Tracking" *ngIf="trackType === 'mine'">
             <form #stepTwoForm="ngForm">
 
                 <p><mat-slide-toggle [(ngModel)]="useSelfTimer" name="togUseSelfTimer">Track the buff duration with a countdown for <strong>Self</strong>.</mat-slide-toggle></p>
@@ -55,7 +96,7 @@
                     </mat-form-field>
                 </p>
 
-                <p><mat-checkbox [(ngModel)]="showTimerWhenEndingSoon" name="showTimerWhenEndingSoon" *ngIf="(!useSelfTimer || (spell?.targetType !== 'Self' && !useTargetTimer)) && alertEndingSoon">Show a timer when ending soon.</mat-checkbox></p>
+                <p><mat-checkbox [(ngModel)]="showTimerWhenEndingSoon" name="showTimerWhenEndingSoon" *ngIf="trackType === 'mine' && (!useSelfTimer || (spell?.targetType !== 'Self' && !useTargetTimer)) && alertEndingSoon">Show a timer when ending soon.</mat-checkbox></p>
 
                 <p><mat-checkbox [(ngModel)]="cancelTimerIfTargetDies" name="cancelTimerIfTargetDies">End timer early if your target dies.</mat-checkbox></p>
                 
@@ -66,7 +107,7 @@
 
             </form>
         </mat-step>
-        <mat-step label="Items with this Effect" *ngIf="spell?.itemsWithEffect?.length > 0">
+        <mat-step label="Items with this Effect" *ngIf="spell?.itemsWithEffect?.length > 0 && trackType === 'mine'">
             <div *ngIf="loadingItemDetails" class="loading">
                 <p>Loading ...</p>
                 <mat-progress-bar mode="indeterminate"></mat-progress-bar>
@@ -91,11 +132,19 @@
 
             </form>
         </mat-step> -->
-        <mat-step label="Import">
+        <mat-step label="Import" *ngIf="trackType === 'mine'">
             <form>
                 <p>Ready for import!</p>
                 <div>
                     <button mat-button (click)="import()" class="t-confirm-yes" color="accent">Import</button>
+                </div>
+            </form>
+        </mat-step>
+        <mat-step label="Import" *ngIf="trackType === 'others'">
+            <form>
+                <p>Ready for import!</p>
+                <div>
+                    <button mat-button (click)="importOthers()" class="t-confirm-yes" color="accent">Import</button>
                 </div>
             </form>
         </mat-step>

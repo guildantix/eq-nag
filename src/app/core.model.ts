@@ -134,6 +134,7 @@ export enum ImportTypes {
     Ability = 2,
     Npc = 3,
     Buff = 4,
+    OthersBuff = 5,
 }
 
 export enum TimerRestartBehaviors {

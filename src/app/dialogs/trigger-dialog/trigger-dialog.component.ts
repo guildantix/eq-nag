@@ -8,6 +8,8 @@ import { DialogService } from '../dialog.service';
 import { ColorUtility } from 'src/app/utilities';
 import { TriggerModel, ActionTypes, TriggerAction, OverlayWindowModel, OperatorTypes, ImportTypes } from 'src/app/core.model';
 
+// TODO: Fix issues reported with class conditions.
+
 @Component( {
     selector: 'app-trigger-dialog',
     templateUrl: 'trigger-dialog.component.html',
@@ -126,7 +128,7 @@ export class TriggerDialogComponent implements OnInit {
             this.reimportDotTimerFromAllakhazam();
         } else if ( this.model.importType === ImportTypes.Ability ) {
             this.reimportAbilityFromAllakhazam();
-        } else if ( this.model.importType === ImportTypes.Buff ) {
+        } else if ( this.model.importType === ImportTypes.Buff || this.model.importType === ImportTypes.OthersBuff ) {
             this.reimportBuffFromAllakhazam();
         }
     }
