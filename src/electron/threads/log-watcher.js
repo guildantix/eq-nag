@@ -5,7 +5,7 @@ const { TriggerAction, ActionTypes, TriggerConditionTypes, OperatorTypes, Charac
 const { QuickShareAuthorListTypes } = require( '../data/models/common' );
 const { PhraseParse, LogTrigger } = require( './log.model' );
 const { OverlayComponent, OverlayWindow, TriggerSecondaryActionModel } = require( '../data/models/overlay-window' );
-const CharacterModel = require( '../data/models/character' );
+const { CharacterModel } = require( '../data/models/character' );
 const customAlphabet = require( 'nanoid' ).customAlphabet;
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const nanoid = customAlphabet( alphabet, 16 );
@@ -692,6 +692,29 @@ function generateTriggerFns() {
              */
             trigger._checkConditions = function () {
                 let conditionsPassed = true;
+
+                if ( trigger._passesClassCondition === false ) {
+                    return false;
+
+                } else if ( StringUtilities.isNullOrWhitespace( charModel.class ) ) {
+                    trigger._passesClassCondition = true;
+                    
+                } else if ( trigger._passesClassCondition === undefined && trigger.classLevels?.length > 0 ) {
+                    let classLevels = trigger.classLevels.filter( f => f.class?.trim().length > 0 ) ?? [];
+
+                    trigger._passesClassCondition = classLevels.length === 0;
+                    
+                    for ( let i = 0; i < classLevels.length; i++ ) {
+                        if ( classLevels[ i ].class === charModel.class ) {
+                            trigger._passesClassCondition = true;
+                            break;
+                        }
+                    }
+
+                    if ( !trigger._passesClassCondition ) {
+                        return false;
+                    }
+                }
 
                 if ( trigger._onCooldown ) {
                     // If the trigger is on cooldown, determine if the trigger must remain on cooldown.
