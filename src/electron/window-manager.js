@@ -475,6 +475,10 @@ class WindowManager {
         ipcMain.on( 'window:update-notes:show', ( event, arg ) => {
             this.showUpdateNotes(event, arg);
         } );
+
+        ipcMain.on( 'renderer:clear-all', ( event, arg ) => {
+            this.#renderer.webContents.send( 'renderer:clear-all', null );
+        } );
         
         userPreferencesDatabase.onFctStyleChanges.push( fctStyles => {
             this.#renderer.webContents.send( 'fctStyles', fctStyles );

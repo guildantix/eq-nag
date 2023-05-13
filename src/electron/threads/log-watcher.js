@@ -109,6 +109,12 @@ let quickShareAuthorsListType = QuickShareAuthorListTypes.Disabled;
 
 /** @type {string[]} */
 let quickShareAuthorsList = [];
+
+/** @type {HTMLAudioElement[]} */
+let audioPlayers = [];
+
+/** @type {string} */
+let logFilePath = null;
 // Common errors:
 //  ${C} instead of {C}
 //  ${CharacterName} isntead of ${Character}
@@ -257,6 +263,8 @@ function LogWatcher(character, logPosition) {
          * @param {string} data The log file path.
          */
         function ( event, data ) {
+            
+            logFilePath = data;
 
             if ( logParseTimeoutId > 0 ) {
                 window.clearTimeout( logParseTimeoutId );
@@ -517,6 +525,10 @@ function LogWatcher(character, logPosition) {
                 executeTriggerAction( instanceData.trigger, action, new Date(), instanceData.res, deltaTime, false );
             }
         } );
+    
+    ipcRenderer.on( 'log:clear-all:done', () => {
+        // This used to speak, but it was a bit much.
+    } );
 
     ipcRenderer.send( 'settings:get:persistent-storage', null );
 
@@ -1446,7 +1458,54 @@ function executeTriggerAction( trigger, action, timestamp, res, deltaTime, simul
         
         displayScreenGlow(action);
         
+    } else if ( action.actionType === ActionTypes.ClearAll ) {
+        /* --== Clear All ==-- */
+
+        clearAll();
     }
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Sends the command to the render to clear all overlay components.  Restarts all counters.
+ */
+function clearAll() {
+
+    for ( const key of Object.keys( counters ) ) {
+        counters[ key ].value = 0;
+    }
+
+    for ( const key of Object.keys( storedVariables ) ) {
+        storedVariables[ key ] = [];
+    }
+
+    let len = audioPlayers?.length ?? 0;
+    for ( let i = len - 1; i >= 0; i-- ) {
+        let player = audioPlayers.splice( i, 1 )[ 0 ];
+        player.pause();
+        player = null;
+    }
+
+    utterances = [];
+    speechSynthesis.cancel();
+
+    changingLogFile = true;
+    window.setTimeout( () => {
+        changingLogFile = false;
+        // currentPosition = null;
+        backfind( logFilePath, () => startParsingLogFile( logFilePath, currentPosition >= 0 ? currentPosition : null ) );
+    }, logParseTimer );
+
+    ipcRenderer.send( 'renderer:clear-all', null );
+
 }
 
 
@@ -2490,6 +2549,13 @@ function playAudioFile( fileId, audioVolume ) {
             let player = new Audio( url );
             player.volume = ( masterVolume * ( audioVolume > 0 ? audioVolume / 100 : 1 ) ) / 100;
             player.play();
+            audioPlayers.push( player );
+            player.addEventListener( 'ended', ( event ) => {
+                let i = audioPlayers.indexOf( player );
+                if ( i > -1 ) {
+                    audioPlayers.splice( i, 1 );
+                }
+            } );
         }
     } );
     ipcRenderer.send( 'audio-file:get:url', fileId );

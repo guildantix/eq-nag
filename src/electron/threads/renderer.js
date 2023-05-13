@@ -505,6 +505,10 @@ function Renderer( originX, originY, glowOnStart ) {
         ( event, fctShowCriticalsInline ) => {
             showCriticalsInline = fctShowCriticalsInline === true;
         } );
+
+    ipcRenderer.on( 'renderer:clear-all', function () {
+        clearAll();
+    } );
     
     speechSynthesis.onvoiceschanged = () => {
         voiceOptions = speechSynthesis.getVoices();
@@ -1045,6 +1049,14 @@ function render( overlayId, comp ) {
                     comp.dom.parentNode.removeChild( comp.dom );
                     ArrayUtilities.remove( overlayInstances[ overlayId ].overlayComponents, f => f.instanceId == comp.instanceId );
                 }, comp.action.duration * 1000 );
+                
+                // Create a method that will remove the component from the overlay.
+                comp.removeComponent = () => {
+                    window.clearInterval( comp.intervalId );
+                    comp.dom.parentNode && comp.dom.parentNode.removeChild( comp.dom );
+                    ArrayUtilities.remove( overlayInstances[ overlayId ].overlayComponents, f => f.instanceId == comp.instanceId );
+                };
+
                 overlayInstances[ overlayId ].overlayComponents.push( comp );
 
             } else if ( comp?.action?.actionType === ActionTypes.Timer
@@ -2422,6 +2434,14 @@ function playAudioFile( fileId ) {
 }
 
 
+
+
+
+
+
+
+
+
 /**
  * Shows a full glow on the primary monitor.
  * 
@@ -2582,6 +2602,56 @@ function countCritX( overlayId, x ) {
     let c = 0;
     overlayInstances[ overlayId ].criticals[ x ].forEach( pos => c += pos ? 1 : 0 );
     return c;
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Instantly removes all trigger elements from the renderer and cancels all cancellable components.
+ */
+function clearAll() {
+
+    // Instantly removes the screen glow.
+    if ( screenGlowTimerId > -1 ) {
+        window.clearTimeout( screenGlowTimerId );
+    }
+
+    if ( screenGlower ) {
+        document.body.removeChild( screenGlower );
+        screenGlower = null;
+    }
+
+    // Loop through each overlay and destroy each component.
+    let components = [];
+    for ( const overlayId of Object.keys( overlayInstances ) ) {
+
+        if ( overlayInstances[ overlayId ].groupByTarget ) {
+
+            for ( const key of Object.keys( overlayInstances[ overlayId ].overlayGroups ) ) {
+                overlayInstances[ overlayId ].overlayGroups[ key ].components?.forEach( comp => components.push( comp ) );
+            }
+        
+        } else {
+    
+            overlayInstances[ overlayId ].overlayComponents?.forEach( comp => components.push( comp ) );
+
+        }
+
+    }
+    
+    components.forEach( comp => {
+        comp.removeComponent();
+        ipcRenderer.send( 'log:destroy:component', comp.instanceId );
+    } );
+    
+    ipcRenderer.send( 'log:clear-all:done', null );
 }
 
 module.exports = Renderer;
