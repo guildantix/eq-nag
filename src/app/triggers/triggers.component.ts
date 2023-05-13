@@ -2,7 +2,7 @@ import { FlatTreeControl } from '@angular/cdk/tree';
 import { Component, ElementRef, HostListener, NgZone, OnInit, ViewChild } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTreeFlatDataSource, MatTreeFlattener } from '@angular/material/tree';
-import { QuickShareFileModel, QuickShareMetaModel, Tag, TriggerFolder, TriggerModel } from '../core.model';
+import { DeathRecapPreferences, QuickShareFileModel, QuickShareMetaModel, Tag, TriggerFolder, TriggerModel } from '../core.model';
 import { DialogService } from '../dialogs/dialog.service';
 import { IpcService } from '../ipc.service';
 import * as _ from 'lodash-es';
@@ -92,6 +92,8 @@ export class TriggersComponent implements OnInit {
 
     private _treeExpanded: boolean = false;
     private triggerFolders: TriggerFolder[] = [];
+
+    public deathRecapPreferences: DeathRecapPreferences = null;
     
     constructor(
         private snackBar: MatSnackBar,
@@ -143,6 +145,7 @@ export class TriggersComponent implements OnInit {
             
         } );
 
+        this.ipcService.getDeathRecapPreferences().subscribe( recapPrefs => this.deathRecapPreferences = recapPrefs ?? null );
         this.ipcService.getAppIsDev().subscribe( isDev => this.isDev = isDev );
         this.ipcService.getTriggerFolders().subscribe( folders => {
             this.updateViewTriggerData( folders );
@@ -212,6 +215,60 @@ export class TriggersComponent implements OnInit {
      */
     public showNewBuffTimerDialog(): void {
         this.dialogService.showNewBuffTimerDialog( this.selectedFolderId );
+    }
+
+
+
+
+
+
+
+
+
+    
+    /**
+     * Copies the death recap hotbutton to the clipboard.
+     */
+    public copyDeathRecapHotkey(): void {
+        this.copyHotkey( '/hot "Death Recap" /em wonders how they died.' );
+    }
+
+
+
+
+
+
+
+
+
+    
+    /**
+     * Copies the clear all hotbutton to the clipboard.
+     */
+    public copyClearAllHotkey(): void {
+        this.copyHotkey( '/hot "Clear All" /em clears their mind.' );
+    }
+
+
+
+
+
+
+
+
+
+    
+    /**
+     * Copies the given hot button text to the clipboard and tells the user it's 
+     * ready for use.
+     * 
+     * @param hotkeyText The hotbutton text to copy to the clipboard.
+     */
+    public copyHotkey( hotkeyText: string ): void {
+        this.ipcService.sendTextToClipboard( hotkeyText );
+
+        this.snackBar.open( 'The command has been copied to your clipboard!', 'Dismiss', { duration: 5000 } );
+        this.dialogService.showInfoDialog( 'Hotkey Help', [ 'The command to create the hotkey has been copied to your clipboard.', 'Paste the command into EverQuest and hit "Enter" to create the hotkey and then place it into your hotbar.' ], 'normal' );
     }
 
 

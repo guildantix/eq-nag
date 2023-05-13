@@ -495,6 +495,22 @@ $bg-extreme-dark: #191919;
 
     .context-menu-background,
     .trigger-main-menu {
+        &.sub-menu {
+            border-right: 1px solid #69f0ae;
+            border-top-right-radius: 0px;
+            border-bottom-right-radius: 0px;
+            min-width: 175px;
+        }
+        h3 {
+            padding: 16px;
+            font-weight: 100;
+            font-size: 20px;
+            text-align: center;
+            margin: 5px 0;
+            font-weight: 300;
+            font-size: 18px;
+            background-color: #00000040;
+        }
         hr {
             border-color: rgba($text, .05);
         }

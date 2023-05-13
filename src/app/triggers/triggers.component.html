@@ -12,7 +12,8 @@
     <button mat-icon-button [matMenuTriggerFor]="menu" aria-label="Example icon-button with a menu">
         <mat-icon>more_vert</mat-icon>
     </button>
-    <mat-menu #menu="matMenu" class="trigger-main-menu">
+    <mat-menu #autoGenMenu="matMenu" class="trigger-main-menu sub-menu">
+        <h3 class="color-blue">Trigger Generators</h3>
         <button mat-menu-item (click)="showNewDotTimerDialog()">
             <!-- <mat-icon>system_update_alt</mat-icon> -->
             <span>DoT Timer (Allakhazam)</span>
@@ -24,6 +25,28 @@
         <button mat-menu-item (click)="showNewBuffTimerDialog()">
             <!-- <mat-icon>system_update_alt</mat-icon> -->
             <span>Buff Timer (Allakhazam)</span>
+        </button>
+    </mat-menu>
+    <mat-menu #hotkeyMenu="matMenu" class="trigger-main-menu sub-menu">
+        <h3 class="color-blue">Create Hotkeys</h3>
+        <button mat-menu-item (click)="copyDeathRecapHotkey()" [disabled]="deathRecapPreferences?.engageMode !== 'hotkey'">
+            <!-- <mat-icon>system_update_alt</mat-icon> -->
+            <span>Death Recap</span>
+        </button>
+        <button mat-menu-item (click)="copyClearAllHotkey()">
+            <!-- <mat-icon>system_update_alt</mat-icon> -->
+            <span>Clear All</span>
+        </button>
+    </mat-menu>
+    <mat-menu #menu="matMenu" class="trigger-main-menu" xPosition="before">
+        <button mat-menu-item [matMenuTriggerFor]="autoGenMenu">
+            <!-- <mat-icon>system_update_alt</mat-icon> -->
+            <span>Auto Generation</span>
+        </button>
+        <hr />
+        <button mat-menu-item [matMenuTriggerFor]="hotkeyMenu">
+            <!-- <mat-icon>system_update_alt</mat-icon> -->
+            <span>Hotkeys</span>
         </button>
         <hr />
         <button mat-menu-item (click)="showSimLogEntry()">
