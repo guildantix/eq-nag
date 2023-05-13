@@ -8,8 +8,6 @@ import { DialogService } from '../dialog.service';
 import { ColorUtility } from 'src/app/utilities';
 import { TriggerModel, ActionTypes, TriggerAction, OverlayWindowModel, OperatorTypes, ImportTypes } from 'src/app/core.model';
 
-// TODO: Fix issues reported with class conditions.
-
 @Component( {
     selector: 'app-trigger-dialog',
     templateUrl: 'trigger-dialog.component.html',
