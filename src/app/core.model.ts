@@ -25,6 +25,8 @@ export enum ActionTypes {
     BeneficialTimer = 10,
     DisplayDeathRecap = 11,
     ScreenGlow = 12,
+    ClearAll = 13,
+
 }
 
 export enum QuickShareAuthorListTypes {
@@ -67,6 +69,7 @@ export function ActionTypeLabels(actionType: ActionTypes): string {
         actionType === ActionTypes.BeneficialTimer ? 'Beneficial Timer' :
         actionType === ActionTypes.DisplayDeathRecap ? 'Display Death Recap' :
         actionType === ActionTypes.ScreenGlow ? 'Screen Glow' :
+        actionType === ActionTypes.ClearAll ? 'Clear All' :
         'Unset Action';
     
 }
@@ -85,6 +88,7 @@ export function ActionTypeIcons( actionType: ActionTypes ): string {
         actionType === ActionTypes.BeneficialTimer ? 'watch_later' :
         actionType === ActionTypes.DisplayDeathRecap ? 'sick' :
         actionType === ActionTypes.ScreenGlow ? 'brightness_5' :
+        actionType === ActionTypes.ClearAll ? 'layers_clear' :
         'block';
 }
 

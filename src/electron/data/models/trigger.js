@@ -14,6 +14,7 @@ var ActionTypes = {
     '10': 'BeneficialTimer',
     '11': 'DisplayDeathRecap',
     '12': 'ScreenGlow',
+    '13': 'ClearAll',
     DisplayText: 0,
     PlayAudio: 1,
     Speak: 2,
@@ -27,6 +28,8 @@ var ActionTypes = {
     BeneficialTimer: 10,
     DisplayDeathRecap: 11,
     ScreenGlow: 12,
+    ClearAll: 13,
+
 }
 
 // TODO: Why wasn't this updated?
