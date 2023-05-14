@@ -139,3 +139,15 @@ fieldset.trigger-duplicates-detail {
     background-color: #00000073;
 }
 
+.trigger-count {
+    .label {
+        opacity: 0.85;
+        font-weight: 100;
+    }
+    .count {
+        font-weight: 300;
+    }
+    padding-top: 9px;
+    font-size: 14px;
+    width: 100%;
+}

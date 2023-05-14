@@ -42,7 +42,11 @@
         
         <div class="import-actions">
             <button mat-button color="warn" (click)="back()"><mat-icon style="transform-origin: center center; transform: rotate(180deg);">double_arrow</mat-icon>Back</button>
-            <span class="spacer"></span>
+            <span class="spacer" style="text-align: center;">
+                <div class="trigger-count">
+                    <span class="label">Count:</span> <span class="count">{{triggers?.length}}</span>
+                </div>
+            </span>
             <button mat-button color="accent" (click)="importTriggers()">Import Triggers<mat-icon>double_arrow</mat-icon></button>
         </div>
     </form>
@@ -53,7 +57,7 @@
         <mat-card class="card action-card" style="margin: 20px; width: 550px;">
             <mat-card-header>
                 <mat-card-title>Map Gina Folders</mat-card-title>
-                <mat-card-subtitle>Map your GINA folders to their equivalent overlay in Nag.</mat-card-subtitle>
+                <mat-card-subtitle>Map your GINA folders to their equivalent folder in Nag.</mat-card-subtitle>
             </mat-card-header>
             <mat-card-content>
                 <div class="fade-out" (click)="toggleFadeOut(pDuplicateDesc)" #pDuplicateDesc style="margin-top: -35px; margin-bottom: 25px;">
@@ -89,7 +93,11 @@
         
         <div class="import-actions">
             <button mat-button color="warn" (click)="back()"><mat-icon style="transform-origin: center center; transform: rotate(180deg);">double_arrow</mat-icon>Back</button>
-            <span class="spacer"></span>
+            <span class="spacer" style="text-align: center;">
+                <div class="trigger-count">
+                    <span class="label">Count:</span> <span class="count">{{triggers?.length}}</span>
+                </div>
+            </span>
             <button mat-button color="accent" (click)="updateGinaFolderMap()">Continue<mat-icon>double_arrow</mat-icon></button>
         </div>
     </form>
@@ -129,7 +137,11 @@
         </mat-card>
         
         <div class="import-actions">
-            <span class="spacer"></span>
+            <span class="spacer" style="text-align: center;">
+                <div class="trigger-count">
+                    <span class="label">Count:</span> <span class="count">{{triggers?.length}}</span>
+                </div>
+            </span>
             <button mat-button color="accent" (click)="updateGinaOverlayMapping()">Mapping Done<mat-icon>double_arrow</mat-icon></button>
         </div>
     </form>
@@ -348,7 +360,11 @@
         
         <div class="import-actions">
             <button mat-button color="warn" (click)="back()"><mat-icon style="transform-origin: center center; transform: rotate(180deg);">double_arrow</mat-icon>Back</button>
-            <span class="spacer"></span>
+            <span class="spacer" style="text-align: center;">
+                <div class="trigger-count">
+                    <span class="label">Count:</span> <span class="count">{{triggers?.length}}</span>
+                </div>
+            </span>
             <button mat-button color="accent" (click)="showFolderCheck()">Continue<mat-icon>double_arrow</mat-icon></button>
         </div>
 
