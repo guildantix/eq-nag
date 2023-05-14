@@ -15,7 +15,7 @@ enum CaptureMethods {
 }
 
 export class GinaImporter {
-    public static GetTrigger( gina: GinaTrigger, ipcService: IpcService, ginaOverlayMapping: GinaToNagOverlay[]|null = null, ginaConfig: GinaConfiguration | null = null ): Observable<TriggerModel> {
+    public static GetTrigger( gina: GinaTrigger, ipcService: IpcService, detrimentalOverlayId: string|null = null, beneficialOverlayId: string|null = null, alertOverlayId: string|null = null, ginaConfig: GinaConfiguration | null = null ): Observable<TriggerModel> {
         let obs: Observable<TriggerModel> = new Observable<TriggerModel>( ( observer: Observer<TriggerModel> ) => {
 
             let trigger = new TriggerModel();
@@ -42,8 +42,8 @@ export class GinaImporter {
             // Actions
             trigger.actions = [];
             let ginaCategory = ginaConfig?.Categories?.Category?.find( f => f.Name == gina.Category ) ?? null;
-            let textOverlayId = ginaOverlayMapping?.find( f => f.GinaOverlay == ginaCategory?.TextOverlay && f.GinaOverlayType === 'text' )?.NagOverlay ?? null;
-            let timerOverlayId = ginaOverlayMapping?.find( f => f.GinaOverlay == ginaCategory?.TimerOverlay && f.GinaOverlayType === 'timer' )?.NagOverlay ?? null;
+            let textOverlayId = alertOverlayId;
+            let timerOverlayId = detrimentalOverlayId;
 
             // Display Text action
             if ( gina.UseText === 'True' ) {

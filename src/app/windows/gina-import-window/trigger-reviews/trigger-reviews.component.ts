@@ -67,17 +67,14 @@ export class TriggerReviewsComponent implements OnInit {
             // let observables: Observable<TriggerIdNameModel[]|any>[] = [ timer( 1 ) ];
             // this.triggers = triggers;
             this._selectedGinaTriggers = data;
-            this.showGinaOverlayMapping();
             
             // this.ipcService.getDetrimentalOverlayId().subscribe( id => this.detrimentalOverlayId = id );
             // this.ipcService.getBeneficialOverlayId().subscribe( id => this.beneficialOverlayId = id );
             // this.ipcService.getAlertOverlayId().subscribe( id => this.alertOverlayId = id );
             
-            // // this.updateGinaOverlayMapping();
-            // // this.showDuplicates();
-            // this.generateTriggerModels().subscribe( () => {
-            //     this.showDuplicates();
-            // } );
+            this.generateTriggerModels().subscribe( () => {
+                this.showDuplicates();
+            } );
 
 
             this.importedGinaObjects = [];
@@ -113,7 +110,6 @@ export class TriggerReviewsComponent implements OnInit {
     public actionTypes: typeof ActionTypes = ActionTypes;
     public timerRestartBehaviors: typeof TimerRestartBehaviors = TimerRestartBehaviors;
     public panel: 'triggerList' | 'overlayAssignment' | 'duplicatesCheck' | 'foldersCheck' | 'zoneNameCheck' | 'default' = 'overlayAssignment';
-    public ginaOverlayMapping: GinaToNagOverlay[] = [];
     public duplicates: DuplicateTriggerAction[] = [];
     public duplicateGroups: Record<string, DuplicateTriggerSubject[]> = {};
     public get duplicatePhrases(): string[] {
@@ -206,25 +202,38 @@ export class TriggerReviewsComponent implements OnInit {
         let obs = new Observable<any>( subscriber => {
             
             if ( this.selectedGinaTriggers?.length > 0 ) {
-                let observables: Observable<TriggerReviewModel>[] = [];
-                this.selectedGinaTriggers.forEach( gd => {
-                    observables.push( GinaImporter.GetTrigger( gd.model.trigger, this.ipcService, this.ginaOverlayMapping, this.ginaConfig ).pipe( map( value => new TriggerReviewModel( value, gd.model, gd.folderFamily ) ) ) );
-                } );
-            
-                // NOTE: For some reason, using concat() will stop processing
-                // triggers when the observable uses the forkJoin operator inside of 
-                // the subscriber.  When an audio file needs to be imported, the 
-                // observable waits for that observable(s) to complete before 
-                // completing the subscriber, and moving the concat to the next 
-                // observable. 
-                // ... observable observable observable.
-            
-                forkJoin( observables ).subscribe( triggers => {
-                    this.triggers = triggers;
 
-                    subscriber.next();
-                    subscriber.complete();
-                } );
+                let defaultOverlayObs = [
+                    this.ipcService.getDetrimentalOverlayId(),
+                    this.ipcService.getBeneficialOverlayId(),
+                    this.ipcService.getAlertOverlayId(),
+                ];
+    
+                forkJoin( defaultOverlayObs )
+                    .subscribe( ( [ detrimentalOverlayId, beneficialOverlayId, alertOverlayId ]: [ string, string, string ] ) => {
+
+
+                        let observables: Observable<TriggerReviewModel>[] = [];
+                        this.selectedGinaTriggers.forEach( gd => {
+                            observables.push( GinaImporter.GetTrigger( gd.model.trigger, this.ipcService, detrimentalOverlayId, beneficialOverlayId, alertOverlayId, this.ginaConfig ).pipe( map( value => new TriggerReviewModel( value, gd.model, gd.folderFamily ) ) ) );
+                        } );
+                    
+                        // NOTE: For some reason, using concat() will stop processing
+                        // triggers when the observable uses the forkJoin operator inside of 
+                        // the subscriber.  When an audio file needs to be imported, the 
+                        // observable waits for that observable(s) to complete before 
+                        // completing the subscriber, and moving the concat to the next 
+                        // observable. 
+                        // ... observable observable observable.
+                    
+                        forkJoin( observables ).subscribe( triggers => {
+                            this.triggers = triggers;
+        
+                            subscriber.next();
+                            subscriber.complete();
+                        } );
+
+                    } );
             
             } else {
                 subscriber.next();
@@ -234,50 +243,6 @@ export class TriggerReviewsComponent implements OnInit {
         } );
         return obs;
         
-    }
-
-    showGinaOverlayMapping() {
-
-        this.ginaOverlayMapping = [];
-        this.panel = 'overlayAssignment';
-
-        this.ipcService.getSetting<GinaToNagOverlay[]>( 'ginaOverlayMapping' ).subscribe( data => {
-            this.ginaOverlayMapping = data;
-
-            if ( this.ginaConfig ) {
-                
-                let textOverlays = _.uniq( this.ginaConfig?.Categories?.Category?.filter( f => this.ginaOverlayMapping.find( x => x.GinaOverlay === f.TextOverlay && x.GinaOverlayType === 'text' ) == null ).map( f => f.TextOverlay ) );
-
-                textOverlays.forEach( f => {
-                    let m = new GinaToNagOverlay();
-                    m.GinaOverlayType = 'text';
-                    m.GinaOverlay = f;
-                    this.ginaOverlayMapping.push( m );
-                } );
-                
-                let timerOverlays = _.uniq( this.ginaConfig?.Categories?.Category?.filter( f => this.ginaOverlayMapping.find( x => x.GinaOverlay === f.TimerOverlay && x.GinaOverlayType === 'timer' ) == null ).map( f => f.TimerOverlay ) );
-                timerOverlays.forEach( f => {
-                    let m = new GinaToNagOverlay();
-                    m.GinaOverlayType = 'timer';
-                    m.GinaOverlay = f;
-                    this.ginaOverlayMapping.push( m );
-                } );
-                
-            }
-
-        } );
-
-    }
-
-    updateGinaOverlayMapping() {
-
-        if ( this.mappingForm.valid ) {
-            this.panel = 'default';
-            this.ipcService.updateSetting( 'ginaOverlayMapping', this.ginaOverlayMapping );
-            this.generateTriggerModels().subscribe( () => {
-                this.showDuplicates();
-            } );
-        }
     }
 
     public newFolderIds: string[] = [];

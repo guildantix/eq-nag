@@ -103,50 +103,6 @@
     </form>
 </ng-template>
 
-<ng-template [ngIf]="panel === 'overlayAssignment'">
-    <form #mappingForm="ngForm">
-        <mat-card class="card action-card" style="margin: 20px; width: 550px;">
-            <mat-card-header>
-                <mat-card-title>Map GINA to Nag Overlays<!-- <button mat-button color="accent" style="float: right;">Auto Resolve</button> --></mat-card-title>
-                <mat-card-subtitle>Map your GINA overlays to their equivalent overlay in Nag.</mat-card-subtitle>
-            </mat-card-header>
-            <mat-card-content>
-                <div class="card-tab-content">
-
-                    <ng-template ngFor let-mapping [ngForOf]="ginaOverlayMapping" let-i="index">
-
-                        <div class="card-property">
-                            <div class="content-middle">{{mapping.GinaOverlay}}</div>
-                            <div>
-                                <mat-form-field style="width: 100%;">
-                                    <mat-label></mat-label>
-                                    <mat-select [(ngModel)]="mapping.NagOverlay" name="ddlNagOverlay_{{i}}" required>
-                                        <ng-template [ngIf]="mapping.GinaOverlayType === 'text'"><mat-option *ngFor="let option of alertOverlays" [value]="option.overlayId">{{option.name}}</mat-option></ng-template>
-                                        <ng-template [ngIf]="mapping.GinaOverlayType === 'timer'"><mat-option *ngFor="let option of timerOverlays" [value]="option.overlayId">{{option.name}}</mat-option></ng-template>
-                                    </mat-select>
-                                    <mat-hint *ngIf="mapping.GinaOverlayType === 'text'">Text Overlay</mat-hint>
-                                    <mat-hint *ngIf="mapping.GinaOverlayType === 'timer'">Timer Overlay</mat-hint>
-                                </mat-form-field>
-                            </div>
-                        </div>
-
-                    </ng-template>
-
-                </div>
-            </mat-card-content>
-        </mat-card>
-        
-        <div class="import-actions">
-            <span class="spacer" style="text-align: center;">
-                <div class="trigger-count">
-                    <span class="label">Count:</span> <span class="count">{{triggers?.length}}</span>
-                </div>
-            </span>
-            <button mat-button color="accent" (click)="updateGinaOverlayMapping()">Mapping Done<mat-icon>double_arrow</mat-icon></button>
-        </div>
-    </form>
-</ng-template>
-
 <ng-template [ngIf]="panel === 'duplicatesCheck'">
 
     <mat-card class="card action-card" style="margin: 20px; width: 550px;">
@@ -359,7 +315,6 @@
     </mat-card>
         
         <div class="import-actions">
-            <!-- <button mat-button color="warn" (click)="back()"><mat-icon style="transform-origin: center center; transform: rotate(180deg);">double_arrow</mat-icon>Back</button> -->
             <span class="spacer" style="text-align: center;">
                 <div class="trigger-count">
                     <span class="label">Count:</span> <span class="count">{{triggers?.length}}</span>
