@@ -161,7 +161,7 @@
                         </ng-container>
     
                         <ng-container matColumnDef="name">
-                            <th mat-header-cell *matHeaderCellDef style="padding-left: 15px;"> Name </th>
+                            <th mat-header-cell *matHeaderCellDef style="padding-left: 15px;"> Name <span style="float:right;" *ngIf="filteredTriggers?.length > 0"><span style="font-weight: 400;">Count:</span> {{filteredTriggers?.length}}</span></th>
                             <td mat-cell *matCellDef="let element; let i = index" style="padding-left: 15px;">{{element.name}} <span class="text-depress" style="float: right;">{{getTriggerFamily(element)}}</span></td>
                         </ng-container>
     
