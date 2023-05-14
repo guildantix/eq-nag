@@ -64,9 +64,12 @@
                                     <mat-tab-group animationDuration="0ms" [selectedIndex]="0">
                                         <mat-tab label="Selected For Import" style="background-color: #00000014;">
                                             <div class="multiple-preview-list">
-                                                <div *ngFor="let item of selectedGinaData">
+                                                <div *ngFor="let item of selectedGinaData; let i = index">
                                                     <span>{{item.folderFamily}}/</span><span>{{item.model.name}}</span>
                                                 </div>
+                                            </div>
+                                            <div style="position: absolute; bottom: 7px; right: 0px; background-color: #171717;">
+                                                <span>Total Triggers: {{selectedGinaData.length}}</span>
                                             </div>
                                         </mat-tab>
                                     </mat-tab-group>
