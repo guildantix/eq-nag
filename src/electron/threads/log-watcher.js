@@ -1302,29 +1302,37 @@ function parseLogEntries( raw, simulating, padTime ) {
 
         let entryMatched = false;
         triggers.forEach( trigger => {
-            if ( !!trigger.enabled ) {
-                trigger._parse( log, ( res, deltaTime ) => {
-                    trigger.actions.forEach( action => {
-                        // This used to execute actions if there are no phrases on the action, but now it doesn't because the action may exist only as a subaction
-                        // ( action.phrases == null || action.phrases?.length === 0 || action.phrases?.indexOf( res.phraseId ) > -1 )
-                        if ( ( isDev || !action.onlyExecuteInDev ) && action.phrases?.indexOf( res.phraseId ) > -1 ) {
+            
+            try {
+                
+                if ( !!trigger.enabled ) {
+                    trigger._parse( log, ( res, deltaTime ) => {
+                        trigger.actions.forEach( action => {
+                            // This used to execute actions if there are no phrases on the action, but now it doesn't because the action may exist only as a subaction
+                            // ( action.phrases == null || action.phrases?.length === 0 || action.phrases?.indexOf( res.phraseId ) > -1 )
+                            if ( ( isDev || !action.onlyExecuteInDev ) && action.phrases?.indexOf( res.phraseId ) > -1 ) {
 
-                            enableLogging && sendInformationToLog( `Execute trigger action [${trigger.name}] : ${ActionTypes[ action.actionType ]}`, 24 );
-                            enableLogging && sendInformationToLog( `    ||${raw}||`, 24 );
+                                enableLogging && sendInformationToLog( `Execute trigger action [${trigger.name}] : ${ActionTypes[ action.actionType ]}`, 24 );
+                                enableLogging && sendInformationToLog( `    ||${raw}||`, 24 );
 
-                            executeTriggerAction( trigger, action, timestamp, res, deltaTime, simulating );
+                                executeTriggerAction( trigger, action, timestamp, res, deltaTime, simulating );
+                            }
+                        } );
+                        entryMatched = true;
+
+                        // If the trigger has a cooldown, start the cooldown now.
+                        if ( trigger.useCooldown ) {
+                            trigger._onCooldown = true;
+                            trigger._cooldownStart = new Date();
                         }
+
                     } );
-                    entryMatched = true;
+                }
 
-                    // If the trigger has a cooldown, start the cooldown now.
-                    if ( trigger.useCooldown ) {
-                        trigger._onCooldown = true;
-                        trigger._cooldownStart = new Date();
-                    }
-
-                } );
+            } catch ( error ) {
+                logError( error, raw, simulating, padTime );
             }
+            
         } );
 
         if ( entryMatched ) {
