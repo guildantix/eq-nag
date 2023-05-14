@@ -2,7 +2,7 @@ import { Component, EventEmitter, Input, OnInit, Output, ViewChild } from '@angu
 import { FormControl, NgForm } from '@angular/forms';
 import { MatTable, MatTableDataSource } from '@angular/material/table';
 import { ActionTypeLabels, ActionTypes, CapturePhrase, DuplicateTriggerAction, FileModel, OverlayWindowModel, OwnedTriggerAction, TimerRestartBehaviors, TriggerAction, TriggerFolder, TriggerModel } from 'src/app/core.model';
-import { GinaConfiguration, GinaMultiSelectDataModel, GinaOverlayIds, GinaToNagOverlay, TriggerIdNameModel, TriggerReviewModel } from 'src/app/gina.model';
+import { GinaConfiguration, GinaMultiSelectDataModel, GinaOverlayIds, GinaToNagOverlay, GinaTreeObject, TriggerIdNameModel, TriggerReviewModel } from 'src/app/gina.model';
 import * as _ from 'lodash-es';
 import { IpcService } from 'src/app/ipc.service';
 import { DialogService } from 'src/app/dialogs/dialog.service';
@@ -52,6 +52,10 @@ export class TriggerReviewsComponent implements OnInit {
     public folderDataSource = new MatTreeFlatDataSource(this.folderTreeControl, this.treeFlattener);
     hasChild = (_: number, node: ExampleFlatNode) => node.expandable;
 
+    // public detrimentalOverlayId: string;
+    // public beneficialOverlayId: string;
+    // public alertOverlayId: string;
+
     // public selectedGinaTriggers: GinaMultiSelectDataModel[] = [];
     private _selectedGinaTriggers: GinaMultiSelectDataModel[] = [];
     private audioFiles: FileModel[] = [];
@@ -64,6 +68,16 @@ export class TriggerReviewsComponent implements OnInit {
             // this.triggers = triggers;
             this._selectedGinaTriggers = data;
             this.showGinaOverlayMapping();
+            
+            // this.ipcService.getDetrimentalOverlayId().subscribe( id => this.detrimentalOverlayId = id );
+            // this.ipcService.getBeneficialOverlayId().subscribe( id => this.beneficialOverlayId = id );
+            // this.ipcService.getAlertOverlayId().subscribe( id => this.alertOverlayId = id );
+            
+            // // this.updateGinaOverlayMapping();
+            // // this.showDuplicates();
+            // this.generateTriggerModels().subscribe( () => {
+            //     this.showDuplicates();
+            // } );
 
 
             this.importedGinaObjects = [];
@@ -285,6 +299,7 @@ export class TriggerReviewsComponent implements OnInit {
             this.triggers.forEach( trigger => {
                 let folder: TriggerFolder = null;
                 
+                // Gina stores folder references as an array, ex: ['Raids', 'Classic', 'Lady Vox'] => Raids/Classic/Lady Vox
                 for ( let i = 0; i < trigger.ginaData.folders?.length; i++ ){
                     const folderName = trigger.ginaData.folders[ i ];
 
@@ -329,9 +344,10 @@ export class TriggerReviewsComponent implements OnInit {
         let output: TriggerFolder[] = [];
 
         for ( let i = 0; i < folders?.length; i++ ) {
-            if ( usedIds.indexOf( folders[ i ].folderId ) > -1 ) {
-                let c = Object.assign( new TriggerFolder(), folders[ i ] );
-                c.children = this.buildReviewFolderStructure( folders[ i ].children, usedIds );
+            let c = Object.assign( new TriggerFolder(), folders[ i ] );
+            c.children = this.buildReviewFolderStructure( folders[ i ].children, usedIds );
+
+            if ( usedIds.indexOf( folders[ i ].folderId ) > -1 || c.children?.length > 0 ) {
                 output.push( c );
             }
         }
@@ -350,42 +366,286 @@ export class TriggerReviewsComponent implements OnInit {
     }
 
     updateGinaFolderMap() {
+
         if ( this.nagFolderMap == null || this.nagFolderNameMap == null ) {
             this.nagFolderMap = {};
             this.nagFolderNameMap = {};
             this.buildNagFolderMap( this.nagFolders, null );
         }
-        this.triggers.forEach( t => {
-            let fid = t.nagTrigger.folderId;
-            t.folderFamilyName = '';
+
+        // Builds the folder family name for each trigger.
+        this.triggers.forEach( trigger => {
+            let fid = trigger.nagTrigger.folderId;
+            trigger.folderFamilyName = '';
             while ( fid != null ) {
-                t.folderFamilyName = this.nagFolderNameMap[ fid ] + '/' + t.folderFamilyName;
+                trigger.folderFamilyName = this.nagFolderNameMap[ fid ] + '/' + trigger.folderFamilyName;
                 fid = this.nagFolderMap[ fid ];
             }
         } );
+
         this.showZoneNameCheck();
+    }
+
+    private findFolderById( folderId: string, folders: TriggerFolder[] | void ): TriggerFolder {
+        folders = folders ? folders : this.nagFolders;
+        for ( let i = 0; i < folders.length; i++ ) {
+            if ( folders[ i ].folderId === folderId ) {
+                return folders[ i ];
+            }
+            let found = folders[ i ].children?.length > 0 ? this.findFolderById( folderId, folders[ i ].children ) : null;
+            if ( found ) {
+                return found;
+            }
+        }
+    }
+
+    private findFolderByName( name: string, folders: TriggerFolder[] | void ): TriggerFolder {
+        folders = folders ? folders : this.nagFolders;
+        for ( let i = 0; i < folders.length; i++ ) {
+            if ( folders[ i ].name === name ) {
+                return folders[ i ];
+            }
+            let found = folders[ i ].children?.length > 0 ? this.findFolderByName( name, folders[ i ].children ) : null;
+            if ( found ) {
+                return found;
+            }
+        }
+    }
+
+    /**
+     * Recursively prints the folder structure to the console log.  This is 
+     * // useful if you need to check the hierarchy structure mid-algorithm.
+     * 
+     * @param folder The folder to print.
+     * @param indent The indent amount, start with null.
+     */
+    private _logFolder( folder: TriggerFolder, indent: string | void = null ) {
+
+        indent = indent ? indent : '';
+        
+        console.log( `${indent}${folder.name}` );
+
+        for ( let i = 0; i < folder.children?.length; i++ ) {
+            
+            this._logFolder( folder.children[i], indent + '  ' );
+            
+        }
+    }
+
+    /**
+     * Prints the folder structure to the console log.  This is useful if you 
+     * need to check the hierarchy structure mid-algorithm.
+     * 
+     * @param folderId The id of the desired folder.
+     */
+    private logFolder( folderId: string ) {
+        let folder = this.findFolderById( folderId, this.nagFolders );
+        if ( folder ) {
+            this._logFolder( folder );
+        }
+    }
+
+    /**
+     * Prints the folder structure to the console log.  This is useful if you 
+     * need to check the hierarchy structure mid-algorithm.
+     * 
+     * @description This method will print the first folder found with an exact 
+     *      match of the given name.
+     * 
+     * @param name The name of the desired folder.
+     */
+    private logFolderByName( name: string ) {
+        let folder = this.findFolderByName( name, this.nagFolders );
+        if ( folder ) {
+            this._logFolder( folder );
+        }
     }
 
     public newFolderMap: Record<string, string> = {};
     mapGinaFolder( newFolderId: string ): void {
-        this.dialogService.showSelectTriggerFolderDialog( null, 'Select an existing folder', 'Select an existing folder that you would like to use.' ).subscribe( folderId => {
+
+        this.dialogService.showSelectTriggerFolderDialog( null, 'Select an existing folder', 'Select an existing folder that you would like to use.' ).subscribe( selectedFolderId => {
             let i = this.newFolderIds.indexOf( newFolderId );
 
-            if ( folderId ) {
-                this.newFolderMap[ newFolderId ] = folderId;
-                
+            if ( selectedFolderId ) {
+                this.newFolderMap[ newFolderId ] = selectedFolderId;
+                this.updateFolders( newFolderId, selectedFolderId );
                 if ( i > -1 ) {
-                    this.newFolderIds.splice( i, 1 );
+                    // this.newFolderIds.splice( i, 1 );
                 }
 
             } else if ( this.newFolderMap[ newFolderId ] ) {
                 delete this.newFolderMap[ newFolderId ];
                 if ( i === -1 ) {
-                    this.newFolderIds.push( newFolderId );
+                    // this.newFolderIds.push( newFolderId );
                 }
             }
 
         } );
+        
+    }
+
+    private updateGinaFolders( gina: GinaTreeObject, folder: TriggerFolder ) {
+        gina.folders = [];
+        let id = folder.folderId;
+        while ( id != null ) {
+            gina.folders.unshift( this.nagFolderNameMap[ id ] );
+            id = this.nagFolderMap[ id ];
+        }
+    }
+
+    updateFolders( prevFolderId: string, selectedFolderId: string ) {
+        let usedFolderIds: string[] = [];
+        this.nagFolderMap = {};
+        this.nagFolderNameMap = {};
+        this.buildNagFolderMap( this.nagFolders, null );
+
+        this.triggers.forEach( trigger => {
+            let folder: TriggerFolder = null;
+
+            // Gina stores folder references as an array, ex: ['Raids', 'Classic', 'Lady Vox'] => Raids/Classic/Lady Vox
+            for ( let i = 0; i < trigger.ginaData.folders?.length; i++ ) {
+                const folderName = trigger.ginaData.folders[ i ];
+
+                let subFolder = folder ? folder.children.find( f => f.name.toLowerCase() === folderName.toLowerCase() ) : this.nagFolders.find( f => f.name.toLowerCase() === folderName.toLowerCase() );
+
+                if ( subFolder == null && trigger.nagTrigger.folderId === prevFolderId ) {
+                    subFolder = this.findFolderById( selectedFolderId, this.nagFolders );
+                }
+
+                if ( subFolder == null ) {
+                    
+                    let id = trigger.nagTrigger.folderId;
+                    
+                    while ( id != null ) {
+                        id = this.nagFolderMap[ id ];
+                        
+                        if ( id === prevFolderId ) {
+                            // We have a child of the prev folder.  This may occur when the parent
+                            // folder is empty of triggers.
+                            let f = this.findFolderById( selectedFolderId );
+                            if ( f != null ) {
+                                subFolder = f?.children?.find( f => f.name.toLowerCase() === folderName.toLowerCase() );
+    
+                                if ( this.newFolderIds.includes( prevFolderId ) ) {
+                                    // The selected folder is being replace by an existing folder,
+                                    // if it's a new folder then we need to remove the old folders.  
+                                    // Any triggers referencing folders in the hierarchy will be 
+                                    // updated in this loop.
+                                    let fparent = this.findFolderById( this.nagFolderMap[ f.folderId ] );
+                                    let oi = fparent.children.findIndex( f => f.folderId === prevFolderId );
+                                    fparent.children.splice( oi, 1 );
+                                }
+
+                                break;
+                            }
+                        }
+
+                    }
+
+                } else if ( subFolder.folderId === prevFolderId ) {
+                    let f = this.findFolderById( selectedFolderId, this.nagFolders );
+
+                    if ( f ) {
+                            
+                        if ( folder ) {
+                            let oi = folder.children.findIndex( f => f.folderId === prevFolderId );
+                            
+                            if ( this.newFolderIds.includes( prevFolderId ) ) {
+                                // We only want to execute this action if the prev folder was a new folder.
+                                folder.children.splice( oi, 1 );
+                            }
+                        } else {
+                            let oi = this.nagFolders.findIndex( f => f.folderId === prevFolderId );
+                            
+                            if ( this.newFolderIds.includes( prevFolderId ) ) {
+                                // We only want to execute this action if the prev folder was a new folder.
+                                folder.children.splice( oi, 1 );
+                            }
+                        }
+
+                        subFolder = f;
+                    }
+                }
+
+                if ( subFolder == null ) {
+                    subFolder = new TriggerFolder();
+
+                    subFolder.folderId = nagId();
+                    subFolder.name = folderName;
+                    subFolder.expanded = false;
+                    subFolder.active = true;
+                    subFolder.comments = 'Imported from Gina';
+                    subFolder.children = [];
+                    subFolder.folderConditions = [];
+
+                    this.newFolderIds.push( subFolder.folderId );
+
+                    if ( folder == null ) {
+                        this.nagFolders.push( subFolder );
+                    } else {
+                        folder.children.push( subFolder );
+                    }
+
+                    this.nagFolderMap[ subFolder.folderId ] = folder?.folderId;
+                    this.nagFolderNameMap[ subFolder.folderId ] = subFolder.name;
+                
+                }
+
+                usedFolderIds.push( subFolder.folderId );
+                folder = subFolder;
+            }
+
+            if ( folder != null ) {
+                // This is required so that future folder changes can look for matches from their
+                // updated place in the hierarchy.
+                this.updateGinaFolders( trigger.ginaData, folder );
+            }
+                
+            trigger.nagTrigger.folderId = folder.folderId;
+        } );
+
+        this.trimEmptyNewFolders( this.nagFolders );
+        // This is not including any data if the folder id is not used, but a child is.
+        this.folderDataSource.data = this.buildReviewFolderStructure( this.nagFolders, usedFolderIds ); 
+        this.folderTreeControl.expandAll();
+
+    }
+
+    /**
+     * Processes each folder for empty new folders and removes them.
+     * 
+     * @param folders The list of folders to process.
+     */
+    private trimEmptyNewFolders( folders: TriggerFolder[] ) {
+        for ( let i = folders.length - 1; i >= 0; i-- ) {
+            if ( this._trimEmptyNewFolder( folders[ i ] ) ) {
+                folders.splice( i, 1 );
+            }
+        }
+    }
+
+    /**
+     * Processes the given folder and full hierarchy to determine if the folder should be removed.
+     * @param folder The folder to process.
+     * @returns Returns true if the folder should be trimmed.
+     */
+    private _trimEmptyNewFolder( folder: TriggerFolder ): boolean {
+
+        if ( folder.children?.length > 0 ) {
+            for ( let i = folder.children?.length - 1; i >= 0; i-- ) {
+                if ( this._trimEmptyNewFolder( folder.children[ i ] ) ) {
+                    folder.children.splice( i, 1 );
+                }
+            }
+        }
+
+        if ( this.newFolderIds.includes( folder.folderId ) ) {
+            return this.triggers.filter( f => f.nagTrigger.folderId === folder.folderId ).length === 0 && ( folder.children == null || folder.children.length === 0 );
+        }
+
+
+        return false;
     }
 
     private _filterZoneName( value: string ): string[] {
