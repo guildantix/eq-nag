@@ -536,7 +536,7 @@ function Renderer( originX, originY, glowOnStart ) {
  */
 function initializeOverlay( overlay ) {
     let content;
-    let div = document.createElement( 'div' );
+    let div = createElement( 'div', overlay.overlayId );
 
     if ( overlay.overlayType === 'FCT' ) {
         content = overlayFctTemplate( {} );
@@ -726,7 +726,7 @@ function updateOverlay( overlayId, model ) {
         contentArea.style.textShadow = textShadow;
     
         // Calculate the height of dot texts.
-        let pDot = document.createElement( 'p' );
+        let pDot = createElement( 'p' );
         pDot.classList.add( 'dot-text' );
         pDot.style.visibility = 'hidden';
         pDot.innerHTML = '&nbsp;';
@@ -1032,7 +1032,7 @@ function render( overlayId, comp ) {
             if ( comp?.action?.actionType === ActionTypes.DisplayText ) {
                 comp.removeAt = new Date( now.setSeconds( comp.action.duration ) );
                 let content = displayTextTemplate( { value: StringUtilities.format( comp.action.displayText, comp.matches ) } );
-                let div = document.createElement( 'div' );
+                let div = createElement( 'div' );
                 div.innerHTML = content;
                 div.style.animation = `animate-fadeout ${comp.action.duration * 1.05}s ease`;
                 comp.dom = div;
@@ -1331,7 +1331,7 @@ function enableMoveResize( dom ) {
     dom.classList.add( 'drag' );
 
     for ( let i = 0; i < resizeHandles.length; i++ ) {
-        let handle = document.createElement( 'span' );
+        let handle = createElement( 'span' );
         handle.classList.add( resizeHandles[ i ] );
         handle.classList.add( 'mouse-enabled' );
         dom.appendChild( handle );
@@ -1505,7 +1505,7 @@ function createGroupedDotTimer( overlayId, contentArea, group, comp ) {
     let displayText = getTimerLabel( overlayId, comp );
     let content = targetGroupTimerTemplate( { value: displayText } );
 
-    let div = document.createElement( 'div' );
+    let div = createElement( 'div' );
     div.innerHTML = content;
     comp.dom = div;
     
@@ -1561,7 +1561,7 @@ function createGroupedTimer( overlayId, contentArea, group, comp ) {
     let displayText = getTimerLabel( overlayId, comp );
     let content = targetGroupTimerTemplate( { value: displayText } );
 
-    let div = document.createElement( 'div' );
+    let div = createElement( 'div' );
     div.innerHTML = content;
     comp.dom = div;
     
@@ -1622,7 +1622,7 @@ function getTimerGroup( overlayId, contentArea, groupName ) {
     }
 
     let content = targetGroupTemplate( { name: groupName } );
-    let div = document.createElement( 'div' );
+    let div = createElement( 'div' );
     div.classList.add( 'mob-dot-group' );
     div.innerHTML = content;
     let h6 = div.querySelector( 'h6' );
@@ -1694,7 +1694,7 @@ function createUngroupedDotTimer( overlayId, contentArea, comp ) {
     let content = timerTemplate( { value: displayText } );
 
     // Create the component's dom element and append it to the content area.
-    let div = document.createElement( 'div' );
+    let div = createElement( 'div' );
     div.innerHTML = content;
     
     if ( comp.action.timerIcon != null ) {
@@ -1739,7 +1739,7 @@ function createUngroupedTimer( overlayId, contentArea, comp ) {
     let content = timerTemplate( { value: displayText } );
 
     // Create the component's dom element and append it to the content area.
-    let div = document.createElement( 'div' );
+    let div = createElement( 'div' );
     div.innerHTML = content;
     
     if ( comp.action.timerIcon != null ) {
@@ -2481,7 +2481,7 @@ function renderGlow( color, duration, flash ) {
 
     if ( !screenGlower ) {
         let bounds = screen.getPrimaryDisplay().bounds;
-        let content = document.createElement( 'div' );
+        let content = createElement( 'div' );
 
         // box-shadow: inset 0 0 30px #00f;
         content.classList.add( 'screen-glow' );
