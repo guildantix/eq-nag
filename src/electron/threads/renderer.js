@@ -1856,7 +1856,7 @@ function applyTimerSettings( overlayId, contentArea, comp, group ) {
     }
 
     // Set the update method.
-    comp.intervalId = window.setInterval( () => {
+    comp.intervalId = startInterval( () => {
 
         let perc = 0;
         let infinite = false;
@@ -2653,6 +2653,28 @@ function createElement( tagName, id ) {
     el.setAttribute( 'id', `${id}` );
 
     return el;
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Executes fn and sets an interval for continuous execution.
+ * 
+ * @returns {number} Returns the interval id.
+ * 
+ * @param {() => void} fn The interval function.
+ * @param {number} delay The delay, in milliseconds.
+ */
+function startInterval(fn, delay) {
+    window.setTimeout( fn );
+    return window.setInterval( fn, delay );
 }
 
 
