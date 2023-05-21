@@ -52,6 +52,7 @@ export class TriggersComponent implements OnInit {
     public processing: boolean = false;
     private restoreFolderHierarchyTimeoutId: number | null = null;
     public restoreFolderHierarchy: () => void | null = null;
+    private folderMap: Record<string, string> = {};
 
     private _indexRecords: number = 0;
     private _maxRecords: number = 0;
@@ -163,10 +164,74 @@ export class TriggersComponent implements OnInit {
 
     
     /**
+     * Recursively expands the given folder, and it's parents.
+     * 
+     * @param folderId The id of the folder to expand.
+     */
+    private expandParents( folderId: string ): void {
+        let node = this.treeControl.dataNodes.find( f => f.folderId === folderId );
+        this.treeControl.expand( node );
+        let parentId = this.folderMap[ folderId ];
+        if ( parentId ) {
+            this.expandParents( parentId );
+        }
+    }
+
+
+
+
+
+
+
+
+
+    
+    /**
+     * If the user has not selected a folder, the user will be presented with 
+     * the folder select dialog.  After a selection has been made, or if a 
+     * folder has already been selected, then the observable is resolved and 
+     * completed.
+     * 
+     * @param title The title of the dialog.
+     * @param description The message to display to the user if the dialog is shown.
+     */
+    private requireFolderSelect( title?: string, description?: string ): Observable<void> {
+        let obs = new Observable<void>( sub => {
+            
+            if ( !this.selectedFolderId ) {
+                this.dialogService.showSelectTriggerFolderDialog( null, title, description ).subscribe( folderId => {
+                    if ( this.selectedFolderId !== folderId ) {
+                        this.expandParents( folderId );
+                        this.toggleSelectedFolder( folderId );
+                    }
+                    sub.next();
+                    sub.complete();
+                } );
+            } else {
+                sub.next();
+                sub.complete();
+            }
+
+        } );
+        return obs;
+    }
+
+
+
+
+
+
+
+
+
+    
+    /**
      * Displays the new trigger dialog.
      */
     public showNewTriggerDialog(): void {
-        this.ipcService.showNewTriggerDialog( this.selectedFolderId );
+        this.requireFolderSelect( 'Select a Folder', 'What folder would you like to put this trigger in?' ).subscribe( () => {
+            this.ipcService.showNewTriggerDialog( this.selectedFolderId );
+        } );
     }
 
 
@@ -182,7 +247,9 @@ export class TriggersComponent implements OnInit {
      * Displays the new dot timer wizard dialog.
      */
     public showNewDotTimerDialog(): void {
-        this.dialogService.showNewDotTimerDialog( this.selectedFolderId );
+        this.requireFolderSelect( 'Select a Folder', 'What folder would you like to put this trigger in?' ).subscribe( () => {
+            this.dialogService.showNewDotTimerDialog( this.selectedFolderId );
+        } );
     }
 
 
@@ -198,7 +265,9 @@ export class TriggersComponent implements OnInit {
      * Displays the new dot timer wizard dialog.
      */
     public showNewRaidAbilityDialog(): void {
-        this.dialogService.showNewRaidAbilityDialog( this.selectedFolderId );
+        this.requireFolderSelect( 'Select a Folder', 'What folder would you like to put this trigger in?' ).subscribe( () => {
+            this.dialogService.showNewRaidAbilityDialog( this.selectedFolderId );
+        } );
     }
 
 
@@ -214,7 +283,9 @@ export class TriggersComponent implements OnInit {
      * Displays the new dot timer wizard dialog.
      */
     public showNewBuffTimerDialog(): void {
-        this.dialogService.showNewBuffTimerDialog( this.selectedFolderId );
+        this.requireFolderSelect( 'Select a Folder', 'What folder would you like to put this trigger in?' ).subscribe( () => {
+            this.dialogService.showNewBuffTimerDialog( this.selectedFolderId );
+        } );
     }
 
 
@@ -721,6 +792,7 @@ export class TriggersComponent implements OnInit {
     private updateViewTriggerData( folders: TriggerFolder[] ): void {
         
         this.selectedFolderId = folders.findIndex( f => f.folderId === this.selectedFolderId ) > -1 ? this.selectedFolderId : null;
+        this.folderMap = TriggerFolder.getFolderAncestryMap( folders );
         this.triggerFolders = folders;
         this.dataSource.data = folders;
         this.expandFolders( folders );
