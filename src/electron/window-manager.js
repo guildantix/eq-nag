@@ -940,7 +940,9 @@ class WindowManager {
         if ( rendererOnTopId ) {
             clearTimeout( rendererOnTopId );
         }
-        this.#renderer?.close();
+        if ( !this.#renderer?.isDestroyed() ) {
+            this.#renderer?.close();
+        }
         this.#renderer = null;
     }
 
