@@ -307,6 +307,7 @@ function Renderer( originX, originY, glowOnStart ) {
         } );
 
     ipcRenderer.on( 'renderer:window:enable-edit', function ( event, overlayId ) {
+        moveToTop( overlayInstances[ overlayId ].dom );
         enableMoveResize( overlayInstances[ overlayId ].dom );
     } );
 
