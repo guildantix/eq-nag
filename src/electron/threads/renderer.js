@@ -107,6 +107,8 @@ class OverlayInstance {
     hideTargetLabel;
     /** @type {OverlayComponent[]} */
     overlayComponents;
+    /** @type {(OverlayComponent|FctModel)[]} */
+    overlayFctComponents;
     /** @type {string} */
     encapsulationId;
     /** @type {number} */
@@ -162,6 +164,7 @@ var screenGlower = null;
 var screenGlowTimerId = null;
 let showCriticalsInline = false;
 const intMaxValue = 9007199254740991;
+let uuid = 0;
 
 
 
@@ -571,6 +574,7 @@ function initializeOverlay( overlay ) {
         groupHeaderWeight: 400,
         hideTargetLabel: false,
         overlayComponents: [],
+        overlayFctComponents: [],
     };
 
     overlayInstances[ overlay.overlayId ].encapsulationId = '_' + nanoid();
@@ -873,8 +877,10 @@ function renderFct( overlayId, comp ) {
     try {
         
         let fctOverlay = overlayInstances[ overlayId ];
+        fctOverlay.overlayFctComponents.push( comp );
+        /** @type {HTMLDivElement} */
         let contentArea = fctOverlay.dom.querySelector( '.overlay-content-area' );
-        let div = document.createElement( 'div' );
+        let div = createElement( 'div' );
 
         if ( comp.fctType === FctTypes.dmgOut ) {
             div.classList.add( 'fct-dmg-out' );
@@ -960,6 +966,23 @@ function renderFct( overlayId, comp ) {
             comp.intervalId = window.setTimeout( () => {
                 comp.dom.parentNode.removeChild( comp.dom );
             }, 7000 );
+
+        }
+
+        for ( let i = fctOverlay.overlayFctComponents.length - 1; i > 0; i-- ) {
+            const component = fctOverlay.overlayFctComponents[ i ];
+
+            if ( !component.critical && component.dom.offsetTop + component.dom.offsetHeight < 0 ) {
+                if ( component.intervalId > 0 ) {
+                    window.clearTimeout( component.intervalId );
+                }
+                component.intervalId = window.setTimeout( () => {
+                    component.dom.parentNode.removeChild( component.dom );
+                }, 500 );
+                component.dom.classList.add( 'animate-fade-out-now' );
+
+                fctOverlay.overlayFctComponents.splice( i, 1 );
+            }
 
         }
 
@@ -2603,6 +2626,33 @@ function countCritX( overlayId, x ) {
     let c = 0;
     overlayInstances[ overlayId ].criticals[ x ].forEach( pos => c += pos ? 1 : 0 );
     return c;
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Creates a new DOM element, but does not add it to the dom.
+ * 
+ * @param {string|null} tagName The tag name.
+ * @param {string|number|null} id The id of the element.
+ * @returns Returns the created element.
+ */
+function createElement( tagName, id ) {
+    
+    tagName = tagName ? tagName : 'div';
+    id = id ? id : ++uuid;
+    
+    let el = document.createElement( 'div' );
+    el.setAttribute( 'id', `${id}` );
+
+    return el;
 }
 
 
