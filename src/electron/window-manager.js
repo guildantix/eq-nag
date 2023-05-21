@@ -603,9 +603,10 @@ class WindowManager {
         require( "@electron/remote/main" ).enable( renderer.webContents );
         
         // TODO: Put the padding in the size calculations and not here.
+        // Reducing the height by 1 pixel will allow access to a hidden taskbar.
         renderer.setBounds( {
             width: bounds.width,
-            height: bounds.height,
+            height: bounds.height - 1,
             x: bounds.x,
             y: bounds.y,
         } );
@@ -1086,7 +1087,8 @@ class WindowManager {
         this.#renderer.movable = true;
         this.#renderer.resizable = true;
 
-        this.#renderer?.setSize( newSize.width, newSize.height );
+        // Reducing the height by 1 pixel will allow access to a hidden taskbar.
+        this.#renderer?.setSize( newSize.width, newSize.height - 1 );
         this.#renderer?.setPosition( newSize.x, newSize.y );
 
         // Lock this window back down.
