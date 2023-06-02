@@ -35,6 +35,7 @@ const channelPrefixes = [
     'console',
     'context',
     'archive',
+    'scraper',
 ];
 
 function validChannel( channel ) {
@@ -65,6 +66,7 @@ contextBridge.exposeInMainWorld( 'api', {
             }
         },
         invoke: ( channel, ...args ) => {
+            console.log( 'derp', channel );
             if ( validChannel( channel ) ) {
                 return ipcRenderer.invoke( channel, ...args );
             } else {

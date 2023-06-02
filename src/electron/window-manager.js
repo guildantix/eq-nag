@@ -111,6 +111,11 @@ class WindowManager {
             this.#renderer.webContents.send( 'renderer:overlay:delete', overlayId );
         } );
 
+        ipcMain.handle( 'scraper:get:eqsr-spell', async ( event, eqsrUrl ) => {
+            const result = await this.scrapeEqsrSpell( eqsrUrl )
+            return result
+        } );
+
         ipcMain.on( 'trigger:dialog:new', ( event, arg ) => {
             let triggerWindow = new BrowserWindow( {
                 parent: mainWindowRef.reference,
@@ -1226,6 +1231,64 @@ class WindowManager {
     resumeRendererMouseForwarding() {
         this.#renderer?.webContents.send( 'renderer:mouse-forwarding:resume', {} );
         this.#renderer?.setIgnoreMouseEvents( true, { forward: true } );
+    }
+
+
+    /**
+     * Opens a thread that parses the given url for the eq spell resources resource.
+     * 
+     * @returns {Promise<string>} Returns the scraped spell.
+     * 
+     * @param {string} url The EQ Spell Resources url.
+     */
+    scrapeEqsrSpell( url ) {
+        
+        ipcMain.removeAllListeners( 'scraper:error' );
+        ipcMain.removeAllListeners( 'scraper:done' );
+
+        /** @type {Promise<string>} */
+        let p = new Promise( ( resolve, reject ) => {
+            
+            let scraperWindow = new BrowserWindow( {
+                parent: this.#mainWindow.reference,
+                modal: false,
+                show: false,
+                width: 700,
+                height: 870,
+                frame: false,
+                webPreferences: {
+                    nodeIntegration: false,
+                    contextIsolation: true,
+                    devTools: app.isDev(),
+                    sandbox: false,
+                    preload: path.join( __dirname, '/preloaders/scraper-eqsr.js' ),
+                }
+            } );
+        
+            // Open the DevTools.
+            if ( app.isDev() ) {
+                scraperWindow.webContents.openDevTools( { mode: 'undocked' } );
+            }
+            
+            ipcMain.once( 'scraper:done', ( event, spell ) => {
+                ipcMain.removeAllListeners( 'scraper:error' );
+                // scraperWindow.close();
+                // scraperWindow = null;
+                resolve( spell );
+            } );
+
+            ipcMain.once( 'scraper:error', ( event, error ) => {
+                ipcMain.removeAllListeners( 'scraper:done' );
+                // scraperWindow.close();
+                // scraperWindow = null;
+                reject( error );
+            } );
+
+            scraperWindow.loadURL( `file://${__dirname}/threads/scraper-eqsr.html?url=${encodeURI( JSON.stringify( url ) )}` );
+
+        } );
+    
+        return p;
     }
     
 

@@ -260,6 +260,24 @@ export class TriggersComponent implements OnInit {
 
 
 
+
+    /**
+     * Displays the eq dot timer import for eq spell resources.
+     */
+    public showNewDotTimerEqsrDialoig(): void {
+        this.requireFolderSelect( 'Select a Folder', 'What folder would you like to put this trigger in?' ).subscribe( () => {
+            this.ipcService.scrapeEqSpellResourceSpell( 'https://spells.eqresource.com/spells.php?id=59823' ).subscribe( spell => console.log( '!!!!! RETURNED', spell ) );
+        } );
+    }
+
+
+
+
+
+
+
+
+
     
     /**
      * Displays the new dot timer wizard dialog.
