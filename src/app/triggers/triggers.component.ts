@@ -1803,19 +1803,25 @@ export class TriggersComponent implements OnInit {
      */
     installQuickShare( quickShareId: string ): void {
 
-        let observables = [
-            this.quickShareService.getQuickShare( quickShareId ),
-            this.quickShareService.getQuickShareFiles( quickShareId ),
-        ];
-
-        forkJoin( observables )
-            .subscribe( ( [ quickShare, files ]: [ QuickShareMetaModel[], QuickShareFileModel[] ] ) => {
-                this.dialogService.showReceiveQuickShareDialog( quickShare, files ).subscribe( imported => {
-                    if ( imported ) {
-                        this.ipcService.requestTick();
+        this.ipcService.getAuthor().subscribe( author => {
+            let observables = [
+                this.quickShareService.isAuthorOfQuickShare(author.authorId, quickShareId),
+                this.quickShareService.getQuickShare( quickShareId ),
+                this.quickShareService.getQuickShareFiles( quickShareId ),
+            ];
+    
+            forkJoin( observables )
+                .subscribe( ( [ isAuthor, quickShare, files ]: [ boolean, QuickShareMetaModel[], QuickShareFileModel[] ] ) => {
+                    if ( !isAuthor ) {
+                        this.dialogService.showReceiveQuickShareDialog( quickShare, files ).subscribe( imported => {
+                            if ( imported ) {
+                                this.ipcService.requestTick();
+                            }
+                        } );
                     }
                 } );
-            } );
+        } );
+        
         
     }
 
