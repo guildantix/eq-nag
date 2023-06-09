@@ -1082,6 +1082,7 @@ export class QuickShareModel {
     public detrimentalOverlayId: string;
     public beneficialOverlayId: string;
     public overlays: OverlayWindowModel[] = [];
+    public primaryDisplaySize: Electron.Size;
 
 }
 
