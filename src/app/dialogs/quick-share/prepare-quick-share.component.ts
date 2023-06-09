@@ -456,6 +456,7 @@ export class PrepareQuickShareDialogComponent implements OnInit {
                 quickShare.triggers = quickShareTriggers;
                 quickShare.detrimentalOverlayId = detrimentalOverlayId;
                 quickShare.beneficialOverlayId = beneficialOverlayId;
+                quickShare.primaryDisplaySize = primaryDisplay.size;
 
                 let quickShareFiles: QuickShareFileModel[] = [];
                 quickShare.overlays = [];
