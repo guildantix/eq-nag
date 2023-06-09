@@ -1081,6 +1081,7 @@ export class QuickShareModel {
     public folders: PackageFolder[] = [];
     public detrimentalOverlayId: string;
     public beneficialOverlayId: string;
+    public overlays: OverlayWindowModel[] = [];
 
 }
 
