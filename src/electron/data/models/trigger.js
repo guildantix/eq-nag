@@ -640,6 +640,12 @@ class QuickShareModel {
     detrimentalOverlayId;
     /** @type {string} */
     beneficialOverlayId;
+    /** @type {string} */
+    textOverlayId;
+    /** @type {OverlayWindow[]} */
+    overlays;
+    /** @type {Electron.Size} */
+    primaryDisplaySize;
 
 }
 
