@@ -443,8 +443,8 @@ class TriggerDatabaseStore extends Store {
             event.sender.send( 'pkg:get:installed', this.getInstalledPackages() );
         } );
 
-        ipcMain.on( 'quickShare:install', ( event, quickShare ) => {
-            event.sender.send( 'quickShare:install', this.installQuickshare( quickShare ) );
+        ipcMain.on( 'quickShare:install', async ( event, quickShare ) => {
+            event.sender.send( 'quickShare:install', await this.installQuickshare( quickShare, event ) );
         } );
 
         if ( this.#orphanedFound ) {
@@ -1455,28 +1455,31 @@ class TriggerDatabaseStore extends Store {
      *  step through creating a matching overlay.  Once all overlays have a 
      *  matching overlay in user data, then the package can be installed.
      * 
-     * @param {TriggerPackageMetaModel} pkg The trigger package.
+     * @param {string} packageId The package id.
+     * @param {OverlayWindow[]} packageOverlays The packaged overlays.
+     * @param {{detrimentalOverlayId: string, beneficialOverlayId: string, textOverlayId: string}} defaultOverlayIds The package source default overlay ids.
+     * @param {Electron.Size} packagePrimaryDisplaySize The original event args.
      * @param {Electron.IpcMainEvent} event The original event args.
      * @param {(overlayMap: Record<string, string>) => void} callback The callback function executed after all overlay maps have been completed.
      */
-    installTriggerPackageOverlays( pkg, event, callback ) {
+    installPackagedOverlays( packageId, packageOverlays, defaultOverlayIds, packagePrimaryDisplaySize, event, callback ) {
         let overlayMap = this.#data.packageOverlayMap ?? {};
         
         let finalize = () => {
             this.#data.packageOverlayMap = overlayMap;
             this.#data.packageOverlays = this.#data.packageOverlays ? this.#data.packageOverlays : {};
-            this.#data.packageOverlays[ pkg.triggerPackageId ] = pkg.model.packageOverlays?.map( f => f.overlayId ) ?? [];
+            this.#data.packageOverlays[ packageId ] = packageOverlays?.map( f => f.overlayId ) ?? [];
             this.storeDataFile( this.#data );
         }
 
-        overlayMap[ pkg.model.detrimentalOverlayId ] = _userPreferences.detrimentalOverlayId;
-        overlayMap[ pkg.model.beneficialOverlayId ] = _userPreferences.beneficialOverlayId;
+        overlayMap[ defaultOverlayIds.detrimentalOverlayId ] = _userPreferences.detrimentalOverlayId;
+        overlayMap[ defaultOverlayIds.beneficialOverlayId ] = _userPreferences.beneficialOverlayId;
         // This was added after the original feature and may be null for older trigger packages.
-        overlayMap[ pkg.model.textOverlayId ? pkg.model.textOverlayId : _userPreferences.alertOverlayId ] = _userPreferences.alertOverlayId;
+        overlayMap[ defaultOverlayIds.textOverlayId ? defaultOverlayIds.textOverlayId : _userPreferences.alertOverlayId ] = _userPreferences.alertOverlayId;
         
-        let missingOverlays = pkg.model.packageOverlays?.filter( f => overlayMap[ f.overlayId ] == null ) ?? [];
+        let missingOverlays = packageOverlays?.filter( f => overlayMap[ f.overlayId ] == null ) ?? [];
         let myDisplaySize = screen.getPrimaryDisplay().size;
-        let sizeRatio = { heightRatio: myDisplaySize.height / pkg.model.primaryDisplaySize?.height ?? 1, widthRatio: myDisplaySize.width / pkg.model.primaryDisplaySize?.width ?? 1 };
+        let sizeRatio = { heightRatio: myDisplaySize.height / packagePrimaryDisplaySize?.height ?? 1, widthRatio: myDisplaySize.width / packagePrimaryDisplaySize?.width ?? 1 };
         
         let installOverlay =
             /**
@@ -1493,7 +1496,7 @@ class TriggerDatabaseStore extends Store {
                         installOverlay( i + 1 );
                     } );
 
-                    if ( pkg.model.primaryDisplaySize ) {
+                    if ( packagePrimaryDisplaySize ) {
                         // Because the origin of the renderer is at the top left 
                         // corner of the primary display, these calculations can be 
                         // simplified. If the bounds of the overlay extend past the 
@@ -1501,8 +1504,8 @@ class TriggerDatabaseStore extends Store {
                         // the new display, otherwise we can adjust by ratio to 
                         // place the copied overlay in the same relative location.
 
-                        let extendsPastHorizontalBounds = missingOverlays[ i ].x < 0 || missingOverlays[ i ].x > ( pkg.model.primaryDisplaySize.width - missingOverlays[ i ].windowWidth );
-                        let extendsPastVerticalBounds = missingOverlays[ i ].y < 0 || missingOverlays[ i ].y > ( pkg.model.primaryDisplaySize.height - missingOverlays[ i ].windowHeight );
+                        let extendsPastHorizontalBounds = missingOverlays[ i ].x < 0 || missingOverlays[ i ].x > ( packagePrimaryDisplaySize.width - missingOverlays[ i ].windowWidth );
+                        let extendsPastVerticalBounds = missingOverlays[ i ].y < 0 || missingOverlays[ i ].y > ( packagePrimaryDisplaySize.height - missingOverlays[ i ].windowHeight );
 
                         if ( extendsPastHorizontalBounds || extendsPastVerticalBounds ) {
                             // Center the new overlay.
@@ -1558,7 +1561,13 @@ class TriggerDatabaseStore extends Store {
             throw 'Trigger database not loaded!';
         }
 
-        this.installTriggerPackageOverlays( pkg, event, overlayMap => {
+        let defaultOverlayIds = {
+            detrimentalOverlayId: pkg.model.detrimentalOverlayId,
+            beneficialOverlayId: pkg.model.beneficialOverlayId,
+            textOverlayId: pkg.model.textOverlayId,
+        };
+
+        this.installPackagedOverlays( pkg.triggerPackageId, pkg.model.packageOverlays, defaultOverlayIds, pkg.model.primaryDisplaySize, event, overlayMap => {
 
             let triggerVersion = this.#data.installedPackages.find( f => f.packageId === pkg.triggerPackageId );
 
@@ -1620,94 +1629,75 @@ class TriggerDatabaseStore extends Store {
     /**
      * Installs the given quickshare triggers, folders, and files.
      * 
+     * @returns {Promise<boolean>} Returns a buffer.
+     * 
      * @param {QuickShareMetaModel} quickShare The quickshare to install.
+     * @param {Electron.IpcMainEvent} event The event args.
      */
-    installQuickshare( quickShare ) {
+    installQuickshare( quickShare, event ) {
         
         if ( this.#data.triggers === null || this.#data.triggers === undefined ) {
             throw 'Trigger database not loaded!';
         }
 
-        let quickShareVersion = this.#data.installedQuickShares.find( f => f.quickShareId === quickShare.quickShareId );
+        let defaultOverlayIds = {
+            detrimentalOverlayId: quickShare.model.detrimentalOverlayId,
+            beneficialOverlayId: quickShare.model.beneficialOverlayId,
+            textOverlayId: quickShare.model.textOverlayId,
+        };
 
-        if ( quickShareVersion == null ) {
-            quickShareVersion = new QuickShareVersion();
-            quickShareVersion.quickShareId = quickShare.quickShareId;
+        let p = new Promise( async ( resolve, reject ) => {
+            
+            this.installPackagedOverlays( quickShare.quickShareId, quickShare.model?.overlays ?? [], defaultOverlayIds, quickShare.model.primaryDisplaySize, event, overlayMap => {
 
-            // Add it to the store
-            this.#data.installedQuickShares.push( quickShareVersion );
-        }
-
-        quickShareVersion.versionId = quickShare.versionId;
-        quickShareVersion.timestamp = quickShare.timestamp;
-        quickShareVersion.author = quickShare.author;
-        quickShareVersion.authorDiscord = quickShare.authorDiscord;
-
-        // First, update the overlay Ids to match their cooresponding values on 
-        // the client.
-
-        /** @type {Record<string, string>} */
-        let overlayMap = {}
-
-        overlayMap[ quickShare.model.detrimentalOverlayId ] = _userPreferences.detrimentalOverlayId;
-        overlayMap[ quickShare.model.beneficialOverlayId ] = _userPreferences.beneficialOverlayId;
-
-        // TODO: quickshare needs to map to overlay ids that aren't defaults.
-
-        quickShare.model?.triggers?.forEach( trigger => {
-            trigger.actions?.forEach( action => {
-
-                if ( action.actionType === ActionTypes.DisplayText ) {
-                    action.overlayId = _userPreferences.alertOverlayId;
-                } else {
-                    action.overlayId = overlayMap[ action.overlayId ];
+                let quickShareVersion = this.#data.installedQuickShares.find( f => f.quickShareId === quickShare.quickShareId );
+    
+                if ( quickShareVersion == null ) {
+                    quickShareVersion = new QuickShareVersion();
+                    quickShareVersion.quickShareId = quickShare.quickShareId;
+    
+                    // Add it to the store
+                    this.#data.installedQuickShares.push( quickShareVersion );
                 }
-                
-                action.endedTextOverlayId = _userPreferences.alertOverlayId;
-                action.endingSoonTextOverlayId = _userPreferences.alertOverlayId;
+    
+                quickShareVersion.versionId = quickShare.versionId;
+                quickShareVersion.timestamp = quickShare.timestamp;
+                quickShareVersion.author = quickShare.author;
+                quickShareVersion.authorDiscord = quickShare.authorDiscord;
+    
+                // First, update the overlay Ids to match their cooresponding values on
+                // the client.
+                quickShare.model?.triggers?.forEach( trigger => {
+                    trigger.actions?.forEach( action => {
+    
+                        if ( action.actionType === ActionTypes.DisplayText ) {
+                            action.overlayId = overlayMap[ action.overlayId ] ?? _userPreferences.alertOverlayId;
+                        } else {
+                            action.overlayId = overlayMap[ action.overlayId ];
+                        }
 
+                        action.endedTextOverlayId = overlayMap[ action.overlayId ] ?? _userPreferences.alertOverlayId;
+                        action.endingSoonTextOverlayId = overlayMap[ action.overlayId ] ?? _userPreferences.alertOverlayId;
+    
+                    } );
+                } );
+    
+                // Next, create the required folders, creating a folder map that maps 
+                // folder ids to existing folders. If a folder does not exist,  it is 
+                // created  using  the  folder  id  in  the trigger   package  folder.
+                let folderMap = this.installPackageFolders( quickShare.model?.folders );
+                quickShare.model?.triggers?.forEach( trigger => this.installPackageTrigger( quickShare.quickShareId, trigger, folderMap ) );
+    
+                // Save changes to the data.
+                this.processPredefinedTriggers();
+                this.storeDataFile( this.#data );
+    
+                resolve( true );
             } );
+
         } );
 
-        // TODO: Enable quick share staging.
-        // if ( quickShare.stageNewTriggers ) {
-        //     let i = this.#data.folders.findIndex( f => f.name === 'Quick Share Staging' );
-            
-        //     if ( i < 0 ) {
-        //         let stageFolder = new TriggerFolder();
-
-        //         stageFolder.folderId = nanoid();
-        //         stageFolder.name = 'Quick Share Staging';
-        //         stageFolder.expanded = false;
-        //         stageFolder.active = false;
-        //         stageFolder.comments = 'Staging for newly imported quick share triggers.';
-        //         stageFolder.children = [];
-
-        //         this.#data.folders.push( stageFolder );
-        //         this.updateFolders( this.#data.folders )
-        //     }
-
-        //     let stageFolder = this.#data.folders.find( f => f.name === 'Quick Share Staging' );
-            
-        //     let stageQuickshareFolder = new PackageFolder();
-        //     stageQuickshareFolder.folderId = stageFolder.folderId;
-        //     stageQuickshareFolder.name = stageFolder.name;
-        //     stageQuickshareFolder.children = quickShare.model.folders;
-
-        //     quickShare.model.folders = [ stageQuickshareFolder ];
-        // }
-
-        // Next, create the required folders, creating a folder map that maps 
-        // folder ids to existing folders. If a folder does not exist,  it is 
-        // created  using  the  folder  id  in  the trigger   package  folder.
-        let folderMap = this.installPackageFolders( quickShare.model?.folders );
-        quickShare.model?.triggers?.forEach( trigger => this.installPackageTrigger( quickShare.quickShareId, trigger, folderMap ) );
-
-        // Save changes to the data.
-        this.processPredefinedTriggers();
-        this.storeDataFile( this.#data );
-
-        return true;
+        return p;
     }
 
 
