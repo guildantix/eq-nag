@@ -699,6 +699,10 @@ export class OutsideResource {
     public get allakhazam(): boolean {
         return this.url.match( /^(http|https):\/\/.*\.allakhazam\.com.*/gi )?.length > 0;
     }
+
+    public get eqSpellResources(): boolean {
+        return this.url.match( /^(http|https):\/\/.*\.eqresource\.com.*/gi )?.length > 0;
+    }
     
     public url: string;
     public name: string;
