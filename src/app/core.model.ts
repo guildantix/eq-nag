@@ -128,6 +128,11 @@ export enum CharacterClasses {
     Wizard = 'WIZ',
 }
 
+export enum ExternalDataSources {
+    Allakhazam = 'ZAM',
+    EqSpellResources = 'EQSR',
+}
+
 export enum ImportTypes {
     None = 0,
     DotTimer = 1,

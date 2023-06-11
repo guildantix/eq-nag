@@ -1,6 +1,6 @@
 import { Component, OnInit, Inject, ViewChild } from '@angular/core';
 import { MatDialog, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
-import { ActionTypes, CapturePhrase, Phrase, OperatorTypes, OverlayWindowModel, TriggerAction, TriggerCondition, TriggerConditionTypes, TriggerModel, ImportTypes, TimerRestartBehaviors, ScrapedSpell, ScrapedClickEffect } from 'src/app/core.model';
+import { ActionTypes, CapturePhrase, Phrase, OperatorTypes, OverlayWindowModel, TriggerAction, TriggerCondition, TriggerConditionTypes, TriggerModel, ImportTypes, TimerRestartBehaviors, ScrapedSpell, ScrapedClickEffect, ExternalDataSources } from 'src/app/core.model';
 import { IpcService } from 'src/app/ipc.service';
 import { ScraperService } from 'src/app/scraper.service';
 import { customAlphabet } from 'nanoid';
@@ -68,10 +68,22 @@ export class NewTriggerDialogComponent implements OnInit {
      * Scrapes the entered URL for spell data.
      */
     public scrape(): void {
-        this.scraper.ScrapeAllakhazamSpell( this.url ).subscribe( spell => {
+
+        let complete = ( spell: ScrapedSpell ) => {
             this.spell = spell;
             this.stepper.next();
-        } );
+        }
+
+        if ( this.data.dataSource === ExternalDataSources.Allakhazam ) {
+
+            this.scraper.ScrapeAllakhazamSpell( this.url ).subscribe( spell => complete( spell ) );
+
+        } else if ( this.data.dataSource === ExternalDataSources.EqSpellResources ) {
+
+            this.ipcService.scrapeEqSpellResourceSpell( this.url ).subscribe( spell => complete( spell ) );
+
+        }
+        
     }
     
 
@@ -111,7 +123,7 @@ export class NewTriggerDialogComponent implements OnInit {
             requirePreviousPhrase: false,
             duration: null,
             ///^(?<target>.+?)\s?'s has been poisoned\.
-            phrase: this.spell.castOnOther.replace( /\.$/, '\\.$' ).replace( /soandso's|soandso\s's|soandso/gmi, '^(?<target>.+?)\\b\\s{0,1}\'{0,1}s{0,1}\\b' ),
+            phrase: this.spell.castOnOther.replace( /\.$/, '\\.$' ).replace( /target's|target\s's|target/gmi, '^(?<target>.+?)\\b\\s{0,1}\'{0,1}s{0,1}\\b' ),
         } );
         trigger.capturePhrases.push( <CapturePhrase>{
             phraseId: nanoid(),

@@ -66,7 +66,6 @@ contextBridge.exposeInMainWorld( 'api', {
             }
         },
         invoke: ( channel, ...args ) => {
-            console.log( 'derp', channel );
             if ( validChannel( channel ) ) {
                 return ipcRenderer.invoke( channel, ...args );
             } else {

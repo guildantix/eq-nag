@@ -14,9 +14,13 @@
     </button>
     <mat-menu #autoGenMenu="matMenu" class="trigger-main-menu sub-menu">
         <h3 class="color-blue">Trigger Generators</h3>
-        <button mat-menu-item (click)="showNewDotTimerEqsrDialoig()">
+        <button mat-menu-item (click)="showNewDotTimerEqsrDialog()">
             <!-- <mat-icon>system_update_alt</mat-icon> -->
             <span>DoT Timer (EQ Spell Resources)</span>
+        </button>
+        <button mat-menu-item (click)="showNewBuffTimerEqsrDialog()">
+            <!-- <mat-icon>system_update_alt</mat-icon> -->
+            <span>Buff Timer (EQ Spell Resources)</span>
         </button>
         <hr />
         <button mat-menu-item (click)="showNewDotTimerDialog()">

@@ -53,6 +53,9 @@ class WindowManager {
     /** @type {NodeJS.Timeout} */
     #resumeRendererMouseForwardingTimeout = null;
 
+    /** @type {number} */
+    #windowIndex = 0;
+
     constructor( dirname ) {
         this.#dirname = dirname;
     }
@@ -112,8 +115,7 @@ class WindowManager {
         } );
 
         ipcMain.handle( 'scraper:get:eqsr-spell', async ( event, eqsrUrl ) => {
-            const result = await this.scrapeEqsrResource( eqsrUrl, 'spell' )
-            return result
+            return await this.scrapeEqsrResource( eqsrUrl, 'spell' );
         } );
 
         ipcMain.handle( 'scraper:get:eqsr-itemClick', async ( event, eqsrUrl ) => {
@@ -1249,9 +1251,7 @@ class WindowManager {
     scrapeEqsrResource( url, scrapeAction ) {
         
         scrapeAction = scrapeAction ? scrapeAction : 'spell';
-
-        ipcMain.removeAllListeners( 'scraper:error' );
-        ipcMain.removeAllListeners( 'scraper:done' );
+        let wi = ++this.#windowIndex;
 
         /** @type {Promise<string>} */
         let p = new Promise( ( resolve, reject ) => {
@@ -1277,21 +1277,21 @@ class WindowManager {
                 scraperWindow.webContents.openDevTools( { mode: 'undocked' } );
             }
             
-            ipcMain.once( 'scraper:done', ( event, spell ) => {
+            ipcMain.once( 'scraper:done[' + wi + ']', ( event, spell ) => {
                 ipcMain.removeAllListeners( 'scraper:error' );
-                // scraperWindow.close();
-                // scraperWindow = null;
+                scraperWindow.close();
+                scraperWindow = null;
                 resolve( spell );
             } );
 
-            ipcMain.once( 'scraper:error', ( event, error ) => {
+            ipcMain.once( 'scraper:error[' + wi + ']', ( event, error ) => {
                 ipcMain.removeAllListeners( 'scraper:done' );
-                // scraperWindow.close();
-                // scraperWindow = null;
+                scraperWindow.close();
+                scraperWindow = null;
                 reject( error );
             } );
 
-            scraperWindow.loadURL( `file://${__dirname}/threads/scraper-eqsr.html?action=${scrapeAction}&url=${encodeURI( JSON.stringify( url ) )}` );
+            scraperWindow.loadURL( `file://${__dirname}/threads/scraper-eqsr.html?i=${wi}&action=${scrapeAction}&url=${encodeURI( JSON.stringify( url ) )}` );
 
         } );
     

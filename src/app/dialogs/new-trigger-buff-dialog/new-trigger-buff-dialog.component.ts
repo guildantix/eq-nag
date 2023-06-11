@@ -1,7 +1,7 @@
 import { Component, Inject, OnInit, ViewChild } from '@angular/core';
 import { MatDialog, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { MatStepper } from '@angular/material/stepper';
-import { ActionTypes, CapturePhrase, ImportTypes, OperatorTypes, OverlayWindowModel, Phrase, ScrapedClickEffect, ScrapedSpell, TimerRestartBehaviors, TriggerAction, TriggerCondition, TriggerConditionTypes, TriggerModel } from 'src/app/core.model';
+import { ActionTypes, CapturePhrase, ExternalDataSources, ImportTypes, OperatorTypes, OverlayWindowModel, Phrase, ScrapedClickEffect, ScrapedSpell, TimerRestartBehaviors, TriggerAction, TriggerCondition, TriggerConditionTypes, TriggerModel } from 'src/app/core.model';
 import { IpcService } from 'src/app/ipc.service';
 import { ScraperService } from 'src/app/scraper.service';
 import { NewTriggerDialogModel } from '../dialog.model';
@@ -91,8 +91,8 @@ export class NewTriggerBuffDialogComponent implements OnInit {
      * Scrapes the entered URL for spell data.
      */
     public scrape(): void {
-        this.scraper.ScrapeAllakhazamSpell( this.url ).subscribe( spell => {
-            
+
+        let complete = ( spell: ScrapedSpell ) => {
             this.spell = spell;
 
             this.endingSoonDuration = this.spell.duration <= 120 ? 12 :
@@ -101,7 +101,18 @@ export class NewTriggerBuffDialogComponent implements OnInit {
                         600;
 
             this.stepper.next();
-        } );
+        }
+
+        if ( this.data.dataSource === ExternalDataSources.Allakhazam ) {
+
+            this.scraper.ScrapeAllakhazamSpell( this.url ).subscribe( spell => complete( spell ) );
+
+        } else if ( this.data.dataSource === ExternalDataSources.EqSpellResources ) {
+
+            this.ipcService.scrapeEqSpellResourceSpell( this.url ).subscribe( spell => complete( spell ) );
+
+        }
+        
     }
 
 
@@ -124,7 +135,13 @@ export class NewTriggerBuffDialogComponent implements OnInit {
         
         this.spell.itemsWithEffect.forEach( item => {
             if ( item.selected ) {
-                observables.push( this.scraper.ScrapeAllakhazamItemClickInfo( item.url ) );
+
+                if ( this.data.dataSource === ExternalDataSources.Allakhazam ) {
+                    observables.push( this.scraper.ScrapeAllakhazamItemClickInfo( item.url ) );
+                } else if ( this.data.dataSource === ExternalDataSources.EqSpellResources ) {
+                    observables.push( this.ipcService.scrapeEqSpellResourceItemClickInfo( item.url ) );
+                }
+                
             }
         } );
 
@@ -424,7 +441,7 @@ export class NewTriggerBuffDialogComponent implements OnInit {
                 requirePreviousPhrase: false,
                 duration: null,
                 // /^(?<target>.+?)\b\s{0,1}'{0,1}s{0,1}\b is covered in necrotic sores\.$/
-                phrase: this.spell.castOnOther.replace( /\.$/, '\\.$' ).replace( /soandso's|soandso\s's|soandso/gmi, '^(?!Your\\s)(?<target>.+?)\\b\\s{0,1}\'{0,1}s{0,1}\\b' ),
+                phrase: this.spell.castOnOther.replace( /\.$/, '\\.$' ).replace( /target's|target\s's|target/gmi, '^(?!Your\\s)(?<target>.+?)\\b\\s{0,1}\'{0,1}s{0,1}\\b' ),
             } );
             buffTimerPhrases.push( castOnOtherPhraseId );
         }

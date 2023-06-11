@@ -2,7 +2,7 @@ import { FlatTreeControl } from '@angular/cdk/tree';
 import { Component, ElementRef, HostListener, NgZone, OnInit, ViewChild } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTreeFlatDataSource, MatTreeFlattener } from '@angular/material/tree';
-import { DeathRecapPreferences, QuickShareFileModel, QuickShareMetaModel, Tag, TriggerFolder, TriggerModel } from '../core.model';
+import { DeathRecapPreferences, ExternalDataSources, QuickShareFileModel, QuickShareMetaModel, Tag, TriggerFolder, TriggerModel } from '../core.model';
 import { DialogService } from '../dialogs/dialog.service';
 import { IpcService } from '../ipc.service';
 import * as _ from 'lodash-es';
@@ -248,7 +248,7 @@ export class TriggersComponent implements OnInit {
      */
     public showNewDotTimerDialog(): void {
         this.requireFolderSelect( 'Select a Folder', 'What folder would you like to put this trigger in?' ).subscribe( () => {
-            this.dialogService.showNewDotTimerDialog( this.selectedFolderId );
+            this.dialogService.showNewDotTimerDialog( this.selectedFolderId, ExternalDataSources.Allakhazam );
         } );
     }
 
@@ -264,9 +264,28 @@ export class TriggersComponent implements OnInit {
     /**
      * Displays the eq dot timer import for eq spell resources.
      */
-    public showNewDotTimerEqsrDialoig(): void {
+    public showNewDotTimerEqsrDialog(): void {
         this.requireFolderSelect( 'Select a Folder', 'What folder would you like to put this trigger in?' ).subscribe( () => {
-            this.ipcService.scrapeEqSpellResourceSpell( 'https://spells.eqresource.com/spells.php?id=59823' ).subscribe( spell => console.log( '!!!!! RETURNED', spell ) );
+            this.dialogService.showNewDotTimerDialog( this.selectedFolderId, ExternalDataSources.EqSpellResources );
+            // this.ipcService.scrapeEqSpellResourceSpell( 'https://spells.eqresource.com/spells.php?id=1447' ).subscribe( spell => console.log( '!!!!! RETURNED', spell ) );
+        } );
+    }
+
+
+
+
+
+
+
+
+
+    
+    /**
+     * Displays the new dot timer wizard dialog.
+     */
+    public showNewBuffTimerEqsrDialog(): void {
+        this.requireFolderSelect( 'Select a Folder', 'What folder would you like to put this trigger in?' ).subscribe( () => {
+            this.dialogService.showNewBuffTimerDialog( this.selectedFolderId, ExternalDataSources.EqSpellResources );
         } );
     }
 
@@ -302,7 +321,7 @@ export class TriggersComponent implements OnInit {
      */
     public showNewBuffTimerDialog(): void {
         this.requireFolderSelect( 'Select a Folder', 'What folder would you like to put this trigger in?' ).subscribe( () => {
-            this.dialogService.showNewBuffTimerDialog( this.selectedFolderId );
+            this.dialogService.showNewBuffTimerDialog( this.selectedFolderId, ExternalDataSources.Allakhazam );
         } );
     }
 

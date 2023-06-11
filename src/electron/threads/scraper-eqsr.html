@@ -12,8 +12,11 @@
     <script type="text/javascript">
         const urlParams = new URLSearchParams( window.location.search );
         
-        let action = urlParams.get('url');
+        let action = urlParams.get('action');
+        let i = urlParams.get('i');
         let url = JSON.parse(decodeURI(urlParams.get('url')));
+
+        window.api.setIndex(i);
 
         if ( action === 'clickEffect' ) {
             scrapeItemClickInfo(url);
