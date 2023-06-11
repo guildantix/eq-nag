@@ -112,8 +112,12 @@ class WindowManager {
         } );
 
         ipcMain.handle( 'scraper:get:eqsr-spell', async ( event, eqsrUrl ) => {
-            const result = await this.scrapeEqsrSpell( eqsrUrl )
+            const result = await this.scrapeEqsrResource( eqsrUrl, 'spell' )
             return result
+        } );
+
+        ipcMain.handle( 'scraper:get:eqsr-itemClick', async ( event, eqsrUrl ) => {
+            return await this.scrapeEqsrResource( eqsrUrl, 'clickEffect' );
         } );
 
         ipcMain.on( 'trigger:dialog:new', ( event, arg ) => {
@@ -1240,9 +1244,12 @@ class WindowManager {
      * @returns {Promise<string>} Returns the scraped spell.
      * 
      * @param {string} url The EQ Spell Resources url.
+     * @param {'spell'|'clickEffect'|undefined} scrapeAction The type of scrape action to execute.
      */
-    scrapeEqsrSpell( url ) {
+    scrapeEqsrResource( url, scrapeAction ) {
         
+        scrapeAction = scrapeAction ? scrapeAction : 'spell';
+
         ipcMain.removeAllListeners( 'scraper:error' );
         ipcMain.removeAllListeners( 'scraper:done' );
 
@@ -1284,7 +1291,7 @@ class WindowManager {
                 reject( error );
             } );
 
-            scraperWindow.loadURL( `file://${__dirname}/threads/scraper-eqsr.html?url=${encodeURI( JSON.stringify( url ) )}` );
+            scraperWindow.loadURL( `file://${__dirname}/threads/scraper-eqsr.html?action=${scrapeAction}&url=${encodeURI( JSON.stringify( url ) )}` );
 
         } );
     
