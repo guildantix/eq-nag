@@ -462,6 +462,10 @@ export class ScraperService {
                 
                 // Scrape items with this effect into outside resources.
                 let itemAnchors = data.itemsWithEffect?.querySelectorAll( 'a' );
+                
+                // If there are items with this effect, we set this to true.
+                // If we find a spell scroll in the list of items, we set this 
+                // to false.
                 model.itemClickOnly = itemAnchors?.length > 0;
 
                 itemAnchors?.forEach( a => {
