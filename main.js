@@ -235,7 +235,9 @@ if ( !instanceLock ) {
     app.on( 'second-instance', ( event, argv, workingDir, addtnlData ) => {
 
         if ( mainWindow ) {
-            
+            // If the main window has been loaded, then let's make sure that 
+            // appears for the user so they don't think Nag isn't running.
+
             if ( mainWindow.isMinimized() ) {
                 mainWindow.restore();
             }
