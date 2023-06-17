@@ -1,3 +1,13 @@
 mat-form-field {
     width: 100%;
+    button[matsuffix]{
+        width: 26px;
+        height: 26px;
+        margin-right: 6px;
+        mat-icon {
+            width: 26px;
+            height: 26px;
+            font-size: 26px;
+        }
+    }
 }

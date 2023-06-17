@@ -456,7 +456,7 @@ function LogWatcher(character, logPosition) {
                     parseLogEntries( lines[ i ], false, padTime );
                 }
                 if ( lastBlock ) {
-                    speakPhrase( 'Simulation ended', false, {}, false, {}, 0, 0, 100, () => ipcRenderer.send( 'log:simulate:done', characterId ) );
+                    speakPhrase( 'Simulation ended', false, {}, false, {}, 0, 0, 100, 1, () => ipcRenderer.send( 'log:simulate:done', characterId ) );
                 }
             };
         
@@ -501,7 +501,7 @@ function LogWatcher(character, logPosition) {
     } );
 
     ipcRenderer.on( 'log:speak:phrase', function ( event, data ) {
-        speakPhrase( data.phrase, data.interruptSpeech, null, false, data.parseResult, data.timerDuration );
+        speakPhrase( data.phrase, data.interruptSpeech, null, false, data.parseResult, data.timerDuration, 0, 100, 1 );
     } );
 
     ipcRenderer.on( 'tick', function ( event, data ) {
@@ -1579,7 +1579,7 @@ function executeTriggerAction( trigger, action, timestamp, res, deltaTime, simul
             duration = +action.duration;
         }
 
-        speakPhrase( action.displayText, action.interruptSpeech, trigger._conditionResults, simulating, res.result, duration, deltaTime, action.speechVolume );
+        speakPhrase( action.displayText, action.interruptSpeech, trigger._conditionResults, simulating, res.result, duration, deltaTime, action.speechVolume, action.speechRate );
     
     } else if ( action.actionType === ActionTypes.DisplayDeathRecap ) {
         /* --== Death Recap ==-- */
@@ -2528,7 +2528,7 @@ function renderPhrases( phrases, conditionResults, parseResult, deltaTime, parse
  * @param {number} speechVolume The volume which to speak.
  * @param {() => void} afterSpeech Executes function after speech ended.
  */
-function speakPhrase( phrase, interrupt, conditionResults, simulating, parseResult, timerDuration, deltaTime, speechVolume, afterSpeech ) {
+function speakPhrase( phrase, interrupt, conditionResults, simulating, parseResult, timerDuration, deltaTime, speechVolume, rate, afterSpeech ) {
     
     if ( !simulating && phrase && voiceIndex > -1 ) {
 
@@ -2546,6 +2546,7 @@ function speakPhrase( phrase, interrupt, conditionResults, simulating, parseResu
         utter.text = StringUtilities.parsePhoneticTransformsToLiteral( utter.text, phoneticTransforms );
         utter.voice = voiceOptions[ voiceIndex ];
         utter.volume = ( masterVolume * ( speechVolume > 0 ? speechVolume / 100 : 1 ) ) / 100;
+        utter.rate = rate ?? 1;
         
         utter.onend = function ( event ) {
             let i = utterances.indexOf( this );
