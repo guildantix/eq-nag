@@ -10,6 +10,14 @@ export const ErrorCodes = {
     }
 };
 
+export enum SettingsKeys {
+    
+    logMaintenanceRules = 'logMaintenanceRules',
+    allowPrerelease = 'allowPrerelease',
+    voiceIndex = 'voiceIndex',
+
+};
+
 export enum ActionTypes {
     
     DisplayText = 0,
@@ -532,6 +540,7 @@ export class TriggerActionProperties {
     public timerIconDef: string = null;
     public interruptSpeech: boolean = false;
     public speechVolume: number = 100;
+    public speechRate: number = 1;
     public hideTimer: boolean = false;
     public hideConditions: TriggerCondition[] = [];
     public castTime: number = null;

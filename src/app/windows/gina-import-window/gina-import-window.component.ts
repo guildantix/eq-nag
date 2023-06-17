@@ -316,6 +316,7 @@ export class GinaImportWindowComponent implements OnInit {
         utter.text = phrase;
         utter.voice = this.voiceOptions[ this.voiceIndex ];
         utter.onend = function ( event ) { }
+        utter.rate = 1;
         speechSynthesis.speak( utter );
     }
 

@@ -230,6 +230,8 @@ class TriggerAction {
     interruptSpeech = false;
     /** @type {number} */
     speechVolume = 100;
+    /** @type {number} */
+    speechRate = 1;
     /** @type {boolean} */
     hideTimer = false;
     /** @type {TriggerCondition[]} */
