@@ -97,13 +97,13 @@ export class TriggersComponent implements OnInit {
     public deathRecapPreferences: DeathRecapPreferences = null;
     
     constructor(
-        private snackBar: MatSnackBar,
-        private ipcService: IpcService,
-        private dialogService: DialogService,
-        private ngZone: NgZone,
-        private libraryService: TriggerLibraryService,
-        private quickShareService: QuickShareService,
-        private dialog: MatDialog,
+        private readonly snackBar: MatSnackBar,
+        private readonly ipcService: IpcService,
+        private readonly dialogService: DialogService,
+        private readonly ngZone: NgZone,
+        private readonly libraryService: TriggerLibraryService,
+        private readonly quickShareService: QuickShareService,
+        private readonly dialog: MatDialog,
     ) {
         
         this.dataSource.data = [];
