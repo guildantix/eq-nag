@@ -456,7 +456,7 @@ function LogWatcher(character, logPosition) {
                     parseLogEntries( lines[ i ], false, padTime );
                 }
                 if ( lastBlock ) {
-                    speakPhrase( 'Simulation ended', false, {}, false, {}, 0, 0, 100, 1, () => ipcRenderer.send( 'log:simulate:done', characterId ) );
+                    speakPhrase( 'Simulation ended', false, false, {}, false, {}, 0, 0, 100, 1, () => ipcRenderer.send( 'log:simulate:done', characterId ) );
                 }
             };
         
@@ -501,7 +501,7 @@ function LogWatcher(character, logPosition) {
     } );
 
     ipcRenderer.on( 'log:speak:phrase', function ( event, data ) {
-        speakPhrase( data.phrase, data.interruptSpeech, null, false, data.parseResult, data.timerDuration, 0, 100, 1 );
+        speakPhrase( data.phrase, data.interruptSpeech, data.speakNext === true, null, false, data.parseResult, data.timerDuration, 0, 100, 1 );
     } );
 
     ipcRenderer.on( 'tick', function ( event, data ) {
@@ -1579,7 +1579,7 @@ function executeTriggerAction( trigger, action, timestamp, res, deltaTime, simul
             duration = +action.duration;
         }
 
-        speakPhrase( action.displayText, action.interruptSpeech, trigger._conditionResults, simulating, res.result, duration, deltaTime, action.speechVolume, action.speechRate );
+        speakPhrase( action.displayText, action.interruptSpeech, action.speakNext, trigger._conditionResults, simulating, res.result, duration, deltaTime, action.speechVolume, action.speechRate );
     
     } else if ( action.actionType === ActionTypes.DisplayDeathRecap ) {
         /* --== Death Recap ==-- */
@@ -2520,6 +2520,7 @@ function renderPhrases( phrases, conditionResults, parseResult, deltaTime, parse
  * 
  * @param {string} phrase The phrase to speak.
  * @param {boolean} interrupt If true, interrupts the current utterance if the speech engine is speaking.
+ * @param {boolean} speakNext If true, lets the current utterance complete but forces this speech next.
  * @param {Record<string, string>} conditionResults The condition results.
  * @param {boolean} simulating If true the phrase is written to the log instead of spoken.
  * @param {RegExpExecArray} parseResult The regexp exec array of the parsed log entry.
@@ -2528,7 +2529,7 @@ function renderPhrases( phrases, conditionResults, parseResult, deltaTime, parse
  * @param {number} speechVolume The volume which to speak.
  * @param {() => void} afterSpeech Executes function after speech ended.
  */
-function speakPhrase( phrase, interrupt, conditionResults, simulating, parseResult, timerDuration, deltaTime, speechVolume, rate, afterSpeech ) {
+function speakPhrase( phrase, interrupt, speakNext, conditionResults, simulating, parseResult, timerDuration, deltaTime, speechVolume, rate, afterSpeech ) {
     
     if ( !simulating && phrase && voiceIndex > -1 ) {
 
@@ -2568,10 +2569,23 @@ function speakPhrase( phrase, interrupt, conditionResults, simulating, parseResu
             
             // Put this speech at the top of the list.
             utterances.unshift( utter );
+
+            // Deletes the next item in the queue, preventing the system from attempting to re-speak what was already started.
+            utterances.splice( 1, 1 );
             
             // Tell the engine to start talking.
             speechSynthesis.speak( utterances[ 0 ] );
     
+        } else if ( speakNext && speechSynthesis.speaking ) {
+            
+            if ( utterances.length > 1 ) {
+                // If there is another queued utterance, then push this utterance to the next in line.
+                utterances = [].concat( utter, ...utterances.slice( 1 ) );
+            } else {
+                // Otherwise just push it into the array at the end.
+                utterances.push( utter );
+            }
+
         } else {
             
             // Put the utterance at the end of the queue.

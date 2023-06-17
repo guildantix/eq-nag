@@ -234,6 +234,8 @@ class TriggerAction {
     speechRate = 1;
     /** @type {boolean} */
     hideTimer = false;
+    /** @type {boolean} */
+    speakNext = false;
     /** @type {TriggerCondition[]} */
     hideConditions = [];
     /** @type {number} */
