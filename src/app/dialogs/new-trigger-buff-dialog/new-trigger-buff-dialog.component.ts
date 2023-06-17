@@ -40,6 +40,10 @@ export class NewTriggerBuffDialogComponent implements OnInit {
     public lockTrackType: boolean = false;
     public hideTimer: boolean = true;
 
+    public get serviceName(): string {
+        return this.data.dataSource === ExternalDataSources.Allakhazam ? 'Allakhazam' : 'EQ Spell Resources';
+    }
+
     public get cannotTrack(): boolean {
         return this.trackType === 'others' && this.spell != null && this.spell.castOnYou == null;
     }
@@ -53,11 +57,11 @@ export class NewTriggerBuffDialogComponent implements OnInit {
     public spell: ScrapedSpell;
     
     constructor(
-        public dialogRef: MatDialogRef<NewTriggerBuffDialogComponent>,
-        @Inject( MAT_DIALOG_DATA ) public data: NewTriggerDialogModel,
-        public scraper: ScraperService,
-        public ipcService: IpcService,
-        public dialog: MatDialog ) { }
+        public readonly dialogRef: MatDialogRef<NewTriggerBuffDialogComponent>,
+        @Inject( MAT_DIALOG_DATA ) public readonly data: NewTriggerDialogModel,
+        public readonly scraper: ScraperService,
+        public readonly ipcService: IpcService,
+        public readonly dialog: MatDialog ) { }
 
     ngOnInit() {
 
