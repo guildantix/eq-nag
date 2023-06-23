@@ -1229,6 +1229,7 @@ class TriggerDatabaseStore extends Store {
                 }
             }
 
+            // TODO: We may want to make this an option in the future.
             // // Finally, let's search through the trigger db
             // for ( let ii = 0; ii < this.#data.triggers?.length; ii++ ) {
             //     const target = this.#data.triggers[ ii ];

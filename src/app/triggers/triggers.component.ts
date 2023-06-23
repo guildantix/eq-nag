@@ -1539,6 +1539,15 @@ export class TriggersComponent implements OnInit {
         }
     }
 
+
+
+
+
+
+
+
+
+
     /**
      * Allows the user to add/edit/delete folder conditions.
      * 
@@ -1941,6 +1950,15 @@ export class TriggersComponent implements OnInit {
 
     }
 
+
+
+
+
+
+
+
+
+    
     /**
      * Opens the gina importer window.
      */
