@@ -4,13 +4,14 @@ const {
     TimerRestartBehaviors,
     TriggerStoreModel,
     TriggerFolder,
+    ExternalDataSources,
 } = require( '../models/trigger' );
 const { backupDatafile } = require( './backup-data-file' );
 const customAlphabet = require( 'nanoid' ).customAlphabet;
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const nanoid = customAlphabet( alphabet, 16 );
 
-const currentTriggerDbVersion = 79;
+const currentTriggerDbVersion = 80;
 
 
 
@@ -667,6 +668,18 @@ function executeDataMigration( data ) {
         } );
         
         data.version = 79;
+        
+    }
+    if ( data.version < 80 ) {
+        data?.triggers?.forEach( trigger => {
+            if ( trigger.allakhazamUrl ) {
+                trigger.externalSource = trigger.allakhazamUrl.indexOf( 'allakhazam.com' ) > -1 ? ExternalDataSources.Allakhazam : ExternalDataSources.EqSpellResources;
+            } else {
+                trigger.externalSource = undefined;
+            }
+        } );
+        
+        data.version = 80;
         
     }
 
