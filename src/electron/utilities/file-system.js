@@ -42,6 +42,11 @@ function exists( path ) {
     return p;
 }
 
+/**
+ * Returns the filename from the given path.
+ * 
+ * @param {string} filePath The full path.
+ */
 function pathGetFilename( filePath ) {
     const matches = /^.*\\(.+\\)*(.+)$/.exec( filePath );
     if ( matches ) {

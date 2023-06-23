@@ -181,6 +181,9 @@ export class IpcService {
         }
     }
 
+    /**
+     * Returns a backup progress when backup emits a progress update.
+     */
     public onBackupProgress(): Observable<Progress> {
         let obs: Observable<Progress> = new Observable<Progress>( ( observer: Observer<Progress> ) => {
             this._onBackupProgress.push( observer );
@@ -189,6 +192,9 @@ export class IpcService {
         return obs;
     }
 
+    /**
+     * Retruns a quit failure model when the user attempts to close nag and nag wants to warn the user of possible corruption.
+     */
     public onQuitFalure(): Observable<QuitFailureData> {
         let obs: Observable<QuitFailureData> = new Observable<QuitFailureData>( ( observer: Observer<QuitFailureData> ) => {
             this._onQuitFalure.push( observer );
@@ -453,6 +459,11 @@ export class IpcService {
 
     }
 
+    /**
+     * Returns the specified setting value.
+     * 
+     * @param key The setting key.
+     */
     public getSetting<T>( key: string ): Observable<T> {
         let obs: Observable<T> = new Observable<T>( ( observer: Observer<T> ) => {
             
