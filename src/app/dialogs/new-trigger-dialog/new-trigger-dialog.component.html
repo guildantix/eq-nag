@@ -1,4 +1,4 @@
-<h2 mat-dialog-title>Import DoT Timer (Allakhazam)</h2>
+<h2 mat-dialog-title>Import DoT Timer ({{serviceName}})</h2>
 
 <mat-dialog-content>
     
@@ -12,7 +12,7 @@
                     <mat-form-field style="width: 100%;">
                         <mat-label></mat-label>
                         <input matInput type="text" [(ngModel)]="url" name="url" required />
-                        <mat-hint>Allakhazam URL</mat-hint>
+                        <mat-hint>{{serviceName}} URL</mat-hint>
                     </mat-form-field>
                 </p>
                             
@@ -58,6 +58,5 @@
 <mat-dialog-actions>
 
   <button mat-button mat-dialog-close class="t-confirm-no" color="warn">Cancel</button>
-  <button mat-button (click)="scrape()" class="t-confirm-yes" color="accent">Import</button>
 
 </mat-dialog-actions>

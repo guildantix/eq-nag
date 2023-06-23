@@ -32,6 +32,10 @@ export class NewTriggerDialogComponent implements OnInit {
     public get timerOverlays(): OverlayWindowModel[] {
         return this.overlays.filter( f => f.overlayType === 'Timer' );
     }
+
+    public get serviceName(): string {
+        return this.data.dataSource === ExternalDataSources.Allakhazam ? 'Allakhazam' : 'EQ Spell Resources';
+    }
     
     @ViewChild( 'stepper', { static: false, read: MatStepper } ) public stepper: MatStepper;
 
