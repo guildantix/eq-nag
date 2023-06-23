@@ -501,15 +501,23 @@ $bg-extreme-dark: #191919;
             border-bottom-right-radius: 0px;
             min-width: 175px;
         }
-        h3 {
+        h3,
+        h2 {
             padding: 16px;
-            font-weight: 100;
-            font-size: 20px;
             text-align: center;
             margin: 5px 0;
+            background-color: #00000040;
+        }
+        h3 {
             font-weight: 300;
             font-size: 18px;
-            background-color: #00000040;
+        }
+        h2 {
+            font-weight: 100;
+            font-size: 16px;
+            padding: 10px 16px;
+            margin: 0;
+            border-top: 3px solid #ffffff17;
         }
         hr {
             border-color: rgba($text, .05);
