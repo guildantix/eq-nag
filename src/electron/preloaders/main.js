@@ -35,6 +35,7 @@ const channelPrefixes = [
     'console',
     'context',
     'archive',
+    'scraper',
 ];
 
 function validChannel( channel ) {

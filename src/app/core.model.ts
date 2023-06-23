@@ -10,6 +10,14 @@ export const ErrorCodes = {
     }
 };
 
+export enum SettingsKeys {
+    
+    logMaintenanceRules = 'logMaintenanceRules',
+    allowPrerelease = 'allowPrerelease',
+    voiceIndex = 'voiceIndex',
+
+};
+
 export enum ActionTypes {
     
     DisplayText = 0,
@@ -126,6 +134,11 @@ export enum CharacterClasses {
     Shaman = 'SHM',
     Warrior = 'WAR',
     Wizard = 'WIZ',
+}
+
+export enum ExternalDataSources {
+    Allakhazam = 'ZAM',
+    EqSpellResources = 'EQSR',
 }
 
 export enum ImportTypes {
@@ -527,6 +540,8 @@ export class TriggerActionProperties {
     public timerIconDef: string = null;
     public interruptSpeech: boolean = false;
     public speechVolume: number = 100;
+    public speechRate: number = 1;
+    public speakNext: boolean = false;
     public hideTimer: boolean = false;
     public hideConditions: TriggerCondition[] = [];
     public castTime: number = null;
@@ -698,6 +713,10 @@ export class OutsideResource {
 
     public get allakhazam(): boolean {
         return this.url.match( /^(http|https):\/\/.*\.allakhazam\.com.*/gi )?.length > 0;
+    }
+
+    public get eqSpellResources(): boolean {
+        return this.url.match( /^(http|https):\/\/.*\.eqresource\.com.*/gi )?.length > 0;
     }
     
     public url: string;

@@ -1,7 +1,7 @@
 import { Injectable, NgZone, OnDestroy } from '@angular/core';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { ConfirmDialogComponent } from './confirm-dialog/confirm-dialog.component';
-import { OverlayWindowModel, QuickShareFileModel, QuickShareMetaModel, ScrapedSpell, TriggerAction, TriggerCondition, TriggerFolder, TriggerModel } from '../core.model';
+import { ExternalDataSources, OverlayWindowModel, QuickShareFileModel, QuickShareMetaModel, ScrapedSpell, TriggerAction, TriggerCondition, TriggerFolder, TriggerModel } from '../core.model';
 import { Observable, Observer } from 'rxjs';
 import { OverlayDetailsDialogComponent } from './overlay-details-dialog/overlay-details-dialog.component';
 import { TriggerActionWizardModalComponent } from './trigger-action-wizard-modal/trigger-action-wizard-modal.component';
@@ -371,11 +371,14 @@ export class DialogService {
     /**
      * Opens the new dot timer trigger dialog.
      */
-    public showNewDotTimerDialog( folderId?: string ): void {
+    public showNewDotTimerDialog( folderId?: string, externalSource?: ExternalDataSources | undefined ): void {
+        
+        externalSource = externalSource ? externalSource : ExternalDataSources.Allakhazam;
+
         this.dialog.open( NewTriggerDialogComponent, {
             width: '750px',
             panelClass: 'app-dialog',
-            data: <NewTriggerDialogModel>{ selectedFolderId: folderId, trigger: null },
+            data: <NewTriggerDialogModel>{ selectedFolderId: folderId, trigger: null, dataSource: externalSource },
         } ).afterClosed();
     }
 
@@ -411,10 +414,13 @@ export class DialogService {
     /**
      * Opens the new dot timer trigger dialog.
      */
-    public showNewBuffTimerDialog( folderId?: string ): void {
+    public showNewBuffTimerDialog( folderId?: string, externalSource?: ExternalDataSources | undefined ): void {
+
+        externalSource = externalSource ? externalSource : ExternalDataSources.Allakhazam;
+
         this.dialog.open( NewTriggerBuffDialogComponent, {
             width: '750px',
-            data: <NewTriggerDialogModel>{ selectedFolderId: folderId, trigger: null },
+            data: <NewTriggerDialogModel>{ selectedFolderId: folderId, trigger: null, dataSource: externalSource },
             panelClass: 'app-dialog',
         } ).afterClosed();
     }

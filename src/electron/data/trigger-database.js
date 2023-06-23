@@ -1846,6 +1846,7 @@ class TriggerDatabaseStore extends Store {
             trigger.triggerId = packageTrigger.triggerId;
             trigger.folderId = folderMap[ packageTrigger.folderId ];
             trigger.packageId = packageId;
+            trigger.enabled = true;
 
             // Add it to the store.
             this.#data.triggers.push( trigger );

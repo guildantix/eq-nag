@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <!-- <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline';" /> -->
+        <title>EQ Spell Resource Scraper</title>
+
+        <script src="scraper-eqsr.js"></script>
+    </head>
+    <body></body>
+    <script type="text/javascript">
+        const urlParams = new URLSearchParams( window.location.search );
+        
+        let action = urlParams.get('action');
+        let i = urlParams.get('i');
+        let url = JSON.parse(decodeURI(urlParams.get('url')));
+
+        window.api.setIndex(i);
+
+        if ( action === 'clickEffect' ) {
+            scrapeItemClickInfo(url);
+        } else {
+            scrapeSpell(url);
+        }
+
+    </script>
+</html>

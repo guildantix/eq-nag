@@ -174,48 +174,84 @@ app.on( 'before-quit', () => {
     trayMenu = null;
 } );
 
-app.on( 'ready', function () {
+
+// --========================--
+// --== App Initialization ==--
+// --========================--
+
+const bootstrapApp = () => {
+
+    app.on( 'ready', function () {
     
-    winManager.onReady();
-    screen.on( 'display-metrics-changed', ( e, newDisplay ) => {
-        log.info( 'screen metrics have changed.', e, newDisplay );
-        winManager.checkWindowPosition();
-    } );
-    protocol.interceptFileProtocol( 'file', ( req, callback ) => {
-        let filePath = new url.URL( req.url ).pathname;
-
-        if ( !filePath.match( /electron/ ) ) {
-            if ( process.platform === 'win32' ) {
-
-                if ( filePath.match( /^\/[A-Za-z]:/ ) ) {
-                    // If it begins with a slash, remove it.
-                    filePath = filePath.slice( 1 );
+        winManager.onReady();
+        screen.on( 'display-metrics-changed', ( e, newDisplay ) => {
+            log.info( 'screen metrics have changed.', e, newDisplay );
+            winManager.checkWindowPosition();
+        } );
+        protocol.interceptFileProtocol( 'file', ( req, callback ) => {
+            let filePath = new url.URL( req.url ).pathname;
+    
+            if ( !filePath.match( /electron/ ) ) {
+                if ( process.platform === 'win32' ) {
+    
+                    if ( filePath.match( /^\/[A-Za-z]:/ ) ) {
+                        // If it begins with a slash, remove it.
+                        filePath = filePath.slice( 1 );
+                    }
+    
+                    if ( filePath.match( /^[A-Za-z]:\/(css|img|js|fonts)/ ) ) {
+                        filePath = path.join( app.getAppPath(), 'dist', filePath.slice( 3 ) );
+    
+                    } else if ( filePath.match( /^[A-Za-z]:\/.*\.(js|css|png|jpeg|jpg|ico|svg|woff|woff2|ttf)$/ ) ) {
+                        // case of "vue-cli-service build --mode development"
+                        filePath = path.join( app.getAppPath(), 'dist', filePath.slice( 3 ) );
+                    }
+    
+                } else {
+    
+                    if ( filePath.match( /^\/(css|img|js)/ ) ) {
+                        filePath = path.join( app.getAppPath(), 'dist', filePath.slice( 1 ) );
+                    } else if ( filePath.match( /^\/[^/\\]+?\.(js|css|png|jpeg|jpg|ico|svg)$/ ) ) {
+                        // case of "vue-cli-service build --mode development"
+                        filePath = path.join( app.getAppPath(), 'dist', filePath.slice( 1 ) );
+                    }
+    
                 }
-
-                if ( filePath.match( /^[A-Za-z]:\/(css|img|js|fonts)/ ) ) {
-                    filePath = path.join( app.getAppPath(), 'dist', filePath.slice( 3 ) );
-
-                } else if ( filePath.match( /^[A-Za-z]:\/.*\.(js|css|png|jpeg|jpg|ico|svg|woff|woff2|ttf)$/ ) ) {
-                    // case of "vue-cli-service build --mode development"
-                    filePath = path.join( app.getAppPath(), 'dist', filePath.slice( 3 ) );
-                }
-
-            } else {
-
-                if ( filePath.match( /^\/(css|img|js)/ ) ) {
-                    filePath = path.join( app.getAppPath(), 'dist', filePath.slice( 1 ) );
-                } else if ( filePath.match( /^\/[^/\\]+?\.(js|css|png|jpeg|jpg|ico|svg)$/ ) ) {
-                    // case of "vue-cli-service build --mode development"
-                    filePath = path.join( app.getAppPath(), 'dist', filePath.slice( 1 ) );
-                }
-
             }
-        }
-
-        callback( path.normalize( filePath ) );
+    
+            callback( path.normalize( filePath ) );
+        } );
+        createWindow();
     } );
-    createWindow();
-} );
+    
+}
+
+// Using the instance lock we can prevent multiple Nag instances from opening.
+const instanceLock = app.requestSingleInstanceLock();
+
+if ( !instanceLock ) {
+    app.quit();
+} else {
+    app.on( 'second-instance', ( event, argv, workingDir, addtnlData ) => {
+
+        if ( mainWindow ) {
+            // If the main window has been loaded, then let's make sure that 
+            // appears for the user so they don't think Nag isn't running.
+
+            if ( mainWindow.isMinimized() ) {
+                mainWindow.restore();
+            }
+
+            mainWindow.setAlwaysOnTop( true );
+            mainWindow.show();
+            mainWindow.setAlwaysOnTop( false );
+            mainWindow.focus();
+            
+        }
+    } );
+
+    bootstrapApp();
+}
 
 app.on( 'window-all-closed', function () {
     if ( process.platform !== 'darwin' ) app.quit()

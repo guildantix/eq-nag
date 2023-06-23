@@ -14,17 +14,27 @@
     </button>
     <mat-menu #autoGenMenu="matMenu" class="trigger-main-menu sub-menu">
         <h3 class="color-blue">Trigger Generators</h3>
+        <h2>Allakhazam</h2>
         <button mat-menu-item (click)="showNewDotTimerDialog()">
             <!-- <mat-icon>system_update_alt</mat-icon> -->
-            <span>DoT Timer (Allakhazam)</span>
+            <span>DoT Timer</span>
         </button>
         <button mat-menu-item (click)="showNewRaidAbilityDialog()">
             <!-- <mat-icon>system_update_alt</mat-icon> -->
-            <span>Raid Ability (Allakhazam)</span>
+            <span>Raid Ability</span>
         </button>
         <button mat-menu-item (click)="showNewBuffTimerDialog()">
             <!-- <mat-icon>system_update_alt</mat-icon> -->
-            <span>Buff Timer (Allakhazam)</span>
+            <span>Buff Timer</span>
+        </button>
+        <h2>EQ Spell Resources</h2>
+        <button mat-menu-item (click)="showNewDotTimerEqsrDialog()">
+            <!-- <mat-icon>system_update_alt</mat-icon> -->
+            <span>DoT Timer</span>
+        </button>
+        <button mat-menu-item (click)="showNewBuffTimerEqsrDialog()">
+            <!-- <mat-icon>system_update_alt</mat-icon> -->
+            <span>Buff Timer</span>
         </button>
     </mat-menu>
     <mat-menu #hotkeyMenu="matMenu" class="trigger-main-menu sub-menu">
