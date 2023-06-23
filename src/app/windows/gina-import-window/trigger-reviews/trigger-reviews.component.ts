@@ -52,11 +52,6 @@ export class TriggerReviewsComponent implements OnInit {
     public folderDataSource = new MatTreeFlatDataSource(this.folderTreeControl, this.treeFlattener);
     hasChild = (_: number, node: ExampleFlatNode) => node.expandable;
 
-    // public detrimentalOverlayId: string;
-    // public beneficialOverlayId: string;
-    // public alertOverlayId: string;
-
-    // public selectedGinaTriggers: GinaMultiSelectDataModel[] = [];
     private _selectedGinaTriggers: GinaMultiSelectDataModel[] = [];
     private audioFiles: FileModel[] = [];
     public get selectedGinaTriggers(): GinaMultiSelectDataModel[] {
@@ -64,13 +59,8 @@ export class TriggerReviewsComponent implements OnInit {
     }
     @Input() public set selectedGinaTriggers( data: GinaMultiSelectDataModel[] ) {
         if ( data ) {
-            // let observables: Observable<TriggerIdNameModel[]|any>[] = [ timer( 1 ) ];
-            // this.triggers = triggers;
-            this._selectedGinaTriggers = data;
             
-            // this.ipcService.getDetrimentalOverlayId().subscribe( id => this.detrimentalOverlayId = id );
-            // this.ipcService.getBeneficialOverlayId().subscribe( id => this.beneficialOverlayId = id );
-            // this.ipcService.getAlertOverlayId().subscribe( id => this.alertOverlayId = id );
+            this._selectedGinaTriggers = data;
             
             this.generateTriggerModels().subscribe( () => {
                 this.showDuplicates();
@@ -82,19 +72,6 @@ export class TriggerReviewsComponent implements OnInit {
                 this.importedGinaObjects.push( t.model.ginaName );
             } );
 
-            // this.ipcService.searchForDuplicates( _.map( triggers, f => f.nagTrigger ) ).subscribe( duplicateData => {
-                
-            //     this.triggers = triggers;
-            //     this.tableData = new MatTableDataSource( this.triggers );
-            //     this.tableData.paginator = this.paginator;
-
-            // } );
-        
-            // forkJoin( observables ).subscribe( doesntmatter => {
-            //     this.triggers = triggers;
-            //     this.tableData = new MatTableDataSource( this.triggers );
-            //     this.tableData.paginator = this.paginator;
-            // } );
         } else {
             this._selectedGinaTriggers = [];
         }
@@ -119,6 +96,8 @@ export class TriggerReviewsComponent implements OnInit {
     public triggerMergeSelected: Record<string, Record<string, boolean>> = {};
     public triggerIgnoreSelected: Record<string, Record<string, boolean>> = {};
     public importedGinaObjects: string[] = [];
+    public newFolderMap: Record<string, string> = {};
+    public newFolderIds: string[] = [];
 
     @Input() public alertOverlays: OverlayWindowModel[] = [];
     @Input() public logOverlays: OverlayWindowModel[] = [];
@@ -143,6 +122,20 @@ export class TriggerReviewsComponent implements OnInit {
 
     ngOnInit() { }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Returns true if the given trigger has invalid/non-optimal capture phrases.
+     * 
+     * @param trigger The trigger to check.
+     */
     public showCapturePhraseSuggestion( trigger: TriggerModel ): boolean {
         if ( trigger == null ) {
             return false;
@@ -168,10 +161,38 @@ export class TriggerReviewsComponent implements OnInit {
         }
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Returns the filename for the given file ID.
+     * 
+     * @param fileId The file ID to get the filename for.
+     */
     public getAudioFilename( fileId: string ): string {
         return this.audioFiles.find( f => f.fileId === fileId )?.fileName;
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Returns the invalid capture phrases for the given trigger.
+     * 
+     * @param trigger The trigger to check.
+     */
     public getInvalidCapturePhrases( trigger: TriggerModel ): CapturePhrase[] {
         if ( trigger == null ) {
             return [];
@@ -197,6 +218,18 @@ export class TriggerReviewsComponent implements OnInit {
         }
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Generates the nag triggers from the selected gina triggers.
+     */
     public generateTriggerModels(): Observable<any> {
         
         let obs = new Observable<any>( subscriber => {
@@ -245,11 +278,36 @@ export class TriggerReviewsComponent implements OnInit {
         
     }
 
-    public newFolderIds: string[] = [];
+
+
+
+
+
+
+
+
+    
+    /**
+     * Returns true if the trigger is a new folder.
+     * 
+     * @param folderId The folder id to check.
+     */
     isNewFolder( folderId: string ): boolean {
         return this.newFolderIds.indexOf( folderId ) > -1;
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Show the folder check panel.
+     */
     showFolderCheck() {
         this.panel = 'foldersCheck';
 
@@ -305,6 +363,21 @@ export class TriggerReviewsComponent implements OnInit {
         
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Returns a folder hiearchy that only contains folders that are used by the triggers.
+     * 
+     * @param folders The trigger folders to build the review folder structure from.
+     * @param usedIds The folder ids that are used by the triggers.
+     */
     buildReviewFolderStructure( folders: TriggerFolder[], usedIds: string[] ): TriggerFolder[] {
         let output: TriggerFolder[] = [];
 
@@ -320,7 +393,23 @@ export class TriggerReviewsComponent implements OnInit {
         return output;
     }
 
-    buildNagFolderMap( folders: TriggerFolder[], parentId: string ) {
+
+
+
+
+
+
+
+
+    
+    /**
+     * Builds a flat map of parent folder ids to child folder ids, and a map of 
+     * folder names to folder ids.
+     * 
+     * @param folders The folder array to build the map from.
+     * @param parentId The parent folder id.
+     */
+    buildNagFolderMap( folders: TriggerFolder[], parentId: string | null ) {
         for ( let i = 0; i < folders?.length; i++ ) {
             this.nagFolderMap[ folders[ i ].folderId ] = parentId;
             this.nagFolderNameMap[ folders[ i ].folderId ] = folders[ i ].name;
@@ -330,6 +419,20 @@ export class TriggerReviewsComponent implements OnInit {
         }
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Updates the nagFolderMap and nagFolderNameMap objects, generating a 
+     * folder family name for each trigger, and showing the zone name check 
+     * panel.
+     */
     updateGinaFolderMap() {
 
         if ( this.nagFolderMap == null || this.nagFolderNameMap == null ) {
@@ -351,6 +454,21 @@ export class TriggerReviewsComponent implements OnInit {
         this.showZoneNameCheck();
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Returns the first folder found with the given id.
+     * 
+     * @param folderId The id of the desired folder.
+     * @param folders The folders to search, defaults to the nagFolders.
+     */
     private findFolderById( folderId: string, folders: TriggerFolder[] | void ): TriggerFolder {
         folders = folders ? folders : this.nagFolders;
         for ( let i = 0; i < folders.length; i++ ) {
@@ -364,6 +482,21 @@ export class TriggerReviewsComponent implements OnInit {
         }
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Returns the first folder found with the given name.
+     * 
+     * @param name The name of the desired folder.
+     * @param folders The folders to search, defaults to the nagFolders.
+     */
     private findFolderByName( name: string, folders: TriggerFolder[] | void ): TriggerFolder {
         folders = folders ? folders : this.nagFolders;
         for ( let i = 0; i < folders.length; i++ ) {
@@ -377,6 +510,15 @@ export class TriggerReviewsComponent implements OnInit {
         }
     }
 
+
+
+
+
+
+
+
+
+    
     /**
      * Recursively prints the folder structure to the console log.  This is 
      * // useful if you need to check the hierarchy structure mid-algorithm.
@@ -397,6 +539,15 @@ export class TriggerReviewsComponent implements OnInit {
         }
     }
 
+
+
+
+
+
+
+
+
+    
     /**
      * Prints the folder structure to the console log.  This is useful if you 
      * need to check the hierarchy structure mid-algorithm.
@@ -410,6 +561,15 @@ export class TriggerReviewsComponent implements OnInit {
         }
     }
 
+
+
+
+
+
+
+
+
+    
     /**
      * Prints the folder structure to the console log.  This is useful if you 
      * need to check the hierarchy structure mid-algorithm.
@@ -426,7 +586,20 @@ export class TriggerReviewsComponent implements OnInit {
         }
     }
 
-    public newFolderMap: Record<string, string> = {};
+
+
+
+
+
+
+
+
+    
+    /**
+     * Maps existing gina folders to existing nag folders.
+     * 
+     * @param newFolderId The id of the new folder.
+     */
     mapGinaFolder( newFolderId: string ): void {
 
         this.dialogService.showSelectTriggerFolderDialog( null, 'Select an existing folder', 'Select an existing folder that you would like to use.' ).subscribe( selectedFolderId => {
@@ -450,6 +623,21 @@ export class TriggerReviewsComponent implements OnInit {
         
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Removes a folder from the gina tree.
+     * 
+     * @param gina The gina tree object to operate against.
+     * @param folder The folder, including children, to remove.
+     */
     private updateGinaFolders( gina: GinaTreeObject, folder: TriggerFolder ) {
         gina.folders = [];
         let id = folder.folderId;
@@ -459,6 +647,21 @@ export class TriggerReviewsComponent implements OnInit {
         }
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Rebuilds the gina folder map and reassigns the folder to each gina folder.
+     * 
+     * @param prevFolderId The previous folder id.
+     * @param selectedFolderId The selected folder id.
+     */
     updateFolders( prevFolderId: string, selectedFolderId: string ) {
         let usedFolderIds: string[] = [];
         this.nagFolderMap = {};
@@ -577,6 +780,15 @@ export class TriggerReviewsComponent implements OnInit {
 
     }
 
+
+
+
+
+
+
+
+
+    
     /**
      * Processes each folder for empty new folders and removes them.
      * 
@@ -590,6 +802,15 @@ export class TriggerReviewsComponent implements OnInit {
         }
     }
 
+
+
+
+
+
+
+
+
+    
     /**
      * Processes the given folder and full hierarchy to determine if the folder should be removed.
      * @param folder The folder to process.
@@ -613,6 +834,22 @@ export class TriggerReviewsComponent implements OnInit {
         return false;
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Filters the list of zone names based on the given value.
+     * 
+     * @returns Returns the list of zone names that match the given value.
+     * 
+     * @param value The value to filter on.
+     */
     private _filterZoneName( value: string ): string[] {
         const fuseConfig = {
             includeScore: true
@@ -635,6 +872,18 @@ export class TriggerReviewsComponent implements OnInit {
         return result.filter( v => v.score < scoreLimit ).map( v => v.item );
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Shows the zone name check panel.
+     */
     showZoneNameCheck() {
         this.panel = 'default';
 
@@ -654,6 +903,18 @@ export class TriggerReviewsComponent implements OnInit {
         } );
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Hides the current panel and shows the previous panel.
+     */
     back() {
         if ( this.panel === 'foldersCheck' ) {
             this.panel = 'duplicatesCheck';
@@ -664,6 +925,18 @@ export class TriggerReviewsComponent implements OnInit {
         }
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Imports the selected triggers.
+     */
     importTriggers() {
         this.dialogService
             .showConfirmationDialog(
@@ -727,6 +1000,18 @@ export class TriggerReviewsComponent implements OnInit {
             } );
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Resets the duplicate check panel.
+     */
     resetDuplicates() {
         this.generateTriggerModels().subscribe( () => {
             this.duplicates = [];
@@ -734,6 +1019,18 @@ export class TriggerReviewsComponent implements OnInit {
         } );
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Shows the duplicate check panel.
+     */
     showDuplicates() {
         
         this.panel = 'duplicatesCheck';
@@ -778,6 +1075,20 @@ export class TriggerReviewsComponent implements OnInit {
         }
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Toggles the fade out class on the given element.
+     * 
+     * @param el The element to toggle the fade out class on.
+     */
     toggleFadeOut( el: HTMLElement ): void {
         if ( el.classList.contains( 'shown' ) ) {
             el.classList.remove( 'shown' );
@@ -786,11 +1097,39 @@ export class TriggerReviewsComponent implements OnInit {
         }
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Returns the ginaName for the trigger with the given triggerId.
+     * 
+     * @param triggerId The triggerId to get the ginaName for.
+     */
     getGinaName( triggerId: string ): string {
         let trigger = this.triggers.find( f => f.nagTrigger.triggerId === triggerId );
         return trigger?.ginaData.ginaName;
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Merges triggers with the same phrase.
+     * 
+     * @param phrase The phrase to merge.
+     */
     mergeSelected( phrase: string ): void {
         let targetTriggerId: string = null;
         let targetGinaName: string = null;
@@ -825,6 +1164,15 @@ export class TriggerReviewsComponent implements OnInit {
         }
     }
 
+
+
+
+
+
+
+
+
+    
     /**
      * Copies the actions of subject trigger onto target trigger.
      * 
@@ -852,6 +1200,20 @@ export class TriggerReviewsComponent implements OnInit {
         return false;
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Ignores the triggers with the given phrase.
+     * 
+     * @param phrase The trigger phrase to ignore.
+     */
     ignoreSelected( phrase: string ): void {
 
         let targetTriggerId: string = null;
@@ -895,6 +1257,20 @@ export class TriggerReviewsComponent implements OnInit {
         }
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Removes a trigger from the import.
+     * 
+     * @param triggerId The id of the trigger to remove from the import.
+     */
     removeFromImport( triggerId: string ): void {
         
         // Remove this trigger from the triggers list.}
@@ -910,6 +1286,15 @@ export class TriggerReviewsComponent implements OnInit {
 
     }
 
+
+
+
+
+
+
+
+
+    
     /**
      * This will tell future Gina import runs to ignore all of the gina triggers in the current model.
      */
@@ -920,28 +1305,112 @@ export class TriggerReviewsComponent implements OnInit {
         } );
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Returns the name for the given trigger id.
+     * 
+     * @param triggerId The id of the trigger to get the name for.
+     */
     getTriggerName( triggerId: string ): string {
         let trigger = this.triggers.find( f => f.nagTrigger.triggerId == triggerId );
         return trigger?.nagTrigger.name ?? 'Unknown';
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Returns the family name for the given trigger id.
+     * 
+     * @param triggerId The id of the trigger to get the family name for.
+     */
     getTriggerFamily( triggerId: string ): string {
         let trigger = this.triggers.find( f => f.nagTrigger.triggerId == triggerId );
         return trigger?.folderFamilyName ?? 'Unknown';
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Returns the gina name for the given trigger id.
+     * 
+     * @param action The action to get the text for.
+     */
     getActionText( action: TriggerAction|OwnedTriggerAction ): string {
         return (action as TriggerAction)?.displayText ?? 'UNKNOWN';
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Returns a label for the given action type.
+     * 
+     * @param actionType The action type to get the label for.
+     */
     getActionTypeLabel( actionType: ActionTypes ): string {
         return ActionTypeLabels( actionType );
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Returns true if the given action type is a timer type.
+     * 
+     * @param actionType The action type to check.
+     */
     isTimerType( actionType: ActionTypes ): boolean {
         return actionType === ActionTypes.Timer || actionType === ActionTypes.DotTimer || actionType === ActionTypes.BeneficialTimer || actionType === ActionTypes.Countdown;
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Returns a label for the given duration.
+     * 
+     * @param seconds The number of seconds for duration.
+     */
     public getDurationLabel( seconds: number | string ): string {
         
         seconds = +seconds;
@@ -971,6 +1440,15 @@ export class TriggerReviewsComponent implements OnInit {
         }
 
     }
+
+
+
+
+
+
+
+
+
 
 }
 
