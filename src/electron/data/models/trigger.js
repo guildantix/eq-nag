@@ -14,6 +14,7 @@ var ActionTypes = {
     '10': 'BeneficialTimer',
     '11': 'DisplayDeathRecap',
     '12': 'ScreenGlow',
+    '13': 'ClearAll',
     DisplayText: 0,
     PlayAudio: 1,
     Speak: 2,
@@ -27,6 +28,8 @@ var ActionTypes = {
     BeneficialTimer: 10,
     DisplayDeathRecap: 11,
     ScreenGlow: 12,
+    ClearAll: 13,
+
 }
 
 // TODO: Why wasn't this updated?
@@ -392,6 +395,47 @@ class TriggerAction {
     textGlowSize = null;
 }
 
+class OwnedTriggerAction extends TriggerAction {
+
+    /** @type {string} */
+    triggerId;
+    /** @type {string} */
+    triggerName;
+    /** @type {string} */
+    phrase;
+    /** @type {'gina'|'nag'} */
+    storeLocation;
+
+    /**
+     * Creates a new owned trigger action object.
+     * 
+     * @param {string} targetTriggerId 
+     * @param {string} targetTriggerName 
+     * @param {string} targetPhrase 
+     * @param {'gina'|'nag'} targetStoreLocation 
+     * @param {TriggerAction} targetAction 
+     */
+    constructor( targetTriggerId, targetTriggerName, targetPhrase, targetStoreLocation, targetAction ) {
+        super();
+        Object.assign( this, targetAction );
+        this.triggerId = targetTriggerId;
+        this.triggerName = targetTriggerName;
+        this.phrase = targetPhrase;
+        this.storeLocation = targetStoreLocation;
+    }
+}
+
+class DuplicateTriggerAction {
+    /** @type {string} */
+    triggerId;
+    /** @type {string} */
+    phrase;
+    /** @type {OwnedTriggerAction[]} */
+    actions;
+    /** @type {TriggerAction} */
+    subjectAction;
+}
+
 class Trigger {
     
     /** @type {string} */
@@ -639,6 +683,15 @@ class TriggerStoreModel {
     packageOverlays;
 }
 
+class GinaToNagOverlay {
+    /** @type {'text' | 'timer'} */
+    GinaOverlayType;
+    /** @type {string} */
+    GinaOverlay;
+    /** @type {string} */
+    NagOverlay;
+}
+
 module.exports = {
     Trigger,
     TriggerAction,
@@ -668,4 +721,7 @@ module.exports = {
     VariableAssignment,
     TriggerStoreModel,
     TriggerCondition,
+    DuplicateTriggerAction,
+    OwnedTriggerAction,
+    GinaToNagOverlay,
 };

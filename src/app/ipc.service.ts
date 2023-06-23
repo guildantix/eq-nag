@@ -3,7 +3,7 @@ import * as Electron from 'electron';
 import { UpdateInfo } from 'electron-updater';
 import { Observable, Observer } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
-import { DataTickModel, DkpEntryModel, TriggerModel, OverlayWindowModel, ActionTypes, FocusEffectSettings, CharacterModel, BasicError, TriggerFolder, FileModel, Tag, AuthorModel, PackageFileModel, TriggerPackageMetaModel, TriggerPackageVersion, FctStylesModel, OverlayBoundsChangedEventArgs, DialogEventArgs, QuickShareMetaModel, LogFileLocation, IpcMessage, DeathRecapPreferences, QuickShareAuthorListTypes, Progress, QuitFailureData } from './core.model';
+import { DataTickModel, DkpEntryModel, TriggerModel, OverlayWindowModel, ActionTypes, FocusEffectSettings, CharacterModel, BasicError, TriggerFolder, FileModel, Tag, AuthorModel, PackageFileModel, TriggerPackageMetaModel, TriggerPackageVersion, FctStylesModel, OverlayBoundsChangedEventArgs, DialogEventArgs, QuickShareMetaModel, LogFileLocation, IpcMessage, DeathRecapPreferences, QuickShareAuthorListTypes, Progress, QuitFailureData, DuplicateTriggerAction } from './core.model';
 import { GinaConfiguration, GinaTriggerGroups } from './gina.model';
 import { ColorUtility } from './utilities';
 
@@ -599,6 +599,22 @@ export class IpcService {
         window.api.ipc.send( 'log:simulate:lines', lines );
     }
 
+    public createNewTriggers( model: TriggerModel[] ): Observable<string[]> {
+        let obs: Observable<string[]> = new Observable<string[]>( ( observer: Observer<string[]> ) => {
+            
+            window.api.ipc.once( 'trigger:mass-create', ( e, triggerIds ) => {
+                this.ngZone.run( () => {
+                    observer.next( triggerIds );
+                    observer.complete();
+                } );
+            } );
+            window.api.ipc.send( 'trigger:mass-create', model );
+
+        } );
+
+        return obs;
+    }
+
     public createNewTrigger( model: TriggerModel ): Observable<string> {
         let obs: Observable<string> = new Observable<string>( ( observer: Observer<string> ) => {
             
@@ -673,6 +689,22 @@ export class IpcService {
                 } );
             } );
             window.api.ipc.send( 'trigger:search:properties', { phrase: phrase, speakText: speakText, displayText: displayText, clipboardText: clipboardText, name: name, comment: comment } );
+
+        } );
+
+        return obs;
+    }
+
+    public searchForDuplicates( triggers: TriggerModel[] ): Observable<DuplicateTriggerAction[]> {
+        let obs: Observable<DuplicateTriggerAction[]> = new Observable<DuplicateTriggerAction[]>( ( observer: Observer<DuplicateTriggerAction[]> ) => {
+            
+            window.api.ipc.once( 'trigger:strict-search:duplicates', ( e, result: DuplicateTriggerAction[] ) => {
+                this.ngZone.run( () => {
+                    observer.next( result );
+                    observer.complete();
+                } );
+            } );
+            window.api.ipc.send( 'trigger:strict-search:duplicates', triggers );
 
         } );
 
@@ -1237,12 +1269,12 @@ export class IpcService {
         return obs;
     }
 
-    public importAudioFile( filename: string ): Observable<string> {
-        let obs: Observable<string> = new Observable<string>( ( observer: Observer<string> ) => {
+    public importAudioFile( filename: string ): Observable<string|undefined> {
+        let obs: Observable<string|undefined> = new Observable<string|undefined>( ( observer: Observer<string|undefined> ) => {
 
-            window.api.ipc.once( 'audio-file:import', ( e, fileId: string ) => {
+            window.api.ipc.once( 'audio-file:import', ( e, fileId: string|undefined ) => {
                 this.ngZone.run( () => {
-                    observer.next( fileId );
+                    observer.next( fileId ?? 'asdf' );
                     observer.complete();
                 } );
             } );
@@ -1283,6 +1315,34 @@ export class IpcService {
                 } );
             } );
             window.api.ipc.send( 'settings:get:author', null );
+
+        } );
+
+        return obs;
+    }
+
+    public resetHiddenModalIds(): void {
+        window.api.ipc.send( 'settings:set:hidden-modal-ids', [] );
+    }
+
+    public saveHiddenModalIds( hiddenModalIds: string[] ): void {
+        window.api.ipc.send( 'settings:set:hidden-modal-ids', hiddenModalIds );
+    }
+
+    public addHiddenModalIds( modalId: string ): void {
+        window.api.ipc.send( 'settings:set:hidden-modal-ids:add', modalId );
+    }
+
+    public getHiddenModalIds(): Observable<string[]> {
+        let obs: Observable<string[]> = new Observable<string[]>( ( observer: Observer<string[]> ) => {
+            
+            window.api.ipc.once( 'settings:get:hidden-modal-ids', ( e, hiddenModalIds: string[] ) => {
+                this.ngZone.run( () => {
+                    observer.next( hiddenModalIds );
+                    observer.complete();
+                } );
+            } );
+            window.api.ipc.send( 'settings:get:hidden-modal-ids', null );
 
         } );
 
@@ -1459,7 +1519,7 @@ export class IpcService {
                     observer.complete();
                 } );
             } );
-            window.api.ipc.send( 'settings:get:ignoredGinaObjects', null );
+            window.api.ipc.send( 'settings:get:ignore-gina-objects', null );
 
         } );
 
@@ -1473,7 +1533,12 @@ export class IpcService {
     /**
      * Returns the GINA configuration file if the GINA data folder was found.
      */
-    public getGinaConfiguration(): Observable<GinaConfiguration> {
+    public getGinaConfiguration( refreshCache: boolean = false ): Observable<GinaConfiguration> {
+        
+        if ( refreshCache === true ) {
+            this._ginaConfigCache = null;
+        }
+
         let obs: Observable<GinaConfiguration> = new Observable<GinaConfiguration>( ( observer: Observer<GinaConfiguration> ) => {
             if ( this._ginaConfigCache === null ) {
                 window.api.ipc.once( 'gina:get:configuration', ( e, ginaConfig: GinaConfiguration ) => {

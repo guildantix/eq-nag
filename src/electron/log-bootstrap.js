@@ -206,6 +206,15 @@ class LogBootstrapper {
                 delete logWatchers[ chr.characterId ];
             }
         } );
+
+        ipcMain.on( 'log:clear-all:done', function ( event, instanceId ) {
+            for ( let key in logWatchers ) {
+                if ( logWatchers.hasOwnProperty( key ) && logWatchers[ key ].window != null ) {
+                    logWatchers[ key ].window.webContents.send( 'log:clear-all:done', null );
+                }
+            }
+        } );
+
     }
 
 

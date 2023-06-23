@@ -110,7 +110,8 @@ fieldset {
     text-align: center;
 }
 
-p.code-block {
+p.code-block,
+span.code-block {
     span {
         display: block;
         padding: 0;
@@ -219,6 +220,9 @@ table {
             font-size: 18px;
         }
         margin-left: 5px;
+    }
+    mat-checkbox {
+        margin-right: 5px;
     }
     min-height: unset !important;
     height: 27px !important;
@@ -419,7 +423,7 @@ fieldset.trigger-property-group {
 
     .field-list {
         .field-line{
-            > label {
+            > label, div {
                 padding: 5px;
                 letter-spacing: 0.5px;
                 min-width: 200px;

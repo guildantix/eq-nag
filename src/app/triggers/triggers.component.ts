@@ -2,7 +2,7 @@ import { FlatTreeControl } from '@angular/cdk/tree';
 import { Component, ElementRef, HostListener, NgZone, OnInit, ViewChild } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTreeFlatDataSource, MatTreeFlattener } from '@angular/material/tree';
-import { QuickShareFileModel, QuickShareMetaModel, Tag, TriggerFolder, TriggerModel } from '../core.model';
+import { DeathRecapPreferences, QuickShareFileModel, QuickShareMetaModel, Tag, TriggerFolder, TriggerModel } from '../core.model';
 import { DialogService } from '../dialogs/dialog.service';
 import { IpcService } from '../ipc.service';
 import * as _ from 'lodash-es';
@@ -52,6 +52,7 @@ export class TriggersComponent implements OnInit {
     public processing: boolean = false;
     private restoreFolderHierarchyTimeoutId: number | null = null;
     public restoreFolderHierarchy: () => void | null = null;
+    private folderMap: Record<string, string> = {};
 
     private _indexRecords: number = 0;
     private _maxRecords: number = 0;
@@ -92,6 +93,8 @@ export class TriggersComponent implements OnInit {
 
     private _treeExpanded: boolean = false;
     private triggerFolders: TriggerFolder[] = [];
+
+    public deathRecapPreferences: DeathRecapPreferences = null;
     
     constructor(
         private snackBar: MatSnackBar,
@@ -143,6 +146,7 @@ export class TriggersComponent implements OnInit {
             
         } );
 
+        this.ipcService.getDeathRecapPreferences().subscribe( recapPrefs => this.deathRecapPreferences = recapPrefs ?? null );
         this.ipcService.getAppIsDev().subscribe( isDev => this.isDev = isDev );
         this.ipcService.getTriggerFolders().subscribe( folders => {
             this.updateViewTriggerData( folders );
@@ -160,10 +164,74 @@ export class TriggersComponent implements OnInit {
 
     
     /**
+     * Recursively expands the given folder, and it's parents.
+     * 
+     * @param folderId The id of the folder to expand.
+     */
+    private expandParents( folderId: string ): void {
+        let node = this.treeControl.dataNodes.find( f => f.folderId === folderId );
+        this.treeControl.expand( node );
+        let parentId = this.folderMap[ folderId ];
+        if ( parentId ) {
+            this.expandParents( parentId );
+        }
+    }
+
+
+
+
+
+
+
+
+
+    
+    /**
+     * If the user has not selected a folder, the user will be presented with 
+     * the folder select dialog.  After a selection has been made, or if a 
+     * folder has already been selected, then the observable is resolved and 
+     * completed.
+     * 
+     * @param title The title of the dialog.
+     * @param description The message to display to the user if the dialog is shown.
+     */
+    private requireFolderSelect( title?: string, description?: string ): Observable<void> {
+        let obs = new Observable<void>( sub => {
+            
+            if ( !this.selectedFolderId ) {
+                this.dialogService.showSelectTriggerFolderDialog( null, title, description ).subscribe( folderId => {
+                    if ( this.selectedFolderId !== folderId ) {
+                        this.expandParents( folderId );
+                        this.toggleSelectedFolder( folderId );
+                    }
+                    sub.next();
+                    sub.complete();
+                } );
+            } else {
+                sub.next();
+                sub.complete();
+            }
+
+        } );
+        return obs;
+    }
+
+
+
+
+
+
+
+
+
+    
+    /**
      * Displays the new trigger dialog.
      */
     public showNewTriggerDialog(): void {
-        this.ipcService.showNewTriggerDialog( this.selectedFolderId );
+        this.requireFolderSelect( 'Select a Folder', 'What folder would you like to put this trigger in?' ).subscribe( () => {
+            this.ipcService.showNewTriggerDialog( this.selectedFolderId );
+        } );
     }
 
 
@@ -179,7 +247,9 @@ export class TriggersComponent implements OnInit {
      * Displays the new dot timer wizard dialog.
      */
     public showNewDotTimerDialog(): void {
-        this.dialogService.showNewDotTimerDialog( this.selectedFolderId );
+        this.requireFolderSelect( 'Select a Folder', 'What folder would you like to put this trigger in?' ).subscribe( () => {
+            this.dialogService.showNewDotTimerDialog( this.selectedFolderId );
+        } );
     }
 
 
@@ -195,7 +265,9 @@ export class TriggersComponent implements OnInit {
      * Displays the new dot timer wizard dialog.
      */
     public showNewRaidAbilityDialog(): void {
-        this.dialogService.showNewRaidAbilityDialog( this.selectedFolderId );
+        this.requireFolderSelect( 'Select a Folder', 'What folder would you like to put this trigger in?' ).subscribe( () => {
+            this.dialogService.showNewRaidAbilityDialog( this.selectedFolderId );
+        } );
     }
 
 
@@ -211,7 +283,63 @@ export class TriggersComponent implements OnInit {
      * Displays the new dot timer wizard dialog.
      */
     public showNewBuffTimerDialog(): void {
-        this.dialogService.showNewBuffTimerDialog( this.selectedFolderId );
+        this.requireFolderSelect( 'Select a Folder', 'What folder would you like to put this trigger in?' ).subscribe( () => {
+            this.dialogService.showNewBuffTimerDialog( this.selectedFolderId );
+        } );
+    }
+
+
+
+
+
+
+
+
+
+    
+    /**
+     * Copies the death recap hotbutton to the clipboard.
+     */
+    public copyDeathRecapHotkey(): void {
+        this.copyHotkey( '/hot "Death Recap" /em wonders how they died.' );
+    }
+
+
+
+
+
+
+
+
+
+    
+    /**
+     * Copies the clear all hotbutton to the clipboard.
+     */
+    public copyClearAllHotkey(): void {
+        this.copyHotkey( '/hot "Clear All" /em clears their mind.' );
+    }
+
+
+
+
+
+
+
+
+
+    
+    /**
+     * Copies the given hot button text to the clipboard and tells the user it's 
+     * ready for use.
+     * 
+     * @param hotkeyText The hotbutton text to copy to the clipboard.
+     */
+    public copyHotkey( hotkeyText: string ): void {
+        this.ipcService.sendTextToClipboard( hotkeyText );
+
+        this.snackBar.open( 'The command has been copied to your clipboard!', 'Dismiss', { duration: 5000 } );
+        this.dialogService.showInfoDialog( 'Hotkey Help', [ 'The command to create the hotkey has been copied to your clipboard.', 'Paste the command into EverQuest and hit "Enter" to create the hotkey and then place it into your hotbar.' ], 'normal', 'triggers-component:copy-hotkey:success-modal' );
     }
 
 
@@ -664,6 +792,7 @@ export class TriggersComponent implements OnInit {
     private updateViewTriggerData( folders: TriggerFolder[] ): void {
         
         this.selectedFolderId = folders.findIndex( f => f.folderId === this.selectedFolderId ) > -1 ? this.selectedFolderId : null;
+        this.folderMap = TriggerFolder.getFolderAncestryMap( folders );
         this.triggerFolders = folders;
         this.dataSource.data = folders;
         this.expandFolders( folders );
@@ -1767,6 +1896,17 @@ export class TriggersComponent implements OnInit {
             }
         } );
 
+    }
+
+    /**
+     * Opens the gina importer window.
+     */
+    ginaImporter() {
+        this.ipcService.showGinaImportWindow().subscribe( loaded => {
+            if ( !loaded ) {
+                this.dialogService.showErrorDialog( 'GINA Import', 'Could not load GINA data.' );
+            }
+        } );
     }
 
 

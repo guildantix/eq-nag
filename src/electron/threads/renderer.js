@@ -107,6 +107,8 @@ class OverlayInstance {
     hideTargetLabel;
     /** @type {OverlayComponent[]} */
     overlayComponents;
+    /** @type {(OverlayComponent|FctModel)[]} */
+    overlayFctComponents;
     /** @type {string} */
     encapsulationId;
     /** @type {number} */
@@ -162,6 +164,7 @@ var screenGlower = null;
 var screenGlowTimerId = null;
 let showCriticalsInline = false;
 const intMaxValue = 9007199254740991;
+let uuid = 0;
 
 
 
@@ -307,6 +310,7 @@ function Renderer( originX, originY, glowOnStart ) {
         } );
 
     ipcRenderer.on( 'renderer:window:enable-edit', function ( event, overlayId ) {
+        moveToTop( overlayInstances[ overlayId ].dom );
         enableMoveResize( overlayInstances[ overlayId ].dom );
     } );
 
@@ -505,6 +509,10 @@ function Renderer( originX, originY, glowOnStart ) {
         ( event, fctShowCriticalsInline ) => {
             showCriticalsInline = fctShowCriticalsInline === true;
         } );
+
+    ipcRenderer.on( 'renderer:clear-all', function () {
+        clearAll();
+    } );
     
     speechSynthesis.onvoiceschanged = () => {
         voiceOptions = speechSynthesis.getVoices();
@@ -528,7 +536,7 @@ function Renderer( originX, originY, glowOnStart ) {
  */
 function initializeOverlay( overlay ) {
     let content;
-    let div = document.createElement( 'div' );
+    let div = createElement( 'div', overlay.overlayId );
 
     if ( overlay.overlayType === 'FCT' ) {
         content = overlayFctTemplate( {} );
@@ -566,6 +574,7 @@ function initializeOverlay( overlay ) {
         groupHeaderWeight: 400,
         hideTargetLabel: false,
         overlayComponents: [],
+        overlayFctComponents: [],
     };
 
     overlayInstances[ overlay.overlayId ].encapsulationId = '_' + nanoid();
@@ -717,7 +726,7 @@ function updateOverlay( overlayId, model ) {
         contentArea.style.textShadow = textShadow;
     
         // Calculate the height of dot texts.
-        let pDot = document.createElement( 'p' );
+        let pDot = createElement( 'p' );
         pDot.classList.add( 'dot-text' );
         pDot.style.visibility = 'hidden';
         pDot.innerHTML = '&nbsp;';
@@ -868,8 +877,10 @@ function renderFct( overlayId, comp ) {
     try {
         
         let fctOverlay = overlayInstances[ overlayId ];
+        fctOverlay.overlayFctComponents.push( comp );
+        /** @type {HTMLDivElement} */
         let contentArea = fctOverlay.dom.querySelector( '.overlay-content-area' );
-        let div = document.createElement( 'div' );
+        let div = createElement( 'div' );
 
         if ( comp.fctType === FctTypes.dmgOut ) {
             div.classList.add( 'fct-dmg-out' );
@@ -958,6 +969,23 @@ function renderFct( overlayId, comp ) {
 
         }
 
+        for ( let i = fctOverlay.overlayFctComponents.length - 1; i > 0; i-- ) {
+            const component = fctOverlay.overlayFctComponents[ i ];
+
+            if ( !component.critical && component.dom.offsetTop + component.dom.offsetHeight < 0 ) {
+                if ( component.intervalId > 0 ) {
+                    window.clearTimeout( component.intervalId );
+                }
+                component.intervalId = window.setTimeout( () => {
+                    component.dom.parentNode.removeChild( component.dom );
+                }, 500 );
+                component.dom.classList.add( 'animate-fade-out-now' );
+
+                fctOverlay.overlayFctComponents.splice( i, 1 );
+            }
+
+        }
+
     } catch ( error ) {
         logError( error, 'fct', overlayId, comp );
 
@@ -1004,7 +1032,7 @@ function render( overlayId, comp ) {
             if ( comp?.action?.actionType === ActionTypes.DisplayText ) {
                 comp.removeAt = new Date( now.setSeconds( comp.action.duration ) );
                 let content = displayTextTemplate( { value: StringUtilities.format( comp.action.displayText, comp.matches ) } );
-                let div = document.createElement( 'div' );
+                let div = createElement( 'div' );
                 div.innerHTML = content;
                 div.style.animation = `animate-fadeout ${comp.action.duration * 1.05}s ease`;
                 comp.dom = div;
@@ -1045,6 +1073,14 @@ function render( overlayId, comp ) {
                     comp.dom.parentNode.removeChild( comp.dom );
                     ArrayUtilities.remove( overlayInstances[ overlayId ].overlayComponents, f => f.instanceId == comp.instanceId );
                 }, comp.action.duration * 1000 );
+                
+                // Create a method that will remove the component from the overlay.
+                comp.removeComponent = () => {
+                    window.clearInterval( comp.intervalId );
+                    comp.dom.parentNode && comp.dom.parentNode.removeChild( comp.dom );
+                    ArrayUtilities.remove( overlayInstances[ overlayId ].overlayComponents, f => f.instanceId == comp.instanceId );
+                };
+
                 overlayInstances[ overlayId ].overlayComponents.push( comp );
 
             } else if ( comp?.action?.actionType === ActionTypes.Timer
@@ -1295,7 +1331,7 @@ function enableMoveResize( dom ) {
     dom.classList.add( 'drag' );
 
     for ( let i = 0; i < resizeHandles.length; i++ ) {
-        let handle = document.createElement( 'span' );
+        let handle = createElement( 'span' );
         handle.classList.add( resizeHandles[ i ] );
         handle.classList.add( 'mouse-enabled' );
         dom.appendChild( handle );
@@ -1469,7 +1505,7 @@ function createGroupedDotTimer( overlayId, contentArea, group, comp ) {
     let displayText = getTimerLabel( overlayId, comp );
     let content = targetGroupTimerTemplate( { value: displayText } );
 
-    let div = document.createElement( 'div' );
+    let div = createElement( 'div' );
     div.innerHTML = content;
     comp.dom = div;
     
@@ -1525,7 +1561,7 @@ function createGroupedTimer( overlayId, contentArea, group, comp ) {
     let displayText = getTimerLabel( overlayId, comp );
     let content = targetGroupTimerTemplate( { value: displayText } );
 
-    let div = document.createElement( 'div' );
+    let div = createElement( 'div' );
     div.innerHTML = content;
     comp.dom = div;
     
@@ -1586,7 +1622,7 @@ function getTimerGroup( overlayId, contentArea, groupName ) {
     }
 
     let content = targetGroupTemplate( { name: groupName } );
-    let div = document.createElement( 'div' );
+    let div = createElement( 'div' );
     div.classList.add( 'mob-dot-group' );
     div.innerHTML = content;
     let h6 = div.querySelector( 'h6' );
@@ -1658,7 +1694,7 @@ function createUngroupedDotTimer( overlayId, contentArea, comp ) {
     let content = timerTemplate( { value: displayText } );
 
     // Create the component's dom element and append it to the content area.
-    let div = document.createElement( 'div' );
+    let div = createElement( 'div' );
     div.innerHTML = content;
     
     if ( comp.action.timerIcon != null ) {
@@ -1703,7 +1739,7 @@ function createUngroupedTimer( overlayId, contentArea, comp ) {
     let content = timerTemplate( { value: displayText } );
 
     // Create the component's dom element and append it to the content area.
-    let div = document.createElement( 'div' );
+    let div = createElement( 'div' );
     div.innerHTML = content;
     
     if ( comp.action.timerIcon != null ) {
@@ -1820,7 +1856,7 @@ function applyTimerSettings( overlayId, contentArea, comp, group ) {
     }
 
     // Set the update method.
-    comp.intervalId = window.setInterval( () => {
+    comp.intervalId = startInterval( () => {
 
         let perc = 0;
         let infinite = false;
@@ -2422,6 +2458,14 @@ function playAudioFile( fileId ) {
 }
 
 
+
+
+
+
+
+
+
+
 /**
  * Shows a full glow on the primary monitor.
  * 
@@ -2437,7 +2481,7 @@ function renderGlow( color, duration, flash ) {
 
     if ( !screenGlower ) {
         let bounds = screen.getPrimaryDisplay().bounds;
-        let content = document.createElement( 'div' );
+        let content = createElement( 'div' );
 
         // box-shadow: inset 0 0 30px #00f;
         content.classList.add( 'screen-glow' );
@@ -2582,6 +2626,105 @@ function countCritX( overlayId, x ) {
     let c = 0;
     overlayInstances[ overlayId ].criticals[ x ].forEach( pos => c += pos ? 1 : 0 );
     return c;
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Creates a new DOM element, but does not add it to the dom.
+ * 
+ * @param {string|null} tagName The tag name.
+ * @param {string|number|null} id The id of the element.
+ * @returns Returns the created element.
+ */
+function createElement( tagName, id ) {
+    
+    tagName = tagName ? tagName : 'div';
+    id = id ? id : ++uuid;
+    
+    let el = document.createElement( 'div' );
+    el.setAttribute( 'id', `${id}` );
+
+    return el;
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Executes fn and sets an interval for continuous execution.
+ * 
+ * @returns {number} Returns the interval id.
+ * 
+ * @param {() => void} fn The interval function.
+ * @param {number} delay The delay, in milliseconds.
+ */
+function startInterval(fn, delay) {
+    window.setTimeout( fn );
+    return window.setInterval( fn, delay );
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Instantly removes all trigger elements from the renderer and cancels all cancellable components.
+ */
+function clearAll() {
+
+    // Instantly removes the screen glow.
+    if ( screenGlowTimerId > -1 ) {
+        window.clearTimeout( screenGlowTimerId );
+    }
+
+    if ( screenGlower ) {
+        document.body.removeChild( screenGlower );
+        screenGlower = null;
+    }
+
+    // Loop through each overlay and destroy each component.
+    let components = [];
+    for ( const overlayId of Object.keys( overlayInstances ) ) {
+
+        if ( overlayInstances[ overlayId ].groupByTarget ) {
+
+            for ( const key of Object.keys( overlayInstances[ overlayId ].overlayGroups ) ) {
+                overlayInstances[ overlayId ].overlayGroups[ key ].components?.forEach( comp => components.push( comp ) );
+            }
+        
+        } else {
+    
+            overlayInstances[ overlayId ].overlayComponents?.forEach( comp => components.push( comp ) );
+
+        }
+
+    }
+    
+    components.forEach( comp => {
+        comp.removeComponent();
+        ipcRenderer.send( 'log:destroy:component', comp.instanceId );
+    } );
+    
+    ipcRenderer.send( 'log:clear-all:done', null );
 }
 
 module.exports = Renderer;

@@ -20,6 +20,9 @@
             -webkit-user-select: none;
             user-select: none;
         }
+        body::-webkit-scrollbar { 
+            display: none;
+        }
 
         div.highlight-border {
             border: 6px solid #00d4ff59;
@@ -220,6 +223,15 @@
         @keyframes animate-fadeout {
             0% { opacity: 1; }
             90% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+
+        .animate-fade-out-now {
+            animation: animate-fadout-now 0.5s ease;
+        }
+
+        @keyframes animate-fadout-now {
+            0% { opacity: 1; }
             100% { opacity: 0; }
         }
 

@@ -427,6 +427,11 @@ class WindowManager {
             this.ginaImportWindow.setBackgroundColor( '#1a1a1a' );
             this.configureRendererMouseBlockingOnMoveResize( this.ginaImportWindow );
 
+            // Open the DevTools.
+            if ( app.isDev() ) {
+                this.ginaImportWindow.webContents.openDevTools( { mode: 'undocked' } );
+            }
+            
         } );
 
         ipcMain.on( 'trigger:dialog:library', ( event, arg ) => {
@@ -469,6 +474,10 @@ class WindowManager {
 
         ipcMain.on( 'window:update-notes:show', ( event, arg ) => {
             this.showUpdateNotes(event, arg);
+        } );
+
+        ipcMain.on( 'renderer:clear-all', ( event, arg ) => {
+            this.#renderer.webContents.send( 'renderer:clear-all', null );
         } );
         
         userPreferencesDatabase.onFctStyleChanges.push( fctStyles => {
@@ -594,9 +603,10 @@ class WindowManager {
         require( "@electron/remote/main" ).enable( renderer.webContents );
         
         // TODO: Put the padding in the size calculations and not here.
+        // Reducing the height by 1 pixel will allow access to a hidden taskbar.
         renderer.setBounds( {
             width: bounds.width,
-            height: bounds.height,
+            height: bounds.height - 1,
             x: bounds.x,
             y: bounds.y,
         } );
@@ -930,7 +940,9 @@ class WindowManager {
         if ( rendererOnTopId ) {
             clearTimeout( rendererOnTopId );
         }
-        this.#renderer?.close();
+        if ( !this.#renderer?.isDestroyed() ) {
+            this.#renderer?.close();
+        }
         this.#renderer = null;
     }
 
@@ -1077,7 +1089,8 @@ class WindowManager {
         this.#renderer.movable = true;
         this.#renderer.resizable = true;
 
-        this.#renderer?.setSize( newSize.width, newSize.height );
+        // Reducing the height by 1 pixel will allow access to a hidden taskbar.
+        this.#renderer?.setSize( newSize.width, newSize.height - 1 );
         this.#renderer?.setPosition( newSize.x, newSize.y );
 
         // Lock this window back down.

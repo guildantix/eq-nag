@@ -1,0 +1,40 @@
+{
+    "triggerId": "hzOXzyXsZANWGcJq",
+    "name": "Display Variable SpellBeingCast",
+    "enabled": true,
+    "capturePhrases": [
+        {
+            "useRegEx": true,
+            "requirePreviousPhrase": false,
+            "duration": null,
+            "phraseId": "bi8mXZAgB7zGnSAc",
+            "phrase": "^Eryndhel requests an update."
+        }
+    ],
+    "comments": "",
+    "actions": [
+        {
+            "phrases": [
+                "bi8mXZAgB7zGnSAc"
+            ],
+            "actionType": 0,
+            "overlayId": "gx4ySJU9Cj35xR1n",
+            "displayText": "SpellBeingCast == ${SpellBeingCast}",
+            "duration": 15,
+            "actionId": "n95VfakBr8TbCKnE",
+            "restartBehavior": 0
+        }
+    ],
+    "captureMethod": "Any match",
+    "conditions": [
+        {
+            "conditionId": "It3bUfInYVi4aGYB",
+            "conditionType": 1,
+            "variableName": "SpellBeingCast",
+            "operatorType": 2
+        }
+    ],
+    "classLevels": [],
+    "predefined": true,
+    "onlyExecuteInDev": true
+}

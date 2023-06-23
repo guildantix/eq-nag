@@ -18,9 +18,12 @@ import { WebComponentsModule } from '../web-components/web-components.module';
 import { HttpClientModule } from '@angular/common/http';
 import { MarkdownModule } from 'ngx-markdown';
 import { UpdateNotesWindowComponent } from './update-notes-window/update-notes-window.component';
+import { TriggerReviewsComponent } from './gina-import-window/trigger-reviews/trigger-reviews.component';
+import { CoreModule } from '../core/core.module';
 
 @NgModule({
     imports: [
+        CoreModule,
         BrowserModule,
         FormsModule,
         ReactiveFormsModule,
@@ -41,6 +44,7 @@ import { UpdateNotesWindowComponent } from './update-notes-window/update-notes-w
     ],
     declarations: [
         GinaImportStepperComponent,
+        TriggerReviewsComponent,
         GinaImportWindowComponent,
         TriggerLibraryWindowComponent,
         NewTriggerPackageComponent,

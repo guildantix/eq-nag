@@ -5,7 +5,7 @@ const { TriggerAction, ActionTypes, TriggerConditionTypes, OperatorTypes, Charac
 const { QuickShareAuthorListTypes } = require( '../data/models/common' );
 const { PhraseParse, LogTrigger } = require( './log.model' );
 const { OverlayComponent, OverlayWindow, TriggerSecondaryActionModel } = require( '../data/models/overlay-window' );
-const CharacterModel = require( '../data/models/character' );
+const { CharacterModel } = require( '../data/models/character' );
 const customAlphabet = require( 'nanoid' ).customAlphabet;
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const nanoid = customAlphabet( alphabet, 16 );
@@ -109,6 +109,12 @@ let quickShareAuthorsListType = QuickShareAuthorListTypes.Disabled;
 
 /** @type {string[]} */
 let quickShareAuthorsList = [];
+
+/** @type {HTMLAudioElement[]} */
+let audioPlayers = [];
+
+/** @type {string} */
+let logFilePath = null;
 // Common errors:
 //  ${C} instead of {C}
 //  ${CharacterName} isntead of ${Character}
@@ -257,6 +263,8 @@ function LogWatcher(character, logPosition) {
          * @param {string} data The log file path.
          */
         function ( event, data ) {
+            
+            logFilePath = data;
 
             if ( logParseTimeoutId > 0 ) {
                 window.clearTimeout( logParseTimeoutId );
@@ -517,6 +525,10 @@ function LogWatcher(character, logPosition) {
                 executeTriggerAction( instanceData.trigger, action, new Date(), instanceData.res, deltaTime, false );
             }
         } );
+    
+    ipcRenderer.on( 'log:clear-all:done', () => {
+        // This used to speak, but it was a bit much.
+    } );
 
     ipcRenderer.send( 'settings:get:persistent-storage', null );
 
@@ -681,6 +693,29 @@ function generateTriggerFns() {
             trigger._checkConditions = function () {
                 let conditionsPassed = true;
 
+                if ( trigger._passesClassCondition === false ) {
+                    return false;
+
+                } else if ( StringUtilities.isNullOrWhitespace( charModel.class ) ) {
+                    trigger._passesClassCondition = true;
+                    
+                } else if ( trigger._passesClassCondition === undefined && trigger.classLevels?.length > 0 ) {
+                    let classLevels = trigger.classLevels.filter( f => f.class?.trim().length > 0 ) ?? [];
+
+                    trigger._passesClassCondition = classLevels.length === 0;
+                    
+                    for ( let i = 0; i < classLevels.length; i++ ) {
+                        if ( classLevels[ i ].class === charModel.class ) {
+                            trigger._passesClassCondition = true;
+                            break;
+                        }
+                    }
+
+                    if ( !trigger._passesClassCondition ) {
+                        return false;
+                    }
+                }
+
                 if ( trigger._onCooldown ) {
                     // If the trigger is on cooldown, determine if the trigger must remain on cooldown.
                     let ellapsedCooldown = DateUtilities.timeSince( trigger._cooldownStart, new Date() );
@@ -688,7 +723,9 @@ function generateTriggerFns() {
                         trigger._onCooldown = false;
                     }
 
-                    return !trigger._onCooldown;
+                    if ( trigger._onCooldown ) {
+                        return false;
+                    }
                 }
 
                 trigger._conditionResults = {};
@@ -1265,29 +1302,37 @@ function parseLogEntries( raw, simulating, padTime ) {
 
         let entryMatched = false;
         triggers.forEach( trigger => {
-            if ( !!trigger.enabled ) {
-                trigger._parse( log, ( res, deltaTime ) => {
-                    trigger.actions.forEach( action => {
-                        // This used to execute actions if there are no phrases on the action, but now it doesn't because the action may exist only as a subaction
-                        // ( action.phrases == null || action.phrases?.length === 0 || action.phrases?.indexOf( res.phraseId ) > -1 )
-                        if ( ( isDev || !action.onlyExecuteInDev ) && action.phrases?.indexOf( res.phraseId ) > -1 ) {
+            
+            try {
+                
+                if ( !!trigger.enabled ) {
+                    trigger._parse( log, ( res, deltaTime ) => {
+                        trigger.actions.forEach( action => {
+                            // This used to execute actions if there are no phrases on the action, but now it doesn't because the action may exist only as a subaction
+                            // ( action.phrases == null || action.phrases?.length === 0 || action.phrases?.indexOf( res.phraseId ) > -1 )
+                            if ( ( isDev || !action.onlyExecuteInDev ) && action.phrases?.indexOf( res.phraseId ) > -1 ) {
 
-                            enableLogging && sendInformationToLog( `Execute trigger action [${trigger.name}] : ${ActionTypes[ action.actionType ]}`, 24 );
-                            enableLogging && sendInformationToLog( `    ||${raw}||`, 24 );
+                                enableLogging && sendInformationToLog( `Execute trigger action [${trigger.name}] : ${ActionTypes[ action.actionType ]}`, 24 );
+                                enableLogging && sendInformationToLog( `    ||${raw}||`, 24 );
 
-                            executeTriggerAction( trigger, action, timestamp, res, deltaTime, simulating );
+                                executeTriggerAction( trigger, action, timestamp, res, deltaTime, simulating );
+                            }
+                        } );
+                        entryMatched = true;
+
+                        // If the trigger has a cooldown, start the cooldown now.
+                        if ( trigger.useCooldown ) {
+                            trigger._onCooldown = true;
+                            trigger._cooldownStart = new Date();
                         }
+
                     } );
-                    entryMatched = true;
+                }
 
-                    // If the trigger has a cooldown, start the cooldown now.
-                    if ( trigger.useCooldown ) {
-                        trigger._onCooldown = true;
-                        trigger._cooldownStart = new Date();
-                    }
-
-                } );
+            } catch ( error ) {
+                logError( error, raw, simulating, padTime );
             }
+            
         } );
 
         if ( entryMatched ) {
@@ -1444,7 +1489,54 @@ function executeTriggerAction( trigger, action, timestamp, res, deltaTime, simul
         
         displayScreenGlow(action);
         
+    } else if ( action.actionType === ActionTypes.ClearAll ) {
+        /* --== Clear All ==-- */
+
+        clearAll();
     }
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Sends the command to the render to clear all overlay components.  Restarts all counters.
+ */
+function clearAll() {
+
+    for ( const key of Object.keys( counters ) ) {
+        counters[ key ].value = 0;
+    }
+
+    for ( const key of Object.keys( storedVariables ) ) {
+        storedVariables[ key ] = [];
+    }
+
+    let len = audioPlayers?.length ?? 0;
+    for ( let i = len - 1; i >= 0; i-- ) {
+        let player = audioPlayers.splice( i, 1 )[ 0 ];
+        player.pause();
+        player = null;
+    }
+
+    utterances = [];
+    speechSynthesis.cancel();
+
+    changingLogFile = true;
+    window.setTimeout( () => {
+        changingLogFile = false;
+        // currentPosition = null;
+        backfind( logFilePath, () => startParsingLogFile( logFilePath, currentPosition >= 0 ? currentPosition : null ) );
+    }, logParseTimer );
+
+    ipcRenderer.send( 'renderer:clear-all', null );
+
 }
 
 
@@ -2488,6 +2580,13 @@ function playAudioFile( fileId, audioVolume ) {
             let player = new Audio( url );
             player.volume = ( masterVolume * ( audioVolume > 0 ? audioVolume / 100 : 1 ) ) / 100;
             player.play();
+            audioPlayers.push( player );
+            player.addEventListener( 'ended', ( event ) => {
+                let i = audioPlayers.indexOf( player );
+                if ( i > -1 ) {
+                    audioPlayers.splice( i, 1 );
+                }
+            } );
         }
     } );
     ipcRenderer.send( 'audio-file:get:url', fileId );

@@ -18,6 +18,9 @@ const {
     QuickShareModel,
     QuickShareMetaModel,
     TriggerStoreModel,
+    DuplicateTriggerAction,
+    OwnedTriggerAction,
+    TriggerConditionTypes,
 } = require( './models/trigger' );
 const ForwardRef = require( '../forward-ref' );
 const customAlphabet = require( 'nanoid' ).customAlphabet;
@@ -31,6 +34,14 @@ const eqZones = require( './models/everquest-zones' );
 const FilesDatabaseStore = require( "./files-database" );
 const UserPreferencesStore = require( "./user-preferences" );
 const { migrateTriggerData } = require( "./migrations/trigger-database-migrations" );
+/** @type {Trigger} */
+const clearAllTrigger = require( "./predefined-triggers/clear-all.json" );
+/** @type {Trigger} */
+const captureZoneTrigger = require( "./predefined-triggers/capture-zone.json" );
+/** @type {Trigger} */
+const displaySpellBeingCastTrigger = require( "./predefined-triggers/display-spell-being-cast.json" );
+/** @type {Trigger} */
+const captureCastingTrigger = require( "./predefined-triggers/capture-casting.json" );
 
 /** @type {FilesDatabaseStore} */
 var _fileStore;
@@ -172,7 +183,6 @@ class TriggerDatabaseStore extends Store {
      * Loads predefined triggers and replaces any changes made by the user with the predfined value.
      */
     processPredefinedTriggers() {
-        let captureCastingTrigger = { "triggerId": "trGkfio6z2xs6hAh", "name": "Capture spell casting", "enabled": true, "capturePhrases": [ { "useRegEx": true, "requirePreviousPhrase": false, "duration": null, "phrase": "^You begin casting (.*)\\.", "phraseId": "v7GDFrDCcFwhTAOP" }, { "useRegEx": true, "requirePreviousPhrase": false, "duration": null, "phraseId": "SmZAE0oEzuhq1cqh", "phrase": "^Your ${SpellBeingCast} spell is interrupted\\." }, { "useRegEx": true, "requirePreviousPhrase": false, "duration": null, "phraseId": "iNy1LoUUFcXnaHws", "phrase": "^(.*) resisted your ${SpellBeingCast}" }, { "useRegEx": true, "requirePreviousPhrase": false, "duration": null, "phraseId": "CC31CtgDiqwi8xV4", "phrase": "^Your ${SpellBeingCast} spell did not take hold\\. \\(Blocked by (.*)\\.\\)" }, { "requirePreviousPhrase": false, "duration": null, "phraseId": "9ccr5pJj08H9rEi7", "phrase": "^Your ${SpellBeingCast} spell fizzles!$", "useRegEx": true } ], "comments": "This trigger will capture the spell casting of the caster and store the spell being cast into a variable for use with other triggers.", "actions": [ { "actionType": 5, "variableName": "SpellBeingCast", "actionId": "xygXKRSFpi3vYQ4D", "phraseId": "v7GDFrDCcFwhTAOP", "phrases": [ "v7GDFrDCcFwhTAOP" ], "restartBehavior": 0, "onlyExecuteInDev": false, "onlyStoreUsedValues": true }, { "actionType": 7, "phraseId": "SmZAE0oEzuhq1cqh", "overlayId": "gx4ySJU9Cj35xR1n", "duration": 15, "displayText": "Spell ${SpellBeingCast} was interrupted.", "actionId": "2779yyKWjlmJvIhn", "phrases": [ "SmZAE0oEzuhq1cqh", "iNy1LoUUFcXnaHws", "CC31CtgDiqwi8xV4", "9ccr5pJj08H9rEi7" ], "variableName": "SpellBeingCast", "restartBehavior": 0, "onlyExecuteInDev": false } ], "captureMethod": "Any match", "conditions": [], "classLevels": [], "predefined": true, "onlyExecuteInDev": false };
 
         let castingIndex = ArrayUtilities.findIndex( this.#data?.triggers, f => f.triggerId === captureCastingTrigger.triggerId );
         if ( castingIndex > -1 ) {
@@ -182,22 +192,27 @@ class TriggerDatabaseStore extends Store {
             this.storeDataFile( this.#data );
         }
 
-        let displaySpellBeingCast = { "triggerId": "hzOXzyXsZANWGcJq", "name": "Display Variable SpellBeingCast", "enabled": true, "capturePhrases": [ { "useRegEx": true, "requirePreviousPhrase": false, "duration": null, "phraseId": "bi8mXZAgB7zGnSAc", "phrase": "^Eryndhel requests an update." } ], "comments": "", "actions": [ { "phrases": [ "bi8mXZAgB7zGnSAc" ], "actionType": 0, "overlayId": "gx4ySJU9Cj35xR1n", "displayText": "SpellBeingCast == ${SpellBeingCast}", "duration": 15, "actionId": "n95VfakBr8TbCKnE", "restartBehavior": 0 } ], "captureMethod": "Any match", "conditions": [ { "conditionId": "It3bUfInYVi4aGYB", "conditionType": 1, "variableName": "SpellBeingCast", "operatorType": 2 } ], "classLevels": [], "predefined": true, "onlyExecuteInDev": true };
-        let displaySpellIndex = ArrayUtilities.findIndex( this.#data?.triggers, f => f.triggerId === displaySpellBeingCast.triggerId );
+        let displaySpellIndex = ArrayUtilities.findIndex( this.#data?.triggers, f => f.triggerId === displaySpellBeingCastTrigger.triggerId );
         if ( displaySpellIndex > -1 ) {
-            this.#data.triggers[ displaySpellIndex ] = displaySpellBeingCast;
+            this.#data.triggers[ displaySpellIndex ] = displaySpellBeingCastTrigger;
         } else {
-            this.#data.triggers.push( displaySpellBeingCast );
+            this.#data.triggers.push( displaySpellBeingCastTrigger );
             this.storeDataFile( this.#data );
         }
 
-
-        let captureZone = { "triggerId": "Gpc9KuTz80s3Rw2g", "name": "Capture Zone", "enabled": true, "capturePhrases": [ { "useRegEx": true, "requirePreviousPhrase": false, "duration": null, "phraseId": "4XE1SERwjEB0rRhc", "phrase": "^You have entered (?!an area where levitation effects do not function)(.*)\\.$" }, { "requirePreviousPhrase": false, "duration": null, "phraseId": "pOZDiwwJdb8VPfXm", "phrase": "^LOADING, PLEASE WAIT\\.\\.\\.", "useRegEx": true } ], "comments": "Captures entering/leaving zones.", "actions": [ { "phrases": [ "4XE1SERwjEB0rRhc" ], "onlyExecuteInDev": false, "overrideTimerColor": null, "timerBackgroundColor": null, "useCustomColor": false, "ifEndingSoon": false, "endingDuration": null, "endingSoonChangeColor": false, "endingSoonColor": null, "endingSoonBackgroundColor": null, "endingSoonDisplayText": false, "endingSoonTextOverlayId": null, "endingSoonText": null, "endingSoonTextDuration": null, "endingSoonSpeak": false, "endingSoonSpeakPhrase": null, "remainAfterEnded": false, "remainDuration": null, "endedDisplayText": false, "endedTextOverlayId": null, "endedText": null, "endedTextDuration": null, "endedSpeak": false, "endedSpeakPhrase": null, "endedChangeColor": false, "endedColor": null, "endedBackgroundColor": null, "actionType": 0, "overlayId": "hQqWbu1vumF9GRJv", "displayText": "You have entered {1}.", "duration": 5, "actionId": "3irHXDSvHQFf3LZ5", "timerIcon": null, "timerIconDef": null, "showRemainingDuration": false, "excludeTargets": [], "endEarlyPhrases": [], "name": null, "resetCounterPhrases": [], "repeatTimer": false, "repeatCount": null, "endingClipboard": false, "endingClipboardText": null, "endedClipboard": false, "endedClipboardText": null, "audioFileId": null, "endingPlayAudio": false, "endingPlayAudioFileId": null, "endedPlayAudio": false, "endedPlayAudioFileId": null, "hideTimer": false, "endingSoonShowTimer": false, "castTime": null, "hideConditions": [], "restartBehavior": null, "textUseCustomBorder": false, "textUseCustomColor": false, "textUseCustomFont": false, "textUseCustomGlow": false, "textUseCustomSize": false, "loopBackForValue": false }, { "phrases": [ "pOZDiwwJdb8VPfXm" ], "onlyExecuteInDev": false, "overrideTimerColor": null, "timerBackgroundColor": null, "useCustomColor": false, "ifEndingSoon": false, "endingDuration": null, "endingSoonChangeColor": false, "endingSoonColor": null, "endingSoonBackgroundColor": null, "endingSoonDisplayText": false, "endingSoonTextOverlayId": null, "endingSoonText": null, "endingSoonTextDuration": null, "endingSoonSpeak": false, "endingSoonSpeakPhrase": null, "remainAfterEnded": false, "remainDuration": null, "endedDisplayText": false, "endedTextOverlayId": null, "endedText": null, "endedTextDuration": null, "endedSpeak": false, "endedSpeakPhrase": null, "endedChangeColor": false, "endedColor": null, "endedBackgroundColor": null, "actionType": 7, "variableName": "CurrentZone", "actionId": "sDiYPmjxrFRg5pI9", "timerIcon": null, "timerIconDef": null, "showRemainingDuration": false, "excludeTargets": [], "endEarlyPhrases": [], "name": null, "resetCounterPhrases": [], "repeatTimer": false, "repeatCount": null, "endingClipboard": false, "endingClipboardText": null, "endedClipboard": false, "endedClipboardText": null, "audioFileId": null, "endingPlayAudio": false, "endingPlayAudioFileId": null, "endedPlayAudio": false, "endedPlayAudioFileId": null, "hideTimer": false, "endingSoonShowTimer": false, "castTime": null, "hideConditions": [], "restartBehavior": null }, { "phrases": [ "4XE1SERwjEB0rRhc" ], "onlyExecuteInDev": false, "overrideTimerColor": null, "timerBackgroundColor": null, "useCustomColor": false, "ifEndingSoon": false, "endingDuration": null, "endingSoonChangeColor": false, "endingSoonColor": null, "endingSoonBackgroundColor": null, "endingSoonDisplayText": false, "endingSoonTextOverlayId": null, "endingSoonText": null, "endingSoonTextDuration": null, "endingSoonSpeak": false, "endingSoonSpeakPhrase": null, "remainAfterEnded": false, "remainDuration": null, "endedDisplayText": false, "endedTextOverlayId": null, "endedText": null, "endedTextDuration": null, "endedSpeak": false, "endedSpeakPhrase": null, "endedChangeColor": false, "endedColor": null, "endedBackgroundColor": null, "actionType": 5, "variableName": "CurrentZone", "actionId": "IW03jfBt5cdqU2CX", "timerIcon": null, "timerIconDef": null, "showRemainingDuration": false, "excludeTargets": [], "endEarlyPhrases": [], "name": null, "resetCounterPhrases": [], "repeatTimer": false, "repeatCount": null, "endingClipboard": false, "endingClipboardText": null, "endedClipboard": false, "endedClipboardText": null, "audioFileId": null, "endingPlayAudio": false, "endingPlayAudioFileId": null, "endedPlayAudio": false, "endedPlayAudioFileId": null, "hideTimer": false, "endingSoonShowTimer": false, "castTime": null, "hideConditions": [], "restartBehavior": null, "loopBackForValue": true } ], "captureMethod": "Any match", "conditions": [], "predefined": true, "onlyExecuteInDev": false, "allakhazamUrl": null, "classLevels": [], "score": 4.843554288349809e-12, "refIndex": 7, "ginaTriggerName": null, "importIdentifier": null, "tagIds": null, "importType": 0, "useCooldown": false, "cooldownDuration": 0, "folderId": "njGANuCzIncWIMzU" };
-        let captureZoneIndex = ArrayUtilities.findIndex( this.#data?.triggers, f => f.triggerId === captureZone.triggerId );
-        if ( captureZoneIndex > -1 ) {
-            this.#data.triggers[ captureZoneIndex ] = captureZone;
+        let clearAllIndex = ArrayUtilities.findIndex( this.#data?.triggers, f => f.triggerId === clearAllTrigger.triggerId );
+        if ( clearAllIndex > -1 ) {
+            this.#data.triggers[ clearAllIndex ] = clearAllTrigger;
         } else {
-            this.#data.triggers.push( captureZone );
+            this.#data.triggers.push( clearAllTrigger );
+            this.storeDataFile( this.#data );
+        }
+
+        let captureZoneIndex = ArrayUtilities.findIndex( this.#data?.triggers, f => f.triggerId === captureZoneTrigger.triggerId );
+        if ( captureZoneIndex > -1 ) {
+            this.#data.triggers[ captureZoneIndex ] = captureZoneTrigger;
+        } else {
+            this.#data.triggers.push( captureZoneTrigger );
             this.storeDataFile( this.#data );
         }
 
@@ -316,6 +331,22 @@ class TriggerDatabaseStore extends Store {
         _fileStore = fileStore;
         _userPreferences = userPreferences;
 
+        ipcMain.on( 'trigger:mass-create',
+            /**
+             * Creates the givne list of triggers.
+             * 
+             * @param {any} event Event args.
+             * @param {Trigger[]} triggers The list of triggers to create.
+             */
+            ( event, triggers ) => {
+                let triggerIds = [];
+                for ( let i = 0; i < triggers?.length; i++ ) {
+                    triggerIds.push( this.add( triggers[ i ], i === triggers.length - 1 ) );
+                }
+                event.sender.send( 'trigger:mass-create', triggerIds );
+                sendTick();
+            } );
+
         ipcMain.on( 'trigger:create', ( event, trigger ) => {
             let triggerId = this.add( trigger );
             event.sender.send( 'trigger:create', triggerId );
@@ -368,6 +399,10 @@ class TriggerDatabaseStore extends Store {
 
         ipcMain.on( 'trigger:search:properties', ( event, args ) => {
             event.sender.send( 'trigger:search:properties', this.searchTriggerProperties( args.phrase, args.speakText, args.displayText, args.clipboardText, args.name, args.comment ) );
+        } );
+
+        ipcMain.on( 'trigger:strict-search:duplicates', ( event, triggers ) => {
+            event.sender.send( 'trigger:strict-search:duplicates', this.strictSearchDuplicates( triggers ) );
         } );
         
         ipcMain.on( 'zones:get:everquest', ( event, args ) => {
@@ -578,7 +613,7 @@ class TriggerDatabaseStore extends Store {
         this.#data.triggers = this.#data.triggers ? this.#data.triggers : [];
 
         // Generate a new id for the trigger.
-        trigger.triggerId = nanoid();
+        trigger.triggerId = trigger.triggerId ? trigger.triggerId : nanoid();
         trigger.actions?.forEach( f => f.actionId = f.actionId ? f.actionId : nanoid() );
         trigger.capturePhrases?.forEach( f => f.phraseId = f.phraseId ? f.phraseId : nanoid() );
         trigger.conditions?.forEach(f => f.conditionId = f.conditionId ? f.conditionId : nanoid() );
@@ -1156,6 +1191,147 @@ class TriggerDatabaseStore extends Store {
         } else {
             return [];
         }
+    }
+
+    /**
+     * Returns a map of trigger id to list of duplicate/existing trigger ids.
+     * 
+     * @returns {DuplicateTriggerAction[]}
+     * 
+     * @param {Trigger[]} triggers The list of triggers to check if duplicates already exist.
+     */
+    strictSearchDuplicates( triggers ) {
+        
+        // 2. We need a quicker duplicate check function.  To that end, we really only care if we're actually getting the same trigger multiple times.  Even moreso, that we're not getting duplicate timers and god forbid speaking alerts.
+        //  a. Here are some examples: Your skin freezes over => skin freeze, this will both operate with each other.  However, we really only care if the actions are also the same actions taken.  Not that the text/timer is the same, but they're both speaking actions?
+        //  b. We should also limit the results by the conditions, if the two triggers are in different zones then they won't conflict.
+        //  c. We need to send the entire list of trigger objects to the back-end for checking, and possibly spin up a new thread that performs the checks, and sends back status updates (0%-100% complete).
+    
+        // More example thoughts:
+        // Sequentials, if gina capture matches any of the sequence.  The gina trigger will still fire even though the sequential may not if the first phrase was not captured.
+
+        /** @type {DuplicateTriggerAction[]} */
+        let output = [];
+
+        for ( let i = 0; i < triggers?.length; i++ ) {
+            const subject = triggers[ i ];
+
+            // output[ subject.triggerId ] = [];
+
+            // First, let's search through the given triggers for duplicates.
+            for ( let ii = 0; ii < triggers?.length; ii++ ) {
+                const target = triggers[ ii ];
+                if ( target.triggerId !== subject.triggerId ) {
+                    let duplicates = this.getDuplicateActions( subject, target, 'gina' );
+                    if ( duplicates?.length > 0 ) {
+                        output = Array.prototype.concat( output, duplicates );
+                    }
+                }
+            }
+
+            // // Finally, let's search through the trigger db
+            // for ( let ii = 0; ii < this.#data.triggers?.length; ii++ ) {
+            //     const target = this.#data.triggers[ ii ];
+            //     if ( target.triggerId !== subject.triggerId ) {
+            //         let duplicates = this.getDuplicateActions( subject, target, 'nag' );
+            //         if ( duplicates?.length > 0 ) {
+            //             output = Array.prototype.concat( output, duplicates );
+            //         }
+            //     }
+            // }
+        }
+
+        return output;
+    }
+
+    /**
+     * Returns matching duplicate trigger actions.
+     * 
+     * @returns {DuplicateTriggerAction[]}
+     * 
+     * @param {Trigger} subject If duplicates are found, the subject will be the trigger reported as invalid.
+     * @param {Trigger} target The target trigger is scanned against the actions and phrases of subject for possible duplicate actions.
+     * @param {'gina'|'nag'} storeLocation
+     */
+    getDuplicateActions( subject, target, storeLocation ) {
+        
+        /** @type {DuplicateTriggerAction[]} */
+        let output = [];
+
+        // Check conditions, if subject or target contains no conditions then possible duplicate actions can be executed.
+        if ( subject.conditions?.length > 0 && target.conditions?.length > 0 ) {
+            let match = false;
+
+            for ( let i = 0; i < subject.conditions.length; i++ ) {
+                const subjectCondition = subject.conditions[ i ];
+
+                for ( let j = 0; j < subject.conditions.length; j++ ) {
+                    const targetCondition = subject.conditions[ j ];
+                    if ( subjectCondition.conditionType === targetCondition.conditionType && subjectCondition.conditionType !== TriggerConditionTypes.VariableValue && subjectCondition.variableName === targetCondition.variableName ) {
+                        let subjectValues = subjectCondition.variableValue.indexOf( '|' ) > -1 ? subjectCondition.variableValue.split( /|/gi ) : [ subjectCondition.variableValue ];
+                        let targetValues = targetCondition.variableValue.indexOf( '|' ) > -1 ? targetCondition.variableValue.split( /|/gi ) : [ targetCondition.variableValue ];
+                        for ( let k = 0; k < subjectValues.length; k++ ) {
+                            // If the subject and target have a condition against the same variable, and a value in the subject condition can match a value in the target condition, then there exists the possible duplicate action execution.
+                            if ( targetValues.indexOf( subjectValues[ k ] ) > -1 ) {
+                                match = true;
+                            }
+                        }
+                    }
+                }
+            }
+            
+            if ( !match ) {
+                return false;
+            }
+        }
+
+        for ( let i = 0; i < subject.capturePhrases?.length; i++ ) {
+            const phrase = subject.capturePhrases[ i ];
+            
+            if ( StringUtilities.isNullOrWhitespace( phrase.phrase ) ) {
+                continue;
+            }
+
+            for ( let j = 0; j < subject.actions?.length; j++ ) {
+                const action = subject.actions[ j ];
+
+                if ( action.phrases.indexOf( phrase.phraseId ) > -1 ) {
+                    // If phrase triggers action, then check for duplicates
+                    for ( let ti = 0; ti < target.capturePhrases?.length; ti++ ) {
+                        const targetPhrase = target.capturePhrases[ ti ];
+                        
+                        let targetDuplicates = new DuplicateTriggerAction();
+
+                        targetDuplicates.triggerId = subject.triggerId;
+                        targetDuplicates.phrase = phrase.phrase;
+                        targetDuplicates.subjectAction = action;
+                        targetDuplicates.actions = [];
+
+                        let ap = phrase.useRegEx ? phrase.phrase.replace( /^\^|\$$/gi, '' ) : phrase.phrase;
+                        let tp = targetPhrase.useRegEx ? targetPhrase.phrase.replace( /^\^|\$$/gi, '' ) : targetPhrase.phrase;
+                        if ( ap.indexOf( tp ) > -1 || tp.indexOf( ap ) > -1 ) {
+                            // If target has a phrase that will/could trigger off of the same phrase, check the target actions.
+                            for ( let tj = 0; tj < target.actions?.length; tj++ ) {
+                                const targetAction = target.actions[ tj ];
+
+                                if ( targetAction.actionType === action.actionType ) {
+                                    // If similar phrases can trigger the same action type, then we have a possible duplicate.
+                                    targetDuplicates.actions.push( new OwnedTriggerAction( target.triggerId, target.name, targetPhrase.phrase, storeLocation, targetAction ) );
+                                }
+                            }
+                        }
+
+                        if ( targetDuplicates.actions?.length > 0 ) {
+                            output.push( targetDuplicates );
+                        }
+                    }
+                }
+
+            }
+
+        }
+
+        return output;
     }
 
     /**

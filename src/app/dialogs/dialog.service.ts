@@ -1,8 +1,8 @@
-import { Injectable } from '@angular/core';
+import { Injectable, NgZone, OnDestroy } from '@angular/core';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { ConfirmDialogComponent } from './confirm-dialog/confirm-dialog.component';
 import { OverlayWindowModel, QuickShareFileModel, QuickShareMetaModel, ScrapedSpell, TriggerAction, TriggerCondition, TriggerFolder, TriggerModel } from '../core.model';
-import { Observable } from 'rxjs';
+import { Observable, Observer } from 'rxjs';
 import { OverlayDetailsDialogComponent } from './overlay-details-dialog/overlay-details-dialog.component';
 import { TriggerActionWizardModalComponent } from './trigger-action-wizard-modal/trigger-action-wizard-modal.component';
 import { NewTriggerDialogComponent } from './new-trigger-dialog/new-trigger-dialog.component';
@@ -53,7 +53,38 @@ export class DialogService {
         }
     };
 
-    constructor( private dialog: MatDialog ) { }
+    private hiddenModalIds: string[] = [];
+    private getHiddenModalIds(): Observable<string[]> {
+        let obs: Observable<string[]> = new Observable<string[]>( ( observer: Observer<string[]> ) => {
+            
+            window.api.ipc.once( 'settings:get:hidden-modal-ids', ( e, hiddenModalIds: string[] ) => {
+                this.ngZone.run( () => {
+                    observer.next( hiddenModalIds );
+                    observer.complete();
+                } );
+            } );
+            window.api.ipc.send( 'settings:get:hidden-modal-ids', null );
+
+        } );
+
+        return obs;
+    }
+
+    private addHiddenModalIds( modalId: string ): void {
+        this.hiddenModalIds.push( modalId );
+        window.api.ipc.send( 'settings:set:hidden-modal-ids:add', modalId );
+    }
+
+    constructor( private dialog: MatDialog, private ngZone: NgZone ) {
+        
+        window.api.ipc.on( 'settings:changed:hidden-modal-ids', ( event: any, data: string[] ) => {
+            ngZone.run( () => {
+                this.hiddenModalIds = data;
+            } );
+        } );
+
+        this.getHiddenModalIds().subscribe( data => this.hiddenModalIds = data );
+    }
 
 
 
@@ -746,7 +777,12 @@ export class DialogService {
      * @param title The dialog title.
      * @param message The message(s) to display to the user.
      */
-    public showInfoDialog( title: string, message: string | ( string | ColoredString )[], size: 'narrow' | 'normal' | 'wide' = 'narrow' ): MatDialogRef<NotificationDialogComponent> {
+    public showInfoDialog( title: string, message: string | ( string | ColoredString )[], size: 'narrow' | 'normal' | 'wide' = 'narrow', modalId: string | null = null ) {
+        
+        if ( modalId && this.hiddenModalIds.includes( modalId ) ) {
+            return;
+        }
+
         size = size ? size : 'narrow';
 
         let data: NotificationDialogModel = new NotificationDialogModel();
@@ -754,6 +790,7 @@ export class DialogService {
         data.title = title;
         data.message = message;
         data.notificationType = NotificationTypes.Information;
+        data.modalId = modalId;
 
         let ref = this.dialog.open( NotificationDialogComponent, {
             width: size === 'narrow' ? '450px' : size === 'wide' ? '650px' : '550px',
@@ -761,9 +798,14 @@ export class DialogService {
             panelClass: 'app-dialog',
         } );
         
-        ref.afterClosed().subscribe();
+        ref.afterClosed().subscribe( modalId => {
+            if ( modalId ) {
+                if ( !this.hiddenModalIds.includes( modalId ) ) {
+                    this.addHiddenModalIds( modalId );
+                }
+            }
+        } );
 
-        return ref;
     }
     
 

@@ -1,11 +1,12 @@
 import { ActionTypes, CapturePhrase, Phrase, TimerRestartBehaviors, TriggerAction, TriggerModel } from '../core.model';
-import { GinaTimerStartBehaviors, GinaTimerTypes, GinaTrigger } from '../gina.model';
+import { GinaConfiguration, GinaTimerStartBehaviors, GinaTimerTypes, GinaToNagOverlay, GinaTrigger } from '../gina.model';
 import { customAlphabet } from 'nanoid';
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const nanoid = customAlphabet( alphabet, 16 );
 import * as _ from 'lodash-es';
 import { forkJoin, Observable, Observer } from 'rxjs';
 import { IpcService } from '../ipc.service';
+import { nagId } from '../core/nag-id.util';
 
 enum CaptureMethods {
     Any = 'Any match',
@@ -14,13 +15,14 @@ enum CaptureMethods {
 }
 
 export class GinaImporter {
-    public static GetTrigger( gina: GinaTrigger, ipcService: IpcService ): Observable<TriggerModel> {
+    public static GetTrigger( gina: GinaTrigger, ipcService: IpcService, detrimentalOverlayId: string|null = null, beneficialOverlayId: string|null = null, alertOverlayId: string|null = null, ginaConfig: GinaConfiguration | null = null ): Observable<TriggerModel> {
         let obs: Observable<TriggerModel> = new Observable<TriggerModel>( ( observer: Observer<TriggerModel> ) => {
 
             let trigger = new TriggerModel();
             let tasks: Observable<any>[] = [];
 
             // General information
+            trigger.triggerId = nagId();
             trigger.name = gina.Name;
             trigger.comments = gina.Comments;
             trigger.captureMethod = CaptureMethods.Any;
@@ -39,12 +41,16 @@ export class GinaImporter {
     
             // Actions
             trigger.actions = [];
+            let ginaCategory = ginaConfig?.Categories?.Category?.find( f => f.Name == gina.Category ) ?? null;
+            let textOverlayId = alertOverlayId;
+            let timerOverlayId = detrimentalOverlayId;
+
             // Display Text action
             if ( gina.UseText === 'True' ) {
                 trigger.actions.push( <TriggerAction>{
                     phrases: [ phraseId ],
                     actionType: ActionTypes.DisplayText,
-                    overlayId: null,
+                    overlayId: textOverlayId,
                     duration: 6,
                     actionId: nanoid(),
                     displayText: gina.DisplayText,
@@ -74,15 +80,17 @@ export class GinaImporter {
                 let importObs = ipcService.importAudioFile( gina.MediaFileName );
                 tasks.push( importObs );
                 importObs.subscribe( fileId => {
-                    trigger.actions.push( <TriggerAction>{
-                        phrases: [ phraseId ],
-                        actionType: ActionTypes.PlayAudio,
-                        overlayId: null,
-                        duration: null,
-                        actionId: nanoid(),
-                        displayText: null,
-                        audioFileId: fileId,
-                    } );
+                    if ( fileId ) {
+                        trigger.actions.push( <TriggerAction>{
+                            phrases: [ phraseId ],
+                            actionType: ActionTypes.PlayAudio,
+                            overlayId: null,
+                            duration: null,
+                            actionId: nanoid(),
+                            displayText: null,
+                            audioFileId: fileId,
+                        } );
+                    }
                 } );
             }
             if ( gina.TimerType != GinaTimerTypes.NoTimer ) {
@@ -92,7 +100,8 @@ export class GinaImporter {
                 timerAction.actionId = nanoid();
                 timerAction.duration = +gina.TimerDuration;
                 timerAction.displayText = gina.TimerName;
-                // overlayId: this.overlayId,
+                timerAction.overlayId = timerOverlayId;
+                
                 if ( gina.TimerType === GinaTimerTypes.Timer ) {
                     timerAction.actionType = ActionTypes.Timer;
                 } else if ( gina.TimerType === GinaTimerTypes.RepeatingTimer ) {
@@ -142,7 +151,9 @@ export class GinaImporter {
                         let endingAudioTask = ipcService.importAudioFile( gina.TimerEndingTrigger.MediaFileName );
                         tasks.push( endingAudioTask );
                         endingAudioTask.subscribe( fileId => {
-                            timerAction.endingPlayAudioFileId = fileId;
+                            if ( fileId ) {
+                                timerAction.endingPlayAudioFileId = fileId;
+                            }
                         } );
                     }
 
@@ -165,7 +176,9 @@ export class GinaImporter {
                         let endedAudioTask = ipcService.importAudioFile( gina.TimerEndedTrigger.MediaFileName );
                         tasks.push( endedAudioTask );
                         endedAudioTask.subscribe( fileId => {
-                            timerAction.endedPlayAudioFileId = fileId;
+                            if ( fileId ) {
+                                timerAction.endedPlayAudioFileId = fileId;
+                            }
                         } );
                     }
                     
@@ -177,7 +190,7 @@ export class GinaImporter {
                 trigger.actions.push( <TriggerAction>{
                     phrases: [ phraseId ],
                     actionType: ActionTypes.Counter,
-                    overlayId: null,
+                    overlayId: timerOverlayId,
                     duration: +gina.CounterResetDuration,
                     actionId: nanoid(),
                     displayText: gina.Name,

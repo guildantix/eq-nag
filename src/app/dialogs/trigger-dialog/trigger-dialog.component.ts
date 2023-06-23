@@ -126,7 +126,7 @@ export class TriggerDialogComponent implements OnInit {
             this.reimportDotTimerFromAllakhazam();
         } else if ( this.model.importType === ImportTypes.Ability ) {
             this.reimportAbilityFromAllakhazam();
-        } else if ( this.model.importType === ImportTypes.Buff ) {
+        } else if ( this.model.importType === ImportTypes.Buff || this.model.importType === ImportTypes.OthersBuff ) {
             this.reimportBuffFromAllakhazam();
         }
     }

@@ -45,6 +45,9 @@ class LogTrigger extends Trigger {
 
     /** @type {TriggerCondition[]} */
     _folderConditions = [];
+
+    /** @type {boolean|undefined} */
+    _passesClassCondition = undefined;
 }
 
 module.exports = { PhraseParse, LogTrigger };

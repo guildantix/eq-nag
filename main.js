@@ -258,14 +258,20 @@ ipcMain.on( 'app:log:info', ( event, data ) => {
     log.info( data );
 } );
 
+var quitCalled = false;
 ipcMain.on( 'app:quit', ( event, forceQuit ) => {
     if ( forceQuit === true || !logBootstrap.isBackupProcessing ) {
+        quitCalled = true;
         app.quit();
     } else {
         event.sender.send( 'app:quit:failure', {
             code: 'backup'
         } );
     }
+} );
+
+process.on( 'exit', () => {
+    !quitCalled && app.quit();
 } );
 
 ipcMain.on( 'app:minimize', ( event, data ) => {

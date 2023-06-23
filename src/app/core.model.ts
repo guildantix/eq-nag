@@ -25,6 +25,8 @@ export enum ActionTypes {
     BeneficialTimer = 10,
     DisplayDeathRecap = 11,
     ScreenGlow = 12,
+    ClearAll = 13,
+
 }
 
 export enum QuickShareAuthorListTypes {
@@ -67,6 +69,7 @@ export function ActionTypeLabels(actionType: ActionTypes): string {
         actionType === ActionTypes.BeneficialTimer ? 'Beneficial Timer' :
         actionType === ActionTypes.DisplayDeathRecap ? 'Display Death Recap' :
         actionType === ActionTypes.ScreenGlow ? 'Screen Glow' :
+        actionType === ActionTypes.ClearAll ? 'Clear All' :
         'Unset Action';
     
 }
@@ -85,6 +88,7 @@ export function ActionTypeIcons( actionType: ActionTypes ): string {
         actionType === ActionTypes.BeneficialTimer ? 'watch_later' :
         actionType === ActionTypes.DisplayDeathRecap ? 'sick' :
         actionType === ActionTypes.ScreenGlow ? 'brightness_5' :
+        actionType === ActionTypes.ClearAll ? 'layers_clear' :
         'block';
 }
 
@@ -130,6 +134,7 @@ export enum ImportTypes {
     Ability = 2,
     Npc = 3,
     Buff = 4,
+    OthersBuff = 5,
 }
 
 export enum TimerRestartBehaviors {
@@ -671,6 +676,22 @@ export class TriggerAction extends TriggerActionProperties {
 
         return _.uniq( variableNames );
     }
+}
+
+export class OwnedTriggerAction extends TriggerAction {
+    public triggerId: string;
+    public triggerName: string;
+    public phrase: string;
+    public storeLocation: 'gina' | 'nag';
+}
+
+export class DuplicateTriggerAction {
+
+    public triggerId: string = null;
+    public phrase: string = null;
+    public actions: OwnedTriggerAction[] = [];
+    public subjectAction: TriggerAction;
+
 }
 
 export class OutsideResource {
