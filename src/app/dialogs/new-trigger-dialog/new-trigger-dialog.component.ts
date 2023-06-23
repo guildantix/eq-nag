@@ -1,6 +1,6 @@
 import { Component, OnInit, Inject, ViewChild } from '@angular/core';
 import { MatDialog, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
-import { ActionTypes, CapturePhrase, Phrase, OperatorTypes, OverlayWindowModel, TriggerAction, TriggerCondition, TriggerConditionTypes, TriggerModel, ImportTypes, TimerRestartBehaviors, ScrapedSpell, ScrapedClickEffect } from 'src/app/core.model';
+import { ActionTypes, CapturePhrase, Phrase, OperatorTypes, OverlayWindowModel, TriggerAction, TriggerCondition, TriggerConditionTypes, TriggerModel, ImportTypes, TimerRestartBehaviors, ScrapedSpell, ScrapedClickEffect, ExternalDataSources } from 'src/app/core.model';
 import { IpcService } from 'src/app/ipc.service';
 import { ScraperService } from 'src/app/scraper.service';
 import { customAlphabet } from 'nanoid';
@@ -31,6 +31,10 @@ export class NewTriggerDialogComponent implements OnInit {
 
     public get timerOverlays(): OverlayWindowModel[] {
         return this.overlays.filter( f => f.overlayType === 'Timer' );
+    }
+
+    public get serviceName(): string {
+        return this.data.dataSource === ExternalDataSources.Allakhazam ? 'Allakhazam' : 'EQ Spell Resources';
     }
     
     @ViewChild( 'stepper', { static: false, read: MatStepper } ) public stepper: MatStepper;
@@ -68,10 +72,22 @@ export class NewTriggerDialogComponent implements OnInit {
      * Scrapes the entered URL for spell data.
      */
     public scrape(): void {
-        this.scraper.ScrapeAllakhazamSpell( this.url ).subscribe( spell => {
+
+        let complete = ( spell: ScrapedSpell ) => {
             this.spell = spell;
             this.stepper.next();
-        } );
+        }
+
+        if ( this.data.dataSource === ExternalDataSources.Allakhazam ) {
+
+            this.scraper.ScrapeAllakhazamSpell( this.url ).subscribe( spell => complete( spell ) );
+
+        } else if ( this.data.dataSource === ExternalDataSources.EqSpellResources ) {
+
+            this.ipcService.scrapeEqSpellResourceSpell( this.url ).subscribe( spell => complete( spell ) );
+
+        }
+        
     }
     
 
@@ -101,6 +117,7 @@ export class NewTriggerDialogComponent implements OnInit {
         trigger.name = this.spell.name;
         trigger.classLevels = this.spell.classes;
         trigger.allakhazamUrl = this.url;
+        trigger.externalSource = this.data.dataSource;
         trigger.captureMethod = 'Sequential';
         trigger.importType = ImportTypes.DotTimer;
 
@@ -111,7 +128,7 @@ export class NewTriggerDialogComponent implements OnInit {
             requirePreviousPhrase: false,
             duration: null,
             ///^(?<target>.+?)\s?'s has been poisoned\.
-            phrase: this.spell.castOnOther.replace( /\.$/, '\\.$' ).replace( /soandso's|soandso\s's|soandso/gmi, '^(?<target>.+?)\\b\\s{0,1}\'{0,1}s{0,1}\\b' ),
+            phrase: this.spell.castOnOther.replace( /\.$/, '\\.$' ).replace( /target's|target\s's|target/gmi, '^(?<target>.+?)\\b\\s{0,1}\'{0,1}s{0,1}\\b' ),
         } );
         trigger.capturePhrases.push( <CapturePhrase>{
             phraseId: nanoid(),
@@ -132,7 +149,8 @@ export class NewTriggerDialogComponent implements OnInit {
         let endingSoonVals = originalDotAction != null && originalDotAction.ifEndingSoon;
         let remainAfterVals = originalDotAction != null && originalDotAction.remainAfterEnded;
         actions.push( <TriggerAction>{
-            phrases: [ trigger.capturePhrases[ 1 ].phraseId ],
+            phrases: [ trigger.capturePhrases[ 0 ].phraseId ],
+            secondaryPhrases: [ trigger.capturePhrases[ 1 ].phraseId ],
             actionType: ActionTypes.DotTimer,
             overlayId: this.overlayId,
             duration: this.spell.duration,
@@ -151,17 +169,17 @@ export class NewTriggerDialogComponent implements OnInit {
             endingSoonSpeak: endingSoonVals ? originalDotAction.endingSoonSpeak : false,
             endingSoonSpeakPhrase: endingSoonVals ? originalDotAction.endingSoonSpeakPhrase : null,
             
-            remainAfterEnded: remainAfterVals ? true : false,
-            remainDuration: remainAfterVals ? originalDotAction.remainDuration : null,
-            endedDisplayText: remainAfterVals ? originalDotAction.endedDisplayText : null,
-            endedTextOverlayId: remainAfterVals ? originalDotAction.endedTextOverlayId : null,
-            endedText: remainAfterVals ? originalDotAction.endedText : null,
-            endedTextDuration: remainAfterVals ? originalDotAction.endedTextDuration : null,
-            endedSpeak: remainAfterVals ? originalDotAction.endedSpeak : false,
-            endedSpeakPhrase: remainAfterVals ? originalDotAction.endedSpeakPhrase : null,
-            endedChangeColor: remainAfterVals ? originalDotAction.endedChangeColor : null,
-            endedColor: remainAfterVals ? originalDotAction.endedColor : null,
-            endedBackgroundColor: remainAfterVals ? originalDotAction.endedBackgroundColor : null,
+            remainAfterEnded: originalDotAction?.remainAfterEnded === false ? false : true,
+            remainDuration: originalDotAction?.remainAfterEnded === true ? originalDotAction.remainDuration : 12,
+            endedDisplayText: originalDotAction?.remainAfterEnded === true ? originalDotAction.endedDisplayText : null,
+            endedTextOverlayId: originalDotAction?.remainAfterEnded === true ? originalDotAction.endedTextOverlayId : null,
+            endedText: originalDotAction?.remainAfterEnded === true ? originalDotAction.endedText : null,
+            endedTextDuration: originalDotAction?.remainAfterEnded === true ? originalDotAction.endedTextDuration : null,
+            endedSpeak: originalDotAction?.remainAfterEnded === true ? originalDotAction.endedSpeak : false,
+            endedSpeakPhrase: originalDotAction?.remainAfterEnded === true ? originalDotAction.endedSpeakPhrase : null,
+            endedChangeColor: originalDotAction?.remainAfterEnded === true ? originalDotAction.endedChangeColor : true,
+            endedColor: originalDotAction?.remainAfterEnded === true ? originalDotAction.endedColor : '#b71c1c',
+            endedBackgroundColor: originalDotAction?.remainAfterEnded === true ? originalDotAction.endedBackgroundColor : 'rgba(48,7,7,0.75)',
         } );
 
         if ( this.onlyExecuteForRareEqTargets ) {

@@ -18,3 +18,19 @@
     }
     padding: 5px 0;
 }
+.primary-menu-item {
+    .context-menu-background.sub-menu {
+        background-color: rgb(33, 33, 33);
+        display: none;
+        left: 165px;
+        position: absolute;
+        margin-top: -41px;
+        border-left: 1px solid #69f0ae;
+        z-index: 2;
+    }
+    &:hover {
+        .context-menu-background.sub-menu {
+            display: block;
+        }
+    }
+}

@@ -1,7 +1,7 @@
 import { Component, Inject, OnInit, ViewChild } from '@angular/core';
 import { MatDialog, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { MatStepper } from '@angular/material/stepper';
-import { ActionTypes, CapturePhrase, ImportTypes, OperatorTypes, OverlayWindowModel, Phrase, ScrapedClickEffect, ScrapedSpell, TimerRestartBehaviors, TriggerAction, TriggerCondition, TriggerConditionTypes, TriggerModel } from 'src/app/core.model';
+import { ActionTypes, CapturePhrase, ExternalDataSources, ImportTypes, OperatorTypes, OverlayWindowModel, Phrase, ScrapedClickEffect, ScrapedSpell, TimerRestartBehaviors, TriggerAction, TriggerCondition, TriggerConditionTypes, TriggerModel } from 'src/app/core.model';
 import { IpcService } from 'src/app/ipc.service';
 import { ScraperService } from 'src/app/scraper.service';
 import { NewTriggerDialogModel } from '../dialog.model';
@@ -12,6 +12,8 @@ const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz
 const nanoid = customAlphabet( alphabet, 16 );
 import * as _ from 'lodash-es';
 import { forkJoin, Observable } from 'rxjs';
+
+// TODO: When adding a buff from an item click, if the user selects multiple items then they will may be getting multiple timers.
 
 @Component( {
     selector: 'app-new-trigger-buff-dialog',
@@ -34,6 +36,17 @@ export class NewTriggerBuffDialogComponent implements OnInit {
     public readyForImport: boolean = false;
     public selectedItems: ScrapedClickEffect[] = [];
     public loadingItemDetails: boolean = false;
+    public trackType: 'mine' | 'others' = 'mine';
+    public lockTrackType: boolean = false;
+    public hideTimer: boolean = true;
+
+    public get serviceName(): string {
+        return this.data.dataSource === ExternalDataSources.Allakhazam ? 'Allakhazam' : 'EQ Spell Resources';
+    }
+
+    public get cannotTrack(): boolean {
+        return this.trackType === 'others' && this.spell != null && this.spell.castOnYou == null;
+    }
 
     public get timerOverlays(): OverlayWindowModel[] {
         return this.overlays.filter( f => f.overlayType === 'Timer' );
@@ -44,19 +57,25 @@ export class NewTriggerBuffDialogComponent implements OnInit {
     public spell: ScrapedSpell;
     
     constructor(
-        public dialogRef: MatDialogRef<NewTriggerBuffDialogComponent>,
-        @Inject( MAT_DIALOG_DATA ) public data: NewTriggerDialogModel,
-        public scraper: ScraperService,
-        public ipcService: IpcService,
-        public dialog: MatDialog ) { }
+        public readonly dialogRef: MatDialogRef<NewTriggerBuffDialogComponent>,
+        @Inject( MAT_DIALOG_DATA ) public readonly data: NewTriggerDialogModel,
+        public readonly scraper: ScraperService,
+        public readonly ipcService: IpcService,
+        public readonly dialog: MatDialog ) { }
 
     ngOnInit() {
 
         if ( this.data?.trigger?.triggerId != null ) {
             this.url = this.data.trigger.allakhazamUrl;
-            let dotAction: TriggerAction = _.find( this.data.trigger.actions, ( action: TriggerAction ) => action.actionType === ActionTypes.BeneficialTimer );
-            if ( dotAction ) {
-                this.timerOverlayId = dotAction.overlayId;
+            let timerAction: TriggerAction = _.find( this.data.trigger.actions, ( action: TriggerAction ) => action.actionType === ActionTypes.BeneficialTimer || action.actionType === ActionTypes.Countdown );
+            if ( timerAction ) {
+                this.timerOverlayId = timerAction.overlayId;
+            }
+            this.lockTrackType = true;
+            if ( this.data.trigger.importType === ImportTypes.OthersBuff ) {
+                this.trackType = 'others';
+            } else {
+                this.trackType = 'mine';
             }
         }
 
@@ -76,8 +95,8 @@ export class NewTriggerBuffDialogComponent implements OnInit {
      * Scrapes the entered URL for spell data.
      */
     public scrape(): void {
-        this.scraper.ScrapeAllakhazamSpell( this.url ).subscribe( spell => {
-            
+
+        let complete = ( spell: ScrapedSpell ) => {
             this.spell = spell;
 
             this.endingSoonDuration = this.spell.duration <= 120 ? 12 :
@@ -86,7 +105,18 @@ export class NewTriggerBuffDialogComponent implements OnInit {
                         600;
 
             this.stepper.next();
-        } );
+        }
+
+        if ( this.data.dataSource === ExternalDataSources.Allakhazam ) {
+
+            this.scraper.ScrapeAllakhazamSpell( this.url ).subscribe( spell => complete( spell ) );
+
+        } else if ( this.data.dataSource === ExternalDataSources.EqSpellResources ) {
+
+            this.ipcService.scrapeEqSpellResourceSpell( this.url ).subscribe( spell => complete( spell ) );
+
+        }
+        
     }
 
 
@@ -109,7 +139,13 @@ export class NewTriggerBuffDialogComponent implements OnInit {
         
         this.spell.itemsWithEffect.forEach( item => {
             if ( item.selected ) {
-                observables.push( this.scraper.ScrapeAllakhazamItemClickInfo( item.url ) );
+
+                if ( this.data.dataSource === ExternalDataSources.Allakhazam ) {
+                    observables.push( this.scraper.ScrapeAllakhazamItemClickInfo( item.url ) );
+                } else if ( this.data.dataSource === ExternalDataSources.EqSpellResources ) {
+                    observables.push( this.ipcService.scrapeEqSpellResourceItemClickInfo( item.url ) );
+                }
+                
             }
         } );
 
@@ -134,7 +170,202 @@ export class NewTriggerBuffDialogComponent implements OnInit {
 
 
     /**
-     * Uses the parsed data to create the trigger.
+     * Uses the parsed data to create the trigger for others casting on self.
+     */
+    public importOthers(): void {
+
+        let trigger: TriggerModel;
+
+        if ( this.data?.trigger?.triggerId != null ) {
+            trigger = this.data.trigger;
+        } else {
+            trigger = new TriggerModel();
+            trigger.comments = `Buff timer ${this.spell.name} for others casting on self.`;
+            trigger.folderId = this.data?.selectedFolderId;
+        }
+
+        trigger.name = `${this.spell.name} from Others`;
+        trigger.classLevels = [];
+        trigger.allakhazamUrl = this.url;
+        trigger.externalSource = this.data.dataSource;
+        trigger.importType = ImportTypes.OthersBuff;
+        
+        trigger.actions = [];
+        trigger.capturePhrases = [];
+        trigger.conditions = [];
+
+        trigger.conditions.push( <TriggerCondition>{
+            conditionId: nanoid(),
+            conditionType: TriggerConditionTypes.VariableValue,
+            variableName: 'SpellBeingCast',
+            operatorType: OperatorTypes.DoesNotEqual,
+            // Gorgon Skin|Gorgon Skin Rk. II|Gorgon Skin Rk. III
+            variableValue: `${this.spell.name}|${this.spell.name} Rk\. II|${this.spell.name} Rk\. III`,
+        } );
+
+        let castOnYouPhraseId: string = null;
+        let iconTimerIds: string[] = [];
+        
+        trigger.captureMethod = 'Any match';
+
+        if ( this.spell.castOnYou?.length > 0 ) {
+            castOnYouPhraseId = nanoid();
+            trigger.capturePhrases.push( <CapturePhrase>{
+                phraseId: castOnYouPhraseId,
+                useRegEx: true,
+                requirePreviousPhrase: false,
+                duration: null,
+                // /^(?<target>You) feel armored\.$/
+                // /^(?<target>You)r balls feel armored\.$/
+                phrase: '^' + this.spell.castOnYou.replace( /\.$/, '\\.$' ).replace( /you/mi, '(?<target>You)' ),
+            } );
+        }
+        
+        let buffTimers: TriggerAction[] = [];
+
+        if ( !this.spell.itemClickOnly ) {
+            buffTimers.push( <TriggerAction>{
+                phrases: [ castOnYouPhraseId ],
+                actionType: ActionTypes.Countdown,
+                overlayId: this.timerOverlayId,
+                duration: this.spell.duration,
+                actionId: nanoid(),
+                restartBehavior: TimerRestartBehaviors.RestartOnDuplicate,
+                displayText: this.spell.name,
+                useCustomColor: true,
+                overrideTimerColor: '#0288d1',
+                timerBackgroundColor: ColorUtility.FromHex( '#0288d1' ).darken( 0.93 ).toString( 0.75 ),
+                endEarlyPhrases: [],
+                hideTimer: this.hideTimer,
+                hideConditions: [],
+                castTime: this.spell.castTime,
+            } );
+        }
+        
+        this.selectedItems.forEach( item => {
+            
+            item.classes.forEach( chrClass => {
+                let i = trigger.classLevels.findIndex( f => f.class === chrClass.class );
+                if ( i == -1 ) {
+                    trigger.classLevels.push( chrClass );
+                }
+            } );
+
+            buffTimers.push( <TriggerAction>{
+                phrases: [ castOnYouPhraseId ],
+                actionType: ActionTypes.Countdown,
+                overlayId: this.timerOverlayId,
+                duration: this.spell.duration,
+                actionId: nanoid(),
+                restartBehavior: TimerRestartBehaviors.RestartOnDuplicate,
+                displayText: `${this.spell.name}`,
+                useCustomColor: true,
+                overrideTimerColor: '#0288d1',
+                timerBackgroundColor: ColorUtility.FromHex( '#0288d1' ).darken( 0.93 ).toString( 0.75 ),
+                endEarlyPhrases: [],
+                hideTimer: this.hideTimer,
+                hideConditions: [],
+                castTime: item.castTime,
+                onlyUseAaBeneficialFocus: true,
+                skipBenCastingTimeFocus: true,
+            } );
+        } );
+
+        buffTimers.forEach( timer => trigger.actions.push( timer ) );
+        buffTimers.forEach( timer => iconTimerIds.push( timer.actionId ) );
+
+        if ( this.cancelTimerIfTargetDies ) {
+                
+            buffTimers.forEach( timer => timer.endEarlyPhrases.push( <Phrase>{
+                phraseId: nanoid(),
+                // You have been slain by a lightning warrior staticfist!
+                phrase: '^You have been slain by [^!]*!$',
+                useRegEx: true,
+            } ) );
+            buffTimers.forEach( timer => timer.endEarlyPhrases.push( <Phrase>{
+                phraseId: nanoid(),
+                // You have been slain by a lightning warrior staticfist!
+                phrase: '^You died\\.$',
+                useRegEx: true,
+            } ) );
+
+        }
+
+        if ( this.spell.effectFades ) {
+            // End when the buff ends early.
+            buffTimers.forEach( timer => timer.endEarlyPhrases.push( <Phrase>{
+                phraseId: nanoid(),
+                phrase: '^' + this.spell.effectFades.replace( /\.$/, '\\.$' ),
+                useRegEx: true,
+            } ) );
+        }
+
+        if ( this.alertWhenBuffFades ) {
+
+            // Using the timer method until I come up with a way to allow the simple capture of the faded msg to work alongside the condition that the spell is currently being cast.
+            buffTimers.forEach( timer => timer.notifyWhenEnded = true );
+            buffTimers.forEach( timer => timer.endedSpeak = true );
+            buffTimers.forEach( timer => timer.endedSpeakPhrase = `Your ${this.spell.name} buff has ended.` );
+            
+        }
+
+        if ( this.alertEndingSoon ) {
+            buffTimers.forEach( timer => timer.ifEndingSoon = true );
+            buffTimers.forEach( timer => timer.endingDuration = this.endingSoonDuration );
+            buffTimers.forEach( timer => timer.endingSoonSpeak = true );
+            buffTimers.forEach( timer => timer.endingSoonSpeakPhrase = `Your ${this.spell.name} buff is ending soon.` );
+            buffTimers.forEach( timer => timer.endingSoonShowTimer = this.showTimerWhenEndingSoon );
+        }
+
+        if ( this.spell.gemIndex > -1 ) {
+                
+            this.dialog.open( SelectIconDialogComponent, {
+                width: '750px',
+                data: {
+                    iconIndex: this.spell.gemIndex,
+                }
+            } ).afterClosed().subscribe( icon => {
+                
+                if ( iconTimerIds?.length > 0 ) {
+                    trigger.actions?.forEach( f => {
+                        if ( iconTimerIds.indexOf( f.actionId ) > -1 ) {
+                            f.timerIcon = icon;
+                        }
+                    } );
+                }
+
+                if ( trigger.triggerId != null ) {
+                    this.ipcService.updateTrigger( trigger ).subscribe( updated => { } );
+                } else {
+                    this.ipcService.createNewTrigger( trigger ).subscribe( triggerId => { trigger.triggerId = triggerId; } );
+                }
+
+                this.dialogRef.close();
+            } );
+
+        } else {
+
+            if ( trigger.triggerId != null ) {
+                this.ipcService.updateTrigger( trigger ).subscribe( updated => { } );
+            } else {
+                this.ipcService.createNewTrigger( trigger ).subscribe( triggerId => { trigger.triggerId = triggerId; } );
+            }
+            
+            this.dialogRef.close();
+        }
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Uses the parsed data to create the trigger for tracking mine.
      */
     public import(): void {
 
@@ -151,6 +382,7 @@ export class NewTriggerBuffDialogComponent implements OnInit {
         trigger.name = this.spell.name;
         trigger.classLevels = this.spell.classes;
         trigger.allakhazamUrl = this.url;
+        trigger.externalSource = this.data.dataSource;
         trigger.importType = ImportTypes.Buff;
         
         trigger.actions = [];
@@ -215,7 +447,7 @@ export class NewTriggerBuffDialogComponent implements OnInit {
                 requirePreviousPhrase: false,
                 duration: null,
                 // /^(?<target>.+?)\b\s{0,1}'{0,1}s{0,1}\b is covered in necrotic sores\.$/
-                phrase: this.spell.castOnOther.replace( /\.$/, '\\.$' ).replace( /soandso's|soandso\s's|soandso/gmi, '^(?!Your\\s)(?<target>.+?)\\b\\s{0,1}\'{0,1}s{0,1}\\b' ),
+                phrase: this.spell.castOnOther.replace( /\.$/, '\\.$' ).replace( /target's|target\s's|target/gmi, '^(?!Your\\s)(?<target>.+?)\\b\\s{0,1}\'{0,1}s{0,1}\\b' ),
             } );
             buffTimerPhrases.push( castOnOtherPhraseId );
         }

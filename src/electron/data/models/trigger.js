@@ -14,6 +14,7 @@ var ActionTypes = {
     '10': 'BeneficialTimer',
     '11': 'DisplayDeathRecap',
     '12': 'ScreenGlow',
+    '13': 'ClearAll',
     DisplayText: 0,
     PlayAudio: 1,
     Speak: 2,
@@ -27,8 +28,18 @@ var ActionTypes = {
     BeneficialTimer: 10,
     DisplayDeathRecap: 11,
     ScreenGlow: 12,
+    ClearAll: 13,
+
 }
 
+var ExternalDataSources = {
+    'ZAM': 'Allakhazam',
+    'EQSR': 'EqSpellResources',
+    Allakhazam: 'ZAM',
+    EqSpellResources: 'EQSR',
+}
+
+// TODO: Why wasn't this updated?
 var TriggerConditionTypes = {
     '0': 'Unknown',
     '1': 'VariableValue',
@@ -86,6 +97,21 @@ var TimerRestartBehaviors = {
     DoNothing: 3,
 }
 
+class TriggerCondition {
+    
+    /** @type {string} */
+    conditionId;
+    /** @type {TriggerConditionTypes} */
+    conditionType;
+    /** @type {OperatorTypes} */
+    operatorType;
+    /** @type {string} */
+    variableName;
+    /** @type {string} */
+    variableValue;
+
+}
+
 class TriggerFolder {
     /** @type {string} */
     folderId;
@@ -99,6 +125,8 @@ class TriggerFolder {
     comments;
     /** @type {TriggerFolder[]} */
     children = [];
+    /** @type {TriggerCondition[]} */
+    folderConditions = [];
 }
 
 class CharacterClassLevel {
@@ -159,55 +187,65 @@ class TriggerSubAction {
 
 class TriggerAction {
 
+    /** @type {string} */
     actionId = null;
+    /** @type {ActionTypes} */
     actionType = ActionTypes.DisplayText;
+    /** @type {string} */
     overlayId;
     /** @type {string} */
     name;
+    /** @type {string} */
     displayText;
-    /** @type number */
+    /** @type {number} */
     duration = null;
     /** @type {string} */
     storageDuration = null;
-    /** @type boolean */
+    /** @type {boolean} */
     showRemainingDuration = false;
-    /** @type boolean */
+    /** @type {boolean} */
     repeatTimer = false;
-    /** @type number */
+    /** @type {number} */
     repeatCount = null;
-    /** @type string */
+    /** @type {string} */
     variableName = null;
     /** @type {string} */
     storeLiteralDefinition = null;
-    /** @type boolean */
+    /** @type {boolean} */
     onlyStoreUsedValues = false;
-    /** @type boolean */
+    /** @type {boolean} */
     loopBackForValue = false;
-    /** @type number */
+    /** @type {number} */
     ticks = null;
-    /** @type string[] */
+    /** @type {string[]} */
     phrases;
+    /** @type {string[]} */
+    secondaryPhrases;
     /** @type {number} */
     restartBehavior = TimerRestartBehaviors.StartNewTimer;
-    /** @type boolean */
+    /** @type {boolean} */
     onlyExecuteInDev = false;
-    /** @type string */
+    /** @type {string} */
     overrideTimerColor = null;
-    /** @type string */
+    /** @type {string} */
     timerBackgroundColor = null;
-    /** @type string */
+    /** @type {string} */
     timerIcon = null;
-    /** @type string */
+    /** @type {string} */
     timerIconDef = null;
-    /** @type boolean */
+    /** @type {boolean} */
     interruptSpeech = false;
     /** @type {number} */
     speechVolume = 100;
-    /** @type boolean */
+    /** @type {number} */
+    speechRate = 1;
+    /** @type {boolean} */
     hideTimer = false;
+    /** @type {boolean} */
+    speakNext = false;
     /** @type {TriggerCondition[]} */
     hideConditions = [];
-    /** @type number */
+    /** @type {number} */
     castTime = null;
     /** @type {boolean} */
     onlyUseAaBeneficialFocus = false;
@@ -368,19 +406,45 @@ class TriggerAction {
     textGlowSize = null;
 }
 
-class TriggerCondition {
-    
-    /** @type string */
-    conditionId;
-    /** @type TriggerConditionTypes */
-    conditionType;
-    /** @type OperatorTypes */
-    operatorType;
-    /** @type string */
-    variableName;
-    /** @type string */
-    variableValue;
+class OwnedTriggerAction extends TriggerAction {
 
+    /** @type {string} */
+    triggerId;
+    /** @type {string} */
+    triggerName;
+    /** @type {string} */
+    phrase;
+    /** @type {'gina'|'nag'} */
+    storeLocation;
+
+    /**
+     * Creates a new owned trigger action object.
+     * 
+     * @param {string} targetTriggerId 
+     * @param {string} targetTriggerName 
+     * @param {string} targetPhrase 
+     * @param {'gina'|'nag'} targetStoreLocation 
+     * @param {TriggerAction} targetAction 
+     */
+    constructor( targetTriggerId, targetTriggerName, targetPhrase, targetStoreLocation, targetAction ) {
+        super();
+        Object.assign( this, targetAction );
+        this.triggerId = targetTriggerId;
+        this.triggerName = targetTriggerName;
+        this.phrase = targetPhrase;
+        this.storeLocation = targetStoreLocation;
+    }
+}
+
+class DuplicateTriggerAction {
+    /** @type {string} */
+    triggerId;
+    /** @type {string} */
+    phrase;
+    /** @type {OwnedTriggerAction[]} */
+    actions;
+    /** @type {TriggerAction} */
+    subjectAction;
 }
 
 class Trigger {
@@ -408,6 +472,8 @@ class Trigger {
     onlyExecuteInDev = false;
     /** @type {string} */
     allakhazamUrl = null;
+    /** @type {ExternalDataSources} */
+    externalSource = null;
     /** @type {string} */
     importIdentifier = null;
     /** @type {ImportTypes} */
@@ -587,6 +653,12 @@ class QuickShareModel {
     detrimentalOverlayId;
     /** @type {string} */
     beneficialOverlayId;
+    /** @type {string} */
+    textOverlayId;
+    /** @type {OverlayWindow[]} */
+    overlays;
+    /** @type {Electron.Size} */
+    primaryDisplaySize;
 
 }
 
@@ -630,11 +702,21 @@ class TriggerStoreModel {
     packageOverlays;
 }
 
+class GinaToNagOverlay {
+    /** @type {'text' | 'timer'} */
+    GinaOverlayType;
+    /** @type {string} */
+    GinaOverlay;
+    /** @type {string} */
+    NagOverlay;
+}
+
 module.exports = {
     Trigger,
     TriggerAction,
     ActionTypes,
     CapturePhrase,
+    ExternalDataSources,
     TriggerConditionTypes,
     OperatorTypes,
     Phrase,
@@ -658,4 +740,8 @@ module.exports = {
     TriggerSubAction,
     VariableAssignment,
     TriggerStoreModel,
+    TriggerCondition,
+    DuplicateTriggerAction,
+    OwnedTriggerAction,
+    GinaToNagOverlay,
 };

@@ -1,8 +1,8 @@
-import { Injectable } from '@angular/core';
+import { Injectable, NgZone, OnDestroy } from '@angular/core';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { ConfirmDialogComponent } from './confirm-dialog/confirm-dialog.component';
-import { OverlayWindowModel, QuickShareFileModel, QuickShareMetaModel, ScrapedSpell, TriggerAction, TriggerCondition, TriggerFolder, TriggerModel } from '../core.model';
-import { Observable } from 'rxjs';
+import { ExternalDataSources, OverlayWindowModel, QuickShareFileModel, QuickShareMetaModel, ScrapedSpell, TriggerAction, TriggerCondition, TriggerFolder, TriggerModel } from '../core.model';
+import { Observable, Observer } from 'rxjs';
 import { OverlayDetailsDialogComponent } from './overlay-details-dialog/overlay-details-dialog.component';
 import { TriggerActionWizardModalComponent } from './trigger-action-wizard-modal/trigger-action-wizard-modal.component';
 import { NewTriggerDialogComponent } from './new-trigger-dialog/new-trigger-dialog.component';
@@ -35,7 +35,56 @@ import { QuestionDialogComponent } from './question-dialog/question-dialog.compo
 @Injectable()
 export class DialogService {
 
-    constructor( private dialog: MatDialog ) { }
+    /**
+     * Workaround to prevent expression error when modals are closed.
+     */
+    private _afc = () => {
+        if ( document.activeElement instanceof HTMLElement ) {
+            // This is a workaround to prevent the error:
+            // 
+            //      ExpressionChangedAfterItHasBeenCheckedError: Expression has changed after it was checked. Previous value for 'mat-form-field-should-float': 'false'. Current value: 'true'.
+            //
+            // I'm sure there's some deeper meaning behind it, but for some 
+            // reason when the confirm dialog's `Yes` button is still the 
+            // active element at this point, that error is written to the 
+            // console.
+            // This error only happens when a list is reloaded after.
+            document.activeElement.blur();
+        }
+    };
+
+    private hiddenModalIds: string[] = [];
+    private getHiddenModalIds(): Observable<string[]> {
+        let obs: Observable<string[]> = new Observable<string[]>( ( observer: Observer<string[]> ) => {
+            
+            window.api.ipc.once( 'settings:get:hidden-modal-ids', ( e, hiddenModalIds: string[] ) => {
+                this.ngZone.run( () => {
+                    observer.next( hiddenModalIds );
+                    observer.complete();
+                } );
+            } );
+            window.api.ipc.send( 'settings:get:hidden-modal-ids', null );
+
+        } );
+
+        return obs;
+    }
+
+    private addHiddenModalIds( modalId: string ): void {
+        this.hiddenModalIds.push( modalId );
+        window.api.ipc.send( 'settings:set:hidden-modal-ids:add', modalId );
+    }
+
+    constructor( private dialog: MatDialog, private ngZone: NgZone ) {
+        
+        window.api.ipc.on( 'settings:changed:hidden-modal-ids', ( event: any, data: string[] ) => {
+            ngZone.run( () => {
+                this.hiddenModalIds = data;
+            } );
+        } );
+
+        this.getHiddenModalIds().subscribe( data => this.hiddenModalIds = data );
+    }
 
 
 
@@ -126,7 +175,47 @@ export class DialogService {
 
     
     /**
+     * Displays a confirmation dialog to the user.  The observable resolves to, yes = true, no = false, cancel = null.
+     * 
+     * @param message The question to display to the user.
+     * @param yesText The description of the action taken when the user confirms the question.
+     * @param noText The description of the action taken when the user declines the question.
+     * @param cancelText The description of the action taken when the user declines the question. If no value is provided, the cancel button is not rendered.
+     */
+    public showConfirmationDialog( message: string | (string|ColoredString)[], yesText: string, noText: string, cancelText: string|null = null, size: 'narrow'|'normal'|'wide' = 'normal', moreInfo: () => void|null = null ): Observable<boolean|null> {
+        size = size ? size : 'normal';
+        let dialogRef: MatDialogRef<ConfirmDialogComponent, boolean|null> = this.dialog.open<ConfirmDialogComponent, any, boolean|null>( ConfirmDialogComponent, {
+            width: size === 'narrow' ? '450px' : size === 'wide' ? '650px' : '550px',
+            data: {
+                message: message,
+                yesMessage: yesText,
+                noMessage: noText,
+                cancelMessage: cancelText,
+                moreInfo: moreInfo,
+            },
+            panelClass: 'app-dialog',
+        } );
+
+        let af = dialogRef.afterClosed();
+
+        af.subscribe( this._afc );
+
+        return af;
+    }
+
+
+
+
+
+
+
+
+
+    
+    /**
      * Displays a confirmation dialog to the user.
+     * 
+     * @deprecated Use showConfirmationDialog instead.
      * 
      * @param message The question to display to the user.
      * @param yesText The description of the action taken when the user confirms the question.
@@ -147,7 +236,9 @@ export class DialogService {
 
         let af = dialogRef.afterClosed();
 
-        af.subscribe( onClose );
+        af.subscribe( confirmed => {
+            onClose( confirmed === true ? true : undefined );
+        } );
         af.subscribe( e => {
 
             if ( document.activeElement instanceof HTMLElement ) {
@@ -280,11 +371,14 @@ export class DialogService {
     /**
      * Opens the new dot timer trigger dialog.
      */
-    public showNewDotTimerDialog( folderId?: string ): void {
+    public showNewDotTimerDialog( folderId?: string, externalSource?: ExternalDataSources | undefined ): void {
+        
+        externalSource = externalSource ? externalSource : ExternalDataSources.Allakhazam;
+
         this.dialog.open( NewTriggerDialogComponent, {
             width: '750px',
             panelClass: 'app-dialog',
-            data: <NewTriggerDialogModel>{ selectedFolderId: folderId, trigger: null },
+            data: <NewTriggerDialogModel>{ selectedFolderId: folderId, trigger: null, dataSource: externalSource },
         } ).afterClosed();
     }
 
@@ -320,10 +414,13 @@ export class DialogService {
     /**
      * Opens the new dot timer trigger dialog.
      */
-    public showNewBuffTimerDialog( folderId?: string ): void {
+    public showNewBuffTimerDialog( folderId?: string, externalSource?: ExternalDataSources | undefined ): void {
+
+        externalSource = externalSource ? externalSource : ExternalDataSources.Allakhazam;
+
         this.dialog.open( NewTriggerBuffDialogComponent, {
             width: '750px',
-            data: <NewTriggerDialogModel>{ selectedFolderId: folderId, trigger: null },
+            data: <NewTriggerDialogModel>{ selectedFolderId: folderId, trigger: null, dataSource: externalSource },
             panelClass: 'app-dialog',
         } ).afterClosed();
     }
@@ -340,10 +437,10 @@ export class DialogService {
     /**
      * Opens the new dot timer trigger dialog.
      */
-    public showReimportDotTimerDialog( model: TriggerModel ): void {
+    public showReimportDotTimerDialog( model: TriggerModel, externalSource: ExternalDataSources ): void {
         this.dialog.open( NewTriggerDialogComponent, {
             width: '750px',
-            data: <NewTriggerDialogModel>{ selectedFolderId: null, trigger: model },
+            data: <NewTriggerDialogModel>{ selectedFolderId: null, trigger: model, dataSource: externalSource },
             panelClass: 'app-dialog',
         } ).afterClosed();
     }
@@ -360,10 +457,10 @@ export class DialogService {
     /**
      * Opens the new dot timer trigger dialog.
      */
-    public showReimportRaidAbilityDialog( model: TriggerModel ): void {
+    public showReimportRaidAbilityDialog( model: TriggerModel, externalSource: ExternalDataSources ): void {
         this.dialog.open( NewTriggerRaidAbilityComponent, {
             width: '750px',
-            data: <NewTriggerDialogModel>{ selectedFolderId: null, trigger: model },
+            data: <NewTriggerDialogModel>{ selectedFolderId: null, trigger: model, dataSource: externalSource },
             panelClass: 'app-dialog',
         } ).afterClosed();
     }
@@ -380,10 +477,10 @@ export class DialogService {
     /**
      * Opens the new dot timer trigger dialog.
      */
-    public showReimportBuffDialog( model: TriggerModel ): void {
+    public showReimportBuffDialog( model: TriggerModel, externalSource: ExternalDataSources ): void {
         this.dialog.open( NewTriggerBuffDialogComponent, {
             width: '750px',
-            data: <NewTriggerDialogModel>{ selectedFolderId: null, trigger: model },
+            data: <NewTriggerDialogModel>{ selectedFolderId: null, trigger: model, dataSource: externalSource },
             panelClass: 'app-dialog',
         } ).afterClosed();
     }
@@ -686,22 +783,35 @@ export class DialogService {
      * @param title The dialog title.
      * @param message The message(s) to display to the user.
      */
-    public showInfoDialog( title: string, message: string | ( string | ColoredString )[] ): MatDialogRef<NotificationDialogComponent> {
+    public showInfoDialog( title: string, message: string | ( string | ColoredString )[], size: 'narrow' | 'normal' | 'wide' = 'narrow', modalId: string | null = null ) {
+        
+        if ( modalId && this.hiddenModalIds.includes( modalId ) ) {
+            return;
+        }
+
+        size = size ? size : 'narrow';
+
         let data: NotificationDialogModel = new NotificationDialogModel();
         
         data.title = title;
         data.message = message;
         data.notificationType = NotificationTypes.Information;
+        data.modalId = modalId;
 
         let ref = this.dialog.open( NotificationDialogComponent, {
-            width: '450px',
+            width: size === 'narrow' ? '450px' : size === 'wide' ? '650px' : '550px',
             data: data,
             panelClass: 'app-dialog',
         } );
         
-        ref.afterClosed().subscribe();
+        ref.afterClosed().subscribe( modalId => {
+            if ( modalId ) {
+                if ( !this.hiddenModalIds.includes( modalId ) ) {
+                    this.addHiddenModalIds( modalId );
+                }
+            }
+        } );
 
-        return ref;
     }
     
 

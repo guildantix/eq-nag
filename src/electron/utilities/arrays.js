@@ -142,12 +142,47 @@ function _distinctPush( values, value ) {
 
 
 
+/**
+ * Combines the given arrays.
+ * @returns {T[]}
+ * @template T
+ * @param {...T[]|T} arrays The array of T.
+ */
+function _concat( ...arrays ) {
+    /** @type {T[]} */
+    let output = [];
+
+    for ( let i = 0; i < arrays?.length; i++ ) {
+        if ( arrays[ i ] !== undefined && arrays[ i ] !== null ) {
+            if ( arrays[ i ] instanceof Array ) {
+                for ( let j = 0; j < arrays[ i ].length; j++ ) {
+                    output.push( arrays[ i ][ j ] );
+                }
+            } else {
+                output.push( arrays[ i ] );
+            }
+        }
+    }
+
+    return output;
+}
+
+
+
+
+
+
+
+
+
+
 const ArrayUtilities = {
     remove: remove,
     findIndex: findIndex,
     enumerateDictionary: _enumerateDictionary,
     getSize: _getSize,
     distinctPush: _distinctPush,
+    concat: _concat,
 };
 
 module.exports = ArrayUtilities;

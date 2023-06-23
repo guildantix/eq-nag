@@ -13,6 +13,7 @@ const ArrayUtilities = require( '../utilities/arrays' );
 const StringUtilities = require( "../utilities/string" );
 const Fuse = require( 'fuse.js' );
 const { MediaTypes, FileModel, PackageFileModel } = require( './models/trigger' );
+const log = require( 'electron-log' );
 
 const eqSpellPages = 63;
 const eqIconPageSize = 256;
@@ -230,28 +231,33 @@ class FilesDatabaseStore extends Store {
      */
     storeFileByName( filename ) {
 
-        let name = path.basename( filename );
-        let existing = _.find( this.#data.files, f => f.fileName === name );
+        if ( filename ) {
+            let name = path.basename( filename );
+            let existing = _.find( this.#data.files, f => f.fileName === name );
 
-        if ( existing ) {
-            return existing.fileId;
+            if ( existing ) {
+                return existing.fileId;
 
-        } else {
-            let id = nanoid();
-            let model = new FileModel();
+            } else {
+                let id = nanoid();
+                let model = new FileModel();
             
-            model.fileId = id;
-            model.mediaType = MediaTypes.Audio;
-            model.fileName = name;
-            model.physicalName = path.join( this.#filePath, `${id}${path.extname( name )}` );
+                model.fileId = id;
+                model.mediaType = MediaTypes.Audio;
+                model.fileName = name;
+                model.physicalName = path.join( this.#filePath, `${id}${path.extname( name )}` );
     
-            fs.copyFile( filename, model.physicalName, () => { } );
+                fs.copyFile( filename, model.physicalName, () => { } );
     
-            this.#data.files.push( model );
-            this.storeDataFile( this.#data );
+                this.#data.files.push( model );
+                this.storeDataFile( this.#data );
     
-            return id;
+                return id;
 
+            }
+        } else {
+            log.error( `[files-database:storeFileByName] Invalid filename: ${filename === undefined ? 'undefined' : filename === null ? 'null' : filename}` );
+            return undefined;
         }
     }
 
@@ -286,6 +292,7 @@ class FilesDatabaseStore extends Store {
     getAudioFileData() {
         /** @type {PackageFileModel[]} */
         let files = _.filter( this.#data.files, f => f.mediaType === MediaTypes.Audio )
+            .filter( f => fs.existsSync( f.physicalName ) )
             .map( f => {
                 let m = new PackageFileModel();
 

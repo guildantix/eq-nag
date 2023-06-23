@@ -2,7 +2,7 @@ import { FlatTreeControl } from '@angular/cdk/tree';
 import { Component, ElementRef, HostListener, NgZone, OnInit, ViewChild } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTreeFlatDataSource, MatTreeFlattener } from '@angular/material/tree';
-import { QuickShareFileModel, QuickShareMetaModel, Tag, TriggerFolder, TriggerModel } from '../core.model';
+import { DeathRecapPreferences, ExternalDataSources, QuickShareFileModel, QuickShareMetaModel, Tag, TriggerFolder, TriggerModel } from '../core.model';
 import { DialogService } from '../dialogs/dialog.service';
 import { IpcService } from '../ipc.service';
 import * as _ from 'lodash-es';
@@ -14,6 +14,8 @@ import { CdkVirtualScrollViewport } from '@angular/cdk/scrolling';
 import { BehaviorSubject, forkJoin, Observable, timer } from 'rxjs';
 import { TriggerLibraryService } from '../windows/trigger-library.service';
 import { QuickShareService } from '../core/quick-share.service';
+import { FolderConditionsDialogComponent } from './folder-conditions-dialog/folder-conditions-dialog.component';
+import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const nanoid = customAlphabet( alphabet, 16 );
 
@@ -48,6 +50,9 @@ export class TriggersComponent implements OnInit {
     public selectedFolderId: string;
     public triggers: TriggerModel[] = [];
     public processing: boolean = false;
+    private restoreFolderHierarchyTimeoutId: number | null = null;
+    public restoreFolderHierarchy: () => void | null = null;
+    private folderMap: Record<string, string> = {};
 
     private _indexRecords: number = 0;
     private _maxRecords: number = 0;
@@ -88,14 +93,17 @@ export class TriggersComponent implements OnInit {
 
     private _treeExpanded: boolean = false;
     private triggerFolders: TriggerFolder[] = [];
+
+    public deathRecapPreferences: DeathRecapPreferences = null;
     
     constructor(
-        private snackBar: MatSnackBar,
-        private ipcService: IpcService,
-        private dialogService: DialogService,
-        private ngZone: NgZone,
-        private libraryService: TriggerLibraryService,
-        private quickShareService: QuickShareService,
+        private readonly snackBar: MatSnackBar,
+        private readonly ipcService: IpcService,
+        private readonly dialogService: DialogService,
+        private readonly ngZone: NgZone,
+        private readonly libraryService: TriggerLibraryService,
+        private readonly quickShareService: QuickShareService,
+        private readonly dialog: MatDialog,
     ) {
         
         this.dataSource.data = [];
@@ -138,6 +146,7 @@ export class TriggersComponent implements OnInit {
             
         } );
 
+        this.ipcService.getDeathRecapPreferences().subscribe( recapPrefs => this.deathRecapPreferences = recapPrefs ?? null );
         this.ipcService.getAppIsDev().subscribe( isDev => this.isDev = isDev );
         this.ipcService.getTriggerFolders().subscribe( folders => {
             this.updateViewTriggerData( folders );
@@ -155,10 +164,74 @@ export class TriggersComponent implements OnInit {
 
     
     /**
+     * Recursively expands the given folder, and it's parents.
+     * 
+     * @param folderId The id of the folder to expand.
+     */
+    private expandParents( folderId: string ): void {
+        let node = this.treeControl.dataNodes.find( f => f.folderId === folderId );
+        this.treeControl.expand( node );
+        let parentId = this.folderMap[ folderId ];
+        if ( parentId ) {
+            this.expandParents( parentId );
+        }
+    }
+
+
+
+
+
+
+
+
+
+    
+    /**
+     * If the user has not selected a folder, the user will be presented with 
+     * the folder select dialog.  After a selection has been made, or if a 
+     * folder has already been selected, then the observable is resolved and 
+     * completed.
+     * 
+     * @param title The title of the dialog.
+     * @param description The message to display to the user if the dialog is shown.
+     */
+    private requireFolderSelect( title?: string, description?: string ): Observable<void> {
+        let obs = new Observable<void>( sub => {
+            
+            if ( !this.selectedFolderId ) {
+                this.dialogService.showSelectTriggerFolderDialog( null, title, description ).subscribe( folderId => {
+                    if ( this.selectedFolderId !== folderId ) {
+                        this.expandParents( folderId );
+                        this.toggleSelectedFolder( folderId );
+                    }
+                    sub.next();
+                    sub.complete();
+                } );
+            } else {
+                sub.next();
+                sub.complete();
+            }
+
+        } );
+        return obs;
+    }
+
+
+
+
+
+
+
+
+
+    
+    /**
      * Displays the new trigger dialog.
      */
     public showNewTriggerDialog(): void {
-        this.ipcService.showNewTriggerDialog( this.selectedFolderId );
+        this.requireFolderSelect( 'Select a Folder', 'What folder would you like to put this trigger in?' ).subscribe( () => {
+            this.ipcService.showNewTriggerDialog( this.selectedFolderId );
+        } );
     }
 
 
@@ -174,7 +247,46 @@ export class TriggersComponent implements OnInit {
      * Displays the new dot timer wizard dialog.
      */
     public showNewDotTimerDialog(): void {
-        this.dialogService.showNewDotTimerDialog( this.selectedFolderId );
+        this.requireFolderSelect( 'Select a Folder', 'What folder would you like to put this trigger in?' ).subscribe( () => {
+            this.dialogService.showNewDotTimerDialog( this.selectedFolderId, ExternalDataSources.Allakhazam );
+        } );
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Displays the eq dot timer import for eq spell resources.
+     */
+    public showNewDotTimerEqsrDialog(): void {
+        this.requireFolderSelect( 'Select a Folder', 'What folder would you like to put this trigger in?' ).subscribe( () => {
+            this.dialogService.showNewDotTimerDialog( this.selectedFolderId, ExternalDataSources.EqSpellResources );
+            // this.ipcService.scrapeEqSpellResourceSpell( 'https://spells.eqresource.com/spells.php?id=1447' ).subscribe( spell => console.log( '!!!!! RETURNED', spell ) );
+        } );
+    }
+
+
+
+
+
+
+
+
+
+    
+    /**
+     * Displays the new dot timer wizard dialog.
+     */
+    public showNewBuffTimerEqsrDialog(): void {
+        this.requireFolderSelect( 'Select a Folder', 'What folder would you like to put this trigger in?' ).subscribe( () => {
+            this.dialogService.showNewBuffTimerDialog( this.selectedFolderId, ExternalDataSources.EqSpellResources );
+        } );
     }
 
 
@@ -190,7 +302,9 @@ export class TriggersComponent implements OnInit {
      * Displays the new dot timer wizard dialog.
      */
     public showNewRaidAbilityDialog(): void {
-        this.dialogService.showNewRaidAbilityDialog( this.selectedFolderId );
+        this.requireFolderSelect( 'Select a Folder', 'What folder would you like to put this trigger in?' ).subscribe( () => {
+            this.dialogService.showNewRaidAbilityDialog( this.selectedFolderId );
+        } );
     }
 
 
@@ -206,7 +320,63 @@ export class TriggersComponent implements OnInit {
      * Displays the new dot timer wizard dialog.
      */
     public showNewBuffTimerDialog(): void {
-        this.dialogService.showNewBuffTimerDialog( this.selectedFolderId );
+        this.requireFolderSelect( 'Select a Folder', 'What folder would you like to put this trigger in?' ).subscribe( () => {
+            this.dialogService.showNewBuffTimerDialog( this.selectedFolderId, ExternalDataSources.Allakhazam );
+        } );
+    }
+
+
+
+
+
+
+
+
+
+    
+    /**
+     * Copies the death recap hotbutton to the clipboard.
+     */
+    public copyDeathRecapHotkey(): void {
+        this.copyHotkey( '/hot "Death Recap" /em wonders how they died.' );
+    }
+
+
+
+
+
+
+
+
+
+    
+    /**
+     * Copies the clear all hotbutton to the clipboard.
+     */
+    public copyClearAllHotkey(): void {
+        this.copyHotkey( '/hot "Clear All" /em clears their mind.' );
+    }
+
+
+
+
+
+
+
+
+
+    
+    /**
+     * Copies the given hot button text to the clipboard and tells the user it's 
+     * ready for use.
+     * 
+     * @param hotkeyText The hotbutton text to copy to the clipboard.
+     */
+    public copyHotkey( hotkeyText: string ): void {
+        this.ipcService.sendTextToClipboard( hotkeyText );
+
+        this.snackBar.open( 'The command has been copied to your clipboard!', 'Dismiss', { duration: 5000 } );
+        this.dialogService.showInfoDialog( 'Hotkey Help', [ 'The command to create the hotkey has been copied to your clipboard.', 'Paste the command into EverQuest and hit "Enter" to create the hotkey and then place it into your hotbar.' ], 'normal', 'triggers-component:copy-hotkey:success-modal' );
     }
 
 
@@ -659,6 +829,7 @@ export class TriggersComponent implements OnInit {
     private updateViewTriggerData( folders: TriggerFolder[] ): void {
         
         this.selectedFolderId = folders.findIndex( f => f.folderId === this.selectedFolderId ) > -1 ? this.selectedFolderId : null;
+        this.folderMap = TriggerFolder.getFolderAncestryMap( folders );
         this.triggerFolders = folders;
         this.dataSource.data = folders;
         this.expandFolders( folders );
@@ -1113,6 +1284,56 @@ export class TriggersComponent implements OnInit {
 
 
 
+
+    /**
+     * Find's the specified folder's parent.  Returns null if the given folder is a root folder.
+     * 
+     * @param folderId The id of the folder.
+     * @param searchFolder The current folder to search.
+     */
+    private findFolderParent( folderId: string, searchFolder: TriggerFolder|null = null ): TriggerFolder|null {
+
+        if ( searchFolder == null ) {
+            
+            for ( let i = 0; i < this.triggerFolders?.length; i++ ) {
+                if ( this.triggerFolders[ i ].folderId === folderId ) {
+                    return null;
+                }
+            }
+            
+            for ( let i = 0; i < this.triggerFolders?.length; i++ ) {
+                let parentq = this.findFolderParent( folderId, this.triggerFolders[ i ] );
+                if ( parentq ) {
+                    return parentq;
+                }
+            }
+
+        } else if ( searchFolder.children?.length > 0 ) {
+            
+            for ( let i = 0; i < searchFolder.children?.length; i++ ) {
+                if ( searchFolder.children[ i ].folderId === folderId ) {
+                    return searchFolder;
+                }
+            }
+
+            for ( let i = 0; i < searchFolder.children?.length; i++ ) {
+                let parentq = this.findFolderParent( folderId, searchFolder.children[ i ] );
+                if ( parentq ) {
+                    return parentq;
+                }
+            }
+        }
+
+    }
+
+
+
+
+
+
+
+
+
     
     /**
      * Returns a list of all descendant triggers for the given folder.
@@ -1164,6 +1385,217 @@ export class TriggersComponent implements OnInit {
 
 
     /**
+     * Creates a restore function that executes the given function.  The given function should return true if the restoration was successful.
+     * 
+     * @param restoreFn The restore function that will undo changes done, returning true if the restoration was successful.
+     * @param timeoutDelayMs The duration to leave the restore button available for click.
+     */
+    private createFolderHierarchyRestore( restoreFn: () => boolean, timeoutDelayMs: number = 15000, overwriteExistingFn: boolean = false ): void {
+
+        const createTimeout = () => {
+            this.restoreFolderHierarchyTimeoutId = window.setTimeout( () => {
+                this.restoreFolderHierarchy = null;
+            }, timeoutDelayMs );
+        }
+
+        if ( overwriteExistingFn === true || this.restoreFolderHierarchy == null ) {
+            
+            // Create the restore function.
+            this.restoreFolderHierarchy = () => {
+
+                // On executing the restore, start by clearing the timeout.
+                window.clearTimeout( this.restoreFolderHierarchyTimeoutId );
+                this.restoreFolderHierarchyTimeoutId = null;
+
+                // Execute the restore function.
+                if ( restoreFn() ) {
+                    // If successful, clear the restore function and we're done.
+                    this.restoreFolderHierarchy = null;
+                } else {
+                    // If it fails, then we need to reset the timeout.  The restoreFn function is responsible for displaying errors.
+                    createTimeout();
+                }
+            }
+
+            // If there is already a timeout, cancel it.
+            if ( this.restoreFolderHierarchyTimeoutId ) {
+                window.clearTimeout( this.restoreFolderHierarchyTimeoutId );
+            }
+
+            // Create a timeout that will clear the restore history.
+            createTimeout();
+        }
+
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Sorts the specified folder and siblings alphabetically.
+     * 
+     * @param folderId The folder id to sort.
+     */
+    private sortAlphabetically( folderId: string ): void {
+
+        let parent = this.findFolderParent( folderId );
+        let targetFolders = parent == null ? this.triggerFolders : parent.children;
+
+        // Before we operate, let's start by creating a restore point.
+        let restorePoint = [].concat( targetFolders );
+        this.createFolderHierarchyRestore( () => {
+            let restoreParent = this.findFolderParent( folderId );
+
+            // We're either updating the root node or the children property of a node.
+            if ( restoreParent == null ) {
+                this.triggerFolders = restorePoint;
+            } else {
+                restoreParent.children = restorePoint;
+            }
+
+            this.updateViewTriggerData( this.triggerFolders );
+            this.updateTriggerFolders();
+
+            return true;
+        } );
+
+        let currentSort = targetFolders.map( f => f?.name ?? '' ).join( '' );
+        targetFolders = _.orderBy( targetFolders, [ f => f.name ], [ 'asc' ] );
+        if ( currentSort === targetFolders.map( f => f?.name ?? '' ).join( '' ) ) {
+            targetFolders = _.orderBy( targetFolders, [ f => f.name ], [ 'desc' ] );
+        }
+
+        if ( parent == null ) {
+            this.triggerFolders = targetFolders;
+        } else {
+            parent.children = targetFolders;
+        }
+
+        this.updateViewTriggerData( this.triggerFolders );
+        this.updateTriggerFolders();
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Moves the given folder up or down in the parent's folder list, based on the given direction.
+     * 
+     * @param folderId The desired folder to move.
+     * @param direction The direction of movement.
+     */
+    private translateFolder( folderId: string, direction: number ): void {
+        let parent = this.findFolderParent( folderId );
+        let targetFolders = parent == null ? this.triggerFolders : parent.children;
+        let i = targetFolders.findIndex( f => f.folderId === folderId );
+        
+        if ( i + direction < 0 ) {
+            direction = -1 * i;
+
+        } else if ( i + direction >= targetFolders.length ) {
+            direction = targetFolders.length - i - 1;
+
+        }
+        
+        if ( direction !== 0 ) {
+
+            // Before we operate, let's start by creating a restore point.
+            let restorePoint: TriggerFolder[] = [].concat( targetFolders );
+            this.createFolderHierarchyRestore( () => {
+                let restoreParent = this.findFolderParent( folderId );
+                
+                // We're either updating the root node or the children property of a node.
+                if ( restoreParent == null ) {
+                    this.triggerFolders = restorePoint;
+                } else {
+                    restoreParent.children = restorePoint;
+                }
+
+                this.updateViewTriggerData( this.triggerFolders );
+                this.updateTriggerFolders();
+
+                return true;
+            } );
+
+            let ni = i + direction;
+            let folder = targetFolders.splice( i, 1 )[ 0 ];
+            targetFolders.splice( ni, 0, folder );
+
+            this.updateViewTriggerData( this.triggerFolders );
+            this.updateTriggerFolders();
+
+        }
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Allows the user to add/edit/delete folder conditions.
+     * 
+     * @param folderId The id of the desired folder.
+     */
+    private editFolderConditions( folderId: string ): void {
+        let folder = this.findFolderById( folderId );
+
+        let dialogRef: MatDialogRef<FolderConditionsDialogComponent> = this.dialog.open( FolderConditionsDialogComponent, {
+            width: '750px',
+            data: folder,
+            panelClass: 'app-dialog',
+        } );
+
+        dialogRef.afterClosed().subscribe( confirmed => {
+
+            if ( confirmed ) {
+                this.updateViewTriggerData( this.triggerFolders );
+                this.updateTriggerFolders();
+            }
+
+            if ( document.activeElement instanceof HTMLElement ) {
+                // This is a workaround to prevent the error:
+                // 
+                //      ExpressionChangedAfterItHasBeenCheckedError: Expression has changed after it was checked. Previous value for 'mat-form-field-should-float': 'false'. Current value: 'true'.
+                //
+                // I'm sure there's some deeper meaning behind it, but for some 
+                // reason when the confirm dialog's `Yes` button is still the 
+                // active element at this point, that error is written to the 
+                // console.
+                // This error only happens when a list is reloaded after.
+                document.activeElement.blur();
+            }
+
+        } );
+
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
      * Returns a context menu definition for the specified folder.
      * 
      * @param folderId The id of the folder.
@@ -1176,12 +1608,6 @@ export class TriggersComponent implements OnInit {
             hide: () => false,
             matIcon: 'label',
         }, {
-            label: 'Change parent',
-            action: () => this.selectParentFolder( folderId ),
-            disabled: () => false,
-            hide: () => false,
-            matIcon: 'sort',
-        }, {
             label: 'New sub-folder',
             action: () => this.addTriggerFolderDialog( folderId ),
             disabled: () => false,
@@ -1193,6 +1619,62 @@ export class TriggersComponent implements OnInit {
             disabled: () => false,
             hide: () => false,
             matIcon: 'label_important',
+        }, {
+            label: 'Sorting',
+            action: () => { },
+            disabled: () => false,
+            hide: () => false,
+            matIcon: 'sort',
+            children: [
+                {
+                    label: 'Sort Alphabetically',
+                    action: () => this.sortAlphabetically( folderId ),
+                    disabled: () => false,
+                    hide: () => false,
+                    matIcon: 'sort_by_alpha',
+                }, {
+                    label: 'Top',
+                    action: () => this.translateFolder( folderId, -10000 ),
+                    disabled: () => false,
+                    hide: () => false,
+                    matIcon: 'vertical_align_top',
+                    keepOpen: true,
+                }, {
+                    label: 'Move up',
+                    action: () => this.translateFolder( folderId, -1 ),
+                    disabled: () => false,
+                    hide: () => false,
+                    matIcon: 'arrow_upward',
+                    keepOpen: true,
+                }, {
+                    label: 'Move down',
+                    action: () => this.translateFolder( folderId, 1 ),
+                    disabled: () => false,
+                    hide: () => false,
+                    matIcon: 'arrow_downward',
+                    keepOpen: true,
+                }, {
+                    label: 'Bottom',
+                    action: () => this.translateFolder( folderId, 10000 ),
+                    disabled: () => false,
+                    hide: () => false,
+                    matIcon: 'vertical_align_bottom',
+                    keepOpen: true,
+                }, <ContextMenuModel>{
+                    label: '-',
+                    action: () => { },
+                    disabled: () => false,
+                    hide: () => false,
+                    // matIcon: 'content_paste',
+                },
+                {
+                    label: 'Change parent',
+                    action: () => this.selectParentFolder( folderId ),
+                    disabled: () => false,
+                    hide: () => false,
+                    matIcon: 'sort',
+                },
+            ]
         }, <ContextMenuModel>{
             label: '-',
             action: () => { },
@@ -1205,6 +1687,18 @@ export class TriggersComponent implements OnInit {
             disabled: () => false,
             hide: () => false,
             matIcon: 'publish',
+        }, <ContextMenuModel>{
+            label: '-',
+            action: () => { },
+            disabled: () => false,
+            hide: () => false,
+            // matIcon: 'content_paste',
+        }, {
+            label: 'Folder Conditions',
+            action: () => this.editFolderConditions( folderId ),
+            disabled: () => false,
+            hide: () => false,
+            matIcon: 'published_with_changes',
         }, <ContextMenuModel>{
             label: '-',
             action: () => { },
@@ -1355,19 +1849,25 @@ export class TriggersComponent implements OnInit {
      */
     installQuickShare( quickShareId: string ): void {
 
-        let observables = [
-            this.quickShareService.getQuickShare( quickShareId ),
-            this.quickShareService.getQuickShareFiles( quickShareId ),
-        ];
-
-        forkJoin( observables )
-            .subscribe( ( [ quickShare, files ]: [ QuickShareMetaModel[], QuickShareFileModel[] ] ) => {
-                this.dialogService.showReceiveQuickShareDialog( quickShare, files ).subscribe( imported => {
-                    if ( imported ) {
-                        this.ipcService.requestTick();
+        this.ipcService.getAuthor().subscribe( author => {
+            let observables = [
+                this.quickShareService.isAuthorOfQuickShare(author.authorId, quickShareId),
+                this.quickShareService.getQuickShare( quickShareId ),
+                this.quickShareService.getQuickShareFiles( quickShareId ),
+            ];
+    
+            forkJoin( observables )
+                .subscribe( ( [ isAuthor, quickShare, files ]: [ boolean, QuickShareMetaModel[], QuickShareFileModel[] ] ) => {
+                    if ( !isAuthor ) {
+                        this.dialogService.showReceiveQuickShareDialog( quickShare, files ).subscribe( imported => {
+                            if ( imported ) {
+                                this.ipcService.requestTick();
+                            }
+                        } );
                     }
                 } );
-            } );
+        } );
+        
         
     }
 
@@ -1448,6 +1948,26 @@ export class TriggersComponent implements OnInit {
             }
         } );
 
+    }
+
+
+
+
+
+
+
+
+
+    
+    /**
+     * Opens the gina importer window.
+     */
+    ginaImporter() {
+        this.ipcService.showGinaImportWindow().subscribe( loaded => {
+            if ( !loaded ) {
+                this.dialogService.showErrorDialog( 'GINA Import', 'Could not load GINA data.' );
+            }
+        } );
     }
 
 

@@ -205,6 +205,7 @@ export class NewTriggerRaidAbilityComponent implements OnInit {
         trigger.name = this.ability.name;
         trigger.classLevels = [];
         trigger.allakhazamUrl = this.url;
+        trigger.externalSource = this.data.dataSource;
         trigger.captureMethod = 'Any match';
         trigger.importType = ImportTypes.Ability;
         // TODO: Enable options for raid abilities to have a cooldown.

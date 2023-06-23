@@ -17,7 +17,7 @@ const GameResources = require( './src/electron/data/game-resources' );
 const FilesDatabaseStore = require( './src/electron/data/files-database' );
 const GinaImporter = require( "./src/electron/gina-importer" );
 const CombatParser = require( "./src/electron/utilities/combat-parser" );
-const { IpcMessage, Progress, ScheduledTask, LogMaintenanceRules } = require( "./src/electron/data/models/common" );
+const { IpcMessage, Progress, ScheduledTask, LogMaintenanceRules, Version } = require( "./src/electron/data/models/common" );
 const { LogFileLocation } = require( "./src/electron/data/log-file-location" );
 const VerifiedPlayersStore = require( "./src/electron/data/verified-players" );
 const cronParser = require( 'cron-parser' );
@@ -40,8 +40,6 @@ const ginaImporter = new GinaImporter();
 const verifiedPlayersDatabase = new VerifiedPlayersStore();
 /** @type {Tray} */
 var trayMenu = null;
-
-GH_TOKEN = "e3460400ae1273a5cac83e1b86a5aceae7f8bab7";
 
 autoUpdater.logger = log;
 
@@ -81,6 +79,11 @@ function createTray() {
     appTrayMenu.setContextMenu( contextMenu );
 
     return appTrayMenu;
+}
+
+const checkForUpdates = () => {
+    autoUpdater.allowPrerelease = userPreferences.allowPrerelease;
+    autoUpdater.checkForUpdates();
 }
 
 function createWindow() {
@@ -142,9 +145,9 @@ function createWindow() {
 
     mainWindow.webContents.once( 'dom-ready', () => {
         sendTick();
-        autoUpdater.checkForUpdates();
+        checkForUpdates();
         setInterval( () => {
-            autoUpdater.checkForUpdates();
+            checkForUpdates();
         }, updateCheckInterval );
 
         // TODO: Remove this in a few versions.
@@ -171,48 +174,84 @@ app.on( 'before-quit', () => {
     trayMenu = null;
 } );
 
-app.on( 'ready', function () {
+
+// --========================--
+// --== App Initialization ==--
+// --========================--
+
+const bootstrapApp = () => {
+
+    app.on( 'ready', function () {
     
-    winManager.onReady();
-    screen.on( 'display-metrics-changed', ( e, newDisplay ) => {
-        log.info( 'screen metrics have changed.', e, newDisplay );
-        winManager.checkWindowPosition();
-    } );
-    protocol.interceptFileProtocol( 'file', ( req, callback ) => {
-        let filePath = new url.URL( req.url ).pathname;
-
-        if ( !filePath.match( /electron/ ) ) {
-            if ( process.platform === 'win32' ) {
-
-                if ( filePath.match( /^\/[A-Za-z]:/ ) ) {
-                    // If it begins with a slash, remove it.
-                    filePath = filePath.slice( 1 );
+        winManager.onReady();
+        screen.on( 'display-metrics-changed', ( e, newDisplay ) => {
+            log.info( 'screen metrics have changed.', e, newDisplay );
+            winManager.checkWindowPosition();
+        } );
+        protocol.interceptFileProtocol( 'file', ( req, callback ) => {
+            let filePath = new url.URL( req.url ).pathname;
+    
+            if ( !filePath.match( /electron/ ) ) {
+                if ( process.platform === 'win32' ) {
+    
+                    if ( filePath.match( /^\/[A-Za-z]:/ ) ) {
+                        // If it begins with a slash, remove it.
+                        filePath = filePath.slice( 1 );
+                    }
+    
+                    if ( filePath.match( /^[A-Za-z]:\/(css|img|js|fonts)/ ) ) {
+                        filePath = path.join( app.getAppPath(), 'dist', filePath.slice( 3 ) );
+    
+                    } else if ( filePath.match( /^[A-Za-z]:\/.*\.(js|css|png|jpeg|jpg|ico|svg|woff|woff2|ttf)$/ ) ) {
+                        // case of "vue-cli-service build --mode development"
+                        filePath = path.join( app.getAppPath(), 'dist', filePath.slice( 3 ) );
+                    }
+    
+                } else {
+    
+                    if ( filePath.match( /^\/(css|img|js)/ ) ) {
+                        filePath = path.join( app.getAppPath(), 'dist', filePath.slice( 1 ) );
+                    } else if ( filePath.match( /^\/[^/\\]+?\.(js|css|png|jpeg|jpg|ico|svg)$/ ) ) {
+                        // case of "vue-cli-service build --mode development"
+                        filePath = path.join( app.getAppPath(), 'dist', filePath.slice( 1 ) );
+                    }
+    
                 }
-
-                if ( filePath.match( /^[A-Za-z]:\/(css|img|js|fonts)/ ) ) {
-                    filePath = path.join( app.getAppPath(), 'dist', filePath.slice( 3 ) );
-
-                } else if ( filePath.match( /^[A-Za-z]:\/.*\.(js|css|png|jpeg|jpg|ico|svg|woff|woff2|ttf)$/ ) ) {
-                    // case of "vue-cli-service build --mode development"
-                    filePath = path.join( app.getAppPath(), 'dist', filePath.slice( 3 ) );
-                }
-
-            } else {
-
-                if ( filePath.match( /^\/(css|img|js)/ ) ) {
-                    filePath = path.join( app.getAppPath(), 'dist', filePath.slice( 1 ) );
-                } else if ( filePath.match( /^\/[^/\\]+?\.(js|css|png|jpeg|jpg|ico|svg)$/ ) ) {
-                    // case of "vue-cli-service build --mode development"
-                    filePath = path.join( app.getAppPath(), 'dist', filePath.slice( 1 ) );
-                }
-
             }
-        }
-
-        callback( path.normalize( filePath ) );
+    
+            callback( path.normalize( filePath ) );
+        } );
+        createWindow();
     } );
-    createWindow();
-} );
+    
+}
+
+// Using the instance lock we can prevent multiple Nag instances from opening.
+const instanceLock = app.requestSingleInstanceLock();
+
+if ( !instanceLock ) {
+    app.quit();
+} else {
+    app.on( 'second-instance', ( event, argv, workingDir, addtnlData ) => {
+
+        if ( mainWindow ) {
+            // If the main window has been loaded, then let's make sure that 
+            // appears for the user so they don't think Nag isn't running.
+
+            if ( mainWindow.isMinimized() ) {
+                mainWindow.restore();
+            }
+
+            mainWindow.setAlwaysOnTop( true );
+            mainWindow.show();
+            mainWindow.setAlwaysOnTop( false );
+            mainWindow.focus();
+            
+        }
+    } );
+
+    bootstrapApp();
+}
 
 app.on( 'window-all-closed', function () {
     if ( process.platform !== 'darwin' ) app.quit()
@@ -255,14 +294,20 @@ ipcMain.on( 'app:log:info', ( event, data ) => {
     log.info( data );
 } );
 
+var quitCalled = false;
 ipcMain.on( 'app:quit', ( event, forceQuit ) => {
     if ( forceQuit === true || !logBootstrap.isBackupProcessing ) {
+        quitCalled = true;
         app.quit();
     } else {
         event.sender.send( 'app:quit:failure', {
             code: 'backup'
         } );
     }
+} );
+
+process.on( 'exit', () => {
+    !quitCalled && app.quit();
 } );
 
 ipcMain.on( 'app:minimize', ( event, data ) => {
@@ -329,17 +374,25 @@ var updateInfo = null;
 
 autoUpdater.on( 'update-downloaded', () => {
     log.info( 'update-downloaded executed' );
-    mainWindow.webContents.send( 'update_downloaded', updateInfo );
-    winManager.eachWindow( ( window, identifier ) => {
-        log.info( `Sending update to ${identifier}` );
-        // TODO: Load update notes markdown.
-        window.webContents.send( 'update_downloaded', updateInfo );
-    } );
+
+    // TODO: Test this feature.
+    if ( !userPreferences.allowPrerelease || Version.compareVersions( updateInfo.version, app.getVersion() ) === 1 ) {
+
+        mainWindow.webContents.send( 'update_downloaded', updateInfo );
+        winManager.eachWindow( ( window, identifier ) => {
+            log.info( `Sending update to ${identifier}` );
+            // TODO: Load update notes markdown.
+            window.webContents.send( 'update_downloaded', updateInfo );
+        } );
+
+    }
+
     if ( updateCheckInterval > 0 ) {
         // Once an update is loaded, stop checking for updates.
         clearInterval( updateCheckInterval );
     }
 } );
+
 
 autoUpdater.on( 'update-available', info => {
     log.info( info );

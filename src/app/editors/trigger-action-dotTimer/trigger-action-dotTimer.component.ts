@@ -1,5 +1,5 @@
 import { Component, ElementRef, Input, OnInit, ViewChild } from '@angular/core';
-import { FileModel, OverlayWindowModel, TimerRestartBehaviors, TriggerAction } from 'src/app/core.model';
+import { CapturePhrase, FileModel, OverlayWindowModel, TimerRestartBehaviors, TriggerAction } from 'src/app/core.model';
 import { ImageUtility } from 'src/app/utilities';
 import * as _ from 'lodash-es';
 import { ContextMenuModel } from 'src/app/context-menu/context-menu.model';
@@ -20,6 +20,7 @@ export class TriggerActionDotTimerComponent implements OnInit {
     @Input( 'action' ) public action: TriggerAction;
     @Input( 'overlayOptions' ) public timerOverlays: OverlayWindowModel[] = [];
     @Input( 'alertOverlays' ) public alertOverlays: OverlayWindowModel[] = [];
+    @Input( 'capturePhrases' ) public capturePhrases: CapturePhrase[] = [];
 
     @ViewChild( 'iconFileSelector' ) private iconFileSelector: ElementRef<HTMLInputElement>;
     @ViewChild( 'audioFileSelector' ) private audioFileSelector: ElementRef<HTMLInputElement>;

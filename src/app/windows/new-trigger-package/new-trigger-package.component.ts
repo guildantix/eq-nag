@@ -1,14 +1,16 @@
 import { ChangeDetectorRef, Component, EventEmitter, Input, OnInit, Output, ViewChild } from '@angular/core';
 import { MatTable } from '@angular/material/table';
-import { TriggerFolder, TriggerModel, PackageTrigger, TriggerPackageMetaModel, PackageFolder, PackageFileModel, TriggerPackageModel, TriggerPackageCategories, OverlayWindowModel, TriggerAction } from 'src/app/core.model';
+import { TriggerFolder, TriggerModel, PackageTrigger, TriggerPackageMetaModel, PackageFolder, PackageFileModel, TriggerPackageModel, TriggerPackageCategories, OverlayWindowModel, TriggerAction, TriggerCondition } from 'src/app/core.model';
 import { DialogService } from 'src/app/dialogs/dialog.service';
 import { IpcService } from 'src/app/ipc.service';
 import * as _ from 'lodash-es';
 import { TriggerLibraryService } from '../trigger-library.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { forkJoin } from 'rxjs';
+import { forkJoin, Observable, Observer } from 'rxjs';
 import { MatChipInputEvent } from '@angular/material/chips';
 import { getPackageImportProperties } from 'src/app/core.decorators';
+import { ColoredString } from 'src/app/dialogs/dialog.model';
+import { nagId } from 'src/app/core/nag-id.util';
 
 @Component( {
     selector: 'app-new-trigger-package',
@@ -706,63 +708,210 @@ export class NewTriggerPackageComponent implements OnInit {
 
 
     /**
+     * Returns a list of all folder conditions that can be applied to the given 
+     * package trigger.
+     * 
+     * @param packageTrigger The trigger to query.
+     */
+    getTriggerFolderConditions( packageTrigger: PackageTrigger ): TriggerCondition[] {
+        const trigger = this.triggers.find( f => f.triggerId === packageTrigger.triggerId );
+        // Start with the trigger's conditions to limit the number of loops required to check for collisions.
+        let conditions: TriggerCondition[] = trigger.conditions.map( f => Object.assign( new TriggerCondition(), f ) );
+
+        // Navigate upwards through the folder hierarchy, adding in conditions that don't collide with existing conditions.
+        let folderId = trigger.folderId;
+        while ( folderId != null ) {
+            const folder = this.getFolder( folderId, this.triggerFolders );
+
+            for ( let i = 0; i < folder.folderConditions?.length; i++ ) {
+                const condition = folder.folderConditions[ i ];
+                if ( conditions.findIndex( f => f.variableName === condition.variableName ) === -1 ) {
+                    // We want a new object here
+                    conditions.push( Object.assign( new TriggerCondition(), condition ) );
+                }
+            }
+
+            // Change the context to this folder's parent.
+            folderId = this.ancestryMap[ folderId ];
+        }
+
+        // Return conditions not already present on the trigger.
+        return conditions.filter( f => trigger.conditions.findIndex( j => j.conditionId === f.conditionId ) === -1 );
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Checks folder conditions for each trigger, and asks user to apply folder 
+     * conditions before publishing.
+     * 
+     * @returns Returns true if the user has chosen to continue publishing.
+     */
+    checkFolderConditions(): Observable<boolean> {
+
+        let obs = new Observable<boolean>( sub => {
+            let hasConditionsToAdd = false;
+            let conditionMap: Record<string, TriggerCondition[]> = {};
+
+            for ( let i = 0; i < this.package.model.triggers?.length; i++ ) {
+                const packageTrigger = this.package.model.triggers[ i ];
+                let conditions = this.getTriggerFolderConditions( packageTrigger );
+                if ( conditions?.length > 0 ) {
+                    hasConditionsToAdd = true;
+                    conditionMap[ packageTrigger.triggerId ] = conditions;
+                }
+            }
+
+            if ( !hasConditionsToAdd ) {
+                sub.next( true );
+                sub.complete();
+
+            } else {
+                this.dialogService.showConfirmationDialog(
+                    [
+                        'There are folder conditions that can be added to the package.',
+                        'Would you like to include those conditions?',
+                    ],
+                    'Click "Yes" to add folder conditions and publish to the library.',
+                    'Click "No" to publish to the library without adding folder conditions.',
+                    'Click "Cancel" to close this dialog without publishing to the library.',
+                    'wide',
+                    () => {
+                        this.dialogService.showInfoDialog( 'Applying Folder Conditions', [
+                            'Every folder can have conditions that determine if triggers in it\'s ancestry should be executed.',
+                            'If you decide to include folder conditions in your package, those conditions will only be added to the triggers for the package.  Your local triggers will not be modified.',
+                            'The reason that folder conditions should only be included as trigger conditions is to prevent collisions when multiple authors use the same folder names.',
+                            'Important: Conditions will only be added to triggers belonging to each folder\'s family. ex: ',
+                            new ColoredString('*t*tRaids \\ Classic \\ Naggy \\ Fire Breathe', '#e3e3e3'),
+                            'The "Fire Breathe" trigger will inherit conditions from Raids, Classic, and Naggy, but will not inherit conditions from Lady Vox or Planes of Power.'
+                        ], 'wide' )
+                    }
+                ).subscribe( confirmed => {
+
+                    if ( confirmed === true ) {
+                        // Add conditions and continue.
+                        // Note: when package triggers are updated, the conditions 
+                        //       list are overwritten with the new conditions and 
+                        //       not updated by conditionId.
+                        let triggerIds = Object.keys( conditionMap );
+                        for ( let i = 0; i < triggerIds.length; i++ ) {
+                            const triggerId = triggerIds[ i ];
+                            const packageTrigger = this.package.model.triggers.find( f => f.triggerId == triggerId );
+
+                            for ( let ci = 0; ci < conditionMap[ triggerId ].length; ci++ ) {
+                                let condition = conditionMap[ triggerId ][ ci ];
+                                condition.conditionId = nagId();
+                                packageTrigger.conditions.push( condition );
+                            }
+                        }
+                        
+                        sub.next( true );
+                        sub.complete();
+
+                    } else if ( confirmed === false ) {
+                        // Continue without adding conditions.
+                        sub.next( true );
+                        sub.complete();
+
+                    } else {
+                        // Cancel operation.
+                        sub.next( false );
+                        sub.complete();
+
+                    }
+
+                } );
+            }
+
+        } );
+
+        return obs;
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
      * Submits the current new package and exits add/edit mode.
      */
     save(): void {
-        // Grab all of the files used.
-        this.package.files = this.package.files ? this.package.files : [];
-        let dataObservables = [
-            this.ipcService.getAudioFileData(),
-            this.ipcService.getDetrimentalOverlayId(),
-            this.ipcService.getBeneficialOverlayId(),
-            this.ipcService.getAlertOverlayId(),
-            this.ipcService.getOverlayWindows(),
-            this.ipcService.getPrimaryDisplay(),
-        ];
+
+        this.checkFolderConditions().subscribe( cont => {
+            
+            if ( cont ) {
+
+                // Grab all of the files used.
+                this.package.files = this.package.files ? this.package.files : [];
+                let dataObservables = [
+                    this.ipcService.getAudioFileData(),
+                    this.ipcService.getDetrimentalOverlayId(),
+                    this.ipcService.getBeneficialOverlayId(),
+                    this.ipcService.getAlertOverlayId(),
+                    this.ipcService.getOverlayWindows(),
+                    this.ipcService.getPrimaryDisplay(),
+                ];
         
-        forkJoin( dataObservables ).subscribe( ( [ audioFiles, detrimentalOverlayId, beneficialOverlayId, textOverlayId, overlays, primaryDisplay ]: [ PackageFileModel[], string, string, string, OverlayWindowModel[], Electron.Display ] ) => {
+                forkJoin( dataObservables ).subscribe( ( [ audioFiles, detrimentalOverlayId, beneficialOverlayId, textOverlayId, overlays, primaryDisplay ]: [ PackageFileModel[], string, string, string, OverlayWindowModel[], Electron.Display ] ) => {
             
-            this.package.model.packageOverlays = [];
+                    this.package.model.packageOverlays = [];
             
-            this.package.model.triggers.forEach( trigger => {
-                trigger.actions.forEach( action => {
+                    this.package.model.triggers.forEach( trigger => {
+                        trigger.actions.forEach( action => {
 
-                    let actionProperties = getPackageImportProperties( Object.assign( new TriggerAction(), action ) );
+                            let actionProperties = getPackageImportProperties( Object.assign( new TriggerAction(), action ) );
 
-                    actionProperties.overlayIds.forEach( overlayId => {
-                        if ( overlayId !== detrimentalOverlayId && overlayId !== beneficialOverlayId && overlayId !== textOverlayId ) {
-                            let overlay = overlays.find( f => f.overlayId === overlayId );
-                            if ( overlay ) {
-                                let exists = this.package.model.packageOverlays.findIndex( f => f.overlayId === overlayId ) > -1;
-                                if ( !exists ) {
-                                    this.package.model.packageOverlays.push( overlay );
+                            actionProperties.overlayIds.forEach( overlayId => {
+                                if ( overlayId !== detrimentalOverlayId && overlayId !== beneficialOverlayId && overlayId !== textOverlayId ) {
+                                    let overlay = overlays.find( f => f.overlayId === overlayId );
+                                    if ( overlay ) {
+                                        let exists = this.package.model.packageOverlays.findIndex( f => f.overlayId === overlayId ) > -1;
+                                        if ( !exists ) {
+                                            this.package.model.packageOverlays.push( overlay );
+                                        }
+                                    }
                                 }
-                            }
-                        }
+                            } );
+
+                            actionProperties.audioFileIds.forEach( audoFileId => {
+                                let file = audioFiles.find( f => f.fileId === audoFileId );
+
+                                if ( file ) {
+                                    let exists = this.package.files.findIndex( f => f.fileId === file.fileId ) > -1;
+                                    if ( !exists ) {
+                                        this.package.files.push( file );
+                                    }
+                                }
+                            } );
+
+                        } );
                     } );
 
-                    actionProperties.audioFileIds.forEach( audoFileId => {
-                        let file = audioFiles.find( f => f.fileId === audoFileId );
+                    this.package.model.detrimentalOverlayId = detrimentalOverlayId;
+                    this.package.model.beneficialOverlayId = beneficialOverlayId;
+                    this.package.model.textOverlayId = textOverlayId;
+                    this.package.model.primaryDisplaySize = primaryDisplay.size;
 
-                        if ( file ) {
-                            let exists = this.package.files.findIndex( f => f.fileId === file.fileId ) > -1;
-                            if ( !exists ) {
-                                this.package.files.push( file );
-                            }
-                        }
-                    } );
+                    this.savePackage();
 
                 } );
-            } );
-
-            this.package.model.detrimentalOverlayId = detrimentalOverlayId;
-            this.package.model.beneficialOverlayId = beneficialOverlayId;
-            this.package.model.textOverlayId = textOverlayId;
-            this.package.model.primaryDisplaySize = primaryDisplay.size;
-
-            this.savePackage();
-
+            
+            }
         } );
+
+
     }
 
 

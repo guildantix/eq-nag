@@ -7,6 +7,7 @@ export class NotificationDialogModel {
     public notificationType: NotificationTypes;
     public icon: string;
     public customButtons: CustomButton[] = [];
+    public modalId: string;
     
 }
 

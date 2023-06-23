@@ -10,6 +10,14 @@ export const ErrorCodes = {
     }
 };
 
+export enum SettingsKeys {
+    
+    logMaintenanceRules = 'logMaintenanceRules',
+    allowPrerelease = 'allowPrerelease',
+    voiceIndex = 'voiceIndex',
+
+};
+
 export enum ActionTypes {
     
     DisplayText = 0,
@@ -25,6 +33,8 @@ export enum ActionTypes {
     BeneficialTimer = 10,
     DisplayDeathRecap = 11,
     ScreenGlow = 12,
+    ClearAll = 13,
+
 }
 
 export enum QuickShareAuthorListTypes {
@@ -67,6 +77,7 @@ export function ActionTypeLabels(actionType: ActionTypes): string {
         actionType === ActionTypes.BeneficialTimer ? 'Beneficial Timer' :
         actionType === ActionTypes.DisplayDeathRecap ? 'Display Death Recap' :
         actionType === ActionTypes.ScreenGlow ? 'Screen Glow' :
+        actionType === ActionTypes.ClearAll ? 'Clear All' :
         'Unset Action';
     
 }
@@ -85,6 +96,7 @@ export function ActionTypeIcons( actionType: ActionTypes ): string {
         actionType === ActionTypes.BeneficialTimer ? 'watch_later' :
         actionType === ActionTypes.DisplayDeathRecap ? 'sick' :
         actionType === ActionTypes.ScreenGlow ? 'brightness_5' :
+        actionType === ActionTypes.ClearAll ? 'layers_clear' :
         'block';
 }
 
@@ -124,12 +136,18 @@ export enum CharacterClasses {
     Wizard = 'WIZ',
 }
 
+export enum ExternalDataSources {
+    Allakhazam = 'ZAM',
+    EqSpellResources = 'EQSR',
+}
+
 export enum ImportTypes {
     None = 0,
     DotTimer = 1,
     Ability = 2,
     Npc = 3,
     Buff = 4,
+    OthersBuff = 5,
 }
 
 export enum TimerRestartBehaviors {
@@ -162,6 +180,7 @@ export class TriggerFolder {
     public active: boolean = true;
     public comments: string;
     public children: TriggerFolder[] = [];
+    public folderConditions: TriggerCondition[] = [];
 
     /**
      * Returns the specified trigger folder in the given hierarchy.
@@ -299,6 +318,7 @@ export class TriggerModel {
     public predefined: boolean = false;
     public onlyExecuteInDev: boolean = false;
     public allakhazamUrl: string = null;
+    public externalSource: ExternalDataSources | undefined = undefined;
     public importIdentifier: string = null;
     public importType: ImportTypes;
     public useCooldown: boolean = false;
@@ -521,6 +541,8 @@ export class TriggerActionProperties {
     public timerIconDef: string = null;
     public interruptSpeech: boolean = false;
     public speechVolume: number = 100;
+    public speechRate: number = 1;
+    public speakNext: boolean = false;
     public hideTimer: boolean = false;
     public hideConditions: TriggerCondition[] = [];
     public castTime: number = null;
@@ -639,7 +661,7 @@ export class TriggerAction extends TriggerActionProperties {
     public phrases: string[] = [];
     public name: string;
     public displayText: string;
-
+    public secondaryPhrases: string[] = [];
 
 
 
@@ -672,10 +694,30 @@ export class TriggerAction extends TriggerActionProperties {
     }
 }
 
+export class OwnedTriggerAction extends TriggerAction {
+    public triggerId: string;
+    public triggerName: string;
+    public phrase: string;
+    public storeLocation: 'gina' | 'nag';
+}
+
+export class DuplicateTriggerAction {
+
+    public triggerId: string = null;
+    public phrase: string = null;
+    public actions: OwnedTriggerAction[] = [];
+    public subjectAction: TriggerAction;
+
+}
+
 export class OutsideResource {
 
     public get allakhazam(): boolean {
         return this.url.match( /^(http|https):\/\/.*\.allakhazam\.com.*/gi )?.length > 0;
+    }
+
+    public get eqSpellResources(): boolean {
+        return this.url.match( /^(http|https):\/\/.*\.eqresource\.com.*/gi )?.length > 0;
     }
     
     public url: string;
@@ -1059,6 +1101,9 @@ export class QuickShareModel {
     public folders: PackageFolder[] = [];
     public detrimentalOverlayId: string;
     public beneficialOverlayId: string;
+    public textOverlayId: string;
+    public overlays: OverlayWindowModel[] = [];
+    public primaryDisplaySize: Electron.Size;
 
 }
 

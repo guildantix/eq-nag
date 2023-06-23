@@ -262,6 +262,45 @@ class LogMaintenanceHistory {
 
 }
 
+class Version {
+
+    /**
+     * Returns -1 if a is less than b, 0 if a and b are equal, and 1 if a is greater than b.
+     * 
+     * @param {string} a The first compare value.
+     * @param {string} b The second compare value.
+     */
+    static compareVersions( a, b ) {
+        // https://regex101.com/r/nu5Aqw/1
+        let aev = /(?<major>\d+)\.(?<minor>\d+)\.(?<revision>\d+)/gi.exec( a );
+        let bev = /(?<major>\d+)\.(?<minor>\d+)\.(?<revision>\d+)/gi.exec( b );
+
+        let av = {
+            major: +aev.groups.major,
+            minor: +aev.groups.minor,
+            revision: +aev.groups.revision,
+        };
+        let bv = {
+            major: +bev.groups.major,
+            minor: +bev.groups.minor,
+            revision: +bev.groups.revision,
+        };
+        
+        let avMajor = av.major === bv.major ? 0 : av.major < bv.major ? -1 : 1;
+        let avMinor = av.minor === bv.minor ? 0 : av.minor < bv.minor ? -1 : 1;
+        let avRevision = av.revision === bv.revision ? 0 : av.revision < bv.revision ? -1 : 1;
+
+        if ( avMajor === 0 && avMinor === 0 && avRevision === 0 ) {
+            return 0;
+        } else if ( avMajor >= 0 && avMinor >= 0 && avRevision >= 0 ) {
+            return 1;
+        } else {
+            return -1;
+        }
+    }
+
+}
+
 module.exports = {
     StyleProperties,
     BasicError,
@@ -277,4 +316,5 @@ module.exports = {
     LogMaintenanceRules, 
     ArchiveFilePrefix, 
     LogMaintenanceHistory, 
+    Version, 
 };

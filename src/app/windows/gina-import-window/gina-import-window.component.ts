@@ -2,9 +2,9 @@ import { animate, state, style, transition, trigger } from '@angular/animations'
 import { FlatTreeControl } from '@angular/cdk/tree';
 import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { MatTreeFlatDataSource, MatTreeFlattener } from '@angular/material/tree';
-import { forkJoin } from 'rxjs';
+import { forkJoin, Observable } from 'rxjs';
 import { DialogService } from 'src/app/dialogs/dialog.service';
-import { GinaPhoneticTransform, GinaTimerTypes, GinaTrigger, GinaTriggerGroup } from 'src/app/gina.model';
+import { GinaConfiguration, GinaMultiSelectDataModel, GinaOverlayIds, GinaPhoneticTransform, GinaTimerTypes, GinaTreeNode, GinaTreeObject, GinaTrigger, GinaTriggerGroup, TriggerReviewModel } from 'src/app/gina.model';
 import { IpcService } from 'src/app/ipc.service';
 import * as _ from 'lodash-es';
 import { ContextMenuModel } from 'src/app/context-menu/context-menu.model';
@@ -15,26 +15,8 @@ import { customAlphabet } from 'nanoid';
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const nanoid = customAlphabet( alphabet, 16 );
 import { MatSnackBar } from '@angular/material/snack-bar';
-
-interface GinaTreeNode {
-    expandable: boolean;
-    name: string;
-    level: number;
-    item: GinaTrigger | GinaPhoneticTransform;
-    ginaName: string;
-    imported: boolean;
-    folders: string[];
-}
-
-class GinaTreeObject {
-    name: string;
-    children: GinaTreeObject[] = [];
-    trigger: GinaTrigger;
-    phoneticTransform: GinaPhoneticTransform;
-    ginaName: string;
-    imported: boolean;
-    folders: string[] = [];
-}
+import { nagId } from 'src/app/core/nag-id.util';
+import { map } from 'rxjs/operators';
 
 @Component( {
     selector: 'app-gina-import-window',
@@ -51,7 +33,7 @@ class GinaTreeObject {
 export class GinaImportWindowComponent implements OnInit {
 
     private _transformer = ( node: GinaTreeObject, level: number ) => {
-        return {
+        let m = <GinaTreeNode>{
             expandable: node.children?.length > 0,
             name: node.name,
             level: level,
@@ -59,19 +41,40 @@ export class GinaImportWindowComponent implements OnInit {
             ginaName: node.ginaName,
             imported: node.imported,
             folders: node.folders,
+            id: node.id,
         };
+
+        Object.defineProperty( m, 'selected', {
+            get: () => node.selected,
+            set: ( v: boolean ) => {
+                this.updateFolderHierarchySelectedState( node, v );
+                this.checkForMultipleSelects();
+                if ( this.hasMultipleSelected ) {
+                    this.generateFlatSelectData();
+                }
+            },
+        } );
+
+        return m;
     }
     public treeControl = new FlatTreeControl<GinaTreeNode>( node => node ? node.level : 1, node => node.expandable );
-    public treeFlattener = new MatTreeFlattener(this._transformer, node => node.level, node => node.expandable, node => node.children);
+    public treeFlattener = new MatTreeFlattener<GinaTreeObject, GinaTreeNode, GinaTreeNode>(this._transformer, node => node.level, node => node.expandable, node => node.children);
     public dataSource = new MatTreeFlatDataSource( this.treeControl, this.treeFlattener );
     public expandedNodes: string[] = [];
     public hasChild = ( _: number, node: GinaTreeNode ) => node.expandable;
+    public isSelected = ( _: number, node: GinaTreeNode ) => node.selected;
+    public hasChildIsSelected = ( _: number, node: GinaTreeNode ) => node.selected && node.expandable;
+    public selectedGinaData: GinaMultiSelectDataModel[] = [];
+    public startReview: boolean = false;
+    public categoryOverlayMap: Record<string, GinaOverlayIds> = {};
+    public ginaConfig: GinaConfiguration = null;
 
     public loadingGinaConfig: boolean = true;
     public showImported: boolean = false;
     public importedTriggerNames: string[] = [];
     public importedPhoneticTransforms: string[] = [];
     public ignoredGinaObjects: string[] = [];
+    public hasMultipleSelected: boolean = false;
 
     public selectedPhoneticTransform: GinaPhoneticTransform = null;
     public selectedTrigger: GinaTrigger = null;
@@ -99,6 +102,7 @@ export class GinaImportWindowComponent implements OnInit {
         return this.overlays.filter( f => f.overlayType === 'Timer' );
     }
 
+    public triggerReviews: TriggerReviewModel[] = [];
     public nTrigger: TriggerModel;
     public duplicateTriggers: TriggerModel[] = [];
     public skipDuplicateTriggerCheck: boolean = false;
@@ -155,7 +159,7 @@ export class GinaImportWindowComponent implements OnInit {
 
     ngOnInit() {
 
-        this.ipcService.tickReceived().subscribe( data => {
+        let tickSub = this.ipcService.tickReceived().subscribe( data => {
             // this.dkpEntries = data.dkpEntries;
             // this.logFile = data.logFile;
             this.voiceIndex = data.voiceIndex;
@@ -170,6 +174,9 @@ export class GinaImportWindowComponent implements OnInit {
             
             this.loadGinaConfig();
 
+            // We need to ignore other ticks.
+            tickSub.unsubscribe();
+
         } );
         
         this.ipcService.requestTick();
@@ -180,15 +187,26 @@ export class GinaImportWindowComponent implements OnInit {
 
     }
 
-    public loadGinaConfig(): void {
+    public loadGinaConfig( refreshCache: boolean = false ): void {
+
+        refreshCache = refreshCache === true;
+
+        if ( refreshCache ) {
+            this.loadingGinaConfig = true;
+        }
 
         this.ipcService
-            .getGinaConfiguration()
+            .getGinaConfiguration( refreshCache )
             .subscribe( ginaConfig => {
                 if ( ginaConfig == null ) {
                     this.dialogService.showWarningDialog( 'GINA failure', 'Could not find the GINA data directory' );
                 } else {
-                    
+                    this.ginaConfig = ginaConfig;
+
+                    // Build the category to overlay map
+                    ginaConfig.Categories.Category.forEach( category => {
+                        this.categoryOverlayMap[ category.Name ] = { textOverlayName: category.TextOverlay, timerOverlayName: category.TimerOverlay };
+                    } );
                     let transformsNode = new GinaTreeObject();
                     let data: GinaTreeObject[] = [];
                     transformsNode.name = 'Phonetic Transforms';
@@ -202,6 +220,8 @@ export class GinaImportWindowComponent implements OnInit {
                             ginaName: `${transform.ActualWord}`,
                             imported: this.ignoredGinaObjects.indexOf( transform.ActualWord ) > -1 || this.importedPhoneticTransforms.indexOf( transform.ActualWord ) > -1,
                             folders: [ 'Phonetic Transforms' ],
+                            selected: false,
+                            id: nagId(),
                         } );
                     } );
 
@@ -242,9 +262,11 @@ export class GinaImportWindowComponent implements OnInit {
         groups?.forEach( group => {
             let groupNode = new GinaTreeObject();
 
+            groupNode.id = nagId();
             groupNode.name = group.Name;
             groupNode.ginaName = `${ginaName}/${group.Name}`;
             groupNode.folders = ginaFolders.concat( [ group.Name ] );
+            groupNode.selected = false;
 
             if ( group.TriggerGroups?.TriggerGroup?.length > 0 ) {
                 groupNode.children = this.getGinaTriggerGroupNodes( group.TriggerGroups.TriggerGroup, groupNode.ginaName, groupNode.folders );
@@ -259,6 +281,8 @@ export class GinaImportWindowComponent implements OnInit {
                     ginaName: `${groupNode.ginaName}/${trigger.Name}`,
                     imported: this.ignoredGinaObjects.indexOf( `${groupNode.ginaName}/${trigger.Name}` ) > -1 || this.importedTriggerNames.indexOf( `${groupNode.ginaName}/${trigger.Name}` ) > -1,
                     folders: groupNode.folders,
+                    selected: false,
+                    id: nagId(),
                 } );
             } );
             
@@ -292,6 +316,7 @@ export class GinaImportWindowComponent implements OnInit {
         utter.text = phrase;
         utter.voice = this.voiceOptions[ this.voiceIndex ];
         utter.onend = function ( event ) { }
+        utter.rate = 1;
         speechSynthesis.speak( utter );
     }
 
@@ -334,6 +359,13 @@ export class GinaImportWindowComponent implements OnInit {
     public playAudioFile( path: string ): void {
         let player = new Audio( `file://${path}` );
         player.play();
+    }
+
+    public playAudioFileId( fileId: string ): void {
+        this.ipcService.getAudioFileUrl( fileId ).subscribe( url => {
+            let player = new Audio( url );
+            player.play();
+        } );
     }
 
     public getDurationLabel( seconds: number | string ): string {
@@ -700,6 +732,11 @@ export class GinaImportWindowComponent implements OnInit {
                         this.skipDuplicateTriggerCheck = false;
                         this.duplicateTriggers = null;
                         this.nTrigger = null;
+                        
+                        this.dataSource.data = [];
+                        this.ignoredGinaObjects.push( this.selectedGinaName );
+                        this.loadGinaConfig( true );
+                        
                         this.snackBar.open( 'Trigger created.', 'Dismiss', { duration: 1500 } );
                     } else {
                         this.snackBar.open( 'Could not create trigger!', 'Dismiss', { duration: 5000 } );
@@ -786,6 +823,77 @@ export class GinaImportWindowComponent implements OnInit {
 
     public closeModal(): void {
         this.ipcService.closeThisChild();
+    }
+
+    private updateFolderHierarchySelectedState( node: GinaTreeObject, selected: boolean ) {
+        node.selected = selected;
+        node.children?.forEach( c => this.updateFolderHierarchySelectedState( c, selected ) );
+    }
+
+    private checkForMultipleSelects( data: GinaTreeObject[] = null, count: number = 0 ) {
+        
+        if ( data == null ) {
+            data = this.dataSource.data;
+            this.hasMultipleSelected = false;
+        }
+
+        for ( let i = 0; i < data?.length; i++ ) {
+            if ( data[ i ].selected ) {
+                count += 1;
+            }
+            if ( count > 1 ) {
+                this.hasMultipleSelected = true;
+                break;
+            } else if ( data[ i ].children?.length > 0 ) {
+                this.checkForMultipleSelects( data[ i ].children, count );
+            }
+        }
+
+    }
+
+    private generateFlatSelectData( data: GinaTreeObject[] = null, family: string = null ) {
+
+        let f = family ? family : '';
+
+        if ( data == null ) {
+            data = this.dataSource.data;
+            this.selectedGinaData = [];
+        }
+
+        for ( let i = 0; i < data?.length; i++ ) {
+            
+            if ( data[ i ].children?.length > 0 ) {
+                this.generateFlatSelectData( data[ i ].children, f + '/' + data[ i ].name );
+            } else if ( data[ i ].selected ) {
+                this.selectedGinaData.push( {
+                    model: data[ i ],
+                    folderFamily: f,
+                } );
+            }
+
+        }
+    }
+
+    public startReviews(): void {
+        this.startReview = true;
+    }
+
+    public resetTriggerSelection(): void {
+        if ( this.startReview ) {
+            this.triggerReviews = [];
+            this.startReview = false;
+        }
+    }
+
+    public onMassImportComplete( importedGinaNames: string[] ): void {
+        
+        this.resetTriggerSelection();
+        this.hasMultipleSelected = false;
+
+        this.ignoredGinaObjects = Array.prototype.concat( [], this.ignoredGinaObjects, importedGinaNames ?? [] );
+        this.dataSource.data = [];
+        this.loadGinaConfig( true );
+        
     }
 
 }

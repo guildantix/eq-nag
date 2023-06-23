@@ -25,6 +25,7 @@ import { SetupService } from './setup/setup.service';
 import { EditorsModule } from './editors/editors.module';
 import { OverlaysComponent } from './overlays/overlays.component';
 import { NgxMatTimepickerModule } from 'ngx-mat-timepicker';
+import { FolderConditionsDialogComponent } from './triggers/folder-conditions-dialog/folder-conditions-dialog.component';
 
 @NgModule( {
     imports: [
@@ -45,6 +46,7 @@ import { NgxMatTimepickerModule } from 'ngx-mat-timepicker';
     declarations: [
         AppComponent,
         ClassNamePipe,
+        FolderConditionsDialogComponent,
         TriggersComponent,
         OverlaysComponent,
         MainComponent,

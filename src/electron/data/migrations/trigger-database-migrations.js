@@ -3,13 +3,15 @@ const {
     ImportTypes,
     TimerRestartBehaviors,
     TriggerStoreModel,
+    TriggerFolder,
+    ExternalDataSources,
 } = require( '../models/trigger' );
 const { backupDatafile } = require( './backup-data-file' );
 const customAlphabet = require( 'nanoid' ).customAlphabet;
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const nanoid = customAlphabet( alphabet, 16 );
 
-const currentTriggerDbVersion = 75;
+const currentTriggerDbVersion = 80;
 
 
 
@@ -36,6 +38,29 @@ function migrateTriggerData( data, configName, migrationComplete ) {
             }
         } );
     }
+
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Recursively updates trigger folders and initializes folder conditions.
+ * 
+ * @param {TriggerFolder[]} folders The trigger folders to update.
+ */
+function createFolderConditions( folders ) {
+    
+    folders?.forEach( folder => {
+        folder.folderConditions = folder.folderConditions?.length > 0 ? folder.folderConditions : [];
+        createFolderConditions( folder?.children ?? [] );
+    } );
 
 }
 
@@ -607,6 +632,54 @@ function executeDataMigration( data ) {
         } );
         
         data.version = 75;
+        
+    }
+    if ( data.version < 76 ) {
+        createFolderConditions( data?.folders ?? [] );
+        
+        data.version = 76;
+        
+    }
+    if ( data.version < 77 ) {
+        data?.triggers?.forEach( trigger => {
+            trigger.actions?.forEach( action => {
+                action.secondaryPhrases = [];
+            } );
+        } );
+        
+        data.version = 77;
+        
+    }
+    if ( data.version < 78 ) {
+        data?.triggers?.forEach( trigger => {
+            trigger.actions?.forEach( action => {
+                action.speechRate = 1;
+            } );
+        } );
+        
+        data.version = 78;
+        
+    }
+    if ( data.version < 79 ) {
+        data?.triggers?.forEach( trigger => {
+            trigger.actions?.forEach( action => {
+                action.speakNext = false;
+            } );
+        } );
+        
+        data.version = 79;
+        
+    }
+    if ( data.version < 80 ) {
+        data?.triggers?.forEach( trigger => {
+            if ( trigger.allakhazamUrl ) {
+                trigger.externalSource = trigger.allakhazamUrl.indexOf( 'allakhazam.com' ) > -1 ? ExternalDataSources.Allakhazam : ExternalDataSources.EqSpellResources;
+            } else {
+                trigger.externalSource = undefined;
+            }
+        } );
+        
+        data.version = 80;
         
     }
 

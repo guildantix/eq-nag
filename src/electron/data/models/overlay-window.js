@@ -143,4 +143,15 @@ class OverlayStoreModel {
     overlays;
 }
 
-module.exports = { OverlayDimensions, OverlayWindow, OverlayComponent, TimerSortTypes, OverlayStoreModel };
+class TriggerSecondaryActionModel {
+    /** @type {'setStart'|'extendDuration'|'clipTimer'} */
+    action;
+    /** @type {Date} */
+    timestamp;
+    /** @type {string} */
+    instanceId;
+    /** @type {number} */
+    duration;
+}
+
+module.exports = { OverlayDimensions, OverlayWindow, OverlayComponent, TimerSortTypes, OverlayStoreModel, TriggerSecondaryActionModel };

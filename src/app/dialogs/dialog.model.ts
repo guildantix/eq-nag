@@ -1,9 +1,10 @@
-import { TriggerFolder, TriggerModel } from '../core.model';
+import { ExternalDataSources, TriggerFolder, TriggerModel } from '../core.model';
 
 export class NewTriggerDialogModel {
     
     trigger: TriggerModel;
     selectedFolderId: string;
+    dataSource: ExternalDataSources = ExternalDataSources.Allakhazam;
 
 }
 

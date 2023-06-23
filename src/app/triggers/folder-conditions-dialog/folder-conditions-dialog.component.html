@@ -1,0 +1,13 @@
+
+<h2 mat-dialog-title>{{title}} Conditions</h2>
+
+<mat-dialog-content>
+    <app-conditions [(conditions)]="conditions" [lighter]="true"></app-conditions>
+</mat-dialog-content>
+
+<mat-dialog-actions>
+    
+    <button mat-button (click)="cancel()" class="t-confirm-no" color="warn">Cancel</button>
+    <button mat-button (click)="confirm()" class="t-confirm-no">Save</button>
+
+</mat-dialog-actions>

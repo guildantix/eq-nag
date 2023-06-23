@@ -77,15 +77,29 @@
     </fieldset>
 
     <fieldset>
-        <legend><span class="title">Window Options</span></legend>
-        <div>
-            <div class="formless-hint half-width">
-                <div class="formless-input"><mat-checkbox [(ngModel)]="minimizeToTrayOnLoad" (change)="onMinimizeToTrayOnLoadChange()">Open minimized to tray.</mat-checkbox></div>
-                <mat-hint>If enabled, when the application runs it will be minimized to the application tray by default.</mat-hint>
+        <legend><span class="title">General Options</span></legend>
+        <div class="fifty-grid">
+            <div>
+                <h2 class="sub-header full-width">Window Options</h2>
+                <div class="formless-hint full-width">
+                    <div class="formless-input"><mat-checkbox [(ngModel)]="minimizeToTrayOnLoad" (change)="onMinimizeToTrayOnLoadChange()">Open minimized to tray.</mat-checkbox></div>
+                    <mat-hint>If enabled, when the application runs it will be minimized to the application tray by default.</mat-hint>
+                </div>
+                <div class="formless-hint full-width">
+                    <div class="formless-input"><mat-checkbox [(ngModel)]="glowOnStartup" (change)="onGlowOnStartupChanged()">Glow on startup.</mat-checkbox></div>
+                    <mat-hint>If enabled, will glow the primary display when Nag starts up.</mat-hint>
+                </div>
             </div>
-            <div class="formless-hint half-width">
-                <div class="formless-input"><mat-checkbox [(ngModel)]="glowOnStartup" (change)="onGlowOnStartupChanged()">Glow on startup.</mat-checkbox></div>
-                <mat-hint>If enabled, will glow the primary display when Nag starts up.</mat-hint>
+            <div>
+                <h2 class="sub-header full-width">Update Settings</h2>
+                <div class="formless-hint full-width">
+                    <div class="formless-input"><mat-checkbox [(ngModel)]="allowPrerelease" (change)="updateSetting( this.settingsKeys.allowPrerelease, this.allowPrerelease, 10 * 1000 )">Allow Pre-release.</mat-checkbox></div>
+                    <mat-hint>If enabled, will automatically update to the latest pre-release.</mat-hint>
+                </div>
+            </div>
+            <div>
+                <h2 class="sub-header full-width">Modal Settings</h2>
+                <button mat-flat-button (click)="resetHiddenModals()">Reset Hidden Modals</button>
             </div>
         </div>
     </fieldset>

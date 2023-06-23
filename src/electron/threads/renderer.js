@@ -3,7 +3,7 @@ const DomUtilities = require( '../utilities/dom' );
 const StringUtilities = require( '../utilities/string' );
 const NumberUtilities = require( '../utilities/numbers' );
 const ArrayUtilities = require( '../utilities/arrays' );
-const { OverlayDimensions, OverlayWindow, OverlayComponent, TimerSortTypes } = require( '../data/models/overlay-window' );
+const { OverlayDimensions, OverlayWindow, OverlayComponent, TimerSortTypes, TriggerSecondaryActionModel } = require( '../data/models/overlay-window' );
 const { ActionTypes, TriggerAction, TriggerConditionTypes, OperatorTypes, TimerRestartBehaviors } = require( '../data/models/trigger' );
 const { ipcRenderer } = require( 'electron' );
 const Handlebars = require( "handlebars" );
@@ -16,6 +16,7 @@ const { FctStylesModel, FctModel, FctTypes } = require( '../data/models/fct' );
 const ElectronUtilities = require( '../utilities/electron' );
 const { StyleProperties } = require( '../data/models/common' );
 const { screen } = require( '@electron/remote' );
+const { DateUtilities } = require( '../utilities/dates' );
 
 /**
  * Sends the error information to the main thread for logging.
@@ -106,6 +107,8 @@ class OverlayInstance {
     hideTargetLabel;
     /** @type {OverlayComponent[]} */
     overlayComponents;
+    /** @type {(OverlayComponent|FctModel)[]} */
+    overlayFctComponents;
     /** @type {string} */
     encapsulationId;
     /** @type {number} */
@@ -160,6 +163,8 @@ var screenGlower = null;
 /** @type {number} */
 var screenGlowTimerId = null;
 let showCriticalsInline = false;
+const intMaxValue = 9007199254740991;
+let uuid = 0;
 
 
 
@@ -268,6 +273,31 @@ function Renderer( originX, originY, glowOnStart ) {
             render( model.overlayId, model );
         } );
 
+    ipcRenderer.on( 'renderer:receive:secondary-action',
+        /**
+         * Handles receiving a secondary trigger action.
+         * @param {*} event The event object.
+         * @param {TriggerSecondaryActionModel} model The trigger secondary action token.
+         */
+        function ( event, model ) {
+            const component = findComponent( c => c.instanceId === model.instanceId );
+            
+            if ( component ) {
+                if ( model.action === 'setStart' ) {
+                    component.start = model.timestamp;
+                } else if ( model.action === 'extendDuration' ) {
+                    component.start = DateUtilities.addSeconds( component.start, model.duration );
+                } else if ( model.action === 'clipTimer' ) {
+                    let noticeMe = DateUtilities.timeSince( component.start, model.timestamp ).totalSeconds - component.action.duration < 0;
+                    component.start = DateUtilities.addSeconds( component.start, DateUtilities.timeSince( component.start, model.timestamp ).totalSeconds - component.action.duration );
+                    if ( noticeMe ) {
+                        component.dom.classList.remove( 'notice-me' );
+                        component.dom.classList.add( 'notice-me' );
+                    }
+                }
+            }
+        } );
+
     ipcRenderer.on( 'renderer:receive:fct-component',
         /**
          * Handles receiving a new trigger action.
@@ -280,6 +310,7 @@ function Renderer( originX, originY, glowOnStart ) {
         } );
 
     ipcRenderer.on( 'renderer:window:enable-edit', function ( event, overlayId ) {
+        moveToTop( overlayInstances[ overlayId ].dom );
         enableMoveResize( overlayInstances[ overlayId ].dom );
     } );
 
@@ -478,6 +509,10 @@ function Renderer( originX, originY, glowOnStart ) {
         ( event, fctShowCriticalsInline ) => {
             showCriticalsInline = fctShowCriticalsInline === true;
         } );
+
+    ipcRenderer.on( 'renderer:clear-all', function () {
+        clearAll();
+    } );
     
     speechSynthesis.onvoiceschanged = () => {
         voiceOptions = speechSynthesis.getVoices();
@@ -501,7 +536,7 @@ function Renderer( originX, originY, glowOnStart ) {
  */
 function initializeOverlay( overlay ) {
     let content;
-    let div = document.createElement( 'div' );
+    let div = createElement( 'div', overlay.overlayId );
 
     if ( overlay.overlayType === 'FCT' ) {
         content = overlayFctTemplate( {} );
@@ -539,6 +574,7 @@ function initializeOverlay( overlay ) {
         groupHeaderWeight: 400,
         hideTargetLabel: false,
         overlayComponents: [],
+        overlayFctComponents: [],
     };
 
     overlayInstances[ overlay.overlayId ].encapsulationId = '_' + nanoid();
@@ -690,7 +726,7 @@ function updateOverlay( overlayId, model ) {
         contentArea.style.textShadow = textShadow;
     
         // Calculate the height of dot texts.
-        let pDot = document.createElement( 'p' );
+        let pDot = createElement( 'p' );
         pDot.classList.add( 'dot-text' );
         pDot.style.visibility = 'hidden';
         pDot.innerHTML = '&nbsp;';
@@ -841,8 +877,10 @@ function renderFct( overlayId, comp ) {
     try {
         
         let fctOverlay = overlayInstances[ overlayId ];
+        fctOverlay.overlayFctComponents.push( comp );
+        /** @type {HTMLDivElement} */
         let contentArea = fctOverlay.dom.querySelector( '.overlay-content-area' );
-        let div = document.createElement( 'div' );
+        let div = createElement( 'div' );
 
         if ( comp.fctType === FctTypes.dmgOut ) {
             div.classList.add( 'fct-dmg-out' );
@@ -931,6 +969,23 @@ function renderFct( overlayId, comp ) {
 
         }
 
+        for ( let i = fctOverlay.overlayFctComponents.length - 1; i > 0; i-- ) {
+            const component = fctOverlay.overlayFctComponents[ i ];
+
+            if ( !component.critical && component.dom.offsetTop + component.dom.offsetHeight < 0 ) {
+                if ( component.intervalId > 0 ) {
+                    window.clearTimeout( component.intervalId );
+                }
+                component.intervalId = window.setTimeout( () => {
+                    component.dom.parentNode.removeChild( component.dom );
+                }, 500 );
+                component.dom.classList.add( 'animate-fade-out-now' );
+
+                fctOverlay.overlayFctComponents.splice( i, 1 );
+            }
+
+        }
+
     } catch ( error ) {
         logError( error, 'fct', overlayId, comp );
 
@@ -977,7 +1032,7 @@ function render( overlayId, comp ) {
             if ( comp?.action?.actionType === ActionTypes.DisplayText ) {
                 comp.removeAt = new Date( now.setSeconds( comp.action.duration ) );
                 let content = displayTextTemplate( { value: StringUtilities.format( comp.action.displayText, comp.matches ) } );
-                let div = document.createElement( 'div' );
+                let div = createElement( 'div' );
                 div.innerHTML = content;
                 div.style.animation = `animate-fadeout ${comp.action.duration * 1.05}s ease`;
                 comp.dom = div;
@@ -1018,6 +1073,14 @@ function render( overlayId, comp ) {
                     comp.dom.parentNode.removeChild( comp.dom );
                     ArrayUtilities.remove( overlayInstances[ overlayId ].overlayComponents, f => f.instanceId == comp.instanceId );
                 }, comp.action.duration * 1000 );
+                
+                // Create a method that will remove the component from the overlay.
+                comp.removeComponent = () => {
+                    window.clearInterval( comp.intervalId );
+                    comp.dom.parentNode && comp.dom.parentNode.removeChild( comp.dom );
+                    ArrayUtilities.remove( overlayInstances[ overlayId ].overlayComponents, f => f.instanceId == comp.instanceId );
+                };
+
                 overlayInstances[ overlayId ].overlayComponents.push( comp );
 
             } else if ( comp?.action?.actionType === ActionTypes.Timer
@@ -1268,7 +1331,7 @@ function enableMoveResize( dom ) {
     dom.classList.add( 'drag' );
 
     for ( let i = 0; i < resizeHandles.length; i++ ) {
-        let handle = document.createElement( 'span' );
+        let handle = createElement( 'span' );
         handle.classList.add( resizeHandles[ i ] );
         handle.classList.add( 'mouse-enabled' );
         dom.appendChild( handle );
@@ -1442,7 +1505,7 @@ function createGroupedDotTimer( overlayId, contentArea, group, comp ) {
     let displayText = getTimerLabel( overlayId, comp );
     let content = targetGroupTimerTemplate( { value: displayText } );
 
-    let div = document.createElement( 'div' );
+    let div = createElement( 'div' );
     div.innerHTML = content;
     comp.dom = div;
     
@@ -1498,7 +1561,7 @@ function createGroupedTimer( overlayId, contentArea, group, comp ) {
     let displayText = getTimerLabel( overlayId, comp );
     let content = targetGroupTimerTemplate( { value: displayText } );
 
-    let div = document.createElement( 'div' );
+    let div = createElement( 'div' );
     div.innerHTML = content;
     comp.dom = div;
     
@@ -1559,7 +1622,7 @@ function getTimerGroup( overlayId, contentArea, groupName ) {
     }
 
     let content = targetGroupTemplate( { name: groupName } );
-    let div = document.createElement( 'div' );
+    let div = createElement( 'div' );
     div.classList.add( 'mob-dot-group' );
     div.innerHTML = content;
     let h6 = div.querySelector( 'h6' );
@@ -1631,7 +1694,7 @@ function createUngroupedDotTimer( overlayId, contentArea, comp ) {
     let content = timerTemplate( { value: displayText } );
 
     // Create the component's dom element and append it to the content area.
-    let div = document.createElement( 'div' );
+    let div = createElement( 'div' );
     div.innerHTML = content;
     
     if ( comp.action.timerIcon != null ) {
@@ -1676,7 +1739,7 @@ function createUngroupedTimer( overlayId, contentArea, comp ) {
     let content = timerTemplate( { value: displayText } );
 
     // Create the component's dom element and append it to the content area.
-    let div = document.createElement( 'div' );
+    let div = createElement( 'div' );
     div.innerHTML = content;
     
     if ( comp.action.timerIcon != null ) {
@@ -1736,15 +1799,17 @@ function applyTimerSettings( overlayId, contentArea, comp, group ) {
         }
     }
 
-    if ( overlayInstances[ overlayId ].showRemainingDuration || comp.action.showRemainingDuration ) {
+    // Set the starting conditions for the timer.
+    comp.start = comp.timestamp;
+    comp.timeRemaining = comp.action.duration;
+
+    if ( comp.start == null ) {
+        comp.dom.querySelector( 'span.time-remaining' ).innerHTML = `(??)&nbsp;`;
+    } else if ( overlayInstances[ overlayId ].showRemainingDuration || comp.action.showRemainingDuration ) {
         comp.dom.querySelector( 'span.time-remaining' ).innerHTML = `(${comp.action.duration})&nbsp;`;
     } else {
         comp.dom.querySelector( 'span.time-remaining' ).innerHTML = ``;
     }
-
-    // Set the starting conditions for the timer.
-    comp.start = comp.timestamp;
-    comp.timeRemaining = comp.action.duration;
 
     // Update visibility
     if ( comp.action.hideTimer ) {
@@ -1791,18 +1856,30 @@ function applyTimerSettings( overlayId, contentArea, comp, group ) {
     }
 
     // Set the update method.
-    comp.intervalId = window.setInterval( () => {
-        let perc = ( Math.abs( ( new Date() ) - comp.start ) / 1000 ) / comp.action.duration;
+    comp.intervalId = startInterval( () => {
 
-        comp.timeRemaining = comp.action.duration - ( comp.action.duration * perc );
+        let perc = 0;
+        let infinite = false;
 
-        if ( comp.action.actionType === ActionTypes.Countdown || comp.action.actionType === ActionTypes.BeneficialTimer ) {
+        if ( comp.start == null ) {
+            infinite = true;
+            comp.timeRemaining = intMaxValue;
+        } else {
+            perc = ( Math.abs( ( new Date() ) - comp.start ) / 1000 ) / comp.action.duration;
+            comp.timeRemaining = comp.action.duration - ( comp.action.duration * perc );
+        }
+
+        if ( infinite ) {
+            // Do nothing.
+        } else if ( comp.action.actionType === ActionTypes.Countdown || comp.action.actionType === ActionTypes.BeneficialTimer ) {
             comp.dom.querySelector( 'div.determinate' ).style.width = `${100 - ( perc * 100 )}%`;
         } else {
             comp.dom.querySelector( 'div.determinate' ).style.width = `${perc * 100}%`;
         }
 
-        if ( overlayInstances[ overlayId ].showRemainingDuration || comp.action.showRemainingDuration ) {
+        if ( infinite ) {
+            comp.dom.querySelector( 'span.time-remaining' ).innerHTML = `(??)&nbsp;`;
+        } else if ( overlayInstances[ overlayId ].showRemainingDuration || comp.action.showRemainingDuration ) {
             comp.dom.querySelector( 'span.time-remaining' ).innerHTML = `(${getDurationLabel( overlayId, comp.timeRemaining )})&nbsp;`;
         } else {
             comp.dom.querySelector( 'span.time-remaining' ).innerHTML = ``;
@@ -2121,6 +2198,58 @@ function findComponents( predicate ) {
 
 
 /**
+ * Finds the first overlay component that satisfies the given predicate.
+ * 
+ * @description This method will search all overlays.
+ * 
+ * @returns {OverlayComponent|null} Returns the first overlay components that satisfies the predicate.  Searches all overlays.
+ * 
+ * @param {(component: OverlayComponent) => boolean} predicate Invoked per iteration, if true the component is immediately returned.
+ */
+function findComponent( predicate ) {
+    for ( let overlayId in overlayInstances ) {
+        if ( overlayInstances.hasOwnProperty( overlayId ) ) {
+
+            if ( overlayInstances[ overlayId ].groupByTarget ) {
+
+                for ( let key of Object.keys( overlayInstances[ overlayId ].overlayGroups ) ) {
+
+                    for ( let i = 0; i < overlayInstances[ overlayId ].overlayGroups[ key ].components?.length; i++ ){
+                        const c = overlayInstances[ overlayId ].overlayGroups[ key ].components[ i ];
+                        if ( predicate( c ) ) {
+                            return c;
+                        }
+                    }
+
+                }
+        
+            } else {
+        
+                for ( let i = 0; i < overlayInstances[ overlayId ].overlayComponents?.length; i++ ){
+                    const c = overlayInstances[ overlayId ].overlayComponents[ i ];
+                    if ( predicate( c ) ) {
+                        return c;
+                    }
+                }
+        
+            }
+
+        }
+    }
+
+    return null;
+}
+
+
+
+
+
+
+
+
+
+
+/**
  * Destroys all overlay components predicate returns truthy for.
  * 
  * @param {string} overlayId The id of the desired overlay.
@@ -2329,6 +2458,14 @@ function playAudioFile( fileId ) {
 }
 
 
+
+
+
+
+
+
+
+
 /**
  * Shows a full glow on the primary monitor.
  * 
@@ -2344,7 +2481,7 @@ function renderGlow( color, duration, flash ) {
 
     if ( !screenGlower ) {
         let bounds = screen.getPrimaryDisplay().bounds;
-        let content = document.createElement( 'div' );
+        let content = createElement( 'div' );
 
         // box-shadow: inset 0 0 30px #00f;
         content.classList.add( 'screen-glow' );
@@ -2489,6 +2626,105 @@ function countCritX( overlayId, x ) {
     let c = 0;
     overlayInstances[ overlayId ].criticals[ x ].forEach( pos => c += pos ? 1 : 0 );
     return c;
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Creates a new DOM element, but does not add it to the dom.
+ * 
+ * @param {string|null} tagName The tag name.
+ * @param {string|number|null} id The id of the element.
+ * @returns Returns the created element.
+ */
+function createElement( tagName, id ) {
+    
+    tagName = tagName ? tagName : 'div';
+    id = id ? id : ++uuid;
+    
+    let el = document.createElement( 'div' );
+    el.setAttribute( 'id', `${id}` );
+
+    return el;
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Executes fn and sets an interval for continuous execution.
+ * 
+ * @returns {number} Returns the interval id.
+ * 
+ * @param {() => void} fn The interval function.
+ * @param {number} delay The delay, in milliseconds.
+ */
+function startInterval(fn, delay) {
+    window.setTimeout( fn );
+    return window.setInterval( fn, delay );
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Instantly removes all trigger elements from the renderer and cancels all cancellable components.
+ */
+function clearAll() {
+
+    // Instantly removes the screen glow.
+    if ( screenGlowTimerId > -1 ) {
+        window.clearTimeout( screenGlowTimerId );
+    }
+
+    if ( screenGlower ) {
+        document.body.removeChild( screenGlower );
+        screenGlower = null;
+    }
+
+    // Loop through each overlay and destroy each component.
+    let components = [];
+    for ( const overlayId of Object.keys( overlayInstances ) ) {
+
+        if ( overlayInstances[ overlayId ].groupByTarget ) {
+
+            for ( const key of Object.keys( overlayInstances[ overlayId ].overlayGroups ) ) {
+                overlayInstances[ overlayId ].overlayGroups[ key ].components?.forEach( comp => components.push( comp ) );
+            }
+        
+        } else {
+    
+            overlayInstances[ overlayId ].overlayComponents?.forEach( comp => components.push( comp ) );
+
+        }
+
+    }
+    
+    components.forEach( comp => {
+        comp.removeComponent();
+        ipcRenderer.send( 'log:destroy:component', comp.instanceId );
+    } );
+    
+    ipcRenderer.send( 'log:clear-all:done', null );
 }
 
 module.exports = Renderer;

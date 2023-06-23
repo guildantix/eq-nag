@@ -12,18 +12,51 @@
     <button mat-icon-button [matMenuTriggerFor]="menu" aria-label="Example icon-button with a menu">
         <mat-icon>more_vert</mat-icon>
     </button>
-    <mat-menu #menu="matMenu" class="trigger-main-menu">
+    <mat-menu #autoGenMenu="matMenu" class="trigger-main-menu sub-menu">
+        <h3 class="color-blue">Trigger Generators</h3>
+        <h2>Allakhazam</h2>
         <button mat-menu-item (click)="showNewDotTimerDialog()">
             <!-- <mat-icon>system_update_alt</mat-icon> -->
-            <span>DoT Timer (Allakhazam)</span>
+            <span>DoT Timer</span>
         </button>
         <button mat-menu-item (click)="showNewRaidAbilityDialog()">
             <!-- <mat-icon>system_update_alt</mat-icon> -->
-            <span>Raid Ability (Allakhazam)</span>
+            <span>Raid Ability</span>
         </button>
         <button mat-menu-item (click)="showNewBuffTimerDialog()">
             <!-- <mat-icon>system_update_alt</mat-icon> -->
-            <span>Buff Timer (Allakhazam)</span>
+            <span>Buff Timer</span>
+        </button>
+        <h2>EQ Spell Resources</h2>
+        <button mat-menu-item (click)="showNewDotTimerEqsrDialog()">
+            <!-- <mat-icon>system_update_alt</mat-icon> -->
+            <span>DoT Timer</span>
+        </button>
+        <button mat-menu-item (click)="showNewBuffTimerEqsrDialog()">
+            <!-- <mat-icon>system_update_alt</mat-icon> -->
+            <span>Buff Timer</span>
+        </button>
+    </mat-menu>
+    <mat-menu #hotkeyMenu="matMenu" class="trigger-main-menu sub-menu">
+        <h3 class="color-blue">Create Hotkeys</h3>
+        <button mat-menu-item (click)="copyDeathRecapHotkey()" [disabled]="deathRecapPreferences?.engageMode !== 'hotkey'">
+            <!-- <mat-icon>system_update_alt</mat-icon> -->
+            <span>Death Recap</span>
+        </button>
+        <button mat-menu-item (click)="copyClearAllHotkey()">
+            <!-- <mat-icon>system_update_alt</mat-icon> -->
+            <span>Clear All</span>
+        </button>
+    </mat-menu>
+    <mat-menu #menu="matMenu" class="trigger-main-menu" xPosition="before">
+        <button mat-menu-item [matMenuTriggerFor]="autoGenMenu">
+            <!-- <mat-icon>system_update_alt</mat-icon> -->
+            <span>Auto Generation</span>
+        </button>
+        <hr />
+        <button mat-menu-item [matMenuTriggerFor]="hotkeyMenu">
+            <!-- <mat-icon>system_update_alt</mat-icon> -->
+            <span>Hotkeys</span>
         </button>
         <hr />
         <button mat-menu-item (click)="showSimLogEntry()">
@@ -38,6 +71,11 @@
         <button mat-menu-item (click)="installMultiCode()">
             <!-- <mat-icon>system_update_alt</mat-icon> -->
             <span>Install Quick Share Code</span>
+        </button>
+        <hr />
+        <button mat-menu-item (click)="ginaImporter()">
+            <!-- <mat-icon>system_update_alt</mat-icon> -->
+            <span>Import from GINA</span>
         </button>
         <!-- <button mat-menu-item disabled>
             <mat-icon>voicemail</mat-icon>
@@ -62,6 +100,7 @@
                 <div class="trigger-categories-header">
                     <span>Trigger folders</span>
                     <span class="spacer"></span>
+                    <button mat-icon-button class="small" class="color-red" (click)="restoreFolderHierarchy()" *ngIf="restoreFolderHierarchy != null" matTooltip="Undo changes to the folder hierarchy."><mat-icon [inline]="true">replay</mat-icon></button>
                     <button mat-icon-button class="small" (click)="addTriggerFolderDialog()"><mat-icon [inline]="true">add</mat-icon></button>
                     <button mat-icon-button class="small" (click)="toggleTree()"><mat-icon *ngIf="!allExpanded" [inline]="true">unfold_more</mat-icon><mat-icon *ngIf="allExpanded" [inline]="true">unfold_less</mat-icon></button>
                 </div>
@@ -100,6 +139,7 @@
             </div>
 
         </div>
+
         <div class="ft-item" style="margin: 3px; width: 66%;">
             <div class="ft-content">
                 <cdk-virtual-scroll-viewport tvsItemSize itemSize="27" class="wrapper mat-elevation-z2" style="height: 100%" #triggerScroller>
@@ -131,7 +171,7 @@
                         </ng-container>
     
                         <ng-container matColumnDef="name">
-                            <th mat-header-cell *matHeaderCellDef style="padding-left: 15px;"> Name </th>
+                            <th mat-header-cell *matHeaderCellDef style="padding-left: 15px;"> Name <span style="float:right;" *ngIf="filteredTriggers?.length > 0"><span style="font-weight: 400;">Count:</span> {{filteredTriggers?.length}}</span></th>
                             <td mat-cell *matCellDef="let element; let i = index" style="padding-left: 15px;">{{element.name}} <span class="text-depress" style="float: right;">{{getTriggerFamily(element)}}</span></td>
                         </ng-container>
     
@@ -151,6 +191,6 @@
                 </cdk-virtual-scroll-viewport>
             </div>
         </div>
+
     </div>
-    
 </div>

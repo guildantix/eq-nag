@@ -14,6 +14,7 @@ export class ConditionsComponent implements OnInit {
 
     @Input() public conditions: TriggerCondition[];
     @Input() public conditionType: TriggerConditionTypes = TriggerConditionTypes.VariableValue;
+    @Input() public lighter: boolean = false;
     @Output() public conditionsChange: EventEmitter<TriggerCondition[]> = new EventEmitter<TriggerCondition[]>();
 
     public triggerConditionTypes: typeof TriggerConditionTypes = TriggerConditionTypes;

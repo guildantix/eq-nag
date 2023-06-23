@@ -53,6 +53,9 @@ class WindowManager {
     /** @type {NodeJS.Timeout} */
     #resumeRendererMouseForwardingTimeout = null;
 
+    /** @type {number} */
+    #windowIndex = 0;
+
     constructor( dirname ) {
         this.#dirname = dirname;
     }
@@ -109,6 +112,14 @@ class WindowManager {
 
         this.#overlayDatabase.registerOverlayDeleteHandler( overlayId => {
             this.#renderer.webContents.send( 'renderer:overlay:delete', overlayId );
+        } );
+
+        ipcMain.handle( 'scraper:get:eqsr-spell', async ( event, eqsrUrl ) => {
+            return await this.scrapeEqsrResource( eqsrUrl, 'spell' );
+        } );
+
+        ipcMain.handle( 'scraper:get:eqsr-itemClick', async ( event, eqsrUrl ) => {
+            return await this.scrapeEqsrResource( eqsrUrl, 'clickEffect' );
         } );
 
         ipcMain.on( 'trigger:dialog:new', ( event, arg ) => {
@@ -339,6 +350,10 @@ class WindowManager {
             this.#renderer.webContents.send( 'renderer:receive:component', component );
         } );
         
+        ipcMain.on( 'overlay:send:secondary-action', ( event, token ) => {
+            this.#renderer.webContents.send( 'renderer:receive:secondary-action', token );
+        } );
+        
         ipcMain.on( 'overlay:send:fct-component', ( event, component ) => {
             this.#renderer.webContents.send( 'renderer:receive:fct-component', component );
         } );
@@ -423,6 +438,11 @@ class WindowManager {
             this.ginaImportWindow.setBackgroundColor( '#1a1a1a' );
             this.configureRendererMouseBlockingOnMoveResize( this.ginaImportWindow );
 
+            // Open the DevTools.
+            if ( app.isDev() ) {
+                this.ginaImportWindow.webContents.openDevTools( { mode: 'undocked' } );
+            }
+            
         } );
 
         ipcMain.on( 'trigger:dialog:library', ( event, arg ) => {
@@ -465,6 +485,10 @@ class WindowManager {
 
         ipcMain.on( 'window:update-notes:show', ( event, arg ) => {
             this.showUpdateNotes(event, arg);
+        } );
+
+        ipcMain.on( 'renderer:clear-all', ( event, arg ) => {
+            this.#renderer.webContents.send( 'renderer:clear-all', null );
         } );
         
         userPreferencesDatabase.onFctStyleChanges.push( fctStyles => {
@@ -590,9 +614,10 @@ class WindowManager {
         require( "@electron/remote/main" ).enable( renderer.webContents );
         
         // TODO: Put the padding in the size calculations and not here.
+        // Reducing the height by 1 pixel will allow access to a hidden taskbar.
         renderer.setBounds( {
             width: bounds.width,
-            height: bounds.height,
+            height: bounds.height - 1,
             x: bounds.x,
             y: bounds.y,
         } );
@@ -926,7 +951,9 @@ class WindowManager {
         if ( rendererOnTopId ) {
             clearTimeout( rendererOnTopId );
         }
-        this.#renderer?.close();
+        if ( !this.#renderer?.isDestroyed() ) {
+            this.#renderer?.close();
+        }
         this.#renderer = null;
     }
 
@@ -1073,7 +1100,8 @@ class WindowManager {
         this.#renderer.movable = true;
         this.#renderer.resizable = true;
 
-        this.#renderer?.setSize( newSize.width, newSize.height );
+        // Reducing the height by 1 pixel will allow access to a hidden taskbar.
+        this.#renderer?.setSize( newSize.width, newSize.height - 1 );
         this.#renderer?.setPosition( newSize.x, newSize.y );
 
         // Lock this window back down.
@@ -1207,8 +1235,67 @@ class WindowManager {
      * Resumes mouse forwarding for the renderer.
      */
     resumeRendererMouseForwarding() {
-        this.#renderer.webContents.send( 'renderer:mouse-forwarding:resume', {} );
-        this.#renderer.setIgnoreMouseEvents( true, { forward: true } );
+        this.#renderer?.webContents.send( 'renderer:mouse-forwarding:resume', {} );
+        this.#renderer?.setIgnoreMouseEvents( true, { forward: true } );
+    }
+
+
+    /**
+     * Opens a thread that parses the given url for the eq spell resources resource.
+     * 
+     * @returns {Promise<string>} Returns the scraped spell.
+     * 
+     * @param {string} url The EQ Spell Resources url.
+     * @param {'spell'|'clickEffect'|undefined} scrapeAction The type of scrape action to execute.
+     */
+    scrapeEqsrResource( url, scrapeAction ) {
+        
+        scrapeAction = scrapeAction ? scrapeAction : 'spell';
+        let wi = ++this.#windowIndex;
+
+        /** @type {Promise<string>} */
+        let p = new Promise( ( resolve, reject ) => {
+            
+            let scraperWindow = new BrowserWindow( {
+                parent: this.#mainWindow.reference,
+                modal: false,
+                show: false,
+                width: 700,
+                height: 870,
+                frame: false,
+                webPreferences: {
+                    nodeIntegration: false,
+                    contextIsolation: true,
+                    devTools: app.isDev(),
+                    sandbox: false,
+                    preload: path.join( __dirname, '/preloaders/scraper-eqsr.js' ),
+                }
+            } );
+        
+            // Open the DevTools.
+            if ( app.isDev() ) {
+                scraperWindow.webContents.openDevTools( { mode: 'undocked' } );
+            }
+            
+            ipcMain.once( 'scraper:done[' + wi + ']', ( event, spell ) => {
+                ipcMain.removeAllListeners( 'scraper:error' );
+                scraperWindow.close();
+                scraperWindow = null;
+                resolve( spell );
+            } );
+
+            ipcMain.once( 'scraper:error[' + wi + ']', ( event, error ) => {
+                ipcMain.removeAllListeners( 'scraper:done' );
+                scraperWindow.close();
+                scraperWindow = null;
+                reject( error );
+            } );
+
+            scraperWindow.loadURL( `file://${__dirname}/threads/scraper-eqsr.html?i=${wi}&action=${scrapeAction}&url=${encodeURI( JSON.stringify( url ) )}` );
+
+        } );
+    
+        return p;
     }
     
 

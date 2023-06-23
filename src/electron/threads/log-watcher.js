@@ -1,11 +1,11 @@
 // const ipc = require( 'electron' ).ipcMain;
 const { ipcRenderer } = require( 'electron' );
 const fs = require( 'fs' );
-const { TriggerAction, ActionTypes, TriggerConditionTypes, OperatorTypes, CharacterClassLevel, TriggerSubAction } = require( '../data/models/trigger' );
+const { TriggerAction, ActionTypes, TriggerConditionTypes, OperatorTypes, CharacterClassLevel, TriggerSubAction, TriggerFolder, TriggerCondition, CapturePhrase, Phrase } = require( '../data/models/trigger' );
 const { QuickShareAuthorListTypes } = require( '../data/models/common' );
 const { PhraseParse, LogTrigger } = require( './log.model' );
-const { OverlayComponent, OverlayWindow } = require( '../data/models/overlay-window' );
-const CharacterModel = require( '../data/models/character' );
+const { OverlayComponent, OverlayWindow, TriggerSecondaryActionModel } = require( '../data/models/overlay-window' );
+const { CharacterModel } = require( '../data/models/character' );
 const customAlphabet = require( 'nanoid' ).customAlphabet;
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const nanoid = customAlphabet( alphabet, 16 );
@@ -16,6 +16,7 @@ const NumberUtilities = require( '../utilities/numbers' );
 const { FctModel, FctTypes } = require( '../data/models/fct' );
 const { DateUtilities } = require( '../utilities/dates' );
 const { IpcMessage } = require( '../data/models/common' );
+const ArrayUtilities = require( '../utilities/arrays' );
 const chunkSize = 512 * 1024;
 
 /**
@@ -57,12 +58,18 @@ var watcher = null;
 var overlays = [];
 /** @type {LogTrigger[]} */
 var triggers = [];
+/** @type {TriggerFolder[]} */
+var triggerFolders = [];
 /** @type {Record<string, string[]>} */
 var storedVariables = {};
 /** @type {Record<string, {value: number, lastUpdate: Date, resetDelay: number, _parse: (logEntry: string) => boolean}>} */
 var counters = {};
-/** @type {{_parse: (logEntry: string) => boolean, instanceId: string}} */
+/** @type {{_parse: (logEntry: string) => boolean, instanceId: string}[]} */
 var cancellableComponents = [];
+/** @type {{_parse: (logEntry: string) => boolean, _trigger: (instanceId: string, timestamp: Date) => void, instanceId: string}[]} */
+var secondaryTriggerActions = [];
+/** @type {{_parse: (logEntry: string) => boolean, _trigger: (instanceId: string, timestamp: Date) => void, instanceId: string}[]} */
+var dotWornOffTracking = [];
 /** @type {Record<string, string[]>} */
 var usedConditionValues = {};
 var enableFct = false;
@@ -92,6 +99,7 @@ var persistentDictionary = {};
 var detrimentalOverlayId = null;
 /** @type {string} */
 var characterId = null;
+const serverTickDuration = 6;
 
 /** @type {Record<string, {trigger: LogTrigger, res: PhraseParse}>} */
 let actionInstances = {};
@@ -101,6 +109,114 @@ let quickShareAuthorsListType = QuickShareAuthorListTypes.Disabled;
 
 /** @type {string[]} */
 let quickShareAuthorsList = [];
+
+/** @type {HTMLAudioElement[]} */
+let audioPlayers = [];
+
+/** @type {string} */
+let logFilePath = null;
+
+/** @type {number|null} */
+let eqTick = null;
+
+/** @type {number[]} */
+let outOfSyncEqTicks = [];
+
+const resetEqTickOnCount = 3;
+
+/** @type {number} */
+let eqTickUpdate = 0;
+
+/** @type {number|null} */
+let eqTickIntervalId = null;
+
+const eqTickMaxUpdateDistance = 60 * 1000;
+const eqTickVariance = 1500;
+
+/** @type {number|null} */
+let eqTickTimeoutId = null;
+
+/**
+ * Starts tracking the server tick.
+ * 
+ * @param {number} time The eq tick time in milliseconds since midnight, January 1, 1970 UTC.
+ */
+let startEqTickTracking = ( time ) => {
+    
+    if ( eqTickTimeoutId > 0 ) {
+        window.clearTimeout( eqTickTimeoutId );
+    }
+    if ( eqTickIntervalId > 0 ) {
+        window.clearInterval( eqTickIntervalId );
+    }
+
+    // Set a timeout that will start the interval at the next server tick.
+    eqTickTimeoutId = window.setTimeout( () => {
+
+        // Set the current eq tick time.
+        eqTick = new Date().getTime();
+
+        // We should be synced with EQ time (for a bit at least) so let's start the 6 second interval tracking ticks.
+        eqTickIntervalId = window.setInterval( () => {
+            // Set the current eq tick time.
+            eqTick = new Date().getTime();
+        }, 6000 );
+
+    // The duration of the timeout needs to sync the computer clock with the timestamp given from the log entry.
+    }, time + ( 6 * 1000 ) - ( new Date().getTime() ) );
+}
+
+/**
+ * Returns the next estimated EQ Server Tick for this character.
+ * 
+ * @returns {Date}
+ */
+let nextEqTick = () => {
+    if ( eqTick > 0 ) {
+        return new Date( eqTick + 6 * 1000 );
+    } else {
+        return null;
+    }
+}
+
+/**
+ * Sets the current tick value.
+ * 
+ * @param {Date} timestamp The timestamp of the tick.
+ */
+let setEqTick = ( timestamp ) => {
+    if ( timestamp ) {
+        let time = timestamp.getTime();
+
+        let updateTime = new Date().getTime();
+        let updateDistance = Math.abs( eqTickUpdate - updateTime );
+        let nextTickTime = eqTick + 6 * 1000;
+
+        let update = () => {
+            eqTick = time;
+            startEqTickTracking( time );
+        }
+
+        if ( updateDistance >= eqTickMaxUpdateDistance || Math.abs( nextTickTime - time ) > eqTickVariance ) {
+            // If we haven't had a tick update in a while or the tick is way out of variance, then we'll just go with it.
+            update();
+
+        } else {
+
+            if ( !outOfSyncEqTicks.includes( time ) ) {
+                outOfSyncEqTicks.push( time );
+            }
+
+            // If the tick time is inside the variance amount for more than the configured number of distinct ticks, then let's update the tick timer.
+            if ( outOfSyncEqTicks.length >= resetEqTickOnCount ) {
+                update();
+            }
+        }
+        
+
+
+    }
+}
 // Common errors:
 //  ${C} instead of {C}
 //  ${CharacterName} isntead of ${Character}
@@ -249,6 +365,8 @@ function LogWatcher(character, logPosition) {
          * @param {string} data The log file path.
          */
         function ( event, data ) {
+            
+            logFilePath = data;
 
             if ( logParseTimeoutId > 0 ) {
                 window.clearTimeout( logParseTimeoutId );
@@ -338,7 +456,7 @@ function LogWatcher(character, logPosition) {
                     parseLogEntries( lines[ i ], false, padTime );
                 }
                 if ( lastBlock ) {
-                    speakPhrase( 'Simulation ended', false, {}, false, {}, 0, 0, 100, () => ipcRenderer.send( 'log:simulate:done', characterId ) );
+                    speakPhrase( 'Simulation ended', false, false, {}, false, {}, 0, 0, 100, 1, () => ipcRenderer.send( 'log:simulate:done', characterId ) );
                 }
             };
         
@@ -383,11 +501,12 @@ function LogWatcher(character, logPosition) {
     } );
 
     ipcRenderer.on( 'log:speak:phrase', function ( event, data ) {
-        speakPhrase( data.phrase, data.interruptSpeech, null, false, data.parseResult, data.timerDuration );
+        speakPhrase( data.phrase, data.interruptSpeech, data.speakNext === true, null, false, data.parseResult, data.timerDuration, 0, 100, 1 );
     } );
 
     ipcRenderer.on( 'tick', function ( event, data ) {
         triggers = data.triggers;
+        triggerFolders = data.folders;
         enableFct = data.enableFct;
         damageDealtOverlayId = data.damageDealtOverlayId;
         damageReceivedOverlayId = data.damageReceivedOverlayId;
@@ -402,15 +521,24 @@ function LogWatcher(character, logPosition) {
         quickShareAuthorsListType = data.quickShareAuthorsListType;
         quickShareAuthorsList = data.quickShareAuthorsList;
 
+        applyFolderConditions( triggerFolders );
         generateTriggerFns();
         initCounters();
     } );
 
     ipcRenderer.on( 'component:destroy', function ( event, instanceId ) {
 
+        // Let's remove the destroyed instance from any cancellation or secondary action tracking.
         if ( cancellableComponents?.length > 0 ) {
-            // Remove the cancelled items.
             _.remove( cancellableComponents, token => token.instanceId === instanceId );
+        }
+
+        if ( secondaryTriggerActions?.length > 0 ) {
+            secondaryTriggerActions = secondaryTriggerActions.filter( t => t.instanceId !== instanceId );
+        }
+
+        if ( dotWornOffTracking?.length > 0 ) {
+            dotWornOffTracking = dotWornOffTracking.filter( t => t.instanceId !== instanceId );
         }
         
         actionInstances[ instanceId ] = null;
@@ -429,7 +557,7 @@ function LogWatcher(character, logPosition) {
             }
         }
 
-        if ( activeCounters || cancellableComponents?.length > 0 ) {
+        if ( activeCounters || cancellableComponents?.length > 0 || secondaryTriggerActions?.length > 0 ) {
             // We're still alive, don't kill us!
             e.sender.send( 'log:pulse', true );
         } else {
@@ -499,6 +627,10 @@ function LogWatcher(character, logPosition) {
                 executeTriggerAction( instanceData.trigger, action, new Date(), instanceData.res, deltaTime, false );
             }
         } );
+    
+    ipcRenderer.on( 'log:clear-all:done', () => {
+        // This used to speak, but it was a bit much.
+    } );
 
     ipcRenderer.send( 'settings:get:persistent-storage', null );
 
@@ -636,9 +768,18 @@ function generateTriggerFns() {
                 }
             } );
 
-            /** @type {Record<string, string[]>} */
+            /** @type {Record<string, string[]>} This object stores values converted from user input for condition checks.  Ex: Knowledge|Tranquility => ['Knowledge', 'Tranquility'] */
             let _conditionValues = {};
             trigger.conditions?.forEach( condition => {
+                if ( condition.variableValue ) {
+                    _conditionValues[ condition.variableName ] = condition.variableValue.split( /\|/gi ) ?? [];
+                    _conditionValues[ condition.variableName ].forEach( v => v = v?.trim() );
+                } else {
+                    _conditionValues[ condition.variableName ] = null;
+                }
+            } );
+
+            trigger._folderConditions?.forEach( condition => {
                 if ( condition.variableValue ) {
                     _conditionValues[ condition.variableName ] = condition.variableValue.split( /\|/gi ) ?? [];
                     _conditionValues[ condition.variableName ].forEach( v => v = v?.trim() );
@@ -654,6 +795,29 @@ function generateTriggerFns() {
             trigger._checkConditions = function () {
                 let conditionsPassed = true;
 
+                if ( trigger._passesClassCondition === false ) {
+                    return false;
+
+                } else if ( StringUtilities.isNullOrWhitespace( charModel.class ) ) {
+                    trigger._passesClassCondition = true;
+                    
+                } else if ( trigger._passesClassCondition === undefined && trigger.classLevels?.length > 0 ) {
+                    let classLevels = trigger.classLevels.filter( f => f.class?.trim().length > 0 ) ?? [];
+
+                    trigger._passesClassCondition = classLevels.length === 0;
+                    
+                    for ( let i = 0; i < classLevels.length; i++ ) {
+                        if ( classLevels[ i ].class === charModel.class ) {
+                            trigger._passesClassCondition = true;
+                            break;
+                        }
+                    }
+
+                    if ( !trigger._passesClassCondition ) {
+                        return false;
+                    }
+                }
+
                 if ( trigger._onCooldown ) {
                     // If the trigger is on cooldown, determine if the trigger must remain on cooldown.
                     let ellapsedCooldown = DateUtilities.timeSince( trigger._cooldownStart, new Date() );
@@ -661,13 +825,19 @@ function generateTriggerFns() {
                         trigger._onCooldown = false;
                     }
 
-                    return !trigger._onCooldown;
+                    if ( trigger._onCooldown ) {
+                        return false;
+                    }
                 }
 
                 trigger._conditionResults = {};
 
-                // The trigger must pass each condition.
-                trigger.conditions?.forEach( condition => {
+                /**
+                 * Executes the given trigger condition checks and evaluations.
+                 * 
+                 * @param {TriggerCondition} condition The condition to check.
+                 */
+                const checkCondition = condition => {
                     if ( condition.conditionType === TriggerConditionTypes.VariableValue ) {
                         if ( condition.operatorType === OperatorTypes.Equals ) {
                             
@@ -706,7 +876,6 @@ function generateTriggerFns() {
                             }
 
                         } else if ( condition.operatorType === OperatorTypes.Contains ) {
-
                             let storedValue = storeContainsValue( condition.variableName, _conditionValues[ condition.variableName ] );
 
                             if ( !storedValue.exists ) {
@@ -720,13 +889,32 @@ function generateTriggerFns() {
                             
                         }
                     }
-                } );
+                }
+
+                // The trigger must pass each condition.
+                trigger.conditions?.forEach( condition => checkCondition( condition ) );
+
+                // Check folder conditions as well.
+                trigger._folderConditions?.forEach( condition => checkCondition( condition ) );
 
                 return conditionsPassed;
             }
 
             // Grab condition values and store them
             trigger.conditions.forEach( condition => {
+                if ( !StringUtilities.isNullOrWhitespace( condition.variableValue ) ) {
+                    let values = condition.variableValue.split( /\|/gi ) ?? [];
+                    usedConditionValues[ condition.variableName ] = usedConditionValues[ condition.variableName ] ? usedConditionValues[ condition.variableName ] : [];
+                    for ( let i = 0; i < values?.length; i++ ) {
+                        if ( usedConditionValues[ condition.variableName ].indexOf( values[ i ] ) == -1 ) {
+                            usedConditionValues[ condition.variableName ].push( values[ i ] );
+                        }
+                    }
+                }
+            } );
+            
+            // Store folder condition values as well
+            trigger._folderConditions?.forEach( condition => {
                 if ( !StringUtilities.isNullOrWhitespace( condition.variableValue ) ) {
                     let values = condition.variableValue.split( /\|/gi ) ?? [];
                     usedConditionValues[ condition.variableName ] = usedConditionValues[ condition.variableName ] ? usedConditionValues[ condition.variableName ] : [];
@@ -938,7 +1126,7 @@ function parseLogEntries( raw, simulating, padTime ) {
             // 3: rgxThorns
             /(.*) is pierced by YOUR thorns for ([0-9]*) points of non-melee damage\./gi,
             // 4: rgxSkillUp
-            /You have become better at ([a-zA-Z0-9_]*)! \(([0-9]*)\)/gi,
+            /You have become better at ([a-zA-Z0-9_\s]*)! \(([0-9]*)\)/gi,
             // 5: rgxTakeMeleeDmg
             /(.*) ([a-zA-Z0-9_]*) YOU for ([0-9]*) points of damage\./gi,
             // 6: rgxAvoidMeleeDmg
@@ -1162,6 +1350,32 @@ function parseLogEntries( raw, simulating, padTime ) {
             _.remove( cancellableComponents, token => tokenIds.indexOf( token.instanceId ) > -1 );
         }
 
+        if ( secondaryTriggerActions?.length > 0 ) {
+            
+            // Iterate backwards so we can safely remove triggered actions as we go.
+            for ( let i = secondaryTriggerActions.length - 1; i >= 0; i-- ){
+                const token = secondaryTriggerActions[ i ];
+                if ( token._parse( log ) ) {
+                    token._trigger( token.instanceId, timestamp );
+                    secondaryTriggerActions.splice( i, 1 );
+                }
+            }
+            
+        }
+
+        if ( dotWornOffTracking?.length > 0 ) {
+            
+            // Iterate backwards so we can safely remove expired actions as we go.
+            for ( let i = dotWornOffTracking.length - 1; i >= 0; i-- ){
+                const token = dotWornOffTracking[ i ];
+                if ( token._parse( log ) ) {
+                    token._trigger( token.instanceId, timestamp );
+                    dotWornOffTracking.splice( i, 1 );
+                }
+            }
+            
+        }
+
         if ( counters ) {
             for ( let key of Object.keys( counters ) ) {
 
@@ -1190,29 +1404,37 @@ function parseLogEntries( raw, simulating, padTime ) {
 
         let entryMatched = false;
         triggers.forEach( trigger => {
-            if ( !!trigger.enabled ) {
-                trigger._parse( log, ( res, deltaTime ) => {
-                    trigger.actions.forEach( action => {
-                        // This used to execute actions if there are no phrases on the action, but now it doesn't because the action may exist only as a subaction
-                        // ( action.phrases == null || action.phrases?.length === 0 || action.phrases?.indexOf( res.phraseId ) > -1 )
-                        if ( ( isDev || !action.onlyExecuteInDev ) && action.phrases?.indexOf( res.phraseId ) > -1 ) {
+            
+            try {
+                
+                if ( !!trigger.enabled ) {
+                    trigger._parse( log, ( res, deltaTime ) => {
+                        trigger.actions.forEach( action => {
+                            // This used to execute actions if there are no phrases on the action, but now it doesn't because the action may exist only as a subaction
+                            // ( action.phrases == null || action.phrases?.length === 0 || action.phrases?.indexOf( res.phraseId ) > -1 )
+                            if ( ( isDev || !action.onlyExecuteInDev ) && action.phrases?.indexOf( res.phraseId ) > -1 ) {
 
-                            enableLogging && sendInformationToLog( `Execute trigger action [${trigger.name}] : ${ActionTypes[ action.actionType ]}`, 24 );
-                            enableLogging && sendInformationToLog( `    ||${raw}||`, 24 );
+                                enableLogging && sendInformationToLog( `Execute trigger action [${trigger.name}] : ${ActionTypes[ action.actionType ]}`, 24 );
+                                enableLogging && sendInformationToLog( `    ||${raw}||`, 24 );
 
-                            executeTriggerAction( trigger, action, timestamp, res, deltaTime, simulating );
+                                executeTriggerAction( trigger, action, timestamp, res, deltaTime, simulating );
+                            }
+                        } );
+                        entryMatched = true;
+
+                        // If the trigger has a cooldown, start the cooldown now.
+                        if ( trigger.useCooldown ) {
+                            trigger._onCooldown = true;
+                            trigger._cooldownStart = new Date();
                         }
+
                     } );
-                    entryMatched = true;
+                }
 
-                    // If the trigger has a cooldown, start the cooldown now.
-                    if ( trigger.useCooldown ) {
-                        trigger._onCooldown = true;
-                        trigger._cooldownStart = new Date();
-                    }
-
-                } );
+            } catch ( error ) {
+                logError( error, raw, simulating, padTime );
             }
+            
         } );
 
         if ( entryMatched ) {
@@ -1357,7 +1579,7 @@ function executeTriggerAction( trigger, action, timestamp, res, deltaTime, simul
             duration = +action.duration;
         }
 
-        speakPhrase( action.displayText, action.interruptSpeech, trigger._conditionResults, simulating, res.result, duration, deltaTime, action.speechVolume );
+        speakPhrase( action.displayText, action.interruptSpeech, action.speakNext, trigger._conditionResults, simulating, res.result, duration, deltaTime, action.speechVolume, action.speechRate );
     
     } else if ( action.actionType === ActionTypes.DisplayDeathRecap ) {
         /* --== Death Recap ==-- */
@@ -1369,7 +1591,54 @@ function executeTriggerAction( trigger, action, timestamp, res, deltaTime, simul
         
         displayScreenGlow(action);
         
+    } else if ( action.actionType === ActionTypes.ClearAll ) {
+        /* --== Clear All ==-- */
+
+        clearAll();
     }
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Sends the command to the render to clear all overlay components.  Restarts all counters.
+ */
+function clearAll() {
+
+    for ( const key of Object.keys( counters ) ) {
+        counters[ key ].value = 0;
+    }
+
+    for ( const key of Object.keys( storedVariables ) ) {
+        storedVariables[ key ] = [];
+    }
+
+    let len = audioPlayers?.length ?? 0;
+    for ( let i = len - 1; i >= 0; i-- ) {
+        let player = audioPlayers.splice( i, 1 )[ 0 ];
+        player.pause();
+        player = null;
+    }
+
+    utterances = [];
+    speechSynthesis.cancel();
+
+    changingLogFile = true;
+    window.setTimeout( () => {
+        changingLogFile = false;
+        // currentPosition = null;
+        backfind( logFilePath, () => startParsingLogFile( logFilePath, currentPosition >= 0 ? currentPosition : null ) );
+    }, logParseTimer );
+
+    ipcRenderer.send( 'renderer:clear-all', null );
+
 }
 
 
@@ -1538,7 +1807,7 @@ function displayDotTimerComponent( res, timestamp, action, deltaTime, trigger ) 
     comp.action.displayText = `${trigger.name} --== ${res.result.groups.target} ==--`;
     comp.overlayId = action.overlayId;
     comp.matches = res.result;
-    comp.timestamp = timestamp;
+    comp.timestamp = comp.action.secondaryPhrases?.length > 0 ? null : timestamp;
     comp.voiceIndex = voiceIndex;
     
     if ( comp.action.endingSoonDisplayText ) {
@@ -1632,6 +1901,92 @@ function displayDotTimerComponent( res, timestamp, action, deltaTime, trigger ) 
             },
             instanceId: comp.instanceId
         } );
+    }
+
+    if ( comp.action.secondaryPhrases?.length > 0 ) {
+        let phrases = trigger.capturePhrases.filter( f => comp.action.secondaryPhrases.indexOf( f.phraseId ) > -1 );
+        let renderedPhrases = renderPhrases( phrases, trigger._conditionResults, res.result, deltaTime, true );
+
+        secondaryTriggerActions.push( {
+            /**
+             * Returns true if the given log entry matches the phrases.
+             * 
+             * @param {string} logEntry The log entry to parse.
+             * @returns {boolean}
+             */
+            _parse: ( logEntry ) => {
+                let matched = false;
+                
+                renderedPhrases.forEach( phrase => {
+                    let _res = new RegExp( phrase, 'gi' ).exec( logEntry );
+                    if ( _res?.length > 0 ) {
+                        enableLogging && sendInformationToLog( `DoT Timer secondary action: [${logEntry}]` );
+                        matched = true;
+                    }
+                } );
+
+                return matched;
+            },
+            /**
+             * Executes this component's secondary action.
+             * 
+             * @param {string} instanceId The instance id of the component.
+             * @param {Date} timestamp The timestamp of the log entry.
+             */
+            _trigger: ( instanceId, timestamp ) => {
+                let m = new TriggerSecondaryActionModel();
+                m.instanceId = instanceId;
+                m.timestamp = timestamp;
+                m.action = 'setStart';
+                ipcRenderer.send( 'overlay:send:secondary-action', m );
+            },
+            instanceId: comp.instanceId
+        } );
+
+        let wornOffPhrase = new Phrase();
+        // https://regex101.com/r/zp2l25/1
+        // ^Your Polybiad Venom(?:\sRk\. III?)? spell has worn off of Combat Dummy Azia\.
+        wornOffPhrase.phrase = `^Your ${trigger.name}(?:\\sRk\\. III?)? spell has worn off of ?{target}\\.`;
+        wornOffPhrase.useRegEx = true;
+        wornOffPhrase.phraseId = nanoid();
+        let renderedWornOffPhrases = renderPhrases( [ wornOffPhrase ], trigger._conditionResults, res.result, deltaTime, true );
+        
+        dotWornOffTracking.push( {
+            /**
+             * Returns true if the given log entry matches the phrases.
+             * 
+             * @param {string} logEntry The log entry to parse.
+             * @returns {boolean}
+             */
+            _parse: ( logEntry ) => {
+                
+                for ( let i = 0; i < renderedWornOffPhrases.length; i++ ) {
+                    const phrase = renderedWornOffPhrases[ i ];
+                    let _res = new RegExp( phrase, 'gi' ).exec( logEntry );
+                    if ( _res?.length > 0 ) {
+                        enableLogging && sendInformationToLog( `DoT Timer worn off: [${logEntry}]` );
+                        return true;
+                    }
+                }
+
+                return false;
+            },
+            /**
+             * Executes this component's secondary action.
+             * 
+             * @param {string} instanceId The instance id of the component.
+             * @param {Date} timestamp The timestamp of the log entry.
+             */
+            _trigger: ( instanceId, timestamp ) => {
+                let m = new TriggerSecondaryActionModel();
+                m.instanceId = instanceId;
+                m.action = 'clipTimer';
+                m.timestamp = timestamp;
+                ipcRenderer.send( 'overlay:send:secondary-action', m );
+            },
+            instanceId: comp.instanceId,
+        } );
+        
     }
 
     return comp.instanceId;
@@ -2118,12 +2473,15 @@ function clearAllStoredValuesInVariable( key ) {
 /**
  * Renders the given list of phrases into regular expressions.
  * 
- * @param {Phrase} phrases The list of phrases to render.
+ * @returns {string[]} Returns the rendered phrase regex.
+ * 
+ * @param {Phrase[]} phrases The list of phrases to render.
  * @param {Record<string,any>} conditionResults The value of condition checks for the executed trigger.
  * @param {RegExpExecArray} parseResult The regexp exec array of the parsed log entry.
  * @param {number} deltaTime The change in time, in milliseconds, since the previous sequential capture.
+ * @param {boolean} parseSequentialMatches If true, sequential group matches will be parsed.
  */
-function renderPhrases( phrases, conditionResults, parseResult, deltaTime ) {
+function renderPhrases( phrases, conditionResults, parseResult, deltaTime, parseSequentialMatches ) {
     let renderedPhrases = [];
     
     deltaTime = deltaTime != null ? deltaTime : 0;
@@ -2134,6 +2492,7 @@ function renderPhrases( phrases, conditionResults, parseResult, deltaTime ) {
         renderedPhrase = StringUtilities.parseShortCodeValuesToLiteral( renderedPhrase, characterName, 0, parseResult?.groups, parseResult ? parseResult[ 0 ] : null );
         renderedPhrase = StringUtilities.parseStoredVariablesToLiteral( renderedPhrase, storedVariables );
         renderedPhrase = conditionResults?.length > 0 ? StringUtilities.parseConditionResultsToLiteral( renderedPhrase, conditionResults ) : renderedPhrase;
+        renderedPhrase = parseSequentialMatches === true && parseResult?.groups ? StringUtilities.parseSequentialGroups( renderedPhrase, parseResult.groups ) : renderedPhrase;
         renderedPhrase = parseResult?.length > 0 ? StringUtilities.parseMatchesToLiteral( renderedPhrase, parseResult, deltaTime ) : renderedPhrase;
         renderedPhrase = StringUtilities.parseCountersToLiteral( renderedPhrase, counters );
 
@@ -2161,6 +2520,7 @@ function renderPhrases( phrases, conditionResults, parseResult, deltaTime ) {
  * 
  * @param {string} phrase The phrase to speak.
  * @param {boolean} interrupt If true, interrupts the current utterance if the speech engine is speaking.
+ * @param {boolean} speakNext If true, lets the current utterance complete but forces this speech next.
  * @param {Record<string, string>} conditionResults The condition results.
  * @param {boolean} simulating If true the phrase is written to the log instead of spoken.
  * @param {RegExpExecArray} parseResult The regexp exec array of the parsed log entry.
@@ -2169,7 +2529,7 @@ function renderPhrases( phrases, conditionResults, parseResult, deltaTime ) {
  * @param {number} speechVolume The volume which to speak.
  * @param {() => void} afterSpeech Executes function after speech ended.
  */
-function speakPhrase( phrase, interrupt, conditionResults, simulating, parseResult, timerDuration, deltaTime, speechVolume, afterSpeech ) {
+function speakPhrase( phrase, interrupt, speakNext, conditionResults, simulating, parseResult, timerDuration, deltaTime, speechVolume, rate, afterSpeech ) {
     
     if ( !simulating && phrase && voiceIndex > -1 ) {
 
@@ -2187,6 +2547,7 @@ function speakPhrase( phrase, interrupt, conditionResults, simulating, parseResu
         utter.text = StringUtilities.parsePhoneticTransformsToLiteral( utter.text, phoneticTransforms );
         utter.voice = voiceOptions[ voiceIndex ];
         utter.volume = ( masterVolume * ( speechVolume > 0 ? speechVolume / 100 : 1 ) ) / 100;
+        utter.rate = rate ?? 1;
         
         utter.onend = function ( event ) {
             let i = utterances.indexOf( this );
@@ -2208,10 +2569,23 @@ function speakPhrase( phrase, interrupt, conditionResults, simulating, parseResu
             
             // Put this speech at the top of the list.
             utterances.unshift( utter );
+
+            // Deletes the next item in the queue, preventing the system from attempting to re-speak what was already started.
+            utterances.splice( 1, 1 );
             
             // Tell the engine to start talking.
             speechSynthesis.speak( utterances[ 0 ] );
     
+        } else if ( speakNext && speechSynthesis.speaking ) {
+            
+            if ( utterances.length > 1 ) {
+                // If there is another queued utterance, then push this utterance to the next in line.
+                utterances = [].concat( utter, ...utterances.slice( 1 ) );
+            } else {
+                // Otherwise just push it into the array at the end.
+                utterances.push( utter );
+            }
+
         } else {
             
             // Put the utterance at the end of the queue.
@@ -2323,6 +2697,13 @@ function playAudioFile( fileId, audioVolume ) {
             let player = new Audio( url );
             player.volume = ( masterVolume * ( audioVolume > 0 ? audioVolume / 100 : 1 ) ) / 100;
             player.play();
+            audioPlayers.push( player );
+            player.addEventListener( 'ended', ( event ) => {
+                let i = audioPlayers.indexOf( player );
+                if ( i > -1 ) {
+                    audioPlayers.splice( i, 1 );
+                }
+            } );
         }
     } );
     ipcRenderer.send( 'audio-file:get:url', fileId );
@@ -2507,6 +2888,37 @@ function backfind( log, callback ) {
 
     }
 
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Applies folder conditions to each trigger.
+ * 
+ * @param {TriggerFolder[]} folders The trigger folders.
+ * @param {TriggerCondition[] | null} conditionAncestry The conditions for each direct parent.
+ */
+function applyFolderConditions( folders, conditionAncestry ) {
+    for ( let i = 0; i < folders?.length; i++ ) {
+        const folder = folders[ i ];
+        let generationConditions = ArrayUtilities.concat( conditionAncestry, folder.folderConditions );
+
+        for ( let ti = 0; ti < triggers?.length; ti++ ) {
+            const trigger = triggers[ ti ];
+            if ( trigger.folderId === folder.folderId ) {
+                trigger._folderConditions = generationConditions;
+            }
+        }
+
+        applyFolderConditions( folder.children ?? [], ArrayUtilities.concat( conditionAncestry, folder.folderConditions ) );
+    }
 }
 
 

@@ -10,6 +10,7 @@ const archiver = require( 'archiver' );
 const LogBootstrapper = require( "../log-bootstrap" );
 const { DeathRecapPreferences } = require( '../data/models/death-recap' );
 const { QuickShareAuthorListTypes } = require( '../data/models/common' );
+const { GinaToNagOverlay } = require( "./models/trigger" );
 
 const possibleEqFolders = [
     '\\users\\public\\Everquest',
@@ -377,6 +378,42 @@ class UserPreferencesStore extends Store {
         return this.#data.logMaintenanceHistory?.length > 0 ? new Date( this.#data.logMaintenanceHistory[ this.#data.logMaintenanceHistory.length - 1 ].timestamp ) : null;
     }
 
+    /** @type {boolean} */
+    get allowPrerelease() {
+        return this.#data.allowPrerelease === true;
+    }
+    set allowPrerelease( val ) {
+        this.#data.allowPrerelease = val === true;
+        this.storeDataFile( this.#data );
+    }
+
+    /** @type {string} */
+    get defaultPaletteName() {
+        return this.#data.defaultPaletteName;
+    }
+    set defaultPaletteName( val ) {
+        this.#data.defaultPaletteName = val;
+        this.storeDataFile( this.#data );
+    }
+
+    /** @type {GinaToNagOverlay[]} */
+    get ginaOverlayMapping() {
+        return this.#data.ginaOverlayMapping;
+    }
+    set ginaOverlayMapping( val ) {
+        this.#data.ginaOverlayMapping = val;
+        this.storeDataFile( this.#data );
+    }
+
+    /** @type {string[]} */
+    get hiddenModalIds() {
+        return this.#data.hiddenModalIds ?? [];
+    }
+    set hiddenModalIds( val ) {
+        this.#data.hiddenModalIds = val ?? [];
+        this.storeDataFile( this.#data );
+    }
+
     /** @type {(fctStyles: FctStylesModel) => void[]} */
     onFctStyleChanges = [];
 
@@ -478,6 +515,34 @@ class UserPreferencesStore extends Store {
 
         }
         
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Adds a new log maintenance history event.
+     * 
+     * @param {Date} timestamp The timestamp of the log.
+     * @param {string} logSchedule The event's cron schedule.
+     * @param {boolean} success True if the backup succeeded.
+     */
+    addLogMaintenanceHistory( timestamp, logSchedule, success ) {
+
+        let d = new LogMaintenanceHistory();
+        d.timestamp = timestamp;
+        d.logSchedule = logSchedule;
+        d.success = success;
+
+        this.#data.logMaintenanceHistory = this.#data.logMaintenanceHistory ? this.#data.logMaintenanceHistory : [];
+        this.#data.logMaintenanceHistory.push( d );
+        this.storeDataFile( this.#data );
     }
 
 
@@ -622,6 +687,7 @@ class UserPreferencesStore extends Store {
             ( event, arg ) => {
                 this[ arg.key ] = arg.value;
                 sendTick();
+                this.emitChanges();
             } );
 
         ipcMain.on( 'settings:get',
@@ -708,7 +774,6 @@ class UserPreferencesStore extends Store {
         } );
 
         ipcMain.on( 'settings:set:everquest-folder', ( event, folder ) => {
-            console.log( 'saving eq folder', folder );
             this.everquestInstallFolder = folder;
             this.storeDataFile( this.#data );
         } );
@@ -914,6 +979,21 @@ class UserPreferencesStore extends Store {
                 this.storeDataFile( this.#data );
                 logBootstrapRef.reference.sendToEach( 'settings:get:persistent-storage', this.persistentStorage );
             } );
+        
+        ipcMain.on( 'settings:get:hidden-modal-ids', ( event ) => {
+            event.sender.send( 'settings:get:hidden-modal-ids', this.hiddenModalIds );
+        } );
+
+        ipcMain.on( 'settings:set:hidden-modal-ids', ( event, data ) => {
+            this.hiddenModalIds = data;
+            mainWindowRef.reference.webContents.send( 'settings:changed:hidden-modal-ids', this.hiddenModalIds );
+        } );
+
+        ipcMain.on( 'settings:set:hidden-modal-ids:add', ( event, modalId ) => {
+            let data = this.hiddenModalIds;
+            data.push( modalId );
+            this.hiddenModalIds = data;
+        } );
 
     }
 

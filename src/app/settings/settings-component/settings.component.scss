@@ -31,6 +31,35 @@ h2 {
         font-size: 21px;
         font-weight: 300;
     }
+    &.sub-header {
+        font-weight: 100;
+        opacity: 0.9;
+        margin-top: -16px;
+        padding-bottom: 6px;
+        font-size: 22px;
+        padding-bottom: 4px;
+        position: relative;
+        padding-right: 11px;
+        text-align: right;
+
+        &.half-width {
+            width: calc(50% - 11px);
+        }
+        &.full-width {
+            width: calc(100% - 11px);
+        }
+
+        &::before {
+            content: "";
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 18px;
+            z-index: -1;
+            background-color: #0000002e;
+        }
+    }
 }
 
 .daysOfWeekToggleGroup {

@@ -3,7 +3,7 @@ import { DialogService } from 'src/app/dialogs/dialog.service';
 import { IpcService } from 'src/app/ipc.service';
 import { MatTable } from '@angular/material/table';
 import { customAlphabet } from 'nanoid';
-import { ActionTypes, AuthorModel, CapturePhrase, DeathRecapPreferences, LogMaintenanceRules, LogMaintenancePlanTypes, OverlayWindowModel, QuickShareAuthorListTypes, TriggerAction, TriggerModel, ScheduledTask, Range } from 'src/app/core.model';
+import { ActionTypes, AuthorModel, CapturePhrase, DeathRecapPreferences, LogMaintenanceRules, LogMaintenancePlanTypes, OverlayWindowModel, QuickShareAuthorListTypes, TriggerAction, TriggerModel, ScheduledTask, Range, SettingsKeys } from 'src/app/core.model';
 import { SettingsService } from '../settings-http.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { SetupService } from 'src/app/setup/setup.service';
@@ -13,12 +13,6 @@ import * as _ from 'lodash-es';
 import { CharactersListComponent } from 'src/app/characters-list/characters-list.component';
 import { nagId } from 'src/app/core/nag-id.util';
 import { DateUtilities } from 'src/app/utilities/date.utilities';
-
-enum SettingsKeys {
-    
-    logMaintenanceRules = 'logMaintenanceRules',
-
-};
 
 interface IPhoneticTransform {
     id: string;
@@ -57,6 +51,7 @@ export class SettingsComponent implements OnInit {
     public logMaintenanceRules: LogMaintenanceRules = new LogMaintenanceRules();
     public logTime: string|null;
     public logDays: number[] = [];
+    public allowPrerelease: boolean = false;
 
     public get timerOverlays(): OverlayWindowModel[] {
         return this.overlays?.filter( m => m.overlayType === 'Timer' );
@@ -140,6 +135,7 @@ export class SettingsComponent implements OnInit {
             this.quickShareAuthorList = f == null ? '' : f.join( '\r\n' );
         } );
 
+        this.ipcService.getSetting<boolean>( SettingsKeys.allowPrerelease ).subscribe( f => this.allowPrerelease = f );
         this.ipcService.getSetting<LogMaintenanceRules>( SettingsKeys.logMaintenanceRules ).subscribe( f => {
 
             this.logMaintenanceRules = f;
@@ -147,7 +143,7 @@ export class SettingsComponent implements OnInit {
 
             if ( f.logSchedule?.dayOfWeek instanceof Array ) {
                 this.logDays = f.logSchedule.dayOfWeek;
-            } else if ( f.logSchedule.dayOfWeek instanceof Range || ( f.logSchedule?.dayOfWeek.hasOwnProperty( 'start' ) && f.logSchedule.dayOfWeek.hasOwnProperty( 'end' ) ) ) {
+            } else if (f.logSchedule.dayOfWeek instanceof Range || (f.logSchedule?.dayOfWeek.hasOwnProperty('start') && f.logSchedule.dayOfWeek.hasOwnProperty('end'))) {
                 this.logDays = Range.toArray( f.logSchedule.dayOfWeek as Range );
             } else if ( f.logSchedule?.dayOfWeek > 0 ) {
                 this.logDays.push( +f.logSchedule.dayOfWeek );
@@ -157,9 +153,6 @@ export class SettingsComponent implements OnInit {
 
     }
 
-    /**
-     * Saves changes tot he log maintenance plan and rules.
-     */
     public saveLogMaintenance(): void {
 
         if ( this.logMaintenanceRules.maintenancePlan === LogMaintenancePlanTypes.BySize ) {
@@ -454,6 +447,7 @@ export class SettingsComponent implements OnInit {
         utter.text = phrase;
         utter.voice = this.voiceOptions[ this.voiceIndex ];
         utter.onend = function ( event ) { }
+        utter.rate = 1;
         speechSynthesis.speak( utter );
     }
 
@@ -702,5 +696,31 @@ export class SettingsComponent implements OnInit {
             this.characterList?.loadCharacters();
         } );
     }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Resets all hidden modals, allowing them to appear again.
+     */
+    resetHiddenModals() {
+        this.ipcService.resetHiddenModalIds();
+        this.snackBar.open( 'All hidden modals will now appear again.', 'dismiss', { duration: 5000 } );
+    }
+
+
+
+
+
+
+
+
+
 
 }

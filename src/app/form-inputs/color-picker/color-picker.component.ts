@@ -1,6 +1,7 @@
 import { Component, OnInit, ViewChild, ElementRef, forwardRef, HostListener, EventEmitter, Output, Input } from '@angular/core';
 import { Color, ColorUtility } from 'src/app/utilities';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
+import { IpcService } from 'src/app/ipc.service';
 
 const baseColors: Color[] = [
     new Color( 0, 0, 0, 1 ),new Color( 244, 67, 54, 1 ),new Color( 233, 30, 99, 1 ),new Color( 156, 39, 176, 1 ),new Color( 103, 58, 183, 1 ),new Color( 33, 150, 243, 1 ),new Color( 3, 169, 244, 1 ),new Color( 0, 188, 212, 1 ),new Color( 0, 150, 136, 1 ),new Color( 255, 235, 59, 1 ),
@@ -13,6 +14,10 @@ const baseColors: Color[] = [
     new Color( 128, 128, 128, 1 ), new Color( 211, 47, 47, 1 ), new Color( 194, 24, 91, 1 ), new Color( 123, 31, 162, 1 ), new Color( 81, 45, 168, 1 ), new Color( 25, 118, 210, 1 ), new Color( 2, 136, 209, 1 ), new Color( 0, 151, 167, 1 ), new Color( 0, 121, 107, 1 ), new Color( 251, 192, 45, 1 ),
     new Color( 102, 102, 102, 1 ), new Color( 198, 40, 40, 1 ), new Color( 173, 20, 87, 1 ), new Color( 106, 27, 154, 1 ), new Color( 69, 39, 160, 1 ), new Color( 21, 101, 192, 1 ), new Color( 2, 119, 189, 1 ), new Color( 0, 131, 143, 1 ), new Color( 0, 105, 92, 1 ), new Color( 249, 168, 37, 1 ),
     new Color( 77, 77, 77, 1 ), new Color( 183, 28, 28, 1 ), new Color( 136, 14, 79, 1 ), new Color( 74, 20, 140, 1 ), new Color( 49, 27, 146, 1 ), new Color( 13, 71, 161, 1 ), new Color( 1, 87, 155, 1 ), new Color( 0, 96, 100, 1 ), new Color( 0, 77, 64, 1 ), new Color( 245, 127, 23, 1 ),
+];
+
+const ginaColors: Color[] = [
+    new Color( 255, 255, 255 ), new Color( 128, 128, 128 ), new Color( 0, 0, 0 ), new Color( 255, 0, 0 ), new Color( 0, 255, 0 ), new Color( 0, 0, 255 ), new Color( 255, 255, 0 ), new Color( 255, 165, 0 ), new Color( 128, 0, 128 )
 ];
 
 
@@ -34,7 +39,9 @@ export class ColorPickerComponent implements OnInit, ControlValueAccessor {
     onTouch: any = () => { }
     public colorPalette: Color[][] = [];
     public showPopup: boolean = false;
+    public paletteName: string = 'nag';
     private _value: Color;
+    private _colors: Color[];
 
     @Input() public inline: boolean = false;
 
@@ -54,18 +61,40 @@ export class ColorPickerComponent implements OnInit, ControlValueAccessor {
     @Output( 'change' ) public change: EventEmitter<string> = new EventEmitter<string>();
     @ViewChild( 'colorInput' ) public colorInputEl: ElementRef<HTMLDivElement>;
 
-    constructor() { }
+    constructor( private ipcService: IpcService ) { }
 
     ngOnInit() {
-        for ( let r: number = 0; r < 10; r++ ) {
+        this.ipcService.getSetting<string>( 'defaultPaletteName' ).subscribe( pn => {
+            this.paletteName = pn ? pn : this.paletteName;
+            this.updateColorPalette();
+        } );
+    }
+
+    public updateColorPalette() {
+
+        if ( this.paletteName === 'gina' ) {
+            this._colors = ginaColors;
+        } else if ( this.paletteName === 'nag' ) {
+            this._colors = baseColors;
+        } else {
+            this._colors = baseColors;
+        }
+
+        this.colorPalette = [];
+        for ( let r: number = 0; r < Math.ceil( this._colors.length / 10 ); r++ ) {
             this.colorPalette[ r ] = [];
             for ( let c: number = 0; c < 10; c++ ) {
-                this.colorPalette[ r ][ c ] = baseColors[ r * 10 + c ];
+                if ( r * 10 + c < this._colors.length ) {
+                    this.colorPalette[ r ][ c ] = this._colors[ r * 10 + c ];
+                }
             }
         }
     }
 
     public selectColor( val: Color ): void {
+
+        this.ipcService.updateSetting( 'defaultPaletteName', this.paletteName );
+        
         this.value = val;
         this.showPopup = false;
     }
