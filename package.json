@@ -1,6 +1,6 @@
 {
   "name": "electron-angular-eq-parse",
-  "version": "0.1.33",
+  "version": "0.1.35",
   "main": "main.js",
   "description": "An EverQuest Notification AGent",
   "author": {
@@ -64,6 +64,7 @@
     "@types/jasminewd2": "~2.0.3",
     "codelyzer": "^6.0.0",
     "copyfiles": "^2.4.1",
+    "dotenv": "^16.3.1",
     "electron": "^23.1.0",
     "electron-builder": "^23.6.0",
     "jasmine-core": "~3.6.0",
@@ -86,8 +87,9 @@
     "productName": "EQ Nag",
     "appId": "scripter.eqNotificationAgent",
     "win": {
+      "signingHashAlgorithms": ["sha256"],
+      "sign": "./sign.js",
       "target": [
-        "portable",
         "nsis"
       ],
       "publish": [
@@ -112,9 +114,11 @@
       "!**/node_modules/.bin",
       "!**/*.{iml,o,hprof,orig,pyc,pyo,rbc,swp,csproj,sln,xproj}",
       "!.editorconfig",
+      "!*.env",
       "!.angular",
       "!.vscode",
       "!e2e",
+      "!sign.js",
       "!source-maps",
       "package.json",
       "!tsconfig*",
