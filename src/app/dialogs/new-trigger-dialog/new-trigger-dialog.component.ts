@@ -117,6 +117,7 @@ export class NewTriggerDialogComponent implements OnInit {
         trigger.name = this.spell.name;
         trigger.classLevels = this.spell.classes;
         trigger.allakhazamUrl = this.url;
+        trigger.externalSource = this.data.dataSource;
         trigger.captureMethod = 'Sequential';
         trigger.importType = ImportTypes.DotTimer;
 

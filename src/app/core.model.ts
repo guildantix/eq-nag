@@ -318,6 +318,7 @@ export class TriggerModel {
     public predefined: boolean = false;
     public onlyExecuteInDev: boolean = false;
     public allakhazamUrl: string = null;
+    public externalSource: ExternalDataSources | undefined = undefined;
     public importIdentifier: string = null;
     public importType: ImportTypes;
     public useCooldown: boolean = false;

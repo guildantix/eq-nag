@@ -437,10 +437,10 @@ export class DialogService {
     /**
      * Opens the new dot timer trigger dialog.
      */
-    public showReimportDotTimerDialog( model: TriggerModel ): void {
+    public showReimportDotTimerDialog( model: TriggerModel, externalSource: ExternalDataSources ): void {
         this.dialog.open( NewTriggerDialogComponent, {
             width: '750px',
-            data: <NewTriggerDialogModel>{ selectedFolderId: null, trigger: model },
+            data: <NewTriggerDialogModel>{ selectedFolderId: null, trigger: model, dataSource: externalSource },
             panelClass: 'app-dialog',
         } ).afterClosed();
     }
@@ -457,10 +457,10 @@ export class DialogService {
     /**
      * Opens the new dot timer trigger dialog.
      */
-    public showReimportRaidAbilityDialog( model: TriggerModel ): void {
+    public showReimportRaidAbilityDialog( model: TriggerModel, externalSource: ExternalDataSources ): void {
         this.dialog.open( NewTriggerRaidAbilityComponent, {
             width: '750px',
-            data: <NewTriggerDialogModel>{ selectedFolderId: null, trigger: model },
+            data: <NewTriggerDialogModel>{ selectedFolderId: null, trigger: model, dataSource: externalSource },
             panelClass: 'app-dialog',
         } ).afterClosed();
     }
@@ -477,10 +477,10 @@ export class DialogService {
     /**
      * Opens the new dot timer trigger dialog.
      */
-    public showReimportBuffDialog( model: TriggerModel ): void {
+    public showReimportBuffDialog( model: TriggerModel, externalSource: ExternalDataSources ): void {
         this.dialog.open( NewTriggerBuffDialogComponent, {
             width: '750px',
-            data: <NewTriggerDialogModel>{ selectedFolderId: null, trigger: model },
+            data: <NewTriggerDialogModel>{ selectedFolderId: null, trigger: model, dataSource: externalSource },
             panelClass: 'app-dialog',
         } ).afterClosed();
     }

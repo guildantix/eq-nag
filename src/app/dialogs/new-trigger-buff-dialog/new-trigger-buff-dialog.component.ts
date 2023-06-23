@@ -187,6 +187,7 @@ export class NewTriggerBuffDialogComponent implements OnInit {
         trigger.name = `${this.spell.name} from Others`;
         trigger.classLevels = [];
         trigger.allakhazamUrl = this.url;
+        trigger.externalSource = this.data.dataSource;
         trigger.importType = ImportTypes.OthersBuff;
         
         trigger.actions = [];
@@ -381,6 +382,7 @@ export class NewTriggerBuffDialogComponent implements OnInit {
         trigger.name = this.spell.name;
         trigger.classLevels = this.spell.classes;
         trigger.allakhazamUrl = this.url;
+        trigger.externalSource = this.data.dataSource;
         trigger.importType = ImportTypes.Buff;
         
         trigger.actions = [];

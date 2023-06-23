@@ -6,7 +6,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { IpcService } from 'src/app/ipc.service';
 import { DialogService } from '../dialog.service';
 import { ColorUtility } from 'src/app/utilities';
-import { TriggerModel, ActionTypes, TriggerAction, OverlayWindowModel, OperatorTypes, ImportTypes } from 'src/app/core.model';
+import { TriggerModel, ActionTypes, TriggerAction, OverlayWindowModel, OperatorTypes, ImportTypes, ExternalDataSources } from 'src/app/core.model';
 
 @Component( {
     selector: 'app-trigger-dialog',
@@ -31,6 +31,14 @@ export class TriggerDialogComponent implements OnInit {
 
     public get showReimportFromAlla(): boolean {
         return this.model.importType != ImportTypes.None && this.model.allakhazamUrl != null;
+    }
+
+    public get serviceName(): string {
+        if ( this.model.importType != ImportTypes.None ) {
+            return this.model?.externalSource === ExternalDataSources.Allakhazam ? 'Allakhazam' : 'EQ Spell Resources';
+        } else {
+            return 'None';
+        }
     }
 
     constructor( private ipcService: IpcService, private route: ActivatedRoute, public dialogService: DialogService, private snackBar: MatSnackBar ) { }
@@ -132,15 +140,15 @@ export class TriggerDialogComponent implements OnInit {
     }
 
     private reimportDotTimerFromAllakhazam(): void {
-        this.dialogService.showReimportDotTimerDialog( this.model );
+        this.dialogService.showReimportDotTimerDialog( this.model, this.model.externalSource );
     }
 
     private reimportAbilityFromAllakhazam(): void {
-        this.dialogService.showReimportRaidAbilityDialog( this.model );
+        this.dialogService.showReimportRaidAbilityDialog( this.model, this.model.externalSource );
     }
 
     private reimportBuffFromAllakhazam(): void {
-        this.dialogService.showReimportBuffDialog( this.model );
+        this.dialogService.showReimportBuffDialog( this.model, this.model.externalSource );
     }
 
 }

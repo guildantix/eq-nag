@@ -32,6 +32,13 @@ var ActionTypes = {
 
 }
 
+var ExternalDataSources = {
+    'ZAM': 'Allakhazam',
+    'EQSR': 'EqSpellResources',
+    Allakhazam: 'ZAM',
+    EqSpellResources: 'EQSR',
+}
+
 // TODO: Why wasn't this updated?
 var TriggerConditionTypes = {
     '0': 'Unknown',
@@ -465,6 +472,8 @@ class Trigger {
     onlyExecuteInDev = false;
     /** @type {string} */
     allakhazamUrl = null;
+    /** @type {ExternalDataSources} */
+    externalSource = null;
     /** @type {string} */
     importIdentifier = null;
     /** @type {ImportTypes} */
@@ -707,6 +716,7 @@ module.exports = {
     TriggerAction,
     ActionTypes,
     CapturePhrase,
+    ExternalDataSources,
     TriggerConditionTypes,
     OperatorTypes,
     Phrase,
