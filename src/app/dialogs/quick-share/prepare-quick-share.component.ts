@@ -4,7 +4,7 @@ import { Component, OnInit, Inject } from '@angular/core';
 import { MatDialog, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { MatTree, MatTreeFlatDataSource, MatTreeFlattener } from '@angular/material/tree';
 import { combineLatest, forkJoin, Observable } from 'rxjs';
-import { AuthorModel, PackageFileModel, PackageFolder, PackageTrigger, QuickShareFileModel, QuickShareModel, TriggerFolder, TriggerModel } from 'src/app/core.model';
+import { AuthorModel, OverlayWindowModel, PackageFileModel, PackageFolder, PackageTrigger, QuickShareFileModel, QuickShareModel, TriggerAction, TriggerFolder, TriggerModel } from 'src/app/core.model';
 import { IpcService } from 'src/app/ipc.service';
 import { PrepareQuickShareModel } from '../dialog.model';
 import * as _ from 'lodash-es';
@@ -15,6 +15,7 @@ import { NotificationDialogComponent } from '../notification-dialog/notification
 import { NotificationTypes } from '../notification-dialog/notification-dialog.model';
 import { HttpErrorResponse } from '@angular/common/http';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { getPackageImportProperties } from 'src/app/core.decorators';
 
 interface QuickShareTreeNode {
     expandable: boolean;
@@ -427,13 +428,16 @@ export class PrepareQuickShareDialogComponent implements OnInit {
             this.ipcService.getAudioFileData(),
             this.ipcService.getDetrimentalOverlayId(),
             this.ipcService.getBeneficialOverlayId(),
+            this.ipcService.getAlertOverlayId(),
+            this.ipcService.getOverlayWindows(),
+            this.ipcService.getPrimaryDisplay(),
             authorObs,
         ];
 
         // combineLatest will wait for the next value in each observable, but 
         // doesn't require the observables to be completed.
         combineLatest( dataObservables ).subscribe(
-            ( [ triggers, folders, audioFiles, detrimentalOverlayId, beneficialOverlayId, author ]: [ TriggerModel[], TriggerFolder[], PackageFileModel[], string, string, AuthorModel ] ) => {
+            ( [ triggers, folders, audioFiles, detrimentalOverlayId, beneficialOverlayId, textOverlayId, overlays, primaryDisplay, author ]: [ TriggerModel[], TriggerFolder[], PackageFileModel[], string, string, string, OverlayWindowModel[], Electron.Display, AuthorModel ] ) => {
 
                 // Pulls the selected triggers and folders into quickshare data
                 // formats.
@@ -452,46 +456,40 @@ export class PrepareQuickShareDialogComponent implements OnInit {
                 quickShare.triggers = quickShareTriggers;
                 quickShare.detrimentalOverlayId = detrimentalOverlayId;
                 quickShare.beneficialOverlayId = beneficialOverlayId;
+                quickShare.textOverlayId = textOverlayId;
+                quickShare.primaryDisplaySize = primaryDisplay.size;
 
                 let quickShareFiles: QuickShareFileModel[] = [];
+                quickShare.overlays = [];
 
                 // Creates the QuickShare file format models.
                 quickShareTriggers.forEach( trigger => {
                     trigger.actions.forEach( action => {
 
-                        if ( action.audioFileId ) {
-                            let file = audioFiles.find( f => f.fileId === action.audioFileId );
-    
+                        let actionProperties = getPackageImportProperties( Object.assign( new TriggerAction(), action ) );
+
+                        actionProperties.overlayIds.forEach( overlayId => {
+                            if ( overlayId !== detrimentalOverlayId && overlayId !== beneficialOverlayId && overlayId !== textOverlayId ) {
+                                let overlay = overlays.find( f => f.overlayId === overlayId );
+                                if ( overlay ) {
+                                    let exists = quickShare.overlays.findIndex( f => f.overlayId === overlayId ) > -1;
+                                    if ( !exists ) {
+                                        quickShare.overlays.push( overlay );
+                                    }
+                                }
+                            }
+                        } );
+
+                        actionProperties.audioFileIds.forEach( audioFileId => {
+                            let file = audioFiles.find( f => f.fileId === audioFileId );
+
                             if ( file ) {
                                 let exists = quickShareFiles.findIndex( f => f.fileId === file.fileId ) > -1;
                                 if ( !exists ) {
                                     quickShareFiles.push( file );
                                 }
                             }
-    
-                        }
-                        if ( action.endedPlayAudioFileId ) {
-                            let file = audioFiles.find( f => f.fileId === action.endedPlayAudioFileId );
-    
-                            if ( file ) {
-                                let exists = quickShareFiles.findIndex( f => f.fileId === file.fileId ) > -1;
-                                if ( !exists ) {
-                                    quickShareFiles.push( file );
-                                }
-                            }
-    
-                        }
-                        if ( action.endingPlayAudioFileId ) {
-                            let file = audioFiles.find( f => f.fileId === action.endingPlayAudioFileId );
-    
-                            if ( file ) {
-                                let exists = quickShareFiles.findIndex( f => f.fileId === file.fileId ) > -1;
-                                if ( !exists ) {
-                                    quickShareFiles.push( file );
-                                }
-                            }
-    
-                        }
+                        } );
     
                     } );
                 } );

@@ -2,7 +2,7 @@ import { Component, ViewChild, ElementRef, OnInit } from '@angular/core';
 import * as _ from 'lodash-es';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { IpcService } from './ipc.service';
-import { DkpEntryModel, OverlayWindowModel, FocusEffectSettings, StylePropertiesModel, FctStylesModel, QuickShareMetaModel, QuickShareFileModel, TriggerPackageMetaModel, VersionNumber } from './core.model';
+import { DkpEntryModel, OverlayWindowModel, FocusEffectSettings, StylePropertiesModel, FctStylesModel, QuickShareMetaModel, QuickShareFileModel, TriggerPackageMetaModel, VersionNumber, AuthorModel } from './core.model';
 import { DialogService } from './dialogs/dialog.service';
 import { customAlphabet } from 'nanoid';
 import { SetupService } from './setup/setup.service';
@@ -120,19 +120,27 @@ export class MainComponent implements OnInit {
         this.ipcService.mainWindowAngularReady();
 
         this.ipcService.quickShareCaptured().subscribe( quickShareId => {
-            let observables = [
-                this.quickShareService.getQuickShare( quickShareId ),
-                this.quickShareService.getQuickShareFiles( quickShareId ),
-            ];
 
-            forkJoin( observables )
-                .subscribe( ( [ quickShare, files ]: [ QuickShareMetaModel[], QuickShareFileModel[] ] ) => {
-                    this.dialogService.showReceiveQuickShareDialog( quickShare, files ).subscribe( imported => {
-                        if ( imported ) {
-                            this.ipcService.requestTick();
+            this.ipcService.getAuthor().subscribe( author => {
+            
+                let observables = [
+                    this.quickShareService.isAuthorOfQuickShare(author.authorId, quickShareId),
+                    this.quickShareService.getQuickShare( quickShareId ),
+                    this.quickShareService.getQuickShareFiles( quickShareId ),
+                ];
+    
+                forkJoin( observables )
+                    .subscribe( ( [ isAuthor, quickShare, files ]: [ boolean, QuickShareMetaModel[], QuickShareFileModel[] ] ) => {
+                        if ( !isAuthor ) {
+                            this.dialogService.showReceiveQuickShareDialog( quickShare, files ).subscribe( imported => {
+                                if ( imported ) {
+                                    this.ipcService.requestTick();
+                                }
+                            } );
                         }
                     } );
-                } );
+                
+            } );
             
         } );
 
