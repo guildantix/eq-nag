@@ -1,0 +1,14 @@
+<div class="debug-console-container" *ngIf="show">
+    <div class="console-toolbar">
+        <button mat-button>Clear</button>
+        <button mat-button (click)="show = false">Hide</button>
+    </div>
+    <p><span class="log-timestamp">[99/99/9999 00:00:00]</span><span class="log-text">This is some text.</span></p>
+    <p><span class="log-timestamp">[9/9/99 00:00:00]</span><span class="log-text">This is some more text. This is some more text. This is some more text. This is some more text. This is some more text. This is some more text. This is some more text. This is some more text. This is some more text. This is some more text. This is some more text. This is some more text. This is some more text. This is some more text. This is some more text. This is some more text. This is some more text. This is some more text. This is some more text. This is some more text. This is some more text. This is some more text. This is some more text. This is some more text. This is some more text. This is some more text. This is some more text.</span></p>
+    <div class="console-input-area" *ngIf="showInput">
+        <span>></span><input type="text" />
+    </div>
+</div>
+<div class="debug-toggle" *ngIf="!show">
+    <button mat-button (click)="show = true">Console</button>
+</div>

@@ -1,0 +1,117 @@
+.debug-toggle {
+    position: fixed;
+    bottom: 0;
+    right: 61px;
+    height: 24px;
+    background-color: #101010bf;
+    color: #c3c3c3;
+    z-index: 9999;
+    box-sizing: border-box;
+
+    &:hover {
+        background-color: #101010;
+    }
+
+    button {
+        font-size: 12px;
+        line-height: 26px;
+        border-radius: 0px;
+    }
+}
+
+.debug-console-container {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 300px;
+    background-color: #101010;
+    color: #c3c3c3;
+    z-index: 9999;
+    overflow: auto;
+    padding: 10px 0px;
+    padding-top: 34px;
+    box-sizing: border-box;
+    border-top: 3px solid #ffffff40;
+
+    p {
+        font-size: 12px;
+        font-family: Consolas, monospace;
+        margin: 0;
+        padding: 2px 0px;
+        padding-left: 19px;
+        line-height: 18px;
+        border-bottom: 1px solid #323232;
+        display: flex;
+        flex-flow: row nowrap;
+
+        &:first-of-type {
+            border-top: 1px solid #323232;
+        }
+
+        span.log-timestamp {
+            margin-right: 5px;
+            flex: 0;
+            white-space: nowrap;
+            min-width: 140px;
+        }
+
+        span.log-text {
+            flex: 1 1 auto;
+        }
+    }
+
+    .console-toolbar {
+        display: flex;
+        justify-content: flex-start;
+        align-items: center;
+        left: 0;
+        right: 0;
+        top: 0;
+        position: absolute;
+        background-color: #141414;
+
+        button {
+            border-radius: 0;
+            font-size: 12px;
+            line-height: 26px;
+        }
+
+        .console-title {
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .console-close {
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+        }
+    }
+
+    .console-input-area {
+        display: flex;
+        width: 100%;
+        flex-flow: row nowrap;
+        padding-left: 7px;
+
+        > span {
+            flex: 0;
+            padding-right: 3px;
+            color: #69b2f0;
+            font-weight: 600;
+            font-family: Consolas, 'Open Sans Condensed';
+        }
+
+        input[type=text] {
+            width: 100%;
+            background-color: #101010;
+            color: #c3c3c3;
+            border: none;
+            outline: none;
+            font-size: 12px;
+            font-family: Consolas, monospace;
+            flex: 0 1 auto;
+        }
+    }
+}
