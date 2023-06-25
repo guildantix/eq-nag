@@ -32,6 +32,46 @@ var ActionTypes = {
 
 }
 
+/**
+ * Returns the label for the given action type.
+ * 
+ * @param {ActionTypes} actionType The action type to get the label for.
+ */
+var getActionLabel = ( actionType ) => {
+    switch ( actionType ) {
+        case ActionTypes.DisplayText:
+            return 'Display Text';
+        case ActionTypes.PlayAudio:
+            return 'Play Audio';
+        case ActionTypes.Speak:
+            return 'Speak';
+        case ActionTypes.Timer:
+            return 'Timer';
+        case ActionTypes.Countdown:
+            return 'Countdown';
+        case ActionTypes.StoreVariable:
+            return 'Store Variable';
+        case ActionTypes.DotTimer:
+            return 'Dot Timer';
+        case ActionTypes.ClearVariable:
+            return 'Clear Variable';
+        case ActionTypes.Counter:
+            return 'Counter';
+        case ActionTypes.Clipboard:
+            return 'Clipboard';
+        case ActionTypes.BeneficialTimer:
+            return 'Beneficial Timer';
+        case ActionTypes.DisplayDeathRecap:
+            return 'Display Death Recap';
+        case ActionTypes.ScreenGlow:
+            return 'Screen Glow';
+        case ActionTypes.ClearAll:
+            return 'Clear All';
+        default:
+            return 'Unknown';
+    }
+}
+
 var ExternalDataSources = {
     'ZAM': 'Allakhazam',
     'EQSR': 'EqSpellResources',
@@ -683,6 +723,49 @@ class QuickShareMetaModel {
 
 }
 
+class TriggerParseHistoryModel {
+    
+    /** @type {string} */
+    parseId;
+    /** @type {Date} */
+    timestamp;
+    /** @type {string} */
+    triggerId;
+    /** @type {string} */
+    triggerName;
+    /** @type {string} */
+    actionId;
+    /** @type {string} */
+    actionTypeLabel;
+    /** @type {string} */
+    phraseId;
+    /** @type {string | string[]} */
+    renderedPhrase;
+    /** @type {string | string[]} */
+    unrenderedPhrase;
+    /** @type {Record<string, string>} */
+    conditionResults;
+    /** @type {Record<string, string[]>} */
+    storedVariables;
+    /** @type {Record<string, {value: number, lastUpdate: Date, resetDelay: number}>} */
+    counters;
+    /** @type {RegExpExecArray | undefined} */
+    regexResult;
+    /** @type {RegExpExecArray | undefined} */
+    dependencyRegexResult;
+    /** @type {string} */
+    parseType;
+    /** @type {number} */
+    deltaTime;
+    /** @type {string} */
+    characterId;
+    /** @type {string} */
+    characterName;
+    /** @type {string} */
+    rawLogEntry;
+
+}
+
 class TriggerStoreModel {
     /** @type {number} */
     version;
@@ -700,6 +783,10 @@ class TriggerStoreModel {
     packageOverlayMap;
     /** @type {Record<string, string[]>} This is a record of all package original overlay ids. */
     packageOverlays;
+    /** @type {Record<string, TriggerParseHistoryModel[]>} */
+    successfulTriggerExecutions = [];
+    /** @type {Record<string, TriggerParseHistoryModel[]>} */
+    failedTriggerExecutions = [];
 }
 
 class GinaToNagOverlay {
@@ -744,4 +831,6 @@ module.exports = {
     DuplicateTriggerAction,
     OwnedTriggerAction,
     GinaToNagOverlay,
+    TriggerParseHistoryModel,
+    getActionLabel,
 };

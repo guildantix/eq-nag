@@ -1,4 +1,4 @@
-const { ActionTypes, TriggerAction } = require( './trigger' );
+const { TriggerAction } = require( './trigger' );
 
 var TimerSortTypes = {
     '0': 'None',

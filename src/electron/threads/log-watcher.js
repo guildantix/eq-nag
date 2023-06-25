@@ -1,7 +1,7 @@
 // const ipc = require( 'electron' ).ipcMain;
 const { ipcRenderer } = require( 'electron' );
 const fs = require( 'fs' );
-const { TriggerAction, ActionTypes, TriggerConditionTypes, OperatorTypes, CharacterClassLevel, TriggerSubAction, TriggerFolder, TriggerCondition, CapturePhrase, Phrase } = require( '../data/models/trigger' );
+const { TriggerAction, ActionTypes, TriggerConditionTypes, OperatorTypes, CharacterClassLevel, TriggerSubAction, TriggerFolder, TriggerCondition, CapturePhrase, Phrase, TriggerParseHistoryModel, getActionLabel } = require( '../data/models/trigger' );
 const { QuickShareAuthorListTypes } = require( '../data/models/common' );
 const { PhraseParse, LogTrigger } = require( './log.model' );
 const { OverlayComponent, OverlayWindow, TriggerSecondaryActionModel } = require( '../data/models/overlay-window' );
@@ -100,6 +100,12 @@ var detrimentalOverlayId = null;
 /** @type {string} */
 var characterId = null;
 const serverTickDuration = 6;
+/** @type {TriggerParseHistoryModel[]} */
+let successfulParses = [];
+/** @type {TriggerParseHistoryModel[]} */
+let failedParses = [];
+let batchTriggerParseHistoryTimeoutId = null;
+const batchTriggerParseHistoryTimeoutDuration = 1000;
 
 /** @type {Record<string, {trigger: LogTrigger, res: PhraseParse}>} */
 let actionInstances = {};
@@ -217,6 +223,181 @@ let setEqTick = ( timestamp ) => {
 
     }
 }
+
+
+
+
+
+
+
+
+
+
+/**
+ * Sends the batch of parses to the main process, clears the batch, and sets 
+ * the timeout to run again.  If there are no parses to send, then the timeout 
+ * is cleared.
+ */
+let _batchTriggerParseHistory = () => {
+    if ( successfulParses?.length > 0 || failedParses?.length > 0 ) {
+
+        // Send the batch of parses to the main process.
+        ipcRenderer.send( 'trigger:batch-history', { successful: JSON.stringify( successfulParses ), failed: JSON.stringify( failedParses ) } );
+
+        // Clear the batch.
+        successfulParses = [];
+        failedParses = [];
+
+        // Set the timeout to run again.
+        batchTriggerParseHistoryTimeoutId = window.setTimeout( _batchTriggerParseHistory, batchTriggerParseHistoryTimeoutDuration );
+
+    } else {
+
+        // Nothing left to do, so let's clear the timeout.
+        batchTriggerParseHistoryTimeoutId = null;
+        
+    }
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Starts the timeout to batch trigger parse history.
+ */
+let batchTriggerParseHistory = () => {
+    if ( !batchTriggerParseHistoryTimeoutId ) {
+        batchTriggerParseHistoryTimeoutId = window.setTimeout( _batchTriggerParseHistory, batchTriggerParseHistoryTimeoutDuration );
+    }
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Creates a new parse history entry.
+ * 
+ * @returns {TriggerParseHistoryModel} Returns the parse history entry.
+ * 
+ * @param {string} rawLogEntry The raw log entry.
+ * @param {Trigger} trigger The trigger that was triggered.
+ * @param {string} actionId The id of the action that was triggered.
+ * @param {'End Early' | 'Trigger Action' | 'Exclude Target' | 'Trigger Secondary Action'} parseType The type of parse.
+ * @param {string} renderedPhrase The rendered phrase.
+ * @param {string} unrenderedPhrase The unrendered phrase.
+ * @param {PhraseParse | undefined} parsedPhrase The parsed phrase.
+ * @param {Record<string, string>} conditionResults The results of the trigger condition checks.
+ * @param {number | undefined} deltaTime The time in milliseconds between the sequential phrases.
+ */
+let _getParseHistoryEntry = ( rawLogEntry, trigger, actionId, parseType, renderedPhrase, unrenderedPhrase, parsedPhrase, conditionResults, deltaTime ) => {
+    let entry = new TriggerParseHistoryModel();
+
+    entry.parseId = nanoid();
+    entry.timestamp = new Date();
+    entry.triggerId = trigger.triggerId;
+    entry.triggerName = trigger.name;
+    entry.actionId = actionId;
+    entry.actionTypeLabel = getActionLabel( trigger.actions.find( a => a.actionId === actionId )?.actionType );
+    entry.parseType = parseType;
+    entry.renderedPhrase = renderedPhrase;
+    entry.unrenderedPhrase = unrenderedPhrase;
+    entry.phraseId = parsedPhrase?.phraseId;
+    entry.regexResult = parsedPhrase?.result;
+    entry.dependencyRegexResult = parsedPhrase?.dependencyResult;
+    entry.conditionResults = conditionResults;
+    entry.deltaTime = deltaTime;
+    entry.counters = _.cloneDeep( counters );
+    entry.storedVariables = _.cloneDeep( storedVariables );
+    entry.characterId = characterId;
+    entry.characterName = characterName;
+    entry.rawLogEntry = rawLogEntry;
+
+    return entry;
+};
+
+
+
+
+
+
+
+
+// TODO: Remove "Trigger" from option strings, since it's redundant.
+
+/**
+ * Adds a successful trigger parsed event to the batch.
+ * 
+ * @param {string} rawLogEntry The raw log entry.
+ * @param {string} triggerId The id of the trigger that was triggered.
+ * @param {string} actionId The id of the action that was triggered.
+ * @param {'End Early' | 'Trigger Action' | 'Trigger Sequential Action' | 'Trigger Action Loopback' | 'Exclude Target' | 'Trigger Cancel Action' | 'Trigger Secondary Action' | 'Reset Counter'} parseType The type of parse.
+ * @param {string} renderedPhrase The rendered phrase.
+ * @param {string} unrenderedPhrase The unrendered phrase.
+ * @param {PhraseParse | undefined} parsedPhrase The parsed phrase.
+ * @param {Record<string, string>} conditionResults The results of the trigger condition checks.
+ * @param {number | undefined} deltaTime The time in milliseconds between the sequential phrases.
+ */
+let addSuccessfulTriggerParsedEvent = ( rawLogEntry, triggerId, actionId, parseType, renderedPhrase, unrenderedPhrase, parsedPhrase, conditionResults, deltaTime ) => {
+    let trigger = triggers.find( t => t.triggerId === triggerId );
+    if ( trigger ) {
+        let entry = _getParseHistoryEntry( rawLogEntry, trigger, actionId, parseType, renderedPhrase, unrenderedPhrase, parsedPhrase, conditionResults, deltaTime );
+
+        // Add the entry to the batch.
+        successfulParses.push( entry );
+
+        // Start the timeout to batch the parses.
+        batchTriggerParseHistory();
+    }
+};
+
+
+
+
+
+
+
+
+
+
+/**
+ * Adds a failed trigger parse history entry.
+ * 
+ * @param {string} rawLogEntry The raw log entry.
+ * @param {string} triggerId The id of the trigger that was triggered.
+ * @param {string} actionId The id of the action that was triggered.
+ * @param {'End Early' | 'Trigger Action' | 'Trigger Sequential Action' | 'Trigger Action Loopback' | 'Exclude Target' | 'Trigger Secondary Action' | 'Reset Counter'} parseType The type of parse.
+ * @param {string | string[]} renderedPhrase The rendered phrase.
+ * @param {string | string[]} unrenderedPhrase The unrendered phrase.
+ * @param {PhraseParse | undefined} parsedPhrase The parsed phrase.
+ * @param {Record<string, string>} conditionResults The results of the trigger condition checks.
+ * @param {number | undefined} deltaTime The time in milliseconds between the sequential phrases.
+ */
+let addFailedTriggerParsedEvent = ( rawLogEntry, triggerId, actionId, parseType, renderedPhrase, unrenderedPhrase, parsedPhrase, conditionResults, deltaTime ) => {
+    let trigger = triggers.find( t => t.triggerId === triggerId );
+
+    if ( trigger ) {
+        let entry = _getParseHistoryEntry( rawLogEntry, trigger, actionId, parseType, renderedPhrase, unrenderedPhrase, parsedPhrase, conditionResults, deltaTime );
+        
+        // Add the entry to the batch.
+        failedParses.push( entry );
+
+        // Start the timeout to batch the parses.
+        batchTriggerParseHistory();
+    }
+};
+
 // Common errors:
 //  ${C} instead of {C}
 //  ${CharacterName} isntead of ${Character}
@@ -667,12 +848,39 @@ function initCounters() {
                             if ( resetsOnPhrases ) {
                                 let matched = false;
                                 
-                                renderedPhrases.forEach( phrase => {
+                                renderedPhrases.forEach( ( phrase, i ) => {
                                     let _res = new RegExp( phrase, 'g' ).exec( logEntry );
                                     if ( _res?.length > 0 ) {
                                         matched = true;
+                                        addSuccessfulTriggerParsedEvent(
+                                            logEntry,
+                                            trigger.triggerId,
+                                            action.actionId,
+                                            'Reset Counter',
+                                            phrase,
+                                            action.resetCounterPhrases[ i ],
+                                            {
+                                                phraseId: action.resetCounterPhrases[ i ].phraseId,
+                                                result: _res,
+                                            },
+                                            trigger._conditionResults,
+                                            undefined );
                                     }
                                 } );
+
+                                if ( !matched ) {
+                                    addFailedTriggerParsedEvent(
+                                        logEntry,
+                                        trigger.triggerId,
+                                        action.actionId,
+                                        'Reset Counter',
+                                        renderedPhrases,
+                                        action.resetCounterPhrases,
+                                        null,
+                                        trigger._conditionResults,
+                                        undefined,
+                                    );
+                                }
     
                                 return matched;
                             } else {
@@ -709,6 +917,9 @@ function generateTriggerFns() {
             /** @type {{groups: Record<string, string>, hasGroups: boolean, captureIndex: number, time: number, logValue: string}[]} */
             let _sequentialMatchs = [];
 
+            /** @type {Record<string, string>} */
+            let _renderedPhrases = {};
+
             trigger.capturePhrases?.forEach( phrase => {
 
                 // Only create parse functions for phrases that have content.
@@ -729,11 +940,13 @@ function generateTriggerFns() {
                                 rgxValue = StringUtilities.parseSequentialGroups( rgxValue, matchGroups );
                             }
                             
+                            _renderedPhrases[ phrase.phraseId ] = rgxValue;
                             let _res = new RegExp( rgxValue, 'gi' ).exec( value );
                             return {
                                 phraseId: phrase.phraseId,
                                 match: _res?.length > 0,
-                                result: _res
+                                result: _res,
+                                renderedPhrase: rgxValue,
                             };
                         } );
                     } else {
@@ -752,15 +965,19 @@ function generateTriggerFns() {
                                     }
                                 }
 
+                                _renderedPhrases[ phrase.phraseId ] = _phrs;
                                 return {
                                     phraseId: phrase.phraseId,
                                     match: matched,
-                                    result: [ value ]
+                                    result: [ value ], 
+                                    renderedPhrase: _phrs,
                                 };
                             } else {
+                                _renderedPhrases[ phrase.phraseId ] = "ERROR!! No value to parse";
                                 return {
                                     match: false,
-                                    result: []
+                                    result: [],
+                                    renderedPhrase: "ERROR!! No value to parse",
                                 };
                             }
                         } );
@@ -937,6 +1154,7 @@ function generateTriggerFns() {
                  * @param {(match: PhraseParse) => void} onMatch This callback is executed when a match is identified.
                  */
                 trigger._parse = ( value, onMatch ) => {
+                    let passed = false;
 
                     // If all conditions passed, then parse the phrase.
                     if ( trigger._checkConditions() ) {
@@ -944,8 +1162,23 @@ function generateTriggerFns() {
                             let _res = _phraseParsers[ i ]( value );
                             if ( _res?.match ) {
                                 onMatch( _res, 0 );
+                                passed = true;
                             }
                         }
+                    }
+
+                    if ( !passed ) {
+                        addFailedTriggerParsedEvent(
+                            value,
+                            trigger.triggerId,
+                            null,
+                            'Trigger Action',
+                            Object.keys( _renderedPhrases ).map( k => _renderedPhrases[ k ] ),
+                            trigger.capturePhrases.map( p => p.phrase ),
+                            null,
+                            trigger._conditionResults,
+                            undefined,
+                        );
                     }
                     
                 };
@@ -964,6 +1197,7 @@ function generateTriggerFns() {
                  * @param {(match: PhraseParse, deltaTime: number) => void} onMatch This callback is executed when a match is identified.
                  */
                 trigger._parse = ( value, onMatch ) => {
+                    let passed = false;
 
                     if ( trigger._checkConditions() ) {
 
@@ -1003,6 +1237,7 @@ function generateTriggerFns() {
                             trigger._deltaTime = 0;
 
                             onMatch( _res, trigger._deltaTime );
+                            passed = true;
 
                         }
                             
@@ -1031,6 +1266,7 @@ function generateTriggerFns() {
                                         _sequentialMatchs[ i ].hasGroups = _sequentialMatchs[ i ].hasGroups || groupKeys.length > 0;
                 
                                         onMatch( _res, trigger._deltaTime );
+                                        passed = true;
 
                                         // we've already checked the first match condition, if
                                         // the sequence restart behavior is 'afterFirstMatch' 
@@ -1055,6 +1291,20 @@ function generateTriggerFns() {
                         
                     }
 
+                    if ( !passed ) {
+                        addFailedTriggerParsedEvent(
+                            value,
+                            trigger.triggerId,
+                            null,
+                            'Trigger Sequential Action',
+                            Object.keys( _renderedPhrases ).map( k => _renderedPhrases[ k ] ),
+                            trigger.capturePhrases.map( p => p.phrase ),
+                            null,
+                            trigger._conditionResults,
+                            trigger._deltaTime,
+                        );
+                    }
+
                 };
 
             } else {
@@ -1066,7 +1316,21 @@ function generateTriggerFns() {
         } else {
             // if the trigger is missing capture phrases, then do nothing.
             trigger._reset = () => { };
-            trigger._parse = ( value, onMatch ) => { };
+            trigger._parse = ( value, onMatch ) => {
+                
+                addFailedTriggerParsedEvent(
+                    value,
+                    trigger.triggerId,
+                    null,
+                    'Trigger Sequential Action',
+                    [],
+                    [],
+                    null,
+                    trigger._conditionResults,
+                    undefined,
+                );
+
+            };
         }
     } );
 }
@@ -1404,7 +1668,7 @@ function parseLogEntries( raw, simulating, padTime ) {
 
         let entryMatched = false;
         triggers.forEach( trigger => {
-            
+
             try {
                 
                 if ( !!trigger.enabled ) {
@@ -1418,6 +1682,17 @@ function parseLogEntries( raw, simulating, padTime ) {
                                 enableLogging && sendInformationToLog( `    ||${raw}||`, 24 );
 
                                 executeTriggerAction( trigger, action, timestamp, res, deltaTime, simulating );
+                                
+                                addSuccessfulTriggerParsedEvent(
+                                    log,
+                                    trigger.triggerId,
+                                    action.actionId,
+                                    trigger.captureMethod === 'Sequential' ? 'Trigger Sequential Action' : 'Trigger Action',
+                                    res.renderedPhrase,
+                                    trigger.capturePhrases.find( p => p.phraseId === res.phraseId )?.phrase,
+                                    res,
+                                    trigger._conditionResults,
+                                    undefined );
                             }
                         } );
                         entryMatched = true;
@@ -1741,13 +2016,49 @@ function displayBeneficialTimerComponent( res, timestamp, action, trigger, spell
             _parse: ( logEntry ) => {
                 let matched = false;
                 
-                renderedPhrases.forEach( phrase => {
+                renderedPhrases.forEach( (phrase, i) => {
                     let _res = new RegExp( phrase, 'gi' ).exec( logEntry );
                     if ( _res?.length > 0 ) {
                         enableLogging && sendInformationToLog( `DoT Timer ended early: [${logEntry}]` );
                         matched = true;
+                        
+                        addSuccessfulTriggerParsedEvent(
+                            logEntry,
+                            trigger.triggerId,
+                            action.actionId,
+                            'Trigger Cancel Action',
+                            phrase,
+                            comp.action.endEarlyPhrases[ i ].phrase,
+                            {
+                                phraseId: comp.action.endEarlyPhrases[ i ].phraseId,
+                                result: _res,
+                                renderedPhrase: phrase,
+                                dependencyResult: res.result,
+                            },
+                            trigger._conditionResults,
+                            undefined );
+                        
                     }
                 } );
+
+                if ( !matched ) {
+                    addFailedTriggerParsedEvent(
+                        logEntry,
+                        trigger.triggerId,
+                        action.actionId,
+                        'Trigger Cancel Action',
+                        renderedPhrases,
+                        comp.action.endEarlyPhrases.map( p => p.phrase ),
+                        {
+                            phraseId: null,
+                            result: null,
+                            renderedPhrase: null,
+                            dependencyResult: res.result,
+                        },
+                        trigger._conditionResults,
+                        undefined,
+                    );
+                }
 
                 return matched;
             },
@@ -1889,13 +2200,49 @@ function displayDotTimerComponent( res, timestamp, action, deltaTime, trigger ) 
             _parse: ( logEntry ) => {
                 let matched = false;
                 
-                renderedPhrases.forEach( phrase => {
+                renderedPhrases.forEach( (phrase, i) => {
                     let _res = new RegExp( phrase, 'gi' ).exec( logEntry );
                     if ( _res?.length > 0 ) {
                         enableLogging && sendInformationToLog( `DoT Timer ended early: [${logEntry}]` );
                         matched = true;
+                        
+                        addSuccessfulTriggerParsedEvent(
+                            logEntry,
+                            trigger.triggerId,
+                            action.actionId,
+                            'Trigger Cancel Action',
+                            phrase,
+                            comp.action.endEarlyPhrases[ i ].phrase,
+                            {
+                                phraseId: comp.action.endEarlyPhrases[ i ].phraseId,
+                                result: _res,
+                                renderedPhrase: phrase,
+                                dependencyResult: res.result,
+                            },
+                            trigger._conditionResults,
+                            deltaTime );
+                        
                     }
                 } );
+
+                if ( !matched ) {
+                    addFailedTriggerParsedEvent(
+                        logEntry,
+                        trigger.triggerId,
+                        action.actionId,
+                        'Trigger Cancel Action',
+                        renderedPhrases,
+                        comp.action.endEarlyPhrases.map( p => p.phrase ),
+                        {
+                            phraseId: null,
+                            result: null,
+                            renderedPhrase: null,
+                            dependencyResult: res.result,
+                        },
+                        trigger._conditionResults,
+                        deltaTime,
+                    );
+                }
 
                 return matched;
             },
@@ -1917,13 +2264,48 @@ function displayDotTimerComponent( res, timestamp, action, deltaTime, trigger ) 
             _parse: ( logEntry ) => {
                 let matched = false;
                 
-                renderedPhrases.forEach( phrase => {
+                renderedPhrases.forEach( ( phrase, i ) => {
                     let _res = new RegExp( phrase, 'gi' ).exec( logEntry );
                     if ( _res?.length > 0 ) {
                         enableLogging && sendInformationToLog( `DoT Timer secondary action: [${logEntry}]` );
                         matched = true;
+                        
+                        addSuccessfulTriggerParsedEvent(
+                            logEntry,
+                            trigger.triggerId,
+                            action.actionId,
+                            'Trigger Secondary Action',
+                            phrase,
+                            phrases[ i ].phrase,
+                            {
+                                phraseId: phrases[ i ].phraseId,
+                                result: _res,
+                                renderedPhrase: phrase,
+                                dependencyResult: res.result,
+                            },
+                            trigger._conditionResults,
+                            deltaTime );
                     }
                 } );
+
+                if ( !matched ) {
+                    addFailedTriggerParsedEvent(
+                        logEntry,
+                        trigger.triggerId,
+                        action.actionId,
+                        'Trigger Secondary Action',
+                        renderedPhrases,
+                        phrases.map( p => p.phrase ),
+                        {
+                            phraseId: null,
+                            result: null,
+                            renderedPhrase: null,
+                            dependencyResult: res.result,
+                        },
+                        trigger._conditionResults,
+                        deltaTime,
+                    );
+                }
 
                 return matched;
             },
@@ -1965,9 +2347,43 @@ function displayDotTimerComponent( res, timestamp, action, deltaTime, trigger ) 
                     let _res = new RegExp( phrase, 'gi' ).exec( logEntry );
                     if ( _res?.length > 0 ) {
                         enableLogging && sendInformationToLog( `DoT Timer worn off: [${logEntry}]` );
+                        
+                        addSuccessfulTriggerParsedEvent(
+                            logEntry,
+                            trigger.triggerId,
+                            action.actionId,
+                            'Trigger Cancel Action',
+                            phrase,
+                            wornOffPhrase.phrase,
+                            {
+                                phraseId: wornOffPhrase.phraseId,
+                                result: _res,
+                                renderedPhrase: phrase,
+                                dependencyResult: res.result,
+                            },
+                            trigger._conditionResults,
+                            deltaTime );
+                        
                         return true;
                     }
                 }
+
+                addFailedTriggerParsedEvent(
+                    logEntry,
+                    trigger.triggerId,
+                    action.actionId,
+                    'Trigger Cancel Action',
+                    renderedWornOffPhrases,
+                    [ wornOffPhrase.phrase ],
+                    {
+                        phraseId: null,
+                        result: null,
+                        renderedPhrase: null,
+                        dependencyResult: res.result,
+                    },
+                    trigger._conditionResults,
+                    deltaTime,
+                );
 
                 return false;
             },
@@ -2105,13 +2521,49 @@ function displayTimerCountdownComponent(res, timestamp, action, deltaTime, trigg
             _parse: ( logEntry ) => {
                 let matched = false;
                                     
-                renderedPhrases.forEach( phrase => {
+                renderedPhrases.forEach( ( phrase, i ) => {
                     let _res = new RegExp( phrase, 'gi' ).exec( logEntry );
                     if ( _res?.length > 0 ) {
                         enableLogging && sendInformationToLog( `DoT Timer ended early: [${logEntry}]` );
                         matched = true;
+                        
+                        addSuccessfulTriggerParsedEvent(
+                            logEntry,
+                            trigger.triggerId,
+                            action.actionId,
+                            'Trigger Cancel Action',
+                            phrase,
+                            comp.action.endEarlyPhrases[ i ].phrase,
+                            {
+                                phraseId: comp.action.endEarlyPhrases[ i ].phraseId,
+                                result: _res,
+                                renderedPhrase: phrase,
+                                dependencyResult: res.result,
+                            },
+                            trigger._conditionResults,
+                            deltaTime );
+                        
                     }
                 } );
+
+                if ( !matched ) {
+                    addFailedTriggerParsedEvent(
+                        logEntry,
+                        trigger.triggerId,
+                        action.actionId,
+                        'Trigger Cancel Action',
+                        renderedPhrases,
+                        comp.action.endEarlyPhrases.map( p => p.phrase ),
+                        {
+                            phraseId: null,
+                            result: null,
+                            renderedPhrase: null,
+                            dependencyResult: res.result,
+                        },
+                        trigger._conditionResults,
+                        deltaTime,
+                    );
+                }
 
                 return matched;
             },
@@ -2837,7 +3289,7 @@ function backfind( log, callback ) {
 
                                                 trigger._parse( log, res => {
                                                     trigger.actions.forEach( action => {
-                                                        if ( action.actionType === ActionTypes.StoreVariable ) {
+                                                        if ( action.phrases?.indexOf( res.phraseId ) > -1 && action.actionType === ActionTypes.StoreVariable ) {
                                                             /* --== Store Variable ==-- */
                     
                                                             if ( action.loopBackForValue ) {
@@ -2846,6 +3298,17 @@ function backfind( log, callback ) {
                                                                 } else {
                                                                     saveVariable( action.variableName, res.result[ 1 ], action.onlyStoreUsedValues );
                                                                 }
+                                
+                                                                addSuccessfulTriggerParsedEvent(
+                                                                    log,
+                                                                    trigger.triggerId,
+                                                                    action.actionId,
+                                                                    'Trigger Action Loopback',
+                                                                    res.renderedPhrase,
+                                                                    trigger.capturePhrases.find( p => p.phraseId === res.phraseId )?.phrase,
+                                                                    res,
+                                                                    trigger._conditionResults,
+                                                                    undefined );
                                                             }
 
                                                         }

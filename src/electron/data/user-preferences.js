@@ -414,6 +414,24 @@ class UserPreferencesStore extends Store {
         this.storeDataFile( this.#data );
     }
 
+    /** @type {number} */
+    get successfulTriggerExecutionRetentionCount() {
+        return this.#data.successfulTriggerExecutionRetentionCount ?? 50;
+    }
+    set successfulTriggerExecutionRetentionCount( val ) {
+        this.#data.successfulTriggerExecutionRetentionCount = val ?? 50;
+        this.storeDataFile( this.#data );
+    }
+
+    /** @type {number} */
+    get failedTriggerExecutionRetentionCount() {
+        return this.#data.failedTriggerExecutionRetentionCount ?? 50;
+    }
+    set failedTriggerExecutionRetentionCount( val ) {
+        this.#data.failedTriggerExecutionRetentionCount = val ?? 50;
+        this.storeDataFile( this.#data );
+    }
+
     /** @type {(fctStyles: FctStylesModel) => void[]} */
     onFctStyleChanges = [];
 

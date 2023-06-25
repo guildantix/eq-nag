@@ -21,6 +21,7 @@ const {
     DuplicateTriggerAction,
     OwnedTriggerAction,
     TriggerConditionTypes,
+    TriggerParseHistoryModel,
 } = require( './models/trigger' );
 const ForwardRef = require( '../forward-ref' );
 const customAlphabet = require( 'nanoid' ).customAlphabet;
@@ -330,6 +331,77 @@ class TriggerDatabaseStore extends Store {
 
         _fileStore = fileStore;
         _userPreferences = userPreferences;
+
+        ipcMain.on( 'trigger:get:history', ( event, triggerId ) => {
+            let successful = this.#data.successfulTriggerExecutions[ triggerId ] ?? [];
+            let failed = this.#data.failedTriggerExecutions[ triggerId ] ?? [];
+            
+            event.sender.send( 'trigger:get:history', { successful: _.orderBy( successful, [ 'timestamp' ], [ 'asc' ] ), failed: _.orderBy( failed, [ 'timestamp' ], [ 'asc' ] ) } );
+        } );
+
+        ipcMain.on( 'trigger:clear:history:all', ( event ) => {
+            this.#data.successfulTriggerExecutions = {};
+            this.#data.failedTriggerExecutions = {};
+            this.storeDataFile( this.#data );
+            event.sender.send( 'trigger:clear:history:all' );
+        } );
+
+        ipcMain.on( 'trigger:batch-history',
+            /**
+             * Stores the given batch history.
+             * 
+             * @param {any} event The event args.
+             * @param {{successful: string, failed: string}} data The data to process.
+             */
+            ( event, data ) => {
+                /** @type {TriggerParseHistoryModel[]} */
+                let successful = JSON.parse( data.successful );
+                /** @type {TriggerParseHistoryModel[]} */
+                let failed = JSON.parse( data.failed );
+
+                successful.forEach( history => {
+                    let triggerSuccesses = this.#data.successfulTriggerExecutions[ history.triggerId ] ?? [];
+                    triggerSuccesses = Array.prototype.concat( history, triggerSuccesses );
+                    this.#data.successfulTriggerExecutions[ history.triggerId ] = triggerSuccesses;
+                } );
+
+                failed.forEach( history => {
+                    let triggerFailures = this.#data.failedTriggerExecutions[ history.triggerId ] ?? [];
+                    triggerFailures = Array.prototype.concat( history, triggerFailures );
+                    this.#data.failedTriggerExecutions[ history.triggerId ] = triggerFailures;
+                } );
+
+                let keys = Object.keys( this.#data.successfulTriggerExecutions );
+                for ( let i = 0; i < keys.length; i++ ) {
+                    const triggerId = keys[ i ];
+                    if ( this.#data.successfulTriggerExecutions[ triggerId ].length > userPreferences.successfulTriggerExecutionRetentionCount ) {
+                        this.#data.successfulTriggerExecutions[ triggerId ].splice( userPreferences.successfulTriggerExecutionRetentionCount - 1 );
+                    }
+                }
+
+                keys = Object.keys( this.#data.failedTriggerExecutions );
+                for ( let i = 0; i < keys.length; i++ ) {
+                    const triggerId = keys[ i ];
+                    if ( this.#data.failedTriggerExecutions[ triggerId ].length > userPreferences.failedTriggerExecutionRetentionCount ) {
+                        this.#data.failedTriggerExecutions[ triggerId ].splice( userPreferences.failedTriggerExecutionRetentionCount - 1 );
+                    }
+                }
+
+                // By default the console will show successful triggers, but not segregate them by trigger.
+                /** @type {TriggerParseHistoryModel[]} */
+                let output = [];
+                keys = Object.keys( this.#data.successfulTriggerExecutions );
+                for ( let i = 0; i < keys.length; i++ ) {
+                    const triggerId = keys[ i ];
+                    output = Array.prototype.concat( output, this.#data.successfulTriggerExecutions[ triggerId ] );
+                }
+
+                this.storeDataFile( this.#data );
+                output = _.orderBy( output, [ 'timestamp' ], [ 'asc' ] );
+
+                mainWindowRef.reference.webContents.send( 'trigger:get:successful-parse-history', output );
+
+            } );
 
         ipcMain.on( 'trigger:mass-create',
             /**

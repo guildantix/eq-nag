@@ -5,6 +5,12 @@ class PhraseParse {
     phraseId;
     /** @type {RegExpExecArray} */
     result;
+    /** @type {RegExpExecArray | undefined} */
+    dependencyResult;
+    /** @type {boolean} */
+    match;
+    /** @type {string} */
+    renderedPhrase;
 }
 
 class LogTrigger extends Trigger {
