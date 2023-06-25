@@ -3,7 +3,7 @@ import * as Electron from 'electron';
 import { UpdateInfo } from 'electron-updater';
 import { Observable, Observer } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
-import { DataTickModel, DkpEntryModel, TriggerModel, OverlayWindowModel, ActionTypes, FocusEffectSettings, CharacterModel, BasicError, TriggerFolder, FileModel, Tag, AuthorModel, PackageFileModel, TriggerPackageMetaModel, TriggerPackageVersion, FctStylesModel, OverlayBoundsChangedEventArgs, DialogEventArgs, QuickShareMetaModel, LogFileLocation, IpcMessage, DeathRecapPreferences, QuickShareAuthorListTypes, Progress, QuitFailureData, DuplicateTriggerAction, ScrapedSpell, ScrapedClickEffect } from './core.model';
+import { DataTickModel, DkpEntryModel, TriggerModel, OverlayWindowModel, ActionTypes, FocusEffectSettings, CharacterModel, BasicError, TriggerFolder, FileModel, Tag, AuthorModel, PackageFileModel, TriggerPackageMetaModel, TriggerPackageVersion, FctStylesModel, OverlayBoundsChangedEventArgs, DialogEventArgs, QuickShareMetaModel, LogFileLocation, IpcMessage, DeathRecapPreferences, QuickShareAuthorListTypes, Progress, QuitFailureData, DuplicateTriggerAction, ScrapedSpell, ScrapedClickEffect, TriggerParseHistoryModel } from './core.model';
 import { GinaConfiguration, GinaTriggerGroups } from './gina.model';
 import { ColorUtility } from './utilities';
 
@@ -27,6 +27,7 @@ export class IpcService {
     private _onMissingPackageOverlay: Observer<OverlayWindowModel>[] = [];
     private _onQuitFalure: Observer<QuitFailureData>[] = [];
     private _onBackupProgress: Observer<Progress>[] = [];
+    private _successfulParseHistoryObservers: Observer<TriggerParseHistoryModel[]>[] = [];
 
     private _ginaConfigCache: GinaConfiguration = null;
 
@@ -173,12 +174,32 @@ export class IpcService {
                     } );
                 } );
 
+                window.api.ipc.on( 'trigger:get:successful-parse-history', ( event: any, data: any ) => {
+                    ngZone.run( () => {
+                        this._successfulParseHistoryObservers?.forEach( f => {
+                            f.next( data );
+                        } );
+                    } );
+                } );
+
+
             } catch ( e ) {
                 throw e;
             }
         } else {
             console.warn( 'App not running inside Electron!' );
         }
+    }
+
+    /**
+     * Returns the list of successful parses.
+     */
+    public onSuccessfulParseHistory(): Observable<TriggerParseHistoryModel[]> {
+        let obs: Observable<TriggerParseHistoryModel[]> = new Observable<TriggerParseHistoryModel[]>( ( observer: Observer<TriggerParseHistoryModel[]> ) => {
+            this._successfulParseHistoryObservers.push( observer );
+        } );
+
+        return obs;
     }
 
     /**
@@ -429,6 +450,10 @@ export class IpcService {
 
     public updateVoiceIndex( index: number ): void {
         window.api.ipc.send( 'voice:select', index );
+    }
+
+    public clearTriggerHistory(): void {
+        window.api.ipc.send( 'trigger:clear:history:all' );
     }
 
     /**
@@ -1844,6 +1869,22 @@ export class IpcService {
                 } );
             } );
             window.api.ipc.send( 'settings:get:deathRecap', null );
+
+        } );
+
+        return obs;
+    }
+
+    public getTriggerParseHistory( triggerId: string ): Observable<{ successful: TriggerParseHistoryModel[], failed: TriggerParseHistoryModel[] }> {
+        let obs: Observable<{ successful: TriggerParseHistoryModel[], failed: TriggerParseHistoryModel[] }> = new Observable<{ successful: TriggerParseHistoryModel[], failed: TriggerParseHistoryModel[] }>( ( observer: Observer<{ successful: TriggerParseHistoryModel[], failed: TriggerParseHistoryModel[] }> ) => {
+            
+            window.api.ipc.once( 'trigger:get:history', ( e, model: { successful: TriggerParseHistoryModel[], failed: TriggerParseHistoryModel[] } ) => {
+                this.ngZone.run( () => {
+                    observer.next( model );
+                    observer.complete();
+                } );
+            } );
+            window.api.ipc.send( 'trigger:get:history', triggerId );
 
         } );
 

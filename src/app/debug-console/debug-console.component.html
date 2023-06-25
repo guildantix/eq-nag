@@ -1,13 +1,53 @@
 <div class="debug-console-container" *ngIf="show">
     <div class="console-toolbar">
-        <button mat-button>Clear</button>
+        <button mat-button (click)="clear()">Clear</button>
         <button mat-button (click)="show = false">Hide</button>
-        <!-- TODO: Add filters for Character -->
-        <!-- TODO: Add scope browsing, to allow the user to click the trigger to show all success and failure logs for that trigger. -->
-        <!-- TODO: When in a scope, allow the user to toggle between successes and failures. -->
+        
+        <mat-form-field>
+            <mat-label></mat-label>
+            <mat-select [(ngModel)]="characterId" name="characterId" placeholder="Character">
+                <mat-option [value]="null">All Characters</mat-option>
+                <mat-option *ngFor="let option of characterOptions" [value]="option.id">{{option.server}} | {{option.name}}</mat-option>
+            </mat-select>
+        </mat-form-field>
+
+        <div *ngIf="showTriggerHistory">
+            <button mat-button (click)="hideTriggerHistory()">{{triggerName}} <mat-icon [inline]="true">clear</mat-icon></button>
+            <button mat-button class="color-red" [ngClass]="{'selected': parseType === 'failed'}" (click)="parseType = 'failed'">Failed</button>
+            <button mat-button class="color-green" [ngClass]="{'selected': parseType === 'successful'}" (click)="parseType = 'successful'">Success</button>
+            <button mat-button class="color-bright-white" (click)="showEditTriggerDialog(triggerId)">Edit Trigger</button>
+        </div>
+
+        <span style="flex: 1 1 auto;"></span>
+
+        <mat-form-field>
+            <input matInput type="text" [(ngModel)]="searchText" name="searchText" />
+            <mat-icon matPrefix style="opacity: 0.5;">search</mat-icon>
+        </mat-form-field>
+
     </div>
-    <p><span class="log-timestamp">[99/99/9999 00:00:00]</span><span class="log-text">This is some text.</span></p>
-    <p><span class="log-timestamp">[9/9/99 00:00:00]</span><span class="log-text">This is some more text. This is some more text. This is some more text. This is some more text. This is some more text. This is some more text. This is some more text. This is some more text. This is some more text. This is some more text. This is some more text. This is some more text. This is some more text. This is some more text. This is some more text. This is some more text. This is some more text. This is some more text. This is some more text. This is some more text. This is some more text. This is some more text. This is some more text. This is some more text. This is some more text. This is some more text. This is some more text.</span></p>
+
+    <ng-template ngFor let-item [ngForOf]="history">
+
+        <p>
+            <span class="log-timestamp">[{{item.timestamp | date:'M/d/yyyy, h:mm a'}}]</span>
+            <span class="links">
+                <mat-icon class="color-blue" matTooltip="{{item.triggerName}}" matTooltipPosition="left" (click)="showTriggerParseHistory(item.triggerId, item.triggerName)" *ngIf="!triggerId">filter_list</mat-icon>
+                <mat-icon class="color-green" (click)="toggleExpandedParse(item)">{{!getExpandedParse(item.parseId) ? 'expand_more' : 'expand_less'}}</mat-icon>
+                <mat-icon class="color-bright-white" (click)="showEditTriggerDialog(item.triggerId)" *ngIf="!triggerId">open_in_new</mat-icon>
+            </span>
+            <span class="log-text">{{item.rawLogEntry}}</span>
+        </p>
+        <p class="log-details" *ngIf="getExpandedParse(item.parseId)">
+            <!-- <span class="log-timestamp"></span> -->
+            <!-- <span class="log-details-line"><code><pre>{{item.storedVariables | json}}</pre></code></span> -->
+            <span class="log-details-line" [innerHTML]="renderParseToHtml(item)"></span>
+        </p>
+        
+    </ng-template>
+
+
+    <!-- <p><span class="log-timestamp">[9/9/99 00:00:00]</span><span class="log-text">This is some more text. This is some more text. This is some more text. This is some more text. This is some more text. This is some more text. This is some more text. This is some more text. This is some more text. This is some more text. This is some more text. This is some more text. This is some more text. This is some more text. This is some more text. This is some more text. This is some more text. This is some more text. This is some more text. This is some more text. This is some more text. This is some more text. This is some more text. This is some more text. This is some more text. This is some more text. This is some more text.</span></p> -->
     <div class="console-input-area" *ngIf="showInput">
         <span>></span><input type="text" />
     </div>

@@ -1,5 +1,6 @@
 $color-grey-80: #808080;
 $color-light-grey: #eeeeee;
+$color-bright-white: #ffffff;
 // $text: #ffffff;
 $text: #ebebeb;
 // $text: #e3e3e3;
@@ -11,6 +12,7 @@ $color-blue: #69b2f0;
 $color-yellow: #f0e069;
 $color-orange: #f0c669;
 $color-orange-dark: #d9990b;
+$color-brown: #c18367;
 $color-red: #f06969;
 $color-red-warn: #f44336;
 $color-purple: #c269f0;
@@ -35,6 +37,10 @@ $bg-extreme-dark: #191919;
 
 .dark-theme {
 
+    .color-bright-white {
+        color: $color-bright-white;
+    }
+
     .color-light {
         color: $color-light;
     }
@@ -58,6 +64,10 @@ $bg-extreme-dark: #191919;
     .color-orange-dark {
         color: $color-orange-dark;
     }
+
+    .color-brown {
+        color: $color-brown;
+    }
     
     .color-red {
         color: $color-red;
@@ -73,6 +83,10 @@ $bg-extreme-dark: #191919;
     
     .color-magenta {
         color: $color-magenta;
+    }
+
+    .border-bright-white {
+        border-color: $color-bright-white;
     }
     
     .border-light {
@@ -101,6 +115,10 @@ $bg-extreme-dark: #191919;
     
     .border-orange-dark {
         border-color: rgba($color-orange-dark, .8); // a: 0.80
+    }
+
+    .border-brown {
+        border-color: rgba($color-brown, .8); // a: 0.80
     }
     
     .border-red {

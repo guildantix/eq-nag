@@ -5,7 +5,7 @@
     height: 24px;
     background-color: #101010bf;
     color: #c3c3c3;
-    z-index: 9999;
+    z-index: 2;
     box-sizing: border-box;
 
     &:hover {
@@ -19,6 +19,51 @@
     }
 }
 
+:host::ng-deep ul {
+    font-family: Consolas, monospace;
+    font-size: 12px;
+    padding-left: 17px;
+
+    li {
+        line-height: 17px;
+        list-style-type: none;
+
+        b {
+            color: #69b2f0;
+        }
+    }
+}
+
+:host::ng-deep mat-form-field {
+    padding: 0;
+    margin: 1px 0;
+    font-size: 12px;
+    border: none;
+    margin: 4px 0;
+
+    .mat-select-placeholder {
+        color: #ffffff80 !important;
+        -webkit-text-fill-color: unset !important;
+    }
+
+    .mat-form-field-underline {
+        display: none;
+    }
+
+    .mat-form-field-wrapper {
+        padding-bottom: 0;
+    }
+
+    mat-icon[matPrefix] {
+        opacity: 0.25;
+        text-align: center;
+        margin-bottom: -10px;
+        font-size: 25px;
+        width: 25px;
+        height: 25px;
+    }
+}
+
 .debug-console-container {
     position: fixed;
     bottom: 0;
@@ -27,10 +72,10 @@
     height: 300px;
     background-color: #101010;
     color: #c3c3c3;
-    z-index: 9999;
+    z-index: 2;
     overflow: auto;
     padding: 10px 0px;
-    padding-top: 34px;
+    padding-top: 0px;
     box-sizing: border-box;
     border-top: 3px solid #ffffff40;
 
@@ -53,7 +98,27 @@
             margin-right: 5px;
             flex: 0;
             white-space: nowrap;
-            min-width: 140px;
+            min-width: 150px;
+        }
+
+        span.links {
+            flex: 0 1 auto;
+            white-space: nowrap;
+            margin-right: 5px;
+            display: flex;
+
+            mat-icon {
+                font-size: 13px;
+                width: 13px;
+                height: 13px;
+                opacity: 0.8;
+                cursor: pointer;
+                margin: 0 2px;
+
+                &:hover {
+                    opacity: 1;
+                }
+            }
         }
 
         span.log-text {
@@ -68,13 +133,27 @@
         left: 0;
         right: 0;
         top: 0;
-        position: absolute;
+        position: sticky;
         background-color: #141414;
+        z-index: 1;
 
         button {
             border-radius: 0;
             font-size: 12px;
             line-height: 26px;
+
+            &.selected {
+
+                &.color-green {
+                    background-color: #69f0ae1a;
+                }
+    
+                &.color-red {
+                    background-color: #f069691a;
+                }
+
+            }
+
         }
 
         .console-title {
@@ -86,6 +165,20 @@
             cursor: pointer;
             font-size: 14px;
             font-weight: bold;
+        }
+
+        select {
+            outline: none;
+            border-radius: 0;
+            border: none;
+            background: #00000000;
+            color: #c3c3c3;
+            -webkit-padding-end: 20px;
+            -webkit-padding-start: 2px;
+
+            option {
+                background-color: #141414;
+            }
         }
     }
 

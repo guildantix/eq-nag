@@ -1295,3 +1295,27 @@ export class LogMaintenanceRules {
     public maxLogFileSizeMb: number = 50;
 
 }
+
+export class TriggerParseHistoryModel {
+
+    public parseId: string;
+    public timestamp: Date;
+    public triggerId: string;
+    public triggerName: string;
+    public actionId: string;
+    public actionTypeLabel: string;
+    public phraseId: string;
+    public renderedPhrase: string | string[];
+    public unrenderedPhrase: string | string[];
+    public conditionResults: Record<string, string[]>;
+    public storedVariables: Record<string, string[]>;
+    public counters: Record<string, {value: number, lastUpdate: Date, resetDelay: number}>;
+    public regexResult: RegExpExecArray | undefined;
+    public dependencyRegexResult: RegExpExecArray | undefined;
+    public parseType: string;
+    public deltaTime: number;
+    public characterId: string;
+    public characterName: string;
+    public rawLogEntry: string;
+    
+}
