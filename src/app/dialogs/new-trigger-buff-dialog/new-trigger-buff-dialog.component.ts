@@ -440,6 +440,7 @@ export class NewTriggerBuffDialogComponent implements OnInit {
         }
         
         if ( this.useTargetTimer ) {
+            const captureReplaceRegex = this.data.dataSource === ExternalDataSources.Allakhazam ? /soandso's|soandso\s's|soandso/gmi : /target's|target\s's|target/gmi;
             castOnOtherPhraseId = nanoid();
             trigger.capturePhrases.push( <CapturePhrase>{
                 phraseId: castOnOtherPhraseId,
@@ -447,7 +448,7 @@ export class NewTriggerBuffDialogComponent implements OnInit {
                 requirePreviousPhrase: false,
                 duration: null,
                 // /^(?<target>.+?)\b\s{0,1}'{0,1}s{0,1}\b is covered in necrotic sores\.$/
-                phrase: this.spell.castOnOther.replace( /\.$/, '\\.$' ).replace( /target's|target\s's|target/gmi, '^(?!Your\\s)(?<target>.+?)\\b\\s{0,1}\'{0,1}s{0,1}\\b' ),
+                phrase: this.spell.castOnOther.replace( /\.$/, '\\.$' ).replace( captureReplaceRegex, '^(?!Your\\s)(?<target>.+?)\\b\\s{0,1}\'{0,1}s{0,1}\\b' ),
             } );
             buffTimerPhrases.push( castOnOtherPhraseId );
         }

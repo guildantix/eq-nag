@@ -122,13 +122,14 @@ export class NewTriggerDialogComponent implements OnInit {
         trigger.importType = ImportTypes.DotTimer;
 
         trigger.capturePhrases = [];
+        const captureReplaceRegex = this.data.dataSource === ExternalDataSources.Allakhazam ? /soandso's|soandso\s's|soandso/gmi : /target's|target\s's|target/gmi;
         trigger.capturePhrases.push( <CapturePhrase>{
             phraseId: nanoid(),
             useRegEx: true,
             requirePreviousPhrase: false,
             duration: null,
             ///^(?<target>.+?)\s?'s has been poisoned\.
-            phrase: this.spell.castOnOther.replace( /\.$/, '\\.$' ).replace( /target's|target\s's|target/gmi, '^(?<target>.+?)\\b\\s{0,1}\'{0,1}s{0,1}\\b' ),
+            phrase: this.spell.castOnOther.replace( /\.$/, '\\.$' ).replace( captureReplaceRegex, '^(?<target>.+?)\\b\\s{0,1}\'{0,1}s{0,1}\\b' ),
         } );
         trigger.capturePhrases.push( <CapturePhrase>{
             phraseId: nanoid(),
