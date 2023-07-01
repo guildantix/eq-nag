@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, protocol, session, screen, Tray, Menu } = require( "electron" );
+const { app, BrowserWindow, ipcMain, protocol, session, screen, Tray, Menu, globalShortcut } = require( "electron" );
 const { autoUpdater, updaterSignal } = require('electron-updater');
 const url = require( "url" );
 const path = require( "path" );
@@ -174,6 +174,21 @@ app.on( 'before-quit', () => {
     trayMenu = null;
 } );
 
+const registerDevToolsShortcut = () => {
+    globalShortcut.register( 'CommandOrControl+Shift+D', function () {
+        
+        const focusedWindow = BrowserWindow.getFocusedWindow();
+
+        if ( focusedWindow ) {
+            if ( focusedWindow?.webContents.isDevToolsOpened() ) {
+                focusedWindow.webContents.closeDevTools();
+            } else {
+                focusedWindow.webContents.openDevTools();
+            }
+        }
+
+    } );
+};
 
 // --========================--
 // --== App Initialization ==--
@@ -222,6 +237,13 @@ const bootstrapApp = () => {
             callback( path.normalize( filePath ) );
         } );
         createWindow();
+
+        if ( enableDevMode === true && process.defaultApp === true ) {
+            // If we're running in dev mode, then we need to register the global shortcut
+            // to open the dev tools.
+            registerDevToolsShortcut();
+        }
+
     } );
     
 }
