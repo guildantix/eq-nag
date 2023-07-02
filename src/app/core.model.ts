@@ -10,6 +10,16 @@ export const ErrorCodes = {
     }
 };
 
+export enum LogTypes {
+    
+    info = 0,
+    error = 1,
+    success = 2,
+    warning = 3,
+    debug = 4,
+
+}
+
 export enum SettingsKeys {
     
     logMaintenanceRules = 'logMaintenanceRules',
@@ -1317,5 +1327,8 @@ export class TriggerParseHistoryModel {
     public characterId: string;
     public characterName: string;
     public rawLogEntry: string;
+    public logType: LogTypes = LogTypes.info;
+    public error: any;
+    public errorDescription: string;
     
 }

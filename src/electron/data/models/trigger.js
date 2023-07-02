@@ -1,5 +1,20 @@
 const { OverlayWindow } = require( "./overlay-window" )
 
+const ErrorMessages = {
+    generalParsingError: () => 'Failed to parse log entry.',
+    triggerParse: () => 'Attempt to execute capture phrases against log entry has failed.',
+    triggerGeneration: () => 'An error occurred while generating the trigger parse functions.',
+    triggerExecution: () => 'Could not execute trigger.',
+    fctException: () => 'An exception occurred while parsing FCT.',
+    cancellableParse: () => 'Could not parse cancellable component phrase.',
+    secondaryTriggerParse: () => 'Could not parse secondary trigger.',
+    secondaryTriggerExecution: () => 'Could not execute secondary trigger.',
+    /**
+     * @param {string} counterName The name of the counter.
+     */
+    counterExecution: (counterName) => `Could not execute counter ${counterName}.`,
+}
+
 var ActionTypes = {
     '0': 'DisplayText',
     '1': 'PlayAudio',
@@ -29,6 +44,21 @@ var ActionTypes = {
     DisplayDeathRecap: 11,
     ScreenGlow: 12,
     ClearAll: 13,
+
+}
+
+var LogTypes = {
+    
+    '0': 'info',
+    '1': 'error',
+    '2': 'success',
+    '3': 'warning',
+    '4': 'debug',
+    info: 0,
+    error: 1,
+    success: 2,
+    warning: 3,
+    debug: 4,
 
 }
 
@@ -763,6 +793,12 @@ class TriggerParseHistoryModel {
     characterName;
     /** @type {string} */
     rawLogEntry;
+    /** @type {LogTypes} */
+    logType = LogTypes.info;
+    /** @type {any} */
+    error;
+    /** @type {string} */
+    errorDescription;
 
 }
 
@@ -783,10 +819,12 @@ class TriggerStoreModel {
     packageOverlayMap;
     /** @type {Record<string, string[]>} This is a record of all package original overlay ids. */
     packageOverlays;
-    /** @type {Record<string, TriggerParseHistoryModel[]>} */
+    /** @type {TriggerParseHistoryModel[]} */
     successfulTriggerExecutions = [];
-    /** @type {Record<string, TriggerParseHistoryModel[]>} */
+    /** @type {TriggerParseHistoryModel[]} */
     failedTriggerExecutions = [];
+    /** @type {TriggerParseHistoryModel[]} */
+    exceptionHistory = [];
 }
 
 class GinaToNagOverlay {
@@ -802,6 +840,7 @@ module.exports = {
     Trigger,
     TriggerAction,
     ActionTypes,
+    LogTypes,
     CapturePhrase,
     ExternalDataSources,
     TriggerConditionTypes,
@@ -833,4 +872,5 @@ module.exports = {
     GinaToNagOverlay,
     TriggerParseHistoryModel,
     getActionLabel,
+    ErrorMessages,
 };

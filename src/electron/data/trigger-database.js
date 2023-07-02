@@ -333,15 +333,31 @@ class TriggerDatabaseStore extends Store {
         _userPreferences = userPreferences;
 
         ipcMain.on( 'trigger:get:history', ( event, triggerId ) => {
-            let successful = this.#data.successfulTriggerExecutions[ triggerId ] ?? [];
-            let failed = this.#data.failedTriggerExecutions[ triggerId ] ?? [];
+            let successful = this.#data.successfulTriggerExecutions?.filter( f => f.triggerId === triggerId ) ?? [];
+            let failed = this.#data.failedTriggerExecutions?.filter( f => f.triggerId === triggerId ) ?? [];
+            let exceptions = this.#data.exceptionHistory?.filter( f => f.triggerId === triggerId ) ?? [];
             
-            event.sender.send( 'trigger:get:history', { successful: _.orderBy( successful, [ 'timestamp' ], [ 'asc' ] ), failed: _.orderBy( failed, [ 'timestamp' ], [ 'asc' ] ) } );
+            event.sender.send( 'trigger:get:history', {
+                successful: _.orderBy( successful, [ 'timestamp' ], [ 'asc' ] ),
+                failed: _.orderBy( Array.prototype.concat( failed, exceptions ), [ 'timestamp' ], [ 'asc' ] )
+            } );
+        } );
+
+        ipcMain.on( 'trigger:get:history:all', ( event ) => {
+            
+            event.sender.send( 'trigger:get:history:all', {
+                successful: _.orderBy( this.#data.successfulTriggerExecutions, [ 'timestamp' ], [ 'asc' ] ),
+                exceptions: _.orderBy( this.#data.exceptionHistory, [ 'timestamp' ], [ 'asc' ] )
+            } );
+
         } );
 
         ipcMain.on( 'trigger:clear:history:all', ( event ) => {
-            this.#data.successfulTriggerExecutions = {};
-            this.#data.failedTriggerExecutions = {};
+            
+            this.#data.successfulTriggerExecutions = [];
+            this.#data.failedTriggerExecutions = [];
+            this.#data.exceptionHistory = [];
+
             this.storeDataFile( this.#data );
             event.sender.send( 'trigger:clear:history:all' );
         } );
@@ -358,48 +374,17 @@ class TriggerDatabaseStore extends Store {
                 let successful = JSON.parse( data.successful );
                 /** @type {TriggerParseHistoryModel[]} */
                 let failed = JSON.parse( data.failed );
-
-                successful.forEach( history => {
-                    let triggerSuccesses = this.#data.successfulTriggerExecutions[ history.triggerId ] ?? [];
-                    triggerSuccesses = Array.prototype.concat( history, triggerSuccesses );
-                    this.#data.successfulTriggerExecutions[ history.triggerId ] = triggerSuccesses;
-                } );
-
-                failed.forEach( history => {
-                    let triggerFailures = this.#data.failedTriggerExecutions[ history.triggerId ] ?? [];
-                    triggerFailures = Array.prototype.concat( history, triggerFailures );
-                    this.#data.failedTriggerExecutions[ history.triggerId ] = triggerFailures;
-                } );
-
-                let keys = Object.keys( this.#data.successfulTriggerExecutions );
-                for ( let i = 0; i < keys.length; i++ ) {
-                    const triggerId = keys[ i ];
-                    if ( this.#data.successfulTriggerExecutions[ triggerId ].length > userPreferences.successfulTriggerExecutionRetentionCount ) {
-                        this.#data.successfulTriggerExecutions[ triggerId ].splice( userPreferences.successfulTriggerExecutionRetentionCount - 1 );
-                    }
-                }
-
-                keys = Object.keys( this.#data.failedTriggerExecutions );
-                for ( let i = 0; i < keys.length; i++ ) {
-                    const triggerId = keys[ i ];
-                    if ( this.#data.failedTriggerExecutions[ triggerId ].length > userPreferences.failedTriggerExecutionRetentionCount ) {
-                        this.#data.failedTriggerExecutions[ triggerId ].splice( userPreferences.failedTriggerExecutionRetentionCount - 1 );
-                    }
-                }
-
-                // By default the console will show successful triggers, but not segregate them by trigger.
                 /** @type {TriggerParseHistoryModel[]} */
-                let output = [];
-                keys = Object.keys( this.#data.successfulTriggerExecutions );
-                for ( let i = 0; i < keys.length; i++ ) {
-                    const triggerId = keys[ i ];
-                    output = Array.prototype.concat( output, this.#data.successfulTriggerExecutions[ triggerId ] );
-                }
+                let exceptions = data.exceptions;
+
+                this.#data.successfulTriggerExecutions = _.orderBy( Array.prototype.concat( this.#data.successfulTriggerExecutions, successful ?? [] ), [ 'timestamp' ], [ 'asc' ] );
+                this.#data.failedTriggerExecutions = _.orderBy( Array.prototype.concat( this.#data.failedTriggerExecutions, failed ?? [] ), [ 'timestamp' ], [ 'asc' ] );
+                this.#data.exceptionHistory = _.orderBy( Array.prototype.concat( this.#data.exceptionHistory, exceptions ?? [] ), [ 'timestamp' ], [ 'asc' ] );
 
                 this.storeDataFile( this.#data );
-                output = _.orderBy( output, [ 'timestamp' ], [ 'asc' ] );
 
-                mainWindowRef.reference.webContents.send( 'trigger:get:successful-parse-history', output );
+                mainWindowRef.reference.webContents.send( 'trigger:get:successful-parse-history', this.#data.successfulTriggerExecutions );
+                mainWindowRef.reference.webContents.send( 'trigger:get:exception-parse-history', this.#data.exceptionHistory );
 
             } );
 
