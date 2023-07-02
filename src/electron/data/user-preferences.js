@@ -31,6 +31,7 @@ const prefChangeListeners = [];
 
 const defaultLogFileSizeMb = 100;
 const defaultLogMaintenanceDelaySeconds = 20;
+const defaultTriggerLogRetentionCount = 50;
 
 /**
  * Get windows drives
@@ -416,19 +417,19 @@ class UserPreferencesStore extends Store {
 
     /** @type {number} */
     get successfulTriggerExecutionRetentionCount() {
-        return this.#data.successfulTriggerExecutionRetentionCount ?? 50;
+        return this.#data.successfulTriggerExecutionRetentionCount ?? defaultTriggerLogRetentionCount;
     }
     set successfulTriggerExecutionRetentionCount( val ) {
-        this.#data.successfulTriggerExecutionRetentionCount = val ?? 50;
+        this.#data.successfulTriggerExecutionRetentionCount = val ?? defaultTriggerLogRetentionCount;
         this.storeDataFile( this.#data );
     }
 
     /** @type {number} */
     get failedTriggerExecutionRetentionCount() {
-        return this.#data.failedTriggerExecutionRetentionCount ?? 50;
+        return this.#data.failedTriggerExecutionRetentionCount ?? defaultTriggerLogRetentionCount;
     }
     set failedTriggerExecutionRetentionCount( val ) {
-        this.#data.failedTriggerExecutionRetentionCount = val ?? 50;
+        this.#data.failedTriggerExecutionRetentionCount = val ?? defaultTriggerLogRetentionCount;
         this.storeDataFile( this.#data );
     }
 
