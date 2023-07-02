@@ -11,7 +11,7 @@ const customAlphabet = require( 'nanoid' ).customAlphabet;
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const nanoid = customAlphabet( alphabet, 16 );
 
-const currentTriggerDbVersion = 82;
+const currentTriggerDbVersion = 83;
 
 
 
@@ -697,6 +697,43 @@ function executeDataMigration( data ) {
 
         data.successfulTriggerExecutions.forEach( execution => execution.parseId = nanoid() );
         data.failedTriggerExecutions.forEach( execution => execution.parseId = nanoid() );
+        
+        data.version = 83;
+        
+    }
+    if ( data.version < 83 ) {
+
+        if ( data.successfulTriggerExecutions ) {
+
+            let output = [];
+            let ids = Object.keys( data.successfulTriggerExecutions );
+
+            ids.forEach( triggerId => {
+                output = Array.prototype.concat( output, data.successfulTriggerExecutions[ triggerId ] );
+            } );
+
+            data.successfulTriggerExecutions = output;
+            
+        } else {
+            data.successfulTriggerExecutions = [];
+        }
+
+        if ( data.failedTriggerExecutions ) {
+            
+            let output = [];
+            let ids = Object.keys( data.failedTriggerExecutions );
+
+            ids.forEach( triggerId => {
+                output = Array.prototype.concat( output, data.failedTriggerExecutions[ triggerId ] );
+            } );
+            
+            data.failedTriggerExecutions = output;
+
+        } else {
+            data.failedTriggerExecutions = [];
+        }
+
+        data.exceptionHistory = [];
         
         data.version = 83;
         
