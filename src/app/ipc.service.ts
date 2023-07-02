@@ -28,6 +28,7 @@ export class IpcService {
     private _onQuitFalure: Observer<QuitFailureData>[] = [];
     private _onBackupProgress: Observer<Progress>[] = [];
     private _successfulParseHistoryObservers: Observer<TriggerParseHistoryModel[]>[] = [];
+    private _exceptionParseHistoryObservers: Observer<TriggerParseHistoryModel[]>[] = [];
 
     private _ginaConfigCache: GinaConfiguration = null;
 
@@ -182,6 +183,15 @@ export class IpcService {
                     } );
                 } );
 
+                window.api.ipc.on( 'trigger:get:exception-parse-history', ( event: any, data: any ) => {
+                    console.log('raw data: ', data);
+                    ngZone.run( () => {
+                        this._exceptionParseHistoryObservers?.forEach( f => {
+                            f.next( data );
+                        } );
+                    } );
+                } );
+
 
             } catch ( e ) {
                 throw e;
@@ -197,6 +207,17 @@ export class IpcService {
     public onSuccessfulParseHistory(): Observable<TriggerParseHistoryModel[]> {
         let obs: Observable<TriggerParseHistoryModel[]> = new Observable<TriggerParseHistoryModel[]>( ( observer: Observer<TriggerParseHistoryModel[]> ) => {
             this._successfulParseHistoryObservers.push( observer );
+        } );
+
+        return obs;
+    }
+
+    /**
+     * Returns the list of successful parses.
+     */
+    public onExceptionParseHistory(): Observable<TriggerParseHistoryModel[]> {
+        let obs: Observable<TriggerParseHistoryModel[]> = new Observable<TriggerParseHistoryModel[]>( ( observer: Observer<TriggerParseHistoryModel[]> ) => {
+            this._exceptionParseHistoryObservers.push( observer );
         } );
 
         return obs;
@@ -1869,6 +1890,26 @@ export class IpcService {
                 } );
             } );
             window.api.ipc.send( 'settings:get:deathRecap', null );
+
+        } );
+
+        return obs;
+    }
+
+    /**
+     * Returns the successful and exception parse history.
+     * @returns 
+     */
+    public getParseHistory(): Observable<{ successful: TriggerParseHistoryModel[], exceptions: TriggerParseHistoryModel[] }> {
+        let obs: Observable<{ successful: TriggerParseHistoryModel[], exceptions: TriggerParseHistoryModel[] }> = new Observable<{ successful: TriggerParseHistoryModel[], exceptions: TriggerParseHistoryModel[] }>( ( observer: Observer<{ successful: TriggerParseHistoryModel[], exceptions: TriggerParseHistoryModel[] }> ) => {
+            
+            window.api.ipc.once( 'trigger:get:history:all', ( e, model: { successful: TriggerParseHistoryModel[], exceptions: TriggerParseHistoryModel[] } ) => {
+                this.ngZone.run( () => {
+                    observer.next( model );
+                    observer.complete();
+                } );
+            } );
+            window.api.ipc.send( 'trigger:get:history:all', null );
 
         } );
 
