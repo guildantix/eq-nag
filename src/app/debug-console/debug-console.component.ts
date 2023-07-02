@@ -1,6 +1,6 @@
 import { Component, HostListener, OnInit } from '@angular/core';
 import { IpcService } from '../ipc.service';
-import { TriggerParseHistoryModel } from '../core.model';
+import { LogTypes, TriggerParseHistoryModel } from '../core.model';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import * as _ from 'lodash-es';
 
@@ -14,6 +14,7 @@ export class DebugConsoleComponent implements OnInit {
     public show: boolean = false;
     public showInput: boolean = false;
     public allSuccessesParseHistory: TriggerParseHistoryModel[] = [];
+    public allExceptionsParseHistory: TriggerParseHistoryModel[] = [];
     public triggerHistory: { successful: TriggerParseHistoryModel[], failed: TriggerParseHistoryModel[] } | undefined;
     public showTriggerHistory: boolean = false;
     public triggerId: string | null = null;
@@ -23,6 +24,7 @@ export class DebugConsoleComponent implements OnInit {
     public expandedParses: string[] = [];
     public searchText: string = null;
     public characterOptions: { id: string, name: string, server: string }[] = [];
+    public logTypes: typeof LogTypes = LogTypes;
 
     public get history(): TriggerParseHistoryModel[] {
         let output: TriggerParseHistoryModel[] = [];
@@ -30,7 +32,7 @@ export class DebugConsoleComponent implements OnInit {
         if ( this.showTriggerHistory ) {
             output = this.parseType === 'successful' ? this.triggerHistory.successful : this.triggerHistory.failed;
         } else {
-            output = this.allSuccessesParseHistory;
+            output = Array.prototype.concat( this.allSuccessesParseHistory, this.allExceptionsParseHistory );
         }
 
         output = output.filter( x => {
@@ -38,7 +40,7 @@ export class DebugConsoleComponent implements OnInit {
                 ( !this.characterId || x.characterId === this.characterId );
         } );
 
-        return output;
+        return _.orderBy( output, [ 'timestamp' ], [ 'asc' ] );
     }
     
     @HostListener( 'document:keyup', [ '$event' ] ) onKeydownHandler( event: KeyboardEvent ) {
@@ -53,9 +55,18 @@ export class DebugConsoleComponent implements OnInit {
     ) { }
 
     ngOnInit() {
+
+        this.ipcService.getParseHistory().subscribe( history => {
+            this.allSuccessesParseHistory = history.successful;
+            this.allExceptionsParseHistory = history.exceptions;
+        } );
         
         this.ipcService.onSuccessfulParseHistory().subscribe( history => {
             this.allSuccessesParseHistory = history;
+        } );
+
+        this.ipcService.onExceptionParseHistory().subscribe( history => {
+            this.allExceptionsParseHistory = history;
         } );
         
         this.ipcService.getCharacters().subscribe( options => {
@@ -79,8 +90,17 @@ export class DebugConsoleComponent implements OnInit {
     public clear() {
         this.ipcService.clearTriggerHistory();
         this.allSuccessesParseHistory = [];
+        this.allExceptionsParseHistory = [];
         this.hideTriggerHistory();
         this.triggerHistory = undefined;
+    }
+
+    public getLogText( log: TriggerParseHistoryModel ): string {
+        if ( log.logType === LogTypes.error ) {
+            return log.errorDescription;
+        } else {
+            return log.rawLogEntry;
+        }
     }
 
 
@@ -253,7 +273,7 @@ export class DebugConsoleComponent implements OnInit {
             } else if ( typeof value === 'string' && value.match( /\d{4}-[01]\d-[0-3]\dT[0-2]\d:[0-5]\d:[0-5]\d\.\d+([+-][0-2]\d:[0-5]\d|Z)/gi ) ) {
                 html += `<li><b class="color-blue">${key}</b>: <span>${new Date(value)}</span></li>`;
             } else {
-                html += `<li><b class="color-blue">${key}</b>: <span class="color-brown">"${value}"</span></li>`;
+                html += `<li><b class="color-blue">${key}</b>: <span class="color-brown">"${value?.replace(/</gmi, '&lt;').replace(/>/gmi, '&gt;')}"</span></li>`;
             }
             
         }

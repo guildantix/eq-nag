@@ -90,6 +90,15 @@
         display: flex;
         flex-flow: row nowrap;
 
+        &.error {
+            
+            color: #f06969;
+            background-color: #2a04047a;
+            border-color: #610a0a;
+            border-top: 1px solid #610a0a;
+            margin-top: -1px;
+        }
+
         &:first-of-type {
             border-top: 1px solid #323232;
         }
