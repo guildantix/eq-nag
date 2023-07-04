@@ -198,7 +198,8 @@
             "castTime": null,
             "hideConditions": [],
             "restartBehavior": null,
-            "loopBackForValue": true
+            "loopBackForValue": true,
+            "variableStorageType": "localVariable"
         }
     ],
     "captureMethod": "Any match",
