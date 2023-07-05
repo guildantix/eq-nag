@@ -124,7 +124,7 @@ export class MainComponent implements OnInit {
             this.ipcService.getAuthor().subscribe( author => {
             
                 let observables = [
-                    this.quickShareService.isAuthorOfQuickShare(author.authorId, quickShareId),
+                    this.quickShareService.isAuthorOfQuickShare( author?.authorId, quickShareId ),
                     this.quickShareService.getQuickShare( quickShareId ),
                     this.quickShareService.getQuickShareFiles( quickShareId ),
                 ];

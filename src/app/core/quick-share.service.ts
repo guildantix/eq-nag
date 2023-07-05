@@ -169,8 +169,10 @@ export class QuickShareService {
      * @param authorId The user's author id.
      * @param quickShareId The id of the quickshare.
      */
-    isAuthorOfQuickShare( authorId: string, quickShareId: string ): Observable<boolean> {
+    isAuthorOfQuickShare( authorId: string | void, quickShareId: string ): Observable<boolean> {
         
+        authorId = authorId ?? 'undefined';
+
         return this.httpClient.get<boolean>( `${environment.shareServiceUrl}/quick-shares/${quickShareId}/is-author/${authorId}` )
             .pipe( catchError( error => this.handleError( error ) ) );
 
