@@ -1,4 +1,4 @@
-<div class="debug-console-container" *ngIf="show">
+<div class="debug-console-container" *ngIf="show" nagResizeable location="top" resizeVisibility="hidden" resizeMax="80%" #container>
     <div class="console-toolbar">
         <button mat-button (click)="clear()">Clear</button>
         <button mat-button (click)="show = false">Hide</button>
@@ -11,11 +11,11 @@
             </mat-select>
         </mat-form-field>
 
-        <div *ngIf="showTriggerHistory">
-            <button mat-button (click)="hideTriggerHistory()">{{triggerName}} <mat-icon [inline]="true">clear</mat-icon></button>
-            <button mat-button class="color-red" [ngClass]="{'selected': parseType === 'failed'}" (click)="parseType = 'failed'">Failed</button>
-            <button mat-button class="color-green" [ngClass]="{'selected': parseType === 'successful'}" (click)="parseType = 'successful'">Success</button>
-            <button mat-button class="color-bright-white" (click)="showEditTriggerDialog(triggerId)">Edit Trigger</button>
+        <div *ngIf="consoleList.showTriggerHistory">
+            <button mat-button (click)="hideTriggerHistory()">{{consoleList.triggerName}} <mat-icon [inline]="true">clear</mat-icon></button>
+            <button mat-button class="color-red" [ngClass]="{'selected': consoleList.parseType === 'failed'}" (click)="setParseType('failed')">Failed</button>
+            <button mat-button class="color-green" [ngClass]="{'selected': consoleList.parseType === 'successful'}" (click)="setParseType('successful')">Success</button>
+            <button mat-button class="color-bright-white" (click)="showEditTriggerDialog()">Edit Trigger</button>
         </div>
 
         <span style="flex: 1 1 auto;"></span>
@@ -27,7 +27,12 @@
 
     </div>
 
-    <ng-template ngFor let-item [ngForOf]="history">
+    <console-list #consoleList (onListUpdated)="onListUpdated()"></console-list>
+
+    <div class="console-bottom-buttons" *ngIf="showBottomTools">
+        <button mat-button (click)="scrollToBottom()" *ngIf="!atBottom">Jump to bottom</button>
+    </div>
+    <!-- <ng-template ngFor let-item [ngForOf]="history">
 
         <p [ngClass]="{'error': item.logType === logTypes.error}">
             <span class="log-timestamp">[{{item.timestamp | date:'M/d/yyyy, h:mm a'}}]</span>
@@ -39,12 +44,10 @@
             <span class="log-text">{{getLogText(item)}}</span>
         </p>
         <p class="log-details" *ngIf="getExpandedParse(item.parseId)">
-            <!-- <span class="log-timestamp"></span> -->
-            <!-- <span class="log-details-line"><code><pre>{{item.storedVariables | json}}</pre></code></span> -->
             <span class="log-details-line" [innerHTML]="renderParseToHtml(item)"></span>
         </p>
         
-    </ng-template>
+    </ng-template> -->
 
 
     <!-- <p><span class="log-timestamp">[9/9/99 00:00:00]</span><span class="log-text">This is some more text. This is some more text. This is some more text. This is some more text. This is some more text. This is some more text. This is some more text. This is some more text. This is some more text. This is some more text. This is some more text. This is some more text. This is some more text. This is some more text. This is some more text. This is some more text. This is some more text. This is some more text. This is some more text. This is some more text. This is some more text. This is some more text. This is some more text. This is some more text. This is some more text. This is some more text. This is some more text.</span></p> -->
