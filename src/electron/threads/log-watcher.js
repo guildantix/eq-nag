@@ -323,11 +323,6 @@ let setEqTick = ( timestamp ) => {
  */
 let _batchTriggerParseHistory = () => {
 
-    // TODO: Only send new logs to the main process.  The main process should append new html elements.
-    // TODO: Use trackBy on the list.
-    // TODO: https://stackoverflow.com/a/46281422, https://angular.io/api/core/ChangeDetectionStrategy
-    //       Create a new component for the list itself that uses the OnPush strategy.
-
     ipcRenderer.once( 'trigger:batch:complete', ( event, data ) => {
 
         // Set the timeout to run again.
