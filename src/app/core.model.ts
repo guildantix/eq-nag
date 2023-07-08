@@ -1330,5 +1330,16 @@ export class TriggerParseHistoryModel {
     public logType: LogTypes = LogTypes.info;
     public error: any;
     public errorDescription: string;
+    public duplicateCount: number = 0;
+
+    public _modelHtml: string;
+
+    public static sameError( a: TriggerParseHistoryModel, b: TriggerParseHistoryModel ): boolean {
+        return a.logType === LogTypes.error &&
+            b.logType === LogTypes.error &&
+            a.triggerId === b.triggerId &&
+            a.error === b.error &&
+            a.errorDescription === b.errorDescription;
+    }
     
 }
