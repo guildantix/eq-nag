@@ -83,7 +83,7 @@ let failedParses = [];
 /** @type {TriggerParseHistoryModel[]} */
 let exceptionParses = [];
 let batchTriggerParseHistoryTimeoutId = null;
-const batchTriggerParseHistoryTimeoutDuration = 1000;
+const batchTriggerParseHistoryTimeoutDuration = 100;
 
 /** @type {Record<string, {trigger: LogTrigger, res: PhraseParse}>} */
 let actionInstances = {};
@@ -189,7 +189,6 @@ const logParseError = ( err, raw, simulating, padTime, errorDesc, trigger, actio
         entry.characterName = characterName;
 
         exceptionParses.push( entry );
-        batchTriggerParseHistory();
 
     }
 };
@@ -320,48 +319,32 @@ let setEqTick = ( timestamp ) => {
 
 /**
  * Sends the batch of parses to the main process, clears the batch, and sets 
- * the timeout to run again.  If there are no parses to send, then the timeout 
- * is cleared.
+ * the timeout to run again.
  */
 let _batchTriggerParseHistory = () => {
-    if ( successfulParses?.length > 0 || failedParses?.length > 0 || exceptionParses?.length > 0 ) {
 
-        // Send the batch of parses to the main process.
-        ipcRenderer.send( 'trigger:batch-history', { successful: JSON.stringify( successfulParses ), failed: JSON.stringify( failedParses ), exceptions: exceptionParses } );
+    // TODO: Only send new logs to the main process.  The main process should append new html elements.
+    // TODO: Use trackBy on the list.
+    // TODO: https://stackoverflow.com/a/46281422, https://angular.io/api/core/ChangeDetectionStrategy
+    //       Create a new component for the list itself that uses the OnPush strategy.
 
-        // Clear the batch.
-        successfulParses = [];
-        failedParses = [];
-        exceptionParses = [];
+    ipcRenderer.once( 'trigger:batch:complete', ( event, data ) => {
 
         // Set the timeout to run again.
-        batchTriggerParseHistoryTimeoutId = window.setTimeout( _batchTriggerParseHistory, batchTriggerParseHistoryTimeoutDuration );
+        batchTriggerParseHistoryTimeoutId = window.setTimeout( () => _batchTriggerParseHistory(), batchTriggerParseHistoryTimeoutDuration );
+            
+    } );
 
-    } else {
+    // Send the batch of parses to the main process.
+    ipcRenderer.send( 'trigger:batch-history', { successful: successfulParses, failed: failedParses, exceptions: exceptionParses } );
 
-        // Nothing left to do, so let's clear the timeout.
-        batchTriggerParseHistoryTimeoutId = null;
-        
-    }
+    // Clear the batch.
+    successfulParses = [];
+    failedParses = [];
+    exceptionParses = [];
+
 }
-
-
-
-
-
-
-
-
-
-
-/**
- * Starts the timeout to batch trigger parse history.
- */
-let batchTriggerParseHistory = () => {
-    if ( !batchTriggerParseHistoryTimeoutId ) {
-        batchTriggerParseHistoryTimeoutId = window.setTimeout( _batchTriggerParseHistory, batchTriggerParseHistoryTimeoutDuration );
-    }
-}
+batchTriggerParseHistoryTimeoutId = window.setTimeout( () => _batchTriggerParseHistory(), batchTriggerParseHistoryTimeoutDuration );
 
 
 
@@ -405,8 +388,8 @@ let _getParseHistoryEntry = ( rawLogEntry, logType, trigger, actionId, parseType
     entry.dependencyRegexResult = parsedPhrase?.dependencyResult;
     entry.conditionResults = conditionResults;
     entry.deltaTime = deltaTime;
-    entry.counters = _.cloneDeep( counters );
-    entry.storedVariables = _.cloneDeep( storedVariables );
+    entry.counters = JSON.parse( JSON.stringify( counters ) );
+    entry.storedVariables = JSON.parse( JSON.stringify( storedVariables ) );
     entry.characterId = characterId;
     entry.characterName = characterName;
     entry.rawLogEntry = rawLogEntry;
@@ -444,9 +427,6 @@ let addSuccessfulTriggerParsedEvent = ( rawLogEntry, triggerId, actionId, parseT
 
         // Add the entry to the batch.
         successfulParses.push( entry );
-
-        // Start the timeout to batch the parses.
-        batchTriggerParseHistory();
     }
 };
 
@@ -473,17 +453,14 @@ let addSuccessfulTriggerParsedEvent = ( rawLogEntry, triggerId, actionId, parseT
  * @param {number | undefined} deltaTime The time in milliseconds between the sequential phrases.
  */
 let addFailedTriggerParsedEvent = ( rawLogEntry, triggerId, actionId, parseType, renderedPhrase, unrenderedPhrase, parsedPhrase, conditionResults, deltaTime ) => {
-    let trigger = triggers.find( t => t.triggerId === triggerId );
+    // let trigger = triggers.find( t => t.triggerId === triggerId );
 
-    if ( trigger ) {
-        let entry = _getParseHistoryEntry( rawLogEntry, LogTypes.info, trigger, actionId, parseType, renderedPhrase, unrenderedPhrase, parsedPhrase, conditionResults, deltaTime );
+    // if ( trigger ) {
+    //     let entry = _getParseHistoryEntry( rawLogEntry, LogTypes.info, trigger, actionId, parseType, renderedPhrase, unrenderedPhrase, parsedPhrase, conditionResults, deltaTime );
         
-        // Add the entry to the batch.
-        failedParses.push( entry );
-
-        // Start the timeout to batch the parses.
-        batchTriggerParseHistory();
-    }
+    //     // Add the entry to the batch.
+    //     failedParses.push( entry );
+    // }
 };
 
 // Common errors:
@@ -3433,15 +3410,25 @@ function backfind( log, callback ) {
                 let danglyBits = null;
                 var stats = fs.fstatSync( fd );
                 let myChunkSize = stats.size < chunkSize ? stats.size : chunkSize;
+                // let myChunkSize = stats.size;
                 let position = stats.size; //  Start at the end of the file.
 
-                function parseChunk() {
+                /**
+                 * 
+                 * @param {number} readCount 
+                 */
+                function parseChunk( readCount ) {
+                    let start = stats.size - readCount - myChunkSize;
+                    if ( start < 0 ) {
+                        start = 0;
+                        myChunkSize = stats.size - readCount;
+                    }
                     if ( position <= 0 || !valuesMissing() ) {
                         // If we've reached the beginning of the file or all values where parsed, execute the callback function and end parsing.
                         callback();
 
                     } else {
-                        fs.read( fd, Buffer.alloc( myChunkSize ), 0, myChunkSize, position - myChunkSize, ( err, bytecount, buff ) => {
+                        fs.read( fd, Buffer.alloc( myChunkSize ), 0, myChunkSize, start, ( err, bytecount, buff ) => {
                         
                             let read = buff.toString( 'utf-8', 0, bytecount );
                             let lines = read.split( /\r\n|\r|\n/gmi );
@@ -3509,13 +3496,13 @@ function backfind( log, callback ) {
                             
                             position -= bytecount;
 
-                            parseChunk();
+                            parseChunk(bytecount);
 
                         } );
                     }
                 }
 
-                parseChunk();
+                parseChunk(0);
                 
             }
         } );
