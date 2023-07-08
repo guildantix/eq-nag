@@ -133,6 +133,12 @@ const fuseOptions_clipboard = {
     ]
 };
 
+/** @type {TriggerParseHistoryModel[]} */
+let successfulTriggerExecutions = [];
+/** @type {TriggerParseHistoryModel[]} */
+let failedTriggerExecutions = [];
+/** @type {TriggerParseHistoryModel[]} */
+let exceptionHistory = [];
 
 
 class TriggerDatabaseStore extends Store {
@@ -333,10 +339,10 @@ class TriggerDatabaseStore extends Store {
         _userPreferences = userPreferences;
 
         ipcMain.on( 'trigger:get:history', ( event, triggerId ) => {
-            let successful = this.#data.successfulTriggerExecutions?.filter( f => f.triggerId === triggerId ) ?? [];
-            let failed = this.#data.failedTriggerExecutions?.filter( f => f.triggerId === triggerId ) ?? [];
-            let exceptions = this.#data.exceptionHistory?.filter( f => f.triggerId === triggerId ) ?? [];
-            
+            let successful = successfulTriggerExecutions?.filter( f => f.triggerId === triggerId ) ?? [];
+            let failed = failedTriggerExecutions?.filter( f => f.triggerId === triggerId ) ?? [];
+            let exceptions = exceptionHistory?.filter( f => f.triggerId === triggerId ) ?? [];
+
             event.sender.send( 'trigger:get:history', {
                 successful: _.orderBy( successful, [ 'timestamp' ], [ 'asc' ] ),
                 failed: _.orderBy( Array.prototype.concat( failed, exceptions ), [ 'timestamp' ], [ 'asc' ] )
@@ -344,19 +350,19 @@ class TriggerDatabaseStore extends Store {
         } );
 
         ipcMain.on( 'trigger:get:history:all', ( event ) => {
-            
+
             event.sender.send( 'trigger:get:history:all', {
-                successful: _.orderBy( this.#data.successfulTriggerExecutions, [ 'timestamp' ], [ 'asc' ] ),
-                exceptions: _.orderBy( this.#data.exceptionHistory, [ 'timestamp' ], [ 'asc' ] )
+                successful: _.orderBy( successfulTriggerExecutions ?? [], [ 'timestamp' ], [ 'asc' ] ),
+                exceptions: _.orderBy( exceptionHistory ?? [], [ 'timestamp' ], [ 'asc' ] )
             } );
 
         } );
 
         ipcMain.on( 'trigger:clear:history:all', ( event ) => {
             
-            this.#data.successfulTriggerExecutions = [];
-            this.#data.failedTriggerExecutions = [];
-            this.#data.exceptionHistory = [];
+            successfulTriggerExecutions = [];
+            failedTriggerExecutions = [];
+            exceptionHistory = [];
 
             this.storeDataFile( this.#data );
             event.sender.send( 'trigger:clear:history:all' );
@@ -369,22 +375,31 @@ class TriggerDatabaseStore extends Store {
              * @param {any} event The event args.
              * @param {{successful: string, failed: string}} data The data to process.
              */
-            ( event, data ) => {
+            async ( event, data ) => {
                 /** @type {TriggerParseHistoryModel[]} */
-                let successful = JSON.parse( data.successful );
+                let successful = _.orderBy( data.successful ?? [], [ 'timestamp' ], [ 'asc' ] );
                 /** @type {TriggerParseHistoryModel[]} */
-                let failed = JSON.parse( data.failed );
+                let failed = _.orderBy( data.failed ?? [], [ 'timestamp' ], [ 'asc' ] );
                 /** @type {TriggerParseHistoryModel[]} */
-                let exceptions = data.exceptions;
+                let exceptions = _.orderBy( data.exceptions ?? [], [ 'timestamp' ], [ 'asc' ] );
 
-                this.#data.successfulTriggerExecutions = _.orderBy( Array.prototype.concat( this.#data.successfulTriggerExecutions, successful ?? [] ), [ 'timestamp' ], [ 'asc' ] );
-                this.#data.failedTriggerExecutions = _.orderBy( Array.prototype.concat( this.#data.failedTriggerExecutions, failed ?? [] ), [ 'timestamp' ], [ 'asc' ] );
-                this.#data.exceptionHistory = _.orderBy( Array.prototype.concat( this.#data.exceptionHistory, exceptions ?? [] ), [ 'timestamp' ], [ 'asc' ] );
+                successfulTriggerExecutions = Array.prototype.concat( successfulTriggerExecutions, successful );
+                failedTriggerExecutions = Array.prototype.concat( failedTriggerExecutions, failed );
+                exceptionHistory = Array.prototype.concat( exceptionHistory, exceptions );
 
-                this.storeDataFile( this.#data );
+                if (successfulTriggerExecutions.length > userPreferences.logRetentionCount) {
+                    successfulTriggerExecutions.splice( 0, successfulTriggerExecutions.length - userPreferences.logRetentionCount );
+                }
+                if ( failedTriggerExecutions.length > userPreferences.logRetentionCount ) {
+                    failedTriggerExecutions.splice( 0, failedTriggerExecutions.length - userPreferences.logRetentionCount );
+                }
+                if ( exceptionHistory.length > userPreferences.logRetentionCount ) {
+                    exceptionHistory.splice( 0, exceptionHistory.length - userPreferences.logRetentionCount );
+                }
+                
 
-                mainWindowRef.reference.webContents.send( 'trigger:get:successful-parse-history', this.#data.successfulTriggerExecutions );
-                mainWindowRef.reference.webContents.send( 'trigger:get:exception-parse-history', this.#data.exceptionHistory );
+                mainWindowRef.reference.webContents.send( 'trigger:batch:parse-history', { successful: successful, exceptions: exceptions } );
+                event.sender.send( 'trigger:batch:complete', null );
 
             } );
 
