@@ -27,8 +27,7 @@ export class IpcService {
     private _onMissingPackageOverlay: Observer<OverlayWindowModel>[] = [];
     private _onQuitFalure: Observer<QuitFailureData>[] = [];
     private _onBackupProgress: Observer<Progress>[] = [];
-    private _successfulParseHistoryObservers: Observer<TriggerParseHistoryModel[]>[] = [];
-    private _exceptionParseHistoryObservers: Observer<TriggerParseHistoryModel[]>[] = [];
+    private _successfulParseHistoryObservers: Observer<{ successful: TriggerParseHistoryModel[], exceptions: TriggerParseHistoryModel[] }>[] = [];
 
     private _ginaConfigCache: GinaConfiguration = null;
 
@@ -175,18 +174,21 @@ export class IpcService {
                     } );
                 } );
 
-                window.api.ipc.on( 'trigger:get:successful-parse-history', ( event: any, data: any ) => {
+                window.api.ipc.on( 'trigger:batch:parse-history', ( event: any, data: { successful: TriggerParseHistoryModel[], exceptions: TriggerParseHistoryModel[] } ) => {
                     ngZone.run( () => {
-                        this._successfulParseHistoryObservers?.forEach( f => {
-                            f.next( data );
-                        } );
-                    } );
-                } );
 
-                window.api.ipc.on( 'trigger:get:exception-parse-history', ( event: any, data: any ) => {
-                    console.log('raw data: ', data);
-                    ngZone.run( () => {
-                        this._exceptionParseHistoryObservers?.forEach( f => {
+                        data.successful = data.successful.map( x => {
+                            let m = Object.assign( new TriggerParseHistoryModel(), x );
+                            m.timestamp = new Date( x.timestamp );
+                            return m;
+                        } );
+                        data.exceptions = data.exceptions.map( x => {
+                            let m = Object.assign( new TriggerParseHistoryModel(), x );
+                            m.timestamp = new Date( x.timestamp );
+                            return m;
+                        } );
+
+                        this._successfulParseHistoryObservers?.forEach( f => {
                             f.next( data );
                         } );
                     } );
@@ -204,20 +206,9 @@ export class IpcService {
     /**
      * Returns the list of successful parses.
      */
-    public onSuccessfulParseHistory(): Observable<TriggerParseHistoryModel[]> {
-        let obs: Observable<TriggerParseHistoryModel[]> = new Observable<TriggerParseHistoryModel[]>( ( observer: Observer<TriggerParseHistoryModel[]> ) => {
+    public onBatchParseHistory(): Observable<{ successful: TriggerParseHistoryModel[], exceptions: TriggerParseHistoryModel[] }> {
+        let obs: Observable<{ successful: TriggerParseHistoryModel[], exceptions: TriggerParseHistoryModel[] }> = new Observable<{ successful: TriggerParseHistoryModel[], exceptions: TriggerParseHistoryModel[] }>( ( observer: Observer<{ successful: TriggerParseHistoryModel[], exceptions: TriggerParseHistoryModel[] }> ) => {
             this._successfulParseHistoryObservers.push( observer );
-        } );
-
-        return obs;
-    }
-
-    /**
-     * Returns the list of successful parses.
-     */
-    public onExceptionParseHistory(): Observable<TriggerParseHistoryModel[]> {
-        let obs: Observable<TriggerParseHistoryModel[]> = new Observable<TriggerParseHistoryModel[]>( ( observer: Observer<TriggerParseHistoryModel[]> ) => {
-            this._exceptionParseHistoryObservers.push( observer );
         } );
 
         return obs;
@@ -1905,6 +1896,16 @@ export class IpcService {
             
             window.api.ipc.once( 'trigger:get:history:all', ( e, model: { successful: TriggerParseHistoryModel[], exceptions: TriggerParseHistoryModel[] } ) => {
                 this.ngZone.run( () => {
+                    model.successful = model.successful.map( x => {
+                        let m = Object.assign( new TriggerParseHistoryModel(), x );
+                        m.timestamp = new Date( x.timestamp );
+                        return m;
+                    } );
+                    model.exceptions = model.exceptions.map( x => {
+                        let m = Object.assign( new TriggerParseHistoryModel(), x );
+                        m.timestamp = new Date( x.timestamp );
+                        return m;
+                    } );
                     observer.next( model );
                     observer.complete();
                 } );
@@ -1921,6 +1922,17 @@ export class IpcService {
             
             window.api.ipc.once( 'trigger:get:history', ( e, model: { successful: TriggerParseHistoryModel[], failed: TriggerParseHistoryModel[] } ) => {
                 this.ngZone.run( () => {
+                    model.successful = model.successful.map( x => {
+                        let m = Object.assign( new TriggerParseHistoryModel(), x );
+                        m.timestamp = new Date( x.timestamp );
+                        return m;
+                    } );
+                    model.failed = model.failed.map( x => {
+                        let m = Object.assign( new TriggerParseHistoryModel(), x );
+                        m.timestamp = new Date( x.timestamp );
+                        return m;
+                    } );
+                    
                     observer.next( model );
                     observer.complete();
                 } );
