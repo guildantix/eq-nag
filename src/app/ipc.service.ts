@@ -1917,6 +1917,11 @@ export class IpcService {
         return obs;
     }
 
+    /**
+     * Returns the successful and exception parse history for a specific trigger.
+     * 
+     * @param triggerId The trigger id to get the history for.
+     */
     public getTriggerParseHistory( triggerId: string ): Observable<{ successful: TriggerParseHistoryModel[], failed: TriggerParseHistoryModel[] }> {
         let obs: Observable<{ successful: TriggerParseHistoryModel[], failed: TriggerParseHistoryModel[] }> = new Observable<{ successful: TriggerParseHistoryModel[], failed: TriggerParseHistoryModel[] }>( ( observer: Observer<{ successful: TriggerParseHistoryModel[], failed: TriggerParseHistoryModel[] }> ) => {
             

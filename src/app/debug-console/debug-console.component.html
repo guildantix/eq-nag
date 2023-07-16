@@ -32,28 +32,11 @@
     <div class="console-bottom-buttons" *ngIf="showBottomTools">
         <button mat-button (click)="scrollToBottom()" *ngIf="!atBottom">Jump to bottom</button>
     </div>
-    <!-- <ng-template ngFor let-item [ngForOf]="history">
 
-        <p [ngClass]="{'error': item.logType === logTypes.error}">
-            <span class="log-timestamp">[{{item.timestamp | date:'M/d/yyyy, h:mm a'}}]</span>
-            <span class="links">
-                <mat-icon class="color-blue" title="{{item.triggerName}}" (click)="showTriggerParseHistory(item.triggerId, item.triggerName)" *ngIf="!triggerId">filter_list</mat-icon>
-                <mat-icon class="color-bright-white" title="Edit this trigger" (click)="showEditTriggerDialog(item.triggerId)" *ngIf="!triggerId">open_in_new</mat-icon>
-                <mat-icon class="color-green" title="Show more details" (click)="toggleExpandedParse(item)">{{!getExpandedParse(item.parseId) ? 'expand_more' : 'expand_less'}}</mat-icon>
-            </span>
-            <span class="log-text">{{getLogText(item)}}</span>
-        </p>
-        <p class="log-details" *ngIf="getExpandedParse(item.parseId)">
-            <span class="log-details-line" [innerHTML]="renderParseToHtml(item)"></span>
-        </p>
-        
-    </ng-template> -->
-
-
-    <!-- <p><span class="log-timestamp">[9/9/99 00:00:00]</span><span class="log-text">This is some more text. This is some more text. This is some more text. This is some more text. This is some more text. This is some more text. This is some more text. This is some more text. This is some more text. This is some more text. This is some more text. This is some more text. This is some more text. This is some more text. This is some more text. This is some more text. This is some more text. This is some more text. This is some more text. This is some more text. This is some more text. This is some more text. This is some more text. This is some more text. This is some more text. This is some more text. This is some more text.</span></p> -->
     <div class="console-input-area" *ngIf="showInput">
         <span>></span><input type="text" />
     </div>
+    
 </div>
 <div class="debug-toggle" *ngIf="!show">
     <button mat-button (click)="show = true">Console</button>
