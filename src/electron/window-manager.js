@@ -624,7 +624,7 @@ class WindowManager {
         
         renderer.loadURL( `file://${__dirname}/threads/renderer.html?originX=${0 - bounds.x}&originY=${0 - bounds.y}&glowOnStart=${this.#userPrefDb.glowOnStartup === true ? 'true' : 'false'}` );
         // renderer.loadURL( `file://${__dirname}/threads/renderer.html` );
-        renderer.setIgnoreMouseEvents( true, { forward: true } );
+        renderer.setIgnoreMouseEvents( true, { forward: false } );
 
         // https://github.com/electron/electron/issues/10078#issuecomment-331581160
         renderer.setAlwaysOnTop( true, "screen-saver" );

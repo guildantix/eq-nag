@@ -15,7 +15,7 @@ const StyleSheetUtil = require( '../utilities/style-sheet' );
 const { FctStylesModel, FctModel, FctTypes } = require( '../data/models/fct' );
 const ElectronUtilities = require( '../utilities/electron' );
 const { StyleProperties } = require( '../data/models/common' );
-const { screen } = require( '@electron/remote' );
+const { getCurrentWindow, screen } = require( '@electron/remote' );
 const { DateUtilities } = require( '../utilities/dates' );
 
 /**
@@ -1157,6 +1157,7 @@ function disableMoveResize( dom ) {
         }
     }
 
+    getCurrentWindow().setIgnoreMouseEvents( true, { forward: false } );
     dom.classList.remove( 'drag' );
     dom.classList.remove( 'mouse-enabled' );
     const domContentArea = dom.querySelectorAll( ':scope *' );
@@ -1180,6 +1181,7 @@ function disableMoveResize( dom ) {
  */
 function enableMoveResize( dom ) {
 
+    getCurrentWindow().setIgnoreMouseEvents( true, { forward: true } );
     dom.classList.add( 'mouse-enabled' );
     const domContentArea = dom.querySelectorAll( ':scope *' );
     domContentArea.forEach( d => d.classList.add( 'mouse-enabled' ) );
