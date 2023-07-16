@@ -13,7 +13,14 @@ const nanoid = customAlphabet( alphabet, 16 );
 } )
 export class CapturePhrasesComponent implements OnInit {
 
-    @Input() public capturePhrases: CapturePhrase[];
+    private _capturePhrases: CapturePhrase[] = [];
+    public get capturePhrases(): CapturePhrase[] {
+        return this._capturePhrases;
+    }
+    @Input() public set capturePhrases( value: CapturePhrase[] ) {
+        this._capturePhrases = value;
+        this.updatePhraseInputTypes();
+    }
     @Output() public capturePhrasesChange: EventEmitter<CapturePhrase[]> = new EventEmitter<CapturePhrase[]>();
 
     @Input() public captureMethod: string;
@@ -29,6 +36,8 @@ export class CapturePhrasesComponent implements OnInit {
 
     public capturePhraseTableColumns = [ 'moveIndex', 'number', 'phrase', 'regEx', 'delete' ];
 
+    public showPhraseTextArea: Record<string, boolean> = {};
+
     @ViewChild( 'capturePhrasesTable' ) private capturePhrasesTable: MatTable<any>;
     
     constructor( private dialogService: DialogService ) { }
@@ -39,12 +48,23 @@ export class CapturePhrasesComponent implements OnInit {
         }
     }
 
+    public updatePhraseInputTypes(): void {
+        this.capturePhrases.forEach( ( phrase, index ) => {
+            this.showPhraseTextArea[ phrase.phraseId ] = phrase.phrase?.length >= 75;
+        } );
+    }
+
+    public onBlur(): void {
+        this.updatePhraseInputTypes();
+    }
+
     public addNewCapturePhrase(): void {
         let phrase: CapturePhrase = new CapturePhrase();
         phrase.phraseId = nanoid();
         this.capturePhrases.push( phrase );
         this.capturePhrasesChange.emit( this.capturePhrases );
         this.capturePhrasesTable?.renderRows();
+        this.updatePhraseInputTypes();
     }
 
     public deleteCapturePhrase( index: number ): void {
@@ -67,12 +87,14 @@ export class CapturePhrasesComponent implements OnInit {
         this.capturePhrases?.splice( index, 1 );
         this.capturePhrasesChange.emit( this.capturePhrases );
         this.capturePhrasesTable?.renderRows();
+        this.updatePhraseInputTypes();
     }
 
     public movePhraseUp( index: number ): void {
         if ( index > 0 ) {
             this.capturePhrases.splice( index - 1, 0, this.capturePhrases.splice( index, 1 )[ 0 ] );
             this.capturePhrasesTable?.renderRows();
+            this.updatePhraseInputTypes();
         }
     }
 
@@ -80,6 +102,7 @@ export class CapturePhrasesComponent implements OnInit {
         if ( index < this.capturePhrases.length - 1 ) {
             this.capturePhrases.splice( index + 1, 0, this.capturePhrases.splice( index, 1 )[ 0 ] );
             this.capturePhrasesTable?.renderRows();
+            this.updatePhraseInputTypes();
         }
     }
 
