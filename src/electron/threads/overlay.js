@@ -2,6 +2,7 @@ const DomUtilities = require( '../utilities/dom' );
 const StringUtilities = require( '../utilities/string' );
 const NumberUtilities = require( '../utilities/numbers' );
 const ArrayUtilities = require( '../utilities/arrays' );
+const { DateUtilities } = require( '../utilities/dates' );
 const { OverlayWindow, OverlayComponent, TimerSortTypes } = require( '../data/models/overlay-window' );
 const { ActionTypes, TriggerAction, TriggerConditionTypes, OperatorTypes, TimerRestartBehaviors } = require( '../data/models/trigger' );
 const { ipcRenderer } = require( 'electron' );
@@ -857,7 +858,7 @@ function applyTimerSettings( contentArea, comp, group ) {
         }
 
         if ( showRemainingDuration || comp.action.showRemainingDuration ) {
-            comp.dom.querySelector( 'span.time-remaining' ).innerHTML = `(${getDurationLabel( comp.timeRemaining )})&nbsp;`;
+            comp.dom.querySelector( 'span.time-remaining' ).innerHTML = `(${DateUtilities.getDurationLabel( comp.timeRemaining )})&nbsp;`;
         } else {
             comp.dom.querySelector( 'span.time-remaining' ).innerHTML = ``;
         }
@@ -1275,42 +1276,6 @@ function sendDisplayTextToOverlay( overlayId, text, duration ) {
  */
 function speakPhrase( phrase, interruptSpeech, parseResult, timerDuration ) {
     ipcRenderer.send( 'log:speak:phrase', { phrase: phrase, interruptSpeech: interruptSpeech, parseResult: parseResult, timerDuration: timerDuration } );
-}
-
-
-
-
-
-
-
-
-
-
-/**
- * Returns a label for the given duration.
- * 
- * @param {number} duration The duration, in seconds.
- */
-function getDurationLabel( duration ) {
-    if ( duration > 60 ) {
-        let d = Math.ceil( duration );
-        let hrs = Math.floor( d / 3600 );
-        let mins = Math.floor( ( d % 3600 ) / 60 );
-        let secs = d % 60;
-        
-        let label = '';
-        if ( hrs > 0 ) {
-            label += `${hrs}h ${mins}m ${secs}s`;
-        } else if ( mins > 0 ) {
-            label += `${mins}m ${secs}s`;
-        } else if ( secs > 0 ) {
-            label += `${secs}s`;
-        }
-
-        return label;
-    } else {
-        return `${Math.ceil(duration)}s`;
-    }
 }
 
 
