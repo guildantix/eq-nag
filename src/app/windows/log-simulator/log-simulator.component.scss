@@ -1,0 +1,124 @@
+mat-option {
+    span {
+        text-transform: capitalize;
+        padding-left: 10px;
+        opacity: 0.55;
+        font-weight: 100;
+        float: right;
+    }
+}
+
+section {
+    overflow: hidden;
+
+    .menu {
+        padding: 15px 25px; 
+        display: flex;
+
+        .spacer {
+            flex: 1 1 auto;
+            display: flex;
+            align-items: center;
+            padding: 0 20px 0 5px;
+
+            div.progress-wrapper {
+                position: relative;
+                width: 100%;
+                
+                mat-progress-bar {
+                    height: 25px;
+                }
+
+                span.label {
+                    position: absolute;
+                    top: 0;
+                    height: 100%;
+                    display: flex;
+                    align-items: center;
+                    text-align: center;
+                    padding-left: 9px;
+                }
+            }
+        }
+    }
+}
+
+.text-editor-container {
+    display: flex;
+    flex-direction: row;
+    font-family: Consolas, monospaced;
+    font-size: 14px;
+    margin: 25px;
+    background-color: #161616;
+    padding: 10px 5px;
+
+    .line-numbers {
+        text-align: right;
+        // padding: 0 7px 0 15px;
+
+        div {
+            padding: 0 7px 0 15px;
+            &:nth-of-type(even){
+                background-color: #1e1e1e;
+            }
+        }
+
+    }
+
+    .text-editor {
+        flex: 1 1 auto;
+        outline: none !important;
+
+        div {
+            &:nth-of-type(odd){
+                background-color: #1e1e1e;
+            }
+        }
+    }
+
+}
+
+.table-container {
+    overflow: scroll;
+    height: calc(100% - 106px);
+    
+    table {
+        tr {
+            td {
+                vertical-align: top;
+                padding-top: 3px;
+                font-family: Consolas, monospace;
+                font-size: 14px;
+                &.line-numbers {
+                    text-align: right;
+                }
+                &.log-text {
+                    padding-left: 5px;
+                    width: 100%;
+                }
+            }
+            
+            &:nth-of-type(odd){
+                td.log-text {
+                    background-color: #262626;
+                }
+                td.line-numbers {
+                    background-color: #2e2e2e;
+                }
+            }
+            &:nth-of-type(even){
+                td.log-text {
+                    background-color: #212121;
+                }
+                td.line-numbers {
+                    background-color: #292929;
+                }
+            }
+
+            &.current {
+                color: #69f0ae;
+            }
+        }
+    }
+
+}

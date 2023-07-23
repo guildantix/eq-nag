@@ -20,6 +20,7 @@ import { MarkdownModule } from 'ngx-markdown';
 import { UpdateNotesWindowComponent } from './update-notes-window/update-notes-window.component';
 import { TriggerReviewsComponent } from './gina-import-window/trigger-reviews/trigger-reviews.component';
 import { CoreModule } from '../core/core.module';
+import { LogSimulatorComponent } from './log-simulator/log-simulator.component';
 
 @NgModule({
     imports: [
@@ -50,6 +51,7 @@ import { CoreModule } from '../core/core.module';
         NewTriggerPackageComponent,
         TriggerPackageDetailsComponent,
         UpdateNotesWindowComponent,
+        LogSimulatorComponent,
     ],
     providers: [
         TriggerLibraryService
