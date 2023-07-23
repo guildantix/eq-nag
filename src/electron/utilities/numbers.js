@@ -38,7 +38,7 @@ function toShorthandString( value ) {
  */
 function round( value, precision ) {
     var multiplier = Math.pow( 10, precision || 0 );
-    return Math.round( value * multiplier ) / multiplier;
+    return Math.round( ( value + Number.EPSILON ) * multiplier ) / multiplier;
 }
 
 /**
