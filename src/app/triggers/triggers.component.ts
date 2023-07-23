@@ -392,10 +392,7 @@ export class TriggersComponent implements OnInit {
      * Opens the log simulation modal.
      */
     public showSimLogEntry(): void {
-        this.dialogService.showInputDialog( 'Enter Log Entries', [ 'Enter the lines of the log file that you want to simulate.' ], 'Log lines', null, null, true ).subscribe( data => {
-            let lines = data.split( /\r\n|\r|\n/gi );
-            this.ipcService.simulateLogLines( lines );
-        } );
+        this.ipcService.showLogSimulator().subscribe( () => {} );
     }
 
 
