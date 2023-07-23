@@ -28,6 +28,9 @@ class WindowManager {
     triggerLibraryWindow;
 
     /** @type {BrowserWindow} */
+    logSimulatorWindow;
+
+    /** @type {BrowserWindow} */
     updateNotesWindow;
 
     /** @type {ForwardRef<BrowserWindow>} */
@@ -481,6 +484,46 @@ class WindowManager {
             } );
             this.triggerLibraryWindow.setBackgroundColor( '#1a1a1a' );
             this.configureRendererMouseBlockingOnMoveResize( this.triggerLibraryWindow );
+        } );
+
+        ipcMain.on( 'trigger:dialog:log-simulator', ( event, arg ) => {
+            this.logSimulatorWindow = new BrowserWindow( {
+                parent: mainWindowRef.reference,
+                modal: false,
+                show: false,
+                width: 1000,
+                height: 800,
+                frame: false,
+                webPreferences: {
+                    nodeIntegration: false,
+                    contextIsolation: true,
+                    devTools: app.isDev(),
+                    sandbox: false,
+                    preload: path.join( __dirname, '/preloaders/main.js' ),
+                }
+            } );
+
+            require( "@electron/remote/main" ).enable( this.logSimulatorWindow.webContents );
+
+            if ( app.isDev() ) {
+                this.logSimulatorWindow.webContents.openDevTools( { mode: 'undocked' } );
+            }
+            
+            let url = `file://${this.#dirname}/dist/index.html#/log/simulator`;
+            if ( arg ) {
+                url += `/${arg}`;
+            }
+            this.logSimulatorWindow.loadURL( url );
+            this.logSimulatorWindow.once( "ready-to-show", () => {
+                this.logSimulatorWindow.show();
+                event.sender.send( 'trigger:dialog:log-simulator', true );
+            } );
+            this.logSimulatorWindow.on( 'closed', () => {
+                this.logSimulatorWindow = null;
+            } );
+            this.logSimulatorWindow.setBackgroundColor( '#1a1a1a' );
+            this.configureRendererMouseBlockingOnMoveResize( this.logSimulatorWindow );
+
         } );
 
         ipcMain.on( 'window:update-notes:show', ( event, arg ) => {
@@ -979,6 +1022,10 @@ class WindowManager {
 
         if ( this.triggerLibraryWindow ) {
             fn( this.triggerLibraryWindow, 'triggerLibraryWindow' );
+        }
+
+        if ( this.logSimulatorWindow ) {
+            fn( this.logSimulatorWindow, 'logSimulatorWindow' );
         }
 
         if ( this.updateNotesWindow ) {
