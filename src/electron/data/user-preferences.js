@@ -1,4 +1,4 @@
-const { ipcMain, BrowserWindow, dialog } = require( "electron" );
+const { ipcMain, BrowserWindow, dialog, shell } = require( "electron" );
 const Store = require( './store' );
 const ForwardRef = require( '../forward-ref' );
 const path = require( 'path' );
@@ -956,6 +956,58 @@ class UserPreferencesStore extends Store {
                 zip.finalize();
             }
 
+        } );
+
+        ipcMain.on( 'settings:open-data-folder', () => {
+            shell.openPath( this.userDataPath );
+        } );
+
+        ipcMain.on( 'settings:download-data-files', () => {
+            let dataPath = path.join( this.userDataPath, 'migrations_backup' );
+
+            if ( !fs.existsSync( dataPath ) ) {
+                fs.mkdirSync( dataPath );
+            }
+
+            let now = new Date( Date.now() );
+            let filename = `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDay() + 1}-${now.getSeconds()}-full-backup.zip`;
+            let dataZip = path.join( this.userDataPath, filename );
+            let output = fs.createWriteStream( dataZip );
+            let zip = archiver( 'zip' );
+                
+            output.on( 'close', () => {
+
+                let options = {
+                    //Placeholder 1
+                    title: "EQ Nag - Data Backup",
+                
+                    //Placeholder 2
+                    defaultPath: filename,
+                
+                    //Placeholder 4
+                    buttonLabel: "Save Backup File",
+                
+                    //Placeholder 3
+                    filters: [
+                        { name: 'Zip', extensions: [ 'zip' ] }
+                    ]
+                }
+
+                const WIN = BrowserWindow.getFocusedWindow();
+
+                dialog.showSaveDialog( WIN, options ).then( saveResult => {
+                    if ( !saveResult.canceled ) {
+                        fs.copyFile( dataZip, saveResult.filePath, () => { } );
+                    }
+                } );
+            } );
+
+            zip.pipe( output );
+            let files = [ 'user-preferences.json', 'characters-database.json', 'files-database.json', 'overlays-database.json', 'trigger-database.json', 'players-database.json' ];
+            files.forEach( file => {
+                zip.file( path.join( this.userDataPath, file ), { name: file } );
+            } );
+            zip.finalize();
         } );
 
         ipcMain.on( 'settings:set:ignore-gina-objects',

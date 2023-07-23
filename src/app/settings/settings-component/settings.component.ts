@@ -392,6 +392,38 @@ export class SettingsComponent implements OnInit {
 
     
     /**
+     * Allows the user to save a copy of their current data files, in zip form.
+     */
+    downloadDataFiles() {
+        this.ipcService.downloadDataFilesZip();
+    }
+    
+
+
+
+
+
+
+
+
+    
+    /**
+     * Shows the current data folder in file explorer.
+     */
+    showDataFolder() {
+        this.ipcService.showDataFolder();
+    }
+
+
+
+
+
+
+
+
+
+    
+    /**
      * Stores the default detrimental overlay id.
      */
     saveDetrimentalOverlayId() {

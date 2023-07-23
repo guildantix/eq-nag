@@ -441,6 +441,14 @@ export class IpcService {
         window.api.ipc.send( 'settings:download-log' );
     }
 
+    public downloadDataFilesZip(): void {
+        window.api.ipc.send( 'settings:download-data-files' );
+    }
+
+    public showDataFolder(): void {
+        window.api.ipc.send( 'settings:open-data-folder' );
+    }
+
     public removeDkpAward( entry: DkpEntryModel ): void {
         window.api.ipc.send( 'dkp:remove', entry );
     }

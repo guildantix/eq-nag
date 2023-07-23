@@ -334,9 +334,11 @@
     </fieldset>
 
     <fieldset>
-        <legend><span class="title">NAG Log File</span></legend>
+        <legend><span class="title">Nag Diagnostics</span></legend>
 
-        <button mat-button (click)="downloadLogFile()">Download Log File</button>
+        <button mat-button (click)="downloadLogFile()" class="color-green">Download Log File</button>
+        <button mat-button (click)="downloadDataFiles()">Download Data Files</button>
+        <button mat-button (click)="showDataFolder()" class="color-orange">Show Data Folder</button>
     </fieldset>
 
 </div>
