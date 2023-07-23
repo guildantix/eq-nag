@@ -1,5 +1,6 @@
 const { contextBridge, ipcRenderer } = require( 'electron' );
 const { getCurrentWindow, screen } = require( '@electron/remote' );
+const { DateUtilities } = require( '../utilities/dates' );
 
 const channelPrefixes = [
     'app',
@@ -36,6 +37,7 @@ const channelPrefixes = [
     'context',
     'archive',
     'scraper',
+    'simulation',
 ];
 
 function validChannel( channel ) {
@@ -79,5 +81,10 @@ contextBridge.exposeInMainWorld( 'api', {
     },
     setVersionNumberViewed: ( value ) => {
         ipcRenderer.send( 'settings:set:lastViewedUpdateNotes', value );
+    },
+    utils: {
+        dates: {
+            getDurationLabel: DateUtilities.getDurationLabel,
+        }
     }
 } );
