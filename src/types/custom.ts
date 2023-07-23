@@ -9,6 +9,16 @@ export class WindowApi {
     ipc: WindowApiIpc;
     close: () => void;
     setVersionNumberViewed: ( version: string ) => void;
+    utils: {
+        dates: {
+            /**
+             * Returns a string representing the duration in the format of "1h 2m 3s".
+             * 
+             * @param duration The duration in seconds.
+             */
+            getDurationLabel: ( duration: number ) => string;
+        }
+    }
 }
 
 declare global {
