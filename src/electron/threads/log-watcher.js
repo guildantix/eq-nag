@@ -2,7 +2,7 @@
 const { ipcRenderer } = require( 'electron' );
 const fs = require( 'fs' );
 const { Trigger, TriggerAction, ActionTypes, TriggerConditionTypes, OperatorTypes, CharacterClassLevel, TriggerSubAction, TriggerFolder, TriggerCondition, CapturePhrase, Phrase, TriggerParseHistoryModel, getActionLabel, LogTypes, ErrorMessages } = require( '../data/models/trigger' );
-const { QuickShareAuthorListTypes } = require( '../data/models/common' );
+const { QuickShareAuthorListTypes, SimulationProgress } = require( '../data/models/common' );
 const { PhraseParse, LogTrigger } = require( './log.model' );
 const { OverlayComponent, OverlayWindow, TriggerSecondaryActionModel } = require( '../data/models/overlay-window' );
 const { CharacterModel } = require( '../data/models/character' );
@@ -13,6 +13,7 @@ const _ = require( 'lodash' );
 
 const StringUtilities = require( '../utilities/string' );
 const NumberUtilities = require( '../utilities/numbers' );
+const ThreadUtilities = require( '../utilities/threading' );
 const { FctModel, FctTypes } = require( '../data/models/fct' );
 const { DateUtilities } = require( '../utilities/dates' );
 const { IpcMessage } = require( '../data/models/common' );
@@ -120,6 +121,23 @@ const eqTickVariance = 1500;
 /** @type {number|null} */
 let eqTickTimeoutId = null;
 
+/** @type {string} */
+let simulationId = null;
+
+/** @type {number} */
+let simulationLineIndex = -1;
+
+/** @type {number} */
+let simulationMaxIndex = -1;
+
+/** @type {boolean} */
+let simulationPaused = false;
+
+/** @type {boolean} */
+let stopSimulation = false;
+
+/** @type {Record<string, any>} */
+let simulationCache = {};
 
 
 
@@ -574,6 +592,91 @@ function startParsingLogFile( logPath, startLogPosition ) {
     } );
 }
 
+const waitForSimulationResume = async () => {
+    while ( simulationPaused ) {
+        await ThreadUtilities.sleep( 250 );
+    }
+    // if ( !simulationPaused ) {
+    //     return;
+    // } else {
+    //     await ThreadUtilities.sleep( 250 );
+    //     waitForSimulationResume();
+    // }
+}
+
+const waitForSimulationToEnd = async () => {
+    while ( simluationId !== null ) {
+        await ThreadUtilities.sleep( 5000 );
+    }
+}
+
+/**
+ * Creates a simulation timer that will display the remaining time in an overlay.
+ * 
+ * @returns Returns the instanceId of the created timer.
+ * 
+ * @param {number} duration The duration of the simulation in milliseconds.
+ */
+function createSimulationTimer( duration ) {
+    let res = new PhraseParse();
+    let action = new TriggerAction();
+    let trigger = new LogTrigger();
+
+    trigger.name = 'Simulation Timer';
+    trigger._reset = () => { };
+    trigger._parse = ( value, onMatch ) => { };
+    trigger._conditionResults = {};
+    trigger._deltaTime = 0;
+
+    action.actionId = nanoid();
+    action.displayText = 'Simulation Duration';
+    action.overlayId = detrimentalOverlayId;
+    action.showRemainingDuration = true;
+    action.actionType = ActionTypes.Countdown;
+
+    action.duration = duration;
+
+    let instanceId = displayTimerCountdownComponent( res, new Date(), action, 0, trigger );
+
+    return instanceId;
+}
+
+/**
+ * 
+ * @param {string} lines The lines to simulate.
+ * @param {Date} timestamp The timestamp to use for the simulation.
+ * @param {*} lastBlock Unknown.
+ * @param {number} padTime The amount of time to pad between each line.
+ */
+function simulateLogEntries( lines, timestamp, lastBlock, padTime ) {
+
+    // Create an object that can track the progress.
+    let progress = new SimulationProgress();
+                
+    progress.completePercent = 0;
+    progress.label = `Simulating`;
+    progress.isComplete = false;
+    
+    for ( let i = 0; i < lines.length; i++ ) {
+        
+        if ( simulationPaused ) {
+            waitForSimulationResume();
+        }
+
+        simulationLineIndex += 1;
+        progress.lineIndex = simulationLineIndex;
+        
+        let complete = ( progress.lineIndex ) / simulationMaxIndex;
+        progress.completePercent = NumberUtilities.round( complete * 100, 2 );
+        ipcRenderer.send( `log:simulation:${simulationId}:progress`, progress );
+        
+        parseLogEntries( lines[ i ], false, padTime );
+    }
+    if ( lastBlock ) {
+        speakPhrase( 'Simulation ended', false, false, {}, false, {}, 0, 0, 100, 1, () => ipcRenderer.send( 'log:simulate:done', characterId ) );
+    }
+}
+
 
 
 
@@ -650,6 +753,207 @@ function LogWatcher(character, logPosition) {
         } );
     } );
 
+    ipcRenderer.on( 'log:simulate:begin',
+        /**
+         * Begins the simulation.
+         * 
+         * @param {any} event Electron event args.
+         * @param {{lines: string, lineIndex: number|null, simluationId: string}} model Simulation data.
+         */
+        async ( event, model ) => {
+        
+            if ( !model || !model.lines || model.lines.length == 0 ) {
+                return;
+            }
+
+            if ( simulationId ) {
+                await waitForSimulationToEnd();
+            }
+
+            // Keep a backup of the stored variables.
+            simulationCache[ 'storedVariables' ] = storedVariables;
+            simulationCache[ 'counters' ] = counters;
+            simulationCache[ 'usedConditionValues' ] = usedConditionValues;
+            
+            simulationMaxIndex = model.lines.length - 1;
+            simulationLineIndex = -1;
+            simulationId = model.simulationId;
+            let simTimerId = null;
+
+            // Setup event handlers for this simulation.
+
+            const cleanUp = () => {
+                console.log( 'cleaning up', simulationId );
+
+                const simulationStoppedChannel = `log:simulation:${simulationId}:stopped`;
+
+                storedVariables = simulationCache[ 'storedVariables' ];
+                counters = simulationCache[ 'counters' ];
+                usedConditionValues = simulationCache[ 'usedConditionValues' ];
+                
+                if ( simTimerId ) {
+                    ipcRenderer.send( 'overlay:destroy:component', simTimerId );
+                }
+
+                ipcRenderer.removeAllListeners( `log:simulation:${simulationId}:pause` );
+                ipcRenderer.removeAllListeners( `log:simulation:${simulationId}:resume` );
+                ipcRenderer.removeAllListeners( `log:simulation:${simulationId}:stop` );
+
+                ipcRenderer.send( simulationStoppedChannel );
+
+                simulationPaused = false;
+                simulationMaxIndex = -1;
+                simulationLineIndex = -1;
+                simulationCache = {};
+                simulationId = null;
+
+            };
+            
+            ipcRenderer.on( `log:simulation:${simulationId}:pause`, () => {
+                simulationPaused = true;
+            } );
+            
+            ipcRenderer.on( `log:simulation:${simulationId}:resume`, ( lineIndex ) => {
+                simulationPaused = false;
+                simulationLineIndex = lineIndex ?? simulationLineIndex;
+            } );
+            
+            ipcRenderer.on( `log:simulation:${simulationId}:stop`, () => {
+                stopSimulation = true;
+                cleanUp();
+            } );
+
+            /** @type {{lines: string[], delay: number, timestamp: Date}[]} */
+            var lineData = [];
+
+            let currentTimestamp = null;
+            let start = new Date( /^\[(.*?)\]\s*/gi.exec( model.lines[ 0 ] )[ 1 ] );
+            let di = -1;
+    
+            // Process each log file into a chunk that contains all entries at the same second.
+            for ( let i = 0; i < model.lines.length; i++ ) {
+                if ( model.lines[ i ]?.length > 0 ) {
+                    let lineTimestamp = new Date( /^\[(.*?)\]\s*/gi.exec( model.lines[ i ] )[ 1 ] );
+    
+                    if ( currentTimestamp == null || lineTimestamp.getTime() != currentTimestamp.getTime() ) {
+                        currentTimestamp = lineTimestamp;
+                        di += 1;
+                        lineData[ di ] = {
+                            lines: [],
+                            delay: DateUtilities.timeSince( start, lineTimestamp ).totalSeconds,
+                            timestamp: lineTimestamp,
+                        };
+                    }
+    
+                    lineData[ di ].lines.push( model.lines[ i ] );
+                }
+            }
+    
+            let fudge = 0;
+            let simDuration = lineData[ lineData.length - 1 ].delay + lineData.length * fudge;
+            simDuration = simDuration >= 1 ? simDuration : 1;
+            // The padTime allows us to simulate the log file in real time by timeshifting the log entries to now.
+            let padTime = DateUtilities.timeSince( start, new Date() ).totalSeconds;
+
+            const calculateRemainingTime = ( lineIndex ) => {
+                lineIndex = lineIndex >= 0 ? lineIndex : 0;
+                let remainingDurationMs = 0;
+                for ( let k = lineIndex + 1; k < lineData.length; k++ ) {
+                    remainingDurationMs += DateUtilities.timeSince( lineData[ k - 1 ].timestamp, lineData[ k ].timestamp ).totalMilliseconds;
+                }
+                return remainingDurationMs;
+            }
+
+            // Create an object that can track the progress.
+            let progress = new SimulationProgress();
+
+            progress.completePercent = 0;
+            progress.label = `Simulating`;
+            progress.isComplete = false;
+            progress.msRemaining = simDuration;
+            progress.lineIndex = 0;
+    
+            ipcRenderer.send( `log:simulation:${simulationId}:progress`, progress );
+            // simTimerId = createSimulationTimer( simDuration );
+
+            for ( let i = 0; i < lineData.length; i++ ) {
+                
+                for ( let j = 0; j < lineData[ i ].lines.length; j++ ) {
+                    
+                    if ( stopSimulation ) {
+                        break;
+                    }
+                    
+                    if ( simulationPaused ) {
+                    
+                        progress.msRemaining = calculateRemainingTime( i );
+                        progress.simulationPaused = true;
+                        ipcRenderer.send( `log:simulation:${simulationId}:progress`, progress );
+
+                        while ( simulationPaused ) {
+                            await ThreadUtilities.sleep( 250 );
+                        }
+
+                        // TODO: Enable pause resume at a specific line.
+                        // TODO: When paused, all timed actions should be paused as well.
+                        let newIndex = 0;
+                        for ( let k = 0; k < lineData.length; k++ ) {
+                            for(let l = 0; l < lineData[ k ].lines.length; l++) {
+                                newIndex += 1;
+
+                                if ( newIndex > simulationLineIndex ) {
+                                    simulationLineIndex = newIndex;
+                                    break;
+                                }
+                            }
+                        }
+                        
+                        // progress.msRemaining = calculateRemainingTime( i );
+                        // progress.simulationPaused = false;
+                        // ipcRenderer.send( `log:simulation:${simulationId}:progress`, progress );
+                    }
+
+                    simulationLineIndex += 1;
+                    progress.lineIndex = simulationLineIndex;
+                    progress.completePercent = ( simulationLineIndex / simulationMaxIndex ) * 100;
+
+                    parseLogEntries( lineData[ i ].lines[ j ], false, padTime ); // The simulating argument will not execute most triggers. // TODO: Remove the simulating argument from parse log entries, it's not used any more.
+                }
+
+                if ( stopSimulation ) {
+                    break;
+                }
+
+                if ( i < lineData.length - 1 ) {
+                    
+                    progress.msRemaining = calculateRemainingTime( i );
+                    progress.simulationPaused = false;
+                    ipcRenderer.send( `log:simulation:${simulationId}:progress`, progress );
+
+                    // Wait for a period of time that matches the time between
+                    // the current chunk and the next chunk.  By using async, 
+                    // the log watcher will continue to process log entries 
+                    // while we wait.
+                    let waitMs = DateUtilities.timeSince( new Date(), new Date( lineData[ i + 1 ].timestamp.getTime() + ( padTime * 1000 ) ) ).totalMilliseconds;
+
+
+                    await ThreadUtilities.sleep( waitMs );
+                    
+                    if ( stopSimulation ) {
+                        break;
+                    }
+                }
+
+            }
+    
+            if ( !stopSimulation ) {
+                cleanUp();
+            }
+
+            stopSimulation = false;
+
+        } );
+
     ipcRenderer.on( 'log:simulate:lines', function ( event, data ) {
         /** @type {{lines: string[], delay: number, timestamp: Date}[]} */
         var lineData = [];
@@ -683,7 +987,7 @@ function LogWatcher(character, logPosition) {
             
             };
 
-        let simulateLogEntries =
+        let simLogEntries =
             /**
              * Parses the given log entries.
              * 
@@ -730,7 +1034,7 @@ function LogWatcher(character, logPosition) {
             simDuration = simDuration >= 1 ? simDuration : 1;
             let padTime = DateUtilities.timeSince( start, new Date() ).totalSeconds;
             for ( let i = lineData.length - 1; i >= 0; i-- ) {
-                window.setTimeout( () => simulateLogEntries( lineData[ i ].lines, lineData[ i ].timestamp, i === lineData.length - 1, padTime ), lineData[ i ].delay * 1000 + i * fudge );
+                window.setTimeout( () => simLogEntries( lineData[ i ].lines, lineData[ i ].timestamp, i === lineData.length - 1, padTime ), lineData[ i ].delay * 1000 + i * fudge );
             }
 
             initializeSimTimer( simDuration );

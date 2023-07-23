@@ -3,7 +3,7 @@ import * as Electron from 'electron';
 import { UpdateInfo } from 'electron-updater';
 import { Observable, Observer } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
-import { DataTickModel, DkpEntryModel, TriggerModel, OverlayWindowModel, ActionTypes, FocusEffectSettings, CharacterModel, BasicError, TriggerFolder, FileModel, Tag, AuthorModel, PackageFileModel, TriggerPackageMetaModel, TriggerPackageVersion, FctStylesModel, OverlayBoundsChangedEventArgs, DialogEventArgs, QuickShareMetaModel, LogFileLocation, IpcMessage, DeathRecapPreferences, QuickShareAuthorListTypes, Progress, QuitFailureData, DuplicateTriggerAction, ScrapedSpell, ScrapedClickEffect, TriggerParseHistoryModel } from './core.model';
+import { DataTickModel, DkpEntryModel, TriggerModel, OverlayWindowModel, ActionTypes, FocusEffectSettings, CharacterModel, BasicError, TriggerFolder, FileModel, Tag, AuthorModel, PackageFileModel, TriggerPackageMetaModel, TriggerPackageVersion, FctStylesModel, OverlayBoundsChangedEventArgs, DialogEventArgs, QuickShareMetaModel, LogFileLocation, IpcMessage, DeathRecapPreferences, QuickShareAuthorListTypes, Progress, QuitFailureData, DuplicateTriggerAction, ScrapedSpell, ScrapedClickEffect, TriggerParseHistoryModel, SimulationProgress } from './core.model';
 import { GinaConfiguration, GinaTriggerGroups } from './gina.model';
 import { ColorUtility } from './utilities';
 
@@ -27,6 +27,7 @@ export class IpcService {
     private _onMissingPackageOverlay: Observer<OverlayWindowModel>[] = [];
     private _onQuitFalure: Observer<QuitFailureData>[] = [];
     private _onBackupProgress: Observer<Progress>[] = [];
+    private _simProgress: Record<string, Observer<SimulationProgress>[]> = {};
     private _successfulParseHistoryObservers: Observer<{ successful: TriggerParseHistoryModel[], exceptions: TriggerParseHistoryModel[] }>[] = [];
 
     private _ginaConfigCache: GinaConfiguration = null;
@@ -628,12 +629,79 @@ export class IpcService {
         return obs;
     }
 
+    public showLogSimulator(): Observable<boolean> {
+        let obs: Observable<boolean> = new Observable<boolean>( ( observer: Observer<boolean> ) => {
+            
+            window.api.ipc.once( 'trigger:dialog:log-simulator', ( e, loaded ) => {
+                this.ngZone.run( () => {
+                    observer.next( loaded );
+                    observer.complete();
+                } );
+            } );
+            window.api.ipc.send( 'trigger:dialog:log-simulator', null );
+
+        } );
+
+        return obs;
+    }
+
     public simulateLogParse( file: string ): void {
         window.api.ipc.send( 'log:simulate:file', file );
     }
 
     public simulateLogLines( lines: string[] ): void {
         window.api.ipc.send( 'log:simulate:lines', lines );
+    }
+
+    public beginSimulation( lines: string[], characterId: string, lineIndex: number | null = null ): Observable<string> {
+        let obs: Observable<string> = new Observable<string>( ( observer: Observer<string> ) => {
+            
+            window.api.ipc.once( 'log:simulate:begin', ( e, simulationId ) => {
+                this.ngZone.run( () => {
+
+                    this._simProgress[ simulationId ] = [];
+
+                    window.api.ipc.on( `simulation:${simulationId}:progress`, ( event: any, data: SimulationProgress ) => {
+                        this.ngZone.run( () => {
+                            this._simProgress[ simulationId ]?.forEach( f => {
+                                f.next( data );
+
+                                if (data.isComplete) {
+                                    f.complete();
+                                }
+                            } );
+                        } );
+                    } );
+                    
+                    observer.next( simulationId );
+                    observer.complete();
+                } );
+            } );
+            window.api.ipc.send( 'log:simulate:begin', { lines: lines, characterId: characterId, lineIndex: lineIndex } );
+
+        } );
+
+        return obs;
+    }
+
+    public getSimulationStatus( simulationId: string ): Observable<SimulationProgress> {
+        let obs: Observable<SimulationProgress> = new Observable<SimulationProgress>( ( observer: Observer<SimulationProgress> ) => {
+            this._simProgress[ simulationId ].push( observer );
+        } );
+
+        return obs;
+    }
+
+    public pauseSimulation( simulationId: string ): void {
+        window.api.ipc.send( `log:simulation:${simulationId}:pause`, null );
+    }
+
+    public resumeSimulation( simulationId: string, lineIndex: number | null = null ): void {
+        window.api.ipc.send( `log:simulation:${simulationId}:resume`, lineIndex );
+    }
+
+    public stopSimulation( simulationId: string ): void {
+        window.api.ipc.send( `log:simulation:${simulationId}:stop`, null );
     }
 
     public createNewTriggers( model: TriggerModel[] ): Observable<string[]> {

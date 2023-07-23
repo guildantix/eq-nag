@@ -8,7 +8,10 @@ const UserPreferencesStore = require( "./data/user-preferences" );
 const FsUtilities = require( "./utilities/file-system" );
 const log = require( 'electron-log' );
 const ForwardRef = require( './forward-ref' );
-const { LogMaintenancePlanTypes, LogMaintenanceRules, ArchiveFilePrefix } = require( "./data/models/common" );
+const { LogMaintenancePlanTypes, LogMaintenanceRules, ArchiveFilePrefix, SimulationProgress } = require( "./data/models/common" );
+const customAlphabet = require( 'nanoid' ).customAlphabet;
+const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+const nanoid = customAlphabet( alphabet, 16 );
 
 class LogWatcherMeta {
     /** @type {BrowserWindow|null} */
@@ -115,6 +118,116 @@ class LogBootstrapper {
                 }
             }
         } );
+
+        ipcMain.on( 'log:simulate:begin',
+            /**
+             * Runs the simulation.
+             * 
+             * @param {Electron.IpcMainEvent} event Electron event args.
+             * @param {{ lines: string[], characterId: string, lineIndex: number|null }} data The data to simulate.
+             */
+            function ( event, data ) {
+                let simulationId = nanoid();
+                let simData = {
+                    lines: data.lines,
+                    lineIndex: data.lineIndex,
+                    simulationId: simulationId,
+                };
+
+                // Create a clean up function that unregisters the sim events.
+                const cleanUp = function () {
+                    ipcMain.removeAllListeners( `log:simulation:${simulationId}:progress` );
+                    ipcMain.removeAllListeners( `log:simulation:${simulationId}:pause` );
+                    ipcMain.removeAllListeners( `log:simulation:${simulationId}:resume` );
+                    ipcMain.removeAllListeners( `log:simulation:${simulationId}:stop` );
+                    event.sender?.send( `simulation:${simulationId}:progress`, { isComplete: true, completePercent: 100, label: 'Simulation complete' } );
+                };
+                    
+                // Setup sim events that handle progress and control.
+
+                ipcMain.on( `log:simulation:${simulationId}:progress`,
+                    /**
+                     * Handles passing progress data to the user window.
+                     * 
+                     * @param {Electron.IpcMainEvent} childEvent Electron event args.
+                     * @param {SimulationProgress} data The sim progress data.
+                     */
+                    function ( childEvent, data ) {
+                        // Executed when log watcher window sends progress.
+                        event.sender?.send( `simulation:${simulationId}:progress`, data );
+
+                        if ( data.isComplete ) {
+                            cleanUp();
+                        }
+                    } );
+
+                ipcMain.on( `log:simulation:${simulationId}:pause`,
+                    /**
+                     * Passes pause event to the log watcher window.
+                     * 
+                     * @param {Electron.IpcMainEvent} childEvent Electron event args.
+                     */
+                    function ( childEvent ) {
+                        // Executed when user pauses sim.
+                        logWatchers[ data.characterId ].window.webContents.send( `log:simulation:${simulationId}:pause` );
+                    } );
+
+                ipcMain.on( `log:simulation:${simulationId}:resume`,
+                    /**
+                     * Passes resume event to the log watcher window.
+                     * 
+                     * @param {Electron.IpcMainEvent} childEvent Electron event args.
+                     * @param {number|null} lineNumber The line number to resume from.
+                     */
+                    function ( childEvent, lineNumber ) {
+                        // Executed when user resumes sim.
+                        logWatchers[ data.characterId ].window.webContents.send( `log:simulation:${simulationId}:resume`, lineNumber );
+                    } );
+
+                ipcMain.on( `log:simulation:${simulationId}:stop`,
+                    /**
+                     * Passes stop event to the log watcher window.
+                     * 
+                     * @param {Electron.IpcMainEvent} childEvent Electron event args.
+                     */
+                    function ( childEvent ) {
+                        // Executed when user stops sim.
+                        logWatchers[ data.characterId ].window.webContents.send( `log:simulation:${simulationId}:stop` );
+                    } );
+                
+                ipcMain.on( `log:simulation:${simulationId}:stopped`,
+                    /**
+                     * Passes stop event to the user window.
+                     * 
+                     * @param {Electron.IpcMainEvent} childEvent Electron event args.
+                     */
+                    ( childEvent ) => {
+                        cleanUp();
+                    } );
+
+                let _chr = characterDatabase.find( data.characterId );
+
+                if ( _chr && logWatchers[ _chr.characterId ].window == null ) {
+                    let _stats = fs.existsSync( _chr.logFile ) ? fs.statSync( _chr.logFile ) : null;
+
+                    // If the window has not been engaged, then open it. // TODO: Start up a log watcher when simulating. Even allow a charcter to be selected from a list.
+                    logWatchers[ _chr.characterId ].window = startLogWatcherWindow( _chr.logFile, isDev, sendTick, _chr, logWatchers[ _chr.characterId ].logSize > _stats.size ? 0 : logWatchers[ _chr.characterId ].logSize );
+            
+                    // Notify the main window.
+                    mainWindowRef.reference.webContents.send( 'log:character:activated', _chr.characterId );
+                
+                    logWatchers[ _chr.characterId ].window.webContents.once( 'dom-ready', () => {
+                        logWatchers[ _chr.characterId ].window.webContents.send( 'log:simulate:begin', simData );
+                        logWatchers[ _chr.characterId ].simulating = true;
+                    } );
+
+                } else {
+                    logWatchers[ _chr.characterId ].window.webContents.send( 'log:simulate:begin', simData );
+                    logWatchers[ _chr.characterId ].simulating = true;
+                }
+
+                event.sender?.send( 'log:simulate:begin', simData.simulationId );
+            } );
 
         ipcMain.on( 'log:simulate:lines', function ( event, data ) {
             for ( let key in logWatchers ) {
