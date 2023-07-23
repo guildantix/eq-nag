@@ -52,6 +52,7 @@ export class SettingsComponent implements OnInit {
     public logTime: string|null;
     public logDays: number[] = [];
     public allowPrerelease: boolean = false;
+    public enableCheckWindowPosition: boolean = true;
 
     public get timerOverlays(): OverlayWindowModel[] {
         return this.overlays?.filter( m => m.overlayType === 'Timer' );
@@ -136,6 +137,7 @@ export class SettingsComponent implements OnInit {
         } );
 
         this.ipcService.getSetting<boolean>( SettingsKeys.allowPrerelease ).subscribe( f => this.allowPrerelease = f );
+        this.ipcService.getSetting<boolean>( SettingsKeys.enableCheckWindowPosition ).subscribe( f => this.enableCheckWindowPosition = f );
         this.ipcService.getSetting<LogMaintenanceRules>( SettingsKeys.logMaintenanceRules ).subscribe( f => {
 
             this.logMaintenanceRules = f;
@@ -712,6 +714,32 @@ export class SettingsComponent implements OnInit {
     resetHiddenModals() {
         this.ipcService.resetHiddenModalIds();
         this.snackBar.open( 'All hidden modals will now appear again.', 'dismiss', { duration: 5000 } );
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Shows a dialog that explains window checking.
+     */
+    explainWindowChecking() {
+        this.dialogService.showInfoDialog(
+            'Relative Window Positioning',
+            [
+                'When the renderer loads an overlay, it will check to ensure that the monitor containing the overlay has moved.',
+                'If the monitor has moved, the renderer will recalculate the position of the overlay relative to the containing monitor. This will ensure that the overlay appears in the same location on the monitor.',
+                'However, on some systems the OS reports the monitor as having moved, even when it has not.',
+                'Disabling this setting will prevent this check from happening, which may resolve the issue.',
+                'However, if disabled and your monitor positions have changed, the overlay may appear in the wrong location or entirely off-screen.  When this happens, you can use the Send to Origin button on the overlay list to reset the overlay position.',
+            ],
+            'wide',
+        );
     }
 
 

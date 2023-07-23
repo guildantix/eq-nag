@@ -424,6 +424,15 @@ class UserPreferencesStore extends Store {
         this.storeDataFile( this.#data );
     }
 
+    get enableCheckWindowPosition() {
+        // Unless the user has explicitly disabled this feature, we'll enable it by default.
+        return this.#data.enableCheckWindowPosition !== false;
+    }
+    set enableCheckWindowPosition( val ) {
+        this.#data.enableCheckWindowPosition = val === true;
+        this.storeDataFile( this.#data );
+    }
+
     /** @type {(fctStyles: FctStylesModel) => void[]} */
     onFctStyleChanges = [];
 

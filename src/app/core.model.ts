@@ -25,6 +25,7 @@ export enum SettingsKeys {
     logMaintenanceRules = 'logMaintenanceRules',
     allowPrerelease = 'allowPrerelease',
     voiceIndex = 'voiceIndex',
+    enableCheckWindowPosition = 'enableCheckWindowPosition',
 
 };
 

@@ -93,13 +93,27 @@
             <div>
                 <h2 class="sub-header full-width">Update Settings</h2>
                 <div class="formless-hint full-width">
-                    <div class="formless-input"><mat-checkbox [(ngModel)]="allowPrerelease" (change)="updateSetting( this.settingsKeys.allowPrerelease, this.allowPrerelease, 10 * 1000 )">Allow Pre-release.</mat-checkbox></div>
+                    <div class="formless-input"><mat-checkbox [(ngModel)]="allowPrerelease" (change)="updateSetting( this.settingsKeys.allowPrerelease, this.allowPrerelease, 500 )">Allow Pre-release.</mat-checkbox></div>
                     <mat-hint>If enabled, will automatically update to the latest pre-release.</mat-hint>
                 </div>
             </div>
             <div>
                 <h2 class="sub-header full-width">Modal Settings</h2>
                 <button mat-flat-button (click)="resetHiddenModals()">Reset Hidden Modals</button>
+            </div>
+            <div>
+                <h2 class="sub-header full-width">Renderer Settings</h2>
+                <div class="formless-hint full-width">
+                    <div class="formless-input"><mat-checkbox [(ngModel)]="enableCheckWindowPosition" (change)="updateSetting( this.settingsKeys.enableCheckWindowPosition, this.enableCheckWindowPosition, 500 )">Enable relative window positions.</mat-checkbox></div>
+                    <mat-hint>
+                        If enabled, will maintain the relative position of an overlay.
+                        <sup class="help-sup"
+                            matTooltip="Click here for more help."
+                            matTooltipPosition="above"
+                            matTooltipClass="tooltip-large"
+                            (click)="explainWindowChecking()">&nbsp;&nbsp;?</sup>
+                    </mat-hint>
+                </div>
             </div>
         </div>
     </fieldset>

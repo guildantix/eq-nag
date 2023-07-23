@@ -637,6 +637,8 @@ class WindowManager {
         let savedBounds = this.#userPrefDb.rendererBounds;
         let bounds = savedBounds == null ? this.calculateRendererBounds() : savedBounds;
 
+        log.info( '[Renderer:loadRenderer] Loading renderer bounds', bounds );
+
         let renderer = new BrowserWindow( {
             transparent: true,
             frame: false,
@@ -693,8 +695,11 @@ class WindowManager {
             this.#renderer.setFullScreenable( false );
         }, 1000 );
 
-        ipcMain.once('main:angular-ready', () => {
-            this.checkWindowPosition( true );
+        ipcMain.once( 'main:angular-ready', () => {
+            if ( this.#userPrefDb.enableCheckWindowPosition ) {
+                log.info( '[WindowManager:main:angular-ready] Initiating overlay position checks.' );
+                this.checkOverlayPositions( true );
+            }
         } );
 
     }
@@ -1058,7 +1063,7 @@ class WindowManager {
      *      is true, then we will display the warning and allow the user to use 
      *      the arrainge window to tweak/save changes to the overlays.
      */
-    checkWindowPosition( showWarning ) {
+    checkOverlayPositions( showWarning ) {
         showWarning = showWarning === true;
         var currentSize = this.#renderer.getBounds();
         let newSize = this.calculateRendererBounds();
@@ -1184,6 +1189,8 @@ class WindowManager {
         const display = screen.getAllDisplays().find( f => f.id === displayId );
         if ( display != null ) {
             let overlay = this.#overlayDatabase.find( overlayId );
+            
+            log.info( `[Overlay:sendOverlayToMiddle] Sending overlay ${overlayId} to middle of display ${displayId}` );
             
             overlay.x = ( display.size.width - overlay.windowWidth ) / 2;
             overlay.y = ( display.size.height - overlay.windowHeight ) / 2;
