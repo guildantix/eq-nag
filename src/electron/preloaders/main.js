@@ -1,6 +1,7 @@
 const { contextBridge, ipcRenderer } = require( 'electron' );
 const { getCurrentWindow, screen } = require( '@electron/remote' );
 const { DateUtilities } = require( '../utilities/dates' );
+const log = require( 'electron-log' );
 
 const channelPrefixes = [
     'app',
@@ -86,5 +87,8 @@ contextBridge.exposeInMainWorld( 'api', {
         dates: {
             getDurationLabel: DateUtilities.getDurationLabel,
         }
+    },
+    logger: {
+        info: log.info,
     }
 } );

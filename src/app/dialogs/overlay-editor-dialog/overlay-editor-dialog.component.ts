@@ -220,6 +220,7 @@ export class OverlayEditorDialogComponent implements OnInit {
             panelClass: 'app-dialog',
         } ).afterClosed().subscribe( displayId => {
             if ( displayId !== null ) {
+                window.api.logger.info( `[OverlayEditor:sendToOrigin] Sending overlay ${this.overlayId} to display ${displayId}` );
                 this.ipcService.sendOverlayToOrigin( this.overlayId, displayId );
             }
         } );

@@ -1198,6 +1198,7 @@ export class IpcService {
     }
 
     public sendOverlayToOrigin( overlayId: string, displayId: number ): void {
+        window.api.logger.info( `[IpcService:sendOverlayToOrigin] Sending overlay ${overlayId} to display ${displayId}` );
         window.api.ipc.send( 'overlay:send-to-origin', { overlayId: overlayId, displayId: displayId } );
     }
 

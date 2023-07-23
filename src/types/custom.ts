@@ -18,7 +18,10 @@ export class WindowApi {
              */
             getDurationLabel: ( duration: number ) => string;
         }
-    }
+    };
+    logger: {
+        info: ( ...params: any[] ) => void
+    };
 }
 
 declare global {
