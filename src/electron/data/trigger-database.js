@@ -139,7 +139,8 @@ let successfulTriggerExecutions = [];
 let failedTriggerExecutions = [];
 /** @type {TriggerParseHistoryModel[]} */
 let exceptionHistory = [];
-
+/** @type {Electron.WebContents[]} */
+const installedIdSubscribers = [];
 
 class TriggerDatabaseStore extends Store {
 
@@ -500,6 +501,7 @@ class TriggerDatabaseStore extends Store {
 
         ipcMain.on( 'pkg:install', ( event, pkg ) => {
             this.installTriggerPkg( pkg, event );
+            this.emitInstalledIds();
         } );
 
         ipcMain.on( 'pkg:uninstall', ( event, packageId ) => {
@@ -515,8 +517,21 @@ class TriggerDatabaseStore extends Store {
             event.sender.send( 'pkg:get:installed', this.getInstalledPackages() );
         } );
 
+        ipcMain.on( 'pkg:subscribe:installed:trigger-ids',
+            /**
+             * Returns a list of all trigger ids that have been installed 
+             * through a package or share.
+             * 
+             * @param {Electron.IpcMainEvent} event The event args.
+             */
+            ( event ) => {
+                installedIdSubscribers.push( event.sender );
+                this.emitInstalledIds();
+            } );
+
         ipcMain.on( 'quickShare:install', async ( event, quickShare ) => {
             event.sender.send( 'quickShare:install', await this.installQuickshare( quickShare, event ) );
+            this.emitInstalledIds();
         } );
 
         if ( this.#orphanedFound ) {
@@ -527,6 +542,22 @@ class TriggerDatabaseStore extends Store {
             } );
         }
 
+    }
+
+    emitInstalledIds() {
+        /** @type {string[]} */
+        let installed = Array.prototype.concat( [], this.getInstalledPackages().map( f => f.packageId ), this.getInstalledQuickShares().map( f => f.quickShareId ) );
+
+        let installedIds = [];
+        this.#data.triggers.forEach( trigger => {
+            if ( installed.includes( trigger.triggerId ) ) {
+                installedIds.push( trigger.triggerId );
+            }
+        } );
+
+        installedIdSubscribers.forEach( subscriber => {
+            subscriber.send( 'pkg:get:installed:trigger-ids', installedIds );
+        } );
     }
 
     /**
