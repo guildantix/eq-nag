@@ -17,6 +17,7 @@ const ElectronUtilities = require( '../utilities/electron' );
 const { StyleProperties } = require( '../data/models/common' );
 const { getCurrentWindow, screen } = require( '@electron/remote' );
 const { DateUtilities } = require( '../utilities/dates' );
+const { SharedTriggerPermissions } = require( '../data/models/sharing-service' );
 
 /**
  * Sends the error information to the main thread for logging.
@@ -165,8 +166,11 @@ var screenGlowTimerId = null;
 let showCriticalsInline = false;
 const intMaxValue = 9007199254740991;
 let uuid = 0;
-
-
+const permissionsSettingKey = 'sharedTriggerPermissions';
+/** @type {SharedTriggerPermissions} */
+let actionPermissions = null;
+/** @type {string[]} */
+let installedTriggerIds = [];
 
 
 
@@ -193,15 +197,48 @@ function Renderer( originX, originY, glowOnStart ) {
         targetGroupTimerTemplate = Handlebars.compile( document.querySelector( '#targetGroupTimerTemplate' ).innerHTML );
 
         logInfo( '[Info:Renderer:Templates] (Renderer docReady) Templates have been compiled!' );
-
-        if ( glowOnStart ) {
-            renderGlow( '#4c0e67', 4000, false );
-        }
     
         /** Tell the main thread that we need a list of all overlays. */
         ipcRenderer.send( 'overlay:get', null );
 
     } );
+
+    ipcRenderer.on( 'pkg:get:installed:trigger-ids', function ( event, data ) {
+        if ( data ) {
+            logInfo( '[Info:Renderer:Settings] (pkg:get:installed:trigger-ids) Received installed trigger IDs.' );
+            installedTriggerIds = data;
+
+            if ( actionPermissions == null ) {
+                /** Tell the main thread that we need the action permissions, and that we want it every time it changes. */
+                ipcRenderer.send( 'settings:get', { key: permissionsSettingKey, subscribe: true } );
+            }
+        }
+    } );
+    
+    ipcRenderer.on( `settings:get:${permissionsSettingKey}:generic`,
+        /**
+         * Handles the response from the main thread when we receive the shared trigger permissions.
+         * 
+         * @param {Electron.IpcRendererEvent} event The event args.
+         * @param {SharedTriggerPermissions} data The shared trigger permissions.
+         */
+        function ( event, data ) {
+            if ( data ) {
+                logInfo( '[Info:Renderer:Settings] (settings:get) Received action permissions.' );
+
+                if ( actionPermissions == null && glowOnStart && !data.disableAllGlowEffects ) {
+                    // If action permissions are null, this is the first time we've
+                    // received them.  If glowOnStart is true, we want to glow the 
+                    // screen, if the user hasn't disabled all glow effects.
+                    renderGlow( '#4c0e67', 4000, false );
+                }
+
+                actionPermissions = data;
+            }
+        } );
+
+    /** Tell the main thread that we need a list of all installed triggers. */
+    ipcRenderer.send( 'pkg:subscribe:installed:trigger-ids', null );
 
     ipcRenderer.on( 'renderer:resolution-changed',
         /**
@@ -1014,6 +1051,10 @@ function render( overlayId, comp ) {
 
         if ( comp?.action?.actionType === ActionTypes.ScreenGlow ) {
             // Non overlay components
+
+            if ( actionPermissions.disableAllGlowEffects || ( actionPermissions.disableSharedGlowEffects && installedTriggerIds.includes( comp.triggerId ) ) ) {
+                return;
+            }
 
             if ( comp?.action?.actionType === ActionTypes.ScreenGlow ) {
                 renderGlow( comp.action.textColor, comp.action.duration * 1000, comp.action.flash );

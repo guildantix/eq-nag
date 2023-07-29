@@ -103,6 +103,8 @@ class OverlayComponent {
     /** @type {string} */
     description;
     /** @type {string} */
+    triggerId;
+    /** @type {string} */
     triggerName;
     /** @type {TriggerAction} */
     action;

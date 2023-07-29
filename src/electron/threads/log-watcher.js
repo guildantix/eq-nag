@@ -2186,7 +2186,7 @@ function executeTriggerAction( trigger, action, timestamp, res, deltaTime, simul
     if ( action.actionType === ActionTypes.DisplayText ) {
         /* --== Display Text ==-- */
     
-        displayTextComponent( res, timestamp, action, deltaTime );
+        displayTextComponent( res, timestamp, action, deltaTime, simulating, trigger.triggerId );
     
     } else if ( action.actionType === ActionTypes.PlayAudio ) {
         /* --== Play Audio ==-- */
@@ -2303,7 +2303,7 @@ function executeTriggerAction( trigger, action, timestamp, res, deltaTime, simul
     } else if ( action.actionType === ActionTypes.ScreenGlow ) {
         /* --== Death Recap ==-- */
         
-        displayScreenGlow(action);
+        displayScreenGlow( action, trigger.triggerId );
         
     } else if ( action.actionType === ActionTypes.ClearAll ) {
         /* --== Clear All ==-- */
@@ -2368,11 +2368,13 @@ function clearAll() {
  * Sends teh given screen glow action to the renderer.
  * 
  * @param {TriggerAction} action The screen glow action to render.
+ * @param {string} triggerId The id of the trigger that caused this action to be rendered.
  */
-function displayScreenGlow( action ) {
+function displayScreenGlow( action, triggerId ) {
     let comp = new OverlayComponent();
 
     comp.instanceId = nanoid();
+    comp.triggerId = triggerId;
     comp.action = action;
     
     ipcRenderer.send( 'overlay:send:component', comp );
@@ -2403,6 +2405,7 @@ function displayBeneficialTimerComponent( res, timestamp, action, trigger, spell
     let comp = new OverlayComponent();
 
     comp.instanceId = nanoid();
+    comp.triggerId = trigger.triggerId;
     comp.triggerName = spellName;
     comp.action = Object.assign( new TriggerAction(), action );
     comp.action.displayText = `${spellName} --== ${res.result.groups.target} ==--`;
@@ -2552,6 +2555,7 @@ function displayDotTimerComponent( res, timestamp, action, deltaTime, trigger ) 
     let comp = new OverlayComponent();
 
     comp.instanceId = nanoid();
+    comp.triggerId = trigger.triggerId;
     comp.triggerName = trigger.name;
     comp.action = Object.assign( new TriggerAction(), action );
     comp.action.displayText = `${trigger.name} --== ${res.result.groups.target} ==--`;
@@ -2873,6 +2877,7 @@ function displayTimerCountdownComponent(res, timestamp, action, deltaTime, trigg
     let comp = new OverlayComponent();
 
     comp.instanceId = nanoid();
+    comp.triggerId = trigger.triggerId;
     comp.triggerName = trigger.name;
     comp.action = Object.assign( new TriggerAction(), action );
 
@@ -3061,14 +3066,16 @@ function sendToClipboard( res, action, conditionResults, deltaTime ) {
  * @param {Date} timestamp The timestamp of the log entry.
  * @param {number} deltaTime The change in time, in milliseconds, since the previous sequential capture.
  * @param {boolean} simulating If true the component is written to the console instead of sent to the overlay window.
+ * @param {string} triggerId The id of the trigger that parsed the phrase.
  * 
  * @return {string} Returns the instance id of the renderer component
  */
-function displayTextComponent( res, timestamp, action, deltaTime, simulating ) {
+function displayTextComponent( res, timestamp, action, deltaTime, simulating, triggerId ) {
     
     let comp = new OverlayComponent();
 
     comp.instanceId = nanoid();
+    comp.triggerId = triggerId;
     comp.action = Object.assign( new TriggerAction(), action );
     
     comp.action.displayText = StringUtilities.parseShortCodeValuesToLiteral( comp.action.displayText, characterName, comp.action.duration, res.result?.groups, res.result ? res.result[ 0 ] : null );
