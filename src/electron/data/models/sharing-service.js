@@ -7,4 +7,13 @@ class AuthorModel {
     discord = null;
 }
 
-module.exports = { AuthorModel };
+class SharedTriggerPermissions {
+
+    /** @type {boolean} */
+    disableSharedGlowEffects = false;
+    /** @type {boolean} */
+    disableAllGlowEffects = false;
+
+}
+
+module.exports = { AuthorModel, SharedTriggerPermissions };
