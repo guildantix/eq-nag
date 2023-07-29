@@ -207,17 +207,33 @@
                         <mat-hint>(Optional) Enter your discord name, or discord server.</mat-hint>
                     </mat-form-field>
                 </div>
+
+                <ng-template [ngIf]="author?.authorId != null" [ngIfElse]="noAuthorFile">
+                    <button mat-button (click)="updateAuthor()">Save Changes</button>
+                    <button mat-button *ngIf="!trustedAuthor" (click)="requestVerification()">Request Verification</button>
+                </ng-template>
+                <ng-template #noAuthorFile>
+                    <button mat-button color="accent" (click)="createAuthor()">Create</button>
+                </ng-template>
             </div>
         </div>
-
-
-        <ng-template [ngIf]="author?.authorId != null" [ngIfElse]="noAuthorFile">
-            <button mat-button (click)="updateAuthor()">Save Changes</button>
-            <button mat-button *ngIf="!trustedAuthor" (click)="requestVerification()">Request Verification</button>
-        </ng-template>
-        <ng-template #noAuthorFile>
-            <button mat-button color="accent" (click)="createAuthor()">Create</button>
-        </ng-template>
+        <div style="display: flex; flex-direction: row;">
+            <div style="width: 50%; padding: 30px 15px 0 0;">
+                <h2 class="header-glow">Shared/Installed Trigger Permissions</h2>
+                <div>
+                    <div class="formless-hint full-width" style="margin-top: 5px; width: 100%;">
+                        <div class="formless-input"><mat-checkbox [(ngModel)]="sharedTriggerPermissions.disableSharedGlowEffects" (change)="updateSetting( this.settingsKeys.sharedTriggerPermissions, this.sharedTriggerPermissions, 500 )">Disable Screen Glow</mat-checkbox></div>
+                        <mat-hint>If enabled, any triggers that were created by another author will not execute glow actions.</mat-hint>
+                    </div>
+                </div>
+                <div *ngIf="sharedTriggerPermissions.disableSharedGlowEffects">
+                    <div class="formless-hint full-width" style="margin-top: 5px; width: 100%;">
+                        <div class="formless-input"><mat-checkbox [(ngModel)]="sharedTriggerPermissions.disableAllGlowEffects" (change)="updateSetting( this.settingsKeys.sharedTriggerPermissions, this.sharedTriggerPermissions, 500 )">Disable All Screen Glow Actions</mat-checkbox></div>
+                        <mat-hint>If enabled, any triggers created by others or yourself will not execute glow actions.</mat-hint>
+                    </div>
+                </div>
+            </div>
+        </div>
 
     </fieldset>
 

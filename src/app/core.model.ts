@@ -26,6 +26,7 @@ export enum SettingsKeys {
     allowPrerelease = 'allowPrerelease',
     voiceIndex = 'voiceIndex',
     enableCheckWindowPosition = 'enableCheckWindowPosition',
+    sharedTriggerPermissions = 'sharedTriggerPermissions',
 
 };
 
@@ -1313,6 +1314,13 @@ export class LogMaintenanceRules {
     public excludeLogFiles: string[] = [];
     public logSchedule: ScheduledTask | null;
     public maxLogFileSizeMb: number = 50;
+
+}
+
+export class SharedTriggerPermissions {
+
+    public disableSharedGlowEffects: boolean = false;
+    public disableAllGlowEffects: boolean = false;
 
 }
 

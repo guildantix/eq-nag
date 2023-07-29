@@ -3,7 +3,7 @@ const Store = require( './store' );
 const ForwardRef = require( '../forward-ref' );
 const path = require( 'path' );
 const fs = require( 'fs' );
-const { AuthorModel } = require( './models/sharing-service' );
+const { AuthorModel, SharedTriggerPermissions } = require( './models/sharing-service' );
 const { FctStylesModel } = require( './models/fct' );
 const { StyleProperties, LogMaintenanceRules, LogMaintenanceHistory } = require( './models/common' );
 const archiver = require( 'archiver' );
@@ -32,6 +32,9 @@ const prefChangeListeners = [];
 const defaultLogFileSizeMb = 100;
 const defaultLogMaintenanceDelaySeconds = 20;
 const defaultTriggerLogRetentionCount = 500;
+/** @type {Record<string, Electron.WebContents[]>} */
+const keySubscribers = {};
+
 
 /**
  * Get windows drives
@@ -433,6 +436,15 @@ class UserPreferencesStore extends Store {
         this.storeDataFile( this.#data );
     }
 
+    /** @type {SharedTriggerPermissions} */
+    get sharedTriggerPermissions() {
+        return this.#data.sharedTriggerPermissions ?? new SharedTriggerPermissions();
+    }
+    set sharedTriggerPermissions( val ) {
+        this.#data.sharedTriggerPermissions = val;
+        this.storeDataFile( this.#data );
+    }
+
     /** @type {(fctStyles: FctStylesModel) => void[]} */
     onFctStyleChanges = [];
 
@@ -707,15 +719,22 @@ class UserPreferencesStore extends Store {
                 this[ arg.key ] = arg.value;
                 sendTick();
                 this.emitChanges();
+                if ( keySubscribers[ arg.key ]?.length > 0 ) {
+                    keySubscribers[ arg.key ].forEach( s => s.send( `settings:get:${arg.key}:generic`, this[ arg.key ] ) );
+                }
             } );
 
         ipcMain.on( 'settings:get',
             /**
              * 
-             * @param {any} event The Event args.
+             * @param {Electron.IpcMainEvent} event The Event args.
              * @param {{key: string}} arg The setting data.
              */
             ( event, arg ) => {
+                if ( arg.subscribe === true ) {
+                    keySubscribers[ arg.key ] = keySubscribers[ arg.key ] ? keySubscribers[ arg.key ] : [];
+                    keySubscribers[ arg.key ].push( event.sender );
+                }
                 event.sender.send( `settings:get:${arg.key}:generic`, this[ arg.key ] );
             } );
         
