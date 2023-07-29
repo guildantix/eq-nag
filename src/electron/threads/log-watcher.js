@@ -596,12 +596,6 @@ const waitForSimulationResume = async () => {
     while ( simulationPaused ) {
         await ThreadUtilities.sleep( 250 );
     }
-    // if ( !simulationPaused ) {
-    //     return;
-    // } else {
-    //     await ThreadUtilities.sleep( 250 );
-    //     waitForSimulationResume();
-    // }
 }
 
 const waitForSimulationToEnd = async () => {
@@ -874,7 +868,6 @@ function LogWatcher(character, logPosition) {
             progress.lineIndex = 0;
     
             ipcRenderer.send( `log:simulation:${simulationId}:progress`, progress );
-            // simTimerId = createSimulationTimer( simDuration );
 
             for ( let i = 0; i < lineData.length; i++ ) {
                 
@@ -908,9 +901,6 @@ function LogWatcher(character, logPosition) {
                             }
                         }
                         
-                        // progress.msRemaining = calculateRemainingTime( i );
-                        // progress.simulationPaused = false;
-                        // ipcRenderer.send( `log:simulation:${simulationId}:progress`, progress );
                     }
 
                     simulationLineIndex += 1;

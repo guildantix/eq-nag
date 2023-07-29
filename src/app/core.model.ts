@@ -1247,9 +1247,11 @@ export class Progress {
 }
 
 export class SimulationProgress extends Progress {
+    
     public lineIndex: number;
     public msRemaining: number;
     public simulationPaused: boolean = false;
+
 }
 
 export class Range {

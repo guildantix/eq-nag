@@ -22,7 +22,6 @@ import { SettingsService } from 'src/app/settings/settings-http.service';
 } )
 export class LogSimulatorComponent implements OnInit {
 
-    // public lineNumbers: number[] = [];
     public lines: string[] = [ 'Paste your log entries and select your character(s) to begin.' ];
     public nagId: ( size?: number ) => string = nagId;
     public rawData: string | null = null;
@@ -63,15 +62,7 @@ export class LogSimulatorComponent implements OnInit {
             this.characters = _.sortBy( characters, [ 'server', 'name' ] );
         } );
     }
-    // @Input() content;
-    // @Output() contentChange = new EventEmitter<string>(); // for two way binding
 
-    // /*
-    // * update html on changes in content editable
-    // */
-    // htmlContentChange( value ) {
-    //     this.contentChange.emit( value );
-    // }
     /**
      * Closes this modal.
      */
@@ -84,7 +75,6 @@ export class LogSimulatorComponent implements OnInit {
             if ( data === null ) return;
             this.rawData = data;
             this.lines = data.split( /\r\n|\r|\n/gi );
-            // this.ipcService.simulateLogLines( lines );
         } );
     }
 
@@ -173,6 +163,7 @@ export class LogSimulatorComponent implements OnInit {
         this.ipcService.stopSimulation( this.simulationId );
     }
 
+    // TODO: Remove this commented code.
     // public onPaste( event: ClipboardEvent, lineIndex: number ): boolean {
     //     // console.log( 'onPaste', event.clipboardData.getData( 'text/plain' ) );
     //     let lines = event.clipboardData.getData( 'text/plain' ).split( /\r\n|\r|\n/gi );

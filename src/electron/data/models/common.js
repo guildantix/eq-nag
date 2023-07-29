@@ -118,12 +118,14 @@ class Progress {
 }
 
 class SimulationProgress extends Progress {
+    
     /** @type {number} */
     lineIndex;
     /** @type {number} */
     msRemaining;
     /** @type {boolean} */
     simulationPaused = false;
+
 }
 
 class Range {
