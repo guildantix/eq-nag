@@ -28,6 +28,7 @@ import { NgxMatTimepickerModule } from 'ngx-mat-timepicker';
 import { FolderConditionsDialogComponent } from './triggers/folder-conditions-dialog/folder-conditions-dialog.component';
 import { DebugConsoleComponent } from './debug-console/debug-console.component';
 import { ConsoleListComponent } from './debug-console/console-list.component';
+import { FloatingCombatTextComponent } from './floating-combat-text/floating-combat-text.component';
 
 @NgModule( {
     imports: [
@@ -57,6 +58,7 @@ import { ConsoleListComponent } from './debug-console/console-list.component';
         CharactersListComponent,
         SettingsComponent,
         SetupWizardComponent,
+        FloatingCombatTextComponent,
     ],
     providers: [
         ScraperService,
