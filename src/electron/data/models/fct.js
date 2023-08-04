@@ -1,5 +1,6 @@
 const { StyleProperties } = require( './common' );
 const { OverlayComponent } = require( './overlay-window' );
+const { AttackModifiers } = require( './combat-parser' );
 
 var FctTypes = {
     '0': 'dmgOut',
@@ -23,6 +24,8 @@ class FctModel extends OverlayComponent {
     dealt = false;
     text = '';
     critical = false;
+    /** @type {AttackModifiers} */
+    modifiers = {};
     attack = '';
     /** @type {Date} */
     timestamp = null;
