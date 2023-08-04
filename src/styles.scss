@@ -41,3 +41,36 @@
     }
     
 }
+
+// 
+
+mat-button-toggle-group.vertical {
+    flex-direction: column;
+    border: none !important;
+
+    .mat-button-toggle {
+        border: none !important;
+        
+        &.mat-button-toggle-appearance-standard {
+            background: #424242;
+
+            &:nth-of-type(even) {
+                background-color: #3c3c3c;
+            }
+
+            &.mat-button-toggle-checked {
+                background-color: #212121;
+
+                &:nth-of-type(even) {
+                    background-color: #1c1c1c;
+                }
+            }
+        }
+
+        button {
+            .mat-button-toggle-label-content {
+                line-height: 27px;
+            }
+        }
+    }
+}
