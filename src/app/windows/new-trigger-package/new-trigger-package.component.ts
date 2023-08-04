@@ -26,6 +26,7 @@ export class NewTriggerPackageComponent implements OnInit {
     private ancestryMap: Record<string, string> = {};
     private _pkgId: string;
     public triggerUpdates: Record<string, string[]> = {};
+    public deletedTriggerIds: string[] = [];
     public categories: string[] = TriggerPackageCategories;
     public editName: boolean = false;
 
@@ -59,7 +60,12 @@ export class NewTriggerPackageComponent implements OnInit {
 
     @ViewChild( 'newTriggersTable', { static: true } ) newTriggersTable: MatTable<TriggerModel>;
 
-    constructor( private ipcService: IpcService, private dialogService: DialogService, private libraryService: TriggerLibraryService, private snackBar: MatSnackBar, private changeDetectorRef: ChangeDetectorRef ) { }
+    constructor(
+        private readonly ipcService: IpcService,
+        private readonly dialogService: DialogService,
+        private readonly libraryService: TriggerLibraryService,
+        private readonly snackBar: MatSnackBar,
+        private readonly changeDetectorRef: ChangeDetectorRef ) { }
 
     ngOnInit() {
 
@@ -137,11 +143,20 @@ export class NewTriggerPackageComponent implements OnInit {
      * package triggers.
      */
     pullTriggerUpdates(): void {
+
+        this.deletedTriggerIds = [];
+
+        this.package.model.triggers.forEach( pkgTrigger => {
+            let trigger = this.triggers.find( t => t.triggerId === pkgTrigger.triggerId );
+            if ( trigger == null ) {
+                this.deletedTriggerIds.push( pkgTrigger.triggerId );
+            }
+        } );
         
         this.triggers.forEach( trigger => {
             
             this.package.model.triggers.forEach( pkgTrigger => {
-                if ( pkgTrigger.triggerId === trigger.triggerId ) {
+                if ( !this.deletedTriggerIds.includes( pkgTrigger.triggerId ) && pkgTrigger.triggerId === trigger.triggerId ) {
 
                     this.triggerUpdates[ trigger.triggerId ] = PackageTrigger.matchesTrigger( pkgTrigger, trigger );
 
@@ -849,6 +864,14 @@ export class NewTriggerPackageComponent implements OnInit {
      */
     save(): void {
 
+        // Remove deleted triggers from the package.
+        this.deletedTriggerIds.forEach( triggerId => {
+            let i = this.package.model.triggers.findIndex( f => f.triggerId === triggerId );
+            if ( i > -1 ) {
+                this.package.model.triggers.splice( i, 1 );
+            }
+        } );
+
         this.checkFolderConditions().subscribe( cont => {
             
             if ( cont ) {
@@ -950,5 +973,86 @@ export class NewTriggerPackageComponent implements OnInit {
             } );
         }
     }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Allows the user to recover a deleted trigger.
+     * 
+     * @param packageTrigger The source package trigger.
+     */
+    public recoverDeletedTrigger( packageTrigger: PackageTrigger ): void {
+        this.dialogService.showConfirmationDialog(
+            [
+                `Are you sure you want to recover ${packageTrigger.name}?`,
+                'If the original trigger was imported from Gina or Allakhazam/EQ Spell Resources, the information on where the trigger came from will be lost. However, the trigger itself is still recoverable.'
+            ],
+            'Click "Yes" to recover this trigger from the package, adding it back to your local trigger library.',
+            'Click "No" to close this dialog without recovering the deleted trigger.' ).subscribe( confirmed => {
+                if ( confirmed ) {
+                    
+                    // Create a copy of the package trigger.
+                    const trigger = PackageTrigger.ToTrigger( packageTrigger );
+
+                    // Save the trigger.
+                    this.ipcService.createNewTrigger( trigger ).subscribe( triggerId => {
+
+                        if ( triggerId?.length > 0 ) {
+                            // If we're successful, remove the trigger from the deleted list and add it to the triggers list.
+                            let i = this.deletedTriggerIds.findIndex( f => f === packageTrigger.triggerId );
+                            
+                            if ( i > -1 ) {
+
+                                this.deletedTriggerIds.splice( i, 1 );
+
+                            }
+                            
+                            this.triggers.push( trigger );
+                        }
+
+                    } );
+                }
+            } );
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Returns the trigger status text.
+     * 
+     * @param triggerId The id of the package trigger.
+     */
+    public getTriggerStatusText( triggerId: string ): string {
+        let updates = this.triggerUpdates[ triggerId ];
+
+        if ( updates ) {
+            return this.triggerUpdates[ triggerId ]?.join( ', ' );
+        } else if ( this.deletedTriggerIds.includes( triggerId ) ) {
+            return 'Deleted';
+        }
+    }
     
+
+
+
+
+
+
+
+
+
 }

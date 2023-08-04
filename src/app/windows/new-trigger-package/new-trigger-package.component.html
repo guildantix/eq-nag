@@ -62,7 +62,12 @@
 
         <ng-container matColumnDef="name">
             <th mat-header-cell *matHeaderCellDef style="padding-left: 15px;"> Name </th>
-            <td mat-cell *matCellDef="let element; let i = index" style="padding-left: 15px; white-space: nowrap; overflow: hidden;" [ngClass]="{'with-changes': triggerUpdates[ element.triggerId ]?.length > 0}" title="{{triggerUpdates[ element.triggerId ]?.join(', ')}}">{{element.name}}</td>
+            <td mat-cell *matCellDef="let element; let i = index" style="padding-left: 15px; white-space: nowrap; overflow: hidden;" 
+                [ngClass]="{'deleted': deletedTriggerIds.includes( element.triggerId ), 'with-changes': triggerUpdates[ element.triggerId ]?.length > 0}" 
+                title="{{getTriggerStatusText( element.triggerId )}}">
+                {{element.name}}
+                <button mat-button class="color-green" *ngIf="deletedTriggerIds.includes( element.triggerId )" (click)="recoverDeletedTrigger(element)">Recover</button>
+            </td>
         </ng-container>
 
         <ng-container matColumnDef="family">

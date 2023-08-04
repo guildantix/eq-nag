@@ -1001,6 +1001,41 @@ export class PackageTrigger {
 
 
 
+    
+    /**
+     * Converts the given package trigger to a trigger model.
+     * 
+     * @returns Returns the converted trigger model.
+     * 
+     * @param packageTrigger The package trigger to convert.
+     */
+    public static ToTrigger( packageTrigger: PackageTrigger ): TriggerModel {
+        let trg = new TriggerModel();
+
+        trg.triggerId = packageTrigger.triggerId;
+        trg.folderId = packageTrigger.folderId;
+        trg.name = packageTrigger.name;
+        trg.capturePhrases = _.cloneDeep( packageTrigger.capturePhrases ) ?? [];
+        trg.comments = _.cloneDeep( packageTrigger.comments ) ?? '';
+        trg.actions = _.cloneDeep( packageTrigger.actions ) ?? [];
+        trg.captureMethod = _.cloneDeep( packageTrigger.captureMethod ) ?? 'Any match';
+        trg.conditions = _.cloneDeep( packageTrigger.conditions ) ?? [];
+        trg.classLevels = _.cloneDeep( packageTrigger.classLevels ) ?? [];
+        trg.useCooldown = packageTrigger.useCooldown === true;
+        trg.cooldownDuration = packageTrigger.cooldownDuration;
+        trg.sequentialRestartBehavior = packageTrigger.sequentialRestartBehavior;
+
+        return trg;
+    }
+
+
+
+
+
+
+
+
+
 
     /**
      * Returns true if the details of the package trigger match the details of 
