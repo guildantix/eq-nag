@@ -1361,3 +1361,11 @@ export class TriggerParseHistoryModel {
     }
     
 }
+
+export class FctCombatGroup {
+
+    public combatGroupId: string;
+    public name: string;
+    public styles: StylePropertiesModel = new StylePropertiesModel();
+
+}

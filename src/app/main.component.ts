@@ -67,12 +67,12 @@ export class MainComponent implements OnInit {
     }
 
     constructor(
-        private snackBar: MatSnackBar,
-        private ipcService: IpcService,
-        private dialogService: DialogService,
-        private setupService: SetupService,
-        private libraryService: TriggerLibraryService,
-        private quickShareService: QuickShareService,
+        private readonly snackBar: MatSnackBar,
+        private readonly ipcService: IpcService,
+        private readonly dialogService: DialogService,
+        private readonly setupService: SetupService,
+        private readonly libraryService: TriggerLibraryService,
+        private readonly quickShareService: QuickShareService,
     ) {
     }
 

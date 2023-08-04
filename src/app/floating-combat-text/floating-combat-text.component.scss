@@ -1,1 +1,143 @@
+div.tab-content {
+    overflow-y: scroll;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    top: 176px;
 
+    > fieldset:not(:first-child) {
+        margin-top: 50px;
+    }
+    fieldset {
+        padding-top: 93px;
+
+        p {
+            font-weight: 300;
+            color: #eeeeee;
+        }
+        .card-property {
+            margin-left: -12px;
+            margin-right: -12px;
+        }
+        legend {
+            span {
+                font-size: 38px;
+                text-shadow: 0 0 7px #0000008f, 0 0 10px #0000008f, 0 0 21px #0000008f, 0 0 42px #0000008f, 0 0 82px #0000008f, 0 0 92px #0202028f, 0 0 102px #0000008f, 0 0 151px #0000008f;
+            }
+        }
+    }
+}
+
+.spacer {
+    flex: 1 1 auto;
+}
+
+.header-glow {
+    text-shadow: 0 0 7px #00000085, 0 0 10px #00000085, 0 0 21px #00000085, 0 0 42px #00000085, 0 0 82px #00000085, 0 0 92px #02020285, 0 0 102px #00000085, 0 0 151px #00000085;
+    &.glow-purple {
+        text-shadow: 0 0 7px #4c0e67, 0 0 10px rgb(0 0 0 / 52%), 0 0 21px rgb(0 0 0 / 52%), 0 0 42px rgb(0 0 0 / 52%), 0 0 82px rgb(0 0 0 / 52%), 0 0 92px rgb(2 2 2 / 52%), 0 0 102px rgb(0 0 0 / 52%), 0 0 151px rgb(0 0 0 / 52%);
+    }
+    &.glow-green {
+        text-shadow: 0 0 7px #17e88385, 0 0 10px rgb(0 0 0 / 52%), 0 0 21px rgb(0 0 0 / 52%), 0 0 42px rgb(0 0 0 / 52%), 0 0 82px rgb(0 0 0 / 52%), 0 0 92px rgb(2 2 2 / 52%), 0 0 102px rgb(0 0 0 / 52%), 0 0 151px rgb(0 0 0 / 52%);
+    }
+    &.glow-red {
+        text-shadow: 0 0 7px #921f1f, 0 0 10px rgb(0 0 0 / 52%), 0 0 21px rgb(0 0 0 / 52%), 0 0 42px rgb(0 0 0 / 52%), 0 0 82px rgb(0 0 0 / 52%), 0 0 92px rgb(2 2 2 / 52%), 0 0 102px rgb(0 0 0 / 52%), 0 0 151px rgb(0 0 0 / 52%);
+    }
+    &.hover-purple:hover {
+        text-shadow: 0 0 7px #4c0e67, 0 0 10px rgb(0 0 0 / 52%), 0 0 21px rgb(0 0 0 / 52%), 0 0 42px rgb(0 0 0 / 52%), 0 0 82px rgb(0 0 0 / 52%), 0 0 92px rgb(2 2 2 / 52%), 0 0 102px rgb(0 0 0 / 52%), 0 0 151px rgb(0 0 0 / 52%);
+    }
+    &.hover-green:hover {
+        text-shadow: 0 0 7px #17e88385, 0 0 10px rgb(0 0 0 / 52%), 0 0 21px rgb(0 0 0 / 52%), 0 0 42px rgb(0 0 0 / 52%), 0 0 82px rgb(0 0 0 / 52%), 0 0 92px rgb(2 2 2 / 52%), 0 0 102px rgb(0 0 0 / 52%), 0 0 151px rgb(0 0 0 / 52%);
+    }
+    &.hover-red:hover {
+        text-shadow: 0 0 7px #921f1f, 0 0 10px rgb(0 0 0 / 52%), 0 0 21px rgb(0 0 0 / 52%), 0 0 42px rgb(0 0 0 / 52%), 0 0 82px rgb(0 0 0 / 52%), 0 0 92px rgb(2 2 2 / 52%), 0 0 102px rgb(0 0 0 / 52%), 0 0 151px rgb(0 0 0 / 52%);
+    }
+}
+
+h2,
+h3 {
+    &.header-glow {
+        margin-top: -15px;
+        font-size: 21px;
+        font-weight: 300;
+    }
+    &.sub-header {
+        font-weight: 100;
+        opacity: 0.9;
+        margin-top: -16px;
+        padding-bottom: 6px;
+        // font-size: 22px;
+        padding-bottom: 4px;
+        position: relative;
+        padding-right: 11px;
+        text-align: right;
+
+        &.half-width {
+            width: calc(50% - 11px);
+        }
+        &.full-width {
+            width: calc(100% - 11px);
+        }
+
+        &::before {
+            content: "";
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 18px;
+            z-index: -1;
+            background-color: #0000002e;
+        }
+    }
+}
+
+.modifiers-list-container {
+    display: flex; 
+    flex-flow: row wrap;
+
+    > div {
+        margin: 0 15px 0 0;
+
+        .formless-hint {
+            margin-top: 5px;
+            padding-bottom: 50px;
+        }
+
+        > h3 {
+            font-weight: 300;
+            margin: 4px 0 7px;
+            font-size: 27px;
+        }
+
+        > h4 {
+            margin: 9px 0 3px 7px;
+            font-size: 19px;
+            font-weight: 100;
+        }
+    }
+}
+
+.group-options-container {
+    display: flex;
+    flex-flow: row wrap;
+    justify-content: space-between;
+    background-color: #252525;
+    padding-bottom: 24px;
+
+    > div {
+        display: flex;
+        flex-flow: column nowrap;
+        margin: 0 10px;
+        padding: 10px;
+        color: #d1d1d1;
+
+        h4 {
+            margin-top: 5px;
+            font-weight: 300;
+            font-size: 19px;
+            margin-bottom: 10px;
+        }
+    }
+}

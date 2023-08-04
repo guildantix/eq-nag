@@ -1,7 +1,289 @@
 <mat-toolbar>
     <span>Floating Combat Text</span>
     <span class="spacer"></span>
+    <button mat-button color="accent" (click)="newCombatGroup()"><mat-icon class="material-icons-outlined">add</mat-icon> New</button>
 </mat-toolbar>
 <div class="tab-content">
+
+    <fieldset *ngFor="let group of combatGroups; let i = index">
+        <legend>
+            <div><span class="title">{{group.name}}</span></div>
+            <span class="spacer"></span>
+            <div><button mat-icon-button class="color-light" matTooltip="Change group name" matTooltipPosition="above" (click)="changeCombatGroupName(i)"><mat-icon class="material-icons-outlined">edit</mat-icon></button></div>
+            <div><button mat-icon-button class="color-blue" matTooltip="Copy group" matTooltipPosition="above"><mat-icon class="material-icons-outlined">content_copy</mat-icon></button></div>
+            <div><button mat-icon-button class="color-red" matTooltip="Delete group" matTooltipPosition="above" (click)="deleteCombatGroup(i)"><mat-icon class="material-icons-outlined">clear</mat-icon></button></div>
+        </legend>
+        <div class="modifiers-list-container">
+
+            <div style="display: flex; flex-flow: column wrap; min-width: 225px;">
+                <!-- <h3>Combat Types</h3> -->
+                <h3 class="sub-header full-width header-glow">Combat Types</h3>
+                <mat-checkbox>Your Melee Hits</mat-checkbox>
+                <mat-checkbox>You Being Hit by Melee</mat-checkbox>
+                <mat-checkbox>Your Spell Hits</mat-checkbox>
+                <mat-checkbox>You Being Hit by Spells</mat-checkbox>
+                <mat-checkbox>Your Healing Done</mat-checkbox>
+                <mat-checkbox>You Being Healed</mat-checkbox>
+            </div>
+            
+            <div style="padding-left: 25px; min-width: 170px;">
+                <!-- <h3>Modifiers</h3> -->
+                <h3 class="sub-header full-width header-glow">Modifiers</h3>
+                <mat-button-toggle-group name="combatModifiers" aria-label="Modifiers" class="vertical" style="float: right;" multiple>
+                    <mat-button-toggle value="normal">Normal</mat-button-toggle>
+                    <mat-button-toggle value="critical">Critical</mat-button-toggle>
+                    <mat-button-toggle value="cripplingBlow">Crippling Blow</mat-button-toggle>
+                    <mat-button-toggle value="flurry">Flurry</mat-button-toggle>
+                    <mat-button-toggle value="lucky">Lucky</mat-button-toggle>
+                    <mat-button-toggle value="twincast">Twincast</mat-button-toggle>
+                    <mat-button-toggle value="riposte">Riposte</mat-button-toggle>
+                    <mat-button-toggle value="strikethrough">Strikethrough</mat-button-toggle>
+                    <mat-button-toggle value="wild_rampage">Wild Rampage</mat-button-toggle>
+                    <mat-button-toggle value="rampage">Rampage</mat-button-toggle>
+                    <mat-button-toggle value="assassinate">Assassinate</mat-button-toggle>
+                    <mat-button-toggle value="headshot">Headshot</mat-button-toggle>
+                    <mat-button-toggle value="double_bow_shot">Double Bow Shot</mat-button-toggle>
+                    <mat-button-toggle value="deadly_strike">Deadly Strike</mat-button-toggle>
+                    <mat-button-toggle value="finishing_blow">Finishing Blow</mat-button-toggle>
+                </mat-button-toggle-group>
+            </div>
+
+            <div style="flex: 1 1 auto; margin-left: 25px;">
+                <h3 class="sub-header full-width header-glow">Group Settings</h3>
+
+                <h4>Overlay</h4>
+                <mat-form-field style="width: 100%">
+                    <mat-label></mat-label>
+                    <mat-select>
+                        <mat-option *ngFor="let option of fctOverlays" [value]="option.overlayId">{{option.name}}</mat-option>
+                    </mat-select>
+                    <mat-hint style="font-size: 1.1em;">Select the overlay that should render this group's combat text.</mat-hint>
+                </mat-form-field>
+
+                <h4>Styles</h4>
+                <app-style-properties [style]="group.styles" label=""></app-style-properties>
+
+                <h4 style="margin-top: -27px; margin-bottom: 14px;">Properties</h4>
+                <div class="group-options-container">
+                    <div>
+                        <h4>Animations</h4>
+                        <mat-checkbox>Float Up</mat-checkbox>
+                        <mat-checkbox>Float Down</mat-checkbox>
+                        <mat-checkbox>Expand and Contract</mat-checkbox>
+                        <mat-checkbox>Fade In</mat-checkbox>
+                        <mat-checkbox>Fade Out</mat-checkbox>
+                    </div>
+                    <div>
+                        <h4>Starting Positions</h4>
+                        <mat-checkbox>Random Position</mat-checkbox>
+                        <mat-checkbox>Right</mat-checkbox>
+                        <mat-checkbox>Left</mat-checkbox>
+                        <mat-checkbox>Top</mat-checkbox>
+                        <mat-checkbox>Bottom</mat-checkbox>
+                    </div>
+                    <div>
+                        <h4>Data</h4>
+                        <mat-checkbox>Accumulate Hits</mat-checkbox>
+                        <!-- <mat-checkbox>asdfasdf</mat-checkbox> -->
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- <div>
+                <div class="formless-hint full-width">
+                    <div class="stacked-inputs">
+                        <div><h3>Your Melee</h3></div>
+                        <div>
+                            <mat-button-toggle-group name="ingredients" aria-label="Ingredients" class="vertical" multiple>
+                                <mat-button-toggle value="normal">Normal</mat-button-toggle>
+                                <mat-button-toggle value="critical">Critical</mat-button-toggle>
+                                <mat-button-toggle value="cripplingBlow">Crippling Blow</mat-button-toggle>
+                                <mat-button-toggle value="flurry">Flurry</mat-button-toggle>
+                                <mat-button-toggle value="lucky">Lucky</mat-button-toggle>
+                                <mat-button-toggle value="twincast">Twincast</mat-button-toggle>
+                                <mat-button-toggle value="riposte">Riposte</mat-button-toggle>
+                                <mat-button-toggle value="strikethrough">Strikethrough</mat-button-toggle>
+                                <mat-button-toggle value="wild_rampage">Wild Rampage</mat-button-toggle>
+                                <mat-button-toggle value="rampage">Rampage</mat-button-toggle>
+                                <mat-button-toggle value="assassinate">Assassinate</mat-button-toggle>
+                                <mat-button-toggle value="headshot">Headshot</mat-button-toggle>
+                                <mat-button-toggle value="double_bow_shot">Double Bow Shot</mat-button-toggle>
+                                <mat-button-toggle value="deadly_strike">Deadly Strike</mat-button-toggle>
+                                <mat-button-toggle value="finishing_blow">Finishing Blow</mat-button-toggle>
+                            </mat-button-toggle-group>
+                        </div>
+                    </div>
+                    <mat-hint>Enable to show your melee hits in this group.</mat-hint>
+                </div>
+            </div>
+            <div>
+                <div class="formless-hint full-width">
+                    <div class="stacked-inputs">
+                        <div><h3>Other Melee</h3></div>
+                        <div>
+                            <mat-button-toggle-group name="ingredients" aria-label="Ingredients" class="vertical" multiple>
+                                <mat-button-toggle value="normal">Normal</mat-button-toggle>
+                                <mat-button-toggle value="critical">Critical</mat-button-toggle>
+                                <mat-button-toggle value="cripplingBlow">Crippling Blow</mat-button-toggle>
+                                <mat-button-toggle value="flurry">Flurry</mat-button-toggle>
+                                <mat-button-toggle value="lucky">Lucky</mat-button-toggle>
+                                <mat-button-toggle value="twincast">Twincast</mat-button-toggle>
+                                <mat-button-toggle value="riposte">Riposte</mat-button-toggle>
+                                <mat-button-toggle value="strikethrough">Strikethrough</mat-button-toggle>
+                                <mat-button-toggle value="wild_rampage">Wild Rampage</mat-button-toggle>
+                                <mat-button-toggle value="rampage">Rampage</mat-button-toggle>
+                                <mat-button-toggle value="assassinate">Assassinate</mat-button-toggle>
+                                <mat-button-toggle value="headshot">Headshot</mat-button-toggle>
+                                <mat-button-toggle value="double_bow_shot">Double Bow Shot</mat-button-toggle>
+                                <mat-button-toggle value="deadly_strike">Deadly Strike</mat-button-toggle>
+                                <mat-button-toggle value="finishing_blow">Finishing Blow</mat-button-toggle>
+                            </mat-button-toggle-group>
+                        </div>
+                    </div>
+                    <mat-hint>Enable to show you being hit in this group.</mat-hint>
+                </div>
+            </div>
+            <div>
+                <div class="formless-hint full-width">
+                    <div class="stacked-inputs">
+                        <div><h3>Your Healing</h3></div>
+                        <div>
+                            <mat-button-toggle-group name="ingredients" aria-label="Ingredients" class="vertical" multiple>
+                                <mat-button-toggle value="normal">Normal</mat-button-toggle>
+                                <mat-button-toggle value="critical">Critical</mat-button-toggle>
+                                <mat-button-toggle value="cripplingBlow">Crippling Blow</mat-button-toggle>
+                                <mat-button-toggle value="flurry">Flurry</mat-button-toggle>
+                                <mat-button-toggle value="lucky">Lucky</mat-button-toggle>
+                                <mat-button-toggle value="twincast">Twincast</mat-button-toggle>
+                                <mat-button-toggle value="riposte">Riposte</mat-button-toggle>
+                                <mat-button-toggle value="strikethrough">Strikethrough</mat-button-toggle>
+                                <mat-button-toggle value="wild_rampage">Wild Rampage</mat-button-toggle>
+                                <mat-button-toggle value="rampage">Rampage</mat-button-toggle>
+                                <mat-button-toggle value="assassinate">Assassinate</mat-button-toggle>
+                                <mat-button-toggle value="headshot">Headshot</mat-button-toggle>
+                                <mat-button-toggle value="double_bow_shot">Double Bow Shot</mat-button-toggle>
+                                <mat-button-toggle value="deadly_strike">Deadly Strike</mat-button-toggle>
+                                <mat-button-toggle value="finishing_blow">Finishing Blow</mat-button-toggle>
+                            </mat-button-toggle-group>
+                        </div>
+                    </div>
+                    <mat-hint>Enable to show you being hit in this group.</mat-hint>
+                </div>
+            </div>
+            <div>
+                <div class="formless-hint full-width">
+                    <div class="stacked-inputs">
+                        <div><h3>Other Healing</h3></div>
+                        <div>
+                            <mat-button-toggle-group name="ingredients" aria-label="Ingredients" class="vertical" multiple>
+                                <mat-button-toggle value="normal">Normal</mat-button-toggle>
+                                <mat-button-toggle value="critical">Critical</mat-button-toggle>
+                                <mat-button-toggle value="cripplingBlow">Crippling Blow</mat-button-toggle>
+                                <mat-button-toggle value="flurry">Flurry</mat-button-toggle>
+                                <mat-button-toggle value="lucky">Lucky</mat-button-toggle>
+                                <mat-button-toggle value="twincast">Twincast</mat-button-toggle>
+                                <mat-button-toggle value="riposte">Riposte</mat-button-toggle>
+                                <mat-button-toggle value="strikethrough">Strikethrough</mat-button-toggle>
+                                <mat-button-toggle value="wild_rampage">Wild Rampage</mat-button-toggle>
+                                <mat-button-toggle value="rampage">Rampage</mat-button-toggle>
+                                <mat-button-toggle value="assassinate">Assassinate</mat-button-toggle>
+                                <mat-button-toggle value="headshot">Headshot</mat-button-toggle>
+                                <mat-button-toggle value="double_bow_shot">Double Bow Shot</mat-button-toggle>
+                                <mat-button-toggle value="deadly_strike">Deadly Strike</mat-button-toggle>
+                                <mat-button-toggle value="finishing_blow">Finishing Blow</mat-button-toggle>
+                            </mat-button-toggle-group>
+                        </div>
+                    </div>
+                    <mat-hint>Enable to show you being hit in this group.</mat-hint>
+                </div>
+            </div>
+            <div>
+                <div class="formless-hint full-width">
+                    <div class="stacked-inputs">
+                        <div><h3>Your Spells</h3></div>
+                        <div>
+                            <mat-button-toggle-group name="ingredients" aria-label="Ingredients" class="vertical" multiple>
+                                <mat-button-toggle value="normal">Normal</mat-button-toggle>
+                                <mat-button-toggle value="critical">Critical</mat-button-toggle>
+                                <mat-button-toggle value="cripplingBlow">Crippling Blow</mat-button-toggle>
+                                <mat-button-toggle value="flurry">Flurry</mat-button-toggle>
+                                <mat-button-toggle value="lucky">Lucky</mat-button-toggle>
+                                <mat-button-toggle value="twincast">Twincast</mat-button-toggle>
+                                <mat-button-toggle value="riposte">Riposte</mat-button-toggle>
+                                <mat-button-toggle value="strikethrough">Strikethrough</mat-button-toggle>
+                                <mat-button-toggle value="wild_rampage">Wild Rampage</mat-button-toggle>
+                                <mat-button-toggle value="rampage">Rampage</mat-button-toggle>
+                                <mat-button-toggle value="assassinate">Assassinate</mat-button-toggle>
+                                <mat-button-toggle value="headshot">Headshot</mat-button-toggle>
+                                <mat-button-toggle value="double_bow_shot">Double Bow Shot</mat-button-toggle>
+                                <mat-button-toggle value="deadly_strike">Deadly Strike</mat-button-toggle>
+                                <mat-button-toggle value="finishing_blow">Finishing Blow</mat-button-toggle>
+                            </mat-button-toggle-group>
+                        </div>
+                    </div>
+                    <mat-hint>Enable to show you being hit in this group.</mat-hint>
+                </div>
+            </div>
+            <div>
+                <div class="formless-hint full-width">
+                    <div class="stacked-inputs">
+                        <div><h3>Other Spells</h3></div>
+                        <div>
+                            <mat-button-toggle-group name="ingredients" aria-label="Ingredients" class="vertical" multiple>
+                                <mat-button-toggle value="normal">Normal</mat-button-toggle>
+                                <mat-button-toggle value="critical">Critical</mat-button-toggle>
+                                <mat-button-toggle value="cripplingBlow">Crippling Blow</mat-button-toggle>
+                                <mat-button-toggle value="flurry">Flurry</mat-button-toggle>
+                                <mat-button-toggle value="lucky">Lucky</mat-button-toggle>
+                                <mat-button-toggle value="twincast">Twincast</mat-button-toggle>
+                                <mat-button-toggle value="riposte">Riposte</mat-button-toggle>
+                                <mat-button-toggle value="strikethrough">Strikethrough</mat-button-toggle>
+                                <mat-button-toggle value="wild_rampage">Wild Rampage</mat-button-toggle>
+                                <mat-button-toggle value="rampage">Rampage</mat-button-toggle>
+                                <mat-button-toggle value="assassinate">Assassinate</mat-button-toggle>
+                                <mat-button-toggle value="headshot">Headshot</mat-button-toggle>
+                                <mat-button-toggle value="double_bow_shot">Double Bow Shot</mat-button-toggle>
+                                <mat-button-toggle value="deadly_strike">Deadly Strike</mat-button-toggle>
+                                <mat-button-toggle value="finishing_blow">Finishing Blow</mat-button-toggle>
+                            </mat-button-toggle-group>
+                        </div>
+                    </div>
+                    <mat-hint>Enable to show you being hit in this group.</mat-hint>
+                </div>
+            </div> -->
+        </div>
+
+        <!-- <p>
+            <mat-checkbox [(ngModel)]="enableFct" (change)="onEnableFctChange()">Enable</mat-checkbox><br />
+            <mat-checkbox [(ngModel)]="showCriticalsInline" (change)="onShowCriticalsInlineChange()">Display critical damage inline with regular damage</mat-checkbox>
+        </p>
+        
+        <p>
+            <mat-form-field>
+                <mat-label></mat-label>
+                <mat-select [(ngModel)]="damageDealtOverlayId" name="ddlDamageDealtOverlay" (selectionChange)="onChangeDealtFctOverylays()">
+                    <mat-option *ngFor="let option of fctOverlays" [value]="option.overlayId">{{option.name}}</mat-option>
+                </mat-select>
+                <mat-hint>Damage Dealt or Healing Done Overlay</mat-hint>
+            </mat-form-field>
+        </p>
+
+        <p>
+            <mat-form-field>
+                <mat-label></mat-label>
+                <mat-select [(ngModel)]="damageTakenOverlayId" name="ddlDamageReceivedOverlay" (selectionChange)="onChangeReceivedFctOverylays()">
+                    <mat-option *ngFor="let option of fctOverlays" [value]="option.overlayId">{{option.name}}</mat-option>
+                </mat-select>
+                <mat-hint>Damage Received or Healing Received Overlay</mat-hint>
+            </mat-form-field>
+        </p> -->
+        
+        <div>
+            <button mat-button class="color-green" [disabled]="!hasChanges(group.combatGroupId)" (click)="saveChanges(group.combatGroupId)">Save Changes</button>
+            <button mat-button class="color-red" [disabled]="!hasChanges(group.combatGroupId)" (click)="rollbackChanges(group.combatGroupId)">Revert Changes</button>
+        </div>
+        
+    </fieldset>
 
 </div>
