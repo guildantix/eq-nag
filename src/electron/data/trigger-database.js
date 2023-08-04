@@ -1710,6 +1710,22 @@ class TriggerDatabaseStore extends Store {
             // folder ids to existing folders. If a folder does not exist,  it is 
             // created  using  the  folder  id  in  the trigger   package  folder.
             let folderMap = this.installPackageFolders( pkg.model?.folders );
+
+            // TODO: We need to keep a trigger package id as an array of packages.  One reason is, if a trigger was only part of an installed package, and that package is uninstalled or the trigger is no longer part of that package, we are safe to remove it.
+            // But we need to find a way to pull an updated list of trigger packages, and update the trigger package id array.
+            // TODO: Would be nice, show what package(s) a trigger is in when viewing the trigger details.
+
+            // // Next, remove any triggers that were installed by this package, and
+            // // are no longer in this package.
+            // let installedTriggers = this.#data.triggers.filter( f => f.packageId === pkg.triggerPackageId );
+            // installedTriggers.forEach( installedTrigger => {
+            //     if ( pkg.model?.triggers?.find( f => f.triggerId === installedTrigger.triggerId ) == null ) {
+            //         // This trigger is no longer in the package, so remove it.
+            //         this.#data.triggers.splice( this.#data.triggers.indexOf( installedTrigger ), 1 );
+            //     }
+            // } );
+
+            // Finally, install the triggers.
             pkg.model?.triggers?.forEach( pkgTrigger => this.installPackageTrigger( pkg.triggerPackageId, pkgTrigger, folderMap ) );
 
             // Save changes to the data.
