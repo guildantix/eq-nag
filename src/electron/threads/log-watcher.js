@@ -1751,14 +1751,8 @@ function parseLogEntries( raw, simulating, padTime ) {
         // let rgxDelimiter = /;/gi;
         // let rgxNum = /(\d+)/gi;
         let rgxCombatText = /hit|damage|miss|dodge|riposte|parry|become better|backstab|stun|attack/gi;
-        let rgxFctCritical = /\. \(.*(Critical).*\)/gi;
-        // TODO: Remove temp death recap for israphel.
-        let tempDeathRecap = new RegExp( `Israphel death recap`, 'gi' );
-
-        if ( raw.match( tempDeathRecap )?.length > 0 ) {
-            ipcRenderer.send( 'window:death-recap', charModel );
-            return;
-        }
+        let rgxFctCritical = /\. \(.*(Critical|Crippling Blow|Strikethrough).*\)/gi;
+        let rgxCombatModifiers = /\. \((?<combatModifiers>.*)\)$/gi;
 
         // Someone healed you.
         // https://regex101.com/r/Jdtzsf/3
@@ -1972,7 +1966,42 @@ function parseLogEntries( raw, simulating, padTime ) {
     
                         }
     
-                        model.critical = raw.match( rgxFctCritical );
+                        // TODO: Performance testing with checkModifiers.
+                        let combatModifiers = raw.match( rgxCombatModifiers )?.groups?.combatModifiers;
+                        if ( combatModifiers ) {
+
+                            let checkModifiers = ( modifierName ) => {
+                                
+                                if ( combatModifiers.length === 0 ) {
+                                    return false;
+                                }
+    
+                                let i = combatModifiers.indexOf( modifierName );
+                                
+                                if ( i > -1 ) {
+                                    combatModifiers = combatModifiers.substring( 0, i ) + combatModifiers.substring( i + modifierName.length );
+                                    return true;
+                                }
+    
+                                return false;
+                            }
+
+                            model.critical = checkModifiers( 'Critical' );
+                            model.modifiers.critical = checkModifiers( 'Critical' );
+                            model.modifiers.cripplingBlow = checkModifiers( 'Crippling Blow' );
+                            model.modifiers.flurry = checkModifiers( 'Flurry' );
+                            model.modifiers.lucky = checkModifiers( 'Lucky' );
+                            model.modifiers.twincast = checkModifiers( 'Twincast' );
+                            model.modifiers.riposte = checkModifiers( 'Riposte' );
+                            model.modifiers.strikethrough = checkModifiers( 'Strikethrough' );
+                            model.modifiers.wild_rampage = checkModifiers( 'Wild Rampage' );
+                            model.modifiers.rampage = checkModifiers( 'Rampage' );
+                            model.modifiers.assassinate = checkModifiers( 'Assassinate' );
+                            model.modifiers.headshot = checkModifiers( 'Headshot' );
+                            model.modifiers.double_bow_shot = checkModifiers( 'Double Bow Shot' );
+                            model.modifiers.deadly_strike = checkModifiers( 'Deadly Strike' );
+                            model.modifiers.finishing_blow = checkModifiers( 'Finishing Blow' );
+                        }
                         model.timestamp = timestamp;
                         model.overlayId = model.dealt ? damageDealtOverlayId : damageReceivedOverlayId;
     
