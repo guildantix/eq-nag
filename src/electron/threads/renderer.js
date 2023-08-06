@@ -156,7 +156,6 @@ const styleSheetUtil = new StyleSheetUtil();
 const fctCssEncapsulationId = '_' + nanoid();
 const delayBetweenCrits = 500;
 const delayVariance = 0.50;
-let delayAdd = 0;
 const criticalPadding = 0;
 var mouseForwardingPaused = false;
 /** @type {HTMLDivElement} */
@@ -972,10 +971,7 @@ function renderFct( overlayId, comp ) {
                     }
                 }, 4000 );
 
-                delayAdd -= comp.delayAmount;
-            }, delayAdd );
-
-            delayAdd += comp.delayAmount;
+            }, comp.delayAmount );
 
         } else {
             let damageSourceText = comp.attack;
