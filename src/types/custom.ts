@@ -17,6 +17,23 @@ export class WindowApi {
              * @param duration The duration in seconds.
              */
             getDurationLabel: ( duration: number ) => string;
+        },
+        styles: {
+            /**
+             * Returns the right-hand text-shadow value for a given border color.
+             * 
+             * @param {string} hexColorCode The hex color for the text border.
+             * @param {number} transparency The transparency value, between 0 and 1.
+             */
+            textOutline: ( hexColorCode: string, transparency: number ) => string;
+            /**
+             * Returns the right-hand text-shadow value for a given glow property.
+             * 
+             * @param {string} hexColorCode The hex color code for the text glow.
+             * @param {number} glowSize The distance the glow will spread.
+             * @param {number} transparency The transparency value, between 0 and 1.
+             */
+            textGlow: ( hexColorCode: string, glowSize: number, transparency: number ) => string;
         }
     };
     logger: {

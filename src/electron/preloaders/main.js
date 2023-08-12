@@ -1,6 +1,7 @@
 const { contextBridge, ipcRenderer } = require( 'electron' );
 const { getCurrentWindow, screen } = require( '@electron/remote' );
 const { DateUtilities } = require( '../utilities/dates' );
+const StyleSheetUtil = require( '../utilities/style-sheet' );
 const log = require( 'electron-log' );
 
 const channelPrefixes = [
@@ -40,6 +41,8 @@ const channelPrefixes = [
     'scraper',
     'simulation',
 ];
+
+const styleSheetUtil = new StyleSheetUtil();
 
 function validChannel( channel ) {
     return channelPrefixes.indexOf( channel.split( /:/gi )[ 0 ] ) > -1;
@@ -86,6 +89,13 @@ contextBridge.exposeInMainWorld( 'api', {
     utils: {
         dates: {
             getDurationLabel: DateUtilities.getDurationLabel,
+        },
+        styles: {
+            textOutline: ( hex, trans ) => {
+                console.log( 'values out', styleSheetUtil.templates.textOutline( hex, trans ) );
+                return styleSheetUtil.templates.textOutline( hex, trans );
+            },
+            textGlow: styleSheetUtil.templates.textGlow,
         }
     },
     logger: {
