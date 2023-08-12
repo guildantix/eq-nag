@@ -25,15 +25,15 @@
             <td>Color</td>
             <td><app-color-picker [(ngModel)]="model.fontColor" (change)="emitChange()" [inline]="true"></app-color-picker></td>
             <td>Weight</td>
-            <td><mat-slider thumbLabel tickInterval="1" step="1" min="0" [max]="maxFontWeightIndex" style="width: 100%;" [(ngModel)]="fontWeightIndex" name="sldrFontWeight" (change)="emitChange()"></mat-slider></td>
+            <td><mat-slider thumbLabel tickInterval="1" step="1" min="0" [max]="maxFontWeightIndex" style="width: 100%;" [(ngModel)]="fontWeightIndex" name="sldrFontWeight" (change)="emitChange()" (input)="updateElementFontWeight($event)"></mat-slider></td>
             <td>Size</td>
-            <td><mat-slider thumbLabel tickInterval="1" min="1" max="64" style="width: 100%;" [(ngModel)]="model.fontSize" name="sldrFontSize" (change)="emitChange()"></mat-slider></td>
+            <td><mat-slider thumbLabel tickInterval="1" min="1" max="64" style="width: 100%;" [(ngModel)]="model.fontSize" name="sldrFontSize" (change)="emitChange()" (input)="updateElementFontStyle($event)"></mat-slider></td>
         </tr>
         <tr>
             <td><mat-checkbox [(ngModel)]="model.showBorder">Border</mat-checkbox></td>
             <td><app-color-picker [(ngModel)]="model.borderColor" (change)="emitChange()" [inline]="true"></app-color-picker></td>
             <td>Intensity</td>
-            <td><mat-slider thumbLabel tickInterval="1" min="0" max="100" style="width: 100%;" [(ngModel)]="borderIntensity" name="sldrBorderIntensity" (change)="onChangeBorderTransparency()"></mat-slider></td>
+            <td><mat-slider thumbLabel tickInterval="1" min="0" max="100" style="width: 100%;" [(ngModel)]="borderIntensity" name="sldrBorderIntensity" (change)="onChangeBorderTransparency()" (input)="updateElementBorderIntensity($event)"></mat-slider></td>
             <td></td>
             <td></td>
         </tr>
@@ -41,9 +41,9 @@
             <td><mat-checkbox [(ngModel)]="model.showGlow">Glow</mat-checkbox></td>
             <td><app-color-picker [(ngModel)]="model.glowColor" (change)="emitChange()" [inline]="true"></app-color-picker></td>
             <td>Intensity</td>
-            <td><mat-slider thumbLabel tickInterval="1" min="0" max="100" style="width: 100%;" [(ngModel)]="glowIntensity" name="sldrGlowIntensity" (change)="onChangeGlowTransparency()"></mat-slider></td>
+            <td><mat-slider thumbLabel tickInterval="1" min="0" max="100" style="width: 100%;" [(ngModel)]="glowIntensity" name="sldrGlowIntensity" (change)="onChangeGlowTransparency()" (input)="updateElementGlowIntensity($event)"></mat-slider></td>
             <td>Size</td>
-            <td><mat-slider thumbLabel tickInterval="1" min="0" max="10" style="width: 100%;" [(ngModel)]="model.glowSize" name="sldrTextGlowSize" (change)="emitChange()"></mat-slider></td>
+            <td><mat-slider thumbLabel tickInterval="1" min="0" max="10" style="width: 100%;" [(ngModel)]="model.glowSize" name="sldrTextGlowSize" (change)="emitChange()" (input)="updateElementGlowSize($event)"></mat-slider></td>
         </tr>
     </table>
 

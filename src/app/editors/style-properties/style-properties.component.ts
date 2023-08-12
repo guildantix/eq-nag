@@ -1,4 +1,5 @@
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { MatSliderChange } from '@angular/material/slider';
 import { StylePropertiesModel } from 'src/app/core.model';
 
 const availableFonts = {
@@ -21,6 +22,7 @@ export class StylePropertiesComponent implements OnInit {
     @Input('style') public model: StylePropertiesModel;
     @Input() public label: string = 'Style Name';
     @Output() public onChange: EventEmitter<StylePropertiesModel> = new EventEmitter<StylePropertiesModel>();
+    @Input( 'style-element' ) public styleElement: HTMLElement | null = null;
 
     public fontWeightIndex: number = 0;
     public borderIntensity: number = 0;
@@ -40,6 +42,10 @@ export class StylePropertiesComponent implements OnInit {
         this.fontWeightIndex = availableFonts[ this.model.fontFamily ].indexOf( this.model.fontWeight );
         this.borderIntensity = Math.round( this.model.borderIntensity * 100 );
         this.glowIntensity = Math.round( this.model.glowIntensity * 100 );
+
+        if ( this.styleElement != null ) {
+            StylePropertiesModel.applyStyles( this.styleElement, this.model );
+        }
     }
 
     public onChangeFontFamily(): void {
@@ -84,6 +90,51 @@ export class StylePropertiesComponent implements OnInit {
         if ( this.model != null ) {
             this.model.fontWeight = availableFonts[ this.model.fontFamily ][ this.fontWeightIndex ];
             this.onChange.emit( this.model );
+            if (this.styleElement != null) {
+                StylePropertiesModel.applyStyles( this.styleElement, this.model );
+            }
+        }
+    }
+
+    updateElementFontWeight( e: MatSliderChange ) {
+        console.log( 'e', e );
+        if ( this.styleElement != null ) {
+            let x = Object.assign( new StylePropertiesModel(), this.model );
+            x.fontWeight = availableFonts[ this.model.fontFamily ][ e.value ];
+            StylePropertiesModel.applyStyles( this.styleElement, x );
+        }
+    }
+
+    updateElementFontStyle( e: MatSliderChange ) {
+        if ( this.styleElement != null ) {
+            let x = Object.assign( new StylePropertiesModel(), this.model );
+            // x.fontWeight = availableFonts[ this.model.fontFamily ][ this.fontWeightIndex ];
+            x.fontSize = e.value;
+            StylePropertiesModel.applyStyles( this.styleElement, x );
+        }
+    }
+
+    updateElementBorderIntensity(e: MatSliderChange) {
+        if ( this.styleElement != null ) {
+            let x = Object.assign( new StylePropertiesModel(), this.model );
+            x.borderIntensity = e.value / 100;
+            StylePropertiesModel.applyStyles( this.styleElement, x );
+        }
+    }
+
+    updateElementGlowIntensity( e: MatSliderChange ) {
+        if ( this.styleElement != null ) {
+            let x = Object.assign( new StylePropertiesModel(), this.model );
+            x.glowIntensity = e.value / 100;
+            StylePropertiesModel.applyStyles( this.styleElement, x );
+        }
+    }
+
+    updateElementGlowSize( e: MatSliderChange ) {
+        if ( this.styleElement != null ) {
+            let x = Object.assign( new StylePropertiesModel(), this.model );
+            x.glowSize = e.value;
+            StylePropertiesModel.applyStyles( this.styleElement, x );
         }
     }
 
