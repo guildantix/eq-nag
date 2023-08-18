@@ -23,6 +23,8 @@ class FctModel extends OverlayComponent {
     overlayId = null;
     dealt = false;
     text = '';
+    /** @type {number | undefined} */
+    value = undefined;
     critical = false;
     /** @type {AttackModifiers} */
     modifiers = {};

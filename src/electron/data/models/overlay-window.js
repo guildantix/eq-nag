@@ -1,4 +1,5 @@
 const { TriggerAction } = require( './trigger' );
+const { StylePropertiesModel } = require( './core' );
 
 var TimerSortTypes = {
     '0': 'None',
@@ -7,6 +8,21 @@ var TimerSortTypes = {
     None: 0,
     Ascending: 1,
     Descending: 2,
+}
+
+const HitStartPositionTypes = {
+    '0': 'unset',
+    '1': 'left',
+    '2': 'right',
+    '4': 'bottom',
+    '8': 'top',
+    '16': 'random',
+    unset : 0,
+    left : 1,
+    right : 2,
+    bottom : 4,
+    top : 8,
+    random : 16,
 }
 
 class OverlayDimensions {
@@ -156,4 +172,45 @@ class TriggerSecondaryActionModel {
     duration;
 }
 
-module.exports = { OverlayDimensions, OverlayWindow, OverlayComponent, TimerSortTypes, OverlayStoreModel, TriggerSecondaryActionModel };
+class CombatAnimations {
+    /** @type {boolean} */
+    fountain = false;
+    /** @type {boolean} */
+    scroll = false;
+    /** @type {boolean} */
+    pulsate = false;
+    /** @type {boolean} */
+    fadeIn = false;
+    /** @type {boolean} */
+    fadeOut = false;
+    /** @type {boolean} */
+    grow = false;
+    /** @type {boolean} */
+    shrink = false;
+}
+
+class FctCombatGroup {
+    /** @type {string} */
+    combatGroupId;
+    /** @type {string} */
+    name;
+    /** @type {StylePropertiesModel} */
+    valueStyles = new StylePropertiesModel();
+    /** @type {StylePropertiesModel} */
+    sourceStyles = new StylePropertiesModel();
+    startingPosition = HitStartPositionTypes.unset;
+    /** @type {boolean} */
+    accumulateHits = false;
+    /** @type {boolean} */
+    ignoreHits = false;
+    /** @type {'percent' | 'value' | 'dynamic'} */
+    thresholdType = 'percent';
+    /** @type {number | undefined} */
+    thresholdValue = undefined;
+    /** @type {number} */
+    thresholdPercent = 60;
+    /** @type {CombatAnimations} */
+    combatAnimations = new CombatAnimations();
+}
+
+module.exports = { OverlayDimensions, OverlayWindow, OverlayComponent, TimerSortTypes, OverlayStoreModel, TriggerSecondaryActionModel, CombatAnimations, FctCombatGroup, HitStartPositionTypes };
