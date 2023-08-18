@@ -424,7 +424,43 @@ export class StylePropertiesModel {
     public glowColor: string = '#000000';
     public glowIntensity: number = 1;
     public glowSize: number = 5;
+    public paddingLeft: number = 0;
+    public paddingRight: number = 0;
+    public paddingTop: number = 0;
+    public paddingBottom: number = 0;
+    public position: 'inline' | 'block' = 'inline';
 
+    public static applyStyles( el: HTMLElement, style: StylePropertiesModel ): void {
+        if ( el ) {
+            el.style.fontFamily = `"${style.fontFamily}"`;
+            el.style.fontSize = `${style.fontSize}px`;
+            el.style.lineHeight = `${( style.lineHeight > 10 ? style.lineHeight : 90 ) / 100}em`;
+            el.style.fontWeight = `${style.fontWeight > 0 ? style.fontWeight : 300}`;
+            el.style.color = style.fontColor;
+            el.style.opacity = style.fontTransparency.toString();
+
+            el.style.paddingLeft = style.paddingLeft > 0 ? `${style.paddingLeft}px` : null;
+            el.style.paddingRight = style.paddingRight > 0 ? `${style.paddingRight}px` : null;
+            el.style.paddingTop = style.paddingTop > 0 ? `${style.paddingTop}px` : null;
+            el.style.paddingBottom = style.paddingBottom > 0 ? `${style.paddingBottom}px` : null;
+
+            el.style.fontWeight = style.fontWeight.toString();
+            el.style.display = style.position === 'inline' ? 'inline-block' : 'block';
+            
+            let textShadow = '';
+
+            if ( style.showBorder ) {
+                textShadow += window.api.utils.styles.textOutline( style.borderColor, style.borderIntensity );
+            }
+
+            if ( style.showGlow ) {
+                textShadow += `${style.showBorder ? ', ' : ''}${window.api.utils.styles.textGlow( style.glowColor, style.glowSize, style.glowIntensity )}`;
+            }
+
+            el.style.textShadow = textShadow.trim();
+            
+        }
+    }
 }
 
 export class FctStylesModel {
@@ -1001,7 +1037,7 @@ export class PackageTrigger {
 
 
 
-    
+
     /**
      * Converts the given package trigger to a trigger model.
      * 
@@ -1397,10 +1433,51 @@ export class TriggerParseHistoryModel {
     
 }
 
+// Flags for where the FCT hit should be displayed.
+export enum HitStartPositionTypes {
+    unset = 0,
+    left = 1,
+    right = 2,
+    bottom = 4,
+    top = 8,
+    random = 16,
+}
+
+export class CombatAnimations {
+
+    public fountain: boolean = false;
+    public scroll: boolean = false;
+
+    public pulsate: boolean = false;
+    public fadeIn: boolean = false;
+    public fadeOut: boolean = false;
+    public grow: boolean = false;
+    public shrink: boolean = false;
+
+}
+
 export class FctCombatGroup {
 
     public combatGroupId: string;
     public name: string;
-    public styles: StylePropertiesModel = new StylePropertiesModel();
+    public valueStyles: StylePropertiesModel = new StylePropertiesModel();
+    public sourceStyles: StylePropertiesModel = new StylePropertiesModel();
+    public startingPosition: HitStartPositionTypes = HitStartPositionTypes.unset;
+    public accumulateHits: boolean = false;
+    public ignoreHits: boolean = false;
+    public thresholdType: 'percent' | 'value' | 'dynamic' = 'percent';
+    public thresholdValue: number | undefined = undefined;
+    public thresholdPercent: number = 60;
+    public combatAnimations: CombatAnimations = new CombatAnimations();
+
+    public displayValue: number = 255;
+    public displayType: string = 'hit';
+    public displayBackground: 'light' | 'dark' = 'dark';
+    public editStylesType: 'value' | 'source' | 'animations' = 'value';
+
+    public _animationCompletePercent: number = 0;
+    public _animationComplete: boolean = true;
+    public _animationIntervalId: number | undefined = undefined;
+    public _animationResetTimeoutId: number | undefined = undefined;
 
 }
