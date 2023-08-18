@@ -22,7 +22,10 @@ export class StylePropertiesComponent implements OnInit {
     @Input('style') public model: StylePropertiesModel;
     @Input() public label: string = 'Style Name';
     @Output() public onChange: EventEmitter<StylePropertiesModel> = new EventEmitter<StylePropertiesModel>();
-    @Input( 'style-element' ) public styleElement: HTMLElement | null = null;
+    @Input( 'style-element' ) public styleElement: HTMLElement[] | null = null;
+    @Input( 'enable-padding-horizontal' ) public enablePaddingHorizontal: boolean = false;
+    @Input( 'enable-padding-vertical' ) public enablePaddingVertical: boolean = false;
+    @Input( 'enable-inline-block' ) public enableInlineBlock: boolean = false;
 
     public fontWeightIndex: number = 0;
     public borderIntensity: number = 0;
@@ -36,6 +39,21 @@ export class StylePropertiesComponent implements OnInit {
         }
     }
 
+    public get showBlock(): boolean {
+        return this.model.position == 'block';
+    }
+    public set showBlock( value: boolean ) {
+        this.model.position = value ? 'block' : 'inline';
+    }
+
+    public get showInline(): boolean {
+        return this.model.position == 'inline';
+    }
+    public set showInline( value: boolean ) {
+        this.model.position = value ? 'inline' : 'block';
+    }
+
+
     constructor() { }
 
     ngOnInit() {
@@ -43,8 +61,8 @@ export class StylePropertiesComponent implements OnInit {
         this.borderIntensity = Math.round( this.model.borderIntensity * 100 );
         this.glowIntensity = Math.round( this.model.glowIntensity * 100 );
 
-        if ( this.styleElement != null ) {
-            StylePropertiesModel.applyStyles( this.styleElement, this.model );
+        if ( this.styleElement?.length > 0 ) {
+            this.styleElement.forEach( e => StylePropertiesModel.applyStyles( e, this.model ) );
         }
     }
 
@@ -90,51 +108,65 @@ export class StylePropertiesComponent implements OnInit {
         if ( this.model != null ) {
             this.model.fontWeight = availableFonts[ this.model.fontFamily ][ this.fontWeightIndex ];
             this.onChange.emit( this.model );
-            if (this.styleElement != null) {
-                StylePropertiesModel.applyStyles( this.styleElement, this.model );
+            if ( this.styleElement?.length > 0 ) {
+                this.styleElement.forEach( e => StylePropertiesModel.applyStyles( e, this.model ) );
             }
         }
     }
 
-    updateElementFontWeight( e: MatSliderChange ) {
-        console.log( 'e', e );
-        if ( this.styleElement != null ) {
-            let x = Object.assign( new StylePropertiesModel(), this.model );
-            x.fontWeight = availableFonts[ this.model.fontFamily ][ e.value ];
-            StylePropertiesModel.applyStyles( this.styleElement, x );
-        }
-    }
+    // updateElementFontWeight( e: MatSliderChange ) {
+    //     console.log( 'e', e );
+    //     if ( this.styleElement?.length > 0 ) {
+    //         let x = Object.assign( new StylePropertiesModel(), this.model );
+    //         x.fontWeight = availableFonts[ this.model.fontFamily ][ e.value ];
+    //         StylePropertiesModel.applyStyles( this.styleElement, x );
+    //     }
+    // }
 
-    updateElementFontStyle( e: MatSliderChange ) {
-        if ( this.styleElement != null ) {
-            let x = Object.assign( new StylePropertiesModel(), this.model );
-            // x.fontWeight = availableFonts[ this.model.fontFamily ][ this.fontWeightIndex ];
-            x.fontSize = e.value;
-            StylePropertiesModel.applyStyles( this.styleElement, x );
-        }
-    }
+    // updateElementFontStyle( e: MatSliderChange ) {
+    //     if ( this.styleElement?.length > 0 ) {
+    //         let x = Object.assign( new StylePropertiesModel(), this.model );
+    //         // x.fontWeight = availableFonts[ this.model.fontFamily ][ this.fontWeightIndex ];
+    //         x.fontSize = e.value;
+    //         this.styleElement.forEach( e => StylePropertiesModel.applyStyles( e, x ) );
+    //     }
+    // }
 
-    updateElementBorderIntensity(e: MatSliderChange) {
-        if ( this.styleElement != null ) {
-            let x = Object.assign( new StylePropertiesModel(), this.model );
-            x.borderIntensity = e.value / 100;
-            StylePropertiesModel.applyStyles( this.styleElement, x );
-        }
-    }
+    // updateElementBorderIntensity(e: MatSliderChange) {
+    //     if ( this.styleElement?.length > 0 ) {
+    //         let x = Object.assign( new StylePropertiesModel(), this.model );
+    //         x.borderIntensity = e.value / 100;
+    //         this.styleElement.forEach( e => StylePropertiesModel.applyStyles( e, x ) );
+    //     }
+    // }
 
-    updateElementGlowIntensity( e: MatSliderChange ) {
-        if ( this.styleElement != null ) {
-            let x = Object.assign( new StylePropertiesModel(), this.model );
-            x.glowIntensity = e.value / 100;
-            StylePropertiesModel.applyStyles( this.styleElement, x );
-        }
-    }
+    // updateElementGlowIntensity( e: MatSliderChange ) {
+    //     if ( this.styleElement?.length > 0 ) {
+    //         let x = Object.assign( new StylePropertiesModel(), this.model );
+    //         x.glowIntensity = e.value / 100;
+    //         this.styleElement.forEach( e => StylePropertiesModel.applyStyles( e, x ) );
+    //     }
+    // }
 
-    updateElementGlowSize( e: MatSliderChange ) {
-        if ( this.styleElement != null ) {
+    // updateElementGlowSize( e: MatSliderChange ) {
+    //     if ( this.styleElement?.length > 0 ) {
+    //         let x = Object.assign( new StylePropertiesModel(), this.model );
+    //         x.glowSize = e.value;
+    //         this.styleElement.forEach( e => StylePropertiesModel.applyStyles( e, x ) );
+    //     }
+    // }
+
+    updateStyleElement( propertyName: 'paddingLeft' | 'paddingRight' | 'paddingTop' | 'paddingBottom' | 'glowSize' | 'glowIntensity' | 'borderIntensity' | 'fontWeight' | 'fontSize', e: MatSliderChange ) {
+        if ( this.styleElement?.length > 0 ) {
             let x = Object.assign( new StylePropertiesModel(), this.model );
-            x.glowSize = e.value;
-            StylePropertiesModel.applyStyles( this.styleElement, x );
+            if ( propertyName == 'fontWeight' ) {
+                x.fontWeight = availableFonts[ this.model.fontFamily ][ e.value ];
+            } else if ( propertyName === 'glowIntensity' || propertyName === 'borderIntensity' ) {
+                x[ propertyName ] = e.value / 100;
+            } else {
+                x[ propertyName ] = e.value;
+            }
+            this.styleElement.forEach( e => StylePropertiesModel.applyStyles( e, x ) );
         }
     }
 

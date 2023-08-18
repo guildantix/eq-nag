@@ -25,25 +25,57 @@
             <td>Color</td>
             <td><app-color-picker [(ngModel)]="model.fontColor" (change)="emitChange()" [inline]="true"></app-color-picker></td>
             <td>Weight</td>
-            <td><mat-slider thumbLabel tickInterval="1" step="1" min="0" [max]="maxFontWeightIndex" style="width: 100%;" [(ngModel)]="fontWeightIndex" name="sldrFontWeight" (change)="emitChange()" (input)="updateElementFontWeight($event)"></mat-slider></td>
+            <td><mat-slider thumbLabel tickInterval="1" step="1" min="0" [max]="maxFontWeightIndex" style="width: 100%;" [(ngModel)]="fontWeightIndex" name="sldrFontWeight" (change)="emitChange()" (input)="updateStyleElement('fontWeight', $event)"></mat-slider></td>
             <td>Size</td>
-            <td><mat-slider thumbLabel tickInterval="1" min="1" max="64" style="width: 100%;" [(ngModel)]="model.fontSize" name="sldrFontSize" (change)="emitChange()" (input)="updateElementFontStyle($event)"></mat-slider></td>
+            <td><mat-slider thumbLabel tickInterval="1" min="1" max="64" style="width: 100%;" [(ngModel)]="model.fontSize" name="sldrFontSize" (change)="emitChange()" (input)="updateStyleElement('fontSize', $event)"></mat-slider></td>
         </tr>
         <tr>
-            <td><mat-checkbox [(ngModel)]="model.showBorder">Border</mat-checkbox></td>
+            <td><mat-checkbox [(ngModel)]="model.showBorder" (change)="emitChange()">Border</mat-checkbox></td>
             <td><app-color-picker [(ngModel)]="model.borderColor" (change)="emitChange()" [inline]="true"></app-color-picker></td>
             <td>Intensity</td>
-            <td><mat-slider thumbLabel tickInterval="1" min="0" max="100" style="width: 100%;" [(ngModel)]="borderIntensity" name="sldrBorderIntensity" (change)="onChangeBorderTransparency()" (input)="updateElementBorderIntensity($event)"></mat-slider></td>
+            <td><mat-slider thumbLabel tickInterval="1" min="0" max="100" style="width: 100%;" [(ngModel)]="borderIntensity" name="sldrBorderIntensity" (change)="onChangeBorderTransparency()" (input)="updateStyleElement('borderIntensity', $event)"></mat-slider></td>
             <td></td>
             <td></td>
         </tr>
         <tr>
-            <td><mat-checkbox [(ngModel)]="model.showGlow">Glow</mat-checkbox></td>
+            <td><mat-checkbox [(ngModel)]="model.showGlow" (change)="emitChange()">Glow</mat-checkbox></td>
             <td><app-color-picker [(ngModel)]="model.glowColor" (change)="emitChange()" [inline]="true"></app-color-picker></td>
             <td>Intensity</td>
-            <td><mat-slider thumbLabel tickInterval="1" min="0" max="100" style="width: 100%;" [(ngModel)]="glowIntensity" name="sldrGlowIntensity" (change)="onChangeGlowTransparency()" (input)="updateElementGlowIntensity($event)"></mat-slider></td>
+            <td><mat-slider thumbLabel tickInterval="1" min="0" max="100" style="width: 100%;" [(ngModel)]="glowIntensity" name="sldrGlowIntensity" (change)="onChangeGlowTransparency()" (input)="updateStyleElement('glowIntensity', $event)"></mat-slider></td>
             <td>Size</td>
-            <td><mat-slider thumbLabel tickInterval="1" min="0" max="10" style="width: 100%;" [(ngModel)]="model.glowSize" name="sldrTextGlowSize" (change)="emitChange()" (input)="updateElementGlowSize($event)"></mat-slider></td>
+            <td><mat-slider thumbLabel tickInterval="1" min="0" max="10" style="width: 100%;" [(ngModel)]="model.glowSize" name="sldrTextGlowSize" (change)="emitChange()" (input)="updateStyleElement('glowSize', $event)"></mat-slider></td>
+        </tr>
+        <tr *ngIf="enablePaddingHorizontal || enablePaddingVertical">
+            <td style="vertical-align: top; padding-top: 13px;">Spacing</td>
+            <td></td>
+            <td colspan="2" style="padding-left: 10px; padding-top: 13px;">
+                <ng-template [ngIf]="enablePaddingHorizontal">
+                    <span style="padding-left: 11px;">Left</span>
+                    <mat-slider thumbLabel tickInterval="1" min="0" max="100" style="width: 100%;" [(ngModel)]="model.paddingLeft" name="sldrPaddingLeft" (change)="emitChange()" (input)="updateStyleElement('paddingLeft', $event)"></mat-slider>
+                </ng-template>
+                <ng-template [ngIf]="enablePaddingVertical">
+                    <span style="padding-left: 11px;">Top</span>
+                    <mat-slider thumbLabel tickInterval="1" min="0" max="100" style="width: 100%;" [(ngModel)]="model.paddingTop" name="sldrPaddingTop" (change)="emitChange()" (input)="updateStyleElement('paddingTop', $event)"></mat-slider>
+                </ng-template>
+            </td>
+            <td colspan="2" style="padding-left: 10px; padding-top: 13px;">
+                <ng-template [ngIf]="enablePaddingHorizontal">
+                    <span style="padding-left: 11px;">Right</span>
+                    <mat-slider thumbLabel tickInterval="1" min="0" max="100" style="width: 100%;" [(ngModel)]="model.paddingRight" name="sldrPaddingRight" (change)="emitChange()" (input)="updateStyleElement('paddingRight', $event)"></mat-slider>
+                </ng-template>
+                <ng-template [ngIf]="enablePaddingVertical">
+                    <span style="padding-left: 11px;">Bottom</span>
+                    <mat-slider thumbLabel tickInterval="1" min="0" max="100" style="width: 100%;" [(ngModel)]="model.paddingBottom" name="sldrPaddingBottom" (change)="emitChange()" (input)="updateStyleElement('paddingBottom', $event)"></mat-slider>
+                </ng-template>
+            </td>
+        </tr>
+        <tr *ngIf="enableInlineBlock" style="height: 50px;">
+            <td>Position</td>
+            <td></td>
+            <td colspan="2"><mat-checkbox [(ngModel)]="showInline" name="showInline" (change)="emitChange()">Inline</mat-checkbox></td>
+            <!-- <td></td> -->
+            <td colspan="2"><mat-checkbox [(ngModel)]="showBlock" name="showBlock" (change)="emitChange()">New Line</mat-checkbox></td>
+            <!-- <td></td> -->
         </tr>
     </table>
 
