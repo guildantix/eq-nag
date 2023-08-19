@@ -3,7 +3,7 @@ import * as Electron from 'electron';
 import { UpdateInfo } from 'electron-updater';
 import { Observable, Observer } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
-import { DataTickModel, DkpEntryModel, TriggerModel, OverlayWindowModel, ActionTypes, FocusEffectSettings, CharacterModel, BasicError, TriggerFolder, FileModel, Tag, AuthorModel, PackageFileModel, TriggerPackageMetaModel, TriggerPackageVersion, FctStylesModel, OverlayBoundsChangedEventArgs, DialogEventArgs, QuickShareMetaModel, LogFileLocation, IpcMessage, DeathRecapPreferences, QuickShareAuthorListTypes, Progress, QuitFailureData, DuplicateTriggerAction, ScrapedSpell, ScrapedClickEffect, TriggerParseHistoryModel, SimulationProgress, FctCombatGroup } from './core.model';
+import { DataTickModel, DkpEntryModel, TriggerModel, OverlayWindowModel, ActionTypes, FocusEffectSettings, CharacterModel, BasicError, TriggerFolder, FileModel, Tag, AuthorModel, PackageFileModel, TriggerPackageMetaModel, TriggerPackageVersion, FctStylesModel, OverlayBoundsChangedEventArgs, DialogEventArgs, QuickShareMetaModel, LogFileLocation, IpcMessage, DeathRecapPreferences, QuickShareAuthorListTypes, Progress, QuitFailureData, DuplicateTriggerAction, ScrapedSpell, ScrapedClickEffect, TriggerParseHistoryModel, SimulationProgress, FctCombatGroup, CombatTypes, StylePropertiesModel, CombatAnimations } from './core.model';
 import { GinaConfiguration, GinaTriggerGroups } from './gina.model';
 import { ColorUtility } from './utilities';
 
@@ -1010,6 +1010,16 @@ export class IpcService {
                 
                 window.api.ipc.once( 'overlay:get:combatGroups', ( e, combatGroups: FctCombatGroup[] ) => {
                     this.ngZone.run( () => {
+                        combatGroups = combatGroups.map( f => {
+                            let m = Object.assign( new FctCombatGroup(), f );
+
+                            m.combatTypes = Object.assign( new CombatTypes(), f.combatTypes );
+                            m.valueStyles = Object.assign( new StylePropertiesModel(), f.valueStyles );
+                            m.sourceStyles = Object.assign( new StylePropertiesModel(), f.sourceStyles );
+                            m.combatAnimations = Object.assign( new CombatAnimations(), f.combatAnimations );
+
+                            return m;
+                        } );
                         observer.next( combatGroups );
                         observer.complete();
                     } );
@@ -2136,20 +2146,33 @@ export class IpcService {
     public migrateFctCombatGroups(): Observable<boolean> {
         let obs: Observable<boolean> = new Observable<boolean>( ( observer: Observer<boolean> ) => {
                 
-                window.api.ipc.once( 'overlay:migrate-fct', ( e, success: boolean ) => {
-                    this.ngZone.run( () => {
-                        observer.next( success );
-                        observer.complete();
-                    } );
+            window.api.ipc.once( 'overlay:migrate-fct', ( e, success: boolean ) => {
+                this.ngZone.run( () => {
+                    observer.next( success );
+                    observer.complete();
                 } );
-                window.api.ipc.send( 'overlay:migrate-fct', undefined );
+            } );
+            window.api.ipc.send( 'overlay:migrate-fct', undefined );
+
         } );
 
         return obs;
     }
 
-    public initializeFctCombatGroups(): void {
-        window.api.ipc.send( 'overlay:initialize-fct', undefined );
+    public initializeFctCombatGroups(): Observable<boolean> {
+        let obs: Observable<boolean> = new Observable<boolean>( ( observer: Observer<boolean> ) => {
+                    
+            window.api.ipc.once( 'overlay:initialize-fct', ( e, success: boolean ) => {
+                this.ngZone.run( () => {
+                    observer.next( success );
+                    observer.complete();
+                } );
+            } );
+            window.api.ipc.send( 'overlay:initialize-fct', undefined );
+
+        } );
+
+        return obs;
     }
 
 }
