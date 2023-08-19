@@ -8,7 +8,7 @@ const nanoid = customAlphabet( alphabet, 16 );
 const { StyleProperties } = require( '../models/common' );
 const ElectronUtilities = require( '../../utilities/electron' );
 
-const currentOverlayDbVersion = 16;
+const currentOverlayDbVersion = 17;
 
 /**
  * 
@@ -278,6 +278,14 @@ function executeDataMigration( data ) {
         
         // Testing the new migration script.
         data.version = 16;
+
+    }
+    if ( !data.version || data.version < 17 ) {
+        log.log( '[Migrations] Migrating overlay database to version -> 17.' );
+       
+        data.fctCombatGroups = [];
+
+        data.version = 17;
 
     }
 
