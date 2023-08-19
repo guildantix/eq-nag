@@ -78,11 +78,8 @@ export class FloatingCombatTextComponent implements OnInit {
     ) { }
 
     ngOnInit() {
-        this.addGroup( 'Default' );
-        this.addGroup( 'Healing' );
-        this.addGroup( 'Damage' );
-        this.addGroup( 'Criticals' );
 
+        this.ipcService.getFctCombatGroups().subscribe( data => this.combatGroups = data );
         this.ipcService.getOverlayWindows().subscribe( data => this.overlays = data );
         this.ipcService.tickReceived().subscribe( data => {
             
