@@ -6,7 +6,7 @@ const customAlphabet = require( 'nanoid' ).customAlphabet;
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const idLen = 16;
 const nanoid = customAlphabet( alphabet, 16 );
-const { OverlayDimensions, OverlayWindow, OverlayStoreModel } = require( './models/overlay-window' );
+const { OverlayDimensions, OverlayWindow, OverlayStoreModel, FctCombatGroup } = require( './models/overlay-window' );
 const { StyleProperties } = require( './models/common' );
 const TriggerDatabaseStore = require( "./trigger-database" );
 const ElectronUtilities = require( "../utilities/electron" );
@@ -201,6 +201,53 @@ class OverlayDatabaseStore extends Store {
         return this.#data.overlays;
     }
 
+    /**
+     * Updates the given combat group in the store.
+     * 
+     * @returns {string} Returns the combat group id.
+     * 
+     * @param {FctCombatGroup} combatGroup The combat group to update.
+     */
+    updateCombatGroup( combatGroup ) {
+        let i = this.#data.fctCombatGroups.findIndex( f => f.combatGroupId === combatGroup.combatGroupId );
+
+        if ( i > -1 && i < this.#data?.fctCombatGroups?.length ) {
+            this.#data.fctCombatGroups[ i ] = combatGroup;
+            this.storeDataFile( this.#data );
+        } else if ( i === -1 ) {
+            combatGroup.combatGroupId = combatGroup.combatGroupId?.length === 16 ? combatGroup.combatGroupId : nanoid();
+            this.#data.fctCombatGroups.push( combatGroup );
+            this.storeDataFile( this.#data );
+        }
+
+        return combatGroup.combatGroupId;
+    }
+
+    /**
+     * Returns all combat groups.
+     * 
+     * @returns {FctCombatGroup[]} Returns the list of all combat groups.
+     */
+    getCombatGroups() {
+        return this.#data.fctCombatGroups;
+    }
+
+    /**
+     * Removes the specified combat group.
+     * 
+     * @param {string} combatGroupId The combat group id to remove.
+     */
+    removeCombatGroup( combatGroupId ) {
+        if ( this.#data?.fctCombatGroups?.length > 0 ) {
+            let i = this.#data.fctCombatGroups.findIndex( e => e.combatGroupId === combatGroupId );
+
+            if ( i > -1 ) {
+                this.#data.fctCombatGroups.splice( i, 1 );
+                this.storeDataFile( this.#data );
+            }
+        }
+    }
+
 
 
 
@@ -280,6 +327,20 @@ class OverlayDatabaseStore extends Store {
             this.#overlayDeleteHandlers.forEach( fn => fn( overlayId ) );
             event.sender.send( 'overlay:delete', deleted );
             sendTick();
+        } );
+
+        ipcMain.on( 'overlay:get:combatGroups', ( event ) => {
+            event.sender.send( 'overlay:get:combatGroups', this.getCombatGroups() );
+        } );
+
+        ipcMain.on( 'overlay:update:combatGroup', ( event, combatGroup ) => {
+            let id = this.updateCombatGroup( combatGroup );
+            event.sender.send( 'overlay:update:combatGroup', id );
+        } );
+
+        ipcMain.on( 'overlay:delete:combatGroup', ( event, combatGroupId ) => {
+            this.removeCombatGroup( combatGroupId );
+            event.sender.send( 'overlay:delete:combatGroup', true );
         } );
 
         ipcMain.on( 'overlay:set:overlayDimensions',

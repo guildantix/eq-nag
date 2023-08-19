@@ -159,6 +159,8 @@ class OverlayStoreModel {
     version;
     /** @type {OverlayWindow[]} */
     overlays;
+    /** @type {FctCombatGroup[]} */
+    fctCombatGroups;
 }
 
 class TriggerSecondaryActionModel {

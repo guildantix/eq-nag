@@ -194,10 +194,10 @@ export class FloatingCombatTextComponent implements OnInit {
      * 
      * @param id The id of the combat group to save.
      */
-    saveChanges( id: string ): void {
-        // this.ipcService.saveCombatGroup( this.combatGroups.find( g => g.combatGroupId === id ) );
-        this.changes[ id ] = false;
-        this.rollback[ id ] = JSON.stringify( this.combatGroups.find( g => g.combatGroupId === id ) );
+    saveChanges( combatGroup: FctCombatGroup ): void {
+        this.ipcService.updateFctCombatGroup( combatGroup );
+        this.changes[ combatGroup.combatGroupId ] = false;
+        this.rollback[ combatGroup.combatGroupId ] = JSON.stringify( combatGroup );
     }
 
 

@@ -3,7 +3,7 @@ import * as Electron from 'electron';
 import { UpdateInfo } from 'electron-updater';
 import { Observable, Observer } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
-import { DataTickModel, DkpEntryModel, TriggerModel, OverlayWindowModel, ActionTypes, FocusEffectSettings, CharacterModel, BasicError, TriggerFolder, FileModel, Tag, AuthorModel, PackageFileModel, TriggerPackageMetaModel, TriggerPackageVersion, FctStylesModel, OverlayBoundsChangedEventArgs, DialogEventArgs, QuickShareMetaModel, LogFileLocation, IpcMessage, DeathRecapPreferences, QuickShareAuthorListTypes, Progress, QuitFailureData, DuplicateTriggerAction, ScrapedSpell, ScrapedClickEffect, TriggerParseHistoryModel, SimulationProgress } from './core.model';
+import { DataTickModel, DkpEntryModel, TriggerModel, OverlayWindowModel, ActionTypes, FocusEffectSettings, CharacterModel, BasicError, TriggerFolder, FileModel, Tag, AuthorModel, PackageFileModel, TriggerPackageMetaModel, TriggerPackageVersion, FctStylesModel, OverlayBoundsChangedEventArgs, DialogEventArgs, QuickShareMetaModel, LogFileLocation, IpcMessage, DeathRecapPreferences, QuickShareAuthorListTypes, Progress, QuitFailureData, DuplicateTriggerAction, ScrapedSpell, ScrapedClickEffect, TriggerParseHistoryModel, SimulationProgress, FctCombatGroup } from './core.model';
 import { GinaConfiguration, GinaTriggerGroups } from './gina.model';
 import { ColorUtility } from './utilities';
 
@@ -924,6 +924,54 @@ export class IpcService {
                 } );
             } );
             window.api.ipc.send( 'trigger:get:stored-variables', null );
+
+        } );
+
+        return obs;
+    }
+
+    public updateFctCombatGroup( model: FctCombatGroup ): Observable<string> {
+        let obs: Observable<string> = new Observable<string>( ( observer: Observer<string> ) => {
+            
+            window.api.ipc.once( 'overlay:update:combatGroup', ( e, combatGroupId: string ) => {
+                this.ngZone.run( () => {
+                    observer.next( combatGroupId );
+                    observer.complete();
+                } );
+            } );
+            window.api.ipc.send( 'overlay:update:combatGroup', model );
+
+        } );
+
+        return obs;
+    }
+
+    public getFctCombatGroups(): Observable<FctCombatGroup[]> {
+        let obs: Observable<FctCombatGroup[]> = new Observable<FctCombatGroup[]>( ( observer: Observer<FctCombatGroup[]> ) => {
+                
+                window.api.ipc.once( 'overlay:get:combatGroups', ( e, combatGroups: FctCombatGroup[] ) => {
+                    this.ngZone.run( () => {
+                        observer.next( combatGroups );
+                        observer.complete();
+                    } );
+                } );
+                window.api.ipc.send( 'overlay:get:combatGroups', null );
+    
+        } );
+
+        return obs;
+    }
+
+    public deleteFctCombatGroup( combatGroupId: string ): Observable<boolean> {
+        let obs: Observable<boolean> = new Observable<boolean>( ( observer: Observer<boolean> ) => {
+            
+            window.api.ipc.once( 'overlay:delete:combatGroup', ( e, deleted: boolean ) => {
+                this.ngZone.run( () => {
+                    observer.next( deleted );
+                    observer.complete();
+                } );
+            } );
+            window.api.ipc.send( 'overlay:delete:combatGroup', combatGroupId );
 
         } );
 

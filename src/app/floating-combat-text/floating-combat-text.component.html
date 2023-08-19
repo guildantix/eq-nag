@@ -216,7 +216,7 @@
         </div>
 
         <div>
-            <button mat-button class="color-green" [disabled]="!hasChanges(group.combatGroupId)" (click)="saveChanges(group.combatGroupId)">Save Changes</button>
+            <button mat-button class="color-green" [disabled]="!hasChanges(group.combatGroupId)" (click)="saveChanges(group)">Save Changes</button>
             <button mat-button class="color-red" [disabled]="!hasChanges(group.combatGroupId)" (click)="rollbackChanges(group.combatGroupId)">Revert Changes</button>
         </div>
         
