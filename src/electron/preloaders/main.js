@@ -34,6 +34,7 @@ const channelPrefixes = [
     'quickshare_captured',
     'quicksharePackage_captured',
     'update_downloaded',
+    'ask_combat_group_migration',
     'dialog',
     'tick',
     'console',

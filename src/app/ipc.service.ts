@@ -29,6 +29,7 @@ export class IpcService {
     private _onBackupProgress: Observer<Progress>[] = [];
     private _simProgress: Record<string, Observer<SimulationProgress>[]> = {};
     private _successfulParseHistoryObservers: Observer<{ successful: TriggerParseHistoryModel[], exceptions: TriggerParseHistoryModel[] }>[] = [];
+    private _onCombatGroupMigrationRequestObservers: Observer<boolean>[] = [];
 
     private _ginaConfigCache: GinaConfiguration = null;
 
@@ -37,6 +38,14 @@ export class IpcService {
     constructor( private ngZone: NgZone ) {
         if ( window.api ) {
             try {
+
+                window.api.ipc.on( 'ask_combat_group_migration', ( event: any, data: boolean ) => {
+                    ngZone.run( () => {
+                        this._onCombatGroupMigrationRequestObservers?.forEach( f => {
+                            f.next( data );
+                        } );
+                    } );
+                } );
 
                 window.api.ipc.on( 'archive:progress', ( event: any, data: Progress ) => {
                     ngZone.run( () => {
@@ -202,6 +211,19 @@ export class IpcService {
         } else {
             console.warn( 'App not running inside Electron!' );
         }
+    }
+
+    /**
+     * Returns an observable that will emit when the main process requests a 
+     * combat group migration.  The value will be true if the user has existing 
+     * fct styles that can be migrated.
+     */
+    public onAskCombatGroupMigration(): Observable<boolean> {
+        let obs: Observable<boolean> = new Observable<boolean>( ( observer: Observer<boolean> ) => {
+            this._onCombatGroupMigrationRequestObservers.push( observer );
+        } );
+
+        return obs;
     }
 
     /**
@@ -2072,6 +2094,14 @@ export class IpcService {
         } );
 
         return obs;
+    }
+
+    public migrateFctCombatGroups(): void {
+        window.api.ipc.send( 'overlay:migrate-fct', undefined );
+    }
+
+    public initializeFctCombatGroups(): void {
+        window.api.ipc.send( 'overlay:initialize-fct', undefined );
     }
 
 }

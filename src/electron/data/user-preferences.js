@@ -85,6 +85,16 @@ class UserPreferencesStore extends Store {
     #data;
 
     /** @type {boolean} */
+    get askForCombatGroupMigrations() {
+        // If it's not explicitly false, then return true.
+        return this.#data.askForCombatGroupMigrations === false ? false : true;
+    }
+    set askForCombatGroupMigrations( val ) {
+        this.#data.askForCombatGroupMigrations = val === true;
+        this.storeDataFile( this.#data );
+    }
+
+    /** @type {boolean} */
     get minimizeToTrayOnLoad() {
         return this.#data.minimizeToTrayOnLoad;
     }

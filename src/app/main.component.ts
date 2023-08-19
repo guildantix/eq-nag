@@ -13,6 +13,7 @@ import { ColoredString } from './dialogs/dialog.model';
 import { SettingsComponent } from './settings/settings-component/settings.component';
 import { QuickShareService } from './core/quick-share.service';
 import { TriggersComponent } from './triggers/triggers.component';
+import { QuestionDialogAnswerModel } from './dialogs/question-dialog/question-dialog.model';
 
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const nanoid = customAlphabet( alphabet, 16 );
@@ -268,6 +269,50 @@ export class MainComponent implements OnInit {
                     true
                 );
             }
+        } );
+
+        this.ipcService.onAskCombatGroupMigration().subscribe( canMigrate => {
+            let statements: string[] = [];
+            let questions: QuestionDialogAnswerModel[] = [];
+
+            statements = ['Floating combat text is disabled by default.', 'To enable FCT, we need to create some new combat groups.'];
+
+            if ( canMigrate ) {
+                
+                questions.push( {
+                    question: [ 'You have existing styles in the older format, would you like to migrate those styles?' ],
+                    buttonText: 'Migrate existing styles',
+                    action: () => {
+                        this.ipcService.migrateFctCombatGroups();
+                    },
+                    cssClass: 'color-green',
+                } );
+
+            }
+
+            questions.push( {
+                question: [ 'You could have the system initialize FCT with default combat groups.' ],
+                buttonText: 'Create default combat groups',
+                action: () => {
+                    this.ipcService.initializeFctCombatGroups();
+                },
+                cssClass: canMigrate ? 'color-white' : 'color-green',
+            } );
+
+            questions.push( {
+                question: [ 'Do nothing and create your own combat groups from scratch.' ],
+                buttonText: 'Do nothing and stop asking',
+                action: () => {
+                    this.ipcService.updateSetting<boolean>( 'askForCombatGroupMigrations', false );
+                },
+                cssClass: 'color-orange',
+            } );
+
+            this.dialogService.showQuestionDialog( `Floating Combat Text ${canMigrate ? 'Migration' : 'Initialization'}`, statements, questions, true, 'wide' );
+            // this.dialogService.showQuestionDialog('FCT Initialization', [''])
+            // this.dialogService.showAskDialog( 'Combat Groups', 'Would you like to migrate your combat groups to the new format?', 'Click "Yes" to migrate your combat groups.', 'Click "No" to leave your combat groups as they are.', confirmed => {
+            //     // this.ipcService.updateSetting<boolean>( 'askForCombatGroupMigrations', false );
+            // } );
         } );
         
     }

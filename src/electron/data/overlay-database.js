@@ -248,6 +248,14 @@ class OverlayDatabaseStore extends Store {
         }
     }
 
+    initializeFctCombatGroups() {
+
+    }
+
+    migrateFctStylesToCombatGroups() {
+
+    }
+
 
 
 
@@ -302,6 +310,14 @@ class OverlayDatabaseStore extends Store {
             this.#overlayUpdateHandlers.forEach( fn => fn( [ overlay ] ) );
             event.sender.send( 'overlay:update', updated );
             sendTick();
+        } );
+
+        ipcMain.on( 'overlay:migrate-fct', ( event ) => {
+            this.migrateFctStylesToCombatGroups();
+        } );
+
+        ipcMain.on( 'overlay:initialize-fct', ( event ) => {
+            this.initializeFctCombatGroups();
         } );
         
         // TODO: Figure out wtf this was?

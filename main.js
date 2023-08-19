@@ -155,6 +155,8 @@ function createWindow() {
         overlays.forEach( overlay => {
             mainWindow.webContents.send( 'color:darken', { overlayId: overlay.overlayId, color: overlay.timerColor } );
         } );
+
+        checkCombatGroups();
     } );
 
     mainWindow.once( 'ready-to-show', () => {
@@ -188,6 +190,14 @@ const registerDevToolsShortcut = () => {
         }
 
     } );
+};
+
+const checkCombatGroups = () => {
+    if ( overlayDatabase.getCombatGroups().length === 0 ) {
+        if ( userPreferences.askForCombatGroupMigrations ) {
+            mainWindow.webContents.send( 'ask_combat_group_migration', userPreferences.fctStyles?.fctDmgInStyle != null );
+        }
+    }
 };
 
 // --========================--
