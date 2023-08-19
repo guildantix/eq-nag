@@ -6,11 +6,13 @@ const customAlphabet = require( 'nanoid' ).customAlphabet;
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const idLen = 16;
 const nanoid = customAlphabet( alphabet, 16 );
-const { OverlayDimensions, OverlayWindow, OverlayStoreModel, FctCombatGroup } = require( './models/overlay-window' );
+const { OverlayDimensions, OverlayWindow, OverlayStoreModel, CombatTypes, FctCombatGroup, HitStartPositionTypes } = require( './models/overlay-window' );
 const { StyleProperties } = require( './models/common' );
 const TriggerDatabaseStore = require( "./trigger-database" );
 const ElectronUtilities = require( "../utilities/electron" );
 const { migrateOverlayData } = require( "./migrations/overlay-database-migration" );
+const UserPreferencesStore = require( "./user-preferences" );
+const { StylePropertiesModel } = require( "./models/core" );
 
 const currentOverlayDbVersion = 14;
 
@@ -29,6 +31,9 @@ class OverlayDatabaseStore extends Store {
      * @type {(overlays: OverlayWindow[]) => void}
      */
     #overlayUpdateHandlers = [];
+
+    /** @type {UserPreferencesStore} */
+    #userPrefDb;
 
     /**
      * Registers an overlay handler function that executes when position 
@@ -254,6 +259,244 @@ class OverlayDatabaseStore extends Store {
 
     migrateFctStylesToCombatGroups() {
 
+        if ( this.#userPrefDb.fctStyles?.fctSpellDmgOutStyle || this.#userPrefDb.fctStyles?.fctDmgOutStyle ) {
+            // My criticals
+            let group = new FctCombatGroup();
+            group.combatGroupId = nanoid();
+            group.name = 'My Criticals';
+            group.overlayId = this.#userPrefDb.damageDealtOverlayId;
+            group.combatTypes.myHits = true;
+            group.combatTypes.mySpellHits = true;
+            group.combatTypes.myHealing = true;
+
+            group.valueStyles = Object.assign( new StylePropertiesModel(), this.#userPrefDb.fctStyles.fctSpellDmgOutStyle );
+            group.sourceStyles.fontColor = '#1976d2';
+            group.sourceStyles.paddingLeft = 8;
+            
+            group.startingPosition = HitStartPositionTypes.random;
+            group.combatAnimations.pulsate = true;
+
+            group.combatModifiers = [
+                'critical'
+            ];
+
+            this.#data.fctCombatGroups.push( group );
+        }
+
+        if ( this.#userPrefDb.fctStyles?.fctDmgOutStyle ) {
+            // My Damage group
+            let group = new FctCombatGroup();
+            group.combatGroupId = nanoid();
+            group.name = 'My Damage';
+            group.overlayId = this.#userPrefDb.damageDealtOverlayId;
+            group.combatTypes.myHits = true;
+
+            group.valueStyles = Object.assign( new StylePropertiesModel(), this.#userPrefDb.fctStyles.fctDmgOutStyle );
+            group.sourceStyles.fontColor = '#1976d2';
+            group.sourceStyles.paddingLeft = 8;
+            
+            group.startingPosition = HitStartPositionTypes.left | HitStartPositionTypes.bottom;
+            group.combatAnimations.scroll = true;
+
+            group.combatModifiers = [
+                'normal',
+                'crippling_blow',
+                'flurry',
+                'lucky',
+                'twincast',
+                'riposte',
+                'strikethrough',
+                'wild_rampage',
+                'rampage',
+                'assassinate',
+                'headshot',
+                'double_bow_shot',
+                'deadly_strike',
+                'finishing_blow'
+            ];
+
+            this.#data.fctCombatGroups.push( group );
+        }
+
+        if ( this.#userPrefDb.fctStyles?.fctSpellDmgOutStyle ) {
+            // My Spell Damage group
+            let group = new FctCombatGroup();
+            group.combatGroupId = nanoid();
+            group.name = 'My Spells';
+            group.overlayId = this.#userPrefDb.damageDealtOverlayId;
+            group.combatTypes.mySpellHits = true;
+
+            group.valueStyles = Object.assign( new StylePropertiesModel(), this.#userPrefDb.fctStyles.fctSpellDmgOutStyle );
+            group.sourceStyles.fontColor = '#1976d2';
+            group.sourceStyles.paddingLeft = 8;
+            
+            group.startingPosition = HitStartPositionTypes.left | HitStartPositionTypes.bottom;
+            group.combatAnimations.scroll = true;
+
+            group.combatModifiers = [
+                'normal',
+                'crippling_blow',
+                'flurry',
+                'lucky',
+                'twincast',
+                'riposte',
+                'strikethrough',
+                'wild_rampage',
+                'rampage',
+                'assassinate',
+                'headshot',
+                'double_bow_shot',
+                'deadly_strike',
+                'finishing_blow'
+            ];
+
+            this.#data.fctCombatGroups.push( group );
+        }
+
+        if ( this.#userPrefDb.fctStyles?.fctHealingOutStyle ) {
+            // My Healing group
+            let group = new FctCombatGroup();
+            group.combatGroupId = nanoid();
+            group.name = 'My Healing';
+            group.overlayId = this.#userPrefDb.damageDealtOverlayId;
+            group.combatTypes.myHealing = true;
+
+            group.valueStyles = Object.assign( new StylePropertiesModel(), this.#userPrefDb.fctStyles.fctHealingOutStyle );
+            group.sourceStyles.fontColor = '#1976d2';
+            group.sourceStyles.paddingLeft = 8;
+            
+            group.startingPosition = HitStartPositionTypes.left | HitStartPositionTypes.bottom;
+            group.combatAnimations.scroll = true;
+
+            group.combatModifiers = [
+                'normal',
+                'crippling_blow',
+                'flurry',
+                'lucky',
+                'twincast',
+                'riposte',
+                'strikethrough',
+                'wild_rampage',
+                'rampage',
+                'assassinate',
+                'headshot',
+                'double_bow_shot',
+                'deadly_strike',
+                'finishing_blow'
+            ];
+
+            this.#data.fctCombatGroups.push( group );
+        }
+
+        if ( this.#userPrefDb.fctStyles?.fctDmgInStyle ) {
+            // Other Damage group
+            let group = new FctCombatGroup();
+            group.combatGroupId = nanoid();
+            group.name = 'Other Damage';
+            group.overlayId = this.#userPrefDb.damageReceivedOverlayId;
+            group.combatTypes.otherHitsOnMe = true;
+
+            group.valueStyles = Object.assign( new StylePropertiesModel(), this.#userPrefDb.fctStyles.fctDmgInStyle );
+            group.sourceStyles.fontColor = '#1976d2';
+            group.sourceStyles.paddingLeft = 8;
+            
+            group.startingPosition = HitStartPositionTypes.left | HitStartPositionTypes.bottom;
+            group.combatAnimations.scroll = true;
+
+            group.combatModifiers = [
+                'normal',
+                'critical',
+                'crippling_blow',
+                'flurry',
+                'lucky',
+                'twincast',
+                'riposte',
+                'strikethrough',
+                'wild_rampage',
+                'rampage',
+                'assassinate',
+                'headshot',
+                'double_bow_shot',
+                'deadly_strike',
+                'finishing_blow'
+            ];
+
+            this.#data.fctCombatGroups.push( group );
+        }
+
+        if ( this.#userPrefDb.fctStyles?.fctSpellDmgInStyle ) {
+            // Other Spell Damage group
+            let group = new FctCombatGroup();
+            group.combatGroupId = nanoid();
+            group.name = 'Other Spell Damage';
+            group.overlayId = this.#userPrefDb.damageReceivedOverlayId;
+            group.combatTypes.otherSpellHitsOnMe = true;
+
+            group.valueStyles = Object.assign( new StylePropertiesModel(), this.#userPrefDb.fctStyles.fctSpellDmgInStyle );
+            group.sourceStyles.fontColor = '#1976d2';
+            group.sourceStyles.paddingLeft = 8;
+            
+            group.startingPosition = HitStartPositionTypes.left | HitStartPositionTypes.bottom;
+            group.combatAnimations.scroll = true;
+
+            group.combatModifiers = [
+                'normal',
+                'critical',
+                'crippling_blow',
+                'flurry',
+                'lucky',
+                'twincast',
+                'riposte',
+                'strikethrough',
+                'wild_rampage',
+                'rampage',
+                'assassinate',
+                'headshot',
+                'double_bow_shot',
+                'deadly_strike',
+                'finishing_blow'
+            ];
+
+            this.#data.fctCombatGroups.push( group );
+        }
+
+        if ( this.#userPrefDb.fctStyles?.fctHealingInStyle ) {
+            // Other healing me group
+            let group = new FctCombatGroup();
+            group.combatGroupId = nanoid();
+            group.name = 'Other Healing';
+            group.overlayId = this.#userPrefDb.damageDealtOverlayId;
+            group.combatTypes.otherHealingOnMe = true;
+
+            group.valueStyles = Object.assign( new StylePropertiesModel(), this.#userPrefDb.fctStyles.fctHealingInStyle );
+            group.sourceStyles.fontColor = '#1976d2';
+            group.sourceStyles.paddingLeft = 8;
+            
+            group.startingPosition = HitStartPositionTypes.right | HitStartPositionTypes.bottom;
+            group.combatAnimations.scroll = true;
+
+            group.combatModifiers = [
+                'normal',
+                'critical',
+                'crippling_blow',
+                'flurry',
+                'lucky',
+                'twincast',
+                'riposte',
+                'strikethrough',
+                'wild_rampage',
+                'rampage',
+                'assassinate',
+                'headshot',
+                'double_bow_shot',
+                'deadly_strike',
+                'finishing_blow'
+            ];
+
+            this.#data.fctCombatGroups.push( group );
+        }
+        
+        this.storeDataFile( this.#data );
     }
 
 
@@ -271,8 +514,12 @@ class OverlayDatabaseStore extends Store {
      * @param {ForwardRef} mainWindowRef The main window of the application.
      * @param {function} sendTick The send tick method.
      * @param {TriggerDatabaseStore} triggerDb Trigger database.
+     * @param {UserPreferencesStore} userPreferencesDatabase The user pref database.
      */
-    attachIpcEvents( mainWindowRef, sendTick, triggerDb ) {
+    attachIpcEvents( mainWindowRef, sendTick, triggerDb, userPreferencesDatabase ) {
+        
+        this.#userPrefDb = userPreferencesDatabase;
+
         ipcMain.on( 'overlay:create',
             /**
              * Creates the given overlay window.
@@ -314,6 +561,7 @@ class OverlayDatabaseStore extends Store {
 
         ipcMain.on( 'overlay:migrate-fct', ( event ) => {
             this.migrateFctStylesToCombatGroups();
+            event.sender.send( 'overlay:migrate-fct', true );
         } );
 
         ipcMain.on( 'overlay:initialize-fct', ( event ) => {
