@@ -3,6 +3,7 @@ const { getCurrentWindow, screen } = require( '@electron/remote' );
 const { DateUtilities } = require( '../utilities/dates' );
 const StyleSheetUtil = require( '../utilities/style-sheet' );
 const log = require( 'electron-log' );
+const NumberUtilities = require( '../utilities/numbers' );
 
 const channelPrefixes = [
     'app',
@@ -91,11 +92,14 @@ contextBridge.exposeInMainWorld( 'api', {
             getDurationLabel: DateUtilities.getDurationLabel,
         },
         styles: {
-            textOutline: ( hex, trans ) => {
-                console.log( 'values out', styleSheetUtil.templates.textOutline( hex, trans ) );
-                return styleSheetUtil.templates.textOutline( hex, trans );
-            },
+            textOutline: styleSheetUtil.templates.textOutline,
             textGlow: styleSheetUtil.templates.textGlow,
+        },
+        numbers: {
+            hasFlag: NumberUtilities.hasFlag,
+            addFlag: NumberUtilities.addFlag,
+            removeFlag: NumberUtilities.removeFlag,
+            toggleFlag: NumberUtilities.toggleFlag,
         }
     },
     logger: {
