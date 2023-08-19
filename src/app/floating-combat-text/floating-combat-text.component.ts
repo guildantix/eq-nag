@@ -4,6 +4,7 @@ import { FctCombatGroup, HitStartPositionTypes, OverlayWindowModel, StylePropert
 import { nagId } from '../core/nag-id.util';
 import { IpcService } from '../ipc.service';
 import { MatCheckboxChange } from '@angular/material/checkbox';
+import { QuestionDialogAnswerModel } from '../dialogs/question-dialog/question-dialog.model';
 
 const animatePulsateDuration = 4000;
 const animateFadeOutDuration = 7000;
@@ -84,6 +85,52 @@ export class FloatingCombatTextComponent implements OnInit {
         this.ipcService.tickReceived().subscribe( data => {
             
             this.overlays = data.overlays;
+
+        } );
+
+        this.ipcService.onAskCombatGroupMigration().subscribe( canMigrate => {
+            let statements: string[] = [];
+            let questions: QuestionDialogAnswerModel[] = [];
+
+            statements = ['Floating combat text is disabled by default.', 'To enable FCT, we need to create some new combat groups.'];
+
+            if ( canMigrate ) {
+                
+                questions.push( {
+                    question: [ 'You have existing styles in the older format, would you like to migrate those styles?' ],
+                    buttonText: 'Migrate existing styles',
+                    action: () => {
+                        this.ipcService.migrateFctCombatGroups().subscribe( success => {
+                            this.ipcService.getFctCombatGroups().subscribe( data => {
+                                console.log( 'data', data );
+                                this.combatGroups = data;
+                            } );
+                        } );
+                    },
+                    cssClass: 'color-green',
+                } );
+
+            }
+
+            questions.push( {
+                question: [ 'You could have the system initialize FCT with default combat groups.' ],
+                buttonText: 'Create default combat groups',
+                action: () => {
+                    this.ipcService.initializeFctCombatGroups();
+                },
+                cssClass: canMigrate ? 'color-white' : 'color-green',
+            } );
+
+            questions.push( {
+                question: [ 'Do nothing and create your own combat groups from scratch.' ],
+                buttonText: 'Do nothing and stop asking',
+                action: () => {
+                    this.ipcService.updateSetting<boolean>( 'askForCombatGroupMigrations', false );
+                },
+                cssClass: 'color-orange',
+            } );
+
+            this.dialogService.showQuestionDialog( `Floating Combat Text ${canMigrate ? 'Migration' : 'Initialization'}`, statements, questions, true, 'wide' );
 
         } );
     }
