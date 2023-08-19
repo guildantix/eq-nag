@@ -2146,7 +2146,6 @@ export class IpcService {
         } );
 
         return obs;
-        // window.api.ipc.send( 'overlay:migrate-fct', undefined );
     }
 
     public initializeFctCombatGroups(): void {
