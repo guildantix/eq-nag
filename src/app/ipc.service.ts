@@ -30,6 +30,8 @@ export class IpcService {
     private _simProgress: Record<string, Observer<SimulationProgress>[]> = {};
     private _successfulParseHistoryObservers: Observer<{ successful: TriggerParseHistoryModel[], exceptions: TriggerParseHistoryModel[] }>[] = [];
     private _onCombatGroupMigrationRequestObservers: Observer<boolean>[] = [];
+    private _settingsObservableCache: Record<string, Observable<any>> = {};
+    private _settingsCacheObservers: Record<string, Observer<any>[]> = {};
 
     private _ginaConfigCache: GinaConfiguration = null;
 
@@ -533,19 +535,54 @@ export class IpcService {
      * @param key The setting key.
      */
     public getSetting<T>( key: string ): Observable<T> {
-        let obs: Observable<T> = new Observable<T>( ( observer: Observer<T> ) => {
+        
+        if ( this._settingsObservableCache[ key ] ) {
+            return this._settingsObservableCache[ key ];
+
+        } else {
             
-            window.api.ipc.once( `settings:get:${key}:generic`, ( e, value: T ) => {
-                this.ngZone.run( () => {
-                    observer.next( value );
-                    observer.complete();
+            // We only need to create one observable for the cache.
+            if ( !this._settingsObservableCache[ key ] ) {
+
+                let cacheObs: Observable<T> = new Observable<T>( ( cacheObserver: Observer<T> ) => {
+                    // This is called each time the observable is subscribed.
+                    this._settingsCacheObservers[ key ] = this._settingsCacheObservers[ key ] ? this._settingsCacheObservers[ key ] : [];
+                    this._settingsCacheObservers[ key ].push( cacheObserver );
                 } );
+                
+                this._settingsObservableCache[ key ] = cacheObs;
+
+            }
+
+            let obs: Observable<T> = new Observable<T>( ( observer: Observer<T> ) => {
+
+                // Create a new observer here that can be resolved by the ipc event.
+                window.api.ipc.once( `settings:get:${key}:generic`, ( e, value: T ) => {
+                    this.ngZone.run( () => {
+                        
+                        observer.next( value );
+                        observer.complete();
+
+                        if ( this._settingsCacheObservers[ key ]?.length > 0 ) {
+                            // Notify all observers waiting for the original request to complete.
+                            this._settingsCacheObservers[ key ].forEach( f => {
+                                f.next( value );
+                                f.complete();
+                            } );
+
+                            // Reset the cache
+                            this._settingsCacheObservers[ key ] = [];
+                            this._settingsObservableCache[ key ] = undefined;
+                        }
+
+                    } );
+                } );
+                window.api.ipc.send( 'settings:get', { key: key } );
+
             } );
-            window.api.ipc.send( 'settings:get', { key: key } );
 
-        } );
-
-        return obs;
+            return obs;
+        }
     }
 
     public updateMasterVolume( masterVolume: number ): void {
@@ -2096,8 +2133,20 @@ export class IpcService {
         return obs;
     }
 
-    public migrateFctCombatGroups(): void {
-        window.api.ipc.send( 'overlay:migrate-fct', undefined );
+    public migrateFctCombatGroups(): Observable<boolean> {
+        let obs: Observable<boolean> = new Observable<boolean>( ( observer: Observer<boolean> ) => {
+                
+                window.api.ipc.once( 'overlay:migrate-fct', ( e, success: boolean ) => {
+                    this.ngZone.run( () => {
+                        observer.next( success );
+                        observer.complete();
+                    } );
+                } );
+                window.api.ipc.send( 'overlay:migrate-fct', undefined );
+        } );
+
+        return obs;
+        // window.api.ipc.send( 'overlay:migrate-fct', undefined );
     }
 
     public initializeFctCombatGroups(): void {
