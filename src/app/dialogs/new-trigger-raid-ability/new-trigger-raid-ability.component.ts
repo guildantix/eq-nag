@@ -16,7 +16,7 @@ const nanoid = customAlphabet( alphabet, 16 );
 @Component({
     selector: 'app-new-trigger-raid-ability',
     templateUrl: 'new-trigger-raid-ability.component.html',
-    styleUrls: [ 'new-trigger-raid-ability.component.scss', '../../core.scss' ]
+    styleUrls: [ 'new-trigger-raid-ability.component.scss', '../dialog.styles.scss', '../../core.scss' ]
 })
 export class NewTriggerRaidAbilityComponent implements OnInit {
 

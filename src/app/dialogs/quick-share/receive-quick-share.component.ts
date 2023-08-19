@@ -44,7 +44,7 @@ class QuickShareTreeObject {
 @Component( {
     selector: 'app-receive-quick-share-dialog',
     templateUrl: 'receive-quick-share.component.html',
-    styleUrls: [ 'receive-quick-share.component.scss', '../../core.scss' ], 
+    styleUrls: [ 'receive-quick-share.component.scss', '../dialog.styles.scss', '../../core.scss' ], 
     animations: [
         trigger( 'detailExpand', [
             state( 'collapsed', style( { height: '0px', minHeight: '0' } ) ),

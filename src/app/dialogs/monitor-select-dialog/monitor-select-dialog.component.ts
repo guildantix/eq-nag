@@ -7,7 +7,7 @@ import { ColoredString } from '../dialog.model';
 @Component( {
     selector: 'app-monitor-select-dialog',
     templateUrl: 'monitor-select-dialog.component.html',
-    styleUrls: [ 'monitor-select-dialog.component.scss' ],
+    styleUrls: [ 'monitor-select-dialog.component.scss', '../dialog.styles.scss' ],
 } )
 export class MonitorSelectDialogComponent implements OnInit {
 

@@ -18,7 +18,7 @@ import { forkJoin, Observable } from 'rxjs';
 @Component( {
     selector: 'app-new-trigger-buff-dialog',
     templateUrl: 'new-trigger-buff-dialog.component.html',
-    styleUrls: [ 'new-trigger-buff-dialog.component.scss', '../../modal.scss', '../../core.scss' ],
+    styleUrls: [ 'new-trigger-buff-dialog.component.scss', '../dialog.styles.scss', '../../modal.scss', '../../core.scss' ],
 } )
 export class NewTriggerBuffDialogComponent implements OnInit {
     

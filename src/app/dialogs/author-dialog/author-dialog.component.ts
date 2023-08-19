@@ -6,7 +6,7 @@ import { IpcService } from 'src/app/ipc.service';
 @Component( {
     selector: 'app-author-dialog',
     templateUrl: 'author-dialog.component.html',
-    styleUrls: [ 'author-dialog.component.scss' ],
+    styleUrls: [ 'author-dialog.component.scss', '../dialog.styles.scss' ],
 } )
 export class AuthorDialogComponent implements OnInit {
 

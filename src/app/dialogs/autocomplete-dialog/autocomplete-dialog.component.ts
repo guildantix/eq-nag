@@ -13,7 +13,7 @@ import * as _ from 'lodash-es';
 @Component( {
     selector: 'app-autocomplete-dialog',
     templateUrl: 'autocomplete-dialog.component.html',
-    styleUrls: [ 'autocomplete-dialog.component.scss' ]
+    styleUrls: [ 'autocomplete-dialog.component.scss', '../dialog.styles.scss' ]
 } )
 export class AutoCompleteDialogComponent implements OnInit {
 
