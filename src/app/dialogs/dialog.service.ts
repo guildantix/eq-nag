@@ -131,8 +131,8 @@ export class DialogService {
      * @param questions The question answers with descriptions.
      * @param cancellable If true, the user can cancel out of the dialog.
      */
-    public showQuestionDialog( title: string, messages: ( string | ColoredString )[], questions: QuestionDialogAnswerModel[], cancellable: boolean = true ): void {
-        
+    public showQuestionDialog( title: string, messages: ( string | ColoredString )[], questions: QuestionDialogAnswerModel[], cancellable: boolean = true, size: 'narrow' | 'normal' | 'wide' = 'normal' ): void {
+        size = size ? size : 'normal';
         let m = new QuestionDialogModel();
 
         m.title = title;
@@ -141,7 +141,7 @@ export class DialogService {
         m.questions = questions;
         
         let dialogRef: MatDialogRef<QuestionDialogComponent> = this.dialog.open( QuestionDialogComponent, {
-            width: '650px',
+            width: size === 'narrow' ? '450px' : size === 'wide' ? '750px' : '650px',
             data: m,
             panelClass: 'app-dialog',
         } );
