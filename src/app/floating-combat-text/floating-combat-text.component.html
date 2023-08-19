@@ -51,7 +51,7 @@
             <div style="flex: 1 1 auto; margin-left: 25px; max-width: calc(100% - 490px);"> <!-- 490px is the width of the left-side components with all margins and padding added up. -->
                 <h3 class="sub-header full-width header-glow">Group Settings</h3>
 
-                <mat-tab-group animationDuration="0ms" [selectedIndex]="0">
+                <mat-tab-group animationDuration="0ms" [selectedIndex]="group.editorTabIndex">
 
                     <mat-tab label="Styles">
                         <div class="card-tab-content">
@@ -107,7 +107,7 @@
                                     <h4>Animations</h4>
                                     <mat-checkbox [(ngModel)]="group.combatAnimations.fountain" name="animation_fountain_{{i}}" (change)="applyGroupAnimations(group, fctGroupA, fctGroupB, $event)">Fountain</mat-checkbox>
                                     <mat-checkbox [(ngModel)]="group.combatAnimations.scroll" name="animation_scroll_{{i}}" (change)="applyGroupAnimations(group, fctGroupA, fctGroupB, $event)">Scroll</mat-checkbox>
-                                    <mat-checkbox [(ngModel)]="group.combatAnimations.pulsate" name="animation_pulsate_{{i}}" (change)="applyGroupAnimations(group, fctGroupA, fctGroupB, $event)">Pulsate</mat-checkbox>
+                                    <mat-checkbox [(ngModel)]="group.combatAnimations.blowout" name="animation_blowOut_{{i}}" (change)="applyGroupAnimations(group, fctGroupA, fctGroupB, $event)">Blowout</mat-checkbox>
                                     <mat-checkbox [(ngModel)]="group.combatAnimations.grow" name="animation_grow_{{i}}" (change)="applyGroupAnimations(group, fctGroupA, fctGroupB)">Grow</mat-checkbox>
                                     <mat-checkbox [(ngModel)]="group.combatAnimations.shrink" name="animation_shrink_{{i}}" (change)="applyGroupAnimations(group, fctGroupA, fctGroupB)">Shrink</mat-checkbox>
                                     <mat-checkbox [(ngModel)]="group.combatAnimations.fadeIn" name="animation_fadeIn_{{i}}" (change)="applyGroupAnimations(group, fctGroupA, fctGroupB)">Fade In</mat-checkbox>
@@ -129,9 +129,9 @@
                         <div class="card-tab-content">
 
                             <h4 class="header-glow">Overlay</h4>
-                            <mat-form-field style="width: calc(100% - 3px);">
+                            <mat-form-field style="width: calc(100% - 3px);" [ngClass]="{'input-error': group.overlayId == null}">
                                 <mat-label></mat-label>
-                                <mat-select>
+                                <mat-select [(ngModel)]="group.overlayId" name="overlayId_{{i}}">
                                     <mat-option *ngFor="let option of fctOverlays" [value]="option.overlayId">{{option.name}}</mat-option>
                                 </mat-select>
                                 <mat-hint style="font-size: 1.1em;">Select the overlay that should render this group's combat text.</mat-hint>

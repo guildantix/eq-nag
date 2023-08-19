@@ -331,7 +331,7 @@ app-style-properties {
     100% { transform: translateY(-100px); }
 }
 
-@keyframes animate-pulsate {
+@keyframes animate-blowout {
     0% { transform: scale(1.5); }
     1% { transform: scale(2.0); }
     50% { transform: scale(2.0); }
@@ -348,7 +348,7 @@ app-style-properties {
     100% { transform: scale(.1); }
 }
 
-@keyframes animate-pulsate-fadeout {
+@keyframes animate-blowout-fadeout {
     0% { transform: scale(1.5); }
     1% { transform: scale(2.0); }
     50% { transform: scale(2.0); opacity: 1; }
@@ -393,4 +393,8 @@ app-style-properties {
 
 .no-bottom-border {
     border-bottom: none !important;
+}
+
+mat-form-field.input-error {
+    border: 2px solid #f44336;
 }

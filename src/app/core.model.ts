@@ -1448,7 +1448,7 @@ export class CombatAnimations {
     public fountain: boolean = false;
     public scroll: boolean = false;
 
-    public pulsate: boolean = false;
+    public blowout: boolean = false;
     public fadeIn: boolean = false;
     public fadeOut: boolean = false;
     public grow: boolean = false;
@@ -1493,5 +1493,9 @@ export class FctCombatGroup {
     public _animationComplete: boolean = true;
     public _animationIntervalId: number | undefined = undefined;
     public _animationResetTimeoutId: number | undefined = undefined;
-
+    public _editorTabIndex: number = -1;
+    public get editorTabIndex(): number {
+        this._editorTabIndex = this._editorTabIndex > -1 ? this._editorTabIndex : this.overlayId == null ? 1 : 0;
+        return this._editorTabIndex;
+    }
 }

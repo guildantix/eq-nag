@@ -6,7 +6,7 @@ import { IpcService } from '../ipc.service';
 import { MatCheckboxChange } from '@angular/material/checkbox';
 import { QuestionDialogAnswerModel } from '../dialogs/question-dialog/question-dialog.model';
 
-const animatePulsateDuration = 4000;
+const animateBlowoutDuration = 4000;
 const animateFadeOutDuration = 7000;
 const animateFadeInDuration = 500;
 const animateFloatDuration = 1000;
@@ -116,7 +116,12 @@ export class FloatingCombatTextComponent implements OnInit {
                 question: [ 'You could have the system initialize FCT with default combat groups.' ],
                 buttonText: 'Create default combat groups',
                 action: () => {
-                    this.ipcService.initializeFctCombatGroups();
+                    this.ipcService.initializeFctCombatGroups().subscribe( success => {
+                        this.ipcService.getFctCombatGroups().subscribe( data => {
+                            console.log( 'data', data );
+                            this.combatGroups = data;
+                        } );
+                    } );
                 },
                 cssClass: canMigrate ? 'color-white' : 'color-green',
             } );
@@ -547,16 +552,16 @@ export class FloatingCombatTextComponent implements OnInit {
         console.log( 'testing', e?.source.name, group.combatAnimations );
         if ( e?.source.name.includes( 'fountain' ) && group.combatAnimations.fountain ) {
             group.combatAnimations.scroll = false;
-            group.combatAnimations.pulsate = false;
+            group.combatAnimations.blowout = false;
             console.log( 'fountain', group.combatAnimations );
 
         } else if ( e?.source.name.includes( 'scroll' ) && group.combatAnimations.scroll ) {
             group.combatAnimations.fountain = false;
             console.log( 'scroll', group.combatAnimations );
             
-        } else if ( e?.source.name.includes( 'pulsate' ) && group.combatAnimations.pulsate ) {
+        } else if ( e?.source.name.includes( 'blowout' ) && group.combatAnimations.blowout ) {
             group.combatAnimations.fountain = false;
-            console.log( 'pulsate', group.combatAnimations );
+            console.log( 'blowout', group.combatAnimations );
             
         }
         
@@ -610,9 +615,9 @@ export class FloatingCombatTextComponent implements OnInit {
         let duration: number = 0;
         let animationDelay: number = 0;
 
-        if ( group.combatAnimations.pulsate ) {
-            animation += ( animation.length > 0 ? ', ' : '' ) + `${group.combatAnimations.fadeOut ? 'animate-pulsate-fadeout' : 'animate-pulsate'} ${animatePulsateDuration}ms ease-out`;
-            duration = duration < animatePulsateDuration ? animatePulsateDuration : duration;
+        if ( group.combatAnimations.blowout ) {
+            animation += ( animation.length > 0 ? ', ' : '' ) + `${group.combatAnimations.fadeOut ? 'animate-blowout-fadeout' : 'animate-blowout'} ${animateBlowoutDuration}ms ease-out`;
+            duration = duration < animateBlowoutDuration ? animateBlowoutDuration : duration;
         }
 
         if ( group.combatAnimations.fountain ) {
@@ -675,7 +680,7 @@ export class FloatingCombatTextComponent implements OnInit {
         // out. 
         // NOTE: This may need to become more complicated as animations are added.
 
-        if ( group.combatAnimations.fadeOut && !group.combatAnimations.pulsate ) {
+        if ( group.combatAnimations.fadeOut && !group.combatAnimations.blowout ) {
             // The fadeout duration is the duration of the longest animation, or a default preconfigured duration.
             let fadeOutDuration: number = duration > 0 ? duration : animateFadeOutDuration;
             let timingFn: string = fadeOutDuration === animateFadeOutDuration ? 'ease-out' : 'ease-in';
