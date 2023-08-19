@@ -191,11 +191,30 @@ class CombatAnimations {
     shrink = false;
 }
 
+class CombatTypes {
+    /** @type {boolean} */
+    myHits = false;
+    /** @type {boolean} */
+    otherHitsOnMe = false;
+    /** @type {boolean} */
+    mySpellHits = false;
+    /** @type {boolean} */
+    otherSpellHitsOnMe = false;
+    /** @type {boolean} */
+    myHealing = false;
+    /** @type {boolean} */
+    otherHealingOnMe = false;
+}
+
 class FctCombatGroup {
     /** @type {string} */
     combatGroupId;
     /** @type {string} */
     name;
+    /** @type {string} */
+    overlayId;
+    /** @type {CombatTypes} */
+    combatTypes = new CombatTypes();
     /** @type {StylePropertiesModel} */
     valueStyles = new StylePropertiesModel();
     /** @type {StylePropertiesModel} */
@@ -213,6 +232,17 @@ class FctCombatGroup {
     thresholdPercent = 60;
     /** @type {CombatAnimations} */
     combatAnimations = new CombatAnimations();
+    /** @type {string[]} */
+    combatModifiers = [];
+
+    /** @type {number} */
+    displayValue = 255;
+    /** @type {string} */
+    displayType = 'hit';
+    /** @type {'light' | 'dark'} */
+    displayBackground = 'dark';
+    /** @type {'value' | 'source' | 'animations'} */
+    editStylesType = 'value';
 }
 
-module.exports = { OverlayDimensions, OverlayWindow, OverlayComponent, TimerSortTypes, OverlayStoreModel, TriggerSecondaryActionModel, CombatAnimations, FctCombatGroup, HitStartPositionTypes };
+module.exports = { OverlayDimensions, OverlayWindow, OverlayComponent, TimerSortTypes, OverlayStoreModel, TriggerSecondaryActionModel, CombatAnimations, CombatTypes, FctCombatGroup, HitStartPositionTypes };
