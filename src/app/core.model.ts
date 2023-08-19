@@ -1456,10 +1456,23 @@ export class CombatAnimations {
 
 }
 
+export class CombatTypes {
+    
+    public myHits: boolean = false;
+    public otherHitsOnMe: boolean = false;
+    public mySpellHits: boolean = false;
+    public otherSpellHitsOnMe: boolean = false;
+    public myHealing: boolean = false;
+    public otherHealingOnMe: boolean = false;
+
+}
+
 export class FctCombatGroup {
 
     public combatGroupId: string;
     public name: string;
+    public overlayId: string;
+    public combatTypes: CombatTypes = new CombatTypes();
     public valueStyles: StylePropertiesModel = new StylePropertiesModel();
     public sourceStyles: StylePropertiesModel = new StylePropertiesModel();
     public startingPosition: HitStartPositionTypes = HitStartPositionTypes.unset;
@@ -1469,6 +1482,7 @@ export class FctCombatGroup {
     public thresholdValue: number | undefined = undefined;
     public thresholdPercent: number = 60;
     public combatAnimations: CombatAnimations = new CombatAnimations();
+    public combatModifiers: string[] = [];
 
     public displayValue: number = 255;
     public displayType: string = 'hit';

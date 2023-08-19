@@ -18,21 +18,21 @@
             <div style="display: flex; flex-flow: column wrap; min-width: 225px;">
                 <!-- <h3>Combat Types</h3> -->
                 <h3 class="sub-header full-width header-glow">Combat Types</h3>
-                <mat-checkbox>Your Melee Hits</mat-checkbox>
-                <mat-checkbox>You Being Hit by Melee</mat-checkbox>
-                <mat-checkbox>Your Spell Hits</mat-checkbox>
-                <mat-checkbox>You Being Hit by Spells</mat-checkbox>
-                <mat-checkbox>Your Healing Done</mat-checkbox>
-                <mat-checkbox>You Being Healed</mat-checkbox>
+                <mat-checkbox [(ngModel)]="group.combatTypes.myHits" name="myHits_{{i}}">Your Melee Hits</mat-checkbox>
+                <mat-checkbox [(ngModel)]="group.combatTypes.otherHitsOnMe" name="otherHitsOnMe_{{i}}">You Being Hit by Melee</mat-checkbox>
+                <mat-checkbox [(ngModel)]="group.combatTypes.mySpellHits" name="mySpellHits_{{i}}">Your Spell Hits</mat-checkbox>
+                <mat-checkbox [(ngModel)]="group.combatTypes.otherSpellHitsOnMe" name="otherSpellHitsOnMe_{{i}}">You Being Hit by Spells</mat-checkbox>
+                <mat-checkbox [(ngModel)]="group.combatTypes.myHealing" name="myHealing_{{i}}">Your Healing Done</mat-checkbox>
+                <mat-checkbox [(ngModel)]="group.combatTypes.otherHealingOnMe" name="otherHealingOnMe_{{i}}">You Being Healed</mat-checkbox>
             </div>
             
             <div style="padding-left: 25px; min-width: 170px;">
                 <!-- <h3>Modifiers</h3> -->
                 <h3 class="sub-header full-width header-glow">Modifiers</h3>
-                <mat-button-toggle-group name="combatModifiers" aria-label="Modifiers" class="vertical" style="float: right;" multiple>
+                <mat-button-toggle-group name="combatModifiers" aria-label="Modifiers" class="vertical" style="float: right;" [(ngModel)]="group.combatModifiers" name="combatModifiers_{{i}}" multiple>
                     <mat-button-toggle value="normal">Normal</mat-button-toggle>
                     <mat-button-toggle value="critical">Critical</mat-button-toggle>
-                    <mat-button-toggle value="cripplingBlow">Crippling Blow</mat-button-toggle>
+                    <mat-button-toggle value="crippling_blow">Crippling Blow</mat-button-toggle>
                     <mat-button-toggle value="flurry">Flurry</mat-button-toggle>
                     <mat-button-toggle value="lucky">Lucky</mat-button-toggle>
                     <mat-button-toggle value="twincast">Twincast</mat-button-toggle>
