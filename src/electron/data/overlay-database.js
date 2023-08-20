@@ -13,6 +13,20 @@ const ElectronUtilities = require( "../utilities/electron" );
 const { migrateOverlayData } = require( "./migrations/overlay-database-migration" );
 const UserPreferencesStore = require( "./user-preferences" );
 const { StylePropertiesModel } = require( "./models/core" );
+/** @type {FctCombatGroup} */
+const defaultCriticalsGroup = require( "./predefined-fct-groups/my-critical-hits.json" );
+/** @type {FctCombatGroup} */
+const defaultHitsGroup = require( "./predefined-fct-groups/my-hits.json" );
+/** @type {FctCombatGroup} */
+const defaultHealingCriticalsGroup = require( "./predefined-fct-groups/my-healing-crits.json" );
+/** @type {FctCombatGroup} */
+const defaultHealingGroup = require( "./predefined-fct-groups/my-healing.json" );
+/** @type {FctCombatGroup} */
+const defaultOtherCriticalsGroup = require( "./predefined-fct-groups/other-critical-hits.json" );
+/** @type {FctCombatGroup} */
+const defaultOtherHitsGroup = require( "./predefined-fct-groups/other-hits.json" );
+/** @type {FctCombatGroup} */
+const defaultOtherHealingGroup = require( "./predefined-fct-groups/other-healing.json" );
 
 const currentOverlayDbVersion = 14;
 
@@ -253,10 +267,53 @@ class OverlayDatabaseStore extends Store {
         }
     }
 
+    /**
+     * Initializes and creates the default combat groups.
+     */
     initializeFctCombatGroups() {
+        let criticalsGroup = Object.assign( new FctCombatGroup(), defaultCriticalsGroup );
+        criticalsGroup.combatGroupId = nanoid();
+        criticalsGroup.overlayId = this.#userPrefDb.damageDealtOverlayId;
 
+        let hitsGroup = Object.assign( new FctCombatGroup(), defaultHitsGroup );
+        hitsGroup.combatGroupId = nanoid();
+        hitsGroup.overlayId = this.#userPrefDb.damageDealtOverlayId;
+
+        let healingCriticalsGroup = Object.assign( new FctCombatGroup(), defaultHealingCriticalsGroup );
+        healingCriticalsGroup.combatGroupId = nanoid();
+        healingCriticalsGroup.overlayId = this.#userPrefDb.damageDealtOverlayId;
+
+        let healingGroup = Object.assign( new FctCombatGroup(), defaultHealingGroup );
+        healingGroup.combatGroupId = nanoid();
+        healingGroup.overlayId = this.#userPrefDb.damageDealtOverlayId;
+
+        let otherCriticalsGroup = Object.assign( new FctCombatGroup(), defaultOtherCriticalsGroup );
+        otherCriticalsGroup.combatGroupId = nanoid();
+        otherCriticalsGroup.overlayId = this.#userPrefDb.damageReceivedOverlayId;
+
+        let otherHitsGroup = Object.assign( new FctCombatGroup(), defaultOtherHitsGroup );
+        otherHitsGroup.combatGroupId = nanoid();
+        otherHitsGroup.overlayId = this.#userPrefDb.damageReceivedOverlayId;
+
+        let otherHealingGroup = Object.assign( new FctCombatGroup(), defaultOtherHealingGroup );
+        otherHealingGroup.combatGroupId = nanoid();
+        otherHealingGroup.overlayId = this.#userPrefDb.damageReceivedOverlayId;
+
+        
+        this.#data.fctCombatGroups.push( criticalsGroup );
+        this.#data.fctCombatGroups.push( hitsGroup );
+        this.#data.fctCombatGroups.push( healingCriticalsGroup );
+        this.#data.fctCombatGroups.push( healingGroup );
+        this.#data.fctCombatGroups.push( otherCriticalsGroup );
+        this.#data.fctCombatGroups.push( otherHitsGroup );
+        this.#data.fctCombatGroups.push( otherHealingGroup );
+        
+        this.storeDataFile( this.#data );
     }
 
+    /**
+     * Migrates existing FCT styles into the new combat groups.
+     */
     migrateFctStylesToCombatGroups() {
 
         if ( this.#userPrefDb.fctStyles?.fctSpellDmgOutStyle || this.#userPrefDb.fctStyles?.fctDmgOutStyle ) {
@@ -274,7 +331,7 @@ class OverlayDatabaseStore extends Store {
             group.sourceStyles.paddingLeft = 8;
             
             group.startingPosition = HitStartPositionTypes.random;
-            group.combatAnimations.pulsate = true;
+            group.combatAnimations.blowout = true;
 
             group.combatModifiers = [
                 'critical'
@@ -566,6 +623,7 @@ class OverlayDatabaseStore extends Store {
 
         ipcMain.on( 'overlay:initialize-fct', ( event ) => {
             this.initializeFctCombatGroups();
+            event.sender.send( 'overlay:initialize-fct', true );
         } );
         
         // TODO: Figure out wtf this was?
