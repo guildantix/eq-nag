@@ -554,7 +554,7 @@ app.on( 'ready', function () {
     dkpDatabase.attachIpcEvents( mainWindowRef, sendTick );
     fileDatabase.attachIpcEvents( mainWindowRef );
     triggerDatabase.attachIpcEvents( mainWindowRef, sendTick, fileDatabase, userPreferences );
-    overlayDatabase.attachIpcEvents( mainWindowRef, sendTick, triggerDatabase );
+    overlayDatabase.attachIpcEvents( mainWindowRef, sendTick, triggerDatabase, userPreferences );
     characterDatabase.attachIpcEvents( mainWindowRef, sendTick );
     logBootstrap.boostrapLogWatchers( mainWindowRef, app.isDev(), characterDatabase, sendTick, userPreferences );
     gameResources.attachIpcEvents( mainWindowRef, userPreferences );
