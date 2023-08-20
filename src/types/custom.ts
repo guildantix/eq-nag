@@ -34,6 +34,44 @@ export class WindowApi {
              * @param {number} transparency The transparency value, between 0 and 1.
              */
             textGlow: ( hexColorCode: string, glowSize: number, transparency: number ) => string;
+        },
+        numbers: {
+            /**
+             * Returns true if the given value contains the given flag.
+             * 
+             * @returns {boolean} Returns true if the given value contains the given flag.
+             * 
+             * @param {number} value The value that may contain the given flag.
+             * @param {number} flag The flag to check for.
+             */
+            hasFlag: ( value: number, flag: number ) => boolean;
+            /**
+             * Adds the given flag to the given value.
+             * 
+             * @returns {number} Returns the value with the flag added.
+             * 
+             * @param {number} value The value to add the flag to.
+             * @param {number} flag The flag to add.
+             */
+            addFlag: ( value: number, flag: number ) => number;
+            /**
+             * Removes the given flag from the given value.
+             * 
+             * @returns {number} Returns the value with the flag removed.
+             * 
+             * @param {number} value The value to remove the flag from.
+             * @param {number} flag The flag to remove.
+             */
+            removeFlag: ( value: number, flag: number ) => number;
+            /**
+             * Toggles the given flag on the given value.
+             * 
+             * @returns {number} Returns the value with the flag toggled.
+             * 
+             * @param {number} value The value to toggle the flag on.
+             * @param {number} flag The flag to toggle.
+             */
+            toggleFlag: ( value: number, flag: number ) => number;
         }
     };
     logger: {

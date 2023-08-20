@@ -31,6 +31,54 @@ function toShorthandString( value ) {
 }
 
 /**
+ * Returns true if the given value contains the given flag.
+ * 
+ * @returns {boolean} Returns true if the given value contains the given flag.
+ * 
+ * @param {number} value The value that may contain the given flag.
+ * @param {number} flag The flag to check for.
+ */
+function hasFlag( value, flag ) {
+    return ( value & flag ) === flag;
+}
+
+/**
+ * Adds the given flag to the given value.
+ * 
+ * @returns {number} Returns the value with the flag added.
+ * 
+ * @param {number} value The value to add the flag to.
+ * @param {number} flag The flag to add.
+ */
+function addFlag( value, flag ) {
+    return value | flag;
+}
+
+/**
+ * Removes the given flag from the given value.
+ * 
+ * @returns {number} Returns the value with the flag removed.
+ * 
+ * @param {number} value The value to remove the flag from.
+ * @param {number} flag The flag to remove.
+ */
+function removeFlag( value, flag ) {
+    return value & ~flag;
+}
+
+/**
+ * Toggles the given flag on the given value.
+ * 
+ * @returns {number} Returns the value with the flag toggled.
+ * 
+ * @param {number} value The value to toggle the flag on.
+ * @param {number} flag The flag to toggle.
+ */
+function toggleFlag( value, flag ) {
+    return value ^ flag;
+}
+
+/**
  * Rounds the given value to the given precision.
  * 
  * @param {number} value The value to round.
@@ -70,6 +118,10 @@ let NumberUtilities = {
     toShorthandString: toShorthandString,
     randomBounded: randomBounded,
     rectContainsPoint: rectContainsPoint,
+    hasFlag: hasFlag,
+    addFlag: addFlag,
+    removeFlag: removeFlag,
+    toggleFlag: toggleFlag,
 };
 
 module.exports = NumberUtilities;
