@@ -1010,26 +1010,27 @@ export class IpcService {
                 
                 window.api.ipc.once( 'overlay:get:combatGroups', ( e, combatGroups: FctCombatGroup[] ) => {
                     this.ngZone.run( () => {
-                        combatGroups = combatGroups.map( f => {
-                            let m = Object.assign( new FctCombatGroup(), f );
-
-                            m.combatTypes = Object.assign( new CombatTypes(), f.combatTypes );
-                            m.valueStyles = Object.assign( new StylePropertiesModel(), f.valueStyles );
-                            m.sourceStyles = Object.assign( new StylePropertiesModel(), f.sourceStyles );
-                            m.combatAnimations = Object.assign( new CombatAnimations(), f.combatAnimations );
-                            
-                            m._animationCompletePercent = 0;
-                            m._animationComplete = true;
-                            m._animationIntervalId = undefined;
-                            m._animationResetTimeoutId = undefined;
-
-                            return m;
-                        } );
-                        observer.next( combatGroups );
+                        observer.next( combatGroups.map( f => FctCombatGroup.hydrateModel( f ) ) );
                         observer.complete();
                     } );
                 } );
                 window.api.ipc.send( 'overlay:get:combatGroups', null );
+    
+        } );
+
+        return obs;
+    }
+
+    public getFctCombatGroup( combatGroupId: string ): Observable<FctCombatGroup> {
+        let obs: Observable<FctCombatGroup> = new Observable<FctCombatGroup>( ( observer: Observer<FctCombatGroup> ) => {
+                
+            window.api.ipc.once( 'overlay:get:combatGroups', ( e, combatGroup: FctCombatGroup ) => {
+                this.ngZone.run( () => {
+                    observer.next( FctCombatGroup.hydrateModel( combatGroup ) );
+                    observer.complete();
+                } );
+            } );
+            window.api.ipc.send( 'overlay:get:combatGroups', null );
     
         } );
 

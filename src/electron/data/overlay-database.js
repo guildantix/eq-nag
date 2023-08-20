@@ -655,6 +655,10 @@ class OverlayDatabaseStore extends Store {
             event.sender.send( 'overlay:get:combatGroups', this.getCombatGroups() );
         } );
 
+        ipcMain.on( 'overlay:get:combatGroup', ( event, combatGroupId ) => {
+            event.sender.send( 'overlay:get:combatGroup', this.getCombatGroups().find( f => f.combatGroupId === combatGroupId ) );
+        } );
+
         ipcMain.on( 'overlay:update:combatGroup', ( event, combatGroup ) => {
             let id = this.updateCombatGroup( combatGroup );
             event.sender.send( 'overlay:update:combatGroup', id );

@@ -1499,4 +1499,36 @@ export class FctCombatGroup {
         this._editorTabIndex = this._editorTabIndex > -1 ? this._editorTabIndex : this.overlayId?.length > 0 ? 0 : 1;
         return this._editorTabIndex;
     }
+
+
+
+
+
+
+
+
+
+    
+    /**
+     * Hydrates the model with the given data.
+     * 
+     * @returns Returns a new object of FctCombatGroup.
+     * 
+     * @param data The data to hydrate the model with.
+     */
+    public static hydrateModel( data: any ): FctCombatGroup {
+        let m = Object.assign( new FctCombatGroup(), data );
+
+        m.combatTypes = Object.assign( new CombatTypes(), data.combatTypes );
+        m.valueStyles = Object.assign( new StylePropertiesModel(), data.valueStyles );
+        m.sourceStyles = Object.assign( new StylePropertiesModel(), data.sourceStyles );
+        m.combatAnimations = Object.assign( new CombatAnimations(), data.combatAnimations );
+        
+        m._animationCompletePercent = 0;
+        m._animationComplete = true;
+        m._animationIntervalId = undefined;
+        m._animationResetTimeoutId = undefined;
+
+        return m;
+    }
 }
