@@ -9,12 +9,13 @@
         <legend>
             <div><span class="title">{{group.name}}</span></div>
             <span class="spacer"></span>
+            <div *ngIf="hasChanges(group.combatGroupId)"><button mat-icon-button class="color-green" matTooltip="Save group" matTooltipPosition="above"(click)="saveChanges(group)"><mat-icon>save</mat-icon></button></div>
             <div><button mat-icon-button class="color-light" matTooltip="Change group name" matTooltipPosition="above" (click)="changeCombatGroupName(i)"><mat-icon class="material-icons-outlined">edit</mat-icon></button></div>
-            <div><button mat-icon-button class="color-blue" matTooltip="Copy group" matTooltipPosition="above"><mat-icon class="material-icons-outlined">content_copy</mat-icon></button></div>
-            <div><button mat-icon-button class="color-red" matTooltip="Delete group" matTooltipPosition="above" (click)="deleteCombatGroup(i)"><mat-icon class="material-icons-outlined">clear</mat-icon></button></div>
+            <div><button mat-icon-button class="color-blue" matTooltip="Copy group" matTooltipPosition="above" (click)="copyCombatGroup(group)"><mat-icon class="material-icons-outlined">content_copy</mat-icon></button></div>
+            <div><button mat-icon-button class="color-red" matTooltip="Delete group" matTooltipPosition="above" (click)="deleteCombatGroup(i, group.combatGroupId)"><mat-icon class="material-icons-outlined">clear</mat-icon></button></div>
         </legend>
         <div class="modifiers-list-container">
-
+            
             <div style="display: flex; flex-flow: column wrap; min-width: 225px;">
                 <!-- <h3>Combat Types</h3> -->
                 <h3 class="sub-header full-width header-glow">Combat Types</h3>

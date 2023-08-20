@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, DoCheck, KeyValueChanges, KeyValueDiffer, KeyValueDiffers, OnInit } from '@angular/core';
 import { DialogService } from '../dialogs/dialog.service';
 import { FctCombatGroup, HitStartPositionTypes, OverlayWindowModel, StylePropertiesModel } from '../core.model';
 import { nagId } from '../core/nag-id.util';
@@ -58,11 +58,11 @@ const combatMessageTypes: string[] = [
     templateUrl: 'floating-combat-text.component.html',
     styleUrls: [ 'floating-combat-text.component.scss', '../core.scss' ],
 } )
-export class FloatingCombatTextComponent implements OnInit {
+export class FloatingCombatTextComponent implements OnInit, DoCheck {
 
     public combatGroups: FctCombatGroup[] = [];
     private changes: Record<string, boolean> = {};
-    private rollback: Record<string, string> = {};
+    private changeTracking: Record<string, string> = {};
     public overlays: OverlayWindowModel[] = [];
     public hitPositionTypes: typeof HitStartPositionTypes = HitStartPositionTypes;
     public hasFlag: ( value: number, flag: number ) => boolean = window.api.utils.numbers.hasFlag;
@@ -79,12 +79,16 @@ export class FloatingCombatTextComponent implements OnInit {
         private readonly dialogService: DialogService,
         private readonly ipcService: IpcService,
         private readonly snackBar: MatSnackBar,
+        private readonly differs: KeyValueDiffers,
     ) { }
 
     ngOnInit() {
 
         this.ipcService.getAppIsDev().subscribe( isDev => this.isDev = isDev );
-        this.ipcService.getFctCombatGroups().subscribe( data => this.combatGroups = data );
+        this.ipcService.getFctCombatGroups().subscribe( data => {
+            this.combatGroups = data;
+            this.combatGroups.forEach( ( group, i ) => this.changeTracking[ group.combatGroupId ] = FctCombatGroup.getHashValue( group ) );
+        } );
         this.ipcService.getOverlayWindows().subscribe( data => this.overlays = data );
         this.ipcService.tickReceived().subscribe( data => {
             
@@ -141,6 +145,12 @@ export class FloatingCombatTextComponent implements OnInit {
 
             this.dialogService.showQuestionDialog( `Floating Combat Text ${canMigrate ? 'Migration' : 'Initialization'}`, statements, questions, true, 'wide' );
 
+        } );
+    }
+
+    ngDoCheck() {
+        this.combatGroups.forEach( group => {
+            this.changes[ group.combatGroupId ] = this.changeTracking[ group.combatGroupId ] !== FctCombatGroup.getHashValue( group );
         } );
     }
 
@@ -207,25 +217,7 @@ export class FloatingCombatTextComponent implements OnInit {
 
         this.combatGroups.push( group );
         this.changes[ group.combatGroupId ] = false;
-        this.rollback[ group.combatGroupId ] = JSON.stringify( group );
-    }
-
-
-
-
-
-
-
-
-
-    
-    /**
-     * Set the combat group with the given id as having been changed.
-     * 
-     * @param id The id of the combat group that has changed.
-     */
-    addChange( id: string ): void {
-        this.changes[ id ] = true;
+        this.changeTracking[ group.combatGroupId ] = FctCombatGroup.getHashValue( group );
     }
 
 
@@ -243,9 +235,8 @@ export class FloatingCombatTextComponent implements OnInit {
      * @param id The id of the combat group to check.
      */
     hasChanges( id: string ): boolean {
-        return this.changes[ id ] === true || false;
+        return this.changes[ id ] === true;
     }
-
 
 
 
@@ -261,8 +252,14 @@ export class FloatingCombatTextComponent implements OnInit {
      * @param id The id of the combat group to rollback.
      */
     rollbackChanges( id: string ): void {
-        this.combatGroups[ this.combatGroups.findIndex( g => g.combatGroupId === id ) ] = Object.assign( new FctCombatGroup(), JSON.parse( this.rollback[ id ] ) );
-        this.changes[ id ] = false;
+        let i = this.combatGroups.findIndex( g => g.combatGroupId === id );
+        this.ipcService.getFctCombatGroup( id ).subscribe( data => {
+            window.setTimeout( () => {
+                this.combatGroups[ i ] = data;
+                this.changes[ id ] = false;
+                this.changeTracking[ id ] = FctCombatGroup.getHashValue( data );
+            } );
+        } );
     }
 
 
@@ -280,9 +277,17 @@ export class FloatingCombatTextComponent implements OnInit {
      * @param id The id of the combat group to save.
      */
     saveChanges( combatGroup: FctCombatGroup ): void {
-        this.ipcService.updateFctCombatGroup( combatGroup );
-        this.changes[ combatGroup.combatGroupId ] = false;
-        this.rollback[ combatGroup.combatGroupId ] = JSON.stringify( combatGroup );
+        this.ipcService.updateFctCombatGroup( combatGroup, this.combatGroups.map( f => f.combatGroupId ) ).subscribe( groupId => {
+            if ( groupId !== combatGroup.combatGroupId ) {
+                let i = this.combatGroups.findIndex( g => g.combatGroupId === combatGroup.combatGroupId );
+                this.combatGroups[ i ].combatGroupId = groupId;
+                this.changeTracking[ groupId ] = FctCombatGroup.getHashValue( this.combatGroups[ i ] );
+                this.changes[ groupId ] = false;
+            } else {
+                this.changes[ combatGroup.combatGroupId ] = false;
+                this.changeTracking[ combatGroup.combatGroupId ] = FctCombatGroup.getHashValue( combatGroup );
+            }
+        } );
     }
 
 
@@ -319,6 +324,42 @@ export class FloatingCombatTextComponent implements OnInit {
 
     
     /**
+     * Show a dialog to create a new combat group, allowing the user to enter a 
+     * name for the new group.
+     */
+    copyCombatGroup( group: FctCombatGroup ): void {
+        this.dialogService.showInputDialog(
+            'Create new combat group',
+            'Enter a name for the new combat group', null, null, group.name + ' (copy)' )
+            .subscribe( name => {
+                if ( name?.trim().length > 0 ) {
+                    let sourceIndex = this.combatGroups.findIndex( g => g.combatGroupId === group.combatGroupId );
+                    let copy = FctCombatGroup.hydrateModel( JSON.parse( JSON.stringify( group ) ) );
+
+                    copy.name = name;
+                    copy.combatGroupId = nagId();
+
+                    if ( sourceIndex > -1 ) {
+                        this.combatGroups.splice( sourceIndex + 1, 0, copy );
+                    } else {
+                        this.combatGroups.push( copy );
+                    }
+
+                    this.saveChanges( copy );
+                }
+            } );
+    }
+
+
+
+
+
+
+
+
+
+    
+    /**
      * Show a dialog to rename a combat group.
      * 
      * @param index The index of the combat group to rename.
@@ -333,7 +374,6 @@ export class FloatingCombatTextComponent implements OnInit {
             .subscribe( name => {
                 if ( name?.trim().length > 0 ) {
                     this.combatGroups[ index ].name = name;
-                    this.addChange( this.combatGroups[ index ].combatGroupId );
                 }
             } );
     }
@@ -352,14 +392,18 @@ export class FloatingCombatTextComponent implements OnInit {
      * 
      * @param index The index of the combat group to delete.
      */
-    deleteCombatGroup( index: number ): void {
+    deleteCombatGroup( index: number, combatGroupId: string ): void {
         this.dialogService.showConfirmationDialog(
-            'Are you sure you want to delete this combat group?',
+            `Are you sure you want to delete "${this.combatGroups[index]?.name ?? 'this combat group'}"?`,
             'Click "Yes" to delete this combat group.',
             'Click "No" to cancel and close this dialog without deleting this combat group.' )
             .subscribe( confirmed => {
                 if ( confirmed ) {
-                    this.combatGroups.splice( index, 1 );
+                    this.ipcService.deleteFctCombatGroup( combatGroupId ).subscribe( success => {
+                        if ( success ) {
+                            this.combatGroups.splice( index, 1 );
+                        }
+                    } );
                 }
             } );
     }
