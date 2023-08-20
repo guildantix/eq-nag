@@ -413,3 +413,18 @@ app-style-properties {
 mat-form-field.input-error {
     border: 2px solid #f44336;
 }
+
+mat-expansion-panel {
+
+    &.mat-expanded {
+    
+        span.title {
+            font-size: 24px;
+            font-weight: 100;
+        }
+        mat-expansion-panel-header {
+            background-color: #00000038;
+            margin-bottom: 32px;
+        }
+    }
+}

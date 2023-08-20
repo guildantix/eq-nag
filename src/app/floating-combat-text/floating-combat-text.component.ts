@@ -70,6 +70,7 @@ export class FloatingCombatTextComponent implements OnInit, DoCheck {
     public removeFlag: ( value: number, flag: number ) => number = window.api.utils.numbers.removeFlag;
     public addFlag: ( value: number, flag: number ) => number = window.api.utils.numbers.addFlag;
     public isDev: boolean = false;
+    public selectedPanelIndex: number = 0;
     
     public get fctOverlays(): OverlayWindowModel[] {
         return this.overlays.filter( f => f.overlayType === 'FCT' );
@@ -276,7 +277,13 @@ export class FloatingCombatTextComponent implements OnInit, DoCheck {
      * 
      * @param id The id of the combat group to save.
      */
-    saveChanges( combatGroup: FctCombatGroup ): void {
+    saveChanges( combatGroup: FctCombatGroup, e: MouseEvent | undefined = undefined ): void {
+        
+        if ( e ) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
         this.ipcService.updateFctCombatGroup( combatGroup, this.combatGroups.map( f => f.combatGroupId ) ).subscribe( groupId => {
             if ( groupId !== combatGroup.combatGroupId ) {
                 let i = this.combatGroups.findIndex( g => g.combatGroupId === combatGroup.combatGroupId );
@@ -327,7 +334,13 @@ export class FloatingCombatTextComponent implements OnInit, DoCheck {
      * Show a dialog to create a new combat group, allowing the user to enter a 
      * name for the new group.
      */
-    copyCombatGroup( group: FctCombatGroup ): void {
+    copyCombatGroup( group: FctCombatGroup, e: MouseEvent | undefined = undefined ): void {
+        
+        if ( e ) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
         this.dialogService.showInputDialog(
             'Create new combat group',
             'Enter a name for the new combat group', null, null, group.name + ' (copy)' )
@@ -364,7 +377,13 @@ export class FloatingCombatTextComponent implements OnInit, DoCheck {
      * 
      * @param index The index of the combat group to rename.
      */
-    changeCombatGroupName( index: number ): void {
+    changeCombatGroupName( index: number, e: MouseEvent | undefined = undefined ): void {
+        
+        if ( e ) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
         this.dialogService.showInputDialog(
             'Change combat group name',
             'Enter a new name for the combat group',
@@ -392,7 +411,13 @@ export class FloatingCombatTextComponent implements OnInit, DoCheck {
      * 
      * @param index The index of the combat group to delete.
      */
-    deleteCombatGroup( index: number, combatGroupId: string ): void {
+    deleteCombatGroup( index: number, combatGroupId: string, e: MouseEvent | undefined = undefined ): void {
+
+        if ( e ) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
         this.dialogService.showConfirmationDialog(
             `Are you sure you want to delete "${this.combatGroups[index]?.name ?? 'this combat group'}"?`,
             'Click "Yes" to delete this combat group.',
