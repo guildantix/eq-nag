@@ -989,7 +989,7 @@ export class IpcService {
         return obs;
     }
 
-    public updateFctCombatGroup( model: FctCombatGroup ): Observable<string> {
+    public updateFctCombatGroup( model: FctCombatGroup, sort: string[] | undefined = undefined ): Observable<string> {
         let obs: Observable<string> = new Observable<string>( ( observer: Observer<string> ) => {
             
             window.api.ipc.once( 'overlay:update:combatGroup', ( e, combatGroupId: string ) => {
@@ -998,7 +998,7 @@ export class IpcService {
                     observer.complete();
                 } );
             } );
-            window.api.ipc.send( 'overlay:update:combatGroup', model );
+            window.api.ipc.send( 'overlay:update:combatGroup', { group: model, sort: sort } );
 
         } );
 
@@ -1024,13 +1024,13 @@ export class IpcService {
     public getFctCombatGroup( combatGroupId: string ): Observable<FctCombatGroup> {
         let obs: Observable<FctCombatGroup> = new Observable<FctCombatGroup>( ( observer: Observer<FctCombatGroup> ) => {
                 
-            window.api.ipc.once( 'overlay:get:combatGroups', ( e, combatGroup: FctCombatGroup ) => {
+            window.api.ipc.once( 'overlay:get:combatGroup', ( e, combatGroup: FctCombatGroup ) => {
                 this.ngZone.run( () => {
                     observer.next( FctCombatGroup.hydrateModel( combatGroup ) );
                     observer.complete();
                 } );
             } );
-            window.api.ipc.send( 'overlay:get:combatGroups', null );
+            window.api.ipc.send( 'overlay:get:combatGroup', combatGroupId );
     
         } );
 
