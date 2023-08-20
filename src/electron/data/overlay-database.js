@@ -659,10 +659,23 @@ class OverlayDatabaseStore extends Store {
             event.sender.send( 'overlay:get:combatGroup', this.getCombatGroups().find( f => f.combatGroupId === combatGroupId ) );
         } );
 
-        ipcMain.on( 'overlay:update:combatGroup', ( event, combatGroup ) => {
-            let id = this.updateCombatGroup( combatGroup );
-            event.sender.send( 'overlay:update:combatGroup', id );
-        } );
+        ipcMain.on( 'overlay:update:combatGroup',
+            /**
+             * Updates the given combat group, and if provided resorts the combat group order.
+             * 
+             * @param {Electron.IpcMainEvent} event The event args.
+             * @param {{ group: FctCombatGroup, sort: string[] | undefined }} model The update model including the combat group and sort order.
+             */
+            ( event, model ) => {
+                let id = this.updateCombatGroup( model.group );
+                if ( model.sort ) {
+                    this.#data.fctCombatGroups = _.sortBy( this.#data.fctCombatGroups, f => {
+                        return model.sort.findIndex( s => s === f.combatGroupId );
+                    } );
+                    this.storeDataFile( this.#data );
+                }
+                event.sender.send( 'overlay:update:combatGroup', id );
+            } );
 
         ipcMain.on( 'overlay:delete:combatGroup', ( event, combatGroupId ) => {
             this.removeCombatGroup( combatGroupId );
