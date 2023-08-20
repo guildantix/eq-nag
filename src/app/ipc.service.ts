@@ -1017,6 +1017,11 @@ export class IpcService {
                             m.valueStyles = Object.assign( new StylePropertiesModel(), f.valueStyles );
                             m.sourceStyles = Object.assign( new StylePropertiesModel(), f.sourceStyles );
                             m.combatAnimations = Object.assign( new CombatAnimations(), f.combatAnimations );
+                            
+                            m._animationCompletePercent = 0;
+                            m._animationComplete = true;
+                            m._animationIntervalId = undefined;
+                            m._animationResetTimeoutId = undefined;
 
                             return m;
                         } );
