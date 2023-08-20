@@ -462,6 +462,10 @@ export class StylePropertiesModel {
             el.style.textAlign = style.justify;
         }
     }
+
+    public static getHashValue( styles: StylePropertiesModel ): string {
+        return `${styles.fontFamily}${styles.fontSize}${styles.lineHeight}${styles.fontWeight}${styles.fontColor}${styles.fontTransparency}${styles.showBorder}${styles.borderColor}${styles.borderIntensity}${styles.showGlow}${styles.glowColor}${styles.glowIntensity}${styles.glowSize}${styles.paddingLeft}${styles.paddingRight}${styles.paddingTop}${styles.paddingBottom}${styles.position}${styles.justify}`;
+    }
 }
 
 export class FctStylesModel {
@@ -1455,6 +1459,20 @@ export class CombatAnimations {
     public grow: boolean = false;
     public shrink: boolean = false;
 
+    public static getHashValue( animations: CombatAnimations ): string {
+        let hash = '';
+
+        hash += animations.fountain ? '1' : '0';
+        hash += animations.scroll ? '1' : '0';
+        hash += animations.blowout ? '1' : '0';
+        hash += animations.fadeIn ? '1' : '0';
+        hash += animations.fadeOut ? '1' : '0';
+        hash += animations.grow ? '1' : '0';
+        hash += animations.shrink ? '1' : '0';
+
+        return hash;
+    }
+
 }
 
 export class CombatTypes {
@@ -1466,6 +1484,18 @@ export class CombatTypes {
     public myHealing: boolean = false;
     public otherHealingOnMe: boolean = false;
 
+    public static getHashValue( combatTypes: CombatTypes ): string {
+        let hash = '';
+
+        hash += combatTypes.myHits ? '1' : '0';
+        hash += combatTypes.otherHitsOnMe ? '1' : '0';
+        hash += combatTypes.mySpellHits ? '1' : '0';
+        hash += combatTypes.otherSpellHitsOnMe ? '1' : '0';
+        hash += combatTypes.myHealing ? '1' : '0';
+        hash += combatTypes.otherHealingOnMe ? '1' : '0';
+
+        return hash;
+    }
 }
 
 export class FctCombatGroup {
@@ -1500,6 +1530,29 @@ export class FctCombatGroup {
         return this._editorTabIndex;
     }
 
+    public static getHashValue( group: FctCombatGroup ): string {
+        let hash = '';
+
+        hash += group.name;
+        hash += group.overlayId;
+        
+        hash += CombatTypes.getHashValue( group.combatTypes );
+        hash += StylePropertiesModel.getHashValue( group.valueStyles );
+        hash += StylePropertiesModel.getHashValue( group.sourceStyles );
+
+        hash += group.startingPosition;
+        hash += group.accumulateHits ? '1' : '0';
+        hash += group.ignoreHits ? '1' : '0';
+        hash += group.thresholdType;
+        hash += group.thresholdValue;
+        hash += group.thresholdPercent;
+
+        hash += CombatAnimations.getHashValue( group.combatAnimations );
+
+        hash += group.combatModifiers.join( '' );
+
+        return hash;
+    }
 
 
 
@@ -1508,7 +1561,8 @@ export class FctCombatGroup {
 
 
 
-    
+
+
     /**
      * Hydrates the model with the given data.
      * 
