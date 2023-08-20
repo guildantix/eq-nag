@@ -11,6 +11,8 @@
                 <mat-panel-title><span class="title header-glow">{{group.name}}</span></mat-panel-title>
                 <mat-panel-description>
                     <span class="spacer"></span>
+                    <div><button mat-icon-button [disabled]="i === 0" (click)="updatePosition(group, -1, $event)"><mat-icon>expand_less</mat-icon></button></div>
+                    <div><button mat-icon-button [disabled]="i >= combatGroups.length - 1" (click)="updatePosition(group, 1, $event)"><mat-icon>expand_more</mat-icon></button></div>
                     <div *ngIf="hasChanges(group.combatGroupId)"><button mat-icon-button class="color-green" matTooltip="Save group" matTooltipPosition="above"(click)="saveChanges(group, $event)"><mat-icon>save</mat-icon></button></div>
                     <div><button mat-icon-button class="color-light" matTooltip="Change group name" matTooltipPosition="above" (click)="changeCombatGroupName(i, $event)"><mat-icon class="material-icons-outlined">edit</mat-icon></button></div>
                     <div><button mat-icon-button class="color-blue" matTooltip="Copy group" matTooltipPosition="above" (click)="copyCombatGroup(group, $event)"><mat-icon class="material-icons-outlined">content_copy</mat-icon></button></div>

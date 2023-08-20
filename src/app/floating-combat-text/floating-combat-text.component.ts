@@ -6,6 +6,7 @@ import { IpcService } from '../ipc.service';
 import { MatCheckboxChange } from '@angular/material/checkbox';
 import { QuestionDialogAnswerModel } from '../dialogs/question-dialog/question-dialog.model';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { Observable } from 'rxjs';
 
 const animateBlowoutDuration = 4000;
 const animateFadeOutDuration = 7000;
@@ -271,20 +272,62 @@ export class FloatingCombatTextComponent implements OnInit, DoCheck {
 
 
 
+
+    /**
+     * Update the position of the given group in the list of combat groups.
+     * 
+     * @description This method will immediately save the changes made.
+     * 
+     * @param group The whose position is changing.
+     * @param direction The direction the group is moving.
+     * @param e The click event args.
+     */
+    updatePosition( group: FctCombatGroup, direction: -1 | 1, e: MouseEvent | undefined = undefined ): void {
+        console.log( 'e', e );
+        if ( e ) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+    
+        let i = this.combatGroups.findIndex( g => g.combatGroupId === group.combatGroupId );
+        let newIndex = i + direction;
+    
+        if ( newIndex >= 0 && newIndex < this.combatGroups.length ) {
+            this.selectedPanelIndex = -1;
+            let temp = this.combatGroups[ newIndex ];
+            this.combatGroups[ newIndex ] = group;
+            this.combatGroups[ i ] = temp;
+            this.saveChanges( group ).subscribe( () => {
+                this.snackBar.open( 'Combat group order updated', 'Dismiss', { duration: 3000 } );
+            } );
+        }
+
+    }
+
+
+
+
+
+
+
+
+
     
     /**
      * Saves changes made to the combat group with the given id and marks it as no longer changed.
      * 
      * @param id The id of the combat group to save.
+     * @param e The click event args.
      */
-    saveChanges( combatGroup: FctCombatGroup, e: MouseEvent | undefined = undefined ): void {
+    saveChanges( combatGroup: FctCombatGroup, e: MouseEvent | undefined = undefined ): Observable<string> {
         
         if ( e ) {
             e.preventDefault();
             e.stopPropagation();
         }
 
-        this.ipcService.updateFctCombatGroup( combatGroup, this.combatGroups.map( f => f.combatGroupId ) ).subscribe( groupId => {
+        let obs = this.ipcService.updateFctCombatGroup( combatGroup, this.combatGroups.map( f => f.combatGroupId ) );
+        obs.subscribe( groupId => {
             if ( groupId !== combatGroup.combatGroupId ) {
                 let i = this.combatGroups.findIndex( g => g.combatGroupId === combatGroup.combatGroupId );
                 this.combatGroups[ i ].combatGroupId = groupId;
@@ -295,6 +338,8 @@ export class FloatingCombatTextComponent implements OnInit, DoCheck {
                 this.changeTracking[ combatGroup.combatGroupId ] = FctCombatGroup.getHashValue( combatGroup );
             }
         } );
+
+        return obs;
     }
 
 
@@ -333,6 +378,9 @@ export class FloatingCombatTextComponent implements OnInit, DoCheck {
     /**
      * Show a dialog to create a new combat group, allowing the user to enter a 
      * name for the new group.
+     * 
+     * @param group The group to copy.
+     * @param e The click event args.
      */
     copyCombatGroup( group: FctCombatGroup, e: MouseEvent | undefined = undefined ): void {
         
@@ -376,6 +424,7 @@ export class FloatingCombatTextComponent implements OnInit, DoCheck {
      * Show a dialog to rename a combat group.
      * 
      * @param index The index of the combat group to rename.
+     * @param e The click event args.
      */
     changeCombatGroupName( index: number, e: MouseEvent | undefined = undefined ): void {
         
@@ -410,6 +459,8 @@ export class FloatingCombatTextComponent implements OnInit, DoCheck {
      * Ask the user to confirm before deleting a combat group.
      * 
      * @param index The index of the combat group to delete.
+     * @param combatGroupId The id of the combat group to delete.
+     * @param e The click event args.
      */
     deleteCombatGroup( index: number, combatGroupId: string, e: MouseEvent | undefined = undefined ): void {
 
