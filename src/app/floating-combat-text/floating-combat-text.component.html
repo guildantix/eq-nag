@@ -80,6 +80,7 @@
                                     </div>
                                 </div>
                                 <mat-progress-bar [ngClass]="{'hidden': group._animationIntervalId == undefined, 'visible': group._animationIntervalId > 0}" mode="determinate" [value]="group._animationCompletePercent" style="position: absolute; bottom: 0px;"></mat-progress-bar>
+                                <button mat-icon-button class="play-button" (click)="applyGroupAnimations(group, fctGroupA, fctGroupB)"><mat-icon>play_circle_outline</mat-icon></button>
                             </div>
 
                             <div class="style-header">
@@ -93,14 +94,16 @@
                                 [style]="group.valueStyles" 
                                 [style-element]="[fctTexta, fctTextb]" 
                                 [enable-padding-horizontal]="true" 
-                                [enable-padding-vertical]="true"></app-style-properties>
+                                [enable-padding-vertical]="true"
+                                [enable-justify]="false"></app-style-properties>
 
                             <app-style-properties label="" [ngClass]="{'hidden': group.editStylesType !== 'source', 'visible': group.editStylesType === 'source'}"
                                 [style]="group.sourceStyles" 
                                 [style-element]="[fctSourcea, fctSourceb]" 
                                 [enable-padding-horizontal]="true" 
                                 [enable-padding-vertical]="true"
-                                [enable-inline-block]="true"></app-style-properties>
+                                [enable-inline-block]="true"
+                                [enable-justify]="group.sourceStyles.position === 'block'"></app-style-properties>
                             
                             <div class="group-options-container" [ngClass]="{'hidden': group.editStylesType !== 'animations', 'visible': group.editStylesType === 'animations'}">
                                 <div>
@@ -218,6 +221,7 @@
         <div>
             <button mat-button class="color-green" [disabled]="!hasChanges(group.combatGroupId)" (click)="saveChanges(group)">Save Changes</button>
             <button mat-button class="color-red" [disabled]="!hasChanges(group.combatGroupId)" (click)="rollbackChanges(group.combatGroupId)">Revert Changes</button>
+            <button mat-button class="color-light" *ngIf="isDev" (click)="copyJson(group)">Copy JSON</button>
         </div>
         
     </fieldset>

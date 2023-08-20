@@ -180,7 +180,7 @@ class CombatAnimations {
     /** @type {boolean} */
     scroll = false;
     /** @type {boolean} */
-    pulsate = false;
+    blowout = false;
     /** @type {boolean} */
     fadeIn = false;
     /** @type {boolean} */

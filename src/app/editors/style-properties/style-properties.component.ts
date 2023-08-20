@@ -26,6 +26,7 @@ export class StylePropertiesComponent implements OnInit {
     @Input( 'enable-padding-horizontal' ) public enablePaddingHorizontal: boolean = false;
     @Input( 'enable-padding-vertical' ) public enablePaddingVertical: boolean = false;
     @Input( 'enable-inline-block' ) public enableInlineBlock: boolean = false;
+    @Input( 'enable-justify' ) public enableJustify: boolean = false;
 
     public fontWeightIndex: number = 0;
     public borderIntensity: number = 0;

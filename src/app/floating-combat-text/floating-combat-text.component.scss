@@ -153,6 +153,21 @@ app-style-properties {
         background-image: url('/assets/images/fct_background_light.png');
     }
 
+    button {
+        &.play-button {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            opacity: 0.66;
+            &:hover {
+                opacity: 0.90;
+            }
+            &:active {
+                opacity: 1;
+            }
+        }
+    }
+
     .fct-background-options {
         display: absolute;
         top: 0;

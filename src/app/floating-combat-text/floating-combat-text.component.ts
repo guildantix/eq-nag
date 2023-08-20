@@ -5,6 +5,7 @@ import { nagId } from '../core/nag-id.util';
 import { IpcService } from '../ipc.service';
 import { MatCheckboxChange } from '@angular/material/checkbox';
 import { QuestionDialogAnswerModel } from '../dialogs/question-dialog/question-dialog.model';
+import { MatSnackBar } from '@angular/material/snack-bar';
 
 const animateBlowoutDuration = 4000;
 const animateFadeOutDuration = 7000;
@@ -68,6 +69,7 @@ export class FloatingCombatTextComponent implements OnInit {
     public toggleFlag: ( value: number, flag: number ) => number = window.api.utils.numbers.toggleFlag;
     public removeFlag: ( value: number, flag: number ) => number = window.api.utils.numbers.removeFlag;
     public addFlag: ( value: number, flag: number ) => number = window.api.utils.numbers.addFlag;
+    public isDev: boolean = false;
     
     public get fctOverlays(): OverlayWindowModel[] {
         return this.overlays.filter( f => f.overlayType === 'FCT' );
@@ -76,10 +78,12 @@ export class FloatingCombatTextComponent implements OnInit {
     constructor(
         private readonly dialogService: DialogService,
         private readonly ipcService: IpcService,
+        private readonly snackBar: MatSnackBar,
     ) { }
 
     ngOnInit() {
 
+        this.ipcService.getAppIsDev().subscribe( isDev => this.isDev = isDev );
         this.ipcService.getFctCombatGroups().subscribe( data => this.combatGroups = data );
         this.ipcService.getOverlayWindows().subscribe( data => this.overlays = data );
         this.ipcService.tickReceived().subscribe( data => {
@@ -138,6 +142,38 @@ export class FloatingCombatTextComponent implements OnInit {
             this.dialogService.showQuestionDialog( `Floating Combat Text ${canMigrate ? 'Migration' : 'Initialization'}`, statements, questions, true, 'wide' );
 
         } );
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Serializes the given combat group to JSON and copies it to the clipboard.
+     * 
+     * @param group The combat group to serialize.
+     */
+    copyJson( group: FctCombatGroup ): void {
+        // We'll need to clear out some data before we copy it, so let's make sure we don't mess with the original.
+        let copy: FctCombatGroup = Object.assign( new FctCombatGroup(), JSON.parse( JSON.stringify( group ) ) );
+        
+        copy._editorTabIndex = -1;
+        copy.combatGroupId = null;
+        copy.overlayId = null;
+        copy.editStylesType = 'value';
+                            
+        copy._animationCompletePercent = 0;
+        copy._animationComplete = true;
+        copy._animationIntervalId = undefined;
+        copy._animationResetTimeoutId = undefined;
+
+        this.ipcService.sendTextToClipboard( JSON.stringify( copy ) );
+        this.snackBar.open( 'Copied to clipboard', 'Dismiss', { duration: 3000 } );
     }
 
 
@@ -579,35 +615,41 @@ export class FloatingCombatTextComponent implements OnInit {
         
         let subA = divA.querySelector( 'div.fct-sub-animation' ) as HTMLElement;
         let subB = divB.querySelector( 'div.fct-sub-animation' ) as HTMLElement;
-
-        divA.style.animation = null;
-        divB.style.animation = null;
-
-        divA.style.opacity = null;
-        divB.style.opacity = null;
-
-        if ( subA ) {
-            subA.style.animation = null;
-            subA.style.opacity = null;
-        }
-        if ( subB ) {
-            subB.style.animation = null;
-            subB.style.opacity = null;
-        }
-
+    
         let textA = subA?.querySelector( 'div.fct-text-layer' ) as HTMLElement;
         let textB = subB?.querySelector( 'div.fct-text-layer' ) as HTMLElement;
 
-        if ( textA ) {
-            textA.style.animation = null;
-            textA.style.opacity = null;
-            textA.style.transform = null;
-        }
-        if ( textB ) {
-            textB.style.animation = null;
-            textB.style.opacity = null;
-            textB.style.transform = null;
-        }
+        const clearAnimations = () => {
+
+            divA.style.animation = null;
+            divB.style.animation = null;
+    
+            divA.style.opacity = null;
+            divB.style.opacity = null;
+    
+            if ( subA ) {
+                subA.style.animation = null;
+                subA.style.opacity = null;
+            }
+            if ( subB ) {
+                subB.style.animation = null;
+                subB.style.opacity = null;
+            }
+    
+            if ( textA ) {
+                textA.style.animation = null;
+                textA.style.opacity = null;
+                textA.style.transform = null;
+            }
+            if ( textB ) {
+                textB.style.animation = null;
+                textB.style.opacity = null;
+                textB.style.transform = null;
+            }
+
+        };
+
+        clearAnimations();
 
         let animation: string = '';
         let subAnimation: string = '';
@@ -765,6 +807,8 @@ export class FloatingCombatTextComponent implements OnInit {
                         divB.classList.remove( 'animation-absolute' );
                         divA.style.opacity = '1';
                         divB.style.opacity = '1';
+
+                        clearAnimations();
 
                     }, 500 );
 

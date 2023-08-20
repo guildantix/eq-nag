@@ -77,6 +77,17 @@
             <td colspan="2"><mat-checkbox [(ngModel)]="showBlock" name="showBlock" (change)="emitChange()">New Line</mat-checkbox></td>
             <!-- <td></td> -->
         </tr>
+        <tr *ngIf="enableJustify" style="height: 50px;">
+            <td>Justify</td>
+            <td></td>
+            <td colspan="4">
+                <mat-radio-group [(ngModel)]="model.justify" name="justify" style="display: flex; flex-flow: row nowrap; justify-content: space-between; width: 100%" (change)="emitChange()">
+                    <mat-radio-button class="justify-option" value="left">Left</mat-radio-button>
+                    <mat-radio-button class="justify-option" value="center">Center</mat-radio-button>
+                    <mat-radio-button class="justify-option" value="right">Right</mat-radio-button>
+                </mat-radio-group>
+            </td>
+        </tr>
     </table>
 
 

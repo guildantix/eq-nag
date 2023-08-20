@@ -36,6 +36,8 @@ class StylePropertiesModel {
     paddingBottom = 0;
     /** @type {'inline' | 'block'} */
     position = 'inline';
+    /** @type {'left' | 'center' | 'right'} */
+    justify = 'left';
 }
 
 module.exports = { StylePropertiesModel };

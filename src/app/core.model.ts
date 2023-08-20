@@ -429,6 +429,7 @@ export class StylePropertiesModel {
     public paddingTop: number = 0;
     public paddingBottom: number = 0;
     public position: 'inline' | 'block' = 'inline';
+    public justify: 'left' | 'center' | 'right' = 'left';
 
     public static applyStyles( el: HTMLElement, style: StylePropertiesModel ): void {
         if ( el ) {
@@ -458,7 +459,7 @@ export class StylePropertiesModel {
             }
 
             el.style.textShadow = textShadow.trim();
-            
+            el.style.textAlign = style.justify;
         }
     }
 }
@@ -1495,7 +1496,7 @@ export class FctCombatGroup {
     public _animationResetTimeoutId: number | undefined = undefined;
     public _editorTabIndex: number = -1;
     public get editorTabIndex(): number {
-        this._editorTabIndex = this._editorTabIndex > -1 ? this._editorTabIndex : this.overlayId == null ? 1 : 0;
+        this._editorTabIndex = this._editorTabIndex > -1 ? this._editorTabIndex : this.overlayId?.length > 0 ? 0 : 1;
         return this._editorTabIndex;
     }
 }
