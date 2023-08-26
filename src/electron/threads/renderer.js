@@ -1044,6 +1044,73 @@ function getRenderGroup( model ) {
 
 
 /**
+ * Attempts to accumulate the given hit, if the render group is configured to do so.
+ * 
+ * @returns {boolean} Returns true if the hit was accumulated.
+ * 
+ * @param {FctCombatGroup} renderGroup The combat group to check.
+ * @param {FctModel} model The FCT model to be rendered.
+ */
+function tryAccumulateHit(renderGroup, model) {
+    // Found a renderGroup, next lets check thresholds.
+    let groupMaxHit = largestHits[ renderGroup.combatGroupId ] ?? 0;
+    let hitAccumulated = false;
+
+    if ( renderGroup.ignoreHits || renderGroup.accumulateHits ) {
+
+        let threshold = renderGroup.thresholdType === 'percent' ? ( renderGroup.thresholdValue / 100 ) * groupMaxHit : renderGroup.thresholdValue;
+
+        if ( model.amount < threshold ) {
+            if ( renderGroup.accumulateHits ) {
+                let overlay = overlayInstances[ renderGroup.overlayId ];
+
+                if ( overlay ) {
+                    /** @type {FctModel | undefined} */
+                    let accumlationTarget = undefined;
+
+                    // We want to find the most recent component that matches the flags, in this render renderGroup.
+                    for ( let i = overlay.overlayFctComponents.length - 1; i >= 0; i-- ) {
+                        const c = overlay.overlayFctComponents[ i ];
+                        if ( c.accumulationPeriod && c.action === model.action && c.combatTypesFlags === model.combatTypesFlags && c.combatModifiersFlags === model.combatModifiersFlags ) {
+                            accumlationTarget = c;
+                            break;
+                        }
+                    }
+
+                    // If we've found a target, we want to accumulate the hits.
+                    if ( accumlationTarget && accumlationTarget.dom ) {
+                        accumulatHits( accumlationTarget.instanceId, accumlationTarget.dom.querySelector( '.fctText' ), model.amount, accumlationTarget.amount );
+                        hitAccumulated = true;
+                    }
+
+                }
+
+                if ( hitAccumulated ) {
+                    // We probably want to exit the function here.
+                    return true;
+                }
+            }
+        }
+
+    }
+
+    if ( model.amount > groupMaxHit ) {
+        largestHits[ renderGroup.combatGroupId ] = model.amount;
+    }
+
+    return hitAccumulated;
+}
+
+
+
+
+
+
+
+
+
+
+/**
  * Renders the given FCT model.
  * 
  * @param {FctModel} model The FCT model to render.
@@ -1064,49 +1131,11 @@ function renderFct2( model ) {
 
     if ( renderGroup ) {
 
-        // Found a renderGroup, next lets check thresholds.
-        let groupMaxHit = largestHits[ renderGroup.combatGroupId ] ?? 0;
-    
-        if ( renderGroup.ignoreHits || renderGroup.accumulateHits ) {
-    
-            let threshold = renderGroup.thresholdType === 'percent' ? ( renderGroup.thresholdValue / 100 ) * groupMaxHit : renderGroup.thresholdValue;
-    
-            if ( model.amount < threshold ) {
-                if ( renderGroup.accumulateHits ) {
-                    let overlay = overlayInstances[ renderGroup.overlayId ];
-    
-                    if ( overlay ) {
-                        /** @type {FctModel | undefined} */
-                        let accumlationTarget = undefined;
-    
-                        // We want to find the most recent component that matches the flags, in this render renderGroup.
-                        for ( let i = overlay.overlayFctComponents.length - 1; i >= 0; i-- ) {
-                            const c = overlay.overlayFctComponents[ i ];
-                            if ( c.accumulationPeriod && c.action === model.action && c.combatTypesFlags === model.combatTypesFlags && c.combatModifiersFlags === model.combatModifiersFlags ) {
-                                accumlationTarget = c;
-                                break;
-                            }
-                        }
-    
-                        // If we've found a target, we want to accumulate the hits.
-                        if ( accumlationTarget && accumlationTarget.dom ) {
-                            accumulatHits( accumlationTarget.instanceId, accumlationTarget.dom.querySelector( '.fctText' ), model.amount, accumlationTarget.amount );
-                            hitAccumulated = true;
-                        }
-    
-                    }
-    
-                    if ( hitAccumulated ) {
-                        // We probably want to exit the function here.
-                        return;
-                    }
-                }
-            }
-    
-        }
-    
-        if ( model.amount > groupMaxHit ) {
-            largestHits[ renderGroup.combatGroupId ] = model.amount;
+        hitAccumulated = tryAccumulateHit( renderGroup, model );
+
+        if ( hitAccumulated ) {
+            // We probably want to exit the function here.
+            return;
         }
 
         let text = NumberUtilities.toShorthandString( model.amount );
