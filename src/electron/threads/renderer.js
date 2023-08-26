@@ -1109,16 +1109,8 @@ function renderFct2( model ) {
             largestHits[ renderGroup.combatGroupId ] = model.amount;
         }
 
-        if ( model.combatModifiers.includes( 'normal' ) ) {
-            console.log( 'model amount', model.amount, model.combatModifiers, model.combatTypesFlags, renderGroup._combatTypesFlags );
-        }
-
         let text = NumberUtilities.toShorthandString( model.amount );
         let damageSourceText = model.action;
-
-        if ( text === 'undefined' ) {
-            console.log( 'undefined text', model );
-        }
 
         let fctOverlay = overlayInstances[ renderGroup.overlayId ];
         fctOverlay.overlayFctComponents.push( model );
