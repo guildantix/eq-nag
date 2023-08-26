@@ -1023,7 +1023,6 @@ function renderFct2( model ) {
             }
         }
     }
-    // console.log( 'found renderGroup', renderGroup?.combatGroupId, model.combatModifiers, modelCombatModifiersFlags );
 
     if ( renderGroup ) {
 
@@ -1135,8 +1134,6 @@ function renderFct2( model ) {
         let textAnimation = '';
         /** @type {number} */
         let duration = 0;
-        // /** @type {number} */
-        // let animationDelay = 0;
         /** @type {number} */
         let accumulationEndMs = 0;
 
@@ -1182,19 +1179,6 @@ function renderFct2( model ) {
             duration = duration < animateFadeOutDuration ? animateFadeOutDuration : duration;
             accumulationEndMs = duration;
 
-            // TODO: I don't believe that this is required, as the animation will just be the browser scrolling text and at the end, the element will be removed.
-            // However, we may want to tweak the duration a little to kill the 
-            // element a few ms before the animation completes to prevent 
-            // possible flashes of numbers if the timeout is executed a ms or 
-            // two late.
-            
-            // if ( renderGroup.combatAnimations.fadeOut ) {
-            //     window.setTimeout( () => {
-            //         div.style.opacity = '0';
-            //     }, animateFadeOutDuration );
-            // }
-
-            // animationDelay = 1500;
         }
         
         // The last two animations applied must be fade out then fade in.  Fade
@@ -1234,7 +1218,6 @@ function renderFct2( model ) {
                 accumulationEndMs = animationDelay;
             }
             
-            // textAnimation += ( textAnimation.length > 0 ? ', ' : '' ) + `animate-shrink ${animationDuration}ms ease-out`;
         }
         
         if ( renderGroup.combatAnimations.grow ) {
@@ -1310,10 +1293,6 @@ function renderFct2( model ) {
                 let _textEl = overlayInstances[ overlayId ].criticalComp.dom.querySelector( '.fctText' );
                 if ( _textEl ) {
                     let f = overlayInstances[ overlayId ].criticalComp;
-                    // overlayInstances[ overlayId ].criticalComp.accumulationDelay += accumulationDelay;
-                    // window.setTimeout( () => {
-                    //     _textEl.innerHTML = overlayInstances[ overlayId ].criticalComp.text;
-                    // }, overlayInstances[ overlayId ].criticalComp.accumulationDelay );
                     accumulatHits( f.instanceId, _textEl, model.amount, f.amount );
                     hitAccumulated = true;
                 }
