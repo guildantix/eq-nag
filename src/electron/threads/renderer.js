@@ -191,6 +191,11 @@ let installedTriggerIds = [];
 /** @type {FctCombatGroup[]} */
 let combatGroups = [];
 
+/** @type {Record<string, number>} */
+var largestHits = {};
+/** @type {Record<string, HitAccumulationModel>} */
+var hitAccumulations = {};
+
 // animation durations, in ms
 const animateFadeShrinkDuration = 4000;
 // const animateFadeOutDuration = 7000;
@@ -945,13 +950,23 @@ function updateOverlay( overlayId, model ) {
             
 }
 
-/** @type {FctRenderComponent | undefined} */
-var lastRenderedFctComponent = undefined;
-/** @type {Record<string, number>} */
-var largestHits = {};
-/** @type {Record<string, HitAccumulationModel>} */
-var hitAccumulations = {};
 
+
+
+
+
+
+
+
+
+/**
+ * Accumulates the given amount onto an existing component.
+ * 
+ * @param {string} instanceId The instance id of the rendered fct component.
+ * @param {HTMLElement} el The element to render the accumulation to.
+ * @param {number} accumulateAmount The amount to accumulate.
+ * @param {number} originalAmount The original starting about.  For hits already accumulated, this value is ignored.
+ */
 function accumulatHits( instanceId, el, accumulateAmount, originalAmount ) {
     let accumulation = hitAccumulations[ instanceId ];
 
@@ -985,6 +1000,15 @@ function accumulatHits( instanceId, el, accumulateAmount, originalAmount ) {
     }
 
 }
+
+
+
+
+
+
+
+
+
 
 /**
  * Renders the given FCT model.
