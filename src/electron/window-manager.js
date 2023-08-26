@@ -113,6 +113,12 @@ class WindowManager {
             this.#renderer.webContents.send( 'renderer:overlay:update', overlays );
         } );
 
+        this.#overlayDatabase.registerCombatGroupUpdateHandler( groups => {
+            if ( this.#renderer ) {
+                this.#renderer.webContents.send( 'renderer:combatGroups', groups );
+            }
+        } );
+
         this.#overlayDatabase.registerOverlayDeleteHandler( overlayId => {
             this.#renderer.webContents.send( 'renderer:overlay:delete', overlayId );
         } );
@@ -685,6 +691,7 @@ class WindowManager {
 
         renderer.webContents.once( 'dom-ready', () => {
             renderer.webContents.send( 'fct:change:fctShowCriticalsInline', this.#userPrefDb.fctShowCriticalsInline );
+            renderer.webContents.send( 'renderer:combatGroups', this.#overlayDatabase.getCombatGroups() );
         } );
 
         this.#renderer = renderer;
