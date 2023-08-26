@@ -705,19 +705,15 @@ export class FloatingCombatTextComponent implements OnInit, DoCheck {
         // than this. This is an animation preview, so values need to be reset 
         // after the animation is complete, and that can have a variable 
         // duration.
-        console.log( 'testing', e?.source.name, group.combatAnimations );
         if ( e?.source.name.includes( 'fountain' ) && group.combatAnimations.fountain ) {
             group.combatAnimations.scroll = false;
             group.combatAnimations.blowout = false;
-            console.log( 'fountain', group.combatAnimations );
 
         } else if ( e?.source.name.includes( 'scroll' ) && group.combatAnimations.scroll ) {
             group.combatAnimations.fountain = false;
-            console.log( 'scroll', group.combatAnimations );
             
         } else if ( e?.source.name.includes( 'blowout' ) && group.combatAnimations.blowout ) {
             group.combatAnimations.fountain = false;
-            console.log( 'blowout', group.combatAnimations );
             
         }
         

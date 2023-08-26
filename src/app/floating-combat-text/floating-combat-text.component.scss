@@ -329,6 +329,11 @@ app-style-properties {
     position: absolute;
 }
 
+:root {
+    --ease-out-cubic: cubic-bezier(0.33, 1, 0.68, 1);
+    --ease-in-cubic: cubic-bezier(0.32, 0, 0.67, 0);
+}
+
 @keyframes animate-fadein {
     from { opacity: 0; }
     // 90% { opacity: 0.337; }
@@ -370,11 +375,6 @@ app-style-properties {
     100% { transform: scale(.1); opacity: 0; }
 }
 
-:root {
-    --ease-out-cubic: cubic-bezier(0.33, 1, 0.68, 1);
-    --ease-in-cubic: cubic-bezier(0.32, 0, 0.67, 0);
-}
-
 // Primary animation
 // var(--random-y) & var(--y-direction), to be applied to the element via script
 @keyframes animate-fountain-floatup {
@@ -389,22 +389,6 @@ app-style-properties {
     0% { transform: translateX(0px); animation-timing-function: ease-in; }
     100% { transform: translateX(var(--random-x)); animation-timing-function: ease-in; }
 }
-
-// @keyframes myOrbit {
-//     0% { transform: rotate(0deg) translateX(0px) rotate(0deg); animation-timing-function: linear; }
-//     45%   { transform: rotate(calc(-180deg * 0.45)) translateX(50px) rotate(calc(180deg * 0.45)); animation-timing-function: linear; }
-//     100%   { transform: rotate(-180deg) translateX(150px) rotate(180deg); animation-timing-function: linear; }
-// }
-
-// @keyframes myOrbitTranslate {
-//     from { translate: 0px 0px; }
-//     to   { translate: 0px 150px; }
-// }
-
-// @keyframes myOrbitRotate {
-//     from { transform: rotate(0deg) rotate(0deg); }
-//     to   { transform: rotate(-180deg) rotate(180deg); }
-// }
 
 .no-bottom-border {
     border-bottom: none !important;
