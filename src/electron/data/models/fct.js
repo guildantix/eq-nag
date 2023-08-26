@@ -35,6 +35,49 @@ class FctModel extends OverlayComponent {
     fct = true;
     /** @type {CombatTypes} */
     combatTypes = new CombatTypes();
+    /** @type {{x: number, y: number} | undefined} */
+    pos = undefined;
+    /** @type {number} */
+    delayAmount = 0;
+
+    /** @type {string | undefined} */
+    actor = undefined;
+    /** @type {string | undefined} */
+    action = undefined;
+    /** @type {string | undefined} */
+    target = undefined;
+    /** @type {number | undefined} */
+    amount = undefined;
+    /** @type {string | undefined} */
+    avoidType = undefined;
+    /** @type {string | undefined} */
+    damageType = undefined;
+    /** @type {string | undefined} */
+    overHealing = undefined;
+
+    accumulationDelay = 0;
+    combatTypesFlags = 0;
+    combatModifiersFlags = 0;
+    accumulationPeriod = true;
+
+}
+
+class HitAccumulationModel {
+    /** @type {string | undefined} */
+    intervalId = undefined;
+    /** @type {number} */
+    targetAmount = 0;
+    /** @type {number} */
+    currentAmount = 0;
+    /** @type {HTMLElement | undefined} */
+    element = undefined;
+}
+
+class FctRenderComponent {
+    /** @type {FctModel[]} */
+    model = [];
+    /** @type {HTMLElement|undefined} */
+    dom = undefined;
 }
 
 class FctStylesModel {
@@ -62,4 +105,4 @@ class FctStylesModel {
 
 }
 
-module.exports = { FctModel, FctStylesModel, FctTypes };
+module.exports = { FctModel, FctStylesModel, FctTypes, FctRenderComponent, HitAccumulationModel };

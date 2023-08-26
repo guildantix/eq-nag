@@ -191,6 +191,17 @@ class CombatAnimations {
     shrink = false;
 }
 
+/** @type {string[]} */
+const combatTypes = [
+    'myHits',
+    'otherHitsOnMe',
+    'mySpellHits',
+    'otherSpellHitsOnMe',
+    'myHealing',
+    'otherHealingOnMe',
+    'skillUp',
+];
+
 class CombatTypes {
     /** @type {boolean} */
     myHits = false;
@@ -204,6 +215,65 @@ class CombatTypes {
     myHealing = false;
     /** @type {boolean} */
     otherHealingOnMe = false;
+    /** @type {boolean} */
+    skillUp = false;
+
+    /**
+     * Returns a unique hash number for the given object.
+     * @returns {number}
+     * @param {CombatTypes} obj
+     */
+    static getFlagsValue( obj ) {
+        let flags = 0;
+        let keys = Object.keys( obj );
+        
+        for ( let i = 0; i < keys.length; i++ ) {
+            if ( obj[ keys[ i ] ] === true ) {
+                let o = combatTypes.indexOf( keys[ i ] );
+                if ( o >= 0 ) {
+                    flags = flags | ( 1 << o );
+                }
+            }
+        }
+        
+        return flags;
+    }
+}
+
+/** @type {string[]} */
+const combatModifiers = [
+    'unset',
+    'normal',
+    'critical',
+    'crippling_blow',
+    'flurry',
+    'lucky',
+    'twincast',
+    'riposte',
+    'strikethrough',
+    'wild_rampage',
+    'rampage',
+    'assassinate',
+    'headshot',
+    'double_bow_shot',
+    'deadly_strike',
+    'finishing_blow',
+];
+
+/**
+ * Returns a unique hash number for the given combat modifiers.
+ * 
+ * @param {string[]} modifiers The combat modifiers to hash.
+ */
+function getCombatModifiersFlags( modifiers ) {
+    let flags = 0;
+    for ( let i = 0; i < modifiers.length; i++ ) {
+        let index = combatModifiers.indexOf( modifiers[ i ] );
+        if ( index >= 0 ) {
+            flags = flags | ( 1 << index );
+        }
+    }
+    return flags;
 }
 
 class FctCombatGroup {
@@ -243,6 +313,11 @@ class FctCombatGroup {
     displayBackground = 'dark';
     /** @type {'value' | 'source' | 'animations'} */
     editStylesType = 'value';
+
+    /** @type {number} */
+    _combatTypesFlags = 0;
+    /** @type {number} */
+    _combatModifiersFlags = 0;
 }
 
-module.exports = { OverlayDimensions, OverlayWindow, OverlayComponent, TimerSortTypes, OverlayStoreModel, TriggerSecondaryActionModel, CombatAnimations, CombatTypes, FctCombatGroup, HitStartPositionTypes };
+module.exports = { OverlayDimensions, OverlayWindow, OverlayComponent, TimerSortTypes, OverlayStoreModel, TriggerSecondaryActionModel, CombatAnimations, CombatTypes, FctCombatGroup, HitStartPositionTypes, getCombatModifiersFlags };
