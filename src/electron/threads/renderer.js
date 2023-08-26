@@ -1001,6 +1001,39 @@ function accumulatHits( instanceId, el, accumulateAmount, originalAmount ) {
 
 }
 
+/**
+ * Finds a matching render group for the given FCT model.
+ * 
+ * @returns {FctCombatGroup | undefined} Returns the render group, or undefined if no render group was found.
+ * 
+ * @param {FctModel} model The FCT model.
+ */
+function getRenderGroup( model ) {
+    /** @type {FctCombatGroup | undefined} */
+    let renderGroup = undefined;
+
+    for ( let i = 0; i < combatGroups?.length ?? 0; i++ ) {
+        const group = combatGroups[ i ];
+
+        if ( ( model.combatTypesFlags & group._combatTypesFlags ) === model.combatTypesFlags ) {
+            // Found a group with matching combat flags.
+            if ( ( model.combatModifiersFlags & group._combatModifiersFlags ) === model.combatModifiersFlags ) {
+
+                // If we're here, we're rendering this group.
+                renderGroup = group;
+                break;
+
+            } else if ( !renderGroup && ( model.combatModifiersFlags & group._combatModifiersFlags ) > 0 ) {
+                // Found a group with some matching combat modifiers.
+                // Next we need to check that it passes threshold for ignore/consolidation.
+                renderGroup = group;
+            }
+        }
+    }
+
+    return renderGroup;
+}
+
 
 
 
@@ -1027,26 +1060,7 @@ function renderFct2( model ) {
         return;
     }
 
-    for ( let i = 0; i < combatGroups?.length ?? 0; i++ ) {
-        const group = combatGroups[ i ];
-
-        if ( ( model.combatTypesFlags & group._combatTypesFlags ) === model.combatTypesFlags ) {
-            // Found a group with matching combat flags.
-
-            if ( ( model.combatModifiersFlags & group._combatModifiersFlags ) === model.combatModifiersFlags ) {
-
-                // If we're here, we're rendering this group.
-                renderGroup = group;
-                break;
-
-            } else if ( !renderGroup && ( model.combatModifiersFlags & group._combatModifiersFlags ) > 0 ) {
-                // Found a group with some matching combat modifiers.
-
-                // Next we need to check that it passes threshold for ignore/consolidation.
-                renderGroup = group;
-            }
-        }
-    }
+    renderGroup = getRenderGroup( model );
 
     if ( renderGroup ) {
 
