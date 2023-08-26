@@ -46,8 +46,23 @@ class OverlayDatabaseStore extends Store {
      */
     #overlayUpdateHandlers = [];
 
+    /**
+     * @type {(combatGroups: FctCombatGroup[]) => void}
+     */
+    #combatGroupUpdateHandlers = [];
+
     /** @type {UserPreferencesStore} */
     #userPrefDb;
+
+    /**
+     * Registers a combat group handler that executes when the combat groups 
+     * are changed.
+     * 
+     * @param {(combatGroups: FctCombatGroup[]) => void} handler The handler function.
+     */
+    registerCombatGroupUpdateHandler( handler ) {
+        this.#combatGroupUpdateHandlers.push( handler );
+    }
 
     /**
      * Registers an overlay handler function that executes when position 
@@ -564,6 +579,22 @@ class OverlayDatabaseStore extends Store {
 
 
 
+    
+    /**
+     * Emits the combat group changes to all registered handlers.
+     */
+    emitCombatGroupChanges() {
+        this.#combatGroupUpdateHandlers.forEach( fn => fn( this.#data.fctCombatGroups ) );
+    }
+
+
+
+
+
+
+
+
+
 
     /**
      * Attaches store events to ipc main and dispatches react events to the main window.
@@ -675,11 +706,13 @@ class OverlayDatabaseStore extends Store {
                     this.storeDataFile( this.#data );
                 }
                 event.sender.send( 'overlay:update:combatGroup', id );
+                this.emitCombatGroupChanges();
             } );
 
         ipcMain.on( 'overlay:delete:combatGroup', ( event, combatGroupId ) => {
             this.removeCombatGroup( combatGroupId );
             event.sender.send( 'overlay:delete:combatGroup', true );
+            this.emitCombatGroupChanges();
         } );
 
         ipcMain.on( 'overlay:set:overlayDimensions',
