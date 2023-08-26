@@ -8,6 +8,9 @@ import { DialogService } from 'src/app/dialogs/dialog.service';
 import { IpcService } from 'src/app/ipc.service';
 import { SettingsService } from 'src/app/settings/settings-http.service';
 
+// TODO: Move away from highlighting the current line and instead highlight all lines at the current second.  And remove the intervals, scrolling the last element into view immediately.
+// TODO: On close, stop the sim.
+
 @Component( {
     selector: 'app-log-simulator',
     templateUrl: 'log-simulator.component.html',

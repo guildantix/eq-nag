@@ -432,6 +432,7 @@ export class StylePropertiesModel {
     public justify: 'left' | 'center' | 'right' = 'left';
 
     public static applyStyles( el: HTMLElement, style: StylePropertiesModel ): void {
+        // TODO: This method should execute the method from core.js, via the api.
         if ( el ) {
             el.style.fontFamily = `"${style.fontFamily}"`;
             el.style.fontSize = `${style.fontSize}px`;
@@ -1497,6 +1498,25 @@ export class CombatTypes {
         return hash;
     }
 }
+
+export const CombatModifiers: string[] = [
+    'unset',
+    'normal',
+    'critical',
+    'crippling_blow',
+    'flurry',
+    'lucky',
+    'twincast',
+    'riposte',
+    'strikethrough',
+    'wild_rampage',
+    'rampage',
+    'assassinate',
+    'headshot',
+    'double_bow_shot',
+    'deadly_strike',
+    'finishing_blow',
+];
 
 export class FctCombatGroup {
 
