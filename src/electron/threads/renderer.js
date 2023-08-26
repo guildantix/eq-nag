@@ -3,7 +3,7 @@ const DomUtilities = require( '../utilities/dom' );
 const StringUtilities = require( '../utilities/string' );
 const NumberUtilities = require( '../utilities/numbers' );
 const ArrayUtilities = require( '../utilities/arrays' );
-const { OverlayDimensions, OverlayWindow, OverlayComponent, TimerSortTypes, TriggerSecondaryActionModel } = require( '../data/models/overlay-window' );
+const { OverlayDimensions, OverlayWindow, OverlayComponent, TimerSortTypes, TriggerSecondaryActionModel, FctCombatGroup, CombatTypes, getCombatModifiersFlags, HitStartPositionTypes } = require( '../data/models/overlay-window' );
 const { ActionTypes, TriggerAction, TriggerConditionTypes, OperatorTypes, TimerRestartBehaviors } = require( '../data/models/trigger' );
 const { ipcRenderer } = require( 'electron' );
 const Handlebars = require( "handlebars" );
@@ -12,12 +12,28 @@ const customAlphabet = require( 'nanoid' ).customAlphabet;
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const nanoid = customAlphabet( alphabet, 16 );
 const StyleSheetUtil = require( '../utilities/style-sheet' );
-const { FctStylesModel, FctModel, FctTypes } = require( '../data/models/fct' );
+const { FctStylesModel, FctModel, FctTypes, FctRenderComponent, HitAccumulationModel } = require( '../data/models/fct' );
 const ElectronUtilities = require( '../utilities/electron' );
 const { StyleProperties } = require( '../data/models/common' );
 const { getCurrentWindow, screen } = require( '@electron/remote' );
 const { DateUtilities } = require( '../utilities/dates' );
 const { SharedTriggerPermissions } = require( '../data/models/sharing-service' );
+const { StylePropertiesModel } = require( '../data/models/core' );
+
+// TODO: List
+//  3. Update the log watcher to capture data that is required by the new combat groups.
+//  4. Bring in the new combat groups when the renderer loads.
+//  5. Create the rendering routines for the new combat groups.
+//  6. Create the routines and animations for hit consolidation and attenuation.
+//  8. For spell hits ahd healing, the spell name should be included/set as the source.
+
+//  ?. For hit consolidation, create the option "I don't care, don't clutter my screen".  I envision this working by taking a percent of screen usage, and if the hits are going to exceed that, then consolidate them.  This will be a global setting, not per overlay.
+//  ?. Work on adding in a DPS meter /grumble.
+//  ?. Show FCT that doesn't get rendered in the application's custom console.  Review the channel 'trigger:batch-history'
+
+
+
+// TODO: Some day we need to remove the old FCT data structure.
 
 /**
  * Sends the error information to the main thread for logging.
@@ -120,6 +136,8 @@ class OverlayInstance {
     fontSize;
     /** @type {boolean[][]} */
     criticals;
+    /** @type {FctModel | undefined} */
+    criticalComp = undefined;
     /** @type {{x: number, y: number}[][]} */
     quadrants;
 }
@@ -170,8 +188,25 @@ const permissionsSettingKey = 'sharedTriggerPermissions';
 let actionPermissions = null;
 /** @type {string[]} */
 let installedTriggerIds = [];
+/** @type {FctCombatGroup[]} */
+let combatGroups = [];
 
+// animation durations, in ms
+const animateFadeShrinkDuration = 4000;
+// const animateFadeOutDuration = 7000;
+const animateBlowoutDuration = 4000;
+const animateFadeOutDuration = 7000;
+const animateFadeInDuration = 500;
+const animateFloatDuration = 1000;
+const animateGrowShrinkDuration = 500;
+const accumulationDelay = 750;
+const accumulationIntervalDelay = 25;
 
+// let perfTimeTotal = 0;
+// let perfIntervalId = null;
+
+/** @type {HandlebarsTemplateDelegate<any>} */
+let fct2Template;
 
 
 
@@ -191,6 +226,7 @@ function Renderer( originX, originY, glowOnStart ) {
         timerTemplate = Handlebars.compile( document.querySelector( '#timerTemplate' ).innerHTML );
         timerIconTemplate = Handlebars.compile( document.querySelector( '#timerIconTemplate' ).innerHTML );
         fctTemplate = Handlebars.compile( document.querySelector( '#fctTemplate' ).innerHTML );
+        fct2Template = Handlebars.compile( document.querySelector( '#fct2Template' ).innerHTML );
         fctCriticalTemplate = Handlebars.compile( document.querySelector( '#fctCriticalTemplate' ).innerHTML );
         targetGroupTemplate = Handlebars.compile( document.querySelector( '#targetGroupTemplate' ).innerHTML );
         targetGroupTimerTemplate = Handlebars.compile( document.querySelector( '#targetGroupTimerTemplate' ).innerHTML );
@@ -201,6 +237,21 @@ function Renderer( originX, originY, glowOnStart ) {
         ipcRenderer.send( 'overlay:get', null );
 
     } );
+
+    ipcRenderer.on( 'renderer:combatGroups',
+        /**
+         * Handles receiving updates to combat groups.
+         * 
+         * @param {Electron.IpcRendererEvent} event The event args.
+         * @param {FctCombatGroup[]} groups The updated list of combat groups.
+         */
+        ( event, groups ) => {
+            combatGroups = groups;
+            combatGroups.forEach( group => {
+                group._combatTypesFlags = CombatTypes.getFlagsValue( group.combatTypes );
+                group._combatModifiersFlags = getCombatModifiersFlags( group.combatModifiers );
+            } );
+        } );
 
     ipcRenderer.on( 'pkg:get:installed:trigger-ids', function ( event, data ) {
         if ( data ) {
@@ -338,11 +389,12 @@ function Renderer( originX, originY, glowOnStart ) {
         /**
          * Handles receiving a new trigger action.
          * @param {*} event The event object.
-         * @param {OverlayComponent} model The trigger action.
+         * @param {FctModel} model The trigger action.
          */
         function ( event, model ) {
             model.added = new Date();
-            renderFct( model.overlayId, model );
+            // renderFct( model.overlayId, model );
+            renderFct2( model );
         } );
 
     ipcRenderer.on( 'renderer:window:enable-edit', function ( event, overlayId ) {
@@ -893,6 +945,425 @@ function updateOverlay( overlayId, model ) {
             
 }
 
+/** @type {FctRenderComponent | undefined} */
+var lastRenderedFctComponent = undefined;
+/** @type {Record<string, number>} */
+var largestHits = {};
+/** @type {Record<string, HitAccumulationModel>} */
+var hitAccumulations = {};
+
+function accumulatHits( instanceId, el, accumulateAmount, originalAmount ) {
+    let accumulation = hitAccumulations[ instanceId ];
+
+    if ( accumulation ) {
+        accumulation.targetAmount += accumulateAmount;
+        
+    } else {
+        accumulation = new HitAccumulationModel();
+        
+        accumulation.targetAmount = originalAmount + accumulateAmount;
+        accumulation.currentAmount = originalAmount;
+        accumulation.element = el;
+
+        accumulation.intervalId = window.setInterval( () => {
+            if ( accumulation.currentAmount >= accumulation.targetAmount ) {
+                window.clearInterval( accumulation.intervalId );
+                delete hitAccumulations[ instanceId ];
+                return;
+            }
+
+            accumulation.currentAmount += Math.ceil( accumulation.targetAmount / ( accumulationDelay / accumulationIntervalDelay ) );
+
+            if ( accumulation.currentAmount > accumulation.targetAmount ) {
+                accumulation.currentAmount = accumulation.targetAmount;
+            }
+
+            accumulation.element.innerHTML = NumberUtilities.toShorthandString( accumulation.currentAmount );
+        }, accumulationIntervalDelay );
+
+        hitAccumulations[ instanceId ] = accumulation;
+    }
+
+}
+
+/**
+ * Renders the given FCT model.
+ * 
+ * @param {FctModel} model The FCT model to render.
+ */
+function renderFct2( model ) {
+    /** @type {FctCombatGroup | undefined} */
+    let renderGroup = undefined;
+
+    model.combatTypesFlags = CombatTypes.getFlagsValue( model.combatTypes );
+    model.combatModifiersFlags = getCombatModifiersFlags( model.combatModifiers );
+    let hitAccumulated = false;
+
+    if ( model.combatTypesFlags === 0 ) {
+        return;
+    }
+
+    for ( let i = 0; i < combatGroups?.length ?? 0; i++ ) {
+        const group = combatGroups[ i ];
+
+        if ( ( model.combatTypesFlags & group._combatTypesFlags ) === model.combatTypesFlags ) {
+            // Found a group with matching combat flags.
+
+            if ( ( model.combatModifiersFlags & group._combatModifiersFlags ) === model.combatModifiersFlags ) {
+
+                // If we're here, we're rendering this group.
+                renderGroup = group;
+                break;
+
+            } else if ( !renderGroup && ( model.combatModifiersFlags & group._combatModifiersFlags ) > 0 ) {
+                // Found a group with some matching combat modifiers.
+
+                // Next we need to check that it passes threshold for ignore/consolidation.
+                renderGroup = group;
+            }
+        }
+    }
+    // console.log( 'found renderGroup', renderGroup?.combatGroupId, model.combatModifiers, modelCombatModifiersFlags );
+
+    if ( renderGroup ) {
+
+        // Found a renderGroup, next lets check thresholds.
+        let groupMaxHit = largestHits[ renderGroup.combatGroupId ] ?? 0;
+    
+        if ( renderGroup.ignoreHits || renderGroup.accumulateHits ) {
+    
+            let threshold = renderGroup.thresholdType === 'percent' ? ( renderGroup.thresholdValue / 100 ) * groupMaxHit : renderGroup.thresholdValue;
+    
+            if ( model.amount < threshold ) {
+                if ( renderGroup.accumulateHits ) {
+                    let overlay = overlayInstances[ renderGroup.overlayId ];
+    
+                    if ( overlay ) {
+                        /** @type {FctModel | undefined} */
+                        let accumlationTarget = undefined;
+    
+                        // We want to find the most recent component that matches the flags, in this render renderGroup.
+                        for ( let i = overlay.overlayFctComponents.length - 1; i >= 0; i-- ) {
+                            const c = overlay.overlayFctComponents[ i ];
+                            if ( c.accumulationPeriod && c.action === model.action && c.combatTypesFlags === model.combatTypesFlags && c.combatModifiersFlags === model.combatModifiersFlags ) {
+                                accumlationTarget = c;
+                                break;
+                            }
+                        }
+    
+                        // If we've found a target, we want to accumulate the hits.
+                        if ( accumlationTarget && accumlationTarget.dom ) {
+                            accumulatHits( accumlationTarget.instanceId, accumlationTarget.dom.querySelector( '.fctText' ), model.amount, accumlationTarget.amount );
+                            hitAccumulated = true;
+                        }
+    
+                    }
+    
+                    if ( hitAccumulated ) {
+                        // We probably want to exit the function here.
+                        return;
+                    }
+                }
+            }
+    
+        }
+    
+        if ( model.amount > groupMaxHit ) {
+            largestHits[ renderGroup.combatGroupId ] = model.amount;
+        }
+
+        if ( model.combatModifiers.includes( 'normal' ) ) {
+            console.log( 'model amount', model.amount, model.combatModifiers, model.combatTypesFlags, renderGroup._combatTypesFlags );
+        }
+
+        let text = NumberUtilities.toShorthandString( model.amount );
+        let damageSourceText = model.action;
+
+        if ( text === 'undefined' ) {
+            console.log( 'undefined text', model );
+        }
+
+        let fctOverlay = overlayInstances[ renderGroup.overlayId ];
+        fctOverlay.overlayFctComponents.push( model );
+        
+        /** @type {HTMLDivElement} */
+        let contentArea;
+
+        let top = NumberUtilities.hasFlag( renderGroup.startingPosition, HitStartPositionTypes.top );
+        let left = NumberUtilities.hasFlag( renderGroup.startingPosition, HitStartPositionTypes.left );
+        let bottom = NumberUtilities.hasFlag( renderGroup.startingPosition, HitStartPositionTypes.bottom );
+        let right = NumberUtilities.hasFlag( renderGroup.startingPosition, HitStartPositionTypes.right );
+        let random = NumberUtilities.hasFlag( renderGroup.startingPosition, HitStartPositionTypes.random );
+        
+        if ( top && left ) {
+            contentArea = fctOverlay.dom.querySelector( '.fct-content.top-left' );
+
+        } else if ( top && right ) {
+            contentArea = fctOverlay.dom.querySelector( '.fct-content.top-right' );
+
+        } else if ( bottom && left ) {
+            contentArea = fctOverlay.dom.querySelector( '.fct-content.bottom-left' );
+
+        } else if ( bottom && right ) {
+            contentArea = fctOverlay.dom.querySelector( '.fct-content.bottom-right' );
+
+        } else if ( random ) {
+            contentArea = fctOverlay.dom.querySelector( '.fct-content.random' );
+
+        } else {
+            contentArea = contentArea = fctOverlay.dom.querySelector( '.fct-content.bottom-left' );
+            bottom = true;
+            left = true;
+            top = false;
+            right = false;
+            random = false;
+            
+        }
+
+        /** @type {string} */
+        let content = fct2Template( { value: text, damageSource: damageSourceText } );
+        let div = createElement( 'div' );
+
+        div.innerHTML = content;
+        div.classList.add( 'fct-values' );
+
+        /** @type {string} */
+        let animation = '';
+        /** @type {string} */
+        let subAnimation = '';
+        /** @type {string} */
+        let textAnimation = '';
+        /** @type {number} */
+        let duration = 0;
+        // /** @type {number} */
+        // let animationDelay = 0;
+        /** @type {number} */
+        let accumulationEndMs = 0;
+
+        if ( renderGroup.combatAnimations.blowout ) {
+            animation += ( animation.length > 0 ? ', ' : '' ) + `${renderGroup.combatAnimations.fadeOut ? 'animate-blowout-fadeout' : 'animate-blowout'} ${animateBlowoutDuration}ms ease-out`;
+            duration = duration < animateBlowoutDuration ? animateBlowoutDuration : duration;
+            accumulationEndMs = animateBlowoutDuration * .5; // 50% { transform: scale(2.0); }
+            
+        } else if ( renderGroup.combatAnimations.fountain ) {
+            
+            div.classList.add( 'animation-absolute' );
+
+            /** @type {number} */
+            let durationVariance = animateFloatDuration * 0.25;
+            /** @type {number} */
+            let durationVarianceRange = durationVariance / 2;
+            
+            // Give the animation a random duration, within a variance constraint.
+            /** @type {number} */
+            let r = ( Math.random() * durationVariance ) - durationVarianceRange;
+            let d = animateFloatDuration + r;
+            div.style.setProperty( '--animation-duration', d + 'ms' );
+
+            duration = duration < d ? d : duration;
+            accumulationEndMs = duration;
+            
+            // Give the animation a random y direction.
+            r = 150 - ( Math.random() * 50 ); // 100 - 150
+            let n = renderGroup.startingPosition & HitStartPositionTypes.top ? 1 : -1; // We use n to determine if the direction is up or down.
+            div.style.setProperty( '--random-y', ( n * r ) + 'px' ); // r must be negative to float in the upward direction.
+            div.style.setProperty( '--y-direction', ( n * 40 * -1 ) + 'px' ); // y direction creates the downward/opposite motion at the apex of the curve.
+            
+            // Give the animation a random x direction.
+            n = Math.random() - 0.5 >= 0 ? 1 : -1; // We use n to determine if the direction is left or right.
+            r = ( 100 - ( Math.random() * 50 ) ) * n; // ( n ) * ( 100 - 150 ), n = 1 or -1
+            div.style.setProperty( '--random-x', r + 'px' );
+
+            animation += ( animation.length > 0 ? ', ' : '' ) + `animate-fountain-floatup var(--animation-duration)`;
+            subAnimation += ( subAnimation.length > 0 ? ', ' : '' ) + `animate-fountain-horizontal var(--animation-duration)`;
+            
+        } else if ( renderGroup.combatAnimations.scroll ) {
+
+            duration = duration < animateFadeOutDuration ? animateFadeOutDuration : duration;
+            accumulationEndMs = duration;
+
+            // TODO: I don't believe that this is required, as the animation will just be the browser scrolling text and at the end, the element will be removed.
+            // However, we may want to tweak the duration a little to kill the 
+            // element a few ms before the animation completes to prevent 
+            // possible flashes of numbers if the timeout is executed a ms or 
+            // two late.
+            
+            // if ( renderGroup.combatAnimations.fadeOut ) {
+            //     window.setTimeout( () => {
+            //         div.style.opacity = '0';
+            //     }, animateFadeOutDuration );
+            // }
+
+            // animationDelay = 1500;
+        }
+        
+        // The last two animations applied must be fade out then fade in.  Fade
+        // out's duration should match the longest animation, or set it's own 
+        // duration.  If apply fade in first, it's duration is faster than fade 
+        // out. 
+        // NOTE: This may need to become more complicated as animations are added.
+
+        if ( renderGroup.combatAnimations.fadeOut && !renderGroup.combatAnimations.blowout ) {
+            // The fadeout duration is the duration of the longest animation, or a default preconfigured duration.
+            /** @type {number} */
+            let fadeOutDuration = duration > 0 ? duration : animateFadeOutDuration;
+            /** @type {string} */
+            let timingFn = fadeOutDuration === animateFadeOutDuration ? 'ease-out' : 'ease-in';
+
+            animation += ( animation.length > 0 ? ', ' : '' ) + `animate-fadeout ${fadeOutDuration}ms ${timingFn}`;
+            duration = fadeOutDuration === animateFadeOutDuration ? animateFadeOutDuration : duration;
+            accumulationEndMs = duration * .9; // 77% { opacity: 1; } -> 100% { opacity: 0; }
+
+        }
+        
+        if ( renderGroup.combatAnimations.fadeIn ) {
+            animation += ( animation.length > 0 ? ', ' : '' ) + `animate-fadein ${animateFadeInDuration}ms ease-out`;
+            duration = duration < animateFadeInDuration ? animateFadeInDuration : duration;
+            
+        }
+        
+        // The grow/shrink animations do not alter the duration of the total animation, so we can apply them last.
+        if ( renderGroup.combatAnimations.shrink ) {
+            if ( renderGroup.combatAnimations.fountain ) {
+                let animationDuration = animateGrowShrinkDuration < duration ? duration : animateGrowShrinkDuration;
+                textAnimation += ( textAnimation.length > 0 ? ', ' : '' ) + `animate-shrink ${animationDuration}ms ease-in`;
+            } else {
+                let animationDelay = duration - animateGrowShrinkDuration;
+                animationDelay = animationDelay < 0 ? 0 : animationDelay;
+                textAnimation += ( textAnimation.length > 0 ? ', ' : '' ) + `animate-shrink ${animateGrowShrinkDuration}ms ease-out ${animationDelay}ms`;
+                accumulationEndMs = animationDelay;
+            }
+            
+            // textAnimation += ( textAnimation.length > 0 ? ', ' : '' ) + `animate-shrink ${animationDuration}ms ease-out`;
+        }
+        
+        if ( renderGroup.combatAnimations.grow ) {
+            let animationDuration = animateGrowShrinkDuration;
+            if ( renderGroup.combatAnimations.fountain ) {
+                animationDuration = animateGrowShrinkDuration < duration ? duration : animateGrowShrinkDuration;
+            } else {
+                animationDuration = animateGrowShrinkDuration > duration ? duration : animateGrowShrinkDuration;
+            }
+            
+            textAnimation += ( textAnimation.length > 0 ? ', ' : '' ) + `animate-grow ${animationDuration}ms ease-out`;
+            
+        }
+        
+        const totalAnimationDuration = duration;
+
+        // Now it's time to apply the animations
+        div.style[ 'animation' ] = animation;
+        
+        /** @type {HTMLElement} */
+        let subAnimationElement = div.querySelector( 'div.fct-sub-animation' );
+
+        if ( subAnimation && subAnimationElement ) {
+            subAnimationElement.style.animation = subAnimation;
+        }
+    
+        /** @type {HTMLElement} */
+        let textAnimationElement = subAnimationElement?.querySelector( 'div.fct-text-layer' );
+
+        if ( textAnimation && textAnimationElement ) {
+            textAnimationElement.style.animation = textAnimation;
+        }
+        
+        // For random position, get a random position.
+        if ( random ) {
+            
+            div.classList.add( 'animation-absolute' );
+
+            let overlayId = renderGroup.overlayId;
+
+            //  Let's try without a delay, and let the bounded random animation durations handle it.
+            // model.delayAmount = NumberUtilities.randomBounded( delayBetweenCrits - ( delayBetweenCrits * delayVariance ), delayBetweenCrits + ( delayBetweenCrits * delayVariance ) + 1 );
+
+    
+            // TODO: If all critical locations are taken, we need to add this hit value to the last one and increase the duration of the last one.
+            // TODO: Would be nice to add in a little animation to show that it's a combined hit.
+            //       To accomplish this, we need to wait x number of milliseconds and add all combined hits together, to let the animation play out.
+            //       This should be true for all random combined hits, not just criticals.  My thoughts are add a little bump in size, quickly, and quickly shrink back down.
+            //       Would be nice if the value counted up as well.
+            model.pos = getRandomLocation( overlayId );
+            
+            if ( model.pos ) {
+
+                overlayInstances[ overlayId ].criticals[ model.pos?.x ?? 0 ][ model.pos?.y ?? 0 ] = true;
+                overlayInstances[ overlayId ].criticalComp = model;
+
+                try {
+                    //  + ( div.clientWidth / 2 ) -- I don't know if this will work, but I also don't think it's required in the new renderer.  The old renderer was a BrowserWindow, so cutting off text was bad.  That's not a concern any longer.
+                    div.style.left = `${overlayInstances[ overlayId ].quadrants[ model.pos?.x ?? 0 ][ model.pos?.y ?? 0 ].x}px`; // Cannot read property 'x' of undefined
+                    //  - ( div.clientHeight * 1.25 )
+                    div.style.top = `${overlayInstances[ overlayId ].quadrants[ model.pos?.x ?? 0 ][ model.pos?.y ?? 0 ].y}px`;
+                } catch ( error ) {
+                    logInfo( `criticals: ${JSON.stringify( overlayInstances[ overlayId ].criticals ?? '' )}` );
+                    logInfo( `quadrants: ${JSON.stringify( overlayInstances[ overlayId ].quadrants ?? '' )}` );
+                }
+
+            } else if ( overlayInstances[ overlayId ].criticalComp && overlayInstances[ overlayId ].criticalComp.dom ) {
+                
+                // This code will apply the curret component's value to the last critical hit.  // TODO: Probably will need some optimizations, and let the model stay up for a little longer.
+                overlayInstances[ overlayId ].criticalComp.amount = overlayInstances[ overlayId ].criticalComp.amount + model.amount;
+                overlayInstances[ overlayId ].criticalComp.text = NumberUtilities.toShorthandString( overlayInstances[ overlayId ].criticalComp.amount );
+                
+                let _textEl = overlayInstances[ overlayId ].criticalComp.dom.querySelector( '.fctText' );
+                if ( _textEl ) {
+                    let f = overlayInstances[ overlayId ].criticalComp;
+                    // overlayInstances[ overlayId ].criticalComp.accumulationDelay += accumulationDelay;
+                    // window.setTimeout( () => {
+                    //     _textEl.innerHTML = overlayInstances[ overlayId ].criticalComp.text;
+                    // }, overlayInstances[ overlayId ].criticalComp.accumulationDelay );
+                    accumulatHits( f.instanceId, _textEl, model.amount, f.amount );
+                    hitAccumulated = true;
+                }
+
+            }
+
+            // The animation is mostly finished after 2/3 through the animation, so let's free up the spot for a new critical when this is fading out.
+            if ( model.pos != undefined ) {
+                window.setTimeout( () => {
+                    if ( overlayInstances[ overlayId ].criticals.length > model.pos.x && overlayInstances[ overlayId ].criticals[ model.pos.x ]?.length > model.pos.y ) {
+                        overlayInstances[ overlayId ].criticals[ model.pos.x ][ model.pos.y ] = false;
+                    }
+                    if (overlayInstances[ overlayId ].criticalComp == model) {
+                        overlayInstances[ overlayId ].criticalComp = undefined;
+                    }
+                }, totalAnimationDuration * 0.667 );
+            }
+
+        }
+
+        if ( !hitAccumulated ) {
+            // Add the element to the dom, and set the timeout to remove it.
+            let fctText = div.querySelector( '.fctText' );
+            StylePropertiesModel.applyStyles( fctText, renderGroup.valueStyles );
+            let fctSource = div.querySelector( '.fctSource' );
+            StylePropertiesModel.applyStyles( fctSource, renderGroup.sourceStyles );
+
+            model.dom = div;
+            if ( top ) {
+                // If the render group starting position is at the top.
+                contentArea.insertBefore( div, contentArea.firstChild );
+            } else {
+                contentArea.appendChild( div );
+            }
+        
+            model.intervalId = window.setTimeout( () => {
+                model.dom.parentNode.removeChild( model.dom );
+                fctOverlay.overlayFctComponents.splice( fctOverlay.overlayFctComponents.indexOf( model ), 1 );
+            }, totalAnimationDuration );
+
+            if ( accumulationEndMs !== totalAnimationDuration ) {
+                window.setTimeout( () => {
+                    model.accumulationPeriod = false;
+                }, accumulationEndMs );
+            }
+        }
+
+    }
+}
+
 
 
 
@@ -909,6 +1380,16 @@ function updateOverlay( overlayId, model ) {
  * @param {FctModel} comp Tells the renderer to forcefully redraw the overlayComponents.
  */
 function renderFct( overlayId, comp ) {
+
+    // if ( perfIntervalId ) {
+    //     window.clearTimeout( perfIntervalId );
+    // }
+
+    // perfIntervalId = window.setTimeout( () => {
+    //     console.log( 'total time', perfTimeTotal );
+    //     perfIntervalId = null;
+    //     perfTimeTotal = 0;
+    // }, 3000 );
 
     try {
         
@@ -946,30 +1427,62 @@ function renderFct( overlayId, comp ) {
             div.innerHTML = content;
 
             div.classList.add( 'animate-fade-shrink' );
+            div.style.animation = `animate-fadeshrink ${animateFadeShrinkDuration}ms ease-out`;
 
             comp.dom = div;
             comp.delayAmount = NumberUtilities.randomBounded( delayBetweenCrits - ( delayBetweenCrits * delayVariance ), delayBetweenCrits + ( delayBetweenCrits * delayVariance ) + 1 );
         
             window.setTimeout( () => {
-                contentArea.appendChild( div );
     
+                // TODO: If all critical locations are taken, we need to add this hit value to the last one and increase the duration of the last one.
+                // TODO: Would be nice to add in a little animation to show that it's a combined hit.
+                //       To accomplish this, we need to wait x number of milliseconds and add all combined hits together, to let the animation play out.
+                //       This should be true for all random combined hits, not just criticals.  My thoughts are add a little bump in size, quickly, and quickly shrink back down.
+                //       Would be nice if the value counted up as well.
                 comp.pos = getRandomLocation( overlayId );
-                overlayInstances[ overlayId ].criticals[ comp.pos.x ][ comp.pos.y ] = true;
+                
+                if ( comp.pos ) {
+                    contentArea.appendChild( div );
 
-                try {
-                    div.style.left = `${overlayInstances[ overlayId ].quadrants[ comp.pos.x ][ comp.pos.y ].x + ( div.clientWidth / 2 )}px`; // Cannot read property 'x' of undefined
-                    div.style.top = `${overlayInstances[ overlayId ].quadrants[ comp.pos.x ][ comp.pos.y ].y - ( div.clientHeight * 1.25 )}px`;
-                } catch ( error ) {
-                    logInfo( `criticals: ${JSON.stringify( overlayInstances[ overlayId ].criticals ?? '' )}` );
-                    logInfo( `quadrants: ${JSON.stringify( overlayInstances[ overlayId ].quadrants ?? '' )}` );
+                    overlayInstances[ overlayId ].criticals[ comp.pos?.x ?? 0 ][ comp.pos?.y ?? 0 ] = true;
+                    overlayInstances[ overlayId ].criticalComp = comp;
+
+                    try {
+                        div.style.left = `${overlayInstances[ overlayId ].quadrants[ comp.pos?.x ?? 0 ][ comp.pos?.y ?? 0 ].x + ( div.clientWidth / 2 )}px`; // Cannot read property 'x' of undefined
+                        div.style.top = `${overlayInstances[ overlayId ].quadrants[ comp.pos?.x ?? 0 ][ comp.pos?.y ?? 0 ].y - ( div.clientHeight * 1.25 )}px`;
+                    } catch ( error ) {
+                        logInfo( `criticals: ${JSON.stringify( overlayInstances[ overlayId ].criticals ?? '' )}` );
+                        logInfo( `quadrants: ${JSON.stringify( overlayInstances[ overlayId ].quadrants ?? '' )}` );
+                    }
+
+                } else if ( overlayInstances[ overlayId ].criticalComp && overlayInstances[ overlayId ].criticalComp.dom ) {
+
+                    // This code will apply the curret component's value to the last critical hit.  // TODO: Probably will need some optimizations, and let the comp stay up for a little longer.
+                    overlayInstances[ overlayId ].criticalComp.value = overlayInstances[ overlayId ].criticalComp.value + comp.value;
+                    overlayInstances[ overlayId ].criticalComp.text = NumberUtilities.toShorthandString( overlayInstances[ overlayId ].criticalComp.value );
+                    
+                    let _textEl = overlayInstances[ overlayId ].criticalComp.dom.querySelector( '.fct-text' );
+                    if ( _textEl ) {
+                        _textEl.innerHTML = overlayInstances[ overlayId ].criticalComp.text;
+                    }
+
                 }
                 
                 comp.intervalId = window.setTimeout( () => {
                     comp.dom.parentNode.removeChild( comp.dom );
-                    if ( overlayInstances[ overlayId ].criticals.length > comp.pos.x && overlayInstances[ overlayId ].criticals[ comp.pos.x ]?.length > comp.pos.y ) {
-                        overlayInstances[ overlayId ].criticals[ comp.pos.x ][ comp.pos.y ] = false;
-                    }
-                }, 4000 );
+                }, animateFadeShrinkDuration );
+
+                // The animation is mostly finished after 2/3 through the animation, so let's free up the spot for a new critical when this is fading out.
+                if ( comp.pos != undefined ) {
+                    window.setTimeout( () => {
+                        if ( overlayInstances[ overlayId ].criticals.length > comp.pos.x && overlayInstances[ overlayId ].criticals[ comp.pos.x ]?.length > comp.pos.y ) {
+                            overlayInstances[ overlayId ].criticals[ comp.pos.x ][ comp.pos.y ] = false;
+                        }
+                        if (overlayInstances[ overlayId ].criticalComp == comp) {
+                            overlayInstances[ overlayId ].criticalComp = undefined;
+                        }
+                    }, animateFadeShrinkDuration * 0.667 );
+                }
 
             }, comp.delayAmount );
 
@@ -984,6 +1497,7 @@ function renderFct( overlayId, comp ) {
             div.innerHTML = content;
 
             div.classList.add( 'animate-fade-out' );
+            div.style.animation = `animate-fadeout ${animateFadeOutDuration}ms ease`;
 
             if ( comp.critical ) {
                 div.classList.add( 'fct-dmg-out-critical' );
@@ -2380,7 +2894,7 @@ function timerExists( overlayId, predicate ) {
  * @param {number} c The value to convert.
  */
 function componentToHex( c ) {
-    var hex = c.toString( 16 );
+    var hex = Math.round(c).toString( 16 );
     return hex.length == 1 ? "0" + hex : hex;
 }
 
@@ -2589,36 +3103,34 @@ function renderGlow( color, duration, flash ) {
  */
 function getRandomLocation( overlayId ) {
     let c = getCompCount( overlayId );
-    let xs = Math.floor( c / overlayInstances[ overlayId ].criticals.length );
-    // let yx = Math.floor( c / overlayInstances[ overlayId ].criticals[ 0 ].length );
+    // let xs = Math.floor( c / criticals.length );
     let x = -1;
     let y = -1;
+    let positions = getOverlayOpenCritPositions( overlayId );
 
-    let crazy = 0;
-    while ( x === -1 && crazy < overlayInstances[ overlayId ].criticals.length * overlayInstances[ overlayId ].criticals[ 0 ].length ) {
-        crazy++;
+    if ( positions.length > 0 ) {
+        let p = positions[ NumberUtilities.randomBounded( 0, positions.length ) ];
+        x = p.x;
+        y = p.y;
+    }
 
-        let t = NumberUtilities.randomBounded( 0, overlayInstances[ overlayId ].criticals.length );
-        if ( countCritX( overlayId, t ) <= xs ) {
-            x = t;
+    return x > -1 && y > -1 ? { x: x, y: y } : undefined;
+}
+
+function getOverlayOpenCritPositions( overlayId ) {
+    /** @type {{x: number, y: number}[]} */
+    let positions = [];
+    let criticals = overlayInstances[ overlayId ].criticals;
+
+    for ( let x = 0; x < criticals.length; x++ ) {
+        for ( let y = 0; y < criticals[ x ].length; y++ ) {
+            if ( !criticals[ x ][ y ] ) {
+                positions.push( { x: x, y: y } );
+            }
         }
     }
 
-    if ( crazy === overlayInstances[ overlayId ].criticals.length * overlayInstances[ overlayId ].criticals[ 0 ].length ) {
-        return { x: NumberUtilities.randomBounded( 0, overlayInstances[ overlayId ].criticals.length ), y: NumberUtilities.randomBounded( 0, overlayInstances[ overlayId ].criticals[ 0 ].length ) };
-    }
-
-    crazy = 0;
-    while ( y === -1 && crazy < overlayInstances[ overlayId ].criticals[ x ].length ) {
-        crazy++;
-
-        let t = NumberUtilities.randomBounded( 0, overlayInstances[ overlayId ].criticals[ x ].length );
-        if ( !overlayInstances[ overlayId ].criticals[ x ][ t ] ) {
-            y = t;
-        }
-    }
-
-    return { x: x, y: y };
+    return positions;
 }
 
 

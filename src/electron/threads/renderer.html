@@ -204,7 +204,7 @@
             position: absolute;
             display: inline-block;
             text-align: center;
-            animation: animate-fadeshrink 4s ease-out;
+            /* animation: animate-fadeshrink 4s ease-out; */
         }
 
         @keyframes animate-fadeshrink {
@@ -217,13 +217,6 @@
         .animate-fade-out {
             position:relative;
             display: inline-block;
-            animation: animate-fadeout 7s ease;
-        }
-
-        @keyframes animate-fadeout {
-            0% { opacity: 1; }
-            90% { opacity: 1; }
-            100% { opacity: 0; }
         }
 
         .animate-fade-out-now {
@@ -377,6 +370,69 @@
                     display: block;
                 }
     </style>
+
+    <style>
+
+        :root {
+            --ease-out-cubic: cubic-bezier(0.33, 1, 0.68, 1);
+            --ease-in-cubic: cubic-bezier(0.32, 0, 0.67, 0);
+        }
+
+        @keyframes animate-fadein {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes animate-fadeout {
+            77% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+
+        @keyframes animate-floatup {
+            0% { transform: translateY(0px); }
+            100% { transform: translateY(-100px); }
+        }
+
+        @keyframes animate-blowout {
+            0% { transform: scale(1.5); }
+            1% { transform: scale(2.0); }
+            50% { transform: scale(2.0); }
+            100% { transform: scale(.1); }
+        }
+
+        @keyframes animate-grow {
+            0% { transform: scale(.1); }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes animate-shrink {
+            0% { transform: scale(1.0); }
+            100% { transform: scale(.1); }
+        }
+
+        @keyframes animate-blowout-fadeout {
+            0% { transform: scale(1.5); }
+            1% { transform: scale(2.0); }
+            50% { transform: scale(2.0); opacity: 1; }
+            100% { transform: scale(.1); opacity: 0; }
+        }
+
+        /* // Primary animation */
+        /* // var(--random-y) & var(--y-direction), to be applied to the element via script */
+        @keyframes animate-fountain-floatup {
+            0% { transform: translateY(0px); animation-timing-function: var(--ease-out-cubic); }
+            77% { transform: translateY(var(--random-y)); animation-timing-function: ease-in; }
+            100% { transform: translateY(calc(var(--random-y) + var(--y-direction))); animation-timing-function: ease-out; }
+        }
+
+        /* // Secondary animation */
+        /* // var(--random-x), to be applied to the element via script */
+        @keyframes animate-fountain-horizontal {
+            0% { transform: translateX(0px); animation-timing-function: ease-in; }
+            100% { transform: translateX(var(--random-x)); animation-timing-function: ease-in; }
+        }
+
+    </style>
 </head>
 <body>
 
@@ -407,18 +463,94 @@
 
         </div>
     </template>
+
+    <style>
+        .content-area-v2 {
+            position: absolute;
+            left: 0;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            /* border: 2px solid green; */
+        }
+
+        .content-area-v2 .fct-content {
+            position: absolute;
+            left: 0;
+            right: 0;
+            top: 0;
+            bottom: 0;
+        }
+
+        .content-area-v2 .top-left {
+            display: flex;
+            flex-flow: column nowrap;
+            align-items: flex-start;
+            justify-content: flex-start;
+
+        }
+
+        .content-area-v2 .top-right {
+            display: flex;
+            flex-flow: column nowrap;
+            align-items: flex-end;
+            justify-content: flex-start;
+
+        }
+
+        .content-area-v2 .bottom-left {
+            display: flex;
+            flex-flow: column nowrap;
+            align-items: flex-start;
+            justify-content: flex-end;
+
+        }
+
+        .content-area-v2 .bottom-right {
+            display: flex;
+            flex-flow: column nowrap;
+            align-items: flex-end;
+            justify-content: flex-end;
+
+        }
+
+        .animation-absolute {
+            position: absolute;
+        }
+    </style>
     
     <!-- =========================== -->
     <!--    FCT Overlay Template     -->
     <!-- =========================== -->
     <template id="overlayFct">
         <div class="overlay-name-watermark"><h1 id="overlay-title">Overlay Title</h1></div>
+        <div class="content-area-v2">
+            <div class="fct-content top-left"></div>
+            <div class="fct-content top-right"></div>
+            <div class="fct-content bottom-left"></div>
+            <div class="fct-content bottom-right"></div>
+            <div class="fct-content random"></div>
+        </div>
         <div class="overlay-content-area">
 
         </div>
         <div class="healing-content-area">
             
         </div>
+    </template>
+
+    <!-- =========================== -->
+    <!--      FCT 2 Template         -->
+    <!-- =========================== -->
+    <template id="fct2Template">
+        <!-- <div class="fct-values fctGroupA"> -->
+            <div class="fct-sub-animation">
+                <div class="fct-text-layer">
+                    <span class="fct-text fctText">{{value}}</span>
+                    <span class="fct-dmg-src fctSource">({{damageSource}})</span>
+                </div>
+            </div>
+        <!-- </div> -->
     </template>
     
     <!-- =========================== -->

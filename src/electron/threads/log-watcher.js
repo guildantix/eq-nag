@@ -141,6 +141,133 @@ let simulationCache = {};
 
 
 
+// if ( i === 0 ) {
+//     /* --== My melee damage ==-- */
+
+//     let action = result.groups?.action;
+//     let target = results.groups?.target;
+//     let actor = results.groups?.actor;
+//     let value = +results[ 3 ];
+//     let dmg = NumberUtilities.toShorthandString( value );
+
+//     model.value = value;
+//     model.text = `${dmg}`;
+//     model.attack = action;
+//     // model.fctType = FctTypes.dmgOut;
+
+// } else if ( i === 1 ) {
+//     /* --== My melee misses ==-- */
+
+//     let dmg = 'miss';
+
+//     model.attack = 'Melee';
+//     model.fctType = FctTypes.dmgOut;
+//     break;
+
+// } else if ( i === 2 ) {
+//     /* --== My spell hits ==-- */
+
+//     let target = results.groups?.target;
+//     let value = +results[ 2 ];
+//     let dmg = NumberUtilities.toShorthandString( value );
+//     let spell = results[ 3 ];
+
+//     model.value = value;
+//     model.text = `${dmg}`;
+//     model.attack = spell;
+//     model.fctType = FctTypes.spellDmgOut;
+
+// } else if ( i === 3 ) {
+//     /* --== My thorns dmg ==-- */
+
+//     let target = results.groups?.target;
+//     let value = +results[ 2 ];
+//     let dmg = NumberUtilities.toShorthandString( value );
+
+//     model.value = value;
+//     model.text = `${dmg}`;
+//     model.attack = 'Thorns';
+//     model.fctType = FctTypes.dmgOut;
+
+// } else if ( i === 4 ) {
+//     /* --== My skill up ==-- */
+
+//     let skill = results[ 1 ];
+//     let level = results[ 2 ];
+
+//     model.text = skill;
+//     model.attack = level;
+//     model.fctType = FctTypes.skill;
+
+// } else if ( i === 5 ) {
+//     /* --== Melee damage taken ==-- */
+
+//     let attacker = results[ 1 ];
+//     let type = results[ 2 ];
+//     let value = +results[ 3 ];
+//     let dmg = NumberUtilities.toShorthandString( value );
+
+//     model.value = value;
+//     model.text = `${dmg}`;
+//     model.attack = type;
+//     model.fctType = FctTypes.dmgIn;
+
+// } else if ( i === 6 ) {
+//     /* --== Me avoiding melee ==-- */
+
+//     let attacker = results[ 1 ];
+//     let type = results[ 2 ];
+//     let miss = results[ 3 ];
+
+//     model.attack = type;
+//     model.fctType = FctTypes.dmgIn;
+//     break;
+
+// } else if ( i === 7 ) {
+//     /* --== Me taking spell damage ==-- */
+
+//     let attacker = results[ 1 ];
+//     let value = +results[ 2 ];
+//     let dmg = NumberUtilities.toShorthandString( value );
+//     let resist = results[ 3 ];
+//     let spell = results[ 4 ];
+
+//     model.value = value;
+//     model.text = `${dmg}`;
+//     model.attack = spell;
+//     model.fctType = FctTypes.spellDmgIn;
+
+// } else if ( i === 8 ) {
+//     /* --== My spell hits ==-- */
+
+//     let target = results.groups?.target;
+//     let value = +results[ 3 ];
+//     let dmg = NumberUtilities.toShorthandString( value );
+//     let spell = results[ 5 ];
+
+//     model.value = value;
+//     model.text = `${dmg}`;
+//     model.attack = spell;
+//     model.fctType = FctTypes.spellDmgOut;
+
+// } else if ( i === 9 || i === 10 ) {
+
+//     let healer = results.groups?.actor;
+//     let target = results.groups?.target;
+//     let healAmount = results.groups?.amount;
+//     let spell = results.groups?.action;
+//     let overHealing = +results.groups?.overhealing;
+
+//     model.value = +healAmount;
+//     model.text = `${healAmount}`;
+//     model.dealt = i === 10;
+//     model.attack = model.dealt ? spell : healer;
+//     model.fctType = i === 10 ? FctTypes.healingOut : FctTypes.healingIn;
+
+// }
+
+
+
 
 
 
@@ -1750,7 +1877,7 @@ function parseLogEntries( raw, simulating, padTime ) {
         // let rgxGrabText = /\'(.*?)\'$/gi;
         // let rgxDelimiter = /;/gi;
         // let rgxNum = /(\d+)/gi;
-        let rgxCombatText = /hit|damage|miss|dodge|riposte|parry|become better|backstab|stun|attack/gi;
+        let rgxCombatText = /hit|damage|miss|dodge|riposte|parry|become better|backstab|stun|attack|crush/gi;
         let rgxFctCritical = /\. \(.*(Critical|Crippling Blow|Strikethrough).*\)/gi;
         let rgxCombatModifiers = /\. \((?<combatModifiers>.*)\)$/gi;
 
@@ -1763,28 +1890,40 @@ function parseLogEntries( raw, simulating, padTime ) {
         // ^(?<healer>You) healed (?<target>.+?) (over time for|for) (?<healAmount>[0-9]*) (\(([0-9]*)\) )?hit points by (?<healType>.+?)\.
     
         let fctRegExs = [
+
             // 0: rgxMelee
-            /You ([a-zA-Z0-9_]*) (.*) for ([0-9]*) points of damage\./gi,
+            /(?<actor>You) (?<action>[a-zA-Z0-9_]*) (?<target>.*) for (?<amount>[0-9]*) points of damage\./gi,
+
             // 1: rgxMeleeMiss
-            /You try to ([a-zA-Z0-9_]*) (.*),/gi,
+            /(?<actor>You) try to (?<action>[a-zA-Z0-9_]*) (?<target>.*),/gi,
+
             // 2: rgxSpellDmg
-            /(.*) has taken ([0-9]*) damage from your (.*)\./gi,
+            /(?<target>.*) has taken (?<amount>[0-9]*) damage from (?<actor>you)r (?<action>.*)\./gi,
+
             // 3: rgxThorns
-            /(.*) is pierced by YOUR thorns for ([0-9]*) points of non-melee damage\./gi,
+            /(?<target>.*) is pierced by (?<actor>YOU)R thorns for (?<amount>[0-9]*) points of non-melee damage\./gi,
+
             // 4: rgxSkillUp
-            /You have become better at ([a-zA-Z0-9_\s]*)! \(([0-9]*)\)/gi,
+            /(?<actor>You) have become better at (?<action>[a-zA-Z0-9_\s]*)! \((?<amount>[0-9]*)\)/gi,
+
             // 5: rgxTakeMeleeDmg
-            /(.*) ([a-zA-Z0-9_]*) YOU for ([0-9]*) points of damage\./gi,
+            /(?<actor>.*) (?<action>[a-zA-Z0-9_]*) (?<target>YOU) for (?<amount>[0-9]*) points of damage\./gi,
+
             // 6: rgxAvoidMeleeDmg
-            /(.*) tries to ([a-zA-Z0-9_]*) YOU, but ([a-zA-Z0-9_\s]*)/gi,
+            /(?<actor>.*) tries to (?<action>[a-zA-Z0-9_]*) (?<target>YOU), but (?<avoidType>[a-zA-Z0-9_\s]*)/gi,
+
             // 7: rgxTakeSpellDmg
-            /(.*) hit you for ([0-9]*) points of ([a-zA-Z0-9_]*) damage by (.*)\./gi,
+            /(?<actor>.*) hit (?<target>you) for (?<amount>[0-9]*) points of (?<damageType>[a-zA-Z0-9_]*) damage by (?<action>.*)\./gi,
+
             // 8: rgxSpellDmg
-            /You ([a-zA-Z0-9_]*) (.*) for ([0-9]*) points of (.*) damage by (.*)\./gi,
+            /(?<actor>You) ([a-zA-Z0-9_]*) (?<target>.*) for (?<amount>[0-9]*) points of (?<damageType>.*) damage by (?<action>.*)\./gi,
+
             // 9: Other heal you
-            /^(?<healer>.+?) healed (?<target>you) (over time for|for) (?<healAmount>[0-9]*) (\(([0-9]*)\) )?hit points by (?<healType>.+?)\./gi,
+            /^(?<actor>.+?) healed (?<target>you) (over time for|for) (?<amount>[0-9]*) (\((?<overhealing>[0-9]*)\) )?hit points by (?<action>.+?)\./gi,
+
             // 10: You heal other
-            /^(?<healer>You) healed (?<target>.+?) (over time for|for) (?<healAmount>[0-9]*) (\(([0-9]*)\) )?hit points by (?<healType>.+?)\./gi,
+            /^(?<actor>You) healed (?<target>.+?) (over time for|for) (?<amount>[0-9]*) (\((?<overhealing>[0-9]*)\) )?hit points by (?<action>.+?)\./gi,
+
         ];
 
         let timestamp = new Date( rgxTimestamp.exec( raw )[ 1 ] );
@@ -1854,120 +1993,32 @@ function parseLogEntries( raw, simulating, padTime ) {
                 
                     if ( results && results.length > 1 ) {
                         let model = new FctModel();
-                        model.dealt = ( i >= 0 && i <= 4 ) || i === 8 ? true : false;
+
+                        // Misses: 1 - My melee misses, 6 - Other melee misses
+                        let misses = [ 1, 6 ];
     
-                        if ( i === 0 ) {
-                            /* --== My melee damage ==-- */
-                        
-                            let type = results[ 1 ];
-                            let target = results[ 2 ];
-                            let dmg = NumberUtilities.toShorthandString( results[ 3 ] );
-    
-                            model.text = `${dmg}`;
-                            model.attack = type;
-                            model.fctType = FctTypes.dmgOut;
-    
-                        } else if ( i === 1 ) {
-                            /* --== My melee misses ==-- */
-                        
-                            let dmg = 'miss';
-    
-                            model.attack = 'Melee';
-                            model.fctType = FctTypes.dmgOut;
-                            break;
-    
-                        } else if ( i === 2 ) {
-                            /* --== My spell hits ==-- */
-                        
-                            let target = results[ 1 ];
-                            let dmg = NumberUtilities.toShorthandString( results[ 2 ] );
-                            let spell = results[ 3 ];
-    
-                            model.text = `${dmg}`;
-                            model.attack = spell;
-                            model.fctType = FctTypes.spellDmgOut;
-    
-                        } else if ( i === 3 ) {
-                            /* --== My thorns dmg ==-- */
-                        
-                            let target = results[ 1 ];
-                            let dmg = NumberUtilities.toShorthandString( results[ 2 ] );
-    
-                            model.text = `${dmg}`;
-                            model.attack = 'Thorns';
-                            model.fctType = FctTypes.dmgOut;
-    
-                        } else if ( i === 4 ) {
-                            /* --== My skill up ==-- */
-                        
-                            let skill = results[ 1 ];
-                            let level = results[ 2 ];
-    
-                            model.text = skill;
-                            model.attack = level;
-                            model.fctType = FctTypes.skill;
-    
-                        } else if ( i === 5 ) {
-                            /* --== Melee damage taken ==-- */
-                        
-                            let attacker = results[ 1 ];
-                            let type = results[ 2 ];
-                            let dmg = NumberUtilities.toShorthandString( results[ 3 ] );
-    
-                            model.text = `${dmg}`;
-                            model.attack = type;
-                            model.fctType = FctTypes.dmgIn;
-    
-                        } else if ( i === 6 ) {
-                            /* --== Me avoiding melee ==-- */
-                        
-                            let attacker = results[ 1 ];
-                            let type = results[ 2 ];
-                            let miss = results[ 3 ];
-    
-                            model.attack = type;
-                            model.fctType = FctTypes.dmgIn;
-                            break;
-    
-                        } else if ( i === 7 ) {
-                            /* --== Me taking spell damage ==-- */
-                        
-                            let attacker = results[ 1 ];
-                            let dmg = NumberUtilities.toShorthandString( results[ 2 ] );
-                            let resist = results[ 3 ];
-                            let spell = results[ 4 ];
-    
-                            model.text = `${dmg}`;
-                            model.attack = spell;
-                            model.fctType = FctTypes.spellDmgIn;
-    
-                        } else if ( i === 8 ) {
-                            /* --== My spell hits ==-- */
-                        
-                            let target = results[ 2 ];
-                            let dmg = NumberUtilities.toShorthandString( results[ 3 ] );
-                            let spell = results[ 5 ];
-    
-                            model.text = `${dmg}`;
-                            model.attack = spell;
-                            model.fctType = FctTypes.spellDmgOut;
-    
-                        } else if ( i === 9 || i === 10 ) {
-    
-                            let healer = results.groups?.healer;
-                            let target = results.groups?.target;
-                            let healAmount = results.groups?.healAmount;
-                            let spell = results.groups?.healType;
-    
-                            model.text = `${healAmount}`;
-                            model.dealt = i === 10;
-                            model.attack = model.dealt ? spell : healer;
-                            model.fctType = i === 10 ? FctTypes.healingOut : FctTypes.healingIn;
-    
-                        }
-    
-                        // TODO: Performance testing with checkModifiers.
-                        let combatModifiers = raw.match( rgxCombatModifiers )?.groups?.combatModifiers;
+                        model.combatTypes.myHits = [ 0 ].indexOf( i ) > -1;
+                        model.combatTypes.otherHitsOnMe = [ 5 ].indexOf( i ) > -1;
+                        model.combatTypes.mySpellHits = [ 2, 3, 8 ].indexOf( i ) > -1;
+                        model.combatTypes.otherSpellHitsOnMe = [ 7 ].indexOf( i ) > -1;
+                        model.combatTypes.otherHealingOnMe = [ 9 ].indexOf( i ) > -1;
+                        model.combatTypes.myHealing = [ 10 ].indexOf( i ) > -1;
+                        model.combatTypes.skillUp = [ 4 ].indexOf( i ) > -1;
+
+                        model.actor = results.groups?.actor;
+                        model.action = results.groups?.action;
+                        model.target = results.groups?.target;
+                        model.amount = misses.includes( i ) ? undefined : +results.groups?.amount;
+                        model.avoidType = results.groups?.avoidType;
+                        model.damageType = results.groups?.damageType;
+                        model.overHealing = +results.groups?.overhealing;
+
+                        // We may use this if performance requires it.  However, most thing late game with have some modifier on it.
+                        // if ( raw.match( /\)$/gi ) ) {
+                            
+                        // }
+
+                        let combatModifiers = /\. \((?<combatModifiers>.*)\)$/gi.exec( raw )?.groups?.combatModifiers;
                         if ( combatModifiers ) {
 
                             let checkModifiers = ( modifierName ) => {
@@ -1986,26 +2037,34 @@ function parseLogEntries( raw, simulating, padTime ) {
                                 return false;
                             }
 
-                            model.critical = checkModifiers( 'Critical' );
-                            model.modifiers.critical = checkModifiers( 'Critical' );
-                            model.modifiers.cripplingBlow = checkModifiers( 'Crippling Blow' );
-                            model.modifiers.flurry = checkModifiers( 'Flurry' );
-                            model.modifiers.lucky = checkModifiers( 'Lucky' );
-                            model.modifiers.twincast = checkModifiers( 'Twincast' );
-                            model.modifiers.riposte = checkModifiers( 'Riposte' );
-                            model.modifiers.strikethrough = checkModifiers( 'Strikethrough' );
-                            model.modifiers.wild_rampage = checkModifiers( 'Wild Rampage' );
-                            model.modifiers.rampage = checkModifiers( 'Rampage' );
-                            model.modifiers.assassinate = checkModifiers( 'Assassinate' );
-                            model.modifiers.headshot = checkModifiers( 'Headshot' );
-                            model.modifiers.double_bow_shot = checkModifiers( 'Double Bow Shot' );
-                            model.modifiers.deadly_strike = checkModifiers( 'Deadly Strike' );
-                            model.modifiers.finishing_blow = checkModifiers( 'Finishing Blow' );
+                            // TODO: Performance testing.
+                            checkModifiers( 'Critical' ) && model.combatModifiers.push( 'critical' );
+                            checkModifiers( 'Crippling Blow' ) && model.combatModifiers.push( 'crippling_blow' );
+                            checkModifiers( 'Flurry' ) && model.combatModifiers.push( 'flurry' );
+                            checkModifiers( 'Lucky' ) && model.combatModifiers.push( 'lucky' );
+                            checkModifiers( 'Twincast' ) && model.combatModifiers.push( 'twincast' );
+                            checkModifiers( 'Riposte' ) && model.combatModifiers.push( 'riposte' );
+                            checkModifiers( 'Strikethrough' ) && model.combatModifiers.push( 'strikethrough' );
+                            checkModifiers( 'Wild Rampage' ) && model.combatModifiers.push( 'wild_rampage' );
+                            checkModifiers( 'Rampage' ) && model.combatModifiers.push( 'rampage' );
+                            checkModifiers( 'Assassinate' ) && model.combatModifiers.push( 'assassinate' );
+                            checkModifiers( 'Headshot' ) && model.combatModifiers.push( 'headshot' );
+                            checkModifiers( 'Double Bow Shot' ) && model.combatModifiers.push( 'double_bow_shot' );
+                            checkModifiers( 'Deadly Strike' ) && model.combatModifiers.push( 'deadly_strike' );
+                            checkModifiers( 'Finishing Blow' ) && model.combatModifiers.push( 'finishing_blow' );
+
+                        } else {
+                            model.combatModifiers.push( 'normal' );
                         }
+                        
                         model.timestamp = timestamp;
-                        model.overlayId = model.dealt ? damageDealtOverlayId : damageReceivedOverlayId;
     
                         ipcRenderer.send( 'overlay:send:fct-component', model );
+
+                        if ( ( model.amount === 'undefined' || !model.amount || model.amount === undefined ) && !misses.includes( i ) ) {
+                            console.log( 'invalid model amount', model );
+                            console.log( '          index, raw', i, raw );
+                        }
     
                         // leave the loop, we found the correct FCT type.
                         break;
