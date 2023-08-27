@@ -1441,12 +1441,12 @@ export class TriggerParseHistoryModel {
 
 // Flags for where the FCT hit should be displayed.
 export enum HitStartPositionTypes {
-    unset = 0,
-    left = 1,
-    right = 2,
-    bottom = 4,
-    top = 8,
-    random = 16,
+    unset   = 0,
+    left    = 1<<0,
+    right   = 1<<1,
+    bottom  = 1<<2,
+    top     = 1<<3,
+    random  = 1<<4,
 }
 
 export class CombatAnimations {
