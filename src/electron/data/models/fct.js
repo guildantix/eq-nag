@@ -39,6 +39,8 @@ class FctModel extends OverlayComponent {
     pos = undefined;
     /** @type {number} */
     delayAmount = 0;
+    /** @type {string} */
+    characterId = undefined;
 
     /** @type {string | undefined} */
     actor = undefined;

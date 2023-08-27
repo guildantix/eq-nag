@@ -50,6 +50,12 @@ class CharacterModel {
 
     /** @type {boolean} If true, this character is on a P1999 server. */
     daybreak = false;
+
+    /** @type {Record<string, number[]>} A record of the combat hits of this character. */
+    combatGroupHits = {};
+
+    /** @type {Record<string, number>} A record of the combat median values of this character. */
+    combatGroupMedian = {};
 }
 
 class CharacterStoreModel {
