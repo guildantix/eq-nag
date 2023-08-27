@@ -7,6 +7,7 @@ import { MatCheckboxChange } from '@angular/material/checkbox';
 import { QuestionDialogAnswerModel } from '../dialogs/question-dialog/question-dialog.model';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Observable } from 'rxjs';
+import { ColoredString } from '../dialogs/dialog.model';
 
 const animateBlowoutDuration = 4000;
 const animateFadeOutDuration = 7000;
@@ -541,7 +542,7 @@ export class FloatingCombatTextComponent implements OnInit, DoCheck {
             'Threshold',
             [
                 'Threshold can be set as a percent of max hit or you can specifiy a specific threshold value.',
-                'If you set the threshold to 50% and the max hit is 1000, then any hit below 500 will be ignored.  This is generally better when you play more than one character.',
+                new ColoredString('If your median hit is **500**, then the max hit will be ~~1000~~. If you set the threshold to ~~80%~~, any hit below ~~**800**~~ will be ignored. This is generally better when you play more than one character.', 'white'),
                 'Alternatively, you can set a specific threshold value. If you set the threshold to 500, then any hit below 500 will be ignored.'
             ],
             'normal' );
@@ -563,8 +564,8 @@ export class FloatingCombatTextComponent implements OnInit, DoCheck {
         this.dialogService.showInfoDialog(
             'Threshold',
             [
-                'Threshold can be set as a percent of max hit or you can specifiy a specific threshold value.',
-                'If you set the threshold to 50% and the max hit is 1000, then any hit below 500 will be added up until a hit of 500 or more is reached.  This is generally better when you play more than one character.',
+                'Threshold can be set as a percent of max median hit or you can specifiy a specific threshold value.',
+                new ColoredString('If your median hit is **500**, then the max hit will be ~~1000~~. If you set the threshold to ~~80%~~, any hit below ~~**800**~~ will be added up until a hit of 800 or more is reached. This is generally better when you play more than one character.', 'white'),
                 'Alternatively, you can set a specific threshold value. If you set the threshold to 500, then any hit below 500 will be added up until a hit of 500 or more is reached.'
             ],
             'normal' );

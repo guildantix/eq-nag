@@ -157,7 +157,7 @@
                         </mat-tab>
     
                         <mat-tab label="Ignore Hits" *ngIf="group.ignoreHits">
-                            <div class="card-tab-content">
+                            <div class="card-tab-content color-light">
                                 <p>When ignore hits is enabled, damage below a specified threshold will be be ignored.</p>
                                 <label>Threshold
                                     <sup class="help-sup"
@@ -170,11 +170,13 @@
                                         <mat-radio-button value="percent" style="margin: 10px 10px;">Percent</mat-radio-button>
                                         <mat-radio-button value="value" style="margin: 10px 10px;">Value</mat-radio-button>
                                     </mat-radio-group>
+
                                     <div style="flex: 1 1 auto;">
                                         <mat-slider thumbLabel min="0" max="100" step="1" value="0" style="width: 100%;" 
                                             [(ngModel)]="group.thresholdPercent" name="thresholdPercent_{{i}}" 
-                                            *ngIf="group.thresholdType === 'percent' || group.thresholdType == undefined"></mat-slider>
-                                        
+                                            *ngIf="group.thresholdType === 'percent' || group.thresholdType == undefined">
+                                        </mat-slider>
+
                                         <mat-form-field style="width: 192px; margin-left: 15px; width: 100%;" *ngIf="group.thresholdType === 'value'">
                                             <mat-label></mat-label>
                                             <input matInput class="no-spinner" [(ngModel)]="group.thresholdValue" name="thresholdValue_{{i}}" type="number" />
@@ -182,12 +184,18 @@
                                         </mat-form-field>
                                     </div>
                                 </div>
+                                <div>
+                                    <ng-template [ngIf]="group.thresholdType === 'percent' || group.thresholdType == undefined">
+                                        <p>You may see a lot of hits coming in over this threshold as the system calculates your average hit.</p>
+                                        <p><strong>Note:</strong> Hit data is stored separately for each character.</p>
+                                    </ng-template>
+                                </div>
     
                             </div>
                         </mat-tab>
     
                         <mat-tab label="Consolidate Hits" *ngIf="group.accumulateHits">
-                            <div class="card-tab-content">
+                            <div class="card-tab-content color-light">
                                 <p>When hit consolidation is enabled, damage below a specified threshold will be added up until a hit that meats the threshold is reached.</p>
                                 <label>Threshold
                                     <sup class="help-sup"
@@ -201,10 +209,12 @@
                                         <mat-radio-button value="value" style="margin: 10px 10px;">Value</mat-radio-button>
                                         <mat-radio-button value="dynamic" *ngIf="false">I don't care, just don't clutter my screen.</mat-radio-button>
                                     </mat-radio-group>
+
                                     <div style="flex: 1 1 auto;">
                                         <mat-slider thumbLabel min="0" max="100" step="1" value="0" style="width: 100%;" 
                                             [(ngModel)]="group.thresholdPercent" name="thresholdPercent_{{i}}" 
-                                            *ngIf="group.thresholdType === 'percent' || group.thresholdType == undefined"></mat-slider>
+                                            *ngIf="group.thresholdType === 'percent' || group.thresholdType == undefined">
+                                        </mat-slider>
                                         
                                         <mat-form-field style="width: 192px; margin-left: 15px; width: 100%;" *ngIf="group.thresholdType === 'value'">
                                             <mat-label></mat-label>
@@ -212,6 +222,12 @@
                                             <mat-hint>Threshold value</mat-hint>
                                         </mat-form-field>
                                     </div>
+                                </div>
+                                <div>
+                                    <ng-template [ngIf]="group.thresholdType === 'percent' || group.thresholdType == undefined">
+                                        <p>You may see a lot of hits coming in over this threshold as the system calculates your average hit.</p>
+                                        <p><strong>Note:</strong> Hit data is stored separately for each character.</p>
+                                    </ng-template>
                                 </div>
     
                             </div>
