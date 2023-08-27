@@ -220,6 +220,70 @@ class CharacterDatabaseStore extends Store {
             return await this.getCharacterOptions( logsPath );
         } );
 
+        ipcMain.on( 'character:save:combatGroupHits',
+            /**
+             * Updates the combat group hits.
+             * 
+             * @param {Electron.IpcMainEvent} event The event args.
+             * @param {{characterId: string, combatGroupHits: Record<string, number[]>}} data The updated combat group hits.
+             */
+            ( event, data ) => {
+                let character = this.find( data.characterId );
+                if ( character ) {
+                    character.combatGroupHits = data.combatGroupHits;
+                    this.update( character );
+                }
+            } );
+
+        ipcMain.on( 'character:save:combatGroupMedian',
+            /**
+             * Updates the combat group median values.
+             * 
+             * @param {Electron.IpcMainEvent} event The event args.
+             * @param {{characterId: string, combatGroupHits: Record<string, number>}} data The updated combat group median values.
+             */
+            ( event, data ) => {
+                let character = this.find( data.characterId );
+                if ( character ) {
+                    character.combatGroupMedian = data.combatGroupMedian;
+                    this.update( character );
+                }
+            } );
+        
+        ipcMain.on( 'character:get:combatGroupHits',
+            /**
+             * Returns the combat group hits object to the sender.
+             * 
+             * @param {Electron.IpcMainEvent} event The event args.
+             */
+            ( event ) => {
+                /** @type {Record<string, Record<string, number[]>>} */
+                let combatGroupHits = {};
+
+                this.#data.characters.forEach( c => {
+                    combatGroupHits[ c.characterId ] = c.combatGroupHits;
+                } );
+
+                event.sender.send( 'character:get:combatGroupHits', combatGroupHits );
+            } );
+        
+        ipcMain.on( 'character:get:combatGroupMedian',
+            /**
+             * Returns the combat group median values object to the sender.
+             * 
+             * @param {Electron.IpcMainEvent} event The event args.
+             */
+            ( event ) => {
+                /** @type {Record<string, Record<string, number[]>>} */
+                let combatGroupMedian = {};
+
+                this.#data.characters.forEach( c => {
+                    combatGroupMedian[ c.characterId ] = c.combatGroupMedian;
+                } );
+
+                event.sender.send( 'character:get:combatGroupMedian', combatGroupMedian );
+            } );
+
     }
 
     /**
