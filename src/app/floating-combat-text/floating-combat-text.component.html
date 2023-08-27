@@ -1,9 +1,14 @@
 <mat-toolbar>
     <span>Floating Combat Text</span>
     <span class="spacer"></span>
+    <!-- <button mat-button [disabled]="true">Export</button> -->
+    <button mat-button [disabled]="true" title="Coming Soon!"><mat-icon class="material-icons-outlined">share</mat-icon> Quickshare</button>
+    <button mat-button [disabled]="true" title="Coming Soon!"><mat-icon class="material-icons-outlined">cloud_download</mat-icon> Import</button>
     <button mat-button color="accent" (click)="newCombatGroup()"><mat-icon class="material-icons-outlined">add</mat-icon> New</button>
 </mat-toolbar>
 <div class="tab-content">
+    
+    <div style="text-align: right; padding: 0 25px 20px;"><mat-checkbox [(ngModel)]="enableFct" (change)="onEnableFctChange()">Enable FCT</mat-checkbox></div>
 
     <mat-accordion class="example-headers-align">
         <mat-expansion-panel hideToggle [@.disabled]="true" *ngFor="let group of combatGroups; let i = index" [expanded]="selectedPanelIndex === i" (expandedChange)="selectedPanelIndex = $event ? i : selectedPanelIndex">

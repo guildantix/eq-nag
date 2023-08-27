@@ -73,6 +73,7 @@ export class FloatingCombatTextComponent implements OnInit, DoCheck {
     public addFlag: ( value: number, flag: number ) => number = window.api.utils.numbers.addFlag;
     public isDev: boolean = false;
     public selectedPanelIndex: number = 0;
+    public enableFct: boolean = false;
     
     public get fctOverlays(): OverlayWindowModel[] {
         return this.overlays.filter( f => f.overlayType === 'FCT' );
@@ -97,6 +98,13 @@ export class FloatingCombatTextComponent implements OnInit, DoCheck {
             
             this.overlays = data.overlays;
 
+        } );
+
+        this.ipcService.tickReceived().subscribe( data => {
+            
+            this.overlays = data.overlays;
+            this.enableFct = data.enableFct;
+            
         } );
 
         this.ipcService.onAskCombatGroupMigration().subscribe( canMigrate => {
@@ -155,6 +163,10 @@ export class FloatingCombatTextComponent implements OnInit, DoCheck {
         this.combatGroups.forEach( group => {
             this.changes[ group.combatGroupId ] = this.changeTracking[ group.combatGroupId ] !== FctCombatGroup.getHashValue( group );
         } );
+    }
+
+    onEnableFctChange(): void {
+        this.ipcService.updateEnableFct( this.enableFct );
     }
 
 
