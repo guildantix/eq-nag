@@ -1774,7 +1774,7 @@ function parseLogEntries( raw, simulating, padTime ) {
             /(?<target>.*) has taken (?<amount>[0-9]*) damage from (?<actor>you)r (?<action>.*)\./gi,
 
             // 3: rgxThorns
-            /(?<target>.*) is pierced by (?<actor>YOU)R thorns for (?<amount>[0-9]*) points of non-melee damage\./gi,
+            /(?<target>.*) is pierced by (?<actor>YOU)R (?<action>thorns) for (?<amount>[0-9]*) points of non-melee damage\./gi,
 
             // 4: rgxSkillUp
             /(?<actor>You) have become better at (?<action>[a-zA-Z0-9_\s]*)! \((?<amount>[0-9]*)\)/gi,
@@ -1910,7 +1910,6 @@ function parseLogEntries( raw, simulating, padTime ) {
                                 return false;
                             }
 
-                            // TODO: Performance testing.
                             checkModifiers( 'Critical' ) && model.combatModifiers.push( 'critical' );
                             checkModifiers( 'Crippling Blow' ) && model.combatModifiers.push( 'crippling_blow' );
                             checkModifiers( 'Flurry' ) && model.combatModifiers.push( 'flurry' );
@@ -1931,13 +1930,9 @@ function parseLogEntries( raw, simulating, padTime ) {
                         }
                         
                         model.timestamp = timestamp;
+                        model.characterId = characterId;
     
                         ipcRenderer.send( 'overlay:send:fct-component', model );
-
-                        if ( ( model.amount === 'undefined' || !model.amount || model.amount === undefined ) && !misses.includes( i ) ) {
-                            console.log( 'invalid model amount', model );
-                            console.log( '          index, raw', i, raw );
-                        }
     
                         // leave the loop, we found the correct FCT type.
                         break;
