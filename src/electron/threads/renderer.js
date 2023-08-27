@@ -191,11 +191,16 @@ let installedTriggerIds = [];
 /** @type {FctCombatGroup[]} */
 let combatGroups = [];
 
-/** @type {Record<string, number>} */
-var largestHits = {};
+/** @type {Record<string, Record<string, number[]>>} */
+var combatGroupHits = {};
+/** @type {Record<string, Record<string, number>>} */
+var combatGroupMedian = {};
 /** @type {Record<string, HitAccumulationModel>} */
 var hitAccumulations = {};
+/** @type {Record<string, number>} */
+var combatHitsUpdateIntervalId = {};
 
+const combatHitsUpdateDelayMs = 5000;
 // animation durations, in ms
 const animateFadeShrinkDuration = 4000;
 // const animateFadeOutDuration = 7000;
@@ -218,6 +223,105 @@ let fct2Template;
 
 
 
+
+
+
+
+/**
+ * Gets the median value for the given character and render group.
+ * 
+ * @returns {number} The median value.
+ * 
+ * @param {string} characterId The id of the character's median data.
+ * @param {string} combatGroupId The id of the render group's median data.
+ */
+function getCombatGroupMedian( characterId, combatGroupId ) {
+    combatGroupMedian[ characterId ] = combatGroupMedian[ characterId ] ?? {};
+    combatGroupMedian[ characterId ][ combatGroupId ] = combatGroupMedian[ characterId ][ combatGroupId ] ?? 0;
+    return combatGroupMedian[ characterId ][ combatGroupId ];
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Sets the median value for the given character and render group.
+ * 
+ * @param {string} characterId The id of the character's median data.
+ * @param {string} combatGroupId The id of the render group's median data.
+ * @param {number} value The value to set.
+ */
+function setCombatGroupMedian( characterId, combatGroupId, value ) {
+    combatGroupMedian[ characterId ] = combatGroupMedian[ characterId ] ?? {};
+    combatGroupMedian[ characterId ][ combatGroupId ] = value;
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Gets the group hits data for the given character and render group.
+ * 
+ * @returns {number[]} The group hits data.
+ * 
+ * @param {string} characterId The id of the character's group hits data.
+ * @param {string} combatGroupId The id of the render group's group hits data.
+ */
+function getCombatGroupHits( characterId, combatGroupId ) {
+    combatGroupHits[ characterId ] = combatGroupHits[ characterId ] ?? {};
+    combatGroupHits[ characterId ][ combatGroupId ] = combatGroupHits[ characterId ][ combatGroupId ] ?? [];
+    return combatGroupHits[ characterId ][ combatGroupId ];
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Sets the group hits data for the given character and render group.
+ * 
+ * @param {string} characterId The id of the character's group hits data.
+ * @param {string} combatGroupId The id of the render group's group hits data.
+ * @param {number[]} value The value to set.
+ */
+function setCombatGroupHits( characterId, combatGroupId, value ) {
+    combatGroupHits[ characterId ] = combatGroupHits[ characterId ] ?? {};
+    combatGroupHits[ characterId ][ combatGroupId ] = value;
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Initializes and starts the rendering system.
+ * 
+ * @param {number} originX The origin x of the main monitor.
+ * @param {number} originY The origin y coordinate of the main monitor.
+ * @param {boolean} glowOnStart If true, glows the screen when the renderer starts.
+ */
 function Renderer( originX, originY, glowOnStart ) {
 
     origin.x = originX;
@@ -243,6 +347,29 @@ function Renderer( originX, originY, glowOnStart ) {
 
     } );
 
+    ipcRenderer.on( 'character:get:combatGroupHits',
+        /**
+         * Handles receiving the combat group hits.
+         * 
+         * @param {Electron.IpcRendererEvent} event The event args.
+         * @param {Record<string, Record<string, number[]>>} data The data for combat group hits.
+         */
+        ( event, data ) => {
+            combatGroupHits = data ?? {};
+            console.log( 'combatGroupHits', combatGroupHits );
+        } );
+
+    ipcRenderer.on( 'character:get:combatGroupMedian',
+        /**
+         * Handles receiving the combat group hits.
+         * 
+         * @param {Electron.IpcRendererEvent} event The event args.
+         * @param {Record<string, Record<string, number>>} data The data for combat group hits.
+         */
+        ( event, data ) => {
+            combatGroupMedian = data ?? {};
+        } );
+
     ipcRenderer.on( 'renderer:combatGroups',
         /**
          * Handles receiving updates to combat groups.
@@ -256,6 +383,11 @@ function Renderer( originX, originY, glowOnStart ) {
                 group._combatTypesFlags = CombatTypes.getFlagsValue( group.combatTypes );
                 group._combatModifiersFlags = getCombatModifiersFlags( group.combatModifiers );
             } );
+
+            // Send a request for the combat data, now that we have our render groups.
+            ipcRenderer.send( 'character:get:combatGroupHits' );
+            ipcRenderer.send( 'character:get:combatGroupMedian' );
+
         } );
 
     ipcRenderer.on( 'pkg:get:installed:trigger-ids', function ( event, data ) {
@@ -1001,6 +1133,41 @@ function accumulatHits( instanceId, el, accumulateAmount, originalAmount ) {
 
 }
 
+
+
+
+
+
+
+
+
+
+/**
+ * Returns true if the render group would accept the hit amount as a valid hit. Returns false if the group would ignore it.
+ * 
+ * @param {string} characterId The character id.
+ * @param {FctCombatGroup} renderGroup The render group to check.
+ * @param {number} hitAmount The hit amount.
+ */
+function groupIgnoresHit( characterId, renderGroup, hitAmount ) {
+    if ( renderGroup.ignoreHits ) {
+        let threshold = renderGroup.thresholdType === 'percent' ? ( renderGroup.thresholdPercent / 100 ) * getCombatGroupMedian( characterId, renderGroup.combatGroupId ) : renderGroup.thresholdValue;
+
+        return hitAmount < threshold;
+    } else {
+        return false;
+    }
+}
+
+
+
+
+
+
+
+
+
+
 /**
  * Finds a matching render group for the given FCT model.
  * 
@@ -1015,7 +1182,7 @@ function getRenderGroup( model ) {
     for ( let i = 0; i < combatGroups?.length ?? 0; i++ ) {
         const group = combatGroups[ i ];
 
-        if ( ( model.combatTypesFlags & group._combatTypesFlags ) === model.combatTypesFlags ) {
+        if ( ( model.combatTypesFlags & group._combatTypesFlags ) === model.combatTypesFlags && !groupIgnoresHit( model.characterId, group, model.amount ) ) {
             // Found a group with matching combat flags.
             if ( ( model.combatModifiersFlags & group._combatModifiersFlags ) === model.combatModifiersFlags ) {
 
@@ -1023,9 +1190,8 @@ function getRenderGroup( model ) {
                 renderGroup = group;
                 break;
 
-            } else if ( !renderGroup && ( model.combatModifiersFlags & group._combatModifiersFlags ) > 0 ) {
+            } else if ( !renderGroup && ( model.combatModifiersFlags & group._combatModifiersFlags ) > 0 && !groupIgnoresHit( model.characterId, group, model.amount ) ) {
                 // Found a group with some matching combat modifiers.
-                // Next we need to check that it passes threshold for ignore/consolidation.
                 renderGroup = group;
             }
         }
@@ -1051,14 +1217,58 @@ function getRenderGroup( model ) {
  * @param {FctCombatGroup} renderGroup The combat group to check.
  * @param {FctModel} model The FCT model to be rendered.
  */
-function tryAccumulateHit(renderGroup, model) {
-    // Found a renderGroup, next lets check thresholds.
-    let groupMaxHit = largestHits[ renderGroup.combatGroupId ] ?? 0;
+function tryAccumulateHit( renderGroup, model ) {
+    let groupMaxHit = 0;
     let hitAccumulated = false;
+    let medianHit = getCombatGroupMedian( model.characterId, renderGroup.combatGroupId );
+    const groupHits = getCombatGroupHits( model.characterId, renderGroup.combatGroupId );
 
-    if ( renderGroup.ignoreHits || renderGroup.accumulateHits ) {
+    // If our data set is too small, or the hit deviates from the median hit by
+    // a 10% margin, then we need to add this hit to our data set and 
+    // recalculate the median hit.
+    if ( groupHits.length < 1000 || (medianHit * .9 > model.amount && medianHit * 1.1 < model.amount) ) {
 
-        let threshold = renderGroup.thresholdType === 'percent' ? ( renderGroup.thresholdValue / 100 ) * groupMaxHit : renderGroup.thresholdValue;
+        groupHits.push( model.amount );
+        groupHits.sort( ( a, b ) => a - b );
+
+        // In general, hits will grow harder over time.  We want to keep track
+        // of the max hit for this group.  When the lengh of this data set 
+        // grows over 1000, we want to remove the smallest hit.
+        if ( groupHits.length > 1000 ) {
+            groupHits.shift();
+        }
+
+        // Calculate the median hit.
+        medianHit = groupHits[ Math.floor( groupHits.length / 2 ) ];
+
+        // Update our data sets.
+        setCombatGroupMedian( model.characterId, renderGroup.combatGroupId, medianHit );
+        setCombatGroupHits( model.characterId, renderGroup.combatGroupId, groupHits );
+
+        // If we're already waiting on a save to execute, then we don't need to start a new one.
+        if ( !combatHitsUpdateIntervalId[ model.characterId ] ) {
+
+            // We want to wait a few seconds before saving the data set.
+            combatHitsUpdateIntervalId[ model.characterId ] = window.setTimeout( () => {
+                
+                ipcRenderer.send( 'character:save:combatGroupHits', { characterId: model.characterId, combatGroupHits: combatGroupHits[ model.characterId ] } );
+                ipcRenderer.send( 'character:save:combatGroupMedian', { characterId: model.characterId, combatGroupMedian: combatGroupMedian[ model.characterId ] } );
+                
+                delete combatHitsUpdateIntervalId[ model.characterId ];
+
+            }, combatHitsUpdateDelayMs );
+
+        }
+
+
+    }
+    
+    // Calculate the max hit for this group.
+    groupMaxHit = medianHit * 2;
+
+    if ( renderGroup.accumulateHits ) {
+
+        let threshold = renderGroup.thresholdType === 'percent' ? ( renderGroup.thresholdPercent / 100 ) * groupMaxHit : renderGroup.thresholdValue;
 
         if ( model.amount < threshold ) {
             if ( renderGroup.accumulateHits ) {
@@ -1070,9 +1280,28 @@ function tryAccumulateHit(renderGroup, model) {
 
                     // We want to find the most recent component that matches the flags, in this render renderGroup.
                     for ( let i = overlay.overlayFctComponents.length - 1; i >= 0; i-- ) {
+                        /** @type {FctModel} */
                         const c = overlay.overlayFctComponents[ i ];
-                        if ( c.accumulationPeriod && c.action === model.action && c.combatTypesFlags === model.combatTypesFlags && c.combatModifiersFlags === model.combatModifiersFlags ) {
+
+                        if ( c.dom && c.accumulationPeriod && c.combatTypesFlags === model.combatTypesFlags && c.combatModifiersFlags === model.combatModifiersFlags ) {
                             accumlationTarget = c;
+
+                            // If the action property doesn't already contain the current action, we want to add it.
+                            if ( c.action?.indexOf( model.action ) === -1 ) {
+                                // If the action property already ends with an ellipsis, then we're out of room. Otherwise we can add it.
+                                if ( !c.action.match( /\.\.\.$/gi ) ) {
+                                    c.action += ', ' + model.action;
+
+                                    // After appending the action, let's trim it if it's too long.
+                                    if ( c.action.length > 37 ) {
+                                        c.action = c.action.substring( 0, 37 ) + '...';
+                                    }
+                                }
+
+                                // Apply the text change.
+                                accumlationTarget.dom.querySelector( '.fctSource' ).innerHTML = `(${c.action})`;
+                            }
+
                             break;
                         }
                     }
@@ -1092,10 +1321,6 @@ function tryAccumulateHit(renderGroup, model) {
             }
         }
 
-    }
-
-    if ( model.amount > groupMaxHit ) {
-        largestHits[ renderGroup.combatGroupId ] = model.amount;
     }
 
     return hitAccumulated;
@@ -1119,6 +1344,7 @@ function renderFct2( model ) {
     /** @type {FctCombatGroup | undefined} */
     let renderGroup = undefined;
 
+    model.instanceId = nanoid();
     model.combatTypesFlags = CombatTypes.getFlagsValue( model.combatTypes );
     model.combatModifiersFlags = getCombatModifiersFlags( model.combatModifiers );
     let hitAccumulated = false;
