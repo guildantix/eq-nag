@@ -29,9 +29,9 @@ The current release version is v0.1.8 and you can find the details [here](https:
 
 There are two ways to run Nag, via the installer or the portable.  The installer will automatically check for updates when Nag loads.
 
-Download the [installer](https://github.com/guildantix/eq-nag/releases/download/v0.1.8/EQ-Nag-Setup-0.1.8.exe).
+Download the [installer](https://github.com/guildantix/eq-nag/releases/download/v0.1.42/EQ-Nag-Setup-0.1.42.exe).
 
-Download the [portable](https://github.com/guildantix/eq-nag/releases/download/v0.1.8/eq_nag_portable.exe).
+Download the [portable](https://github.com/guildantix/eq-nag/releases/latest) from the release page.
 
 ## Discord
 
