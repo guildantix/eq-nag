@@ -46,6 +46,7 @@ export enum ActionTypes {
     DisplayDeathRecap = 11,
     ScreenGlow = 12,
     ClearAll = 13,
+    Stopwatch = 14,
 
 }
 

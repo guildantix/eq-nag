@@ -30,6 +30,7 @@ var ActionTypes = {
     '11': 'DisplayDeathRecap',
     '12': 'ScreenGlow',
     '13': 'ClearAll',
+    '14': 'Stopwatch',
     DisplayText: 0,
     PlayAudio: 1,
     Speak: 2,
@@ -44,6 +45,7 @@ var ActionTypes = {
     DisplayDeathRecap: 11,
     ScreenGlow: 12,
     ClearAll: 13,
+    Stopwatch: 14,
 
 }
 
