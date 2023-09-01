@@ -5,7 +5,7 @@
         "mySpellHits": false,
         "otherSpellHitsOnMe": false,
         "myHealing": false,
-        "otherHealingOnMe": false
+        "otherHealingOnMe": true
     },
     "valueStyles": {
         "fontFamily": "Roboto",
