@@ -83,6 +83,39 @@ export class LogSimulatorComponent implements OnInit {
                 if ( StringUtility.isNullOrWhitespace( lines[ i ] ) ) {
                     lines.splice( i, 1 );
                     i--;
+                    continue;
+                }
+                
+                const lineDateMatch = /^\[(.*?)\]\s*/gi.exec( lines[ i ] );
+                if ( !lineDateMatch ) {
+                    let nearestDate: string = undefined;
+
+                    if ( i === 0 ) {
+                        let j = i;
+                        while ( j < lines.length && nearestDate == undefined ) {
+                            j++;
+                            const nextLineDateMatch = /^\[(.*?)\]\s*/gi.exec( lines[ j ] );
+                            if ( nextLineDateMatch ) {
+                                nearestDate = nextLineDateMatch[ 0 ];
+                            }
+                        }
+                    } else {
+                        let j = i;
+                        while ( j >= 0 && nearestDate == undefined ) {
+                            j--;
+                            const prevLineDateMatch = /^\[(.*?)\]\s*/gi.exec( lines[ j ] );
+                            if ( prevLineDateMatch ) {
+                                nearestDate = prevLineDateMatch[ 0 ];
+                            }
+                        }
+                    }
+                    
+                    if ( nearestDate ) {
+                        lines[ i ] = `${nearestDate}${lines[ i ]}`;
+                    } else {
+                        lines.splice( i, 1 );
+                        i--;
+                    }
                 }
             }
             this.lines = lines;
