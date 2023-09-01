@@ -19,6 +19,15 @@ export class StringUtility {
     }
 
     /**
+     * Returns true if the given value is null, undefined, empty, or whitespace only.
+     * 
+     * @param value The string value to check.
+     */
+    public static isNullOrWhitespace( value: string ): boolean {
+        return value === null || value === undefined || value.trim().length === 0;
+    }
+
+    /**
      * Returns an array of all named group matches in the given string against the given regexp.
      * 
      * @param value The string value to execute regex against.
