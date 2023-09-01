@@ -1,0 +1,22 @@
+mat-form-field {
+    width: 100%;
+    button[matsuffix]{
+        width: 26px;
+        height: 26px;
+        margin-right: 6px;
+        mat-icon {
+            width: 26px;
+            height: 26px;
+            font-size: 26px;
+        }
+    }
+}
+
+// TODO: Move this to a global style sheet
+:host ::ng-deep {
+    mat-checkbox.break-spaces {
+        span.mat-checkbox-label {
+            white-space: break-spaces;
+        }
+    }
+}
