@@ -8,7 +8,7 @@
                 <span class="material-icons" *ngIf="action.actionType === actionTypes.DisplayText">text_format</span>
                 <span class="material-icons" *ngIf="action.actionType === actionTypes.PlayAudio">audiotrack</span>
                 <span class="material-icons" *ngIf="action.actionType === actionTypes.Speak">volume_up</span>
-                <span class="material-icons" *ngIf="action.actionType === actionTypes.Timer">timer</span>
+                <span class="material-icons material-icons-outlined" *ngIf="action.actionType === actionTypes.Timer">alarm</span>
                 <span class="material-icons" *ngIf="action.actionType === actionTypes.Countdown">watch</span>
                 <span class="material-icons" *ngIf="action.actionType === actionTypes.StoreVariable">sd_storage</span>
                 <span class="material-icons" *ngIf="action.actionType === actionTypes.ClearVariable">sd_storage</span>
@@ -19,6 +19,7 @@
                 <span class="material-icons" *ngIf="action.actionType === actionTypes.DisplayDeathRecap">sick</span>
                 <span class="material-icons" *ngIf="action.actionType === actionTypes.ScreenGlow">brightness_5</span>
                 <span class="material-icons material-icons-outlined" *ngIf="action.actionType === actionTypes.ClearAll">layers_clear</span>
+                <span class="material-icons material-icons-outlined" *ngIf="action.actionType === actionTypes.Stopwatch">timer</span>
             </div>
             <mat-card-title>{{action.actionType == null ? 'Unset Action' : actionTypeLabels(action.actionType)}}</mat-card-title>
             <mat-card-subtitle>
@@ -36,6 +37,7 @@
                 <span *ngIf="action.actionType === actionTypes.DisplayDeathRecap">Displays the Death Recap window.</span>
                 <span *ngIf="action.actionType === actionTypes.ScreenGlow">Renders a glow around the main display.</span>
                 <span *ngIf="action.actionType === actionTypes.ClearAll">Stops all active components.</span>
+                <span *ngIf="action.actionType === actionTypes.Stopwatch">Starts a stopwatch.</span>
                 <mat-label *ngIf="isDev" style="color:#00000059;">&nbsp;{{action.actionId}}</mat-label>
             </mat-card-subtitle>
         </mat-card-header>
@@ -59,6 +61,7 @@
                         <mat-option [value]="actionTypes.DisplayDeathRecap">{{actionTypeLabels(actionTypes.DisplayDeathRecap)}}</mat-option>
                         <mat-option [value]="actionTypes.ScreenGlow">{{actionTypeLabels(actionTypes.ScreenGlow)}}</mat-option>
                         <mat-option [value]="actionTypes.ClearAll">{{actionTypeLabels(actionTypes.ClearAll)}}</mat-option>
+                        <mat-option [value]="actionTypes.Stopwatch">{{actionTypeLabels(actionTypes.Stopwatch)}}</mat-option>
                     </mat-select>
                     <mat-hint>Action Type</mat-hint>
                 </mat-form-field>
@@ -158,6 +161,12 @@
 
             <div *ngIf="action.actionType === actionTypes.ClearAll">
                 <p>This action will clear all render elements, stop all timer types, reset all stored variables, end all audio files and speech, and restart all counters. </p>
+            </div>
+
+            <div *ngIf="action.actionType === actionTypes.Stopwatch">
+
+                <app-trigger-action-stopwatch [action]="action" [overlayOptions]="timerOverlays" [alertOverlays]="alertOverlays" [triggerActions]="getOtherActions(action.actionId)" [phrases]="capturePhrases"></app-trigger-action-stopwatch>
+
             </div>
 
         </mat-card-content>
