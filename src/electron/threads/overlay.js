@@ -60,7 +60,7 @@ var fontSize = 1;
 var sortDirection = TimerSortTypes.None;
 var voiceOptions = [];
 var dotTextHeight = 0;
-var showRemainingDuration = false;
+var showDuration = false;
 var groupByTarget = false;
 var groupHeaderSize = 12;
 var groupHeaderColor = '#ffffff';
@@ -256,7 +256,7 @@ function Overlay() {
                 icon.style.height = `${dotTextHeight}px`;
             } );
 
-            showRemainingDuration = model.showTimeRemaining === true;
+            showDuration = model.showTimeRemaining === true;
 
             if ( model.groupByTarget ) {
                 contentArea.classList.add( 'grouped-mobs' );
@@ -791,7 +791,7 @@ function applyTimerSettings( contentArea, comp, group ) {
         comp.dom.querySelector( '.progress' ).style.backgroundColor = comp.action.timerBackgroundColor;
     }
 
-    if ( showRemainingDuration || comp.action.showRemainingDuration ) {
+    if ( showDuration || comp.action.showDuration ) {
         comp.dom.querySelector( 'span.time-remaining' ).innerHTML = `(${comp.action.duration})&nbsp;`;
     } else {
         comp.dom.querySelector( 'span.time-remaining' ).innerHTML = ``;
@@ -857,7 +857,7 @@ function applyTimerSettings( contentArea, comp, group ) {
             comp.dom.querySelector( 'div.determinate' ).style.width = `${perc * 100}%`;
         }
 
-        if ( showRemainingDuration || comp.action.showRemainingDuration ) {
+        if ( showDuration || comp.action.showDuration ) {
             comp.dom.querySelector( 'span.time-remaining' ).innerHTML = `(${DateUtilities.getDurationLabel( comp.timeRemaining )})&nbsp;`;
         } else {
             comp.dom.querySelector( 'span.time-remaining' ).innerHTML = ``;

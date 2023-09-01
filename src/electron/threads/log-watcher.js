@@ -625,7 +625,7 @@ function createSimulationTimer( duration ) {
     action.actionId = nanoid();
     action.displayText = 'Simulation Duration';
     action.overlayId = detrimentalOverlayId;
-    action.showRemainingDuration = true;
+    action.showDuration = true;
     action.actionType = ActionTypes.Countdown;
 
     action.duration = duration;
@@ -968,7 +968,7 @@ function LogWatcher(character, logPosition) {
                 action.actionId = nanoid();
                 action.displayText = 'Simulation Duration';
                 action.overlayId = detrimentalOverlayId;
-                action.showRemainingDuration = true;
+                action.showDuration = true;
                 action.actionType = ActionTypes.Countdown;
             
                 action.duration = duration;

@@ -111,7 +111,7 @@ class OverlayInstance {
     /** @type {number} */
     dotTextHeight;
     /** @type {boolean} */
-    showRemainingDuration;
+    showDuration;
     /** @type {boolean} */
     groupByTarget;
     /** @type {number} */
@@ -792,7 +792,7 @@ function initializeOverlay( overlay ) {
         overlayGroups: {},
         sortDirection: TimerSortTypes.None,
         dotTextHeight: 0,
-        showRemainingDuration: false,
+        showDuration: false,
         groupByTarget: false,
         groupHeaderSize: 12,
         groupHeaderColor: '#ffffff',
@@ -966,7 +966,7 @@ function updateOverlay( overlayId, model ) {
             icon.style.height = `${overlayInstances[ overlayId ].dotTextHeight}px`;
         } );
     
-        overlayInstances[ overlayId ].showRemainingDuration = model.showTimeRemaining === true;
+        overlayInstances[ overlayId ].showDuration = model.showTimeRemaining === true;
     
         if ( model.groupByTarget ) {
             contentArea.classList.add( 'grouped-mobs' );
@@ -2622,7 +2622,7 @@ function applyTimerSettings( overlayId, contentArea, comp, group ) {
 
     if ( comp.start == null ) {
         comp.dom.querySelector( 'span.time-remaining' ).innerHTML = `(??)&nbsp;`;
-    } else if ( overlayInstances[ overlayId ].showRemainingDuration || comp.action.showRemainingDuration ) {
+    } else if ( overlayInstances[ overlayId ].showDuration || comp.action.showDuration ) {
         comp.dom.querySelector( 'span.time-remaining' ).innerHTML = `(${comp.action.duration})&nbsp;`;
     } else {
         comp.dom.querySelector( 'span.time-remaining' ).innerHTML = ``;
@@ -2696,7 +2696,7 @@ function applyTimerSettings( overlayId, contentArea, comp, group ) {
 
         if ( infinite ) {
             comp.dom.querySelector( 'span.time-remaining' ).innerHTML = `(??)&nbsp;`;
-        } else if ( overlayInstances[ overlayId ].showRemainingDuration || comp.action.showRemainingDuration ) {
+        } else if ( overlayInstances[ overlayId ].showDuration || comp.action.showDuration ) {
             comp.dom.querySelector( 'span.time-remaining' ).innerHTML = `(${getDurationLabel( overlayId, comp.timeRemaining )})&nbsp;`;
         } else {
             comp.dom.querySelector( 'span.time-remaining' ).innerHTML = ``;

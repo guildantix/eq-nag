@@ -91,6 +91,7 @@ export function ActionTypeLabels(actionType: ActionTypes): string {
         actionType === ActionTypes.DisplayDeathRecap ? 'Display Death Recap' :
         actionType === ActionTypes.ScreenGlow ? 'Screen Glow' :
         actionType === ActionTypes.ClearAll ? 'Clear All' :
+        actionType === ActionTypes.Stopwatch ? 'Stopwatch' :
         'Unset Action';
     
 }
@@ -580,7 +581,9 @@ export class TriggerActionProperties {
 
     public duration: number = null;
     public storageDuration: string = null;
+    /** @deprecated Use showDuration instead. */
     public showRemainingDuration: boolean = false;
+    public showDuration: boolean = false;
     public repeatTimer: boolean = false;
     public repeatCount: number = null;
     public variableName: string = null;

@@ -99,6 +99,8 @@ var getActionLabel = ( actionType ) => {
             return 'Screen Glow';
         case ActionTypes.ClearAll:
             return 'Clear All';
+        case ActionTypes.Stopwatch:
+            return 'Stopwatch';
         default:
             return 'Unknown';
     }
@@ -273,8 +275,10 @@ class TriggerAction {
     duration = null;
     /** @type {string} */
     storageDuration = null;
-    /** @type {boolean} */
+    /** @type {boolean} @deprecated Use showDuration instead. */
     showRemainingDuration = false;
+    /** @type {boolean} */
+    showDuration = false;
     /** @type {boolean} */
     repeatTimer = false;
     /** @type {number} */

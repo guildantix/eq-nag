@@ -17,7 +17,7 @@
             "overlayId": null,
             "duration": null,
             "storageDuration": null,
-            "showRemainingDuration": false,
+            "showDuration": false,
             "repeatTimer": false,
             "repeatCount": null,
             "variableName": null,
