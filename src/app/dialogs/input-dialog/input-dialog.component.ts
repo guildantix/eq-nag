@@ -15,6 +15,9 @@ export class InputDialogComponent implements OnInit {
 
     @HostListener( 'keyup', [ '$event' ] ) public onKeyUp( e: KeyboardEvent ) {
         if ( e.key === 'Enter' ) {
+            if ( ( e.target as HTMLElement ).tagName === 'TEXTAREA' ) {
+                return;
+            }
             this.accept();
         } else if ( e.key === 'Escape' ) {
             this.cancel();
