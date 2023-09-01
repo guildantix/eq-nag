@@ -241,6 +241,21 @@ export class NewCharacterDialogComponent implements OnInit {
                 this.model = option;
 
             }
+            
+            let p99Special = /eqlog_(?<Character>.*)_project1999\.txt$/gi.exec( characterLogPath );
+            if ( p99Special != null && p99Special?.groups?.Character != null ) {
+
+                let option: CharacterModel = new CharacterModel();
+
+                option.name = p99Special.groups.Character;
+                option.server = 'project1999';
+                option.logFile = `${characterLogPath}`;
+                option.p99 = true;
+                option.daybreak = false;
+
+                this.model = option;
+
+            }
         }
     }
     
