@@ -7,6 +7,7 @@ import { nagId } from 'src/app/core/nag-id.util';
 import { DialogService } from 'src/app/dialogs/dialog.service';
 import { IpcService } from 'src/app/ipc.service';
 import { SettingsService } from 'src/app/settings/settings-http.service';
+import { StringUtility } from 'src/app/utilities';
 
 // TODO: Move away from highlighting the current line and instead highlight all lines at the current second.  And remove the intervals, scrolling the last element into view immediately.
 // TODO: On close, stop the sim.
@@ -77,7 +78,14 @@ export class LogSimulatorComponent implements OnInit {
         this.dialogService.showInputDialog( 'Paste Log Entries', [ 'Enter the lines of the log file that you want to simulate.' ], 'Log lines', null, this.rawData, true ).subscribe( data => {
             if ( data === null ) return;
             this.rawData = data;
-            this.lines = data.split( /\r\n|\r|\n/gi );
+            let lines = data.split( /\r\n|\r|\n/gi );
+            for ( let i = 0; i < lines.length; i++ ) {
+                if ( StringUtility.isNullOrWhitespace( lines[ i ] ) ) {
+                    lines.splice( i, 1 );
+                    i--;
+                }
+            }
+            this.lines = lines;
         } );
     }
 
