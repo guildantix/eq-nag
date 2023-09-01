@@ -100,7 +100,7 @@ export function ActionTypeIcons( actionType: ActionTypes ): string {
     return actionType === ActionTypes.DisplayText ? 'text_format' :
         actionType === ActionTypes.PlayAudio ? 'audiotrack' :
         actionType === ActionTypes.Speak ? 'volume_up' :
-        actionType === ActionTypes.Timer ? 'timer' :
+        actionType === ActionTypes.Timer ? 'alarm' :
         actionType === ActionTypes.Countdown ? 'watch' :
         actionType === ActionTypes.StoreVariable ? 'sd_storage' :
         actionType === ActionTypes.DotTimer ? 'watch_later' :
@@ -111,6 +111,7 @@ export function ActionTypeIcons( actionType: ActionTypes ): string {
         actionType === ActionTypes.DisplayDeathRecap ? 'sick' :
         actionType === ActionTypes.ScreenGlow ? 'brightness_5' :
         actionType === ActionTypes.ClearAll ? 'layers_clear' :
+        actionType === ActionTypes.Stopwatch ? 'timer' :
         'block';
 }
 
