@@ -1129,13 +1129,21 @@ function LogWatcher(character, logPosition) {
         
                     } else {
                 
-                        if ( action.storageDuration ) {
+                        if ( action.storageDuration && action.storageDuration.indexOf( '[' ) > -1 ) {
                             let dur = +action.duration;
                             dur = +getPersistentDictionaryValue( action.storageDuration, instanceData.res, timestamp, action, deltaTime, trigger );
                             expectedDuration = dur > 0 ? dur / 1000 : +action.duration;
+
+                        } else if ( action.storageDuration ) {
+                            let dur = +action.duration;
+                            dur = +getScalarValue( action.storageDuration, 0 );
+                            expectedDuration = dur > 0 ? dur / 1000 : +action.duration;
+
                         } else {
                             expectedDuration = +action.duration;
+
                         }
+                        
                     }
 
                     v.subAction.variableValues?.forEach( f => {
@@ -2841,9 +2849,13 @@ function displayTimerCountdownComponent(res, timestamp, action, deltaTime, trigg
         comp.action.duration = StringUtilities.getDurationFromLabel( res.result?.groups?.timerDuration );
     } else {
 
-        if ( action.storageDuration ) {
+        if ( action.storageDuration && action.storageDuration.indexOf( '[' ) > -1 ) {
             let dur = +action.duration;
             dur = +getPersistentDictionaryValue( action.storageDuration, res, timestamp, action, deltaTime, trigger );
+            comp.action.duration = dur > 0 ? dur / 1000 : +action.duration;
+        } else if ( action.storageDuration ) {
+            let dur = +action.duration;
+            dur = +getScalarValue( action.storageDuration, 0 );
             comp.action.duration = dur > 0 ? dur / 1000 : +action.duration;
         } else {
             comp.action.duration = +action.duration;
@@ -3179,6 +3191,26 @@ function saveScalarVariable( key, value ) {
 
     enableLogging && sendInformationToLog( `Storing scalar value [${value}] into [${key}]`, 12 );
     enableLogging && sendInformationToLog( `Current values are: ${storedVariables[ key ].join( '|' )}` );
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Returns the value of the given key in the store.
+ * 
+ * @param {string} key The key of the stored variable.
+ * @param {any | undefined} defaultValue The default value to return if the key is not found.
+ */
+function getScalarValue( key, defaultValue ) {
+    defaultValue = defaultValue ?? undefined;
+    return storedVariables[ key ]?.length > 0 ? storedVariables[ key ][ 0 ] : defaultValue;
 }
 
 
