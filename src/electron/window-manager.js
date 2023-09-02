@@ -371,6 +371,10 @@ class WindowManager {
             this.#renderer.webContents.send( 'component:destroy', instanceId );
         } );
         
+        ipcMain.on( 'renderer:stopwatch:stop', ( event, instanceId ) => {
+            this.#renderer.webContents.send( 'renderer:stopwatch:stop', instanceId );
+        } );
+        
         ipcMain.on( 'renderer:reset:overlayDimensions', ( event ) => {
             this.#renderer.webContents.send( 'renderer:reset:overlayDimensions', null );
         } );

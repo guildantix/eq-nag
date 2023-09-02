@@ -119,6 +119,22 @@ class LogBootstrapper {
             }
         } );
 
+        ipcMain.on( 'log:store:variable', function ( event, data ) {
+            for ( let key in logWatchers ) {
+                if ( logWatchers.hasOwnProperty( key ) && logWatchers[ key ].window != null ) {
+                    logWatchers[ key ].window.webContents.send( 'log:store:variable', data );
+                }
+            }
+        } );
+
+        ipcMain.on( 'log:store:scalar-variable', function ( event, data ) {
+            for ( let key in logWatchers ) {
+                if ( logWatchers.hasOwnProperty( key ) && logWatchers[ key ].window != null ) {
+                    logWatchers[ key ].window.webContents.send( 'log:store:scalar-variable', data );
+                }
+            }
+        } );
+
         ipcMain.on( 'log:simulate:begin',
             /**
              * Runs the simulation.
