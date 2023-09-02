@@ -18,7 +18,7 @@
 
                 <ng-template [ngIf]="menuItem.label !== '-' && menuItem.children == undefined">
                     <button mat-button (click)="executeAction(menuItem)" [disabled]="menuItem.disabled()" [class]="menuItem.cssClass">
-                        <mat-icon *ngIf="menuItem.matIcon != null; else iconSpacer" [inline]="true">{{menuItem.matIcon}}</mat-icon>
+                        <mat-icon [attr.class]="menuItem.matIconCssClass" *ngIf="menuItem.matIcon != null; else iconSpacer" [inline]="true">{{menuItem.matIcon}}</mat-icon>
                         <ng-template #iconSpacer><span class="icon-spacer"></span></ng-template>
                         {{menuItem.label}}
                     </button>
@@ -29,7 +29,7 @@
                 <ng-template [ngIf]="menuItem.label !== '-' && menuItem.children != undefined">
 
                     <button mat-button (mouseenter)="executeAction(menuItem, subMenu)" (mouseleave)="keepOpen = false" [disabled]="menuItem.disabled()" [class]="menuItem.cssClass">
-                        <mat-icon *ngIf="menuItem.matIcon != null; else iconSpacer" [inline]="true">{{menuItem.matIcon}}</mat-icon>
+                        <mat-icon [attr.class]="menuItem.matIconCssClass" *ngIf="menuItem.matIcon != null; else iconSpacer" [inline]="true">{{menuItem.matIcon}}</mat-icon>
                         <ng-template #iconSpacer><span class="icon-spacer"></span></ng-template>
                         {{menuItem.label}}
                         <mat-icon [inline]="true" style="float: right; margin-right: 0;">arrow_forward_ios</mat-icon>
@@ -42,7 +42,7 @@
                             </ng-template>
                             <ng-template [ngIf]="subMenuItem.label !== '-'">
                                 <button mat-button (click)="executeAction(subMenuItem)" [disabled]="subMenuItem.disabled()" [class]="subMenuItem.cssClass">
-                                    <mat-icon *ngIf="subMenuItem.matIcon != null; else iconSpacer" [inline]="true">{{subMenuItem.matIcon}}</mat-icon>
+                                    <mat-icon [attr.class]="menuItem.matIconCssClass" *ngIf="subMenuItem.matIcon != null; else iconSpacer" [inline]="true">{{subMenuItem.matIcon}}</mat-icon>
                                     <ng-template #iconSpacer><span class="icon-spacer"></span></ng-template>
                                     {{subMenuItem.label}}
                                 </button>
