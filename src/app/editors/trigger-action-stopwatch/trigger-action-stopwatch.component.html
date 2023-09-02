@@ -1,5 +1,5 @@
 <mat-tab-group animationDuration="0ms" [selectedIndex]="0">
-    <mat-tab label="Timer">
+    <mat-tab label="Stopwatch">
 
         <div class="card-tab-content">
 
@@ -17,7 +17,7 @@
                     <mat-form-field style="width: 100%;">
                         <mat-label></mat-label>
                         <input matInput [(ngModel)]="action.displayText" name="txtDisplayText" />
-                        <mat-hint>Timer name</mat-hint>
+                        <mat-hint>Stopwatch name</mat-hint>
                     </mat-form-field>
                 </div>
             </div>
@@ -27,19 +27,19 @@
             </div>
 
             <div class="card-property">
-                <div class="content-middle"><mat-checkbox [(ngModel)]="action.hideTimer" name="cbxHideTimer" title="Use this option if you want to keep track of a duration but don't need to see the progress.">Hide Timer?</mat-checkbox></div>
+                <div class="content-middle"><mat-checkbox [(ngModel)]="action.hideTimer" name="cbxHideTimer" title="Use this option if you want to keep track of a duration but don't need to see the progress.">Hide stopwatch?</mat-checkbox></div>
                 <div class="content-middle"><a *ngIf="action.hideTimer" (click)="editHideTimerConditions()" href="javascript:void(0);" class="color-blue">Conditions</a></div>
             </div>
 
             <div class="card-property">
-                <div class="content-middle">When triggered again, how do you want the timer to behave?</div>
+                <div class="content-middle">When triggered again, how do you want the stopwatch to behave?</div>
                 <div>
                     <mat-form-field style="width: 100%;">
                         <mat-label></mat-label>
                         <mat-select [(ngModel)]="action.restartBehavior" name="rdoRestartBehavior_{{action.actionId}}">
-                            <mat-option [value]="timerRestartBehaviors.StartNewTimer">Always start new timer</mat-option>
+                            <mat-option [value]="timerRestartBehaviors.StartNewTimer">Always start new stopwatch</mat-option>
                             <mat-option [value]="timerRestartBehaviors.RestartOnDuplicate">Restart only if the name matches</mat-option>
-                            <mat-option [value]="timerRestartBehaviors.RestartTimer">Restart timer regardless of the name</mat-option>
+                            <mat-option [value]="timerRestartBehaviors.RestartTimer">Restart stopwatch regardless of the name</mat-option>
                             <mat-option [value]="timerRestartBehaviors.DoNothing">Do nothing and ignore trigger</mat-option>
                         </mat-select>
                         <mat-hint>Restart behavior</mat-hint>
@@ -50,17 +50,6 @@
             <div class="card-property">
                 <div class="content-middle"><mat-checkbox [(ngModel)]="action.showDuration" name="cbxShowTimeRemaining">Show the stopwatch duration</mat-checkbox></div>
                 <div></div>
-            </div>
-
-            <div class="card-property">
-                <div class="content-middle"><mat-checkbox [(ngModel)]="action.repeatTimer" name="cbxRepeatTimer">Repeat timer</mat-checkbox></div>
-                <div class="content-middle content-right">
-                    <mat-form-field *ngIf="action.repeatTimer">
-                        <mat-label></mat-label>
-                        <input matInput type="number" [(ngModel)]="action.repeatCount" name="txtRepeatCount" />
-                        <mat-hint>Leave blank to repeat indefinitely</mat-hint>
-                    </mat-form-field>
-                </div>
             </div>
 
             <div class="card-property">
@@ -84,7 +73,7 @@
             </div>
 
             <div class="card-property">
-                <div class="content-top">Timer Icon<div style="padding: 20px 15px;"><img *ngIf="action.timerIcon" [src]="action.timerIcon" (click)="openIconFileModal(action)" /></div></div>
+                <div class="content-top">Stopwatch Icon<div style="padding: 20px 15px;"><img *ngIf="action.timerIcon" [src]="action.timerIcon" (click)="openIconFileModal(action)" /></div></div>
                 <div class="content-vertical content-right content-top">
                     
                     <div class="align-left"><button mat-button *ngIf="action.timerIcon == null" (click)="openIconFileModal(action)" color="accent">Select Icon File</button></div>
@@ -97,12 +86,12 @@
 
     </mat-tab>
 
-    <mat-tab label="Timer Ended">
+    <mat-tab label="Stopwatch Ended">
         <div class="card-tab-content" [appContextMenu]="getActionEndedCtxMenu(action)">
 
             <!-- Yes store duration in variable -->
             <div class="card-property">
-                <div class="content-middle"><mat-checkbox [(ngModel)]="action.storeDuration" name="cbxStoreDuration">Store timer duration in variable.</mat-checkbox></div>
+                <div class="content-middle"><mat-checkbox [(ngModel)]="action.storeDuration" name="cbxStoreDuration">Store stopwatch duration in variable.</mat-checkbox></div>
                 <div class="content-right" *ngIf="action.storeDuration">
                     <mat-form-field>
                         <mat-label></mat-label>
@@ -112,17 +101,9 @@
                 </div>
             </div>
 
-            <!-- Notify when ending -->
+            <!-- Change stopwatch color -->
             <div class="card-property">
-
-                <div class="content-middle"><mat-checkbox [(ngModel)]="action.remainAfterEnded" name="cbxRemainAfterEnded">Remain after ended</mat-checkbox></div>
-                <div class="content-right" *ngIf="action.remainAfterEnded"><app-duration [(ngModel)]="action.remainDuration" name="durRemainDuration"></app-duration></div>
-
-            </div>
-
-            <!-- Change timer color -->
-            <div class="card-property" *ngIf="action.remainAfterEnded && action.remainDuration > 0">
-                <div class="content-middle"><mat-checkbox [(ngModel)]="action.endedChangeColor" name="cbxEndedChangeColor" *ngIf="action.remainDuration > 0">Change timer color</mat-checkbox></div>
+                <div class="content-middle"><mat-checkbox [(ngModel)]="action.endedChangeColor" name="cbxEndedChangeColor">Change stopwatch color</mat-checkbox></div>
                 <div class="content-right content-middle"><app-color-picker [(ngModel)]="action.endedColor" name="acpEndedColor" *ngIf="action.endedChangeColor" [inline]="true"></app-color-picker></div>
             </div>
 
@@ -143,7 +124,9 @@
                         <div class="full-width content-top content-left" style="padding-top: 5px;" *ngFor="let subAction of action.endedSubActions; let i = index">
                             <div class="sub-action-options-container" *ngIf="!subAction.actionId">
                                 <div class="hr"></div>
+                                <h2 style="margin: 18px 0;font-weight: 100;">Choose an Action to execute</h2>
                                 <app-trigger-action-option *ngFor="let action of actionOptions; let i = index" [action]="action" (click)="assignSubAction(subAction, action)"></app-trigger-action-option>
+                                <div class="hr"></div>
                             </div>
                             <div class="sub-action-container" *ngIf="subAction.actionId">
                                 <ng-container *ngIf="getSubActionAction(subAction.actionId) as subActionAction">
@@ -235,7 +218,7 @@
                     <p class="align-content-left">Select an audio file from the list or upload a new file.</p>
 
                     <div class="align-content-justify">
-                        <mat-form-field>
+                        <mat-form-field style="width: calc(100% - 40px);">
                             <mat-label></mat-label>
                             <mat-select [(ngModel)]="action.endedPlayAudioFileId" name="ddlEndedPlayAudioFileId">
                                 <mat-option *ngFor="let option of audioFiles" [value]="option.fileId">{{option.fileName}}</mat-option>
@@ -254,13 +237,11 @@
 
         </div>
     </mat-tab>
-    <mat-tab label="End Early">
+    <mat-tab label="Stop Stopwatch">
         <div class="card-tab-content">
 
-            <mat-checkbox *ngIf="action.remainAfterEnded" [(ngModel)]="action.remainUnlessEndedEarly" name="cbxRemainUnlessEndedEarly" class="break-spaces">When ended early, force the timer to close without waiting for the remain timer to end.</mat-checkbox>
-            
             <app-phrases [(phrases)]="action.endEarlyPhrases">
-                <span style="font-size: 12px; font-weight: 400; line-height: 10px;">If any of the below phrases match a new log entry, the timer will end early.</span>
+                <span style="font-size: 12px; font-weight: 400; line-height: 10px;">If any of the below phrases match a new log entry, the stopwatch will end and execute any specified ended actions.</span>
             </app-phrases>
 
         </div>

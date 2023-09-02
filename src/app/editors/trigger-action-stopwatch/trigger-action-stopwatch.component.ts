@@ -39,7 +39,9 @@ export class TriggerActionStopwatchComponent implements OnInit {
         private readonly ipcService: IpcService,
     ) { }
 
-    ngOnInit() { }
+    ngOnInit() {
+        this.ipcService.getAudioFiles().subscribe( files => this.audioFiles = files );
+    }
 
     public addSubAction( property: TriggerSubAction[] ) {
         property.unshift( new TriggerSubAction() );
