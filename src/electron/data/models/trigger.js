@@ -331,6 +331,8 @@ class TriggerAction {
     variableStorageType = 'localVariable';
     /** @type {boolean} */
     flash = false;
+    /** @type {boolean} */
+    storeDuration = false;
 
     /** @type {TriggerSubAction[]} */
     endingSoonSubActions = [];

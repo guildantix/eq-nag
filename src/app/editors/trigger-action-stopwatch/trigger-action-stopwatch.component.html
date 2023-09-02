@@ -100,6 +100,18 @@
     <mat-tab label="Timer Ended">
         <div class="card-tab-content" [appContextMenu]="getActionEndedCtxMenu(action)">
 
+            <!-- Yes store duration in variable -->
+            <div class="card-property">
+                <div class="content-middle"><mat-checkbox [(ngModel)]="action.storeDuration" name="cbxStoreDuration">Store timer duration in variable.</mat-checkbox></div>
+                <div class="content-right" *ngIf="action.storeDuration">
+                    <mat-form-field>
+                        <mat-label></mat-label>
+                        <input matInput [(ngModel)]="action.variableName" name="txtVariableName" />
+                        <mat-hint>Variable Name</mat-hint>
+                    </mat-form-field>
+                </div>
+            </div>
+
             <!-- Notify when ending -->
             <div class="card-property">
 

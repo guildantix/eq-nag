@@ -609,6 +609,7 @@ export class TriggerActionProperties {
     public skipBenCastingTimeFocus: boolean = false;
     public variableStorageType: string = 'localVariable';
     public flash: boolean = false;
+    public storeDuration: boolean = false;
 
     public endingSoonSubActions: TriggerSubAction[] = [];
     public endedSubActions: TriggerSubAction[] = [];
