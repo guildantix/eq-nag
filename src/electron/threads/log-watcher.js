@@ -39,6 +39,8 @@ var triggers = [];
 var triggerFolders = [];
 /** @type {Record<string, string[]>} */
 var storedVariables = {};
+/** @type {string[]} A list of all component instance ids originated by this log watcher. */
+var logInstanceIds = [];
 /** @type {Record<string, {value: number, lastUpdate: Date, resetDelay: number, _parse: (logEntry: string) => boolean}>} */
 var counters = {};
 /** @type {{_parse: (logEntry: string) => boolean, instanceId: string}[]} */
@@ -631,6 +633,8 @@ function createSimulationTimer( duration ) {
     action.duration = duration;
 
     let instanceId = displayTimerCountdownComponent( res, new Date(), action, 0, trigger );
+    
+    logInstanceIds.push( instanceId );
 
     return instanceId;
 }
@@ -1143,7 +1147,7 @@ function LogWatcher(character, logPosition) {
                             expectedDuration = +action.duration;
 
                         }
-                        
+
                     }
 
                     v.subAction.variableValues?.forEach( f => {
@@ -1174,6 +1178,31 @@ function LogWatcher(character, logPosition) {
     ipcRenderer.on( 'log:clear-all:done', () => {
         // This used to speak, but it was a bit much.
     } );
+    
+    ipcRenderer.on( 'log:store:variable',
+        /**
+         * 
+         * @param {any} e Event args.
+         * @param {{variableName: string, variableValue: any, instanceId: string}} data The values.
+         */
+        ( e, data ) => {
+            if ( logInstanceIds.includes( data.instanceId ) ) {
+                saveVariable( data.variableName, data.variableValue, false );
+            }
+        } );
+    
+    ipcRenderer.on( 'log:store:scalar-variable',
+        /**
+         * 
+         * @param {any} e Event args.
+         * @param {{variableName: string, variableValue: any, instanceId: string}} data The values.
+         */
+        ( e, data ) => {
+            console.log( 'received store variable', data, logInstanceIds.includes( data.instanceId ) );
+            if ( logInstanceIds.includes( data.instanceId ) ) {
+                saveScalarVariable( data.variableName, data.variableValue );
+            }
+        } );
 
     ipcRenderer.send( 'settings:get:persistent-storage', null );
 
@@ -2191,7 +2220,7 @@ function executeTriggerAction( trigger, action, timestamp, res, deltaTime, simul
 
         incrementCounter( action.displayText );
 
-    } else if ( action.actionType === ActionTypes.Timer || action.actionType === ActionTypes.Countdown ) {
+    } else if ( action.actionType === ActionTypes.Timer || action.actionType === ActionTypes.Countdown || action.actionType === ActionTypes.Stopwatch ) {
         /* --== Start a Timer/Countdown ==-- */
     
         let instanceId = displayTimerCountdownComponent( res, timestamp, action, deltaTime, trigger );
@@ -2341,6 +2370,8 @@ function displayScreenGlow( action, triggerId ) {
     comp.triggerId = triggerId;
     comp.action = action;
     
+    logInstanceIds.push( comp.instanceId );
+    
     ipcRenderer.send( 'overlay:send:component', comp );
 }
 
@@ -2377,6 +2408,8 @@ function displayBeneficialTimerComponent( res, timestamp, action, trigger, spell
     comp.matches = res.result;
     comp.timestamp = timestamp;
     comp.voiceIndex = voiceIndex;
+    
+    logInstanceIds.push( comp.instanceId );
     
     if ( comp.action.endingSoonDisplayText ) {
         comp.action.endingSoonText = StringUtilities.parseShortCodeValuesToLiteral( action.endingSoonText, characterName, comp.action.duration, res.result?.groups, res.result ? res.result[ 0 ] : null );
@@ -2527,6 +2560,8 @@ function displayDotTimerComponent( res, timestamp, action, deltaTime, trigger ) 
     comp.matches = res.result;
     comp.timestamp = comp.action.secondaryPhrases?.length > 0 ? null : timestamp;
     comp.voiceIndex = voiceIndex;
+    
+    logInstanceIds.push( comp.instanceId );
     
     if ( comp.action.endingSoonDisplayText ) {
         comp.action.endingSoonText = StringUtilities.parseShortCodeValuesToLiteral( action.endingSoonText, characterName, comp.action.duration, res.result?.groups, res.result ? res.result[ 0 ] : null );
@@ -2727,6 +2762,9 @@ function displayDotTimerComponent( res, timestamp, action, deltaTime, trigger ) 
                 m.instanceId = instanceId;
                 m.timestamp = timestamp;
                 m.action = 'setStart';
+                
+                logInstanceIds.push( m.instanceId );
+                
                 ipcRenderer.send( 'overlay:send:secondary-action', m );
             },
             instanceId: comp.instanceId
@@ -2805,6 +2843,9 @@ function displayDotTimerComponent( res, timestamp, action, deltaTime, trigger ) 
                 m.instanceId = instanceId;
                 m.action = 'clipTimer';
                 m.timestamp = timestamp;
+                
+                logInstanceIds.push( m.instanceId );
+                
                 ipcRenderer.send( 'overlay:send:secondary-action', m );
             },
             instanceId: comp.instanceId,
@@ -2844,21 +2885,25 @@ function displayTimerCountdownComponent(res, timestamp, action, deltaTime, trigg
     comp.triggerId = trigger.triggerId;
     comp.triggerName = trigger.name;
     comp.action = Object.assign( new TriggerAction(), action );
+    
+    logInstanceIds.push( comp.instanceId );
 
-    if ( res.result?.groups?.timerDuration ) {
-        comp.action.duration = StringUtilities.getDurationFromLabel( res.result?.groups?.timerDuration );
-    } else {
-
-        if ( action.storageDuration && action.storageDuration.indexOf( '[' ) > -1 ) {
-            let dur = +action.duration;
-            dur = +getPersistentDictionaryValue( action.storageDuration, res, timestamp, action, deltaTime, trigger );
-            comp.action.duration = dur > 0 ? dur / 1000 : +action.duration;
-        } else if ( action.storageDuration ) {
-            let dur = +action.duration;
-            dur = +getScalarValue( action.storageDuration, 0 );
-            comp.action.duration = dur > 0 ? dur / 1000 : +action.duration;
+    if ( comp.action.actionType !== ActionTypes.Stopwatch ) {
+        if ( res.result?.groups?.timerDuration ) {
+            comp.action.duration = StringUtilities.getDurationFromLabel( res.result?.groups?.timerDuration );
         } else {
-            comp.action.duration = +action.duration;
+    
+            if ( action.storageDuration && action.storageDuration.indexOf( '[' ) > -1 ) {
+                let dur = +action.duration;
+                dur = +getPersistentDictionaryValue( action.storageDuration, res, timestamp, action, deltaTime, trigger );
+                comp.action.duration = dur > 0 ? dur / 1000 : +action.duration;
+            } else if ( action.storageDuration ) {
+                let dur = +action.duration;
+                dur = +getScalarValue( action.storageDuration, 0 );
+                comp.action.duration = dur > 0 ? dur / 1000 : +action.duration;
+            } else {
+                comp.action.duration = +action.duration;
+            }
         }
     }
     
@@ -2873,28 +2918,30 @@ function displayTimerCountdownComponent(res, timestamp, action, deltaTime, trigg
     comp.timestamp = timestamp;
     comp.voiceIndex = voiceIndex;
     
-    if ( comp.action.endingSoonDisplayText ) {
-        comp.action.endingSoonText = StringUtilities.parseShortCodeValuesToLiteral( action.endingSoonText, characterName, comp.action.duration, res.result?.groups, res.result ? res.result[ 0 ] : null );
-        comp.action.endingSoonText = StringUtilities.parseStoredVariablesToLiteral( comp.action.endingSoonText, storedVariables );
-        comp.action.endingSoonText = StringUtilities.parseConditionResultsToLiteral( comp.action.endingSoonText, trigger._conditionResults );
-        comp.action.endingSoonText = StringUtilities.parseMatchesToLiteral( comp.action.endingSoonText, res.result, deltaTime );
-        comp.action.endingSoonText = StringUtilities.parseCountersToLiteral( comp.action.endingSoonText, counters );
-    }
-
-    if ( comp.action.endingSoonSpeak ) {
-        comp.action.endingSoonSpeakPhrase = StringUtilities.parseShortCodeValuesToLiteral( action.endingSoonSpeakPhrase, characterName, comp.action.duration, res.result?.groups, res.result ? res.result[ 0 ] : null );
-        comp.action.endingSoonSpeakPhrase = StringUtilities.parseStoredVariablesToLiteral( comp.action.endingSoonSpeakPhrase, storedVariables );
-        comp.action.endingSoonSpeakPhrase = StringUtilities.parseConditionResultsToLiteral( comp.action.endingSoonSpeakPhrase, trigger._conditionResults );
-        comp.action.endingSoonSpeakPhrase = StringUtilities.parseMatchesToLiteral( comp.action.endingSoonSpeakPhrase, res.result, deltaTime );
-        comp.action.endingSoonSpeakPhrase = StringUtilities.parseCountersToLiteral( comp.action.endingSoonSpeakPhrase, counters );
-    }
-
-    if ( comp.action.endingClipboard ) {
-        comp.action.endingClipboardText = StringUtilities.parseShortCodeValuesToLiteral( action.endingClipboardText, characterName, comp.action.duration, res.result?.groups, res.result ? res.result[ 0 ] : null );
-        comp.action.endingClipboardText = StringUtilities.parseStoredVariablesToLiteral( comp.action.endingClipboardText, storedVariables );
-        comp.action.endingClipboardText = StringUtilities.parseConditionResultsToLiteral( comp.action.endingClipboardText, trigger._conditionResults );
-        comp.action.endingClipboardText = StringUtilities.parseMatchesToLiteral( comp.action.endingClipboardText, res.result, deltaTime );
-        comp.action.endingClipboardText = StringUtilities.parseCountersToLiteral( comp.action.endingClipboardText, counters );
+    if ( comp.action.actionType !== ActionTypes.Stopwatch ) {
+        if ( comp.action.endingSoonDisplayText ) {
+            comp.action.endingSoonText = StringUtilities.parseShortCodeValuesToLiteral( action.endingSoonText, characterName, comp.action.duration, res.result?.groups, res.result ? res.result[ 0 ] : null );
+            comp.action.endingSoonText = StringUtilities.parseStoredVariablesToLiteral( comp.action.endingSoonText, storedVariables );
+            comp.action.endingSoonText = StringUtilities.parseConditionResultsToLiteral( comp.action.endingSoonText, trigger._conditionResults );
+            comp.action.endingSoonText = StringUtilities.parseMatchesToLiteral( comp.action.endingSoonText, res.result, deltaTime );
+            comp.action.endingSoonText = StringUtilities.parseCountersToLiteral( comp.action.endingSoonText, counters );
+        }
+    
+        if ( comp.action.endingSoonSpeak ) {
+            comp.action.endingSoonSpeakPhrase = StringUtilities.parseShortCodeValuesToLiteral( action.endingSoonSpeakPhrase, characterName, comp.action.duration, res.result?.groups, res.result ? res.result[ 0 ] : null );
+            comp.action.endingSoonSpeakPhrase = StringUtilities.parseStoredVariablesToLiteral( comp.action.endingSoonSpeakPhrase, storedVariables );
+            comp.action.endingSoonSpeakPhrase = StringUtilities.parseConditionResultsToLiteral( comp.action.endingSoonSpeakPhrase, trigger._conditionResults );
+            comp.action.endingSoonSpeakPhrase = StringUtilities.parseMatchesToLiteral( comp.action.endingSoonSpeakPhrase, res.result, deltaTime );
+            comp.action.endingSoonSpeakPhrase = StringUtilities.parseCountersToLiteral( comp.action.endingSoonSpeakPhrase, counters );
+        }
+    
+        if ( comp.action.endingClipboard ) {
+            comp.action.endingClipboardText = StringUtilities.parseShortCodeValuesToLiteral( action.endingClipboardText, characterName, comp.action.duration, res.result?.groups, res.result ? res.result[ 0 ] : null );
+            comp.action.endingClipboardText = StringUtilities.parseStoredVariablesToLiteral( comp.action.endingClipboardText, storedVariables );
+            comp.action.endingClipboardText = StringUtilities.parseConditionResultsToLiteral( comp.action.endingClipboardText, trigger._conditionResults );
+            comp.action.endingClipboardText = StringUtilities.parseMatchesToLiteral( comp.action.endingClipboardText, res.result, deltaTime );
+            comp.action.endingClipboardText = StringUtilities.parseCountersToLiteral( comp.action.endingClipboardText, counters );
+        }
     }
 
     if ( comp.action.endedDisplayText ) {
@@ -2932,11 +2979,12 @@ function displayTimerCountdownComponent(res, timestamp, action, deltaTime, trigg
         cancellableComponents.push( {
             _parse: ( logEntry ) => {
                 let matched = false;
-                                    
-                renderedPhrases.forEach( ( phrase, i ) => {
+
+                for ( let i = 0; i < renderedPhrases.length; i++ ) {
+                    const phrase = renderedPhrases[ i ];
                     let _res = new RegExp( phrase, 'gi' ).exec( logEntry );
                     if ( _res?.length > 0 ) {
-                        enableLogging && sendInformationToLog( `DoT Timer ended early: [${logEntry}]` );
+                        enableLogging && sendInformationToLog( `Timer/Countdown/Stopwatch ended early: [${logEntry}]` );
                         matched = true;
                         
                         addSuccessfulTriggerParsedEvent(
@@ -2955,8 +3003,16 @@ function displayTimerCountdownComponent(res, timestamp, action, deltaTime, trigg
                             trigger._conditionResults,
                             deltaTime );
                         
+
+                        if ( comp.action.actionType === ActionTypes.Stopwatch ) {
+                            // TODO: This should be done with actual capture phrase properties instead of intercepting the end early phrases and modifying the results unnaturally.
+                            ipcRenderer.send( 'renderer:stopwatch:stop', comp.instanceId );
+
+                            // If this is a stopwatch, we need to send the stop command to the renderer, and tell the log watcher that the parse failed to prevent the log parser from destroying the component entirely.
+                            return false;
+                        }
                     }
-                } );
+                }
 
                 if ( !matched ) {
                     addFailedTriggerParsedEvent(
@@ -3046,6 +3102,8 @@ function displayTextComponent( res, timestamp, action, deltaTime, simulating, tr
     comp.triggerId = triggerId;
     comp.action = Object.assign( new TriggerAction(), action );
     
+    logInstanceIds.push( comp.instanceId );
+    
     comp.action.displayText = StringUtilities.parseShortCodeValuesToLiteral( comp.action.displayText, characterName, comp.action.duration, res.result?.groups, res.result ? res.result[ 0 ] : null );
     comp.action.displayText = StringUtilities.parseStoredVariablesToLiteral( comp.action.displayText, storedVariables );
     comp.action.displayText = StringUtilities.parseCountersToLiteral( comp.action.displayText, counters );
@@ -3093,6 +3151,9 @@ function sendInformationToLog( info, duration ) {
         comp.action = new TriggerAction();
         comp.action.actionId = nanoid();
         comp.action.actionType = ActionTypes.DisplayText;
+        
+        logInstanceIds.push( comp.instanceId );
+        
         if ( typeof info === 'string' ) {
             comp.action.displayText = info.replace( /\s/gmi, '&nbsp;' );
             comp.action.duration = duration;
