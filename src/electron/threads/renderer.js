@@ -31,6 +31,8 @@ const { StylePropertiesModel } = require( '../data/models/core' );
 //  ?. Work on adding in a DPS meter /grumble.
 //  ?. Show FCT that doesn't get rendered in the application's custom console.  Review the channel 'trigger:batch-history'
 
+// TODO: Show general exceptions in the debug console, to the user.
+
 
 
 // TODO: Some day we need to remove the old FCT data structure.
@@ -590,6 +592,13 @@ function Renderer( originX, originY, glowOnStart ) {
 
     ipcRenderer.on( 'renderer:mouse-forwarding:resume', function ( event, overlayId ) {
         mouseForwardingPaused = false;
+    } );
+
+    ipcRenderer.on( 'renderer:stopwatch:stop', ( e, instanceId ) => {
+        let comp = findComponent( c => c.instanceId === instanceId );
+        if ( comp ) {
+            comp.stopwatchState = 'stop';
+        }
     } );
 
     ipcRenderer.on( 'component:destroy', function ( event, instanceId ) {
@@ -1901,7 +1910,8 @@ function render( overlayId, comp ) {
             } else if ( comp?.action?.actionType === ActionTypes.Timer
                 || comp?.action?.actionType === ActionTypes.Countdown
                 || comp?.action?.actionType === ActionTypes.DotTimer
-                || comp?.action?.actionType === ActionTypes.BeneficialTimer ) {
+                || comp?.action?.actionType === ActionTypes.BeneficialTimer
+                || comp?.action?.actionType === ActionTypes.Stopwatch ) {
         
                 if ( restartTimerComponent( overlayId, comp ) ) {
                     return;
@@ -2290,12 +2300,16 @@ function getTimerLabel( overlayId, comp ) {
 
     if ( comp.action.actionType === ActionTypes.Timer || comp.action.actionType === ActionTypes.Countdown ) {
         label = comp.action.displayText || comp.triggerName;
+
     } else if ( comp.action.actionType === ActionTypes.DotTimer || comp.action.actionType === ActionTypes.BeneficialTimer ) {
         if ( overlayInstances[ overlayId ].groupByTarget || overlayInstances[ overlayId ].hideTargetLabel ) {
             label = comp.triggerName;
         } else {
             label = comp.action.displayText || comp.triggerName;
         }
+    } else if ( comp.action.actionType === ActionTypes.Stopwatch ) {
+        label = comp.action.displayText || comp.triggerName;
+        
     }
 
     return label;
@@ -2618,7 +2632,8 @@ function applyTimerSettings( overlayId, contentArea, comp, group ) {
 
     // Set the starting conditions for the timer.
     comp.start = comp.timestamp;
-    comp.timeRemaining = comp.action.duration;
+    comp.timeRemaining = comp.action.actionType === ActionTypes.Stopwatch ? 0 : comp.action.duration;
+    comp.stopwatchState = 'running';
 
     if ( comp.start == null ) {
         comp.dom.querySelector( 'span.time-remaining' ).innerHTML = `(??)&nbsp;`;
@@ -2677,10 +2692,54 @@ function applyTimerSettings( overlayId, contentArea, comp, group ) {
 
         let perc = 0;
         let infinite = false;
+        let isStopwatch = comp.action.actionType === ActionTypes.Stopwatch;
 
-        if ( comp.start == null ) {
+        if ( comp.start == null && !isStopwatch ) {
             infinite = true;
             comp.timeRemaining = intMaxValue;
+
+        } else if ( isStopwatch ) {
+            // Stopwatch perc is always 0.
+            perc = 0;
+
+            // Stopwatch can have transitionary status types - This is what the user can set.
+
+            // Transitionary status types can be: pause, stop, or continue.
+            // Next, the stopwatch can be in one of three perpetual states: running, paused, or ended.
+            // The last status type is the final state: ended.  On ended, we need to execute ended actions, including applying the duration to storage values.
+
+            if ( comp.stopwatchState === 'stop' ) {
+                // The user has just stopped the stopwatch, we need to calculate the final duration and execute end timer actions.
+                comp.stopwatchState = 'ended';
+                if ( comp.start != null ) {
+                    comp.timeRemaining += Math.abs( ( new Date() ) - comp.start );
+                    comp.start = null;
+                    console.log( 'stopwatch ended', comp.timeRemaining );
+                }
+
+            } else if ( comp.stopwatchState === 'pause' ) {
+                // The user has just paused the stopwatch, we need to calcualte the duration and clear the start.
+                comp.stopwatchState = 'paused';
+                if ( comp.start != null ) {
+                    comp.timeRemaining += Math.abs( ( new Date() ) - comp.start );
+                    comp.start = null;
+                }
+
+            } else if ( comp.stopwatchState === 'continue' && comp.start == null ) {
+                // The user has continued from paused.  We need to set the start.
+                comp.stopwatchState = 'running';
+                comp.start = new Date();
+
+            } else if ( comp.stopwatchState === 'running' && comp.start != null ) {
+                // The stopwatch is running, increment the duration and reset the start.
+                if ( comp.start != null ) {
+                    comp.timeRemaining += Math.abs( ( new Date() ) - comp.start );
+                    comp.start = null;
+                }
+                comp.start = new Date();
+
+            }
+
         } else {
             perc = ( Math.abs( ( new Date() ) - comp.start ) / 1000 ) / comp.action.duration;
             comp.timeRemaining = comp.action.duration - ( comp.action.duration * perc );
@@ -2697,12 +2756,18 @@ function applyTimerSettings( overlayId, contentArea, comp, group ) {
         if ( infinite ) {
             comp.dom.querySelector( 'span.time-remaining' ).innerHTML = `(??)&nbsp;`;
         } else if ( overlayInstances[ overlayId ].showDuration || comp.action.showDuration ) {
-            comp.dom.querySelector( 'span.time-remaining' ).innerHTML = `(${getDurationLabel( overlayId, comp.timeRemaining )})&nbsp;`;
+            if ( isStopwatch ) {
+                comp.dom.querySelector( 'span.time-remaining' ).innerHTML = `(${getDurationLabel( overlayId, Math.round( comp.timeRemaining / 1000 ) )})&nbsp;`;
+            } else {
+                comp.dom.querySelector( 'span.time-remaining' ).innerHTML = `(${getDurationLabel( overlayId, comp.timeRemaining )})&nbsp;`;
+            }
         } else {
             comp.dom.querySelector( 'span.time-remaining' ).innerHTML = ``;
         }
 
-        if ( comp.action.ifEndingSoon && comp.action.endingDuration > 0 && comp.timeRemaining > 0 && comp.timeRemaining <= comp.action.endingDuration ) {
+        const allowEndingSoon = [ ActionTypes.Timer, ActionTypes.Countdown, ActionTypes.BeneficialTimer, ActionTypes.DotTimer ].includes( comp.action.actionType );
+
+        if ( allowEndingSoon && comp.action.ifEndingSoon && comp.action.endingDuration > 0 && comp.timeRemaining > 0 && comp.timeRemaining <= comp.action.endingDuration ) {
             // Apply any ending soon condition effects.
 
             if ( comp.action.endingSoonChangeColor ) {
@@ -2748,17 +2813,34 @@ function applyTimerSettings( overlayId, contentArea, comp, group ) {
 
         }
         
-        if ( comp.timeRemaining <= 0 ) {
+        if ( comp.timeRemaining <= 0 || ( isStopwatch && comp.stopwatchState === 'ended' ) ) {
             // If the timer has ended, but is required to remain for a
             // duration, apply the ended conditions to the timer.
+            
+            if ( isStopwatch && comp.action.storeDuration ) {
+                // If the stopwatch has ended and the user has elected to stoe the duration in a variable, then do so.
+                
+                if ( !comp.action.variableName ) {
+                    logError( { errorMessage: 'Could not store stopwatch duration because a variable name was not provided!' }, 'trigger', overlayId, comp );
 
-            if ( !comp.action.repeatTimer && ( comp.action.remainAfterEnded || comp.action.notifyWhenEnded ) ) {
+                } else {
+                    let duration = Math.round( comp.timeRemaining );
+                    ipcRenderer.send( 'log:store:scalar-variable', { variableName: comp.action.variableName, variableValue: duration, instanceId: comp.instanceId } );
+
+                }
+
+            }
+
+            let executeEndedActions = !comp.action.repeatTimer && ( comp.action.remainAfterEnded || comp.action.notifyWhenEnded );
+            executeEndedActions = executeEndedActions || ( comp.action.notifyWhenEnded && isStopwatch && comp.stopwatchState === 'ended' );
+
+            if ( executeEndedActions ) {
                 if ( comp.action.endedChangeColor ) {
                     comp.dom.querySelector( 'div.determinate' ).style.backgroundColor = comp.action.endedColor;
                     comp.dom.querySelector( 'div.progress' ).style.backgroundColor = comp.action.endedBackgroundColor;
                 }
 
-                if ( comp.hidden && comp.action.remainAfterEnded ) {
+                if ( comp.hidden && ( comp.action.remainAfterEnded || isStopwatch ) ) {
                     comp.hidden = false;
                     comp.dom.style.display = null;
                     if ( overlayInstances[ overlayId ].groupByTarget && group ) {
@@ -2797,7 +2879,12 @@ function applyTimerSettings( overlayId, contentArea, comp, group ) {
 
         }
 
-        if ( ( comp.timeRemaining <= 0 && !comp.action.remainAfterEnded && !comp.action.repeatTimer ) || ( comp.timeRemaining <= -1 * comp.action.remainDuration && !comp.action.repeatTimer ) ) {
+        
+
+        if ( ( isStopwatch && comp.stopwatchState === 'ended' ) ) {
+            delayRemoveComponent( overlayId, comp );
+
+        } else if ( ( comp.timeRemaining <= 0 && !comp.action.remainAfterEnded && !comp.action.repeatTimer ) || ( comp.timeRemaining <= -1 * comp.action.remainDuration && !comp.action.repeatTimer ) ) {
             // When conditions met that require the timer be removed from the 
             // overlay, then call the remove comonponent method.
             
@@ -2935,6 +3022,10 @@ function restartTimerComponent( overlayId, comp ) {
             // id.
             destroyComponents( overlayId, c => c.action.actionId == comp.action.actionId && ( comp.action.displayText == null || c.description === comp.action.displayText ) );
             
+        } else if ( comp.action.actionType === ActionTypes.Stopwatch ) {
+            // Here we reset the stopwatch and do not execute ended actions. ...
+            destroyComponents( overlayId, c => c.action.actionId == comp.action.actionId && ( comp.action.displayText == null || c.description === comp.action.displayText ) );
+
         }
 
     } else if ( comp.action.restartBehavior === TimerRestartBehaviors.RestartTimer ) {
