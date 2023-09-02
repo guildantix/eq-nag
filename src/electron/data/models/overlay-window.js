@@ -152,6 +152,8 @@ class OverlayComponent {
     hidden = false;
     /** @type {() => void} */
     removeComponent;
+    /** @type {'pause'|'stop'|'continue'|'running'|'paused'|'ended'} */
+    stopwatchState = 'running';
 }
 
 class OverlayStoreModel {
