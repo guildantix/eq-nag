@@ -98,7 +98,7 @@ export class TriggerDialogComponent implements OnInit {
                     action.endingSoonColor = null;
                 }
 
-                if ( action.remainAfterEnded === true && action.remainDuration > 0 ) {
+                if ( action.actionType === ActionTypes.Stopwatch || ( action.remainAfterEnded === true && action.remainDuration > 0 ) ) {
                     if ( action.endedChangeColor === true ) {
                         action.endedBackgroundColor = ColorUtility.FromHex( action.endedColor ).darken( 0.93 ).toString( 0.75 );
                     } else {
