@@ -132,13 +132,10 @@ export class TriggersComponent implements OnInit {
         } );
 
         this.ipcService.tickReceived().subscribe( tick => {
-            let selectedFolderId = this.selectedFolderId;
             let searchTerm = this.searchTerm;
             this.triggers = tick.triggers.filter( f => this.isDev || !f.predefined );
             this.updateViewTriggerData( tick.folders );
-            if ( selectedFolderId ) {
-                this.toggleSelectedFolder( selectedFolderId );
-            }
+            this.toggleSelectedFolder( null );
             if ( searchTerm ) {
                 this.searchTerm = searchTerm;
                 this.searchTriggers();
@@ -428,7 +425,7 @@ export class TriggersComponent implements OnInit {
      * @param folderId The id of the folder to toggle.
      */
     public toggleSelectedFolder( folderId: string ): void {
-        this.selectedFolderId = this.selectedFolderId === folderId ? null : folderId;
+        this.selectedFolderId = this.selectedFolderId === folderId ? null : folderId === null ? this.selectedFolderId : folderId;
         this.filterTriggers();
         this.searchTerm = null;
     }
@@ -824,14 +821,44 @@ export class TriggersComponent implements OnInit {
      * @param folders The updated list of trigger folders.
      */
     private updateViewTriggerData( folders: TriggerFolder[] ): void {
-        
-        this.selectedFolderId = folders.findIndex( f => f.folderId === this.selectedFolderId ) > -1 ? this.selectedFolderId : null;
+        this.selectedFolderId = this.folderExistsRecursive( folders, this.selectedFolderId ) ? this.selectedFolderId : null;
         this.folderMap = TriggerFolder.getFolderAncestryMap( folders );
         this.triggerFolders = folders;
         this.dataSource.data = folders;
         this.expandFolders( folders );
         this.updateExpandStatus();
 
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Returns true if the given folder id exists in the hierarchy.
+     * 
+     * @param folders The list of folders to search.
+     * @param folderId The id of the desired folder.
+     */
+    private folderExistsRecursive( folders: TriggerFolder[], folderId: string ): boolean {
+        let exists = false;
+        for ( let i = 0; i < folders.length; i++ ) {
+            if ( folders[ i ].folderId === folderId ) {
+                exists = true;
+                break;
+            } else if ( folders[ i ].children?.length > 0 ) {
+                exists = this.folderExistsRecursive( folders[ i ].children, folderId );
+                if ( exists ) {
+                    break;
+                }
+            }
+        }
+        return exists;
     }
 
 
@@ -1703,12 +1730,138 @@ export class TriggersComponent implements OnInit {
             hide: () => false,
             // matIcon: 'content_paste',
         }, <ContextMenuModel>{
+            label: 'Disable All Triggers',
+            action: () => this.disableFolderTriggers( folderId ),
+            disabled: () => false,
+            hide: () => !this.hasSomeTriggersToDisable( folderId ),
+            matIcon: 'unpublished',
+            matIconCssClass: 'material-icons-outlined',
+        }, <ContextMenuModel>{
+            label: 'Enable All Triggers',
+            action: () => this.enableFolderTriggers( folderId ),
+            disabled: () => false,
+            hide: () => !this.hasSomeTriggersToEnable( folderId ),
+            matIcon: 'check_circle',
+            matIconCssClass: 'material-icons-outlined',
+        }, <ContextMenuModel>{
             label: 'Delete Folder',
             action: () => this.deleteFolder( folderId, name ),
             disabled: () => false,
             hide: () => false,
             matIcon: 'clear',
         } ];
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Enables all triggers in the specified folder's hierarchy.
+     * 
+     * @param folderId The id of the folder.
+     */
+    enableFolderTriggers( folderId: string ): void {
+        let folder = this.findFolderById( folderId );
+        let folderName = this.getFolderFamilyNames( folderId, this.triggerFolders, [] ).join( ' / ' );
+        if ( folder ) {
+            this.dialogService.showConfirmationDialog( [ `Are you sure you want to enable all triggers in ${folderName}?`, 'This will enable all triggers in this folder and all sub-folders.' ], 'Click "Yes" to enable all triggers in this folder and all sub-folders.', 'Click "No" to close this dialog without enabling any triggers.' ).subscribe( confirmed => {
+                if ( confirmed ) {
+                    this.setEnableStateForFolder( folder, true );
+                }
+            } );
+        }
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Disables all triggers in the specified folder's hierarchy.
+     * 
+     * @param folderId The id of the folder.
+     */
+    disableFolderTriggers( folderId: string ): void {
+        let folder = this.findFolderById( folderId );
+        let folderName = this.getFolderFamilyNames( folderId, this.triggerFolders, [] ).join( ' / ' );
+        if ( folder ) {
+            this.dialogService.showConfirmationDialog( [ `Are you sure you want to disable all triggers in ${folderName}?`, 'This will disable all triggers in this folder and all sub-folders.' ], 'Click "Yes" to disable all triggers in this folder and all sub-folders.', 'Click "No" to close this dialog without disabling any triggers.' ).subscribe( confirmed => {
+                if ( confirmed ) {
+                    this.setEnableStateForFolder( folder, false );
+                }
+            } );
+        }
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Enables or disables all triggers in the specified folder's hierarchy.
+     * 
+     * @param folder The folder to enable/disable triggers for.
+     * @param enabled True to enable, false to disable.
+     */
+    private setEnableStateForFolder( folder: TriggerFolder, enabled: boolean ): void {
+        this.processing = true;
+        let triggers = this.getDescendantTriggers( folder );
+        triggers.forEach( trigger => {
+            trigger.enabled = enabled;
+        } );
+        this.ipcService.updateTriggers( this.triggers ).subscribe( failed => this.processing = false );
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Returns true if at least one trigger in the specified folder's hierarchy is disabled.
+     * 
+     * @param folderId The id of the folder.
+     */
+    private hasSomeTriggersToEnable( folderId: string ): boolean {
+        return this.getDescendantTriggers( this.findFolderById( folderId ) ).some( trigger => trigger.enabled === false );
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Returns true if at least one trigger in the specified folder's hierarchy is enabled.
+     * 
+     * @param folderId The id of the folder.
+     */
+    private hasSomeTriggersToDisable( folderId: string ): boolean {
+        return this.getDescendantTriggers( this.findFolderById( folderId ) ).some( trigger => trigger.enabled === true );
     }
 
 
