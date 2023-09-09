@@ -98,26 +98,35 @@ export class GinaImporter {
 
                 timerAction.phrases = [ phraseId ];
                 timerAction.actionId = nanoid();
-                timerAction.duration = +gina.TimerDuration;
                 timerAction.displayText = gina.TimerName;
                 timerAction.overlayId = timerOverlayId;
                 
                 if ( gina.TimerType === GinaTimerTypes.Timer ) {
-                    timerAction.actionType = ActionTypes.Timer;
+                    // Gina doesn't appear to have a timer that goes from empty to full.
+                    timerAction.actionType = ActionTypes.Countdown;
+                    timerAction.duration = +gina.TimerDuration;
+
                 } else if ( gina.TimerType === GinaTimerTypes.RepeatingTimer ) {
-                    timerAction.actionType = ActionTypes.Timer;
+                    timerAction.actionType = ActionTypes.Countdown;
+                    timerAction.duration = +gina.TimerDuration;
                     timerAction.repeatTimer = true;
                     timerAction.repeatCount = null;
+
                 } else if ( gina.TimerType === GinaTimerTypes.Stopwatch ) {
-                    timerAction.actionType = ActionTypes.Countdown;
+                    timerAction.actionType = ActionTypes.Stopwatch;
+                    timerAction.duration = null;
+
                 }
 
                 if ( gina.TimerStartBehavior === GinaTimerStartBehaviors.RestartTimer && gina.RestartBasedOnTimerName === 'True' ) {
                     timerAction.restartBehavior = TimerRestartBehaviors.RestartOnDuplicate;
+
                 } else if ( gina.TimerStartBehavior === GinaTimerStartBehaviors.RestartTimer && gina.RestartBasedOnTimerName !== 'True' ) {
                     timerAction.restartBehavior = TimerRestartBehaviors.RestartTimer;
+
                 } else if ( gina.TimerStartBehavior === GinaTimerStartBehaviors.IgnoreIfRunning ) {
                     timerAction.restartBehavior = TimerRestartBehaviors.DoNothing;
+
                 } else {
                     timerAction.restartBehavior = TimerRestartBehaviors.StartNewTimer;
                 }
