@@ -1365,16 +1365,32 @@ export class TriggersComponent implements OnInit {
      * @param folder The desired trigger folder.
      * @param triggers The current list of all descendant triggers.
      */
-    private getDescendantTriggers( folder: TriggerFolder, triggers: TriggerModel[] = null ): TriggerModel[] {
-        triggers = triggers ? triggers : [];
+    private getDescendantTriggers( folder: TriggerFolder ): TriggerModel[] {
+        return this._recursiveGetDescendantTriggers( folder );
+    }
 
-        // Pull in all the indirect descendants.
-        folder.children.forEach( f => triggers = triggers.concat( this.getDescendantTriggers( f, triggers ) ) );
 
-        // Pull in all the direct descendants.
-        triggers = triggers.concat( this.triggers.filter( f => f.folderId === folder.folderId ) );
-        
-        return triggers;
+
+
+
+
+
+
+
+
+    /**
+     * Recursively searches for all descendant triggers for the given folder and all descendant folders.
+     * 
+     * @param folder The folder containing the desired triggers.
+     */
+    private _recursiveGetDescendantTriggers( folder: TriggerFolder ): TriggerModel[] {
+        let triggers = this.triggers.filter( f => f.folderId === folder.folderId );
+
+        folder.children.forEach( f => {
+            triggers = triggers.concat( this._recursiveGetDescendantTriggers( f ) );
+        } );
+
+        return triggers ?? [];
     }
 
 
