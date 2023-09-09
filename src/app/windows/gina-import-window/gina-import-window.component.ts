@@ -137,7 +137,7 @@ export class GinaImportWindowComponent implements OnInit {
             let bad = _.some( this.nTrigger.actions, ( ac: TriggerAction ) => {
                 if ( ac.actionType === ActionTypes.DisplayText ) {
                     return ac.overlayId == null;
-                } else if ( ac.actionType === ActionTypes.Countdown || ac.actionType === ActionTypes.DotTimer || ac.actionType === ActionTypes.Timer ) {
+                } else if ( ac.actionType === ActionTypes.Countdown || ac.actionType === ActionTypes.DotTimer || ac.actionType === ActionTypes.Timer || ac.actionType === ActionTypes.Stopwatch || ac.actionType === ActionTypes.BeneficialTimer ) {
                     return ( ac.overlayId == null || (ac.ifEndingSoon && ac.endingSoonDisplayText && ac.endingSoonTextOverlayId == null) || (ac.notifyWhenEnded && ac.endedDisplayText && ac.endedTextOverlayId == null) )
                 }
             } );
@@ -509,6 +509,9 @@ export class GinaImportWindowComponent implements OnInit {
         this.ipcService.showEditTriggerDialog( triggerId );
     }
 
+    public changeTimerType( newType: GinaTimerTypes ): void {
+        this.selectedTrigger.TimerType = newType;
+    }
 
 
 
@@ -609,7 +612,7 @@ export class GinaImportWindowComponent implements OnInit {
                                         return;
                                     }
 
-                                } else if ( ac.actionType === ActionTypes.Countdown || ac.actionType === ActionTypes.DotTimer || ac.actionType === ActionTypes.Timer ) {
+                                } else if ( ac.actionType === ActionTypes.Countdown || ac.actionType === ActionTypes.DotTimer || ac.actionType === ActionTypes.Timer || ac.actionType === ActionTypes.Stopwatch || ac.actionType === ActionTypes.BeneficialTimer ) {
                                     
                                     if ( ac.overlayId == null ) {
                                         if ( this.timerOverlays?.length > 0 ) {
