@@ -554,6 +554,25 @@ fieldset.trigger-property-group {
 
     .field-list {
         .field-line{
+
+            > span {
+                span {
+                    a {
+                        font-size: 12px;
+                        font-weight: 500;
+                        color: rgba($color-blue, .8);
+                        cursor: pointer;
+
+                        &:hover {
+                            color: $color-blue;
+                        }
+                        &:active {
+                            color: darken($color-blue, 33%);
+                        }
+                    }
+                }
+            }
+
             &:nth-of-type(even) {
                 > label {
                     background-color: #00000033;
