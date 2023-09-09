@@ -1423,6 +1423,26 @@ export class TriggersComponent implements OnInit {
 
 
 
+    
+    /**
+     * Selects the specified trigger and sends it to the quick share dialog.
+     * 
+     * @param triggerId The id of the trigger to share.
+     */
+    private quickShareTrigger( triggerId: string ): void {
+        let trigger = this.triggers.find( f => f.triggerId === triggerId );
+        let folder = this.findFolderById( trigger.folderId );
+        this.dialogService.showPrepareQuickShareDialog( [ trigger ], [ folder ] ).subscribe( quickShareId => { } );
+    }
+
+
+
+
+
+
+
+
+
 
     /**
      * Creates a restore function that executes the given function.  The given function should return true if the restoration was successful.
@@ -1705,7 +1725,6 @@ export class TriggersComponent implements OnInit {
                     action: () => { },
                     disabled: () => false,
                     hide: () => false,
-                    // matIcon: 'content_paste',
                 },
                 {
                     label: 'Change parent',
@@ -1720,7 +1739,6 @@ export class TriggersComponent implements OnInit {
             action: () => { },
             disabled: () => false,
             hide: () => false,
-            // matIcon: 'content_paste',
         }, {
             label: 'Quick Share',
             action: () => this.quickShareFolder( folderId ),
@@ -1732,7 +1750,6 @@ export class TriggersComponent implements OnInit {
             action: () => { },
             disabled: () => false,
             hide: () => false,
-            // matIcon: 'content_paste',
         }, {
             label: 'Folder Conditions',
             action: () => this.editFolderConditions( folderId ),
@@ -1744,7 +1761,6 @@ export class TriggersComponent implements OnInit {
             action: () => { },
             disabled: () => false,
             hide: () => false,
-            // matIcon: 'content_paste',
         }, <ContextMenuModel>{
             label: 'Disable All Triggers',
             action: () => this.disableFolderTriggers( folderId ),
@@ -1912,7 +1928,17 @@ export class TriggersComponent implements OnInit {
             action: () => { },
             disabled: () => false,
             hide: () => false,
-            // matIcon: 'content_paste',
+        }, {
+            label: 'Quick Share',
+            action: () => this.quickShareTrigger( trigger.triggerId ),
+            disabled: () => false,
+            hide: () => false,
+            matIcon: 'publish',
+        }, <ContextMenuModel>{
+            label: '-',
+            action: () => { },
+            disabled: () => false,
+            hide: () => false,
         }, <ContextMenuModel>{
             label: 'Delete Trigger',
             action: () => this.deleteTrigger( trigger.triggerId ),
