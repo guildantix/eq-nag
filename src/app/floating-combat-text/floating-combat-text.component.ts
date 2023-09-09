@@ -9,6 +9,11 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { Observable } from 'rxjs';
 import { ColoredString } from '../dialogs/dialog.model';
 
+// TODO: FCT Features
+// 1. Consolidation configuration settings: by time and by source.
+// 2. Enable FCT by character.
+// 3. Healing - incoming excludes overheal while outgoing shows overheal.
+
 const animateBlowoutDuration = 4000;
 const animateFadeOutDuration = 7000;
 const animateFadeInDuration = 500;
