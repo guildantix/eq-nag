@@ -29,7 +29,8 @@ export enum SettingsKeys {
     sharedTriggerPermissions = 'sharedTriggerPermissions',
     speechVolume = 'speechVolume',
     audioVolume = 'audioVolume',
-
+    baseSpeakingRate = 'baseSpeakingRate',
+    
 };
 
 export enum ActionTypes {

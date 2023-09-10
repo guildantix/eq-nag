@@ -140,7 +140,7 @@
                     <mat-hint>Select the text to speech voice</mat-hint>
                 </mat-form-field>
                 <div style="margin-top: 15px;">Base Speaking Rate</div>
-                <mat-slider [(ngModel)]="baseSpeakingRate" thumbLabel tickInterval="0.25" step="0.25" min="0.25" max="4" style="width: 100%;"></mat-slider>
+                <mat-slider [(ngModel)]="baseSpeakingRate" thumbLabel tickInterval="0.25" step="0.25" min="0.25" max="4" style="width: 100%;" (change)="updateSetting( settingsKeys.baseSpeakingRate, baseSpeakingRate, 500 )"></mat-slider>
                 <div>
                     <h3 class="sub-header full-width">Examples</h3>
                     <div>
