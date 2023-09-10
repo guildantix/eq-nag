@@ -11,3 +11,21 @@ mat-form-field {
         }
     }
 }
+
+:host ::ng-deep {
+    mat-button-toggle-group {
+        height: 32px;
+
+        > mat-button-toggle {
+            height: 32px;
+
+            > button {
+                height: 32px;
+
+                > .mat-button-toggle-label-content {
+                    line-height: 25px;
+                }
+            }
+        }
+    }
+}
