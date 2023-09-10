@@ -11,7 +11,7 @@ const customAlphabet = require( 'nanoid' ).customAlphabet;
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const nanoid = customAlphabet( alphabet, 16 );
 
-const currentTriggerDbVersion = 86;
+const currentTriggerDbVersion = 87;
 
 
 
@@ -767,6 +767,33 @@ function executeDataMigration( data ) {
         } );
         
         data.version = 86;
+        
+    }
+    if ( data.version < 87 ) {
+        //                                                           vslow, slow,  normal, fast, vfast
+        // Changed the speaking rate from slider to specific values: 0.25,  0.50,  1.00,   1.50, 2.50
+        data?.triggers?.forEach( trigger => {
+            trigger.actions?.forEach( action => {
+                if ( action.speechRate > 0 ) {
+                    // Because we're using discrete values, we need to ensure that the previous values are mapped to the new values.
+                    if ( action.speechRate >= 2 ) {
+                        action.speechRate = 2.5;
+                    } else if ( action.speechRate >= 1.25 ) {
+                        action.speechRate = 1.5;
+                    } else if (action.speechRate >= 0.75 ) {
+                        action.speechRate = 1;
+                    } else if ( action.speechRate > 0.37 ) {
+                        action.speechRate = 0.5;
+                    } else {
+                        action.speechRate = 0.25;
+                    }
+                } else {
+                    action.speechRate = 1;
+                }
+            } );
+        } );
+        
+        data.version = 87;
         
     }
 
