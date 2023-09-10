@@ -230,6 +230,42 @@ class UserPreferencesStore extends Store {
         this.storeDataFile( this.#data );
     }
 
+    get speechVolume() {
+        if ( this.#data && this.#data.speechVolume > -1 ) {
+            return this.#data.speechVolume;
+        } else {
+            return 100;
+        }
+    }
+    set speechVolume( val ) {
+        this.#data.speechVolume = val <= 100 && val >= 0 ? val : 100;
+        this.storeDataFile( this.#data );
+    }
+
+    get audioVolume() {
+        if ( this.#data && this.#data.audioVolume > -1 ) {
+            return this.#data.audioVolume;
+        } else {
+            return 100;
+        }
+    }
+    set audioVolume( val ) {
+        this.#data.audioVolume = val <= 100 && val >= 0 ? val : 100;
+        this.storeDataFile( this.#data );
+    }
+
+    get baseSpeakingRate() {
+        if ( this.#data && this.#data.baseSpeakingRate > 0 && this.#data.baseSpeakingRate <= 4 ) {
+            return this.#data.baseSpeakingRate;
+        } else {
+            return 1;
+        }
+    }
+    set baseSpeakingRate( val ) {
+        this.#data.baseSpeakingRate = val <= 4 && val > 0 ? val : 1;
+        this.storeDataFile( this.#data );
+    }
+
     get enableFct() {
         return this.#data.enableFct === true;
     }

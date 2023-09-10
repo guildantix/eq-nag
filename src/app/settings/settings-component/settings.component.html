@@ -120,21 +120,44 @@
 
     <fieldset>
         <legend><span class="title">Sound</span></legend>
-        <div class="card-property">
-            <div class="content-middle">Master Volume</div>
-            <div class="content-right"><mat-slider [(ngModel)]="masterVolume" thumbLabel tickInterval="1" min="1" max="100" style="width: 100%;" (change)="onChangeMasterVolume()" ></mat-slider></div>
+        <div class="fifty-grid">
+            <div>
+                <h2 class="sub-header full-width">Volume</h2>
+                <div>Master Volume</div>
+                <mat-slider [(ngModel)]="masterVolume" thumbLabel tickInterval="1" min="1" max="100" style="width: 100%;" (change)="onChangeMasterVolume()" ></mat-slider>
+                <div>Text to Speech Volume</div>
+                <mat-slider [(ngModel)]="speechVolume" thumbLabel tickInterval="1" min="1" max="100" style="width: 100%;" (change)="updateSetting( settingsKeys.speechVolume, speechVolume, 500 )"></mat-slider>
+                <div>Audio Volume</div>
+                <mat-slider [(ngModel)]="audioVolume" thumbLabel tickInterval="1" min="1" max="100" style="width: 100%;" (change)="updateSetting( settingsKeys.audioVolume, audioVolume, 500 )"></mat-slider>
+            </div>
+            <div>
+                <h2 class="sub-header full-width">Text to Speech</h2>
+                <mat-form-field style="width: 100%;">
+                    <mat-label></mat-label>
+                    <mat-select [(ngModel)]="voiceIndex" (selectionChange)="onChangeVoice()">
+                        <mat-option *ngFor="let option of voiceOptions; let i = index" [value]="i">{{option.name}}</mat-option>
+                    </mat-select>
+                    <mat-hint>Select the text to speech voice</mat-hint>
+                </mat-form-field>
+                <div style="margin-top: 15px;">Base Speaking Rate</div>
+                <mat-slider [(ngModel)]="baseSpeakingRate" thumbLabel tickInterval="0.25" step="0.25" min="0.25" max="4" style="width: 100%;"></mat-slider>
+                <div>
+                    <h3 class="sub-header full-width">Examples</h3>
+                    <div>
+                        <button mat-button (click)="speakPhrase(exampleSpeech, .25)"><mat-icon>play_circle_outline</mat-icon> Very Slow</button>
+                        <button mat-button (click)="speakPhrase(exampleSpeech, .50)"><mat-icon>play_circle_outline</mat-icon> Slow</button>
+                        <button mat-button (click)="speakPhrase(exampleSpeech, 1)"><mat-icon>play_circle_outline</mat-icon> Normal</button>
+                        <button mat-button (click)="speakPhrase(exampleSpeech, 1.50)"><mat-icon>play_circle_outline</mat-icon> Fast</button>
+                        <button mat-button (click)="speakPhrase(exampleSpeech, 2.50)"><mat-icon>play_circle_outline</mat-icon> Very Fast</button>
+                        <mat-form-field style="width: 100%">
+                            <mat-label></mat-label>
+                            <input matInput type="text" [(ngModel)]="exampleSpeech" name="txtExampleSpeech" />
+                            <mat-hint>Example speech</mat-hint>
+                        </mat-form-field>
+                    </div>
+                </div>
+            </div>
         </div>
-    </fieldset>
-
-    <fieldset>
-        <legend><span class="title">Text to Speech</span></legend>
-        <mat-form-field style="width: 50%;">
-            <mat-label></mat-label>
-            <mat-select [(ngModel)]="voiceIndex" (selectionChange)="onChangeVoice()">
-                <mat-option *ngFor="let option of voiceOptions; let i = index" [value]="i">{{option.name}}</mat-option>
-            </mat-select>
-            <mat-hint>Select the text to speech voice</mat-hint>
-        </mat-form-field>
     </fieldset>
 
     <fieldset style="padding-left: 28px; padding-right: 28px; padding-top: 60px;">

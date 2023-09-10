@@ -27,6 +27,8 @@ export enum SettingsKeys {
     voiceIndex = 'voiceIndex',
     enableCheckWindowPosition = 'enableCheckWindowPosition',
     sharedTriggerPermissions = 'sharedTriggerPermissions',
+    speechVolume = 'speechVolume',
+    audioVolume = 'audioVolume',
 
 };
 
@@ -540,6 +542,8 @@ export class DataTickModel {
     public logFile: string;
     public voiceIndex: number;
     public masterVolume: number = 100;
+    public speechVolume: number = 100;
+    public audioVolume: number = 100;
     public triggers: TriggerModel[] = [];
     public overlays: OverlayWindowModel[] = [];
     public enableFct: boolean = false;
@@ -556,6 +560,7 @@ export class DataTickModel {
     public enableQuickShareImports: boolean = true;
     public quickShareAuthorsListType: QuickShareAuthorListTypes;
     public quickShareAuthorsList: string[] = [];
+    public baseSpeakingRate: number = 1;
     
 }
 

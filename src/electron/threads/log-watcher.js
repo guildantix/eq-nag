@@ -58,6 +58,9 @@ var damageReceivedOverlayId = null;
 var voiceOptions = [];
 var voiceIndex = -1;
 var masterVolume = 100;
+var speechVolume = 100;
+var audioVolume = 100;
+var baseSpeakingRate = 1;
 var logParseTimeoutId = null;
 const logParseTimer = 50;
 var changingLogFile = false;
@@ -1051,6 +1054,9 @@ function LogWatcher(character, logPosition) {
         damageReceivedOverlayId = data.damageReceivedOverlayId;
         voiceIndex = data.voiceIndex;
         masterVolume = data.masterVolume;
+        speechVolume = data.speechVolume;
+        audioVolume = data.audioVolume;
+        baseSpeakingRate = data.baseSpeakingRate;
         isDev = data.isDev;
         phoneticTransforms = data.phoneticTransforms;
         charModel = data.characterModel ? data.characterModel : charModel;
@@ -3473,10 +3479,10 @@ function renderPhrases( phrases, conditionResults, parseResult, deltaTime, parse
  * @param {RegExpExecArray} parseResult The regexp exec array of the parsed log entry.
  * @param {number} timerDuration The duration in seconds of the timer, if applicable.
  * @param {number} deltaTime The change in time, in milliseconds, since the previous sequential capture.
- * @param {number} speechVolume The volume which to speak.
+ * @param {number} volume The volume which to speak.
  * @param {() => void} afterSpeech Executes function after speech ended.
  */
-function speakPhrase( phrase, interrupt, speakNext, conditionResults, simulating, parseResult, timerDuration, deltaTime, speechVolume, rate, afterSpeech ) {
+function speakPhrase( phrase, interrupt, speakNext, conditionResults, simulating, parseResult, timerDuration, deltaTime, volume, rate, afterSpeech ) {
     
     if ( !simulating && phrase && voiceIndex > -1 ) {
 
@@ -3493,8 +3499,8 @@ function speakPhrase( phrase, interrupt, speakNext, conditionResults, simulating
         utter.text = StringUtilities.parseCountersToLiteral( utter.text, counters );
         utter.text = StringUtilities.parsePhoneticTransformsToLiteral( utter.text, phoneticTransforms );
         utter.voice = voiceOptions[ voiceIndex ];
-        utter.volume = ( masterVolume * ( speechVolume > 0 ? speechVolume / 100 : 1 ) ) / 100;
-        utter.rate = rate ?? 1;
+        utter.volume = ( masterVolume / 100 ) * ( speechVolume / 100 ) * ( volume > 0 ? volume / 100 : 1 );
+        utter.rate = ( rate ?? 1 ) * ( baseSpeakingRate ?? 1 );
         
         utter.onend = function ( event ) {
             let i = utterances.indexOf( this );
@@ -3638,11 +3644,11 @@ function calculateCastingMilliseconds( duration, triggerClasses, extFocusPercent
  * 
  * @param {string} fileId The id of the desired file.
  */
-function playAudioFile( fileId, audioVolume ) {
+function playAudioFile( fileId, volume ) {
     ipcRenderer.once( 'audio-file:get:url', ( e, url ) => {
         if ( url ) {
             let player = new Audio( url );
-            player.volume = ( masterVolume * ( audioVolume > 0 ? audioVolume / 100 : 1 ) ) / 100;
+            player.volume = ( masterVolume / 100 ) * ( audioVolume / 100 ) * ( volume > 0 ? volume / 100 : 1 );
             player.play();
             audioPlayers.push( player );
             player.addEventListener( 'ended', ( event ) => {

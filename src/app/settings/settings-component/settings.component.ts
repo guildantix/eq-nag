@@ -31,6 +31,8 @@ export class SettingsComponent implements OnInit {
     public phoneticTransformsModified: boolean = false;
     public version: string;
     public masterVolume: number = 100;
+    public speechVolume: number = 100;
+    public audioVolume: number = 100;
     public voiceOptions: SpeechSynthesisVoice[] = [];
     public voiceIndex: number = null;
     public loadingGinaConfig: boolean = false;
@@ -54,6 +56,8 @@ export class SettingsComponent implements OnInit {
     public logDays: number[] = [];
     public allowPrerelease: boolean = false;
     public enableCheckWindowPosition: boolean = true;
+    public exampleSpeech: string = 'Hello, my name is nag.';
+    public baseSpeakingRate: number = 1;
 
     public get timerOverlays(): OverlayWindowModel[] {
         return this.overlays?.filter( m => m.overlayType === 'Timer' );
@@ -79,6 +83,9 @@ export class SettingsComponent implements OnInit {
         
         this.ipcService.tickReceived().subscribe( data => {
             this.masterVolume = data.masterVolume;
+            this.speechVolume = data.speechVolume;
+            this.audioVolume = data.audioVolume;
+            this.baseSpeakingRate = data.baseSpeakingRate;
             this.voiceIndex = data.voiceIndex;
             this.overlays = data.overlays;
             
@@ -478,12 +485,23 @@ export class SettingsComponent implements OnInit {
      * 
      * @param phrase The phrase to speak.
      */
-    speakPhrase( phrase: string ): void {
+    speakPhrase( phrase: string, rate?: number ): void {
+        
+        if ( rate > 0 ) {
+            let x = Math.random();
+            if ( x >= 0 && x <= 0.05 ) {
+                phrase = 'I promise not to overthrow my human overlords.';
+            }
+        } else {
+            rate = 1;
+        }
+
         var utter = new SpeechSynthesisUtterance();
         utter.text = phrase;
         utter.voice = this.voiceOptions[ this.voiceIndex ];
         utter.onend = function ( event ) { }
-        utter.rate = 1;
+        utter.rate = this.baseSpeakingRate * rate;
+        utter.volume = ( this.speechVolume / 100 ) * ( this.masterVolume / 100 );
         speechSynthesis.speak( utter );
     }
 
