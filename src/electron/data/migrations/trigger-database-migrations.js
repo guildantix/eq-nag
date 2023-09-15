@@ -11,7 +11,7 @@ const customAlphabet = require( 'nanoid' ).customAlphabet;
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const nanoid = customAlphabet( alphabet, 16 );
 
-const currentTriggerDbVersion = 87;
+const currentTriggerDbVersion = 88;
 
 
 
@@ -794,6 +794,35 @@ function executeDataMigration( data ) {
         } );
         
         data.version = 87;
+        
+    }
+    if ( data.version < 88 ) {
+        
+        // Removed the slow and very slow rates, and tweaked the speaking rates to be more natural.
+
+        //              Normal,    Fast,    Very Fast
+        // New values:       1,    1.75,         2.25
+        // Old values:       1,    1.50,         2.50
+
+        data?.triggers?.forEach( trigger => {
+            trigger.actions?.forEach( action => {
+
+                if ( action.speechRate > 0 ) {
+                    if ( action.speechRate >= 2.25 ) {
+                        action.speechRate = 2.25;
+                    } else if ( action.speechRate >= 1.25 ) {
+                        action.speechRate = 1.75;
+                    } else {
+                        action.speechRate = 1;
+                    }
+                } else {
+                    action.speechRate = 1;
+                }
+                
+            } );
+        } );
+        
+        data.version = 88;
         
     }
 

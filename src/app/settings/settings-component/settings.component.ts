@@ -13,6 +13,7 @@ import * as _ from 'lodash-es';
 import { CharactersListComponent } from 'src/app/characters-list/characters-list.component';
 import { nagId } from 'src/app/core/nag-id.util';
 import { DateUtilities } from 'src/app/utilities/date.utilities';
+import { MathUtilities } from 'src/app/utilities/math.utilities';
 
 interface IPhoneticTransform {
     id: string;
@@ -58,6 +59,7 @@ export class SettingsComponent implements OnInit {
     public enableCheckWindowPosition: boolean = true;
     public exampleSpeech: string = 'Hello, my name is nag.';
     public baseSpeakingRate: number = 1;
+    public utter: SpeechSynthesisUtterance | undefined = undefined;
 
     public get timerOverlays(): OverlayWindowModel[] {
         return this.overlays?.filter( m => m.overlayType === 'Timer' );
@@ -485,24 +487,36 @@ export class SettingsComponent implements OnInit {
      * 
      * @param phrase The phrase to speak.
      */
-    speakPhrase( phrase: string, rate?: number ): void {
+    speakPhrase( phrase: string, rate: number | undefined = undefined ): void {
         
-        if ( rate > 0 ) {
+        if ( rate !== undefined ) {
             let x = Math.random();
             if ( x >= 0 && x <= 0.05 ) {
                 phrase = 'I promise not to overthrow my human overlords.';
             }
-        } else {
-            rate = 1;
         }
 
-        var utter = new SpeechSynthesisUtterance();
-        utter.text = phrase;
-        utter.voice = this.voiceOptions[ this.voiceIndex ];
-        utter.onend = function ( event ) { }
-        utter.rate = this.baseSpeakingRate * rate;
-        utter.volume = ( this.speechVolume / 100 ) * ( this.masterVolume / 100 );
-        speechSynthesis.speak( utter );
+        rate = rate ?? 0;
+
+        if ( this.baseSpeakingRate < 1 ) {
+            rate = rate - ( 1 - this.baseSpeakingRate );
+        } else if ( rate < this.baseSpeakingRate ) {
+            rate = this.baseSpeakingRate;
+        }
+
+        if ( this.utter ) {
+            speechSynthesis.cancel();
+            this.utter = undefined;
+        }
+
+        this.utter = new SpeechSynthesisUtterance();
+        this.utter.text = phrase;
+        this.utter.voice = this.voiceOptions[ this.voiceIndex ];
+        this.utter.onend = function ( event ) { }
+        this.utter.rate = MathUtilities.clamp( rate, 0.1, 4 );
+        this.utter.volume = ( this.speechVolume / 100 ) * ( this.masterVolume / 100 );
+        speechSynthesis.speak( this.utter );
+
     }
 
 

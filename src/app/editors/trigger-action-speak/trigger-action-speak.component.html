@@ -20,11 +20,9 @@
             <div class="card-property" style="align-items: center;">
                 <div class="content-middle">Rate</div>
                 <mat-button-toggle-group name="speakingRate" aria-label="Select the speaking rate for this speak action." [(ngModel)]="action.speechRate">
-                    <mat-button-toggle [value]="0.25">Very Slow</mat-button-toggle>
-                    <mat-button-toggle [value]="0.50">Slow</mat-button-toggle>
                     <mat-button-toggle [value]="1.00">Normal</mat-button-toggle>
-                    <mat-button-toggle [value]="2.50">Fast</mat-button-toggle>
-                    <mat-button-toggle [value]="2.50">Very Fast</mat-button-toggle>
+                    <mat-button-toggle [value]="1.75">Fast</mat-button-toggle>
+                    <mat-button-toggle [value]="2.25">Very Fast</mat-button-toggle>
                 </mat-button-toggle-group>
             </div>
 
