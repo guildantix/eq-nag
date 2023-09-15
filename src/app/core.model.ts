@@ -30,7 +30,7 @@ export enum SettingsKeys {
     speechVolume = 'speechVolume',
     audioVolume = 'audioVolume',
     baseSpeakingRate = 'baseSpeakingRate',
-    
+
 };
 
 export enum ActionTypes {
@@ -1286,11 +1286,11 @@ export class VersionNumber {
 
     constructor( private version: string ) {
         if ( version == null )
-            throw 'Version number not provided!';
+            throw new Error( 'Version number not provided!' );
         
         let parts = version.split( /\./gi );
         if ( parts?.length !== 3 ) {
-            throw 'Invalid version number!';
+            throw new Error( 'Invalid version number!' );
         }
         this.major = +parts[ 0 ];
         this.minor = +parts[ 1 ];

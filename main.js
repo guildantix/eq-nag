@@ -203,15 +203,23 @@ const checkCombatGroups = () => {
 // --========================--
 // --== App Initialization ==--
 // --========================--
+    
+// TODO: Enable a setting that will allow the user to disable graphics, will likely need a switch of some kind.
+// // This is a workaround for a bug in Electron that causes the app to crash on some systems.
+// log.info( '[main:app-initialization] Disabling hardware acceleration.' );
+// app.disableHardwareAcceleration();
+// app.commandLine.appendSwitch( "disable-software-rasterizer" );
 
 const bootstrapApp = () => {
 
     app.on( 'ready', function () {
-    
+        
         winManager.onReady();
         screen.on( 'display-metrics-changed', ( e, newDisplay ) => {
-            log.info( 'screen metrics have changed.', e, newDisplay );
-            winManager.checkWindowPosition();
+            if ( userPreferences.enableCheckWindowPosition === true ) {
+                log.info( '[main:display-metrics-changed] Initiating overlay position checks.', e, newDisplay );
+                winManager.checkOverlayPositions( true );
+            }
         } );
         protocol.interceptFileProtocol( 'file', ( req, callback ) => {
             let filePath = new url.URL( req.url ).pathname;
@@ -445,6 +453,7 @@ ipcMain.on( 'app:isDev', ( event ) => {
 } );
 
 ipcMain.on( 'app:version', ( event ) => {
+    log.info( `[app:version] ${app.getVersion()}` );
     event.sender.send( 'app:version', { version: app.getVersion() } );
 } );
 
