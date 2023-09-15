@@ -472,6 +472,10 @@ export class MainComponent implements OnInit {
         this.ipcService.saveFctStyles( this.fctStyles );
     }
 
+    public showEasyWindow(): void {
+        this.ipcService.showEasyWindow().subscribe();
+    }
+
     public testFn(): void {
         // large file test: E:\\EverQuest\\Logs\\backup\\20220721\\eqlog_Halifor_rizlona.txt
         

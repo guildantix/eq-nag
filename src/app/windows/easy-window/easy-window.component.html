@@ -1,0 +1,48 @@
+<div class="modal">
+    <header>
+        <mat-toolbar class="titlebar" color="default">
+            <span>Easy Mode</span>
+            <span class="spacer"></span>
+            <button mat-icon-button aria-label="Exit Easy Mode" (click)="closeModal()">
+                <mat-icon>clear</mat-icon>
+            </button>
+        </mat-toolbar>
+    </header>
+    <section>
+
+        <mat-stepper [linear]="true" #stepper>
+            <mat-step label="Step 1">
+                <div class="step-options">
+                    <mat-card class="box-shadow-green hover-only cursor-pointer" (click)="setAction('addCharacter')">
+                        <mat-card-header>
+                            <mat-card-title>Add a Character</mat-card-title>
+                            <mat-card-subtitle>Add a character to Nag.</mat-card-subtitle>
+                        </mat-card-header>
+                        <mat-card-content>
+                            <p>Add a new character to Nag.  This can be done through selecting a log file or choosing a character from the auto-generated lists.</p>
+                        </mat-card-content>
+                    </mat-card>
+                    <mat-card class="box-shadow-green hover-only cursor-pointer" (click)="setAction('triggerEdit')">
+                        <mat-card-header>
+                            <mat-card-title>Change a Trigger</mat-card-title>
+                            <mat-card-subtitle>You would like to change something about a trigger.</mat-card-subtitle>
+                        </mat-card-header>
+                        <mat-card-content>
+                            <p>To change any property of a trigger, including what a trigger says, shows, timer durations, etc...</p>
+                        </mat-card-content>
+                    </mat-card>
+                </div>
+            </mat-step>
+            <mat-step label="Add a Character" *ngIf="action === 'addCharacter'">
+
+            </mat-step>
+            <mat-step label="Find Trigger" *ngIf="action === 'triggerEdit'">
+
+            </mat-step>
+        </mat-stepper>
+
+    </section>
+    <footer>
+        <button mat-button color="warn" (click)="closeModal()">Close</button>
+    </footer>
+</div>

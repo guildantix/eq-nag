@@ -7,6 +7,7 @@ import { TriggerLibraryWindowComponent } from './windows/trigger-library-window/
 import { MoveOverlaysDialogComponent } from './dialogs/move-overlays-dialog/move-overlays-dialog.component';
 import { UpdateNotesWindowComponent } from './windows/update-notes-window/update-notes-window.component';
 import { LogSimulatorComponent } from './windows/log-simulator/log-simulator.component';
+import { EasyWindowComponent } from './windows/easy-window/easy-window.component';
 
 
 // let secureRoutes: Routes = [
@@ -82,6 +83,7 @@ let _routes: Routes = [
     { path: 'gina/import', component: GinaImportWindowComponent },
     { path: 'update-notes', component: UpdateNotesWindowComponent },
     { path: 'log/simulator', component: LogSimulatorComponent },
+    { path: 'easy', component: EasyWindowComponent },
     // { path: '', redirectTo: '/users', pathMatch: 'full', canActivate: [ Guard ] }, // If the user is logged in, the Guard will allow the navigation and the user will be redirected to the user list.
     { path: '', redirectTo: '/dashboard', pathMatch: 'full' }, // If the user is not logged in, then the guard will not allow access (theoretically it should redirect the user, but) and this will redirect to the login page.
     // { path: '', component: SecureComponent, canActivate: [ Guard ], children: secureRoutes },

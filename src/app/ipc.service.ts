@@ -712,6 +712,22 @@ export class IpcService {
         return obs;
     }
 
+    public showEasyWindow(): Observable<boolean> {
+        let obs: Observable<boolean> = new Observable<boolean>( ( observer: Observer<boolean> ) => {
+            
+            window.api.ipc.once( 'trigger:dialog:easy-window', ( e, loaded ) => {
+                this.ngZone.run( () => {
+                    observer.next( loaded );
+                    observer.complete();
+                } );
+            } );
+            window.api.ipc.send( 'trigger:dialog:easy-window', null );
+
+        } );
+
+        return obs;
+    }
+
     public simulateLogParse( file: string ): void {
         window.api.ipc.send( 'log:simulate:file', file );
     }

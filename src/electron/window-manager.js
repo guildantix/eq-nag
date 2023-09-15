@@ -31,6 +31,9 @@ class WindowManager {
     logSimulatorWindow;
 
     /** @type {BrowserWindow} */
+    easyWindow;
+
+    /** @type {BrowserWindow} */
     updateNotesWindow;
 
     /** @type {ForwardRef<BrowserWindow>} */
@@ -533,6 +536,51 @@ class WindowManager {
             } );
             this.logSimulatorWindow.setBackgroundColor( '#1a1a1a' );
             this.configureRendererMouseBlockingOnMoveResize( this.logSimulatorWindow );
+
+        } );
+
+        ipcMain.on( 'trigger:dialog:easy-window', ( event, arg ) => {
+            
+            if ( this.easyWindow != null ) {
+                return;
+            }
+
+            this.easyWindow = new BrowserWindow( {
+                parent: mainWindowRef.reference,
+                modal: false,
+                show: false,
+                width: 1000,
+                height: 800,
+                frame: false,
+                webPreferences: {
+                    nodeIntegration: false,
+                    contextIsolation: true,
+                    devTools: app.isDev(),
+                    sandbox: false,
+                    preload: path.join( __dirname, '/preloaders/main.js' ),
+                }
+            } );
+
+            require( "@electron/remote/main" ).enable( this.easyWindow.webContents );
+
+            if ( app.isDev() ) {
+                this.easyWindow.webContents.openDevTools( { mode: 'undocked' } );
+            }
+            
+            let url = `file://${this.#dirname}/dist/index.html#/easy`;
+            if ( arg ) {
+                url += `/${arg}`;
+            }
+            this.easyWindow.loadURL( url );
+            this.easyWindow.once( "ready-to-show", () => {
+                this.easyWindow.show();
+                event.sender.send( 'trigger:dialog:easy-window', true );
+            } );
+            this.easyWindow.on( 'closed', () => {
+                this.easyWindow = null;
+            } );
+            this.easyWindow.setBackgroundColor( '#1a1a1a' );
+            this.configureRendererMouseBlockingOnMoveResize( this.easyWindow );
 
         } );
 
