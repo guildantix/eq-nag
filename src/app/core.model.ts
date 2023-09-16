@@ -876,6 +876,8 @@ export class CharacterModel {
     public beneficialCastingSpeedFocusDecayLevel: number;
     public p99: boolean = false;
     public daybreak: boolean = false;
+    public triggerProfile: string | undefined = undefined;
+    public disabledTriggers: string[] = [];
     
 }
 

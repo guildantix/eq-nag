@@ -62,3 +62,47 @@ mat-panel-title {
     padding: 5px 25px;
     z-index: 1;
 }
+
+.character-triggers {
+    display: flex;
+    flex-flow: row nowrap;
+    background-color: rgb(33,33,33);
+    margin: 25px;
+
+    .triggers-list {
+        flex: 1 1 0px;
+        height: 550px;
+        
+        h2 {
+            margin: 0;
+            padding: 25px 50px;
+            font-weight: 100;
+            background-color: #1a1a1a;
+            text-align: center;
+        }
+
+        > div {
+            position: relative;
+            height: calc(100% - 100px); // The header is 70px, plus the padding;
+            overflow-y: auto;
+            padding: 0 15px;
+            top: 15px;
+        }
+        // margin-right: 15px;
+    }
+
+    .action-buttons {
+        flex: 0 0 50px;
+        display: flex;
+        flex-flow: column nowrap;
+        justify-content: center;
+        align-items: center;
+        background-color: #1a1a1a;
+
+        .double-chevron {
+            mat-icon:nth-child(2) {
+                margin-left: -18px;
+            }
+        }
+    }
+}

@@ -15,6 +15,7 @@ export class CharactersListComponent implements OnInit {
     public characters: CharacterModel[] = [];
     public selectedTabIndex: number = -1;
     public activeLogFilesDictionary: any = {};
+    public triggerProfiles: string[] = [ 'Main', 'Alt', 'Box' ];
     
     @ViewChild( 'fileSelector' ) private fileSelector: ElementRef<HTMLInputElement>;
     @ViewChild( 'savedLabel' ) private savedLabel: ElementRef<HTMLDivElement>;
@@ -41,6 +42,38 @@ export class CharactersListComponent implements OnInit {
                 this.selectedTabIndex = i >= 0 && i < this.characters.length ? i : -1;
             }
         } );
+    }
+
+    public onCharacterSelected( character: CharacterModel, index: number | undefined = undefined ): void {
+        this.selectedTabIndex = index === 0 || index > 0 ? index : _.findIndex( this.characters, f => f.characterId === character.characterId );
+    }
+
+    public onTriggerProfileChanged( character: CharacterModel ): void {
+        
+    }
+
+    public updateTriggerProfile( character: CharacterModel, profile: string ): void {
+        this.dialogService.showConfirmationDialog(
+            [ `Are you sure you want to update the "${profile}" profile?`, 'This will update the profile to include all enabled and disabled triggers from this character, and update all other characters using the same profile.' ],
+            'Click "Yes" to update this profile and all characters using this profile.',
+            'Click "No" to close this dialog without updating the profile.' )
+            .subscribe( confirmed => {
+                if ( confirmed ) {
+                    
+                }
+            } );
+    }
+
+    public reapplyTriggerProfile( character: CharacterModel, profile: string ): void {
+        this.dialogService.showConfirmationDialog(
+            [ `Are you sure you want to reapply the "${profile}" profile?`, 'This will reset the character\'s enabled and disabled triggers and reapply from the profile.' ],
+            'Click "Yes" to reapply the profile to this character.',
+            'Click "No" to close this dialog without reapplying the profile.' )
+            .subscribe( confirmed => {
+                if ( confirmed ) {
+                    
+                }
+            } );
     }
 
     public updateCharacter( character: CharacterModel ): void {

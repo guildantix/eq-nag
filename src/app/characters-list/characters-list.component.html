@@ -1,6 +1,6 @@
 
 <mat-accordion class="example-headers-align">
-    <mat-expansion-panel hideToggle *ngFor="let character of characters; let i = index" [expanded]="selectedTabIndex === i">
+    <mat-expansion-panel hideToggle *ngFor="let character of characters; let i = index" [expanded]="selectedTabIndex === i" (afterExpand)="onCharacterSelected(character, i)">
       <mat-expansion-panel-header>
         <mat-panel-title>{{character.name}}<small>{{character.class | className}}</small></mat-panel-title>
         <mat-panel-description><ng-template [ngIf]="character.p99">P1999&nbsp;</ng-template>{{character.server}}<mat-icon *ngIf="activeLogFilesDictionary[character.characterId] === true" color="accent">cast_connected</mat-icon><mat-icon *ngIf="activeLogFilesDictionary[character.characterId] !== true">cast</mat-icon></mat-panel-description>
@@ -124,6 +124,85 @@
                             </span></td>
                             </tr>
                         </table>
+                    </mat-card-content>
+                </mat-card>
+
+            </div>
+        </mat-tab>
+        <mat-tab label="Triggers">
+            <div class="character-tab-content">
+
+                <mat-card>
+                    <mat-card-header>
+                        <mat-card-title>
+                            Trigger Profile
+                        </mat-card-title>
+                    </mat-card-header>
+                    <mat-card-content>
+                        <mat-form-field style="width: 333px;">
+                            <mat-label></mat-label>
+                            <mat-select [(ngModel)]="character.triggerProfile" name="ddlTriggerProfile_{{i}}" (selectionChange)="onTriggerProfileChanged(character)">
+                                <mat-option [value]="undefined">None</mat-option>
+                                <mat-option *ngFor="let triggerProfile of triggerProfiles" [value]="triggerProfile">{{triggerProfile}}</mat-option>
+                            </mat-select>
+                            <mat-hint>Select a trigger profile to load.</mat-hint>
+                        </mat-form-field>
+                        <div style="padding: 5px;"><mat-checkbox>Disable new triggers by default</mat-checkbox>
+                            <sup class="help-sup"
+                                matTooltip="If enabled, new triggers that you create or are installed from the library or quickshare, will be disabled for this profile."
+                                matTooltipPosition="above"
+                                matTooltipClass="tooltip-large">&nbsp;&nbsp;?</sup>
+                            </div>
+                        <div>
+                            <button mat-button class="color-green"><mat-icon>add</mat-icon> Create New Profile</button>
+                            <button mat-button class="color-orange" 
+                                *ngIf="character.triggerProfile" 
+                                matTooltipPosition="below" 
+                                matTooltip="Reset this character's triggers and reapply the selected profile."
+                                (click)="reapplyTriggerProfile(character, character.triggerProfile)"
+                            >
+                                <mat-icon>refresh</mat-icon> Reapply Profile
+                            </button>
+                            <button mat-button class="color-light" 
+                                *ngIf="character.triggerProfile" 
+                                matTooltipPosition="below" 
+                                matTooltip="Update the selected profile and propagate changes to all other characters using the same profile."
+                                (click)="updateTriggerProfile(character, character.triggerProfile)"
+                            >
+                                <mat-icon class="material-icons-outlined">save</mat-icon> Update "{{character.triggerProfile}}" Profile
+                            </button>
+                        </div>
+                    </mat-card-content>
+                </mat-card>
+
+                <mat-card>
+                    <mat-card-header>
+                        <mat-card-title>
+                            Character Triggers
+                        </mat-card-title>
+                    </mat-card-header>
+                    <mat-card-content>
+                        <!-- <app-triggers *ngIf="selectedTabIndex === i"></app-triggers> -->
+                        <div class="character-triggers">
+                            <div class="triggers-list">
+                                <h2>Enabled Triggers</h2>
+                                <div>
+                                    
+                                </div>
+                            </div>
+                            <div class="action-buttons">
+                                <button mat-icon-button class="double-chevron"><mat-icon>chevron_left</mat-icon><mat-icon>chevron_left</mat-icon></button>
+                                <button mat-icon-button><mat-icon>chevron_left</mat-icon></button>
+                                <button mat-icon-button><mat-icon>chevron_right</mat-icon></button>
+                                <button mat-icon-button class="double-chevron"><mat-icon>chevron_right</mat-icon><mat-icon>chevron_right</mat-icon></button>
+                            </div>
+                            <div class="triggers-list">
+                                <h2>Disabled Triggers</h2>
+                                <div>
+                                    
+                                </div>
+                            </div>
+                        </div>
                     </mat-card-content>
                 </mat-card>
 
