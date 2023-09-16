@@ -3,7 +3,7 @@ import * as Electron from 'electron';
 import { UpdateInfo } from 'electron-updater';
 import { Observable, Observer } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
-import { DataTickModel, DkpEntryModel, TriggerModel, OverlayWindowModel, ActionTypes, FocusEffectSettings, CharacterModel, BasicError, TriggerFolder, FileModel, Tag, AuthorModel, PackageFileModel, TriggerPackageMetaModel, TriggerPackageVersion, FctStylesModel, OverlayBoundsChangedEventArgs, DialogEventArgs, QuickShareMetaModel, LogFileLocation, IpcMessage, DeathRecapPreferences, QuickShareAuthorListTypes, Progress, QuitFailureData, DuplicateTriggerAction, ScrapedSpell, ScrapedClickEffect, TriggerParseHistoryModel, SimulationProgress, FctCombatGroup, CombatTypes, StylePropertiesModel, CombatAnimations } from './core.model';
+import { DataTickModel, DkpEntryModel, TriggerModel, OverlayWindowModel, ActionTypes, FocusEffectSettings, CharacterModel, BasicError, TriggerFolder, FileModel, Tag, AuthorModel, PackageFileModel, TriggerPackageMetaModel, TriggerPackageVersion, FctStylesModel, OverlayBoundsChangedEventArgs, DialogEventArgs, QuickShareMetaModel, LogFileLocation, IpcMessage, DeathRecapPreferences, QuickShareAuthorListTypes, Progress, QuitFailureData, DuplicateTriggerAction, ScrapedSpell, ScrapedClickEffect, TriggerParseHistoryModel, SimulationProgress, FctCombatGroup, CombatTypes, StylePropertiesModel, CombatAnimations, TriggersProfileModel } from './core.model';
 import { GinaConfiguration, GinaTriggerGroups } from './gina.model';
 import { ColorUtility } from './utilities';
 
@@ -1248,6 +1248,38 @@ export class IpcService {
                 } );
             } );
             window.api.ipc.send( 'character:delete', characterId );
+
+        } );
+
+        return obs;
+    }
+
+    public getTriggerProfiles(): Observable<TriggersProfileModel[]> {
+        let obs: Observable<TriggersProfileModel[]> = new Observable<TriggersProfileModel[]>( ( observer: Observer<TriggersProfileModel[]> ) => {
+            
+            window.api.ipc.once( 'character:get:triggerProfiles', ( e, triggerProfiles: TriggersProfileModel[] ) => {
+                this.ngZone.run( () => {
+                    observer.next( triggerProfiles.map( c => Object.assign( new TriggersProfileModel(), c ) ) );
+                    observer.complete();
+                } );
+            } );
+            window.api.ipc.send( 'character:get:triggerProfiles', null );
+
+        } );
+
+        return obs;
+    }
+
+    public updateTriggerProfile( model: TriggersProfileModel ): Observable<string> {
+        let obs: Observable<string> = new Observable<string>( ( observer: Observer<string> ) => {
+            
+            window.api.ipc.once( 'character:save:triggerProfile', ( e, profileId: string ) => {
+                this.ngZone.run( () => {
+                    observer.next( profileId );
+                    observer.complete();
+                } );
+            } );
+            window.api.ipc.send( 'character:save:triggerProfile', model );
 
         } );
 

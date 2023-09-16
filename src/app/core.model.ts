@@ -857,6 +857,14 @@ export class FocusEffectSettings {
 
 }
 
+export class TriggersProfileModel {
+    
+    public profileId: string;
+    public name: string;
+    public disabledTriggers: string[] = [];
+
+}
+
 export class CharacterModel {
 
     public characterId: string;

@@ -6,7 +6,7 @@ const customAlphabet = require( 'nanoid' ).customAlphabet;
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const idLen = 16;
 const nanoid = customAlphabet( alphabet, 16 );
-const { CharacterModel, CharacterStoreModel } = require( "./models/character" );
+const { CharacterModel, CharacterStoreModel, TriggersProfileModel } = require( "./models/character" );
 const fs = require( 'fs' );
 const { migrateCharacterData } = require( "./migrations/character-database-migration" );
 
@@ -219,6 +219,38 @@ class CharacterDatabaseStore extends Store {
         ipcMain.handle( 'character:get:options', async ( event, logsPath ) => {
             return await this.getCharacterOptions( logsPath );
         } );
+
+        ipcMain.on( 'character:get:triggerProfiles',
+            /**
+             * Returns a list of all trigger profiles.
+             * 
+             * @param {Electron.IpcMainEvent} event The event args.
+             */
+            ( event ) => {
+                event.sender.send( 'character:get:triggerProfiles', this.#data.triggerProfiles );
+            } );
+
+        ipcMain.on( 'character:save:triggerProfile',
+            /**
+             * Saves the trigger profile.
+             * 
+             * @param {Electron.IpcMainEvent} event The event args.
+             * @param {TriggersProfileModel} profile The trigger profile.
+             */
+            ( event, profile ) => {
+                let triggerProfile = this.#data.triggerProfiles.find( tp => tp.profileId === profile.profileId );
+
+                if ( triggerProfile ) {
+                    triggerProfile.disabledTriggers = profile.disabledTriggers;
+                    this.storeDataFile( this.#data );
+                } else {
+                    profile.profileId = profile.profileId ?? nanoid();
+                    this.#data.triggerProfiles.push( profile );
+                    this.storeDataFile( this.#data );
+                }
+                
+                event.sender.send( 'character:save:triggerProfile', profile.profileId );
+            } );
 
         ipcMain.on( 'character:save:combatGroupHits',
             /**

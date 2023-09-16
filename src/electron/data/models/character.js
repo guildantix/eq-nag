@@ -65,12 +65,28 @@ class CharacterModel {
     
 }
 
+class TriggersProfileModel {
+
+    /** @type {string} */
+    profileId;
+    
+    /** @type {string} */
+    name;
+
+    /** @type {string[]} */
+    disabledTriggers;
+
+}
+
 class CharacterStoreModel {
     /** @type {number} */
     version;
     
     /** @type {CharacterModel[]} */
     characters;
+    
+    /** @type {TriggersProfileModel[]} */
+    triggerProfiles;
 }
 
-module.exports = { CharacterModel, CharacterStoreModel };
+module.exports = { CharacterModel, TriggersProfileModel, CharacterStoreModel };
