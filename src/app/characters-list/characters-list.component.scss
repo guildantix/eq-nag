@@ -71,7 +71,8 @@ mat-panel-title {
 
     .triggers-list {
         flex: 1 1 0px;
-        height: 550px;
+        min-height: 550px;
+        max-height: 700px;
         
         h2 {
             margin: 0;
@@ -89,6 +90,26 @@ mat-panel-title {
             top: 15px;
         }
         // margin-right: 15px;
+
+        mat-tree-node.trigger-node {
+            mat-checkbox,
+            button {
+                margin-left: 10px;
+                margin-right: 10px;
+            }
+        }
+        
+        mat-tree-node.folder-node {
+            mat-checkbox {
+                margin-left: 10px;
+                margin-right: 10px;
+            }
+        }
+        
+        .disabled-label {
+            color: rgba(255,255,255,.3);
+        }
+        
     }
 
     .action-buttons {

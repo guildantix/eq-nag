@@ -1193,9 +1193,9 @@ export class IpcService {
     public getCharacters(): Observable<CharacterModel[]> {
         let obs: Observable<CharacterModel[]> = new Observable<CharacterModel[]>( ( observer: Observer<CharacterModel[]> ) => {
             
-            window.api.ipc.once( 'character:get', ( e, overlays: CharacterModel[] ) => {
+            window.api.ipc.once( 'character:get', ( e, characters: CharacterModel[] ) => {
                 this.ngZone.run( () => {
-                    observer.next( overlays );
+                    observer.next( characters.map( c => Object.assign( new CharacterModel(), c ) ) );
                     observer.complete();
                 } );
             } );
