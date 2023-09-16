@@ -56,6 +56,13 @@ class CharacterModel {
 
     /** @type {Record<string, number>} A record of the combat median values of this character. */
     combatGroupMedian = {};
+
+    /** @type {string | undefined} */
+    triggerProfile = undefined;
+
+    /** @type {string[]} */
+    disabledTriggers = [];
+    
 }
 
 class CharacterStoreModel {
