@@ -76,6 +76,38 @@ export class CharactersListComponent implements OnInit {
         this.ipcService.characterLogActivated().subscribe( chrId => this.activeLogFilesDictionary[ chrId ] = true );
         this.ipcService.characterLogDeactivated().subscribe( chrId => this.activeLogFilesDictionary[ chrId ] = false );
         this.ipcService.getTriggerProfiles().subscribe( profiles => this.triggerProfiles = profiles );
+        
+        this.ipcService.tickReceived().subscribe( tick => {
+            
+            if ( tick.triggerProfileDisabledTriggers?.length > 0 ) {
+                tick.triggerProfileDisabledTriggers.forEach( tp => {
+                    let profile = this.triggerProfiles.find( f => f.profileId === tp.triggerProfileId );
+                    if ( profile ) {
+                        profile.disabledTriggers = tp.disabledTriggers;
+                        // Loading character profile isn't necessary, because profile is only used to set an initial state.  Any changes further are only applied when actively used by the user. via the Update for all, or reapply for one.
+                    }
+                } );
+            }
+
+            if ( tick.characterDisabledTriggers?.length > 0 ) {
+                tick.characterDisabledTriggers.forEach( cd => {
+                    let character = this.characters.find( f => f.characterId === cd.characterId );
+                    if ( character ) {
+                        let intersection = character.disabledTriggers.filter( x => cd.disabledTriggers.includes( x ) );
+                        if ( tick.triggerChanges || intersection.length !== character.disabledTriggers.length || intersection.length !== cd.disabledTriggers.length ) {
+                            character.disabledTriggers = cd.disabledTriggers;
+                            
+                            if ( this.characterData[ character.characterId ] ) {
+                                delete this.characterData[ character.characterId ];
+                                if ( this.selectedTabIndex === this.characters.findIndex( f => f.characterId === character.characterId ) ) {
+                                    this.onCharacterSelected( character );
+                                }
+                            }
+                        }
+                    }
+                } );
+            }
+        } );
     }
 
     public newCharacter(): void {
