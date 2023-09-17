@@ -144,6 +144,9 @@ let stopSimulation = false;
 /** @type {Record<string, any>} */
 let simulationCache = {};
 
+/** @type {string[]} */
+let disabledTriggerIds = [];
+
 
 
 
@@ -1065,6 +1068,20 @@ function LogWatcher(character, logPosition) {
         detrimentalOverlayId = data.detrimentalOverlayId;
         quickShareAuthorsListType = data.quickShareAuthorsListType;
         quickShareAuthorsList = data.quickShareAuthorsList;
+
+        if ( data.characterDisabledTriggers ) {
+            const characterDisabledTriggers = data.characterDisabledTriggers.find( f => f.characterId === characterId );
+
+            if ( characterDisabledTriggers ) {
+                disabledTriggerIds = characterDisabledTriggers.disabledTriggers;
+            }
+
+            if ( disabledTriggerIds?.length > 0 ) {
+                triggers.forEach( trigger => {
+                    trigger._profileDisabled = disabledTriggerIds.includes( trigger.triggerId );
+                } );
+            }
+        }
 
         applyFolderConditions( triggerFolders );
         generateTriggerFns();
@@ -2101,48 +2118,48 @@ function parseLogEntries( raw, simulating, padTime ) {
 
             // try {
                 
-                if ( !!trigger.enabled ) {
-                    trigger._parse( log, ( res, deltaTime ) => {
+            if ( !!trigger.enabled && !trigger._profileDisabled ) {
+                trigger._parse( log, ( res, deltaTime ) => {
 
-                        try {
+                    try {
                             
-                            trigger.actions.forEach( action => {
-                                // This used to execute actions if there are no phrases on the action, but now it doesn't because the action may exist only as a subaction
-                                // ( action.phrases == null || action.phrases?.length === 0 || action.phrases?.indexOf( res.phraseId ) > -1 )
-                                if ( ( isDev || !action.onlyExecuteInDev ) && action.phrases?.indexOf( res.phraseId ) > -1 ) {
+                        trigger.actions.forEach( action => {
+                            // This used to execute actions if there are no phrases on the action, but now it doesn't because the action may exist only as a subaction
+                            // ( action.phrases == null || action.phrases?.length === 0 || action.phrases?.indexOf( res.phraseId ) > -1 )
+                            if ( ( isDev || !action.onlyExecuteInDev ) && action.phrases?.indexOf( res.phraseId ) > -1 ) {
 
-                                    enableLogging && sendInformationToLog( `Execute trigger action [${trigger.name}] : ${ActionTypes[ action.actionType ]}`, 24 );
-                                    enableLogging && sendInformationToLog( `    ||${raw}||`, 24 );
+                                enableLogging && sendInformationToLog( `Execute trigger action [${trigger.name}] : ${ActionTypes[ action.actionType ]}`, 24 );
+                                enableLogging && sendInformationToLog( `    ||${raw}||`, 24 );
 
-                                    executeTriggerAction( trigger, action, timestamp, res, deltaTime, simulating );
+                                executeTriggerAction( trigger, action, timestamp, res, deltaTime, simulating );
                                 
-                                    addSuccessfulTriggerParsedEvent(
-                                        log,
-                                        trigger.triggerId,
-                                        action.actionId,
-                                        trigger.captureMethod === 'Sequential' ? 'Trigger Sequential Action' : 'Trigger Action',
-                                        res.renderedPhrase,
-                                        trigger.capturePhrases.find( p => p.phraseId === res.phraseId )?.phrase,
-                                        res,
-                                        trigger._conditionResults,
-                                        undefined );
-                                }
-                            } );
-                            entryMatched = true;
-
-                            // If the trigger has a cooldown, start the cooldown now.
-                            if ( trigger.useCooldown ) {
-                                trigger._onCooldown = true;
-                                trigger._cooldownStart = new Date();
+                                addSuccessfulTriggerParsedEvent(
+                                    log,
+                                    trigger.triggerId,
+                                    action.actionId,
+                                    trigger.captureMethod === 'Sequential' ? 'Trigger Sequential Action' : 'Trigger Action',
+                                    res.renderedPhrase,
+                                    trigger.capturePhrases.find( p => p.phraseId === res.phraseId )?.phrase,
+                                    res,
+                                    trigger._conditionResults,
+                                    undefined );
                             }
-                            
-                        } catch ( error ) {
-                            logError( error, raw, simulating, padTime, ErrorMessages.triggerExecution(), trigger );
+                        } );
+                        entryMatched = true;
+
+                        // If the trigger has a cooldown, start the cooldown now.
+                        if ( trigger.useCooldown ) {
+                            trigger._onCooldown = true;
+                            trigger._cooldownStart = new Date();
                         }
                             
+                    } catch ( error ) {
+                        logError( error, raw, simulating, padTime, ErrorMessages.triggerExecution(), trigger );
+                    }
+                            
 
-                    } );
-                }
+                } );
+            }
 
             // } catch ( error ) {
             //     logError( error, raw, simulating, padTime, ErrorMessages.triggerParse(), trigger );

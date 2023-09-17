@@ -54,6 +54,9 @@ class LogTrigger extends Trigger {
 
     /** @type {boolean|undefined} */
     _passesClassCondition = undefined;
+
+    /** @type {boolean} */
+    _profileDisabled = false;
 }
 
 module.exports = { PhraseParse, LogTrigger };
