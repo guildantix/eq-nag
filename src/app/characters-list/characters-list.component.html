@@ -154,7 +154,7 @@
                                         </mat-select>
                                         <mat-hint>Select a trigger profile to load.</mat-hint>
                                     </mat-form-field>
-                                    <div style="padding: 5px; white-space: nowrap;"><mat-checkbox [(ngModel)]="character.disableTriggersByDefault">Disable new triggers by default</mat-checkbox>
+                                    <div style="padding: 5px; white-space: nowrap;"><mat-checkbox [(ngModel)]="character.disableTriggersByDefault" (change)="saveCharacterDelay(character)">Disable new triggers by default</mat-checkbox>
                                         <sup class="help-sup"
                                             matTooltip="If enabled, new triggers that you create or install from the library or quickshare will be disabled for this profile."
                                             matTooltipPosition="right"
