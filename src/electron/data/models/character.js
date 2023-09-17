@@ -62,6 +62,9 @@ class CharacterModel {
 
     /** @type {string[]} */
     disabledTriggers = [];
+
+    /** @type {boolean} */
+    disableTriggersByDefault = false;
     
 }
 
@@ -76,9 +79,13 @@ class TriggersProfileModel {
     /** @type {string[]} */
     disabledTriggers;
 
+    /** @type {boolean} */
+    disableTriggersByDefault = false;
+
 }
 
 class CharacterStoreModel {
+
     /** @type {number} */
     version;
     
@@ -87,6 +94,10 @@ class CharacterStoreModel {
     
     /** @type {TriggersProfileModel[]} */
     triggerProfiles;
+
+    /** @type {boolean} */
+    disableTriggersByDefault = false;
+
 }
 
 module.exports = { CharacterModel, TriggersProfileModel, CharacterStoreModel };

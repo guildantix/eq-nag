@@ -1286,6 +1286,22 @@ export class IpcService {
         return obs;
     }
 
+    public deleteTriggerProfile( profileId: string ): Observable<boolean> {
+        let obs: Observable<boolean> = new Observable<boolean>( ( observer: Observer<boolean> ) => {
+            
+            window.api.ipc.once( 'character:delete:triggerProfile', ( e, deleted: boolean ) => {
+                this.ngZone.run( () => {
+                    observer.next( deleted );
+                    observer.complete();
+                } );
+            } );
+            window.api.ipc.send( 'character:delete:triggerProfile', profileId );
+
+        } );
+
+        return obs;
+    }
+
     public getEqInstallFolder(): Observable<string> {
         let obs: Observable<string> = new Observable<string>( ( observer: Observer<string> ) => {
             

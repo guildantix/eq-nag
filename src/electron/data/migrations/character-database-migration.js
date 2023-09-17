@@ -4,7 +4,7 @@ const customAlphabet = require( 'nanoid' ).customAlphabet;
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const nanoid = customAlphabet( alphabet, 16 );
 
-const currentCharacterDbVersion = 8;
+const currentCharacterDbVersion = 9;
 
 /**
  * 
@@ -77,6 +77,16 @@ function executeDataMigration( data ) {
     if ( !data.version || data.version < 8 ) {
         data.triggerProfiles = data.triggerProfiles ?? [];
         data.version = 8;
+
+    }
+    if ( !data.version || data.version < 9 ) {
+        data.triggerProfiles?.forEach( f => {
+            f.disableTriggersByDefault = f.disableTriggersByDefault === true ?? false;
+        } );
+        data.characters?.forEach( c => {
+            c.disableTriggersByDefault = c.disableTriggersByDefault === true ?? false;
+        } );
+        data.version = 9;
 
     }
 

@@ -251,6 +251,22 @@ class CharacterDatabaseStore extends Store {
                 
                 event.sender.send( 'character:save:triggerProfile', profile.profileId );
             } );
+        
+        ipcMain.on( 'character:delete:triggerProfile',
+            /**
+             * Deletes the specified trigger profile.
+             * 
+             * @param {Electron.IpcMainEvent} event The event args.
+             * @param {string} profileId The id of the profile.
+             */
+            ( event, profileId ) => {
+                let i = this.#data.triggerProfiles.findIndex( tp => tp.profileId === profileId );
+                if ( i > -1 ) {
+                    this.#data.triggerProfiles.splice( i, 1 );
+                    this.storeDataFile( this.#data );
+                }
+                event.sender.send( 'character:delete:triggerProfile', this.#data.triggerProfiles.findIndex( tp => tp.profileId === profileId ) === -1 );
+            } );
 
         ipcMain.on( 'character:save:combatGroupHits',
             /**

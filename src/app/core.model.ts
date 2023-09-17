@@ -862,6 +862,7 @@ export class TriggersProfileModel {
     public profileId: string;
     public name: string;
     public disabledTriggers: string[] = [];
+    public disableTriggersByDefault: boolean = false;
 
 }
 
@@ -886,6 +887,7 @@ export class CharacterModel {
     public daybreak: boolean = false;
     public triggerProfile: string | undefined = undefined;
     public disabledTriggers: string[] = [];
+    public disableTriggersByDefault: boolean = false;
     
 }
 
