@@ -372,7 +372,10 @@ ipcMain.on( 'app:get:all-display', ( event ) => {
 
 ipcMain.on( 'main:console:log', ( event, data ) => { mainWindow.webContents.send( 'console:log', data ); } );
 
-function sendTick() {
+let _tickTimeoutId = -1;
+let _tickTriggers = 0;
+function sendTick( delay ) {
+    delay = delay === true ? true : false;
     let _triggers = triggerDatabase.getAll();
     let _folders = triggerDatabase.getFolders();
     let tickData = {
@@ -384,6 +387,7 @@ function sendTick() {
         audioVolume: userPreferences.audioVolume,
         baseSpeakingRate: userPreferences.baseSpeakingRate,
         triggers: _triggers,
+        triggerChanges: _tickTriggers !== _triggers.length,
         overlays: overlayDatabase.getAll(),
         damageDealtOverlayId: userPreferences.damageDealtOverlayId,
         damageReceivedOverlayId: userPreferences.damageReceivedOverlayId,
@@ -402,14 +406,33 @@ function sendTick() {
         detrimentalOverlayId: userPreferences.detrimentalOverlayId,
         quickShareAuthorsListType: userPreferences.quickShareAuthorsListType,
         quickShareAuthorsList: userPreferences.quickShareAuthorsList,
+        characterDisabledTriggers: characterDatabase.getAll().map( c => { return { characterId: c.characterId, disabledTriggers: c.disabledTriggers }; } ),
+        triggerProfileDisabledTriggers: characterDatabase.getAllTriggerProfiles().map( tp => { return { triggerProfileId: tp.triggerProfileId, disabledTriggers: tp.disabledTriggers }; } ),
     };
-    mainWindow.webContents.send( 'tick', tickData );
-    logBootstrap.tick( tickData, characterDatabase );
 
-    if ( winManager.ginaImportWindow != null ) {
-        winManager.ginaImportWindow.send( 'tick', tickData );
-    }
+    const _executeTick = () => {
+        _tickTriggers = _triggers?.length ?? 0;
+        mainWindow.webContents.send( 'tick', tickData );
+        logBootstrap.tick( tickData, characterDatabase );
+
+        if ( winManager.ginaImportWindow != null ) {
+            winManager.ginaImportWindow.send( 'tick', tickData );
+        }
+    };
     
+    if (_tickTimeoutId > -1) {
+        clearTimeout(_tickTimeoutId);
+    }
+
+    if ( delay ) {
+        _tickTimeoutId = setTimeout( () => {
+            _executeTick();
+        }, 1000 );
+
+    } else {
+        _executeTick();
+    }
+
 }
 
 /** @type {import("electron-updater").UpdateInfo} */
@@ -576,6 +599,16 @@ app.on( 'ready', function () {
     winManager.configureRendererMouseBlockingOnMoveResize( mainWindow );
 
     winManager.loadRenderer();
+
+    triggerDatabase.onTriggerCreated( ( trigger ) => {
+        characterDatabase.addToDisabledByDefaultTriggers( trigger.triggerId );
+        sendTick( true );
+    } );
+
+    triggerDatabase.onTriggerDeleted( ( trigger ) => {
+        characterDatabase.removeFromDisabledTriggers( trigger.triggerId );
+        sendTick( true );
+    } );
 
     setTimeout( () => {
         scheduler();

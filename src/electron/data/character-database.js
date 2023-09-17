@@ -174,6 +174,66 @@ class CharacterDatabaseStore extends Store {
         return this.#data.characters;
     }
 
+    /**
+     * Returns all trigger profiles.
+     * 
+     * @returns {TriggersProfileModel[]} Returns the list of all trigger profiles.
+     */
+    getAllTriggerProfiles() {
+        return this.#data.triggerProfiles;
+    }
+
+    /**
+     * Adds the given trigger id to all profiles and characters that have disable by default on.
+     * 
+     * @param {string} triggerId The id of the trigger.
+     */
+    addToDisabledByDefaultTriggers( triggerId ) {
+        
+        // Update all trigger profiles.
+        this.#data.triggerProfiles.forEach( tp => {
+            if ( tp.disableTriggersByDefault === true && tp.disabledTriggers.indexOf( triggerId ) < 0 ) {
+                tp.disabledTriggers.push( triggerId );
+            }
+        } );
+
+        // Update all characters.
+        this.#data.characters.forEach( c => {
+            let profile = this.#data.triggerProfiles.find( tp => tp.profileId === c.triggerProfileId );
+            if ( ( c.disableTriggersByDefault === true || profile?.disableTriggersByDefault === true ) && c.disabledTriggers.indexOf( triggerId ) < 0 ) {
+                c.disabledTriggers.push( triggerId );
+            }
+        } );
+        
+        this.storeDataFile( this.#data );
+    }
+
+    /**
+     * Removes the given trigger id from all profiles and character disabled lists.
+     * 
+     * @param {string} triggerId The id of the trigger to remove.
+     */
+    removeFromDisabledTriggers( triggerId ) {
+            
+        // Update all trigger profiles.
+        this.#data.triggerProfiles.forEach( profile => {
+            let i = profile.disabledTriggers.indexOf( triggerId );
+            if ( i > -1 ) {
+                profile.disabledTriggers.splice( i, 1 );
+            }
+        } );
+    
+        // Update all characters.
+        this.#data.characters.forEach( character => {
+            let i = character.disabledTriggers.indexOf( triggerId );
+            if ( i > -1 ) {
+                character.disabledTriggers.splice( i, 1 );
+            }
+        } );
+            
+        this.storeDataFile( this.#data );
+    }
+
 
 
 

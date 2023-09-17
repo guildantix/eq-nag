@@ -142,6 +142,11 @@ let exceptionHistory = [];
 /** @type {Electron.WebContents[]} */
 const installedIdSubscribers = [];
 
+/** @type {((trigger: Trigger) => void)[]} */
+var onCreatedHandlers = [];
+/** @type {((trigger: Trigger) => void)[]} */
+var onRemovedHandlers = [];
+
 class TriggerDatabaseStore extends Store {
 
     /** 
@@ -176,6 +181,34 @@ class TriggerDatabaseStore extends Store {
                 this.storeDataFile( this.#data );
             } );
         } );
+    }
+
+    /**
+     * Executes the given function, passing in the new trigger, when a new trigger is added.
+     * 
+     * @param {(trigger: Trigger) => void} fn The callback function.
+     */
+    onTriggerCreated( fn ) {
+        let i = onCreatedHandlers.indexOf( fn );
+        if ( i < 0 ) {
+            onCreatedHandlers.push( fn );
+        } else {
+            onCreatedHandlers[ i ] = fn;
+        }
+    }
+
+    /**
+     * Executes the given function, passing in the deleted trigger, when a trigger is deleted.
+     * 
+     * @param {(trigger: Trigger) => void} fn The callback function.
+     */
+    onTriggerDeleted( fn ) {
+        let i = onRemovedHandlers.indexOf( fn );
+        if ( i < 0 ) {
+            onRemovedHandlers.push( fn );
+        } else {
+            onRemovedHandlers[ i ] = fn;
+        }
     }
 
 
@@ -728,6 +761,9 @@ class TriggerDatabaseStore extends Store {
             // Save changes to the data.
             this.processPredefinedTriggers();
             this.storeDataFile( this.#data );
+
+            // Execute any callback functions for the on created event.
+            onCreatedHandlers.forEach( fn => fn( trigger ) );
         }
 
         return trigger.triggerId;
@@ -927,6 +963,8 @@ class TriggerDatabaseStore extends Store {
             // Save the changes to the data.
             this.processPredefinedTriggers();
             this.storeDataFile( this.#data );
+
+            onRemovedHandlers.forEach( fn => fn( removed[ 0 ] ) );
 
             // Return true if at least 1 item was removed.
             return removed?.length > 0;
@@ -1970,6 +2008,9 @@ class TriggerDatabaseStore extends Store {
 
             // Add it to the store.
             this.#data.triggers.push( trigger );
+
+            // Execute any callback functions for the on created event.
+            onCreatedHandlers.forEach( fn => fn( trigger ) );
 
         }
 
