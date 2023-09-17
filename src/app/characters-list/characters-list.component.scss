@@ -127,3 +127,11 @@ mat-panel-title {
         }
     }
 }
+
+button.mat-option-button {
+    float: right;
+
+    mat-icon {
+        margin-right: 0;
+    }
+}

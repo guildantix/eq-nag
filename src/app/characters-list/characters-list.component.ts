@@ -1,6 +1,6 @@
 import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { CharacterModel, TriggerFolder, TriggerModel } from '../core.model';
+import { CharacterModel, TriggerFolder, TriggerModel, TriggersProfileModel } from '../core.model';
 import { DialogService } from '../dialogs/dialog.service';
 import { IpcService } from '../ipc.service';
 import * as _ from 'lodash-es';
@@ -31,7 +31,7 @@ interface CharacterTriggerData {
     folders: TriggerFolder[];
     triggers: TriggerModel[];
     dataSource: MatTreeFlatDataSource<CharacterTriggerTreeObject, CharacterTriggerTreeNode, CharacterTriggerTreeNode>;
-    saveTimeoutId: number | undefined;
+    treeControl: FlatTreeControl<CharacterTriggerTreeNode>;
 }
 
 @Component( {
@@ -53,16 +53,16 @@ export class CharactersListComponent implements OnInit {
             hasChildren: node.children?.length > 0,
         };
     }
-    public treeControl = new FlatTreeControl<CharacterTriggerTreeNode>( node => node ? node.level : 1, node => node.expandable );
     public treeFlattener = new MatTreeFlattener(this._transformer, node => node.level, node => node.expandable, node => node.children);
     public hasChild = ( _: number, node: CharacterTriggerTreeNode ) => node.expandable;
     public characterData: Record<string, CharacterTriggerData> = {};
     public characterTriggerSaveDelayMs: number = 1000;
+    public characterSaveTimeoutIds: Record<string, number> = {};
 
     public characters: CharacterModel[] = [];
     public selectedTabIndex: number = -1;
     public activeLogFilesDictionary: any = {};
-    public triggerProfiles: string[] = [ 'Main', 'Alt', 'Box' ];
+    public triggerProfiles: TriggersProfileModel[] = [];
     
     @ViewChild( 'fileSelector' ) private fileSelector: ElementRef<HTMLInputElement>;
     @ViewChild( 'savedLabel' ) private savedLabel: ElementRef<HTMLDivElement>;
@@ -75,6 +75,7 @@ export class CharactersListComponent implements OnInit {
         this.loadCharacters();
         this.ipcService.characterLogActivated().subscribe( chrId => this.activeLogFilesDictionary[ chrId ] = true );
         this.ipcService.characterLogDeactivated().subscribe( chrId => this.activeLogFilesDictionary[ chrId ] = false );
+        this.ipcService.getTriggerProfiles().subscribe( profiles => this.triggerProfiles = profiles );
     }
 
     public newCharacter(): void {
@@ -91,10 +92,13 @@ export class CharactersListComponent implements OnInit {
         } );
     }
 
-    public getCharacterDataSource( character: CharacterModel ): MatTreeFlatDataSource<CharacterTriggerTreeObject, CharacterTriggerTreeNode, CharacterTriggerTreeNode> {
-        return this.characterData[ character.characterId ]?.dataSource;
-    }
-
+    /**
+     * Loads the triggers for the specified character and builds the tree 
+     * data.  If the data has already been loaded, it is refreshed.
+     * 
+     * @param character The character that was selected.
+     * @param index The index of the tab that was selected.
+     */
     public onCharacterSelected( character: CharacterModel, index: number | undefined = undefined ): void {
         this.selectedTabIndex = index === 0 || index > 0 ? index : _.findIndex( this.characters, f => f.characterId === character.characterId );
 
@@ -104,55 +108,282 @@ export class CharactersListComponent implements OnInit {
 
                     let data: CharacterTriggerTreeObject[] = [];
                     folders.forEach( folder => this.processFolder( folder, triggers, data, character.disabledTriggers ) );
-
+                    let treeControl = new FlatTreeControl<CharacterTriggerTreeNode>( node => node ? node.level : 1, node => node.expandable );
 
                     this.characterData[ character.characterId ] = {
                         folders: folders,
                         triggers: triggers,
-                        dataSource: new MatTreeFlatDataSource( this.treeControl, this.treeFlattener ),
-                        saveTimeoutId: undefined,
+                        treeControl: treeControl,
+                        dataSource: new MatTreeFlatDataSource( treeControl, this.treeFlattener ),
                     };
                     
                     this.characterData[ character.characterId ].dataSource.data = data;
     
-                    this.updateFolderStates( folders );
+                    this.updateFolderStates( character );
                     
                 } );
             } );
+        } else {
+            this.updateCharacterTrigerSelectState( character );
+            this.onTriggerSelectChange( character );
+            this.updateFolderStates( character );
         }
     }
 
+    /**
+     * Confirms the user wants to delete the specified trigger profile, then if 
+     * confirmed deletes the profile.
+     * 
+     * @param event The mouse event that triggered this method.
+     * @param profileId The id of the profile to delete.
+     */
+    public deleteTriggerProfile(event: MouseEvent, profileId: string): void {
+        event.preventDefault();
+        event.stopPropagation();
+
+        let profile = this.triggerProfiles.find( f => f.profileId === profileId );
+        if ( profile ) {
+            this.dialogService
+                .showConfirmationDialog( 'Are you sure you want to delete this profile?', 'Click "Yes" to delete this profile.', 'Click "No" to close this dialog without deleting the profile.' )
+                .subscribe( confirmed => {
+                    if ( confirmed ) {
+                        this.ipcService.deleteTriggerProfile( profile.profileId ).subscribe( deleted => {
+                            if ( deleted ) {
+                                this.triggerProfiles.splice( this.triggerProfiles.indexOf( profile ), 1 );
+                                this.snackBar.open( 'Profile deleted!', 'Dismiss', { duration: 2500 } );
+                                this.characters.forEach( c => {
+                                    if ( c.triggerProfile === profile.profileId ) {
+                                        c.triggerProfile = null;
+                                    }
+                                    this.ipcService.updateCharacter( c ).subscribe( updated => { } );
+                                } );
+                            }
+                        } );
+                    }
+                } );
+        }
+    }
+
+    /**
+     * Returns the specified profile's name.
+     * 
+     * @param profileId The id of the profile
+     */
+    public getProfileName( profileId: string ): string {
+        let profile = this.triggerProfiles.find( f => f.profileId === profileId );
+        return profile?.name ?? 'Unknown';
+    }
+
+    /**
+     * Adds a new trigger profile to the server and adds it to the given 
+     * character. The new profile will have the same disabled triggers as the 
+     * character.
+     * 
+     * @param character The character to add the trigger profile to.
+     */
+    public addTriggerProfile( character: CharacterModel ): void {
+        this.dialogService
+            .showInputDialog( 'Add Trigger Profile', 'Enter a name for the new profile.', undefined, 'Profile Name' )
+            .subscribe( name => {
+                if ( name ) {
+                    
+                    let profile = new TriggersProfileModel();
+                    
+                    profile.name = name;
+                    profile.disabledTriggers = character.disabledTriggers?.slice() ?? [];
+                    profile.disableTriggersByDefault = character.disableTriggersByDefault;
+
+                    this.ipcService.updateTriggerProfile( profile ).subscribe( profileId => {
+                        if ( profileId ) {
+                            profile.profileId = profileId;
+                            this.triggerProfiles.push( profile );
+                            character.triggerProfile = profileId;
+                            this.snackBar.open( 'Profile added!', 'Dismiss', { duration: 2500 } );
+                        }
+                    } );
+
+                }
+            } );
+    }
+
+    /**
+     * Updates the specified profile's disabled trigger list to match exactly 
+     * the given character's list of disabled triggers.
+     * 
+     * @param character The character to update the profile for.
+     * @param profileId The id of the profile.
+     */
+    public updateTriggerProfile( character: CharacterModel, profileId: string ): void {
+        let profile = this.triggerProfiles.find( f => f.profileId === profileId );
+
+        const execute = () => {
+            // Updates the profile with the new disabled triggers.
+            profile.disabledTriggers = character.disabledTriggers.slice();
+            profile.disableTriggersByDefault = character.disableTriggersByDefault;
+
+            // Updates all characters using this profile with the new disabled triggers.
+            this.characters.forEach( character => {
+                if ( character.triggerProfile === profile.profileId ) {
+                    
+                    character.disabledTriggers = profile.disabledTriggers.slice();
+                    character.disableTriggersByDefault = profile.disableTriggersByDefault;
+
+                    if ( this.characterData[ character.characterId ] ) {
+
+                        // If their triggers list has been loaded, let's update the tree.
+                        this.updateCharacterTrigerSelectState( character );
+                        this.onTriggerSelectChange( character );
+                        this.updateFolderStates( character );
+
+                    }
+                    
+                    // Finally, save the character.
+                    this.saveCharacterDelay( character, true );
+                }
+            } );
+
+            // Finally, send the updated profile to the server.
+            this.ipcService.updateTriggerProfile( profile ).subscribe( updated => {
+                if ( updated ) {
+                    this.snackBar.open( 'Profile updated!', 'Dismiss', { duration: 2500 } );
+                }
+            } );
+        }
+
+        if ( profile ) {
+            this.dialogService.showConfirmationDialog(
+                [ `Are you sure you want to update the "${profile.name}" profile?`, 'This will update the profile to include all enabled and disabled triggers from this character, and update all other characters using the same profile.' ],
+                'Click "Yes" to update this profile and all characters using this profile.',
+                'Click "No" to close this dialog without updating the profile.' )
+                .subscribe( confirmed => {
+                    if ( confirmed ) {
+                        execute();
+                    }
+                } );
+        }
+    }
+
+    /**
+     * Applies the given profile to the given character.
+     * 
+     * @param character The character to apply the profile to.
+     * @param profile The profile to apply.
+     */
+    private applyTriggerProfile( character: CharacterModel, profile: TriggersProfileModel ): void {
+        character.disabledTriggers = profile.disabledTriggers.slice();
+        character.disableTriggersByDefault = profile.disableTriggersByDefault;
+        this.updateCharacterTrigerSelectState( character );
+        this.onTriggerSelectChange( character );
+        this.updateFolderStates( character );
+        this.saveCharacterDelay( character );
+    }
+
+    /**
+     * Reapplies the specified profile to the given character. This will reset 
+     * their selected disabled triggers and folders.
+     * 
+     * @param character The character to reapply the profile to.
+     * @param profileId The id of the profile to reapply.
+     */
+    public reapplyTriggerProfile( character: CharacterModel, profileId: string ): void {
+        let profile = this.triggerProfiles.find( f => f.profileId === profileId );
+
+        if ( profile ) {
+            this.dialogService.showConfirmationDialog(
+                [ `Are you sure you want to reapply the "${profile}" profile?`, 'This will reset the character\'s enabled and disabled triggers and reapply from the profile.' ],
+                'Click "Yes" to reapply the profile to this character.',
+                'Click "No" to close this dialog without reapplying the profile.' )
+                .subscribe( confirmed => {
+                    if ( confirmed ) {
+                        this.applyTriggerProfile( character, profile );
+                    }
+                } );
+        }
+    }
+
+    /**
+     * Reapplies the selected states for the given character's triggers based 
+     * on their disabled triggers array.
+     * 
+     * @param character The character to reapply trigger select states for.
+     */
+    public updateCharacterTrigerSelectState( character: CharacterModel ): void {
+            
+        this.characterData[ character.characterId ].dataSource.data.forEach( node => {
+            if ( node.trigger?.triggerId && character.disabledTriggers.includes( node.trigger.triggerId ) ) {
+                node.selected = true;
+            } else {
+                node.selected = false;
+            }
+        } );
+
+        this.characterData[ character.characterId ].treeControl.dataNodes.forEach( node => {
+            if ( !node.isFolder && character.disabledTriggers.includes( node.id ) ) {
+                node.selected = true;
+            } else if ( !node.isFolder ) {
+                node.selected = false;
+            }
+        } );
+
+    }
+
+    /**
+     * Reapplies the profile for the given character, if they have a profile 
+     * selected.
+     * 
+     * @param character The character that had their trigger profile changed.
+     */
     public onTriggerProfileChanged( character: CharacterModel ): void {
-        // TODO: Load the profile and apply it to the character.
-        // TODO: Store and load profiles from the database.
+        let profile = this.triggerProfiles.find( f => f.profileId === character.triggerProfile );
+
+        if ( profile ) {
+            this.applyTriggerProfile( character, profile );
+        }
     }
 
     /**
      * Triggers the update folder states method.
      */
     onTriggerSelectChange( character: CharacterModel ): void {
-        this.updateFolderStates( this.characterData[ character.characterId ].folders );
+        this.updateFolderStates( character );
     }
 
-    saveCharacterTriggers( character: CharacterModel ): void {
+    /**
+     * Saves the given character after a delay. If the character is saved 
+     * again, the delay is restarted.
+     * 
+     * @param character The character to save.
+     * @param silent If true, no snackbar will be shown.
+     */
+    saveCharacterDelay( character: CharacterModel, silent: boolean = false ): void {
 
         // If there is already a save timeout, clear it.
-        if ( this.characterData[ character.characterId ].saveTimeoutId ) {
-            window.clearTimeout( this.characterData[ character.characterId ].saveTimeoutId );
-            this.characterData[ character.characterId ].saveTimeoutId = undefined;
+        if ( this.characterSaveTimeoutIds[ character.characterId ] ) {
+            window.clearTimeout( this.characterSaveTimeoutIds[ character.characterId ] );
+            delete this.characterSaveTimeoutIds[ character.characterId ];
         }
 
         // Set a new save timeout.
-        this.characterData[ character.characterId ].saveTimeoutId = window.setTimeout( () => {
+        this.characterSaveTimeoutIds[ character.characterId ] = window.setTimeout( () => {
             this.ipcService.updateCharacter( character ).subscribe( updated => {
-                if ( updated ) {
+                if ( updated && !silent ) {
                     this.snackBar.open( 'Character updated!', 'Dismiss', { duration: 2500 } );
                 }
-                this.characterData[ character.characterId ].saveTimeoutId = undefined;
+
+                delete this.characterSaveTimeoutIds[ character.characterId ];
             } );
         }, this.characterTriggerSaveDelayMs );
     }
 
+    /**
+     * Toggles the selected state of the given trigger.  If the node is a 
+     * trigger, it is added/removed from the disabled triggers list. If the 
+     * node is a folder, all triggers in the folder are added/removed from 
+     * the disabled triggers list.
+     * 
+     * @param character The character to toggle the trigger for.
+     * @param node The tree view node, either folder or trigger, to toggle.
+     */
     toggleEnabled( character: CharacterModel, node: CharacterTriggerTreeNode ): void {
         node.selected = !node.selected;
         this.onTriggerSelectChange( character );
@@ -165,7 +396,7 @@ export class CharactersListComponent implements OnInit {
             }
         }
 
-        this.saveCharacterTriggers( character );
+        this.saveCharacterDelay( character );
     }
 
     /**
@@ -179,7 +410,7 @@ export class CharactersListComponent implements OnInit {
         let folder = this.findFolderById( node.id, this.characterData[ character.characterId ].folders );
         let familyIds = this.getDescendantFolderIds( folder );
         for ( let i = 0; i < familyIds?.length; i++ ) {
-            let triggers = this.treeControl.dataNodes.filter( t => !t.isFolder && t.item.folderId === familyIds[ i ] );
+            let triggers = this.characterData[ character.characterId ].treeControl.dataNodes.filter( t => !t.isFolder && t.item.folderId === familyIds[ i ] );
             triggers.forEach( f => {
                 f.selected = value;
                 if ( value && !character.disabledTriggers.includes( f.id ) ) {
@@ -190,9 +421,9 @@ export class CharactersListComponent implements OnInit {
             } );
         }
         
-        this.updateFolderStates( this.characterData[ character.characterId ].folders );
+        this.updateFolderStates( character );
 
-        this.saveCharacterTriggers( character );
+        this.saveCharacterDelay( character );
     }
 
     /**
@@ -271,50 +502,26 @@ export class CharactersListComponent implements OnInit {
      * Updates the selection state of all folders, show partial/full/none 
      * selection state based on the direct and descendant selected triggers.
      */
-    private updateFolderStates(folders: TriggerFolder[]): void {
+    private updateFolderStates( character: CharacterModel ): void {
 
-        this.treeControl.dataNodes.forEach( f => {
+        this.characterData[ character.characterId ].treeControl.dataNodes.forEach( f => {
             if ( f.isFolder ) {
-                let folder = this.findFolderById( f.id, folders );
+                let folder = this.findFolderById( f.id, this.characterData[ character.characterId ].folders );
                 let familyIds = this.getDescendantFolderIds( folder );
                 let triggerCount = 0;
                 let selectedTriggerCount = 0;
                 
                 for ( let i = 0; i < familyIds?.length; i++ ) {
-                    let triggers = this.treeControl.dataNodes.filter( t => !t.isFolder && t.item.folderId === familyIds[ i ] );
+                    let triggers = this.characterData[ character.characterId ].treeControl.dataNodes.filter( t => !t.isFolder && t.item.folderId === familyIds[ i ] );
                     triggerCount += triggers.length;
                     selectedTriggerCount += triggers.filter( t => t.selected ).length;
                 }
 
                 f.folderState = triggerCount === selectedTriggerCount && triggerCount > 0 ? 'all' :
-                                selectedTriggerCount === 0 ? 'none' : 'partial';
+                    selectedTriggerCount === 0 ? 'none' : 'partial';
             }
         } );
         
-    }
-
-    public updateTriggerProfile( character: CharacterModel, profile: string ): void {
-        this.dialogService.showConfirmationDialog(
-            [ `Are you sure you want to update the "${profile}" profile?`, 'This will update the profile to include all enabled and disabled triggers from this character, and update all other characters using the same profile.' ],
-            'Click "Yes" to update this profile and all characters using this profile.',
-            'Click "No" to close this dialog without updating the profile.' )
-            .subscribe( confirmed => {
-                if ( confirmed ) {
-                    
-                }
-            } );
-    }
-
-    public reapplyTriggerProfile( character: CharacterModel, profile: string ): void {
-        this.dialogService.showConfirmationDialog(
-            [ `Are you sure you want to reapply the "${profile}" profile?`, 'This will reset the character\'s enabled and disabled triggers and reapply from the profile.' ],
-            'Click "Yes" to reapply the profile to this character.',
-            'Click "No" to close this dialog without reapplying the profile.' )
-            .subscribe( confirmed => {
-                if ( confirmed ) {
-                    
-                }
-            } );
     }
 
     public updateCharacter( character: CharacterModel ): void {
