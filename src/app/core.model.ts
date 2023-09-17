@@ -562,6 +562,15 @@ export class DataTickModel {
     public quickShareAuthorsListType: QuickShareAuthorListTypes;
     public quickShareAuthorsList: string[] = [];
     public baseSpeakingRate: number = 1;
+    public characterDisabledTriggers: {
+        characterId: any;
+        disabledTriggers: string[];
+    }[] | undefined = undefined;
+    public triggerProfileDisabledTriggers: {
+        triggerProfileId: any;
+        disabledTriggers: string[];
+    }[] | undefined = undefined;
+    public triggerChanges: boolean = false;
     
 }
 
