@@ -177,10 +177,22 @@
 
         .overlay-content-area .progress,
         .healing-content-area .progress {
-            height: auto;
-            margin-top: -5px;
-            margin-bottom: 10px;
-            line-height: 0.9em;
+            margin-top: -1px;
+            height: 1.5em;
+            margin-bottom: 0.4em;
+        }
+
+        .overlay-content-area.timer {
+            overflow: visible;
+        }
+
+        .overlay-content-area.timer.ungrouped {
+            display: flex;
+            flex-flow: column nowrap;
+        }
+
+        .overlay-content-area.timer.reverse {
+            flex-flow: column-reverse nowrap;
         }
 
         .fct-label {
@@ -309,7 +321,7 @@
         .dot-text {
             position: absolute;
             z-index: 1;
-            padding: 4px;
+            padding: 0.25em;
             line-height: 0.9em;
             letter-spacing: 1px;
             color: white;

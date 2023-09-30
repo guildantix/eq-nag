@@ -786,6 +786,18 @@ function initializeOverlay( overlay ) {
 
     div.innerHTML = content;
     div.style.position = 'absolute';
+    
+
+    if ( overlay.overlayType === 'Timer' ) {
+        let ca = div.querySelector( '.overlay-content-area' );
+        if ( ca ) {
+            ca.classList.add( 'timer' );
+        }
+
+        if ( overlay.groupByTarget !== true ) {
+            ca.classList.add( 'ungrouped' );
+        }
+    }
 
     div.style.left = ( overlay.x + overlay.displayBounds.x + origin.x ) + 'px';
     div.style.top = ( overlay.y + overlay.displayBounds.y + origin.y ) + 'px';
@@ -913,8 +925,6 @@ function updateOverlay( overlayId, model ) {
                 contentArea.style.justifyContent = undefined;
             }
         }
-    
-        contentArea.querySelectorAll( '.progress' ).forEach( f => f.style.marginBottom = contentArea.style.lineHeight );
     
         if ( model.fontColor ) {
             if ( model.fontTransparency < 1 ) {
@@ -2341,7 +2351,7 @@ function createGroupedDotTimer( overlayId, contentArea, group, comp ) {
     comp.dom = div;
     
     if ( comp.action.timerIcon != null ) {
-        div.innerHTML = timerIconTemplate( { icon: comp.action.timerIcon, iconStyle: `"style="position: absolute; margin-left: -${overlayInstances[ overlayId ].dotTextHeight + 2}px;  height: ${overlayInstances[ overlayId ].dotTextHeight}px;` } ) + div.innerHTML;
+        div.innerHTML = timerIconTemplate( { icon: comp.action.timerIcon, iconStyle: `"style="position: absolute; margin-left: -1.7em;  height: 1.5em;` } ) + div.innerHTML;
     }
 
     comp.dom = div;
@@ -2397,7 +2407,7 @@ function createGroupedTimer( overlayId, contentArea, group, comp ) {
     comp.dom = div;
     
     if ( comp.action.timerIcon != null ) {
-        div.innerHTML = timerIconTemplate( { icon: comp.action.timerIcon, iconStyle: `"style="position: absolute; margin-left: -${overlayInstances[ overlayId ].dotTextHeight + 2}px;  height: ${overlayInstances[ overlayId ].dotTextHeight}px;` } ) + div.innerHTML;
+        div.innerHTML = timerIconTemplate( { icon: comp.action.timerIcon, iconStyle: `"style="position: absolute; margin-left: -1.7em;  height: 1.5em;` } ) + div.innerHTML;
     }
 
     comp.dom = div;
@@ -2529,7 +2539,7 @@ function createUngroupedDotTimer( overlayId, contentArea, comp ) {
     div.innerHTML = content;
     
     if ( comp.action.timerIcon != null ) {
-        div.innerHTML = timerIconTemplate( { icon: comp.action.timerIcon, iconStyle: `"style="position: absolute; margin-left: -${overlayInstances[ overlayId ].dotTextHeight + 2}px;  height: ${overlayInstances[ overlayId ].dotTextHeight}px;` } ) + div.innerHTML;
+        div.innerHTML = timerIconTemplate( { icon: comp.action.timerIcon, iconStyle: `"style="position: absolute; margin-left: -1.7em;  height: 1.5em;` } ) + div.innerHTML;
     }
 
     comp.dom = div;
@@ -2574,7 +2584,7 @@ function createUngroupedTimer( overlayId, contentArea, comp ) {
     div.innerHTML = content;
     
     if ( comp.action.timerIcon != null ) {
-        div.innerHTML = timerIconTemplate( { icon: comp.action.timerIcon, iconStyle: `"style="position: absolute; margin-left: -${overlayInstances[ overlayId ].dotTextHeight + 2}px;  height: ${overlayInstances[ overlayId ].dotTextHeight}px;` } ) + div.innerHTML;
+        div.innerHTML = timerIconTemplate( { icon: comp.action.timerIcon, iconStyle: `"style="position: absolute; margin-left: -1.7em;  height: 1.5em;` } ) + div.innerHTML;
     }
 
     comp.dom = div;
@@ -2612,9 +2622,6 @@ function createUngroupedTimer( overlayId, contentArea, comp ) {
  * @param {TimerGroup} group The containing group, if available.
  */
 function applyTimerSettings( overlayId, contentArea, comp, group ) {
-    // Apply the styles required to make the progress bar height match the 
-    // specified number in the overlay settings.
-    comp.dom.querySelector( '.progress' ).style.marginBottom = contentArea.style.lineHeight;
     if ( comp.action.overrideTimerColor ) {
         comp.dom.querySelector( '.determinate' ).style.backgroundColor = comp.action.overrideTimerColor;
         comp.dom.querySelector( '.progress' ).style.backgroundColor = comp.action.timerBackgroundColor;
