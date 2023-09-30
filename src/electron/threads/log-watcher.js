@@ -1,5 +1,5 @@
 // const ipc = require( 'electron' ).ipcMain;
-const { ipcRenderer } = require( 'electron' );
+const { ipcRenderer, ipcMain } = require( 'electron' );
 const fs = require( 'fs' );
 const { Trigger, TriggerAction, ActionTypes, TriggerConditionTypes, OperatorTypes, CharacterClassLevel, TriggerSubAction, TriggerFolder, TriggerCondition, CapturePhrase, Phrase, TriggerParseHistoryModel, getActionLabel, LogTypes, ErrorMessages } = require( '../data/models/trigger' );
 const { QuickShareAuthorListTypes, SimulationProgress } = require( '../data/models/common' );
@@ -703,7 +703,10 @@ function LogWatcher(character, logPosition) {
         charModel = character;
         characterId = character.characterId;
     }
-    saveScalarVariable( "Character", characterName );
+
+    loadCachedStoredVariables( () => {
+        saveScalarVariable( "Character", characterName );
+    } );
 
     ipcRenderer.on( 'log:changed',
         /**
@@ -3205,6 +3208,69 @@ function sendInformationToLog( info, duration ) {
 
 
 /**
+ * Sends the stored variables object to the main thread to cache in memory.
+ */
+function cacheStoredVariables() {
+    ipcRenderer.send( 'cache:store', { key: `storedVariables:${characterId}`, value: storedVariables } );
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Clears the cached stored variables.
+ */
+function clearCachedStoredVariables() {
+    ipcRenderer.send( 'cache:clear', `storedVariables:${characterId}` );
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Loads cached stored variables, or initializes the stored variables object if 
+ * no cache is found.
+ * 
+ * @param {() => void} callback The callback to execute after the stored variables are loaded.
+ */
+function loadCachedStoredVariables( callback ) {
+    let cacheKey = `storedVariables:${characterId}`;
+    ipcRenderer.once( `cache:retrieve:${cacheKey}`, ( event, cachedVariables ) => {
+        if ( cachedVariables ) {
+            storedVariables = cachedVariables;
+        } else {
+            storedVariables = {};
+        }
+
+        if ( callback ) {
+            callback();
+        }
+    } );
+    ipcRenderer.send( 'cache:retrieve', cacheKey );
+}
+
+
+
+
+
+
+
+
+
+
+/**
  * Saves the given value in the store.
  * 
  * @param {string} key The key of the stored variable.
@@ -3227,6 +3293,7 @@ function saveVariable( key, value, restricted ) {
         enableLogging && sendInformationToLog( `Storing value [${value}] into [${key}]`, 12 );
         enableLogging && sendInformationToLog( `Current values are: ${storedVariables[ key ].join( '|' )}` );
 
+        cacheStoredVariables();
     }
 
 }
@@ -3275,6 +3342,8 @@ function saveScalarVariable( key, value ) {
 
     enableLogging && sendInformationToLog( `Storing scalar value [${value}] into [${key}]`, 12 );
     enableLogging && sendInformationToLog( `Current values are: ${storedVariables[ key ].join( '|' )}` );
+
+    cacheStoredVariables();
 }
 
 
@@ -3411,6 +3480,8 @@ function clearStoredVariable( key, value ) {
         }
     }
 
+    clearCachedStoredVariables();
+
 }
 
 
@@ -3429,6 +3500,7 @@ function clearStoredVariable( key, value ) {
  */
 function clearAllStoredValuesInVariable( key ) {
     storedVariables[ key ] = [];
+    cacheStoredVariables();
 }
 
 
