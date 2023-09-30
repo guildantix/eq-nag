@@ -13,7 +13,8 @@ import { ConsoleListComponent } from './console-list.component';
 export class DebugConsoleComponent implements OnInit {
 
     public show: boolean = false;
-    public showInput: boolean = false;
+    public showInput: boolean = true;
+    public consoleCommand: string | undefined = undefined;
     public showTriggerHistory: boolean = false;
     public characterId: string = null;
     // public parseType: 'successful' | 'failed' = 'successful';
@@ -61,6 +62,25 @@ export class DebugConsoleComponent implements OnInit {
             this.characterOptions = _.orderBy( options.map( x => ( { id: x.characterId, name: x.name, server: x.server } ) ), [ 'server', 'name' ] );
         } );
 
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Sends the entered console command to the server.
+     */
+    sendConsoleCommand(): void {
+        if ( this.consoleCommand ) {
+            this.ipcService.sendConsoleCommand( this.consoleCommand );
+            this.consoleCommand = undefined;
+        }
     }
 
 
@@ -143,9 +163,11 @@ export class DebugConsoleComponent implements OnInit {
      * Scrolls to the bottom of the console when the list is updated.
      */
     public onListUpdated(): void {
-        if ( !this.scrolling ) {
-            this.container.nativeElement.scrollTop = this.container.nativeElement.scrollHeight;
-        }
+        window.setTimeout( () => {
+            if ( !this.scrolling ) {
+                this.container.nativeElement.scrollTop = this.container.nativeElement.scrollHeight;
+            }
+        } );
     }
 
 

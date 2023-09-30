@@ -1434,10 +1434,20 @@ export class SharedTriggerPermissions {
 
 }
 
-export class TriggerParseHistoryModel {
+export class ConsoleMessageModel {
+
+    public timestamp: Date;
+    public label: string;
+    public message: string;
+    public logType: LogTypes = LogTypes.info;
+    public logId: string;
+    public payload: any;
+
+}
+
+export class TriggerParseHistoryModel extends ConsoleMessageModel {
 
     public parseId: string;
-    public timestamp: Date;
     public triggerId: string;
     public triggerName: string;
     public actionId: string;
@@ -1455,7 +1465,6 @@ export class TriggerParseHistoryModel {
     public characterId: string;
     public characterName: string;
     public rawLogEntry: string;
-    public logType: LogTypes = LogTypes.info;
     public error: any;
     public errorDescription: string;
     public duplicateCount: number = 0;

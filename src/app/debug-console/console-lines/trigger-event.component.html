@@ -1,0 +1,13 @@
+<p [ngClass]="{'error': item.logType === logTypes.error}">
+    <span class="log-timestamp">[{{item.timestamp | date:'M/d/yyyy, h:mm a'}}]</span>
+    <span class="links">
+        <strong style="width: 15px;" [style.visibility]="item.logType === logTypes.error && item.duplicateCount > 0 ? 'visible' : 'hidden'">{{item.duplicateCount + 1}}</strong>
+        <mat-icon class="color-blue" title="{{getTitle(item)}}" (click)="showTriggerParseHistory(item.triggerId, item.triggerName)">filter_list</mat-icon> <!-- *ngIf="!triggerId" -->
+        <mat-icon class="color-bright-white" title="Edit this trigger" (click)="showEditTriggerDialog(item.triggerId)">open_in_new</mat-icon> <!-- *ngIf="!triggerId" -->
+        <mat-icon class="color-green" title="Show more details" (click)="expanded = !expanded">{{!expanded ? 'expand_more' : 'expand_less'}}</mat-icon>
+    </span>
+    <span class="log-text">{{getLogText(item)}}</span>
+</p>
+<p class="log-details" *ngIf="expanded">
+    <span class="log-details-line" [innerHTML]="renderParseToHtml(item)"></span>
+</p>

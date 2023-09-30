@@ -3,12 +3,17 @@ import * as Electron from 'electron';
 import { UpdateInfo } from 'electron-updater';
 import { Observable, Observer } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
-import { DataTickModel, DkpEntryModel, TriggerModel, OverlayWindowModel, ActionTypes, FocusEffectSettings, CharacterModel, BasicError, TriggerFolder, FileModel, Tag, AuthorModel, PackageFileModel, TriggerPackageMetaModel, TriggerPackageVersion, FctStylesModel, OverlayBoundsChangedEventArgs, DialogEventArgs, QuickShareMetaModel, LogFileLocation, IpcMessage, DeathRecapPreferences, QuickShareAuthorListTypes, Progress, QuitFailureData, DuplicateTriggerAction, ScrapedSpell, ScrapedClickEffect, TriggerParseHistoryModel, SimulationProgress, FctCombatGroup, CombatTypes, StylePropertiesModel, CombatAnimations, TriggersProfileModel } from './core.model';
+import { DataTickModel, DkpEntryModel, TriggerModel, OverlayWindowModel, ActionTypes, FocusEffectSettings, CharacterModel, BasicError, TriggerFolder, FileModel, Tag, AuthorModel, PackageFileModel, TriggerPackageMetaModel, TriggerPackageVersion, FctStylesModel, OverlayBoundsChangedEventArgs, DialogEventArgs, QuickShareMetaModel, LogFileLocation, IpcMessage, DeathRecapPreferences, QuickShareAuthorListTypes, Progress, QuitFailureData, DuplicateTriggerAction, ScrapedSpell, ScrapedClickEffect, TriggerParseHistoryModel, SimulationProgress, FctCombatGroup, CombatTypes, StylePropertiesModel, CombatAnimations, TriggersProfileModel, ConsoleMessageModel, LogTypes } from './core.model';
 import { GinaConfiguration, GinaTriggerGroups } from './gina.model';
 import { ColorUtility } from './utilities';
+import { nagId } from './core/nag-id.util';
 
 @Injectable( { providedIn: 'root' })
 export class IpcService {
+
+    private _successfulParses: TriggerParseHistoryModel[] = [];
+    private _failedParses: TriggerParseHistoryModel[] = [];
+    private _consoleMessages: ConsoleMessageModel[] = [];
     
     private _tickObservers: Observer<DataTickModel>[] = [];
     private _transmitObservers: Observer<DkpEntryModel[]>[] = [];
@@ -29,6 +34,8 @@ export class IpcService {
     private _onBackupProgress: Observer<Progress>[] = [];
     private _simProgress: Record<string, Observer<SimulationProgress>[]> = {};
     private _successfulParseHistoryObservers: Observer<{ successful: TriggerParseHistoryModel[], exceptions: TriggerParseHistoryModel[] }>[] = [];
+    private _consoleSuccessObservers: Observer<ConsoleMessageModel>[] = [];
+    private _consoleErrorObservers: Observer<ConsoleMessageModel>[] = [];
     private _onCombatGroupMigrationRequestObservers: Observer<boolean>[] = [];
     private _settingsObservableCache: Record<string, Observable<any>> = {};
     private _settingsCacheObservers: Record<string, Observer<any>[]> = {};
@@ -192,11 +199,15 @@ export class IpcService {
                         data.successful = data.successful.map( x => {
                             let m = Object.assign( new TriggerParseHistoryModel(), x );
                             m.timestamp = new Date( x.timestamp );
+                            m.logId = nagId();
+                            // this._successfulParses.push( m );
                             return m;
                         } );
                         data.exceptions = data.exceptions.map( x => {
                             let m = Object.assign( new TriggerParseHistoryModel(), x );
                             m.timestamp = new Date( x.timestamp );
+                            m.logId = nagId();
+                            // this._failedParses.push( m );
                             return m;
                         } );
 
@@ -204,6 +215,41 @@ export class IpcService {
                             f.next( data );
                         } );
                     } );
+                } );
+
+                window.api.ipc.on( 'console:success', ( event: any, data: ConsoleMessageModel ) => {
+                    ngZone.run( () => {
+                        this._consoleSuccessObservers?.forEach( f => {
+                            let m = Object.assign( new ConsoleMessageModel(), data );
+                            m.logType = LogTypes.success;
+                            m.logId = nagId();
+                            f.next( m );
+                        } );
+                    } );
+                } );
+
+                window.api.ipc.on( 'console:error', ( event: any, data: ConsoleMessageModel ) => {
+                    ngZone.run( () => {
+                        this._consoleErrorObservers?.forEach( f => {
+                            let m = Object.assign( new ConsoleMessageModel(), data );
+                            m.logType = LogTypes.error;
+                            m.logId = nagId();
+                            f.next( m );
+                        } );
+                    } );
+                } );
+
+                this.onConsoleSuccess().subscribe( log => {
+                    this._consoleMessages.push( log );
+                } );
+
+                this.onConsoleError().subscribe( log => {
+                    this._consoleMessages.push( log );
+                } );
+
+                this.onBatchParseHistory().subscribe( history => {
+                    this._successfulParses.push( ...history.successful );
+                    this._failedParses.push( ...history.exceptions );
                 } );
 
 
@@ -234,6 +280,22 @@ export class IpcService {
     public onBatchParseHistory(): Observable<{ successful: TriggerParseHistoryModel[], exceptions: TriggerParseHistoryModel[] }> {
         let obs: Observable<{ successful: TriggerParseHistoryModel[], exceptions: TriggerParseHistoryModel[] }> = new Observable<{ successful: TriggerParseHistoryModel[], exceptions: TriggerParseHistoryModel[] }>( ( observer: Observer<{ successful: TriggerParseHistoryModel[], exceptions: TriggerParseHistoryModel[] }> ) => {
             this._successfulParseHistoryObservers.push( observer );
+        } );
+
+        return obs;
+    }
+
+    public onConsoleSuccess(): Observable<ConsoleMessageModel> {
+        let obs: Observable<ConsoleMessageModel> = new Observable<ConsoleMessageModel>( ( observer: Observer<ConsoleMessageModel> ) => {
+            this._consoleSuccessObservers.push( observer );
+        } );
+
+        return obs;
+    }
+
+    public onConsoleError(): Observable<ConsoleMessageModel> {
+        let obs: Observable<ConsoleMessageModel> = new Observable<ConsoleMessageModel>( ( observer: Observer<ConsoleMessageModel> ) => {
+            this._consoleErrorObservers.push( observer );
         } );
 
         return obs;
@@ -499,6 +561,10 @@ export class IpcService {
 
     public clearTriggerHistory(): void {
         window.api.ipc.send( 'trigger:clear:history:all' );
+    }
+
+    public sendConsoleCommand( command: string ): void {
+        window.api.ipc.send( 'console:command', command );
     }
 
     /**
@@ -2176,6 +2242,23 @@ export class IpcService {
             } );
             window.api.ipc.send( 'trigger:get:history:all', null );
 
+        } );
+
+        return obs;
+    }
+
+    public getConsoleData(): Observable<{ successful: TriggerParseHistoryModel[], failed: TriggerParseHistoryModel[], consoleMessages: ConsoleMessageModel[] }> {
+        let obs: Observable<{ successful: TriggerParseHistoryModel[], failed: TriggerParseHistoryModel[], consoleMessages: ConsoleMessageModel[] }> = new Observable<{ successful: TriggerParseHistoryModel[], failed: TriggerParseHistoryModel[], consoleMessages: ConsoleMessageModel[] }>( ( observer: Observer<{ successful: TriggerParseHistoryModel[], failed: TriggerParseHistoryModel[], consoleMessages: ConsoleMessageModel[] }> ) => {
+            let data: { successful: TriggerParseHistoryModel[], failed: TriggerParseHistoryModel[], consoleMessages: ConsoleMessageModel[] } = {
+                successful: [],
+                failed: [],
+                consoleMessages: [],
+            };
+            data.successful = this._successfulParses.slice();
+            data.failed = this._failedParses.slice();
+            data.consoleMessages = this._consoleMessages.slice();
+            observer.next( data );
+            observer.complete();
         } );
 
         return obs;

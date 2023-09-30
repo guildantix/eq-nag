@@ -536,6 +536,38 @@ ipcMain.on( 'main:archive:progress',
     }
 );
 
+ipcMain.on( 'console:command',
+    /**
+     * Executes the given console command.
+     * 
+     * @param {Electron.IpcMainEvent} event The event args.
+     * @param {string | undefined} command The command to execute.
+     */
+    async ( event, command ) => {
+        let commands = command?.split( ' ' ) ?? [];
+        if ( commands.length > 0 ) {
+            if ( commands[ 0 ] === 'log' ) {
+                if ( commands.length > 1 ) {
+                    if ( commands[ 1 ] === 'backup' ) {
+                        try {
+                            await logBootstrap.backupLogFiles( userPreferences.logMaintenanceRules, userPreferences.logMaintenanceHistory?.length ?? 0 );
+                            event.sender.send( 'console:success', { label: 'Backup Event', message: 'Log backup completed successfully.', timestamp: new Date() } );
+                        } catch ( error ) {
+                            log.error( error );
+                            event.sender.send( 'console:error', { label: 'Backup Event', message: 'Log backup failed.', timestamp: new Date(), payload: error } );
+                        }
+                    }
+                }
+            } else if ( commands[ 0 ] === 'ping' ) {
+                if ( commands.length === 1 ) {
+                    event.sender.send( 'console:success', { label: 'Ping', message: 'Ping received.', timestamp: new Date() } );
+                } else {
+                    event.sender.send( 'console:success', { label: 'Text Ping', message: `Ping received: ${commands.slice( 1 ).join( ' ' )}`, timestamp: new Date() } );
+                }
+            }
+        }
+    } );
+
 var mainWindowRef = new ForwardRef( () => mainWindow ? mainWindow : null );
 var logBootstrapRef = new ForwardRef( () => logBootstrap ? logBootstrap : null );
 

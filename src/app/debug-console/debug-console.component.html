@@ -34,7 +34,7 @@
     </div>
 
     <div class="console-input-area" *ngIf="showInput">
-        <span>></span><input type="text" />
+        <span>></span><input type="text" [(ngModel)]="consoleCommand" name="consoleCommand" (keyup.enter)="sendConsoleCommand()" />
     </div>
     
 </div>
