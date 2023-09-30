@@ -76,7 +76,9 @@ export class LogSimulatorComponent implements OnInit {
 
     public showPasteDialog(): void {
         this.dialogService.showInputDialog( 'Paste Log Entries', [ 'Enter the lines of the log file that you want to simulate.' ], 'Log lines', null, this.rawData, true ).subscribe( data => {
-            if ( data === null ) return;
+            if ( data === null || data === undefined ) {
+                return;
+            }
             this.rawData = data;
             let lines = data.split( /\r\n|\r|\n/gi );
             for ( let i = 0; i < lines.length; i++ ) {
