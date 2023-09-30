@@ -42,6 +42,7 @@ const channelPrefixes = [
     'archive',
     'scraper',
     'simulation',
+    'cache',
 ];
 
 const styleSheetUtil = new StyleSheetUtil();

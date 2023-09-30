@@ -536,6 +536,7 @@ ipcMain.on( 'main:archive:progress',
     }
 );
 
+// TODO: Update the github pages with a list of available console commands.
 ipcMain.on( 'console:command',
     /**
      * Executes the given console command.
@@ -566,6 +567,40 @@ ipcMain.on( 'console:command',
                 }
             }
         }
+    } );
+
+var memoryCache = {};
+ipcMain.on( 'cache:store',
+    /**
+     * Caches the given value with the given key.
+     * 
+     * @param {Electron.IpcMainEvent} event The event args.
+     * @param {{key: string, value: any}} data 
+     */
+    ( event, data ) => {
+        memoryCache[ data.key ] = data.value;
+    } );
+
+ipcMain.on( 'cache:retrieve',
+    /**
+     * Retrieves the cached item with the given key.
+     * 
+     * @param {Electron.IpcMainEvent} event The event args.
+     * @param {string} key The cache key.
+     */
+    ( event, key ) => {
+        event.sender.send( `cache:retrieve:${key}`, memoryCache[ key ] );
+    } );
+
+ipcMain.on( 'cache:clear',
+    /**
+     * Clears the cached item with the given key.
+     * 
+     * @param {Electron.IpcMainEvent} event The event args.
+     * @param {string} key The cache key.
+     */
+    ( event, key ) => {
+        delete memoryCache[ key ];
     } );
 
 var mainWindowRef = new ForwardRef( () => mainWindow ? mainWindow : null );
