@@ -339,17 +339,27 @@
 
         .grouped-mobs {
             display: flex;
-            flex-wrap: wrap;
+            flex-flow: row wrap;
             align-content: flex-start;
         }
 
+        .grouped-mobs.reverse {
+            flex-flow: row wrap !important;
+            align-content: flex-end;
+        }
+
         .mob-dot-group {
-            display: inline-block;
+            display: flex;
+            flex-flow: column nowrap;
             width: 200px;
         }
 
+            .grouped-mobs.reverse .mob-dot-group {
+                flex-flow: column-reverse nowrap;
+            }
+
         .mob-dot-group:nth-child(n+0) {
-            margin-left: 25px;;
+            margin-left: 25px;
         }
 
             .mob-dot-group > div {
