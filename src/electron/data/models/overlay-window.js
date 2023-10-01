@@ -110,6 +110,9 @@ class OverlayWindow {
     /** @type {boolean} */
     hideTargetLabel = false;
 
+    /** @type {boolean} */
+    reverse = false;
+
 }
 
 class OverlayComponent {

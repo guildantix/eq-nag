@@ -531,6 +531,8 @@ export class OverlayWindowModel {
     public showTimeRemaining: boolean = false;
     public hideTargetLabel: boolean = false;
 
+    public reverse: boolean = false;
+
     public isValid (): boolean {
         return name != null && this.overlayType != null;
     }
