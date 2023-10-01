@@ -188,6 +188,12 @@
                         </div>
 
                         <div class="f-row">
+                            <div class="f-sm-4 al-left"><mat-checkbox [(ngModel)]="model.reverse" name="reverse" (change)="broadcastModel()">Reverse timer flow, starting from the bottom and adding more above.</mat-checkbox></div>
+                            <div class="f-sm-4 al-center"></div>
+                            <div class="f-sm-4 al-center"></div>
+                        </div>
+
+                        <div class="f-row">
                             <div class="f-sm-4 al-left"><mat-checkbox [(ngModel)]="model.groupByTarget" name="groupByTarget" (change)="broadcastModel()">Group DoTs by target</mat-checkbox></div>
                             <div class="f-sm-4 al-center"></div>
                             <div class="f-sm-4 al-center"></div>
