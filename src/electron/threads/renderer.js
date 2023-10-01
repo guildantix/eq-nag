@@ -994,6 +994,12 @@ function updateOverlay( overlayId, model ) {
             contentArea.classList.remove( 'grouped-mobs' );
             overlayInstances[ overlayId ].groupByTarget = false;
         }
+
+        if ( model.reverse ) {
+            contentArea.classList.add( 'reverse' );
+        } else {
+            contentArea.classList.remove( 'reverse' );
+        }
     
         overlayInstances[ overlayId ].groupHeaderSize = model.groupHeaderSize > 0 ? model.groupHeaderSize : 12;
         overlayInstances[ overlayId ].groupHeaderColor = !StringUtilities.isNullOrWhitespace( model.groupHeaderColor ) ? model.groupHeaderColor : '#ffffff';
