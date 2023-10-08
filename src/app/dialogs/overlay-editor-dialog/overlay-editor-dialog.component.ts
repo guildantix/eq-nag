@@ -54,6 +54,7 @@ export class OverlayEditorDialogComponent implements OnInit {
     public textGlowIntensity: number = 100;
     public textGlowColor: string = '#000000';
     public enterDescription: boolean;
+    public showColoredBackground: boolean = false;
     
     public get maxFontWeightIndex(): number {
         if ( this.model?.fontFamily != null ) {
@@ -61,6 +62,62 @@ export class OverlayEditorDialogComponent implements OnInit {
         } else {
             return 1;
         }
+    }
+
+    public get fontWeight(): string {
+        if ( this.fontWeightIndex >= 0 ) {
+            return `${availableFonts[ this.model.fontFamily ][ this.fontWeightIndex ]}`;
+        } else {
+            return null;
+        }
+    }
+
+    public get textShadow(): string {
+        let shdw = null;
+        if ( this.model.showTextBorder && this.textBorderColor ) {
+            let textBorderColor = ColorUtility.FromHex( this.textBorderColor ).toHexString( this.model.textBorderIntensity );
+            shdw = shdw ? shdw : '';
+            shdw += `0px 0px 1px ${textBorderColor}, -1px -1px 0 ${textBorderColor}, 1px -1px 0 ${textBorderColor}, -1px 1px 0 ${textBorderColor}, 1px 1px 0 ${textBorderColor}`;
+        }
+
+        if ( this.model.showTextGlow && this.textGlowColor && this.textGlowIntensity ) {
+            let textGlowColor = ColorUtility.FromHex( this.textGlowColor ).toHexString( this.model.textGlowIntensity );
+            shdw = shdw ? shdw + ',' : '';
+            shdw += `0px 0px ${this.model.textGlowSize}px ${textGlowColor}, -1px -1px ${this.model.textGlowSize}px ${textGlowColor}, 1px -1px ${this.model.textGlowSize}px ${textGlowColor}, -1px 1px ${this.model.textGlowSize}px ${textGlowColor}, 1px 1px ${this.model.textGlowSize}px ${textGlowColor}`;
+        }
+        
+        return shdw;
+    }
+
+    public get backgroundColor(): string {
+        if ( this.model.backgroundTransparency > 0 && this.model.backgroundColor ) {
+            let backgroundColor = ColorUtility.FromHex( this.model.backgroundColor ).toHexString( this.model.backgroundTransparency );
+            return backgroundColor;
+        } else {
+            return null;
+        }
+    }
+
+    public get border(): string {
+        if ( this.model.borderTransparency > 0 && this.model.borderColor ) {
+            let borderColor = ColorUtility.FromHex( this.model.borderColor ).toHexString( this.model.borderTransparency );
+            return `3px solid ${borderColor}`;
+        } else {
+            return null;
+        }
+    }
+
+    public get lineHeight(): string {
+        return `${( this.model.lineHeight > 10 ? this.model.lineHeight : 90 ) / 100}em`;
+    }
+
+    public get previewFontColor(): string {
+        if ( this.fontTransparency > 0 ) {
+            return ColorUtility.FromHex( this.model.fontColor ).toHexString( this.fontTransparency / 100 );
+        } else {
+            return this.model.fontColor;
+        }
+        
     }
 
     @HostListener( 'window:beforeunload' ) doSomething() {
@@ -115,6 +172,18 @@ export class OverlayEditorDialogComponent implements OnInit {
         
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Sets the font family and broadcasts the model.
+     */
     public onChangeFontFamily(): void {
         let fi: number = availableFonts[ this.model.fontFamily ].indexOf( this.model.fontWeight );
         this.fontWeightIndex = -1;
@@ -147,36 +216,120 @@ export class OverlayEditorDialogComponent implements OnInit {
         this.broadcastModel();
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Sets the font border intensity and broadcasts the model.
+     */
     public onChangeTextBorderIntensity(): void {
         this.model.textBorderIntensity = this.textBorderIntensity / 100;
         this.broadcastModel();
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Sets the text glow intensity and broadcasts the model.
+     */
     public onChangeTextGlowIntensity(): void {
         this.model.textGlowIntensity = this.textGlowIntensity / 100;
         this.broadcastModel();
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Sets the font transparency and broadcasts the model.
+     */
     public onChangeFontTransparency(): void {
         this.model.fontTransparency = this.fontTransparency / 100;
         this.broadcastModel();
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Sets the background transparency and broadcasts the model.
+     */
     public onChangeBackgroundTransparency(): void {
         this.model.backgroundTransparency = this.backgroundTransparency / 100;
         this.broadcastModel();
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Sets the border transparency and broadcasts the model.
+     */
     public onChangeBorderTransparency(): void {
         this.model.borderTransparency = this.borderTransparency / 100;
         this.broadcastModel();
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Sets the font color and broadcasts the model.
+     */
     public onChangeFontColor(): void {
         this.model.fontColor = this.fontColor.toHex();
         this.broadcastModel();
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Broadcasts the model to the overlay.
+     */
     public broadcastModel(): void {
         this.model.fontWeight = availableFonts[ this.model.fontFamily ][ this.fontWeightIndex ];
         this.model.groupHeaderWeight = availableFonts[ this.model.fontFamily ][ this.dotGroupHeaderWeightIndex ];
@@ -185,19 +338,70 @@ export class OverlayEditorDialogComponent implements OnInit {
         this.ipcService.broadcastOverlayModel( this.model );
     }
     
+
+
+
+
+
+
+
+
+    
+    /**
+     * Broadcasts the model to the overlay.
+     * 
+     * @param style The style that changed.
+     */
     public styleChange( style: StylePropertiesModel ) {
+        // TODO: Wat?
         this.broadcastModel();
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Cancels the overlay editor, reverting any changes made.
+     */
     public cancel(): void {
         this.ipcService.updateOverlayWindow( this._noChangesModel ).subscribe( success => { } );
         this.closeModal();
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Closes the modal.
+     */
     public closeModal(): void {
         this.ipcService.closeThisChild();
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Saves the overlay.
+     */
     public save(): void {
         if ( this.overlayId == null ) {
             this.closeModal();
@@ -210,6 +414,18 @@ export class OverlayEditorDialogComponent implements OnInit {
         }
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Sends the overlay to the origin of the user selected display.
+     */
     sendToOrigin() {
         this.dialog.open<MonitorSelectDialogComponent, any, number|null>( MonitorSelectDialogComponent, {
             width: '750px',
@@ -226,6 +442,18 @@ export class OverlayEditorDialogComponent implements OnInit {
         } );
     }
     
+
+
+
+
+
+
+
+
+    
+    /**
+     * Sends a test display text to the overlay.
+     */
     public sendDisplayTextTest(): void {
         if ( this.model.overlayType === 'Timer' ) {
             let timers: any[] = [
@@ -280,7 +508,7 @@ export class OverlayEditorDialogComponent implements OnInit {
                     overlayId: this.overlayId,
                     action: {
                         actionType: ActionTypes.DisplayText,
-                        duration: Math.floor(Math.random() * 5) + 1,
+                        duration: Math.floor(Math.random() * 5) + 10,
                         displayText: phrase,
                     }
                 }
@@ -288,4 +516,14 @@ export class OverlayEditorDialogComponent implements OnInit {
             } );
         }
     }
+
+
+
+
+
+
+
+
+
+
 }

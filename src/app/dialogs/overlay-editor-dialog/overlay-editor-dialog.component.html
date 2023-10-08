@@ -11,7 +11,22 @@
     <section>
         <mat-tab-group animationDuration="0ms" [selectedIndex]="0">
             <mat-tab label="General">
-                <div class="tab-content">
+                <div class="tab-content" [ngClass]="{'with-preview': model.overlayType === 'Alert'}">
+
+                    <game-preview class="game-preview" *ngIf="model.overlayType === 'Alert'">
+                        <div class="text-preview" 
+                            [style.color]="previewFontColor"
+                            [style.font-family]="model.fontFamily"
+                            [style.font-weight]="fontWeight"
+                            [style.line-height]="lineHeight"
+                            [style.text-shadow]="textShadow"
+                            [style.font-size]="model.fontSize + 'px'"
+                            [style.border]="border"
+                            [style.background]="backgroundColor">
+                            The quick brown fox {{model.fontSize}} jumped over the lazy dog.<br/>
+                            The quick brown fox {{model.fontSize}} jumped over the lazy dog.<br/>
+                            The quick brown fox {{model.fontSize}} jumped over the lazy dog.</div>
+                    </game-preview>
 
                     <fieldset class="margin-t-25">
                         <legend><span class="title">Properties</span><small>Description and styles for this overlay window.</small></legend>
