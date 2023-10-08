@@ -126,7 +126,7 @@ app-style-properties {
     width: calc(100% + 50px);
 }
 
-.fct-style-editor {
+.fct-game-preview {
     width: 100%;
     max-width: 1070px;
     height: 220px;
@@ -138,20 +138,7 @@ app-style-properties {
     text-overflow: clip;
     overflow: hidden;
     box-shadow: 0 0 9px 4px #10101094;
-    /* box-shadow: 0 0 4px 2px #000000, inset 0 0 4px 2px #181818; */
-    /* border: 1px solid #181818; */
-    /* box-shadow: inset 0 0 4px 2px #181818; */
-
-    // Variables
-    --text-shadow:  0px 0px 1px #000000ff, -1px -1px 1px #000000ff, 1px -1px 1px #000000ff, -1px 1px 1px #000000ff, 1px 1px 1px #000000ff,
-                    0px 0px 5px #000000d9, -1px -1px 5px #000000d9, 1px -1px 5px #000000d9, -1px 1px 5px #000000d9, 1px 1px 5px #000000d9;
-    
-    &.dark {
-        background-image: url('/assets/images/fct_background_dark.png');
-    }
-    &.light {
-        background-image: url('/assets/images/fct_background_light.png');
-    }
+    display: block;
 
     button {
         &.play-button {
@@ -164,29 +151,6 @@ app-style-properties {
             }
             &:active {
                 opacity: 1;
-            }
-        }
-    }
-
-    .fct-background-options {
-        display: absolute;
-        top: 0;
-        left: 0;
-
-        > span {
-            text-shadow: var(--text-shadow);
-            cursor: pointer;
-            margin: 5px;
-            font-size: 12px;
-            opacity: 0.667;
-
-            &:hover {
-                color: #c269f0;
-            }
-
-            &:active {
-                color: #b13cec;
-                // opacity: 0.50;
             }
         }
     }
@@ -225,13 +189,11 @@ app-style-properties {
         }
 
         .fct-dmg-src {
-            // text-shadow: var(--text-shadow);
             cursor: pointer;
             display: inline-block;
         }
     
         .fct-text {
-            // text-shadow: var(--text-shadow);
             cursor: pointer;
             display: inline-block;
         }

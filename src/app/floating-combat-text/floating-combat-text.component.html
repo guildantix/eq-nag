@@ -66,12 +66,8 @@
     
                         <mat-tab label="Styles">
                             <div class="card-tab-content">
-    
-                                <div class="fct-style-editor" [ngClass]="{'light': group.displayBackground === 'light', 'dark': group.displayBackground === 'dark'}">
-                                    <div class="fct-background-options">
-                                        <span (click)="group.displayBackground = 'light'">Light</span>
-                                        <span (click)="group.displayBackground = 'dark'">Dark</span>
-                                    </div>
+
+                                <game-preview class="fct-game-preview" [(color)]="group.displayBackground">
                                     <div class="fct-container fct-inline" [ngClass]="getGroupPositionNgClass(group.startingPosition)">
                                         <div class="fct-values" #fctGroupA>
                                             <div class="fct-sub-animation">
@@ -92,7 +88,7 @@
                                     </div>
                                     <mat-progress-bar [ngClass]="{'hidden': group._animationIntervalId == undefined, 'visible': group._animationIntervalId > 0}" mode="determinate" [value]="group._animationCompletePercent" style="position: absolute; bottom: 0px;"></mat-progress-bar>
                                     <button mat-icon-button class="play-button" (click)="applyGroupAnimations(group, fctGroupA, fctGroupB)"><mat-icon>play_circle_outline</mat-icon></button>
-                                </div>
+                                </game-preview>
     
                                 <div class="style-header">
                                     <span (click)="group.editStylesType = 'value'" [ngClass]="{'inactive': group.editStylesType !== 'value', 'active': group.editStylesType === 'value'}">Value</span>
