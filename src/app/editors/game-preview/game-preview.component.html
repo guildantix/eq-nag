@@ -1,0 +1,9 @@
+<div class="game-preview-container-container">
+    <div class="game-preview-container" [ngClass]="{'light': background === 'light', 'dark': background === 'dark'}">
+        <div class="preview-background-options">
+            <span (click)="background = 'light'">Light</span>
+            <span (click)="background = 'dark'">Dark</span>
+        </div>
+        <ng-content></ng-content>
+    </div>
+</div>
