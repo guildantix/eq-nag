@@ -3,7 +3,13 @@
     <mat-expansion-panel hideToggle *ngFor="let character of characters; let i = index" [expanded]="selectedTabIndex === i" (afterExpand)="onCharacterSelected(character, i)">
       <mat-expansion-panel-header>
         <mat-panel-title>{{character.name}}<small>{{character.class | className}}</small></mat-panel-title>
-        <mat-panel-description><ng-template [ngIf]="character.p99">P1999&nbsp;</ng-template>{{character.server}}<mat-icon *ngIf="activeLogFilesDictionary[character.characterId] === true" color="accent">cast_connected</mat-icon><mat-icon *ngIf="activeLogFilesDictionary[character.characterId] !== true">cast</mat-icon></mat-panel-description>
+        <mat-panel-description>
+            <ng-template [ngIf]="character.p99">P1999&nbsp;</ng-template>
+            <ng-template [ngIf]="character.takp">TAKP&nbsp;</ng-template>
+            {{character.server}}
+            <mat-icon *ngIf="activeLogFilesDictionary[character.characterId] === true" color="accent">cast_connected</mat-icon>
+            <mat-icon *ngIf="activeLogFilesDictionary[character.characterId] !== true">cast</mat-icon>
+        </mat-panel-description>
       </mat-expansion-panel-header>
 
       <mat-tab-group animationDuration="0ms" [selectedIndex]="0">

@@ -2,14 +2,14 @@
 
 <mat-dialog-content>
 
-    <p class="loading" *ngIf="eqFolder === undefined"><mat-spinner></mat-spinner><span>Searching for EverQuest folder.</span></p>
+    <p class="loading" *ngIf="panel === 'missingInstallFolder'"><mat-spinner></mat-spinner><span>Searching for EverQuest folder.</span></p>
     <p *ngIf="eqFolder === null">
         <span>Could not locate your EverQuest folder.  Please select your character's log file.</span>
         <br />
         <button mat-button color="accent" (click)="showFileSelector()">Select Log File</button>
 
     </p>
-    <ng-template [ngIf]="eqFolder !== null && eqFolder !== undefined && model == null">
+    <ng-template [ngIf]="panel === 'selectCharacter'">
         
         <p>Please select the server of the character you are adding.</p>
 
@@ -35,7 +35,7 @@
         <button mat-button color="accent" (click)="showFileSelector()">Select Log File</button>
 
     </ng-template>
-    <ng-template [ngIf]="model != null">
+    <ng-template [ngIf]="panel === 'modelReview'">
 
         <p></p>
 
@@ -44,12 +44,45 @@
             
             <div class="field-list">
                 <div class="field-line"><label>Character Name</label><span>{{model.name}}</span></div>
-                <div class="field-line"><label>Service</label><span *ngIf="model.p99">P1999</span><span *ngIf="model.daybreak">Daybreak</span></div>
+                <div class="field-line"><label>Service</label><span *ngIf="model.p99">P1999</span><span *ngIf="model.daybreak">Daybreak</span><span *ngIf="model.takp">TAKP</span></div>
                 <div class="field-line"><label>Server</label><span style="text-transform: capitalize;">{{model.server}}</span></div>
                 <div class="field-line"><label>Log file</label><span>{{model.logFile}}</span></div>
             </div>
 
         </fieldset>
+
+    </ng-template>
+    <ng-template [ngIf]="panel === 'manualInput'">
+
+        <p>Unrecognized log file definition.  Please enter your character details below.</p>
+
+        <p>
+            <mat-form-field style="width: 50%;">
+                <mat-label></mat-label>
+                <input matInput [(ngModel)]="model.name" name="manualName" />
+                <mat-hint>Character Name</mat-hint>
+            </mat-form-field>
+
+            <mat-form-field style="width: 50%;">
+                <mat-label></mat-label>
+                <mat-select [(ngModel)]="selectedService" name="manualService">
+                    <mat-option value="p99">P1999</mat-option>
+                    <mat-option value="daybreak">Daybreak</mat-option>
+                    <mat-option value="takp">TAKP</mat-option>
+                    <mat-option value="other">Other</mat-option>
+                </mat-select>
+                <mat-hint>Service</mat-hint>
+            </mat-form-field>
+
+            <mat-form-field style="width: 50%;">
+                <mat-label></mat-label>
+                <input matInput [(ngModel)]="model.server" name="manualServer" />
+                <mat-hint>Server</mat-hint>
+            </mat-form-field>
+
+        </p>
+        
+        <button mat-button color="accent" (click)="createManualModel()" [disabled]="!model.name || !model.server || !selectedService">Continue</button>
 
     </ng-template>
 
@@ -60,6 +93,6 @@
 
     <button mat-button class="color-orange" (click)="cancelCharacter()" *ngIf="model != null"><mat-icon>chevron_left</mat-icon>&nbsp;Back</button>
     <button mat-button mat-dialog-close class="t-confirm-no" color="warn">Cancel</button>
-    <button mat-button (click)="create()" class="t-confirm-yes" color="accent" [disabled]="model == null">Create</button>
+    <button mat-button (click)="create()" class="t-confirm-yes" color="accent" [disabled]="model == null || panel === 'manualInput'">Create</button>
 
 </mat-dialog-actions>
