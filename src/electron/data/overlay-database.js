@@ -28,6 +28,12 @@ const defaultOtherHitsGroup = require( "./predefined-fct-groups/other-hits.json"
 /** @type {FctCombatGroup} */
 const defaultOtherHealingGroup = require( "./predefined-fct-groups/other-healing.json" );
 
+// TODO: Update the installer to walk the user through creating the FCT overlays and combat groups.
+// TODO: Add overlay importer for FCT overlays.
+// TODO: Add importer for FCT combat groups.
+// TODO: Add exporter for FCT combat groups and overlays.
+// TODO: Create an api endpoint for getting/creating the FCT combat groups and overlays.
+
 const currentOverlayDbVersion = 14;
 
 class OverlayDatabaseStore extends Store {
