@@ -2280,7 +2280,7 @@ function executeTriggerAction( trigger, action, timestamp, res, deltaTime, simul
         let time = timestamp.getTime();
         let _t = timestamp.getTime();
         if ( action.castTime >= 3000 && charModel.hasBeneficialCastingSpeedFocus && !action.skipBenCastingTimeFocus ) {
-            let tMod = calculateCastingMilliseconds( action.castTime, trigger.classLevels, charModel.beneficialCastingSpeedFocusPercent, charModel.beneficialCastingSpeedFocusDecayLevel );
+            let tMod = calculateCastingMilliseconds( action.castTime, trigger.classLevels, charModel.beneficialCastingSpeedFocusPercent, charModel.beneficialCastingSpeedFocusDecayLevel, 50 );
             time -= tMod;
         } else {
             time -= action.castTime;
@@ -3704,8 +3704,9 @@ function calculateAdditionalTicks( duration, triggerClasses, wornExtFocusPercent
  * @param {CharacterClassLevel[]} triggerClasses The base duration.
  * @param {number} extFocusPercent The total percent increase.
  * @param {number} extFocusDecayLevel The level in which the focus begins to fade.
+ * @param {number} maxPercent The maximum percent decrease.
  */
-function calculateCastingMilliseconds( duration, triggerClasses, extFocusPercent, extFocusDecayLevel ) {
+function calculateCastingMilliseconds( duration, triggerClasses, extFocusPercent, extFocusDecayLevel, maxPercent ) {
     
     let percent = extFocusPercent;
     let charClassData = _.find( triggerClasses, ccl => ccl.class === charModel.class );
@@ -3713,6 +3714,10 @@ function calculateCastingMilliseconds( duration, triggerClasses, extFocusPercent
     if ( charClassData != null && charClassData.level > extFocusDecayLevel ) {
         let decayPercent = ( charClassData.level - extFocusDecayLevel ) * 5;
         percent = percent * ( 1 - decayPercent / 100 );
+    }
+
+    if ( percent > maxPercent ) {
+        percent = maxPercent;
     }
 
     let reduction = 1 - percent / 100;
