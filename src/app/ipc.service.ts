@@ -511,6 +511,10 @@ export class IpcService {
         return obs;
     }
 
+    public mainWindowLoaded(): void {
+        window.api.ipc.send( 'app:main-window-loaded', null );
+    }
+
     public quitAndInstallUpdate(): void {
         window.api.ipc.send( 'app:restart', null );
     }

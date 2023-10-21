@@ -30,6 +30,7 @@ export enum SettingsKeys {
     speechVolume = 'speechVolume',
     audioVolume = 'audioVolume',
     baseSpeakingRate = 'baseSpeakingRate',
+    enableGpuAcceleration = 'enableGpuAcceleration',
 
 };
 

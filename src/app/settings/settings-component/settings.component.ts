@@ -57,9 +57,11 @@ export class SettingsComponent implements OnInit {
     public logDays: number[] = [];
     public allowPrerelease: boolean = false;
     public enableCheckWindowPosition: boolean = true;
+    public enableGpuAcceleration: boolean = false;
     public exampleSpeech: string = 'Hello, my name is nag.';
     public baseSpeakingRate: number = 1;
     public utter: SpeechSynthesisUtterance | undefined = undefined;
+    public updatedSettings: string[] = [];
 
     public get timerOverlays(): OverlayWindowModel[] {
         return this.overlays?.filter( m => m.overlayType === 'Timer' );
@@ -148,6 +150,7 @@ export class SettingsComponent implements OnInit {
 
         this.ipcService.getSetting<boolean>( SettingsKeys.allowPrerelease ).subscribe( f => this.allowPrerelease = f );
         this.ipcService.getSetting<boolean>( SettingsKeys.enableCheckWindowPosition ).subscribe( f => this.enableCheckWindowPosition = f );
+        this.ipcService.getSetting<boolean>( SettingsKeys.enableGpuAcceleration ).subscribe( f => this.enableGpuAcceleration = f );
         this.ipcService.getSetting<LogMaintenanceRules>( SettingsKeys.logMaintenanceRules ).subscribe( f => {
 
             this.logMaintenanceRules = f;
@@ -213,6 +216,7 @@ export class SettingsComponent implements OnInit {
      */
     public updateSetting<T>( key: SettingsKeys, value: T, delay: number = null ) {
         this.ipcService.updateSetting( key, value, delay );
+        this.updatedSettings.push( key );
     }
 
 

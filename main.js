@@ -203,12 +203,45 @@ const checkCombatGroups = () => {
 // --========================--
 // --== App Initialization ==--
 // --========================--
+
+if ( process.argv?.length > 1 && process.argv.includes( '--no-gpu' ) ) {
     
-// TODO: Enable a setting that will allow the user to disable graphics, will likely need a switch of some kind.
-// // This is a workaround for a bug in Electron that causes the app to crash on some systems.
-// log.info( '[main:app-initialization] Disabling hardware acceleration.' );
-// app.disableHardwareAcceleration();
-// app.commandLine.appendSwitch( "disable-software-rasterizer" );
+    log.info( '[main:app-initialization] Disabling hardware acceleration.' );
+
+    app.disableHardwareAcceleration();
+    app.commandLine.appendSwitch( "disable-software-rasterizer" );
+
+} else {
+    
+    if ( userPreferences.enableGpuAcceleration === true && !userPreferences.disableGpuAcceleration ) {
+    
+        log.info( '[main:app-initialization] Hardware acceleration is enabled.' );
+        userPreferences.disableGpuAcceleration = true;
+    
+        // When the main window loads and sends back the 'main-window-activated',
+        // we'll turn off the disable gpu. If something goes wrong, this will 
+        // allow the next run of Nag to start without GPU acceleration.
+
+        ipcMain.once( 'app:main-window-loaded', () => {
+            userPreferences.disableGpuAcceleration = false;
+        } );
+    
+    } else {
+
+        if ( userPreferences.disableGpuAcceleration ) {
+            log.info( '[main:app-initialization] Nag did not load correctly last run, disabling hardware acceleration.' );
+            userPreferences.disableGpuAcceleration = false;
+            userPreferences.enableGpuAcceleration = false;
+        }
+    
+        log.info( '[main:app-initialization] Disabling hardware acceleration.' );
+
+        app.disableHardwareAcceleration();
+        app.commandLine.appendSwitch( "disable-software-rasterizer" );
+
+    }
+}
+
 
 const bootstrapApp = () => {
 

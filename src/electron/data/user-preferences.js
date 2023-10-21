@@ -11,6 +11,7 @@ const LogBootstrapper = require( "../log-bootstrap" );
 const { DeathRecapPreferences } = require( '../data/models/death-recap' );
 const { QuickShareAuthorListTypes } = require( '../data/models/common' );
 const { GinaToNagOverlay } = require( "./models/trigger" );
+const log = require( 'electron-log' );
 
 const possibleEqFolders = [
     '\\users\\public\\Everquest',
@@ -83,6 +84,27 @@ class UserPreferencesStore extends Store {
      * }}
      */
     #data;
+
+    /** @type {boolean} If true, then Nag will enable GPU acceleration on load. */
+    get enableGpuAcceleration() {
+        return this.#data.enableGpuAcceleration === true ? true : false;
+    }
+    set enableGpuAcceleration( val ) {
+        log.info( '[UserPreferences:enableGpuAcceleration]', val );
+        this.#data.enableGpuAcceleration = val === true;
+        this.storeDataFile( this.#data );
+    }
+
+    /** @type {boolean} If true, then GPU acceleration has been enabled and the main window has been loaded. */
+    get disableGpuAcceleration() {
+        // If it's not explicitly false, then return true.
+        return this.#data.disableGpuAcceleration === false ? false : true;
+    }
+    set disableGpuAcceleration( val ) {
+        log.info( '[UserPreferences:disableGpuAcceleration]', val );
+        this.#data.disableGpuAcceleration = val === true;
+        this.storeDataFile( this.#data );
+    }
 
     /** @type {boolean} */
     get askForCombatGroupMigrations() {

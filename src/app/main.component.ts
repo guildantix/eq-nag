@@ -270,6 +270,10 @@ export class MainComponent implements OnInit {
             }
         } );
 
+        window.setTimeout( () => {
+            this.ipcService.mainWindowLoaded();
+        }, 60 * 1000 );
+
     }
 
 
