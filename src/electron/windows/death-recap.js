@@ -61,8 +61,20 @@ function getNumberFormat( numeric ) {
     } else if ( numeric >= 1000000 && numeric < 10000000 ) {
         return { value: `${NumberUtilities.round( numeric / 1000000, 1 )}`, magnitude: 'M' };
 
-    } else if ( numeric >= 10000000 ) {
+    } else if ( numeric >= 10000000 && numeric < 1000000000 ) {
         return { value: `${NumberUtilities.round( numeric / 1000000, 0 ).toString().replace( /\B(?=(\d{3})+(?!\d))/g, "," )}`, magnitude: 'M' };
+
+    } else if ( numeric >= 1000000000 && numeric < 1000000000000 ) {
+        return { value: `${NumberUtilities.round( numeric / 1000000000, 1 )}`, magnitude: 'B' };
+
+    } else if ( numeric >= 1000000000000 && numeric < 1000000000000000 ) {
+        return { value: `${NumberUtilities.round( numeric / 1000000000000, 1 )}`, magnitude: 'T' };
+
+    } else if ( numeric >= 1000000000000000 && numeric < 1000000000000000000 ) {
+        return { value: `${NumberUtilities.round( numeric / 1000000000000000, 1 )}`, magnitude: 'q' };
+
+    } else if ( numeric >= 1000000000000000000 ) {
+        return { value: `${NumberUtilities.round( numeric / 1000000000000000000, 0 ).toString().replace( /\B(?=(\d{3})+(?!\d))/g, "," )}`, magnitude: 'Q' };
 
     } else {
         return { value: 'n/a', magnitude: null };
