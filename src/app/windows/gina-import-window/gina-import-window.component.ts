@@ -187,6 +187,17 @@ export class GinaImportWindowComponent implements OnInit {
 
     }
 
+    /**
+     * Reloads the current gina configuration, showing or hiding imported items.
+     * 
+     * @param showImported If true, the tree will show imported items. If false, it will hide imported items.
+     */
+    public onShowImportedChange( showImported: boolean ): void {
+        this.showImported = showImported;
+        this.dataSource.data = [];
+        this.loadGinaConfig( true );
+    }
+
     public loadGinaConfig( refreshCache: boolean = false ): void {
 
         refreshCache = refreshCache === true;
@@ -248,7 +259,7 @@ export class GinaImportWindowComponent implements OnInit {
     }
 
     private trimGroups( data: GinaTreeObject[] ): void {
-        _.remove( data, c => c.imported );
+        _.remove( data, c => c.imported && !this.showImported );
         data?.forEach( group => {
             if ( group.children?.length > 0 ) {
                 this.trimGroups( group.children );

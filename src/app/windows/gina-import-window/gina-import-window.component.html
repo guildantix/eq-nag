@@ -24,7 +24,7 @@
                             <div class="trigger-categories-header">
                                 <span>GINA Components</span>
                                 <span class="spacer"></span>
-                                <button mat-icon-button [title]="(showImported ? 'Hide items have have already been imported.' : 'Show items that have already been imported.')" (click)="showImported = !showImported">
+                                <button mat-icon-button [title]="(showImported ? 'Hide items have have already been imported.' : 'Show items that have already been imported.')" (click)="onShowImportedChange( !showImported )">
                                     <mat-icon [ngClass]="{'material-icons-outlined': !showImported}" [inline]="true">check_circle</mat-icon>
                                 </button>
                             </div>
