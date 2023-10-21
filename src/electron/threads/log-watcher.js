@@ -2280,7 +2280,7 @@ function executeTriggerAction( trigger, action, timestamp, res, deltaTime, simul
         let time = timestamp.getTime();
         let _t = timestamp.getTime();
         if ( action.castTime >= 3000 && charModel.hasBeneficialCastingSpeedFocus && !action.skipBenCastingTimeFocus ) {
-            let tMod = calculateCastingMilliseconds( action.castTime, trigger.classLevels, charModel.beneficialCastingSpeedFocusPercent, charModel.beneficialCastingSpeedFocusDecayLevel, 50 );
+            let tMod = calculateBeneficialCastingMilliseconds( action.castTime, action.duration, trigger.classLevels, charModel, 50 );
             time -= tMod;
         } else {
             time -= action.castTime;
@@ -3700,19 +3700,22 @@ function calculateAdditionalTicks( duration, triggerClasses, wornExtFocusPercent
 /**
  * Calculates the number of additional ticks from focus effects.
  * 
- * @param {number} duration The base duration, in milliseconds.
+ * @param {number} castTime The cast time, in milliseconds.
+ * @param {number} timerDuration The timer duration, in milliseconds.
  * @param {CharacterClassLevel[]} triggerClasses The base duration.
- * @param {number} extFocusPercent The total percent increase.
- * @param {number} extFocusDecayLevel The level in which the focus begins to fade.
+ * @param {CharacterModel} characterModel The character model.
  * @param {number} maxPercent The maximum percent decrease.
  */
-function calculateCastingMilliseconds( duration, triggerClasses, extFocusPercent, extFocusDecayLevel, maxPercent ) {
+function calculateBeneficialCastingMilliseconds( castTime, timerDuration, triggerClasses, characterModel, maxPercent ) {
     
-    let percent = extFocusPercent;
+    let wornFocus = characterModel.beneficialCastingSpeedFocusPercent ?? 0;
+    let aaFocus = characterModel.beneficialCastingSpeedFocusAaPercent ?? 0;
+    let durationLimit = characterModel.beneficialCastingSpeedFocusAaDurationLimit > 0 ? characterModel.beneficialCastingSpeedFocusAaDurationLimit : 6000;
+    let percent = timerDuration >= durationLimit ? wornFocus + aaFocus : wornFocus;
     let charClassData = _.find( triggerClasses, ccl => ccl.class === charModel.class );
 
-    if ( charClassData != null && charClassData.level > extFocusDecayLevel ) {
-        let decayPercent = ( charClassData.level - extFocusDecayLevel ) * 5;
+    if ( charClassData != null && charClassData.level > characterModel.extendedBeneficialFocusDecayLevel ) {
+        let decayPercent = ( charClassData.level - characterModel.extendedBeneficialFocusDecayLevel ) * 5;
         percent = percent * ( 1 - decayPercent / 100 );
     }
 
@@ -3721,7 +3724,7 @@ function calculateCastingMilliseconds( duration, triggerClasses, extFocusPercent
     }
 
     let reduction = 1 - percent / 100;
-    return duration * reduction;
+    return castTime * reduction;
 }
 
 

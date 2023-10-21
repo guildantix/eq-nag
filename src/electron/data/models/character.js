@@ -39,8 +39,14 @@ class CharacterModel {
     /** @type {boolean} True if the character has an extended dot focus item. */
     hasBeneficialCastingSpeedFocus = false;
 
-    /** @type {number} The amount of bonus from the extended dot focus effect. */
+    /** @type {number} The amount of bonus from the beneficial spell haste focus effect. */
     beneficialCastingSpeedFocusPercent = null;
+
+    /** @type {number} The amount of bonus from the beneficial spell haste AA. */
+    beneficialCastingSpeedFocusAaPercent = null;
+
+    /** @type {number} The beneficial spell duration from the spell haste AA. */
+    beneficialCastingSpeedFocusAaDurationLimit = null;
 
     /** @type {number} The level at which the extended dot focus effect will begin to decay. */
     beneficialCastingSpeedFocusDecayLevel = null;

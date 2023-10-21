@@ -561,34 +561,20 @@ export class CharactersListComponent implements OnInit {
         character.extendedDotFocusPercent = this.calculateFocusPercent( character.extendedDotFocusPercent );
         character.extendedBeneficialFocusPercent = this.calculateFocusPercent( character.extendedBeneficialFocusPercent );
         character.beneficialCastingSpeedFocusPercent = this.calculateFocusPercent( character.beneficialCastingSpeedFocusPercent );
+        character.beneficialCastingSpeedFocusAaPercent = this.calculateFocusPercent( character.beneficialCastingSpeedFocusAaPercent );
         character.extendedBeneficialFocusAaPercent = this.calculateFocusPercent( character.extendedBeneficialFocusAaPercent );
-        // let dotExtFocusPct = /([0-9]*)\+([0-9]*)/gi.exec( character.extendedDotFocusPercent?.toString() );
-        // if ( dotExtFocusPct?.length > 0 ) {
-        //     character.extendedDotFocusPercent = +dotExtFocusPct[ 1 ] + +dotExtFocusPct[ 2 ];
-        // } else if ( character.extendedDotFocusPercent ) {
-        //     character.extendedDotFocusPercent = +character.extendedDotFocusPercent;
-        // } else {
-        //     character.extendedDotFocusPercent = null;
-        // }
 
-        // let benExtFocusPct = /([0-9]*)\+([0-9]*)/gi.exec( character.extendedBeneficialFocusPercent?.toString() );
-        // if ( benExtFocusPct?.length > 0 ) {
-        //     character.extendedBeneficialFocusPercent = +benExtFocusPct[ 1 ] + +benExtFocusPct[ 2 ];
-        // } else if ( character.extendedBeneficialFocusPercent ) {
-        //     character.extendedBeneficialFocusPercent = +character.extendedBeneficialFocusPercent;
-        // } else {
-        //     character.extendedBeneficialFocusPercent = null;
-        // }
-
-        // let benHasteFocusPct = /([0-9]*)\+([0-9]*)/gi.exec( character.beneficialCastingSpeedFocusPercent?.toString() );
-        // if ( benHasteFocusPct?.length > 0 ) {
-        //     character.beneficialCastingSpeedFocusPercent = +benHasteFocusPct[ 1 ] + +benHasteFocusPct[ 2 ];
-        // } else if ( character.beneficialCastingSpeedFocusPercent ) {
-        //     character.beneficialCastingSpeedFocusPercent = +character.beneficialCastingSpeedFocusPercent;
-        // } else {
-        //     character.beneficialCastingSpeedFocusPercent = null;
-        // }
-
+        if ( character.beneficialCastingSpeedFocusAaDurationLimit ) {
+            let limit = +character.beneficialCastingSpeedFocusAaDurationLimit;
+            if ( limit < 100 ) {
+                character.beneficialCastingSpeedFocusAaDurationLimit = limit * 1000;
+            } else {
+                character.beneficialCastingSpeedFocusAaDurationLimit = limit;
+            }
+        } else {
+            character.beneficialCastingSpeedFocusAaDurationLimit = null;
+        }
+        
         this.ipcService.updateCharacter( character ).subscribe( updated => {
             if ( updated ) {
                 if ( this.snackBarTimeoutId != null ) {

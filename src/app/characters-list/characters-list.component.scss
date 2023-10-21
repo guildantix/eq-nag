@@ -135,3 +135,18 @@ button.mat-option-button {
         margin-right: 0;
     }
 }
+
+table {
+    tr {
+        td {
+            &.character-focus-label {
+                vertical-align: top;
+                padding-top: 20px;
+            }
+            &.character-focus-values {
+                vertical-align: top;
+                padding-top: 5px;
+            }
+        }
+    }
+}

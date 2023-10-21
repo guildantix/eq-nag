@@ -68,8 +68,8 @@
                     <mat-card-content>
                         <table>
                             <tr>
-                                <td><mat-slide-toggle [(ngModel)]="character.hasExtendedDotFocus" (change)="updateCharacter(character)" name="hasExtendedDotFocus_{{i}}"> Extended DOT Focus?</mat-slide-toggle></td>
-                                <td><span *ngIf="character.hasExtendedDotFocus">
+                                <td class="character-focus-label"><mat-slide-toggle [(ngModel)]="character.hasExtendedDotFocus" (change)="updateCharacter(character)" name="hasExtendedDotFocus_{{i}}"> Extended DOT Focus?</mat-slide-toggle></td>
+                                <td class="character-focus-values"><span *ngIf="character.hasExtendedDotFocus">
     
                                 <mat-form-field style="width: 104px; margin-left: 15px;">
                                     <mat-label>%</mat-label>
@@ -77,7 +77,7 @@
                                     <mat-hint>Percent increase</mat-hint>
                                 </mat-form-field>
                                 
-                                <mat-form-field style="width: 192px; margin-left: 15px;">
+                                <mat-form-field style="width: 220px; margin-left: 15px;">
                                     <mat-label>Level</mat-label>
                                     <input matInput [(ngModel)]="character.extendedDotFocusDecayLevel" name="extDotFocusDecayLevel_{{i}}" type="number" (change)="updateCharacter(character)" />
                                     <mat-hint>Level at which decay begins</mat-hint>
@@ -86,8 +86,8 @@
                             </span></td>
                             </tr>
                             <tr>
-                                <td><mat-slide-toggle [(ngModel)]="character.hasExtendedBeneficialFocus" (change)="updateCharacter(character)" name="hasExtendedBeneficialFocus_{{i}}"> Extended Beneficial Focus?</mat-slide-toggle></td>
-                                <td>
+                                <td class="character-focus-label"><mat-slide-toggle [(ngModel)]="character.hasExtendedBeneficialFocus" (change)="updateCharacter(character)" name="hasExtendedBeneficialFocus_{{i}}"> Extended Beneficial Focus?</mat-slide-toggle></td>
+                                <td class="character-focus-values">
                                     <span *ngIf="character.hasExtendedBeneficialFocus">
     
                                         <mat-form-field style="width: 104px; margin-left: 15px;">
@@ -95,36 +95,52 @@
                                             <input matInput  [(ngModel)]="character.extendedBeneficialFocusPercent" name="extBeneficialFocusPercent_{{i}}" type="string" (change)="updateCharacter(character)" />
                                             <mat-hint>Worn Percent</mat-hint>
                                         </mat-form-field>
+                                        
+                                        <mat-form-field style="width: 220px; margin-left: 15px;">
+                                            <mat-label>Level</mat-label>
+                                            <input matInput [(ngModel)]="character.extendedBeneficialFocusDecayLevel" name="extBeneficialFocusDecayLevel_{{i}}" type="number" (change)="updateCharacter(character)" />
+                                            <mat-hint>Level at which decay begins</mat-hint>
+                                        </mat-form-field>
+
+                                        <br />
     
                                         <mat-form-field style="width: 104px; margin-left: 15px;">
                                             <mat-label>AA</mat-label>
                                             <input matInput  [(ngModel)]="character.extendedBeneficialFocusAaPercent" name="extBeneficialFocusAaPercent_{{i}}" type="string" (change)="updateCharacter(character)" />
                                             <mat-hint>AA Percent</mat-hint>
                                         </mat-form-field>
-                                        
-                                        <mat-form-field style="width: 192px; margin-left: 15px;">
-                                            <mat-label>Level</mat-label>
-                                            <input matInput [(ngModel)]="character.extendedBeneficialFocusDecayLevel" name="extBeneficialFocusDecayLevel_{{i}}" type="number" (change)="updateCharacter(character)" />
-                                            <mat-hint>Level at which decay begins</mat-hint>
-                                        </mat-form-field>
     
                                     </span>
                                 </td>
                             </tr>
                             <tr>
-                                <td><mat-slide-toggle [(ngModel)]="character.hasBeneficialCastingSpeedFocus" (change)="updateCharacter(character)" name="hasBeneficialCastingSpeedFocus{{i}}"> Beneficial Spell Haste Focus?</mat-slide-toggle></td>
-                                <td><span *ngIf="character.hasBeneficialCastingSpeedFocus">
+                                <td class="character-focus-label"><mat-slide-toggle [(ngModel)]="character.hasBeneficialCastingSpeedFocus" (change)="updateCharacter(character)" name="hasBeneficialCastingSpeedFocus{{i}}"> Beneficial Spell Haste Focus?</mat-slide-toggle></td>
+                                <td class="character-focus-values"><span *ngIf="character.hasBeneficialCastingSpeedFocus">
     
                                 <mat-form-field style="width: 104px; margin-left: 15px;">
-                                    <mat-label>%</mat-label>
-                                    <input matInput  [(ngModel)]="character.beneficialCastingSpeedFocusPercent" name="beneficialCastingSpeedFocusPercent{{i}}" type="string" (change)="updateCharacter(character)" />
-                                    <mat-hint>Percent increase</mat-hint>
+                                    <mat-label>Worn</mat-label>
+                                    <input matInput [(ngModel)]="character.beneficialCastingSpeedFocusPercent" name="beneficialCastingSpeedFocusPercent{{i}}" type="string" (change)="updateCharacter(character)" />
+                                    <mat-hint>Worn increase</mat-hint>
                                 </mat-form-field>
                                 
-                                <mat-form-field style="width: 192px; margin-left: 15px;">
+                                <mat-form-field style="width: 220px; margin-left: 15px;">
                                     <mat-label>Level</mat-label>
                                     <input matInput [(ngModel)]="character.beneficialCastingSpeedFocusDecayLevel" name="beneficialCastingSpeedFocusDecayLevel{{i}}" type="number" (change)="updateCharacter(character)" />
                                     <mat-hint>Level at which decay begins (empty for never).</mat-hint>
+                                </mat-form-field>
+
+                                <br />
+    
+                                <mat-form-field style="width: 104px; margin-left: 15px;">
+                                    <mat-label>AA</mat-label>
+                                    <input matInput [(ngModel)]="character.beneficialCastingSpeedFocusAaPercent" name="extBeneficialCastingSpeedFocusAaPercent_{{i}}" type="string" (change)="updateCharacter(character)" />
+                                    <mat-hint>AA Percent</mat-hint>
+                                </mat-form-field>
+    
+                                <mat-form-field style="width: 220px; margin-left: 15px;">
+                                    <mat-label>Duration Limit</mat-label>
+                                    <input matInput [(ngModel)]="character.beneficialCastingSpeedFocusAaDurationLimit" name="extBeneficialCastingSpeedFocusAaDurationLimit_{{i}}" type="string" (change)="updateCharacter(character)" />
+                                    <mat-hint>The min duration (ms) for AA spell haste.</mat-hint>
                                 </mat-form-field>
     
                             </span></td>

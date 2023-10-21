@@ -894,6 +894,8 @@ export class CharacterModel {
     public extendedBeneficialFocusAaPercent: number;
     public hasBeneficialCastingSpeedFocus: boolean;
     public beneficialCastingSpeedFocusPercent: number;
+    public beneficialCastingSpeedFocusAaPercent: number;
+    public beneficialCastingSpeedFocusAaDurationLimit: number;
     public beneficialCastingSpeedFocusDecayLevel: number;
     public p99: boolean = false;
     public takp: boolean = false;
