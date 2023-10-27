@@ -407,17 +407,26 @@ class WindowManager {
             ( event, d ) => {
             
                 const display = ElectronUtilities.determineContainingDisplay( d.bounds );
-                
-                d.displayId = display.id;
-                
-                d.displayBounds = display.bounds;
-                d.bounds.x = d.bounds.x - display.bounds.x;
-                d.bounds.y = d.bounds.y - display.bounds.y;
 
-                this.#mainWindow.reference.webContents.send( 'overlay:event:bounds-changed', d );
-                this.#openOverlayEditors.forEach( window => {
-                    window?.webContents.send( 'overlay:event:bounds-changed', d );
-                } );
+                if ( display == undefined ) {
+                    // If a display could not be found, then send to the middle of the primary display.
+                    const primaryDisplay = screen.getPrimaryDisplay();
+                    this.sendOverlayToMiddle( d.overlayId, primaryDisplay.id );
+
+                } else {
+                
+                    d.displayId = display.id;
+                    
+                    d.displayBounds = display.bounds;
+                    d.bounds.x = d.bounds.x - display.bounds.x;
+                    d.bounds.y = d.bounds.y - display.bounds.y;
+    
+                    this.#mainWindow.reference.webContents.send( 'overlay:event:bounds-changed', d );
+                    this.#openOverlayEditors.forEach( window => {
+                        window?.webContents.send( 'overlay:event:bounds-changed', d );
+                    } );
+                    
+                }
             } );
 
         ipcMain.on( 'gina:dialog:import', ( event, arg ) => {
