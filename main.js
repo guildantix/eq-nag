@@ -213,33 +213,33 @@ if ( process.argv?.length > 1 && process.argv.includes( '--no-gpu' ) ) {
 
 } else {
     
-    if ( userPreferences.enableGpuAcceleration === true && !userPreferences.disableGpuAcceleration ) {
+    // if ( userPreferences.enableGpuAcceleration === true && !userPreferences.disableGpuAcceleration ) {
     
-        log.info( '[main:app-initialization] Hardware acceleration is enabled.' );
-        userPreferences.disableGpuAcceleration = true;
+    //     log.info( '[main:app-initialization] Hardware acceleration is enabled.' );
+    //     userPreferences.disableGpuAcceleration = true;
     
-        // When the main window loads and sends back the 'main-window-activated',
-        // we'll turn off the disable gpu. If something goes wrong, this will 
-        // allow the next run of Nag to start without GPU acceleration.
+    //     // When the main window loads and sends back the 'main-window-activated',
+    //     // we'll turn off the disable gpu. If something goes wrong, this will 
+    //     // allow the next run of Nag to start without GPU acceleration.
 
-        ipcMain.once( 'app:main-window-loaded', () => {
-            userPreferences.disableGpuAcceleration = false;
-        } );
+    //     ipcMain.once( 'app:main-window-loaded', () => {
+    //         userPreferences.disableGpuAcceleration = false;
+    //     } );
     
-    } else {
+    // } else {
 
-        if ( userPreferences.disableGpuAcceleration ) {
-            log.info( '[main:app-initialization] Nag did not load correctly last run, disabling hardware acceleration.' );
-            userPreferences.disableGpuAcceleration = false;
-            userPreferences.enableGpuAcceleration = false;
-        }
+    //     if ( userPreferences.disableGpuAcceleration ) {
+    //         log.info( '[main:app-initialization] Nag did not load correctly last run, disabling hardware acceleration.' );
+    //         userPreferences.disableGpuAcceleration = false;
+    //         userPreferences.enableGpuAcceleration = false;
+    //     }
     
-        log.info( '[main:app-initialization] Disabling hardware acceleration.' );
+    //     log.info( '[main:app-initialization] Disabling hardware acceleration.' );
 
-        app.disableHardwareAcceleration();
-        app.commandLine.appendSwitch( "disable-software-rasterizer" );
+    //     app.disableHardwareAcceleration();
+    //     app.commandLine.appendSwitch( "disable-software-rasterizer" );
 
-    }
+    // }
 }
 
 
