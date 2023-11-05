@@ -1,12 +1,10 @@
-import { Injectable, NgZone } from '@angular/core';
+import { Injectable } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { DialogService } from '../dialogs/dialog.service';
 import { IpcService } from '../ipc.service';
-import { QuickShareFileModel, QuickShareMetaModel, QuickShareModel, QuickShareTransferModel, QuickShareVersion } from '../core.model';
-import { Observable, Observer, throwError } from 'rxjs';
+import { QuickShareFctMetaModel, QuickShareFctModel, QuickShareFctTransferModel, QuickShareFileModel, QuickShareMetaModel, QuickShareModel, QuickShareTransferModel, QuickShareVersion } from '../core.model';
+import { Observable, throwError } from 'rxjs';
 import { environment } from 'src/environments/environment';
 import { catchError, map } from 'rxjs/operators';
-import { IpcRenderer } from 'electron';
 import * as _ from 'lodash-es';
 import { MatDialog } from '@angular/material/dialog';
 import { NotificationDialogComponent } from '../dialogs/notification-dialog/notification-dialog.component';
@@ -57,6 +55,34 @@ export class QuickShareService {
 
     
     /**
+     * Creates a new quick share.
+     * 
+     * @returns Returns the quick share id.
+     * 
+     * @param authorId The id of the author.
+     * @param model The quickshare model.
+     * @param notes Notes attached to this update.
+     */
+    createQuickShareFct( authorId: string, model: QuickShareFctModel, notes: string ): Observable<string> {
+        let data = new QuickShareFctTransferModel();
+
+        data.model = model;
+        data.notes = notes;
+
+        return this.httpClient.post<string>( `${environment.shareServiceUrl}/quick-shares/${authorId}/fct`, data )
+            .pipe( catchError( error => this.handleError( error ) ) );
+    }
+
+
+
+
+
+
+
+
+
+    
+    /**
      * Returns a list of the latest version information for the specified quickshares.
      * 
      * @param quickShareIds The list of installed quickshare ids.
@@ -66,6 +92,30 @@ export class QuickShareService {
         return this.httpClient.get( `${environment.shareServiceUrl}/quick-shares/version-info` )
             .pipe(
                 map<any[], QuickShareVersion[]>( updates => _.map( updates, update => Object.assign( new QuickShareVersion(), update ) ) ),
+                catchError( error => this.handleError( error ) )
+            );
+        
+    }
+
+
+
+
+
+
+
+
+
+    
+    /**
+     * Returns the specified quickshare.
+     * 
+     * @param quickShareFctId The id of the desired quickshare.
+     */
+    getQuickShareFct( quickShareFctId: string ): Observable<QuickShareFctMetaModel[]> {
+        
+        return this.httpClient.get( `${environment.shareServiceUrl}/quick-shares/${quickShareFctId}/fct` )
+            .pipe(
+                map<any[], QuickShareFctMetaModel[]>( quickShareFcts => _.map( quickShareFcts, quickShareFct => Object.assign( new QuickShareFctMetaModel(), quickShareFct ) ) ),
                 catchError( error => this.handleError( error ) )
             );
         
@@ -134,6 +184,39 @@ export class QuickShareService {
      * @returns Returns the update model.
      * 
      * @param authorId The user's author id.
+     * @param quickShareFctId The quickshare id.
+     * @param model The updated quickshare model.
+     * @param notes Update notes.
+     */
+    updateQuickShareFct( authorId: string, quickShareFctId: string, model: QuickShareFctModel, notes: string ): Observable<QuickShareFctMetaModel[]> {
+        let data = new QuickShareFctTransferModel();
+        
+        data.model = model;
+        data.notes = notes;
+
+        return this.httpClient.put( `${environment.shareServiceUrl}/quick-shares/${authorId}/update/${quickShareFctId}/fct`, data )
+            .pipe(
+                map<any[], QuickShareFctMetaModel[]>( quickShareFcts => _.map( quickShareFcts, quickShareFct => Object.assign( new QuickShareFctMetaModel(), quickShareFct ) ) ),
+                catchError( error => this.handleError( error ) )
+            );
+
+    }
+
+
+
+
+
+
+
+
+
+    
+    /**
+     * Updates the quickshare on the server.
+     * 
+     * @returns Returns the update model.
+     * 
+     * @param authorId The user's author id.
      * @param quickShareId The quickshare id.
      * @param model The updated quickshare model.
      * @param files The files used by this quickshare.
@@ -151,6 +234,30 @@ export class QuickShareService {
                 map<any[], QuickShareMetaModel[]>( quickShares => _.map( quickShares, quickShare => Object.assign( new QuickShareMetaModel(), quickShare ) ) ),
                 catchError( error => this.handleError( error ) )
             );
+
+    }
+
+
+
+
+
+
+
+
+
+    
+    /**
+     * Returns true if the specifed author id is the author of the specified quickshare.
+     * 
+     * @param authorId The user's author id.
+     * @param quickShareFctId The id of the quickshare.
+     */
+    isAuthorOfQuickShareFct( authorId: string | void, quickShareFctId: string ): Observable<boolean> {
+        
+        authorId = authorId ?? 'undefined';
+
+        return this.httpClient.get<boolean>( `${environment.shareServiceUrl}/quick-shares/${quickShareFctId}/is-author/${authorId}/fct` )
+            .pipe( catchError( error => this.handleError( error ) ) );
 
     }
 
