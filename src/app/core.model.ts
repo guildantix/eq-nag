@@ -1223,6 +1223,14 @@ export class TriggerPackageMetaModel {
 
 }
 
+export class QuickShareFctModel {
+
+    public fctGroups: FctCombatGroup[] = [];
+    public overlays: OverlayWindowModel[] = [];
+    public primaryDisplaySize: Electron.Size;
+
+}
+
 export class QuickShareModel {
     
     public triggers: PackageTrigger[] = [];
@@ -1232,6 +1240,18 @@ export class QuickShareModel {
     public textOverlayId: string;
     public overlays: OverlayWindowModel[] = [];
     public primaryDisplaySize: Electron.Size;
+
+}
+
+export class QuickShareFctMetaModel {
+
+    public quickShareId: string;
+    public versionId: string;
+    public timeStamp: Date;
+    public model: QuickShareFctModel = new QuickShareFctModel();
+    public author: string;
+    public authorDiscord: string;
+    public trustedAuthor: boolean = false;
 
 }
 
@@ -1253,6 +1273,13 @@ export class QuickShareTransferModel {
     public model: any;
     public notes: string;
     public files: QuickShareFileModel[] = [];
+    
+}
+
+export class QuickShareFctTransferModel {
+
+    public model: any;
+    public notes: string;
     
 }
 
