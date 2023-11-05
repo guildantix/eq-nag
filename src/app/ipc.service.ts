@@ -2331,5 +2331,50 @@ export class IpcService {
 
         return obs;
     }
+    
+    /**
+     * Installs the given overlays, allowing the user to make copies of each 
+     * overlay or to map existing overlays to the new overlays.
+     * 
+     * @returns Returns an object that contains all overlay windows and the overlay window id map.
+     * 
+     * @param overlays The overlays to install.
+     */
+    installOverlays( overlays: OverlayWindowModel[], packagePrimaryDisplaySize: Electron.Size ): Observable<OverlayWindowModel[]> {
+        let obs: Observable<OverlayWindowModel[]> = new Observable<OverlayWindowModel[]>( ( observer: Observer<OverlayWindowModel[]> ) => {
+                    
+            window.api.ipc.once( 'overlay:install-overlays', ( e, data: OverlayWindowModel[] ) => {
+                this.ngZone.run( () => {
+                    observer.next( data );
+                    observer.complete();
+                } );
+            } );
+            window.api.ipc.send( 'overlay:install-overlays', { overlays: overlays, packagePrimaryDisplaySize: packagePrimaryDisplaySize } );
+
+        } );
+
+        return obs;
+    }
+
+    /**
+     * Deletes all existing combat groups and installs the given list of combat groups.
+     * 
+     * @param fctGroups The list of combat groups to install.
+     */
+    installCombatGroups( fctGroups: FctCombatGroup[] ): Observable<FctCombatGroup[]> {
+        let obs: Observable<FctCombatGroup[]> = new Observable<FctCombatGroup[]>( ( observer: Observer<FctCombatGroup[]> ) => {
+                    
+            window.api.ipc.once( 'overlay:install-combat-groups', ( e, data: FctCombatGroup[] ) => {
+                this.ngZone.run( () => {
+                    observer.next( data );
+                    observer.complete();
+                } );
+            } );
+            window.api.ipc.send( 'overlay:install-combat-groups', fctGroups );
+
+        } );
+
+        return obs;
+    }
 
 }
