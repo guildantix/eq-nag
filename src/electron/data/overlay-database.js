@@ -777,10 +777,174 @@ class OverlayDatabaseStore extends Store {
                 } );
                 event.sender.send( 'renderer:get:overlayDimensions', dims );
             } );
+        
+            ipcMain.on( 'overlay:install-overlays',
+                /**
+                 * Installs the given overlay data.
+                 * 
+                 * @param {Electron.IpcMainEvent} event The event args.
+                 * @param {{overlays: OverlayWindow[], packagePrimaryDisplaySize: Electron.Size}} data The overlay data.
+                 */
+                ( event, data ) => {
+                    this.installOverlays( data.overlays, data.packagePrimaryDisplaySize, event, () => {
+                        event.sender.send( 'overlay:install-overlays', this.getAll() );
+                    } );
+                } );
+        
+            ipcMain.on( 'overlay:install-combat-groups',
+                /**
+                 * Installs the given combat groups.
+                 * 
+                 * @param {Electron.IpcMainEvent} event The event args.
+                 * @param {FctCombatGroup[]} data The combat groups to install.
+                 */
+                ( event, data ) => {
+                    this.installCombatGroups( data );
+                    event.sender.send( 'overlay:install-combat-groups', this.getCombatGroups() );
+                } );
 
         this.#sendTickRef.setRefFn( () => sendTick );
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Installs the given list of combat groups, removing all previous combat groups, and updates the store.
+     * 
+     * @param {FctCombatGroup[]} packagedCombatGroups The combat groups to install.
+     */
+    installCombatGroups( packagedCombatGroups ) {
+        let rollback = this.#data.fctCombatGroups.slice();
+
+        try {
+            // Clear existing combat groups.
+            this.#data.fctCombatGroups = [];
+
+            // Add the new combat groups.
+            packagedCombatGroups.forEach( g => {
+                g.overlayId = this.#data.overlayMap[ g.overlayId ];
+                this.#data.fctCombatGroups.push( g );
+            } );
+
+            // Save the changes.
+            this.storeDataFile( this.#data );
+
+            // Emit the changes.
+            this.emitCombatGroupChanges();
+
+        } catch ( error ) {
+            this.#data.fctCombatGroups = rollback;
+            throw error;
+        }
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Ensures that the overlays are installed.
+     * 
+     * @remarks Install is a bad choice here, when a package overlay is 
+     *  missing, it is sent to the main window with the intent to have the user 
+     *  step through creating a matching overlay.  Once all overlays have a 
+     *  matching overlay in user data, then the package can be installed.
+     * 
+     * @param {OverlayWindow[]} packageOverlays The packaged overlays.
+     * @param {Electron.Size} packagePrimaryDisplaySize The original event args.
+     * @param {Electron.IpcMainEvent} event The original event args.
+     * @param {(overlayMap: Record<string, string>) => void} callback The callback function executed after all overlay maps have been completed.
+     */
+    installOverlays( packageOverlays, packagePrimaryDisplaySize, event, callback ) {
+        let overlayMap = this.#data.overlayMap ?? {};
+        
+        let finalize = () => {
+            this.#data.overlayMap = overlayMap;
+            this.storeDataFile( this.#data );
+        }
+
+        let missingOverlays = packageOverlays?.filter( f => overlayMap[ f.overlayId ] == null ) ?? [];
+        let myDisplaySize = screen.getPrimaryDisplay().size;
+        let sizeRatio = { heightRatio: myDisplaySize.height / packagePrimaryDisplaySize?.height ?? 1, widthRatio: myDisplaySize.width / packagePrimaryDisplaySize?.width ?? 1 };
+        
+        let installOverlay =
+            /**
+             * Execute the process for installing trigger overlays.
+             * 
+             * @param {number} i The index of the overlay.
+             */
+            ( i ) => {
+
+                if ( i < missingOverlays.length ) {
+                    // If we still have more overlays to process, then send that to the sender.
+                    ipcMain.once( `trigger:missing-overlay:${missingOverlays[ i ].overlayId}`, ( event, userOverlayId ) => {
+                        overlayMap[ missingOverlays[ i ].overlayId ] = userOverlayId;
+                        installOverlay( i + 1 );
+                    } );
+
+                    if ( packagePrimaryDisplaySize ) {
+                        // Because the origin of the renderer is at the top left 
+                        // corner of the primary display, these calculations can be 
+                        // simplified. If the bounds of the overlay extend past the 
+                        // bounds of the primary display, we need to just center 
+                        // the new display, otherwise we can adjust by ratio to 
+                        // place the copied overlay in the same relative location.
+
+                        let extendsPastHorizontalBounds = missingOverlays[ i ].x < 0 || missingOverlays[ i ].x > ( packagePrimaryDisplaySize.width - missingOverlays[ i ].windowWidth );
+                        let extendsPastVerticalBounds = missingOverlays[ i ].y < 0 || missingOverlays[ i ].y > ( packagePrimaryDisplaySize.height - missingOverlays[ i ].windowHeight );
+
+                        if ( extendsPastHorizontalBounds || extendsPastVerticalBounds ) {
+                            // Center the new overlay.
+                            missingOverlays[ i ].windowWidth = missingOverlays[ i ].windowWidth * sizeRatio.widthRatio;
+                            missingOverlays[ i ].windowHeight = missingOverlays[ i ].windowHeight * sizeRatio.heightRatio;
+                            missingOverlays[ i ].x = ( myDisplaySize.width / 2 ) - ( missingOverlays[ i ].x / 2 );
+                            missingOverlays[ i ].y = ( myDisplaySize.height / 2 ) - ( missingOverlays[ i ].y / 2 );
+
+                        } else {
+                            // Position relative to source display.
+                            missingOverlays[ i ].x = missingOverlays[ i ].x * sizeRatio.widthRatio;
+                            missingOverlays[ i ].y = missingOverlays[ i ].y * sizeRatio.heightRatio;
+                            missingOverlays[ i ].windowWidth = missingOverlays[ i ].windowWidth * sizeRatio.widthRatio;
+                            missingOverlays[ i ].windowHeight = missingOverlays[ i ].windowHeight * sizeRatio.heightRatio;
+
+                        }
+                    }
+                    
+                    event.sender.send( 'pkg:missing-overlay', missingOverlays[ i ] );
+
+                } else {
+                    // We're done, let's continue the normal process.
+                    finalize();
+                    callback( overlayMap );
+
+                }
+            
+            };
+        
+        installOverlay( 0 );
+    }
+
+
+
+
+
+
+
+
+
+    
 }
 
 module.exports = OverlayDatabaseStore;

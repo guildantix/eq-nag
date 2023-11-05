@@ -166,6 +166,8 @@ class OverlayStoreModel {
     overlays;
     /** @type {FctCombatGroup[]} */
     fctCombatGroups;
+    /** @type {Record<string, string>} */
+    overlayMap = {};
 }
 
 class TriggerSecondaryActionModel {
