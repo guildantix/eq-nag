@@ -110,13 +110,9 @@ function createWindow() {
 
     trayMenu = createTray();
 
-    mainWindow.loadURL(
-        url.format( {
-            pathname: path.join( __dirname, `/dist/index.html` ),
-            protocol: "file:",
-            slashes: true
-        } )
-    );
+    let mainUrl = new url.URL( `file://${path.join( __dirname, `/dist/index.html` )}` );
+    mainWindow.loadURL( mainUrl.toString() );
+
     // Open the DevTools.
     if ( app.isDev() ) {
         mainWindow.webContents.openDevTools( { mode: 'undocked' } );
@@ -206,40 +202,11 @@ const checkCombatGroups = () => {
 
 if ( process.argv?.length > 1 && process.argv.includes( '--no-gpu' ) ) {
     
-    log.info( '[main:app-initialization] Disabling hardware acceleration.' );
+    log.info( '[main:app-initialization] Disabling hardware acceleration. --no-gpu' );
 
     app.disableHardwareAcceleration();
     app.commandLine.appendSwitch( "disable-software-rasterizer" );
 
-} else {
-    
-    // if ( userPreferences.enableGpuAcceleration === true && !userPreferences.disableGpuAcceleration ) {
-    
-    //     log.info( '[main:app-initialization] Hardware acceleration is enabled.' );
-    //     userPreferences.disableGpuAcceleration = true;
-    
-    //     // When the main window loads and sends back the 'main-window-activated',
-    //     // we'll turn off the disable gpu. If something goes wrong, this will 
-    //     // allow the next run of Nag to start without GPU acceleration.
-
-    //     ipcMain.once( 'app:main-window-loaded', () => {
-    //         userPreferences.disableGpuAcceleration = false;
-    //     } );
-    
-    // } else {
-
-    //     if ( userPreferences.disableGpuAcceleration ) {
-    //         log.info( '[main:app-initialization] Nag did not load correctly last run, disabling hardware acceleration.' );
-    //         userPreferences.disableGpuAcceleration = false;
-    //         userPreferences.enableGpuAcceleration = false;
-    //     }
-    
-    //     log.info( '[main:app-initialization] Disabling hardware acceleration.' );
-
-    //     app.disableHardwareAcceleration();
-    //     app.commandLine.appendSwitch( "disable-software-rasterizer" );
-
-    // }
 }
 
 
@@ -285,7 +252,14 @@ const bootstrapApp = () => {
                 }
             }
     
-            callback( path.normalize( filePath ) );
+            log.info( '[main:interceptFileProtocol] Intercepted file protocol.', {
+                req: req,
+                filePath: filePath,
+                normalizedFilePath: path.normalize( filePath ),
+                appPath: app.getAppPath(),
+            } );
+
+            callback( path.normalize( filePath ).replace( /%20/g, ' ' ) );
         } );
         createWindow();
 
