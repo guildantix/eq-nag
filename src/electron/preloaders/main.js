@@ -104,7 +104,7 @@ contextBridge.exposeInMainWorld( 'api', {
             toggleFlag: NumberUtilities.toggleFlag,
         },
         screens: {
-            primaryDisplaySize: screen.getPrimaryDisplay().size,
+            primaryDisplaySize: () => screen.getPrimaryDisplay().size,
         }
     },
     logger: {
