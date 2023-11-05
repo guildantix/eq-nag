@@ -1,6 +1,6 @@
 import { Component, DoCheck, KeyValueChanges, KeyValueDiffer, KeyValueDiffers, OnInit } from '@angular/core';
 import { DialogService } from '../dialogs/dialog.service';
-import { FctCombatGroup, HitStartPositionTypes, OverlayWindowModel, StylePropertiesModel } from '../core.model';
+import { FctCombatGroup, HitStartPositionTypes, OverlayWindowModel, QuickShareFctMetaModel, QuickShareFctModel, QuickShareFctTransferModel, StylePropertiesModel } from '../core.model';
 import { nagId } from '../core/nag-id.util';
 import { IpcService } from '../ipc.service';
 import { MatCheckboxChange } from '@angular/material/checkbox';
@@ -8,6 +8,7 @@ import { QuestionDialogAnswerModel } from '../dialogs/question-dialog/question-d
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Observable } from 'rxjs';
 import { ColoredString } from '../dialogs/dialog.model';
+import { QuickShareService } from '../core/quick-share.service';
 
 // TODO: FCT Features
 // 1. Consolidation configuration settings: by time and by source.
@@ -89,6 +90,7 @@ export class FloatingCombatTextComponent implements OnInit, DoCheck {
         private readonly ipcService: IpcService,
         private readonly snackBar: MatSnackBar,
         private readonly differs: KeyValueDiffers,
+        private readonly quickShareService: QuickShareService,
     ) { }
 
     ngOnInit() {
@@ -172,6 +174,82 @@ export class FloatingCombatTextComponent implements OnInit, DoCheck {
 
     onEnableFctChange(): void {
         this.ipcService.updateEnableFct( this.enableFct );
+    }
+
+    createQuickShare(): void {
+        let model = new QuickShareFctModel();
+        model.fctGroups = this.combatGroups.slice();
+        model.overlays = this.overlays.filter( x => model.fctGroups.findIndex( y => y.overlayId === x.overlayId ) > -1 );
+        model.primaryDisplaySize = window.api.utils.screens.primaryDisplaySize();
+
+        let transfer = new QuickShareFctTransferModel();
+        transfer.model = model;
+        transfer.notes = '';
+
+        this.ipcService.getAuthor().subscribe( author => {
+            this.quickShareService.createQuickShareFct( author.authorId, model, '' ).subscribe( quickShareId => {
+                let quickShareCode = `{NAG:fct/${quickShareId}}`;
+                this.ipcService.sendTextToClipboard( quickShareCode );
+                this.snackBar.open( 'Quick share code copied to clipboard', 'Dismiss', { duration: 3000 } );
+            } );
+        })
+    }
+
+    /**
+     * Opens the quick share dialog and allows the user to enter in a quick share code for FCT.
+     */
+    installQuickShare(): void {
+        this.dialogService
+            .showInputDialog(
+                'Install Quick Share',
+                [ 'To install shared combat groups, paste the code below' ],
+                'Quick share code',
+                'Paste in the quick share code',
+                null,
+                false )
+            .subscribe( response => {
+                if ( response ) {
+                    let handled = false;
+
+                    // {NAG:fct/a3fASS34127BGggsr1}
+                    let pkg = /{NAG:fct\/(?<packageId>.+?)}/g.exec( response );
+                    if ( pkg?.groups?.packageId ) {
+                        this.installFctPackage( pkg.groups.packageId );
+                        handled = true;
+                    }
+
+                    if ( !handled ) {
+                        this.dialogService.showErrorDialog( 'Error', [ 'Could not parse code, no packages installed!' ] );
+                    }
+
+                }
+            } );
+    }
+
+    /**
+     * Installs the specified combat group package.
+     * 
+     * @param packageId The id of the FCT combat groups package.
+     */
+    installFctPackage( packageId: string ): void {
+        this.quickShareService.getQuickShareFct( packageId ).subscribe( data => {
+            if ( data.length > 0 ) {
+                const quickShare = data[ 0 ];
+                // Copy all overlays.
+                this.ipcService.installOverlays( quickShare.model.overlays, quickShare.model.primaryDisplaySize ).subscribe( overlays => {
+
+                    // Update the overlays list.
+                    this.overlays = overlays;
+
+                    // Install all combat groups.
+                    this.ipcService.installCombatGroups( quickShare.model.fctGroups ).subscribe( combatGroups => {
+                        this.combatGroups = combatGroups;
+                        this.combatGroups.forEach( ( group, i ) => this.changeTracking[ group.combatGroupId ] = FctCombatGroup.getHashValue( group ) );
+                    } );
+
+                } );
+            }
+        } );
     }
 
 
