@@ -102,6 +102,9 @@ contextBridge.exposeInMainWorld( 'api', {
             addFlag: NumberUtilities.addFlag,
             removeFlag: NumberUtilities.removeFlag,
             toggleFlag: NumberUtilities.toggleFlag,
+        },
+        screens: {
+            primaryDisplaySize: screen.getPrimaryDisplay().size,
         }
     },
     logger: {

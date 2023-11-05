@@ -73,6 +73,14 @@ export class WindowApi {
              */
             toggleFlag: ( value: number, flag: number ) => number;
         }
+        screens: {
+            /**
+             * Returns the size of the primary display.
+             * 
+             * @returns {Electron.Size} The size of the primary display.
+             */
+            primaryDisplaySize: () => Electron.Size;
+        }
     };
     logger: {
         info: ( ...params: any[] ) => void
