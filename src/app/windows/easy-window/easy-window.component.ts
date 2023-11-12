@@ -26,6 +26,15 @@ export class EasyWindowComponent implements OnInit {
 
     ngOnInit() { }
 
+
+
+
+
+
+
+
+
+    
     /**
      * Closes this modal.
      */
@@ -33,14 +42,31 @@ export class EasyWindowComponent implements OnInit {
         this.ipcService.closeThisChild();
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Sets the action to perform.
+     * @param action The action to set.
+     */
     public setAction( action: 'addCharacter' | 'triggerEdit' ): void {
         this.action = action;
         window.setTimeout( () => this.stepper.next() );
     }
 
-    // public actionTriggerEdit(): void {
-    //     this.action = 'triggerEdit';
-    //     this.stepper.next();
-    // }
+
+
+
+
+
+
+
+
 
 }
