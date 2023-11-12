@@ -110,10 +110,36 @@ export class CharactersListComponent implements OnInit {
         } );
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Shows the new character dialog.
+     */
     public newCharacter(): void {
         this.dialogService.showNewCharacterDialog( characterId => this.loadCharacters( characterId ) );
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Loads the specified character into the character list.
+     * 
+     * @param characterId The id of the character to load.
+     */
     public loadCharacters( characterId?: string ): void {
         this.ipcService.getCharacters().subscribe( data => {
             this.characters = data;
@@ -124,6 +150,15 @@ export class CharactersListComponent implements OnInit {
         } );
     }
 
+
+
+
+
+
+
+
+
+    
     /**
      * Loads the triggers for the specified character and builds the tree 
      * data.  If the data has already been loaded, it is refreshed.
@@ -162,6 +197,15 @@ export class CharactersListComponent implements OnInit {
         }
     }
 
+
+
+
+
+
+
+
+
+    
     /**
      * Confirms the user wants to delete the specified trigger profile, then if 
      * confirmed deletes the profile.
@@ -196,6 +240,15 @@ export class CharactersListComponent implements OnInit {
         }
     }
 
+
+
+
+
+
+
+
+
+    
     /**
      * Returns the specified profile's name.
      * 
@@ -206,6 +259,15 @@ export class CharactersListComponent implements OnInit {
         return profile?.name ?? 'Unknown';
     }
 
+
+
+
+
+
+
+
+
+    
     /**
      * Adds a new trigger profile to the server and adds it to the given 
      * character. The new profile will have the same disabled triggers as the 
@@ -238,6 +300,15 @@ export class CharactersListComponent implements OnInit {
             } );
     }
 
+
+
+
+
+
+
+
+
+    
     /**
      * Updates the specified profile's disabled trigger list to match exactly 
      * the given character's list of disabled triggers.
@@ -295,6 +366,15 @@ export class CharactersListComponent implements OnInit {
         }
     }
 
+
+
+
+
+
+
+
+
+    
     /**
      * Applies the given profile to the given character.
      * 
@@ -310,6 +390,15 @@ export class CharactersListComponent implements OnInit {
         this.saveCharacterDelay( character );
     }
 
+
+
+
+
+
+
+
+
+    
     /**
      * Reapplies the specified profile to the given character. This will reset 
      * their selected disabled triggers and folders.
@@ -333,6 +422,15 @@ export class CharactersListComponent implements OnInit {
         }
     }
 
+
+
+
+
+
+
+
+
+    
     /**
      * Reapplies the selected states for the given character's triggers based 
      * on their disabled triggers array.
@@ -359,6 +457,15 @@ export class CharactersListComponent implements OnInit {
 
     }
 
+
+
+
+
+
+
+
+
+    
     /**
      * Reapplies the profile for the given character, if they have a profile 
      * selected.
@@ -373,6 +480,15 @@ export class CharactersListComponent implements OnInit {
         }
     }
 
+
+
+
+
+
+
+
+
+    
     /**
      * Triggers the update folder states method.
      */
@@ -380,6 +496,15 @@ export class CharactersListComponent implements OnInit {
         this.updateFolderStates( character );
     }
 
+
+
+
+
+
+
+
+
+    
     /**
      * Saves the given character after a delay. If the character is saved 
      * again, the delay is restarted.
@@ -407,6 +532,15 @@ export class CharactersListComponent implements OnInit {
         }, this.characterTriggerSaveDelayMs );
     }
 
+
+
+
+
+
+
+
+
+    
     /**
      * Toggles the selected state of the given trigger.  If the node is a 
      * trigger, it is added/removed from the disabled triggers list. If the 
@@ -431,6 +565,15 @@ export class CharactersListComponent implements OnInit {
         this.saveCharacterDelay( character );
     }
 
+
+
+
+
+
+
+
+
+    
     /**
      * Selects all triggers in the given folder, including all descendants.
      * 
@@ -458,6 +601,15 @@ export class CharactersListComponent implements OnInit {
         this.saveCharacterDelay( character );
     }
 
+
+
+
+
+
+
+
+
+    
     /**
      * Generates the tree node data.
      * 
@@ -493,6 +645,15 @@ export class CharactersListComponent implements OnInit {
         } );
     }
 
+
+
+
+
+
+
+
+
+    
     /**
      * Returns the specified trigger folder in the given hierarchy.
      * 
@@ -512,6 +673,15 @@ export class CharactersListComponent implements OnInit {
 
     }
 
+
+
+
+
+
+
+
+
+    
     /**
      * Returns a list of all direct and descendant child folders.
      * 
@@ -530,6 +700,14 @@ export class CharactersListComponent implements OnInit {
     }
 
 
+
+
+
+
+
+
+
+    
     /**
      * Updates the selection state of all folders, show partial/full/none 
      * selection state based on the direct and descendant selected triggers.
@@ -556,6 +734,20 @@ export class CharactersListComponent implements OnInit {
         
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Saves changes to the given character model.
+     * 
+     * @param character The character to update.
+     */
     public updateCharacter( character: CharacterModel ): void {
 
         character.extendedDotFocusPercent = this.calculateFocusPercent( character.extendedDotFocusPercent );
@@ -594,6 +786,22 @@ export class CharactersListComponent implements OnInit {
         } );
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Parses the given value into a focus percent.
+     * 
+     * @returns Returns the parsed value as a number, or null if the value is unparsable.
+     * 
+     * @param value The value to parse.
+     */
     private calculateFocusPercent( value: string | number ): number {
 
         let exMatch = /([0-9]*)\+([0-9]*)/gi.exec( value?.toString() );
@@ -608,28 +816,71 @@ export class CharactersListComponent implements OnInit {
         return isNaN( percent ) ? null : percent;
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Deletes the specified character.
+     * 
+     * @param character The character to delete.
+     */
     public deleteCharacter(character: CharacterModel): void {
         this.dialogService
-            .showConfirmDialog(
-                `Are you certain you would like to remove ${character.name} [${character.server}]?`, `Click 'Yes' to delete ${character.name}.`, `Click 'No' to keep your character.`,
-                confirmed => {
-                    if ( confirmed ) {
-                        this.ipcService.deleteCharacter( character.characterId ).subscribe( deleted => {
-                            if ( deleted ) {
+            .showConfirmationDialog(
+                `Are you certain you would like to remove ${character.name} [${character.server}]?`, `Click 'Yes' to delete ${character.name}.`, `Click 'No' to keep your character.` )
+            .subscribe( confirmed => {
+                if ( confirmed ) {
+                    this.ipcService.deleteCharacter( character.characterId ).subscribe( deleted => {
+                        if ( deleted ) {
                                 
-                                this.snackBar.open( 'Character deleted!', 'Dismiss', { duration: 2500 } );
-                                this.loadCharacters();
-                            }
-                        } );
-                    }
-                } );
+                            this.snackBar.open( 'Character deleted!', 'Dismiss', { duration: 2500 } );
+                            this.loadCharacters();
+                        }
+                    } );
+                }
+            } );
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Shows the system file selector to select a log file for the specified 
+     * character.
+     * 
+     * @param characterId The id of the character to show the file selector for.
+     */
     showFileSelector( characterId: string ) {
         this.fileSelector.nativeElement.click();
         this.fileSelector.nativeElement.setAttribute( 'character-id', characterId );
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Handles the file selected event.
+     * 
+     * @param e The event args.
+     */
     fileSelected( e: any ) {
         let characterId: string = this.fileSelector.nativeElement.getAttribute( 'character-id' );
 
@@ -647,5 +898,14 @@ export class CharactersListComponent implements OnInit {
 
         }
     }
+
+
+
+
+
+
+
+
+
 
 }
