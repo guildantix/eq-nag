@@ -102,6 +102,14 @@ class CombatParser {
     chunkSize = 1048576;
     /** @type {number} */
     chunks = 50;
+    /** @type {string[]} */
+    _unknownEntities = [];
+    /** @type {string[]} */
+    _verifiedPlayers = [ characterName ];
+    /** @type {string[]} */
+    _verifiedNpcs = [];
+    /** @type {string[]} */
+    _verifiedPets = [];
 
     /** @type {LogRecord[]} */
     encounterEvents = [];
@@ -126,7 +134,6 @@ class CombatParser {
      * @param {string} myCharacterName The character name of the log file owner.
      */
     loadDeathRecap( logFilePath, lineNo, myCharacterName, callback ) {
-        characterName = myCharacterName;
 
         let act = () => {
             ipcRenderer.on( 'verified-players:get',
@@ -411,27 +418,38 @@ class CombatParser {
 
             }
         }
-        
-        console.log( 'parsing fight events:', Date.now() - startParse );
 
         // TODO: Keep record of 100% Player/Pet verifications
 
-        /** @type {string[]} */
-        var unknownEntities = [];
-        /** @type {string[]} */
-        var verifiedPlayers = [ characterName ];
-        /** @type {string[]} */
-        var verifiedNpcs = [];
-        /** @type {string[]} */
-        var verifiedPets = [];
+        this._updateEntityVerifications( lines );
 
+        callback( this._getDeathRecapModel( defensiveTimers ) );
+
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Updates entity verification, adding 100% confirmations for players, 
+     * pets, and npcs.
+     * 
+     * @param {string[]} lines The log lines for the combat.
+     */
+    _updateEntityVerifications( lines ) {
         const startPlayerSearch = Date.now();
         for ( let i = 0; i < lines.length; i++ ) {
             let regxResult = combatRgx.GroupRaid.exec( lines[ i ] );
             regxResult = regxResult == null ? combatRgx.Chat.exec( lines[ i ] ) : regxResult;
             regxResult = regxResult == null ? combatRgx.Achievement.exec( lines[ i ] ) : regxResult;
-            if ( regxResult !== null && verifiedPlayers.indexOf( regxResult.groups.player ) === -1 ) {
-                verifiedPlayers.push( regxResult.groups.player );
+            if ( regxResult !== null && this._verifiedPlayers.indexOf( regxResult.groups.player ) === -1 ) {
+                this._verifiedPlayers.push( regxResult.groups.player );
             }
             combatRgx.DirectDamage.lastIndex = 0;
             combatRgx.YourDoT.lastIndex = 0;
@@ -440,35 +458,35 @@ class CombatParser {
 
         for ( let i = 0; i < this.encounterEvents.length; i++ ) {
             const event = this.encounterEvents[ i ];
-            if ( ( event.modifiers?.rampage || event.modifiers?.wild_rampage ) && verifiedNpcs.indexOf( event.actor ) === -1 ) {
-                verifiedNpcs.push( event.actor );
+            if ( ( event.modifiers?.rampage || event.modifiers?.wild_rampage ) && this._verifiedNpcs.indexOf( event.actor ) === -1 ) {
+                this._verifiedNpcs.push( event.actor );
             }
         }
 
-        for ( let i = 0; i < verifiedPlayers.length; i++ ) {
-            const player = verifiedPlayers[ i ];
-            for ( let j = 0; j < verifiedNpcs.length; j++ ) {
-                const npc = verifiedNpcs[ j ];
+        for ( let i = 0; i < this._verifiedPlayers.length; i++ ) {
+            const player = this._verifiedPlayers[ i ];
+            for ( let j = 0; j < this._verifiedNpcs.length; j++ ) {
+                const npc = this._verifiedNpcs[ j ];
 
                 if ( npc.indexOf( player ) === 0 ) {
-                    verifiedPets.push( npc );
+                    this._verifiedPets.push( npc );
                 }
             }
         }
 
-        verifiedNpcs = verifiedNpcs.filter( f => verifiedPets.indexOf( f ) === -1 );
+        this._verifiedNpcs = this._verifiedNpcs.filter( f => this._verifiedPets.indexOf( f ) === -1 );
 
         for ( let i = 0; i < this.encounterEvents.length; i++ ) {
             const event = this.encounterEvents[ i ];
-            if ( event.actor != null && !( verifiedNpcs.indexOf( event.actor ) >= 0 || verifiedPets.indexOf( event.actor ) >= 0 || verifiedPlayers.indexOf( event.actor ) >= 0 || unknownEntities.indexOf( event.actor ) >= 0 ) ) {
-                unknownEntities.push( event.actor );
+            if ( event.actor != null && !( this._verifiedNpcs.indexOf( event.actor ) >= 0 || this._verifiedPets.indexOf( event.actor ) >= 0 || this._verifiedPlayers.indexOf( event.actor ) >= 0 || this._unknownEntities.indexOf( event.actor ) >= 0 ) ) {
+                this._unknownEntities.push( event.actor );
             }
         }
-        
+
         console.log( 'player/npc search:', Date.now() - startPlayerSearch );
 
         let crazy = 0;
-        while ( unknownEntities.length > 0 && crazy < 5 ) {
+        while ( this._unknownEntities.length > 0 && crazy < 5 ) {
             crazy++;
 
             /** @type {{name: string, attackNpc: number, attackPlayer: number, healNpc: number, healPlayer: number, attackedByNpc: 0, attackedByPlayer: 0}[]} */
@@ -479,10 +497,8 @@ class CombatParser {
 
                 if ( event.actor != null && event.target != null ) {
                     // Someone might be unaccounted for.
-
-                    if ( unknownEntities.indexOf( event.actor ) > -1) {
+                    if ( this._unknownEntities.indexOf( event.actor ) > -1 ) {
                         // It's the actor!
-
                         let stats = entitySimpleStats.find( f => f.name === event.actor );
                         let add = false;
 
@@ -493,19 +509,17 @@ class CombatParser {
 
                         if ( event.damage > 0 || event.attackAvoided ) {
                             // The actor is attacking something.
-
-                            if ( verifiedNpcs.indexOf( event.target ) > -1 ) {
+                            if ( this._verifiedNpcs.indexOf( event.target ) > -1 ) {
                                 stats.attackNpc += 1;
-                            } else if ( verifiedPlayers.indexOf( event.target ) > -1 ) {
+                            } else if ( this._verifiedPlayers.indexOf( event.target ) > -1 ) {
                                 stats.attackPlayer += 1;
                             }
-                            
+
                         } else if ( event.heal > 0 ) {
                             // The actor is healing something.
-
-                            if ( verifiedNpcs.indexOf( event.target ) > -1 ) {
+                            if ( this._verifiedNpcs.indexOf( event.target ) > -1 ) {
                                 stats.healNpc += 1;
-                            } else if ( verifiedPlayers.indexOf( event.target ) > -1 ) {
+                            } else if ( this._verifiedPlayers.indexOf( event.target ) > -1 ) {
                                 stats.healPlayer += 1;
                             }
 
@@ -515,9 +529,8 @@ class CombatParser {
                             entitySimpleStats.push( stats );
                         }
 
-                    } else if ( unknownEntities.indexOf( event.target ) > -1 ) {
+                    } else if ( this._unknownEntities.indexOf( event.target ) > -1 ) {
                         // It's the target!
-
                         let stats = entitySimpleStats.find( f => f.name === event.target );
                         let add = false;
 
@@ -528,21 +541,19 @@ class CombatParser {
 
                         if ( event.damage > 0 || event.attackAvoided ) {
                             // The known(?) is attacking the unknown.
-
-                            if ( verifiedNpcs.indexOf( event.actor ) > -1 ) {
+                            if ( this._verifiedNpcs.indexOf( event.actor ) > -1 ) {
                                 stats.attackedByNpc += 1;
-                            } else if ( verifiedPlayers.indexOf( event.actor ) > -1 ) {
+                            } else if ( this._verifiedPlayers.indexOf( event.actor ) > -1 ) {
                                 stats.attackedByPlayer += 1;
                             }
-                            
+
                         }
                         // NPCs can heal just players, so this doesn't tell us anything.
                         // Players can heal NPCs (and can only receive healing by NPCs. Charming a pet that can't heal themselves, so all healing comes from players), so this doesn't tell us anything.
-
                         if ( add ) {
                             entitySimpleStats.push( stats );
                         }
-                        
+
                     }
                 }
 
@@ -553,50 +564,67 @@ class CombatParser {
 
                 if ( stats.attackPlayer === 0 && stats.attackNpc > 0 ) {
 
-                    verifiedPets.push( stats.name );
-                    let ui = unknownEntities.indexOf( stats.name );
-                    unknownEntities.splice( ui, 1 );
+                    this._verifiedPets.push( stats.name );
+                    let ui = this._unknownEntities.indexOf( stats.name );
+                    this._unknownEntities.splice( ui, 1 );
 
                 } else if ( stats.attackNpc === 0 && stats.attackPlayer === 0 && stats.healPlayer > 0 ) {
 
-                    verifiedPets.push( stats.name );
-                    let ui = unknownEntities.indexOf( stats.name );
-                    unknownEntities.splice( ui, 1 );
+                    this._verifiedPets.push( stats.name );
+                    let ui = this._unknownEntities.indexOf( stats.name );
+                    this._unknownEntities.splice( ui, 1 );
 
                 } else if ( stats.attackedByPlayer > 0 && stats.attackNpc === 0 ) {
 
-                    verifiedNpcs.push( stats.name );
-                    let ui = unknownEntities.indexOf( stats.name );
-                    unknownEntities.splice( ui, 1 );
-                    
-                } else if ( stats.attackedByNpc > 0 && stats.attackPlayer === 0) {
+                    this._verifiedNpcs.push( stats.name );
+                    let ui = this._unknownEntities.indexOf( stats.name );
+                    this._unknownEntities.splice( ui, 1 );
 
-                    verifiedPets.push( stats.name );
-                    let ui = unknownEntities.indexOf( stats.name );
-                    unknownEntities.splice( ui, 1 );
-                    
+                } else if ( stats.attackedByNpc > 0 && stats.attackPlayer === 0 ) {
+
+                    this._verifiedPets.push( stats.name );
+                    let ui = this._unknownEntities.indexOf( stats.name );
+                    this._unknownEntities.splice( ui, 1 );
+
                 } else if ( stats.attackNpc === 0 && stats.attackPlayer > 0 ) {
 
-                    verifiedNpcs.push( stats.name );
-                    let ui = unknownEntities.indexOf( stats.name );
-                    unknownEntities.splice( ui, 1 );
+                    this._verifiedNpcs.push( stats.name );
+                    let ui = this._unknownEntities.indexOf( stats.name );
+                    this._unknownEntities.splice( ui, 1 );
 
                 } else if ( stats.attackPlayer > 0 && stats.attackNpc > 0 ) {
-                    
+
                     if ( stats.attackPlayer / stats.attackNpc <= 0.5 ) {
-                        verifiedPets.push( stats.name );
-                        let ui = unknownEntities.indexOf( stats.name );
-                        unknownEntities.splice( ui, 1 );
+                        this._verifiedPets.push( stats.name );
+                        let ui = this._unknownEntities.indexOf( stats.name );
+                        this._unknownEntities.splice( ui, 1 );
                     } else if ( stats / attackNpc / stats.attackPlayer <= 0.5 ) {
-                        verifiedNpcs.push( stats.name );
-                        let ui = unknownEntities.indexOf( stats.name );
-                        unknownEntities.splice( ui, 1 );
+                        this._verifiedNpcs.push( stats.name );
+                        let ui = this._unknownEntities.indexOf( stats.name );
+                        this._unknownEntities.splice( ui, 1 );
                     }
 
                 }
             }
         }
+        
+    }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Returns the death recap model.
+     * 
+     * @param {{name: string, start: Date, duration: number, end: Date}[]} defensiveTimers The list of defensive timers.
+     */
+    _getDeathRecapModel( defensiveTimers ) {
         let model = new DeathRecapModel();
 
         model.myDeathLog = [];
@@ -612,7 +640,7 @@ class CombatParser {
         let totalRaidHealingReceived = 0;
         let totalRaidDamage = 0;
         let encounterTimestamp = this.encounterEvents[ 0 ].timestamp;
-        
+
         /** @type {Record<string, number>} */
         let mobQuadCount = {};
 
@@ -627,8 +655,8 @@ class CombatParser {
             let handled = false;
 
             // Calculates encounter mob statsitics, this doesn't break the loop when a match is found.
-            for ( let j = 0; j < verifiedNpcs.length; j++ ) {
-                const npc = verifiedNpcs[ j ];
+            for ( let j = 0; j < this._verifiedNpcs.length; j++ ) {
+                const npc = this._verifiedNpcs[ j ];
 
                 if ( npc === event.actor ) {
 
@@ -683,30 +711,30 @@ class CombatParser {
                             mobHitCount[ npc ].spellHits.push( event.damage );
                         }
                     }
-                    
+
                 }
             }
 
             // Calculate raid statistics
-            for ( let j = 0; j < verifiedPlayers.length; j++ ) {
-                const player = verifiedPlayers[ j ];
+            for ( let j = 0; j < this._verifiedPlayers.length; j++ ) {
+                const player = this._verifiedPlayers[ j ];
 
                 if ( player === event.actor ) {
 
                     if ( event.heal > 0 ) {
 
                         if ( event.overHeal > 0 ) {
-                        
+
                             totalRaidHealing += event.heal + event.overHeal;
                             totalRaidHealingReceived += event.heal;
 
                         } else if ( event.heal > 0 ) {
-                        
+
                             totalRaidHealing += event.heal;
                             totalRaidHealingReceived += event.heal;
 
                         }
-                        
+
                         healingToRaid[ event.actor ] = healingToRaid[ event.actor ] ? healingToRaid[ event.actor ] : 0;
                         healingToRaid[ event.actor ] += event.heal;
 
@@ -716,17 +744,17 @@ class CombatParser {
                     if ( event.damage > 0 ) {
                         totalRaidDamage += event.damage;
                     }
-                    
+
                 }
             }
 
-            for ( let j = 0; j < verifiedPlayers.length; j++ ) {
-                const player = verifiedPlayers[ j ];
+            for ( let j = 0; j < this._verifiedPlayers.length; j++ ) {
+                const player = this._verifiedPlayers[ j ];
 
                 if ( player === event.target ) {
                     if ( player === characterName ) {
                         let log = new DeathRecapLog();
-                        
+
                         log.timestamp = event.timestamp;
                         log.actor = event.actor;
                         log.attackType = event.attackType;
@@ -735,9 +763,9 @@ class CombatParser {
                         log.overHealing = event.overHeal;
                         log.attackName = event.attackName;
                         log.target = player;
-                        
+
                         model.myDeathLog.push( log );
-                        
+
                         if ( event.damage > 0 ) {
                             damageToRaid[ event.actor ] = damageToRaid[ event.actor ] ? damageToRaid[ event.actor ] : 0;
                             damageToRaid[ event.actor ] += event.damage;
@@ -746,7 +774,7 @@ class CombatParser {
                         handled = true;
                         break;
                     } else {
-                        
+
                         if ( event.damage > 0 ) {
                             damageToRaid[ event.actor ] = damageToRaid[ event.actor ] ? damageToRaid[ event.actor ] : 0;
                             damageToRaid[ event.actor ] += event.damage;
@@ -760,12 +788,12 @@ class CombatParser {
 
             if ( handled )
                 continue;
-            
-            for ( let j = 0; j < verifiedPets.length; j++ ) {
-                const pet = verifiedPets[ j ];
+
+            for ( let j = 0; j < this._verifiedPets.length; j++ ) {
+                const pet = this._verifiedPets[ j ];
 
                 if ( pet === event.target ) {
-                                            
+
                     if ( event.damage > 0 ) {
                         damageToRaid[ event.actor ] = damageToRaid[ event.actor ] ? damageToRaid[ event.actor ] : 0;
                         damageToRaid[ event.actor ] += event.damage;
@@ -782,7 +810,7 @@ class CombatParser {
                     break;
                 }
             }
-            
+
             if ( encounterTimestamp != event.timestamp ) {
                 mobQuadCount = {};
                 encounterTimestamp = event.timestamp;
@@ -839,7 +867,7 @@ class CombatParser {
 
         model.encounterStatistics.mobs = [];
         let mobStatKeys = Object.keys( mobStats );
-        for (let i = 0; i < mobStatKeys.length; i++) {
+        for ( let i = 0; i < mobStatKeys.length; i++ ) {
             const stats = mobStats[ mobStatKeys[ i ] ];
             stats.name = mobStatKeys[ i ];
 
@@ -852,19 +880,8 @@ class CombatParser {
         model.encounterStatistics.raid.dps = totalRaidDamage / encounterDuration;
         model.encounterStatistics.raid.healing = totalRaidHealing;
         model.encounterStatistics.raid.healingReceived = totalRaidHealingReceived;
-        
-        callback( model );
-
+        return model;
     }
-
-
-
-
-
-
-
-
-
 
     /**
      * Queries the specified log file for all player deaths.
