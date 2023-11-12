@@ -261,7 +261,6 @@ class CombatParser {
      */
     _processDeathRecapLines( lines, callback ) {
 
-        const startFight = Date.now();
         let medianLogsPerSecond = 0;
         let allBlocksLps = [];
         let totalLogTimeBlocks = 0;
@@ -274,9 +273,6 @@ class CombatParser {
         let dieDown = 0;
         // When die down count equals the limit, we break the loop and have found the beginning of the fight.
         let dieDownLimit = 5;
-
-        // /** @type {{timestamp: Date, log: string}[]} */
-        // let timeLogs = [];
 
         /** @type {Record<string, string[]>} */
         let timeLogs = {};
@@ -330,8 +326,6 @@ class CombatParser {
                 }
             }
         }
-
-        console.log( 'calculate fight duration:', Date.now() - startFight );
 
         const startParse = Date.now();
         // MeleeDamage: actor, attackType, target, damage modifiers.
