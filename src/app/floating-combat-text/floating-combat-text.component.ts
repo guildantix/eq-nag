@@ -21,46 +21,6 @@ const animateFadeInDuration = 500;
 const animateFloatDuration = 1000;
 const animateGrowShrinkDuration = 500;
 
-const combatMessageTypes: string[] = [
-    'yourHits', // actor = you, no other modifiers
-    'yourFlurry', // actor = you, flurry modifier
-    'yourCrits', // actor = you, critical modifier
-    'yourCripplingBlows', // actor = you, crippling modifier
-    'youBeingHit', // target = you, no other modifiers
-    
-    'yourPetHits', // actor = your pet, no other modifiers // TODO: add pet assignment "/pet leader"
-    'yourPetCrits', // actor = your pet, critical modifier
-    'yourPetFlurry', // actor = your pet, flurry modifier
-    'yourPetRampage', // actor = your pet, rampage modifier
-    'yourPetBeingHit', // target = your pet, no other modifiers
-
-    'tauntMessages', // undetermined // TODO: Find logs of taunt message to determine what we can do with this
-    'yourCombatAbilitiesHits', // undetermined // TODO: Find logs of combat abilities to determine what we can do with this
-    'yourCombatAbilitiesCrits', // undetermined // TODO: Find logs of combat abilities to determine what we can do with this
-    
-    'yourMeleeWarnings', // undetermined // TODO: Find logs of melee warnings to determine what we can do with this
-    'combatAbilityReuse', // undetermined // TODO: Find logs of combat ability reuse to determine what we can do with this
-
-    'yourSpellHits', // actor = you, no other modifiers
-    'yourSpellCrits', // actor = you, critical modifier
-    'yourSpellResists', // actor = you, target = other, resist modifier
-    'yourSpellImmunes', // actor = you, target = other, immune modifier
-    'yourSpellInterrupts', // actor = you, interrupt modifier
-    'yourDoTHits', // actor = you, DoT modifier
-    'yourDoTCrits', // actor = you, DoT modifier, critical modifier
-    'yourHeals', // actor = you, target = other, no other modifiers
-    'yourCritHeals', // actor = you, target = other, critical modifier
-    'youBeingHealed', // target = you, no other modifiers
-    'youBeingCritHealed', // target = you, critical modifier
-    'yourOvertimeHeals', // actor = you, target = other, no other modifiers
-    'yourOvertimeCritHeals', // actor = you, target = other, critical modifier
-    'youBeingOvertimeHealed', // target = you, no other modifiers
-    'youBeingOvertimeCritHealed', // target = you, critical modifier
-    'yourDamageShieldHits', // actor = you, target = other, no other modifiers
-    'youBeingHitByDamageShield', // target = you, no other modifiers
-    'youBeingHitByEnvironmentalDamage', // target = you, no other modifiers
-];
-
 @Component( {
     selector: 'app-floating-combat-text',
     templateUrl: 'floating-combat-text.component.html',
@@ -128,7 +88,6 @@ export class FloatingCombatTextComponent implements OnInit, DoCheck {
                     action: () => {
                         this.ipcService.migrateFctCombatGroups().subscribe( success => {
                             this.ipcService.getFctCombatGroups().subscribe( data => {
-                                console.log( 'data', data );
                                 this.combatGroups = data;
                             } );
                         } );
@@ -144,7 +103,6 @@ export class FloatingCombatTextComponent implements OnInit, DoCheck {
                 action: () => {
                     this.ipcService.initializeFctCombatGroups().subscribe( success => {
                         this.ipcService.getFctCombatGroups().subscribe( data => {
-                            console.log( 'data', data );
                             this.combatGroups = data;
                         } );
                     } );
@@ -172,10 +130,34 @@ export class FloatingCombatTextComponent implements OnInit, DoCheck {
         } );
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * When the user changes the enable FCT setting, update the setting.
+     */
     onEnableFctChange(): void {
         this.ipcService.updateEnableFct( this.enableFct );
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Creates a quick share code for the current FCT configuration.
+     */
     createQuickShare(): void {
         let model = new QuickShareFctModel();
         model.fctGroups = this.combatGroups.slice();
@@ -194,6 +176,15 @@ export class FloatingCombatTextComponent implements OnInit, DoCheck {
             } );
         })
     }
+
+
+
+
+
+
+
+
+
 
     /**
      * Opens the quick share dialog and allows the user to enter in a quick share code for FCT.
@@ -225,6 +216,15 @@ export class FloatingCombatTextComponent implements OnInit, DoCheck {
                 }
             } );
     }
+
+
+
+
+
+
+
+
+
 
     /**
      * Installs the specified combat group package.
@@ -379,7 +379,7 @@ export class FloatingCombatTextComponent implements OnInit, DoCheck {
      * @param e The click event args.
      */
     updatePosition( group: FctCombatGroup, direction: -1 | 1, e: MouseEvent | undefined = undefined ): void {
-        console.log( 'e', e );
+
         if ( e ) {
             e.preventDefault();
             e.stopPropagation();
@@ -941,7 +941,6 @@ export class FloatingCombatTextComponent implements OnInit, DoCheck {
 
             animation += ( animation.length > 0 ? ', ' : '' ) + `animate-fadeout ${fadeOutDuration}ms ${timingFn}`;
             duration = fadeOutDuration === animateFadeOutDuration ? animateFadeOutDuration : duration;
-            console.log( 'fadeOutDuration', fadeOutDuration, timingFn );
         }
 
         if ( group.combatAnimations.fadeIn ) {
@@ -972,9 +971,8 @@ export class FloatingCombatTextComponent implements OnInit, DoCheck {
             textAnimation += ( textAnimation.length > 0 ? ', ' : '' ) + `animate-grow ${animationDuration}ms ease-out`;
         }
 
-        console.log( 'animation', animation, duration );
-
         if ( animation.length === 0 && subAnimation.length === 0 && textAnimation.length === 0 ) {
+
         } else {
 
             window.setTimeout( () => {
