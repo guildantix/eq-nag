@@ -43,6 +43,15 @@ class CharacterDatabaseStore extends Store {
 
     }
     
+
+
+
+
+
+
+
+
+
     /**
      * Adds the given character to the store.
      * 
@@ -70,6 +79,15 @@ class CharacterDatabaseStore extends Store {
         return character.characterId;
     }
     
+
+
+
+
+
+
+
+
+
     /**
      * Removes the specified character.
      * 
@@ -86,6 +104,15 @@ class CharacterDatabaseStore extends Store {
         }
     }
     
+
+
+
+
+
+
+
+
+
     /**
      * Removes the character at the specified index.
      * 
@@ -108,6 +135,15 @@ class CharacterDatabaseStore extends Store {
         }
     }
     
+
+
+
+
+
+
+
+
+
     /**
      * Returns the character with the given id.
      * 
@@ -126,6 +162,21 @@ class CharacterDatabaseStore extends Store {
         }
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Returns the character id of the character with the given log file.
+     * 
+     * @param {string} logFile The log file to search for.
+     * @returns 
+     */
     findCharacterIdByLogFile( logFile ) {
         
         // Find the index of the character by Id.
@@ -138,6 +189,15 @@ class CharacterDatabaseStore extends Store {
             return null;
         }
     }
+
+
+
+
+
+
+
+
+
 
     /**
      * Updates the given character in the store.
@@ -165,6 +225,15 @@ class CharacterDatabaseStore extends Store {
         
     }
     
+
+
+
+
+
+
+
+
+
     /**
      * Returns all characters.
      * 
@@ -174,6 +243,15 @@ class CharacterDatabaseStore extends Store {
         return this.#data.characters;
     }
 
+
+
+
+
+
+
+
+
+
     /**
      * Returns all trigger profiles.
      * 
@@ -182,6 +260,15 @@ class CharacterDatabaseStore extends Store {
     getAllTriggerProfiles() {
         return this.#data.triggerProfiles;
     }
+
+
+
+
+
+
+
+
+
 
     /**
      * Adds the given trigger id to all profiles and characters that have disable by default on.
@@ -207,6 +294,15 @@ class CharacterDatabaseStore extends Store {
         
         this.storeDataFile( this.#data );
     }
+
+
+
+
+
+
+
+
+
 
     /**
      * Removes the given trigger id from all profiles and character disabled lists.
@@ -394,6 +490,15 @@ class CharacterDatabaseStore extends Store {
 
     }
 
+
+
+
+
+
+
+
+
+
     /**
      * Returns a list of options available from the known eq log file path.
      * 
@@ -426,6 +531,15 @@ class CharacterDatabaseStore extends Store {
         return dictionary;
     }
 
+
+
+
+
+
+
+
+
+
     /**
      * Executes the given function, passing in the new character, when a new character is added.
      * 
@@ -440,6 +554,15 @@ class CharacterDatabaseStore extends Store {
         }
     }
 
+
+
+
+
+
+
+
+
+
     /**
      * Executes the given function, passing in the removed character, when a character is removed.
      * 
@@ -453,6 +576,15 @@ class CharacterDatabaseStore extends Store {
             onRemovedHandlers[ i ] = fn;
         }
     }
+
+
+
+
+
+
+
+
+
 
 }
 
