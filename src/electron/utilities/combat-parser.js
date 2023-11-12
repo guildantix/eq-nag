@@ -14,279 +14,6 @@ const { AttackModifiers, LogRecord, avoidTypeMap, attackTypeMap } = require( '..
 /** @type {string} */
 let characterName = 'You';
 
-/** @type {LogRecord[]} */
-let encounterEvents = [];
-
-
-
-
-
-
-
-
-
-
-/**
- * Returns a unified name for the attack type.
- * 
- * @example 
- *          'backstabs' => 'backstab'
- *          'Touch of the Cursed XV' => 'Touch of the Cursed XV'
- * 
- * @returns {{name: string, type: 'melee'|'spell'}]}
- * 
- * @param {string} attackType The name of the attack type.
- */
-function getAttackType( attackType ) {
-    // regular expression to strip roman numerals or ranks from spell names: /^(?<spellName>.+?)(\s[IVXLCDM]+|\sRk\.\s[I]{2,3})?$/gi [https://regex101.com/r/xnoznH/1]
-    let name = attackTypeMap[ attackType ];
-    return {
-        name: name ? name : attackType,
-        type: name ? 'melee' : 'spell',
-    };
-}
-
-
-
-
-
-
-
-
-
-
-/**
- * Returns the character name of the target and actor.
- * 
- * @remarks In the log, some references to the actor/target are himself, you, 
- *          etc.  This should map the value correctly.
- * 
- * @returns {{actor: string, target: string}}
- * 
- * @param {string} actor The name of the actor.
- * @param {string?} target The name of the actor.
- */
-function getActorTargetNames( actor, target ) {
-    let output = {
-        actor: actor?.substring( 0, 1 ).toUpperCase() + actor?.substring( 1 ),
-        target: target?.substring( 0, 1 ).toUpperCase() + target?.substring( 1 ),
-    };
-        
-    if ( actor === 'YOU' || actor === 'YOUR' || actor === 'you' || actor === 'You' ) {
-        output.actor = characterName;
-    }
-
-    if ( target === 'YOU' || target === 'YOUR' || target === 'you' || target === 'You' ) {
-        output.target = characterName;
-    } else if ( target === 'himself' || target === 'herself' ) {
-        output.target = actor;
-    }
-
-    return output;
-}
-
-
-
-
-
-
-
-
-
-
-/**
- * Adds a new melee event to the encounter.
- * 
- * @param {Date} timestamp The timestamp of the event.
- * @param {string} actor The name of the actor.
- * @param {string} target The name of the target.
- * @param {number} damage The damage amount.
- * @param {string} attackType The attack type.
- * @param {string?} modifiers The modifiers of the attack.
- */
-function addMeleeEvent( timestamp, actor, target, damage, attackType, modifiers ) {
-    let names = getActorTargetNames( actor, target );
-    let attackTypeName = getAttackType( attackType );
-
-    let rec = new LogRecord();
-    rec.timestamp = timestamp;
-    rec.actor = names.actor;
-    rec.target = names.target;
-    rec.attackType = attackTypeName.type;
-    rec.attackName = attackTypeName.name;
-    rec.damage = damage;
-    rec.thorns = false;
-    rec.modifiers = new AttackModifiers();
-    rec.modifiers.critical = modifiers?.indexOf( 'Critical' ) > -1;
-    rec.modifiers.flurry = modifiers?.indexOf( 'Flurry' ) > -1;
-    rec.modifiers.lucky = modifiers?.indexOf( 'Lucky' ) > -1;
-    rec.modifiers.riposte = modifiers?.indexOf( 'Riposte' ) > -1;
-    rec.modifiers.strikethrough = modifiers?.indexOf( 'Strikethrough' ) > -1;
-    rec.modifiers.wild_rampage = modifiers?.indexOf( 'Wild Rampage' ) > -1;
-    rec.modifiers.rampage = modifiers?.indexOf( 'Rampage' ) > -1;
-    rec.modifiers.assassinate = modifiers?.indexOf( 'Assassinate' ) > -1;
-    rec.modifiers.headshot = modifiers?.indexOf( 'Headshot' ) > -1;
-    rec.modifiers.double_bow_shot = modifiers?.indexOf( 'Double Bow Shot' ) > -1;
-    rec.modifiers.deadly_strike = modifiers?.indexOf( 'Deadly Strike' ) > -1;
-    rec.modifiers.finishing_blow = modifiers?.indexOf( 'Finishing Blow' ) > -1;
-
-    encounterEvents.push( rec );
-}
-
-
-
-
-
-
-
-
-
-
-/**
- * Adds a new defense event to the encounter.
- * 
- * @param {Date} timestamp The timestamp of the event.
- * @param {string} actor The name of the actor.
- * @param {string} target The name of the target.
- * @param {string} defenseType The type of defense.
- * @param {string?} attackType The type of defense.
- * @param {string?} modifiers The modifiers of the attack.
- */
-function addMeleeAvoidance( timestamp, actor, target, defenseType, attackType, modifiers ) {
-    let names = getActorTargetNames( actor, target );
-    let attackTypeName = getAttackType( attackType );
-    let avoidTypeName = avoidTypeMap[ defenseType ];
-
-    let rec = new LogRecord();
-    rec.timestamp = timestamp;
-    rec.actor = names.actor;
-    rec.target = names.target;
-    rec.attackType = attackTypeName.type;
-    rec.attackName = attackTypeName.name;
-    rec.attackAvoided = true;
-    rec.modifiers = new AttackModifiers();
-    rec.modifiers.dodge = avoidTypeName === 'dodge';
-    rec.modifiers.parry = avoidTypeName === 'parry';
-    rec.modifiers.riposte = avoidTypeName === 'riposte';
-    rec.modifiers.block = avoidTypeName === 'block';
-    rec.modifiers.miss = avoidTypeName === 'miss';
-
-    encounterEvents.push( rec );
-}
-
-
-
-
-
-
-
-
-
-
-/**
- * Adds a new detrimental spell event to the encounter.
- * 
- * @param {Date} timestamp The timestamp of the event.
- * @param {string} actor The name of the actor.
- * @param {string} target The name of the target.
- * @param {number} damage The damage amount.
- * @param {string} attackType The name of the spell.
- * @param {string?} resistType The resist check of the spell.
- * @param {string?} modifiers The modifiers of the spell.
- */
-function addDetrimentalSpellEvent( timestamp, actor, target, damage, attackType, resistType, modifiers ) {
-    let names = getActorTargetNames( actor, target );
-    let attackTypeName = getAttackType( attackType );
-
-    let rec = new LogRecord();
-    rec.timestamp = timestamp;
-    rec.actor = names.actor;
-    rec.target = names.target;
-    rec.attackType = attackTypeName.type;
-    rec.attackName = attackTypeName.name;
-    rec.damage = damage;
-    rec.thorns = false;
-    rec.modifiers = new AttackModifiers();
-    rec.modifiers.critical = modifiers?.indexOf( 'Critical' ) > -1;
-    rec.modifiers.lucky = modifiers?.indexOf( 'Lucky' ) > -1;
-    rec.modifiers.strikethrough = modifiers?.indexOf( 'Strikethrough' ) > -1;
-
-    encounterEvents.push( rec );
-}
-
-
-
-
-
-
-
-
-
-
-/**
- * Adds a new beneficial spell event to the encounter.
- * 
- * @param {Date} timestamp The timestamp of the event.
- * @param {string} actor The name of the actor.
- * @param {string} target The name of the target.
- * @param {string} healDuration The capture group for the heal duration.
- * @param {number} healActual The healing applied to the target.
- * @param {string} healType The name of the heal spell.
- * @param {number?} healLiteral The total amount of possible healing, if supplied in the capture groups.
- * @param {string?} modifiers The modifiers of the spell.
- */
-function addBeneficialSpellEvent(timestamp, actor, target, healDuration, healActual, healType, healLiteral, modifiers) {
-    let names = getActorTargetNames( actor, target );
-    let healTypeName = getAttackType( healType );
-
-    let rec = new LogRecord();
-    rec.timestamp = timestamp;
-    rec.actor = names.actor;
-    rec.target = names.target;
-    rec.attackType = healTypeName.type;
-    rec.attackName = healTypeName.name; // healDuration === 'over time for' ? 'heal over time' : 'direct heal'; // TODO: Log heal over times.
-    rec.heal = healActual;
-    rec.overHeal = healLiteral > 0 ? healLiteral - healActual : 0;
-    rec.thorns = false;
-    rec.modifiers = new AttackModifiers();
-    rec.modifiers.critical = modifiers?.indexOf( 'Critical' ) > -1;
-    rec.modifiers.lucky = modifiers?.indexOf( 'Lucky' ) > -1;
-
-    encounterEvents.push( rec );
-}
-
-
-
-
-
-
-
-
-
-
-/**
- * Adds a new thorns event to the encounter.
- * 
- * @param {Date} timestamp The timestamp of the event.
- * @param {string} actor The name of the actor.
- * @param {string} target The name of the target.
- * @param {number} damage The thorns damage.
- */
-function addThornsEvent( timestamp, actor, target, damage ) {
-    let names = getActorTargetNames( actor, target );
-
-    let rec = new LogRecord();
-    rec.timestamp = timestamp;
-    rec.actor = names.actor;
-    rec.target = names.target;
-    rec.attackType = 'thorns';
-    rec.damage = damage;
-    rec.thorns = true;
-    rec.modifiers = new AttackModifiers();
-
-    encounterEvents.push( rec );
-}
-
 
 
 
@@ -375,6 +102,9 @@ class CombatParser {
     chunkSize = 1048576;
     /** @type {number} */
     chunks = 50;
+
+    /** @type {LogRecord[]} */
+    encounterEvents = [];
 
     constructor() { }
 
@@ -622,7 +352,7 @@ class CombatParser {
 
                 regxResult = combatRgx.MeleeDamage.exec( logs[ i ] );
                 if ( regxResult !== null ) {
-                    addMeleeEvent( timestamp, regxResult.groups.actor, regxResult.groups.target, +regxResult.groups.damage, regxResult.groups.attackType, regxResult.groups.modifiers );
+                    this._addMeleeEvent( timestamp, regxResult.groups.actor, regxResult.groups.target, +regxResult.groups.damage, regxResult.groups.attackType, regxResult.groups.modifiers );
                     continue;
                 }
                 combatRgx.MeleeDamage.lastIndex = 0;
@@ -630,7 +360,7 @@ class CombatParser {
                 regxResult = combatRgx.MeleeMiss.exec( logs[ i ] );
                 regxResult = regxResult == null ? combatRgx.ActiveDefense.exec( logs[ i ] ) : regxResult;
                 if ( regxResult !== null ) {
-                    addMeleeAvoidance( timestamp, regxResult.groups.actor, regxResult.groups.target, regxResult.groups.defenseType, regxResult.groups.attackType, regxResult.groups.modifiers );
+                    this._addMeleeAvoidance( timestamp, regxResult.groups.actor, regxResult.groups.target, regxResult.groups.defenseType, regxResult.groups.attackType, regxResult.groups.modifiers );
                     continue;
                 }
                 combatRgx.MeleeMiss.lastIndex = 0;
@@ -640,7 +370,7 @@ class CombatParser {
                 regxResult = regxResult == null ? combatRgx.YourDoT.exec( logs[ i ] ) : regxResult;
                 regxResult = regxResult == null ? combatRgx.OtherDoT.exec( logs[ i ] ) : regxResult;
                 if ( regxResult !== null ) {
-                    addDetrimentalSpellEvent( timestamp, regxResult.groups.actor, regxResult.groups.target, +regxResult.groups.damage, regxResult.groups.attackType, regxResult.groups.resistType, regxResult.groups.modifiers );
+                    this._addDetrimentalSpellEvent( timestamp, regxResult.groups.actor, regxResult.groups.target, +regxResult.groups.damage, regxResult.groups.attackType, regxResult.groups.resistType, regxResult.groups.modifiers );
                     continue;
                 }
                 combatRgx.DirectDamage.lastIndex = 0;
@@ -649,14 +379,14 @@ class CombatParser {
                 
                 regxResult = combatRgx.Thorns.exec( logs[ i ] );
                 if ( regxResult !== null ) {
-                    addThornsEvent( timestamp, regxResult.groups.actor, regxResult.groups.target, +regxResult.groups.damage );
+                    this._addThornsEvent( timestamp, regxResult.groups.actor, regxResult.groups.target, +regxResult.groups.damage );
                     continue;
                 }
                 combatRgx.Thorns.lastIndex = 0;
                 
                 regxResult = combatRgx.Healing.exec( logs[ i ] );
                 if ( regxResult !== null ) {
-                    addBeneficialSpellEvent( timestamp, regxResult.groups.actor, regxResult.groups.target, regxResult.groups.healDuration, +regxResult.groups.healActual, regxResult.groups.healType, +regxResult.groups.healLiteral, regxResult.groups.modifiers );
+                    this._addBeneficialSpellEvent( timestamp, regxResult.groups.actor, regxResult.groups.target, regxResult.groups.healDuration, +regxResult.groups.healActual, regxResult.groups.healType, +regxResult.groups.healLiteral, regxResult.groups.modifiers );
                     continue;
                 }
                 combatRgx.Healing.lastIndex = 0;
@@ -708,8 +438,8 @@ class CombatParser {
             combatRgx.OtherDoT.lastIndex = 0;
         }
 
-        for ( let i = 0; i < encounterEvents.length; i++ ) {
-            const event = encounterEvents[ i ];
+        for ( let i = 0; i < this.encounterEvents.length; i++ ) {
+            const event = this.encounterEvents[ i ];
             if ( ( event.modifiers?.rampage || event.modifiers?.wild_rampage ) && verifiedNpcs.indexOf( event.actor ) === -1 ) {
                 verifiedNpcs.push( event.actor );
             }
@@ -728,8 +458,8 @@ class CombatParser {
 
         verifiedNpcs = verifiedNpcs.filter( f => verifiedPets.indexOf( f ) === -1 );
 
-        for ( let i = 0; i < encounterEvents.length; i++ ) {
-            const event = encounterEvents[ i ];
+        for ( let i = 0; i < this.encounterEvents.length; i++ ) {
+            const event = this.encounterEvents[ i ];
             if ( event.actor != null && !( verifiedNpcs.indexOf( event.actor ) >= 0 || verifiedPets.indexOf( event.actor ) >= 0 || verifiedPlayers.indexOf( event.actor ) >= 0 || unknownEntities.indexOf( event.actor ) >= 0 ) ) {
                 unknownEntities.push( event.actor );
             }
@@ -744,8 +474,8 @@ class CombatParser {
             /** @type {{name: string, attackNpc: number, attackPlayer: number, healNpc: number, healPlayer: number, attackedByNpc: 0, attackedByPlayer: 0}[]} */
             let entitySimpleStats = [];
 
-            for ( let i = 0; i < encounterEvents.length; i++ ) {
-                const event = encounterEvents[ i ];
+            for ( let i = 0; i < this.encounterEvents.length; i++ ) {
+                const event = this.encounterEvents[ i ];
 
                 if ( event.actor != null && event.target != null ) {
                     // Someone might be unaccounted for.
@@ -877,11 +607,11 @@ class CombatParser {
         let damageToRaid = {};
         /** @type {Record<string, number>} */
         let healingToRaid = {};
-        let encounterDuration = DateUtilities.timeSince( encounterEvents[ 0 ].timestamp, encounterEvents[ encounterEvents.length - 1 ].timestamp ).totalSeconds;
+        let encounterDuration = DateUtilities.timeSince( this.encounterEvents[ 0 ].timestamp, this.encounterEvents[ this.encounterEvents.length - 1 ].timestamp ).totalSeconds;
         let totalRaidHealing = 0;
         let totalRaidHealingReceived = 0;
         let totalRaidDamage = 0;
-        let encounterTimestamp = encounterEvents[ 0 ].timestamp;
+        let encounterTimestamp = this.encounterEvents[ 0 ].timestamp;
         
         /** @type {Record<string, number>} */
         let mobQuadCount = {};
@@ -892,8 +622,8 @@ class CombatParser {
         /** @type {Record<string, DeathRecapEncounterMob>} */
         let mobStats = {};
 
-        for ( let i = 0; i < encounterEvents.length; i++ ) {
-            const event = encounterEvents[ i ];
+        for ( let i = 0; i < this.encounterEvents.length; i++ ) {
+            const event = this.encounterEvents[ i ];
             let handled = false;
 
             // Calculates encounter mob statsitics, this doesn't break the loop when a match is found.
@@ -1223,6 +953,276 @@ class CombatParser {
      */
     readLogFile( logFilePath, fn ) {
         
+    }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    /**
+     * Returns a unified name for the attack type.
+     * 
+     * @example 
+     *          'backstabs' => 'backstab'
+     *          'Touch of the Cursed XV' => 'Touch of the Cursed XV'
+     * 
+     * @returns {{name: string, type: 'melee'|'spell'}]}
+     * 
+     * @param {string} attackType The name of the attack type.
+     */
+    _getAttackType( attackType ) {
+        // regular expression to strip roman numerals or ranks from spell names: /^(?<spellName>.+?)(\s[IVXLCDM]+|\sRk\.\s[I]{2,3})?$/gi [https://regex101.com/r/xnoznH/1]
+        let name = attackTypeMap[ attackType ];
+        return {
+            name: name ? name : attackType,
+            type: name ? 'melee' : 'spell',
+        };
+    }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    /**
+     * Returns the character name of the target and actor.
+     * 
+     * @remarks In the log, some references to the actor/target are himself, you, 
+     *          etc.  This should map the value correctly.
+     * 
+     * @returns {{actor: string, target: string}}
+     * 
+     * @param {string} actor The name of the actor.
+     * @param {string?} target The name of the actor.
+     */
+    _getActorTargetNames( actor, target ) {
+        let output = {
+            actor: actor?.substring( 0, 1 ).toUpperCase() + actor?.substring( 1 ),
+            target: target?.substring( 0, 1 ).toUpperCase() + target?.substring( 1 ),
+        };
+            
+        if ( actor === 'YOU' || actor === 'YOUR' || actor === 'you' || actor === 'You' ) {
+            output.actor = characterName;
+        }
+    
+        if ( target === 'YOU' || target === 'YOUR' || target === 'you' || target === 'You' ) {
+            output.target = characterName;
+        } else if ( target === 'himself' || target === 'herself' ) {
+            output.target = actor;
+        }
+    
+        return output;
+    }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    /**
+     * Adds a new melee event to the encounter.
+     * 
+     * @param {Date} timestamp The timestamp of the event.
+     * @param {string} actor The name of the actor.
+     * @param {string} target The name of the target.
+     * @param {number} damage The damage amount.
+     * @param {string} attackType The attack type.
+     * @param {string?} modifiers The modifiers of the attack.
+     */
+    _addMeleeEvent( timestamp, actor, target, damage, attackType, modifiers ) {
+        let names = this._getActorTargetNames( actor, target );
+        let attackTypeName = this._getAttackType( attackType );
+    
+        let rec = new LogRecord();
+        rec.timestamp = timestamp;
+        rec.actor = names.actor;
+        rec.target = names.target;
+        rec.attackType = attackTypeName.type;
+        rec.attackName = attackTypeName.name;
+        rec.damage = damage;
+        rec.thorns = false;
+        rec.modifiers = new AttackModifiers();
+        rec.modifiers.critical = modifiers?.indexOf( 'Critical' ) > -1;
+        rec.modifiers.flurry = modifiers?.indexOf( 'Flurry' ) > -1;
+        rec.modifiers.lucky = modifiers?.indexOf( 'Lucky' ) > -1;
+        rec.modifiers.riposte = modifiers?.indexOf( 'Riposte' ) > -1;
+        rec.modifiers.strikethrough = modifiers?.indexOf( 'Strikethrough' ) > -1;
+        rec.modifiers.wild_rampage = modifiers?.indexOf( 'Wild Rampage' ) > -1;
+        rec.modifiers.rampage = modifiers?.indexOf( 'Rampage' ) > -1;
+        rec.modifiers.assassinate = modifiers?.indexOf( 'Assassinate' ) > -1;
+        rec.modifiers.headshot = modifiers?.indexOf( 'Headshot' ) > -1;
+        rec.modifiers.double_bow_shot = modifiers?.indexOf( 'Double Bow Shot' ) > -1;
+        rec.modifiers.deadly_strike = modifiers?.indexOf( 'Deadly Strike' ) > -1;
+        rec.modifiers.finishing_blow = modifiers?.indexOf( 'Finishing Blow' ) > -1;
+    
+        this.encounterEvents.push( rec );
+    }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    /**
+     * Adds a new defense event to the encounter.
+     * 
+     * @param {Date} timestamp The timestamp of the event.
+     * @param {string} actor The name of the actor.
+     * @param {string} target The name of the target.
+     * @param {string} defenseType The type of defense.
+     * @param {string?} attackType The type of defense.
+     * @param {string?} modifiers The modifiers of the attack.
+     */
+    _addMeleeAvoidance( timestamp, actor, target, defenseType, attackType, modifiers ) {
+        let names = this._getActorTargetNames( actor, target );
+        let attackTypeName = this._getAttackType( attackType );
+        let avoidTypeName = avoidTypeMap[ defenseType ];
+    
+        let rec = new LogRecord();
+        rec.timestamp = timestamp;
+        rec.actor = names.actor;
+        rec.target = names.target;
+        rec.attackType = attackTypeName.type;
+        rec.attackName = attackTypeName.name;
+        rec.attackAvoided = true;
+        rec.modifiers = new AttackModifiers();
+        rec.modifiers.dodge = avoidTypeName === 'dodge';
+        rec.modifiers.parry = avoidTypeName === 'parry';
+        rec.modifiers.riposte = avoidTypeName === 'riposte';
+        rec.modifiers.block = avoidTypeName === 'block';
+        rec.modifiers.miss = avoidTypeName === 'miss';
+    
+        this.encounterEvents.push( rec );
+    }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    /**
+     * Adds a new detrimental spell event to the encounter.
+     * 
+     * @param {Date} timestamp The timestamp of the event.
+     * @param {string} actor The name of the actor.
+     * @param {string} target The name of the target.
+     * @param {number} damage The damage amount.
+     * @param {string} attackType The name of the spell.
+     * @param {string?} resistType The resist check of the spell.
+     * @param {string?} modifiers The modifiers of the spell.
+     */
+    _addDetrimentalSpellEvent( timestamp, actor, target, damage, attackType, resistType, modifiers ) {
+        let names = this._getActorTargetNames( actor, target );
+        let attackTypeName = this._getAttackType( attackType );
+    
+        let rec = new LogRecord();
+        rec.timestamp = timestamp;
+        rec.actor = names.actor;
+        rec.target = names.target;
+        rec.attackType = attackTypeName.type;
+        rec.attackName = attackTypeName.name;
+        rec.damage = damage;
+        rec.thorns = false;
+        rec.modifiers = new AttackModifiers();
+        rec.modifiers.critical = modifiers?.indexOf( 'Critical' ) > -1;
+        rec.modifiers.lucky = modifiers?.indexOf( 'Lucky' ) > -1;
+        rec.modifiers.strikethrough = modifiers?.indexOf( 'Strikethrough' ) > -1;
+    
+        this.encounterEvents.push( rec );
+    }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    /**
+     * Adds a new beneficial spell event to the encounter.
+     * 
+     * @param {Date} timestamp The timestamp of the event.
+     * @param {string} actor The name of the actor.
+     * @param {string} target The name of the target.
+     * @param {string} healDuration The capture group for the heal duration.
+     * @param {number} healActual The healing applied to the target.
+     * @param {string} healType The name of the heal spell.
+     * @param {number?} healLiteral The total amount of possible healing, if supplied in the capture groups.
+     * @param {string?} modifiers The modifiers of the spell.
+     */
+    _addBeneficialSpellEvent(timestamp, actor, target, healDuration, healActual, healType, healLiteral, modifiers) {
+        let names = this._getActorTargetNames( actor, target );
+        let healTypeName = this._getAttackType( healType );
+    
+        let rec = new LogRecord();
+        rec.timestamp = timestamp;
+        rec.actor = names.actor;
+        rec.target = names.target;
+        rec.attackType = healTypeName.type;
+        rec.attackName = healTypeName.name; // healDuration === 'over time for' ? 'heal over time' : 'direct heal'; // TODO: Log heal over times.
+        rec.heal = healActual;
+        rec.overHeal = healLiteral > 0 ? healLiteral - healActual : 0;
+        rec.thorns = false;
+        rec.modifiers = new AttackModifiers();
+        rec.modifiers.critical = modifiers?.indexOf( 'Critical' ) > -1;
+        rec.modifiers.lucky = modifiers?.indexOf( 'Lucky' ) > -1;
+    
+        this.encounterEvents.push( rec );
+    }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    /**
+     * Adds a new thorns event to the encounter.
+     * 
+     * @param {Date} timestamp The timestamp of the event.
+     * @param {string} actor The name of the actor.
+     * @param {string} target The name of the target.
+     * @param {number} damage The thorns damage.
+     */
+    _addThornsEvent( timestamp, actor, target, damage ) {
+        let names = this._getActorTargetNames( actor, target );
+    
+        let rec = new LogRecord();
+        rec.timestamp = timestamp;
+        rec.actor = names.actor;
+        rec.target = names.target;
+        rec.attackType = 'thorns';
+        rec.damage = damage;
+        rec.thorns = true;
+        rec.modifiers = new AttackModifiers();
+    
+        this.encounterEvents.push( rec );
     }
     
 }
