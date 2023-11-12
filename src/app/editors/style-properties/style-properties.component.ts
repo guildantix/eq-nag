@@ -67,6 +67,19 @@ export class StylePropertiesComponent implements OnInit {
         }
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Calculates the font weight from the font weight index and calls 
+     * emitChange.
+     */
     public onChangeFontFamily(): void {
         let fi: number = availableFonts[ this.model.fontFamily ].indexOf( this.model.fontWeight );
         this.fontWeightIndex = -1;
@@ -95,16 +108,55 @@ export class StylePropertiesComponent implements OnInit {
         this.emitChange();
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Calculates the border transparency from the border transparency and 
+     * calls emitChange.
+     */
     public onChangeBorderTransparency(): void {
         this.model.borderIntensity = this.borderIntensity / 100;
         this.emitChange();
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Calculates the glow transparency from the glow transparency and calls 
+     * emitChange.
+     */
     public onChangeGlowTransparency(): void {
         this.model.glowIntensity = this.glowIntensity / 100;
         this.emitChange();
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Emits the onChange event for this component and applies the styles to 
+     * the style element.
+     */
     emitChange() {
         if ( this.model != null ) {
             this.model.fontWeight = availableFonts[ this.model.fontFamily ][ this.fontWeightIndex ];
@@ -115,48 +167,21 @@ export class StylePropertiesComponent implements OnInit {
         }
     }
 
-    // updateElementFontWeight( e: MatSliderChange ) {
-    //     console.log( 'e', e );
-    //     if ( this.styleElement?.length > 0 ) {
-    //         let x = Object.assign( new StylePropertiesModel(), this.model );
-    //         x.fontWeight = availableFonts[ this.model.fontFamily ][ e.value ];
-    //         StylePropertiesModel.applyStyles( this.styleElement, x );
-    //     }
-    // }
 
-    // updateElementFontStyle( e: MatSliderChange ) {
-    //     if ( this.styleElement?.length > 0 ) {
-    //         let x = Object.assign( new StylePropertiesModel(), this.model );
-    //         // x.fontWeight = availableFonts[ this.model.fontFamily ][ this.fontWeightIndex ];
-    //         x.fontSize = e.value;
-    //         this.styleElement.forEach( e => StylePropertiesModel.applyStyles( e, x ) );
-    //     }
-    // }
 
-    // updateElementBorderIntensity(e: MatSliderChange) {
-    //     if ( this.styleElement?.length > 0 ) {
-    //         let x = Object.assign( new StylePropertiesModel(), this.model );
-    //         x.borderIntensity = e.value / 100;
-    //         this.styleElement.forEach( e => StylePropertiesModel.applyStyles( e, x ) );
-    //     }
-    // }
 
-    // updateElementGlowIntensity( e: MatSliderChange ) {
-    //     if ( this.styleElement?.length > 0 ) {
-    //         let x = Object.assign( new StylePropertiesModel(), this.model );
-    //         x.glowIntensity = e.value / 100;
-    //         this.styleElement.forEach( e => StylePropertiesModel.applyStyles( e, x ) );
-    //     }
-    // }
 
-    // updateElementGlowSize( e: MatSliderChange ) {
-    //     if ( this.styleElement?.length > 0 ) {
-    //         let x = Object.assign( new StylePropertiesModel(), this.model );
-    //         x.glowSize = e.value;
-    //         this.styleElement.forEach( e => StylePropertiesModel.applyStyles( e, x ) );
-    //     }
-    // }
 
+
+
+
+
+    /**
+     * Saves changes to the style element.
+     * 
+     * @param propertyName The name of the property to update.
+     * @param e The mat slider change event.
+     */
     updateStyleElement( propertyName: 'paddingLeft' | 'paddingRight' | 'paddingTop' | 'paddingBottom' | 'glowSize' | 'glowIntensity' | 'borderIntensity' | 'fontWeight' | 'fontSize', e: MatSliderChange ) {
         if ( this.styleElement?.length > 0 ) {
             let x = Object.assign( new StylePropertiesModel(), this.model );
@@ -171,4 +196,13 @@ export class StylePropertiesComponent implements OnInit {
         }
     }
 
+
+
+
+
+
+
+
+
+    
 }
