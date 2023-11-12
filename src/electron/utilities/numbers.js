@@ -1,4 +1,13 @@
 
+
+
+
+
+
+
+
+
+
 /**
  * Converts the given value into a shorthand string.
  * 
@@ -30,6 +39,15 @@ function toShorthandString( value ) {
     }
 }
 
+
+
+
+
+
+
+
+
+
 /**
  * Returns true if the given value contains the given flag.
  * 
@@ -41,6 +59,15 @@ function toShorthandString( value ) {
 function hasFlag( value, flag ) {
     return ( value & flag ) === flag;
 }
+
+
+
+
+
+
+
+
+
 
 /**
  * Adds the given flag to the given value.
@@ -54,6 +81,15 @@ function addFlag( value, flag ) {
     return value | flag;
 }
 
+
+
+
+
+
+
+
+
+
 /**
  * Removes the given flag from the given value.
  * 
@@ -65,6 +101,15 @@ function addFlag( value, flag ) {
 function removeFlag( value, flag ) {
     return value & ~flag;
 }
+
+
+
+
+
+
+
+
+
 
 /**
  * Toggles the given flag on the given value.
@@ -78,6 +123,15 @@ function toggleFlag( value, flag ) {
     return value ^ flag;
 }
 
+
+
+
+
+
+
+
+
+
 /**
  * Rounds the given value to the given precision.
  * 
@@ -89,6 +143,15 @@ function round( value, precision ) {
     return Math.round( ( value + Number.EPSILON ) * multiplier ) / multiplier;
 }
 
+
+
+
+
+
+
+
+
+
 /**
  * Returns a whole number between the given min and max bounds.
  * 
@@ -98,6 +161,15 @@ function round( value, precision ) {
 function randomBounded( min, max ) {
     return Math.floor( Math.random() * ( max - min ) ) + min;
 }
+
+
+
+
+
+
+
+
+
 
 /**
  * Returns true if the given rectangle contains the specified point.
@@ -112,6 +184,15 @@ function rectContainsPoint( rect, x, y ) {
 
     return xContained && yContained;
 }
+
+
+
+
+
+
+
+
+
 
 let NumberUtilities = {
     round: round,
