@@ -128,6 +128,15 @@ class OverlayDatabaseStore extends Store {
         } );
     }
     
+
+
+
+
+
+
+
+
+
     /**
      * Adds the given overlay to the store.
      * 
@@ -152,6 +161,15 @@ class OverlayDatabaseStore extends Store {
         return overlay.overlayId;
     }
     
+
+
+
+
+
+
+
+
+
     /**
      * Removes the specified overlay.
      * 
@@ -169,6 +187,15 @@ class OverlayDatabaseStore extends Store {
         }
     }
     
+
+
+
+
+
+
+
+
+
     /**
      * Removes the overlay at the specified index.
      * 
@@ -188,6 +215,15 @@ class OverlayDatabaseStore extends Store {
         }
     }
     
+
+
+
+
+
+
+
+
+
     /**
      * Returns the overlay with the given id.
      * 
@@ -205,6 +241,15 @@ class OverlayDatabaseStore extends Store {
             return this.#data.overlays[ i ];
         }
     }
+
+
+
+
+
+
+
+
+
 
     /**
      * Updates the given overlay in the store.
@@ -232,6 +277,15 @@ class OverlayDatabaseStore extends Store {
         
     }
     
+
+
+
+
+
+
+
+
+
     /**
      * Returns all overlays.
      * 
@@ -240,6 +294,15 @@ class OverlayDatabaseStore extends Store {
     getAll() {
         return this.#data.overlays;
     }
+
+
+
+
+
+
+
+
+
 
     /**
      * Updates the given combat group in the store.
@@ -263,6 +326,15 @@ class OverlayDatabaseStore extends Store {
         return combatGroup.combatGroupId;
     }
 
+
+
+
+
+
+
+
+
+
     /**
      * Returns all combat groups.
      * 
@@ -271,6 +343,15 @@ class OverlayDatabaseStore extends Store {
     getCombatGroups() {
         return this.#data.fctCombatGroups;
     }
+
+
+
+
+
+
+
+
+
 
     /**
      * Removes the specified combat group.
@@ -287,6 +368,15 @@ class OverlayDatabaseStore extends Store {
             }
         }
     }
+
+
+
+
+
+
+
+
+
 
     /**
      * Initializes and creates the default combat groups.
@@ -331,6 +421,15 @@ class OverlayDatabaseStore extends Store {
         
         this.storeDataFile( this.#data );
     }
+
+
+
+
+
+
+
+
+
 
     /**
      * Migrates existing FCT styles into the new combat groups.
