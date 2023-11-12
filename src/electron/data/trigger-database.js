@@ -183,6 +183,15 @@ class TriggerDatabaseStore extends Store {
         } );
     }
 
+
+
+
+
+
+
+
+
+
     /**
      * Executes the given function, passing in the new trigger, when a new trigger is added.
      * 
@@ -196,6 +205,15 @@ class TriggerDatabaseStore extends Store {
             onCreatedHandlers[ i ] = fn;
         }
     }
+
+
+
+
+
+
+
+
+
 
     /**
      * Executes the given function, passing in the deleted trigger, when a trigger is deleted.
@@ -577,6 +595,18 @@ class TriggerDatabaseStore extends Store {
 
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Returns a list of all installed package ids.
+     */
     emitInstalledIds() {
         /** @type {string[]} */
         let installed = Array.prototype.concat( [], this.getInstalledPackages().map( f => f.packageId ), this.getInstalledQuickShares().map( f => f.quickShareId ) );
@@ -593,6 +623,15 @@ class TriggerDatabaseStore extends Store {
         } );
     }
 
+
+
+
+
+
+
+
+
+
     /**
      * Returns a list of all tags.
      * 
@@ -601,6 +640,15 @@ class TriggerDatabaseStore extends Store {
     getTags() {
         return this.#data?.tags?.length > 0 ? this.#data.tags : [];
     }
+
+
+
+
+
+
+
+
+
 
     /**
      * Creates a new tag.
@@ -623,6 +671,15 @@ class TriggerDatabaseStore extends Store {
         return tag.tagId;
     }
 
+
+
+
+
+
+
+
+
+
     /**
      * Updates an existing tag.
      * 
@@ -643,6 +700,15 @@ class TriggerDatabaseStore extends Store {
 
         this.storeDataFile( this.#data );
     }
+
+
+
+
+
+
+
+
+
 
     /**
      * Removes the specified tag.
@@ -694,6 +760,15 @@ class TriggerDatabaseStore extends Store {
         return this.#data?.folders?.length > 0 ? this.#data.folders : [];
     }
 
+
+
+
+
+
+
+
+
+
     /**
      * Updates the store of trigger folders.
      * 
@@ -709,6 +784,15 @@ class TriggerDatabaseStore extends Store {
         
         return this.#data.folders;
     }
+
+
+
+
+
+
+
+
+
 
     /**
      * Applies folder ids to all folders in the given heirarchy.
@@ -777,46 +861,6 @@ class TriggerDatabaseStore extends Store {
 
 
 
-
-    // /**
-    //  * Adds the given folder to the store.
-    //  * 
-    //  * @returns {string} Returns the generated folder id.
-    //  * 
-    //  * @param {TriggerFolder} folder The folder to add to the store.
-    //  * @param {string} parentId The folderId of the parent folder.
-    //  */
-    // addFolder( folder, parentId ) {
-    //     // Init the folders array.
-    //     this.#data.folders = this.#data.folders ? this.#data.folders : [];
-
-    //     // Generate a new id for the folder.
-    //     folder.folderId = nanoid();
-
-    //     if ( parentId == null ) {
-    //         // Add it to the store.
-    //         this.#data.folders.push( folder );
-    //     } else {
-    //         // Find the index of the parent folder.
-    //         let i = _.findIndex( this.#data.folders, ( e ) => e.folderId === parentId );
-    //         this.#data.folders[i]
-    //     }
-
-    //     // Save changes to the data.
-    //     this.processPredefinedTriggers();
-    //     this.storeDataFile( this.#data );
-
-    //     return folder.folderId;
-    // }
-
-
-
-
-
-
-
-
-
     
     /**
      * Removes the given trigger.
@@ -844,46 +888,6 @@ class TriggerDatabaseStore extends Store {
 
 
     
-    // /**
-    //  * Removes the given folder.
-    //  * 
-    //  * @param {TriggerFolder} folder The folder to remove.
-    //  */
-    // removeFolder( folder ) {
-    //     if ( this.#data?.folders?.length > 0 ) {
-    //         let folderId = folder.folderId;
-
-    //         // Find the index of the trigger.
-    //         let i = _.findIndex( this.#data.folders, ( e ) => e.folderId === folder.folderId );
-
-    //         // Remove the folder by index.
-    //         let removed = this.removeFolderIndex( i );
-
-    //         if ( removed ) {
-    //             this.#data.triggers?.forEach( trigger => {
-    //                 if ( trigger.folderId === folderId ) {
-    //                     trigger.folderId = null;
-    //                 }
-    //             } );
-    
-    //             // Save changes to the data.
-    //             this.processPredefinedTriggers();
-    //             this.storeDataFile( this.#data );
-    //         }
-
-    //         return removed;
-    //     }
-    // }
-
-
-
-
-
-
-
-
-
-    
     /**
      * Removes the specified trigger.
      * 
@@ -900,45 +904,6 @@ class TriggerDatabaseStore extends Store {
 
         }
     }
-
-
-
-
-
-
-
-
-
-    
-    // /**
-    //  * Removes the specified folder.
-    //  * 
-    //  * @param {string} folderId The folder to remove.
-    //  */
-    // remove( folderId ) {
-    //     if ( this.#data?.folders?.length > 0 ) {
-
-    //         // Find the index of the folder.
-    //         let i = _.findIndex( this.#data.folders, ( e ) => e.folderId === folderId );
-
-    //         // Remove the trigger by index.
-    //         let removed = this.removeFolderIndex( i );
-
-    //         if ( removed ) {
-    //             this.#data.triggers?.forEach( trigger => {
-    //                 if ( trigger.folderId === folderId ) {
-    //                     trigger.folderId = null;
-    //                 }
-    //             } );
-
-    //             // Save changes to the data.
-    //             this.processPredefinedTriggers();
-    //             this.storeDataFile( this.#data );
-    //         }
-
-    //         return removed;
-    //     }
-    // }
     
 
 
@@ -980,35 +945,6 @@ class TriggerDatabaseStore extends Store {
 
 
     
-    // /**
-    //  * Removes the folder at the specified index.
-    //  * 
-    //  * @param {number} i The index of the folder to remove.
-    //  */
-    // removeFolderIndex( i ) {
-    //     if ( this.#data?.folders?.length > i ) {
-
-    //         // Remove the folder by index.
-    //         let removed = this.#data.folders.splice( i, 1 );
-
-    //         // Save the changes to the data.
-    //         this.processPredefinedTriggers();
-    //         this.storeDataFile( this.#data );
-
-    //         // Return true if at least 1 item was removed.
-    //         return removed?.length > 0;
-    //     }
-    // }
-    
-
-
-
-
-
-
-
-
-    
     /**
      * Returns the trigger with the given id.
      * 
@@ -1024,31 +960,6 @@ class TriggerDatabaseStore extends Store {
             return this.#data.triggers[ i ];
         }
     }
-    
-
-
-
-
-
-
-
-
-    
-    // /**
-    //  * Returns the folder with the given id.
-    //  * 
-    //  * @param {string} folderId The folder id of the desired folder.
-    //  */
-    // findFolder( folderId ) {
-
-    //     // Find the index of the folder by Id.
-    //     let i = _.findIndex( this.#data.folders, ( e ) => e.folderId === folderId );
-
-    //     // If the index is valid, then return the found trigger.
-    //     if ( i > -1 && i < this.#data?.folders?.length ) {
-    //         return this.#data.folders[ i ];
-    //     }
-    // }
 
 
 
@@ -1150,42 +1061,6 @@ class TriggerDatabaseStore extends Store {
 
 
 
-    // /**
-    //  * Updates the given folder in the store.
-    //  * 
-    //  * @returns {boolean} Returns true if the folder was updated.
-    //  * 
-    //  * @param {TriggerFolder} folder The folder to update.
-    //  */
-    // update( folder ) {
-
-    //     // Find the index of the folder by Id.
-    //     let i = _.findIndex( this.#data.folders, ( e ) => e.folderId === folder.folderId );
-
-    //     // If the index is valid, then update the found folder.
-    //     if ( i > -1 && i < this.#data?.folders?.length ) {
-    //         this.#data.folders[ i ] = folder;
-
-    //         // Save changes to the data.
-    //         this.processPredefinedTriggers();
-    //         this.storeDataFile( this.#data );
-
-    //         return true;
-    //     } else {
-    //         return false;
-    //     }
-        
-    // }
-
-
-
-
-
-
-
-
-
-
     /**
      * Returns a list of triggers predicate returns truthy for.
      * 
@@ -1210,22 +1085,6 @@ class TriggerDatabaseStore extends Store {
     getAll() {
         return this.#data.triggers;
     }
-
-
-
-
-
-
-
-
-
-    
-    // /**
-    //  * Returns all folders.
-    //  */
-    // getFolders() {
-    //     return this.#data.folders;
-    // }
 
 
 
@@ -1334,6 +1193,15 @@ class TriggerDatabaseStore extends Store {
         }
     }
 
+
+
+
+
+
+
+
+
+
     /**
      * Returns a map of trigger id to list of duplicate/existing trigger ids.
      * 
@@ -1385,6 +1253,15 @@ class TriggerDatabaseStore extends Store {
 
         return output;
     }
+
+
+
+
+
+
+
+
+
 
     /**
      * Returns matching duplicate trigger actions.
@@ -1475,6 +1352,15 @@ class TriggerDatabaseStore extends Store {
 
         return output;
     }
+
+
+
+
+
+
+
+
+
 
     /**
      * Searches through all triggers trying to find any match.  This is a fuzzy 
@@ -2202,6 +2088,15 @@ class TriggerDatabaseStore extends Store {
 
         this.storeDataFile( this.#data );
     }
+
+
+
+
+
+
+
+
+
 
 }
 
