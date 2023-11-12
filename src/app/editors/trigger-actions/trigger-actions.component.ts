@@ -63,21 +63,44 @@ export class TriggerActionsComponent implements OnInit {
 
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Adds a new empty action.
+     */
     public addNewAction(): void {
         this.actions.push( new TriggerAction() );
         this.actionsChange.emit( this.actions );
     }
 
-    // public showActionWizard( action: TriggerAction ): void {
-    //     this.dialogService.showTriggerActionWizardDialog( action, model => console.log( 'model', model ) );
-    // }
 
+
+
+
+
+
+
+
+    
+    /**
+     * Deletes the specified action, after confirming with the user.
+     * 
+     * @param index The index of the action to remove.
+     */
     public deleteAction( index: number ): void {
-        this.dialogService.showConfirmDialog(
-            'Are you certain you want to delete this action?',
-            'Click "Yes" to delete the action.',
-            'Click "No" to cancel and close this dialog without deleting the action.',
-            ( confirmed ) => {
+        this.dialogService
+            .showConfirmationDialog(
+                'Are you certain you want to delete this action?',
+                'Click "Yes" to delete the action.',
+                'Click "No" to cancel and close this dialog without deleting the action.' )
+            .subscribe( confirmed => {
                 if ( confirmed ) {
                     this.actions?.splice( index, 1 );
                     this.actionsChange.emit( this.actions );
@@ -85,6 +108,15 @@ export class TriggerActionsComponent implements OnInit {
             } );
     }
 
+
+
+
+
+
+
+
+
+    
     /**
      * Returns a list of trigger actions not matching the given id.
      * 
@@ -94,6 +126,15 @@ export class TriggerActionsComponent implements OnInit {
         return this.actions.filter( f => f.actionId !== actionId );
     }
 
+
+
+
+
+
+
+
+
+    
     /**
      * Moves the action at the given index up one position.
      * 
@@ -102,29 +143,6 @@ export class TriggerActionsComponent implements OnInit {
     public moveUp( index: number, ev: MouseEvent ): void {
 
         this.scrolling = true;
-        // if ( ev && this.content ) {
-        //     const target = ev.target as HTMLElement;
-        //     if ( target ) {
-        //         let contentRect = this.content.nativeElement.getBoundingClientRect();
-        //         let mouseRelativeX = ev.clientX - contentRect.left;
-        //         let mouseRelativeY = ev.clientY - contentRect.top;
-        //         let targetRect = target.getBoundingClientRect();
-        //         let targetRelativeX = targetRect.left - contentRect.left;
-        //         let targetRelativeY = targetRect.top - contentRect.top;
-        //         let mouseTargetRelativeX = mouseRelativeX - targetRelativeX;
-        //         let mouseTargetRelativeY = mouseRelativeY - targetRelativeY;
-
-        //         console.log( 'content rect', contentRect );
-        //         console.log( 'target rect', targetRect );
-        //         console.log( 'target relative', targetRelativeX, targetRelativeY );
-        //         console.log( 'mouse relative to target', mouseTargetRelativeX, mouseTargetRelativeY );
-        //         console.log( 'target', target );
-        //         this.content.nativeElement.scrollTop = -100;
-        //         // console.log( 'content', this.content?.nativeElement.getBoundingClientRect() );
-        //         // console.log( 'mouse pos', ev.clientX, ev.clientY );
-        //         // console.log( 'mouse relative pos', ev.clientX - this.content?.nativeElement.getBoundingClientRect().left, ev.clientY - this.content?.nativeElement.getBoundingClientRect().top );
-        //     }
-        // }
 
         if ( index > 0 ) {
             const action = this.actions[ index ];
@@ -135,6 +153,15 @@ export class TriggerActionsComponent implements OnInit {
         }
     }
 
+
+
+
+
+
+
+
+
+    
     /**
      * Moves the action at the given index down one position.
      * 
@@ -143,11 +170,6 @@ export class TriggerActionsComponent implements OnInit {
     public moveDown( index: number, ev: MouseEvent ): void {
 
         this.scrolling = true;
-        // if ( ev ) {
-        //     console.log( 'content', this.content?.nativeElement.getBoundingClientRect() );
-        //     console.log( 'mouse pos', ev.clientX, ev.clientY );
-        //     console.log( 'mouse relative pos', ev.clientX - this.content?.nativeElement.getBoundingClientRect().left, ev.clientY - this.content?.nativeElement.getBoundingClientRect().top );
-        // }
 
         if ( index < this.actions.length - 1 ) {
             const action = this.actions[ index ];
@@ -157,5 +179,14 @@ export class TriggerActionsComponent implements OnInit {
             this.scrollIndex = index + 1;
         }
     }
+
+
+
+
+
+
+
+
+
 
 }
