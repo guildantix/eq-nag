@@ -43,15 +43,58 @@ export class TriggerActionStopwatchComponent implements OnInit {
         this.ipcService.getAudioFiles().subscribe( files => this.audioFiles = files );
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Adds a new empty sub-action to the given action property.
+     * 
+     * @param property The property to add a sub-action to.
+     */
     public addSubAction( property: TriggerSubAction[] ) {
         property.unshift( new TriggerSubAction() );
-        console.log( 'testing', property );
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Removes the sub-action at the specified index from the given property.
+     * 
+     * @param property The property to remove the sub-action from.
+     * @param index The index of the sub action.
+     */
     public removeSubAction( property: TriggerSubAction[], index: number ) {
         property.splice( index, 1 );
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Assigns the given sub-action to the given primary action.
+     * 
+     * @param subAction The sub action to assign.
+     * @param action The parent action.
+     */
     public assignSubAction( subAction: TriggerSubAction, action: TriggerAction ) {
         subAction.actionId = action.actionId;
 
@@ -85,10 +128,38 @@ export class TriggerActionStopwatchComponent implements OnInit {
         
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Finds the action with the specified id from actionOptions.
+     * 
+     * @returns Returns the found action.
+     * 
+     * @param actionId The id of the action.
+     */
     public getSubActionAction( actionId: string ): TriggerAction {
         return this.actionOptions.find( f => f.actionId === actionId );
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Displays the help dialog for variable assignment for sub-actions.
+     */
     public helpVariableAssignment() {
         // This sub-action uses variables from capture phrases that are not available in all of the phrases that trigger the calling action.
 
