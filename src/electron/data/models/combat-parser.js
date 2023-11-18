@@ -39,6 +39,15 @@ class AttackModifiers {
     finishing_blow = false;
 }
 
+class PlayerInfo {
+    /** @type {number} */
+    level;
+    /** @type {string} */
+    className;
+    /** @type {string} */
+    raceName;
+}
+
 class LogRecord {
     /** @type {Date} */
     timestamp;
@@ -128,4 +137,4 @@ const avoidTypeMap = {
     'miss': 'miss',
 }
 
-module.exports = { AttackModifiers, LogRecord, avoidTypeMap, attackTypeMap };
+module.exports = { AttackModifiers, PlayerInfo, LogRecord, avoidTypeMap, attackTypeMap };
