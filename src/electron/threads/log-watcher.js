@@ -18,6 +18,7 @@ const { FctModel, FctTypes } = require( '../data/models/fct' );
 const { DateUtilities } = require( '../utilities/dates' );
 const { IpcMessage } = require( '../data/models/common' );
 const ArrayUtilities = require( '../utilities/arrays' );
+const CombatParser = require( '../utilities/combat-parser' );
 const chunkSize = 512 * 1024;
 
 window.onerror = ( error, url, line ) => {
@@ -90,6 +91,7 @@ let failedParses = [];
 let exceptionParses = [];
 let batchTriggerParseHistoryTimeoutId = null;
 const batchTriggerParseHistoryTimeoutDuration = 100;
+let dpsIntervalId = null;
 
 /** @type {Record<string, {trigger: LogTrigger, res: PhraseParse}>} */
 let actionInstances = {};
@@ -241,6 +243,55 @@ const logParseError = ( err, raw, simulating, padTime, errorDesc, trigger, actio
  */
 const logError = ( err, raw, simulating, padTime, errorDesc, trigger, action ) => {
     logParseError( err, raw, simulating, padTime, errorDesc, trigger, action );
+};
+
+/** @type {CombatParser} */
+let myCombatParser = undefined;
+
+const writeDpsToConsole = () => {
+    // let now = new Date();
+    
+    // let encounterEvents = myCombatParser.getEncounterEvents( DateUtilities.addSeconds( now, -10 ), null, characterName, null );
+    // let dps = 0;
+    // encounterEvents.forEach( e => {
+    //     dps += e.damage ?? 0;
+    // } );
+    // let now = new Date();
+    // let dps = 0;
+    // for ( let i = myCombatLog.length - 1; i >= 0; i-- ) {
+    //     let entry = myCombatLog[ i ];
+    //     if ( entry.timestamp.getTime() >= now.getTime() - 10000 ) {
+    //         dps += entry.damage;
+    //     }
+    // }
+
+    // let dps = 0;6
+
+    // This is currently a really simple version of DPS tracking.  What we need to do is capture the start/end of each players combat and then calculate the DPS based on that.  In addition to what we're doing now, which is their immediate DPS not encounter DPS.
+    let encounterDps = myCombatParser?.getEncounterDps() ?? [];
+    // console.log( 'encounterDps', encounterDps );
+    let myDpsInfo = encounterDps.find( f => f.name === characterName );
+    if ( myDpsInfo ) {
+        let damage = myDpsInfo.damage + ( myDpsInfo.pets?.reduce( ( a, b ) => a + b.damage, 0 ) ?? 0 );
+        let dps = myDpsInfo.dps + ( myDpsInfo.pets?.reduce( ( a, b ) => a + b.dps, 0 ) ?? 0 );
+        let duration = DateUtilities.timeSince( myDpsInfo.start, myDpsInfo.end ).totalSeconds;
+        console.log( `DPS: \t${damage}\t${dps}\t${duration}` );
+    } else {
+        console.log( `DPS: 0` );
+    }
+};
+
+const startDpsTracking = () => {
+    if ( !dpsIntervalId ) {
+        dpsIntervalId = window.setInterval( () => writeDpsToConsole(), 1000 );
+    }
+};
+
+const stopDpsTracking = () => {
+    if ( dpsIntervalId ) {
+        window.clearInterval( dpsIntervalId );
+        dpsIntervalId = null;
+    }
 };
 
 
@@ -1235,6 +1286,9 @@ function LogWatcher(character, logPosition) {
     speechSynthesis.onvoiceschanged = () => {
         voiceOptions = speechSynthesis.getVoices();
     };
+
+    myCombatParser = new CombatParser( characterName );
+    startDpsTracking();
 }
 
 
@@ -1869,6 +1923,9 @@ function parseLogEntries( raw, simulating, padTime ) {
         else if ( padTime > 0 )
             timestamp = new Date( timestamp.getTime() + ( padTime * 1000 ) );
     
+        // Add to the combat tracker.
+        myCombatParser?.addCombatEvent( raw );
+        
         let log = raw.replace( rgxTimestamp, '' );
         
         // https://regex101.com/r/FvGiGC/2
