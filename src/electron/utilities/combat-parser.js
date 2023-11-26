@@ -9,7 +9,7 @@ const { ipcRenderer } = require( 'electron' );
 const { VerifiedPlayersDb } = require( '../data/models/verified-players-db' );
 const { DateUtilities } = require( './dates' );
 const { DeathRecapEncounterMob, DeathRecapRaidStats, DeathRecapEncounter, DeathRecapLog, DeathRecapDamageSource, DeathRecapModel } = require( '../data/models/death-recap' );
-const { AttackModifiers, LogRecord, avoidTypeMap, attackTypeMap } = require( '../data/models/combat-parser' );
+const { AttackModifiers, LogRecord, avoidTypeMap, attackTypeMap, PlayerInfo, PlayerDps, EncounterStats, PlayerEncounterStats, PetDps } = require( '../data/models/combat-parser' );
 
 /** @type {string} */
 let characterName = 'You';
@@ -23,8 +23,30 @@ let characterName = 'You';
 
 
 
+/**
+ * Executes the given regular expression against the given log line.
+ * 
+ * @returns {RegExpExecArray | null} The regular expression result.
+ * 
+ * @param {RegExp} rgx The combat regular expression to execute.
+ * @param {string} logLine The log line to execute the regular expression against.
+ */
+const executCombatRgx = ( rgx, logLine ) => {
+    rgx.lastIndex = 0;
+    return rgx.exec( logLine );
+}
+
+
+
+
+
+
+
+
+
+
 const combatRgx = {
-    // Melee damage. (learn|learns|) [https://regex101.com/r/oMsgre/2]
+    // Melee damage. (learn|learns|) [https://regex101.com/r/oMsgre/3]
     // NOTES: 
     //  - If we change "points" to "point(s)?" then we can capture the 1 point of damage attacks, but the processing cost doesn't seem worth it.
     MeleeDamage: /^(?<actor>.*?) (?<attackType>backstab|backstabs|bash|bashes|bite|bites|claw|claws|crush|crushes|frenzy|frenzies|gore|gores|hit|hits|kick|kicks|maul|mauls|pierce|pierces|punch|punches|rend|rends|shoot|shoots|slam|slams|slash|slashes|slice|slices|smash|smashes|sting|stings|strike|strikes|sweep|sweeps+?) (?<target>.*) for (?<damage>[0-9]*) points of damage\.[\s]?(\((?<modifiers>.*)?\))?/gi,
@@ -75,11 +97,18 @@ const combatRgx = {
     // https://regex101.com/r/e1bXss/1
     LastStand: /^(?<actor>.+?)\b\s{0,1}'{0,1}s{0,1}\b.* steels themselves for a last stand\.$/gi,
 
+    // https://regex101.com/r/cPfBq5/1
+    PetLeader: /^(?<pet>.+?) says, 'My leader is (?<player>.*)\.'$/gi,
+
     // The following match LastStand
     // CulminatingStand: null,
     // UltimateStand: null,
     // ResoluteStand: null,
 }
+
+// https://regex101.com/r/cqfoUU/2
+// This won't capture anon people.
+const playerWhoRgx = /^(OFFLINEMODE)?\[(?<level>\d+)\s(?<classTitleOrName>Savage Lord|Arch Mage|High Priest|Grave Lord|Feral Lord|Storm Warden|Arch Convoker|Arch Lich|Lord Protector|Forest Stalker|Dread Lord|Arch Magus|Stone Fist|Scourge Knight|Grand Archanist|Storm Caller|Grand Summoner|Holy Defender|.+?)\]?\s(:?\((?<classRealName>.*?)\)\])?\s?(?<player>.*?)\s\((?<raceName>.+?)\)\s/gi;
 
 
 
@@ -102,19 +131,254 @@ class CombatParser {
     chunkSize = 1048576;
     /** @type {number} */
     chunks = 50;
+
+    // TODO: Keep records of entity verifications, by server where appropriate.
     /** @type {string[]} */
     _unknownEntities = [];
     /** @type {string[]} */
-    _verifiedPlayers = [ characterName ];
+    _verifiedPlayers = []; // needs to be by server
     /** @type {string[]} */
     _verifiedNpcs = [];
     /** @type {string[]} */
-    _verifiedPets = [];
+    _verifiedPets = []; // needs to be by server
+    /** @type {Record<string, string[]>} */
+    _playerPets = {}; // needs to be by server
+    /** @type {Record<string, string>} */
+    _petOwners = {}; // needs to be by server
+    /** @type {Record<string, PlayerInfo>} */
+    _playerInfos = {}; // needs to be by server
+    /** @type {Record<string, number>} */
+    _playerEncounterStats = {};
 
     /** @type {LogRecord[]} */
     encounterEvents = [];
 
-    constructor() { }
+    /** @type {{name: string, start: Date, duration: number, end: Date}[]} */
+    encounterDefensiveTimers = [];
+
+    /** @type {EncounterStats} */
+    _encounterStats = undefined;
+
+    /**
+     * Constructs a new combat parser.
+     * @param {string} myCharacterName The character name of the current log file owner.
+     */
+    constructor( myCharacterName ) {
+        characterName = myCharacterName ?? characterName;
+        this._verifiedPlayers.push( characterName );
+        console.log( 'initiating combat parser for', characterName );
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Returns a list of encounter events matching the given criteria.
+     * 
+     * @returns {LogRecord[]} The list of encounter events.
+     * 
+     * @param {Date} start The start of the encounter.
+     * @param {Date} end The end of the encounter.
+     * @param {string} actor The name of the actor.
+     * @param {string} target The name of the target.
+     */
+    getEncounterEvents( start, end, actor, target ) {
+        // TODO: We should just update this so that DPS statistics are returned instead of the raw encounter events.  That way, we can just update statistics as new combat events are added.
+        let actorPets = this._playerPets[ actor ];
+        let output = this.encounterEvents.filter( f => {
+            return ( start == null || f.timestamp >= start ) && ( end == null || f.timestamp <= end ) && ( actor == null || f.actor === actor ) && ( target == null || f.target === target );
+        } );
+
+        if ( actorPets?.length > 0 ) {
+            let petOutput = this.encounterEvents.filter( f => actorPets.includes( f.actor ) );
+            output = output.concat( petOutput );
+        }
+
+        return output;
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Returns the DPS for a 10 second encounter.
+     * 
+     * @returns {PlayerDps[]} The list of player DPS.
+     */
+    getEncounterDps() {
+        /** @type {PlayerDps[]} */
+        let output = [];
+
+        for ( let i = 0; i < this._verifiedPlayers.length; i++ ) {
+            let playerEvents = this._encounterStats?.playerEvents[ this._verifiedPlayers[ i ] ];
+            if ( playerEvents ) {
+                
+                playerEvents.playerDps.start = playerEvents.encounterStart;
+                playerEvents.playerDps.end = playerEvents.lastEncounterEvent;
+
+                output.push( playerEvents.playerDps );
+            }
+        }
+
+        return output;
+        // let now = new Date();
+        // let duration = 10;
+        // let start = DateUtilities.addSeconds( now, -1 * duration );
+        // let encounterEvents = this.encounterEvents.filter( f => f.timestamp >= start );
+
+        // /** @type {PlayerDps[]} */
+        // let output = [];
+        // let players = Object.keys( this._verifiedPlayers );
+
+        // for ( let i = 0; i < encounterEvents.length; i++ ) {
+        //     const event = encounterEvents[ i ];
+        //     let player = event.actor;
+
+        //     if ( players.includes( player ) ) {
+        //         let playerDps = output.find( f => f.name === player );
+        //         if ( playerDps == null ) {
+        //             playerDps = {
+        //                 name: player,
+        //                 class: this._playerInfos[ player ].className,
+        //                 dps: 0,
+        //                 damage: 0,
+        //                 pets: []
+        //             };
+        //             output.push( playerDps );
+        //         }
+        //         playerDps.damage += event.damage ?? 0;
+        //     } else if ( this._verifiedPets.includes( player ) ) {
+        //         let petOwner = this._petOwners[ player ];
+        //         if ( petOwner != null ) {
+        //             let playerDps = output.find( f => f.name === petOwner );
+        //             if ( playerDps == null ) {
+        //                 playerDps = {
+        //                     name: petOwner,
+        //                     class: this._playerInfos[ petOwner ]?.className,
+        //                     dps: 0,
+        //                     damage: 0,
+        //                     pets: []
+        //                 };
+        //                 output.push( playerDps );
+        //             }
+        //             let petDps = playerDps.pets.find( f => f.name === player );
+        //             if ( petDps == null ) {
+        //                 petDps = {
+        //                     name: player,
+        //                     damage: 0,
+        //                     dps: 0
+        //                 };
+        //                 playerDps.pets.push( petDps );
+        //             }
+        //             petDps.damage += event.damage ?? 0;
+        //         }
+        //     }
+        // }
+
+        // for ( let i = 0; i < output.length; i++ ) {
+        //     const playerDps = output[ i ];
+        //     playerDps.dps = Math.round( playerDps.damage / duration );
+        //     for ( let j = 0; j < playerDps.pets.length; j++ ) {
+        //         const petDps = playerDps.pets[ j ];
+        //         petDps.dps = Math.round( petDps.damage / duration );
+        //     }
+        // }
+
+        // return output;
+
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Adds the given log line to the encounter events.
+     * 
+     * @param {string} logLine The log file line to process and add to the combat events.
+     */
+    addCombatEvent( logLine ) {
+        let timeLog = /^\[(?<timestamp>.*?)\]\s*(?<log>.*)/gi.exec( logLine )?.groups;
+        if ( timeLog ) {
+
+            let entry = {
+                timestamp: timeLog.timestamp,
+                log: timeLog.log,
+            };
+            
+            this._updateEntityVerifications( [ entry.log ] );
+
+            const timestamp = new Date( entry.timestamp );
+            
+            let regxResult = null;
+
+            regxResult = executCombatRgx( combatRgx.MeleeDamage, entry.log );
+            if ( regxResult !== null ) {
+                this._addMeleeEvent( timestamp, regxResult.groups.actor, regxResult.groups.target, +regxResult.groups.damage, regxResult.groups.attackType, regxResult.groups.modifiers );
+                return;
+            }
+            
+            regxResult = executCombatRgx( combatRgx.MeleeMiss, entry.log );
+            regxResult = regxResult == null ? executCombatRgx( combatRgx.ActiveDefense, entry.log ) : regxResult;
+            if ( regxResult !== null ) {
+                this._addMeleeAvoidance( timestamp,  regxResult.groups.actor ,  regxResult.groups.target, regxResult.groups.defenseType, regxResult.groups.attackType, regxResult.groups.modifiers );
+                return;
+            }
+            
+            regxResult = executCombatRgx( combatRgx.DirectDamage, entry.log );
+            regxResult = regxResult == null ? executCombatRgx( combatRgx.YourDoT, entry.log ) : regxResult;
+            regxResult = regxResult == null ? executCombatRgx( combatRgx.OtherDoT, entry.log ) : regxResult;
+            if ( regxResult !== null ) {
+                this._addDetrimentalSpellEvent( timestamp,  regxResult.groups.actor ,  regxResult.groups.target , +regxResult.groups.damage, regxResult.groups.attackType, regxResult.groups.resistType, regxResult.groups.modifiers );
+                return;
+            }
+            
+            regxResult = executCombatRgx( combatRgx.Thorns, entry.log );
+            if ( regxResult !== null ) {
+                this._addThornsEvent( timestamp,  regxResult.groups.actor ,  regxResult.groups.target , +regxResult.groups.damage );
+                return;
+            }
+            
+            regxResult = executCombatRgx( combatRgx.Healing, entry.log );
+            if ( regxResult !== null ) {
+                this._addBeneficialSpellEvent( timestamp,  regxResult.groups.actor ,  regxResult.groups.target , regxResult.groups.healDuration, +regxResult.groups.healActual, regxResult.groups.healType, +regxResult.groups.healLiteral, regxResult.groups.modifiers );
+                return;
+            }
+
+            regxResult = executCombatRgx( combatRgx.Defensive, entry.log );
+            regxResult = regxResult == null ? executCombatRgx( combatRgx.Stonewall, entry.log ) : regxResult;
+            regxResult = regxResult == null ? executCombatRgx( combatRgx.FinalStand, entry.log ) : regxResult;
+            regxResult = regxResult == null ? executCombatRgx( combatRgx.LastStand, entry.log ) : regxResult;
+            if ( regxResult !== null ) {
+                let names = this._getActorTargetNames( regxResult.groups.actor, regxResult.groups.target );
+                this.encounterDefensiveTimers.push( {
+                    name: names.actor,
+                    start: timestamp,
+                    duration: 3 * 60,
+                    end: DateUtilities.addSeconds( timestamp, 3 * 60 )
+                } );
+                return;
+            }
+
+        }
+    }
 
 
 
@@ -351,51 +615,43 @@ class CombatParser {
 
                 let regxResult = null;
 
-                regxResult = combatRgx.MeleeDamage.exec( logs[ i ] );
+                regxResult = executCombatRgx( combatRgx.MeleeDamage, logs[ i ] );
                 if ( regxResult !== null ) {
                     this._addMeleeEvent( timestamp, regxResult.groups.actor, regxResult.groups.target, +regxResult.groups.damage, regxResult.groups.attackType, regxResult.groups.modifiers );
                     continue;
                 }
-                combatRgx.MeleeDamage.lastIndex = 0;
                 
-                regxResult = combatRgx.MeleeMiss.exec( logs[ i ] );
-                regxResult = regxResult == null ? combatRgx.ActiveDefense.exec( logs[ i ] ) : regxResult;
+                regxResult = executCombatRgx( combatRgx.MeleeMiss, logs[ i ] );
+                regxResult = regxResult == null ? executCombatRgx( combatRgx.ActiveDefense, logs[ i ] ) : regxResult;
                 if ( regxResult !== null ) {
                     this._addMeleeAvoidance( timestamp, regxResult.groups.actor, regxResult.groups.target, regxResult.groups.defenseType, regxResult.groups.attackType, regxResult.groups.modifiers );
                     continue;
                 }
-                combatRgx.MeleeMiss.lastIndex = 0;
-                combatRgx.ActiveDefense.lastIndex = 0;
                 
-                regxResult = combatRgx.DirectDamage.exec( logs[ i ] );
-                regxResult = regxResult == null ? combatRgx.YourDoT.exec( logs[ i ] ) : regxResult;
-                regxResult = regxResult == null ? combatRgx.OtherDoT.exec( logs[ i ] ) : regxResult;
+                regxResult = executCombatRgx( combatRgx.DirectDamage, logs[ i ] );
+                regxResult = regxResult == null ? executCombatRgx( combatRgx.YourDoT, logs[ i ] ) : regxResult;
+                regxResult = regxResult == null ? executCombatRgx( combatRgx.OtherDoT, logs[ i ] ) : regxResult;
                 if ( regxResult !== null ) {
                     this._addDetrimentalSpellEvent( timestamp, regxResult.groups.actor, regxResult.groups.target, +regxResult.groups.damage, regxResult.groups.attackType, regxResult.groups.resistType, regxResult.groups.modifiers );
                     continue;
                 }
-                combatRgx.DirectDamage.lastIndex = 0;
-                combatRgx.YourDoT.lastIndex = 0;
-                combatRgx.OtherDoT.lastIndex = 0;
                 
-                regxResult = combatRgx.Thorns.exec( logs[ i ] );
+                regxResult = executCombatRgx( combatRgx.Thorns, logs[ i ] );
                 if ( regxResult !== null ) {
                     this._addThornsEvent( timestamp, regxResult.groups.actor, regxResult.groups.target, +regxResult.groups.damage );
                     continue;
                 }
-                combatRgx.Thorns.lastIndex = 0;
                 
-                regxResult = combatRgx.Healing.exec( logs[ i ] );
+                regxResult = executCombatRgx( combatRgx.Healing, logs[ i ] );
                 if ( regxResult !== null ) {
                     this._addBeneficialSpellEvent( timestamp, regxResult.groups.actor, regxResult.groups.target, regxResult.groups.healDuration, +regxResult.groups.healActual, regxResult.groups.healType, +regxResult.groups.healLiteral, regxResult.groups.modifiers );
                     continue;
                 }
-                combatRgx.Healing.lastIndex = 0;
 
-                regxResult = combatRgx.Defensive.exec( logs[ i ] );
-                regxResult = regxResult == null ? combatRgx.Stonewall.exec( logs[ i ] ) : regxResult;
-                regxResult = regxResult == null ? combatRgx.FinalStand.exec( logs[ i ] ) : regxResult;
-                regxResult = regxResult == null ? combatRgx.LastStand.exec( logs[ i ] ) : regxResult;
+                regxResult = executCombatRgx( combatRgx.Defensive, logs[ i ] );
+                regxResult = regxResult == null ? executCombatRgx( combatRgx.Stonewall, logs[ i ] ) : regxResult;
+                regxResult = regxResult == null ? executCombatRgx( combatRgx.FinalStand, logs[ i ] ) : regxResult;
+                regxResult = regxResult == null ? executCombatRgx( combatRgx.LastStand, logs[ i ] ) : regxResult;
                 if ( regxResult !== null ) {
                     defensiveTimers.push( {
                         name: regxResult.groups.actor,
@@ -405,15 +661,9 @@ class CombatParser {
                     } );
                     continue;
                 }
-                combatRgx.Defensive.lastIndex = 0;
-                combatRgx.Stonewall.lastIndex = 0;
-                combatRgx.FinalStand.lastIndex = 0;
-                combatRgx.LastStand.lastIndex = 0;
 
             }
         }
-
-        // TODO: Keep record of 100% Player/Pet verifications
 
         this._updateEntityVerifications( lines );
 
@@ -435,28 +685,74 @@ class CombatParser {
      * pets, and npcs.
      * 
      * @param {string[]} lines The log lines for the combat.
+     * @param {string} myCharacterName The character name of the log file owner.
      */
-    _updateEntityVerifications( lines ) {
-        const startPlayerSearch = Date.now();
+    _updateEntityVerifications( lines, myCharacterName ) {
+        
+        // TODO: This is in serious need of optimization.
+
         for ( let i = 0; i < lines.length; i++ ) {
-            let regxResult = combatRgx.GroupRaid.exec( lines[ i ] );
-            regxResult = regxResult == null ? combatRgx.Chat.exec( lines[ i ] ) : regxResult;
-            regxResult = regxResult == null ? combatRgx.Achievement.exec( lines[ i ] ) : regxResult;
+            let regxResult = executCombatRgx( combatRgx.GroupRaid, lines[ i ] );
+            regxResult = regxResult == null ? executCombatRgx( combatRgx.Chat, lines[ i ] ) : regxResult;
+            regxResult = regxResult == null ? executCombatRgx( combatRgx.Achievement, lines[ i ] ) : regxResult;
             if ( regxResult !== null && this._verifiedPlayers.indexOf( regxResult.groups.player ) === -1 ) {
                 this._verifiedPlayers.push( regxResult.groups.player );
             }
-            combatRgx.DirectDamage.lastIndex = 0;
-            combatRgx.YourDoT.lastIndex = 0;
-            combatRgx.OtherDoT.lastIndex = 0;
+
+            let petLeader = executCombatRgx( combatRgx.PetLeader, lines[ i ] );
+            if ( petLeader !== null && petLeader.groups != null && petLeader.groups.player != null && petLeader.groups.pet != null ) {
+                let petKey = petLeader.groups.player;
+
+                if ( this._verifiedPlayers.indexOf( petLeader.groups.player ) === -1 ) {
+                    this._verifiedPlayers.push( petLeader.groups.player );
+                }
+
+                if ( this._verifiedPets.indexOf( petLeader.groups.pet ) === -1 ) {
+                    this._verifiedPets.push( petLeader.groups.pet );
+                }
+
+                if ( !this._playerPets[ petKey ] ) {
+                    this._playerPets[ petKey ] = [];
+                }
+                
+                this._petOwners[ petLeader.groups.pet ] = petKey;
+                this._playerPets[ petKey ].push( petLeader.groups.pet );
+
+            }
+
+            let playerWho = executCombatRgx( playerWhoRgx, lines[ i ] );
+            if ( playerWho !== null && playerWho.groups != null && playerWho.groups.player != null ) {
+                const playerName = playerWho.groups.player;
+
+                if ( this._verifiedPlayers.indexOf( playerName ) === -1 ) {
+                    this._verifiedPlayers.push( playerName );
+                }
+
+                if ( this._playerInfos[ playerName ] == null ) {
+                    this._playerInfos[ playerName ] = {
+                        level: +playerWho.groups.level,
+                        className: playerWho.groups.classRealName ?? playerWho.groups.classTitleOrName,
+                        raceName: playerWho.groups.raceName,
+                    };
+                } else {
+                    this._playerInfos[ playerName ].level = +playerWho.groups.level;
+                    this._playerInfos[ playerName ].className = playerWho.groups.classRealName ?? playerWho.groups.classTitleOrName;
+                    this._playerInfos[ playerName ].raceName = playerWho.groups.raceName;
+                }
+            }
+            
         }
 
+        // TODO: This is looping through all of the encounter events, this should be refactored and optimized.
         for ( let i = 0; i < this.encounterEvents.length; i++ ) {
             const event = this.encounterEvents[ i ];
-            if ( ( event.modifiers?.rampage || event.modifiers?.wild_rampage ) && this._verifiedNpcs.indexOf( event.actor ) === -1 ) {
+            const rampages = event.modifiers?.rampage || event.modifiers?.wild_rampage;
+            if ( rampages && !this._verifiedPets.includes( event.actor ) && !this._verifiedNpcs.includes( event.actor ) ) {
                 this._verifiedNpcs.push( event.actor );
             }
         }
 
+        // Loop through all verified players, and remove their named pets from the npcs list. Ex: Soandso's warder.
         for ( let i = 0; i < this._verifiedPlayers.length; i++ ) {
             const player = this._verifiedPlayers[ i ];
             for ( let j = 0; j < this._verifiedNpcs.length; j++ ) {
@@ -464,12 +760,14 @@ class CombatParser {
 
                 if ( npc.indexOf( player ) === 0 ) {
                     this._verifiedPets.push( npc );
+                    // Pets do not belong in the verified npcs list.
+                    this._verifiedNpcs.splice( j, 1 );
                 }
             }
         }
 
-        this._verifiedNpcs = this._verifiedNpcs.filter( f => this._verifiedPets.indexOf( f ) === -1 );
 
+        // TODO: Another loop that is going through all encounter events, refactor and optimize.
         for ( let i = 0; i < this.encounterEvents.length; i++ ) {
             const event = this.encounterEvents[ i ];
             if ( event.actor != null && !( this._verifiedNpcs.indexOf( event.actor ) >= 0 || this._verifiedPets.indexOf( event.actor ) >= 0 || this._verifiedPlayers.indexOf( event.actor ) >= 0 || this._unknownEntities.indexOf( event.actor ) >= 0 ) ) {
@@ -477,8 +775,7 @@ class CombatParser {
             }
         }
 
-        console.log( 'player/npc search:', Date.now() - startPlayerSearch );
-
+        // TODO: Implicit entity verification should be refactored and optimized, and not something to be executed at every log line.
         let crazy = 0;
         while ( this._unknownEntities.length > 0 && crazy < 5 ) {
             crazy++;
@@ -486,6 +783,8 @@ class CombatParser {
             /** @type {{name: string, attackNpc: number, attackPlayer: number, healNpc: number, healPlayer: number, attackedByNpc: 0, attackedByPlayer: 0}[]} */
             let entitySimpleStats = [];
 
+            // Let's calculate some simple statistics for each unknown entity,
+            // and see if we can't figure out what they are implicitly.
             for ( let i = 0; i < this.encounterEvents.length; i++ ) {
                 const event = this.encounterEvents[ i ];
 
@@ -1080,6 +1379,8 @@ class CombatParser {
         rec.modifiers.finishing_blow = modifiers?.indexOf( 'Finishing Blow' ) > -1;
     
         this.encounterEvents.push( rec );
+        this._updateEncounterStats( rec );
+
     }
     
     
@@ -1121,6 +1422,8 @@ class CombatParser {
         rec.modifiers.miss = avoidTypeName === 'miss';
     
         this.encounterEvents.push( rec );
+        this._updateEncounterStats( rec );
+        
     }
     
     
@@ -1161,6 +1464,8 @@ class CombatParser {
         rec.modifiers.strikethrough = modifiers?.indexOf( 'Strikethrough' ) > -1;
     
         this.encounterEvents.push( rec );
+        this._updateEncounterStats( rec );
+        
     }
     
     
@@ -1202,6 +1507,8 @@ class CombatParser {
         rec.modifiers.lucky = modifiers?.indexOf( 'Lucky' ) > -1;
     
         this.encounterEvents.push( rec );
+        this._updateEncounterStats( rec );
+        
     }
     
     
@@ -1234,6 +1541,162 @@ class CombatParser {
         rec.modifiers = new AttackModifiers();
     
         this.encounterEvents.push( rec );
+        this._updateEncounterStats( rec );
+        
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Updates the given dps record with the log record.
+     * 
+     * @param {LogRecord} logRecord The log record.
+     * @param {PlayerDps | PetDps} dpsRec The dps record.
+     * @param {number} duration The player encounter duration in seconds.
+     */
+    _calculateDpsStats( logRecord, dpsRec, duration ) {
+
+        dpsRec.damage += logRecord.damage ?? 0;
+        dpsRec.healing += logRecord.heal ?? 0;
+
+        if ( duration > 0 ) {
+            dpsRec.dps = Math.round( dpsRec.damage / duration );
+            dpsRec.hps = Math.round( dpsRec.healing / duration );
+        }
+
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * 
+     * @param {Record<string, PlayerEncounterStats>} source The source for player encounter stats.
+     * @param {string} name The name of the player.
+     * @param {Date} timestamp The timestamp of the event.
+     */
+    _getOrCreatePlayerEncounterStats( source, name, timestamp ) {
+        if ( source[ name ] == null ) {
+            source[ name ] = new PlayerEncounterStats();
+            source[ name ].name = name;
+            source[ name ].encounterStart = timestamp;
+            source[ name ].playerDps.name = name;
+            source[ name ].playerDps.pets = [];
+            source[ name ].playerDpsRec.name = name;
+            source[ name ].playerDpsRec.pets = [];
+        }
+        source[ name ].lastEncounterEvent = timestamp;
+
+        return source[ name ];
+    }
+    
+
+
+
+
+
+
+
+
+
+    /**
+     * Updates the encounter statistics.
+     * 
+     * @param {LogRecord} logRecord The log record to update the encounter stats with.
+     */
+    _updateEncounterStats( logRecord ) {
+        const timestamp = logRecord.timestamp || new Date();
+        
+        if ( logRecord != undefined ) {
+            let playerActor = this._verifiedPlayers.includes( logRecord.actor );
+            let playerTarget = this._verifiedPlayers.includes( logRecord.target );
+            let petActor = this._verifiedPets.includes( logRecord.actor );
+            let petTarget = this._verifiedPets.includes( logRecord.target );
+
+            // TODO: This needs to be done for a single player, instead
+            //      of each character tracked parsing DPS.  Alternatively, 
+            //      we could just track our own DPS/HPS and receive DPS/HPS 
+            //      from other players.  But that should automatically 
+            //      accept local log file data, and not require a server.
+            
+            // TODO: Player duration should be an array of durations, 
+            //      allowing for the player to stop attacking and start again.  
+            //      This should be separate from their encounter dps.
+            
+            if ( playerActor || playerTarget || petActor || petTarget ) {
+                // 30 seconds of no encounter activity ends the encounter, starting a new one.
+                if ( this._encounterStats == undefined || this._encounterStats.lastEncounterEvent < DateUtilities.addSeconds( timestamp, -30 ) ) {
+                    this._encounterStats = new EncounterStats();
+                    this._encounterStats.encounterStart = timestamp;
+                }
+
+                this._encounterStats.lastEncounterEvent = timestamp;
+
+                if ( playerTarget ) {
+                    // If the player is the target, then we need to add to the player's dps received record.
+                    let playerEvents = this._getOrCreatePlayerEncounterStats( this._encounterStats.playerEvents, logRecord.target, timestamp );
+                    let playerDuration = DateUtilities.timeSince( playerEvents.encounterStart, timestamp ).totalSeconds;
+                    this._calculateDpsStats( logRecord, playerEvents.playerDpsRec, playerDuration );
+
+                } else if ( petTarget ) {
+                    // If a player's pet is the target, then we need to grab the pet's owner, and add the dps received to the owner's pet list for dps received.
+                    let owner = this._petOwners[ logRecord.target ];
+                    let playerEvents = this._getOrCreatePlayerEncounterStats( this._encounterStats.playerEvents, owner, timestamp );
+
+                    let petDpsRec = playerEvents.playerDpsRec.pets.find( f => f.name === logRecord.target );
+                    if ( petDpsRec == null ) {
+                        petDpsRec = new PetDps();
+                        petDpsRec.name = logRecord.target;
+                        playerEvents.playerDpsRec.pets.push( petDpsRec );
+                    }
+
+                    let playerDuration = DateUtilities.timeSince( playerEvents.encounterStart, timestamp ).totalSeconds;
+                    this._calculateDpsStats( logRecord, petDpsRec, playerDuration );
+
+                }
+
+                if ( playerActor ) {
+                    // If the player is the actor, then we need to add to the player's dps record.
+                    let playerEvents = this._getOrCreatePlayerEncounterStats( this._encounterStats.playerEvents, logRecord.actor, timestamp );
+                    let playerDuration = DateUtilities.timeSince( playerEvents.encounterStart, timestamp ).totalSeconds;
+                    this._calculateDpsStats( logRecord, playerEvents.playerDps, playerDuration );
+                    
+                } else if ( petActor ) {
+                    // If a player's pet is the actor, then we need to grab the pet's owner, and add the dps to the owner's pet list.
+                    let owner = this._petOwners[ logRecord.actor ];
+                    let playerEvents = this._getOrCreatePlayerEncounterStats( this._encounterStats.playerEvents, owner, timestamp );
+
+                    let petDps = playerEvents.playerDps.pets.find( f => f.name === logRecord.actor );
+                    if ( petDps == null ) {
+                        petDps = new PetDps();
+                        petDps.name = logRecord.actor;
+                        petDps.healing = 0;
+                        petDps.damage = 0;
+                        playerEvents.playerDps.pets.push( petDps );
+                    }
+
+                    let playerDuration = DateUtilities.timeSince( playerEvents.encounterStart, timestamp ).totalSeconds;
+                    this._calculateDpsStats( logRecord, petDps, playerDuration );
+                    
+                }
+
+            }
+
+        }
+        
     }
     
 }

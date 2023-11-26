@@ -48,6 +48,66 @@ class PlayerInfo {
     raceName;
 }
 
+class PetDps {
+    /** @type {string} */
+    name;
+    /** @type {number} */
+    dps = 0;
+    /** @type {number} */
+    hps = 0;
+    /** @type {number} */
+    damage = 0;
+    /** @type {number} */
+    healing = 0;
+}
+
+class PlayerDps {
+    /** @type {string} */
+    name;
+    /** @type {string} */
+    class;
+    /** @type {number} */
+    dps = 0;
+    /** @type {number} */
+    hps = 0;
+    /** @type {number} */
+    damage = 0;
+    /** @type {number} */
+    healing = 0;
+    /** @type {PetDps[]} */
+    pets = [];
+    /** @type {Date | undefined} */
+    start = undefined;
+    /** @type {Date | undefined} */
+    end = undefined;
+}
+
+class PlayerEncounterStats {
+    /** @type {string} */
+    name;
+    /** @type {string} */
+    class;
+    /** @type {PlayerDps} */
+    playerDps = new PlayerDps();
+    /** @type {PlayerDps} */
+    playerDpsRec = new PlayerDps();
+    /** @type {Date} */
+    encounterStart;
+    /** @type {Date} */
+    lastEncounterEvent;
+}
+
+class EncounterStats {
+    /** @type {string[]} */
+    npcs = [];
+    /** @type {Date} */
+    encounterStart;
+    /** @type {Date} */
+    lastEncounterEvent;
+    /** @type {Record<string, PlayerEncounterStats>} */
+    playerEvents = {};
+}
+
 class LogRecord {
     /** @type {Date} */
     timestamp;
@@ -137,4 +197,9 @@ const avoidTypeMap = {
     'miss': 'miss',
 }
 
-module.exports = { AttackModifiers, PlayerInfo, LogRecord, avoidTypeMap, attackTypeMap };
+const EncounterEventTypes = {
+    melee: 0,
+    playerHeal: 1,
+}
+
+module.exports = { AttackModifiers, PlayerInfo, LogRecord, PlayerDps, PetDps, PlayerEncounterStats, EncounterStats, avoidTypeMap, attackTypeMap, EncounterEventTypes };
