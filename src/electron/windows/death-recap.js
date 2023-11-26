@@ -114,7 +114,7 @@ function DeathRecap( logFilePath, lineNo, messageId, characterName ) {
     } );
 
     // "Constructor"
-    let combatParser = new CombatParser();
+    let combatParser = new CombatParser(characterName);
 
     if ( lineNo !== -1 ) {
         
