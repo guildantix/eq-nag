@@ -1636,6 +1636,8 @@ class CombatParser {
             //      allowing for the player to stop attacking and start again.  
             //      This should be separate from their encounter dps.
             
+            // TODO: FCT should be calculated from the encounter stats for the player, not separate parsed data.
+            
             if ( playerActor || playerTarget || petActor || petTarget ) {
                 // 30 seconds of no encounter activity ends the encounter, starting a new one.
                 if ( this._encounterStats == undefined || this._encounterStats.lastEncounterEvent < DateUtilities.addSeconds( timestamp, -30 ) ) {
