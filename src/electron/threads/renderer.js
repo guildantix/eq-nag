@@ -37,6 +37,22 @@ const { StylePropertiesModel } = require( '../data/models/core' );
 
 // TODO: Some day we need to remove the old FCT data structure.
 
+
+// TODO: DPS Meter list.
+// DPS Meter:
+//  1. We need to create a new overlay type that is a DPS meter.
+//  2. We need to create the DPS calculations, building on the existing FCT parses.
+//  3. We need to create the rendering routines for the DPS meter.
+//  4. We need to create the animations for the DPS meter.
+//  5. Add pet damage tracking to both the FCT and DPS meter.
+
+// DPS Meter wants:
+//  1. A list of the top 10 DPSers.
+//  2. A way to share your DPS with others.
+//      a. Add class colors and icons to the DPS meter.
+//      b. Add a way to determine classes from the combat log.
+//      c. Persist the class data for each character.
+
 /**
  * Sends the error information to the main thread for logging.
  * 
