@@ -509,6 +509,11 @@ ipcMain.on( 'context:get:pseudo-clipboard', ( event, key ) => {
     event.sender.send( `context:get:pseudo-clipboard:${key}`, pseudoClipboard[ key ] );
 } );
 
+ipcMain.on( 'window:unfocus', ( event ) => {
+    const win = BrowserWindow.fromId( event.sender.id );
+    win?.blur();
+} );
+
 ipcMain.on( 'death-recap:find-deaths',
     /**
      * 

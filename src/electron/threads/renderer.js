@@ -569,7 +569,8 @@ function Renderer( originX, originY, glowOnStart ) {
 
     ipcRenderer.on( 'renderer:window:enable-edit', function ( event, overlayId ) {
         moveToTop( overlayInstances[ overlayId ].dom );
-        enableOverlayMoveResize( overlayInstances[ overlayId ].dom );
+        enableMoveResize( overlayInstances[ overlayId ].dom );
+        MouseUtilities.refreshDom();
     } );
 
     ipcRenderer.on( 'renderer:overlay:move',
@@ -595,18 +596,21 @@ function Renderer( originX, originY, glowOnStart ) {
         if ( overlayInstances[ overlayId ] ) {
             disableMoveResize( overlayInstances[ overlayId ].dom );
         }
+        MouseUtilities.refreshDom();
     } );
 
     ipcRenderer.on( 'renderer:arrange-overlays', function ( event ) {
         eachOverlay( function ( overlay ) {
-            enableOverlayMoveResize( overlay.dom );
+            enableMoveResize( overlay.dom );
         } );
+        MouseUtilities.refreshDom();
     } );
 
     ipcRenderer.on( 'renderer:end-arrange-overlays', function ( event ) {
         eachOverlay( function ( overlay ) {
             disableMoveResize( overlay.dom );
         } );
+        MouseUtilities.refreshDom();
     } );
 
     ipcRenderer.on( 'renderer:window:highlight', function ( event, overlayId ) {
@@ -2032,11 +2036,10 @@ function disableMoveResize( dom ) {
         }
     }
 
-    MouseUtilities.setIgnoreMouseEvents();
     dom.classList.remove( 'drag' );
-    dom.classList.remove( 'mouse-enabled' );
+    dom.classList.remove( 'dynamic-mouse' );
     const domContentArea = dom.querySelectorAll( ':scope *' );
-    domContentArea.forEach( d => d.classList.remove( 'mouse-enabled' ) );
+    domContentArea.forEach( d => d.classList.remove( 'dynamic-mouse' ) );
     dom.dispatchEvent( stopTrackingMoveResizeEvent );
 }
 
@@ -2054,12 +2057,11 @@ function disableMoveResize( dom ) {
  * 
  * @param {HTMLElement} dom The element to enable resize event on.
  */
-function enableOverlayMoveResize( dom ) {
+function enableMoveResize( dom ) {
 
-    MouseUtilities.setHandleMouseEvents( true );
-    dom.classList.add( 'mouse-enabled' );
+    dom.classList.add( 'dynamic-mouse' );
     const domContentArea = dom.querySelectorAll( ':scope *' );
-    domContentArea.forEach( d => d.classList.add( 'mouse-enabled' ) );
+    domContentArea.forEach( d => d.classList.add( 'dynamic-mouse' ) );
     
     /** @type {import('electron').Rectangle} */
     let bounds = {
@@ -2210,7 +2212,7 @@ function enableOverlayMoveResize( dom ) {
     for ( let i = 0; i < resizeHandles.length; i++ ) {
         let handle = createElement( 'span' );
         handle.classList.add( resizeHandles[ i ] );
-        handle.classList.add( 'mouse-enabled' );
+        handle.classList.add( 'dynamic-mouse' );
         dom.appendChild( handle );
     }
 

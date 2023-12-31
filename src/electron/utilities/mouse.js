@@ -1,4 +1,5 @@
 const { getCurrentWindow, screen } = require( '@electron/remote' );
+const { ipcRenderer } = require( 'electron' );
 
 var mouseEnabled = false;
 var dynamicMouseIntervalId = null;
@@ -27,6 +28,7 @@ function setIgnoreMouseEvents() {
         if ( dynamicMouseIntervalId == null ) {
             dynamicMouseIntervalId = window.setInterval( trackDynamicMouse, 33 );
         }
+        ipcRenderer.send( 'window:unfocus' );
     }
 }
 
