@@ -824,6 +824,7 @@ function initializeOverlay( overlay ) {
 
     div.innerHTML = content;
     div.style.position = 'absolute';
+    div.classList.add( 'overlay-container' );
     
 
     if ( overlay.overlayType === 'Timer' ) {

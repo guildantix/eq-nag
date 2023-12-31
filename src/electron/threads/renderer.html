@@ -37,12 +37,14 @@
         }
 
         .drag {
-            background-color: rgba(0,0,0,0.15);
             resize: both;
         }
 
+        .overlay-container.drag {
+            background-color: rgba(0,0,0,0.15);
+        }
+
         .resize-n {
-            background-color: rgba(0,0,0,0.5);
             position: absolute;
             right: -6px;
             left: -6px;
@@ -52,7 +54,6 @@
         }
 
         .resize-s {
-            background-color: rgba(0,0,0,0.5);
             position: absolute;
             right: -6px;
             left: -6px;
@@ -62,7 +63,6 @@
         }
 
         .resize-e {
-            background-color: rgba(0,0,0,0.5);
             position: absolute;
             right: -6px;
             top: -6px;
@@ -72,13 +72,19 @@
         }
 
         .resize-w {
-            background-color: rgba(0,0,0,0.5);
             position: absolute;
             left: -6px;
             top: -6px;
             width: 6px;
             bottom: -6px;
             cursor: ew-resize;
+        }
+
+        .overlay-container .resize-n,
+        .overlay-container .resize-s,
+        .overlay-container .resize-e,
+        .overlay-container .resize-w {
+            background-color: rgba(0,0,0,0.5);
         }
 
         .resize-ne {
