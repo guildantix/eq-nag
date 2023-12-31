@@ -19,6 +19,7 @@ const { getCurrentWindow, screen } = require( '@electron/remote' );
 const { DateUtilities } = require( '../utilities/dates' );
 const { SharedTriggerPermissions } = require( '../data/models/sharing-service' );
 const { StylePropertiesModel } = require( '../data/models/core' );
+const MouseUtilities = require( '../utilities/mouse' );
 
 // TODO: List
 //  3. Update the log watcher to capture data that is required by the new combat groups.
@@ -178,6 +179,8 @@ var timerTemplate;
 var timerIconTemplate;
 var targetGroupTemplate;
 var targetGroupTimerTemplate;
+/** @type {HandlebarsTemplateDelegate<any>} */
+var dpsWindowTemplate;
 var voiceOptions = [];
 /** @type {Record<number, number>} */
 var destroySchedule = {};
@@ -229,6 +232,7 @@ const animateFloatDuration = 1000;
 const animateGrowShrinkDuration = 500;
 const accumulationDelay = 750;
 const accumulationIntervalDelay = 25;
+
 
 // let perfTimeTotal = 0;
 // let perfIntervalId = null;
@@ -357,12 +361,23 @@ function Renderer( originX, originY, glowOnStart ) {
         fctCriticalTemplate = Handlebars.compile( document.querySelector( '#fctCriticalTemplate' ).innerHTML );
         targetGroupTemplate = Handlebars.compile( document.querySelector( '#targetGroupTemplate' ).innerHTML );
         targetGroupTimerTemplate = Handlebars.compile( document.querySelector( '#targetGroupTimerTemplate' ).innerHTML );
+        dpsWindowTemplate = Handlebars.compile( document.querySelector( '#dpsWindowTemplate' ).innerHTML );
 
         logInfo( '[Info:Renderer:Templates] (Renderer docReady) Templates have been compiled!' );
     
         /** Tell the main thread that we need a list of all overlays. */
         ipcRenderer.send( 'overlay:get', null );
 
+        /** @type {string} */
+        let dpsWindowHtml = dpsWindowTemplate( {} );
+        // document.write( dpsWindowHtml );
+        let div = createElement( 'div' );
+
+        div.innerHTML = dpsWindowHtml;
+        document.body.appendChild( div );
+        console.log( 'div', div );
+
+        MouseUtilities.trackDynamicMouse( origin );
     } );
 
     ipcRenderer.on( 'character:get:combatGroupHits',
@@ -768,6 +783,9 @@ function Renderer( originX, originY, glowOnStart ) {
         voiceOptions = speechSynthesis.getVoices();
     };
 
+    return {
+        origin: origin,
+    };
 }
 
 
@@ -2014,7 +2032,7 @@ function disableMoveResize( dom ) {
         }
     }
 
-    getCurrentWindow().setIgnoreMouseEvents( true, { forward: false } );
+    MouseUtilities.setIgnoreMouseEvents();
     dom.classList.remove( 'drag' );
     dom.classList.remove( 'mouse-enabled' );
     const domContentArea = dom.querySelectorAll( ':scope *' );
@@ -2038,7 +2056,7 @@ function disableMoveResize( dom ) {
  */
 function enableMoveResize( dom ) {
 
-    getCurrentWindow().setIgnoreMouseEvents( true, { forward: true } );
+    MouseUtilities.setHandleMouseEvents( true );
     dom.classList.add( 'mouse-enabled' );
     const domContentArea = dom.querySelectorAll( ':scope *' );
     domContentArea.forEach( d => d.classList.add( 'mouse-enabled' ) );
