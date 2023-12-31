@@ -569,7 +569,7 @@ function Renderer( originX, originY, glowOnStart ) {
 
     ipcRenderer.on( 'renderer:window:enable-edit', function ( event, overlayId ) {
         moveToTop( overlayInstances[ overlayId ].dom );
-        enableMoveResize( overlayInstances[ overlayId ].dom );
+        enableOverlayMoveResize( overlayInstances[ overlayId ].dom );
     } );
 
     ipcRenderer.on( 'renderer:overlay:move',
@@ -599,7 +599,7 @@ function Renderer( originX, originY, glowOnStart ) {
 
     ipcRenderer.on( 'renderer:arrange-overlays', function ( event ) {
         eachOverlay( function ( overlay ) {
-            enableMoveResize( overlay.dom );
+            enableOverlayMoveResize( overlay.dom );
         } );
     } );
 
@@ -2054,7 +2054,7 @@ function disableMoveResize( dom ) {
  * 
  * @param {HTMLElement} dom The element to enable resize event on.
  */
-function enableMoveResize( dom ) {
+function enableOverlayMoveResize( dom ) {
 
     MouseUtilities.setHandleMouseEvents( true );
     dom.classList.add( 'mouse-enabled' );
