@@ -123,10 +123,35 @@ function getInnerContentArea( dom ) {
 
 
 
+/**
+ * Retrieves all parent nodes of the given dom element.
+ * 
+ * @param {HTMLElement} dom The dom element.
+ */
+function getParents( dom ) {
+    let parents = [];
+    let parent = dom.parentNode;
+    while ( parent ) {
+        parents.push( parent );
+        parent = parent.parentNode;
+    }
+    return parents;
+}
+
+
+
+
+
+
+
+
+
+
 const DomUtilities = {
     docReady: docReady,
     updateDomTextOnly: updateDomTextOnly,
     getInnerContentArea: getInnerContentArea,
+    getParents: getParents,
 };
 
 module.exports = DomUtilities;
