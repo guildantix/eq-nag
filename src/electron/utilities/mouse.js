@@ -1,5 +1,6 @@
 const { getCurrentWindow, screen } = require( '@electron/remote' );
 const { ipcRenderer } = require( 'electron' );
+const { mouseZIndex } = require( './constants' );
 
 var mouseEnabled = false;
 var dynamicMouseIntervalId = null;
@@ -90,6 +91,7 @@ function getMouseUpdate() {
  */
 function trackDynamicMouse() {
     mouseEnabledDoms = mouseEnabledDoms ?? document.querySelectorAll( '.dynamic-mouse' );
+    mouseEnabledDoms.forEach( dom => dom.style.zIndex = dom.classList.contains('overlay-container') ? dom.style.zIndex : undefined );
     let mouseCoords = getMouseUpdate();
 
     // If the mouse is over a dynamic-mouse element, then we want to set the mouse events to be handled.
@@ -101,6 +103,7 @@ function trackDynamicMouse() {
         if ( (rect.x - origin.x) <= mouseCoords.x && (rect.x - origin.x) + rect.width >= mouseCoords.x && (rect.y - origin.y) <= mouseCoords.y && (rect.y - origin.y) + rect.height >= mouseCoords.y ) {
             setHandleMouseEvents();
             mouseEnabled = true;
+            dom.style.zIndex = dom.classList.contains('overlay-container') ? dom.style.zIndex : mouseZIndex;
             break;
         }
     }
