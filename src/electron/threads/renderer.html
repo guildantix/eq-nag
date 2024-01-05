@@ -46,6 +46,7 @@
 
         .resize-n {
             position: absolute;
+            z-index: 111;
             right: -6px;
             left: -6px;
             top: -6px;
@@ -55,6 +56,7 @@
 
         .resize-s {
             position: absolute;
+            z-index: 111;
             right: -6px;
             left: -6px;
             bottom: -6px;
@@ -64,6 +66,7 @@
 
         .resize-e {
             position: absolute;
+            z-index: 111;
             right: -6px;
             top: -6px;
             width: 6px;
@@ -73,6 +76,7 @@
 
         .resize-w {
             position: absolute;
+            z-index: 111;
             left: -6px;
             top: -6px;
             width: 6px;
@@ -93,6 +97,7 @@
             height: 12px;
             width: 12px;
             position: absolute;
+            z-index: 111;
             cursor: ne-resize;
         }
 
@@ -102,6 +107,7 @@
             height: 12px;
             width: 12px;
             position: absolute;
+            z-index: 111;
             cursor: se-resize;
         }
 
@@ -111,6 +117,7 @@
             height: 12px;
             width: 12px;
             position: absolute;
+            z-index: 111;
             cursor: sw-resize;
         }
 
@@ -120,6 +127,7 @@
             height: 12px;
             width: 12px;
             position: absolute;
+            z-index: 111;
             cursor: nw-resize;
         }
 
@@ -546,10 +554,12 @@
             flex-flow: row nowrap;
             padding: 5px 0 7px;
             color: #adadad;
+            overflow: hidden;
         }
         .window.dps-meter .window-footer {
             height: 4px;
             background-color: #181818;
+            position: relative;
         }
         .window.dps-meter .window-title .spacer {
             flex: 1 1 auto;
@@ -572,9 +582,9 @@
         .window-content {
             border-right: 4px solid #181818;
             margin: 0;
-            /* padding: 1px 0px 1px 0px; */
             border-left: 4px solid #181818;
-            height: 200px;
+            height: calc(100% - 34px);
+            overflow: hidden;
         }
         .window-content .dps-item {
             position: relative;
@@ -582,6 +592,7 @@
             background-color: #181818;
             white-space: nowrap;
             text-overflow: clip;
+            overflow: hidden;
         }
         .window-content .dps-item .dps-item-name {
             /* position: absolute; */

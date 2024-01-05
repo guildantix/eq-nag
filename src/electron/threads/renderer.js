@@ -3,7 +3,7 @@ const DomUtilities = require( '../utilities/dom' );
 const StringUtilities = require( '../utilities/string' );
 const NumberUtilities = require( '../utilities/numbers' );
 const ArrayUtilities = require( '../utilities/arrays' );
-const { OverlayDimensions, OverlayWindow, OverlayComponent, TimerSortTypes, TriggerSecondaryActionModel, FctCombatGroup, CombatTypes, getCombatModifiersFlags, HitStartPositionTypes } = require( '../data/models/overlay-window' );
+const { OverlayDimensions, OverlayWindow, OverlayComponent, TimerSortTypes, TriggerSecondaryActionModel, FctCombatGroup, CombatTypes, getCombatModifiersFlags, HitStartPositionTypes, DisplayMetaModel } = require( '../data/models/overlay-window' );
 const { ActionTypes, TriggerAction, TriggerConditionTypes, OperatorTypes, TimerRestartBehaviors } = require( '../data/models/trigger' );
 const { ipcRenderer } = require( 'electron' );
 const Handlebars = require( "handlebars" );
@@ -20,6 +20,7 @@ const { DateUtilities } = require( '../utilities/dates' );
 const { SharedTriggerPermissions } = require( '../data/models/sharing-service' );
 const { StylePropertiesModel } = require( '../data/models/core' );
 const MouseUtilities = require( '../utilities/mouse' );
+const { overlayZIndex, overlayTopZIndex } = require( '../utilities/constants' );
 
 // TODO: List
 //  3. Update the log watcher to capture data that is required by the new combat groups.
@@ -233,6 +234,8 @@ const animateGrowShrinkDuration = 500;
 const accumulationDelay = 750;
 const accumulationIntervalDelay = 25;
 
+/** @type {DisplayMetaModel[]} */
+let displayMetas = [];
 
 // let perfTimeTotal = 0;
 // let perfIntervalId = null;
@@ -337,6 +340,52 @@ function setCombatGroupHits( characterId, combatGroupId, value ) {
 
 
 
+
+/**
+ * Returns true if the dom rect is inside a display.
+ * 
+ * @param {DOMRect} bounds The dom bounds.
+ */
+function verifyDomRectOnDisplay( bounds ) {
+    let nw = false;
+    let ne = false;
+    let sw = false;
+    let se = false;
+
+    let domBounds = { x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height };
+    domBounds.x -= origin.x;
+    domBounds.y -= origin.y;
+
+    for ( let i = 0; i < displayMetas.length; i++ ) {
+        const display = displayMetas[ i ];
+        
+        if ( domBounds.x >= display.bounds.x && domBounds.x <= display.bounds.x + display.bounds.width && domBounds.y >= display.bounds.y && domBounds.y <= display.bounds.y + display.bounds.height ) {
+            nw = true;
+        }
+        if ( domBounds.x + domBounds.width >= display.bounds.x && domBounds.x + domBounds.width <= display.bounds.x + display.bounds.width && domBounds.y >= display.bounds.y && domBounds.y <= display.bounds.y + display.bounds.height ) {
+            ne = true;
+        }
+        if ( domBounds.x >= display.bounds.x && domBounds.x <= display.bounds.x + display.bounds.width && domBounds.y + domBounds.height >= display.bounds.y && domBounds.y + domBounds.height <= display.bounds.y + display.bounds.height ) {
+            sw = true;
+        }
+        if ( domBounds.x + domBounds.width >= display.bounds.x && domBounds.x + domBounds.width <= display.bounds.x + display.bounds.width && domBounds.y + domBounds.height >= display.bounds.y && domBounds.y + domBounds.height <= display.bounds.y + display.bounds.height ) {
+            se = true;
+        }
+
+    }
+
+    return nw && ne && sw && se;
+}
+
+
+
+
+
+
+
+
+
+
 /**
  * Initializes and starts the rendering system.
  * 
@@ -368,6 +417,9 @@ function Renderer( originX, originY, glowOnStart ) {
         /** Tell the main thread that we need a list of all overlays. */
         ipcRenderer.send( 'overlay:get', null );
 
+        /** Tell the main thread we want a list of all display metas */
+        ipcRenderer.send( 'renderer:get-displays-meta', null );
+
         /** @type {string} */
         let dpsWindowHtml = dpsWindowTemplate( {} );
         // document.write( dpsWindowHtml );
@@ -378,6 +430,18 @@ function Renderer( originX, originY, glowOnStart ) {
         console.log( 'div', div );
 
         MouseUtilities.trackDynamicMouse( origin );
+
+        div.style.position = 'relative';
+
+        let dpsWindow = div.querySelector( '.window' );
+        dpsWindow.style.width = '250px';
+        dpsWindow.style.height = '350px';
+
+        // center element on main monitor
+        dpsWindow.style.left = ( origin.x + ( screen.getPrimaryDisplay().workArea.width / 2 ) - ( dpsWindow.offsetWidth / 2 ) ) + 'px';
+        dpsWindow.style.top = ( origin.y + ( screen.getPrimaryDisplay().workArea.height / 2 ) - ( dpsWindow.offsetHeight / 2 ) ) + 'px';
+
+        enableMoveResize( dpsWindow, div.querySelector( '.window-title' ) );
     } );
 
     ipcRenderer.on( 'character:get:combatGroupHits',
@@ -495,6 +559,18 @@ function Renderer( originX, originY, glowOnStart ) {
                 initializeOverlay( overlay );
             } );
             
+        } );
+
+    ipcRenderer.on( 'renderer:get-displays-meta',
+        /**
+         * Handles the display meta response.
+         * 
+         * @param {any} event 
+         * @param {DisplayMetaModel[]} data The list of display metas.
+         */
+        function ( event, data ) {
+            console.log( 'renderer:get-displays-meta', data );
+            displayMetas = data;
         } );
     
     ipcRenderer.on( 'renderer:overlay:new',
@@ -2057,9 +2133,9 @@ function disableMoveResize( dom ) {
  * Enables resize events on the given dom element.
  * 
  * @param {HTMLElement} dom The element to enable resize event on.
+ * @param {HTMLElement} moveHandle The element to use as the move handle.
  */
-function enableMoveResize( dom ) {
-
+function enableMoveResize( dom, moveHandle ) {
     dom.classList.add( 'dynamic-mouse' );
     const domContentArea = dom.querySelectorAll( ':scope *' );
     domContentArea.forEach( d => d.classList.add( 'dynamic-mouse' ) );
@@ -2077,46 +2153,81 @@ function enableMoveResize( dom ) {
         x: 0,
         y: 0,
     };
-    
+
     let trackN = function ( evt ) {
-        dom.style.top = `${evt.y}px`;
-        const dy = bounds.y - dom.offsetTop;
-        bounds.y = dom.offsetTop;
+        const dy = bounds.y - evt.y;
+        bounds.y = evt.y;
         bounds.height += dy;
-        dom.style.height = `${bounds.height}px`;
+
+        if ( verifyDomRectOnDisplay( bounds ) ) {
+            dom.style.top = `${bounds.y}px`;
+            dom.style.height = `${bounds.height}px`;
+        }
     }
 
     let trackS = function ( evt ) {
         const dy = evt.y - (bounds.y + bounds.height);
         bounds.height += dy;
-        dom.style.height = `${bounds.height}px`;
+
+        if ( verifyDomRectOnDisplay( bounds ) ) {
+            dom.style.height = `${bounds.height}px`;
+        }
     }
 
     let trackE = function ( evt ) {
         const dx = evt.x - ( bounds.x + bounds.width );
         bounds.width += dx;
-        dom.style.width = `${bounds.width}px`;
+
+        if ( verifyDomRectOnDisplay( bounds ) ) {
+            dom.style.width = `${bounds.width}px`;
+        }
     }
 
     let trackW = function ( evt ) {
-        dom.style.left = `${evt.x}px`;
-        const dx = bounds.x - dom.offsetLeft;
-        bounds.x = dom.offsetLeft;
+        const dx = bounds.x - evt.x;
+        bounds.x = evt.x;
         bounds.width += dx;
-        dom.style.width = `${bounds.width}px`;
+
+        if ( verifyDomRectOnDisplay( bounds ) ) {
+            dom.style.left = `${bounds.x}px`;
+            dom.style.width = `${bounds.width}px`;
+        }
     }
 
-    let trackMove = function ( evt ) {
-        bounds.x = evt.x - relMousePos.x;
-        bounds.y = evt.y - relMousePos.y;
+    let trackMoveX = function ( evt ) {
+        const dx = evt.x - relMousePos.x;
+
+        const x = bounds.x;
+        bounds.x = dx;
+        if ( !verifyDomRectOnDisplay( bounds ) ) {
+            bounds.x = x;
+        }
+
         dom.style.left = `${bounds.x}px`;
+    }
+
+    let trackMoveY = function ( evt ) {
+        const dy = evt.y - relMousePos.y;
+
+        const y = bounds.y;
+        bounds.y = dy;
+        if ( !verifyDomRectOnDisplay( bounds ) ) {
+            bounds.y = y;
+        }
+
         dom.style.top = `${bounds.y}px`;
     }
 
+    /**
+     * Handles the mouse down event.
+     * 
+     * @param {PointerEvent} evt The pointer event.
+     */
     let onMouseDown = function ( evt ) {
         const dx = evt.x - bounds.x;
         const dy = evt.y - bounds.y;
 
+        const m = evt.target === moveHandle || DomUtilities.getParents( evt.target ).includes( moveHandle );
         const n = dy >= 0 - dragBorderSize && dy < 0;
         const s = dy <= bounds.height + dragBorderSize && dy >= bounds.height;
         const e = dx <= bounds.width + dragBorderSize && dx >= bounds.width;
@@ -2127,29 +2238,30 @@ function enableMoveResize( dom ) {
         // 
         //      if 'n' then attach the 'trackN' event.
         // 
-        n && document.addEventListener( 'pointermove', trackN );
-        s && document.addEventListener( 'pointermove', trackS );
-        e && document.addEventListener( 'pointermove', trackE );
-        w && document.addEventListener( 'pointermove', trackW );
+        n && !m && document.addEventListener( 'pointermove', trackN );
+        s && !m && document.addEventListener( 'pointermove', trackS );
+        e && !m && document.addEventListener( 'pointermove', trackE );
+        w && !m && document.addEventListener( 'pointermove', trackW );
 
         const ne = ( dy >= dragBorderSize - dragCornerSize && dy < dragBorderSize ) && ( dx <= bounds.width + dragBorderSize && dx >= bounds.width - dragBorderSize );
         const se = ( dy <= bounds.height + dragBorderSize && dy >= bounds.height - dragBorderSize ) && ( dx <= bounds.width + dragBorderSize && dx >= bounds.width - dragBorderSize );
         const sw = ( dy <= bounds.height + dragBorderSize && dy >= bounds.height - dragBorderSize ) && ( dx >= dragBorderSize - dragCornerSize && dx < dragBorderSize );
         const nw = ( dy >= dragBorderSize - dragCornerSize && dy < dragBorderSize ) && ( dx >= dragBorderSize - dragCornerSize && dx < dragBorderSize );
 
-        ne && !n && document.addEventListener( 'pointermove', trackN );
-        ne && !e && document.addEventListener( 'pointermove', trackE );
-        se && !s && document.addEventListener( 'pointermove', trackS );
-        se && !e && document.addEventListener( 'pointermove', trackE );
-        sw && !s && document.addEventListener( 'pointermove', trackS );
-        sw && !w && document.addEventListener( 'pointermove', trackW );
-        nw && !n && document.addEventListener( 'pointermove', trackN );
-        nw && !w && document.addEventListener( 'pointermove', trackW );
+        ne && !n && !m && document.addEventListener( 'pointermove', trackN );
+        ne && !e && !m && document.addEventListener( 'pointermove', trackE );
+        se && !s && !m && document.addEventListener( 'pointermove', trackS );
+        se && !e && !m && document.addEventListener( 'pointermove', trackE );
+        sw && !s && !m && document.addEventListener( 'pointermove', trackS );
+        sw && !w && !m && document.addEventListener( 'pointermove', trackW );
+        nw && !n && !m && document.addEventListener( 'pointermove', trackN );
+        nw && !w && !m && document.addEventListener( 'pointermove', trackW );
 
-        if ( !n && !s && !e && !w && !ne && !se && !sw && !nw ) {
+        if ( m || ( !moveHandle && !n && !s && !e && !w && !ne && !se && !sw && !nw ) ) {
             relMousePos.x = dx;
             relMousePos.y = dy;
-            document.addEventListener( 'pointermove', trackMove );
+            document.addEventListener( 'pointermove', trackMoveX );
+            document.addEventListener( 'pointermove', trackMoveY );
         }
     }
 
@@ -2161,7 +2273,8 @@ function enableMoveResize( dom ) {
         document.removeEventListener( 'pointermove', trackS );
         document.removeEventListener( 'pointermove', trackE );
         document.removeEventListener( 'pointermove', trackW );
-        document.removeEventListener( 'pointermove', trackMove );
+        document.removeEventListener( 'pointermove', trackMoveX );
+        document.removeEventListener( 'pointermove', trackMoveY );
 
         // Next, lets check if the user made any changes.  If they have, then 
         // we need to let the overlay database know.
@@ -2205,7 +2318,8 @@ function enableMoveResize( dom ) {
         document.removeEventListener( 'pointermove', trackS );
         document.removeEventListener( 'pointermove', trackE );
         document.removeEventListener( 'pointermove', trackW );
-        document.removeEventListener( 'pointermove', trackMove );
+        document.removeEventListener( 'pointermove', trackMoveX );
+        document.removeEventListener( 'pointermove', trackMoveY );
     }
 
     dom.classList.add( 'drag' );
@@ -2240,9 +2354,9 @@ function moveToTop( dom ) {
     for ( let overlayId in overlayInstances ) {
         if ( overlayId && overlayInstances.hasOwnProperty( overlayId ) ) {
             if ( dom === overlayInstances[ overlayId ].dom ) {
-                overlayInstances[ overlayId ].dom.style.zIndex = 2;
+                overlayInstances[ overlayId ].dom.style.zIndex = overlayTopZIndex;
             } else {
-                overlayInstances[ overlayId ].dom.style.zIndex = 1;
+                overlayInstances[ overlayId ].dom.style.zIndex = overlayZIndex;
             }
         }
     }
