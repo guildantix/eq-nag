@@ -43,6 +43,7 @@ const channelPrefixes = [
     'scraper',
     'simulation',
     'cache',
+    'combat-database',
 ];
 
 const styleSheetUtil = new StyleSheetUtil();
