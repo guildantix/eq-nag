@@ -97,8 +97,9 @@ function getNumberFormat( numeric ) {
  * @param {number} lineNo The line number at which death occurred.
  * @param {string} messageId The ipc message id.
  * @param {string} characterName The name of the character.
+ * @param {string} serverName The name of the server.
  */
-function DeathRecap( logFilePath, lineNo, messageId, characterName ) {
+function DeathRecap( logFilePath, lineNo, messageId, characterName, serverName ) {
     
     DomUtilities.docReady( f => {
         let title = document.querySelector( '#characterName' );
@@ -114,7 +115,7 @@ function DeathRecap( logFilePath, lineNo, messageId, characterName ) {
     } );
 
     // "Constructor"
-    let combatParser = new CombatParser(characterName);
+    let combatParser = new CombatParser( characterName, serverName );
 
     if ( lineNo !== -1 ) {
         

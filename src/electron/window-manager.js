@@ -215,10 +215,10 @@ class WindowManager {
              * Loads the death recap for the specified player death.
              * 
              * @param {any} event Event args.
-             * @param {IpcMessage<{logFileLoc: LogFileLocation, characterName: string}>} arg The character model.
+             * @param {IpcMessage<{logFileLoc: LogFileLocation, characterName: string, serverName: string}>} arg The character model.
              */
             ( event, arg ) => {
-                this.loadDeathRecap( arg.value.logFileLoc, arg.id, arg.value.characterName );
+                this.loadDeathRecap( arg.value.logFileLoc, arg.id, arg.value.characterName, arg.value.serverName );
             }
         );
         
@@ -227,10 +227,10 @@ class WindowManager {
              * Loads the death recap for the specified player death.
              * 
              * @param {any} event Event args.
-             * @param {IpcMessage<{logFilePath: string, characterName: string}>} arg The character model.
+             * @param {IpcMessage<{logFilePath: string, characterName: string, serverName: string}>} arg The character model.
              */
             ( event, arg ) => {
-                this.loadLastDeathRecap( arg.value.logFilePath, arg.id, arg.value.characterName );
+                this.loadLastDeathRecap( arg.value.logFilePath, arg.id, arg.value.characterName, arg.value.serverName );
             }
         );
 
@@ -849,9 +849,10 @@ class WindowManager {
      * @param {string} logFilePath The full path to the log file.
      * @param {string} messageId The message id.
      * @param {string} characterName The name of the character that died.
+     * @param {string} serverName The name of the server.
      */
-    loadLastDeathRecap( logFilePath, messageId, characterName ) {
-        this._loadDeathRecap( logFilePath, 'last', messageId, characterName );
+    loadLastDeathRecap( logFilePath, messageId, characterName, serverName ) {
+        this._loadDeathRecap( logFilePath, 'last', messageId, characterName, serverName );
     }
 
 
@@ -869,9 +870,10 @@ class WindowManager {
      * @param {LogFileLocation} logFileLocation The location in the log file where death happened.
      * @param {string} messageId The ipc message id.
      * @param {string} characterName The name of the character.
+     * @param {string} serverName The name of the server.
      */
-    loadDeathRecap( logFileLocation, messageId, characterName ) {
-        this._loadDeathRecap( logFileLocation.logFilePath, logFileLocation.lineNo, messageId, characterName );
+    loadDeathRecap( logFileLocation, messageId, characterName, serverName ) {
+        this._loadDeathRecap( logFileLocation.logFilePath, logFileLocation.lineNo, messageId, characterName, serverName );
     }
 
 
@@ -890,8 +892,9 @@ class WindowManager {
      * @param {number|'last'} lineNo The line number of the death, or 'last' to pull the latest death.
      * @param {string} messageId The message id.
      * @param {string} characterName The name of the character that died.
+     * @param {string} serverName The name of the server.
      */
-    _loadDeathRecap( logFilePath, lineNo, messageId, characterName ) {
+    _loadDeathRecap( logFilePath, lineNo, messageId, characterName, serverName ) {
         
         let deathRecap = new BrowserWindow( {
             transparent: true,

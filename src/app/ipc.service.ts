@@ -729,8 +729,8 @@ export class IpcService {
         return obs;
     }
 
-    public showDeathRecap( logFileLoc: LogFileLocation, characterName: string ) {
-        let message = new IpcMessage( { logFileLoc: logFileLoc, characterName: characterName } );
+    public showDeathRecap( logFileLoc: LogFileLocation, characterName: string, serverName: string ) {
+        let message = new IpcMessage( { logFileLoc: logFileLoc, characterName: characterName, serverName: serverName } );
         window.api.ipc.send( 'window:death-recap', message );
     }
 
