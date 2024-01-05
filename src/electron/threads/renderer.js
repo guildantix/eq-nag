@@ -454,6 +454,7 @@ function Renderer( originX, originY, glowOnStart ) {
          */
         ( event, data ) => {
             // This may or may not include duplicate information based on the character's you have active.
+            // TODO: Synchronize local data.
             console.log( 'encounterDps', data );
         } );
 
