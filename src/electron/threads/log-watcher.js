@@ -92,6 +92,10 @@ let exceptionParses = [];
 let batchTriggerParseHistoryTimeoutId = null;
 const batchTriggerParseHistoryTimeoutDuration = 100;
 let dpsIntervalId = null;
+const dpsInterval = 1000;
+const enableDpsTransmit = true; // TODO: Enable transmission of DPS to the api for log event synchronization.
+let dpsTransmitIntervalId = null;
+const dpsTransmitInterval = 5000;
 
 /** @type {Record<string, {trigger: LogTrigger, res: PhraseParse}>} */
 let actionInstances = {};
@@ -248,49 +252,49 @@ const logError = ( err, raw, simulating, padTime, errorDesc, trigger, action ) =
 /** @type {CombatParser} */
 let myCombatParser = undefined;
 
-const writeDpsToConsole = () => {
-    // let now = new Date();
-    
-    // let encounterEvents = myCombatParser.getEncounterEvents( DateUtilities.addSeconds( now, -10 ), null, characterName, null );
-    // let dps = 0;
-    // encounterEvents.forEach( e => {
-    //     dps += e.damage ?? 0;
-    // } );
-    // let now = new Date();
-    // let dps = 0;
-    // for ( let i = myCombatLog.length - 1; i >= 0; i-- ) {
-    //     let entry = myCombatLog[ i ];
-    //     if ( entry.timestamp.getTime() >= now.getTime() - 10000 ) {
-    //         dps += entry.damage;
-    //     }
-    // }
-
-    // let dps = 0;6
-
+const sendDpsToRenderer = () => {
     // This is currently a really simple version of DPS tracking.  What we need to do is capture the start/end of each players combat and then calculate the DPS based on that.  In addition to what we're doing now, which is their immediate DPS not encounter DPS.
     let encounterDps = myCombatParser?.getEncounterDps() ?? [];
-    // console.log( 'encounterDps', encounterDps );
-    let myDpsInfo = encounterDps.find( f => f.name === characterName );
-    if ( myDpsInfo ) {
-        let damage = myDpsInfo.damage + ( myDpsInfo.pets?.reduce( ( a, b ) => a + b.damage, 0 ) ?? 0 );
-        let dps = myDpsInfo.dps + ( myDpsInfo.pets?.reduce( ( a, b ) => a + b.dps, 0 ) ?? 0 );
-        let duration = DateUtilities.timeSince( myDpsInfo.start, myDpsInfo.end ).totalSeconds;
-        console.log( `DPS: \t${damage}\t${dps}\t${duration}` );
-    } else {
-        console.log( `DPS: 0` );
-    }
+    ipcRenderer.send( 'renderer:encounter-dps', { character: characterName, encounterDps: encounterDps } );
 };
 
+const transmitEncounterEvents = () => {
+    let fullEncounterEvents = myCombatParser?.getCharacterEncounterEvents( characterName, true ) ?? [];
+    let minifiedEncounterEvents = myCombatParser?.getMinifiedEncounterEvents( fullEncounterEvents ) ?? [];
+
+    fullEncounterEvents?.forEach( e => e.transmitted = true );
+
+    // TODO: Actually transmit the events.
+    console.log( 'full events', JSON.stringify( fullEncounterEvents ).length );
+    console.log( 'minified events', JSON.stringify( minifiedEncounterEvents ).length );
+}
+
+const dpsTransmitFn = () => {
+    transmitEncounterEvents();
+
+    dpsTransmitIntervalId = window.setTimeout( () => dpsTransmitFn(), dpsTransmitInterval );
+}
+
+const dpsIntervalFn = () => {
+    sendDpsToRenderer();
+
+    dpsIntervalId = window.setTimeout( () => dpsIntervalFn(), dpsInterval );
+}
+
 const startDpsTracking = () => {
+    // TODO: Only track DPS once per machine, alternatively only one log watcher watches for all events while each log watcher tracks DPS for their character.
     if ( !dpsIntervalId ) {
-        dpsIntervalId = window.setInterval( () => writeDpsToConsole(), 1000 );
+        dpsIntervalId = window.setTimeout( () => dpsIntervalFn(), dpsInterval );
+        enableDpsTransmit && ( dpsTransmitIntervalId = window.setTimeout( () => dpsTransmitFn(), dpsTransmitInterval ) );
     }
 };
 
 const stopDpsTracking = () => {
     if ( dpsIntervalId ) {
-        window.clearInterval( dpsIntervalId );
+        window.clearTimeout( dpsIntervalId );
         dpsIntervalId = null;
+        window.clearTimeout( dpsTransmitIntervalId );
+        dpsTransmitIntervalId = null;
     }
 };
 
