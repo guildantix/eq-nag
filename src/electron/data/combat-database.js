@@ -53,6 +53,15 @@ class CombatDatabase extends Store {
         }
     }
 
+
+
+
+
+
+
+
+
+    
     /**
      * Attaches store events to ipc main and dispatches react events to the main window.
      * 
@@ -71,6 +80,15 @@ class CombatDatabase extends Store {
 
     }
 
+
+
+
+
+
+
+
+
+    
     /**
      * Updates the database with the given server model.
      * 
@@ -85,6 +103,15 @@ class CombatDatabase extends Store {
         }
         await this.storeDataFileAsync( this.#data );
     }
+
+
+
+
+
+
+
+
+
 
     /**
      * Gets or creates a new server.
