@@ -675,7 +675,9 @@ app.on( 'ready', function () {
     ginaImporter.initGinaImporter( mainWindowRef, app.isDev() );
     verifiedPlayersDatabase.attachIpcEvents( mainWindowRef, sendTick );
 
-    winManager.configureRendererMouseBlockingOnMoveResize( mainWindow );
+    // TODO: Update this method with the new mouse.js implementation.
+    // TODO: There may still be some renderer forwarding that needs to be removed.
+    winManager.configureRendererMouseBlockingOnMoveResize( mainWindow ); 
 
     winManager.loadRenderer();
 
