@@ -135,6 +135,8 @@ class LogRecord {
     modifiers;
     /** @type {boolean?} true when actor MUST be a player, false when actor MUST be an npc, and null if unset/unknown */
     player;
+    /** @type {boolean} */
+    transmitted = false;
 }
 
 const attackTypeMap = {
