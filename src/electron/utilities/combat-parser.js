@@ -45,6 +45,47 @@ const executCombatRgx = ( rgx, logLine ) => {
 
 
 
+/**
+ * Minifies the given log record.  Deleting undefined properties and false modifiers.
+ * 
+ * @returns {any} Returns the minified log record.
+ * 
+ * @param {LogRecord} rec The log record to minify.
+ */
+const minifyLogRecord = ( rec ) => {
+
+    /** @type {LogRecord} */
+    let minifiedRec = Object.assign( new LogRecord(), rec );
+    minifiedRec.modifiers = Object.assign( new AttackModifiers(), rec.modifiers );
+
+    let keys = Object.keys( minifiedRec );
+    for ( let i = 0; i < keys.length; i++ ) {
+        const key = keys[ i ];
+        if ( minifiedRec[ key ] === undefined ) {
+            delete minifiedRec[ key ];
+        }
+    }
+
+    let mKeys = Object.keys( minifiedRec.modifiers );
+    for ( let i = 0; i < mKeys.length; i++ ) {
+        const key = mKeys[ i ];
+        if ( minifiedRec.modifiers[ key ] === false ) {
+            delete minifiedRec.modifiers[ key ];
+        }
+    }
+
+    return minifiedRec;
+}
+
+
+
+
+
+
+
+
+
+
 const combatRgx = {
     // Melee damage. (learn|learns|) [https://regex101.com/r/oMsgre/3]
     // NOTES: 
@@ -233,71 +274,57 @@ class CombatParser {
         }
 
         return output;
-        // let now = new Date();
-        // let duration = 10;
-        // let start = DateUtilities.addSeconds( now, -1 * duration );
-        // let encounterEvents = this.encounterEvents.filter( f => f.timestamp >= start );
+    }
 
-        // /** @type {PlayerDps[]} */
-        // let output = [];
-        // let players = Object.keys( this._verifiedPlayers );
 
-        // for ( let i = 0; i < encounterEvents.length; i++ ) {
-        //     const event = encounterEvents[ i ];
-        //     let player = event.actor;
 
-        //     if ( players.includes( player ) ) {
-        //         let playerDps = output.find( f => f.name === player );
-        //         if ( playerDps == null ) {
-        //             playerDps = {
-        //                 name: player,
-        //                 class: this._playerInfos[ player ].className,
-        //                 dps: 0,
-        //                 damage: 0,
-        //                 pets: []
-        //             };
-        //             output.push( playerDps );
-        //         }
-        //         playerDps.damage += event.damage ?? 0;
-        //     } else if ( this._verifiedPets.includes( player ) ) {
-        //         let petOwner = this._petOwners[ player ];
-        //         if ( petOwner != null ) {
-        //             let playerDps = output.find( f => f.name === petOwner );
-        //             if ( playerDps == null ) {
-        //                 playerDps = {
-        //                     name: petOwner,
-        //                     class: this._playerInfos[ petOwner ]?.className,
-        //                     dps: 0,
-        //                     damage: 0,
-        //                     pets: []
-        //                 };
-        //                 output.push( playerDps );
-        //             }
-        //             let petDps = playerDps.pets.find( f => f.name === player );
-        //             if ( petDps == null ) {
-        //                 petDps = {
-        //                     name: player,
-        //                     damage: 0,
-        //                     dps: 0
-        //                 };
-        //                 playerDps.pets.push( petDps );
-        //             }
-        //             petDps.damage += event.damage ?? 0;
-        //         }
-        //     }
-        // }
 
-        // for ( let i = 0; i < output.length; i++ ) {
-        //     const playerDps = output[ i ];
-        //     playerDps.dps = Math.round( playerDps.damage / duration );
-        //     for ( let j = 0; j < playerDps.pets.length; j++ ) {
-        //         const petDps = playerDps.pets[ j ];
-        //         petDps.dps = Math.round( petDps.damage / duration );
-        //     }
-        // }
 
-        // return output;
 
+
+
+
+
+    /**
+     * Returns the list of log records for the specified character.
+     * 
+     * @returns {LogRecord[]} The list of log records.
+     * 
+     * @param {string} character The name of the character to pull log records for.
+     * @param {boolean | undefined} untransmittedOnly If true, will only pull untransmitted log records.
+     */
+    getCharacterEncounterEvents( character, untransmittedOnly ) {
+        let actorPets = this._playerPets[ character ];
+        let output = this.encounterEvents.filter( f => {
+            return ( !untransmittedOnly || f.transmitted === false ) && ( character == null || f.actor === character );
+        } );
+
+        if ( actorPets?.length > 0 ) {
+            let petOutput = this.encounterEvents.filter( f => ( !untransmittedOnly || f.transmitted === false ) && actorPets.includes( f.actor ) );
+            output = output.concat( petOutput );
+        }
+
+        return output;
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Minifies the given list of event logs.
+     * 
+     * @returns Returns the minified encounter events.
+     * 
+     * @param {LogRecord[]} eventLogs The list of event logs to minify.
+     */
+    getMinifiedEncounterEvents( eventLogs ) {
+        return eventLogs.map( m => minifyLogRecord( m ) );
     }
 
 
