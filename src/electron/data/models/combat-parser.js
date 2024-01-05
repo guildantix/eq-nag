@@ -204,4 +204,74 @@ const EncounterEventTypes = {
     playerHeal: 1,
 }
 
-module.exports = { AttackModifiers, PlayerInfo, LogRecord, PlayerDps, PetDps, PlayerEncounterStats, EncounterStats, avoidTypeMap, attackTypeMap, EncounterEventTypes };
+class ServerCombatModel {
+
+    /** @type {string} */
+    server;
+    /** @type {Record<string, PlayerInfo>} */
+    verifiedPlayers = {};
+    /** @type {string[]} */
+    verifiedNpcs = [];
+    /** @type {string[]>} */
+    verifiedPets = [];
+    /** @type {Record<string, string>} */
+    petOwners = {};
+    
+}
+
+class CombatEncounterModel {
+
+    /** @type {string} */
+    server;
+    /** @type {LogRecord} */
+    encounterEvents = [];
+    /** @type {Date} */
+    start;
+    /** @type {Date | undefined} */
+    end = undefined;
+
+    /**
+     * Initializes a new encounter.
+     * 
+     * @param {string} serverName The name of the server.
+     * @param {Date} timeStamp The start time of the encounter.
+     */
+    constructor( serverName, timeStamp ) {
+
+        if ( !serverName ) {
+            throw new Error( 'serverName is required.' );
+        }
+
+        if ( !timeStamp ) {
+            throw new Error( 'timeStamp is required.' );
+        }
+
+        this.server = serverName;
+        this.start = timeStamp;
+    }
+
+}
+
+class CombatDb {
+
+    /** @type {ServerCombatModel[]} */
+    servers = [];
+    /** @type {CombatEncounterModel[]} */
+    encounters = [];
+
+}
+
+module.exports = {
+    AttackModifiers,
+    PlayerInfo,
+    LogRecord,
+    PlayerDps,
+    PetDps,
+    PlayerEncounterStats,
+    EncounterStats,
+    avoidTypeMap,
+    attackTypeMap,
+    EncounterEventTypes,
+    ServerCombatModel,
+    CombatDb
+};

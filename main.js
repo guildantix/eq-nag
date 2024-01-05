@@ -22,6 +22,7 @@ const { LogFileLocation } = require( "./src/electron/data/log-file-location" );
 const VerifiedPlayersStore = require( "./src/electron/data/verified-players" );
 const cronParser = require( 'cron-parser' );
 const { DateUtilities } = require( "./src/electron/utilities/dates" );
+const CombatDatabase = require( "./src/electron/data/combat-database" );
 
 /** @type {BrowserWindow} */
 var mainWindow, logWatcherWindow, testWindow;
@@ -37,7 +38,8 @@ const logBootstrap = new LogBootstrapper();
 const gameResources = new GameResources();
 const fileDatabase = new FilesDatabaseStore();
 const ginaImporter = new GinaImporter();
-const verifiedPlayersDatabase = new VerifiedPlayersStore();
+// const verifiedPlayersDatabase = new VerifiedPlayersStore();
+const combatDatabase = new CombatDatabase();
 /** @type {Tray} */
 var trayMenu = null;
 
@@ -673,7 +675,7 @@ app.on( 'ready', function () {
     logBootstrap.boostrapLogWatchers( mainWindowRef, app.isDev(), characterDatabase, sendTick, userPreferences );
     gameResources.attachIpcEvents( mainWindowRef, userPreferences );
     ginaImporter.initGinaImporter( mainWindowRef, app.isDev() );
-    verifiedPlayersDatabase.attachIpcEvents( mainWindowRef, sendTick );
+    combatDatabase.attachIpcEvents( mainWindowRef, sendTick );
 
     // TODO: Update this method with the new mouse.js implementation.
     // TODO: There may still be some renderer forwarding that needs to be removed.
