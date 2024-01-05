@@ -605,6 +605,10 @@ class WindowManager {
             this.#renderer.webContents.send( 'renderer:get-displays-meta', this.getDisplaysMeta() );
         } );
         
+        ipcMain.on( 'renderer:encounter-dps', ( event, encounterDps ) => {
+            this.#renderer.webContents.send( 'renderer:encounter-dps', encounterDps );
+        } );
+        
         userPreferencesDatabase.onFctStyleChanges.push( fctStyles => {
             this.#renderer.webContents.send( 'fctStyles', fctStyles );
         } );

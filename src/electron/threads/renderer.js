@@ -21,6 +21,7 @@ const { SharedTriggerPermissions } = require( '../data/models/sharing-service' )
 const { StylePropertiesModel } = require( '../data/models/core' );
 const MouseUtilities = require( '../utilities/mouse' );
 const { overlayZIndex, overlayTopZIndex } = require( '../utilities/constants' );
+const { PlayerDps } = require( '../data/models/combat-parser' );
 
 // TODO: List
 //  3. Update the log watcher to capture data that is required by the new combat groups.
@@ -443,6 +444,18 @@ function Renderer( originX, originY, glowOnStart ) {
 
         enableMoveResize( dpsWindow, div.querySelector( '.window-title' ) );
     } );
+
+    ipcRenderer.on( 'renderer:encounter-dps',
+        /**
+         * Handles receiving the combat group hits.
+         * 
+         * @param {Electron.IpcRendererEvent} event The event args.
+         * @param {{character: string, encounterDps: PlayerDps[]}} data The data for combat group hits.
+         */
+        ( event, data ) => {
+            // This may or may not include duplicate information based on the character's you have active.
+            console.log( 'encounterDps', data );
+        } );
 
     ipcRenderer.on( 'character:get:combatGroupHits',
         /**
