@@ -1291,7 +1291,7 @@ function LogWatcher(character, logPosition) {
         voiceOptions = speechSynthesis.getVoices();
     };
 
-    myCombatParser = new CombatParser( characterName );
+    myCombatParser = new CombatParser( characterName, character.server );
     startDpsTracking();
 }
 
@@ -4161,7 +4161,7 @@ function getPersistentDictionaryValue( key, res, timestamp, action, deltaTime, t
  */
 function loadLastDeathRecap() {
 
-    let message = new IpcMessage( { logFilePath: charModel.logFile, characterName: characterName } );
+    let message = new IpcMessage( { logFilePath: charModel.logFile, characterName: characterName, serverName: charModel.server } );
     ipcRenderer.send( 'window:last-death-recap', message );
     
 }

@@ -9,7 +9,7 @@ const { ipcRenderer } = require( 'electron' );
 const { VerifiedPlayersDb } = require( '../data/models/verified-players-db' );
 const { DateUtilities } = require( './dates' );
 const { DeathRecapEncounterMob, DeathRecapRaidStats, DeathRecapEncounter, DeathRecapLog, DeathRecapDamageSource, DeathRecapModel } = require( '../data/models/death-recap' );
-const { AttackModifiers, LogRecord, avoidTypeMap, attackTypeMap, PlayerInfo, PlayerDps, EncounterStats, PlayerEncounterStats, PetDps } = require( '../data/models/combat-parser' );
+const { AttackModifiers, LogRecord, avoidTypeMap, attackTypeMap, PlayerInfo, PlayerDps, EncounterStats, PlayerEncounterStats, PetDps, ServerCombatModel } = require( '../data/models/combat-parser' );
 
 /** @type {string} */
 let characterName = 'You';
@@ -188,8 +188,8 @@ class CombatParser {
     _petOwners = {}; // needs to be by server
     /** @type {Record<string, PlayerInfo>} */
     _playerInfos = {}; // needs to be by server
-    /** @type {Record<string, number>} */
-    _playerEncounterStats = {};
+    /** @type {string} */
+    _serverName;
 
     /** @type {LogRecord[]} */
     encounterEvents = [];
@@ -202,12 +202,72 @@ class CombatParser {
 
     /**
      * Constructs a new combat parser.
+     * 
      * @param {string} myCharacterName The character name of the current log file owner.
+     * @param {string} serverName The name of the server for the character.
      */
-    constructor( myCharacterName ) {
+    constructor( myCharacterName, serverName ) {
         characterName = myCharacterName ?? characterName;
         this._verifiedPlayers.push( characterName );
-        console.log( 'initiating combat parser for', characterName );
+        console.log( 'initiating combat parser for', characterName, 'on server', serverName );
+        this._serverName = serverName;
+
+        ipcRenderer.on( 'combat-database:get-server',
+            /**
+             * Handles the get-server event.
+             * 
+             * @param {any} event The event args.
+             * @param {ServerCombatModel} data The server combat model.
+             */
+            ( event, data ) => {
+                if ( data ) {
+                    this._playerInfos = data.verifiedPlayers;
+                    this._verifiedPlayers = Object.keys( data.verifiedPlayers );
+                    this._verifiedNpcs = data.verifiedNpcs;
+                    this._verifiedPets = data.verifiedPets;
+                    this._petOwners = data.petOwners;
+
+                    // Calculate the pets each player has.
+                    this._playerPets = this._playerPets ?? {};
+                    let petKeys = Object.keys( this._petOwners );
+                    for ( let i = 0; i < petKeys.length; i++ ) {
+                        let pet = petKeys[ i ];
+                        let owner = this._petOwners[ pet ];
+                        if ( !this._playerPets[ owner ] ) {
+                            this._playerPets[ owner ] = [];
+                        }
+                        this._playerPets[ owner ].push( pet );
+                    }
+                }
+            } );
+        
+        if ( serverName ) {
+            ipcRenderer.send( 'combat-database:get-server', serverName );
+        }
+    }
+
+
+
+
+
+
+
+
+
+    
+    /**
+     * Updates the combat db with the current player/pet data.
+     */
+    _updateServerModel() {
+        let server = new ServerCombatModel();
+
+        server.server = this._serverName;
+        server.verifiedPlayers = this._playerInfos;
+        server.verifiedNpcs = this._verifiedNpcs;
+        server.verifiedPets = this._verifiedPets;
+        server.petOwners = this._petOwners;
+
+        ipcRenderer.send( 'combat-database:put-server', server );
     }
 
 
@@ -427,19 +487,7 @@ class CombatParser {
     loadDeathRecap( logFilePath, lineNo, myCharacterName, callback ) {
 
         let act = () => {
-            ipcRenderer.on( 'verified-players:get',
-                /**
-                 * Handles the event.
-                 * 
-                 * @param {any} event Event args.
-                 * @param {VerifiedPlayersDb} data Verified players data.
-                 */
-                ( event, data ) => {
-                    // verifiedPlayersDb = data;
-                    this._doLoadDeathRecap( logFilePath, lineNo, callback );
-                }
-            );
-            ipcRenderer.send( 'verified-players:get' );
+            this._doLoadDeathRecap( logFilePath, lineNo, callback );
         }
 
         if ( lineNo > 0 ) {
@@ -717,6 +765,7 @@ class CombatParser {
     _updateEntityVerifications( lines, myCharacterName ) {
         
         // TODO: This is in serious need of optimization.
+        let updateServerModel = false;
 
         for ( let i = 0; i < lines.length; i++ ) {
             let regxResult = executCombatRgx( combatRgx.GroupRaid, lines[ i ] );
@@ -724,6 +773,7 @@ class CombatParser {
             regxResult = regxResult == null ? executCombatRgx( combatRgx.Achievement, lines[ i ] ) : regxResult;
             if ( regxResult !== null && this._verifiedPlayers.indexOf( regxResult.groups.player ) === -1 ) {
                 this._verifiedPlayers.push( regxResult.groups.player );
+                updateServerModel = true;
             }
 
             let petLeader = executCombatRgx( combatRgx.PetLeader, lines[ i ] );
@@ -744,6 +794,7 @@ class CombatParser {
                 
                 this._petOwners[ petLeader.groups.pet ] = petKey;
                 this._playerPets[ petKey ].push( petLeader.groups.pet );
+                updateServerModel = true;
 
             }
 
@@ -766,6 +817,8 @@ class CombatParser {
                     this._playerInfos[ playerName ].className = playerWho.groups.classRealName ?? playerWho.groups.classTitleOrName;
                     this._playerInfos[ playerName ].raceName = playerWho.groups.raceName;
                 }
+                
+                updateServerModel = true;
             }
             
         }
@@ -776,6 +829,7 @@ class CombatParser {
             const rampages = event.modifiers?.rampage || event.modifiers?.wild_rampage;
             if ( rampages && !this._verifiedPets.includes( event.actor ) && !this._verifiedNpcs.includes( event.actor ) ) {
                 this._verifiedNpcs.push( event.actor );
+                updateServerModel = true;
             }
         }
 
@@ -789,6 +843,7 @@ class CombatParser {
                     this._verifiedPets.push( npc );
                     // Pets do not belong in the verified npcs list.
                     this._verifiedNpcs.splice( j, 1 );
+                    updateServerModel = true;
                 }
             }
         }
@@ -799,6 +854,7 @@ class CombatParser {
             const event = this.encounterEvents[ i ];
             if ( event.actor != null && !( this._verifiedNpcs.indexOf( event.actor ) >= 0 || this._verifiedPets.indexOf( event.actor ) >= 0 || this._verifiedPlayers.indexOf( event.actor ) >= 0 || this._unknownEntities.indexOf( event.actor ) >= 0 ) ) {
                 this._unknownEntities.push( event.actor );
+                updateServerModel = true;
             }
         }
 
@@ -887,30 +943,35 @@ class CombatParser {
                     this._verifiedPets.push( stats.name );
                     let ui = this._unknownEntities.indexOf( stats.name );
                     this._unknownEntities.splice( ui, 1 );
+                    updateServerModel = true;
 
                 } else if ( stats.attackNpc === 0 && stats.attackPlayer === 0 && stats.healPlayer > 0 ) {
 
                     this._verifiedPets.push( stats.name );
                     let ui = this._unknownEntities.indexOf( stats.name );
                     this._unknownEntities.splice( ui, 1 );
+                    updateServerModel = true;
 
                 } else if ( stats.attackedByPlayer > 0 && stats.attackNpc === 0 ) {
 
                     this._verifiedNpcs.push( stats.name );
                     let ui = this._unknownEntities.indexOf( stats.name );
                     this._unknownEntities.splice( ui, 1 );
+                    updateServerModel = true;
 
                 } else if ( stats.attackedByNpc > 0 && stats.attackPlayer === 0 ) {
 
                     this._verifiedPets.push( stats.name );
                     let ui = this._unknownEntities.indexOf( stats.name );
                     this._unknownEntities.splice( ui, 1 );
+                    updateServerModel = true;
 
                 } else if ( stats.attackNpc === 0 && stats.attackPlayer > 0 ) {
 
                     this._verifiedNpcs.push( stats.name );
                     let ui = this._unknownEntities.indexOf( stats.name );
                     this._unknownEntities.splice( ui, 1 );
+                    updateServerModel = true;
 
                 } else if ( stats.attackPlayer > 0 && stats.attackNpc > 0 ) {
 
@@ -918,14 +979,22 @@ class CombatParser {
                         this._verifiedPets.push( stats.name );
                         let ui = this._unknownEntities.indexOf( stats.name );
                         this._unknownEntities.splice( ui, 1 );
+                        updateServerModel = true;
+
                     } else if ( stats / attackNpc / stats.attackPlayer <= 0.5 ) {
                         this._verifiedNpcs.push( stats.name );
                         let ui = this._unknownEntities.indexOf( stats.name );
                         this._unknownEntities.splice( ui, 1 );
+                        updateServerModel = true;
+                        
                     }
 
                 }
             }
+        }
+
+        if ( updateServerModel ) {
+            this._updateServerModel();
         }
         
     }
