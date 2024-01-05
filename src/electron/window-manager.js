@@ -2,7 +2,7 @@ const { app, BrowserWindow, ipcMain, screen } = require( "electron" );
 const ForwardRef = require( './forward-ref' );
 const OverlayDatabaseStore = require( "./data/overlay-database" );
 const UserPreferencesStore = require( "./data/user-preferences" );
-const { OverlayWindow } = require( "./data/models/overlay-window" );
+const { OverlayWindow, DisplayMetaModel } = require( "./data/models/overlay-window" );
 const ArrayUtilities = require( "./utilities/arrays" );
 const log = require( 'electron-log' );
 const CharacterModel = require( './data/models/character' );
@@ -601,6 +601,10 @@ class WindowManager {
             this.#renderer.webContents.send( 'renderer:clear-all', null );
         } );
         
+        ipcMain.on( 'renderer:get-displays-meta', ( event ) => {
+            this.#renderer.webContents.send( 'renderer:get-displays-meta', this.getDisplaysMeta() );
+        } );
+        
         userPreferencesDatabase.onFctStyleChanges.push( fctStyles => {
             this.#renderer.webContents.send( 'fctStyles', fctStyles );
         } );
@@ -1049,6 +1053,38 @@ class WindowManager {
             width: right - left,
             height: bottom - top,
         };
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Returns a list of all displays meta information.
+     * 
+     * @returns {DisplayMetaModel[]} Returns an array of display meta data.
+     */
+    getDisplaysMeta() {
+        let displays = screen.getAllDisplays();
+        let primaryDisplay = screen.getPrimaryDisplay();
+
+        let output = displays.map( display => {
+            let output = new DisplayMetaModel();
+
+            output.id = display.id;
+            output.bounds = display.bounds;
+            output.label = display.label;
+            output.isPrimary = display.id === primaryDisplay.id;
+
+            return output;
+        } );
+
+        return output;
     }
 
 

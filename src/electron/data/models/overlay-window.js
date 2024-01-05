@@ -327,4 +327,15 @@ class FctCombatGroup {
     _combatModifiersFlags = 0;
 }
 
-module.exports = { OverlayDimensions, OverlayWindow, OverlayComponent, TimerSortTypes, OverlayStoreModel, TriggerSecondaryActionModel, CombatAnimations, CombatTypes, FctCombatGroup, HitStartPositionTypes, getCombatModifiersFlags };
+class DisplayMetaModel {
+    /** @type {string} */
+    id;
+    /** @type {string} */
+    label;
+    /** @type {Electron.Rectangle} */
+    bounds;
+    /** @type {boolean} */
+    isPrimary = false;
+}
+
+module.exports = { OverlayDimensions, OverlayWindow, OverlayComponent, TimerSortTypes, OverlayStoreModel, TriggerSecondaryActionModel, CombatAnimations, CombatTypes, FctCombatGroup, HitStartPositionTypes, getCombatModifiersFlags, DisplayMetaModel };
