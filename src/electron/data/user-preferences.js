@@ -513,6 +513,24 @@ class UserPreferencesStore extends Store {
         this.storeDataFile( this.#data );
     }
 
+    /** @type {boolean} */
+    get enableDpsWindow() {
+        return this.#data.enableDpsWindow === true;
+    }
+    set enableDpsWindow( val ) {
+        this.#data.enableDpsWindow = val === true;
+        this.storeDataFile( this.#data );
+    }
+
+    /** @type {import('electron').Rectangle} */
+    get dpsWindowPosition() {
+        return this.#data.dpsWindowPosition;
+    }
+    set dpsWindowPosition( val ) {
+        this.#data.dpsWindowPosition = val;
+        this.storeDataFile( this.#data );
+    }
+
     /** @type {(fctStyles: FctStylesModel) => void[]} */
     onFctStyleChanges = [];
 
@@ -791,12 +809,26 @@ class UserPreferencesStore extends Store {
                     keySubscribers[ arg.key ].forEach( s => s.send( `settings:get:${arg.key}:generic`, this[ arg.key ] ) );
                 }
             } );
+        
+        ipcMain.handle( 'settings:get',
+            /**
+             * 
+             * @param {Electron.IpcMainEvent} event The Event args.
+             * @param {{key: string, subscribe: boolean}} arg The setting data.
+             */
+            ( event, arg ) => {
+                if ( arg.subscribe === true ) {
+                    keySubscribers[ arg.key ] = keySubscribers[ arg.key ] ? keySubscribers[ arg.key ] : [];
+                    keySubscribers[ arg.key ].push( event.sender );
+                }
+                return this[ arg.key ];
+            } );
 
         ipcMain.on( 'settings:get',
             /**
              * 
              * @param {Electron.IpcMainEvent} event The Event args.
-             * @param {{key: string}} arg The setting data.
+             * @param {{key: string, subscribe: boolean}} arg The setting data.
              */
             ( event, arg ) => {
                 if ( arg.subscribe === true ) {
