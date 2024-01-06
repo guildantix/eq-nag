@@ -119,6 +119,11 @@
     </fieldset>
 
     <fieldset>
+        <legend><span class="title">DPS Meter</span></legend>
+        <mat-checkbox [(ngModel)]="enableDpsWindow" (change)="updateSetting( this.settingsKeys.enableDpsWindow, this.enableDpsWindow, 500 )">Enable DPS Meter</mat-checkbox>
+    </fieldset>
+
+    <fieldset>
         <legend><span class="title">Sound</span></legend>
         <div class="fifty-grid">
             <div>
