@@ -31,6 +31,8 @@ export enum SettingsKeys {
     audioVolume = 'audioVolume',
     baseSpeakingRate = 'baseSpeakingRate',
     enableGpuAcceleration = 'enableGpuAcceleration',
+    dpsWindowPosition = 'dpsWindowPosition',
+    enableDpsWindow = 'enableDpsWindow',
 
 };
 
@@ -1127,6 +1129,8 @@ export class PackageTrigger {
      */
     public static matchesTrigger( packageTrigger: PackageTrigger, trigger: TriggerModel ): string[] {
         let changes: string[] = [];
+        // TODO: Targeted package updates by trigger/folder.
+        // TODO: When updating a trigger, if you're the author of that trigger and the trigger is in a package, you should be able to update the package.
         
         if ( packageTrigger.triggerId !== trigger.triggerId ) {
             return changes;
