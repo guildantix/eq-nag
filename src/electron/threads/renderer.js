@@ -244,6 +244,9 @@ let displayMetas = [];
 /** @type {HandlebarsTemplateDelegate<any>} */
 let fct2Template;
 
+/** @type {HTMLElement | undefined} */
+let dpsWindow = undefined;
+
 
 
 
@@ -388,6 +391,59 @@ function verifyDomRectOnDisplay( bounds ) {
 
 
 /**
+ * Moves/resizes the given element by the given bounds.
+ * 
+ * @param {HTMLElement} dom The dom element.
+ * @param {import('electron').Rectangle} bounds The bounds.
+ */
+function moveResizeDomElement( dom, bounds ) {
+    dom.style.left = bounds.x + 'px';
+    dom.style.top = bounds.y + 'px';
+    dom.style.width = bounds.width + 'px';
+    dom.style.height = bounds.height + 'px';
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Creates a new dps window.
+ * 
+ * @returns {HTMLElement} Returns the dps window.
+ */
+function createDpsWindow() {
+    
+    /** @type {string} */
+    let dpsWindowHtml = dpsWindowTemplate( {} );
+    // document.write( dpsWindowHtml );
+    let div = createElement( 'div' );
+        
+    div.innerHTML = dpsWindowHtml;
+    document.body.appendChild( div );
+        
+        
+    div.style.position = 'relative';
+        
+    return div.querySelector( '.window' );
+
+}
+
+
+
+
+
+
+
+
+
+
+/**
  * Initializes and starts the rendering system.
  * 
  * @param {number} originX The origin x of the main monitor.
@@ -420,30 +476,65 @@ function Renderer( originX, originY, glowOnStart ) {
 
         /** Tell the main thread we want a list of all display metas */
         ipcRenderer.send( 'renderer:get-displays-meta', null );
-
-        /** @type {string} */
-        let dpsWindowHtml = dpsWindowTemplate( {} );
-        // document.write( dpsWindowHtml );
-        let div = createElement( 'div' );
-
-        div.innerHTML = dpsWindowHtml;
-        document.body.appendChild( div );
-        console.log( 'div', div );
-
+        
         MouseUtilities.trackDynamicMouse( origin );
+                
+        dpsWindow = createDpsWindow();
 
-        div.style.position = 'relative';
+        ipcRenderer
+            .invoke( 'settings:get', { key: 'dpsWindowPosition', subscribe: true } )
+            .then( dpsWindowBounds => {
 
-        let dpsWindow = div.querySelector( '.window' );
-        dpsWindow.style.width = '250px';
-        dpsWindow.style.height = '350px';
+                MouseUtilities.refreshDom();
 
-        // center element on main monitor
-        dpsWindow.style.left = ( origin.x + ( screen.getPrimaryDisplay().workArea.width / 2 ) - ( dpsWindow.offsetWidth / 2 ) ) + 'px';
-        dpsWindow.style.top = ( origin.y + ( screen.getPrimaryDisplay().workArea.height / 2 ) - ( dpsWindow.offsetHeight / 2 ) ) + 'px';
+                if ( dpsWindowBounds ) {
+                    moveResizeDomElement( dpsWindow, dpsWindowBounds );
+                } else {
+                    dpsWindow.style.width = '250px';
+                    dpsWindow.style.height = '350px';
 
-        enableMoveResize( dpsWindow, div.querySelector( '.window-title' ) );
+                    // center element on main monitor
+                    dpsWindow.style.left = ( origin.x + ( screen.getPrimaryDisplay().workArea.width / 2 ) - ( dpsWindow.offsetWidth / 2 ) ) + 'px';
+                    dpsWindow.style.top = ( origin.y + ( screen.getPrimaryDisplay().workArea.height / 2 ) - ( dpsWindow.offsetHeight / 2 ) ) + 'px';
+                }
+
+                enableMoveResize(
+                    dpsWindow,
+                    dpsWindow.querySelector( '.window-title' ),
+                    bounds => {
+                        ipcRenderer.send( 'settings:set', { key: 'dpsWindowPosition', value: bounds } );
+                    } );
+            } );
+        
+        ipcRenderer
+            .invoke( 'settings:get', { key: 'enableDpsWindow', subscribe: true } )
+            .then( data => {
+                dpsWindow.style.display = data ? 'block' : 'none';
+            } );
+
     } );
+
+    ipcRenderer.on( 'settings:get:enableDpsWindow:generic',
+        /**
+         * 
+         * @param {Electron.IpcRendererEvent} event The event args
+         * @param {boolean} data True if enabled.
+         */
+        ( event, data ) => {
+            if ( dpsWindow ) {
+                dpsWindow.style.display = data ? 'block' : 'none';
+            }
+        } );
+
+    ipcRenderer.on( 'settings:get:dpsWindowPosition:generic',
+        /**
+         * 
+         * @param {Electron.IpcRendererEvent} event The event args.
+         * @param {DOMRect} data The bounds of the dps window.
+         */
+        ( event, data ) => {
+            dpsWindow && data && moveResizeDomElement( dpsWindow, data );
+        } );
 
     ipcRenderer.on( 'renderer:encounter-dps',
         /**
@@ -2148,8 +2239,9 @@ function disableMoveResize( dom ) {
  * 
  * @param {HTMLElement} dom The element to enable resize event on.
  * @param {HTMLElement} moveHandle The element to use as the move handle.
+ * @param {(import('electron').Rectangle) => void} onMoveResize The callback to call when the element is moved or resized.
  */
-function enableMoveResize( dom, moveHandle ) {
+function enableMoveResize( dom, moveHandle, onMoveResize ) {
     dom.classList.add( 'dynamic-mouse' );
     const domContentArea = dom.querySelectorAll( ':scope *' );
     domContentArea.forEach( d => d.classList.add( 'dynamic-mouse' ) );
@@ -2322,6 +2414,8 @@ function enableMoveResize( dom, moveHandle ) {
                 }
             }
         }
+
+        onMoveResize && onMoveResize( bounds );
     }
 
     let stopTracking = function ( evt ) {
