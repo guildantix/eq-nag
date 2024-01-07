@@ -670,63 +670,6 @@
                 <!-- <span class="window-title-btn"><i class="fas fa-times"></i></span> -->
             </div>
             <div class="window-content dps-items">
-                <!-- <div class="dps-item">
-                    <div class="dps-item-label">
-                        <img  class="dps-item-icon" src="/assets/images/BRD-icon.png" />
-                        <span class="dps-item-name">Player1</span>
-                        <span class="spacer"></span>
-                        <span class="dps-item-values">457k (11k, 30.40%)</span>
-                    </div>
-                    <div class="progress" style="background-color: unset"><p style="margin: 4px;">&nbsp;</p>
-                        <div class="determinate" style="width: 100%; background-color: #804400;">
-                            <div class="border top" style="background: linear-gradient(to right, transparent, #c26700);" data-left-color="#008000" data-right-color="#00a800"></div>
-                            <div class="border bottom" style="background: linear-gradient(to right, transparent, #c26700);" data-left-color="#008000" data-right-color="#00a800"></div>
-                        </div>
-                    </div>
-                </div>
-                <div class="dps-item">
-                    <div class="dps-item-label">
-                        <span class="dps-item-icon-placeholder"><i class="fa-solid fa-question"></i></span>
-                        <span class="dps-item-name">Player2</span>
-                        <span class="spacer"></span>
-                        <span class="dps-item-values">370k (8.8k, 24.61%)</span>
-                    </div>
-                    <div class="progress" style="background-color: unset"><p style="margin: 4px;">&nbsp;</p>
-                        
-                        <div class="determinate" style="width: 81%; background-color: #008000;">
-                            <div class="border top" style="background: linear-gradient(to right, transparent, #00c200);" data-left-color="#008000" data-right-color="#00a800"></div>
-                            <div class="border bottom" style="background: linear-gradient(to right, transparent, #00c200);" data-left-color="#008000" data-right-color="#00a800"></div>
-                        </div>
-                    </div>
-                </div>
-                <div class="dps-item">
-                    <div class="dps-item-label">
-                        <img  class="dps-item-icon" src="/assets/images/DRU-icon.png" />
-                        <span class="dps-item-name">Player3</span>
-                        <span class="spacer"></span>
-                        <span class="dps-item-values">352k (8.3k, 23.41%)</span>
-                    </div>
-                    <div class="progress" style="background-color: unset"><p style="margin: 4px;">&nbsp;</p>
-                        <div class="determinate" style="width: 77%; background-color: #004280;">
-                            <div class="border top" style="background: linear-gradient(to right, transparent, #0064c2);" data-left-color="#004280" data-right-color="#0057a8"></div>
-                            <div class="border bottom" style="background: linear-gradient(to right, transparent, #0064c2);" data-left-color="#004280" data-right-color="#0057a8"></div>
-                        </div>
-                    </div>
-                </div> -->
-                <!-- <div class="dps-item">
-                    <div class="dps-item-label">
-                        <img  class="dps-item-icon" src="/assets/images/NEC-icon.png" />
-                        <span class="dps-item-name">Player4</span>
-                        <span class="spacer"></span>
-                        <span class="dps-item-values">324k (7.7k, 21.56%)</span>
-                    </div>
-                    <div class="progress" style="background-color: unset"><p style="margin: 4px;">&nbsp;</p>
-                        <div class="determinate" style="width: 71%; background-color: #8788ee;">
-                            <div class="border top" style="background: linear-gradient(to right, #800f00, #c21700);" data-left-color="#800f00" data-right-color="#a81400"></div>
-                            <div class="border bottom" style="background: linear-gradient(to right, #800f00, #c21700);" data-left-color="#800f00" data-right-color="#a81400"></div>
-                        </div>
-                    </div>
-                </div> -->
             </div>
             <div class="window-footer">
                 <span class="window-footer-text"></span>
@@ -738,21 +681,19 @@
     <!--      DPS Meter - Item       -->
     <!-- =========================== -->
     <template id="dpsWindowItemTemplate">
-        <!-- <div class="dps-item"> -->
-            <div class="dps-item-label">
-                <img class="dps-item-icon" src="{{iconImage}}" />
-                <span class="dps-item-icon-placeholder"><i class="fa-solid fa-question"></i></span>
-                <span class="dps-item-name">{{label}}</span>
-                <span class="spacer"></span>
-                <span class="dps-item-values">{{value}}</span>
+        <div class="dps-item-label">
+            <img class="dps-item-icon" src="{{iconImage}}" />
+            <span class="dps-item-icon-placeholder"><i class="fa-solid fa-question"></i></span>
+            <span class="dps-item-name">{{label}}</span>
+            <span class="spacer"></span>
+            <span class="dps-item-values">{{value}}</span>
+        </div>
+        <div class="progress" style="background-color: unset"><p style="margin: 4px;">&nbsp;</p>
+            <div class="determinate" ><!-- style="width: 100%;" --><!-- background-color: #804400; -->
+                <div class="border top"></div> <!-- background: linear-gradient(to right, transparent, #c26700); --> <!-- border -> hsl -> 13% lighter -->
+                <div class="border bottom"></div> <!-- background: linear-gradient(to right, transparent, #c26700); --> <!-- border -> hsl -> 13% lighter -->
             </div>
-            <div class="progress" style="background-color: unset"><p style="margin: 4px;">&nbsp;</p>
-                <div class="determinate" ><!-- style="width: 100%;" --><!-- background-color: #804400; -->
-                    <div class="border top"></div> <!-- background: linear-gradient(to right, transparent, #c26700); --> <!-- border -> hsl -> 13% lighter -->
-                    <div class="border bottom"></div> <!-- background: linear-gradient(to right, transparent, #c26700); --> <!-- border -> hsl -> 13% lighter -->
-                </div>
-            </div>
-        <!-- </div> -->
+        </div>
     </template>
     
     <!-- =========================== -->
