@@ -21,7 +21,7 @@
  * @param {string|number} value The value to convert.
  */
 function toShorthandString( value ) {
-    if ( value ) {
+    if ( value !== null && value !== undefined ) {
         let numeric = +value;
         if ( numeric < 1000 ) {
             return `${value}`;
