@@ -4,6 +4,7 @@ const { DateUtilities } = require( '../utilities/dates' );
 const StyleSheetUtil = require( '../utilities/style-sheet' );
 const log = require( 'electron-log' );
 const NumberUtilities = require( '../utilities/numbers' );
+const { pSBCr, pSBC, RGB_Linear_Blend, RGB_Linear_Shade, RGB_Log_Blend, RGB_Log_Shade } = require( '../utilities/colors' );
 
 const channelPrefixes = [
     'app',
@@ -106,6 +107,14 @@ contextBridge.exposeInMainWorld( 'api', {
         },
         screens: {
             primaryDisplaySize: () => screen.getPrimaryDisplay().size,
+        },
+        colors: {
+            pSBCr: pSBCr,
+            pSBC: pSBC,
+            RGB_Linear_Blend: RGB_Linear_Blend,
+            RGB_Linear_Shade: RGB_Linear_Shade,
+            RGB_Log_Blend: RGB_Log_Blend,
+            RGB_Log_Shade: RGB_Log_Shade,
         }
     },
     logger: {

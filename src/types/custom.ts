@@ -80,6 +80,14 @@ export class WindowApi {
              * @returns {Electron.Size} The size of the primary display.
              */
             primaryDisplaySize: () => Electron.Size;
+        },
+        colors: {
+            pSBCr: ( d, r, g, b, a, i, m ) => number,
+            pSBC: ( p: any, c0: any, c1: any, l: any ) => string,
+            RGB_Linear_Blend: ( p, c0, c1 ) => string,
+            RGB_Linear_Shade: ( p, c ) => string,
+            RGB_Log_Blend: ( p, c0, c1 ) => string,
+            RGB_Log_Shade: ( p, c ) => string,
         }
     };
     logger: {
