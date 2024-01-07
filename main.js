@@ -42,7 +42,8 @@ const ginaImporter = new GinaImporter();
 const combatDatabase = new CombatDatabase();
 /** @type {Tray} */
 var trayMenu = null;
-
+/** @type {string | undefined} */
+var combatParseCharacterId = undefined;
 autoUpdater.logger = log;
 
 require( '@electron/remote/main' ).initialize();
@@ -308,6 +309,20 @@ app.on( 'window-all-closed', function () {
 
 app.on( 'activate', function () {
     if ( mainWindow === null ) createWindow()
+} );
+
+ipcMain.handle( 'app:register-combat-parser', ( event, characterId ) => {
+    if ( combatParseCharacterId == undefined ) {
+        combatParseCharacterId = characterId;
+    }
+
+    return combatParseCharacterId;
+} );
+
+ipcMain.on( 'app:unregister-combat-parser', ( event, characterId ) => {
+    if ( combatParseCharacterId === characterId ) {
+        combatParseCharacterId = undefined;
+    }
 } );
 
 // TODO: Remove this in a few versions.

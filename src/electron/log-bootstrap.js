@@ -68,6 +68,9 @@ class LogBootstrapper {
         return this.#logBackupWindow != null;
     }
 
+    /** @type {(character: string) => void} */
+    onLogWatcherWindowClosed = undefined;
+
 
 
 
@@ -328,6 +331,10 @@ class LogBootstrapper {
                 if ( logWatchers[ chr.characterId ].window != null ) {
                     logWatchers[ chr.characterId ].window.close();
                     logWatchers[ chr.characterId ].window = null;
+
+                    if ( this.onLogWatcherWindowClosed ) {
+                        this.onLogWatcherWindowClosed( chr.characterId );
+                    }
                 }
 
                 clearInterval( logWatchers[ chr.characterId ].intervalId );
@@ -628,6 +635,10 @@ class LogBootstrapper {
                             if ( logWatchers[ characterId ].window != null && !logWatchers[ characterId ].window.isDestroyed() ) {
                                 logWatchers[ characterId ].window.close();
                                 logWatchers[ characterId ].window = null;
+
+                                if ( this.onLogWatcherWindowClosed ) {
+                                    this.onLogWatcherWindowClosed( characterId );
+                                }
                             }
 
                         }
@@ -663,6 +674,10 @@ class LogBootstrapper {
                 if ( logWatchers[ key ].window != null && !logWatchers[ key ].window.isDestroyed() ) {
                     logWatchers[ key ].window.close();
                     logWatchers[ key ].window = null;
+
+                    if ( this.onLogWatcherWindowClosed ) {
+                        this.onLogWatcherWindowClosed( key );
+                    }
                 }
 
                 clearInterval( logWatchers[ key ].intervalId );

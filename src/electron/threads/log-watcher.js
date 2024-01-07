@@ -250,7 +250,7 @@ const logError = ( err, raw, simulating, padTime, errorDesc, trigger, action ) =
     logParseError( err, raw, simulating, padTime, errorDesc, trigger, action );
 };
 
-/** @type {CombatParser} */
+/** @type {CombatParser | undefined} */
 let myCombatParser = undefined;
 
 const sendDpsToRenderer = () => {
@@ -281,7 +281,6 @@ const dpsIntervalFn = () => {
 }
 
 const startDpsTracking = () => {
-    // TODO: Only track DPS once per machine, alternatively only one log watcher watches for all events while each log watcher tracks DPS for their character.
     if ( !dpsIntervalId ) {
         dpsIntervalId = window.setTimeout( () => dpsIntervalFn(), dpsInterval );
         enableDpsTransmit && ( dpsTransmitIntervalId = window.setTimeout( () => dpsTransmitFn(), dpsTransmitInterval ) );
@@ -1299,9 +1298,15 @@ function LogWatcher(character, logPosition) {
         voiceOptions = speechSynthesis.getVoices();
     };
 
-    myCombatParser = new CombatParser( characterName, character.server );
-    myCombatParser.onEncounterReset = onEncounterReset;
-    startDpsTracking();
+    ipcRenderer
+        .invoke( 'app:register-combat-parser', characterId )
+        .then( ( registeredCombatParser ) => {
+            if ( registeredCombatParser === characterId ) {
+                myCombatParser = new CombatParser( characterName, character.server );
+                myCombatParser.onEncounterReset = onEncounterReset;
+                startDpsTracking();
+            }
+        } );
 }
 
 
