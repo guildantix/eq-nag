@@ -225,7 +225,7 @@ const bootstrapApp = () => {
         } );
         protocol.interceptFileProtocol( 'file', ( req, callback ) => {
             let filePath = new url.URL( req.url ).pathname;
-    
+            
             if ( !filePath.match( /electron/ ) ) {
                 if ( process.platform === 'win32' ) {
     
@@ -237,7 +237,7 @@ const bootstrapApp = () => {
                     if ( filePath.match( /^[A-Za-z]:\/(css|img|js|fonts)/ ) ) {
                         filePath = path.join( app.getAppPath(), 'dist', filePath.slice( 3 ) );
     
-                    } else if ( filePath.match( /^[A-Za-z]:\/.*\.(js|css|png|jpeg|jpg|ico|svg|woff|woff2|ttf)$/ ) ) {
+                    } else if ( filePath.match( /^[A-Za-z]:\/.*\.(js|css|png|jpeg|jpg|ico|svg|woff|woff2|ttf|webp)$/ ) ) {
                         // case of "vue-cli-service build --mode development"
                         filePath = path.join( app.getAppPath(), 'dist', filePath.slice( 3 ) );
                     }
