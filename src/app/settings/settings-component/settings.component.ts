@@ -64,7 +64,7 @@ export class SettingsComponent implements OnInit {
     }
     public set dpsEncounterResetTimeSec( value: number ) {
         this._dpsEncounterResetTimeMs = value * 1000;
-        this.updateSetting( SettingsKeys.dpsEncounterResetTimeMs, this._dpsEncounterResetTimeMs, 5 * 1000 );
+        this.updateSetting( SettingsKeys.dpsEncounterResetTimeMs, this._dpsEncounterResetTimeMs, 500 );
     }
     // public enableGpuAcceleration: boolean = false;
     public exampleSpeech: string = 'Hello, my name is nag.';
