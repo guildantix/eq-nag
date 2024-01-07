@@ -609,6 +609,10 @@ class WindowManager {
             this.#renderer.webContents.send( 'renderer:encounter-dps', encounterDps );
         } );
         
+        ipcMain.on( 'renderer:encounter-reset', ( event, encounterDps ) => {
+            this.#renderer.webContents.send( 'renderer:encounter-reset', encounterDps );
+        } );
+        
         userPreferencesDatabase.onFctStyleChanges.push( fctStyles => {
             this.#renderer.webContents.send( 'fctStyles', fctStyles );
         } );
