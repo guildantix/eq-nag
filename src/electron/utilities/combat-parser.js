@@ -14,6 +14,9 @@ const { AttackModifiers, LogRecord, avoidTypeMap, attackTypeMap, PlayerInfo, Pla
 /** @type {string} */
 let characterName = 'You';
 
+/** @type {number} */
+const encounterResetMs = 20 * 1000;
+
 
 
 
@@ -199,6 +202,12 @@ class CombatParser {
 
     /** @type {EncounterStats} */
     _encounterStats = undefined;
+
+    /** @type {number} */
+    _encounterResetTimerId = undefined;
+
+    /** @type {({encounterEvents: LogRecord[]}) => void} */
+    onEncounterReset = undefined;
 
     /**
      * Constructs a new combat parser.
@@ -1428,6 +1437,57 @@ class CombatParser {
     
         return output;
     }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Resets the encounter.
+     */
+    _resetEncounter() {
+
+        // TODO: Get a list of all attacked NPCs in this encounter.
+        // TODO: Store encounter in combat database.
+
+        // Clear the current encounter.
+        const events = this.encounterEvents;
+        this.encounterEvents = [];
+        this._encounterStats = new EncounterStats();
+
+        if ( this.onEncounterReset ) {
+            this.onEncounterReset( events );
+        }
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Adds the given log record to the encounter statistics.
+     * 
+     * @param {LogRecord} rec The log record to add to the encounter.
+     */
+    _addEncounterEvent( rec ) {
+        this.encounterEvents.push( rec );
+        this._updateEncounterStats( rec );
+
+        if ( this._encounterResetTimerId ) {
+            clearTimeout( this._encounterResetTimerId );
+        }
+        this._encounterResetTimerId = window.setTimeout( () => this._resetEncounter(), encounterResetMs );
+    }
     
     
     
@@ -1474,8 +1534,7 @@ class CombatParser {
         rec.modifiers.deadly_strike = modifiers?.indexOf( 'Deadly Strike' ) > -1;
         rec.modifiers.finishing_blow = modifiers?.indexOf( 'Finishing Blow' ) > -1;
     
-        this.encounterEvents.push( rec );
-        this._updateEncounterStats( rec );
+        this._addEncounterEvent( rec );
 
     }
     
@@ -1517,8 +1576,7 @@ class CombatParser {
         rec.modifiers.block = avoidTypeName === 'block';
         rec.modifiers.miss = avoidTypeName === 'miss';
     
-        this.encounterEvents.push( rec );
-        this._updateEncounterStats( rec );
+        this._addEncounterEvent( rec );
         
     }
     
@@ -1559,8 +1617,7 @@ class CombatParser {
         rec.modifiers.lucky = modifiers?.indexOf( 'Lucky' ) > -1;
         rec.modifiers.strikethrough = modifiers?.indexOf( 'Strikethrough' ) > -1;
     
-        this.encounterEvents.push( rec );
-        this._updateEncounterStats( rec );
+        this._addEncounterEvent( rec );
         
     }
     
@@ -1602,8 +1659,7 @@ class CombatParser {
         rec.modifiers.critical = modifiers?.indexOf( 'Critical' ) > -1;
         rec.modifiers.lucky = modifiers?.indexOf( 'Lucky' ) > -1;
     
-        this.encounterEvents.push( rec );
-        this._updateEncounterStats( rec );
+        this._addEncounterEvent( rec );
         
     }
     
@@ -1636,8 +1692,7 @@ class CombatParser {
         rec.thorns = true;
         rec.modifiers = new AttackModifiers();
     
-        this.encounterEvents.push( rec );
-        this._updateEncounterStats( rec );
+        this._addEncounterEvent( rec );
         
     }
 
@@ -1686,16 +1741,22 @@ class CombatParser {
      */
     _getOrCreatePlayerEncounterStats( source, name, timestamp ) {
         if ( source[ name ] == null ) {
+            let playerInfo = this._playerInfos ? this._playerInfos[ name ] : undefined;
+
             source[ name ] = new PlayerEncounterStats();
             source[ name ].name = name;
+            source[ name ].class = playerInfo?.className;
             source[ name ].encounterStart = timestamp;
             source[ name ].playerDps.name = name;
+            source[ name ].playerDps.class = playerInfo?.className;
             source[ name ].playerDps.pets = [];
             source[ name ].playerDpsRec.name = name;
             source[ name ].playerDpsRec.pets = [];
+
         }
         source[ name ].lastEncounterEvent = timestamp;
 
+        console.log( `Returning player encounter stats for ${name}`, source[ name ] );
         return source[ name ];
     }
     

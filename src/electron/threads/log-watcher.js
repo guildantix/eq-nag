@@ -19,6 +19,7 @@ const { DateUtilities } = require( '../utilities/dates' );
 const { IpcMessage } = require( '../data/models/common' );
 const ArrayUtilities = require( '../utilities/arrays' );
 const CombatParser = require( '../utilities/combat-parser' );
+const { LogRecord } = require( '../data/models/combat-parser' );
 const chunkSize = 512 * 1024;
 
 window.onerror = ( error, url, line ) => {
@@ -265,8 +266,6 @@ const transmitEncounterEvents = () => {
     fullEncounterEvents?.forEach( e => e.transmitted = true );
 
     // TODO: Actually transmit the events.
-    console.log( 'full events', JSON.stringify( fullEncounterEvents ).length );
-    console.log( 'minified events', JSON.stringify( minifiedEncounterEvents ).length );
 }
 
 const dpsTransmitFn = () => {
@@ -288,6 +287,15 @@ const startDpsTracking = () => {
         enableDpsTransmit && ( dpsTransmitIntervalId = window.setTimeout( () => dpsTransmitFn(), dpsTransmitInterval ) );
     }
 };
+
+/**
+ * Executes when the encounter is reset.
+ * 
+ * @param {LogRecord[]} encounterEvents The events from the encounter.
+ */
+const onEncounterReset = ( encounterEvents ) => {
+    ipcRenderer.send( 'renderer:encounter-reset', { character: characterName } );
+}
 
 const stopDpsTracking = () => {
     if ( dpsIntervalId ) {
@@ -1292,6 +1300,7 @@ function LogWatcher(character, logPosition) {
     };
 
     myCombatParser = new CombatParser( characterName, character.server );
+    myCombatParser.onEncounterReset = onEncounterReset;
     startDpsTracking();
 }
 
