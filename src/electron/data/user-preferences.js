@@ -531,6 +531,15 @@ class UserPreferencesStore extends Store {
         this.storeDataFile( this.#data );
     }
 
+    /** @type {number} */
+    get dpsEncounterResetTimeMs() {
+        return this.#data.dpsEncounterResetTimeMs ?? 30000;
+    }
+    set dpsEncounterResetTimeMs( val ) {
+        this.#data.dpsEncounterResetTimeMs = val;
+        this.storeDataFile( this.#data );
+    }
+
     /** @type {(fctStyles: FctStylesModel) => void[]} */
     onFctStyleChanges = [];
 

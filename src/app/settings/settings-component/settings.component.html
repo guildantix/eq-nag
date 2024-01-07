@@ -121,6 +121,22 @@
     <fieldset>
         <legend><span class="title">DPS Meter</span></legend>
         <mat-checkbox [(ngModel)]="enableDpsWindow" (change)="updateSetting( this.settingsKeys.enableDpsWindow, this.enableDpsWindow, 500 )">Enable DPS Meter</mat-checkbox>
+        <div class="fifty-grid">
+            <div>
+                <h2 class="sub-header full-width">Encounter Settings</h2>
+                <div class="formless-hint full-width">
+                    <div class="formless-input" style="height: 70px; align-items: center;">
+                        <span>Encouter Reset Time</span>
+                        <span style="flex: 1 1 auto;"></span>
+                        <app-duration [(ngModel)]="dpsEncounterResetTimeSec" name="durEndingSoon_others" [inline]="true"></app-duration>
+                    </div>
+                    <mat-hint>The amount of time to wait before resetting an encounter, after having no combat updates.</mat-hint>
+                </div>                
+            </div>
+            <div>
+                <h2 class="sub-header full-width">DPS Meter Window</h2>
+            </div>
+        </div>
     </fieldset>
 
     <fieldset>

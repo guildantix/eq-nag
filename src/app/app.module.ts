@@ -31,6 +31,7 @@ import { ConsoleListComponent } from './debug-console/console-list.component';
 import { FloatingCombatTextComponent } from './floating-combat-text/floating-combat-text.component';
 import { ConsoleTriggerEventComponent } from './debug-console/console-lines/trigger-event.component';
 import { ConsoleMessageComponent } from './debug-console/console-lines/message.component';
+import { FormInputModule } from './form-inputs/form-inputs.module';
 
 @NgModule( {
     imports: [
@@ -47,6 +48,7 @@ import { ConsoleMessageComponent } from './debug-console/console-lines/message.c
         // SetupModule,
         EditorsModule,
         NgxMatTimepickerModule,
+        FormInputModule,
     ],
     declarations: [
         AppComponent,

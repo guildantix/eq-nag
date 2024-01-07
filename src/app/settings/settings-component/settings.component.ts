@@ -58,6 +58,14 @@ export class SettingsComponent implements OnInit {
     public allowPrerelease: boolean = false;
     public enableCheckWindowPosition: boolean = true;
     public enableDpsWindow: boolean = false;
+    private _dpsEncounterResetTimeMs: number = 30 * 1000;
+    public get dpsEncounterResetTimeSec(): number {
+        return this._dpsEncounterResetTimeMs / 1000;
+    }
+    public set dpsEncounterResetTimeSec( value: number ) {
+        this._dpsEncounterResetTimeMs = value * 1000;
+        this.updateSetting( SettingsKeys.dpsEncounterResetTimeMs, this._dpsEncounterResetTimeMs, 5 * 1000 );
+    }
     // public enableGpuAcceleration: boolean = false;
     public exampleSpeech: string = 'Hello, my name is nag.';
     public baseSpeakingRate: number = 1;
@@ -152,6 +160,7 @@ export class SettingsComponent implements OnInit {
         this.ipcService.getSetting<boolean>( SettingsKeys.allowPrerelease ).subscribe( f => this.allowPrerelease = f );
         this.ipcService.getSetting<boolean>( SettingsKeys.enableCheckWindowPosition ).subscribe( f => this.enableCheckWindowPosition = f );
         this.ipcService.getSetting<boolean>( SettingsKeys.enableDpsWindow ).subscribe( f => this.enableDpsWindow = f );
+        this.ipcService.getSetting<number>( SettingsKeys.dpsEncounterResetTimeMs ).subscribe( f => this._dpsEncounterResetTimeMs = f );
         // this.ipcService.getSetting<boolean>( SettingsKeys.enableGpuAcceleration ).subscribe( f => this.enableGpuAcceleration = f );
         this.ipcService.getSetting<LogMaintenanceRules>( SettingsKeys.logMaintenanceRules ).subscribe( f => {
 

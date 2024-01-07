@@ -33,7 +33,8 @@ export enum SettingsKeys {
     enableGpuAcceleration = 'enableGpuAcceleration',
     dpsWindowPosition = 'dpsWindowPosition',
     enableDpsWindow = 'enableDpsWindow',
-
+    dpsEncounterResetTimeMs = 'dpsEncounterResetTimeMs',
+    
 };
 
 export enum ActionTypes {
