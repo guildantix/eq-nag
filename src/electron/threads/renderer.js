@@ -20,8 +20,10 @@ const { DateUtilities } = require( '../utilities/dates' );
 const { SharedTriggerPermissions } = require( '../data/models/sharing-service' );
 const { StylePropertiesModel } = require( '../data/models/core' );
 const MouseUtilities = require( '../utilities/mouse' );
-const { overlayZIndex, overlayTopZIndex } = require( '../utilities/constants' );
+const { overlayZIndex, overlayTopZIndex, imagesPath } = require( '../utilities/constants' );
 const { PlayerDps } = require( '../data/models/combat-parser' );
+const { getEverQuestClassIcon, getEverQuestClassAbbreviation, getEverQuestClassColor } = require( '../utilities/everquest' );
+const { lightenColor, darkenColor } = require( '../utilities/colors' );
 
 // TODO: List
 //  3. Update the log watcher to capture data that is required by the new combat groups.
@@ -170,6 +172,13 @@ class ReceivedOverlayComponent {
     overlayId;
 }
 
+class DpsItem {
+    /** @type {PlayerDps} */
+    playerDps;
+    /** @type {HTMLElement} */
+    dom;
+}
+
 /** @type {Record<string, OverlayInstance>} */
 var overlayInstances = {};
 
@@ -183,6 +192,8 @@ var targetGroupTemplate;
 var targetGroupTimerTemplate;
 /** @type {HandlebarsTemplateDelegate<any>} */
 var dpsWindowTemplate;
+/** @type {HandlebarsTemplateDelegate<any>} */
+var dpsWindowItemTemplate;
 var voiceOptions = [];
 /** @type {Record<number, number>} */
 var destroySchedule = {};
@@ -246,6 +257,9 @@ let fct2Template;
 
 /** @type {HTMLElement | undefined} */
 let dpsWindow = undefined;
+
+/** @type {DpsItem[]} */
+let dpsItems = [];
 
 
 
@@ -444,6 +458,83 @@ function createDpsWindow() {
 
 
 /**
+ * Clears the current dps items.
+ */
+function clearDpsItems() {
+    dpsItems.forEach( f => f?.dom?.remove() );
+    dpsItems = [];
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Renders the current dps items.
+ */
+function renderDpsItems() {
+
+    dpsItems.forEach( f => f?.dom?.remove() );
+
+    dpsItems = dpsItems.sort( ( a, b ) => a.playerDps.dps - b.playerDps.dps );
+    const totalDamage = dpsItems.reduce( ( a, b ) => a + b.playerDps.damage + b.playerDps.pets.reduce( ( x, y ) => x + y.damage, 0 ), 0 );
+    const topDamage = dpsItems.reduce( ( a, b ) => Math.max( a, b.playerDps.damage + b.playerDps.pets.reduce( ( x, y ) => x + y.damage, 0 ) ), 0 );
+
+    for ( let i = 0; i < dpsItems.length; i++ ) {
+        const dpsItem = dpsItems[ i ];
+        const damageDone = dpsItem.playerDps.damage + dpsItem.playerDps.pets.reduce( ( a, b ) => a + b.damage, 0 );
+        const dpsDone = dpsItem.playerDps.dps + dpsItem.playerDps.pets.reduce( ( a, b ) => a + b.dps, 0 );
+        const classAbbr = getEverQuestClassAbbreviation( dpsItem.playerDps.class );
+
+        // Create a new DPS item dom.
+        let model = {
+            iconImage: `${imagesPath}/${getEverQuestClassIcon( classAbbr )}`,
+            label: `${dpsItem.playerDps.name}`,
+            value: `${NumberUtilities.toShorthandString( damageDone )} (${NumberUtilities.toShorthandString( dpsDone )}, ${Math.round( damageDone / totalDamage * 100 )}%)`,
+        };
+
+        dpsItem.dom = createElement( 'div' );
+        dpsItem.dom.classList.add( 'dps-item' );
+        dpsItem.dom.innerHTML = dpsWindowItemTemplate( model );
+        dpsWindow.querySelector( '.dps-items' ).appendChild( dpsItem.dom );
+
+        if ( dpsItem.playerDps.class ) {
+            dpsItem.dom.querySelector( '.dps-item-icon-placeholder' ).style.display = 'none';
+        } else {
+            dpsItem.dom.querySelector( '.dps-item-icon' ).style.display = 'none';
+        }
+
+        let bar = dpsItem.dom.querySelector( '.determinate' );
+        let colorCode = darkenColor( getEverQuestClassColor( classAbbr ), 0.667 );
+        
+        bar.style.backgroundColor = colorCode;
+        bar.style.width = `${Math.round( damageDone / topDamage * 100 )}%`;
+
+        let topBorder = bar.querySelector( '.border.top' );
+        let bottomBorder = bar.querySelector( '.border.bottom' );
+        let borderColor = lightenColor( colorCode, 0.13 );
+
+        topBorder.style.background = `linear-gradient(to right, transparent, ${borderColor})`;
+        bottomBorder.style.background = `linear-gradient(to right, transparent, ${borderColor})`;
+
+    }
+}
+
+
+
+
+
+
+
+
+
+
+/**
  * Initializes and starts the rendering system.
  * 
  * @param {number} originX The origin x of the main monitor.
@@ -468,6 +559,7 @@ function Renderer( originX, originY, glowOnStart ) {
         targetGroupTemplate = Handlebars.compile( document.querySelector( '#targetGroupTemplate' ).innerHTML );
         targetGroupTimerTemplate = Handlebars.compile( document.querySelector( '#targetGroupTimerTemplate' ).innerHTML );
         dpsWindowTemplate = Handlebars.compile( document.querySelector( '#dpsWindowTemplate' ).innerHTML );
+        dpsWindowItemTemplate = Handlebars.compile( document.querySelector( '#dpsWindowItemTemplate' ).innerHTML );
 
         logInfo( '[Info:Renderer:Templates] (Renderer docReady) Templates have been compiled!' );
     
@@ -546,7 +638,27 @@ function Renderer( originX, originY, glowOnStart ) {
         ( event, data ) => {
             // This may or may not include duplicate information based on the character's you have active.
             // TODO: Synchronize local data.
-            console.log( 'encounterDps', data );
+            for ( let i = 0; i < data.encounterDps.length; i++ ) {
+                let dpsItem = dpsItems.find( f => f.playerDps.name === data.encounterDps[ i ].name );
+                if ( dpsItem ) {
+                    dpsItem.playerDps = data.encounterDps[ i ];
+                } else {
+                    dpsItems.push( { playerDps: data.encounterDps[ i ], dom: undefined } );
+                }
+            }
+
+            renderDpsItems();
+        } );
+    
+    ipcRenderer.on( 'renderer:encounter-reset',
+        /**
+         * Handles receiving the combat group hits.
+         * 
+         * @param {Electron.IpcRendererEvent} event The event args.
+         * @param {{character: string}} data The data for combat group hits.
+         */
+        ( event, data ) => {
+            clearDpsItems();
         } );
 
     ipcRenderer.on( 'character:get:combatGroupHits',
@@ -558,7 +670,6 @@ function Renderer( originX, originY, glowOnStart ) {
          */
         ( event, data ) => {
             combatGroupHits = data ?? {};
-            console.log( 'combatGroupHits', combatGroupHits );
         } );
 
     ipcRenderer.on( 'character:get:combatGroupMedian',
