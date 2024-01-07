@@ -15,7 +15,7 @@ const { AttackModifiers, LogRecord, avoidTypeMap, attackTypeMap, PlayerInfo, Pla
 let characterName = 'You';
 
 /** @type {number} */
-const encounterResetMs = 20 * 1000;
+let encounterResetMs = 20 * 1000;
 
 
 
@@ -220,6 +220,29 @@ class CombatParser {
         this._verifiedPlayers.push( characterName );
         console.log( 'initiating combat parser for', characterName, 'on server', serverName );
         this._serverName = serverName;
+
+
+        ipcRenderer.on( 'settings:get:dpsEncounterResetTimeMs:generic',
+            /**
+             * 
+             * @param {Electron.IpcRendererEvent} event The event args
+             * @param {number} data True if enabled.
+             */
+            ( event, data ) => {
+                if ( data > 0 ) {
+                    console.log( 'reset time changed', data );
+                    encounterResetMs = data;
+                }
+            } );
+        
+        ipcRenderer
+            .invoke( 'settings:get', { key: 'dpsEncounterResetTimeMs', subscribe: true } )
+            .then( data => {
+                console.log( 'reset time changed', data );
+                if ( data > 0 ) {
+                    encounterResetMs = data;
+                }
+            } );
 
         ipcRenderer.on( 'combat-database:get-server',
             /**
