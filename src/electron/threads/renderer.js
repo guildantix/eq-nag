@@ -487,9 +487,6 @@ function renderDpsItems() {
     let topDamage = 0;
 
     dpsItems.forEach( f => {
-        // TODO: Update instead of recreate on each call.
-        f?.dom?.remove();
-
         let damageDone = f.playerDps.damage + f.playerDps.pets.reduce( ( a, b ) => a + b.damage, 0 );
         let dpsDone = f.playerDps.dps + f.playerDps.pets.reduce( ( a, b ) => a + b.dps, 0 );
 
@@ -515,31 +512,69 @@ function renderDpsItems() {
             value: `${NumberUtilities.toShorthandString( damageDone )} (${NumberUtilities.toShorthandString( dpsDone )}, ${Math.round( damageDone / totalDamage * 100 )}%)`,
         };
 
-        dpsItem.dom = createElement( 'div' );
-        dpsItem.dom.classList.add( 'dps-item' );
-        dpsItem.dom.innerHTML = dpsWindowItemTemplate( model );
-        dpsWindow.querySelector( '.dps-items' ).appendChild( dpsItem.dom );
+        if ( !dpsItem.dom ) {
+            dpsItem.dom = createElement( 'div' );
+            dpsItem.dom.classList.add( 'dps-item' );
+            dpsItem.dom.innerHTML = dpsWindowItemTemplate( model );
+            dpsWindow.querySelector( '.dps-items' ).appendChild( dpsItem.dom );
 
-        if ( dpsItem.playerDps.class ) {
-            dpsItem.dom.querySelector( '.dps-item-icon-placeholder' ).style.display = 'none';
+            let bar = dpsItem.dom.querySelector( '.determinate' );
+            let colorCode = darkenColor( getEverQuestClassColor( classAbbr ), 0.667 );
+        
+            bar.style.backgroundColor = colorCode;
+            bar.style.width = `${Math.round( damageDone / topDamage * 100 )}%`;
+
+            let topBorder = bar.querySelector( '.border.top' );
+            let bottomBorder = bar.querySelector( '.border.bottom' );
+            let borderColor = lightenColor( colorCode, 0.13 );
+
+            topBorder.style.background = `linear-gradient(to right, transparent, ${borderColor})`;
+            bottomBorder.style.background = `linear-gradient(to right, transparent, ${borderColor})`;
+
         } else {
-            dpsItem.dom.querySelector( '.dps-item-icon' ).style.display = 'none';
+
+            /** @type {HTMLSpanElement} */
+            let labelSpan = dpsItem.dom.querySelector( '.dps-item-name' );
+            labelSpan != null && ( labelSpan.innerText = model.label );
+
+            /** @type {HTMLSpanElement} */
+            let valueSpan = dpsItem.dom.querySelector( '.dps-item-values' );
+            valueSpan != null && ( valueSpan.innerText = model.value );
+
+            /** @type {HTMLImageElement} */
+            let iconImg = dpsItem.dom.querySelector( '.dps-item-icon' );
+            iconImg != null && ( iconImg.src = model.iconImage );
+
+            let bar = dpsItem.dom.querySelector( '.determinate' );
+            bar.style.width = `${Math.round( damageDone / topDamage * 100 )}%`;
+
+            dpsItem.dom.parentNode.append( dpsItem.dom );
+            
+        }
+            
+        if ( dpsItem.playerDps.class ) {
+
+            /** @type {HTMLSpanElement} */
+            let placeholderSpan = dpsItem.dom.querySelector( '.dps-item-icon-placeholder' );
+            placeholderSpan != null && ( placeholderSpan.style.display = 'none' );
+
+            /** @type {HTMLImageElement} */
+            let iconImg = dpsItem.dom.querySelector( '.dps-item-icon' );
+            iconImg != null && ( iconImg.style.display = 'inline' );
+
+        } else {
+
+            /** @type {HTMLSpanElement} */
+            let placeholderSpan = dpsItem.dom.querySelector( '.dps-item-icon-placeholder' );
+            placeholderSpan != null && ( placeholderSpan.style.display = 'inline' );
+
+            /** @type {HTMLImageElement} */
+            let iconImg = dpsItem.dom.querySelector( '.dps-item-icon' );
+            iconImg != null && ( iconImg.style.display = 'none' );
         }
 
-        let bar = dpsItem.dom.querySelector( '.determinate' );
-        let colorCode = darkenColor( getEverQuestClassColor( classAbbr ), 0.667 );
-        
-        bar.style.backgroundColor = colorCode;
-        bar.style.width = `${Math.round( damageDone / topDamage * 100 )}%`;
-
-        let topBorder = bar.querySelector( '.border.top' );
-        let bottomBorder = bar.querySelector( '.border.bottom' );
-        let borderColor = lightenColor( colorCode, 0.13 );
-
-        topBorder.style.background = `linear-gradient(to right, transparent, ${borderColor})`;
-        bottomBorder.style.background = `linear-gradient(to right, transparent, ${borderColor})`;
-
     }
+
 }
 
 
