@@ -230,7 +230,6 @@ class CombatParser {
              */
             ( event, data ) => {
                 if ( data > 0 ) {
-                    console.log( 'reset time changed', data );
                     encounterResetMs = data;
                 }
             } );
@@ -238,7 +237,6 @@ class CombatParser {
         ipcRenderer
             .invoke( 'settings:get', { key: 'dpsEncounterResetTimeMs', subscribe: true } )
             .then( data => {
-                console.log( 'reset time changed', data );
                 if ( data > 0 ) {
                     encounterResetMs = data;
                 }
@@ -1779,7 +1777,6 @@ class CombatParser {
         }
         source[ name ].lastEncounterEvent = timestamp;
 
-        console.log( `Returning player encounter stats for ${name}`, source[ name ] );
         return source[ name ];
     }
     

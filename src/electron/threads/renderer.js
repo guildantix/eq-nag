@@ -479,11 +479,28 @@ function clearDpsItems() {
  */
 function renderDpsItems() {
 
-    dpsItems.forEach( f => f?.dom?.remove() );
+    /** @type {Record<string, number>} */
+    let damageDoneRecs = {};
+    /** @type {Record<string, number>} */
+    let dpsDoneRecs = {};
+    let totalDamage = 0;
+    let topDamage = 0;
 
-    dpsItems = dpsItems.sort( ( a, b ) => a.playerDps.dps - b.playerDps.dps );
-    const totalDamage = dpsItems.reduce( ( a, b ) => a + b.playerDps.damage + b.playerDps.pets.reduce( ( x, y ) => x + y.damage, 0 ), 0 );
-    const topDamage = dpsItems.reduce( ( a, b ) => Math.max( a, b.playerDps.damage + b.playerDps.pets.reduce( ( x, y ) => x + y.damage, 0 ) ), 0 );
+    dpsItems.forEach( f => {
+        // TODO: Update instead of recreate on each call.
+        f?.dom?.remove();
+
+        let damageDone = f.playerDps.damage + f.playerDps.pets.reduce( ( a, b ) => a + b.damage, 0 );
+        let dpsDone = f.playerDps.dps + f.playerDps.pets.reduce( ( a, b ) => a + b.dps, 0 );
+
+        damageDoneRecs[ f.playerDps.name ] = damageDone;
+        dpsDoneRecs[ f.playerDps.name ] = dpsDone;
+
+        totalDamage += damageDone;
+        topDamage = Math.max( topDamage, damageDone );
+    } );
+
+    dpsItems = dpsItems.sort( ( a, b ) => damageDoneRecs[ b.playerDps.name ] - damageDoneRecs[ a.playerDps.name ] );
 
     for ( let i = 0; i < dpsItems.length; i++ ) {
         const dpsItem = dpsItems[ i ];
