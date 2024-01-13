@@ -1,3 +1,4 @@
+const activeWindow = require( 'active-win' );
 const StringUtilities = require( '../../utilities/string' );
 
 const customAlphabet = require( 'nanoid' ).customAlphabet;
@@ -337,6 +338,44 @@ class Version {
 
 }
 
+class WinInfo {
+
+    /**
+     * 
+     * @param {activeWindow.Result} window The active window.
+     * @param {number} nagPid The process id of the nag window.
+     */
+    constructor( window, nagPid ) {
+
+        if ( window ) {
+            this.title = window.title;
+            this.processId = window.owner?.processId ?? 0;
+            this.id = window.id;
+            this.platform = window.platform;
+            this.ownerName = window.owner?.name ?? '';
+            this.ownerPath = window.owner?.path ?? '';
+        }
+        
+        this.nagProcessId = nagPid;
+    }
+
+    /** @type {string} */
+    title;
+    /** @type {number} */
+    processId;
+    /** @type {number} */
+    id;
+    /** @type {string} */
+    platform;
+    /** @type {string} */
+    ownerName;
+    /** @type {string} */
+    ownerPath;
+    /** @type {number} */
+    nagProcessId;
+
+}
+
 module.exports = {
     StyleProperties,
     BasicError,
@@ -355,4 +394,5 @@ module.exports = {
     LogMaintenanceHistory, 
     Version, 
     UserPreferencesStoreModel, 
+    WinInfo, 
 };
