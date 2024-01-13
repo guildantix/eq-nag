@@ -21,7 +21,7 @@ const { SharedTriggerPermissions } = require( '../data/models/sharing-service' )
 const { StylePropertiesModel } = require( '../data/models/core' );
 const MouseUtilities = require( '../utilities/mouse' );
 const { overlayZIndex, overlayTopZIndex, imagesPath } = require( '../utilities/constants' );
-const { PlayerDps } = require( '../data/models/combat-parser' );
+const { PlayerDps, DpsMeterSettings } = require( '../data/models/combat-parser' );
 const { getEverQuestClassIcon, getEverQuestClassAbbreviation, getEverQuestClassColor } = require( '../utilities/everquest' );
 const { lightenColor, darkenColor } = require( '../utilities/colors' );
 
@@ -261,6 +261,9 @@ let dpsWindow = undefined;
 /** @type {DpsItem[]} */
 let dpsItems = [];
 
+/** @type {DpsMeterSettings} */
+let dpsMeterSettings = new DpsMeterSettings();
+
 
 
 
@@ -446,6 +449,29 @@ function createDpsWindow() {
         
     return div.querySelector( '.window' );
 
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Updates the settings for the dps meter window.
+ * 
+ * @param {DpsMeterSettings} settings The settings object for the dps meter window.
+ */
+function updateDpsWindowSettings( settings ) {
+    
+    dpsMeterSettings = settings;
+
+    if ( dpsWindow ) {
+        dpsWindow.style.display = dpsMeterSettings.show ? 'block' : 'none';
+    }
 }
 
 
@@ -651,14 +677,14 @@ function Renderer( originX, originY, glowOnStart ) {
             } );
         
         ipcRenderer
-            .invoke( 'settings:get', { key: 'enableDpsWindow', subscribe: true } )
+            .invoke( 'settings:get', { key: 'dpsMeterSettings', subscribe: true } )
             .then( data => {
-                dpsWindow.style.display = data ? 'block' : 'none';
+                updateDpsWindowSettings( data );
             } );
 
     } );
 
-    ipcRenderer.on( 'settings:get:enableDpsWindow:generic',
+    ipcRenderer.on( 'settings:get:dpsMeterSettings:generic',
         /**
          * 
          * @param {Electron.IpcRendererEvent} event The event args
@@ -666,7 +692,7 @@ function Renderer( originX, originY, glowOnStart ) {
          */
         ( event, data ) => {
             if ( dpsWindow ) {
-                dpsWindow.style.display = data ? 'block' : 'none';
+                updateDpsWindowSettings( data );
             }
         } );
 
