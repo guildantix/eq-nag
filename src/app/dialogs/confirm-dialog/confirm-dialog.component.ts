@@ -10,7 +10,10 @@ import { ColoredString } from '../dialog.model';
 export class ConfirmDialogComponent implements OnInit {
 
     public title: string = 'Confirm';
-    public messages: (string|ColoredString)[] = [];
+    public messages: ( string | ColoredString )[] = [];
+    public noText: string = 'No';
+    public yesText: string = 'Yes';
+    public cancelText: string = 'Cancel';
 
     constructor(
         public dialogRef: MatDialogRef<ConfirmDialogComponent>,
@@ -23,6 +26,14 @@ export class ConfirmDialogComponent implements OnInit {
             this.messages.push( this.data.message );
         } else {
             this.messages.push( 'Are you sure?' );
+        }
+
+        if ( this.data.buttonTexts ) {
+            let buttonTexts = this.data.buttonTexts as { 'Yes'?: string, 'No'?: string, 'Cancel'?: string };
+
+            this.yesText = buttonTexts.Yes ?? this.yesText;
+            this.noText = buttonTexts.No ?? this.noText;
+            this.cancelText = buttonTexts.Cancel ?? this.cancelText;
         }
 
         if ( this.data.title ) {
