@@ -741,7 +741,6 @@ class UserPreferencesStore extends Store {
                     keySubscribers[ arg.key ] = keySubscribers[ arg.key ] ? keySubscribers[ arg.key ] : [];
                     keySubscribers[ arg.key ].push( event.sender );
                 }
-                arg.key === 'dpsMeterSettings' && console.log( '!!!! dpsMeterSettings', this[ arg.key ] );
                 return this[ arg.key ];
             } );
 
