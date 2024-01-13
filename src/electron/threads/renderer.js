@@ -14,7 +14,7 @@ const nanoid = customAlphabet( alphabet, 16 );
 const StyleSheetUtil = require( '../utilities/style-sheet' );
 const { FctStylesModel, FctModel, FctTypes, FctRenderComponent, HitAccumulationModel } = require( '../data/models/fct' );
 const ElectronUtilities = require( '../utilities/electron' );
-const { StyleProperties } = require( '../data/models/common' );
+const { StyleProperties, WinInfo } = require( '../data/models/common' );
 const { getCurrentWindow, screen } = require( '@electron/remote' );
 const { DateUtilities } = require( '../utilities/dates' );
 const { SharedTriggerPermissions } = require( '../data/models/sharing-service' );
@@ -264,6 +264,9 @@ let dpsItems = [];
 /** @type {DpsMeterSettings} */
 let dpsMeterSettings = new DpsMeterSettings();
 
+/** @type {WinInfo} */
+let activeWinInfo = undefined;
+
 
 
 
@@ -462,15 +465,25 @@ function createDpsWindow() {
 
 /**
  * Updates the settings for the dps meter window.
- * 
- * @param {DpsMeterSettings} settings The settings object for the dps meter window.
  */
-function updateDpsWindowSettings( settings ) {
+function updateDpsWindowSettings() {
     
-    dpsMeterSettings = settings;
-
     if ( dpsWindow ) {
-        dpsWindow.style.display = dpsMeterSettings.show ? 'block' : 'none';
+        let showDpsWindow = dpsMeterSettings.show;
+
+        if ( !dpsMeterSettings.keepOnScreen && showDpsWindow ) {
+
+            if ( activeWinInfo?.ownerName === 'Windows Explorer' && ( activeWinInfo?.title === '' || activeWinInfo?.title === 'Task Switching' ) ) {
+                // Do nothing, the user has clicked on the taskbar.
+            } else if ( activeWinInfo?.ownerName === 'eqgame.exe' || ( activeWinInfo?.nagProcessId != null && activeWinInfo?.processId != null && activeWinInfo.nagProcessId === activeWinInfo.processId ) ) {
+                showDpsWindow = true;
+            } else {
+                showDpsWindow = false;
+            }
+
+        }
+
+        dpsWindow.style.display = showDpsWindow ? 'block' : 'none';
     }
 }
 
@@ -651,6 +664,8 @@ function Renderer( originX, originY, glowOnStart ) {
                 
         dpsWindow = createDpsWindow();
 
+        ipcRenderer.send( 'main:active-window:subscribe', undefined );
+
         ipcRenderer
             .invoke( 'settings:get', { key: 'dpsWindowPosition', subscribe: true } )
             .then( dpsWindowBounds => {
@@ -679,10 +694,24 @@ function Renderer( originX, originY, glowOnStart ) {
         ipcRenderer
             .invoke( 'settings:get', { key: 'dpsMeterSettings', subscribe: true } )
             .then( data => {
-                updateDpsWindowSettings( data );
+                dpsMeterSettings = data;
+                updateDpsWindowSettings();
             } );
 
     } );
+
+    ipcRenderer.on( 'active-window:changed',
+        /**
+         * 
+         * @param {Electron.IpcRendererEvent} event The event args.
+         * @param {WinInfo} data The window information.
+         */
+        ( event, data ) => {
+
+            activeWinInfo = data;
+            updateDpsWindowSettings();
+
+        } );
 
     ipcRenderer.on( 'settings:get:dpsMeterSettings:generic',
         /**
@@ -691,9 +720,8 @@ function Renderer( originX, originY, glowOnStart ) {
          * @param {boolean} data True if enabled.
          */
         ( event, data ) => {
-            if ( dpsWindow ) {
-                updateDpsWindowSettings( data );
-            }
+            dpsMeterSettings = data;
+            updateDpsWindowSettings( data );
         } );
 
     ipcRenderer.on( 'settings:get:dpsWindowPosition:generic',

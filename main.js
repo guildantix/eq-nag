@@ -17,12 +17,13 @@ const GameResources = require( './src/electron/data/game-resources' );
 const FilesDatabaseStore = require( './src/electron/data/files-database' );
 const GinaImporter = require( "./src/electron/gina-importer" );
 const CombatParser = require( "./src/electron/utilities/combat-parser" );
-const { IpcMessage, Progress, ScheduledTask, LogMaintenanceRules, Version } = require( "./src/electron/data/models/common" );
+const { IpcMessage, Progress, ScheduledTask, LogMaintenanceRules, Version, WinInfo } = require( "./src/electron/data/models/common" );
 const { LogFileLocation } = require( "./src/electron/data/log-file-location" );
 const VerifiedPlayersStore = require( "./src/electron/data/verified-players" );
 const cronParser = require( 'cron-parser' );
 const { DateUtilities } = require( "./src/electron/utilities/dates" );
 const CombatDatabase = require( "./src/electron/data/combat-database" );
+const activeWindow = require( "active-win" );
 
 /** @type {BrowserWindow} */
 var mainWindow, logWatcherWindow, testWindow;
@@ -45,6 +46,8 @@ var trayMenu = null;
 /** @type {string | undefined} */
 var combatParseCharacterId = undefined;
 autoUpdater.logger = log;
+/** @type {number | undefined} */
+var nagProcessId = undefined;
 
 require( '@electron/remote/main' ).initialize();
 
@@ -156,6 +159,11 @@ function createWindow() {
         } );
 
         checkCombatGroups();
+
+        // nagProcessId = mainWindow.webContents.getOSProcessId();
+        // console.log( 'testing main window things' );
+        // console.log( 'get OS proc id', mainWindow.webContents.getOSProcessId() );
+        // console.log( 'get process id', mainWindow.webContents.getProcessId() );
     } );
 
     mainWindow.once( 'ready-to-show', () => {
@@ -255,12 +263,14 @@ const bootstrapApp = () => {
                 }
             }
     
-            log.info( '[main:interceptFileProtocol] Intercepted file protocol.', {
-                req: req,
-                filePath: filePath,
-                normalizedFilePath: path.normalize( filePath ),
-                appPath: app.getAppPath(),
-            } );
+            if ( !app.isDev() ) {
+                log.info( '[main:interceptFileProtocol] Intercepted file protocol.', {
+                    req: req,
+                    filePath: filePath,
+                    normalizedFilePath: path.normalize( filePath ),
+                    appPath: app.getAppPath(),
+                } );
+            }
 
             callback( path.normalize( filePath ).replace( /%20/g, ' ' ) );
         } );
@@ -271,6 +281,8 @@ const bootstrapApp = () => {
             // to open the dev tools.
             registerDevToolsShortcut();
         }
+
+        setTimeout( checkActiveWindow, 100 );
 
     } );
     
@@ -712,6 +724,50 @@ app.on( 'ready', function () {
         scheduler();
     }, 1000 );
 } );
+
+/** @type {Electron.WebContents[]} */
+const activeWindowSubscribers = [];
+/** @type {WinInfo} */
+let activeWinInfo = undefined;
+
+ipcMain.on( 'main:active-window:subscribe', ( event ) => {
+    if ( !activeWindowSubscribers.includes( event.sender ) ) {
+        activeWindowSubscribers.push( event.sender );
+        activeWinInfo && event.sender.send( 'active-window:changed', activeWinInfo );
+    }
+} );
+
+ipcMain.on( 'main:active-window:unsubscribe', ( event ) => {
+    if ( activeWindowSubscribers.includes( event.sender ) ) {
+        activeWindowSubscribers.splice( activeWindowSubscribers.indexOf( event.sender ), 1 );
+    }
+} );
+
+const checkActiveWindow = async () => {
+    let data = await activeWindow();
+    // console.log( '!!!!! active window', data );
+    // // data.owner.name === 'eqgame.exe'
+    // let isEq = data?.owner?.name === 'eqgame.exe';
+
+    if ( nagProcessId == undefined && data?.owner?.name === 'Electron' && data?.title === 'Nag' ) {
+        nagProcessId = data?.owner?.processId;
+    }
+    
+    if ( activeWinInfo?.id !== data?.id ) {
+        activeWinInfo = new WinInfo( data, nagProcessId );
+
+        for ( let i = activeWindowSubscribers.length - 1; i >= 0; i-- ) {
+            const webContents = activeWindowSubscribers[ i ];
+            if ( !webContents?.isDestroyed() ) {
+                webContents.send( 'active-window:changed', activeWinInfo );
+            } else {
+                activeWindowSubscribers.splice( i, 1 );
+            }
+        }
+    }
+
+    setTimeout( checkActiveWindow, 100 );
+};
 
 // let x = userPreferences.everquestInstallFolder;
 
