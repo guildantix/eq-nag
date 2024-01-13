@@ -1,4 +1,4 @@
-import { Component, Input, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, Input, OnInit } from '@angular/core';
 import { DialogService } from 'src/app/dialogs/dialog.service';
 import { IpcService } from 'src/app/ipc.service';
 import { MatTable } from '@angular/material/table';
@@ -58,6 +58,8 @@ export class SettingsComponent implements OnInit {
     public allowPrerelease: boolean = false;
     public enableCheckWindowPosition: boolean = true;
     private _dpsMeterSettings: DpsMeterSettings = new DpsMeterSettings();
+    private _dpsPlayerDelayIntervalId: number = null;
+    private _dpsPlayerDelayRestoreValue: number | undefined = undefined;
     
     public get dpsShow() : boolean {
         return this._dpsMeterSettings.show;
@@ -75,10 +77,10 @@ export class SettingsComponent implements OnInit {
         this.updateSetting( SettingsKeys.dpsMeterSettings, this._dpsMeterSettings, 500 );
     }
     
-    public get showOnlyInCombat() : boolean {
+    public get dpsShowOnlyInCombat() : boolean {
         return this._dpsMeterSettings.showOnlyInCombat;
     }
-    public set showOnlyInCombat(v : boolean) {
+    public set dpsShowOnlyInCombat(v : boolean) {
         this._dpsMeterSettings.showOnlyInCombat = v;
         this.updateSetting( SettingsKeys.dpsMeterSettings, this._dpsMeterSettings, 500 );
     }
@@ -134,12 +136,12 @@ export class SettingsComponent implements OnInit {
         this.updateSetting( SettingsKeys.dpsMeterSettings, this._dpsMeterSettings, 500 );
     }
     
-    public get dpsPlayerInactiveDelaySec() : number {
+    public get dpsPlayerInactiveDelaySec(): number {
+        console.log( 'dpsPlayerInactiveDelaySec', this._dpsMeterSettings.playerInactiveDelayMs / 1000 );
         return this._dpsMeterSettings.playerInactiveDelayMs / 1000;
     }
-    public set dpsPlayerInactiveDelaySec(v : number) {
-        this._dpsMeterSettings.playerInactiveDelayMs = v * 1000;
-        this.updateSetting( SettingsKeys.dpsMeterSettings, this._dpsMeterSettings, 500 );
+    public set dpsPlayerInactiveDelaySec( v: number ) {
+        this.updatePlayerInactiveDelay( v );
     }
 
     // public enableGpuAcceleration: boolean = false;
@@ -160,7 +162,14 @@ export class SettingsComponent implements OnInit {
 
     @Input() public characterList: CharactersListComponent;
 
-    constructor( private ipcService: IpcService, private dialogService: DialogService, private settingsService: SettingsService, private snackBar: MatSnackBar, private setupService: SetupService ) {
+    constructor(
+        private readonly ipcService: IpcService,
+        private readonly dialogService: DialogService,
+        private readonly settingsService: SettingsService,
+        private readonly snackBar: MatSnackBar,
+        private readonly setupService: SetupService,
+        private readonly changeDetectorRef: ChangeDetectorRef,
+    ) {
         speechSynthesis.onvoiceschanged = () => {
             this.voiceOptions = speechSynthesis.getVoices();
         };
@@ -235,7 +244,10 @@ export class SettingsComponent implements OnInit {
 
         this.ipcService.getSetting<boolean>( SettingsKeys.allowPrerelease ).subscribe( f => this.allowPrerelease = f );
         this.ipcService.getSetting<boolean>( SettingsKeys.enableCheckWindowPosition ).subscribe( f => this.enableCheckWindowPosition = f );
-        this.ipcService.getSetting<DpsMeterSettings>( SettingsKeys.dpsMeterSettings ).subscribe( f => this._dpsMeterSettings = f );
+        this.ipcService.getSetting<DpsMeterSettings>( SettingsKeys.dpsMeterSettings ).subscribe( f => {
+            this._dpsMeterSettings = f;
+            this._dpsPlayerDelayRestoreValue = f.playerInactiveDelayMs / 1000;
+        } );
         // this.ipcService.getSetting<boolean>( SettingsKeys.enableGpuAcceleration ).subscribe( f => this.enableGpuAcceleration = f );
         this.ipcService.getSetting<LogMaintenanceRules>( SettingsKeys.logMaintenanceRules ).subscribe( f => {
 
@@ -300,9 +312,50 @@ export class SettingsComponent implements OnInit {
      * @param value The setting value.
      * @param delay Wait the given milliseconds before submitting changes.  If another change for the same key comes, the timeout is restarted.
      */
-    public updateSetting<T>( key: SettingsKeys, value: T, delay: number = null ) {
-        this.ipcService.updateSetting( key, value, delay );
+    public updateSetting<T>( key: SettingsKeys, value: T, delay: number = null, onExecuted: () => void = null ) {
+        this.ipcService.updateSetting( key, value, delay, onExecuted );
         this.updatedSettings.push( key );
+    }
+
+    public updatePlayerInactiveDelay( v: number ) {
+
+        if ( this._dpsPlayerDelayIntervalId > 0 ) {
+            window.clearTimeout( this._dpsPlayerDelayIntervalId );
+        }
+
+        // this._dpsPlayerDelayRestoreValue = this._dpsPlayerDelayRestoreValue ?? this._dpsMeterSettings.playerInactiveDelayMs / 1000;
+        this._dpsMeterSettings.playerInactiveDelayMs = v * 1000;
+        this.updateSetting( SettingsKeys.dpsMeterSettings, this._dpsMeterSettings, 500, () => this._dpsPlayerDelayRestoreValue = this._dpsPlayerDelayRestoreValue ?? v );
+
+        if ( v < 7 ) {
+            this._dpsPlayerDelayIntervalId = window.setTimeout( () => {
+                this.dialogService.showConfirmationDialog(
+                    [ 'This value should not be less than 7 seconds to account for classes that primarily use damage over time spells.', `Are you sure you want to set this value to ${v} seconds?` ],
+                    `Click "Yes" to set the delay to ${v} seconds.`,
+                    'Click "Default" to change the delay to 7 seconds.',
+                    `Click "Cancel" to close and reset the value back to ${this._dpsPlayerDelayRestoreValue} seconds.`,
+                    'normal', null,
+                    {
+                        'No': 'Default, set to 7 seconds',
+                    }
+                ).subscribe( confirmed => {
+                        if ( confirmed === true ) {
+                            this._dpsMeterSettings.playerInactiveDelayMs = v * 1000;
+                            this.updateSetting( SettingsKeys.dpsMeterSettings, this._dpsMeterSettings, 500 );
+                        } else if ( confirmed === false ) {
+                            this._dpsMeterSettings.playerInactiveDelayMs = 7 * 1000;
+                            this.updateSetting( SettingsKeys.dpsMeterSettings, this._dpsMeterSettings, 500 );
+                        } else {
+                            this._dpsMeterSettings.playerInactiveDelayMs = this._dpsPlayerDelayRestoreValue * 1000;
+                            this.updateSetting( SettingsKeys.dpsMeterSettings, this._dpsMeterSettings, 500 );
+                        }
+                        this._dpsPlayerDelayRestoreValue = undefined;
+                        this.changeDetectorRef.detectChanges();
+                    } );
+            }, 2500 );
+        } else {
+            // this._dpsPlayerDelayRestoreValue = undefined;
+        }
     }
 
 
