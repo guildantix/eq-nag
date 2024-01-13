@@ -545,12 +545,17 @@ function renderDpsItems() {
         const damageDone = dpsItem.playerDps.damage + dpsItem.playerDps.pets.reduce( ( a, b ) => a + b.damage, 0 );
         const dpsDone = dpsItem.playerDps.dps + dpsItem.playerDps.pets.reduce( ( a, b ) => a + b.dps, 0 );
         const classAbbr = getEverQuestClassAbbreviation( dpsItem.playerDps.class );
+        const dpsSec = dpsItem.playerDps.start ? DateUtilities.timeSince( dpsItem.playerDps.start, dpsItem.playerDps.end ?? new Date() ).totalSeconds : 0;
+        const pctDone = totalDamage > 0 ? Math.round( damageDone / totalDamage * 100 ) : 0;
 
         // Create a new DPS item dom.
         let model = {
             iconImage: `${imagesPath}/${getEverQuestClassIcon( classAbbr )}`,
             label: `${dpsItem.playerDps.name}`,
-            value: `${NumberUtilities.toShorthandString( damageDone )} (${NumberUtilities.toShorthandString( dpsDone )}, ${Math.round( damageDone / totalDamage * 100 )}%)`,
+            value: `${NumberUtilities.toShorthandString( damageDone )} (${NumberUtilities.toShorthandString( dpsDone )}, ${pctDone}%)`,
+            damage: NumberUtilities.toShorthandString( damageDone ),
+            dps: NumberUtilities.toShorthandString( dpsDone ),
+            sec: dpsSec > 0 ? `${dpsSec}s` : '-',
         };
 
         if ( !dpsItem.dom ) {
@@ -581,6 +586,18 @@ function renderDpsItems() {
             /** @type {HTMLSpanElement} */
             let valueSpan = dpsItem.dom.querySelector( '.dps-item-values' );
             valueSpan != null && ( valueSpan.innerText = model.value );
+
+            /** @type {HTMLSpanElement} */
+            let damageSpan = dpsItem.dom.querySelector( '.dps-line-item.damage' );
+            damageSpan != null && ( damageSpan.innerText = model.damage );
+
+            /** @type {HTMLSpanElement} */
+            let dpsSpan = dpsItem.dom.querySelector( '.dps-line-item.dps' );
+            dpsSpan != null && ( dpsSpan.innerText = model.dps );
+
+            /** @type {HTMLSpanElement} */
+            let secSpan = dpsItem.dom.querySelector( '.dps-line-item.sec' );
+            secSpan != null && ( secSpan.innerText = model.sec );
 
             /** @type {HTMLImageElement} */
             let iconImg = dpsItem.dom.querySelector( '.dps-item-icon' );

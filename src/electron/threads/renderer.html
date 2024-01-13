@@ -549,6 +549,9 @@
             font-size: 14px;
             /* display: none; */
         }
+        .window.dps-meter.hide {
+            display: none;
+        }
         .window.dps-meter .window-title {
             background-color: #181818;
             display: flex;
@@ -565,19 +568,19 @@
         .window.dps-meter .window-title .spacer {
             flex: 1 1 auto;
         }
-        .window.dps-meter .window-title .window-title-text {
-            padding-left: 15px;
+        .window.dps-meter .window-title .window-title-col.text {
+            padding-left: 1em;
         }
-        .window.dps-meter .window-title .window-title-btn {
+        .window.dps-meter .window-title .window-title-col.btn {
             width: 1em;
             height: 1em;
             cursor: pointer;
             margin: 0 0.5em 0 0;
         }
-        .window.dps-meter .window-title .window-title-btn:hover {
+        .window.dps-meter .window-title .window-title-col.btn:hover {
             color: #b8b8b8;
         }
-        .window.dps-meter .window-title .window-title-btn:active {
+        .window.dps-meter .window-title .window-title-col.btn:active {
             color: #929292;
         }
         .window-content {
@@ -586,6 +589,7 @@
             border-left: 4px solid #181818;
             height: calc(100% - 34px);
             overflow: hidden;
+            background-color: #00000070;
         }
         .window-content .dps-item {
             position: relative;
@@ -654,7 +658,47 @@
         }
         .dps-item-values {
             text-shadow: -1px -1px 2px #000, 1px -1px 2px #000, -1px 1px 2px #000, 1px 1px 2px #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
-            padding-right: 1em;
+        }
+        .dps-line-item {
+            text-shadow: -1px -1px 2px #000, 1px -1px 2px #000, -1px 1px 2px #000, 1px 1px 2px #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
+        }
+        .window.dps-meter .damage {
+            width: 75px;
+        }
+        .window.dps-meter .sec,
+        .window.dps-meter .dps {
+            width: 50px;
+        }
+        .window.dps-meter .damage,
+        .window.dps-meter .dps,
+        .window.dps-meter .sec {
+            text-align: right;
+        }
+        .window.dps-meter .right-pad {
+            width: 1em;
+            display: inline-block;
+            background-color: unset;
+        }
+        .dps-line-item.damage,
+        .dps-line-item.dps,
+        .dps-line-item.sec {
+            padding-right: 0.25em;
+        }
+        .window-title-col.damage,
+        .window-title-col.dps,
+        .window-title-col.sec {
+            padding-right: 0.25em;
+        }
+        .window.dps-meter .damage,
+        .window.dps-meter .dps,
+        .window.dps-meter .sec {
+            display: none;
+        }
+        .window.dps-meter.damage .damage,
+        .window.dps-meter.dps .dps,
+        .window.dps-meter.sec .sec {
+            display: inline;
+            background-color: unset;
         }
     </style>
     
@@ -662,14 +706,38 @@
     <!--          DPS Meter          -->
     <!-- =========================== -->
     <template id="dpsWindowTemplate">
-        <div class="window dps-meter dynamic-mouse">
+        <div class="window dps-meter dynamic-mouse damage dps sec">
             <div class="window-title">
-                <span class="window-title-text">Damage Done</span>
-                <span class="spacer"></span>
-                <!-- <span class="window-title-btn"><i class="fas fa-gear"></i></span> -->
-                <!-- <span class="window-title-btn"><i class="fas fa-times"></i></span> -->
+                <span class="window-title-col text">Damage Done</span>
+                <span class="window-title-col spacer"></span>
+                <span class="window-title-col damage">Damage</span>
+                <span class="window-title-col dps">DPS</span>
+                <span class="window-title-col sec">Time</span>
+                <span class="window-title-col right-pad"></span>
+                <!-- <span class="window-title-col btn"><i class="fas fa-gear"></i></span> -->
+                <!-- <span class="window-title-col btn"><i class="fas fa-times"></i></span> -->
             </div>
             <div class="window-content dps-items">
+                <!-- <div class="dps-item">
+                    
+                    <div class="dps-item-label">
+                        <img class="dps-item-icon" style="display: none;" />
+                        <span class="dps-item-icon-placeholder"><i class="fa-solid fa-question"></i></span>
+                        <span class="dps-item-name">Ryvn</span>
+                        <span class="spacer"></span>
+                        <span class="dps-line-item damage">456k</span>
+                        <span class="dps-line-item dps">26.3k</span>
+                        <span class="dps-line-item sec">32s</span>
+                        <span class="dps-line-item right-pad"></span>
+                    </div>
+                    <div class="progress" style="background-color: unset;"><p style="margin: 4px;">&nbsp;</p>
+                        <div class="determinate" style="background-color: red; width: 100%;" >
+                            <div class="border top" style="background-color: white;"></div>
+                            <div class="border bottom" style="background-color: white;"></div>
+                        </div>
+                    </div>
+
+                </div> -->
             </div>
             <div class="window-footer">
                 <span class="window-footer-text"></span>
@@ -686,7 +754,10 @@
             <span class="dps-item-icon-placeholder"><i class="fa-solid fa-question"></i></span>
             <span class="dps-item-name">{{label}}</span>
             <span class="spacer"></span>
-            <span class="dps-item-values">{{value}}</span>
+            <span class="dps-line-item damage">{{damage}}</span>
+            <span class="dps-line-item dps">{{dps}}</span>
+            <span class="dps-line-item sec">{{sec}}</span>
+            <span class="dps-line-item right-pad"></span>
         </div>
         <div class="progress" style="background-color: unset"><p style="margin: 4px;">&nbsp;</p>
             <div class="determinate" >
