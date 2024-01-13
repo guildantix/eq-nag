@@ -3,7 +3,7 @@ import { DialogService } from 'src/app/dialogs/dialog.service';
 import { IpcService } from 'src/app/ipc.service';
 import { MatTable } from '@angular/material/table';
 import { customAlphabet } from 'nanoid';
-import { ActionTypes, AuthorModel, CapturePhrase, DeathRecapPreferences, LogMaintenanceRules, LogMaintenancePlanTypes, OverlayWindowModel, QuickShareAuthorListTypes, TriggerAction, TriggerModel, ScheduledTask, Range, SettingsKeys, SharedTriggerPermissions } from 'src/app/core.model';
+import { ActionTypes, AuthorModel, CapturePhrase, DeathRecapPreferences, LogMaintenanceRules, LogMaintenancePlanTypes, OverlayWindowModel, QuickShareAuthorListTypes, TriggerAction, TriggerModel, ScheduledTask, Range, SettingsKeys, SharedTriggerPermissions, DpsMeterSettings } from 'src/app/core.model';
 import { SettingsService } from '../settings-http.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { SetupService } from 'src/app/setup/setup.service';
@@ -57,15 +57,91 @@ export class SettingsComponent implements OnInit {
     public logDays: number[] = [];
     public allowPrerelease: boolean = false;
     public enableCheckWindowPosition: boolean = true;
-    public enableDpsWindow: boolean = false;
-    private _dpsEncounterResetTimeMs: number = 30 * 1000;
+    private _dpsMeterSettings: DpsMeterSettings = new DpsMeterSettings();
+    
+    public get dpsShow() : boolean {
+        return this._dpsMeterSettings.show;
+    }
+    public set dpsShow(v : boolean) {
+        this._dpsMeterSettings.show = v;
+        this.updateSetting( SettingsKeys.dpsMeterSettings, this._dpsMeterSettings, 0 );
+    }
+    
+    public get dpsAutoFade() : boolean {
+        return this._dpsMeterSettings.autoFade;
+    }
+    public set dpsAutoFade(v : boolean) {
+        this._dpsMeterSettings.autoFade = v;
+        this.updateSetting( SettingsKeys.dpsMeterSettings, this._dpsMeterSettings, 500 );
+    }
+    
+    public get showOnlyInCombat() : boolean {
+        return this._dpsMeterSettings.showOnlyInCombat;
+    }
+    public set showOnlyInCombat(v : boolean) {
+        this._dpsMeterSettings.showOnlyInCombat = v;
+        this.updateSetting( SettingsKeys.dpsMeterSettings, this._dpsMeterSettings, 500 );
+    }
+
+    public get dpsKeepOnScreen() : boolean {
+        return this._dpsMeterSettings.keepOnScreen;
+    }
+    public set dpsKeepOnScreen(v : boolean) {
+        this._dpsMeterSettings.keepOnScreen = v;
+        this.updateSetting( SettingsKeys.dpsMeterSettings, this._dpsMeterSettings, 500 );
+    }
+
+    // TODO: This is going to take some effort on the animation side of things, mixing with mouseenter/mouseleave events.
+    // TODO: https://developer.mozilla.org/en-US/docs/Web/API/Element/animationend_event
+
+    // public get dpsFadeDelaySec() : number {
+    //     return this._dpsMeterSettings.fadeDelayMs / 1000;
+    // }
+    // public set dpsFadeDelaySec(v : number) {
+    //     this._dpsMeterSettings.fadeDelayMs = v * 1000;
+    //     this.updateSetting( SettingsKeys.dpsMeterSettings, this._dpsMeterSettings, 500 );
+    // }
+    
+    // public get dpsFadeDurationSec() : number {
+    //     return this._dpsMeterSettings.fadeDurationMs / 1000;
+    // }
+    // public set dpsFadeDurationSec(v : number) {
+    //     this._dpsMeterSettings.fadeDurationMs = v * 1000;
+    //     this.updateSetting( SettingsKeys.dpsMeterSettings, this._dpsMeterSettings, 500 );
+    // }
+    
+    // public get dpsFadeOpacity() : number {
+    //     return this._dpsMeterSettings.fadeOpacity;
+    // }
+    // public set dpsFadeOpacity(v : number) {
+    //     this._dpsMeterSettings.fadeOpacity = v;
+    //     this.updateSetting( SettingsKeys.dpsMeterSettings, this._dpsMeterSettings, 500 );
+    // }
+    
     public get dpsEncounterResetTimeSec(): number {
-        return this._dpsEncounterResetTimeMs / 1000;
+        return this._dpsMeterSettings.encounterResetDelayMs / 1000;
     }
     public set dpsEncounterResetTimeSec( value: number ) {
-        this._dpsEncounterResetTimeMs = value * 1000;
-        this.updateSetting( SettingsKeys.dpsEncounterResetTimeMs, this._dpsEncounterResetTimeMs, 500 );
+        this._dpsMeterSettings.encounterResetDelayMs = value * 1000;
+        this.updateSetting( SettingsKeys.dpsMeterSettings, this._dpsMeterSettings, 500 );
     }
+    
+    public get dpsEncounterInactiveDelaySec(): number {
+        return this._dpsMeterSettings.encounterInactiveDelayMs / 1000;
+    }
+    public set dpsEncounterInactiveDelaySec( v: number ) {
+        this._dpsMeterSettings.encounterInactiveDelayMs = v * 1000;
+        this.updateSetting( SettingsKeys.dpsMeterSettings, this._dpsMeterSettings, 500 );
+    }
+    
+    public get dpsPlayerInactiveDelaySec() : number {
+        return this._dpsMeterSettings.playerInactiveDelayMs / 1000;
+    }
+    public set dpsPlayerInactiveDelaySec(v : number) {
+        this._dpsMeterSettings.playerInactiveDelayMs = v * 1000;
+        this.updateSetting( SettingsKeys.dpsMeterSettings, this._dpsMeterSettings, 500 );
+    }
+
     // public enableGpuAcceleration: boolean = false;
     public exampleSpeech: string = 'Hello, my name is nag.';
     public baseSpeakingRate: number = 1;
@@ -159,8 +235,7 @@ export class SettingsComponent implements OnInit {
 
         this.ipcService.getSetting<boolean>( SettingsKeys.allowPrerelease ).subscribe( f => this.allowPrerelease = f );
         this.ipcService.getSetting<boolean>( SettingsKeys.enableCheckWindowPosition ).subscribe( f => this.enableCheckWindowPosition = f );
-        this.ipcService.getSetting<boolean>( SettingsKeys.enableDpsWindow ).subscribe( f => this.enableDpsWindow = f );
-        this.ipcService.getSetting<number>( SettingsKeys.dpsEncounterResetTimeMs ).subscribe( f => this._dpsEncounterResetTimeMs = f );
+        this.ipcService.getSetting<DpsMeterSettings>( SettingsKeys.dpsMeterSettings ).subscribe( f => this._dpsMeterSettings = f );
         // this.ipcService.getSetting<boolean>( SettingsKeys.enableGpuAcceleration ).subscribe( f => this.enableGpuAcceleration = f );
         this.ipcService.getSetting<LogMaintenanceRules>( SettingsKeys.logMaintenanceRules ).subscribe( f => {
 

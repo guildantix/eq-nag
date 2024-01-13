@@ -120,7 +120,7 @@
 
     <fieldset>
         <legend><span class="title">DPS Meter</span></legend>
-        <mat-checkbox [(ngModel)]="enableDpsWindow" (change)="updateSetting( this.settingsKeys.enableDpsWindow, this.enableDpsWindow, 500 )">Enable DPS Meter</mat-checkbox>
+        <mat-checkbox [(ngModel)]="dpsShow" name="dpsShow">Enable DPS Meter</mat-checkbox>
         <div class="fifty-grid">
             <div>
                 <h2 class="sub-header full-width">Encounter Settings</h2>

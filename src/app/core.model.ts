@@ -32,9 +32,7 @@ export enum SettingsKeys {
     baseSpeakingRate = 'baseSpeakingRate',
     enableGpuAcceleration = 'enableGpuAcceleration',
     dpsWindowPosition = 'dpsWindowPosition',
-    enableDpsWindow = 'enableDpsWindow',
-    dpsEncounterResetTimeMs = 'dpsEncounterResetTimeMs',
-    
+    dpsMeterSettings = 'dpsMeterSettings',
 };
 
 export enum ActionTypes {
@@ -1685,4 +1683,19 @@ export class FctCombatGroup {
 
         return m;
     }
+}
+
+export class DpsMeterSettings {
+    
+    public show: boolean = true;
+    public autoFade: boolean = false;
+    public showOnlyInCombat: boolean = false;
+    public keepOnScreen: boolean = false;
+    public fadeDelayMs: number = 5000;
+    public fadeDurationMs: number = 5000;
+    public fadeOpacity: number = 0.5;
+    public encounterResetDelayMs: number = 8000;
+    public encounterInactiveDelayMs: number = 8000;
+    public playerInactiveDelayMs: number = 8000;
+
 }
