@@ -137,7 +137,6 @@ export class SettingsComponent implements OnInit {
     }
     
     public get dpsPlayerInactiveDelaySec(): number {
-        console.log( 'dpsPlayerInactiveDelaySec', this._dpsMeterSettings.playerInactiveDelayMs / 1000 );
         return this._dpsMeterSettings.playerInactiveDelayMs / 1000;
     }
     public set dpsPlayerInactiveDelaySec( v: number ) {
