@@ -29,7 +29,6 @@ function setIgnoreMouseEvents() {
         if ( dynamicMouseIntervalId == null ) {
             dynamicMouseIntervalId = window.setInterval( trackDynamicMouse, 33 );
         }
-        ipcRenderer.send( 'window:unfocus' );
     }
 }
 
