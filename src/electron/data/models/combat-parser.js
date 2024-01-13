@@ -261,6 +261,21 @@ class CombatDb {
 
 }
 
+class DpsMeterSettings {
+
+    show = true;
+    autoFade = false;
+    showOnlyInCombat = false;
+    keepOnScreen = false;
+    fadeDelayMs = 5000;
+    fadeDurationMs = 5000;
+    fadeOpacity = 0.5;
+    encounterResetDelayMs = 30000;
+    encounterInactiveDelayMs = 8000;
+    playerInactiveDelayMs = 8000;
+
+}
+
 module.exports = {
     AttackModifiers,
     PlayerInfo,
@@ -273,5 +288,6 @@ module.exports = {
     attackTypeMap,
     EncounterEventTypes,
     ServerCombatModel,
-    CombatDb
+    CombatDb,
+    DpsMeterSettings
 };

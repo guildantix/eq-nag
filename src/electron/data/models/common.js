@@ -245,6 +245,29 @@ const LogMaintenancePlanTypes = {
 
 const ArchiveFilePrefix = 'archive_';
 
+class UserPreferencesStoreModel {
+    /** @type {Record<string, string>} */
+    phoneticTransforms;
+    /** @type {string[]} */
+    ignoreGinaObjects;
+    /** @type {FctStylesModel} */
+    fctStyles;
+    /** @type {DeathRecapPreferences} */
+    deathRecap;
+    /** @type {boolean} */
+    minimizeToTrayOnLoad;
+    /** @type {string} */
+    lastViewedUpdateNotes;
+    /** @type {LogMaintenanceRules} */
+    logMaintenanceRules;
+    /** @type {LogMaintenanceHistory[]} */
+    logMaintenanceHistory;
+    /** @type {DpsMeterSettings} */
+    dpsMeterSettings;
+    /** @type {number} */
+    version = 0;
+}
+
 class LogMaintenanceRules {
 
     /** @type {boolean} */
@@ -331,4 +354,5 @@ module.exports = {
     ArchiveFilePrefix, 
     LogMaintenanceHistory, 
     Version, 
+    UserPreferencesStoreModel, 
 };
