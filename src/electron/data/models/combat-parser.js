@@ -272,7 +272,7 @@ class DpsMeterSettings {
     fadeOpacity = 0.5;
     encounterResetDelayMs = 30000;
     encounterInactiveDelayMs = 8000;
-    playerInactiveDelayMs = 8000;
+    playerInactiveDelayMs = 7000;
 
 }
 

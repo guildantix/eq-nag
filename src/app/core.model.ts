@@ -1696,6 +1696,6 @@ export class DpsMeterSettings {
     public fadeOpacity: number = 0.5;
     public encounterResetDelayMs: number = 8000;
     public encounterInactiveDelayMs: number = 8000;
-    public playerInactiveDelayMs: number = 8000;
+    public playerInactiveDelayMs: number = 7000;
 
 }
