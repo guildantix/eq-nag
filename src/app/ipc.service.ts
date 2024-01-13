@@ -578,7 +578,7 @@ export class IpcService {
      * @param value The setting value.
      * @param delay Wait the given milliseconds before sending changes.  If another change for the same key comes, the timeout is restarted.
      */
-    public updateSetting<T>( key: string, value: T, delay: number = null ): void {
+    public updateSetting<T>( key: string, value: T, delay: number = null, onExecuted: () => void = null ): void {
         
         if ( delay > 0 ) {
 
@@ -590,10 +590,18 @@ export class IpcService {
             // Start a new timer.
             this._timeoutIds[ key ] = window.setTimeout( () => {
                 window.api.ipc.send( 'settings:set', { key: key, value: value } );
+                this._timeoutIds[ key ] = 0;
+                if ( onExecuted ) {
+                    onExecuted();
+                }
             }, delay );
             
         } else {
             window.api.ipc.send( 'settings:set', { key: key, value: value } );
+            this._timeoutIds[ key ] = 0;
+            if ( onExecuted ) {
+                onExecuted();
+            }
 
         }
 
