@@ -1,17 +1,19 @@
-const { ipcMain, BrowserWindow, dialog, shell } = require( "electron" );
+const { ipcMain, BrowserWindow, dialog, shell, app } = require( "electron" );
 const Store = require( './store' );
 const ForwardRef = require( '../forward-ref' );
 const path = require( 'path' );
 const fs = require( 'fs' );
 const { AuthorModel, SharedTriggerPermissions } = require( './models/sharing-service' );
 const { FctStylesModel } = require( './models/fct' );
-const { StyleProperties, LogMaintenanceRules, LogMaintenanceHistory } = require( './models/common' );
+const { StyleProperties, LogMaintenanceRules, LogMaintenanceHistory, UserPreferencesStoreModel } = require( './models/common' );
 const archiver = require( 'archiver' );
 const LogBootstrapper = require( "../log-bootstrap" );
 const { DeathRecapPreferences } = require( '../data/models/death-recap' );
 const { QuickShareAuthorListTypes } = require( '../data/models/common' );
 const { GinaToNagOverlay } = require( "./models/trigger" );
 const log = require( 'electron-log' );
+const { DpsMeterSettings } = require( "./models/combat-parser" );
+const { migrateUserPreferencesData } = require( "./migrations/user-preferences-database-migration" );
 
 const possibleEqFolders = [
     '\\users\\public\\Everquest',
@@ -72,16 +74,7 @@ function get_win_drives( success_cb, error_cb ) {
 class UserPreferencesStore extends Store {
 
     /** The data store for this object.
-     * @type {{
-     * phoneticTransforms: Record<string, string>,
-     * ignoreGinaObjects: string[],
-     * fctStyles: FctStylesModel,
-     * deathRecap: DeathRecapPreferences,
-     * minimizeToTrayOnLoad: boolean,
-     * lastViewedUpdateNotes: string,
-     * logMaintenanceRules: LogMaintenanceRules,
-     * logMaintenanceHistory: LogMaintenanceHistory[],
-     * }}
+     * @type {UserPreferencesStoreModel}
      */
     #data;
 
@@ -513,15 +506,6 @@ class UserPreferencesStore extends Store {
         this.storeDataFile( this.#data );
     }
 
-    /** @type {boolean} */
-    get enableDpsWindow() {
-        return this.#data.enableDpsWindow === true;
-    }
-    set enableDpsWindow( val ) {
-        this.#data.enableDpsWindow = val === true;
-        this.storeDataFile( this.#data );
-    }
-
     /** @type {import('electron').Rectangle} */
     get dpsWindowPosition() {
         return this.#data.dpsWindowPosition;
@@ -540,6 +524,15 @@ class UserPreferencesStore extends Store {
         this.storeDataFile( this.#data );
     }
 
+    /** @type {DpsMeterSettings} */
+    get dpsMeterSettings() {
+        return this.#data.dpsMeterSettings;
+    }
+    set dpsMeterSettings( val ) {
+        this.#data.dpsMeterSettings = val;
+        this.storeDataFile( this.#data );
+    }
+
     /** @type {(fctStyles: FctStylesModel) => void[]} */
     onFctStyleChanges = [];
 
@@ -547,100 +540,18 @@ class UserPreferencesStore extends Store {
         super( {
             // We'll call our data file 'user-preferences'
             configName: 'user-preferences',
-            defaults: { logFile: null, windowBounds: { width: 800, height: 600, x: undefined, y: undefined } }
+            defaults: { logFile: null, windowBounds: { width: 800, height: 600, x: undefined, y: undefined }, version: 1 }
         } );
         // var defaults = { windowBounds: { width: 800, height: 600 } };
         
         this.#data = this.parseDataFile();
 
-        if ( !this.#data.version || this.#data.version < 3 ) {
-            
-            this.#data.fctStyles = new FctStylesModel();
-            
-            this.#data.fctStyles.fctDmgOutStyle = new StyleProperties();
-            this.#data.fctStyles.fctDmgOutStyle.fontSize = 32;
-            this.#data.fctStyles.fctDmgOutStyle.lineHeight = 95;
-            this.#data.fctStyles.fctDmgOutStyle.fontWeight = 700;
-            this.#data.fctStyles.fctDmgOutStyle.glowSize = 10;
-
-            this.#data.fctStyles.fctDmgInStyle = new StyleProperties();
-            this.#data.fctStyles.fctDmgInStyle.fontSize = 32;
-            this.#data.fctStyles.fctDmgInStyle.lineHeight = 95;
-            this.#data.fctStyles.fctDmgInStyle.fontWeight = 700;
-            this.#data.fctStyles.fctDmgInStyle.fontColor = '#b71c1c';
-            this.#data.fctStyles.fctDmgInStyle.glowSize = 10;
-
-            this.#data.fctStyles.fctSpellDmgOutStyle = new StyleProperties();
-            this.#data.fctStyles.fctSpellDmgOutStyle.fontSize = 32;
-            this.#data.fctStyles.fctSpellDmgOutStyle.lineHeight = 95;
-            this.#data.fctStyles.fctSpellDmgOutStyle.fontWeight = 700;
-            this.#data.fctStyles.fctSpellDmgOutStyle.glowSize = 10;
-
-            this.#data.fctStyles.fctSpellDmgInStyle = new StyleProperties();
-            this.#data.fctStyles.fctSpellDmgInStyle.fontSize = 32;
-            this.#data.fctStyles.fctSpellDmgInStyle.lineHeight = 95;
-            this.#data.fctStyles.fctSpellDmgInStyle.fontWeight = 700;
-            this.#data.fctStyles.fctSpellDmgInStyle.fontColor = '#b71c1c';
-            this.#data.fctStyles.fctSpellDmgInStyle.glowSize = 10;
-
-            this.#data.fctStyles.fctHealingOutStyle = new StyleProperties();
-            this.#data.fctStyles.fctHealingOutStyle.fontSize = 32;
-            this.#data.fctStyles.fctHealingOutStyle.lineHeight = 95;
-            this.#data.fctStyles.fctHealingOutStyle.fontWeight = 700;
-            this.#data.fctStyles.fctHealingOutStyle.fontColor = '#42a5f5';
-            this.#data.fctStyles.fctHealingOutStyle.glowSize = 10;
-
-            this.#data.fctStyles.fctHealingInStyle = new StyleProperties();
-            this.#data.fctStyles.fctHealingInStyle.fontSize = 32;
-            this.#data.fctStyles.fctHealingInStyle.lineHeight = 95;
-            this.#data.fctStyles.fctHealingInStyle.fontWeight = 700;
-            this.#data.fctStyles.fctHealingInStyle.fontColor = '#42a5f5';
-            this.#data.fctStyles.fctHealingInStyle.glowSize = 10;
-
-            this.#data.fctStyles.fctSkillStyle = new StyleProperties();
-            this.#data.fctStyles.fctSkillStyle.fontSize = 12;
-            this.#data.fctStyles.fctSkillStyle.fontWeight = 400;
-            this.#data.fctStyles.fctSkillStyle.fontColor = '#005aff';
-
-            this.#data.version = 3;
-            this.storeDataFile( this.#data );
-
-        }
-        if ( !this.#data.version || this.#data.version < 4 ) {
-            
-            // QuickSharing should be enabled by default, so we use database
-            // upgrade to set that state.
-            this.#data.enableQuickShareImports = true;
-            this.#data.version = 4;
-            this.storeDataFile( this.#data );
-
-        }
-        if ( !this.#data.version || this.#data.version < 5 ) {
-            
-            // Enable the glow on startup.
-            this.#data.glowOnStartup = true;
-            this.#data.version = 5;
-            this.storeDataFile( this.#data );
-
-        }
-        if ( !this.#data.version || this.#data.version < 6 ) {
-            
-            // Set the master volume to 100%.
-            this.#data.masterVolume = 100;
-            this.#data.version = 6;
-            this.storeDataFile( this.#data );
-
-        }
-        if ( !this.#data.version || this.#data.version < 7 ) {
-            
-            // Set the master volume to 100%.
-            this.#data.quickShareAuthorsList = [];
-            this.#data.quickShareAuthorsListType = QuickShareAuthorListTypes.Disabled;
-            this.#data.version = 7;
-            this.storeDataFile( this.#data );
-
-        }
-        
+        app.on( 'ready', () => {
+            migrateUserPreferencesData( this.#data, this.configName, async ( data ) => {
+                this.#data = data;
+                await this.storeDataFileAsync( this.#data );
+            } );
+        } );
     }
 
 
@@ -830,6 +741,7 @@ class UserPreferencesStore extends Store {
                     keySubscribers[ arg.key ] = keySubscribers[ arg.key ] ? keySubscribers[ arg.key ] : [];
                     keySubscribers[ arg.key ].push( event.sender );
                 }
+                arg.key === 'dpsMeterSettings' && console.log( '!!!! dpsMeterSettings', this[ arg.key ] );
                 return this[ arg.key ];
             } );
 
