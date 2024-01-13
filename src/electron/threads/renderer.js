@@ -471,6 +471,8 @@ function updateDpsWindowSettings() {
     if ( dpsWindow ) {
         let showDpsWindow = dpsMeterSettings.show;
 
+        showDpsWindow = dpsMeterSettings.showOnlyInCombat ? dpsItems?.length > 0 : showDpsWindow;
+
         if ( !dpsMeterSettings.keepOnScreen && showDpsWindow ) {
 
             if ( activeWinInfo?.ownerName === 'Windows Explorer' && ( activeWinInfo?.title === '' || activeWinInfo?.title === 'Task Switching' ) ) {
@@ -614,6 +616,7 @@ function renderDpsItems() {
 
     }
 
+    updateDpsWindowSettings();
 }
 
 
