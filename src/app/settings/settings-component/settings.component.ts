@@ -83,12 +83,12 @@ export class SettingsComponent implements OnInit {
         this.updateSetting( SettingsKeys.dpsMeterSettings, this._dpsMeterSettings, 500 );
     }
 
-    public get dpsKeepOnScreen() : boolean {
-        return this._dpsMeterSettings.keepOnScreen;
+    public get dpsOnlyShowWhenFocused() : boolean {
+        return !this._dpsMeterSettings.keepOnScreen;
     }
-    public set dpsKeepOnScreen(v : boolean) {
-        this._dpsMeterSettings.keepOnScreen = v;
-        this.updateSetting( SettingsKeys.dpsMeterSettings, this._dpsMeterSettings, 500 );
+    public set dpsOnlyShowWhenFocused(v : boolean) {
+        this._dpsMeterSettings.keepOnScreen = !v;
+        this.updateSetting( SettingsKeys.dpsMeterSettings, this._dpsMeterSettings, 0 );
     }
 
     // TODO: This is going to take some effort on the animation side of things, mixing with mouseenter/mouseleave events.
