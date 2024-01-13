@@ -1,6 +1,6 @@
 {
   "name": "electron-angular-eq-parse",
-  "version": "0.1.54",
+  "version": "0.1.55",
   "main": "main.js",
   "description": "An EverQuest Notification AGent",
   "author": {
@@ -33,6 +33,7 @@
     "@angular/router": "^14.1.1",
     "@electron/remote": "^2.0.9",
     "@types/lodash-es": "^4.17.4",
+    "active-win": "^8.1.1",
     "adm-zip": "^0.5.10",
     "archiver": "^5.3.0",
     "chokidar": "^3.4.0",
@@ -87,7 +88,9 @@
     "productName": "EQ Nag",
     "appId": "scripter.eqNotificationAgent",
     "win": {
-      "signingHashAlgorithms": ["sha256"],
+      "signingHashAlgorithms": [
+        "sha256"
+      ],
       "sign": "./sign.js",
       "target": [
         "nsis",
