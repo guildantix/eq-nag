@@ -542,19 +542,21 @@ function renderDpsItems() {
 
     for ( let i = 0; i < dpsItems.length; i++ ) {
         const dpsItem = dpsItems[ i ];
-        const damageDone = dpsItem.playerDps.damage + dpsItem.playerDps.pets.reduce( ( a, b ) => a + b.damage, 0 );
-        const dpsDone = dpsItem.playerDps.dps + dpsItem.playerDps.pets.reduce( ( a, b ) => a + b.dps, 0 );
+        const damageDone = dpsItem.playerDps.damage;
+        const petDamageDone = dpsItem.playerDps.pets.reduce( ( a, b ) => a + b.damage, 0 );
+        const dpsDone = dpsItem.playerDps.dps;
+        const petDpsDone = dpsItem.playerDps.pets.reduce( ( a, b ) => a + b.dps, 0 );
         const classAbbr = getEverQuestClassAbbreviation( dpsItem.playerDps.class );
         const dpsSec = dpsItem.playerDps.start ? DateUtilities.timeSince( dpsItem.playerDps.start, dpsItem.playerDps.end ?? new Date() ).totalSeconds : 0;
-        const pctDone = totalDamage > 0 ? Math.round( damageDone / totalDamage * 100 ) : 0;
+        const pctDone = totalDamage > 0 ? Math.round( ( damageDone + petDamageDone ) / totalDamage * 100 ) : 0;
 
         // Create a new DPS item dom.
         let model = {
             iconImage: `${imagesPath}/${getEverQuestClassIcon( classAbbr )}`,
-            label: `${dpsItem.playerDps.name}`,
-            value: `${NumberUtilities.toShorthandString( damageDone )} (${NumberUtilities.toShorthandString( dpsDone )}, ${pctDone}%)`,
-            damage: NumberUtilities.toShorthandString( damageDone ),
-            dps: NumberUtilities.toShorthandString( dpsDone ),
+            label: petDamageDone > 0 ? `${dpsItem.playerDps.name} + pet(s)` : `${dpsItem.playerDps.name}`,
+            value: `${NumberUtilities.toShorthandString( damageDone + petDamageDone )} (${NumberUtilities.toShorthandString( dpsDone + petDpsDone )}, ${pctDone}%)`,
+            damage: NumberUtilities.toShorthandString( damageDone + petDamageDone ),
+            dps: NumberUtilities.toShorthandString( dpsDone + petDpsDone ),
             sec: dpsSec > 0 ? `${dpsSec}s` : '-',
         };
 
@@ -568,7 +570,7 @@ function renderDpsItems() {
             let colorCode = darkenColor( getEverQuestClassColor( classAbbr ), 0.667 );
         
             bar.style.backgroundColor = colorCode;
-            bar.style.width = `${Math.round( damageDone / topDamage * 100 )}%`;
+            bar.style.width = `${pctDone}%`;
 
             let topBorder = bar.querySelector( '.border.top' );
             let bottomBorder = bar.querySelector( '.border.bottom' );
@@ -604,7 +606,7 @@ function renderDpsItems() {
             iconImg != null && ( iconImg.src = model.iconImage );
 
             let bar = dpsItem.dom.querySelector( '.determinate' );
-            bar.style.width = `${Math.round( damageDone / topDamage * 100 )}%`;
+            bar.style.width = `${pctDone}%`;
 
             dpsItem.dom.parentNode.append( dpsItem.dom );
             
