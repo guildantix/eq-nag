@@ -22,6 +22,7 @@ import { TriggerReviewsComponent } from './gina-import-window/trigger-reviews/tr
 import { CoreModule } from '../core/core.module';
 import { LogSimulatorComponent } from './log-simulator/log-simulator.component';
 import { EasyWindowComponent } from './easy-window/easy-window.component';
+import { SettingsModule } from '../settings/settings.module';
 
 @NgModule({
     imports: [
@@ -37,6 +38,7 @@ import { EasyWindowComponent } from './easy-window/easy-window.component';
         EditorsModule,
         WebComponentsModule,
         HttpClientModule,
+        SettingsModule,
         MarkdownModule.forRoot(),
     ],
     exports: [
