@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, Input, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, ElementRef, Input, OnInit, ViewChild } from '@angular/core';
 import { DialogService } from 'src/app/dialogs/dialog.service';
 import { IpcService } from 'src/app/ipc.service';
 import { MatTable } from '@angular/material/table';
@@ -160,6 +160,7 @@ export class SettingsComponent implements OnInit {
     private overlays: OverlayWindowModel[] = [];
 
     @Input() public characterList: CharactersListComponent;
+    @ViewChild( 'combatStatisticsGroup', { static: true } ) public combatStatisticsGroup: ElementRef<HTMLFieldSetElement>;
 
     constructor(
         private readonly ipcService: IpcService,
