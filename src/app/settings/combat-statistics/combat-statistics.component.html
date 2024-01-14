@@ -1,0 +1,43 @@
+<mat-checkbox [(ngModel)]="dpsShow" name="dpsShow">Enable Combat Statistics</mat-checkbox>
+
+<div class="fifty-grid">
+    <div>
+        <h2 class="sub-header full-width">Encounter Settings</h2>
+
+        <div class="formless-hint full-width">
+            <div class="formless-input" style="height: 70px; align-items: center;">
+                <span>Encounter Reset Time</span>
+                <span style="flex: 1 1 auto;"></span>
+                <app-duration [(ngModel)]="dpsEncounterResetTimeSec" name="dpsEncounterResetTimeSec" [inline]="true"></app-duration>
+            </div>
+            <mat-hint>The amount of time to wait before resetting an encounter.</mat-hint>
+        </div>
+        
+        <div class="formless-hint full-width">
+            <div class="formless-input" style="height: 70px; align-items: center;">
+                <span>Encounter Inactive Time</span>
+                <span style="flex: 1 1 auto;"></span>
+                <app-duration [(ngModel)]="dpsEncounterInactiveDelaySec" name="dpsEncounterInactiveDelaySec" [inline]="true"></app-duration>
+            </div>
+            <mat-hint>The amount of time for an encounter to become inactive, pausing further statistics until fight resumes.</mat-hint>
+        </div>
+
+        <div class="formless-hint full-width">
+            <div class="formless-input" style="height: 70px; align-items: center;">
+                <span>Player Inactive Time</span>
+                <span style="flex: 1 1 auto;"></span>
+                <app-duration [(ngModel)]="dpsPlayerInactiveDelaySec" name="dpsPlayerInactiveDelaySec" [inline]="true"></app-duration>
+            </div>
+            <mat-hint>The amount of time to wait before pausing a player's DPS calculation.</mat-hint>
+        </div>
+
+    </div>
+    <div>
+        <h2 class="sub-header full-width">Combat Statistics Window Settings</h2>
+
+        <mat-checkbox [(ngModel)]="dpsOnlyShowWhenFocused" name="dpsOnlyShowWhenFocused">Only show when Nag or EverQuest have focus.</mat-checkbox>
+        
+        <mat-checkbox [(ngModel)]="dpsShowOnlyInCombat" name="dpsShowOnlyInCombat">Only show when there is an encounter.</mat-checkbox>
+        
+    </div>
+</div>

@@ -12,6 +12,7 @@ import { FormInputModule } from '../form-inputs/form-inputs.module';
 import { MaterialModule } from '../material.module';
 import { WebComponentsModule } from '../web-components/web-components.module';
 import { NgxMatTimepickerModule } from 'ngx-mat-timepicker';
+import { CombatStatisticsComponent } from './combat-statistics/combat-statistics.component';
 
 @NgModule({
     imports: [
@@ -30,9 +31,11 @@ import { NgxMatTimepickerModule } from 'ngx-mat-timepicker';
         NgxMatTimepickerModule,
     ],
     declarations: [
+        CombatStatisticsComponent,
         SettingsComponent,
     ],
     exports: [
+        CombatStatisticsComponent,
         SettingsComponent,
     ],
     providers: [],
