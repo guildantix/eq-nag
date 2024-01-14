@@ -255,7 +255,7 @@ let myCombatParser = undefined;
 
 const sendDpsToRenderer = () => {
     // This is currently a really simple version of DPS tracking.  What we need to do is capture the start/end of each players combat and then calculate the DPS based on that.  In addition to what we're doing now, which is their immediate DPS not encounter DPS.
-    let encounterDps = myCombatParser?.getEncounterDps() ?? [];
+    let encounterDps = myCombatParser?.getEncounterOutgoingDps() ?? [];
     ipcRenderer.send( 'renderer:encounter-dps', { character: characterName, encounterDps: encounterDps } );
 };
 

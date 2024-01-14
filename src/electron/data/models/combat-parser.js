@@ -76,6 +76,8 @@ class PlayerDps {
     healing = 0;
     /** @type {PetDps[]} */
     pets = [];
+    /** @type {number} */
+    time;
     /** @type {Date | undefined} */
     start = undefined;
     /** @type {Date | undefined} */
@@ -87,10 +89,10 @@ class PlayerEncounterStats {
     name;
     /** @type {string} */
     class;
+    /** @type {PlayerDps[]} */
+    playerDpsOutgoing = [];
     /** @type {PlayerDps} */
-    playerDps = new PlayerDps();
-    /** @type {PlayerDps} */
-    playerDpsRec = new PlayerDps();
+    playerDpsIncoming = new PlayerDps();
     /** @type {Date} */
     encounterStart;
     /** @type {Date} */

@@ -9,13 +9,28 @@ const { ipcRenderer } = require( 'electron' );
 const { VerifiedPlayersDb } = require( '../data/models/verified-players-db' );
 const { DateUtilities } = require( './dates' );
 const { DeathRecapEncounterMob, DeathRecapRaidStats, DeathRecapEncounter, DeathRecapLog, DeathRecapDamageSource, DeathRecapModel } = require( '../data/models/death-recap' );
-const { AttackModifiers, LogRecord, avoidTypeMap, attackTypeMap, PlayerInfo, PlayerDps, EncounterStats, PlayerEncounterStats, PetDps, ServerCombatModel } = require( '../data/models/combat-parser' );
+const {
+    AttackModifiers,
+    LogRecord,
+    avoidTypeMap,
+    attackTypeMap,
+    PlayerInfo,
+    PlayerDps,
+    EncounterStats,
+    PlayerEncounterStats,
+    PetDps,
+    ServerCombatModel,
+    DpsMeterSettings,
+} = require( '../data/models/combat-parser' );
 
 /** @type {string} */
 let characterName = 'You';
 
 /** @type {number} */
 let encounterResetMs = 20 * 1000;
+
+/** @type {DpsMeterSettings} */
+let dpsMeterSettings = new DpsMeterSettings();
 
 
 
@@ -221,6 +236,15 @@ class CombatParser {
         console.log( 'initiating combat parser for', characterName, 'on server', serverName );
         this._serverName = serverName;
 
+        ipcRenderer.on( 'settings:get:dpsMeterSettings:generic',
+        /**
+         * 
+         * @param {Electron.IpcRendererEvent} event The event args
+         * @param {boolean} data True if enabled.
+         */
+        ( event, data ) => {
+            dpsMeterSettings = data;
+        } );
 
         ipcRenderer.on( 'settings:get:dpsEncounterResetTimeMs:generic',
             /**
@@ -269,6 +293,12 @@ class CombatParser {
                         this._playerPets[ owner ].push( pet );
                     }
                 }
+            } );
+        
+        ipcRenderer
+            .invoke( 'settings:get', { key: 'dpsMeterSettings', subscribe: true } )
+            .then( data => {
+                dpsMeterSettings = data;
             } );
         
         if ( serverName ) {
@@ -348,18 +378,59 @@ class CombatParser {
      * 
      * @returns {PlayerDps[]} The list of player DPS.
      */
-    getEncounterDps() {
+    getEncounterOutgoingDps() {
         /** @type {PlayerDps[]} */
         let output = [];
 
         for ( let i = 0; i < this._verifiedPlayers.length; i++ ) {
             let playerEvents = this._encounterStats?.playerEvents[ this._verifiedPlayers[ i ] ];
             if ( playerEvents ) {
-                
-                playerEvents.playerDps.start = playerEvents.encounterStart;
-                playerEvents.playerDps.end = playerEvents.lastEncounterEvent;
+                let playerDps = new PlayerDps();
 
-                output.push( playerEvents.playerDps );
+                playerDps.name = playerEvents.name;
+                playerDps.class = playerEvents.class;
+                playerDps.dps = 0;
+                playerDps.hps = 0;
+                playerDps.damage = 0;
+                playerDps.healing = 0;
+                playerDps.time = 0;
+                playerDps.pets = [];
+
+                for ( let j = 0; j < playerEvents.playerDpsOutgoing.length; j++ ) {
+                    const event = playerEvents.playerDpsOutgoing[ j ];
+                    playerDps.damage += event.damage;
+                    playerDps.healing += event.healing;
+                    playerDps.time += event.time;
+
+                    for ( let k = 0; k < event.pets.length; k++ ) {
+                        const petDps = event.pets[ k ];
+                        let pet = playerDps.pets.find( f => f.name === petDps.name );
+                        if ( !pet ) {
+                            pet = new PetDps();
+                            pet.name = petDps.name;
+                            pet.class = petDps.class;
+                            pet.damage = 0;
+                            pet.healing = 0;
+                            pet.time = 0;
+                            playerDps.pets.push( pet );
+                        }
+
+                        pet.damage += petDps.damage;
+                        pet.healing += petDps.healing;
+
+                    }
+                }
+
+                // Calculate the DPS and HPS.
+                playerDps.dps = playerDps.damage / ( playerDps.time > 0 ? playerDps.time : 1 );
+                playerDps.hps = playerDps.healing / ( playerDps.time > 0 ? playerDps.time : 1 );
+
+                playerDps.pets.forEach( f => {
+                    f.dps = f.damage / ( playerDps.time > 0 ? playerDps.time : 1 );
+                    f.hps = f.healing / ( playerDps.time > 0 ? playerDps.time : 1 );
+                } );
+
+                output.push( playerDps );
             }
         }
 
@@ -1738,11 +1809,6 @@ class CombatParser {
         dpsRec.damage += logRecord.damage ?? 0;
         dpsRec.healing += logRecord.heal ?? 0;
 
-        if ( duration > 0 ) {
-            dpsRec.dps = Math.round( dpsRec.damage / duration );
-            dpsRec.hps = Math.round( dpsRec.healing / duration );
-        }
-
     }
 
 
@@ -1768,16 +1834,109 @@ class CombatParser {
             source[ name ].name = name;
             source[ name ].class = playerInfo?.className;
             source[ name ].encounterStart = timestamp;
-            source[ name ].playerDps.name = name;
-            source[ name ].playerDps.class = playerInfo?.className;
-            source[ name ].playerDps.pets = [];
-            source[ name ].playerDpsRec.name = name;
-            source[ name ].playerDpsRec.pets = [];
 
         }
         source[ name ].lastEncounterEvent = timestamp;
 
+
+
         return source[ name ];
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Finds or creates a player dps stat block.
+     * 
+     * @returns {PlayerDps} Returns the player dps stat block.
+     * 
+     * @param {PlayerDps[]} playerDpsRecs The player's stat blocks.
+     * @param {string} name The name of the player.
+     * @param {string} className The class of the player.
+     * @param {Date} timestamp The timestamp for the latest event.
+     */
+    _getOrCreatePlayerDpsStats( playerDpsRecs, name, className, timestamp ) {
+        /** @type {PlayerDps} */
+        let statBlock = undefined;
+
+        if ( playerDpsRecs?.length > 0 ) {
+            let lastDps = playerDpsRecs[ playerDpsRecs.length - 1 ];
+            let delay = DateUtilities.timeSince( lastDps.end, timestamp ).totalMilliseconds;
+
+            if ( delay > dpsMeterSettings.playerInactiveDelayMs ) {
+                statBlock = new PlayerDps();
+                statBlock.start = timestamp;
+                statBlock.name = name;
+                statBlock.class = className;
+                statBlock.pets = [];
+                playerDpsRecs.push( statBlock );
+            } else {
+                statBlock = lastDps;
+            }
+        } else {
+            statBlock = new PlayerDps();
+            statBlock.start = timestamp;
+            statBlock.name = name;
+            statBlock.class = className;
+            statBlock.pets = [];
+            playerDpsRecs.push( statBlock );
+        }
+
+        statBlock.end = timestamp;
+        statBlock.time = DateUtilities.timeSince( statBlock.start, statBlock.end ).totalSeconds;
+        statBlock.time = statBlock.time > 0 ? statBlock.time : 1;
+
+        return statBlock;
+    }
+
+
+
+
+
+
+
+
+
+    
+    /**
+     * Finds or creates a pet dps stat block.
+     * 
+     * @returns {PetDps} Returns the pet dps stat block.
+     * 
+     * @param {PetDps[]} petDpsRecs The pet's encounter stat blocks.
+     * @param {string} name The name of the pet.
+     * @param {Date} timestamp The timestamp for the latest event.
+     */
+    _getOrCreatePetDpsStats( petDpsRecs, name, timestamp ) {
+        /** @type {PetDps} */
+        let statBlock = undefined;
+
+        if ( petDpsRecs?.length > 0 ) {
+            statBlock = petDpsRecs.find( f => f.name === name );
+
+            if ( statBlock == null ) {
+                statBlock = new PetDps();
+                statBlock.name = name;
+                statBlock.damage = 0;
+                statBlock.healing = 0;
+                petDpsRecs.push( statBlock );
+            }
+        } else {
+            statBlock = new PetDps();
+            statBlock.name = name;
+            statBlock.damage = 0;
+            statBlock.healing = 0;
+            petDpsRecs.push( statBlock );
+        }
+
+        return statBlock;
     }
     
 
@@ -1827,48 +1986,37 @@ class CombatParser {
                 if ( playerTarget ) {
                     // If the player is the target, then we need to add to the player's dps received record.
                     let playerEvents = this._getOrCreatePlayerEncounterStats( this._encounterStats.playerEvents, logRecord.target, timestamp );
-                    let playerDuration = DateUtilities.timeSince( playerEvents.encounterStart, timestamp ).totalSeconds;
-                    this._calculateDpsStats( logRecord, playerEvents.playerDpsRec, playerDuration );
+                    let playerIncoming = this._getOrCreatePlayerDpsStats( playerEvents.playerDpsIncoming, playerEvents.name, playerEvents.class, timestamp );
+                    this._calculateDpsStats( logRecord, playerIncoming, playerIncoming.time );
 
                 } else if ( petTarget ) {
                     // If a player's pet is the target, then we need to grab the pet's owner, and add the dps received to the owner's pet list for dps received.
                     let owner = this._petOwners[ logRecord.target ];
+                    // TODO: Deal with pets that don't have owners.
                     let playerEvents = this._getOrCreatePlayerEncounterStats( this._encounterStats.playerEvents, owner, timestamp );
+                    let playerIncoming = this._getOrCreatePlayerDpsStats( playerEvents.playerDpsIncoming, playerEvents.name, playerEvents.class, timestamp );
+                    let petDpsRec = this._getOrCreatePetDpsStats( playerIncoming.pets, logRecord.target, timestamp );
 
-                    let petDpsRec = playerEvents.playerDpsRec.pets.find( f => f.name === logRecord.target );
-                    if ( petDpsRec == null ) {
-                        petDpsRec = new PetDps();
-                        petDpsRec.name = logRecord.target;
-                        playerEvents.playerDpsRec.pets.push( petDpsRec );
-                    }
-
-                    let playerDuration = DateUtilities.timeSince( playerEvents.encounterStart, timestamp ).totalSeconds;
-                    this._calculateDpsStats( logRecord, petDpsRec, playerDuration );
+                    this._calculateDpsStats( logRecord, petDpsRec, playerIncoming.time );
 
                 }
 
                 if ( playerActor ) {
                     // If the player is the actor, then we need to add to the player's dps record.
                     let playerEvents = this._getOrCreatePlayerEncounterStats( this._encounterStats.playerEvents, logRecord.actor, timestamp );
-                    let playerDuration = DateUtilities.timeSince( playerEvents.encounterStart, timestamp ).totalSeconds;
-                    this._calculateDpsStats( logRecord, playerEvents.playerDps, playerDuration );
+                    let playerOutgoing = this._getOrCreatePlayerDpsStats( playerEvents.playerDpsOutgoing, playerEvents.name, playerEvents.class, timestamp );
+                    
+                    this._calculateDpsStats( logRecord, playerOutgoing, playerOutgoing.time );
                     
                 } else if ( petActor ) {
                     // If a player's pet is the actor, then we need to grab the pet's owner, and add the dps to the owner's pet list.
                     let owner = this._petOwners[ logRecord.actor ];
+                    // TODO: Deal with pets that don't have owners.
                     let playerEvents = this._getOrCreatePlayerEncounterStats( this._encounterStats.playerEvents, owner, timestamp );
+                    let playerOutgoing = this._getOrCreatePlayerDpsStats( playerEvents.playerDpsOutgoing, playerEvents.name, playerEvents.class, timestamp );
+                    let petDps = this._getOrCreatePetDpsStats( playerOutgoing.pets, logRecord.actor, timestamp );
 
-                    let petDps = playerEvents.playerDps.pets.find( f => f.name === logRecord.actor );
-                    if ( petDps == null ) {
-                        petDps = new PetDps();
-                        petDps.name = logRecord.actor;
-                        petDps.healing = 0;
-                        petDps.damage = 0;
-                        playerEvents.playerDps.pets.push( petDps );
-                    }
-
-                    let playerDuration = DateUtilities.timeSince( playerEvents.encounterStart, timestamp ).totalSeconds;
-                    this._calculateDpsStats( logRecord, petDps, playerDuration );
+                    this._calculateDpsStats( logRecord, petDps, playerOutgoing.time );
                     
                 }
 

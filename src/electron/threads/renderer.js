@@ -547,7 +547,7 @@ function renderDpsItems() {
         const dpsDone = dpsItem.playerDps.dps;
         const petDpsDone = dpsItem.playerDps.pets.reduce( ( a, b ) => a + b.dps, 0 );
         const classAbbr = getEverQuestClassAbbreviation( dpsItem.playerDps.class );
-        const dpsSec = dpsItem.playerDps.start ? DateUtilities.timeSince( dpsItem.playerDps.start, dpsItem.playerDps.end ?? new Date() ).totalSeconds : 0;
+        const dpsSec = dpsItem.playerDps.time;
         const pctDone = totalDamage > 0 ? Math.round( ( damageDone + petDamageDone ) / totalDamage * 100 ) : 0;
 
         // Create a new DPS item dom.
