@@ -726,7 +726,14 @@ class UserPreferencesStore extends Store {
                 sendTick();
                 this.emitChanges();
                 if ( keySubscribers[ arg.key ]?.length > 0 ) {
-                    keySubscribers[ arg.key ].forEach( s => s.send( `settings:get:${arg.key}:generic`, this[ arg.key ] ) );
+                    for ( let i = keySubscribers[ arg.key ].length - 1; i >= 0; i-- ) {
+                        const subscriber = keySubscribers[ arg.key ][ i ];
+                        if ( subscriber && !subscriber.isDestroyed() ) {
+                            subscriber.send( `settings:get:${arg.key}:generic`, this[ arg.key ] );
+                        } else {
+                            keySubscribers[ arg.key ].splice( i, 1 );
+                        }
+                    }
                 }
             } );
         
