@@ -374,6 +374,7 @@ var quitCalled = false;
 ipcMain.on( 'app:quit', ( event, forceQuit ) => {
     if ( forceQuit === true || !logBootstrap.isBackupProcessing ) {
         quitCalled = true;
+        winManager.unload();
         app.quit();
     } else {
         event.sender.send( 'app:quit:failure', {
