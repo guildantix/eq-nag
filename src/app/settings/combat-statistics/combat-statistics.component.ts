@@ -104,7 +104,9 @@ export class CombatStatisticsComponent implements OnInit {
         private readonly changeDetectorRef: ChangeDetectorRef,
     ) { }
 
-    ngOnInit() { }
+    ngOnInit() {
+        this.loadSettings();
+    }
 
 
 
@@ -114,12 +116,12 @@ export class CombatStatisticsComponent implements OnInit {
 
 
 
-    
+
     /**
      * Load settings from the main process.
      */
     loadSettings() {
-        this.ipcService.getSetting<DpsMeterSettings>( SettingsKeys.dpsMeterSettings ).subscribe( f => {
+        this.ipcService.watchSetting<DpsMeterSettings>( SettingsKeys.dpsMeterSettings ).subscribe( f => {
             this._dpsMeterSettings = f;
             this._dpsPlayerDelayRestoreValue = f.playerInactiveDelayMs / 1000;
         } );

@@ -39,6 +39,8 @@ export class IpcService {
     private _onCombatGroupMigrationRequestObservers: Observer<boolean>[] = [];
     private _settingsObservableCache: Record<string, Observable<any>> = {};
     private _settingsCacheObservers: Record<string, Observer<any>[]> = {};
+    private _watchedSettings: string[] = [];
+    private _settingsWatchObservers: Record<string, Observer<any>[]> = {};
 
     private _ginaConfigCache: GinaConfiguration = null;
 
@@ -605,6 +607,39 @@ export class IpcService {
 
         }
 
+    }
+
+    /**
+     * Returns an observable that continually updates when the specified setting changess.
+     * 
+     * @param key The setting key.
+     */
+    public watchSetting<T>( key: string ): Observable<T> {
+        let obs: Observable<T> = new Observable<T>( ( observer: Observer<T> ) => {
+
+            if ( !this._watchedSettings.includes( key ) ) {
+                this._watchedSettings.push( key );
+
+                window.api.ipc.on( `settings:get:${key}:generic`, ( e, value: T ) => {
+                    this.ngZone.run( () => {
+                        observer.next( value );
+
+                        if ( this._settingsWatchObservers[ key ]?.length > 0 ) {
+                            this._settingsWatchObservers[ key ].forEach( f => {
+                                f.next( value );
+                            } );
+                        }
+                    } );
+                } );
+            } else {
+                this._settingsWatchObservers[ key ].push( observer );
+            }
+
+            window.api.ipc.send( 'settings:get', { key: key, subscribe: true } );
+
+        } );
+
+        return obs;
     }
 
     /**
