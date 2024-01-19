@@ -867,12 +867,15 @@ class WindowManager {
         }
 
         let settingsWindow = new BrowserWindow( {
-            parent: mainWindow,
             modal: false,
             show: false,
             width: 1000,
             height: 800,
             frame: false,
+            skipTaskbar: false,
+            maximizable: true,
+            minimizable: true,
+            resizable: true,
             webPreferences: {
                 nodeIntegration: false,
                 contextIsolation: true,
@@ -1182,6 +1185,13 @@ class WindowManager {
         }
         if ( !this.#renderer?.isDestroyed() ) {
             this.#renderer?.close();
+        }
+        if ( this.settingsWindows ) {
+            Object.keys( this.settingsWindows ).forEach( key => {
+                if ( !this.settingsWindows[ key ]?.isDestroyed() ) {
+                    this.settingsWindows[ key ].close();
+                }
+            } );
         }
         this.#renderer = null;
     }
