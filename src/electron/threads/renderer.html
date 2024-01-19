@@ -571,16 +571,16 @@
         .window.dps-meter .window-title .window-title-col.text {
             padding-left: 1em;
         }
-        .window.dps-meter .window-title .window-title-col.btn {
+        .window.dps-meter .window-title .window-title-col.title-btn {
             width: 1em;
             height: 1em;
             cursor: pointer;
             margin: 0 0.5em 0 0;
         }
-        .window.dps-meter .window-title .window-title-col.btn:hover {
+        .window.dps-meter .window-title .window-title-col.title-btn:hover {
             color: #b8b8b8;
         }
-        .window.dps-meter .window-title .window-title-col.btn:active {
+        .window.dps-meter .window-title .window-title-col.title-btn:active {
             color: #929292;
         }
         .window-content {
@@ -700,6 +700,33 @@
             display: inline;
             background-color: unset;
         }
+        .window-title:hover .window-title-col.mouse-hide {
+            display: none;
+        }
+        .window-title .window-title-col.mouse-show {
+            display: none;
+        }
+        .window-title:hover .window-title-col.mouse-show {
+            display: inline;
+        }
+
+        .window-settings {
+            position: absolute;
+            z-index: 11111;
+            left:0;
+            right:0;
+        }
+        .window-settings-row {
+            display: flex;
+            flex-flow: row nowrap;
+            align-items: center;
+            justify-content: flex-start;
+            padding: 0.25em 0.5em;
+            width: 100%;
+        }
+        .window-settings-row .spacer {
+            flex: 1 1 auto;
+        }
     </style>
     
     <!-- =========================== -->
@@ -710,12 +737,12 @@
             <div class="window-title">
                 <span class="window-title-col text">Damage Done</span>
                 <span class="window-title-col spacer"></span>
-                <span class="window-title-col damage">Damage</span>
-                <span class="window-title-col dps">DPS</span>
-                <span class="window-title-col sec">Time</span>
+                <span class="window-title-col damage mouse-hide">Damage</span>
+                <span class="window-title-col dps mouse-hide">DPS</span>
+                <span class="window-title-col sec mouse-hide">Time</span>
+                <!-- <span class="window-title-col title-btn mouse-show"><i class="fa-solid fa-table-columns"></i></span> -->
+                <span class="window-title-col title-btn mouse-show" onclick="window.api.showSettings('combatStatistics')"><i class="fas fa-gear"></i></span>
                 <span class="window-title-col right-pad"></span>
-                <!-- <span class="window-title-col btn"><i class="fas fa-gear"></i></span> -->
-                <!-- <span class="window-title-col btn"><i class="fas fa-times"></i></span> -->
             </div>
             <div class="window-content dps-items">
                 <!-- <div class="dps-item">

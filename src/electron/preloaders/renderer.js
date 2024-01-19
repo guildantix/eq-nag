@@ -23,4 +23,7 @@ contextBridge.exposeInMainWorld( 'api', {
         const { x, y } = screen.getCursorScreenPoint();
         return { x, y };
     },
+    showSettings: ( name ) => {
+        ipcRenderer.send( 'show-settings', name );
+    }
 } );
