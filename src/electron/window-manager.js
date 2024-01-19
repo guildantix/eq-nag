@@ -33,6 +33,9 @@ class WindowManager {
     /** @type {BrowserWindow} */
     easyWindow;
 
+    /** @type {Record<string, BrowserWindow>} */
+    settingsWindows = {};
+
     /** @type {BrowserWindow} */
     updateNotesWindow;
 
@@ -125,6 +128,16 @@ class WindowManager {
         this.#overlayDatabase.registerOverlayDeleteHandler( overlayId => {
             this.#renderer.webContents.send( 'renderer:overlay:delete', overlayId );
         } );
+
+        ipcMain.on( 'show-settings',
+            /**
+             * 
+             * @param {Electron.IpcMainEvent} event The event args.
+             * @param {string} name The name of the setting to show.
+             */
+            ( event, name ) => {
+                this.openSettingsWindow( name, mainWindowRef.reference );
+            } );
 
         ipcMain.handle( 'scraper:get:eqsr-spell', async ( event, eqsrUrl ) => {
             return await this.scrapeEqsrResource( eqsrUrl, 'spell' );
@@ -836,6 +849,59 @@ class WindowManager {
             deathRecap.webContents.openDevTools( { mode: 'undocked' } );
         }
         
+    }
+
+    openSettingsWindow( name, mainWindow ) {
+        
+        if ( this.settingsWindows[ name ] != null ) {
+            
+            if ( this.settingsWindows[ name ].isMinimized() ) {
+                this.settingsWindows[ name ].restore();
+            }
+
+            this.settingsWindows[ name ].setAlwaysOnTop( true );
+            this.settingsWindows[ name ].focus();
+            this.settingsWindows[ name ].setAlwaysOnTop( false );
+                
+            return;
+        }
+
+        let settingsWindow = new BrowserWindow( {
+            parent: mainWindow,
+            modal: false,
+            show: false,
+            width: 1000,
+            height: 800,
+            frame: false,
+            webPreferences: {
+                nodeIntegration: false,
+                contextIsolation: true,
+                devTools: app.isDev(),
+                sandbox: false,
+                preload: path.join( __dirname, '/preloaders/main.js' ),
+            }
+        } );
+
+        this.settingsWindows[ name ] = settingsWindow;
+
+        require( "@electron/remote/main" ).enable( settingsWindow.webContents );
+
+        if ( app.isDev() ) {
+            settingsWindow.webContents.openDevTools( { mode: 'undocked' } );
+        }
+        
+        let url = `file://${this.#dirname}/dist/index.html#/settings/${name}`;
+
+        settingsWindow.loadURL( url );
+        settingsWindow.once( "ready-to-show", () => {
+            settingsWindow.show();
+        } );
+        settingsWindow.on( 'closed', () => {
+            this.settingsWindows[ name ] = null;
+        } );
+        settingsWindow.setBackgroundColor( '#1a1a1a' );
+        this.configureRendererMouseBlockingOnMoveResize( settingsWindow );
+
     }
 
 
