@@ -1,0 +1,25 @@
+<div class="modal">
+    <header>
+        <mat-toolbar class="titlebar" color="default">
+            <span>{{title}}</span>
+            <span class="spacer"></span>
+            <button mat-icon-button aria-label="Exit Easy Mode" (click)="closeModal()">
+                <mat-icon>clear</mat-icon>
+            </button>
+        </mat-toolbar>
+    </header>
+    <section>
+        <div class="tab-content">
+            
+            <fieldset #combatStatisticsGroup *ngIf="type === 'combatStatistics'">
+                <legend><span class="title">Combat Statistics</span></legend>
+                
+                <combat-statistics></combat-statistics>
+            </fieldset>
+
+        </div>
+    </section>
+    <footer>
+        <button mat-button color="warn" (click)="closeModal()">Close</button>
+    </footer>
+</div>

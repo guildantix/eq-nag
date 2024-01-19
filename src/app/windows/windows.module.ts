@@ -23,6 +23,7 @@ import { CoreModule } from '../core/core.module';
 import { LogSimulatorComponent } from './log-simulator/log-simulator.component';
 import { EasyWindowComponent } from './easy-window/easy-window.component';
 import { SettingsModule } from '../settings/settings.module';
+import { SettingsWindowComponent } from './settings-window/settings-window.component';
 
 @NgModule({
     imports: [
@@ -56,6 +57,7 @@ import { SettingsModule } from '../settings/settings.module';
         UpdateNotesWindowComponent,
         LogSimulatorComponent,
         EasyWindowComponent,
+        SettingsWindowComponent,
     ],
     providers: [
         TriggerLibraryService
