@@ -253,6 +253,9 @@ const logError = ( err, raw, simulating, padTime, errorDesc, trigger, action ) =
 /** @type {CombatParser | undefined} */
 let myCombatParser = undefined;
 
+/** @type {string[]} */
+let myCombatParserCache = [];
+
 const sendDpsToRenderer = () => {
     // This is currently a really simple version of DPS tracking.  What we need to do is capture the start/end of each players combat and then calculate the DPS based on that.  In addition to what we're doing now, which is their immediate DPS not encounter DPS.
     let encounterDps = myCombatParser?.getEncounterOutgoingDps() ?? [];
@@ -511,39 +514,6 @@ let addSuccessfulTriggerParsedEvent = ( rawLogEntry, triggerId, actionId, parseT
         // Add the entry to the batch.
         successfulParses.push( entry );
     }
-};
-
-
-
-
-
-
-
-
-
-
-/**
- * Adds a failed trigger parse history entry.
- * 
- * @param {string} rawLogEntry The raw log entry.
- * @param {string} triggerId The id of the trigger that was triggered.
- * @param {string} actionId The id of the action that was triggered.
- * @param {'End Early' | 'Trigger Action' | 'Trigger Sequential Action' | 'Trigger Action Loopback' | 'Exclude Target' | 'Trigger Secondary Action' | 'Reset Counter'} parseType The type of parse.
- * @param {string | string[]} renderedPhrase The rendered phrase.
- * @param {string | string[]} unrenderedPhrase The unrendered phrase.
- * @param {PhraseParse | undefined} parsedPhrase The parsed phrase.
- * @param {Record<string, string>} conditionResults The results of the trigger condition checks.
- * @param {number | undefined} deltaTime The time in milliseconds between the sequential phrases.
- */
-let addFailedTriggerParsedEvent = ( rawLogEntry, triggerId, actionId, parseType, renderedPhrase, unrenderedPhrase, parsedPhrase, conditionResults, deltaTime ) => {
-    // let trigger = triggers.find( t => t.triggerId === triggerId );
-
-    // if ( trigger ) {
-    //     let entry = _getParseHistoryEntry( rawLogEntry, LogTypes.info, trigger, actionId, parseType, renderedPhrase, unrenderedPhrase, parsedPhrase, conditionResults, deltaTime );
-        
-    //     // Add the entry to the batch.
-    //     failedParses.push( entry );
-    // }
 };
 
 // Common errors:
@@ -945,45 +915,16 @@ function LogWatcher(character, logPosition) {
             ipcRenderer.send( `log:simulation:${simulationId}:progress`, progress );
 
             for ( let i = 0; i < lineData.length; i++ ) {
+                const lineCount = lineData[ i ].lines.length;
+
+                // TODO: Remove the simulating argument from parse log entries, it's not used any more.
+                lineData[ i ].lines.forEach( line => parseLogEntries( line, false, padTime ) );
                 
-                for ( let j = 0; j < lineData[ i ].lines.length; j++ ) {
-                    
-                    if ( stopSimulation ) {
-                        break;
-                    }
-                    
-                    if ( simulationPaused ) {
-                    
-                        progress.msRemaining = calculateRemainingTime( i );
-                        progress.simulationPaused = true;
-                        ipcRenderer.send( `log:simulation:${simulationId}:progress`, progress );
+                simulationLineIndex += lineCount;
+                progress.lineIndex = simulationLineIndex;
+                progress.completePercent = ( simulationLineIndex / simulationMaxIndex ) * 100;
 
-                        while ( simulationPaused ) {
-                            await ThreadUtilities.sleep( 250 );
-                        }
-
-                        // TODO: Enable pause resume at a specific line.
-                        // TODO: When paused, all timed actions should be paused as well.
-                        let newIndex = 0;
-                        for ( let k = 0; k < lineData.length; k++ ) {
-                            for(let l = 0; l < lineData[ k ].lines.length; l++) {
-                                newIndex += 1;
-
-                                if ( newIndex > simulationLineIndex ) {
-                                    simulationLineIndex = newIndex;
-                                    break;
-                                }
-                            }
-                        }
-                        
-                    }
-
-                    simulationLineIndex += 1;
-                    progress.lineIndex = simulationLineIndex;
-                    progress.completePercent = ( simulationLineIndex / simulationMaxIndex ) * 100;
-
-                    parseLogEntries( lineData[ i ].lines[ j ], false, padTime ); // The simulating argument will not execute most triggers. // TODO: Remove the simulating argument from parse log entries, it's not used any more.
-                }
+                // TODO: When paused, all timed actions should be paused as well.
 
                 if ( stopSimulation ) {
                     break;
@@ -999,8 +940,10 @@ function LogWatcher(character, logPosition) {
                     // the current chunk and the next chunk.  By using async, 
                     // the log watcher will continue to process log entries 
                     // while we wait.
-                    let waitMs = DateUtilities.timeSince( new Date(), new Date( lineData[ i + 1 ].timestamp.getTime() + ( padTime * 1000 ) ) ).totalMilliseconds;
-
+                    // let waitMs = DateUtilities.timeSince( new Date(), new Date( lineData[ i + 1 ].timestamp.getTime() + ( padTime * 1000 ) ) ).totalMilliseconds;
+                    let waitMs = new Date( lineData[ i + 1 ].timestamp.getTime() + ( padTime * 1000 ) ).getTime() - new Date().getTime();
+                    // console.log( 'waitMs', waitMs );
+                    waitMs = waitMs > 0 ? waitMs : 0;
 
                     await ThreadUtilities.sleep( waitMs );
                     
@@ -1653,27 +1596,13 @@ function generateTriggerFns() {
         
                             // If all conditions passed, then parse the phrase.
                             if ( trigger._checkConditions() ) {
-                                for ( let i = 0; i < _phraseParsers?.length; i++ ) {
-                                    let _res = _phraseParsers[ i ]( value );
+                                _phraseParsers.forEach( ( parser, i ) => {
+                                    let _res = parser( value );
                                     if ( _res?.match ) {
                                         onMatch( _res, 0 );
                                         passed = true;
                                     }
-                                }
-                            }
-        
-                            if ( !passed ) {
-                                addFailedTriggerParsedEvent(
-                                    value,
-                                    trigger.triggerId,
-                                    null,
-                                    'Trigger Action',
-                                    Object.keys( _renderedPhrases ).map( k => _renderedPhrases[ k ] ),
-                                    trigger.capturePhrases.map( p => p.phrase ),
-                                    null,
-                                    trigger._conditionResults,
-                                    undefined,
-                                );
+                                } );
                             }
                             
                         } catch ( error ) {
@@ -1726,9 +1655,9 @@ function generateTriggerFns() {
         
                                     let groupKeys = _res.result?.groups ? Object.keys( _res.result.groups ) : [];
                                     if ( groupKeys.length > 0 ) {
-                                        for ( let key of groupKeys ) {
+                                        groupKeys.forEach( key => {
                                             _newSeqMatch.groups[ key ] = _res.result.groups[ key ];
-                                        }
+                                        } );
                                     }
         
                                     _newSeqMatch.hasGroups = groupKeys?.length > 0;
@@ -1754,24 +1683,24 @@ function generateTriggerFns() {
                                     /** @type {number[]} */
                                     let removeSequenceIndices = [];
         
-                                    for ( let i = 0; i < _sequentialMatchs.length; i++ ) {
-                                        if ( _sequentialMatchs[ i ].captureIndex < _phraseParsers?.length ) {
-                                            let _res = _phraseParsers[ _sequentialMatchs[ i ].captureIndex ]( value, _sequentialMatchs[ i ].hasGroups, _sequentialMatchs[ i ].groups );
+                                    _sequentialMatchs.forEach( ( sequentialMatch, i ) => {
+                                        if ( sequentialMatch.captureIndex < _phraseParsers?.length ) {
+                                            let _res = _phraseParsers[ sequentialMatch.captureIndex ]( value, sequentialMatch.hasGroups, sequentialMatch.groups );
                                                 
                                             if ( _res?.match ) {
-                                                _sequentialMatchs[ i ].captureIndex += 1;
+                                                sequentialMatch.captureIndex += 1;
         
-                                                trigger._deltaTime = Date.now() - _sequentialMatchs[ i ].time;
-                                                _sequentialMatchs[ i ].time = Date.now();
+                                                trigger._deltaTime = Date.now() - sequentialMatch.time;
+                                                sequentialMatch.time = Date.now();
                                                     
                                                 let groupKeys = _res.result?.groups ? Object.keys( _res.result.groups ) : [];
                                                 if ( groupKeys.length > 0 ) {
                                                     for ( let key of groupKeys ) {
-                                                        _sequentialMatchs[ i ].groups[ key ] = _res.result.groups[ key ];
+                                                        sequentialMatch.groups[ key ] = _res.result.groups[ key ];
                                                     }
                                                 }
                         
-                                                _sequentialMatchs[ i ].hasGroups = _sequentialMatchs[ i ].hasGroups || groupKeys.length > 0;
+                                                sequentialMatch.hasGroups = sequentialMatch.hasGroups || groupKeys.length > 0;
                         
                                                 onMatch( _res, trigger._deltaTime );
                                                 passed = true;
@@ -1784,7 +1713,7 @@ function generateTriggerFns() {
                                                 }
                                             }
                                         }
-                                    }
+                                    } );
         
                                     // Remove any sequences.
                                     for ( let i = removeSequenceIndices.length - 1; i >= 0; i-- ) {
@@ -1799,20 +1728,6 @@ function generateTriggerFns() {
                                 
                             }
         
-                            if ( !passed ) {
-                                addFailedTriggerParsedEvent(
-                                    value,
-                                    trigger.triggerId,
-                                    null,
-                                    'Trigger Sequential Action',
-                                    Object.keys( _renderedPhrases ).map( k => _renderedPhrases[ k ] ),
-                                    trigger.capturePhrases.map( p => p.phrase ),
-                                    null,
-                                    trigger._conditionResults,
-                                    trigger._deltaTime,
-                                );
-                            }
-                            
                         } catch ( error ) {
                             logParseError(
                                 error, value, null, null,
@@ -1836,18 +1751,6 @@ function generateTriggerFns() {
                 trigger._reset = () => { };
                 trigger._parse = ( value, onMatch ) => {
                     
-                    addFailedTriggerParsedEvent(
-                        value,
-                        trigger.triggerId,
-                        null,
-                        'Trigger Sequential Action',
-                        [],
-                        [],
-                        null,
-                        trigger._conditionResults,
-                        undefined,
-                    );
-    
                 };
             }
 
@@ -1877,6 +1780,7 @@ function generateTriggerFns() {
 function parseLogEntries( raw, simulating, padTime ) {
 
     try {
+        // let startp = performance.now(); //p
         
         simulating = simulating === true ? true : false;
     
@@ -1941,8 +1845,24 @@ function parseLogEntries( raw, simulating, padTime ) {
         else if ( padTime > 0 )
             timestamp = new Date( timestamp.getTime() + ( padTime * 1000 ) );
     
-        // Add to the combat tracker.
-        myCombatParser?.addCombatEvent( raw );
+        // This could be optimized better.
+        if ( myCombatParser?.loaded ) {
+            
+            if ( myCombatParserCache?.length > 0 ) {
+                // Add cached log entries to the combat tracker.
+                myCombatParserCache.forEach( c => myCombatParser.addCombatEvent( c ) );
+                myCombatParserCache = [];
+            }
+
+            // Add to the combat tracker.
+            myCombatParser?.addCombatEvent( raw );
+
+        } else {
+
+            // Add to the combat tracker cache.
+            myCombatParserCache.push( raw );
+
+        }
         
         let log = raw.replace( rgxTimestamp, '' );
         
@@ -2250,6 +2170,11 @@ function parseLogEntries( raw, simulating, padTime ) {
             parsedLogEntries[ t ] = parsedLogEntries[ t ]?.length > 0 ? parsedLogEntries[ t ] : [];
             parsedLogEntries[ t ].push( log );
         }
+
+        // let endp = performance.now(); //p
+        // let p = ( endp - startp ); //p
+
+        // console.log( 'p', p, raw ); //p
 
     } catch ( error ) {
         logError( error, raw, simulating, padTime, ErrorMessages.generalParsingError(), null );
@@ -2581,25 +2506,6 @@ function displayBeneficialTimerComponent( res, timestamp, action, trigger, spell
                     }
                 } );
 
-                if ( !matched ) {
-                    addFailedTriggerParsedEvent(
-                        logEntry,
-                        trigger.triggerId,
-                        action.actionId,
-                        'Trigger Cancel Action',
-                        renderedPhrases,
-                        comp.action.endEarlyPhrases.map( p => p.phrase ),
-                        {
-                            phraseId: null,
-                            result: null,
-                            renderedPhrase: null,
-                            dependencyResult: res.result,
-                        },
-                        trigger._conditionResults,
-                        undefined,
-                    );
-                }
-
                 return matched;
             },
             instanceId: comp.instanceId
@@ -2768,25 +2674,6 @@ function displayDotTimerComponent( res, timestamp, action, deltaTime, trigger ) 
                     }
                 } );
 
-                if ( !matched ) {
-                    addFailedTriggerParsedEvent(
-                        logEntry,
-                        trigger.triggerId,
-                        action.actionId,
-                        'Trigger Cancel Action',
-                        renderedPhrases,
-                        comp.action.endEarlyPhrases.map( p => p.phrase ),
-                        {
-                            phraseId: null,
-                            result: null,
-                            renderedPhrase: null,
-                            dependencyResult: res.result,
-                        },
-                        trigger._conditionResults,
-                        deltaTime,
-                    );
-                }
-
                 return matched;
             },
             instanceId: comp.instanceId
@@ -2830,25 +2717,6 @@ function displayDotTimerComponent( res, timestamp, action, deltaTime, trigger ) 
                             deltaTime );
                     }
                 } );
-
-                if ( !matched ) {
-                    addFailedTriggerParsedEvent(
-                        logEntry,
-                        trigger.triggerId,
-                        action.actionId,
-                        'Trigger Secondary Action',
-                        renderedPhrases,
-                        phrases.map( p => p.phrase ),
-                        {
-                            phraseId: null,
-                            result: null,
-                            renderedPhrase: null,
-                            dependencyResult: res.result,
-                        },
-                        trigger._conditionResults,
-                        deltaTime,
-                    );
-                }
 
                 return matched;
             },
@@ -2913,23 +2781,6 @@ function displayDotTimerComponent( res, timestamp, action, deltaTime, trigger ) 
                         return true;
                     }
                 }
-
-                addFailedTriggerParsedEvent(
-                    logEntry,
-                    trigger.triggerId,
-                    action.actionId,
-                    'Trigger Cancel Action',
-                    renderedWornOffPhrases,
-                    [ wornOffPhrase.phrase ],
-                    {
-                        phraseId: null,
-                        result: null,
-                        renderedPhrase: null,
-                        dependencyResult: res.result,
-                    },
-                    trigger._conditionResults,
-                    deltaTime,
-                );
 
                 return false;
             },
@@ -3113,25 +2964,6 @@ function displayTimerCountdownComponent(res, timestamp, action, deltaTime, trigg
                             return false;
                         }
                     }
-                }
-
-                if ( !matched ) {
-                    addFailedTriggerParsedEvent(
-                        logEntry,
-                        trigger.triggerId,
-                        action.actionId,
-                        'Trigger Cancel Action',
-                        renderedPhrases,
-                        comp.action.endEarlyPhrases.map( p => p.phrase ),
-                        {
-                            phraseId: null,
-                            result: null,
-                            renderedPhrase: null,
-                            dependencyResult: res.result,
-                        },
-                        trigger._conditionResults,
-                        deltaTime,
-                    );
                 }
 
                 return matched;
