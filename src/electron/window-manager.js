@@ -1199,7 +1199,7 @@ class WindowManager {
         if ( this.settingsWindows ) {
             Object.keys( this.settingsWindows ).forEach( key => {
                 if ( !this.settingsWindows[ key ]?.isDestroyed() ) {
-                    this.settingsWindows[ key ].close();
+                    this.settingsWindows[ key ]?.close();
                 }
             } );
         }
