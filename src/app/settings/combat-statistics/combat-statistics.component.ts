@@ -112,6 +112,9 @@ export class CombatStatisticsComponent implements OnInit {
 
     public playerNames: Record<string, string[]> = {};
     public playerPageIndices: Record<string, number> = {};
+    public serverSearchText: Record<string, string> = {};
+    public verifiedPlayersGridData: Record<string, IPlayerGridInfo[]> = {};
+    public playersDataLength: Record<string, number> = {};
 
     private _combatDatabases: ServerCombatModel[] = [];
     public get combatDatabases(): ServerCombatModel[] {
@@ -123,7 +126,9 @@ export class CombatStatisticsComponent implements OnInit {
         for ( const db of v ) {
             this.playerNames[ db.server ] = ( Object.keys( db.verifiedPlayers ) ?? [] ).sort();
             this.playerPageIndices[ db.server ] = 0;
+            this.serverSearchText[ db.server ] = null;
         }
+        this.refreshLists();
     }
 
     constructor(
@@ -238,23 +243,113 @@ export class CombatStatisticsComponent implements OnInit {
         }
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Updates the player page index for the given server.
+     * 
+     * @param server The server to page.
+     * @param event The page event args.
+     */
     public handlePlayerPageEvent( server: string, event: PageEvent ): void {
-        // console.log( 'testing', server, event );
         this.playerPageIndices[ server ] = event.pageIndex;
+        this.refreshLists();
     }
 
-    public getPagedVerifiedPlayers( server: string ): IPlayerGridInfo[] {
+
+
+
+
+
+
+
+
+
+    /**
+     * Updates the lists for each server list, filtering and paging the data.
+     * 
+     * @param server The server to page and filter.
+     */
+    public pageAndFilterServerLists( server: string ): void {
         const players = this.combatDatabases.find( f => f.server === server )?.verifiedPlayers ?? {};
-        // const keys = Object.keys( players ).sort();
-        const skip = this.playerPageIndices[ server ] * 10;
-        const take = skip + 10 > this.playerNames[ server ].length ? this.playerNames[ server ].length : skip + 10;
-        const result: IPlayerGridInfo[] = [];
-        for ( let i = skip; i < take; i++ ) {
+        const search = this.serverSearchText[ server ]?.toLowerCase()?.trim();
+
+        let filteredData: IPlayerGridInfo[] = [];
+        for ( let i = 0; i < this.playerNames[ server ].length; i++ ) {
             let p = players[ this.playerNames[ server ][ i ] ] as IPlayerGridInfo;
             p.name = this.playerNames[ server ][ i ];
-            result.push( p );
+            if ( search != null && search.length > 0 && p.name.toLowerCase().indexOf( search ) < 0 && p.className.toLowerCase().indexOf( search ) < 0 ) {
+                continue;
+            }
+            filteredData.push( p );
         }
-        return result;
+        this.playersDataLength[ server ] = filteredData.length;
+
+        const skip = this.playerPageIndices[ server ] * 10;
+        const take = skip + 10 > filteredData.length ? filteredData.length : skip + 10;
+        const result: IPlayerGridInfo[] = [];
+        for ( let i = skip; i < take; i++ ) {
+            result.push( filteredData[ i ] );
+        }
+
+        this.verifiedPlayersGridData[ server ] = result;
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Refreshes all server lists.
+     */
+    public refreshLists() {
+        for ( const db of this.combatDatabases ) {
+            this.pageAndFilterServerLists( db.server );
+        }
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Updates the search text for the given server, and refreshes and filters 
+     * all server lists.
+     * 
+     * @param server The server to search.
+     */
+    public handleSearchTextChange( server: string ): void {
+        
+        this.refreshLists();
+
+        // If the index is greater than the number of pages, set it to the last page.
+        let i = this.playerPageIndices[ server ];
+        if ( i > Math.floor( this.playersDataLength[ server ] / 10 ) ) {
+            i = Math.floor( this.playersDataLength[ server ] / 10 );
+        }
+
+        // If we've changed the index, then we need to refresh the lists again.
+        if ( i !== this.playerPageIndices[ server ] ) {
+            this.playerPageIndices[ server ] = i;
+            this.refreshLists();
+        }
     }
 
 

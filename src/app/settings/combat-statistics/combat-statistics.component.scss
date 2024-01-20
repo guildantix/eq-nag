@@ -9,43 +9,74 @@
     }
 }
 
-:host ::ng-deep .players-table {
+:host ::ng-deep {
 
-    tr {
-        td {
-            mat-paginator {
-                background-color: #1a1a1a;
-                color: #bdbdbd;
-            }
-            .mat-paginator-outer-container {
-                height: 35px;
+    .players-table {
+        tr {
+            td {
+                mat-paginator {
+                    background-color: #1a1a1a;
+                    color: #bdbdbd;
+                }
+                .mat-paginator-outer-container {
+                    height: 35px;
 
-                .mat-paginator-container {
-                    // margin-top: -21px;
-                    min-height: unset;
+                    .mat-paginator-container {
+                        // margin-top: -21px;
+                        min-height: unset;
+                    }
                 }
             }
         }
     }
+
+    .mat-form-field-label-wrapper {
+        mat-label {
+            margin-left: 4px;
+        }
+    }
+}
+
+.mat-tab-label-content {
+    text-transform: capitalize;
 }
 
 .server-tab-container {
     display: flex;
     flex-flow: row wrap;
 
+    h1, h2 {
+        font-weight: 100;
+        padding: 0;
+    }
+    h1 {
+        margin: 10px 15px;
+    }
+    h2 {
+        margin: 3px 15px;
+    }
+
+    .server-search {
+        width: 100%;
+        margin: 10px;
+
+        > div {
+            padding: 15px;
+            background-color: #2a2a2a;
+
+            &:first-child {
+                background-color: #3a3a3a;
+            }
+
+            > mat-form-field {
+                width: 50%;
+            }
+        }
+
+    }
+
     .server-content-panel {
         margin: 10px;
         background-color: #3a3a3a;
-
-        h1, h2 {
-            font-weight: 100;
-            padding: 0;
-        }
-        h1 {
-            margin: 10px 15px;
-        }
-        h2 {
-            margin: 3px 15px;
-        }
     }
 }

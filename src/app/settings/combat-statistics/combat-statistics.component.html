@@ -47,6 +47,21 @@
     <mat-tab-group>
         <mat-tab label="{{db.server}}" *ngFor="let db of combatDatabases">
             <div class="server-tab-container">
+                
+                <div class="server-search">
+
+                    <div><h2>Filters</h2></div>
+
+                    <div>
+                        <mat-form-field>
+                            <!-- <mat-label>Search</mat-label> -->
+                            <input matInput [(ngModel)]="serverSearchText[db.server]" name="serverSearchText" (keyup)="handleSearchTextChange(db.server)" />
+                            <mat-hint>Search by name or class.</mat-hint>
+                        </mat-form-field>
+                    </div>
+
+                </div>
+
                 <div class="server-content-panel">
                     <h1>Players</h1>
     
@@ -57,7 +72,7 @@
                             <th>Level</th>
                             <th></th>
                         </tr>
-                        <tr *ngFor="let player of getPagedVerifiedPlayers(db.server)">
+                        <tr *ngFor="let player of verifiedPlayersGridData[db.server]">
                             <td>{{player.name}}</td>
                             <td>{{player.className}}</td>
                             <td>{{player.level}}</td>
@@ -74,9 +89,9 @@
                                 <mat-paginator #paginator
                                     class="demo-paginator"
                                     (page)="handlePlayerPageEvent(db.server, $event)"
-                                    [length]="playerNames[db.server].length"
+                                    [length]="playersDataLength[db.server]"
                                     [pageSize]="10"
-                                    [disabled]="playerNames[db.server].length <= 10"
+                                    [disabled]="playersDataLength[db.server] <= 10"
                                     [showFirstLastButtons]="true"
                                     [pageSizeOptions]="[]"
                                     [hidePageSize]="true"
@@ -88,6 +103,7 @@
                     </table>
     
                 </div>
+
             </div>
         </mat-tab>
     </mat-tab-group>
