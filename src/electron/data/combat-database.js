@@ -68,15 +68,33 @@ class CombatDatabase extends Store {
      * @param {ForwardRef} mainWindowRef The main window of the application.
      * @param {function} sendTick The send tick method.
      */
-     attachIpcEvents( mainWindowRef, sendTick ) {
+    attachIpcEvents( mainWindowRef, sendTick ) {
 
-         ipcMain.on( 'combat-database:get-server', ( event, serverName ) => {
-             event.sender.send( 'combat-database:get-server', this.getOrInitServer( serverName ) );
-         } );
+        ipcMain.on( 'combat-database:get-server',
+            /**
+             * @param {import("electron").IpcMainEvent} event The event args.
+             * @param {string} serverName The name of the server.
+             */
+            ( event, serverName ) => {
+                event.sender.send( 'combat-database:get-server', this.getOrInitServer( serverName ) );
+            } );
+         
+        ipcMain.on( 'combat-database:get-all',
+            /**
+             * @param {import("electron").IpcMainEvent} event The event args.
+             */
+            ( event ) => {
+                event.sender.send( 'combat-database:get-all', this.#data.servers );
+            } );
 
-         ipcMain.on( 'combat-database:put-server', ( event, server ) => {
-             this.putServer( server );
-         } );
+        ipcMain.on( 'combat-database:put-server',
+            /**
+             * @param {import("electron").IpcMainEvent} event The event args.
+             * @param {ServerCombatModel} server Theserver combat model.
+             */
+            ( event, server ) => {
+                this.putServer( server );
+            } );
 
     }
 
