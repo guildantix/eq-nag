@@ -3,7 +3,7 @@ import * as Electron from 'electron';
 import { UpdateInfo } from 'electron-updater';
 import { Observable, Observer } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
-import { DataTickModel, DkpEntryModel, TriggerModel, OverlayWindowModel, ActionTypes, FocusEffectSettings, CharacterModel, BasicError, TriggerFolder, FileModel, Tag, AuthorModel, PackageFileModel, TriggerPackageMetaModel, TriggerPackageVersion, FctStylesModel, OverlayBoundsChangedEventArgs, DialogEventArgs, QuickShareMetaModel, LogFileLocation, IpcMessage, DeathRecapPreferences, QuickShareAuthorListTypes, Progress, QuitFailureData, DuplicateTriggerAction, ScrapedSpell, ScrapedClickEffect, TriggerParseHistoryModel, SimulationProgress, FctCombatGroup, CombatTypes, StylePropertiesModel, CombatAnimations, TriggersProfileModel, ConsoleMessageModel, LogTypes } from './core.model';
+import { DataTickModel, DkpEntryModel, TriggerModel, OverlayWindowModel, ActionTypes, FocusEffectSettings, CharacterModel, BasicError, TriggerFolder, FileModel, Tag, AuthorModel, PackageFileModel, TriggerPackageMetaModel, TriggerPackageVersion, FctStylesModel, OverlayBoundsChangedEventArgs, DialogEventArgs, QuickShareMetaModel, LogFileLocation, IpcMessage, DeathRecapPreferences, QuickShareAuthorListTypes, Progress, QuitFailureData, DuplicateTriggerAction, ScrapedSpell, ScrapedClickEffect, TriggerParseHistoryModel, SimulationProgress, FctCombatGroup, CombatTypes, StylePropertiesModel, CombatAnimations, TriggersProfileModel, ConsoleMessageModel, LogTypes, ServerCombatModel } from './core.model';
 import { GinaConfiguration, GinaTriggerGroups } from './gina.model';
 import { ColorUtility } from './utilities';
 import { nagId } from './core/nag-id.util';
@@ -2414,6 +2414,22 @@ export class IpcService {
                 } );
             } );
             window.api.ipc.send( 'overlay:install-combat-groups', fctGroups );
+
+        } );
+
+        return obs;
+    }
+
+    public getCombatDatabases(): Observable<ServerCombatModel[]> {
+        let obs: Observable<ServerCombatModel[]> = new Observable<ServerCombatModel[]>( ( observer: Observer<ServerCombatModel[]> ) => {
+                
+            window.api.ipc.once( 'combat-database:get-all', ( e, data: ServerCombatModel[] ) => {
+                this.ngZone.run( () => {
+                    observer.next( data );
+                    observer.complete();
+                } );
+            } );
+            window.api.ipc.send( 'combat-database:get-all', undefined );
 
         } );
 
