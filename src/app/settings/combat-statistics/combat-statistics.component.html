@@ -41,3 +41,55 @@
         
     </div>
 </div>
+
+<div *ngIf="showCombatDatabase">
+
+    <mat-tab-group>
+        <mat-tab label="{{db.server}}" *ngFor="let db of combatDatabases">
+            <div class="server-tab-container">
+                <div class="server-content-panel">
+                    <h1>Players</h1>
+    
+                    <table class="players-table">
+                        <tr>
+                            <th>Name</th>
+                            <th>Class</th>
+                            <th>Level</th>
+                            <th></th>
+                        </tr>
+                        <tr *ngFor="let player of getPagedVerifiedPlayers(db.server)">
+                            <td>{{player.name}}</td>
+                            <td>{{player.className}}</td>
+                            <td>{{player.level}}</td>
+                            <td>
+                                <button mat-icon-button [matMenuTriggerFor]="menu"><mat-icon>more_vert</mat-icon></button>
+                                <mat-menu #menu="matMenu">
+                                    <button mat-menu-item><mat-icon>pets</mat-icon>Move to pets</button>
+                                    <button mat-menu-item><mat-icon class="color-red">clear</mat-icon><span class="color-red">Remove</span></button>
+                                </mat-menu>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td colspan="4" style="padding-left: 0;">
+                                <mat-paginator #paginator
+                                    class="demo-paginator"
+                                    (page)="handlePlayerPageEvent(db.server, $event)"
+                                    [length]="playerNames[db.server].length"
+                                    [pageSize]="10"
+                                    [disabled]="playerNames[db.server].length <= 10"
+                                    [showFirstLastButtons]="true"
+                                    [pageSizeOptions]="[]"
+                                    [hidePageSize]="true"
+                                    [pageIndex]="playerPageIndices[db.server]"
+                                    aria-label="Select page">
+                                </mat-paginator>
+                            </td>
+                        </tr>
+                    </table>
+    
+                </div>
+            </div>
+        </mat-tab>
+    </mat-tab-group>
+
+</div>

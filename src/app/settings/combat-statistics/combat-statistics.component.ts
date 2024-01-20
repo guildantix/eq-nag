@@ -1,14 +1,26 @@
-import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
-import { DpsMeterSettings, SettingsKeys } from 'src/app/core.model';
+import { ChangeDetectorRef, Component, Input, OnInit } from '@angular/core';
+import { PageEvent } from '@angular/material/paginator';
+import { DpsMeterSettings, PlayerInfo, ServerCombatModel, SettingsKeys } from 'src/app/core.model';
 import { DialogService } from 'src/app/dialogs/dialog.service';
 import { IpcService } from 'src/app/ipc.service';
+
+interface IPlayerGridInfo {
+    
+    name: string;
+    level: number;
+    className: string;
+    raceName: string;
+
+}
 
 @Component( {
     selector: 'combat-statistics',
     templateUrl: 'combat-statistics.component.html',
-    styleUrls: [ '../settings-component/settings.component.scss', '../../core.scss' ],
+    styleUrls: [ '../settings-component/settings.component.scss', '../../core.scss', './combat-statistics.component.scss' ],
 } )
 export class CombatStatisticsComponent implements OnInit {
+
+    @Input() public showCombatDatabase: boolean = false;
 
     private _dpsMeterSettings: DpsMeterSettings = new DpsMeterSettings();
     private _dpsPlayerDelayIntervalId: number = null;
@@ -98,6 +110,22 @@ export class CombatStatisticsComponent implements OnInit {
 
     public updatedSettings: string[] = [];
 
+    public playerNames: Record<string, string[]> = {};
+    public playerPageIndices: Record<string, number> = {};
+
+    private _combatDatabases: ServerCombatModel[] = [];
+    public get combatDatabases(): ServerCombatModel[] {
+        return this._combatDatabases;
+    }
+    public set combatDatabases( v: ServerCombatModel[] ) {
+        this._combatDatabases = v;
+        this.playerNames = {};
+        for ( const db of v ) {
+            this.playerNames[ db.server ] = ( Object.keys( db.verifiedPlayers ) ?? [] ).sort();
+            this.playerPageIndices[ db.server ] = 0;
+        }
+    }
+
     constructor(
         private readonly ipcService: IpcService,
         private readonly dialogService: DialogService,
@@ -125,9 +153,7 @@ export class CombatStatisticsComponent implements OnInit {
             this._dpsMeterSettings = f;
             this._dpsPlayerDelayRestoreValue = f.playerInactiveDelayMs / 1000;
         } );
-        this.ipcService.getCombatDatabases().subscribe( f => {
-            console.log( 'combat databases', f );
-        } );
+        this.ipcService.getCombatDatabases().subscribe( f => this.combatDatabases = f );
     }
 
 
@@ -210,6 +236,25 @@ export class CombatStatisticsComponent implements OnInit {
         } else {
             // this._dpsPlayerDelayRestoreValue = undefined;
         }
+    }
+
+    public handlePlayerPageEvent( server: string, event: PageEvent ): void {
+        // console.log( 'testing', server, event );
+        this.playerPageIndices[ server ] = event.pageIndex;
+    }
+
+    public getPagedVerifiedPlayers( server: string ): IPlayerGridInfo[] {
+        const players = this.combatDatabases.find( f => f.server === server )?.verifiedPlayers ?? {};
+        // const keys = Object.keys( players ).sort();
+        const skip = this.playerPageIndices[ server ] * 10;
+        const take = skip + 10 > this.playerNames[ server ].length ? this.playerNames[ server ].length : skip + 10;
+        const result: IPlayerGridInfo[] = [];
+        for ( let i = skip; i < take; i++ ) {
+            let p = players[ this.playerNames[ server ][ i ] ] as IPlayerGridInfo;
+            p.name = this.playerNames[ server ][ i ];
+            result.push( p );
+        }
+        return result;
     }
 
 

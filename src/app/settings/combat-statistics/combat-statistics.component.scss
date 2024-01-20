@@ -1,0 +1,51 @@
+.players-table {
+    width: unset;
+
+    tr {
+        th {
+            font-weight: 500;
+            opacity: 0.6;
+        }
+    }
+}
+
+:host ::ng-deep .players-table {
+
+    tr {
+        td {
+            mat-paginator {
+                background-color: #1a1a1a;
+                color: #bdbdbd;
+            }
+            .mat-paginator-outer-container {
+                height: 35px;
+
+                .mat-paginator-container {
+                    // margin-top: -21px;
+                    min-height: unset;
+                }
+            }
+        }
+    }
+}
+
+.server-tab-container {
+    display: flex;
+    flex-flow: row wrap;
+
+    .server-content-panel {
+        margin: 10px;
+        background-color: #3a3a3a;
+
+        h1, h2 {
+            font-weight: 100;
+            padding: 0;
+        }
+        h1 {
+            margin: 10px 15px;
+        }
+        h2 {
+            margin: 3px 15px;
+        }
+    }
+}
