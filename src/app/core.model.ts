@@ -1699,3 +1699,21 @@ export class DpsMeterSettings {
     public playerInactiveDelayMs: number = 7000;
 
 }
+
+export class PlayerInfo {
+
+    public level: number;
+    public className: string;
+    public raceName: string;
+
+}
+
+export class ServerCombatModel {
+    
+    public server: string | undefined = undefined;
+    public verifiedPlayers: Record<string, PlayerInfo> = {};
+    public verifiedNpcs: string[] = [];
+    public verifiedPets: string[] = [];
+    public petOwners: Record<string, string> = {};
+    
+}
