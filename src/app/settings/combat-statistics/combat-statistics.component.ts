@@ -125,6 +125,9 @@ export class CombatStatisticsComponent implements OnInit {
             this._dpsMeterSettings = f;
             this._dpsPlayerDelayRestoreValue = f.playerInactiveDelayMs / 1000;
         } );
+        this.ipcService.getCombatDatabases().subscribe( f => {
+            console.log( 'combat databases', f );
+        } );
     }
 
 
