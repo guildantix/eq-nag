@@ -91,8 +91,8 @@ class PlayerEncounterStats {
     class;
     /** @type {PlayerDps[]} */
     playerDpsOutgoing = [];
-    /** @type {PlayerDps} */
-    playerDpsIncoming = new PlayerDps();
+    /** @type {PlayerDps[]} */
+    playerDpsIncoming = [];
     /** @type {Date} */
     encounterStart;
     /** @type {Date} */

@@ -23,6 +23,8 @@ const {
     DpsMeterSettings,
 } = require( '../data/models/combat-parser' );
 
+// TODO: Zhay`s pet hits Vius Vex for 9075 points of damage.
+
 /** @type {string} */
 let characterName = 'You';
 
@@ -167,7 +169,7 @@ const combatRgx = {
 
 // https://regex101.com/r/cqfoUU/2
 // This won't capture anon people.
-const playerWhoRgx = /^(OFFLINEMODE)?\[(?<level>\d+)\s(?<classTitleOrName>Savage Lord|Arch Mage|High Priest|Grave Lord|Feral Lord|Storm Warden|Arch Convoker|Arch Lich|Lord Protector|Forest Stalker|Dread Lord|Arch Magus|Stone Fist|Scourge Knight|Grand Archanist|Storm Caller|Grand Summoner|Holy Defender|.+?)\]?\s(:?\((?<classRealName>.*?)\)\])?\s?(?<player>.*?)\s\((?<raceName>.+?)\)\s/gi;
+const playerWhoRgx = /^(OFFLINEMODE)?\[(?<level>\d+)\s(?<classTitleOrName>Savage Lord|Arch Animist|Arch Mage|High Priest|Grave Lord|Feral Lord|Storm Warden|Arch Convoker|Arch Lich|Lord Protector|Forest Stalker|Dread Lord|Arch Magus|Stone Fist|Scourge Knight|Grand Archanist|Storm Caller|Grand Summoner|Holy Defender|.+?)\]?\s(:?\((?<classRealName>.*?)\)\])?\s?(?<player>.*?)\s\((?<raceName>.+?)\)\s/gi;
 
 
 
@@ -223,6 +225,12 @@ class CombatParser {
 
     /** @type {({encounterEvents: LogRecord[]}) => void} */
     onEncounterReset = undefined;
+
+    /** @type {() => void} */
+    onReady = undefined;
+
+    /** @type {boolean} */
+    loaded = false;
 
     /**
      * Constructs a new combat parser.
@@ -291,6 +299,11 @@ class CombatParser {
                             this._playerPets[ owner ] = [];
                         }
                         this._playerPets[ owner ].push( pet );
+                    }
+
+                    this.loaded = true;
+                    if ( this.onReady ) {
+                        this.onReady();
                     }
                 }
             } );
