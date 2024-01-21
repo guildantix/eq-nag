@@ -98,7 +98,7 @@
                                     <button mat-menu-item (click)="moveToNpcs(db.server, player.name, 'player')"><mat-icon class="material-icons-outlined">sentiment_very_dissatisfied</mat-icon>Move to NPCs</button>
                                     <button mat-menu-item (click)="enterPlayerLevel(db.server, player.name)"><mat-icon class="material-icons-outlined">work_history</mat-icon>Change Level</button>
                                     <button mat-menu-item (click)="selectPlayerClass(db.server, player.name)"><mat-icon class="material-icons-outlined">school</mat-icon>Change Class</button>
-                                    <button mat-menu-item><mat-icon class="color-red">clear</mat-icon><span class="color-red">Remove</span></button>
+                                    <button mat-menu-item (click)="removePlayer(db.server, player.name)"><mat-icon class="color-red">clear</mat-icon><span class="color-red">Remove</span></button>
                                 </mat-menu>
                             </td>
                         </tr>
@@ -147,7 +147,7 @@
                                     <button mat-menu-item (click)="moveToPlayers(db.server, pet.name, 'pet')"><mat-icon class="material-icons-outlined">account_circle</mat-icon>Move to players</button>
                                     <button mat-menu-item (click)="moveToNpcs(db.server, pet.name, 'pet')"><mat-icon class="material-icons-outlined">sentiment_very_dissatisfied</mat-icon>Move to NPCs</button>
                                     <button mat-menu-item (click)="assignPetOwner(db.server, pet.name)"><mat-icon class="material-icons-outlined">supervisor_account</mat-icon>Change/Assign Owner</button>
-                                    <button mat-menu-item><mat-icon class="color-red">clear</mat-icon><span class="color-red">Remove</span></button>
+                                    <button mat-menu-item (click)="removePet(db.server, pet.name)"><mat-icon class="color-red">clear</mat-icon><span class="color-red">Remove</span></button>
                                 </mat-menu>
                             </td>
                         </tr>
@@ -187,7 +187,7 @@
                                 <mat-menu #menu="matMenu">
                                     <button mat-menu-item (click)="moveToPlayers(db.server, npc, 'npc')"><mat-icon class="material-icons-outlined">account_circle</mat-icon>Move to players</button>
                                     <button mat-menu-item (click)="moveToPets(db.server, npc, 'npc')"><mat-icon class="material-icons-outlined">pets</mat-icon>Move to pets</button>
-                                    <button mat-menu-item><mat-icon class="color-red">clear</mat-icon><span class="color-red">Remove</span></button>
+                                    <button mat-menu-item (click)="removeNpc(db.server, npc)"><mat-icon class="color-red">clear</mat-icon><span class="color-red">Remove</span></button>
                                 </mat-menu>
                             </td>
                         </tr>

@@ -737,6 +737,76 @@ export class CombatStatisticsComponent implements OnInit, AfterViewInit, OnDestr
             } );
     }
 
+    public removePlayer( server: string, name: string ) {
+        const db = this.combatDatabases.find( f => f.server === server );
+        if ( db == null ) {
+            return;
+        }
+        const player = db.verifiedPlayers[ name ] as IPlayerGridInfo;
+        if ( player == null ) {
+            return;
+        }
+        this.dialogService
+            .showConfirmationDialog(
+                [ `Are you sure you want to remove ${name} from the players list?` ],
+                `Click "Yes" to remove ${name} from the players list.`,
+                'Click "No" to close and leave the player in the players list.'
+            ).subscribe( confirmed => {
+                if ( confirmed === true ) {
+                    delete db.verifiedPlayers[ name ];
+                    this.playerNames[ db.server ] = ( Object.keys( db.verifiedPlayers ) ?? [] ).sort();
+                    this.saveChanges( server );
+                    this.refreshLists();
+                }
+            } );
+    }
+
+    public removePet( server: string, name: string ) {
+        const db = this.combatDatabases.find( f => f.server === server );
+        if ( db == null ) {
+            return;
+        }
+        const pet = db.verifiedPets.find( f => f === name );
+        if ( pet == null ) {
+            return;
+        }
+        this.dialogService
+            .showConfirmationDialog(
+                [ `Are you sure you want to remove ${name} from the pets list?` ],
+                `Click "Yes" to remove ${name} from the pets list.`,
+                'Click "No" to close and leave the pet in the pets list.'
+            ).subscribe( confirmed => {
+                if ( confirmed === true ) {
+                    db.verifiedPets.splice( db.verifiedPets.findIndex( f => f === name ), 1 );
+                    this.saveChanges( server );
+                    this.refreshLists();
+                }
+            } );
+    }
+
+    public removeNpc( server: string, name: string ) {
+        const db = this.combatDatabases.find( f => f.server === server );
+        if ( db == null ) {
+            return;
+        }
+        const npc = db.verifiedNpcs.find( f => f === name );
+        if ( npc == null ) {
+            return;
+        }
+        this.dialogService
+            .showConfirmationDialog(
+                [ `Are you sure you want to remove ${name} from the npcs list?` ],
+                `Click "Yes" to remove ${name} from the npcs list.`,
+                'Click "No" to close and leave the npc in the npcs list.'
+            ).subscribe( confirmed => {
+                if ( confirmed === true ) {
+                    db.verifiedNpcs.splice( db.verifiedNpcs.findIndex( f => f === name ), 1 );
+                    this.saveChanges( server );
+                    this.refreshLists();
+                }
+            } );
+    }
+
 
 
 
