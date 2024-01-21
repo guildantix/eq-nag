@@ -876,11 +876,17 @@ class WindowManager {
             return;
         }
 
+        let windowSize = { width: 1000, height: 800 };
+
+        if ( name === 'combatStatistics' ) {
+            windowSize = { width: 1100, height: 1000 };
+        }
+
         let settingsWindow = new BrowserWindow( {
             modal: false,
             show: false,
-            width: 1100,
-            height: 800,
+            width: windowSize.width,
+            height: windowSize.height,
             frame: false,
             skipTaskbar: false,
             maximizable: true,
