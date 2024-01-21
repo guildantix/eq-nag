@@ -156,6 +156,25 @@ export enum CharacterClasses {
     Wizard = 'WIZ',
 }
 
+export const CharacterClassNames: string[] = [
+    'Bard',
+    'Beastlord',
+    'Berserker',
+    'Cleric',
+    'Druid',
+    'Enchanter',
+    'Magician',
+    'Monk',
+    'Necromancer',
+    'Paladin',
+    'Ranger',
+    'Rogue',
+    'Shadowknight',
+    'Shaman',
+    'Warrior',
+    'Wizard',
+]
+
 export enum ExternalDataSources {
     Allakhazam = 'ZAM',
     EqSpellResources = 'EQSR',
@@ -1715,5 +1734,5 @@ export class ServerCombatModel {
     public verifiedNpcs: string[] = [];
     public verifiedPets: string[] = [];
     public petOwners: Record<string, string> = {};
-    
+
 }
