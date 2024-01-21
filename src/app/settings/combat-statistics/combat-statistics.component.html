@@ -132,15 +132,12 @@
                             <th></th>
                         </tr>
                         <tr *ngFor="let pet of verifiedPetsGridData[db.server]">
-                            <td class="flex" *ngIf="pet.ownerName">
-                                <span>
-                                    {{pet.ownerName}}
-                                </span>
-                                <span class="spacer"></span>
-                                <button mat-icon-button class="color-red dim" title="Remove {{pet.ownerName}} as the owner."><mat-icon>clear</mat-icon></button>
+                            <td *ngIf="pet.ownerName">
+                                <span class="hover-hide">{{pet.ownerName}}</span>
+                                <span class="hover-show"><a (click)="assignPetOwner(db.server, pet.name)" class="color-blue">{{pet.ownerName}}</a></span>
                             </td>
                             <td *ngIf="!pet.ownerName">
-                                <a href="javascript:void(0);" class="color-blue dim">Assign Owner</a>
+                                <a (click)="assignPetOwner(db.server, pet.name)" class="color-blue dim">Assign Owner</a>
                             </td>
                             <td>{{pet.name}}</td>
                             <td>
@@ -149,6 +146,7 @@
                                 <mat-menu #menu="matMenu">
                                     <button mat-menu-item (click)="moveToPlayers(db.server, pet.name, 'pet')"><mat-icon class="material-icons-outlined">account_circle</mat-icon>Move to players</button>
                                     <button mat-menu-item (click)="moveToNpcs(db.server, pet.name, 'pet')"><mat-icon class="material-icons-outlined">sentiment_very_dissatisfied</mat-icon>Move to NPCs</button>
+                                    <button mat-menu-item (click)="assignPetOwner(db.server, pet.name)"><mat-icon class="material-icons-outlined">supervisor_account</mat-icon>Change/Assign Owner</button>
                                     <button mat-menu-item><mat-icon class="color-red">clear</mat-icon><span class="color-red">Remove</span></button>
                                 </mat-menu>
                             </td>

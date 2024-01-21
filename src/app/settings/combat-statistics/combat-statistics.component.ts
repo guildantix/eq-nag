@@ -709,6 +709,34 @@ export class CombatStatisticsComponent implements OnInit, AfterViewInit, OnDestr
             } );
     }
 
+    public assignPetOwner( server: string, petName: string ) {
+        const db = this.combatDatabases.find( f => f.server === server );
+        if ( db == null ) {
+            return;
+        }
+        const pet = db.verifiedPets.find( f => f === petName );
+        if ( pet == null ) {
+            return;
+        }
+        
+        let ownerOptions = Array.prototype.concat( [], this.playerNames[ server ] );
+        ownerOptions.push( 'None' );
+
+        this.dialogService
+            .showAutocompleteDialog( 'Select Pet Owner', [], ownerOptions, undefined, `Select the owner for ${petName}` )
+            .subscribe( ownerName => {
+                if ( this.playerNames[ server ].includes( ownerName ) ) {
+                    db.petOwners[ petName ] = ownerName;
+                    this.saveChanges( server );
+                    this.refreshLists();
+                } else if ( ownerName === 'None' || ownerName === undefined ) {
+                    delete db.petOwners[ petName ];
+                    this.saveChanges( server );
+                    this.refreshLists();
+                }
+            } );
+    }
+
 
 
 
