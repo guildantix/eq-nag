@@ -73,14 +73,31 @@
                         </tr>
                         <tr *ngFor="let player of verifiedPlayersGridData[db.server]">
                             <td>{{player.name}}</td>
-                            <td>{{player.className}}</td>
-                            <td>{{player.level}}</td>
+                            <td *ngIf="player.className">
+                                <span class="hover-hide">{{player.className}}</span>
+                                <span class="hover-show"><a (click)="selectPlayerClass(db.server, player.name)" class="color-blue">{{player.className}}</a></span>
+                            </td>
+                            <td *ngIf="!player.className">
+                                <a (click)="selectPlayerClass(db.server, player.name)" class="color-blue dim">Choose Class</a>
+                            </td>
+                            <!-- <td>{{player.className}}</td> -->
+                            <td *ngIf="player.level > 0">
+                                <span class="hover-hide">{{player.level}}</span>
+                                <span class="hover-show"><a (click)="enterPlayerLevel(db.server, player.name)" class="color-blue">{{player.level}}</a></span>
+                                <!-- <span>{{player.level}}</span> -->
+                            </td>
+                            <td  *ngIf="!player.level">
+                                <a (click)="enterPlayerLevel(db.server, player.name)" class="color-blue dim">N/A</a>
+                            </td>
+                            <!-- <td>{{player.level}}</td> -->
                             <td>
                                 <!-- <button mat-icon-button class="color-red dim" title="Remove player and move to unknown/NPCs."><mat-icon>clear</mat-icon></button> -->
                                 <button mat-icon-button [matMenuTriggerFor]="menu"><mat-icon>more_vert</mat-icon></button>
                                 <mat-menu #menu="matMenu">
                                     <button mat-menu-item (click)="moveToPets(db.server, player.name, 'player')"><mat-icon class="material-icons-outlined">pets</mat-icon>Move to pets</button>
                                     <button mat-menu-item (click)="moveToNpcs(db.server, player.name, 'player')"><mat-icon class="material-icons-outlined">sentiment_very_dissatisfied</mat-icon>Move to NPCs</button>
+                                    <button mat-menu-item (click)="enterPlayerLevel(db.server, player.name)"><mat-icon class="material-icons-outlined">work_history</mat-icon>Change Level</button>
+                                    <button mat-menu-item (click)="selectPlayerClass(db.server, player.name)"><mat-icon class="material-icons-outlined">school</mat-icon>Change Class</button>
                                     <button mat-menu-item><mat-icon class="color-red">clear</mat-icon><span class="color-red">Remove</span></button>
                                 </mat-menu>
                             </td>
@@ -130,7 +147,7 @@
                                 <!-- <button mat-icon-button class="color-red dim" title="Remove pet and move to unknown/NPCs."><mat-icon>clear</mat-icon></button> -->
                                 <button mat-icon-button [matMenuTriggerFor]="menu"><mat-icon>more_vert</mat-icon></button>
                                 <mat-menu #menu="matMenu">
-                                    <button mat-menu-item><mat-icon class="material-icons-outlined">account_circle</mat-icon>Move to players</button>
+                                    <button mat-menu-item (click)="moveToPlayers(db.server, pet.name, 'pet')"><mat-icon class="material-icons-outlined">account_circle</mat-icon>Move to players</button>
                                     <button mat-menu-item (click)="moveToNpcs(db.server, pet.name, 'pet')"><mat-icon class="material-icons-outlined">sentiment_very_dissatisfied</mat-icon>Move to NPCs</button>
                                     <button mat-menu-item><mat-icon class="color-red">clear</mat-icon><span class="color-red">Remove</span></button>
                                 </mat-menu>
@@ -170,7 +187,7 @@
                             <td>
                                 <button mat-icon-button [matMenuTriggerFor]="menu"><mat-icon>more_vert</mat-icon></button>
                                 <mat-menu #menu="matMenu">
-                                    <button mat-menu-item><mat-icon class="material-icons-outlined">account_circle</mat-icon>Move to players</button>
+                                    <button mat-menu-item (click)="moveToPlayers(db.server, npc, 'npc')"><mat-icon class="material-icons-outlined">account_circle</mat-icon>Move to players</button>
                                     <button mat-menu-item (click)="moveToPets(db.server, npc, 'npc')"><mat-icon class="material-icons-outlined">pets</mat-icon>Move to pets</button>
                                     <button mat-menu-item><mat-icon class="color-red">clear</mat-icon><span class="color-red">Remove</span></button>
                                 </mat-menu>

@@ -1,6 +1,6 @@
 import { AfterViewInit, ChangeDetectorRef, Component, Input, OnDestroy, OnInit } from '@angular/core';
 import { PageEvent } from '@angular/material/paginator';
-import { DpsMeterSettings, PlayerInfo, ServerCombatModel, SettingsKeys } from 'src/app/core.model';
+import { CharacterClassNames, DpsMeterSettings, PlayerInfo, ServerCombatModel, SettingsKeys } from 'src/app/core.model';
 import { DialogService } from 'src/app/dialogs/dialog.service';
 import { IpcService } from 'src/app/ipc.service';
 
@@ -632,7 +632,7 @@ export class CombatStatisticsComponent implements OnInit, AfterViewInit, OnDestr
 
 
 
-    
+
     /**
      * Moves the specified pet or npc to the players list.
      * 
@@ -667,6 +667,46 @@ export class CombatStatisticsComponent implements OnInit, AfterViewInit, OnDestr
 
         this.saveChanges( server );
         this.refreshLists();
+    }
+
+    public selectPlayerClass( server: string, name: string ) {
+        const db = this.combatDatabases.find( f => f.server === server );
+        if ( db == null ) {
+            return;
+        }
+        const player = db.verifiedPlayers[ name ] as IPlayerGridInfo;
+        if ( player == null ) {
+            return;
+        }
+        this.dialogService
+            .showAutocompleteDialog( 'Select Player Class', [], CharacterClassNames, undefined, `Select the class for ${name}` )
+            .subscribe( className => {
+                if ( CharacterClassNames.includes( className ) ) {
+                    player.className = className;
+                    this.saveChanges( server );
+                    this.refreshLists();
+                }
+            } );
+    }
+
+    public enterPlayerLevel( server: string, name: string ) {
+        const db = this.combatDatabases.find( f => f.server === server );
+        if ( db == null ) {
+            return;
+        }
+        const player = db.verifiedPlayers[ name ] as IPlayerGridInfo;
+        if ( player == null ) {
+            return;
+        }
+        this.dialogService
+            .showInputDialog( 'Enter Player Level', [], undefined, `Enter the level for ${name}`, player.level > 0 ? player.level.toString() : '', false )
+            .subscribe( level => {
+                if ( +level > 0 ) {
+                    player.level = +level;
+                    this.saveChanges( server );
+                    this.refreshLists();
+                }
+            } );
     }
 
 

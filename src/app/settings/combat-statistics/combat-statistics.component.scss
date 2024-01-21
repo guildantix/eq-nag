@@ -1,5 +1,6 @@
 .players-table,
-.pets-table {
+.pets-table,
+.npcs-table {
     width: unset;
 
     tr {
@@ -20,6 +21,19 @@
                 
                 &:hover {
                     text-decoration: underline;
+                }
+            }
+
+            .hover-show {
+                display: none;
+            }
+
+            &:hover {
+                .hover-hide {
+                    display: none;
+                }
+                .hover-show {
+                    display: unset;
                 }
             }
 
