@@ -586,7 +586,7 @@ export class CombatStatisticsComponent implements OnInit, AfterViewInit, OnDestr
 
 
 
-    
+
     /**
      * Moves the specified player or pet to the npcs list.
      * 
@@ -618,6 +618,51 @@ export class CombatStatisticsComponent implements OnInit, AfterViewInit, OnDestr
         let npc = db.verifiedNpcs.find( f => f === name );
         if ( npc == null ) {
             db.verifiedNpcs.push( name );
+        }
+
+        this.saveChanges( server );
+        this.refreshLists();
+    }
+
+
+
+
+
+
+
+
+
+    
+    /**
+     * Moves the specified pet or npc to the players list.
+     * 
+     * @param server The name of the server.
+     * @param name The name of the pet or npc.
+     * @param type The type of the entity.
+     */
+    public moveToPlayers( server: string, name: string, type: 'pet' | 'npc' ): void {
+        const db = this.combatDatabases.find( f => f.server === server );
+        
+        if ( db == null ) {
+            return;
+        }
+
+        if ( type === 'pet' ) {
+            let pet = db.verifiedPets.find( f => f === name );
+            if ( pet != null ) {
+                db.verifiedPets.splice( db.verifiedPets.findIndex( f => f === name ), 1 );
+            }
+        } else if ( type === 'npc' ) {
+            let npc = db.verifiedNpcs.find( f => f === name );
+            if ( npc != null ) {
+                db.verifiedNpcs.splice( db.verifiedNpcs.findIndex( f => f === name ), 1 );
+            }
+        }
+
+        let player = db.verifiedPlayers[ name ] as IPlayerGridInfo;
+        if ( player == null ) {
+            db.verifiedPlayers[ name ] = { level: 0, className: '', raceName: '' };
+            this.playerNames[ db.server ] = ( Object.keys( db.verifiedPlayers ) ?? [] ).sort();
         }
 
         this.saveChanges( server );
