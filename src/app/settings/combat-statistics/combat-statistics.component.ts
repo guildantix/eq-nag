@@ -20,6 +20,7 @@ interface IPetGridInfo {
 
 }
 
+const pageSize = 10;
 
 let settingsSection: HTMLDivElement = null;
 let scrolling: boolean = false;
@@ -93,6 +94,10 @@ export class CombatStatisticsComponent implements OnInit, AfterViewInit, OnDestr
     private _dpsPlayerDelayIntervalId: number = null;
     private _dpsPlayerDelayRestoreValue: number | undefined = undefined;
     
+    public get pageSize(): number {
+        return pageSize;
+    }
+
     public get dpsShow() : boolean {
         return this._dpsMeterSettings.show;
     }
@@ -180,11 +185,14 @@ export class CombatStatisticsComponent implements OnInit, AfterViewInit, OnDestr
     public playerNames: Record<string, string[]> = {};
     public playerPageIndices: Record<string, number> = {};
     public petPageIndices: Record<string, number> = {};
+    public npcPageIndices: Record<string, number> = {};
     public serverSearchText: Record<string, string> = {};
     public verifiedPlayersGridData: Record<string, IPlayerGridInfo[]> = {};
     public verifiedPetsGridData: Record<string, IPetGridInfo[]> = {};
+    public verifiedNpcsGridData: Record<string, string[]> = {};
     public playersDataLength: Record<string, number> = {};
     public petDataLength: Record<string, number> = {};
+    public npcDataLength: Record<string, number> = {};
 
     private _combatDatabases: ServerCombatModel[] = [];
     public get combatDatabases(): ServerCombatModel[] {
@@ -197,6 +205,7 @@ export class CombatStatisticsComponent implements OnInit, AfterViewInit, OnDestr
             this.playerNames[ db.server ] = ( Object.keys( db.verifiedPlayers ) ?? [] ).sort();
             this.playerPageIndices[ db.server ] = 0;
             this.petPageIndices[ db.server ] = 0;
+            this.npcPageIndices[ db.server ] = 0;
             this.serverSearchText[ db.server ] = null;
         }
         this.refreshLists();
@@ -374,6 +383,26 @@ export class CombatStatisticsComponent implements OnInit, AfterViewInit, OnDestr
 
 
     /**
+     * Updates the npc page index for the given server.
+     * 
+     * @param server The server to page.
+     * @param event The page event args.
+     */
+    public handleNpcPageEvent( server: string, event: PageEvent ): void {
+        this.npcPageIndices[ server ] = event.pageIndex;
+        this.refreshLists();
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
      * Updates the lists for each server list, filtering and paging the data.
      * 
      * @param server The server to page and filter.
@@ -393,8 +422,8 @@ export class CombatStatisticsComponent implements OnInit, AfterViewInit, OnDestr
         }
         this.playersDataLength[ server ] = filteredData.length;
 
-        const skip = this.playerPageIndices[ server ] * 10;
-        const take = skip + 10 > filteredData.length ? filteredData.length : skip + 10;
+        const skip = this.playerPageIndices[ server ] * pageSize;
+        const take = skip + pageSize > filteredData.length ? filteredData.length : skip + pageSize;
         const result: IPlayerGridInfo[] = [];
         for ( let i = skip; i < take; i++ ) {
             result.push( filteredData[ i ] );
@@ -418,13 +447,27 @@ export class CombatStatisticsComponent implements OnInit, AfterViewInit, OnDestr
         }
         this.petDataLength[ server ] = filteredPetData.length;
 
-        const skipPet = this.petPageIndices[ server ] * 10;
-        const takePet = skipPet + 10 > filteredPetData.length ? filteredPetData.length : skipPet + 10;
+        const skipPet = this.petPageIndices[ server ] * pageSize;
+        const takePet = skipPet + pageSize > filteredPetData.length ? filteredPetData.length : skipPet + pageSize;
         const resultPet: IPetGridInfo[] = [];
         for ( let i = skipPet; i < takePet; i++ ) {
             resultPet.push( filteredPetData[ i ] );
         }
         this.verifiedPetsGridData[ server ] = resultPet;
+
+
+        const npcs = this.combatDatabases.find( f => f.server === server )?.verifiedNpcs?.sort() ?? [];
+        let filteredNpcData: string[] = npcs.filter( f => search == null || search.length === 0 || f.toLowerCase().indexOf( search ) >= 0 );
+        this.npcDataLength[ server ] = filteredNpcData.length;
+
+        const skipNpc = this.npcPageIndices[ server ] * pageSize;
+        const takeNpc = skipNpc + pageSize > filteredNpcData.length ? filteredNpcData.length : skipNpc + pageSize;
+        const resultNpc: string[] = [];
+        for ( let i = skipNpc; i < takeNpc; i++ ) {
+            resultNpc.push( filteredNpcData[ i ] );
+        }
+        this.verifiedNpcsGridData[ server ] = resultNpc;
+        
     }
 
 
@@ -465,14 +508,26 @@ export class CombatStatisticsComponent implements OnInit, AfterViewInit, OnDestr
         this.refreshLists();
 
         // If the index is greater than the number of pages, set it to the last page.
-        let i = this.playerPageIndices[ server ];
-        if ( i > Math.floor( this.playersDataLength[ server ] / 10 ) ) {
-            i = Math.floor( this.playersDataLength[ server ] / 10 );
+        let playerIndex = this.playerPageIndices[ server ];
+        if ( playerIndex > Math.floor( this.playersDataLength[ server ] / pageSize ) ) {
+            playerIndex = Math.floor( this.playersDataLength[ server ] / pageSize );
+        }
+
+        let petIndex = this.petPageIndices[ server ];
+        if ( petIndex > Math.floor( this.petDataLength[ server ] / pageSize ) ) {
+            petIndex = Math.floor( this.petDataLength[ server ] / pageSize );
+        }
+
+        let npcIndex = this.npcPageIndices[ server ];
+        if ( npcIndex > Math.floor( this.npcDataLength[ server ] / pageSize ) ) {
+            npcIndex = Math.floor( this.npcDataLength[ server ] / pageSize );
         }
 
         // If we've changed the index, then we need to refresh the lists again.
-        if ( i !== this.playerPageIndices[ server ] ) {
-            this.playerPageIndices[ server ] = i;
+        if ( playerIndex !== this.playerPageIndices[ server ] || petIndex !== this.petPageIndices[ server ] || npcIndex !== this.npcPageIndices[ server ] ) {
+            this.playerPageIndices[ server ] = playerIndex;
+            this.petPageIndices[ server ] = petIndex;
+            this.npcPageIndices[ server ] = npcIndex;
             this.refreshLists();
         }
     }
