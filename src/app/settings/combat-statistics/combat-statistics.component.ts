@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, Input, OnInit } from '@angular/core';
+import { AfterViewInit, ChangeDetectorRef, Component, Input, OnDestroy, OnInit } from '@angular/core';
 import { PageEvent } from '@angular/material/paginator';
 import { DpsMeterSettings, PlayerInfo, ServerCombatModel, SettingsKeys } from 'src/app/core.model';
 import { DialogService } from 'src/app/dialogs/dialog.service';
@@ -13,12 +13,79 @@ interface IPlayerGridInfo {
 
 }
 
+interface IPetGridInfo {
+    
+    name: string;
+    ownerName: string;
+
+}
+
+
+let settingsSection: HTMLDivElement = null;
+let scrolling: boolean = false;
+let scrollDistance: number = 0;
+let timeoutId: number = null;
+const executeScroll = ( deltaY ) => {
+    lastScrollHeight = settingsSection.scrollTop;
+    settingsSection.scrollBy( { top: deltaY, behavior: 'smooth' } );
+    scrolling = true;
+    window.requestAnimationFrame( checkForScrolling );
+};
+const disableWheelEvent = ( e: WheelEvent ) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    settingsSection = settingsSection ?? document.querySelector( 'settings-window section' );
+    if ( settingsSection ) {
+        scrollDistance += e.deltaY;
+
+        if ( !scrolling ) {
+            if ( timeoutId ) {
+                window.clearTimeout( timeoutId );
+            }
+            timeoutId = window.setTimeout( () => {
+                executeScroll( scrollDistance );
+                scrollDistance = 0;
+            }, 40 );
+        }
+    }
+    
+    return false;
+};
+
+let lastScrollHeight: number = 0;
+let lastChangedFrame = 0;
+let frameCount = 0;
+const checkForScrolling = () => {
+    frameCount++;
+    if ( frameCount > 120 || ( frameCount - lastChangedFrame ) > 5 ) {
+        scrolling = false;
+        frameCount = 0;
+        if ( scrollDistance !== 0 ) {
+            
+            timeoutId = window.setTimeout( () => {
+                executeScroll( scrollDistance );
+                scrollDistance = 0;
+            }, 20 );
+        }
+    }
+    settingsSection = settingsSection ?? document.querySelector( 'settings-window section' );
+    if ( settingsSection && settingsSection.scrollTop !== lastScrollHeight ) {
+        scrolling = true;
+        lastChangedFrame = frameCount;
+        lastScrollHeight = settingsSection.scrollTop;
+    }
+    if ( scrolling ) {
+        window.requestAnimationFrame( checkForScrolling );
+    }
+}
+
 @Component( {
     selector: 'combat-statistics',
     templateUrl: 'combat-statistics.component.html',
     styleUrls: [ '../settings-component/settings.component.scss', '../../core.scss', './combat-statistics.component.scss' ],
 } )
-export class CombatStatisticsComponent implements OnInit {
+export class CombatStatisticsComponent implements OnInit, AfterViewInit, OnDestroy {
 
     @Input() public showCombatDatabase: boolean = false;
 
@@ -112,9 +179,12 @@ export class CombatStatisticsComponent implements OnInit {
 
     public playerNames: Record<string, string[]> = {};
     public playerPageIndices: Record<string, number> = {};
+    public petPageIndices: Record<string, number> = {};
     public serverSearchText: Record<string, string> = {};
     public verifiedPlayersGridData: Record<string, IPlayerGridInfo[]> = {};
+    public verifiedPetsGridData: Record<string, IPetGridInfo[]> = {};
     public playersDataLength: Record<string, number> = {};
+    public petDataLength: Record<string, number> = {};
 
     private _combatDatabases: ServerCombatModel[] = [];
     public get combatDatabases(): ServerCombatModel[] {
@@ -126,6 +196,7 @@ export class CombatStatisticsComponent implements OnInit {
         for ( const db of v ) {
             this.playerNames[ db.server ] = ( Object.keys( db.verifiedPlayers ) ?? [] ).sort();
             this.playerPageIndices[ db.server ] = 0;
+            this.petPageIndices[ db.server ] = 0;
             this.serverSearchText[ db.server ] = null;
         }
         this.refreshLists();
@@ -140,6 +211,16 @@ export class CombatStatisticsComponent implements OnInit {
     ngOnInit() {
         this.loadSettings();
     }
+
+    ngAfterViewInit(): void {
+        document.querySelector('mat-tab-group')?.addEventListener( 'wheel', disableWheelEvent );
+    }
+
+    ngOnDestroy(): void {
+        document.querySelector('mat-tab-group')?.removeEventListener( 'wheel', disableWheelEvent );
+    }
+
+
 
 
 
@@ -273,6 +354,26 @@ export class CombatStatisticsComponent implements OnInit {
 
 
     /**
+     * Updates the pet page index for the given server.
+     * 
+     * @param server The server to page.
+     * @param event The page event args.
+     */
+    public handlePetPageEvent( server: string, event: PageEvent ): void {
+        this.petPageIndices[ server ] = event.pageIndex;
+        this.refreshLists();
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
      * Updates the lists for each server list, filtering and paging the data.
      * 
      * @param server The server to page and filter.
@@ -300,6 +401,30 @@ export class CombatStatisticsComponent implements OnInit {
         }
 
         this.verifiedPlayersGridData[ server ] = result;
+
+        const pets = this.combatDatabases.find( f => f.server === server )?.verifiedPets?.sort() ?? [];
+        const petOwners = this.combatDatabases.find( f => f.server === server )?.petOwners ?? {};
+        let filteredPetData: IPetGridInfo[] = [];
+        for ( let i = 0; i < pets.length; i++ ) {
+            let petName = pets[ i ];
+            let ownerName = petOwners[ petName ];
+            if ( search != null && search.length > 0 && petName.toLowerCase().indexOf( search ) < 0 && ( ownerName?.toLowerCase()?.indexOf( search ) ?? -1 ) < 0 ) {
+                continue;
+            }
+            let namedPet = petName.indexOf( '`' ) > 0;
+            if ( !namedPet ) {
+                filteredPetData.push( { name: petName, ownerName: ownerName } );
+            }
+        }
+        this.petDataLength[ server ] = filteredPetData.length;
+
+        const skipPet = this.petPageIndices[ server ] * 10;
+        const takePet = skipPet + 10 > filteredPetData.length ? filteredPetData.length : skipPet + 10;
+        const resultPet: IPetGridInfo[] = [];
+        for ( let i = skipPet; i < takePet; i++ ) {
+            resultPet.push( filteredPetData[ i ] );
+        }
+        this.verifiedPetsGridData[ server ] = resultPet;
     }
 
 
@@ -350,6 +475,29 @@ export class CombatStatisticsComponent implements OnInit {
             this.playerPageIndices[ server ] = i;
             this.refreshLists();
         }
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Updates the database for the specified server.
+     * 
+     * @param server The server to update.
+     */
+    public saveChanges( server: string ): void {
+        const db = this.combatDatabases.find( f => f.server === server );
+        // TODO: Save the database.
+        // this.ipcService.saveCombatDatabase( db ).subscribe( f => {
+        //     this.combatDatabases = f;
+        //     this.refreshLists();
+        // } );
     }
 
 

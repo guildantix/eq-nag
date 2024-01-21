@@ -1,4 +1,5 @@
-.players-table {
+.players-table,
+.pets-table {
     width: unset;
 
     tr {
@@ -6,12 +7,43 @@
             font-weight: 500;
             opacity: 0.6;
         }
+        td {
+            .dim {
+                opacity: 0.4;
+
+                &:hover {
+                    opacity: 1;
+                }
+            }
+            .pet-owner {
+                cursor: pointer;
+                
+                &:hover {
+                    text-decoration: underline;
+                }
+            }
+
+            &.flex {
+                display: flex;
+                flex-flow: row nowrap;
+                align-items: center;
+
+                .spacer {
+                    flex: 1 1 auto;
+                }
+            }
+        }
     }
 }
 
 :host ::ng-deep {
 
-    .players-table {
+    .mat-tab-label-content {
+        text-transform: capitalize;
+    }
+    
+    .players-table,
+    .pets-table {
         tr {
             td {
                 mat-paginator {
@@ -37,13 +69,10 @@
     }
 }
 
-.mat-tab-label-content {
-    text-transform: capitalize;
-}
-
 .server-tab-container {
     display: flex;
     flex-flow: row wrap;
+    align-items: flex-start;
 
     h1, h2 {
         font-weight: 100;
@@ -79,4 +108,47 @@
         margin: 10px;
         background-color: #3a3a3a;
     }
+}
+
+.custom-select {
+    position: relative;
+
+    .custom-select-list {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        z-index: 1;
+        background-color: #202020;
+        border: 2px solid black;
+        border-radius: 3px;
+        padding: 4px 8px;
+        cursor: pointer;
+        min-width: 104px;
+        max-height: 200px;
+        overflow-y: auto;
+        overflow-x: hidden;
+        -webkit-overflow-scrolling: touch;
+        -ms-overflow-style: -ms-autohiding-scrollbar;
+        -webkit-box-shadow: 0 2px 5px 0 rgba(0, 0, 0, 0.26);
+        box-shadow: 0 2px 5px 0 rgba(0, 0, 0, 0.26);
+        -webkit-transition: opacity 0.2s ease-in-out;
+        transition: opacity 0.2s ease-in-out;
+        opacity: 0;
+        pointer-events: none;
+    }
+    // select {
+    //     appearance: none;
+    //     /*  safari  */
+    //     -webkit-appearance: none;
+    //     /*  other styles for aesthetics */
+    //     background-color: #202020;
+    //     border: 2px solid black;
+    //     color: #dbdbdb;
+    //     border-radius: 3px;
+    //     padding: 4px 8px;
+    //     cursor: pointer;
+    //     min-width: 104px;
+    // }
+
 }

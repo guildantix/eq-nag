@@ -54,7 +54,6 @@
 
                     <div>
                         <mat-form-field>
-                            <!-- <mat-label>Search</mat-label> -->
                             <input matInput [(ngModel)]="serverSearchText[db.server]" name="serverSearchText" (keyup)="handleSearchTextChange(db.server)" />
                             <mat-hint>Search by name or class.</mat-hint>
                         </mat-form-field>
@@ -77,9 +76,10 @@
                             <td>{{player.className}}</td>
                             <td>{{player.level}}</td>
                             <td>
+                                <!-- <button mat-icon-button class="color-red dim" title="Remove player and move to unknown/NPCs."><mat-icon>clear</mat-icon></button> -->
                                 <button mat-icon-button [matMenuTriggerFor]="menu"><mat-icon>more_vert</mat-icon></button>
                                 <mat-menu #menu="matMenu">
-                                    <button mat-menu-item><mat-icon>pets</mat-icon>Move to pets</button>
+                                    <button mat-menu-item><mat-icon class="material-icons-outlined">pets</mat-icon>Move to pets</button>
                                     <button mat-menu-item><mat-icon class="color-red">clear</mat-icon><span class="color-red">Remove</span></button>
                                 </mat-menu>
                             </td>
@@ -102,6 +102,55 @@
                         </tr>
                     </table>
     
+                </div>
+
+                <div class="server-content-panel">
+                    <h1>Pets</h1>
+
+                    <table class="pets-table">
+                        <tr>
+                            <th>Owner</th>
+                            <th>Pet</th>
+                            <th></th>
+                        </tr>
+                        <tr *ngFor="let pet of verifiedPetsGridData[db.server]">
+                            <td class="flex" *ngIf="pet.ownerName">
+                                <span>
+                                    {{pet.ownerName}}
+                                </span>
+                                <span class="spacer"></span>
+                                <button mat-icon-button class="color-red dim" title="Remove {{pet.ownerName}} as the owner."><mat-icon>clear</mat-icon></button>
+                            </td>
+                            <td *ngIf="!pet.ownerName">
+                                <a href="javascript:void(0);" class="color-blue dim">Assign Owner</a>
+                            </td>
+                            <td>{{pet.name}}</td>
+                            <td>
+                                <!-- <button mat-icon-button class="color-red dim" title="Remove pet and move to unknown/NPCs."><mat-icon>clear</mat-icon></button> -->
+                                <button mat-icon-button [matMenuTriggerFor]="menu"><mat-icon>more_vert</mat-icon></button>
+                                <mat-menu #menu="matMenu">
+                                    <button mat-menu-item><mat-icon class="material-icons-outlined">account_circle</mat-icon>Move to players</button>
+                                    <button mat-menu-item><mat-icon class="color-red">clear</mat-icon><span class="color-red">Remove</span></button>
+                                </mat-menu>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td colspan="3" style="padding-left: 0;">
+                                <mat-paginator #paginator
+                                    class="demo-paginator"
+                                    (page)="handlePetPageEvent(db.server, $event)"
+                                    [length]="petDataLength[db.server]"
+                                    [pageSize]="10"
+                                    [disabled]="petDataLength[db.server] <= 10"
+                                    [showFirstLastButtons]="true"
+                                    [pageSizeOptions]="[]"
+                                    [hidePageSize]="true"
+                                    [pageIndex]="petPageIndices[db.server]"
+                                    aria-label="Select page">
+                                </mat-paginator>
+                            </td>
+                        </tr>
+                    </table>
                 </div>
 
             </div>
