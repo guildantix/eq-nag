@@ -841,3 +841,30 @@ mat-button-toggle-group {
 .cursor-pointer {
     cursor: pointer;
 }
+
+.pets-table {
+    .pet-owner {
+        &:hover {
+            text-decoration: underline;
+            color: $color-red;
+            &:active {
+                color: $color-red-dark;
+            }
+        }
+    }
+}
+
+a {
+    &.color-blue {
+        text-decoration: none;
+        color: $color-blue;
+
+        &:hover {
+            color: $color-blue;
+        }
+
+        &:active {
+            color: darken($color-blue, 33%);
+        }
+    }
+}
