@@ -540,6 +540,52 @@ export class CombatStatisticsComponent implements OnInit, AfterViewInit, OnDestr
 
 
 
+    
+    /**
+     * Moves the specified player or npc to the pets list.
+     * 
+     * @param server The name of the server.
+     * @param name The name of the player or npc.
+     * @param type The type of the entity.
+     */
+    public moveToPets( server: string, name: string, type: 'player' | 'npc' ): void {
+        const db = this.combatDatabases.find( f => f.server === server );
+        
+        if ( db == null ) {
+            return;
+        }
+
+        if ( type === 'player' ) {
+            let player = db.verifiedPlayers[ name ] as IPlayerGridInfo;
+            if ( player != null ) {
+                delete db.verifiedPlayers[ name ];
+
+                this.playerNames[ db.server ] = ( Object.keys( db.verifiedPlayers ) ?? [] ).sort();
+            }
+        } else if ( type === 'npc' ) {
+            let npc = db.verifiedNpcs.find( f => f === name );
+            if ( npc != null ) {
+                db.verifiedNpcs.splice( db.verifiedNpcs.findIndex( f => f === name ), 1 );
+            }
+        }
+
+        let pet = db.verifiedPets.find( f => f === name );
+        if ( pet == null ) {
+            db.verifiedPets.push( name );
+        }
+
+        this.saveChanges( server );
+        this.refreshLists();
+    }
+
+
+
+
+
+
+
+
+
 
     /**
      * Updates the database for the specified server.
@@ -548,6 +594,8 @@ export class CombatStatisticsComponent implements OnInit, AfterViewInit, OnDestr
      */
     public saveChanges( server: string ): void {
         const db = this.combatDatabases.find( f => f.server === server );
+        console.warn( 'Not Yet Implemented', 'CombatStatisticsComponent.saveChanges' );
+        console.log( 'saving db', db );
         // TODO: Save the database.
         // this.ipcService.saveCombatDatabase( db ).subscribe( f => {
         //     this.combatDatabases = f;

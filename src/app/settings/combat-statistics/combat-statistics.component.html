@@ -79,7 +79,7 @@
                                 <!-- <button mat-icon-button class="color-red dim" title="Remove player and move to unknown/NPCs."><mat-icon>clear</mat-icon></button> -->
                                 <button mat-icon-button [matMenuTriggerFor]="menu"><mat-icon>more_vert</mat-icon></button>
                                 <mat-menu #menu="matMenu">
-                                    <button mat-menu-item><mat-icon class="material-icons-outlined">pets</mat-icon>Move to pets</button>
+                                    <button mat-menu-item (click)="moveToPets(db.server, player.name, 'player')"><mat-icon class="material-icons-outlined">pets</mat-icon>Move to pets</button>
                                     <button mat-menu-item><mat-icon class="material-icons-outlined">sentiment_very_dissatisfied</mat-icon>Move to NPCs</button>
                                     <button mat-menu-item><mat-icon class="color-red">clear</mat-icon><span class="color-red">Remove</span></button>
                                 </mat-menu>
@@ -171,7 +171,7 @@
                                 <button mat-icon-button [matMenuTriggerFor]="menu"><mat-icon>more_vert</mat-icon></button>
                                 <mat-menu #menu="matMenu">
                                     <button mat-menu-item><mat-icon class="material-icons-outlined">account_circle</mat-icon>Move to players</button>
-                                    <button mat-menu-item><mat-icon class="material-icons-outlined">pets</mat-icon>Move to pets</button>
+                                    <button mat-menu-item (click)="moveToPets(db.server, npc, 'npc')"><mat-icon class="material-icons-outlined">pets</mat-icon>Move to pets</button>
                                     <button mat-menu-item><mat-icon class="color-red">clear</mat-icon><span class="color-red">Remove</span></button>
                                 </mat-menu>
                             </td>
