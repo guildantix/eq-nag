@@ -669,6 +669,23 @@ export class CombatStatisticsComponent implements OnInit, AfterViewInit, OnDestr
         this.refreshLists();
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Opens a dialog to allow the user to select the class for the specified 
+     * user.
+     * 
+     * @param server The name of the server.
+     * @param name The name of the player to select the class for.
+     * @returns 
+     */
     public selectPlayerClass( server: string, name: string ) {
         const db = this.combatDatabases.find( f => f.server === server );
         if ( db == null ) {
@@ -689,6 +706,23 @@ export class CombatStatisticsComponent implements OnInit, AfterViewInit, OnDestr
             } );
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Opens a dialog to allow the user enter the level for the specified 
+     * player.
+     * 
+     * @param server The name of the server.
+     * @param name The name of the player to enter the level for.
+     * @returns 
+     */
     public enterPlayerLevel( server: string, name: string ) {
         const db = this.combatDatabases.find( f => f.server === server );
         if ( db == null ) {
@@ -709,6 +743,22 @@ export class CombatStatisticsComponent implements OnInit, AfterViewInit, OnDestr
             } );
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Opens a dialog to allow the user to enter the name of the pet owner.
+     * 
+     * @param server The name of the server.
+     * @param petName The name of the pet to assign an owner to.
+     * @returns 
+     */
     public assignPetOwner( server: string, petName: string ) {
         const db = this.combatDatabases.find( f => f.server === server );
         if ( db == null ) {
@@ -737,6 +787,21 @@ export class CombatStatisticsComponent implements OnInit, AfterViewInit, OnDestr
             } );
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Removes the specified player from the players list.
+     * 
+     * @param server The name of the server.
+     * @param name The name of the player to remove.
+     */
     public removePlayer( server: string, name: string ) {
         const db = this.combatDatabases.find( f => f.server === server );
         if ( db == null ) {
@@ -761,6 +826,21 @@ export class CombatStatisticsComponent implements OnInit, AfterViewInit, OnDestr
             } );
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Removes the specified pet from the pets list.
+     * 
+     * @param server The name of the server.
+     * @param name The name of the pet to remove.
+     */
     public removePet( server: string, name: string ) {
         const db = this.combatDatabases.find( f => f.server === server );
         if ( db == null ) {
@@ -784,6 +864,21 @@ export class CombatStatisticsComponent implements OnInit, AfterViewInit, OnDestr
             } );
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Removes the specified npc from the npcs list.
+     * 
+     * @param server The name of the server.
+     * @param name The name of the npc to remove.
+     */
     public removeNpc( server: string, name: string ) {
         const db = this.combatDatabases.find( f => f.server === server );
         if ( db == null ) {
