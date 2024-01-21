@@ -920,11 +920,11 @@ export class CombatStatisticsComponent implements OnInit, AfterViewInit, OnDestr
         const db = this.combatDatabases.find( f => f.server === server );
         console.warn( 'Not Yet Implemented', 'CombatStatisticsComponent.saveChanges' );
         console.log( 'saving db', db );
+
         // TODO: Save the database.
-        // this.ipcService.saveCombatDatabase( db ).subscribe( f => {
-        //     this.combatDatabases = f;
-        //     this.refreshLists();
-        // } );
+        if ( db ) {
+            this.ipcService.saveCombatDatabase( db );
+        }
     }
 
 

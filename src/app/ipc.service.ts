@@ -573,6 +573,10 @@ export class IpcService {
         window.api.ipc.send( 'console:command', command );
     }
 
+    public saveCombatDatabase(db: ServerCombatModel): void {
+        window.api.ipc.send( 'combat-database:put-server', db );
+    }
+
     /**
      * Generic setting update function.
      * 
