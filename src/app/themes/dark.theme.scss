@@ -858,6 +858,7 @@ a {
     &.color-blue {
         text-decoration: none;
         color: $color-blue;
+        cursor: pointer;
 
         &:hover {
             color: $color-blue;
