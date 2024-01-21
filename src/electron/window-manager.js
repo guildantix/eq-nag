@@ -879,7 +879,7 @@ class WindowManager {
         let settingsWindow = new BrowserWindow( {
             modal: false,
             show: false,
-            width: 1000,
+            width: 1100,
             height: 800,
             frame: false,
             skipTaskbar: false,
