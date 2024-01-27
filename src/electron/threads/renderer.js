@@ -3724,12 +3724,16 @@ function timerExists( overlayId, predicate ) {
 
     if ( overlayInstances[ overlayId ].groupByTarget ) {
 
-        for ( let key of Object.keys( overlayInstances[ overlayId ].overlayGroups ) ) {
-            overlayInstances[ overlayId ].overlayGroups[ key ].components?.forEach( c => {
+        let groupNames = Object.keys( overlayInstances[ overlayId ].overlayGroups );
+        for ( let i = 0; i < groupNames.length; i++ ) {
+            const key = groupNames[ i ];
+
+            for ( let j = 0; j < overlayInstances[ overlayId ].overlayGroups[ key ].components?.length; j++ ) {
+                const c = overlayInstances[ overlayId ].overlayGroups[ key ].components[ j ];
                 if ( predicate( c ) ) {
                     return true;
                 }
-            } );
+            }
         }
 
     } else {
