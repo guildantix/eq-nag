@@ -22,71 +22,14 @@ interface IPetGridInfo {
 
 const pageSize = 10;
 
-let settingsSection: HTMLDivElement = null;
-let scrolling: boolean = false;
-let scrollDistance: number = 0;
-let timeoutId: number = null;
-const executeScroll = ( deltaY ) => {
-    lastScrollHeight = settingsSection.scrollTop;
-    settingsSection.scrollBy( { top: deltaY, behavior: 'smooth' } );
-    scrolling = true;
-    window.requestAnimationFrame( checkForScrolling );
-};
-const disableWheelEvent = ( e: WheelEvent ) => {
-    e.preventDefault();
-    e.stopPropagation();
 
-    settingsSection = settingsSection ?? document.querySelector( 'settings-window section' );
-    if ( settingsSection ) {
-        scrollDistance += e.deltaY;
-
-        if ( !scrolling ) {
-            if ( timeoutId ) {
-                window.clearTimeout( timeoutId );
-            }
-            timeoutId = window.setTimeout( () => {
-                executeScroll( scrollDistance );
-                scrollDistance = 0;
-            }, 40 );
-        }
-    }
-    
-    return false;
-};
-
-let lastScrollHeight: number = 0;
-let lastChangedFrame = 0;
-let frameCount = 0;
-const checkForScrolling = () => {
-    frameCount++;
-    if ( frameCount > 120 || ( frameCount - lastChangedFrame ) > 5 ) {
-        scrolling = false;
-        frameCount = 0;
-        if ( scrollDistance !== 0 ) {
-            
-            timeoutId = window.setTimeout( () => {
-                executeScroll( scrollDistance );
-                scrollDistance = 0;
-            }, 20 );
-        }
-    }
-    settingsSection = settingsSection ?? document.querySelector( 'settings-window section' );
-    if ( settingsSection && settingsSection.scrollTop !== lastScrollHeight ) {
-        scrolling = true;
-        lastChangedFrame = frameCount;
-        lastScrollHeight = settingsSection.scrollTop;
-    }
-    if ( scrolling ) {
-        window.requestAnimationFrame( checkForScrolling );
-    }
-}
 
 @Component( {
     selector: 'combat-statistics',
     templateUrl: 'combat-statistics.component.html',
     styleUrls: [ '../settings-component/settings.component.scss', '../../core.scss', './combat-statistics.component.scss' ],
 } )
-export class CombatStatisticsComponent implements OnInit, AfterViewInit, OnDestroy {
+export class CombatStatisticsComponent implements OnInit {
 
     @Input() public showCombatDatabase: boolean = false;
 
@@ -219,14 +162,6 @@ export class CombatStatisticsComponent implements OnInit, AfterViewInit, OnDestr
 
     ngOnInit() {
         this.loadSettings();
-    }
-
-    ngAfterViewInit(): void {
-        document.querySelector('mat-tab-group')?.addEventListener( 'wheel', disableWheelEvent );
-    }
-
-    ngOnDestroy(): void {
-        document.querySelector('mat-tab-group')?.removeEventListener( 'wheel', disableWheelEvent );
     }
 
 
