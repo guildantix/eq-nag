@@ -160,6 +160,48 @@ let disabledTriggerIds = [];
 /** @type {Record<string, RegExp>} */
 let buffRegExs = {};
 
+    
+let rgxTimestamp = /^\[(.*?)\]\s*/i;
+let rgxCombatText = /hit|damage|miss|dodge|riposte|parry|become better|backstab|stun|attack|crush/i;
+let rgxFctCritical = /\. \(.*(Critical|Crippling Blow|Strikethrough).*\)/i;
+let rgxCombatModifiers = /\. \((?<combatModifiers>.*)\)$/i;
+let fctRegExs = [
+
+    // 0: rgxMelee
+    /(?<actor>You) (?<action>[a-zA-Z0-9_]*) (?<target>.*) for (?<amount>[0-9]*) points of damage\./i,
+
+    // 1: rgxMeleeMiss
+    /(?<actor>You) try to (?<action>[a-zA-Z0-9_]*) (?<target>.*),/i,
+
+    // 2: rgxSpellDmg
+    /(?<target>.*) has taken (?<amount>[0-9]*) damage from (?<actor>you)r (?<action>.*)\./i,
+
+    // 3: rgxThorns
+    /(?<target>.*) is pierced by (?<actor>YOU)R (?<action>thorns) for (?<amount>[0-9]*) points of non-melee damage\./i,
+
+    // 4: rgxSkillUp
+    /(?<actor>You) have become better at (?<action>[a-zA-Z0-9_\s]*)! \((?<amount>[0-9]*)\)/i,
+
+    // 5: rgxTakeMeleeDmg
+    /(?<actor>.*) (?<action>[a-zA-Z0-9_]*) (?<target>YOU) for (?<amount>[0-9]*) points of damage\./i,
+
+    // 6: rgxAvoidMeleeDmg
+    /(?<actor>.*) tries to (?<action>[a-zA-Z0-9_]*) (?<target>YOU), but (?<avoidType>[a-zA-Z0-9_\s]*)/i,
+
+    // 7: rgxTakeSpellDmg
+    /(?<actor>.*) hit (?<target>you) for (?<amount>[0-9]*) points of (?<damageType>[a-zA-Z0-9_]*) damage by (?<action>.*)\./i,
+
+    // 8: rgxSpellDmg
+    /(?<actor>You) ([a-zA-Z0-9_]*) (?<target>.*) for (?<amount>[0-9]*) points of (?<damageType>.*) damage by (?<action>.*)\./i,
+
+    // 9: Other heal you
+    /^(?<actor>.+?) healed (?<target>you) (over time for|for) (?<amount>[0-9]*) (\((?<overhealing>[0-9]*)\) )?hit points by (?<action>.+?)\./i,
+
+    // 10: You heal other
+    /^(?<actor>You) healed (?<target>.+?) (over time for|for) (?<amount>[0-9]*) (\((?<overhealing>[0-9]*)\) )?hit points by (?<action>.+?)\./i,
+
+];
+
 
 
 
@@ -1806,13 +1848,9 @@ function parseLogEntries( raw, simulating, padTime ) {
         simulating = simulating === true ? true : false;
     
         // let rgxTrigger = /grats;/gi;
-        let rgxTimestamp = /^\[(.*?)\]\s*/gi;
         // let rgxGrabText = /\'(.*?)\'$/gi;
         // let rgxDelimiter = /;/gi;
         // let rgxNum = /(\d+)/gi;
-        let rgxCombatText = /hit|damage|miss|dodge|riposte|parry|become better|backstab|stun|attack|crush/gi;
-        let rgxFctCritical = /\. \(.*(Critical|Crippling Blow|Strikethrough).*\)/gi;
-        let rgxCombatModifiers = /\. \((?<combatModifiers>.*)\)$/gi;
 
         // Someone healed you.
         // https://regex101.com/r/Jdtzsf/3
@@ -1821,43 +1859,6 @@ function parseLogEntries( raw, simulating, padTime ) {
         // You healed someone else.
         // https://regex101.com/r/0btqKz/1
         // ^(?<healer>You) healed (?<target>.+?) (over time for|for) (?<healAmount>[0-9]*) (\(([0-9]*)\) )?hit points by (?<healType>.+?)\.
-    
-        let fctRegExs = [
-
-            // 0: rgxMelee
-            /(?<actor>You) (?<action>[a-zA-Z0-9_]*) (?<target>.*) for (?<amount>[0-9]*) points of damage\./gi,
-
-            // 1: rgxMeleeMiss
-            /(?<actor>You) try to (?<action>[a-zA-Z0-9_]*) (?<target>.*),/gi,
-
-            // 2: rgxSpellDmg
-            /(?<target>.*) has taken (?<amount>[0-9]*) damage from (?<actor>you)r (?<action>.*)\./gi,
-
-            // 3: rgxThorns
-            /(?<target>.*) is pierced by (?<actor>YOU)R (?<action>thorns) for (?<amount>[0-9]*) points of non-melee damage\./gi,
-
-            // 4: rgxSkillUp
-            /(?<actor>You) have become better at (?<action>[a-zA-Z0-9_\s]*)! \((?<amount>[0-9]*)\)/gi,
-
-            // 5: rgxTakeMeleeDmg
-            /(?<actor>.*) (?<action>[a-zA-Z0-9_]*) (?<target>YOU) for (?<amount>[0-9]*) points of damage\./gi,
-
-            // 6: rgxAvoidMeleeDmg
-            /(?<actor>.*) tries to (?<action>[a-zA-Z0-9_]*) (?<target>YOU), but (?<avoidType>[a-zA-Z0-9_\s]*)/gi,
-
-            // 7: rgxTakeSpellDmg
-            /(?<actor>.*) hit (?<target>you) for (?<amount>[0-9]*) points of (?<damageType>[a-zA-Z0-9_]*) damage by (?<action>.*)\./gi,
-
-            // 8: rgxSpellDmg
-            /(?<actor>You) ([a-zA-Z0-9_]*) (?<target>.*) for (?<amount>[0-9]*) points of (?<damageType>.*) damage by (?<action>.*)\./gi,
-
-            // 9: Other heal you
-            /^(?<actor>.+?) healed (?<target>you) (over time for|for) (?<amount>[0-9]*) (\((?<overhealing>[0-9]*)\) )?hit points by (?<action>.+?)\./gi,
-
-            // 10: You heal other
-            /^(?<actor>You) healed (?<target>.+?) (over time for|for) (?<amount>[0-9]*) (\((?<overhealing>[0-9]*)\) )?hit points by (?<action>.+?)\./gi,
-
-        ];
 
         let timestamp = new Date( rgxTimestamp.exec( raw )[ 1 ] );
 
