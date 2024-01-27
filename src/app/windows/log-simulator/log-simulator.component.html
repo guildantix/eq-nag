@@ -32,8 +32,8 @@
             </mat-form-field>
 
             <button mat-icon-button class="color-blue" [disabled]="characterId == null || true"><mat-icon>fast_rewind</mat-icon></button>
-            <button mat-icon-button class="material-icons-outlined color-green" [disabled]="characterId == null" (click)="beginSimulation()"><mat-icon>play_circle</mat-icon></button>
-            <button mat-icon-button class="color-red" [disabled]="characterId == null" (click)="stopSimulation()"><mat-icon>stop</mat-icon></button>
+            <button mat-icon-button class="material-icons-outlined color-green" [disabled]="characterId == null || rawData == null" (click)="beginSimulation()"><mat-icon>play_circle</mat-icon></button>
+            <button mat-icon-button class="color-red" [disabled]="characterId == null || rawData == null" (click)="stopSimulation()"><mat-icon>stop</mat-icon></button>
             <button mat-icon-button class="color-yellow" [disabled]="characterId == null || true"><mat-icon>pause</mat-icon></button>
             <button mat-icon-button class="color-blue" [disabled]="characterId == null || true"><mat-icon>fast_forward</mat-icon></button>
 
