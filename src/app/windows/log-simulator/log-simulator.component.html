@@ -40,36 +40,15 @@
         </div>
         <div class="table-container">
             <table>
-                <!-- [ngClass]="{'current': i === simulationLineIndex}" -->
                 <tr *ngFor="let line of lines; let i = index" #trRef [attr.class]="getTrClass(i, trRef)">
                     <td class="line-numbers" [ngClass]="{'even': i % 2 === 0, 'odd': i % 2 !== 0}">{{i + 1}}</td>
                     <td class="log-text">{{line}}</td>
                 </tr>
             </table>
         </div>
-        <!-- TODO: Remove this comment block -->
-        <!-- <div class="text-editor-container">
-            <div class="line-numbers">
-                <div *ngFor="let l of lines; let i = index">{{i + 1}}</div>
-            </div>
-            <div style="flex: 1 1 auto;">
-                <div style="width: 100%;" *ngFor="let l of lines; let i = index" contenteditable="true" (paste)="onPaste($event, i)" (keydown)="onKeyDown($event, i)">{{l}}</div>
-            </div>
-        </div> -->
     </section>
     <footer>
         <button mat-button color="warn" (click)="closeModal()">Close</button>
     </footer>
 </div>
 
-    <!-- TODO: Remove this comment block -->
-            <!-- <ng-template ngFor let-item [ngForOf]="lines" let-i="index">
- (input)="onContentChanged($event, i)"
-            </ng-template>  -->
-            <!-- <div class="line-numbers">
-                <div *ngFor="let lineNumber of lineNumbers">{{lineNumber}}</div>
-            </div> -->
-            <!-- <div class="text-editor" contenteditable="true" #editableContentArea (input)="onContentChanged( $event)" (contentChange)="someFunction()">
-
-            </div> -->
-            <!-- <div class="text-editor">This is a test<div>This is only a test</div><div>This is a test</div><div>This is just a simple test</div><div><br></div></div> -->

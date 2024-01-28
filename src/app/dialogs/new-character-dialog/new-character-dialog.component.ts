@@ -24,7 +24,6 @@ export class NewCharacterDialogComponent implements OnInit {
     public server: NewCharacterOptionModel;
     public existingCharacters: CharacterModel[] = [];
     public panel: 'missingInstallFolder' | 'selectCharacter' | 'modelReview' | 'manualInput' = 'selectCharacter';
-    // public serviceOptions: string[] = [ 'p99', 'daybreak', 'takp', 'other' ];
     public selectedService: string = 'daybreak';
     public otherServiceName: string = '';
 
