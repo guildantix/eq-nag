@@ -790,6 +790,32 @@ export class TriggerAction extends TriggerActionProperties {
 
         return _.uniq( variableNames );
     }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Resets the ids of all sub-objects in the given action.
+     * 
+     * @param action The action to reset.
+     */
+    public static resetActionIds( action: TriggerAction ): void {
+
+        action.actionId = nagId();
+        action.hideConditions?.forEach( condition => condition.conditionId = nagId() );
+        action.endingSoonSubActions?.forEach( subAction => subAction.actionId = nagId() );
+        action.endedSubActions?.forEach( subAction => subAction.actionId = nagId() );
+        action.excludeTargets?.forEach( phrase => phrase.phraseId = nagId() );
+        action.endEarlyPhrases?.forEach( phrase => phrase.phraseId = nagId() );
+        action.resetCounterPhrases?.forEach( phrase => phrase.phraseId = nagId() );
+
+    }
 }
 
 export class OwnedTriggerAction extends TriggerAction {
