@@ -548,7 +548,7 @@ function renderDpsItems() {
         const petDpsDone = dpsItem.playerDps.pets.reduce( ( a, b ) => a + b.dps, 0 );
         const classAbbr = getEverQuestClassAbbreviation( dpsItem.playerDps.class );
         const dpsSec = dpsItem.playerDps.time;
-        const pctDone = totalDamage > 0 ? Math.round( ( damageDone + petDamageDone ) / totalDamage * 100 ) : 0;
+        const pctDone = topDamage > 0 ? Math.round( ( damageDone + petDamageDone ) / topDamage * 100 ) : 0;
 
         // Create a new DPS item dom.
         let model = {
@@ -631,6 +631,12 @@ function renderDpsItems() {
             /** @type {HTMLImageElement} */
             let iconImg = dpsItem.dom.querySelector( '.dps-item-icon' );
             iconImg != null && ( iconImg.style.display = 'none' );
+        }
+
+        if ( ( damageDone + petDamageDone ) > 0 ) {
+            dpsItem.dom.style.display = 'block';
+        } else {
+            dpsItem.dom.style.display = 'none';
         }
 
     }
