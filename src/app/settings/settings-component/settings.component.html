@@ -93,7 +93,7 @@
             <div>
                 <h2 class="sub-header full-width">Update Settings</h2>
                 <div class="formless-hint full-width">
-                    <div class="formless-input"><mat-checkbox [(ngModel)]="allowPrerelease" (change)="updateSetting( this.settingsKeys.allowPrerelease, this.allowPrerelease, 10 * 1000 )">Allow Pre-release.</mat-checkbox></div>
+                    <div class="formless-input"><mat-checkbox [(ngModel)]="allowPrerelease" (change)="updateSetting( this.settingsKeys.allowPrerelease, this.allowPrerelease, 500 )">Allow Pre-release.</mat-checkbox></div>
                     <mat-hint>If enabled, will automatically update to the latest pre-release.</mat-hint>
                 </div>
             </div>
@@ -101,26 +101,61 @@
                 <h2 class="sub-header full-width">Modal Settings</h2>
                 <button mat-flat-button (click)="resetHiddenModals()">Reset Hidden Modals</button>
             </div>
+            <div>
+                <h2 class="sub-header full-width">Renderer Settings</h2>
+                <div class="formless-hint full-width">
+                    <div class="formless-input"><mat-checkbox [(ngModel)]="enableCheckWindowPosition" (change)="updateSetting( this.settingsKeys.enableCheckWindowPosition, this.enableCheckWindowPosition, 500 )">Enable relative window positions.</mat-checkbox></div>
+                    <mat-hint>
+                        If enabled, will maintain the relative position of an overlay.
+                        <sup class="help-sup"
+                            matTooltip="Click here for more help."
+                            matTooltipPosition="above"
+                            matTooltipClass="tooltip-large"
+                            (click)="explainWindowChecking()">&nbsp;&nbsp;?</sup>
+                    </mat-hint>
+                </div>
+            </div>
         </div>
     </fieldset>
 
     <fieldset>
         <legend><span class="title">Sound</span></legend>
-        <div class="card-property">
-            <div class="content-middle">Master Volume</div>
-            <div class="content-right"><mat-slider [(ngModel)]="masterVolume" thumbLabel tickInterval="1" min="1" max="100" style="width: 100%;" (change)="onChangeMasterVolume()" ></mat-slider></div>
+        <div class="fifty-grid">
+            <div>
+                <h2 class="sub-header full-width">Volume</h2>
+                <div>Master Volume</div>
+                <mat-slider [(ngModel)]="masterVolume" thumbLabel tickInterval="1" min="1" max="100" style="width: 100%;" (change)="onChangeMasterVolume()" ></mat-slider>
+                <div>Text to Speech Volume</div>
+                <mat-slider [(ngModel)]="speechVolume" thumbLabel tickInterval="1" min="1" max="100" style="width: 100%;" (change)="updateSetting( settingsKeys.speechVolume, speechVolume, 500 )"></mat-slider>
+                <div>Audio Volume</div>
+                <mat-slider [(ngModel)]="audioVolume" thumbLabel tickInterval="1" min="1" max="100" style="width: 100%;" (change)="updateSetting( settingsKeys.audioVolume, audioVolume, 500 )"></mat-slider>
+            </div>
+            <div>
+                <h2 class="sub-header full-width">Text to Speech</h2>
+                <mat-form-field style="width: 100%;">
+                    <mat-label></mat-label>
+                    <mat-select [(ngModel)]="voiceIndex" (selectionChange)="onChangeVoice()">
+                        <mat-option *ngFor="let option of voiceOptions; let i = index" [value]="i">{{option.name}}</mat-option>
+                    </mat-select>
+                    <mat-hint>Select the text to speech voice</mat-hint>
+                </mat-form-field>
+                <div style="margin-top: 15px;">Base Speaking Rate</div>
+                <mat-slider [(ngModel)]="baseSpeakingRate" thumbLabel tickInterval="0.25" step="0.25" min="0.25" max="4" style="width: 100%;" (change)="updateSetting( settingsKeys.baseSpeakingRate, baseSpeakingRate, 500 )"></mat-slider>
+                <div>
+                    <h3 class="sub-header full-width">Examples</h3>
+                    <div>
+                        <button mat-button (click)="speakPhrase(exampleSpeech, 1)"><mat-icon>play_circle_outline</mat-icon> Normal</button>
+                        <button mat-button (click)="speakPhrase(exampleSpeech, 1.75)"><mat-icon>play_circle_outline</mat-icon> Fast</button>
+                        <button mat-button (click)="speakPhrase(exampleSpeech, 2.25)"><mat-icon>play_circle_outline</mat-icon> Very Fast</button>
+                        <mat-form-field style="width: 100%">
+                            <mat-label></mat-label>
+                            <input matInput type="text" [(ngModel)]="exampleSpeech" name="txtExampleSpeech" />
+                            <mat-hint>Example speech</mat-hint>
+                        </mat-form-field>
+                    </div>
+                </div>
+            </div>
         </div>
-    </fieldset>
-
-    <fieldset>
-        <legend><span class="title">Text to Speech</span></legend>
-        <mat-form-field style="width: 50%;">
-            <mat-label></mat-label>
-            <mat-select [(ngModel)]="voiceIndex" (selectionChange)="onChangeVoice()">
-                <mat-option *ngFor="let option of voiceOptions; let i = index" [value]="i">{{option.name}}</mat-option>
-            </mat-select>
-            <mat-hint>Select the text to speech voice</mat-hint>
-        </mat-form-field>
     </fieldset>
 
     <fieldset style="padding-left: 28px; padding-right: 28px; padding-top: 60px;">
@@ -193,17 +228,33 @@
                         <mat-hint>(Optional) Enter your discord name, or discord server.</mat-hint>
                     </mat-form-field>
                 </div>
+
+                <ng-template [ngIf]="author?.authorId != null" [ngIfElse]="noAuthorFile">
+                    <button mat-button (click)="updateAuthor()">Save Changes</button>
+                    <button mat-button *ngIf="!trustedAuthor" (click)="requestVerification()">Request Verification</button>
+                </ng-template>
+                <ng-template #noAuthorFile>
+                    <button mat-button color="accent" (click)="createAuthor()">Create</button>
+                </ng-template>
             </div>
         </div>
-
-
-        <ng-template [ngIf]="author?.authorId != null" [ngIfElse]="noAuthorFile">
-            <button mat-button (click)="updateAuthor()">Save Changes</button>
-            <button mat-button *ngIf="!trustedAuthor" (click)="requestVerification()">Request Verification</button>
-        </ng-template>
-        <ng-template #noAuthorFile>
-            <button mat-button color="accent" (click)="createAuthor()">Create</button>
-        </ng-template>
+        <div style="display: flex; flex-direction: row;">
+            <div style="width: 50%; padding: 30px 15px 0 0;">
+                <h2 class="header-glow">Shared/Installed Trigger Permissions</h2>
+                <div>
+                    <div class="formless-hint full-width" style="margin-top: 5px; width: 100%;">
+                        <div class="formless-input"><mat-checkbox [(ngModel)]="sharedTriggerPermissions.disableSharedGlowEffects" (change)="updateSetting( this.settingsKeys.sharedTriggerPermissions, this.sharedTriggerPermissions, 500 )">Disable Screen Glow</mat-checkbox></div>
+                        <mat-hint>If enabled, any triggers that were created by another author will not execute glow actions.</mat-hint>
+                    </div>
+                </div>
+                <div *ngIf="sharedTriggerPermissions.disableSharedGlowEffects">
+                    <div class="formless-hint full-width" style="margin-top: 5px; width: 100%;">
+                        <div class="formless-input"><mat-checkbox [(ngModel)]="sharedTriggerPermissions.disableAllGlowEffects" (change)="updateSetting( this.settingsKeys.sharedTriggerPermissions, this.sharedTriggerPermissions, 500 )">Disable All Screen Glow Actions</mat-checkbox></div>
+                        <mat-hint>If enabled, any triggers created by others or yourself will not execute glow actions.</mat-hint>
+                    </div>
+                </div>
+            </div>
+        </div>
 
     </fieldset>
 
@@ -250,7 +301,7 @@
             <ng-container matColumnDef="play">
                 <th mat-header-cell *matHeaderCellDef style="text-align: center; width: 50px; padding-left: 15px;">  </th>
                 <td mat-cell *matCellDef="let element; let i = index" style="text-align: center; width: 50px; padding-left: 15px;">
-                    <button mat-icon-button aria-label="Delete this overlay" (click)="speakPhrase(element.phoneticText)">
+                    <button mat-icon-button aria-label="Delete this overlay" (click)="speakPhrase(element.phoneticText, undefined)">
                         <mat-icon>play_circle_outline</mat-icon>
                     </button>
                 </td>
@@ -320,9 +371,11 @@
     </fieldset>
 
     <fieldset>
-        <legend><span class="title">NAG Log File</span></legend>
+        <legend><span class="title">Nag Diagnostics</span></legend>
 
-        <button mat-button (click)="downloadLogFile()">Download Log File</button>
+        <button mat-button (click)="downloadLogFile()" class="color-green">Download Log File</button>
+        <button mat-button (click)="downloadDataFiles()">Download Data Files</button>
+        <button mat-button (click)="showDataFolder()" class="color-orange">Show Data Folder</button>
     </fieldset>
 
 </div>

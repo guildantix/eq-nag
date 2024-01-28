@@ -31,7 +31,7 @@ export class GinaImportStepperComponent implements OnInit {
         let missingOverlays = _.some( this.model.actions, ( ac: TriggerAction ) => {
             if ( ac.actionType === ActionTypes.DisplayText ) {
                 return ac.overlayId == null;
-            } else if ( ac.actionType === ActionTypes.Countdown || ac.actionType === ActionTypes.DotTimer || ac.actionType === ActionTypes.Timer ) {
+            } else if ( ac.actionType === ActionTypes.Countdown || ac.actionType === ActionTypes.DotTimer || ac.actionType === ActionTypes.Timer || ac.actionType === ActionTypes.Stopwatch || ac.actionType === ActionTypes.BeneficialTimer ) {
                 return ( ac.overlayId == null || ( ac.ifEndingSoon && ac.endingSoonDisplayText && ac.endingSoonTextOverlayId == null ) || ( ac.notifyWhenEnded && ac.endedDisplayText && ac.endedTextOverlayId == null ) )
             }
         } );
@@ -114,7 +114,7 @@ export class GinaImportStepperComponent implements OnInit {
                     return;
                 }
 
-            } else if ( ac.actionType === ActionTypes.Countdown || ac.actionType === ActionTypes.DotTimer || ac.actionType === ActionTypes.Timer ) {
+            } else if ( ac.actionType === ActionTypes.Countdown || ac.actionType === ActionTypes.DotTimer || ac.actionType === ActionTypes.Timer || ac.actionType === ActionTypes.Stopwatch || ac.actionType === ActionTypes.BeneficialTimer ) {
                                     
                 if ( ac.overlayId == null ) {
                     if ( this.timerOverlays?.length > 0 ) {

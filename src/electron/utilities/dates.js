@@ -131,11 +131,48 @@ function _addDays( value, days ) {
 
 
 
+/**
+ * Returns a label for the given duration.
+ * 
+ * @param {number} duration The duration, in seconds.
+ */
+function _getDurationLabel( duration ) {
+    if ( duration > 60 ) {
+        let d = Math.ceil( duration );
+        let hrs = Math.floor( d / 3600 );
+        let mins = Math.floor( ( d % 3600 ) / 60 );
+        let secs = d % 60;
+        
+        let label = '';
+        if ( hrs > 0 ) {
+            label += `${hrs}h ${mins}m ${secs}s`;
+        } else if ( mins > 0 ) {
+            label += `${mins}m ${secs}s`;
+        } else if ( secs > 0 ) {
+            label += `${secs}s`;
+        }
+
+        return label;
+    } else {
+        return `${Math.ceil(duration)}s`;
+    }
+}
+
+
+
+
+
+
+
+
+
+
 const DateUtilities = {
     timeSince: _timeSince,
     addSeconds: _addSeconds,
     addMilliseconds: _addMilliseconds,
     addDays: _addDays,
+    getDurationLabel: _getDurationLabel,
 };
 
 module.exports = { DateUtilities, TimeSpan };

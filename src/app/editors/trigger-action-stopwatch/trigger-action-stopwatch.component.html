@@ -1,0 +1,251 @@
+<mat-tab-group animationDuration="0ms" [selectedIndex]="0">
+    <mat-tab label="Stopwatch">
+
+        <div class="card-tab-content">
+
+            <div class="card-property">
+                <div>
+                    <mat-form-field style="width: 100%;">
+                        <mat-label></mat-label>
+                        <mat-select [(ngModel)]="action.overlayId" name="ddlDotTimerOverlay">
+                            <mat-option *ngFor="let option of timerOverlays" [value]="option.overlayId">{{option.name}}</mat-option>
+                        </mat-select>
+                        <mat-hint>Overlay Window</mat-hint>
+                    </mat-form-field>
+                </div>
+                <div>
+                    <mat-form-field style="width: 100%;">
+                        <mat-label></mat-label>
+                        <input matInput [(ngModel)]="action.displayText" name="txtDisplayText" />
+                        <mat-hint>Stopwatch name</mat-hint>
+                    </mat-form-field>
+                </div>
+            </div>
+
+            <div class="card-property" *ngIf="action.actionType === actionTypes.BeneficialTimer">
+                <div class="content-middle"><mat-checkbox [(ngModel)]="action.onlyUseAaBeneficialFocus" name="cbxOnlyUseAaBeneficialFocus" title="Item click effects only benefit from AA extended focus.">AA Extended Focus Only</mat-checkbox></div>
+            </div>
+
+            <div class="card-property">
+                <div class="content-middle"><mat-checkbox [(ngModel)]="action.hideTimer" name="cbxHideTimer" title="Use this option if you want to keep track of a duration but don't need to see the progress.">Hide stopwatch?</mat-checkbox></div>
+                <div class="content-middle"><a *ngIf="action.hideTimer" (click)="editHideTimerConditions()" href="javascript:void(0);" class="color-blue">Conditions</a></div>
+            </div>
+
+            <div class="card-property">
+                <div class="content-middle">When triggered again, how do you want the stopwatch to behave?</div>
+                <div>
+                    <mat-form-field style="width: 100%;">
+                        <mat-label></mat-label>
+                        <mat-select [(ngModel)]="action.restartBehavior" name="rdoRestartBehavior_{{action.actionId}}">
+                            <mat-option [value]="timerRestartBehaviors.StartNewTimer">Always start new stopwatch</mat-option>
+                            <mat-option [value]="timerRestartBehaviors.RestartOnDuplicate">Restart only if the name matches</mat-option>
+                            <mat-option [value]="timerRestartBehaviors.RestartTimer">Restart stopwatch regardless of the name</mat-option>
+                            <mat-option [value]="timerRestartBehaviors.DoNothing">Do nothing and ignore trigger</mat-option>
+                        </mat-select>
+                        <mat-hint>Restart behavior</mat-hint>
+                    </mat-form-field>
+                </div>
+            </div>
+
+            <div class="card-property">
+                <div class="content-middle"><mat-checkbox [(ngModel)]="action.showDuration" name="cbxShowTimeRemaining">Show the stopwatch duration</mat-checkbox></div>
+                <div></div>
+            </div>
+
+            <div class="card-property">
+                <div class="content-middle"><mat-checkbox [(ngModel)]="action.useCustomColor" name="cbxUseCustomColor">Use color</mat-checkbox></div>
+                <div class="content-middle content-right"><app-color-picker [(ngModel)]="action.overrideTimerColor" name="acpOverrideTimerColor" *ngIf="action.useCustomColor" [inline]="true"></app-color-picker></div>
+            </div>
+
+            <div class="card-property" *ngIf="action.actionType === actionTypes.BeneficialTimer">
+                <div class="content-middle">Cast time</div>
+                <div class="content-middle">
+                    <mat-form-field style="width: 100%;">
+                        <mat-label></mat-label>
+                        <input matInput type="number" [(ngModel)]="action.castTime" name="txtCastTime" required />
+                        <mat-hint>Base casting time in milliseconds. (ex: 2.5 is 2500)</mat-hint>
+                    </mat-form-field>
+                </div>
+            </div>
+
+            <div class="card-property" *ngIf="action.actionType === actionTypes.BeneficialTimer">
+                <div class="content-middle"><mat-checkbox [(ngModel)]="action.skipBenCastingTimeFocus" name="cbxSkipBenCastingTimeFocus" title="Item click effects do not benefit from spell haste.">Do not use beneficial spell haste focus.</mat-checkbox></div>
+            </div>
+
+            <div class="card-property">
+                <div class="content-top">Stopwatch Icon<div style="padding: 20px 15px;"><img *ngIf="action.timerIcon" [src]="action.timerIcon" (click)="openIconFileModal(action)" /></div></div>
+                <div class="content-vertical content-right content-top">
+                    
+                    <div class="align-left"><button mat-button *ngIf="action.timerIcon == null" (click)="openIconFileModal(action)" color="accent">Select Icon File</button></div>
+                    <div class="align-left"><button mat-button *ngIf="action.timerIcon == null" (click)="selectEqSpellIcon(action)" color="accent">Select EverQuest Spell Icon</button></div>
+                    <div class="align-left"><button mat-button *ngIf="action.timerIcon" (click)="action.timerIcon = null" color="warn">Reset Icon</button></div>
+                </div>
+            </div>
+
+        </div>
+
+    </mat-tab>
+
+    <mat-tab label="Stopwatch Ended">
+        <div class="card-tab-content" [appContextMenu]="getActionEndedCtxMenu(action)">
+
+            <!-- Yes store duration in variable -->
+            <div class="card-property">
+                <div class="content-middle"><mat-checkbox [(ngModel)]="action.storeDuration" name="cbxStoreDuration">Store stopwatch duration in variable.</mat-checkbox></div>
+                <div class="content-right" *ngIf="action.storeDuration">
+                    <mat-form-field>
+                        <mat-label></mat-label>
+                        <input matInput [(ngModel)]="action.variableName" name="txtVariableName" />
+                        <mat-hint>Variable Name</mat-hint>
+                    </mat-form-field>
+                </div>
+            </div>
+
+            <!-- Change stopwatch color -->
+            <div class="card-property">
+                <div class="content-middle"><mat-checkbox [(ngModel)]="action.endedChangeColor" name="cbxEndedChangeColor">Change stopwatch color</mat-checkbox></div>
+                <div class="content-right content-middle"><app-color-picker [(ngModel)]="action.endedColor" name="acpEndedColor" *ngIf="action.endedChangeColor" [inline]="true"></app-color-picker></div>
+            </div>
+
+            <!-- Enable actions -->
+            <div class="card-property">
+                <div class="content-middle"><mat-checkbox [(ngModel)]="action.notifyWhenEnded" name="cbxNotifyWhenEnded">Enable ended notifications.</mat-checkbox></div>
+            </div>
+
+            <div class="card-property" *ngIf="action.notifyWhenEnded" style="padding: 0;">
+                <div class="full-width content-top" style="padding: 0;">
+                    <div style="display: flex; flex-direction: row; padding: 0 42px;">
+                        <div class="content-top" style="padding-top: 22px;"><label>Execute actions when ended.</label></div>
+                        <div class="content-top content-vertical content-right" style="padding-top: 9px; flex: 1 1 auto;">
+                            <div style="text-align: right;"><button mat-icon-button color="accent" (click)="addSubAction(action.endedSubActions)"><mat-icon>add</mat-icon></button></div>
+                        </div>
+                    </div>
+                    <div style="padding-bottom: 25px;" *ngIf="action.endedSubActions?.length > 0">
+                        <div class="full-width content-top content-left" style="padding-top: 5px;" *ngFor="let subAction of action.endedSubActions; let i = index">
+                            <div class="sub-action-options-container" *ngIf="!subAction.actionId">
+                                <div class="hr"></div>
+                                <h2 style="margin: 18px 0;font-weight: 100;">Choose an Action to execute</h2>
+                                <app-trigger-action-option *ngFor="let action of actionOptions; let i = index" [action]="action" (click)="assignSubAction(subAction, action)"></app-trigger-action-option>
+                                <div class="hr"></div>
+                            </div>
+                            <div class="sub-action-container" *ngIf="subAction.actionId">
+                                <ng-container *ngIf="getSubActionAction(subAction.actionId) as subActionAction">
+                                    <div class="sub-action">
+                                        <div class="sub-action-icon"><mat-icon>{{actionTypeIcons(subActionAction.actionType)}}</mat-icon></div>
+                                        <div class="sub-action-desc">
+                                            <h4>{{actionTypeLabels(subActionAction.actionType)}}</h4>
+                                            <p>{{subActionAction.displayText}}</p>
+                                            <button class="color-red" mat-icon-button (click)="removeSubAction(action.endedSubActions, i)" style="float: right; margin-top: -45px;"><mat-icon>clear</mat-icon></button>
+                                        </div>
+                                    </div>
+                                    <div class="sub-action-variables" *ngIf="subAction.variableValues?.length > 0">
+                                        <div class="header-info"><label>Variable Assignment (<app-link-button (click)="helpVariableAssignment()">What is this?</app-link-button>)</label></div>
+                                        <div *ngFor="let nameValue of subAction.variableValues; let vvi = index"><label>{{nameValue.name}}</label><input type="text" [(ngModel)]="nameValue.value" name="variableValue_{{i}}_{{vvi}}" /></div>
+                                    </div>
+                                </ng-container>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Display text -->
+            <div class="card-property" *ngIf="action.notifyWhenEnded" style="margin-top:10px; clear: both;">
+                
+                <div class="content-top"><mat-checkbox [(ngModel)]="action.endedDisplayText" name="cbxEndedDisplayText">Display text</mat-checkbox></div>
+
+                <div class="content-vertical content-right">
+
+                    <mat-form-field *ngIf="action.endedDisplayText">
+                        <mat-label></mat-label>
+                        <input matInput [(ngModel)]="action.endedText" name="txtEndedText" placeholder="Enter the text to display" />
+                        <mat-hint>Display Text</mat-hint>
+                    </mat-form-field>
+
+                    <mat-form-field *ngIf="action.endedDisplayText">
+                        <mat-label></mat-label>
+                        <mat-select [(ngModel)]="action.endedTextOverlayId" name="ddlEndedTextOverlayId">
+                            <mat-option *ngFor="let option of alertOverlays" [value]="option.overlayId">{{option.name}}</mat-option>
+                        </mat-select>
+                        <mat-hint>Overlay Window</mat-hint>
+                    </mat-form-field>
+
+                    <app-duration [(ngModel)]="action.endedTextDuration" name="durEndedTextDuration" *ngIf="action.endedDisplayText"></app-duration>
+
+                </div>
+                
+            </div>
+
+            <!-- Speak a phrase -->
+            <div class="card-property" *ngIf="action.notifyWhenEnded">
+                
+                <div class="content-top"><mat-checkbox [(ngModel)]="action.endedSpeak" name="cbxEndedSpeak">Speak phrase</mat-checkbox></div>
+
+                <div class="content-vertical content-right">
+                    <mat-form-field *ngIf="action.endedSpeak">
+                        <mat-label></mat-label>
+                        <input matInput [(ngModel)]="action.endedSpeakPhrase" name="txtEndedSpeakPhrase" placeholder="Enter text to speak." />
+                        <mat-hint>Phrase</mat-hint>
+                    </mat-form-field>
+                    <mat-checkbox class="align-left head-room" [(ngModel)]="action.endedInterruptSpeech" name="cbxEndedInterruptSpeech" *ngIf="action.endedSpeak" title="If the TTS engine is currently speaking, that speech will be interrupted when this trigger action executes.">Interrupt speech</mat-checkbox>
+                </div>
+                
+            </div>
+
+            <!-- Send text to clipboard -->
+            <div class="card-property" *ngIf="action.notifyWhenEnded">
+                
+                <div class="content-middle"><mat-checkbox [(ngModel)]="action.endedClipboard" name="cbxEndedClipboard">Send text to clipboard</mat-checkbox></div>
+
+                <div class="content-right">
+                    <mat-form-field class="fill-width" *ngIf="action.endedClipboard">
+                        <mat-label></mat-label>
+                        <input matInput [(ngModel)]="action.endedClipboardText" name="txtEndedClipboardText" placeholder="Enter text to copy." />
+                        <mat-hint>Clipboard text</mat-hint>
+                    </mat-form-field>
+                </div>
+                
+            </div>
+
+            <!-- Play an audio clip -->
+            <div class="card-property" *ngIf="action.notifyWhenEnded">
+                
+                <div class="content-top"><mat-checkbox [(ngModel)]="action.endedPlayAudio" name="cbxEndedPlayAudio">Play an audio clip</mat-checkbox></div>
+
+                <div class="content-vertical content-right" *ngIf="action.endedPlayAudio">
+                    
+                    <p class="align-content-left">Select an audio file from the list or upload a new file.</p>
+
+                    <div class="align-content-justify">
+                        <mat-form-field style="width: calc(100% - 40px);">
+                            <mat-label></mat-label>
+                            <mat-select [(ngModel)]="action.endedPlayAudioFileId" name="ddlEndedPlayAudioFileId">
+                                <mat-option *ngFor="let option of audioFiles" [value]="option.fileId">{{option.fileName}}</mat-option>
+                            </mat-select>
+                            <mat-hint>Saved audio clips</mat-hint>
+                        </mat-form-field>
+
+                        <div class="self-center"><button mat-icon-button *ngIf="action.endedPlayAudioFileId != null" (click)="playAudioFile(action.endedPlayAudioFileId)"><mat-icon>play_circle_outline</mat-icon></button></div>
+                    </div>
+
+                    <div><button mat-button (click)="openEndedAudioFileModal()">Select new audio file.</button></div>
+
+                </div>
+                
+            </div>
+
+        </div>
+    </mat-tab>
+    <mat-tab label="Stop Stopwatch">
+        <div class="card-tab-content">
+
+            <app-phrases [(phrases)]="action.endEarlyPhrases">
+                <span style="font-size: 12px; font-weight: 400; line-height: 10px;">If any of the below phrases match a new log entry, the stopwatch will end and execute any specified ended actions.</span>
+            </app-phrases>
+
+        </div>
+    </mat-tab>
+</mat-tab-group>
+<input type="file" #iconFileSelector style="display:none;" accept="*.txt" (change)="iconFileSelected($event)" />
+<input type="file" #audioFileSelector style="display:none;" accept="audio/mpeg" (change)="onAudioFileSelected($event)" />

@@ -62,3 +62,91 @@ mat-panel-title {
     padding: 5px 25px;
     z-index: 1;
 }
+
+.character-triggers {
+    display: flex;
+    flex-flow: row nowrap;
+    background-color: rgb(33,33,33);
+    margin: 25px;
+
+    .triggers-list {
+        flex: 1 1 0px;
+        min-height: 550px;
+        max-height: 700px;
+        
+        h2 {
+            margin: 0;
+            padding: 25px 50px;
+            font-weight: 100;
+            background-color: #1a1a1a;
+            text-align: center;
+        }
+
+        > div {
+            position: relative;
+            height: calc(100% - 100px); // The header is 70px, plus the padding;
+            overflow-y: auto;
+            padding: 0 15px;
+            top: 15px;
+        }
+        // margin-right: 15px;
+
+        mat-tree-node.trigger-node {
+            mat-checkbox,
+            button {
+                margin-left: 10px;
+                margin-right: 10px;
+            }
+        }
+        
+        mat-tree-node.folder-node {
+            mat-checkbox {
+                margin-left: 10px;
+                margin-right: 10px;
+            }
+        }
+        
+        .disabled-label {
+            color: rgba(255,255,255,.3);
+        }
+        
+    }
+
+    .action-buttons {
+        flex: 0 0 50px;
+        display: flex;
+        flex-flow: column nowrap;
+        justify-content: center;
+        align-items: center;
+        background-color: #1a1a1a;
+
+        .double-chevron {
+            mat-icon:nth-child(2) {
+                margin-left: -18px;
+            }
+        }
+    }
+}
+
+button.mat-option-button {
+    float: right;
+
+    mat-icon {
+        margin-right: 0;
+    }
+}
+
+table {
+    tr {
+        td {
+            &.character-focus-label {
+                vertical-align: top;
+                padding-top: 20px;
+            }
+            &.character-focus-values {
+                vertical-align: top;
+                padding-top: 5px;
+            }
+        }
+    }
+}

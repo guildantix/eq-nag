@@ -137,7 +137,7 @@ export class GinaImportWindowComponent implements OnInit {
             let bad = _.some( this.nTrigger.actions, ( ac: TriggerAction ) => {
                 if ( ac.actionType === ActionTypes.DisplayText ) {
                     return ac.overlayId == null;
-                } else if ( ac.actionType === ActionTypes.Countdown || ac.actionType === ActionTypes.DotTimer || ac.actionType === ActionTypes.Timer ) {
+                } else if ( ac.actionType === ActionTypes.Countdown || ac.actionType === ActionTypes.DotTimer || ac.actionType === ActionTypes.Timer || ac.actionType === ActionTypes.Stopwatch || ac.actionType === ActionTypes.BeneficialTimer ) {
                     return ( ac.overlayId == null || (ac.ifEndingSoon && ac.endingSoonDisplayText && ac.endingSoonTextOverlayId == null) || (ac.notifyWhenEnded && ac.endedDisplayText && ac.endedTextOverlayId == null) )
                 }
             } );
@@ -185,6 +185,17 @@ export class GinaImportWindowComponent implements OnInit {
             this.triggerFolders = folders;
         } );
 
+    }
+
+    /**
+     * Reloads the current gina configuration, showing or hiding imported items.
+     * 
+     * @param showImported If true, the tree will show imported items. If false, it will hide imported items.
+     */
+    public onShowImportedChange( showImported: boolean ): void {
+        this.showImported = showImported;
+        this.dataSource.data = [];
+        this.loadGinaConfig( true );
     }
 
     public loadGinaConfig( refreshCache: boolean = false ): void {
@@ -248,7 +259,7 @@ export class GinaImportWindowComponent implements OnInit {
     }
 
     private trimGroups( data: GinaTreeObject[] ): void {
-        _.remove( data, c => c.imported );
+        _.remove( data, c => c.imported && !this.showImported );
         data?.forEach( group => {
             if ( group.children?.length > 0 ) {
                 this.trimGroups( group.children );
@@ -509,6 +520,9 @@ export class GinaImportWindowComponent implements OnInit {
         this.ipcService.showEditTriggerDialog( triggerId );
     }
 
+    public changeTimerType( newType: GinaTimerTypes ): void {
+        this.selectedTrigger.TimerType = newType;
+    }
 
 
 
@@ -609,7 +623,7 @@ export class GinaImportWindowComponent implements OnInit {
                                         return;
                                     }
 
-                                } else if ( ac.actionType === ActionTypes.Countdown || ac.actionType === ActionTypes.DotTimer || ac.actionType === ActionTypes.Timer ) {
+                                } else if ( ac.actionType === ActionTypes.Countdown || ac.actionType === ActionTypes.DotTimer || ac.actionType === ActionTypes.Timer || ac.actionType === ActionTypes.Stopwatch || ac.actionType === ActionTypes.BeneficialTimer ) {
                                     
                                     if ( ac.overlayId == null ) {
                                         if ( this.timerOverlays?.length > 0 ) {

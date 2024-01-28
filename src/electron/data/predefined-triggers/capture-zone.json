@@ -57,7 +57,7 @@
             "actionId": "3irHXDSvHQFf3LZ5",
             "timerIcon": null,
             "timerIconDef": null,
-            "showRemainingDuration": false,
+            "showDuration": false,
             "excludeTargets": [],
             "endEarlyPhrases": [],
             "name": null,
@@ -120,7 +120,7 @@
             "actionId": "sDiYPmjxrFRg5pI9",
             "timerIcon": null,
             "timerIconDef": null,
-            "showRemainingDuration": false,
+            "showDuration": false,
             "excludeTargets": [],
             "endEarlyPhrases": [],
             "name": null,
@@ -177,7 +177,7 @@
             "actionId": "IW03jfBt5cdqU2CX",
             "timerIcon": null,
             "timerIconDef": null,
-            "showRemainingDuration": false,
+            "showDuration": false,
             "excludeTargets": [],
             "endEarlyPhrases": [],
             "name": null,
@@ -198,7 +198,8 @@
             "castTime": null,
             "hideConditions": [],
             "restartBehavior": null,
-            "loopBackForValue": true
+            "loopBackForValue": true,
+            "variableStorageType": "localVariable"
         }
     ],
     "captureMethod": "Any match",

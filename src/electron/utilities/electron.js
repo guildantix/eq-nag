@@ -81,6 +81,8 @@ function determineContainingDisplay( bounds ) {
         }
 
     }
+
+    return undefined;
 }
 
 

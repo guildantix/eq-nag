@@ -3,7 +3,7 @@ import { DialogService } from 'src/app/dialogs/dialog.service';
 import { IpcService } from 'src/app/ipc.service';
 import { MatTable } from '@angular/material/table';
 import { customAlphabet } from 'nanoid';
-import { ActionTypes, AuthorModel, CapturePhrase, DeathRecapPreferences, LogMaintenanceRules, LogMaintenancePlanTypes, OverlayWindowModel, QuickShareAuthorListTypes, TriggerAction, TriggerModel, ScheduledTask, Range, SettingsKeys } from 'src/app/core.model';
+import { ActionTypes, AuthorModel, CapturePhrase, DeathRecapPreferences, LogMaintenanceRules, LogMaintenancePlanTypes, OverlayWindowModel, QuickShareAuthorListTypes, TriggerAction, TriggerModel, ScheduledTask, Range, SettingsKeys, SharedTriggerPermissions } from 'src/app/core.model';
 import { SettingsService } from '../settings-http.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { SetupService } from 'src/app/setup/setup.service';
@@ -13,6 +13,7 @@ import * as _ from 'lodash-es';
 import { CharactersListComponent } from 'src/app/characters-list/characters-list.component';
 import { nagId } from 'src/app/core/nag-id.util';
 import { DateUtilities } from 'src/app/utilities/date.utilities';
+import { MathUtilities } from 'src/app/utilities/math.utilities';
 
 interface IPhoneticTransform {
     id: string;
@@ -31,6 +32,8 @@ export class SettingsComponent implements OnInit {
     public phoneticTransformsModified: boolean = false;
     public version: string;
     public masterVolume: number = 100;
+    public speechVolume: number = 100;
+    public audioVolume: number = 100;
     public voiceOptions: SpeechSynthesisVoice[] = [];
     public voiceIndex: number = null;
     public loadingGinaConfig: boolean = false;
@@ -40,6 +43,7 @@ export class SettingsComponent implements OnInit {
     public beneficialOverlayId: string = null;
     public alertOverlayId: string = null;
     public enableQuickShareImports: boolean = false;
+    public sharedTriggerPermissions: SharedTriggerPermissions = new SharedTriggerPermissions();
     public deathRecapPreferences: DeathRecapPreferences = new DeathRecapPreferences();
     public minimizeToTrayOnLoad: boolean = false;
     public glowOnStartup: boolean = true;
@@ -52,6 +56,12 @@ export class SettingsComponent implements OnInit {
     public logTime: string|null;
     public logDays: number[] = [];
     public allowPrerelease: boolean = false;
+    public enableCheckWindowPosition: boolean = true;
+    // public enableGpuAcceleration: boolean = false;
+    public exampleSpeech: string = 'Hello, my name is nag.';
+    public baseSpeakingRate: number = 1;
+    public utter: SpeechSynthesisUtterance | undefined = undefined;
+    public updatedSettings: string[] = [];
 
     public get timerOverlays(): OverlayWindowModel[] {
         return this.overlays?.filter( m => m.overlayType === 'Timer' );
@@ -77,6 +87,9 @@ export class SettingsComponent implements OnInit {
         
         this.ipcService.tickReceived().subscribe( data => {
             this.masterVolume = data.masterVolume;
+            this.speechVolume = data.speechVolume;
+            this.audioVolume = data.audioVolume;
+            this.baseSpeakingRate = data.baseSpeakingRate;
             this.voiceIndex = data.voiceIndex;
             this.overlays = data.overlays;
             
@@ -136,6 +149,8 @@ export class SettingsComponent implements OnInit {
         } );
 
         this.ipcService.getSetting<boolean>( SettingsKeys.allowPrerelease ).subscribe( f => this.allowPrerelease = f );
+        this.ipcService.getSetting<boolean>( SettingsKeys.enableCheckWindowPosition ).subscribe( f => this.enableCheckWindowPosition = f );
+        // this.ipcService.getSetting<boolean>( SettingsKeys.enableGpuAcceleration ).subscribe( f => this.enableGpuAcceleration = f );
         this.ipcService.getSetting<LogMaintenanceRules>( SettingsKeys.logMaintenanceRules ).subscribe( f => {
 
             this.logMaintenanceRules = f;
@@ -143,13 +158,14 @@ export class SettingsComponent implements OnInit {
 
             if ( f.logSchedule?.dayOfWeek instanceof Array ) {
                 this.logDays = f.logSchedule.dayOfWeek;
-            } else if (f.logSchedule.dayOfWeek instanceof Range || (f.logSchedule?.dayOfWeek.hasOwnProperty('start') && f.logSchedule.dayOfWeek.hasOwnProperty('end'))) {
+            } else if (f.logSchedule?.dayOfWeek instanceof Range || (f.logSchedule?.dayOfWeek.hasOwnProperty('start') && f.logSchedule.dayOfWeek.hasOwnProperty('end'))) {
                 this.logDays = Range.toArray( f.logSchedule.dayOfWeek as Range );
             } else if ( f.logSchedule?.dayOfWeek > 0 ) {
                 this.logDays.push( +f.logSchedule.dayOfWeek );
             }
 
         } );
+        this.ipcService.getSetting<SharedTriggerPermissions>( SettingsKeys.sharedTriggerPermissions ).subscribe( f => this.sharedTriggerPermissions = f ?? new SharedTriggerPermissions() );
 
     }
 
@@ -200,6 +216,7 @@ export class SettingsComponent implements OnInit {
      */
     public updateSetting<T>( key: SettingsKeys, value: T, delay: number = null ) {
         this.ipcService.updateSetting( key, value, delay );
+        this.updatedSettings.push( key );
     }
 
 
@@ -390,6 +407,38 @@ export class SettingsComponent implements OnInit {
 
     
     /**
+     * Allows the user to save a copy of their current data files, in zip form.
+     */
+    downloadDataFiles() {
+        this.ipcService.downloadDataFilesZip();
+    }
+    
+
+
+
+
+
+
+
+
+    
+    /**
+     * Shows the current data folder in file explorer.
+     */
+    showDataFolder() {
+        this.ipcService.showDataFolder();
+    }
+
+
+
+
+
+
+
+
+
+    
+    /**
      * Stores the default detrimental overlay id.
      */
     saveDetrimentalOverlayId() {
@@ -442,13 +491,36 @@ export class SettingsComponent implements OnInit {
      * 
      * @param phrase The phrase to speak.
      */
-    speakPhrase( phrase: string ): void {
-        var utter = new SpeechSynthesisUtterance();
-        utter.text = phrase;
-        utter.voice = this.voiceOptions[ this.voiceIndex ];
-        utter.onend = function ( event ) { }
-        utter.rate = 1;
-        speechSynthesis.speak( utter );
+    speakPhrase( phrase: string, rate: number | undefined = undefined ): void {
+        
+        if ( rate !== undefined ) {
+            let x = Math.random();
+            if ( x >= 0 && x <= 0.05 ) {
+                phrase = 'I promise not to overthrow my human overlords.';
+            }
+        }
+
+        rate = rate ?? 0;
+
+        if ( this.baseSpeakingRate < 1 ) {
+            rate = rate - ( 1 - this.baseSpeakingRate );
+        } else if ( rate < this.baseSpeakingRate ) {
+            rate = this.baseSpeakingRate;
+        }
+
+        if ( this.utter ) {
+            speechSynthesis.cancel();
+            this.utter = undefined;
+        }
+
+        this.utter = new SpeechSynthesisUtterance();
+        this.utter.text = phrase;
+        this.utter.voice = this.voiceOptions[ this.voiceIndex ];
+        this.utter.onend = function ( event ) { }
+        this.utter.rate = MathUtilities.clamp( rate, 0.1, 4 );
+        this.utter.volume = ( this.speechVolume / 100 ) * ( this.masterVolume / 100 );
+        speechSynthesis.speak( this.utter );
+
     }
 
 
@@ -712,6 +784,32 @@ export class SettingsComponent implements OnInit {
     resetHiddenModals() {
         this.ipcService.resetHiddenModalIds();
         this.snackBar.open( 'All hidden modals will now appear again.', 'dismiss', { duration: 5000 } );
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Shows a dialog that explains window checking.
+     */
+    explainWindowChecking() {
+        this.dialogService.showInfoDialog(
+            'Relative Window Positioning',
+            [
+                'When the renderer loads an overlay, it will check to ensure that the monitor containing the overlay has moved.',
+                'If the monitor has moved, the renderer will recalculate the position of the overlay relative to the containing monitor. This will ensure that the overlay appears in the same location on the monitor.',
+                'However, on some systems the OS reports the monitor as having moved, even when it has not.',
+                'Disabling this setting will prevent this check from happening, which may resolve the issue.',
+                'However, if disabled and your monitor positions have changed, the overlay may appear in the wrong location or entirely off-screen.  When this happens, you can use the Send to Origin button on the overlay list to reset the overlay position.',
+            ],
+            'wide',
+        );
     }
 
 

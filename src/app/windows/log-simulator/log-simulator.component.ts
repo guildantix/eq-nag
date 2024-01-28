@@ -1,0 +1,293 @@
+import { trigger, state, style, transition, animate } from '@angular/animations';
+import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import * as _ from 'lodash-es';
+import { CharacterModel } from 'src/app/core.model';
+import { nagId } from 'src/app/core/nag-id.util';
+import { DialogService } from 'src/app/dialogs/dialog.service';
+import { IpcService } from 'src/app/ipc.service';
+import { SettingsService } from 'src/app/settings/settings-http.service';
+import { StringUtility } from 'src/app/utilities';
+
+// TODO: Move away from highlighting the current line and instead highlight all lines at the current second.  And remove the intervals, scrolling the last element into view immediately.
+// TODO: On close, stop the sim.
+
+@Component( {
+    selector: 'app-log-simulator',
+    templateUrl: 'log-simulator.component.html',
+    styleUrls: [ 'log-simulator.component.scss', '../../core.scss', '../../modal.scss' ],
+    animations: [
+        trigger( 'detailExpand', [
+            state( 'collapsed', style( { height: '0px', minHeight: '0' } ) ),
+            state( 'expanded', style( { height: '*' } ) ),
+            transition( 'expanded <=> collapsed', animate( '225ms cubic-bezier(0.4, 0.0, 0.2, 1)' ) ),
+        ] ),
+    ],
+} )
+export class LogSimulatorComponent implements OnInit {
+
+    public lines: string[] = [ 'Paste your log entries and select your character(s) to begin.' ];
+    public nagId: ( size?: number ) => string = nagId;
+    public rawData: string | null = null;
+    public characters: CharacterModel[] = [];
+    public characterId: string | null = null;
+    public simulationStatus: 'idle' | 'paused' | 'running' | 'complete' = 'idle';
+    public simulationTimerId: number | null = null;
+    public simulationRuntime: number = 0;
+    public simulationExpectedRuntime: number = 0;
+    public simulationLineIndex: number = -1;
+    public simulationId: string | null = null;
+    public get simulationProgressPercent(): number {
+        if ( this.simulationExpectedRuntime === 0 ) {
+            return 0;
+        }
+        return this.simulationRuntime / this.simulationExpectedRuntime * 100;
+    }
+    public get simulationProgressTimeRemainingString(): string {
+        if ( this.simulationExpectedRuntime === 0 ) {
+            return 'Calculating...';
+        }
+        const remaining = this.simulationExpectedRuntime - this.simulationRuntime;
+        if ( remaining < 0 ) {
+            return 'Calculating...';
+        }
+        return window.api.utils.dates.getDurationLabel( remaining / 1000 );
+    }
+    public lastIndexScrolled: number = -1;
+
+    constructor(
+        private readonly ipcService: IpcService,
+        private readonly dialogService: DialogService,
+        private readonly snackBar: MatSnackBar,
+        private readonly settingsService: SettingsService,
+    ) { }
+
+    ngOnInit() {
+        this.ipcService.getCharacters().subscribe( characters => {
+            this.characters = _.sortBy( characters, [ 'server', 'name' ] );
+        } );
+    }
+
+
+
+
+
+
+
+
+
+    
+    /**
+     * Closes this modal.
+     */
+    public closeModal(): void {
+        this.ipcService.closeThisChild();
+    }
+
+
+
+
+
+
+
+
+
+    
+    /**
+     * Shows the paste dialog.
+     */
+    public showPasteDialog(): void {
+        this.dialogService.showInputDialog( 'Paste Log Entries', [ 'Enter the lines of the log file that you want to simulate.' ], 'Log lines', null, this.rawData, true ).subscribe( data => {
+            if ( data === null || data === undefined ) {
+                return;
+            }
+            this.rawData = data;
+            let lines = data.split( /\r\n|\r|\n/gi );
+            for ( let i = 0; i < lines.length; i++ ) {
+                if ( StringUtility.isNullOrWhitespace( lines[ i ] ) ) {
+                    lines.splice( i, 1 );
+                    i--;
+                    continue;
+                }
+                
+                const lineDateMatch = /^\[(.*?)\]\s*/gi.exec( lines[ i ] );
+                if ( !lineDateMatch ) {
+                    let nearestDate: string = undefined;
+
+                    if ( i === 0 ) {
+                        let j = i;
+                        while ( j < lines.length && nearestDate == undefined ) {
+                            j++;
+                            const nextLineDateMatch = /^\[(.*?)\]\s*/gi.exec( lines[ j ] );
+                            if ( nextLineDateMatch ) {
+                                nearestDate = nextLineDateMatch[ 0 ];
+                            }
+                        }
+                    } else {
+                        let j = i;
+                        while ( j >= 0 && nearestDate == undefined ) {
+                            j--;
+                            const prevLineDateMatch = /^\[(.*?)\]\s*/gi.exec( lines[ j ] );
+                            if ( prevLineDateMatch ) {
+                                nearestDate = prevLineDateMatch[ 0 ];
+                            }
+                        }
+                    }
+                    
+                    if ( nearestDate ) {
+                        lines[ i ] = `${nearestDate}${lines[ i ]}`;
+                    } else {
+                        lines.splice( i, 1 );
+                        i--;
+                    }
+                }
+            }
+            this.lines = lines;
+        } );
+    }
+
+
+
+
+
+
+
+
+
+    
+    /**
+     * Returns the name and server of the selected character.
+     */
+    public getSelectValue(): string {
+        if ( this.characterId != null ) {
+            let c = this.characters.find( c =>  c.characterId === this.characterId );
+            return `${c.name} (${c.server})`;
+        }
+
+        return '';
+    }
+
+
+
+
+
+
+
+
+
+    
+    /**
+     * Returns the css class name for the given table row.
+     * 
+     * @param index The table row index.
+     * @param trRef A reference to the html table row element.
+     */
+    public getTrClass( index: number, trRef: HTMLTableRowElement ): string {
+        if ( index === this.simulationLineIndex ) {
+            if ( this.lastIndexScrolled !== index ) {
+                trRef.scrollIntoView( { block: "end" } );
+                this.lastIndexScrolled = index;
+            }
+            return 'current';
+        } else {
+            return '';
+        }
+    }
+
+
+
+
+
+
+
+
+
+    
+    /**
+     * Begins the simulation.
+     */
+    public beginSimulation(): void {
+        this.ipcService.beginSimulation( this.lines, this.characterId ).subscribe( simulationId => {
+            this.simulationId = simulationId;
+            this.simulationRuntime = 0;
+            this.snackBar.open( 'Simulation started.', 'OK', { duration: 3000 } );
+            this.ipcService.getSimulationStatus( simulationId ).subscribe( status => {
+                
+                if ( status.simulationPaused ) {
+                    this.simulationStatus = 'paused';
+                } else {
+                    this.simulationStatus = 'running';
+                }
+                let lineDistance = status.lineIndex - this.simulationLineIndex;
+                if ( lineDistance > 1 ) {
+                    let _ms = 500 / lineDistance;
+                    let _fn = () => {
+                        this.simulationLineIndex++;
+                        if ( this.simulationLineIndex < status.lineIndex ) {
+                            window.setTimeout( _fn, _ms );
+                        }
+                    }
+                    window.setTimeout( _fn, _ms );
+                } else {
+                    this.simulationLineIndex = status.lineIndex;
+                }
+
+                if ( status.lineIndex === 0 ) {
+                    this.simulationExpectedRuntime = status.msRemaining;
+                } else if ( status.msRemaining !== ( this.simulationExpectedRuntime - status.msRemaining ) ) {
+                    this.simulationRuntime = this.simulationExpectedRuntime - status.msRemaining;
+                }
+
+                if ( !status.simulationPaused && !this.simulationTimerId ) {
+                    this.simulationTimerId = window.setInterval( () => {
+                        this.simulationRuntime += 100;
+                    }, 100 );
+                } else if ( this.simulationTimerId && status.simulationPaused ) {
+                    window.clearInterval( this.simulationTimerId );
+                    this.simulationTimerId = null;
+                }
+
+                if ( status.isComplete ) {
+                    this.simulationStatus = 'idle';
+                    if ( this.simulationTimerId ) {
+                        window.clearInterval( this.simulationTimerId );
+                    }
+                    this.simulationTimerId = null;
+                    this.simulationRuntime = 0;
+                    this.simulationExpectedRuntime = 0;
+                    this.snackBar.open( 'Simulation complete.', 'OK', { duration: 3000 } );
+
+                    this.simulationLineIndex = this.lines.length - 1;
+                    window.setTimeout( () => this.simulationLineIndex = -1, 750 );
+                }
+
+            } );
+        } );
+    }
+
+
+
+
+
+
+
+
+
+    
+    /**
+     * Stops the simulation.
+     */
+    public stopSimulation(): void {
+        this.ipcService.stopSimulation( this.simulationId );
+    }
+
+
+
+
+
+
+
+
+
+
+}

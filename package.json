@@ -1,6 +1,6 @@
 {
   "name": "electron-angular-eq-parse",
-  "version": "0.1.36",
+  "version": "0.1.54",
   "main": "main.js",
   "description": "An EverQuest Notification AGent",
   "author": {
@@ -90,7 +90,8 @@
       "signingHashAlgorithms": ["sha256"],
       "sign": "./sign.js",
       "target": [
-        "nsis"
+        "nsis",
+        "portable"
       ],
       "publish": [
         {

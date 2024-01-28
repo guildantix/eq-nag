@@ -1,9 +1,9 @@
-const { ipcMain, BrowserWindow, dialog } = require( "electron" );
+const { ipcMain, BrowserWindow, dialog, shell } = require( "electron" );
 const Store = require( './store' );
 const ForwardRef = require( '../forward-ref' );
 const path = require( 'path' );
 const fs = require( 'fs' );
-const { AuthorModel } = require( './models/sharing-service' );
+const { AuthorModel, SharedTriggerPermissions } = require( './models/sharing-service' );
 const { FctStylesModel } = require( './models/fct' );
 const { StyleProperties, LogMaintenanceRules, LogMaintenanceHistory } = require( './models/common' );
 const archiver = require( 'archiver' );
@@ -11,6 +11,7 @@ const LogBootstrapper = require( "../log-bootstrap" );
 const { DeathRecapPreferences } = require( '../data/models/death-recap' );
 const { QuickShareAuthorListTypes } = require( '../data/models/common' );
 const { GinaToNagOverlay } = require( "./models/trigger" );
+const log = require( 'electron-log' );
 
 const possibleEqFolders = [
     '\\users\\public\\Everquest',
@@ -31,6 +32,10 @@ const prefChangeListeners = [];
 
 const defaultLogFileSizeMb = 100;
 const defaultLogMaintenanceDelaySeconds = 20;
+const defaultTriggerLogRetentionCount = 500;
+/** @type {Record<string, Electron.WebContents[]>} */
+const keySubscribers = {};
+
 
 /**
  * Get windows drives
@@ -79,6 +84,37 @@ class UserPreferencesStore extends Store {
      * }}
      */
     #data;
+
+    /** @type {boolean} If true, then Nag will enable GPU acceleration on load. */
+    get enableGpuAcceleration() {
+        return this.#data.enableGpuAcceleration === true ? true : false;
+    }
+    set enableGpuAcceleration( val ) {
+        log.info( '[UserPreferences:enableGpuAcceleration]', val );
+        this.#data.enableGpuAcceleration = val === true;
+        this.storeDataFile( this.#data );
+    }
+
+    /** @type {boolean} If true, then GPU acceleration has been enabled and the main window has been loaded. */
+    get disableGpuAcceleration() {
+        // If it's not explicitly false, then return true.
+        return this.#data.disableGpuAcceleration === false ? false : true;
+    }
+    set disableGpuAcceleration( val ) {
+        log.info( '[UserPreferences:disableGpuAcceleration]', val );
+        this.#data.disableGpuAcceleration = val === true;
+        this.storeDataFile( this.#data );
+    }
+
+    /** @type {boolean} */
+    get askForCombatGroupMigrations() {
+        // If it's not explicitly false, then return true.
+        return this.#data.askForCombatGroupMigrations === false ? false : true;
+    }
+    set askForCombatGroupMigrations( val ) {
+        this.#data.askForCombatGroupMigrations = val === true;
+        this.storeDataFile( this.#data );
+    }
 
     /** @type {boolean} */
     get minimizeToTrayOnLoad() {
@@ -213,6 +249,42 @@ class UserPreferencesStore extends Store {
     }
     set masterVolume( val ) {
         this.#data.masterVolume = val <= 100 && val >= 0 ? val : 100;
+        this.storeDataFile( this.#data );
+    }
+
+    get speechVolume() {
+        if ( this.#data && this.#data.speechVolume > -1 ) {
+            return this.#data.speechVolume;
+        } else {
+            return 100;
+        }
+    }
+    set speechVolume( val ) {
+        this.#data.speechVolume = val <= 100 && val >= 0 ? val : 100;
+        this.storeDataFile( this.#data );
+    }
+
+    get audioVolume() {
+        if ( this.#data && this.#data.audioVolume > -1 ) {
+            return this.#data.audioVolume;
+        } else {
+            return 100;
+        }
+    }
+    set audioVolume( val ) {
+        this.#data.audioVolume = val <= 100 && val >= 0 ? val : 100;
+        this.storeDataFile( this.#data );
+    }
+
+    get baseSpeakingRate() {
+        if ( this.#data && this.#data.baseSpeakingRate > 0 && this.#data.baseSpeakingRate <= 4 ) {
+            return this.#data.baseSpeakingRate;
+        } else {
+            return 1;
+        }
+    }
+    set baseSpeakingRate( val ) {
+        this.#data.baseSpeakingRate = val <= 4 && val > 0 ? val : 1;
         this.storeDataFile( this.#data );
     }
 
@@ -411,6 +483,33 @@ class UserPreferencesStore extends Store {
     }
     set hiddenModalIds( val ) {
         this.#data.hiddenModalIds = val ?? [];
+        this.storeDataFile( this.#data );
+    }
+
+    /** @type {number} */
+    get logRetentionCount() {
+        return this.#data.logRetentionCount ?? defaultTriggerLogRetentionCount;
+    }
+    set logRetentionCount( val ) {
+        this.#data.logRetentionCount = val ?? defaultTriggerLogRetentionCount;
+        this.storeDataFile( this.#data );
+    }
+
+    get enableCheckWindowPosition() {
+        // Unless the user has explicitly disabled this feature, we'll enable it by default.
+        return this.#data.enableCheckWindowPosition !== false;
+    }
+    set enableCheckWindowPosition( val ) {
+        this.#data.enableCheckWindowPosition = val === true;
+        this.storeDataFile( this.#data );
+    }
+
+    /** @type {SharedTriggerPermissions} */
+    get sharedTriggerPermissions() {
+        return this.#data.sharedTriggerPermissions ?? new SharedTriggerPermissions();
+    }
+    set sharedTriggerPermissions( val ) {
+        this.#data.sharedTriggerPermissions = val;
         this.storeDataFile( this.#data );
     }
 
@@ -688,15 +787,22 @@ class UserPreferencesStore extends Store {
                 this[ arg.key ] = arg.value;
                 sendTick();
                 this.emitChanges();
+                if ( keySubscribers[ arg.key ]?.length > 0 ) {
+                    keySubscribers[ arg.key ].forEach( s => s.send( `settings:get:${arg.key}:generic`, this[ arg.key ] ) );
+                }
             } );
 
         ipcMain.on( 'settings:get',
             /**
              * 
-             * @param {any} event The Event args.
+             * @param {Electron.IpcMainEvent} event The Event args.
              * @param {{key: string}} arg The setting data.
              */
             ( event, arg ) => {
+                if ( arg.subscribe === true ) {
+                    keySubscribers[ arg.key ] = keySubscribers[ arg.key ] ? keySubscribers[ arg.key ] : [];
+                    keySubscribers[ arg.key ].push( event.sender );
+                }
                 event.sender.send( `settings:get:${arg.key}:generic`, this[ arg.key ] );
             } );
         
@@ -937,6 +1043,58 @@ class UserPreferencesStore extends Store {
                 zip.finalize();
             }
 
+        } );
+
+        ipcMain.on( 'settings:open-data-folder', () => {
+            shell.openPath( this.userDataPath );
+        } );
+
+        ipcMain.on( 'settings:download-data-files', () => {
+            let dataPath = path.join( this.userDataPath, 'migrations_backup' );
+
+            if ( !fs.existsSync( dataPath ) ) {
+                fs.mkdirSync( dataPath );
+            }
+
+            let now = new Date( Date.now() );
+            let filename = `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDay() + 1}-${now.getSeconds()}-full-backup.zip`;
+            let dataZip = path.join( this.userDataPath, filename );
+            let output = fs.createWriteStream( dataZip );
+            let zip = archiver( 'zip' );
+                
+            output.on( 'close', () => {
+
+                let options = {
+                    //Placeholder 1
+                    title: "EQ Nag - Data Backup",
+                
+                    //Placeholder 2
+                    defaultPath: filename,
+                
+                    //Placeholder 4
+                    buttonLabel: "Save Backup File",
+                
+                    //Placeholder 3
+                    filters: [
+                        { name: 'Zip', extensions: [ 'zip' ] }
+                    ]
+                }
+
+                const WIN = BrowserWindow.getFocusedWindow();
+
+                dialog.showSaveDialog( WIN, options ).then( saveResult => {
+                    if ( !saveResult.canceled ) {
+                        fs.copyFile( dataZip, saveResult.filePath, () => { } );
+                    }
+                } );
+            } );
+
+            zip.pipe( output );
+            let files = [ 'user-preferences.json', 'characters-database.json', 'files-database.json', 'overlays-database.json', 'trigger-database.json', 'players-database.json' ];
+            files.forEach( file => {
+                zip.file( path.join( this.userDataPath, file ), { name: file } );
+            } );
+            zip.finalize();
         } );
 
         ipcMain.on( 'settings:set:ignore-gina-objects',

@@ -50,7 +50,7 @@ fieldset {
         .spacer {
             flex: 1 1 auto;
         }
-        button {
+        > button {
             position: absolute;
             right: 12px;
             top: 3px;
@@ -435,6 +435,11 @@ fieldset.trigger-property-group {
                 font-size: 14px;
                 display: flex;
                 flex: 1;
+
+                > span {
+                    flex: 1 1 auto;
+                    text-align: right;
+                }
             }
             > button {
                 mat-icon {
@@ -559,10 +564,24 @@ div.formless-hint {
     text-align: left;
     margin-bottom: 5px;
 
+    h3 {
+        font-weight: 300;
+        margin: 4px 0 7px;
+        font-size: 19px;
+    }
+
     > .formless-input {
         height: 41px;
         display: flex;
         flex-direction: row;
+        > * {
+            align-self: center;
+        }
+    }
+
+    > .stacked-inputs {
+        display: flex;
+        flex-direction: column;
         > * {
             align-self: center;
         }

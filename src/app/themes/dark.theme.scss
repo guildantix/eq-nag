@@ -1,5 +1,6 @@
 $color-grey-80: #808080;
 $color-light-grey: #eeeeee;
+$color-bright-white: #ffffff;
 // $text: #ffffff;
 $text: #ebebeb;
 // $text: #e3e3e3;
@@ -11,6 +12,7 @@ $color-blue: #69b2f0;
 $color-yellow: #f0e069;
 $color-orange: #f0c669;
 $color-orange-dark: #d9990b;
+$color-brown: #c18367;
 $color-red: #f06969;
 $color-red-warn: #f44336;
 $color-purple: #c269f0;
@@ -35,6 +37,10 @@ $bg-extreme-dark: #191919;
 
 .dark-theme {
 
+    .color-bright-white {
+        color: $color-bright-white;
+    }
+
     .color-light {
         color: $color-light;
     }
@@ -58,6 +64,10 @@ $bg-extreme-dark: #191919;
     .color-orange-dark {
         color: $color-orange-dark;
     }
+
+    .color-brown {
+        color: $color-brown;
+    }
     
     .color-red {
         color: $color-red;
@@ -74,6 +84,58 @@ $bg-extreme-dark: #191919;
     .color-magenta {
         color: $color-magenta;
     }
+
+    .hover-bright-wight:hover {
+        color: $color-bright-white;
+    }
+
+    .hover-light:hover {
+        color: $color-light;
+    }
+
+    .hover-blue:hover {
+        color: $color-blue;
+    }
+
+    .hover-green:hover {
+        color: $color-green;
+    }
+
+    .hover-yellow:hover {
+        color: $color-yellow;
+    }
+
+    .hover-orange:hover {
+        color: $color-orange;
+    }
+
+    .hover-orange-dark:hover {
+        color: $color-orange-dark;
+    }
+
+    .hover-brown:hover {
+        color: $color-brown;
+    }
+
+    .hover-red:hover {
+        color: $color-red;
+    }
+
+    .hover-red-warn:hover {
+        color: $color-red-warn;
+    }
+
+    .hover-purple:hover {
+        color: $color-purple;
+    }
+
+    .hover-magenta:hover {
+        color: $color-magenta;
+    }
+
+    .border-bright-white {
+        border-color: $color-bright-white;
+    }
     
     .border-light {
         border-color: $color-light;
@@ -86,37 +148,87 @@ $bg-extreme-dark: #191919;
     .border-blue {
         border-color: rgba($color-blue, .8); // a: 0.80
     }
+
+    .box-shadow-blue {
+        box-shadow: 0 0 5px 1px $color-blue;
+    }
     
     .border-green {
         border-color: rgba($color-green, .8); // a: 0.80
+    }
+
+    .box-shadow-green {
+        box-shadow: 0 0 5px 1px $color-green;
+        &.hover-only {
+            box-shadow: unset;
+            &:hover {
+                box-shadow: 0 0 5px 1px $color-green;
+            }
+        }
     }
     
     .border-yellow {
         border-color: rgba($color-yellow, .8); // a: 0.80
     }
+
+    .box-shadow-yellow {
+        box-shadow: 0 0 5px 1px $color-yellow;
+    }
     
     .border-orange {
         border-color: rgba($color-orange, .8); // a: 0.80
     }
+
+    .box-shadow-orange {
+        box-shadow: 0 0 5px 1px $color-orange;
+    }
     
     .border-orange-dark {
         border-color: rgba($color-orange-dark, .8); // a: 0.80
+    }
+
+    .box-shadow-orange-dark {
+        box-shadow: 0 0 5px 1px $color-orange-dark;
+    }
+
+    .border-brown {
+        border-color: rgba($color-brown, .8); // a: 0.80
+    }
+
+    .box-shadow-brown {
+        box-shadow: 0 0 5px 1px $color-brown;
     }
     
     .border-red {
         border-color: rgba($color-red, .8); // a: 0.80
     }
 
+    .box-shadow-red {
+        box-shadow: 0 0 5px 1px $color-red;
+    }
+
     .border-red-warn {
         border-color: rgba($color-red-warn, .8); // a: 0.80
+    }
+
+    .box-shadow-red-warn {
+        box-shadow: 0 0 5px 1px $color-red-warn;
     }
     
     .border-purple {
         border-color: rgba($color-purple, .8); // a: 0.80
     }
+
+    .box-shadow-purple {
+        box-shadow: 0 0 5px 1px $color-purple;
+    }
     
     .border-magenta {
         border-color: rgba($color-magenta, .8); // a: 0.80
+    }
+
+    .box-shadow-magenta {
+        box-shadow: 0 0 5px 1px $color-magenta;
     }
 
     app-main {
@@ -536,6 +648,25 @@ fieldset.trigger-property-group {
 
     .field-list {
         .field-line{
+
+            > span {
+                span {
+                    a {
+                        font-size: 12px;
+                        font-weight: 500;
+                        color: rgba($color-blue, .8);
+                        cursor: pointer;
+
+                        &:hover {
+                            color: $color-blue;
+                        }
+                        &:active {
+                            color: darken($color-blue, 33%);
+                        }
+                    }
+                }
+            }
+
             &:nth-of-type(even) {
                 > label {
                     background-color: #00000033;
@@ -608,6 +739,12 @@ span.item-link {
 
     &:active {
         color: $color-purple;
+    }
+}
+
+mat-hint {
+    .help-sup {
+        font-size: 10px;
     }
 }
 
@@ -699,4 +836,8 @@ mat-button-toggle-group {
             }
         }
     }
+}
+
+.cursor-pointer {
+    cursor: pointer;
 }

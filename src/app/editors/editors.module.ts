@@ -26,6 +26,8 @@ import { TriggerActionDeathRecapComponent } from './trigger-action-death-recap/t
 import { WebComponentsModule } from '../web-components/web-components.module';
 import { CoreModule } from '../core/core.module';
 import { TriggerActionScreenGlowComponent } from './trigger-action-screen-glow/trigger-action-screen-glow.component';
+import { TriggerActionStopwatchComponent } from './trigger-action-stopwatch/trigger-action-stopwatch.component';
+import { GamePreviewComponent } from './game-preview/game-preview.component';
 
 @NgModule({
     imports: [
@@ -57,6 +59,8 @@ import { TriggerActionScreenGlowComponent } from './trigger-action-screen-glow/t
         StylePropertiesComponent,
         TriggerActionDeathRecapComponent,
         TriggerActionScreenGlowComponent,
+        TriggerActionStopwatchComponent,
+        GamePreviewComponent,
     ],
     declarations: [
         ConditionsComponent,
@@ -76,6 +80,8 @@ import { TriggerActionScreenGlowComponent } from './trigger-action-screen-glow/t
         StylePropertiesComponent,
         TriggerActionDeathRecapComponent,
         TriggerActionScreenGlowComponent,
+        TriggerActionStopwatchComponent,
+        GamePreviewComponent,
     ],
     providers: [],
 })

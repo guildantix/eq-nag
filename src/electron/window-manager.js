@@ -28,6 +28,12 @@ class WindowManager {
     triggerLibraryWindow;
 
     /** @type {BrowserWindow} */
+    logSimulatorWindow;
+
+    /** @type {BrowserWindow} */
+    easyWindow;
+
+    /** @type {BrowserWindow} */
     updateNotesWindow;
 
     /** @type {ForwardRef<BrowserWindow>} */
@@ -108,6 +114,12 @@ class WindowManager {
 
         this.#overlayDatabase.registerOverlayUpdateHandler( overlays => {
             this.#renderer.webContents.send( 'renderer:overlay:update', overlays );
+        } );
+
+        this.#overlayDatabase.registerCombatGroupUpdateHandler( groups => {
+            if ( this.#renderer ) {
+                this.#renderer.webContents.send( 'renderer:combatGroups', groups );
+            }
         } );
 
         this.#overlayDatabase.registerOverlayDeleteHandler( overlayId => {
@@ -362,6 +374,10 @@ class WindowManager {
             this.#renderer.webContents.send( 'component:destroy', instanceId );
         } );
         
+        ipcMain.on( 'renderer:stopwatch:stop', ( event, instanceId ) => {
+            this.#renderer.webContents.send( 'renderer:stopwatch:stop', instanceId );
+        } );
+        
         ipcMain.on( 'renderer:reset:overlayDimensions', ( event ) => {
             this.#renderer.webContents.send( 'renderer:reset:overlayDimensions', null );
         } );
@@ -391,17 +407,26 @@ class WindowManager {
             ( event, d ) => {
             
                 const display = ElectronUtilities.determineContainingDisplay( d.bounds );
-                
-                d.displayId = display.id;
-                
-                d.displayBounds = display.bounds;
-                d.bounds.x = d.bounds.x - display.bounds.x;
-                d.bounds.y = d.bounds.y - display.bounds.y;
 
-                this.#mainWindow.reference.webContents.send( 'overlay:event:bounds-changed', d );
-                this.#openOverlayEditors.forEach( window => {
-                    window?.webContents.send( 'overlay:event:bounds-changed', d );
-                } );
+                if ( display == undefined ) {
+                    // If a display could not be found, then send to the middle of the primary display.
+                    const primaryDisplay = screen.getPrimaryDisplay();
+                    this.sendOverlayToMiddle( d.overlayId, primaryDisplay.id );
+
+                } else {
+                
+                    d.displayId = display.id;
+                    
+                    d.displayBounds = display.bounds;
+                    d.bounds.x = d.bounds.x - display.bounds.x;
+                    d.bounds.y = d.bounds.y - display.bounds.y;
+    
+                    this.#mainWindow.reference.webContents.send( 'overlay:event:bounds-changed', d );
+                    this.#openOverlayEditors.forEach( window => {
+                        window?.webContents.send( 'overlay:event:bounds-changed', d );
+                    } );
+                    
+                }
             } );
 
         ipcMain.on( 'gina:dialog:import', ( event, arg ) => {
@@ -481,6 +506,91 @@ class WindowManager {
             } );
             this.triggerLibraryWindow.setBackgroundColor( '#1a1a1a' );
             this.configureRendererMouseBlockingOnMoveResize( this.triggerLibraryWindow );
+        } );
+
+        ipcMain.on( 'trigger:dialog:log-simulator', ( event, arg ) => {
+            this.logSimulatorWindow = new BrowserWindow( {
+                parent: mainWindowRef.reference,
+                modal: false,
+                show: false,
+                width: 1000,
+                height: 800,
+                frame: false,
+                webPreferences: {
+                    nodeIntegration: false,
+                    contextIsolation: true,
+                    devTools: app.isDev(),
+                    sandbox: false,
+                    preload: path.join( __dirname, '/preloaders/main.js' ),
+                }
+            } );
+
+            require( "@electron/remote/main" ).enable( this.logSimulatorWindow.webContents );
+
+            if ( app.isDev() ) {
+                this.logSimulatorWindow.webContents.openDevTools( { mode: 'undocked' } );
+            }
+            
+            let url = `file://${this.#dirname}/dist/index.html#/log/simulator`;
+            if ( arg ) {
+                url += `/${arg}`;
+            }
+            this.logSimulatorWindow.loadURL( url );
+            this.logSimulatorWindow.once( "ready-to-show", () => {
+                this.logSimulatorWindow.show();
+                event.sender.send( 'trigger:dialog:log-simulator', true );
+            } );
+            this.logSimulatorWindow.on( 'closed', () => {
+                this.logSimulatorWindow = null;
+            } );
+            this.logSimulatorWindow.setBackgroundColor( '#1a1a1a' );
+            this.configureRendererMouseBlockingOnMoveResize( this.logSimulatorWindow );
+
+        } );
+
+        ipcMain.on( 'trigger:dialog:easy-window', ( event, arg ) => {
+            
+            if ( this.easyWindow != null ) {
+                return;
+            }
+
+            this.easyWindow = new BrowserWindow( {
+                parent: mainWindowRef.reference,
+                modal: false,
+                show: false,
+                width: 1000,
+                height: 800,
+                frame: false,
+                webPreferences: {
+                    nodeIntegration: false,
+                    contextIsolation: true,
+                    devTools: app.isDev(),
+                    sandbox: false,
+                    preload: path.join( __dirname, '/preloaders/main.js' ),
+                }
+            } );
+
+            require( "@electron/remote/main" ).enable( this.easyWindow.webContents );
+
+            if ( app.isDev() ) {
+                this.easyWindow.webContents.openDevTools( { mode: 'undocked' } );
+            }
+            
+            let url = `file://${this.#dirname}/dist/index.html#/easy`;
+            if ( arg ) {
+                url += `/${arg}`;
+            }
+            this.easyWindow.loadURL( url );
+            this.easyWindow.once( "ready-to-show", () => {
+                this.easyWindow.show();
+                event.sender.send( 'trigger:dialog:easy-window', true );
+            } );
+            this.easyWindow.on( 'closed', () => {
+                this.easyWindow = null;
+            } );
+            this.easyWindow.setBackgroundColor( '#1a1a1a' );
+            this.configureRendererMouseBlockingOnMoveResize( this.easyWindow );
+
         } );
 
         ipcMain.on( 'window:update-notes:show', ( event, arg ) => {
@@ -594,6 +704,8 @@ class WindowManager {
         let savedBounds = this.#userPrefDb.rendererBounds;
         let bounds = savedBounds == null ? this.calculateRendererBounds() : savedBounds;
 
+        log.info( '[Renderer:loadRenderer] Loading renderer bounds', bounds );
+
         let renderer = new BrowserWindow( {
             transparent: true,
             frame: false,
@@ -624,7 +736,7 @@ class WindowManager {
         
         renderer.loadURL( `file://${__dirname}/threads/renderer.html?originX=${0 - bounds.x}&originY=${0 - bounds.y}&glowOnStart=${this.#userPrefDb.glowOnStartup === true ? 'true' : 'false'}` );
         // renderer.loadURL( `file://${__dirname}/threads/renderer.html` );
-        renderer.setIgnoreMouseEvents( true, { forward: true } );
+        renderer.setIgnoreMouseEvents( true, { forward: false } );
 
         // https://github.com/electron/electron/issues/10078#issuecomment-331581160
         renderer.setAlwaysOnTop( true, "screen-saver" );
@@ -640,6 +752,7 @@ class WindowManager {
 
         renderer.webContents.once( 'dom-ready', () => {
             renderer.webContents.send( 'fct:change:fctShowCriticalsInline', this.#userPrefDb.fctShowCriticalsInline );
+            renderer.webContents.send( 'renderer:combatGroups', this.#overlayDatabase.getCombatGroups() );
         } );
 
         this.#renderer = renderer;
@@ -650,8 +763,11 @@ class WindowManager {
             this.#renderer.setFullScreenable( false );
         }, 1000 );
 
-        ipcMain.once('main:angular-ready', () => {
-            this.checkWindowPosition( true );
+        ipcMain.once( 'main:angular-ready', () => {
+            if ( this.#userPrefDb.enableCheckWindowPosition ) {
+                log.info( '[WindowManager:main:angular-ready] Initiating overlay position checks.' );
+                this.checkOverlayPositions( true );
+            }
         } );
 
     }
@@ -981,6 +1097,10 @@ class WindowManager {
             fn( this.triggerLibraryWindow, 'triggerLibraryWindow' );
         }
 
+        if ( this.logSimulatorWindow ) {
+            fn( this.logSimulatorWindow, 'logSimulatorWindow' );
+        }
+
         if ( this.updateNotesWindow ) {
             fn( this.updateNotesWindow, 'updateNotesWindow' );
         }
@@ -1011,7 +1131,7 @@ class WindowManager {
      *      is true, then we will display the warning and allow the user to use 
      *      the arrainge window to tweak/save changes to the overlays.
      */
-    checkWindowPosition( showWarning ) {
+    checkOverlayPositions( showWarning ) {
         showWarning = showWarning === true;
         var currentSize = this.#renderer.getBounds();
         let newSize = this.calculateRendererBounds();
@@ -1137,6 +1257,8 @@ class WindowManager {
         const display = screen.getAllDisplays().find( f => f.id === displayId );
         if ( display != null ) {
             let overlay = this.#overlayDatabase.find( overlayId );
+            
+            log.info( `[Overlay:sendOverlayToMiddle] Sending overlay ${overlayId} to middle of display ${displayId}` );
             
             overlay.x = ( display.size.width - overlay.windowWidth ) / 2;
             overlay.y = ( display.size.height - overlay.windowHeight ) / 2;

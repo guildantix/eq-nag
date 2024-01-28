@@ -5,6 +5,12 @@ class PhraseParse {
     phraseId;
     /** @type {RegExpExecArray} */
     result;
+    /** @type {RegExpExecArray | undefined} */
+    dependencyResult;
+    /** @type {boolean} */
+    match;
+    /** @type {string} */
+    renderedPhrase;
 }
 
 class LogTrigger extends Trigger {
@@ -48,6 +54,9 @@ class LogTrigger extends Trigger {
 
     /** @type {boolean|undefined} */
     _passesClassCondition = undefined;
+
+    /** @type {boolean} */
+    _profileDisabled = false;
 }
 
 module.exports = { PhraseParse, LogTrigger };

@@ -39,6 +39,8 @@ export enum GinaTimerTypes {
     Timer = 'Timer',
     RepeatingTimer = 'RepeatingTimer',
     Stopwatch = 'Stopwatch',
+    // This is a custom type that is not part of the Gina XML
+    Countup = 'Countup',
 }
 
 export enum GinaTimerStartBehaviors {

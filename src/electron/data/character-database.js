@@ -6,7 +6,7 @@ const customAlphabet = require( 'nanoid' ).customAlphabet;
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const idLen = 16;
 const nanoid = customAlphabet( alphabet, 16 );
-const { CharacterModel, CharacterStoreModel } = require( "./models/character" );
+const { CharacterModel, CharacterStoreModel, TriggersProfileModel } = require( "./models/character" );
 const fs = require( 'fs' );
 const { migrateCharacterData } = require( "./migrations/character-database-migration" );
 
@@ -43,6 +43,15 @@ class CharacterDatabaseStore extends Store {
 
     }
     
+
+
+
+
+
+
+
+
+
     /**
      * Adds the given character to the store.
      * 
@@ -70,6 +79,15 @@ class CharacterDatabaseStore extends Store {
         return character.characterId;
     }
     
+
+
+
+
+
+
+
+
+
     /**
      * Removes the specified character.
      * 
@@ -86,6 +104,15 @@ class CharacterDatabaseStore extends Store {
         }
     }
     
+
+
+
+
+
+
+
+
+
     /**
      * Removes the character at the specified index.
      * 
@@ -108,6 +135,15 @@ class CharacterDatabaseStore extends Store {
         }
     }
     
+
+
+
+
+
+
+
+
+
     /**
      * Returns the character with the given id.
      * 
@@ -126,6 +162,21 @@ class CharacterDatabaseStore extends Store {
         }
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Returns the character id of the character with the given log file.
+     * 
+     * @param {string} logFile The log file to search for.
+     * @returns 
+     */
     findCharacterIdByLogFile( logFile ) {
         
         // Find the index of the character by Id.
@@ -138,6 +189,15 @@ class CharacterDatabaseStore extends Store {
             return null;
         }
     }
+
+
+
+
+
+
+
+
+
 
     /**
      * Updates the given character in the store.
@@ -165,6 +225,15 @@ class CharacterDatabaseStore extends Store {
         
     }
     
+
+
+
+
+
+
+
+
+
     /**
      * Returns all characters.
      * 
@@ -172,6 +241,93 @@ class CharacterDatabaseStore extends Store {
      */
     getAll() {
         return this.#data.characters;
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Returns all trigger profiles.
+     * 
+     * @returns {TriggersProfileModel[]} Returns the list of all trigger profiles.
+     */
+    getAllTriggerProfiles() {
+        return this.#data.triggerProfiles;
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Adds the given trigger id to all profiles and characters that have disable by default on.
+     * 
+     * @param {string} triggerId The id of the trigger.
+     */
+    addToDisabledByDefaultTriggers( triggerId ) {
+        
+        // Update all trigger profiles.
+        this.#data.triggerProfiles.forEach( tp => {
+            if ( tp.disableTriggersByDefault === true && tp.disabledTriggers.indexOf( triggerId ) < 0 ) {
+                tp.disabledTriggers.push( triggerId );
+            }
+        } );
+
+        // Update all characters.
+        this.#data.characters.forEach( c => {
+            let profile = this.#data.triggerProfiles.find( tp => tp.profileId === c.triggerProfileId );
+            if ( ( c.disableTriggersByDefault === true || profile?.disableTriggersByDefault === true ) && c.disabledTriggers.indexOf( triggerId ) < 0 ) {
+                c.disabledTriggers.push( triggerId );
+            }
+        } );
+        
+        this.storeDataFile( this.#data );
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Removes the given trigger id from all profiles and character disabled lists.
+     * 
+     * @param {string} triggerId The id of the trigger to remove.
+     */
+    removeFromDisabledTriggers( triggerId ) {
+            
+        // Update all trigger profiles.
+        this.#data.triggerProfiles.forEach( profile => {
+            let i = profile.disabledTriggers.indexOf( triggerId );
+            if ( i > -1 ) {
+                profile.disabledTriggers.splice( i, 1 );
+            }
+        } );
+    
+        // Update all characters.
+        this.#data.characters.forEach( character => {
+            let i = character.disabledTriggers.indexOf( triggerId );
+            if ( i > -1 ) {
+                character.disabledTriggers.splice( i, 1 );
+            }
+        } );
+            
+        this.storeDataFile( this.#data );
     }
 
 
@@ -220,7 +376,128 @@ class CharacterDatabaseStore extends Store {
             return await this.getCharacterOptions( logsPath );
         } );
 
+        ipcMain.on( 'character:get:triggerProfiles',
+            /**
+             * Returns a list of all trigger profiles.
+             * 
+             * @param {Electron.IpcMainEvent} event The event args.
+             */
+            ( event ) => {
+                event.sender.send( 'character:get:triggerProfiles', this.#data.triggerProfiles );
+            } );
+
+        ipcMain.on( 'character:save:triggerProfile',
+            /**
+             * Saves the trigger profile.
+             * 
+             * @param {Electron.IpcMainEvent} event The event args.
+             * @param {TriggersProfileModel} profile The trigger profile.
+             */
+            ( event, profile ) => {
+                let triggerProfile = this.#data.triggerProfiles.find( tp => tp.profileId === profile.profileId );
+
+                if ( triggerProfile ) {
+                    triggerProfile.disabledTriggers = profile.disabledTriggers;
+                    this.storeDataFile( this.#data );
+                } else {
+                    profile.profileId = profile.profileId ?? nanoid();
+                    this.#data.triggerProfiles.push( profile );
+                    this.storeDataFile( this.#data );
+                }
+                
+                event.sender.send( 'character:save:triggerProfile', profile.profileId );
+            } );
+        
+        ipcMain.on( 'character:delete:triggerProfile',
+            /**
+             * Deletes the specified trigger profile.
+             * 
+             * @param {Electron.IpcMainEvent} event The event args.
+             * @param {string} profileId The id of the profile.
+             */
+            ( event, profileId ) => {
+                let i = this.#data.triggerProfiles.findIndex( tp => tp.profileId === profileId );
+                if ( i > -1 ) {
+                    this.#data.triggerProfiles.splice( i, 1 );
+                    this.storeDataFile( this.#data );
+                }
+                event.sender.send( 'character:delete:triggerProfile', this.#data.triggerProfiles.findIndex( tp => tp.profileId === profileId ) === -1 );
+            } );
+
+        ipcMain.on( 'character:save:combatGroupHits',
+            /**
+             * Updates the combat group hits.
+             * 
+             * @param {Electron.IpcMainEvent} event The event args.
+             * @param {{characterId: string, combatGroupHits: Record<string, number[]>}} data The updated combat group hits.
+             */
+            ( event, data ) => {
+                let character = this.find( data.characterId );
+                if ( character ) {
+                    character.combatGroupHits = data.combatGroupHits;
+                    this.update( character );
+                }
+            } );
+
+        ipcMain.on( 'character:save:combatGroupMedian',
+            /**
+             * Updates the combat group median values.
+             * 
+             * @param {Electron.IpcMainEvent} event The event args.
+             * @param {{characterId: string, combatGroupHits: Record<string, number>}} data The updated combat group median values.
+             */
+            ( event, data ) => {
+                let character = this.find( data.characterId );
+                if ( character ) {
+                    character.combatGroupMedian = data.combatGroupMedian;
+                    this.update( character );
+                }
+            } );
+        
+        ipcMain.on( 'character:get:combatGroupHits',
+            /**
+             * Returns the combat group hits object to the sender.
+             * 
+             * @param {Electron.IpcMainEvent} event The event args.
+             */
+            ( event ) => {
+                /** @type {Record<string, Record<string, number[]>>} */
+                let combatGroupHits = {};
+
+                this.#data.characters.forEach( c => {
+                    combatGroupHits[ c.characterId ] = c.combatGroupHits;
+                } );
+
+                event.sender.send( 'character:get:combatGroupHits', combatGroupHits );
+            } );
+        
+        ipcMain.on( 'character:get:combatGroupMedian',
+            /**
+             * Returns the combat group median values object to the sender.
+             * 
+             * @param {Electron.IpcMainEvent} event The event args.
+             */
+            ( event ) => {
+                /** @type {Record<string, Record<string, number[]>>} */
+                let combatGroupMedian = {};
+
+                this.#data.characters.forEach( c => {
+                    combatGroupMedian[ c.characterId ] = c.combatGroupMedian;
+                } );
+
+                event.sender.send( 'character:get:combatGroupMedian', combatGroupMedian );
+            } );
+
     }
+
+
+
+
+
+
+
+
+
 
     /**
      * Returns a list of options available from the known eq log file path.
@@ -254,6 +531,15 @@ class CharacterDatabaseStore extends Store {
         return dictionary;
     }
 
+
+
+
+
+
+
+
+
+
     /**
      * Executes the given function, passing in the new character, when a new character is added.
      * 
@@ -268,6 +554,15 @@ class CharacterDatabaseStore extends Store {
         }
     }
 
+
+
+
+
+
+
+
+
+
     /**
      * Executes the given function, passing in the removed character, when a character is removed.
      * 
@@ -281,6 +576,15 @@ class CharacterDatabaseStore extends Store {
             onRemovedHandlers[ i ] = fn;
         }
     }
+
+
+
+
+
+
+
+
+
 
 }
 

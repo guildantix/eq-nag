@@ -1,0 +1,11 @@
+<p [ngClass]="{'error': item.logType === logTypes.error}">
+    <span class="log-timestamp">[{{item.timestamp | date:'M/d/yyyy, h:mm a'}}]</span>
+    <span class="links" style="min-width: 20px;">
+        <mat-icon [ngClass]="{'color-green': item.logType !== logTypes.error}" title="Show more details" *ngIf="renderPayload" (click)="expanded = !expanded">{{!expanded ? 'expand_more' : 'expand_less'}}</mat-icon>
+    </span>
+    <span class="log-text" style="flex: 0 0; white-space: nowrap; font-weight: bold; padding-right: 7px; min-width: 80px;">{{item.label}}</span>
+    <span class="log-text">{{item.message}}</span>
+</p>
+<p class="log-details" [ngClass]="{'error': item.logType === logTypes.error}" *ngIf="renderPayload && expanded">
+    <span class="log-details-line" [innerHTML]="payloadHtml"></span>
+</p>

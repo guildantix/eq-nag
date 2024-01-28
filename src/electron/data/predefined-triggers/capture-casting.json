@@ -68,7 +68,8 @@
             ],
             "variableName": "SpellBeingCast",
             "restartBehavior": 0,
-            "onlyExecuteInDev": false
+            "onlyExecuteInDev": false,
+            "variableStorageType": "localVariable"
         }
     ],
     "captureMethod": "Any match",

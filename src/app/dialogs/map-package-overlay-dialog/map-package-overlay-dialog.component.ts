@@ -10,7 +10,7 @@ import { NotificationDialogModel, NotificationTypes } from '../notification-dial
 @Component( {
     selector: 'app-map-package-overlay-dialog',
     templateUrl: 'map-package-overlay-dialog.component.html',
-    styleUrls: [ './map-package-overlay-dialog.component.scss' ],
+    styleUrls: [ './map-package-overlay-dialog.component.scss', '../dialog.styles.scss' ],
 } )
 export class MapPackageOverlayDialogComponent implements OnInit, OnDestroy {
 

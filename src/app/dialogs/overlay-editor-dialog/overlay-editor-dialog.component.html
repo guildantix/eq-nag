@@ -11,7 +11,22 @@
     <section>
         <mat-tab-group animationDuration="0ms" [selectedIndex]="0">
             <mat-tab label="General">
-                <div class="tab-content">
+                <div class="tab-content" [ngClass]="{'with-preview': model.overlayType === 'Alert'}">
+
+                    <game-preview class="game-preview" *ngIf="model.overlayType === 'Alert'">
+                        <div class="text-preview" 
+                            [style.color]="previewFontColor"
+                            [style.font-family]="model.fontFamily"
+                            [style.font-weight]="fontWeight"
+                            [style.line-height]="lineHeight"
+                            [style.text-shadow]="textShadow"
+                            [style.font-size]="model.fontSize + 'px'"
+                            [style.border]="border"
+                            [style.background]="backgroundColor">
+                            The quick brown fox {{model.fontSize}} jumped over the lazy dog.<br/>
+                            The quick brown fox {{model.fontSize}} jumped over the lazy dog.<br/>
+                            The quick brown fox {{model.fontSize}} jumped over the lazy dog.</div>
+                    </game-preview>
 
                     <fieldset class="margin-t-25">
                         <legend><span class="title">Properties</span><small>Description and styles for this overlay window.</small></legend>
@@ -151,19 +166,6 @@
 
                     </fieldset>
 
-                    <!-- <fieldset class="margin-t-25" *ngIf="model.overlayType === 'FCT'">
-                        <legend><span class="title">FCT Options</span><small>Change how specific combat numbers are displayed.</small></legend>
-
-                        <app-style-properties [style]="model.fctDmgOutStyle" label="My Damage" (onChange)="styleChange($event)"></app-style-properties>
-                        <app-style-properties [style]="model.fctDmgInStyle" label="Other Damage" (onChange)="styleChange($event)"></app-style-properties>
-                        <app-style-properties [style]="model.fctSpellDmgOutStyle" label="My Spells" (onChange)="styleChange($event)"></app-style-properties>
-                        <app-style-properties [style]="model.fctSpellDmgInStyle" label="Other  Spells" (onChange)="styleChange($event)"></app-style-properties>
-                        <app-style-properties [style]="model.fctHealingOutStyle" label="My Healing" (onChange)="styleChange($event)"></app-style-properties>
-                        <app-style-properties [style]="model.fctHealingInStyle" label="Other Healing" (onChange)="styleChange($event)"></app-style-properties>
-                        <app-style-properties [style]="model.fctSkillStyle" label="Skill" (onChange)="styleChange($event)"></app-style-properties>
-
-                    </fieldset> -->
-
                     <fieldset class="margin-t-25" *ngIf="model.overlayType === 'Timer'">
                         <legend><span class="title">Timer Options</span><small>Change properties about how timers should appear in this overlay.</small></legend>
                                    
@@ -198,6 +200,12 @@
 
                         <div>
                             <mat-checkbox [(ngModel)]="model.showTimeRemaining" name="showTimeRemaining" (change)="broadcastModel()">Show the time remaining</mat-checkbox>
+                        </div>
+
+                        <div class="f-row">
+                            <div class="f-sm-4 al-left"><mat-checkbox [(ngModel)]="model.reverse" name="reverse" (change)="broadcastModel()">Reverse timer flow, starting from the bottom and adding more above.</mat-checkbox></div>
+                            <div class="f-sm-4 al-center"></div>
+                            <div class="f-sm-4 al-center"></div>
                         </div>
 
                         <div class="f-row">

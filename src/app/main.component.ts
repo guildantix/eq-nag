@@ -67,12 +67,12 @@ export class MainComponent implements OnInit {
     }
 
     constructor(
-        private snackBar: MatSnackBar,
-        private ipcService: IpcService,
-        private dialogService: DialogService,
-        private setupService: SetupService,
-        private libraryService: TriggerLibraryService,
-        private quickShareService: QuickShareService,
+        private readonly snackBar: MatSnackBar,
+        private readonly ipcService: IpcService,
+        private readonly dialogService: DialogService,
+        private readonly setupService: SetupService,
+        private readonly libraryService: TriggerLibraryService,
+        private readonly quickShareService: QuickShareService,
     ) {
     }
 
@@ -124,7 +124,7 @@ export class MainComponent implements OnInit {
             this.ipcService.getAuthor().subscribe( author => {
             
                 let observables = [
-                    this.quickShareService.isAuthorOfQuickShare(author.authorId, quickShareId),
+                    this.quickShareService.isAuthorOfQuickShare( author?.authorId, quickShareId ),
                     this.quickShareService.getQuickShare( quickShareId ),
                     this.quickShareService.getQuickShareFiles( quickShareId ),
                 ];
@@ -269,7 +269,11 @@ export class MainComponent implements OnInit {
                 );
             }
         } );
-        
+
+        window.setTimeout( () => {
+            this.ipcService.mainWindowLoaded();
+        }, 60 * 1000 );
+
     }
 
 
@@ -470,6 +474,10 @@ export class MainComponent implements OnInit {
     
     public styleChange( style: StylePropertiesModel ) {
         this.ipcService.saveFctStyles( this.fctStyles );
+    }
+
+    public showEasyWindow(): void {
+        this.ipcService.showEasyWindow().subscribe();
     }
 
     public testFn(): void {

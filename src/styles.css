@@ -1,6 +1,6 @@
 /* @import '@angular/material/prebuilt-themes/purple-green.css'; */
 
-body{ margin: 0; height: 100%; font-family: Roboto,"Helvetica Neue Light","Helvetica Neue",Helvetica,Arial,"Lucida Grande",sans-serif; color: #ebebeb; }
+body{ margin: 0; height: 100%; font-family: Roboto,"Helvetica Neue Light","Helvetica Neue",Helvetica,Arial,"Lucida Grande",sans-serif; color: #ebebeb; overflow-y: hidden; }
 html { height: 100%; overflow-y: hidden; }
 .docs-app-background {
     background: #303030;

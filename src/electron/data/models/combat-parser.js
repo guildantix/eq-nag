@@ -4,9 +4,13 @@ class AttackModifiers {
     /** @type {boolean} */
     critical = false;
     /** @type {boolean} */
+    cripplingBlow = false;
+    /** @type {boolean} */
     flurry = false;
     /** @type {boolean} */
     lucky = false;
+    /** @type {boolean} */
+    twincast = false;
     /** @type {boolean} */
     riposte = false;
     /** @type {boolean} */

@@ -1,0 +1,56 @@
+
+:host::ng-deep p {
+    font-size: 12px;
+    font-family: Consolas, monospace;
+    margin: 0;
+    padding: 2px 0px;
+    padding-left: 19px;
+    line-height: 18px;
+    border-bottom: 1px solid #323232;
+    display: flex;
+    flex-flow: row nowrap;
+
+    &.error {
+        
+        color: #f06969;
+        background-color: #2a04047a;
+        border-color: #610a0a;
+        border-top: 1px solid #610a0a;
+        margin-top: -1px;
+    }
+
+    &:first-of-type {
+        border-top: 1px solid #323232;
+    }
+
+    span.log-timestamp {
+        margin-right: 5px;
+        flex: 0;
+        white-space: nowrap;
+        min-width: 150px;
+    }
+
+    span.links {
+        flex: 0 1 auto;
+        white-space: nowrap;
+        margin-right: 5px;
+        display: flex;
+
+        mat-icon {
+            font-size: 13px;
+            width: 13px;
+            height: 13px;
+            opacity: 0.8;
+            cursor: pointer;
+            margin: 0 2px;
+
+            &:hover {
+                opacity: 1;
+            }
+        }
+    }
+
+    span.log-text {
+        flex: 1 1 auto;
+    }
+}

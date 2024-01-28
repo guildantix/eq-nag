@@ -1,5 +1,20 @@
 const { OverlayWindow } = require( "./overlay-window" )
 
+const ErrorMessages = {
+    generalParsingError: () => 'Failed to parse log entry.',
+    triggerParse: () => 'Attempt to execute capture phrases against log entry has failed.',
+    triggerGeneration: () => 'An error occurred while generating the trigger parse functions.',
+    triggerExecution: () => 'Could not execute trigger.',
+    fctException: () => 'An exception occurred while parsing FCT.',
+    cancellableParse: () => 'Could not parse cancellable component phrase.',
+    secondaryTriggerParse: () => 'Could not parse secondary trigger.',
+    secondaryTriggerExecution: () => 'Could not execute secondary trigger.',
+    /**
+     * @param {string} counterName The name of the counter.
+     */
+    counterExecution: (counterName) => `Could not execute counter ${counterName}.`,
+}
+
 var ActionTypes = {
     '0': 'DisplayText',
     '1': 'PlayAudio',
@@ -15,6 +30,7 @@ var ActionTypes = {
     '11': 'DisplayDeathRecap',
     '12': 'ScreenGlow',
     '13': 'ClearAll',
+    '14': 'Stopwatch',
     DisplayText: 0,
     PlayAudio: 1,
     Speak: 2,
@@ -29,7 +45,65 @@ var ActionTypes = {
     DisplayDeathRecap: 11,
     ScreenGlow: 12,
     ClearAll: 13,
+    Stopwatch: 14,
 
+}
+
+var LogTypes = {
+    
+    '0': 'info',
+    '1': 'error',
+    '2': 'success',
+    '3': 'warning',
+    '4': 'debug',
+    info: 0,
+    error: 1,
+    success: 2,
+    warning: 3,
+    debug: 4,
+
+}
+
+/**
+ * Returns the label for the given action type.
+ * 
+ * @param {ActionTypes} actionType The action type to get the label for.
+ */
+var getActionLabel = ( actionType ) => {
+    switch ( actionType ) {
+        case ActionTypes.DisplayText:
+            return 'Display Text';
+        case ActionTypes.PlayAudio:
+            return 'Play Audio';
+        case ActionTypes.Speak:
+            return 'Speak';
+        case ActionTypes.Timer:
+            return 'Timer';
+        case ActionTypes.Countdown:
+            return 'Countdown';
+        case ActionTypes.StoreVariable:
+            return 'Store Variable';
+        case ActionTypes.DotTimer:
+            return 'Dot Timer';
+        case ActionTypes.ClearVariable:
+            return 'Clear Variable';
+        case ActionTypes.Counter:
+            return 'Counter';
+        case ActionTypes.Clipboard:
+            return 'Clipboard';
+        case ActionTypes.BeneficialTimer:
+            return 'Beneficial Timer';
+        case ActionTypes.DisplayDeathRecap:
+            return 'Display Death Recap';
+        case ActionTypes.ScreenGlow:
+            return 'Screen Glow';
+        case ActionTypes.ClearAll:
+            return 'Clear All';
+        case ActionTypes.Stopwatch:
+            return 'Stopwatch';
+        default:
+            return 'Unknown';
+    }
 }
 
 var ExternalDataSources = {
@@ -201,8 +275,10 @@ class TriggerAction {
     duration = null;
     /** @type {string} */
     storageDuration = null;
-    /** @type {boolean} */
+    /** @type {boolean} @deprecated Use showDuration instead. */
     showRemainingDuration = false;
+    /** @type {boolean} */
+    showDuration = false;
     /** @type {boolean} */
     repeatTimer = false;
     /** @type {number} */
@@ -255,6 +331,8 @@ class TriggerAction {
     variableStorageType = 'localVariable';
     /** @type {boolean} */
     flash = false;
+    /** @type {boolean} */
+    storeDuration = false;
 
     /** @type {TriggerSubAction[]} */
     endingSoonSubActions = [];
@@ -683,6 +761,55 @@ class QuickShareMetaModel {
 
 }
 
+class TriggerParseHistoryModel {
+    
+    /** @type {string} */
+    parseId;
+    /** @type {Date} */
+    timestamp;
+    /** @type {string} */
+    triggerId;
+    /** @type {string} */
+    triggerName;
+    /** @type {string} */
+    actionId;
+    /** @type {string} */
+    actionTypeLabel;
+    /** @type {string} */
+    phraseId;
+    /** @type {string | string[]} */
+    renderedPhrase;
+    /** @type {string | string[]} */
+    unrenderedPhrase;
+    /** @type {Record<string, string>} */
+    conditionResults;
+    /** @type {Record<string, string[]>} */
+    storedVariables;
+    /** @type {Record<string, {value: number, lastUpdate: Date, resetDelay: number}>} */
+    counters;
+    /** @type {RegExpExecArray | undefined} */
+    regexResult;
+    /** @type {RegExpExecArray | undefined} */
+    dependencyRegexResult;
+    /** @type {string} */
+    parseType;
+    /** @type {number} */
+    deltaTime;
+    /** @type {string} */
+    characterId;
+    /** @type {string} */
+    characterName;
+    /** @type {string} */
+    rawLogEntry;
+    /** @type {LogTypes} */
+    logType = LogTypes.info;
+    /** @type {any} */
+    error;
+    /** @type {string} */
+    errorDescription;
+
+}
+
 class TriggerStoreModel {
     /** @type {number} */
     version;
@@ -700,6 +827,12 @@ class TriggerStoreModel {
     packageOverlayMap;
     /** @type {Record<string, string[]>} This is a record of all package original overlay ids. */
     packageOverlays;
+    /** @type {TriggerParseHistoryModel[]} */
+    successfulTriggerExecutions = [];
+    /** @type {TriggerParseHistoryModel[]} */
+    failedTriggerExecutions = [];
+    /** @type {TriggerParseHistoryModel[]} */
+    exceptionHistory = [];
 }
 
 class GinaToNagOverlay {
@@ -715,6 +848,7 @@ module.exports = {
     Trigger,
     TriggerAction,
     ActionTypes,
+    LogTypes,
     CapturePhrase,
     ExternalDataSources,
     TriggerConditionTypes,
@@ -744,4 +878,7 @@ module.exports = {
     DuplicateTriggerAction,
     OwnedTriggerAction,
     GinaToNagOverlay,
+    TriggerParseHistoryModel,
+    getActionLabel,
+    ErrorMessages,
 };

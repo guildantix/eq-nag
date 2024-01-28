@@ -13,16 +13,19 @@ const nanoid = customAlphabet( alphabet, 16 );
 @Component( {
     selector: 'app-new-character-dialog',
     templateUrl: 'new-character-dialog.component.html',
-    styleUrls: [ '../../core.scss', '../../modal.scss', 'new-character-dialog.component.scss' ]
+    styleUrls: [ '../dialog.styles.scss', '../../core.scss', '../../modal.scss', 'new-character-dialog.component.scss' ]
 } )
 export class NewCharacterDialogComponent implements OnInit {
 
     public url: string;
     public eqFolder: string = undefined;
-    public model: CharacterModel;
+    public model: CharacterModel | undefined = undefined;
     public serverOptions: NewCharacterOptionModel[] = [];
     public server: NewCharacterOptionModel;
     public existingCharacters: CharacterModel[] = [];
+    public panel: 'missingInstallFolder' | 'selectCharacter' | 'modelReview' | 'manualInput' = 'selectCharacter';
+    public selectedService: string = 'daybreak';
+    public otherServiceName: string = '';
 
     @ViewChild( 'fileSelector' ) private fileSelector: ElementRef<HTMLInputElement>;
 
@@ -40,6 +43,10 @@ export class NewCharacterDialogComponent implements OnInit {
         this.ipcService.getEqInstallFolder().subscribe( folder => {
             this.eqFolder = folder;
             this.populateCharacterOptions();
+
+            if (this.eqFolder == undefined) {
+                this.panel = 'missingInstallFolder';
+            }
         } );
     }
 
@@ -188,8 +195,30 @@ export class NewCharacterDialogComponent implements OnInit {
      * Clears the selected character.
      */
     cancelCharacter() {
-        this.model = null;
+        this.model = undefined;
         this.fileSelector.nativeElement.value = null;
+        this.panel = this.eqFolder == null ? 'missingInstallFolder' : 'selectCharacter';
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Uses manual user input to create a character model.
+     */
+    createManualModel() {
+        this.model.server = this.model.server?.toLowerCase() || '';
+        this.model.p99 = this.selectedService == 'p99';
+        this.model.daybreak = this.selectedService == 'daybreak';
+        this.model.takp = this.selectedService == 'takp';
+
+        this.panel = 'modelReview';
     }
 
 
@@ -219,6 +248,7 @@ export class NewCharacterDialogComponent implements OnInit {
                 option.name = results.groups.Character;
                 option.server = results.groups.Server;
                 option.logFile = `${characterLogPath}`;
+                option.takp = false;
                 option.p99 = false;
                 option.daybreak = true;
 
@@ -235,11 +265,53 @@ export class NewCharacterDialogComponent implements OnInit {
                 option.name = p99Results.groups.Character;
                 option.server = p99Results.groups.Server;
                 option.logFile = `${characterLogPath}`;
+                option.takp = false;
                 option.p99 = true;
                 option.daybreak = false;
 
                 this.model = option;
 
+            }
+            
+            let p99Special = /eqlog_(?<Character>.*)_project1999\.txt$/gi.exec( characterLogPath );
+            if ( p99Special != null && p99Special?.groups?.Character != null ) {
+
+                let option: CharacterModel = new CharacterModel();
+
+                option.name = p99Special.groups.Character;
+                option.server = 'project1999';
+                option.logFile = `${characterLogPath}`;
+                option.takp = false;
+                option.p99 = true;
+                option.daybreak = false;
+
+                this.model = option;
+
+            }
+
+            // eqlog_Testname_pq.proj.txt
+            let quarm = /eqlog_(?<Character>.*)_pq\.proj\.txt$/gi.exec( characterLogPath );
+            if ( quarm != null && quarm?.groups?.Character != null ) {
+
+                let option: CharacterModel = new CharacterModel();
+
+                option.name = quarm.groups.Character;
+                option.server = 'quarm';
+                option.logFile = `${characterLogPath}`;
+                option.takp = true;
+                option.p99 = false;
+                option.daybreak = false;
+
+                this.model = option;
+
+            }
+
+            if ( this.model == undefined ) {
+                this.model = new CharacterModel();
+                this.model.logFile = `${characterLogPath}`;
+                this.panel = 'manualInput';
+            } else {
+                this.panel = 'modelReview';
             }
         }
     }

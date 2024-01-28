@@ -3,12 +3,17 @@ import * as Electron from 'electron';
 import { UpdateInfo } from 'electron-updater';
 import { Observable, Observer } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
-import { DataTickModel, DkpEntryModel, TriggerModel, OverlayWindowModel, ActionTypes, FocusEffectSettings, CharacterModel, BasicError, TriggerFolder, FileModel, Tag, AuthorModel, PackageFileModel, TriggerPackageMetaModel, TriggerPackageVersion, FctStylesModel, OverlayBoundsChangedEventArgs, DialogEventArgs, QuickShareMetaModel, LogFileLocation, IpcMessage, DeathRecapPreferences, QuickShareAuthorListTypes, Progress, QuitFailureData, DuplicateTriggerAction, ScrapedSpell, ScrapedClickEffect } from './core.model';
+import { DataTickModel, DkpEntryModel, TriggerModel, OverlayWindowModel, ActionTypes, FocusEffectSettings, CharacterModel, BasicError, TriggerFolder, FileModel, Tag, AuthorModel, PackageFileModel, TriggerPackageMetaModel, TriggerPackageVersion, FctStylesModel, OverlayBoundsChangedEventArgs, DialogEventArgs, QuickShareMetaModel, LogFileLocation, IpcMessage, DeathRecapPreferences, QuickShareAuthorListTypes, Progress, QuitFailureData, DuplicateTriggerAction, ScrapedSpell, ScrapedClickEffect, TriggerParseHistoryModel, SimulationProgress, FctCombatGroup, CombatTypes, StylePropertiesModel, CombatAnimations, TriggersProfileModel, ConsoleMessageModel, LogTypes } from './core.model';
 import { GinaConfiguration, GinaTriggerGroups } from './gina.model';
 import { ColorUtility } from './utilities';
+import { nagId } from './core/nag-id.util';
 
 @Injectable( { providedIn: 'root' })
 export class IpcService {
+
+    private _successfulParses: TriggerParseHistoryModel[] = [];
+    private _failedParses: TriggerParseHistoryModel[] = [];
+    private _consoleMessages: ConsoleMessageModel[] = [];
     
     private _tickObservers: Observer<DataTickModel>[] = [];
     private _transmitObservers: Observer<DkpEntryModel[]>[] = [];
@@ -27,6 +32,13 @@ export class IpcService {
     private _onMissingPackageOverlay: Observer<OverlayWindowModel>[] = [];
     private _onQuitFalure: Observer<QuitFailureData>[] = [];
     private _onBackupProgress: Observer<Progress>[] = [];
+    private _simProgress: Record<string, Observer<SimulationProgress>[]> = {};
+    private _successfulParseHistoryObservers: Observer<{ successful: TriggerParseHistoryModel[], exceptions: TriggerParseHistoryModel[] }>[] = [];
+    private _consoleSuccessObservers: Observer<ConsoleMessageModel>[] = [];
+    private _consoleErrorObservers: Observer<ConsoleMessageModel>[] = [];
+    private _onCombatGroupMigrationRequestObservers: Observer<boolean>[] = [];
+    private _settingsObservableCache: Record<string, Observable<any>> = {};
+    private _settingsCacheObservers: Record<string, Observer<any>[]> = {};
 
     private _ginaConfigCache: GinaConfiguration = null;
 
@@ -35,6 +47,14 @@ export class IpcService {
     constructor( private ngZone: NgZone ) {
         if ( window.api ) {
             try {
+
+                window.api.ipc.on( 'ask_combat_group_migration', ( event: any, data: boolean ) => {
+                    ngZone.run( () => {
+                        this._onCombatGroupMigrationRequestObservers?.forEach( f => {
+                            f.next( data );
+                        } );
+                    } );
+                } );
 
                 window.api.ipc.on( 'archive:progress', ( event: any, data: Progress ) => {
                     ngZone.run( () => {
@@ -173,12 +193,112 @@ export class IpcService {
                     } );
                 } );
 
+                window.api.ipc.on( 'trigger:batch:parse-history', ( event: any, data: { successful: TriggerParseHistoryModel[], exceptions: TriggerParseHistoryModel[] } ) => {
+                    ngZone.run( () => {
+
+                        data.successful = data.successful.map( x => {
+                            let m = Object.assign( new TriggerParseHistoryModel(), x );
+                            m.timestamp = new Date( x.timestamp );
+                            m.logId = nagId();
+                            // this._successfulParses.push( m );
+                            return m;
+                        } );
+                        data.exceptions = data.exceptions.map( x => {
+                            let m = Object.assign( new TriggerParseHistoryModel(), x );
+                            m.timestamp = new Date( x.timestamp );
+                            m.logId = nagId();
+                            // this._failedParses.push( m );
+                            return m;
+                        } );
+
+                        this._successfulParseHistoryObservers?.forEach( f => {
+                            f.next( data );
+                        } );
+                    } );
+                } );
+
+                window.api.ipc.on( 'console:success', ( event: any, data: ConsoleMessageModel ) => {
+                    ngZone.run( () => {
+                        this._consoleSuccessObservers?.forEach( f => {
+                            let m = Object.assign( new ConsoleMessageModel(), data );
+                            m.logType = LogTypes.success;
+                            m.logId = nagId();
+                            f.next( m );
+                        } );
+                    } );
+                } );
+
+                window.api.ipc.on( 'console:error', ( event: any, data: ConsoleMessageModel ) => {
+                    ngZone.run( () => {
+                        this._consoleErrorObservers?.forEach( f => {
+                            let m = Object.assign( new ConsoleMessageModel(), data );
+                            m.logType = LogTypes.error;
+                            m.logId = nagId();
+                            f.next( m );
+                        } );
+                    } );
+                } );
+
+                this.onConsoleSuccess().subscribe( log => {
+                    this._consoleMessages.push( log );
+                } );
+
+                this.onConsoleError().subscribe( log => {
+                    this._consoleMessages.push( log );
+                } );
+
+                this.onBatchParseHistory().subscribe( history => {
+                    this._successfulParses.push( ...history.successful );
+                    this._failedParses.push( ...history.exceptions );
+                } );
+
+
             } catch ( e ) {
                 throw e;
             }
         } else {
             console.warn( 'App not running inside Electron!' );
         }
+    }
+
+    /**
+     * Returns an observable that will emit when the main process requests a 
+     * combat group migration.  The value will be true if the user has existing 
+     * fct styles that can be migrated.
+     */
+    public onAskCombatGroupMigration(): Observable<boolean> {
+        let obs: Observable<boolean> = new Observable<boolean>( ( observer: Observer<boolean> ) => {
+            this._onCombatGroupMigrationRequestObservers.push( observer );
+        } );
+
+        return obs;
+    }
+
+    /**
+     * Returns the list of successful parses.
+     */
+    public onBatchParseHistory(): Observable<{ successful: TriggerParseHistoryModel[], exceptions: TriggerParseHistoryModel[] }> {
+        let obs: Observable<{ successful: TriggerParseHistoryModel[], exceptions: TriggerParseHistoryModel[] }> = new Observable<{ successful: TriggerParseHistoryModel[], exceptions: TriggerParseHistoryModel[] }>( ( observer: Observer<{ successful: TriggerParseHistoryModel[], exceptions: TriggerParseHistoryModel[] }> ) => {
+            this._successfulParseHistoryObservers.push( observer );
+        } );
+
+        return obs;
+    }
+
+    public onConsoleSuccess(): Observable<ConsoleMessageModel> {
+        let obs: Observable<ConsoleMessageModel> = new Observable<ConsoleMessageModel>( ( observer: Observer<ConsoleMessageModel> ) => {
+            this._consoleSuccessObservers.push( observer );
+        } );
+
+        return obs;
+    }
+
+    public onConsoleError(): Observable<ConsoleMessageModel> {
+        let obs: Observable<ConsoleMessageModel> = new Observable<ConsoleMessageModel>( ( observer: Observer<ConsoleMessageModel> ) => {
+            this._consoleErrorObservers.push( observer );
+        } );
+
+        return obs;
     }
 
     /**
@@ -391,6 +511,10 @@ export class IpcService {
         return obs;
     }
 
+    public mainWindowLoaded(): void {
+        window.api.ipc.send( 'app:main-window-loaded', null );
+    }
+
     public quitAndInstallUpdate(): void {
         window.api.ipc.send( 'app:restart', null );
     }
@@ -405,6 +529,14 @@ export class IpcService {
 
     public downloadLogZip(): void {
         window.api.ipc.send( 'settings:download-log' );
+    }
+
+    public downloadDataFilesZip(): void {
+        window.api.ipc.send( 'settings:download-data-files' );
+    }
+
+    public showDataFolder(): void {
+        window.api.ipc.send( 'settings:open-data-folder' );
     }
 
     public removeDkpAward( entry: DkpEntryModel ): void {
@@ -429,6 +561,14 @@ export class IpcService {
 
     public updateVoiceIndex( index: number ): void {
         window.api.ipc.send( 'voice:select', index );
+    }
+
+    public clearTriggerHistory(): void {
+        window.api.ipc.send( 'trigger:clear:history:all' );
+    }
+
+    public sendConsoleCommand( command: string ): void {
+        window.api.ipc.send( 'console:command', command );
     }
 
     /**
@@ -465,19 +605,54 @@ export class IpcService {
      * @param key The setting key.
      */
     public getSetting<T>( key: string ): Observable<T> {
-        let obs: Observable<T> = new Observable<T>( ( observer: Observer<T> ) => {
+        
+        if ( this._settingsObservableCache[ key ] ) {
+            return this._settingsObservableCache[ key ];
+
+        } else {
             
-            window.api.ipc.once( `settings:get:${key}:generic`, ( e, value: T ) => {
-                this.ngZone.run( () => {
-                    observer.next( value );
-                    observer.complete();
+            // We only need to create one observable for the cache.
+            if ( !this._settingsObservableCache[ key ] ) {
+
+                let cacheObs: Observable<T> = new Observable<T>( ( cacheObserver: Observer<T> ) => {
+                    // This is called each time the observable is subscribed.
+                    this._settingsCacheObservers[ key ] = this._settingsCacheObservers[ key ] ? this._settingsCacheObservers[ key ] : [];
+                    this._settingsCacheObservers[ key ].push( cacheObserver );
                 } );
+                
+                this._settingsObservableCache[ key ] = cacheObs;
+
+            }
+
+            let obs: Observable<T> = new Observable<T>( ( observer: Observer<T> ) => {
+
+                // Create a new observer here that can be resolved by the ipc event.
+                window.api.ipc.once( `settings:get:${key}:generic`, ( e, value: T ) => {
+                    this.ngZone.run( () => {
+                        
+                        observer.next( value );
+                        observer.complete();
+
+                        if ( this._settingsCacheObservers[ key ]?.length > 0 ) {
+                            // Notify all observers waiting for the original request to complete.
+                            this._settingsCacheObservers[ key ].forEach( f => {
+                                f.next( value );
+                                f.complete();
+                            } );
+
+                            // Reset the cache
+                            this._settingsCacheObservers[ key ] = [];
+                            this._settingsObservableCache[ key ] = undefined;
+                        }
+
+                    } );
+                } );
+                window.api.ipc.send( 'settings:get', { key: key } );
+
             } );
-            window.api.ipc.send( 'settings:get', { key: key } );
 
-        } );
-
-        return obs;
+            return obs;
+        }
     }
 
     public updateMasterVolume( masterVolume: number ): void {
@@ -591,12 +766,95 @@ export class IpcService {
         return obs;
     }
 
+    public showLogSimulator(): Observable<boolean> {
+        let obs: Observable<boolean> = new Observable<boolean>( ( observer: Observer<boolean> ) => {
+            
+            window.api.ipc.once( 'trigger:dialog:log-simulator', ( e, loaded ) => {
+                this.ngZone.run( () => {
+                    observer.next( loaded );
+                    observer.complete();
+                } );
+            } );
+            window.api.ipc.send( 'trigger:dialog:log-simulator', null );
+
+        } );
+
+        return obs;
+    }
+
+    public showEasyWindow(): Observable<boolean> {
+        let obs: Observable<boolean> = new Observable<boolean>( ( observer: Observer<boolean> ) => {
+            
+            window.api.ipc.once( 'trigger:dialog:easy-window', ( e, loaded ) => {
+                this.ngZone.run( () => {
+                    observer.next( loaded );
+                    observer.complete();
+                } );
+            } );
+            window.api.ipc.send( 'trigger:dialog:easy-window', null );
+
+        } );
+
+        return obs;
+    }
+
     public simulateLogParse( file: string ): void {
         window.api.ipc.send( 'log:simulate:file', file );
     }
 
     public simulateLogLines( lines: string[] ): void {
         window.api.ipc.send( 'log:simulate:lines', lines );
+    }
+
+    public beginSimulation( lines: string[], characterId: string, lineIndex: number | null = null ): Observable<string> {
+        let obs: Observable<string> = new Observable<string>( ( observer: Observer<string> ) => {
+            
+            window.api.ipc.once( 'log:simulate:begin', ( e, simulationId ) => {
+                this.ngZone.run( () => {
+
+                    this._simProgress[ simulationId ] = [];
+
+                    window.api.ipc.on( `simulation:${simulationId}:progress`, ( event: any, data: SimulationProgress ) => {
+                        this.ngZone.run( () => {
+                            this._simProgress[ simulationId ]?.forEach( f => {
+                                f.next( data );
+
+                                if (data.isComplete) {
+                                    f.complete();
+                                }
+                            } );
+                        } );
+                    } );
+                    
+                    observer.next( simulationId );
+                    observer.complete();
+                } );
+            } );
+            window.api.ipc.send( 'log:simulate:begin', { lines: lines, characterId: characterId, lineIndex: lineIndex } );
+
+        } );
+
+        return obs;
+    }
+
+    public getSimulationStatus( simulationId: string ): Observable<SimulationProgress> {
+        let obs: Observable<SimulationProgress> = new Observable<SimulationProgress>( ( observer: Observer<SimulationProgress> ) => {
+            this._simProgress[ simulationId ].push( observer );
+        } );
+
+        return obs;
+    }
+
+    public pauseSimulation( simulationId: string ): void {
+        window.api.ipc.send( `log:simulation:${simulationId}:pause`, null );
+    }
+
+    public resumeSimulation( simulationId: string, lineIndex: number | null = null ): void {
+        window.api.ipc.send( `log:simulation:${simulationId}:resume`, lineIndex );
+    }
+
+    public stopSimulation( simulationId: string ): void {
+        window.api.ipc.send( `log:simulation:${simulationId}:stop`, null );
     }
 
     public createNewTriggers( model: TriggerModel[] ): Observable<string[]> {
@@ -817,6 +1075,70 @@ export class IpcService {
         return obs;
     }
 
+    public updateFctCombatGroup( model: FctCombatGroup, sort: string[] | undefined = undefined ): Observable<string> {
+        let obs: Observable<string> = new Observable<string>( ( observer: Observer<string> ) => {
+            
+            window.api.ipc.once( 'overlay:update:combatGroup', ( e, combatGroupId: string ) => {
+                this.ngZone.run( () => {
+                    observer.next( combatGroupId );
+                    observer.complete();
+                } );
+            } );
+            window.api.ipc.send( 'overlay:update:combatGroup', { group: model, sort: sort } );
+
+        } );
+
+        return obs;
+    }
+
+    public getFctCombatGroups(): Observable<FctCombatGroup[]> {
+        let obs: Observable<FctCombatGroup[]> = new Observable<FctCombatGroup[]>( ( observer: Observer<FctCombatGroup[]> ) => {
+                
+                window.api.ipc.once( 'overlay:get:combatGroups', ( e, combatGroups: FctCombatGroup[] ) => {
+                    this.ngZone.run( () => {
+                        observer.next( combatGroups.map( f => FctCombatGroup.hydrateModel( f ) ) );
+                        observer.complete();
+                    } );
+                } );
+                window.api.ipc.send( 'overlay:get:combatGroups', null );
+    
+        } );
+
+        return obs;
+    }
+
+    public getFctCombatGroup( combatGroupId: string ): Observable<FctCombatGroup> {
+        let obs: Observable<FctCombatGroup> = new Observable<FctCombatGroup>( ( observer: Observer<FctCombatGroup> ) => {
+                
+            window.api.ipc.once( 'overlay:get:combatGroup', ( e, combatGroup: FctCombatGroup ) => {
+                this.ngZone.run( () => {
+                    observer.next( FctCombatGroup.hydrateModel( combatGroup ) );
+                    observer.complete();
+                } );
+            } );
+            window.api.ipc.send( 'overlay:get:combatGroup', combatGroupId );
+    
+        } );
+
+        return obs;
+    }
+
+    public deleteFctCombatGroup( combatGroupId: string ): Observable<boolean> {
+        let obs: Observable<boolean> = new Observable<boolean>( ( observer: Observer<boolean> ) => {
+            
+            window.api.ipc.once( 'overlay:delete:combatGroup', ( e, deleted: boolean ) => {
+                this.ngZone.run( () => {
+                    observer.next( deleted );
+                    observer.complete();
+                } );
+            } );
+            window.api.ipc.send( 'overlay:delete:combatGroup', combatGroupId );
+
+        } );
+
+        return obs;
+    }
+
     public createNewOverlayWindow( model: OverlayWindowModel ): Observable<string> {
         let obs: Observable<string> = new Observable<string>( ( observer: Observer<string> ) => {
             
@@ -941,9 +1263,9 @@ export class IpcService {
     public getCharacters(): Observable<CharacterModel[]> {
         let obs: Observable<CharacterModel[]> = new Observable<CharacterModel[]>( ( observer: Observer<CharacterModel[]> ) => {
             
-            window.api.ipc.once( 'character:get', ( e, overlays: CharacterModel[] ) => {
+            window.api.ipc.once( 'character:get', ( e, characters: CharacterModel[] ) => {
                 this.ngZone.run( () => {
-                    observer.next( overlays );
+                    observer.next( characters.map( c => Object.assign( new CharacterModel(), c ) ) );
                     observer.complete();
                 } );
             } );
@@ -996,6 +1318,54 @@ export class IpcService {
                 } );
             } );
             window.api.ipc.send( 'character:delete', characterId );
+
+        } );
+
+        return obs;
+    }
+
+    public getTriggerProfiles(): Observable<TriggersProfileModel[]> {
+        let obs: Observable<TriggersProfileModel[]> = new Observable<TriggersProfileModel[]>( ( observer: Observer<TriggersProfileModel[]> ) => {
+            
+            window.api.ipc.once( 'character:get:triggerProfiles', ( e, triggerProfiles: TriggersProfileModel[] ) => {
+                this.ngZone.run( () => {
+                    observer.next( triggerProfiles.map( c => Object.assign( new TriggersProfileModel(), c ) ) );
+                    observer.complete();
+                } );
+            } );
+            window.api.ipc.send( 'character:get:triggerProfiles', null );
+
+        } );
+
+        return obs;
+    }
+
+    public updateTriggerProfile( model: TriggersProfileModel ): Observable<string> {
+        let obs: Observable<string> = new Observable<string>( ( observer: Observer<string> ) => {
+            
+            window.api.ipc.once( 'character:save:triggerProfile', ( e, profileId: string ) => {
+                this.ngZone.run( () => {
+                    observer.next( profileId );
+                    observer.complete();
+                } );
+            } );
+            window.api.ipc.send( 'character:save:triggerProfile', model );
+
+        } );
+
+        return obs;
+    }
+
+    public deleteTriggerProfile( profileId: string ): Observable<boolean> {
+        let obs: Observable<boolean> = new Observable<boolean>( ( observer: Observer<boolean> ) => {
+            
+            window.api.ipc.once( 'character:delete:triggerProfile', ( e, deleted: boolean ) => {
+                this.ngZone.run( () => {
+                    observer.next( deleted );
+                    observer.complete();
+                } );
+            } );
+            window.api.ipc.send( 'character:delete:triggerProfile', profileId );
 
         } );
 
@@ -1093,6 +1463,7 @@ export class IpcService {
     }
 
     public sendOverlayToOrigin( overlayId: string, displayId: number ): void {
+        window.api.logger.info( `[IpcService:sendOverlayToOrigin] Sending overlay ${overlayId} to display ${displayId}` );
         window.api.ipc.send( 'overlay:send-to-origin', { overlayId: overlayId, displayId: displayId } );
     }
 
@@ -1844,6 +2215,162 @@ export class IpcService {
                 } );
             } );
             window.api.ipc.send( 'settings:get:deathRecap', null );
+
+        } );
+
+        return obs;
+    }
+
+    /**
+     * Returns the successful and exception parse history.
+     * @returns 
+     */
+    public getParseHistory(): Observable<{ successful: TriggerParseHistoryModel[], exceptions: TriggerParseHistoryModel[] }> {
+        let obs: Observable<{ successful: TriggerParseHistoryModel[], exceptions: TriggerParseHistoryModel[] }> = new Observable<{ successful: TriggerParseHistoryModel[], exceptions: TriggerParseHistoryModel[] }>( ( observer: Observer<{ successful: TriggerParseHistoryModel[], exceptions: TriggerParseHistoryModel[] }> ) => {
+            
+            window.api.ipc.once( 'trigger:get:history:all', ( e, model: { successful: TriggerParseHistoryModel[], exceptions: TriggerParseHistoryModel[] } ) => {
+                this.ngZone.run( () => {
+                    model.successful = model.successful.map( x => {
+                        let m = Object.assign( new TriggerParseHistoryModel(), x );
+                        m.timestamp = new Date( x.timestamp );
+                        return m;
+                    } );
+                    model.exceptions = model.exceptions.map( x => {
+                        let m = Object.assign( new TriggerParseHistoryModel(), x );
+                        m.timestamp = new Date( x.timestamp );
+                        return m;
+                    } );
+                    observer.next( model );
+                    observer.complete();
+                } );
+            } );
+            window.api.ipc.send( 'trigger:get:history:all', null );
+
+        } );
+
+        return obs;
+    }
+
+    public getConsoleData(): Observable<{ successful: TriggerParseHistoryModel[], failed: TriggerParseHistoryModel[], consoleMessages: ConsoleMessageModel[] }> {
+        let obs: Observable<{ successful: TriggerParseHistoryModel[], failed: TriggerParseHistoryModel[], consoleMessages: ConsoleMessageModel[] }> = new Observable<{ successful: TriggerParseHistoryModel[], failed: TriggerParseHistoryModel[], consoleMessages: ConsoleMessageModel[] }>( ( observer: Observer<{ successful: TriggerParseHistoryModel[], failed: TriggerParseHistoryModel[], consoleMessages: ConsoleMessageModel[] }> ) => {
+            let data: { successful: TriggerParseHistoryModel[], failed: TriggerParseHistoryModel[], consoleMessages: ConsoleMessageModel[] } = {
+                successful: [],
+                failed: [],
+                consoleMessages: [],
+            };
+            data.successful = this._successfulParses.slice();
+            data.failed = this._failedParses.slice();
+            data.consoleMessages = this._consoleMessages.slice();
+            observer.next( data );
+            observer.complete();
+        } );
+
+        return obs;
+    }
+
+    /**
+     * Returns the successful and exception parse history for a specific trigger.
+     * 
+     * @param triggerId The trigger id to get the history for.
+     */
+    public getTriggerParseHistory( triggerId: string ): Observable<{ successful: TriggerParseHistoryModel[], failed: TriggerParseHistoryModel[] }> {
+        let obs: Observable<{ successful: TriggerParseHistoryModel[], failed: TriggerParseHistoryModel[] }> = new Observable<{ successful: TriggerParseHistoryModel[], failed: TriggerParseHistoryModel[] }>( ( observer: Observer<{ successful: TriggerParseHistoryModel[], failed: TriggerParseHistoryModel[] }> ) => {
+            
+            window.api.ipc.once( 'trigger:get:history', ( e, model: { successful: TriggerParseHistoryModel[], failed: TriggerParseHistoryModel[] } ) => {
+                this.ngZone.run( () => {
+                    model.successful = model.successful.map( x => {
+                        let m = Object.assign( new TriggerParseHistoryModel(), x );
+                        m.timestamp = new Date( x.timestamp );
+                        return m;
+                    } );
+                    model.failed = model.failed.map( x => {
+                        let m = Object.assign( new TriggerParseHistoryModel(), x );
+                        m.timestamp = new Date( x.timestamp );
+                        return m;
+                    } );
+                    
+                    observer.next( model );
+                    observer.complete();
+                } );
+            } );
+            window.api.ipc.send( 'trigger:get:history', triggerId );
+
+        } );
+
+        return obs;
+    }
+
+    public migrateFctCombatGroups(): Observable<boolean> {
+        let obs: Observable<boolean> = new Observable<boolean>( ( observer: Observer<boolean> ) => {
+                
+            window.api.ipc.once( 'overlay:migrate-fct', ( e, success: boolean ) => {
+                this.ngZone.run( () => {
+                    observer.next( success );
+                    observer.complete();
+                } );
+            } );
+            window.api.ipc.send( 'overlay:migrate-fct', undefined );
+
+        } );
+
+        return obs;
+    }
+
+    public initializeFctCombatGroups(): Observable<boolean> {
+        let obs: Observable<boolean> = new Observable<boolean>( ( observer: Observer<boolean> ) => {
+                    
+            window.api.ipc.once( 'overlay:initialize-fct', ( e, success: boolean ) => {
+                this.ngZone.run( () => {
+                    observer.next( success );
+                    observer.complete();
+                } );
+            } );
+            window.api.ipc.send( 'overlay:initialize-fct', undefined );
+
+        } );
+
+        return obs;
+    }
+    
+    /**
+     * Installs the given overlays, allowing the user to make copies of each 
+     * overlay or to map existing overlays to the new overlays.
+     * 
+     * @returns Returns an object that contains all overlay windows and the overlay window id map.
+     * 
+     * @param overlays The overlays to install.
+     */
+    installOverlays( overlays: OverlayWindowModel[], packagePrimaryDisplaySize: Electron.Size ): Observable<OverlayWindowModel[]> {
+        let obs: Observable<OverlayWindowModel[]> = new Observable<OverlayWindowModel[]>( ( observer: Observer<OverlayWindowModel[]> ) => {
+                    
+            window.api.ipc.once( 'overlay:install-overlays', ( e, data: OverlayWindowModel[] ) => {
+                this.ngZone.run( () => {
+                    observer.next( data );
+                    observer.complete();
+                } );
+            } );
+            window.api.ipc.send( 'overlay:install-overlays', { overlays: overlays, packagePrimaryDisplaySize: packagePrimaryDisplaySize } );
+
+        } );
+
+        return obs;
+    }
+
+    /**
+     * Deletes all existing combat groups and installs the given list of combat groups.
+     * 
+     * @param fctGroups The list of combat groups to install.
+     */
+    installCombatGroups( fctGroups: FctCombatGroup[] ): Observable<FctCombatGroup[]> {
+        let obs: Observable<FctCombatGroup[]> = new Observable<FctCombatGroup[]>( ( observer: Observer<FctCombatGroup[]> ) => {
+                    
+            window.api.ipc.once( 'overlay:install-combat-groups', ( e, data: FctCombatGroup[] ) => {
+                this.ngZone.run( () => {
+                    observer.next( data );
+                    observer.complete();
+                } );
+            } );
+            window.api.ipc.send( 'overlay:install-combat-groups', fctGroups );
 
         } );
 

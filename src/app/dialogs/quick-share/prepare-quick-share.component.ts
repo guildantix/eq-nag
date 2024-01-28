@@ -40,7 +40,7 @@ class QuickShareTreeObject {
 @Component( {
     selector: 'app-prepare-quick-share-dialog',
     templateUrl: 'prepare-quick-share.component.html',
-    styleUrls: [ 'prepare-quick-share.component.scss', '../../core.scss', '../../modal.scss' ], 
+    styleUrls: [ 'prepare-quick-share.component.scss', '../dialog.styles.scss', '../../core.scss', '../../modal.scss' ], 
     animations: [
         trigger( 'detailExpand', [
             state( 'collapsed', style( { height: '0px', minHeight: '0' } ) ),

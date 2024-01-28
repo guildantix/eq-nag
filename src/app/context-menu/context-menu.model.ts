@@ -6,6 +6,7 @@ export class ContextMenuModel {
     public disabled: () => boolean;
     public hide: () => boolean;
     public matIcon: string;
+    public matIconCssClass?: string;
     public cssClass?: string;
     public children?: ContextMenuModel[] | undefined;
     public keepOpen?: boolean = false;

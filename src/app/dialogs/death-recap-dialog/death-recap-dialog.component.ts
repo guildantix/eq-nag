@@ -9,7 +9,7 @@ import { ColoredString } from '../dialog.model';
 @Component( {
     selector: 'app-death-recap-dialog',
     templateUrl: 'death-recap-dialog.component.html',
-    styleUrls: [ 'death-recap-dialog.component.scss', '../../core.scss' ]
+    styleUrls: [ 'death-recap-dialog.component.scss', '../dialog.styles.scss', '../../core.scss' ]
 } )
 export class DeathRecapDialogComponent implements OnInit {
 

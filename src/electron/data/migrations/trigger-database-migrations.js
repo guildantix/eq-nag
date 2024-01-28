@@ -11,7 +11,7 @@ const customAlphabet = require( 'nanoid' ).customAlphabet;
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const nanoid = customAlphabet( alphabet, 16 );
 
-const currentTriggerDbVersion = 80;
+const currentTriggerDbVersion = 88;
 
 
 
@@ -680,6 +680,149 @@ function executeDataMigration( data ) {
         } );
         
         data.version = 80;
+        
+    }
+    if ( data.version < 81 ) {
+
+        data.successfulTriggerExecutions = [];
+        data.failedTriggerExecutions = [];
+        
+        data.version = 81;
+        
+    }
+    if ( data.version < 82 ) {
+
+        data.successfulTriggerExecutions = data.successfulTriggerExecutions ?? [];
+        data.failedTriggerExecutions = data.failedTriggerExecutions ?? [];
+
+        data.successfulTriggerExecutions.forEach( execution => execution.parseId = nanoid() );
+        data.failedTriggerExecutions.forEach( execution => execution.parseId = nanoid() );
+        
+        data.version = 83;
+        
+    }
+    if ( data.version < 83 ) {
+
+        if ( data.successfulTriggerExecutions ) {
+
+            let output = [];
+            let ids = Object.keys( data.successfulTriggerExecutions );
+
+            ids.forEach( triggerId => {
+                output = Array.prototype.concat( output, data.successfulTriggerExecutions[ triggerId ] );
+            } );
+
+            data.successfulTriggerExecutions = output;
+            
+        } else {
+            data.successfulTriggerExecutions = [];
+        }
+
+        if ( data.failedTriggerExecutions ) {
+            
+            let output = [];
+            let ids = Object.keys( data.failedTriggerExecutions );
+
+            ids.forEach( triggerId => {
+                output = Array.prototype.concat( output, data.failedTriggerExecutions[ triggerId ] );
+            } );
+            
+            data.failedTriggerExecutions = output;
+
+        } else {
+            data.failedTriggerExecutions = [];
+        }
+
+        data.exceptionHistory = [];
+        
+        data.version = 83;
+        
+    }
+    if ( data.version < 84 ) {
+
+        data.successfulTriggerExecutions = [];
+        data.failedTriggerExecutions = [];
+        data.exceptionHistory = [];
+        
+        data.version = 84;
+        
+    }
+    if ( data.version < 85 ) {
+
+        data.triggers.forEach( trigger => {
+            trigger.actions.forEach( action => {
+                action.showDuration = action.showRemainingDuration;
+            } );
+        } );
+        
+        data.version = 85;
+        
+    }
+    if ( data.version < 86 ) {
+
+        data.triggers.forEach( trigger => {
+            trigger.actions.forEach( action => {
+                action.storeDuration = false;
+            } );
+        } );
+        
+        data.version = 86;
+        
+    }
+    if ( data.version < 87 ) {
+        //                                                           vslow, slow,  normal, fast, vfast
+        // Changed the speaking rate from slider to specific values: 0.25,  0.50,  1.00,   1.50, 2.50
+        data?.triggers?.forEach( trigger => {
+            trigger.actions?.forEach( action => {
+                if ( action.speechRate > 0 ) {
+                    // Because we're using discrete values, we need to ensure that the previous values are mapped to the new values.
+                    if ( action.speechRate >= 2 ) {
+                        action.speechRate = 2.5;
+                    } else if ( action.speechRate >= 1.25 ) {
+                        action.speechRate = 1.5;
+                    } else if (action.speechRate >= 0.75 ) {
+                        action.speechRate = 1;
+                    } else if ( action.speechRate > 0.37 ) {
+                        action.speechRate = 0.5;
+                    } else {
+                        action.speechRate = 0.25;
+                    }
+                } else {
+                    action.speechRate = 1;
+                }
+            } );
+        } );
+        
+        data.version = 87;
+        
+    }
+    if ( data.version < 88 ) {
+        
+        // Removed the slow and very slow rates, and tweaked the speaking rates to be more natural.
+
+        //              Normal,    Fast,    Very Fast
+        // New values:       1,    1.75,         2.25
+        // Old values:       1,    1.50,         2.50
+
+        data?.triggers?.forEach( trigger => {
+            trigger.actions?.forEach( action => {
+
+                if ( action.speechRate > 0 ) {
+                    if ( action.speechRate >= 2.25 ) {
+                        action.speechRate = 2.25;
+                    } else if ( action.speechRate >= 1.25 ) {
+                        action.speechRate = 1.75;
+                    } else {
+                        action.speechRate = 1;
+                    }
+                } else {
+                    action.speechRate = 1;
+                }
+                
+            } );
+        } );
+        
+        data.version = 88;
         
     }
 

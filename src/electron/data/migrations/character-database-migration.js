@@ -4,7 +4,7 @@ const customAlphabet = require( 'nanoid' ).customAlphabet;
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const nanoid = customAlphabet( alphabet, 16 );
 
-const currentCharacterDbVersion = 5;
+const currentCharacterDbVersion = 10;
 
 /**
  * 
@@ -56,6 +56,45 @@ function executeDataMigration( data ) {
             f.daybreak = f.p99 !== true;
         } );
         data.version = 5;
+
+    }
+    if ( !data.version || data.version < 6 ) {
+        data?.characters?.forEach( f => {
+            f.combatGroupHits = {};
+            f.combatGroupMedian = {};
+        } );
+        data.version = 6;
+
+    }
+    if ( !data.version || data.version < 7 ) {
+        data?.characters?.forEach( f => {
+            f.triggerProfile = f.triggerProfile ?? undefined;
+            f.disabledTriggers = f.disabledTriggers ?? [];
+        } );
+        data.version = 7;
+
+    }
+    if ( !data.version || data.version < 8 ) {
+        data.triggerProfiles = data.triggerProfiles ?? [];
+        data.version = 8;
+
+    }
+    if ( !data.version || data.version < 9 ) {
+        data.triggerProfiles?.forEach( f => {
+            f.disableTriggersByDefault = f.disableTriggersByDefault === true ?? false;
+        } );
+        data.characters?.forEach( c => {
+            c.disableTriggersByDefault = c.disableTriggersByDefault === true ?? false;
+        } );
+        data.version = 9;
+
+    }
+    if ( !data.version || data.version < 10 ) {
+        data?.characters?.forEach( f => {
+            f.takp = f.takp === true;
+            f.daybreak = f.takp !== true && f.p99 !== true;
+        } );
+        data.version = 10;
 
     }
 

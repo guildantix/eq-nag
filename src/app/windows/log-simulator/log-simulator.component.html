@@ -1,0 +1,54 @@
+<div class="modal">
+    <header>
+        <mat-toolbar class="titlebar" color="default">
+            <span>Log Simulation</span>
+            <span class="spacer"></span>
+            <button mat-icon-button aria-label="Exit GINA import" (click)="closeModal()">
+                <mat-icon>clear</mat-icon>
+            </button>
+        </mat-toolbar>
+    </header>
+    <section>
+        <div class="menu">
+
+            <button mat-button class="color-blue" (click)="showPasteDialog()" style="align-self: center;">Paste Log Entries</button>
+
+            <span class="spacer">
+                <div class="progress-wrapper" *ngIf="simulationStatus === 'running'">
+                    <mat-progress-bar mode="determinate" [value]="simulationProgressPercent"></mat-progress-bar>
+                    <span class="label">Time Remaining: {{simulationProgressTimeRemainingString}}</span>
+                </div>
+            </span>
+            
+            <mat-form-field style="width: 220px;">
+                <mat-label></mat-label>
+                <mat-select [(ngModel)]="characterId" name="ddlCharacters">
+                    <mat-select-trigger>
+                        {{getSelectValue()}}
+                    </mat-select-trigger>
+                    <mat-option *ngFor="let option of characters" [value]="option.characterId">{{option.name}}<span>{{option.server}}</span></mat-option>
+                </mat-select>
+                <mat-hint>Select the character(s) to execute simulation.</mat-hint>
+            </mat-form-field>
+
+            <button mat-icon-button class="color-blue" [disabled]="characterId == null || true"><mat-icon>fast_rewind</mat-icon></button>
+            <button mat-icon-button class="material-icons-outlined color-green" [disabled]="characterId == null" (click)="beginSimulation()"><mat-icon>play_circle</mat-icon></button>
+            <button mat-icon-button class="color-red" [disabled]="characterId == null" (click)="stopSimulation()"><mat-icon>stop</mat-icon></button>
+            <button mat-icon-button class="color-yellow" [disabled]="characterId == null || true"><mat-icon>pause</mat-icon></button>
+            <button mat-icon-button class="color-blue" [disabled]="characterId == null || true"><mat-icon>fast_forward</mat-icon></button>
+
+        </div>
+        <div class="table-container">
+            <table>
+                <tr *ngFor="let line of lines; let i = index" #trRef [attr.class]="getTrClass(i, trRef)">
+                    <td class="line-numbers" [ngClass]="{'even': i % 2 === 0, 'odd': i % 2 !== 0}">{{i + 1}}</td>
+                    <td class="log-text">{{line}}</td>
+                </tr>
+            </table>
+        </div>
+    </section>
+    <footer>
+        <button mat-button color="warn" (click)="closeModal()">Close</button>
+    </footer>
+</div>
+

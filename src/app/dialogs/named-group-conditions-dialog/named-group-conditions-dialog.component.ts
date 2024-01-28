@@ -8,7 +8,7 @@ import { NamedGroupConditionsModel } from './named-group-conditions.model';
 @Component( {
     selector: 'app-input-dialog',
     templateUrl: 'named-group-conditions-dialog.component.html',
-    styleUrls: [ 'named-group-conditions-dialog.component.scss', '../../core.scss' ],
+    styleUrls: [ 'named-group-conditions-dialog.component.scss', '../dialog.styles.scss', '../../core.scss' ],
 } )
 export class NamedGroupConditionsDialogComponent implements OnInit {
 

@@ -112,6 +112,19 @@ class Progress {
     completePercent;
     /** @type {string} */
     label;
+    /** @type {boolean} */
+    isComplete = false;
+
+}
+
+class SimulationProgress extends Progress {
+    
+    /** @type {number} */
+    lineIndex;
+    /** @type {number} */
+    msRemaining;
+    /** @type {boolean} */
+    simulationPaused = false;
 
 }
 
@@ -310,6 +323,7 @@ module.exports = {
     PlayerPet,
     QuickShareAuthorListTypes,
     Progress,
+    SimulationProgress,
     Range,
     ScheduledTask,
     LogMaintenancePlanTypes, 

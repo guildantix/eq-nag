@@ -73,3 +73,30 @@ mat-radio-group.horizontal {
         margin: 0 10px;
     }
 }
+
+.with-preview {
+    padding: 167px 10px 0 10px !important;
+
+}
+
+.game-preview {
+    position: fixed;
+    z-index: 2;
+    overflow: hidden;
+    top: 113px;
+    right: 0;
+    left: 0;
+    border: 5px solid #585858;
+    border: 15px solid #1a1a1a;
+    background-color: #1a1a1a;
+
+    .text-preview {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        overflow: hidden;
+        height: 126px;
+        white-space: nowrap;
+        overflow: visible;
+    }
+}

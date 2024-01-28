@@ -10,11 +10,27 @@ export const ErrorCodes = {
     }
 };
 
+export enum LogTypes {
+    
+    info = 0,
+    error = 1,
+    success = 2,
+    warning = 3,
+    debug = 4,
+
+}
+
 export enum SettingsKeys {
     
     logMaintenanceRules = 'logMaintenanceRules',
     allowPrerelease = 'allowPrerelease',
     voiceIndex = 'voiceIndex',
+    enableCheckWindowPosition = 'enableCheckWindowPosition',
+    sharedTriggerPermissions = 'sharedTriggerPermissions',
+    speechVolume = 'speechVolume',
+    audioVolume = 'audioVolume',
+    baseSpeakingRate = 'baseSpeakingRate',
+    enableGpuAcceleration = 'enableGpuAcceleration',
 
 };
 
@@ -34,6 +50,7 @@ export enum ActionTypes {
     DisplayDeathRecap = 11,
     ScreenGlow = 12,
     ClearAll = 13,
+    Stopwatch = 14,
 
 }
 
@@ -78,6 +95,7 @@ export function ActionTypeLabels(actionType: ActionTypes): string {
         actionType === ActionTypes.DisplayDeathRecap ? 'Display Death Recap' :
         actionType === ActionTypes.ScreenGlow ? 'Screen Glow' :
         actionType === ActionTypes.ClearAll ? 'Clear All' :
+        actionType === ActionTypes.Stopwatch ? 'Stopwatch' :
         'Unset Action';
     
 }
@@ -86,7 +104,7 @@ export function ActionTypeIcons( actionType: ActionTypes ): string {
     return actionType === ActionTypes.DisplayText ? 'text_format' :
         actionType === ActionTypes.PlayAudio ? 'audiotrack' :
         actionType === ActionTypes.Speak ? 'volume_up' :
-        actionType === ActionTypes.Timer ? 'timer' :
+        actionType === ActionTypes.Timer ? 'alarm' :
         actionType === ActionTypes.Countdown ? 'watch' :
         actionType === ActionTypes.StoreVariable ? 'sd_storage' :
         actionType === ActionTypes.DotTimer ? 'watch_later' :
@@ -97,6 +115,7 @@ export function ActionTypeIcons( actionType: ActionTypes ): string {
         actionType === ActionTypes.DisplayDeathRecap ? 'sick' :
         actionType === ActionTypes.ScreenGlow ? 'brightness_5' :
         actionType === ActionTypes.ClearAll ? 'layers_clear' :
+        actionType === ActionTypes.Stopwatch ? 'timer' :
         'block';
 }
 
@@ -412,7 +431,49 @@ export class StylePropertiesModel {
     public glowColor: string = '#000000';
     public glowIntensity: number = 1;
     public glowSize: number = 5;
+    public paddingLeft: number = 0;
+    public paddingRight: number = 0;
+    public paddingTop: number = 0;
+    public paddingBottom: number = 0;
+    public position: 'inline' | 'block' = 'inline';
+    public justify: 'left' | 'center' | 'right' = 'left';
 
+    public static applyStyles( el: HTMLElement, style: StylePropertiesModel ): void {
+        // TODO: This method should execute the method from core.js, via the api.
+        if ( el ) {
+            el.style.fontFamily = `"${style.fontFamily}"`;
+            el.style.fontSize = `${style.fontSize}px`;
+            el.style.lineHeight = `${( style.lineHeight > 10 ? style.lineHeight : 90 ) / 100}em`;
+            el.style.fontWeight = `${style.fontWeight > 0 ? style.fontWeight : 300}`;
+            el.style.color = style.fontColor;
+            el.style.opacity = style.fontTransparency.toString();
+
+            el.style.paddingLeft = style.paddingLeft > 0 ? `${style.paddingLeft}px` : null;
+            el.style.paddingRight = style.paddingRight > 0 ? `${style.paddingRight}px` : null;
+            el.style.paddingTop = style.paddingTop > 0 ? `${style.paddingTop}px` : null;
+            el.style.paddingBottom = style.paddingBottom > 0 ? `${style.paddingBottom}px` : null;
+
+            el.style.fontWeight = style.fontWeight.toString();
+            el.style.display = style.position === 'inline' ? 'inline-block' : 'block';
+            
+            let textShadow = '';
+
+            if ( style.showBorder ) {
+                textShadow += window.api.utils.styles.textOutline( style.borderColor, style.borderIntensity );
+            }
+
+            if ( style.showGlow ) {
+                textShadow += `${style.showBorder ? ', ' : ''}${window.api.utils.styles.textGlow( style.glowColor, style.glowSize, style.glowIntensity )}`;
+            }
+
+            el.style.textShadow = textShadow.trim();
+            el.style.textAlign = style.justify;
+        }
+    }
+
+    public static getHashValue( styles: StylePropertiesModel ): string {
+        return `${styles.fontFamily}${styles.fontSize}${styles.lineHeight}${styles.fontWeight}${styles.fontColor}${styles.fontTransparency}${styles.showBorder}${styles.borderColor}${styles.borderIntensity}${styles.showGlow}${styles.glowColor}${styles.glowIntensity}${styles.glowSize}${styles.paddingLeft}${styles.paddingRight}${styles.paddingTop}${styles.paddingBottom}${styles.position}${styles.justify}`;
+    }
 }
 
 export class FctStylesModel {
@@ -471,6 +532,8 @@ export class OverlayWindowModel {
     public showTimeRemaining: boolean = false;
     public hideTargetLabel: boolean = false;
 
+    public reverse: boolean = false;
+
     public isValid (): boolean {
         return name != null && this.overlayType != null;
     }
@@ -483,6 +546,8 @@ export class DataTickModel {
     public logFile: string;
     public voiceIndex: number;
     public masterVolume: number = 100;
+    public speechVolume: number = 100;
+    public audioVolume: number = 100;
     public triggers: TriggerModel[] = [];
     public overlays: OverlayWindowModel[] = [];
     public enableFct: boolean = false;
@@ -499,6 +564,16 @@ export class DataTickModel {
     public enableQuickShareImports: boolean = true;
     public quickShareAuthorsListType: QuickShareAuthorListTypes;
     public quickShareAuthorsList: string[] = [];
+    public baseSpeakingRate: number = 1;
+    public characterDisabledTriggers: {
+        characterId: any;
+        disabledTriggers: string[];
+    }[] | undefined = undefined;
+    public triggerProfileDisabledTriggers: {
+        triggerProfileId: any;
+        disabledTriggers: string[];
+    }[] | undefined = undefined;
+    public triggerChanges: boolean = false;
     
 }
 
@@ -525,7 +600,9 @@ export class TriggerActionProperties {
 
     public duration: number = null;
     public storageDuration: string = null;
+    /** @deprecated Use showDuration instead. */
     public showRemainingDuration: boolean = false;
+    public showDuration: boolean = false;
     public repeatTimer: boolean = false;
     public repeatCount: number = null;
     public variableName: string = null;
@@ -550,6 +627,7 @@ export class TriggerActionProperties {
     public skipBenCastingTimeFocus: boolean = false;
     public variableStorageType: string = 'localVariable';
     public flash: boolean = false;
+    public storeDuration: boolean = false;
 
     public endingSoonSubActions: TriggerSubAction[] = [];
     public endedSubActions: TriggerSubAction[] = [];
@@ -791,6 +869,15 @@ export class FocusEffectSettings {
 
 }
 
+export class TriggersProfileModel {
+    
+    public profileId: string;
+    public name: string;
+    public disabledTriggers: string[] = [];
+    public disableTriggersByDefault: boolean = false;
+
+}
+
 export class CharacterModel {
 
     public characterId: string;
@@ -807,9 +894,15 @@ export class CharacterModel {
     public extendedBeneficialFocusAaPercent: number;
     public hasBeneficialCastingSpeedFocus: boolean;
     public beneficialCastingSpeedFocusPercent: number;
+    public beneficialCastingSpeedFocusAaPercent: number;
+    public beneficialCastingSpeedFocusAaDurationLimit: number;
     public beneficialCastingSpeedFocusDecayLevel: number;
     public p99: boolean = false;
+    public takp: boolean = false;
     public daybreak: boolean = false;
+    public triggerProfile: string | undefined = undefined;
+    public disabledTriggers: string[] = [];
+    public disableTriggersByDefault: boolean = false;
     
 }
 
@@ -991,6 +1084,41 @@ export class PackageTrigger {
 
 
     /**
+     * Converts the given package trigger to a trigger model.
+     * 
+     * @returns Returns the converted trigger model.
+     * 
+     * @param packageTrigger The package trigger to convert.
+     */
+    public static ToTrigger( packageTrigger: PackageTrigger ): TriggerModel {
+        let trg = new TriggerModel();
+
+        trg.triggerId = packageTrigger.triggerId;
+        trg.folderId = packageTrigger.folderId;
+        trg.name = packageTrigger.name;
+        trg.capturePhrases = _.cloneDeep( packageTrigger.capturePhrases ) ?? [];
+        trg.comments = _.cloneDeep( packageTrigger.comments ) ?? '';
+        trg.actions = _.cloneDeep( packageTrigger.actions ) ?? [];
+        trg.captureMethod = _.cloneDeep( packageTrigger.captureMethod ) ?? 'Any match';
+        trg.conditions = _.cloneDeep( packageTrigger.conditions ) ?? [];
+        trg.classLevels = _.cloneDeep( packageTrigger.classLevels ) ?? [];
+        trg.useCooldown = packageTrigger.useCooldown === true;
+        trg.cooldownDuration = packageTrigger.cooldownDuration;
+        trg.sequentialRestartBehavior = packageTrigger.sequentialRestartBehavior;
+
+        return trg;
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
      * Returns true if the details of the package trigger match the details of 
      * the installed trigger.
      * 
@@ -1095,6 +1223,14 @@ export class TriggerPackageMetaModel {
 
 }
 
+export class QuickShareFctModel {
+
+    public fctGroups: FctCombatGroup[] = [];
+    public overlays: OverlayWindowModel[] = [];
+    public primaryDisplaySize: Electron.Size;
+
+}
+
 export class QuickShareModel {
     
     public triggers: PackageTrigger[] = [];
@@ -1104,6 +1240,18 @@ export class QuickShareModel {
     public textOverlayId: string;
     public overlays: OverlayWindowModel[] = [];
     public primaryDisplaySize: Electron.Size;
+
+}
+
+export class QuickShareFctMetaModel {
+
+    public quickShareId: string;
+    public versionId: string;
+    public timeStamp: Date;
+    public model: QuickShareFctModel = new QuickShareFctModel();
+    public author: string;
+    public authorDiscord: string;
+    public trustedAuthor: boolean = false;
 
 }
 
@@ -1125,6 +1273,13 @@ export class QuickShareTransferModel {
     public model: any;
     public notes: string;
     public files: QuickShareFileModel[] = [];
+    
+}
+
+export class QuickShareFctTransferModel {
+
+    public model: any;
+    public notes: string;
     
 }
 
@@ -1185,11 +1340,11 @@ export class VersionNumber {
 
     constructor( private version: string ) {
         if ( version == null )
-            throw 'Version number not provided!';
+            throw new Error( 'Version number not provided!' );
         
         let parts = version.split( /\./gi );
         if ( parts?.length !== 3 ) {
-            throw 'Invalid version number!';
+            throw new Error( 'Invalid version number!' );
         }
         this.major = +parts[ 0 ];
         this.minor = +parts[ 1 ];
@@ -1231,6 +1386,15 @@ export class Progress {
     
     public completePercent: number;
     public label: string;
+    public isComplete: boolean = false;
+
+}
+
+export class SimulationProgress extends Progress {
+    
+    public lineIndex: number;
+    public msRemaining: number;
+    public simulationPaused: boolean = false;
 
 }
 
@@ -1294,4 +1458,226 @@ export class LogMaintenanceRules {
     public logSchedule: ScheduledTask | null;
     public maxLogFileSizeMb: number = 50;
 
+}
+
+export class SharedTriggerPermissions {
+
+    public disableSharedGlowEffects: boolean = false;
+    public disableAllGlowEffects: boolean = false;
+
+}
+
+export class ConsoleMessageModel {
+
+    public timestamp: Date;
+    public label: string;
+    public message: string;
+    public logType: LogTypes = LogTypes.info;
+    public logId: string;
+    public payload: any;
+
+}
+
+export class TriggerParseHistoryModel extends ConsoleMessageModel {
+
+    public parseId: string;
+    public triggerId: string;
+    public triggerName: string;
+    public actionId: string;
+    public actionTypeLabel: string;
+    public phraseId: string;
+    public renderedPhrase: string | string[];
+    public unrenderedPhrase: string | string[];
+    public conditionResults: Record<string, string[]>;
+    public storedVariables: Record<string, string[]>;
+    public counters: Record<string, {value: number, lastUpdate: Date, resetDelay: number}>;
+    public regexResult: RegExpExecArray | undefined;
+    public dependencyRegexResult: RegExpExecArray | undefined;
+    public parseType: string;
+    public deltaTime: number;
+    public characterId: string;
+    public characterName: string;
+    public rawLogEntry: string;
+    public error: any;
+    public errorDescription: string;
+    public duplicateCount: number = 0;
+
+    public _modelHtml: string;
+
+    public static sameError( a: TriggerParseHistoryModel, b: TriggerParseHistoryModel ): boolean {
+        return a.logType === LogTypes.error &&
+            b.logType === LogTypes.error &&
+            a.triggerId === b.triggerId &&
+            a.error === b.error &&
+            a.errorDescription === b.errorDescription;
+    }
+    
+}
+
+// Flags for where the FCT hit should be displayed.
+export enum HitStartPositionTypes {
+    unset   = 0,
+    left    = 1<<0,
+    right   = 1<<1,
+    bottom  = 1<<2,
+    top     = 1<<3,
+    random  = 1<<4,
+}
+
+export class CombatAnimations {
+
+    public fountain: boolean = false;
+    public scroll: boolean = false;
+
+    public blowout: boolean = false;
+    public fadeIn: boolean = false;
+    public fadeOut: boolean = false;
+    public grow: boolean = false;
+    public shrink: boolean = false;
+
+    public static getHashValue( animations: CombatAnimations ): string {
+        let hash = '';
+
+        hash += animations.fountain ? '1' : '0';
+        hash += animations.scroll ? '1' : '0';
+        hash += animations.blowout ? '1' : '0';
+        hash += animations.fadeIn ? '1' : '0';
+        hash += animations.fadeOut ? '1' : '0';
+        hash += animations.grow ? '1' : '0';
+        hash += animations.shrink ? '1' : '0';
+
+        return hash;
+    }
+
+}
+
+export class CombatTypes {
+    
+    public myHits: boolean = false;
+    public otherHitsOnMe: boolean = false;
+    public mySpellHits: boolean = false;
+    public otherSpellHitsOnMe: boolean = false;
+    public myHealing: boolean = false;
+    public otherHealingOnMe: boolean = false;
+
+    public static getHashValue( combatTypes: CombatTypes ): string {
+        let hash = '';
+
+        hash += combatTypes.myHits ? '1' : '0';
+        hash += combatTypes.otherHitsOnMe ? '1' : '0';
+        hash += combatTypes.mySpellHits ? '1' : '0';
+        hash += combatTypes.otherSpellHitsOnMe ? '1' : '0';
+        hash += combatTypes.myHealing ? '1' : '0';
+        hash += combatTypes.otherHealingOnMe ? '1' : '0';
+
+        return hash;
+    }
+}
+
+export const CombatModifiers: string[] = [
+    'unset',
+    'normal',
+    'critical',
+    'crippling_blow',
+    'flurry',
+    'lucky',
+    'twincast',
+    'riposte',
+    'strikethrough',
+    'wild_rampage',
+    'rampage',
+    'assassinate',
+    'headshot',
+    'double_bow_shot',
+    'deadly_strike',
+    'finishing_blow',
+];
+
+export class FctCombatGroup {
+
+    public combatGroupId: string;
+    public name: string;
+    public overlayId: string;
+    public combatTypes: CombatTypes = new CombatTypes();
+    public valueStyles: StylePropertiesModel = new StylePropertiesModel();
+    public sourceStyles: StylePropertiesModel = new StylePropertiesModel();
+    public startingPosition: HitStartPositionTypes = HitStartPositionTypes.unset;
+    public accumulateHits: boolean = false;
+    public ignoreHits: boolean = false;
+    public thresholdType: 'percent' | 'value' | 'dynamic' = 'percent';
+    public thresholdValue: number | undefined = undefined;
+    public thresholdPercent: number = 60;
+    public combatAnimations: CombatAnimations = new CombatAnimations();
+    public combatModifiers: string[] = [];
+
+    public displayValue: number = 255;
+    public displayType: string = 'hit';
+    public displayBackground: 'light' | 'dark' = 'dark';
+    public editStylesType: 'value' | 'source' | 'animations' = 'value';
+
+    public _animationCompletePercent: number = 0;
+    public _animationComplete: boolean = true;
+    public _animationIntervalId: number | undefined = undefined;
+    public _animationResetTimeoutId: number | undefined = undefined;
+    public _editorTabIndex: number = -1;
+    public get editorTabIndex(): number {
+        this._editorTabIndex = this._editorTabIndex > -1 ? this._editorTabIndex : this.overlayId?.length > 0 ? 0 : 1;
+        return this._editorTabIndex;
+    }
+
+    public static getHashValue( group: FctCombatGroup ): string {
+        let hash = '';
+
+        hash += group.name;
+        hash += group.overlayId;
+        
+        hash += CombatTypes.getHashValue( group.combatTypes );
+        hash += StylePropertiesModel.getHashValue( group.valueStyles );
+        hash += StylePropertiesModel.getHashValue( group.sourceStyles );
+
+        hash += group.startingPosition;
+        hash += group.accumulateHits ? '1' : '0';
+        hash += group.ignoreHits ? '1' : '0';
+        hash += group.thresholdType;
+        hash += group.thresholdValue;
+        hash += group.thresholdPercent;
+
+        hash += CombatAnimations.getHashValue( group.combatAnimations );
+
+        hash += group.combatModifiers.join( '' );
+
+        return hash;
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Hydrates the model with the given data.
+     * 
+     * @returns Returns a new object of FctCombatGroup.
+     * 
+     * @param data The data to hydrate the model with.
+     */
+    public static hydrateModel( data: any ): FctCombatGroup {
+        let m = Object.assign( new FctCombatGroup(), data );
+
+        m.combatTypes = Object.assign( new CombatTypes(), data.combatTypes );
+        m.valueStyles = Object.assign( new StylePropertiesModel(), data.valueStyles );
+        m.sourceStyles = Object.assign( new StylePropertiesModel(), data.sourceStyles );
+        m.combatAnimations = Object.assign( new CombatAnimations(), data.combatAnimations );
+        
+        m._animationCompletePercent = 0;
+        m._animationComplete = true;
+        m._animationIntervalId = undefined;
+        m._animationResetTimeoutId = undefined;
+
+        return m;
+    }
 }

@@ -21,6 +21,7 @@ const {
     DuplicateTriggerAction,
     OwnedTriggerAction,
     TriggerConditionTypes,
+    TriggerParseHistoryModel,
 } = require( './models/trigger' );
 const ForwardRef = require( '../forward-ref' );
 const customAlphabet = require( 'nanoid' ).customAlphabet;
@@ -132,7 +133,19 @@ const fuseOptions_clipboard = {
     ]
 };
 
+/** @type {TriggerParseHistoryModel[]} */
+let successfulTriggerExecutions = [];
+/** @type {TriggerParseHistoryModel[]} */
+let failedTriggerExecutions = [];
+/** @type {TriggerParseHistoryModel[]} */
+let exceptionHistory = [];
+/** @type {Electron.WebContents[]} */
+const installedIdSubscribers = [];
 
+/** @type {((trigger: Trigger) => void)[]} */
+var onCreatedHandlers = [];
+/** @type {((trigger: Trigger) => void)[]} */
+var onRemovedHandlers = [];
 
 class TriggerDatabaseStore extends Store {
 
@@ -168,6 +181,52 @@ class TriggerDatabaseStore extends Store {
                 this.storeDataFile( this.#data );
             } );
         } );
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Executes the given function, passing in the new trigger, when a new trigger is added.
+     * 
+     * @param {(trigger: Trigger) => void} fn The callback function.
+     */
+    onTriggerCreated( fn ) {
+        let i = onCreatedHandlers.indexOf( fn );
+        if ( i < 0 ) {
+            onCreatedHandlers.push( fn );
+        } else {
+            onCreatedHandlers[ i ] = fn;
+        }
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Executes the given function, passing in the deleted trigger, when a trigger is deleted.
+     * 
+     * @param {(trigger: Trigger) => void} fn The callback function.
+     */
+    onTriggerDeleted( fn ) {
+        let i = onRemovedHandlers.indexOf( fn );
+        if ( i < 0 ) {
+            onRemovedHandlers.push( fn );
+        } else {
+            onRemovedHandlers[ i ] = fn;
+        }
     }
 
 
@@ -331,6 +390,71 @@ class TriggerDatabaseStore extends Store {
         _fileStore = fileStore;
         _userPreferences = userPreferences;
 
+        ipcMain.on( 'trigger:get:history', ( event, triggerId ) => {
+            let successful = successfulTriggerExecutions?.filter( f => f.triggerId === triggerId ) ?? [];
+            let failed = failedTriggerExecutions?.filter( f => f.triggerId === triggerId ) ?? [];
+            let exceptions = exceptionHistory?.filter( f => f.triggerId === triggerId ) ?? [];
+
+            event.sender.send( 'trigger:get:history', {
+                successful: _.orderBy( successful, [ 'timestamp' ], [ 'asc' ] ),
+                failed: _.orderBy( Array.prototype.concat( failed, exceptions ), [ 'timestamp' ], [ 'asc' ] )
+            } );
+        } );
+
+        ipcMain.on( 'trigger:get:history:all', ( event ) => {
+
+            event.sender.send( 'trigger:get:history:all', {
+                successful: _.orderBy( successfulTriggerExecutions ?? [], [ 'timestamp' ], [ 'asc' ] ),
+                exceptions: _.orderBy( exceptionHistory ?? [], [ 'timestamp' ], [ 'asc' ] )
+            } );
+
+        } );
+
+        ipcMain.on( 'trigger:clear:history:all', ( event ) => {
+            
+            successfulTriggerExecutions = [];
+            failedTriggerExecutions = [];
+            exceptionHistory = [];
+
+            this.storeDataFile( this.#data );
+            event.sender.send( 'trigger:clear:history:all' );
+        } );
+
+        ipcMain.on( 'trigger:batch-history',
+            /**
+             * Stores the given batch history.
+             * 
+             * @param {any} event The event args.
+             * @param {{successful: string, failed: string}} data The data to process.
+             */
+            async ( event, data ) => {
+                /** @type {TriggerParseHistoryModel[]} */
+                let successful = _.orderBy( data.successful ?? [], [ 'timestamp' ], [ 'asc' ] );
+                /** @type {TriggerParseHistoryModel[]} */
+                let failed = _.orderBy( data.failed ?? [], [ 'timestamp' ], [ 'asc' ] );
+                /** @type {TriggerParseHistoryModel[]} */
+                let exceptions = _.orderBy( data.exceptions ?? [], [ 'timestamp' ], [ 'asc' ] );
+
+                successfulTriggerExecutions = Array.prototype.concat( successfulTriggerExecutions, successful );
+                failedTriggerExecutions = Array.prototype.concat( failedTriggerExecutions, failed );
+                exceptionHistory = Array.prototype.concat( exceptionHistory, exceptions );
+
+                if (successfulTriggerExecutions.length > userPreferences.logRetentionCount) {
+                    successfulTriggerExecutions.splice( 0, successfulTriggerExecutions.length - userPreferences.logRetentionCount );
+                }
+                if ( failedTriggerExecutions.length > userPreferences.logRetentionCount ) {
+                    failedTriggerExecutions.splice( 0, failedTriggerExecutions.length - userPreferences.logRetentionCount );
+                }
+                if ( exceptionHistory.length > userPreferences.logRetentionCount ) {
+                    exceptionHistory.splice( 0, exceptionHistory.length - userPreferences.logRetentionCount );
+                }
+                
+
+                mainWindowRef.reference.webContents.send( 'trigger:batch:parse-history', { successful: successful, exceptions: exceptions } );
+                event.sender.send( 'trigger:batch:complete', null );
+
+            } );
+
         ipcMain.on( 'trigger:mass-create',
             /**
              * Creates the givne list of triggers.
@@ -428,6 +552,7 @@ class TriggerDatabaseStore extends Store {
 
         ipcMain.on( 'pkg:install', ( event, pkg ) => {
             this.installTriggerPkg( pkg, event );
+            this.emitInstalledIds();
         } );
 
         ipcMain.on( 'pkg:uninstall', ( event, packageId ) => {
@@ -443,8 +568,21 @@ class TriggerDatabaseStore extends Store {
             event.sender.send( 'pkg:get:installed', this.getInstalledPackages() );
         } );
 
+        ipcMain.on( 'pkg:subscribe:installed:trigger-ids',
+            /**
+             * Returns a list of all trigger ids that have been installed 
+             * through a package or share.
+             * 
+             * @param {Electron.IpcMainEvent} event The event args.
+             */
+            ( event ) => {
+                installedIdSubscribers.push( event.sender );
+                this.emitInstalledIds();
+            } );
+
         ipcMain.on( 'quickShare:install', async ( event, quickShare ) => {
             event.sender.send( 'quickShare:install', await this.installQuickshare( quickShare, event ) );
+            this.emitInstalledIds();
         } );
 
         if ( this.#orphanedFound ) {
@@ -457,6 +595,43 @@ class TriggerDatabaseStore extends Store {
 
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Returns a list of all installed package ids.
+     */
+    emitInstalledIds() {
+        /** @type {string[]} */
+        let installed = Array.prototype.concat( [], this.getInstalledPackages().map( f => f.packageId ), this.getInstalledQuickShares().map( f => f.quickShareId ) );
+
+        let installedIds = [];
+        this.#data.triggers.forEach( trigger => {
+            if ( installed.includes( trigger.triggerId ) ) {
+                installedIds.push( trigger.triggerId );
+            }
+        } );
+
+        installedIdSubscribers.forEach( subscriber => {
+            subscriber.send( 'pkg:get:installed:trigger-ids', installedIds );
+        } );
+    }
+
+
+
+
+
+
+
+
+
+
     /**
      * Returns a list of all tags.
      * 
@@ -465,6 +640,15 @@ class TriggerDatabaseStore extends Store {
     getTags() {
         return this.#data?.tags?.length > 0 ? this.#data.tags : [];
     }
+
+
+
+
+
+
+
+
+
 
     /**
      * Creates a new tag.
@@ -487,6 +671,15 @@ class TriggerDatabaseStore extends Store {
         return tag.tagId;
     }
 
+
+
+
+
+
+
+
+
+
     /**
      * Updates an existing tag.
      * 
@@ -507,6 +700,15 @@ class TriggerDatabaseStore extends Store {
 
         this.storeDataFile( this.#data );
     }
+
+
+
+
+
+
+
+
+
 
     /**
      * Removes the specified tag.
@@ -558,6 +760,15 @@ class TriggerDatabaseStore extends Store {
         return this.#data?.folders?.length > 0 ? this.#data.folders : [];
     }
 
+
+
+
+
+
+
+
+
+
     /**
      * Updates the store of trigger folders.
      * 
@@ -573,6 +784,15 @@ class TriggerDatabaseStore extends Store {
         
         return this.#data.folders;
     }
+
+
+
+
+
+
+
+
+
 
     /**
      * Applies folder ids to all folders in the given heirarchy.
@@ -625,50 +845,13 @@ class TriggerDatabaseStore extends Store {
             // Save changes to the data.
             this.processPredefinedTriggers();
             this.storeDataFile( this.#data );
+
+            // Execute any callback functions for the on created event.
+            onCreatedHandlers.forEach( fn => fn( trigger ) );
         }
 
         return trigger.triggerId;
     }
-
-
-
-
-
-
-
-
-
-
-    // /**
-    //  * Adds the given folder to the store.
-    //  * 
-    //  * @returns {string} Returns the generated folder id.
-    //  * 
-    //  * @param {TriggerFolder} folder The folder to add to the store.
-    //  * @param {string} parentId The folderId of the parent folder.
-    //  */
-    // addFolder( folder, parentId ) {
-    //     // Init the folders array.
-    //     this.#data.folders = this.#data.folders ? this.#data.folders : [];
-
-    //     // Generate a new id for the folder.
-    //     folder.folderId = nanoid();
-
-    //     if ( parentId == null ) {
-    //         // Add it to the store.
-    //         this.#data.folders.push( folder );
-    //     } else {
-    //         // Find the index of the parent folder.
-    //         let i = _.findIndex( this.#data.folders, ( e ) => e.folderId === parentId );
-    //         this.#data.folders[i]
-    //     }
-
-    //     // Save changes to the data.
-    //     this.processPredefinedTriggers();
-    //     this.storeDataFile( this.#data );
-
-    //     return folder.folderId;
-    // }
 
 
 
@@ -705,46 +888,6 @@ class TriggerDatabaseStore extends Store {
 
 
     
-    // /**
-    //  * Removes the given folder.
-    //  * 
-    //  * @param {TriggerFolder} folder The folder to remove.
-    //  */
-    // removeFolder( folder ) {
-    //     if ( this.#data?.folders?.length > 0 ) {
-    //         let folderId = folder.folderId;
-
-    //         // Find the index of the trigger.
-    //         let i = _.findIndex( this.#data.folders, ( e ) => e.folderId === folder.folderId );
-
-    //         // Remove the folder by index.
-    //         let removed = this.removeFolderIndex( i );
-
-    //         if ( removed ) {
-    //             this.#data.triggers?.forEach( trigger => {
-    //                 if ( trigger.folderId === folderId ) {
-    //                     trigger.folderId = null;
-    //                 }
-    //             } );
-    
-    //             // Save changes to the data.
-    //             this.processPredefinedTriggers();
-    //             this.storeDataFile( this.#data );
-    //         }
-
-    //         return removed;
-    //     }
-    // }
-
-
-
-
-
-
-
-
-
-    
     /**
      * Removes the specified trigger.
      * 
@@ -761,45 +904,6 @@ class TriggerDatabaseStore extends Store {
 
         }
     }
-
-
-
-
-
-
-
-
-
-    
-    // /**
-    //  * Removes the specified folder.
-    //  * 
-    //  * @param {string} folderId The folder to remove.
-    //  */
-    // remove( folderId ) {
-    //     if ( this.#data?.folders?.length > 0 ) {
-
-    //         // Find the index of the folder.
-    //         let i = _.findIndex( this.#data.folders, ( e ) => e.folderId === folderId );
-
-    //         // Remove the trigger by index.
-    //         let removed = this.removeFolderIndex( i );
-
-    //         if ( removed ) {
-    //             this.#data.triggers?.forEach( trigger => {
-    //                 if ( trigger.folderId === folderId ) {
-    //                     trigger.folderId = null;
-    //                 }
-    //             } );
-
-    //             // Save changes to the data.
-    //             this.processPredefinedTriggers();
-    //             this.storeDataFile( this.#data );
-    //         }
-
-    //         return removed;
-    //     }
-    // }
     
 
 
@@ -825,39 +929,12 @@ class TriggerDatabaseStore extends Store {
             this.processPredefinedTriggers();
             this.storeDataFile( this.#data );
 
+            onRemovedHandlers.forEach( fn => fn( removed[ 0 ] ) );
+
             // Return true if at least 1 item was removed.
             return removed?.length > 0;
         }
     }
-    
-
-
-
-
-
-
-
-
-    
-    // /**
-    //  * Removes the folder at the specified index.
-    //  * 
-    //  * @param {number} i The index of the folder to remove.
-    //  */
-    // removeFolderIndex( i ) {
-    //     if ( this.#data?.folders?.length > i ) {
-
-    //         // Remove the folder by index.
-    //         let removed = this.#data.folders.splice( i, 1 );
-
-    //         // Save the changes to the data.
-    //         this.processPredefinedTriggers();
-    //         this.storeDataFile( this.#data );
-
-    //         // Return true if at least 1 item was removed.
-    //         return removed?.length > 0;
-    //     }
-    // }
     
 
 
@@ -883,31 +960,6 @@ class TriggerDatabaseStore extends Store {
             return this.#data.triggers[ i ];
         }
     }
-    
-
-
-
-
-
-
-
-
-    
-    // /**
-    //  * Returns the folder with the given id.
-    //  * 
-    //  * @param {string} folderId The folder id of the desired folder.
-    //  */
-    // findFolder( folderId ) {
-
-    //     // Find the index of the folder by Id.
-    //     let i = _.findIndex( this.#data.folders, ( e ) => e.folderId === folderId );
-
-    //     // If the index is valid, then return the found trigger.
-    //     if ( i > -1 && i < this.#data?.folders?.length ) {
-    //         return this.#data.folders[ i ];
-    //     }
-    // }
 
 
 
@@ -1009,42 +1061,6 @@ class TriggerDatabaseStore extends Store {
 
 
 
-    // /**
-    //  * Updates the given folder in the store.
-    //  * 
-    //  * @returns {boolean} Returns true if the folder was updated.
-    //  * 
-    //  * @param {TriggerFolder} folder The folder to update.
-    //  */
-    // update( folder ) {
-
-    //     // Find the index of the folder by Id.
-    //     let i = _.findIndex( this.#data.folders, ( e ) => e.folderId === folder.folderId );
-
-    //     // If the index is valid, then update the found folder.
-    //     if ( i > -1 && i < this.#data?.folders?.length ) {
-    //         this.#data.folders[ i ] = folder;
-
-    //         // Save changes to the data.
-    //         this.processPredefinedTriggers();
-    //         this.storeDataFile( this.#data );
-
-    //         return true;
-    //     } else {
-    //         return false;
-    //     }
-        
-    // }
-
-
-
-
-
-
-
-
-
-
     /**
      * Returns a list of triggers predicate returns truthy for.
      * 
@@ -1069,22 +1085,6 @@ class TriggerDatabaseStore extends Store {
     getAll() {
         return this.#data.triggers;
     }
-
-
-
-
-
-
-
-
-
-    
-    // /**
-    //  * Returns all folders.
-    //  */
-    // getFolders() {
-    //     return this.#data.folders;
-    // }
 
 
 
@@ -1193,6 +1193,15 @@ class TriggerDatabaseStore extends Store {
         }
     }
 
+
+
+
+
+
+
+
+
+
     /**
      * Returns a map of trigger id to list of duplicate/existing trigger ids.
      * 
@@ -1244,6 +1253,15 @@ class TriggerDatabaseStore extends Store {
 
         return output;
     }
+
+
+
+
+
+
+
+
+
 
     /**
      * Returns matching duplicate trigger actions.
@@ -1334,6 +1352,15 @@ class TriggerDatabaseStore extends Store {
 
         return output;
     }
+
+
+
+
+
+
+
+
+
 
     /**
      * Searches through all triggers trying to find any match.  This is a fuzzy 
@@ -1607,6 +1634,22 @@ class TriggerDatabaseStore extends Store {
             // folder ids to existing folders. If a folder does not exist,  it is 
             // created  using  the  folder  id  in  the trigger   package  folder.
             let folderMap = this.installPackageFolders( pkg.model?.folders );
+
+            // TODO: We need to keep a trigger package id as an array of packages.  One reason is, if a trigger was only part of an installed package, and that package is uninstalled or the trigger is no longer part of that package, we are safe to remove it.
+            // But we need to find a way to pull an updated list of trigger packages, and update the trigger package id array.
+            // TODO: Would be nice, show what package(s) a trigger is in when viewing the trigger details.
+
+            // // Next, remove any triggers that were installed by this package, and
+            // // are no longer in this package.
+            // let installedTriggers = this.#data.triggers.filter( f => f.packageId === pkg.triggerPackageId );
+            // installedTriggers.forEach( installedTrigger => {
+            //     if ( pkg.model?.triggers?.find( f => f.triggerId === installedTrigger.triggerId ) == null ) {
+            //         // This trigger is no longer in the package, so remove it.
+            //         this.#data.triggers.splice( this.#data.triggers.indexOf( installedTrigger ), 1 );
+            //     }
+            // } );
+
+            // Finally, install the triggers.
             pkg.model?.triggers?.forEach( pkgTrigger => this.installPackageTrigger( pkg.triggerPackageId, pkgTrigger, folderMap ) );
 
             // Save changes to the data.
@@ -1852,6 +1895,9 @@ class TriggerDatabaseStore extends Store {
             // Add it to the store.
             this.#data.triggers.push( trigger );
 
+            // Execute any callback functions for the on created event.
+            onCreatedHandlers.forEach( fn => fn( trigger ) );
+
         }
 
         trigger.name = packageTrigger.name;
@@ -2042,6 +2088,15 @@ class TriggerDatabaseStore extends Store {
 
         this.storeDataFile( this.#data );
     }
+
+
+
+
+
+
+
+
+
 
 }
 

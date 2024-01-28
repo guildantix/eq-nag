@@ -26,6 +26,11 @@ import { EditorsModule } from './editors/editors.module';
 import { OverlaysComponent } from './overlays/overlays.component';
 import { NgxMatTimepickerModule } from 'ngx-mat-timepicker';
 import { FolderConditionsDialogComponent } from './triggers/folder-conditions-dialog/folder-conditions-dialog.component';
+import { DebugConsoleComponent } from './debug-console/debug-console.component';
+import { ConsoleListComponent } from './debug-console/console-list.component';
+import { FloatingCombatTextComponent } from './floating-combat-text/floating-combat-text.component';
+import { ConsoleTriggerEventComponent } from './debug-console/console-lines/trigger-event.component';
+import { ConsoleMessageComponent } from './debug-console/console-lines/message.component';
 
 @NgModule( {
     imports: [
@@ -49,10 +54,15 @@ import { FolderConditionsDialogComponent } from './triggers/folder-conditions-di
         FolderConditionsDialogComponent,
         TriggersComponent,
         OverlaysComponent,
+        ConsoleTriggerEventComponent,
+        ConsoleMessageComponent,
+        ConsoleListComponent,
+        DebugConsoleComponent,
         MainComponent,
         CharactersListComponent,
         SettingsComponent,
         SetupWizardComponent,
+        FloatingCombatTextComponent,
     ],
     providers: [
         ScraperService,

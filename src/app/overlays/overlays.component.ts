@@ -338,6 +338,7 @@ export class OverlaysComponent implements OnInit {
         const overlay = this.overlays.find( f => f.overlayId === overlayId );
         this.dialogService.showMonitorSelect( 'Select which monitor to move this overlay to.', overlay?.displayId ?? null ).subscribe( displayId => {
             if ( displayId !== null ) {
+                window.api.logger.info( `[Overlays:sendToOrigin] Sending overlay ${overlayId} to display ${displayId}` );
                 this.ipcService.sendOverlayToOrigin( overlayId, displayId );
             }
         } );

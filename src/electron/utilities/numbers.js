@@ -1,4 +1,13 @@
 
+
+
+
+
+
+
+
+
+
 /**
  * Converts the given value into a shorthand string.
  * 
@@ -30,6 +39,99 @@ function toShorthandString( value ) {
     }
 }
 
+
+
+
+
+
+
+
+
+
+/**
+ * Returns true if the given value contains the given flag.
+ * 
+ * @returns {boolean} Returns true if the given value contains the given flag.
+ * 
+ * @param {number} value The value that may contain the given flag.
+ * @param {number} flag The flag to check for.
+ */
+function hasFlag( value, flag ) {
+    return ( value & flag ) === flag;
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Adds the given flag to the given value.
+ * 
+ * @returns {number} Returns the value with the flag added.
+ * 
+ * @param {number} value The value to add the flag to.
+ * @param {number} flag The flag to add.
+ */
+function addFlag( value, flag ) {
+    return value | flag;
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Removes the given flag from the given value.
+ * 
+ * @returns {number} Returns the value with the flag removed.
+ * 
+ * @param {number} value The value to remove the flag from.
+ * @param {number} flag The flag to remove.
+ */
+function removeFlag( value, flag ) {
+    return value & ~flag;
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Toggles the given flag on the given value.
+ * 
+ * @returns {number} Returns the value with the flag toggled.
+ * 
+ * @param {number} value The value to toggle the flag on.
+ * @param {number} flag The flag to toggle.
+ */
+function toggleFlag( value, flag ) {
+    return value ^ flag;
+}
+
+
+
+
+
+
+
+
+
+
 /**
  * Rounds the given value to the given precision.
  * 
@@ -38,8 +140,17 @@ function toShorthandString( value ) {
  */
 function round( value, precision ) {
     var multiplier = Math.pow( 10, precision || 0 );
-    return Math.round( value * multiplier ) / multiplier;
+    return Math.round( ( value + Number.EPSILON ) * multiplier ) / multiplier;
 }
+
+
+
+
+
+
+
+
+
 
 /**
  * Returns a whole number between the given min and max bounds.
@@ -50,6 +161,15 @@ function round( value, precision ) {
 function randomBounded( min, max ) {
     return Math.floor( Math.random() * ( max - min ) ) + min;
 }
+
+
+
+
+
+
+
+
+
 
 /**
  * Returns true if the given rectangle contains the specified point.
@@ -65,11 +185,24 @@ function rectContainsPoint( rect, x, y ) {
     return xContained && yContained;
 }
 
+
+
+
+
+
+
+
+
+
 let NumberUtilities = {
     round: round,
     toShorthandString: toShorthandString,
     randomBounded: randomBounded,
     rectContainsPoint: rectContainsPoint,
+    hasFlag: hasFlag,
+    addFlag: addFlag,
+    removeFlag: removeFlag,
+    toggleFlag: toggleFlag,
 };
 
 module.exports = NumberUtilities;

@@ -6,6 +6,7 @@
         <button mat-icon-button aria-label="Run Setup Wizard" (click)="runSetupWizard()" *ngIf="!setupCompleted">
             <mat-icon class="material-icons-outlined color-green" style="font-size: 32px; line-height: 32px; width: 32px; height: 32px;">settings_suggest</mat-icon>
         </button>
+        <!-- <button mat-icon-button aria-label="Easy Mode" (click)="showEasyWindow()" class="hover-green"><mat-icon class="material-icons-outlined">auto_awesome</mat-icon></button> -->
         <button mat-icon-button aria-label="Minimize to tray" (click)="sendToTray()">
             <mat-icon>south_east</mat-icon>
         </button>
@@ -44,69 +45,9 @@
 
         </mat-tab>
         <mat-tab label="Floating Combat Text">
-            <mat-toolbar>
-                <span>Floating Combat Text</span>
-                <span class="spacer"></span>
-            </mat-toolbar>
-            <div class="tab-content">
 
-                <fieldset>
-                    <legend><span class="title">General</span></legend>
-                    <p>
-                        <mat-checkbox [(ngModel)]="enableFct" (change)="onEnableFctChange()">Enable</mat-checkbox><br />
-                        <mat-checkbox [(ngModel)]="showCriticalsInline" (change)="onShowCriticalsInlineChange()">Display critical damage inline with regular damage</mat-checkbox>
-                    </p>
-                    
-                    <p>
-                        <mat-form-field>
-                            <mat-label></mat-label>
-                            <mat-select [(ngModel)]="damageDealtOverlayId" name="ddlDamageDealtOverlay" (selectionChange)="onChangeDealtFctOverylays()">
-                                <mat-option *ngFor="let option of fctOverlays" [value]="option.overlayId">{{option.name}}</mat-option>
-                            </mat-select>
-                            <mat-hint>Damage Dealt or Healing Done Overlay</mat-hint>
-                        </mat-form-field>
-                    </p>
+            <app-floating-combat-text></app-floating-combat-text>
 
-                    <p>
-                        <mat-form-field>
-                            <mat-label></mat-label>
-                            <mat-select [(ngModel)]="damageTakenOverlayId" name="ddlDamageReceivedOverlay" (selectionChange)="onChangeReceivedFctOverylays()">
-                                <mat-option *ngFor="let option of fctOverlays" [value]="option.overlayId">{{option.name}}</mat-option>
-                            </mat-select>
-                            <mat-hint>Damage Received or Healing Received Overlay</mat-hint>
-                        </mat-form-field>
-                    </p>
-                    
-                </fieldset>
-
-                <fieldset class="margin-t-25" *ngIf="fctStyles != null">
-                    <legend><span class="title">FCT Options</span><small>Change how specific combat numbers are displayed.</small></legend>
-
-                    <mat-form-field style="width: 100%;">
-                        <mat-label>FCT Combat Type</mat-label>
-                        <mat-select class="combat-ddl" [(ngModel)]="combatType" name="ddlCombatType" disableOptionCentering style="max-width: unset;">
-                            <mat-option class="combat-option" value="DmgOut">My Damage</mat-option>
-                            <mat-option class="combat-option" value="DmgIn">Other Damage</mat-option>
-                            <mat-option class="combat-option" value="SpellDmgOut">My Spells</mat-option>
-                            <mat-option class="combat-option" value="SpellDmgIn">Other  Spells</mat-option>
-                            <mat-option class="combat-option" value="HealingOut">My Healing</mat-option>
-                            <mat-option class="combat-option" value="HealingIn">Other Healing</mat-option>
-                            <mat-option class="combat-option" value="Skill">Skills</mat-option>
-                        </mat-select>
-                        <mat-hint>Select the combat value type from the list to change the way it is displayed on the screen.</mat-hint>
-                    </mat-form-field>
-
-                    <ng-template [ngIf]="combatType === 'DmgOut'"><app-style-properties [style]="fctStyles.fctDmgOutStyle" label="My Damage" (onChange)="styleChange($event)"></app-style-properties></ng-template>
-                    <ng-template [ngIf]="combatType === 'DmgIn'"><app-style-properties [style]="fctStyles.fctDmgInStyle" label="Other Damage" (onChange)="styleChange($event)"></app-style-properties></ng-template>
-                    <ng-template [ngIf]="combatType === 'SpellDmgOut'"><app-style-properties [style]="fctStyles.fctSpellDmgOutStyle" label="My Spells" (onChange)="styleChange($event)"></app-style-properties></ng-template>
-                    <ng-template [ngIf]="combatType === 'SpellDmgIn'"><app-style-properties [style]="fctStyles.fctSpellDmgInStyle" label="Other  Spells" (onChange)="styleChange($event)"></app-style-properties></ng-template>
-                    <ng-template [ngIf]="combatType === 'HealingOut'"><app-style-properties [style]="fctStyles.fctHealingOutStyle" label="My Healing" (onChange)="styleChange($event)"></app-style-properties></ng-template>
-                    <ng-template [ngIf]="combatType === 'HealingIn'"><app-style-properties [style]="fctStyles.fctHealingInStyle" label="Other Healing" (onChange)="styleChange($event)"></app-style-properties></ng-template>
-                    <ng-template [ngIf]="combatType === 'Skill'"><app-style-properties [style]="fctStyles.fctSkillStyle" label="Skill" (onChange)="styleChange($event)"></app-style-properties></ng-template>
-                    
-                </fieldset>
-
-            </div>
         </mat-tab>
         <mat-tab label="Settings">
 
@@ -118,3 +59,5 @@
     <input type="file" #fileSelector style="display:none;" accept="*.txt" (change)="fileSelected($event)" />
 
 </section>
+
+<app-debug-console></app-debug-console>

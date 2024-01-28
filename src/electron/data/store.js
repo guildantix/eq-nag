@@ -1,6 +1,7 @@
 const electron = require( 'electron' );
 const path = require( 'path' );
 const fs = require( 'fs' );
+const fsp = fs.promises;
 const archiver = require( 'archiver' );
 const FsUtilities = require( '../utilities/file-system' );
 
@@ -46,6 +47,19 @@ class Store {
         } catch ( error ) {
             console.error( 'Error storing ' + this.configName, error );
         }
+    }
+
+    storeDataFileAsync( data ) {
+
+        if ( !data )
+            throw 'Attmept to store null data file!';
+        
+        try {
+            return fsp.writeFile( this.#path, JSON.stringify( data ) );
+        } catch ( error ) {
+            console.error( 'Error storing ' + this.configName, error );
+        }
+        
     }
 
     /**

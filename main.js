@@ -110,13 +110,9 @@ function createWindow() {
 
     trayMenu = createTray();
 
-    mainWindow.loadURL(
-        url.format( {
-            pathname: path.join( __dirname, `/dist/index.html` ),
-            protocol: "file:",
-            slashes: true
-        } )
-    );
+    let mainUrl = new url.URL( `file://${path.join( __dirname, `/dist/index.html` )}` );
+    mainWindow.loadURL( mainUrl.toString() );
+
     // Open the DevTools.
     if ( app.isDev() ) {
         mainWindow.webContents.openDevTools( { mode: 'undocked' } );
@@ -155,6 +151,8 @@ function createWindow() {
         overlays.forEach( overlay => {
             mainWindow.webContents.send( 'color:darken', { overlayId: overlay.overlayId, color: overlay.timerColor } );
         } );
+
+        checkCombatGroups();
     } );
 
     mainWindow.once( 'ready-to-show', () => {
@@ -190,18 +188,38 @@ const registerDevToolsShortcut = () => {
     } );
 };
 
+const checkCombatGroups = () => {
+    if ( overlayDatabase.getCombatGroups().length === 0 ) {
+        if ( userPreferences.askForCombatGroupMigrations ) {
+            mainWindow.webContents.send( 'ask_combat_group_migration', userPreferences.fctStyles?.fctDmgInStyle != null );
+        }
+    }
+};
+
 // --========================--
 // --== App Initialization ==--
 // --========================--
 
+if ( process.argv?.length > 1 && process.argv.includes( '--no-gpu' ) ) {
+    
+    log.info( '[main:app-initialization] Disabling hardware acceleration. --no-gpu' );
+
+    app.disableHardwareAcceleration();
+    app.commandLine.appendSwitch( "disable-software-rasterizer" );
+
+}
+
+
 const bootstrapApp = () => {
 
     app.on( 'ready', function () {
-    
+        
         winManager.onReady();
         screen.on( 'display-metrics-changed', ( e, newDisplay ) => {
-            log.info( 'screen metrics have changed.', e, newDisplay );
-            winManager.checkWindowPosition();
+            if ( userPreferences.enableCheckWindowPosition === true ) {
+                log.info( '[main:display-metrics-changed] Initiating overlay position checks.', e, newDisplay );
+                winManager.checkOverlayPositions( true );
+            }
         } );
         protocol.interceptFileProtocol( 'file', ( req, callback ) => {
             let filePath = new url.URL( req.url ).pathname;
@@ -234,7 +252,14 @@ const bootstrapApp = () => {
                 }
             }
     
-            callback( path.normalize( filePath ) );
+            log.info( '[main:interceptFileProtocol] Intercepted file protocol.', {
+                req: req,
+                filePath: filePath,
+                normalizedFilePath: path.normalize( filePath ),
+                appPath: app.getAppPath(),
+            } );
+
+            callback( path.normalize( filePath ).replace( /%20/g, ' ' ) );
         } );
         createWindow();
 
@@ -354,7 +379,10 @@ ipcMain.on( 'app:get:all-display', ( event ) => {
 
 ipcMain.on( 'main:console:log', ( event, data ) => { mainWindow.webContents.send( 'console:log', data ); } );
 
-function sendTick() {
+let _tickTimeoutId = -1;
+let _tickTriggers = 0;
+function sendTick( delay ) {
+    delay = delay === true ? true : false;
     let _triggers = triggerDatabase.getAll();
     let _folders = triggerDatabase.getFolders();
     let tickData = {
@@ -362,7 +390,11 @@ function sendTick() {
         logFile: userPreferences.logFile,
         voiceIndex: userPreferences.voiceIndex,
         masterVolume: userPreferences.masterVolume,
+        speechVolume: userPreferences.speechVolume,
+        audioVolume: userPreferences.audioVolume,
+        baseSpeakingRate: userPreferences.baseSpeakingRate,
         triggers: _triggers,
+        triggerChanges: _tickTriggers !== _triggers.length,
         overlays: overlayDatabase.getAll(),
         damageDealtOverlayId: userPreferences.damageDealtOverlayId,
         damageReceivedOverlayId: userPreferences.damageReceivedOverlayId,
@@ -381,14 +413,33 @@ function sendTick() {
         detrimentalOverlayId: userPreferences.detrimentalOverlayId,
         quickShareAuthorsListType: userPreferences.quickShareAuthorsListType,
         quickShareAuthorsList: userPreferences.quickShareAuthorsList,
+        characterDisabledTriggers: characterDatabase.getAll().map( c => { return { characterId: c.characterId, disabledTriggers: c.disabledTriggers }; } ),
+        triggerProfileDisabledTriggers: characterDatabase.getAllTriggerProfiles().map( tp => { return { triggerProfileId: tp.triggerProfileId, disabledTriggers: tp.disabledTriggers }; } ),
     };
-    mainWindow.webContents.send( 'tick', tickData );
-    logBootstrap.tick( tickData, characterDatabase );
 
-    if ( winManager.ginaImportWindow != null ) {
-        winManager.ginaImportWindow.send( 'tick', tickData );
-    }
+    const _executeTick = () => {
+        _tickTriggers = _triggers?.length ?? 0;
+        mainWindow.webContents.send( 'tick', tickData );
+        logBootstrap.tick( tickData, characterDatabase );
+
+        if ( winManager.ginaImportWindow != null ) {
+            winManager.ginaImportWindow.send( 'tick', tickData );
+        }
+    };
     
+    if (_tickTimeoutId > -1) {
+        clearTimeout(_tickTimeoutId);
+    }
+
+    if ( delay ) {
+        _tickTimeoutId = setTimeout( () => {
+            _executeTick();
+        }, 1000 );
+
+    } else {
+        _executeTick();
+    }
+
 }
 
 /** @type {import("electron-updater").UpdateInfo} */
@@ -432,6 +483,7 @@ ipcMain.on( 'app:isDev', ( event ) => {
 } );
 
 ipcMain.on( 'app:version', ( event ) => {
+    log.info( `[app:version] ${app.getVersion()}` );
     event.sender.send( 'app:version', { version: app.getVersion() } );
 } );
 
@@ -491,6 +543,73 @@ ipcMain.on( 'main:archive:progress',
     }
 );
 
+// TODO: Update the github pages with a list of available console commands.
+ipcMain.on( 'console:command',
+    /**
+     * Executes the given console command.
+     * 
+     * @param {Electron.IpcMainEvent} event The event args.
+     * @param {string | undefined} command The command to execute.
+     */
+    async ( event, command ) => {
+        let commands = command?.split( ' ' ) ?? [];
+        if ( commands.length > 0 ) {
+            if ( commands[ 0 ] === 'log' ) {
+                if ( commands.length > 1 ) {
+                    if ( commands[ 1 ] === 'backup' ) {
+                        try {
+                            await logBootstrap.backupLogFiles( userPreferences.logMaintenanceRules, userPreferences.logMaintenanceHistory?.length ?? 0 );
+                            event.sender.send( 'console:success', { label: 'Backup Event', message: 'Log backup completed successfully.', timestamp: new Date() } );
+                        } catch ( error ) {
+                            log.error( error );
+                            event.sender.send( 'console:error', { label: 'Backup Event', message: 'Log backup failed.', timestamp: new Date(), payload: error } );
+                        }
+                    }
+                }
+            } else if ( commands[ 0 ] === 'ping' ) {
+                if ( commands.length === 1 ) {
+                    event.sender.send( 'console:success', { label: 'Ping', message: 'Ping received.', timestamp: new Date() } );
+                } else {
+                    event.sender.send( 'console:success', { label: 'Text Ping', message: `Ping received: ${commands.slice( 1 ).join( ' ' )}`, timestamp: new Date() } );
+                }
+            }
+        }
+    } );
+
+var memoryCache = {};
+ipcMain.on( 'cache:store',
+    /**
+     * Caches the given value with the given key.
+     * 
+     * @param {Electron.IpcMainEvent} event The event args.
+     * @param {{key: string, value: any}} data 
+     */
+    ( event, data ) => {
+        memoryCache[ data.key ] = data.value;
+    } );
+
+ipcMain.on( 'cache:retrieve',
+    /**
+     * Retrieves the cached item with the given key.
+     * 
+     * @param {Electron.IpcMainEvent} event The event args.
+     * @param {string} key The cache key.
+     */
+    ( event, key ) => {
+        event.sender.send( `cache:retrieve:${key}`, memoryCache[ key ] );
+    } );
+
+ipcMain.on( 'cache:clear',
+    /**
+     * Clears the cached item with the given key.
+     * 
+     * @param {Electron.IpcMainEvent} event The event args.
+     * @param {string} key The cache key.
+     */
+    ( event, key ) => {
+        delete memoryCache[ key ];
+    } );
+
 var mainWindowRef = new ForwardRef( () => mainWindow ? mainWindow : null );
 var logBootstrapRef = new ForwardRef( () => logBootstrap ? logBootstrap : null );
 
@@ -544,7 +663,7 @@ app.on( 'ready', function () {
     dkpDatabase.attachIpcEvents( mainWindowRef, sendTick );
     fileDatabase.attachIpcEvents( mainWindowRef );
     triggerDatabase.attachIpcEvents( mainWindowRef, sendTick, fileDatabase, userPreferences );
-    overlayDatabase.attachIpcEvents( mainWindowRef, sendTick, triggerDatabase );
+    overlayDatabase.attachIpcEvents( mainWindowRef, sendTick, triggerDatabase, userPreferences );
     characterDatabase.attachIpcEvents( mainWindowRef, sendTick );
     logBootstrap.boostrapLogWatchers( mainWindowRef, app.isDev(), characterDatabase, sendTick, userPreferences );
     gameResources.attachIpcEvents( mainWindowRef, userPreferences );
@@ -554,6 +673,16 @@ app.on( 'ready', function () {
     winManager.configureRendererMouseBlockingOnMoveResize( mainWindow );
 
     winManager.loadRenderer();
+
+    triggerDatabase.onTriggerCreated( ( trigger ) => {
+        characterDatabase.addToDisabledByDefaultTriggers( trigger.triggerId );
+        sendTick( true );
+    } );
+
+    triggerDatabase.onTriggerDeleted( ( trigger ) => {
+        characterDatabase.removeFromDisabledTriggers( trigger.triggerId );
+        sendTick( true );
+    } );
 
     setTimeout( () => {
         scheduler();

@@ -3,7 +3,7 @@ const DomUtilities = require( '../utilities/dom' );
 const StringUtilities = require( '../utilities/string' );
 const NumberUtilities = require( '../utilities/numbers' );
 const ArrayUtilities = require( '../utilities/arrays' );
-const { OverlayDimensions, OverlayWindow, OverlayComponent, TimerSortTypes, TriggerSecondaryActionModel } = require( '../data/models/overlay-window' );
+const { OverlayDimensions, OverlayWindow, OverlayComponent, TimerSortTypes, TriggerSecondaryActionModel, FctCombatGroup, CombatTypes, getCombatModifiersFlags, HitStartPositionTypes } = require( '../data/models/overlay-window' );
 const { ActionTypes, TriggerAction, TriggerConditionTypes, OperatorTypes, TimerRestartBehaviors } = require( '../data/models/trigger' );
 const { ipcRenderer } = require( 'electron' );
 const Handlebars = require( "handlebars" );
@@ -12,11 +12,30 @@ const customAlphabet = require( 'nanoid' ).customAlphabet;
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const nanoid = customAlphabet( alphabet, 16 );
 const StyleSheetUtil = require( '../utilities/style-sheet' );
-const { FctStylesModel, FctModel, FctTypes } = require( '../data/models/fct' );
+const { FctStylesModel, FctModel, FctTypes, FctRenderComponent, HitAccumulationModel } = require( '../data/models/fct' );
 const ElectronUtilities = require( '../utilities/electron' );
 const { StyleProperties } = require( '../data/models/common' );
-const { screen } = require( '@electron/remote' );
+const { getCurrentWindow, screen } = require( '@electron/remote' );
 const { DateUtilities } = require( '../utilities/dates' );
+const { SharedTriggerPermissions } = require( '../data/models/sharing-service' );
+const { StylePropertiesModel } = require( '../data/models/core' );
+
+// TODO: List
+//  3. Update the log watcher to capture data that is required by the new combat groups.
+//  4. Bring in the new combat groups when the renderer loads.
+//  5. Create the rendering routines for the new combat groups.
+//  6. Create the routines and animations for hit consolidation and attenuation.
+//  8. For spell hits ahd healing, the spell name should be included/set as the source.
+
+//  ?. For hit consolidation, create the option "I don't care, don't clutter my screen".  I envision this working by taking a percent of screen usage, and if the hits are going to exceed that, then consolidate them.  This will be a global setting, not per overlay.
+//  ?. Work on adding in a DPS meter /grumble.
+//  ?. Show FCT that doesn't get rendered in the application's custom console.  Review the channel 'trigger:batch-history'
+
+// TODO: Show general exceptions in the debug console, to the user.
+
+
+
+// TODO: Some day we need to remove the old FCT data structure.
 
 /**
  * Sends the error information to the main thread for logging.
@@ -94,7 +113,7 @@ class OverlayInstance {
     /** @type {number} */
     dotTextHeight;
     /** @type {boolean} */
-    showRemainingDuration;
+    showDuration;
     /** @type {boolean} */
     groupByTarget;
     /** @type {number} */
@@ -119,6 +138,8 @@ class OverlayInstance {
     fontSize;
     /** @type {boolean[][]} */
     criticals;
+    /** @type {FctModel | undefined} */
+    criticalComp = undefined;
     /** @type {{x: number, y: number}[][]} */
     quadrants;
 }
@@ -155,7 +176,6 @@ const styleSheetUtil = new StyleSheetUtil();
 const fctCssEncapsulationId = '_' + nanoid();
 const delayBetweenCrits = 500;
 const delayVariance = 0.50;
-let delayAdd = 0;
 const criticalPadding = 0;
 var mouseForwardingPaused = false;
 /** @type {HTMLDivElement} */
@@ -165,6 +185,40 @@ var screenGlowTimerId = null;
 let showCriticalsInline = false;
 const intMaxValue = 9007199254740991;
 let uuid = 0;
+const permissionsSettingKey = 'sharedTriggerPermissions';
+/** @type {SharedTriggerPermissions} */
+let actionPermissions = null;
+/** @type {string[]} */
+let installedTriggerIds = [];
+/** @type {FctCombatGroup[]} */
+let combatGroups = [];
+
+/** @type {Record<string, Record<string, number[]>>} */
+var combatGroupHits = {};
+/** @type {Record<string, Record<string, number>>} */
+var combatGroupMedian = {};
+/** @type {Record<string, HitAccumulationModel>} */
+var hitAccumulations = {};
+/** @type {Record<string, number>} */
+var combatHitsUpdateIntervalId = {};
+
+const combatHitsUpdateDelayMs = 5000;
+// animation durations, in ms
+const animateFadeShrinkDuration = 4000;
+// const animateFadeOutDuration = 7000;
+const animateBlowoutDuration = 4000;
+const animateFadeOutDuration = 7000;
+const animateFadeInDuration = 500;
+const animateFloatDuration = 1000;
+const animateGrowShrinkDuration = 500;
+const accumulationDelay = 750;
+const accumulationIntervalDelay = 25;
+
+// let perfTimeTotal = 0;
+// let perfIntervalId = null;
+
+/** @type {HandlebarsTemplateDelegate<any>} */
+let fct2Template;
 
 
 
@@ -175,6 +229,101 @@ let uuid = 0;
 
 
 
+/**
+ * Gets the median value for the given character and render group.
+ * 
+ * @returns {number} The median value.
+ * 
+ * @param {string} characterId The id of the character's median data.
+ * @param {string} combatGroupId The id of the render group's median data.
+ */
+function getCombatGroupMedian( characterId, combatGroupId ) {
+    combatGroupMedian[ characterId ] = combatGroupMedian[ characterId ] ?? {};
+    combatGroupMedian[ characterId ][ combatGroupId ] = combatGroupMedian[ characterId ][ combatGroupId ] ?? 0;
+    return combatGroupMedian[ characterId ][ combatGroupId ];
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Sets the median value for the given character and render group.
+ * 
+ * @param {string} characterId The id of the character's median data.
+ * @param {string} combatGroupId The id of the render group's median data.
+ * @param {number} value The value to set.
+ */
+function setCombatGroupMedian( characterId, combatGroupId, value ) {
+    combatGroupMedian[ characterId ] = combatGroupMedian[ characterId ] ?? {};
+    combatGroupMedian[ characterId ][ combatGroupId ] = value;
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Gets the group hits data for the given character and render group.
+ * 
+ * @returns {number[]} The group hits data.
+ * 
+ * @param {string} characterId The id of the character's group hits data.
+ * @param {string} combatGroupId The id of the render group's group hits data.
+ */
+function getCombatGroupHits( characterId, combatGroupId ) {
+    combatGroupHits[ characterId ] = combatGroupHits[ characterId ] ?? {};
+    combatGroupHits[ characterId ][ combatGroupId ] = combatGroupHits[ characterId ][ combatGroupId ] ?? [];
+    return combatGroupHits[ characterId ][ combatGroupId ];
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Sets the group hits data for the given character and render group.
+ * 
+ * @param {string} characterId The id of the character's group hits data.
+ * @param {string} combatGroupId The id of the render group's group hits data.
+ * @param {number[]} value The value to set.
+ */
+function setCombatGroupHits( characterId, combatGroupId, value ) {
+    combatGroupHits[ characterId ] = combatGroupHits[ characterId ] ?? {};
+    combatGroupHits[ characterId ][ combatGroupId ] = value;
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Initializes and starts the rendering system.
+ * 
+ * @param {number} originX The origin x of the main monitor.
+ * @param {number} originY The origin y coordinate of the main monitor.
+ * @param {boolean} glowOnStart If true, glows the screen when the renderer starts.
+ */
 function Renderer( originX, originY, glowOnStart ) {
 
     origin.x = originX;
@@ -188,20 +337,97 @@ function Renderer( originX, originY, glowOnStart ) {
         timerTemplate = Handlebars.compile( document.querySelector( '#timerTemplate' ).innerHTML );
         timerIconTemplate = Handlebars.compile( document.querySelector( '#timerIconTemplate' ).innerHTML );
         fctTemplate = Handlebars.compile( document.querySelector( '#fctTemplate' ).innerHTML );
+        fct2Template = Handlebars.compile( document.querySelector( '#fct2Template' ).innerHTML );
         fctCriticalTemplate = Handlebars.compile( document.querySelector( '#fctCriticalTemplate' ).innerHTML );
         targetGroupTemplate = Handlebars.compile( document.querySelector( '#targetGroupTemplate' ).innerHTML );
         targetGroupTimerTemplate = Handlebars.compile( document.querySelector( '#targetGroupTimerTemplate' ).innerHTML );
 
         logInfo( '[Info:Renderer:Templates] (Renderer docReady) Templates have been compiled!' );
-
-        if ( glowOnStart ) {
-            renderGlow( '#4c0e67', 4000, false );
-        }
     
         /** Tell the main thread that we need a list of all overlays. */
         ipcRenderer.send( 'overlay:get', null );
 
     } );
+
+    ipcRenderer.on( 'character:get:combatGroupHits',
+        /**
+         * Handles receiving the combat group hits.
+         * 
+         * @param {Electron.IpcRendererEvent} event The event args.
+         * @param {Record<string, Record<string, number[]>>} data The data for combat group hits.
+         */
+        ( event, data ) => {
+            combatGroupHits = data ?? {};
+            console.log( 'combatGroupHits', combatGroupHits );
+        } );
+
+    ipcRenderer.on( 'character:get:combatGroupMedian',
+        /**
+         * Handles receiving the combat group hits.
+         * 
+         * @param {Electron.IpcRendererEvent} event The event args.
+         * @param {Record<string, Record<string, number>>} data The data for combat group hits.
+         */
+        ( event, data ) => {
+            combatGroupMedian = data ?? {};
+        } );
+
+    ipcRenderer.on( 'renderer:combatGroups',
+        /**
+         * Handles receiving updates to combat groups.
+         * 
+         * @param {Electron.IpcRendererEvent} event The event args.
+         * @param {FctCombatGroup[]} groups The updated list of combat groups.
+         */
+        ( event, groups ) => {
+            combatGroups = groups;
+            combatGroups.forEach( group => {
+                group._combatTypesFlags = CombatTypes.getFlagsValue( group.combatTypes );
+                group._combatModifiersFlags = getCombatModifiersFlags( group.combatModifiers );
+            } );
+
+            // Send a request for the combat data, now that we have our render groups.
+            ipcRenderer.send( 'character:get:combatGroupHits' );
+            ipcRenderer.send( 'character:get:combatGroupMedian' );
+
+        } );
+
+    ipcRenderer.on( 'pkg:get:installed:trigger-ids', function ( event, data ) {
+        if ( data ) {
+            logInfo( '[Info:Renderer:Settings] (pkg:get:installed:trigger-ids) Received installed trigger IDs.' );
+            installedTriggerIds = data;
+
+            if ( actionPermissions == null ) {
+                /** Tell the main thread that we need the action permissions, and that we want it every time it changes. */
+                ipcRenderer.send( 'settings:get', { key: permissionsSettingKey, subscribe: true } );
+            }
+        }
+    } );
+    
+    ipcRenderer.on( `settings:get:${permissionsSettingKey}:generic`,
+        /**
+         * Handles the response from the main thread when we receive the shared trigger permissions.
+         * 
+         * @param {Electron.IpcRendererEvent} event The event args.
+         * @param {SharedTriggerPermissions} data The shared trigger permissions.
+         */
+        function ( event, data ) {
+            if ( data ) {
+                logInfo( '[Info:Renderer:Settings] (settings:get) Received action permissions.' );
+
+                if ( actionPermissions == null && glowOnStart && !data.disableAllGlowEffects ) {
+                    // If action permissions are null, this is the first time we've
+                    // received them.  If glowOnStart is true, we want to glow the 
+                    // screen, if the user hasn't disabled all glow effects.
+                    renderGlow( '#4c0e67', 4000, false );
+                }
+
+                actionPermissions = data;
+            }
+        } );
+
+    /** Tell the main thread that we need a list of all installed triggers. */
+    ipcRenderer.send( 'pkg:subscribe:installed:trigger-ids', null );
 
     ipcRenderer.on( 'renderer:resolution-changed',
         /**
@@ -302,11 +528,12 @@ function Renderer( originX, originY, glowOnStart ) {
         /**
          * Handles receiving a new trigger action.
          * @param {*} event The event object.
-         * @param {OverlayComponent} model The trigger action.
+         * @param {FctModel} model The trigger action.
          */
         function ( event, model ) {
             model.added = new Date();
-            renderFct( model.overlayId, model );
+            // renderFct( model.overlayId, model );
+            renderFct2( model );
         } );
 
     ipcRenderer.on( 'renderer:window:enable-edit', function ( event, overlayId ) {
@@ -365,6 +592,13 @@ function Renderer( originX, originY, glowOnStart ) {
 
     ipcRenderer.on( 'renderer:mouse-forwarding:resume', function ( event, overlayId ) {
         mouseForwardingPaused = false;
+    } );
+
+    ipcRenderer.on( 'renderer:stopwatch:stop', ( e, instanceId ) => {
+        let comp = findComponent( c => c.instanceId === instanceId );
+        if ( comp ) {
+            comp.stopwatchState = 'stop';
+        }
     } );
 
     ipcRenderer.on( 'component:destroy', function ( event, instanceId ) {
@@ -552,6 +786,18 @@ function initializeOverlay( overlay ) {
 
     div.innerHTML = content;
     div.style.position = 'absolute';
+    
+
+    if ( overlay.overlayType === 'Timer' ) {
+        let ca = div.querySelector( '.overlay-content-area' );
+        if ( ca ) {
+            ca.classList.add( 'timer' );
+        }
+
+        if ( overlay.groupByTarget !== true ) {
+            ca.classList.add( 'ungrouped' );
+        }
+    }
 
     div.style.left = ( overlay.x + overlay.displayBounds.x + origin.x ) + 'px';
     div.style.top = ( overlay.y + overlay.displayBounds.y + origin.y ) + 'px';
@@ -567,7 +813,7 @@ function initializeOverlay( overlay ) {
         overlayGroups: {},
         sortDirection: TimerSortTypes.None,
         dotTextHeight: 0,
-        showRemainingDuration: false,
+        showDuration: false,
         groupByTarget: false,
         groupHeaderSize: 12,
         groupHeaderColor: '#ffffff',
@@ -680,8 +926,6 @@ function updateOverlay( overlayId, model ) {
             }
         }
     
-        contentArea.querySelectorAll( '.progress' ).forEach( f => f.style.marginBottom = contentArea.style.lineHeight );
-    
         if ( model.fontColor ) {
             if ( model.fontTransparency < 1 ) {
                 contentArea.style.color = `${model.fontColor}${componentToHex( Math.round( model.fontTransparency * 255 ) )}`;
@@ -741,7 +985,7 @@ function updateOverlay( overlayId, model ) {
             icon.style.height = `${overlayInstances[ overlayId ].dotTextHeight}px`;
         } );
     
-        overlayInstances[ overlayId ].showRemainingDuration = model.showTimeRemaining === true;
+        overlayInstances[ overlayId ].showDuration = model.showTimeRemaining === true;
     
         if ( model.groupByTarget ) {
             contentArea.classList.add( 'grouped-mobs' );
@@ -749,6 +993,12 @@ function updateOverlay( overlayId, model ) {
         } else {
             contentArea.classList.remove( 'grouped-mobs' );
             overlayInstances[ overlayId ].groupByTarget = false;
+        }
+
+        if ( model.reverse ) {
+            contentArea.classList.add( 'reverse' );
+        } else {
+            contentArea.classList.remove( 'reverse' );
         }
     
         overlayInstances[ overlayId ].groupHeaderSize = model.groupHeaderSize > 0 ? model.groupHeaderSize : 12;
@@ -867,12 +1117,568 @@ function updateOverlay( overlayId, model ) {
 
 
 /**
+ * Accumulates the given amount onto an existing component.
+ * 
+ * @param {string} instanceId The instance id of the rendered fct component.
+ * @param {HTMLElement} el The element to render the accumulation to.
+ * @param {number} accumulateAmount The amount to accumulate.
+ * @param {number} originalAmount The original starting about.  For hits already accumulated, this value is ignored.
+ */
+function accumulatHits( instanceId, el, accumulateAmount, originalAmount ) {
+    let accumulation = hitAccumulations[ instanceId ];
+
+    if ( accumulation ) {
+        accumulation.targetAmount += accumulateAmount;
+        
+    } else {
+        accumulation = new HitAccumulationModel();
+        
+        accumulation.targetAmount = originalAmount + accumulateAmount;
+        accumulation.currentAmount = originalAmount;
+        accumulation.element = el;
+
+        accumulation.intervalId = window.setInterval( () => {
+            if ( accumulation.currentAmount >= accumulation.targetAmount ) {
+                window.clearInterval( accumulation.intervalId );
+                delete hitAccumulations[ instanceId ];
+                return;
+            }
+
+            accumulation.currentAmount += Math.ceil( accumulation.targetAmount / ( accumulationDelay / accumulationIntervalDelay ) );
+
+            if ( accumulation.currentAmount > accumulation.targetAmount ) {
+                accumulation.currentAmount = accumulation.targetAmount;
+            }
+
+            accumulation.element.innerHTML = NumberUtilities.toShorthandString( accumulation.currentAmount );
+        }, accumulationIntervalDelay );
+
+        hitAccumulations[ instanceId ] = accumulation;
+    }
+
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Returns true if the render group would accept the hit amount as a valid hit. Returns false if the group would ignore it.
+ * 
+ * @param {string} characterId The character id.
+ * @param {FctCombatGroup} renderGroup The render group to check.
+ * @param {number} hitAmount The hit amount.
+ */
+function groupIgnoresHit( characterId, renderGroup, hitAmount ) {
+    if ( renderGroup.ignoreHits ) {
+        let threshold = renderGroup.thresholdType === 'percent' ? ( renderGroup.thresholdPercent / 100 ) * getCombatGroupMedian( characterId, renderGroup.combatGroupId ) : renderGroup.thresholdValue;
+
+        return hitAmount < threshold;
+    } else {
+        return false;
+    }
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Finds a matching render group for the given FCT model.
+ * 
+ * @returns {FctCombatGroup | undefined} Returns the render group, or undefined if no render group was found.
+ * 
+ * @param {FctModel} model The FCT model.
+ */
+function getRenderGroup( model ) {
+    /** @type {FctCombatGroup | undefined} */
+    let renderGroup = undefined;
+
+    for ( let i = 0; i < combatGroups?.length ?? 0; i++ ) {
+        const group = combatGroups[ i ];
+
+        if ( ( model.combatTypesFlags & group._combatTypesFlags ) === model.combatTypesFlags && !groupIgnoresHit( model.characterId, group, model.amount ) ) {
+            // Found a group with matching combat flags.
+            if ( ( model.combatModifiersFlags & group._combatModifiersFlags ) === model.combatModifiersFlags ) {
+
+                // If we're here, we're rendering this group.
+                renderGroup = group;
+                break;
+
+            } else if ( !renderGroup && ( model.combatModifiersFlags & group._combatModifiersFlags ) > 0 && !groupIgnoresHit( model.characterId, group, model.amount ) ) {
+                // Found a group with some matching combat modifiers.
+                renderGroup = group;
+            }
+        }
+    }
+
+    return renderGroup;
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Attempts to accumulate the given hit, if the render group is configured to do so.
+ * 
+ * @returns {boolean} Returns true if the hit was accumulated.
+ * 
+ * @param {FctCombatGroup} renderGroup The combat group to check.
+ * @param {FctModel} model The FCT model to be rendered.
+ */
+function tryAccumulateHit( renderGroup, model ) {
+    let groupMaxHit = 0;
+    let hitAccumulated = false;
+    let medianHit = getCombatGroupMedian( model.characterId, renderGroup.combatGroupId );
+    const groupHits = getCombatGroupHits( model.characterId, renderGroup.combatGroupId );
+
+    // If our data set is too small, or the hit deviates from the median hit by
+    // a 10% margin, then we need to add this hit to our data set and 
+    // recalculate the median hit.
+    if ( groupHits.length < 1000 || (medianHit * .9 > model.amount && medianHit * 1.1 < model.amount) ) {
+
+        groupHits.push( model.amount );
+        groupHits.sort( ( a, b ) => a - b );
+
+        // In general, hits will grow harder over time.  We want to keep track
+        // of the max hit for this group.  When the lengh of this data set 
+        // grows over 1000, we want to remove the smallest hit.
+        if ( groupHits.length > 1000 ) {
+            groupHits.shift();
+        }
+
+        // Calculate the median hit.
+        medianHit = groupHits[ Math.floor( groupHits.length / 2 ) ];
+
+        // Update our data sets.
+        setCombatGroupMedian( model.characterId, renderGroup.combatGroupId, medianHit );
+        setCombatGroupHits( model.characterId, renderGroup.combatGroupId, groupHits );
+
+        // If we're already waiting on a save to execute, then we don't need to start a new one.
+        if ( !combatHitsUpdateIntervalId[ model.characterId ] ) {
+
+            // We want to wait a few seconds before saving the data set.
+            combatHitsUpdateIntervalId[ model.characterId ] = window.setTimeout( () => {
+                
+                ipcRenderer.send( 'character:save:combatGroupHits', { characterId: model.characterId, combatGroupHits: combatGroupHits[ model.characterId ] } );
+                ipcRenderer.send( 'character:save:combatGroupMedian', { characterId: model.characterId, combatGroupMedian: combatGroupMedian[ model.characterId ] } );
+                
+                delete combatHitsUpdateIntervalId[ model.characterId ];
+
+            }, combatHitsUpdateDelayMs );
+
+        }
+
+
+    }
+    
+    // Calculate the max hit for this group.
+    groupMaxHit = medianHit * 2;
+
+    if ( renderGroup.accumulateHits ) {
+
+        let threshold = renderGroup.thresholdType === 'percent' ? ( renderGroup.thresholdPercent / 100 ) * groupMaxHit : renderGroup.thresholdValue;
+
+        if ( model.amount < threshold ) {
+            if ( renderGroup.accumulateHits ) {
+                let overlay = overlayInstances[ renderGroup.overlayId ];
+
+                if ( overlay ) {
+                    /** @type {FctModel | undefined} */
+                    let accumlationTarget = undefined;
+
+                    // We want to find the most recent component that matches the flags, in this render renderGroup.
+                    for ( let i = overlay.overlayFctComponents.length - 1; i >= 0; i-- ) {
+                        /** @type {FctModel} */
+                        const c = overlay.overlayFctComponents[ i ];
+
+                        if ( c.dom && c.accumulationPeriod && c.combatTypesFlags === model.combatTypesFlags && c.combatModifiersFlags === model.combatModifiersFlags ) {
+                            accumlationTarget = c;
+
+                            // If the action property doesn't already contain the current action, we want to add it.
+                            if ( c.action?.indexOf( model.action ) === -1 ) {
+                                // If the action property already ends with an ellipsis, then we're out of room. Otherwise we can add it.
+                                if ( !c.action.match( /\.\.\.$/gi ) ) {
+                                    c.action += ', ' + model.action;
+
+                                    // After appending the action, let's trim it if it's too long.
+                                    if ( c.action.length > 37 ) {
+                                        c.action = c.action.substring( 0, 37 ) + '...';
+                                    }
+                                }
+
+                                // Apply the text change.
+                                accumlationTarget.dom.querySelector( '.fctSource' ).innerHTML = `(${c.action})`;
+                            }
+
+                            break;
+                        }
+                    }
+
+                    // If we've found a target, we want to accumulate the hits.
+                    if ( accumlationTarget && accumlationTarget.dom ) {
+                        accumulatHits( accumlationTarget.instanceId, accumlationTarget.dom.querySelector( '.fctText' ), model.amount, accumlationTarget.amount );
+                        hitAccumulated = true;
+                    }
+
+                }
+
+                if ( hitAccumulated ) {
+                    // We probably want to exit the function here.
+                    return true;
+                }
+            }
+        }
+
+    }
+
+    return hitAccumulated;
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Renders the given FCT model.
+ * 
+ * @param {FctModel} model The FCT model to render.
+ */
+function renderFct2( model ) {
+    /** @type {FctCombatGroup | undefined} */
+    let renderGroup = undefined;
+
+    model.instanceId = nanoid();
+    model.combatTypesFlags = CombatTypes.getFlagsValue( model.combatTypes );
+    model.combatModifiersFlags = getCombatModifiersFlags( model.combatModifiers );
+    let hitAccumulated = false;
+
+    if ( model.combatTypesFlags === 0 ) {
+        return;
+    }
+
+    renderGroup = getRenderGroup( model );
+
+    if ( renderGroup ) {
+
+        hitAccumulated = tryAccumulateHit( renderGroup, model );
+
+        if ( hitAccumulated ) {
+            // We probably want to exit the function here.
+            return;
+        }
+
+        let text = NumberUtilities.toShorthandString( model.amount );
+        let damageSourceText = model.action;
+
+        let fctOverlay = overlayInstances[ renderGroup.overlayId ];
+        fctOverlay.overlayFctComponents.push( model );
+        
+        /** @type {HTMLDivElement} */
+        let contentArea;
+
+        let top = NumberUtilities.hasFlag( renderGroup.startingPosition, HitStartPositionTypes.top );
+        let left = NumberUtilities.hasFlag( renderGroup.startingPosition, HitStartPositionTypes.left );
+        let bottom = NumberUtilities.hasFlag( renderGroup.startingPosition, HitStartPositionTypes.bottom );
+        let right = NumberUtilities.hasFlag( renderGroup.startingPosition, HitStartPositionTypes.right );
+        let random = NumberUtilities.hasFlag( renderGroup.startingPosition, HitStartPositionTypes.random );
+        
+        if ( top && left ) {
+            contentArea = fctOverlay.dom.querySelector( '.fct-content.top-left' );
+
+        } else if ( top && right ) {
+            contentArea = fctOverlay.dom.querySelector( '.fct-content.top-right' );
+
+        } else if ( bottom && left ) {
+            contentArea = fctOverlay.dom.querySelector( '.fct-content.bottom-left' );
+
+        } else if ( bottom && right ) {
+            contentArea = fctOverlay.dom.querySelector( '.fct-content.bottom-right' );
+
+        } else if ( random ) {
+            contentArea = fctOverlay.dom.querySelector( '.fct-content.random' );
+
+        } else {
+            contentArea = contentArea = fctOverlay.dom.querySelector( '.fct-content.bottom-left' );
+            bottom = true;
+            left = true;
+            top = false;
+            right = false;
+            random = false;
+            
+        }
+
+        /** @type {string} */
+        let content = fct2Template( { value: text, damageSource: damageSourceText } );
+        let div = createElement( 'div' );
+
+        div.innerHTML = content;
+        div.classList.add( 'fct-values' );
+
+        /** @type {string} */
+        let animation = '';
+        /** @type {string} */
+        let subAnimation = '';
+        /** @type {string} */
+        let textAnimation = '';
+        /** @type {number} */
+        let duration = 0;
+        /** @type {number} */
+        let accumulationEndMs = 0;
+
+        if ( renderGroup.combatAnimations.blowout ) {
+            animation += ( animation.length > 0 ? ', ' : '' ) + `${renderGroup.combatAnimations.fadeOut ? 'animate-blowout-fadeout' : 'animate-blowout'} ${animateBlowoutDuration}ms ease-out`;
+            duration = duration < animateBlowoutDuration ? animateBlowoutDuration : duration;
+            accumulationEndMs = animateBlowoutDuration * .5; // 50% { transform: scale(2.0); }
+            
+        } else if ( renderGroup.combatAnimations.fountain ) {
+            
+            div.classList.add( 'animation-absolute' );
+
+            /** @type {number} */
+            let durationVariance = animateFloatDuration * 0.25;
+            /** @type {number} */
+            let durationVarianceRange = durationVariance / 2;
+            
+            // Give the animation a random duration, within a variance constraint.
+            /** @type {number} */
+            let r = ( Math.random() * durationVariance ) - durationVarianceRange;
+            let d = animateFloatDuration + r;
+            div.style.setProperty( '--animation-duration', d + 'ms' );
+
+            duration = duration < d ? d : duration;
+            accumulationEndMs = duration;
+            
+            // Give the animation a random y direction.
+            r = 150 - ( Math.random() * 50 ); // 100 - 150
+            let n = renderGroup.startingPosition & HitStartPositionTypes.top ? 1 : -1; // We use n to determine if the direction is up or down.
+            div.style.setProperty( '--random-y', ( n * r ) + 'px' ); // r must be negative to float in the upward direction.
+            div.style.setProperty( '--y-direction', ( n * 40 * -1 ) + 'px' ); // y direction creates the downward/opposite motion at the apex of the curve.
+            
+            // Give the animation a random x direction.
+            n = Math.random() - 0.5 >= 0 ? 1 : -1; // We use n to determine if the direction is left or right.
+            r = ( 100 - ( Math.random() * 50 ) ) * n; // ( n ) * ( 100 - 150 ), n = 1 or -1
+            div.style.setProperty( '--random-x', r + 'px' );
+
+            animation += ( animation.length > 0 ? ', ' : '' ) + `animate-fountain-floatup var(--animation-duration)`;
+            subAnimation += ( subAnimation.length > 0 ? ', ' : '' ) + `animate-fountain-horizontal var(--animation-duration)`;
+            
+        } else if ( renderGroup.combatAnimations.scroll ) {
+
+            duration = duration < animateFadeOutDuration ? animateFadeOutDuration : duration;
+            accumulationEndMs = duration;
+
+        }
+        
+        // The last two animations applied must be fade out then fade in.  Fade
+        // out's duration should match the longest animation, or set it's own 
+        // duration.  If apply fade in first, it's duration is faster than fade 
+        // out. 
+        // NOTE: This may need to become more complicated as animations are added.
+
+        if ( renderGroup.combatAnimations.fadeOut && !renderGroup.combatAnimations.blowout ) {
+            // The fadeout duration is the duration of the longest animation, or a default preconfigured duration.
+            /** @type {number} */
+            let fadeOutDuration = duration > 0 ? duration : animateFadeOutDuration;
+            /** @type {string} */
+            let timingFn = fadeOutDuration === animateFadeOutDuration ? 'ease-out' : 'ease-in';
+
+            animation += ( animation.length > 0 ? ', ' : '' ) + `animate-fadeout ${fadeOutDuration}ms ${timingFn}`;
+            duration = fadeOutDuration === animateFadeOutDuration ? animateFadeOutDuration : duration;
+            accumulationEndMs = duration * .9; // 77% { opacity: 1; } -> 100% { opacity: 0; }
+
+        }
+        
+        if ( renderGroup.combatAnimations.fadeIn ) {
+            animation += ( animation.length > 0 ? ', ' : '' ) + `animate-fadein ${animateFadeInDuration}ms ease-out`;
+            duration = duration < animateFadeInDuration ? animateFadeInDuration : duration;
+            
+        }
+        
+        // The grow/shrink animations do not alter the duration of the total animation, so we can apply them last.
+        if ( renderGroup.combatAnimations.shrink ) {
+            if ( renderGroup.combatAnimations.fountain ) {
+                let animationDuration = animateGrowShrinkDuration < duration ? duration : animateGrowShrinkDuration;
+                textAnimation += ( textAnimation.length > 0 ? ', ' : '' ) + `animate-shrink ${animationDuration}ms ease-in`;
+            } else {
+                let animationDelay = duration - animateGrowShrinkDuration;
+                animationDelay = animationDelay < 0 ? 0 : animationDelay;
+                textAnimation += ( textAnimation.length > 0 ? ', ' : '' ) + `animate-shrink ${animateGrowShrinkDuration}ms ease-out ${animationDelay}ms`;
+                accumulationEndMs = animationDelay;
+            }
+            
+        }
+        
+        if ( renderGroup.combatAnimations.grow ) {
+            let animationDuration = animateGrowShrinkDuration;
+            if ( renderGroup.combatAnimations.fountain ) {
+                animationDuration = animateGrowShrinkDuration < duration ? duration : animateGrowShrinkDuration;
+            } else {
+                animationDuration = animateGrowShrinkDuration > duration ? duration : animateGrowShrinkDuration;
+            }
+            
+            textAnimation += ( textAnimation.length > 0 ? ', ' : '' ) + `animate-grow ${animationDuration}ms ease-out`;
+            
+        }
+        
+        const totalAnimationDuration = duration;
+
+        // Now it's time to apply the animations
+        div.style[ 'animation' ] = animation;
+        
+        /** @type {HTMLElement} */
+        let subAnimationElement = div.querySelector( 'div.fct-sub-animation' );
+
+        if ( subAnimation && subAnimationElement ) {
+            subAnimationElement.style.animation = subAnimation;
+        }
+    
+        /** @type {HTMLElement} */
+        let textAnimationElement = subAnimationElement?.querySelector( 'div.fct-text-layer' );
+
+        if ( textAnimation && textAnimationElement ) {
+            textAnimationElement.style.animation = textAnimation;
+        }
+        
+        // For random position, get a random position.
+        if ( random ) {
+            
+            div.classList.add( 'animation-absolute' );
+
+            let overlayId = renderGroup.overlayId;
+
+            //  Let's try without a delay, and let the bounded random animation durations handle it.
+            // model.delayAmount = NumberUtilities.randomBounded( delayBetweenCrits - ( delayBetweenCrits * delayVariance ), delayBetweenCrits + ( delayBetweenCrits * delayVariance ) + 1 );
+
+    
+            // TODO: If all critical locations are taken, we need to add this hit value to the last one and increase the duration of the last one.
+            // TODO: Would be nice to add in a little animation to show that it's a combined hit.
+            //       To accomplish this, we need to wait x number of milliseconds and add all combined hits together, to let the animation play out.
+            //       This should be true for all random combined hits, not just criticals.  My thoughts are add a little bump in size, quickly, and quickly shrink back down.
+            //       Would be nice if the value counted up as well.
+            model.pos = getRandomLocation( overlayId );
+            
+            if ( model.pos ) {
+
+                overlayInstances[ overlayId ].criticals[ model.pos?.x ?? 0 ][ model.pos?.y ?? 0 ] = true;
+                overlayInstances[ overlayId ].criticalComp = model;
+
+                try {
+                    //  + ( div.clientWidth / 2 ) -- I don't know if this will work, but I also don't think it's required in the new renderer.  The old renderer was a BrowserWindow, so cutting off text was bad.  That's not a concern any longer.
+                    div.style.left = `${overlayInstances[ overlayId ].quadrants[ model.pos?.x ?? 0 ][ model.pos?.y ?? 0 ].x}px`; // Cannot read property 'x' of undefined
+                    //  - ( div.clientHeight * 1.25 )
+                    div.style.top = `${overlayInstances[ overlayId ].quadrants[ model.pos?.x ?? 0 ][ model.pos?.y ?? 0 ].y}px`;
+                } catch ( error ) {
+                    logInfo( `criticals: ${JSON.stringify( overlayInstances[ overlayId ].criticals ?? '' )}` );
+                    logInfo( `quadrants: ${JSON.stringify( overlayInstances[ overlayId ].quadrants ?? '' )}` );
+                }
+
+            } else if ( overlayInstances[ overlayId ].criticalComp && overlayInstances[ overlayId ].criticalComp.dom ) {
+                
+                // This code will apply the curret component's value to the last critical hit.  // TODO: Probably will need some optimizations, and let the model stay up for a little longer.
+                overlayInstances[ overlayId ].criticalComp.amount = overlayInstances[ overlayId ].criticalComp.amount + model.amount;
+                overlayInstances[ overlayId ].criticalComp.text = NumberUtilities.toShorthandString( overlayInstances[ overlayId ].criticalComp.amount );
+                
+                let _textEl = overlayInstances[ overlayId ].criticalComp.dom.querySelector( '.fctText' );
+                if ( _textEl ) {
+                    let f = overlayInstances[ overlayId ].criticalComp;
+                    accumulatHits( f.instanceId, _textEl, model.amount, f.amount );
+                    hitAccumulated = true;
+                }
+
+            }
+
+            // The animation is mostly finished after 2/3 through the animation, so let's free up the spot for a new critical when this is fading out.
+            if ( model.pos != undefined ) {
+                window.setTimeout( () => {
+                    if ( overlayInstances[ overlayId ].criticals.length > model.pos.x && overlayInstances[ overlayId ].criticals[ model.pos.x ]?.length > model.pos.y ) {
+                        overlayInstances[ overlayId ].criticals[ model.pos.x ][ model.pos.y ] = false;
+                    }
+                    if (overlayInstances[ overlayId ].criticalComp == model) {
+                        overlayInstances[ overlayId ].criticalComp = undefined;
+                    }
+                }, totalAnimationDuration * 0.667 );
+            }
+
+        }
+
+        if ( !hitAccumulated ) {
+            // Add the element to the dom, and set the timeout to remove it.
+            let fctText = div.querySelector( '.fctText' );
+            StylePropertiesModel.applyStyles( fctText, renderGroup.valueStyles );
+            let fctSource = div.querySelector( '.fctSource' );
+            StylePropertiesModel.applyStyles( fctSource, renderGroup.sourceStyles );
+
+            model.dom = div;
+            if ( top ) {
+                // If the render group starting position is at the top.
+                contentArea.insertBefore( div, contentArea.firstChild );
+            } else {
+                contentArea.appendChild( div );
+            }
+        
+            model.intervalId = window.setTimeout( () => {
+                model.dom.parentNode.removeChild( model.dom );
+                fctOverlay.overlayFctComponents.splice( fctOverlay.overlayFctComponents.indexOf( model ), 1 );
+            }, totalAnimationDuration );
+
+            if ( accumulationEndMs !== totalAnimationDuration ) {
+                window.setTimeout( () => {
+                    model.accumulationPeriod = false;
+                }, accumulationEndMs );
+            }
+        }
+
+    }
+}
+
+
+
+
+
+
+
+
+
+
+/**
  * Renders the FCT component.
  *
  * @param {string} overlayId The id of the desired overlay.
  * @param {FctModel} comp Tells the renderer to forcefully redraw the overlayComponents.
  */
 function renderFct( overlayId, comp ) {
+
+    // if ( perfIntervalId ) {
+    //     window.clearTimeout( perfIntervalId );
+    // }
+
+    // perfIntervalId = window.setTimeout( () => {
+    //     console.log( 'total time', perfTimeTotal );
+    //     perfIntervalId = null;
+    //     perfTimeTotal = 0;
+    // }, 3000 );
 
     try {
         
@@ -910,35 +1716,64 @@ function renderFct( overlayId, comp ) {
             div.innerHTML = content;
 
             div.classList.add( 'animate-fade-shrink' );
+            div.style.animation = `animate-fadeshrink ${animateFadeShrinkDuration}ms ease-out`;
 
             comp.dom = div;
             comp.delayAmount = NumberUtilities.randomBounded( delayBetweenCrits - ( delayBetweenCrits * delayVariance ), delayBetweenCrits + ( delayBetweenCrits * delayVariance ) + 1 );
         
             window.setTimeout( () => {
-                contentArea.appendChild( div );
     
+                // TODO: If all critical locations are taken, we need to add this hit value to the last one and increase the duration of the last one.
+                // TODO: Would be nice to add in a little animation to show that it's a combined hit.
+                //       To accomplish this, we need to wait x number of milliseconds and add all combined hits together, to let the animation play out.
+                //       This should be true for all random combined hits, not just criticals.  My thoughts are add a little bump in size, quickly, and quickly shrink back down.
+                //       Would be nice if the value counted up as well.
                 comp.pos = getRandomLocation( overlayId );
-                overlayInstances[ overlayId ].criticals[ comp.pos.x ][ comp.pos.y ] = true;
+                
+                if ( comp.pos ) {
+                    contentArea.appendChild( div );
 
-                try {
-                    div.style.left = `${overlayInstances[ overlayId ].quadrants[ comp.pos.x ][ comp.pos.y ].x + ( div.clientWidth / 2 )}px`; // Cannot read property 'x' of undefined
-                    div.style.top = `${overlayInstances[ overlayId ].quadrants[ comp.pos.x ][ comp.pos.y ].y - ( div.clientHeight * 1.25 )}px`;
-                } catch ( error ) {
-                    logInfo( `criticals: ${JSON.stringify( overlayInstances[ overlayId ].criticals ?? '' )}` );
-                    logInfo( `quadrants: ${JSON.stringify( overlayInstances[ overlayId ].quadrants ?? '' )}` );
+                    overlayInstances[ overlayId ].criticals[ comp.pos?.x ?? 0 ][ comp.pos?.y ?? 0 ] = true;
+                    overlayInstances[ overlayId ].criticalComp = comp;
+
+                    try {
+                        div.style.left = `${overlayInstances[ overlayId ].quadrants[ comp.pos?.x ?? 0 ][ comp.pos?.y ?? 0 ].x + ( div.clientWidth / 2 )}px`; // Cannot read property 'x' of undefined
+                        div.style.top = `${overlayInstances[ overlayId ].quadrants[ comp.pos?.x ?? 0 ][ comp.pos?.y ?? 0 ].y - ( div.clientHeight * 1.25 )}px`;
+                    } catch ( error ) {
+                        logInfo( `criticals: ${JSON.stringify( overlayInstances[ overlayId ].criticals ?? '' )}` );
+                        logInfo( `quadrants: ${JSON.stringify( overlayInstances[ overlayId ].quadrants ?? '' )}` );
+                    }
+
+                } else if ( overlayInstances[ overlayId ].criticalComp && overlayInstances[ overlayId ].criticalComp.dom ) {
+
+                    // This code will apply the curret component's value to the last critical hit.  // TODO: Probably will need some optimizations, and let the comp stay up for a little longer.
+                    overlayInstances[ overlayId ].criticalComp.value = overlayInstances[ overlayId ].criticalComp.value + comp.value;
+                    overlayInstances[ overlayId ].criticalComp.text = NumberUtilities.toShorthandString( overlayInstances[ overlayId ].criticalComp.value );
+                    
+                    let _textEl = overlayInstances[ overlayId ].criticalComp.dom.querySelector( '.fct-text' );
+                    if ( _textEl ) {
+                        _textEl.innerHTML = overlayInstances[ overlayId ].criticalComp.text;
+                    }
+
                 }
                 
                 comp.intervalId = window.setTimeout( () => {
                     comp.dom.parentNode.removeChild( comp.dom );
-                    if ( overlayInstances[ overlayId ].criticals.length > comp.pos.x && overlayInstances[ overlayId ].criticals[ comp.pos.x ]?.length > comp.pos.y ) {
-                        overlayInstances[ overlayId ].criticals[ comp.pos.x ][ comp.pos.y ] = false;
-                    }
-                }, 4000 );
+                }, animateFadeShrinkDuration );
 
-                delayAdd -= comp.delayAmount;
-            }, delayAdd );
+                // The animation is mostly finished after 2/3 through the animation, so let's free up the spot for a new critical when this is fading out.
+                if ( comp.pos != undefined ) {
+                    window.setTimeout( () => {
+                        if ( overlayInstances[ overlayId ].criticals.length > comp.pos.x && overlayInstances[ overlayId ].criticals[ comp.pos.x ]?.length > comp.pos.y ) {
+                            overlayInstances[ overlayId ].criticals[ comp.pos.x ][ comp.pos.y ] = false;
+                        }
+                        if (overlayInstances[ overlayId ].criticalComp == comp) {
+                            overlayInstances[ overlayId ].criticalComp = undefined;
+                        }
+                    }, animateFadeShrinkDuration * 0.667 );
+                }
 
-            delayAdd += comp.delayAmount;
+            }, comp.delayAmount );
 
         } else {
             let damageSourceText = comp.attack;
@@ -951,6 +1786,7 @@ function renderFct( overlayId, comp ) {
             div.innerHTML = content;
 
             div.classList.add( 'animate-fade-out' );
+            div.style.animation = `animate-fadeout ${animateFadeOutDuration}ms ease`;
 
             if ( comp.critical ) {
                 div.classList.add( 'fct-dmg-out-critical' );
@@ -1014,6 +1850,10 @@ function render( overlayId, comp ) {
 
         if ( comp?.action?.actionType === ActionTypes.ScreenGlow ) {
             // Non overlay components
+
+            if ( actionPermissions.disableAllGlowEffects || ( actionPermissions.disableSharedGlowEffects && installedTriggerIds.includes( comp.triggerId ) ) ) {
+                return;
+            }
 
             if ( comp?.action?.actionType === ActionTypes.ScreenGlow ) {
                 renderGlow( comp.action.textColor, comp.action.duration * 1000, comp.action.flash );
@@ -1086,7 +1926,8 @@ function render( overlayId, comp ) {
             } else if ( comp?.action?.actionType === ActionTypes.Timer
                 || comp?.action?.actionType === ActionTypes.Countdown
                 || comp?.action?.actionType === ActionTypes.DotTimer
-                || comp?.action?.actionType === ActionTypes.BeneficialTimer ) {
+                || comp?.action?.actionType === ActionTypes.BeneficialTimer
+                || comp?.action?.actionType === ActionTypes.Stopwatch ) {
         
                 if ( restartTimerComponent( overlayId, comp ) ) {
                     return;
@@ -1157,6 +1998,7 @@ function disableMoveResize( dom ) {
         }
     }
 
+    getCurrentWindow().setIgnoreMouseEvents( true, { forward: false } );
     dom.classList.remove( 'drag' );
     dom.classList.remove( 'mouse-enabled' );
     const domContentArea = dom.querySelectorAll( ':scope *' );
@@ -1180,6 +2022,7 @@ function disableMoveResize( dom ) {
  */
 function enableMoveResize( dom ) {
 
+    getCurrentWindow().setIgnoreMouseEvents( true, { forward: true } );
     dom.classList.add( 'mouse-enabled' );
     const domContentArea = dom.querySelectorAll( ':scope *' );
     domContentArea.forEach( d => d.classList.add( 'mouse-enabled' ) );
@@ -1473,12 +2316,16 @@ function getTimerLabel( overlayId, comp ) {
 
     if ( comp.action.actionType === ActionTypes.Timer || comp.action.actionType === ActionTypes.Countdown ) {
         label = comp.action.displayText || comp.triggerName;
+
     } else if ( comp.action.actionType === ActionTypes.DotTimer || comp.action.actionType === ActionTypes.BeneficialTimer ) {
         if ( overlayInstances[ overlayId ].groupByTarget || overlayInstances[ overlayId ].hideTargetLabel ) {
             label = comp.triggerName;
         } else {
             label = comp.action.displayText || comp.triggerName;
         }
+    } else if ( comp.action.actionType === ActionTypes.Stopwatch ) {
+        label = comp.action.displayText || comp.triggerName;
+        
     }
 
     return label;
@@ -1510,7 +2357,7 @@ function createGroupedDotTimer( overlayId, contentArea, group, comp ) {
     comp.dom = div;
     
     if ( comp.action.timerIcon != null ) {
-        div.innerHTML = timerIconTemplate( { icon: comp.action.timerIcon, iconStyle: `"style="position: absolute; margin-left: -${overlayInstances[ overlayId ].dotTextHeight + 2}px;  height: ${overlayInstances[ overlayId ].dotTextHeight}px;` } ) + div.innerHTML;
+        div.innerHTML = timerIconTemplate( { icon: comp.action.timerIcon, iconStyle: `"style="position: absolute; margin-left: -1.7em;  height: 1.5em;` } ) + div.innerHTML;
     }
 
     comp.dom = div;
@@ -1566,7 +2413,7 @@ function createGroupedTimer( overlayId, contentArea, group, comp ) {
     comp.dom = div;
     
     if ( comp.action.timerIcon != null ) {
-        div.innerHTML = timerIconTemplate( { icon: comp.action.timerIcon, iconStyle: `"style="position: absolute; margin-left: -${overlayInstances[ overlayId ].dotTextHeight + 2}px;  height: ${overlayInstances[ overlayId ].dotTextHeight}px;` } ) + div.innerHTML;
+        div.innerHTML = timerIconTemplate( { icon: comp.action.timerIcon, iconStyle: `"style="position: absolute; margin-left: -1.7em;  height: 1.5em;` } ) + div.innerHTML;
     }
 
     comp.dom = div;
@@ -1698,7 +2545,7 @@ function createUngroupedDotTimer( overlayId, contentArea, comp ) {
     div.innerHTML = content;
     
     if ( comp.action.timerIcon != null ) {
-        div.innerHTML = timerIconTemplate( { icon: comp.action.timerIcon, iconStyle: `"style="position: absolute; margin-left: -${overlayInstances[ overlayId ].dotTextHeight + 2}px;  height: ${overlayInstances[ overlayId ].dotTextHeight}px;` } ) + div.innerHTML;
+        div.innerHTML = timerIconTemplate( { icon: comp.action.timerIcon, iconStyle: `"style="position: absolute; margin-left: -1.7em;  height: 1.5em;` } ) + div.innerHTML;
     }
 
     comp.dom = div;
@@ -1743,7 +2590,7 @@ function createUngroupedTimer( overlayId, contentArea, comp ) {
     div.innerHTML = content;
     
     if ( comp.action.timerIcon != null ) {
-        div.innerHTML = timerIconTemplate( { icon: comp.action.timerIcon, iconStyle: `"style="position: absolute; margin-left: -${overlayInstances[ overlayId ].dotTextHeight + 2}px;  height: ${overlayInstances[ overlayId ].dotTextHeight}px;` } ) + div.innerHTML;
+        div.innerHTML = timerIconTemplate( { icon: comp.action.timerIcon, iconStyle: `"style="position: absolute; margin-left: -1.7em;  height: 1.5em;` } ) + div.innerHTML;
     }
 
     comp.dom = div;
@@ -1781,9 +2628,6 @@ function createUngroupedTimer( overlayId, contentArea, comp ) {
  * @param {TimerGroup} group The containing group, if available.
  */
 function applyTimerSettings( overlayId, contentArea, comp, group ) {
-    // Apply the styles required to make the progress bar height match the 
-    // specified number in the overlay settings.
-    comp.dom.querySelector( '.progress' ).style.marginBottom = contentArea.style.lineHeight;
     if ( comp.action.overrideTimerColor ) {
         comp.dom.querySelector( '.determinate' ).style.backgroundColor = comp.action.overrideTimerColor;
         comp.dom.querySelector( '.progress' ).style.backgroundColor = comp.action.timerBackgroundColor;
@@ -1801,11 +2645,12 @@ function applyTimerSettings( overlayId, contentArea, comp, group ) {
 
     // Set the starting conditions for the timer.
     comp.start = comp.timestamp;
-    comp.timeRemaining = comp.action.duration;
+    comp.timeRemaining = comp.action.actionType === ActionTypes.Stopwatch ? 0 : comp.action.duration;
+    comp.stopwatchState = 'running';
 
     if ( comp.start == null ) {
         comp.dom.querySelector( 'span.time-remaining' ).innerHTML = `(??)&nbsp;`;
-    } else if ( overlayInstances[ overlayId ].showRemainingDuration || comp.action.showRemainingDuration ) {
+    } else if ( overlayInstances[ overlayId ].showDuration || comp.action.showDuration ) {
         comp.dom.querySelector( 'span.time-remaining' ).innerHTML = `(${comp.action.duration})&nbsp;`;
     } else {
         comp.dom.querySelector( 'span.time-remaining' ).innerHTML = ``;
@@ -1860,10 +2705,54 @@ function applyTimerSettings( overlayId, contentArea, comp, group ) {
 
         let perc = 0;
         let infinite = false;
+        let isStopwatch = comp.action.actionType === ActionTypes.Stopwatch;
 
-        if ( comp.start == null ) {
+        if ( comp.start == null && !isStopwatch ) {
             infinite = true;
             comp.timeRemaining = intMaxValue;
+
+        } else if ( isStopwatch ) {
+            // Stopwatch perc is always 0.
+            perc = 0;
+
+            // Stopwatch can have transitionary status types - This is what the user can set.
+
+            // Transitionary status types can be: pause, stop, or continue.
+            // Next, the stopwatch can be in one of three perpetual states: running, paused, or ended.
+            // The last status type is the final state: ended.  On ended, we need to execute ended actions, including applying the duration to storage values.
+
+            if ( comp.stopwatchState === 'stop' ) {
+                // The user has just stopped the stopwatch, we need to calculate the final duration and execute end timer actions.
+                comp.stopwatchState = 'ended';
+                if ( comp.start != null ) {
+                    comp.timeRemaining += Math.abs( ( new Date() ) - comp.start );
+                    comp.start = null;
+                    console.log( 'stopwatch ended', comp.timeRemaining );
+                }
+
+            } else if ( comp.stopwatchState === 'pause' ) {
+                // The user has just paused the stopwatch, we need to calcualte the duration and clear the start.
+                comp.stopwatchState = 'paused';
+                if ( comp.start != null ) {
+                    comp.timeRemaining += Math.abs( ( new Date() ) - comp.start );
+                    comp.start = null;
+                }
+
+            } else if ( comp.stopwatchState === 'continue' && comp.start == null ) {
+                // The user has continued from paused.  We need to set the start.
+                comp.stopwatchState = 'running';
+                comp.start = new Date();
+
+            } else if ( comp.stopwatchState === 'running' && comp.start != null ) {
+                // The stopwatch is running, increment the duration and reset the start.
+                if ( comp.start != null ) {
+                    comp.timeRemaining += Math.abs( ( new Date() ) - comp.start );
+                    comp.start = null;
+                }
+                comp.start = new Date();
+
+            }
+
         } else {
             perc = ( Math.abs( ( new Date() ) - comp.start ) / 1000 ) / comp.action.duration;
             comp.timeRemaining = comp.action.duration - ( comp.action.duration * perc );
@@ -1879,13 +2768,19 @@ function applyTimerSettings( overlayId, contentArea, comp, group ) {
 
         if ( infinite ) {
             comp.dom.querySelector( 'span.time-remaining' ).innerHTML = `(??)&nbsp;`;
-        } else if ( overlayInstances[ overlayId ].showRemainingDuration || comp.action.showRemainingDuration ) {
-            comp.dom.querySelector( 'span.time-remaining' ).innerHTML = `(${getDurationLabel( overlayId, comp.timeRemaining )})&nbsp;`;
+        } else if ( overlayInstances[ overlayId ].showDuration || comp.action.showDuration ) {
+            if ( isStopwatch ) {
+                comp.dom.querySelector( 'span.time-remaining' ).innerHTML = `(${getDurationLabel( overlayId, Math.round( comp.timeRemaining / 1000 ) )})&nbsp;`;
+            } else {
+                comp.dom.querySelector( 'span.time-remaining' ).innerHTML = `(${getDurationLabel( overlayId, comp.timeRemaining )})&nbsp;`;
+            }
         } else {
             comp.dom.querySelector( 'span.time-remaining' ).innerHTML = ``;
         }
 
-        if ( comp.action.ifEndingSoon && comp.action.endingDuration > 0 && comp.timeRemaining > 0 && comp.timeRemaining <= comp.action.endingDuration ) {
+        const allowEndingSoon = [ ActionTypes.Timer, ActionTypes.Countdown, ActionTypes.BeneficialTimer, ActionTypes.DotTimer ].includes( comp.action.actionType );
+
+        if ( allowEndingSoon && comp.action.ifEndingSoon && comp.action.endingDuration > 0 && comp.timeRemaining > 0 && comp.timeRemaining <= comp.action.endingDuration ) {
             // Apply any ending soon condition effects.
 
             if ( comp.action.endingSoonChangeColor ) {
@@ -1931,17 +2826,34 @@ function applyTimerSettings( overlayId, contentArea, comp, group ) {
 
         }
         
-        if ( comp.timeRemaining <= 0 ) {
+        if ( comp.timeRemaining <= 0 || ( isStopwatch && comp.stopwatchState === 'ended' ) ) {
             // If the timer has ended, but is required to remain for a
             // duration, apply the ended conditions to the timer.
+            
+            if ( isStopwatch && comp.action.storeDuration ) {
+                // If the stopwatch has ended and the user has elected to stoe the duration in a variable, then do so.
+                
+                if ( !comp.action.variableName ) {
+                    logError( { errorMessage: 'Could not store stopwatch duration because a variable name was not provided!' }, 'trigger', overlayId, comp );
 
-            if ( !comp.action.repeatTimer && ( comp.action.remainAfterEnded || comp.action.notifyWhenEnded ) ) {
+                } else {
+                    let duration = Math.round( comp.timeRemaining );
+                    ipcRenderer.send( 'log:store:scalar-variable', { variableName: comp.action.variableName, variableValue: duration, instanceId: comp.instanceId } );
+
+                }
+
+            }
+
+            let executeEndedActions = !comp.action.repeatTimer && ( comp.action.remainAfterEnded || comp.action.notifyWhenEnded );
+            executeEndedActions = executeEndedActions || ( comp.action.notifyWhenEnded && isStopwatch && comp.stopwatchState === 'ended' );
+
+            if ( executeEndedActions ) {
                 if ( comp.action.endedChangeColor ) {
                     comp.dom.querySelector( 'div.determinate' ).style.backgroundColor = comp.action.endedColor;
                     comp.dom.querySelector( 'div.progress' ).style.backgroundColor = comp.action.endedBackgroundColor;
                 }
 
-                if ( comp.hidden && comp.action.remainAfterEnded ) {
+                if ( comp.hidden && ( comp.action.remainAfterEnded || isStopwatch ) ) {
                     comp.hidden = false;
                     comp.dom.style.display = null;
                     if ( overlayInstances[ overlayId ].groupByTarget && group ) {
@@ -1980,7 +2892,12 @@ function applyTimerSettings( overlayId, contentArea, comp, group ) {
 
         }
 
-        if ( ( comp.timeRemaining <= 0 && !comp.action.remainAfterEnded && !comp.action.repeatTimer ) || ( comp.timeRemaining <= -1 * comp.action.remainDuration && !comp.action.repeatTimer ) ) {
+        
+
+        if ( ( isStopwatch && comp.stopwatchState === 'ended' ) ) {
+            delayRemoveComponent( overlayId, comp );
+
+        } else if ( ( comp.timeRemaining <= 0 && !comp.action.remainAfterEnded && !comp.action.repeatTimer ) || ( comp.timeRemaining <= -1 * comp.action.remainDuration && !comp.action.repeatTimer ) ) {
             // When conditions met that require the timer be removed from the 
             // overlay, then call the remove comonponent method.
             
@@ -2118,6 +3035,10 @@ function restartTimerComponent( overlayId, comp ) {
             // id.
             destroyComponents( overlayId, c => c.action.actionId == comp.action.actionId && ( comp.action.displayText == null || c.description === comp.action.displayText ) );
             
+        } else if ( comp.action.actionType === ActionTypes.Stopwatch ) {
+            // Here we reset the stopwatch and do not execute ended actions. ...
+            destroyComponents( overlayId, c => c.action.actionId == comp.action.actionId && ( comp.action.displayText == null || c.description === comp.action.displayText ) );
+
         }
 
     } else if ( comp.action.restartBehavior === TimerRestartBehaviors.RestartTimer ) {
@@ -2341,7 +3262,7 @@ function timerExists( overlayId, predicate ) {
  * @param {number} c The value to convert.
  */
 function componentToHex( c ) {
-    var hex = c.toString( 16 );
+    var hex = Math.round(c).toString( 16 );
     return hex.length == 1 ? "0" + hex : hex;
 }
 
@@ -2550,36 +3471,34 @@ function renderGlow( color, duration, flash ) {
  */
 function getRandomLocation( overlayId ) {
     let c = getCompCount( overlayId );
-    let xs = Math.floor( c / overlayInstances[ overlayId ].criticals.length );
-    // let yx = Math.floor( c / overlayInstances[ overlayId ].criticals[ 0 ].length );
+    // let xs = Math.floor( c / criticals.length );
     let x = -1;
     let y = -1;
+    let positions = getOverlayOpenCritPositions( overlayId );
 
-    let crazy = 0;
-    while ( x === -1 && crazy < overlayInstances[ overlayId ].criticals.length * overlayInstances[ overlayId ].criticals[ 0 ].length ) {
-        crazy++;
+    if ( positions.length > 0 ) {
+        let p = positions[ NumberUtilities.randomBounded( 0, positions.length ) ];
+        x = p.x;
+        y = p.y;
+    }
 
-        let t = NumberUtilities.randomBounded( 0, overlayInstances[ overlayId ].criticals.length );
-        if ( countCritX( overlayId, t ) <= xs ) {
-            x = t;
+    return x > -1 && y > -1 ? { x: x, y: y } : undefined;
+}
+
+function getOverlayOpenCritPositions( overlayId ) {
+    /** @type {{x: number, y: number}[]} */
+    let positions = [];
+    let criticals = overlayInstances[ overlayId ].criticals;
+
+    for ( let x = 0; x < criticals.length; x++ ) {
+        for ( let y = 0; y < criticals[ x ].length; y++ ) {
+            if ( !criticals[ x ][ y ] ) {
+                positions.push( { x: x, y: y } );
+            }
         }
     }
 
-    if ( crazy === overlayInstances[ overlayId ].criticals.length * overlayInstances[ overlayId ].criticals[ 0 ].length ) {
-        return { x: NumberUtilities.randomBounded( 0, overlayInstances[ overlayId ].criticals.length ), y: NumberUtilities.randomBounded( 0, overlayInstances[ overlayId ].criticals[ 0 ].length ) };
-    }
-
-    crazy = 0;
-    while ( y === -1 && crazy < overlayInstances[ overlayId ].criticals[ x ].length ) {
-        crazy++;
-
-        let t = NumberUtilities.randomBounded( 0, overlayInstances[ overlayId ].criticals[ x ].length );
-        if ( !overlayInstances[ overlayId ].criticals[ x ][ t ] ) {
-            y = t;
-        }
-    }
-
-    return { x: x, y: y };
+    return positions;
 }
 
 

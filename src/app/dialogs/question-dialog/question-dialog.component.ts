@@ -6,7 +6,7 @@ import { QuestionDialogAnswerModel, QuestionDialogModel } from './question-dialo
 @Component( {
     selector: 'app-question-dialog',
     templateUrl: 'question-dialog.component.html',
-    styleUrls: [ 'question-dialog.component.scss', '../../core.scss' ]
+    styleUrls: [ 'question-dialog.component.scss', '../dialog.styles.scss', '../../core.scss' ]
 } )
 export class QuestionDialogComponent implements OnInit {
 

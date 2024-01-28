@@ -7,7 +7,7 @@ import { ActionOverlayReviewModel, OverlayReassignments } from './action-overlay
 @Component( {
     selector: 'app-action-overlay-reassignment-dialog',
     templateUrl: 'action-overlay-reassignment-dialog.component.html',
-    styleUrls: [ './action-overlay-reassignment-dialog.component.scss' ]
+    styleUrls: [ './action-overlay-reassignment-dialog.component.scss', '../dialog.styles.scss' ]
 } )
 export class ActionOverlayReassignmentDialogComponent implements OnInit {
 

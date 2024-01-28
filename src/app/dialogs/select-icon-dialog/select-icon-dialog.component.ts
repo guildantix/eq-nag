@@ -7,7 +7,7 @@ import { IpcService } from 'src/app/ipc.service';
 @Component( {
     selector: 'app-select-icon-dialog',
     templateUrl: 'select-icon-dialog.component.html',
-    styleUrls: [ 'select-icon-dialog.component.scss' ],
+    styleUrls: [ 'select-icon-dialog.component.scss', '../dialog.styles.scss' ],
 } )
 export class SelectIconDialogComponent implements OnInit {
     

@@ -1,169 +1,185 @@
 
 <div class="toolbar-top"><button mat-button color="accent" style="float: right; margin-right: 50px;" (click)="addNewAction()"><mat-icon>add</mat-icon>New</button></div>
-<div class="flex-layout">
-    <mat-card class="card action-card" *ngFor="let action of actions; let i = index" style="margin: 20px; width: 550px;">
-        <mat-card-header>
-            <div mat-card-avatar class="action-header-image">
-                <span class="material-icons" *ngIf="action.actionType == null">block</span>
-                <span class="material-icons" *ngIf="action.actionType === actionTypes.DisplayText">text_format</span>
-                <span class="material-icons" *ngIf="action.actionType === actionTypes.PlayAudio">audiotrack</span>
-                <span class="material-icons" *ngIf="action.actionType === actionTypes.Speak">volume_up</span>
-                <span class="material-icons" *ngIf="action.actionType === actionTypes.Timer">timer</span>
-                <span class="material-icons" *ngIf="action.actionType === actionTypes.Countdown">watch</span>
-                <span class="material-icons" *ngIf="action.actionType === actionTypes.StoreVariable">sd_storage</span>
-                <span class="material-icons" *ngIf="action.actionType === actionTypes.ClearVariable">sd_storage</span>
-                <span class="material-icons" *ngIf="action.actionType === actionTypes.DotTimer">watch_later</span>
-                <span class="material-icons" *ngIf="action.actionType === actionTypes.Counter">exposure_plus_1</span>
-                <span class="material-icons" *ngIf="action.actionType === actionTypes.Clipboard">content_copy</span>
-                <span class="material-icons" *ngIf="action.actionType === actionTypes.BeneficialTimer">watch_later</span>
-                <span class="material-icons" *ngIf="action.actionType === actionTypes.DisplayDeathRecap">sick</span>
-                <span class="material-icons" *ngIf="action.actionType === actionTypes.ScreenGlow">brightness_5</span>
-                <span class="material-icons material-icons-outlined" *ngIf="action.actionType === actionTypes.ClearAll">layers_clear</span>
-            </div>
-            <mat-card-title>{{action.actionType == null ? 'Unset Action' : actionTypeLabels(action.actionType)}}</mat-card-title>
-            <mat-card-subtitle>
-                <span *ngIf="action.actionType === actionTypes.DisplayText">Display text on an overlay.</span>
-                <span *ngIf="action.actionType === actionTypes.DotTimer">Creates a countdown until the dot expires.</span>
-                <span *ngIf="action.actionType === actionTypes.PlayAudio">Play an audio file.</span>
-                <span *ngIf="action.actionType === actionTypes.Speak">Speak a phrase.</span>
-                <span *ngIf="action.actionType === actionTypes.Timer">Start a timer.</span>
-                <span *ngIf="action.actionType === actionTypes.Countdown">Start a countdown.</span>
-                <span *ngIf="action.actionType === actionTypes.StoreVariable">Store a value in a variable.</span>
-                <span *ngIf="action.actionType === actionTypes.ClearVariable">Empties the value in a variable.</span>
-                <span *ngIf="action.actionType === actionTypes.Counter">Track the number of times an event occurs.</span>
-                <span *ngIf="action.actionType === actionTypes.Clipboard">Put text into the clipboard.</span>
-                <span *ngIf="action.actionType === actionTypes.BeneficialTimer">Creates a countdown until the buff expires.</span>
-                <span *ngIf="action.actionType === actionTypes.DisplayDeathRecap">Displays the Death Recap window.</span>
-                <span *ngIf="action.actionType === actionTypes.ScreenGlow">Renders a glow around the main display.</span>
-                <span *ngIf="action.actionType === actionTypes.ClearAll">Stops all active components.</span>
-                <mat-label *ngIf="isDev" style="color:#00000059;">&nbsp;{{action.actionId}}</mat-label>
-            </mat-card-subtitle>
-        </mat-card-header>
-        <mat-card-content>
-            
-            <div>
-                <mat-form-field style="width: 100%;">
-                    <mat-label></mat-label>
-                    <mat-select [(ngModel)]="action.actionType" name="ddlActionType_{{i}}">
-                        <mat-option [value]="actionTypes.DisplayText">{{actionTypeLabels(actionTypes.DisplayText)}}</mat-option>
-                        <mat-option [value]="actionTypes.DotTimer">{{actionTypeLabels(actionTypes.DotTimer)}}</mat-option>
-                        <mat-option [value]="actionTypes.PlayAudio">{{actionTypeLabels(actionTypes.PlayAudio)}}</mat-option>
-                        <mat-option [value]="actionTypes.Speak">{{actionTypeLabels(actionTypes.Speak)}}</mat-option>
-                        <mat-option [value]="actionTypes.Timer">{{actionTypeLabels(actionTypes.Timer)}}</mat-option>
-                        <mat-option [value]="actionTypes.Countdown">{{actionTypeLabels(actionTypes.Countdown)}}</mat-option>
-                        <mat-option [value]="actionTypes.StoreVariable">{{actionTypeLabels(actionTypes.StoreVariable)}}</mat-option>
-                        <mat-option [value]="actionTypes.ClearVariable">{{actionTypeLabels(actionTypes.ClearVariable)}}</mat-option>
-                        <mat-option [value]="actionTypes.Counter">{{actionTypeLabels(actionTypes.Counter)}}</mat-option>
-                        <mat-option [value]="actionTypes.Clipboard">{{actionTypeLabels(actionTypes.Clipboard)}}</mat-option>
-                        <mat-option [value]="actionTypes.BeneficialTimer">{{actionTypeLabels(actionTypes.BeneficialTimer)}}</mat-option>
-                        <mat-option [value]="actionTypes.DisplayDeathRecap">{{actionTypeLabels(actionTypes.DisplayDeathRecap)}}</mat-option>
-                        <mat-option [value]="actionTypes.ScreenGlow">{{actionTypeLabels(actionTypes.ScreenGlow)}}</mat-option>
-                        <mat-option [value]="actionTypes.ClearAll">{{actionTypeLabels(actionTypes.ClearAll)}}</mat-option>
-                    </mat-select>
-                    <mat-hint>Action Type</mat-hint>
-                </mat-form-field>
-            </div>
-
-            <div *ngIf="action.actionType != null">
-
+<div class="content" #content>
+    <div class="flex-layout">
+        <mat-card class="card action-card" *ngFor="let action of actions; let i = index" style="margin: 20px; width: 550px;" [ngClass]="{'box-shadow-blue': scrollIndex === i}">
+            <mat-card-header>
+                <div mat-card-avatar class="action-header-image">
+                    <span class="material-icons" *ngIf="action.actionType == null">block</span>
+                    <span class="material-icons" *ngIf="action.actionType === actionTypes.DisplayText">text_format</span>
+                    <span class="material-icons" *ngIf="action.actionType === actionTypes.PlayAudio">audiotrack</span>
+                    <span class="material-icons" *ngIf="action.actionType === actionTypes.Speak">volume_up</span>
+                    <span class="material-icons material-icons-outlined" *ngIf="action.actionType === actionTypes.Timer">alarm</span>
+                    <span class="material-icons" *ngIf="action.actionType === actionTypes.Countdown">watch</span>
+                    <span class="material-icons" *ngIf="action.actionType === actionTypes.StoreVariable">sd_storage</span>
+                    <span class="material-icons" *ngIf="action.actionType === actionTypes.ClearVariable">sd_storage</span>
+                    <span class="material-icons" *ngIf="action.actionType === actionTypes.DotTimer">watch_later</span>
+                    <span class="material-icons" *ngIf="action.actionType === actionTypes.Counter">exposure_plus_1</span>
+                    <span class="material-icons" *ngIf="action.actionType === actionTypes.Clipboard">content_copy</span>
+                    <span class="material-icons" *ngIf="action.actionType === actionTypes.BeneficialTimer">watch_later</span>
+                    <span class="material-icons" *ngIf="action.actionType === actionTypes.DisplayDeathRecap">sick</span>
+                    <span class="material-icons" *ngIf="action.actionType === actionTypes.ScreenGlow">brightness_5</span>
+                    <span class="material-icons material-icons-outlined" *ngIf="action.actionType === actionTypes.ClearAll">layers_clear</span>
+                    <span class="material-icons material-icons-outlined" *ngIf="action.actionType === actionTypes.Stopwatch">timer</span>
+                </div>
+                <mat-card-title>{{action.actionType == null ? 'Unset Action' : actionTypeLabels(action.actionType)}}</mat-card-title>
+                <mat-card-subtitle>
+                    <span *ngIf="action.actionType === actionTypes.DisplayText">Display text on an overlay.</span>
+                    <span *ngIf="action.actionType === actionTypes.DotTimer">Creates a countdown until the dot expires.</span>
+                    <span *ngIf="action.actionType === actionTypes.PlayAudio">Play an audio file.</span>
+                    <span *ngIf="action.actionType === actionTypes.Speak">Speak a phrase.</span>
+                    <span *ngIf="action.actionType === actionTypes.Timer">Start a timer.</span>
+                    <span *ngIf="action.actionType === actionTypes.Countdown">Start a countdown.</span>
+                    <span *ngIf="action.actionType === actionTypes.StoreVariable">Store a value in a variable.</span>
+                    <span *ngIf="action.actionType === actionTypes.ClearVariable">Empties the value in a variable.</span>
+                    <span *ngIf="action.actionType === actionTypes.Counter">Track the number of times an event occurs.</span>
+                    <span *ngIf="action.actionType === actionTypes.Clipboard">Put text into the clipboard.</span>
+                    <span *ngIf="action.actionType === actionTypes.BeneficialTimer">Creates a countdown until the buff expires.</span>
+                    <span *ngIf="action.actionType === actionTypes.DisplayDeathRecap">Displays the Death Recap window.</span>
+                    <span *ngIf="action.actionType === actionTypes.ScreenGlow">Renders a glow around the main display.</span>
+                    <span *ngIf="action.actionType === actionTypes.ClearAll">Stops all active components.</span>
+                    <span *ngIf="action.actionType === actionTypes.Stopwatch">Starts a stopwatch.</span>
+                    <mat-label *ngIf="isDev" style="color:#00000059;">&nbsp;{{action.actionId}}</mat-label>
+                </mat-card-subtitle>
+                <span class="spacer"></span>
+                <div class="action-movers">
+                    <button mat-icon-button (click)="moveUp(i, $event)" [disabled]="i === 0 || actions.length <= 1"><mat-icon>expand_less</mat-icon></button> <!-- up -->
+                    <button mat-icon-button (click)="moveDown(i, $event)" [disabled]="i === actions.length - 1 || actions.length <= 1"><mat-icon>expand_more</mat-icon></button> <!-- down -->
+                </div>
+            </mat-card-header>
+            <mat-card-content *ngIf="!scrolling">
+                
                 <div>
                     <mat-form-field style="width: 100%;">
                         <mat-label></mat-label>
-                        <mat-select [(ngModel)]="action.phrases" name="ddlActionPhrase_{{i}}" multiple>
-                            <mat-option *ngFor="let phrase of capturePhrases" [value]="phrase.phraseId">{{phrase.phrase}}</mat-option>
+                        <mat-select [(ngModel)]="action.actionType" name="ddlActionType_{{i}}">
+                            <mat-option [value]="actionTypes.DisplayText">{{actionTypeLabels(actionTypes.DisplayText)}}</mat-option>
+                            <mat-option [value]="actionTypes.DotTimer">{{actionTypeLabels(actionTypes.DotTimer)}}</mat-option>
+                            <mat-option [value]="actionTypes.PlayAudio">{{actionTypeLabels(actionTypes.PlayAudio)}}</mat-option>
+                            <mat-option [value]="actionTypes.Speak">{{actionTypeLabels(actionTypes.Speak)}}</mat-option>
+                            <mat-option [value]="actionTypes.Timer">{{actionTypeLabels(actionTypes.Timer)}}</mat-option>
+                            <mat-option [value]="actionTypes.Countdown">{{actionTypeLabels(actionTypes.Countdown)}}</mat-option>
+                            <mat-option [value]="actionTypes.StoreVariable">{{actionTypeLabels(actionTypes.StoreVariable)}}</mat-option>
+                            <mat-option [value]="actionTypes.ClearVariable">{{actionTypeLabels(actionTypes.ClearVariable)}}</mat-option>
+                            <mat-option [value]="actionTypes.Counter">{{actionTypeLabels(actionTypes.Counter)}}</mat-option>
+                            <mat-option [value]="actionTypes.Clipboard">{{actionTypeLabels(actionTypes.Clipboard)}}</mat-option>
+                            <mat-option [value]="actionTypes.BeneficialTimer">{{actionTypeLabels(actionTypes.BeneficialTimer)}}</mat-option>
+                            <mat-option [value]="actionTypes.DisplayDeathRecap">{{actionTypeLabels(actionTypes.DisplayDeathRecap)}}</mat-option>
+                            <mat-option [value]="actionTypes.ScreenGlow">{{actionTypeLabels(actionTypes.ScreenGlow)}}</mat-option>
+                            <mat-option [value]="actionTypes.ClearAll">{{actionTypeLabels(actionTypes.ClearAll)}}</mat-option>
+                            <mat-option [value]="actionTypes.Stopwatch">{{actionTypeLabels(actionTypes.Stopwatch)}}</mat-option>
                         </mat-select>
-                        <mat-hint>Trigger on phrase</mat-hint>
+                        <mat-hint>Action Type</mat-hint>
                     </mat-form-field>
                 </div>
-
-            </div>
-
-            <div *ngIf="action.actionType === actionTypes.PlayAudio">
-
-                <app-trigger-action-audio [action]="action"></app-trigger-action-audio>
-
-            </div>
-
-            <div *ngIf="action.actionType === actionTypes.Counter">
-
-                <app-trigger-action-counter [action]="action" [overlayOptions]="alertOverlays"></app-trigger-action-counter>
-
-            </div>
-
-            <div *ngIf="action.actionType === actionTypes.Clipboard">
-
-                <app-trigger-action-clipboard [action]="action"></app-trigger-action-clipboard>
-
-            </div>
-
-            <div *ngIf="action.actionType === actionTypes.DisplayText">
-
-                <app-trigger-action-display-text [action]="action" [overlayOptions]="alertOverlays"></app-trigger-action-display-text>
-
-            </div>
-
-            <div *ngIf="action.actionType === actionTypes.StoreVariable">
-
-                <app-trigger-action-store-variable [action]="action"></app-trigger-action-store-variable>
-
-            </div>
-
-            <div *ngIf="action.actionType === actionTypes.ClearVariable">
-
-                <app-trigger-action-clear-variable [action]="action"></app-trigger-action-clear-variable>
-
-            </div>
-
-            <div *ngIf="action.actionType === actionTypes.DotTimer">
-
-                <app-trigger-action-dotTimer [action]="action" [overlayOptions]="timerOverlays" [alertOverlays]="alertOverlays" [capturePhrases]="capturePhrases" ></app-trigger-action-dotTimer>
-
-            </div>
-
-            <div *ngIf="action.actionType === actionTypes.Speak">
-
-                <app-trigger-action-speak [action]="action"></app-trigger-action-speak>
-
-            </div>
-
-            <div *ngIf="action.actionType === actionTypes.Timer">
-
-                <app-trigger-action-timer [action]="action" [overlayOptions]="timerOverlays" [alertOverlays]="alertOverlays" [triggerActions]="getOtherActions(action.actionId)" [phrases]="capturePhrases"></app-trigger-action-timer>
-
-            </div>
-
-            <div *ngIf="action.actionType === actionTypes.Countdown">
-
-                <app-trigger-action-timer [action]="action" [overlayOptions]="timerOverlays" [alertOverlays]="alertOverlays" [triggerActions]="getOtherActions(action.actionId)" [phrases]="capturePhrases"></app-trigger-action-timer>
-
-            </div>
-
-            <div *ngIf="action.actionType === actionTypes.BeneficialTimer">
-
-                <app-trigger-action-timer [action]="action" [overlayOptions]="timerOverlays" [alertOverlays]="alertOverlays" [triggerActions]="getOtherActions(action.actionId)" [phrases]="capturePhrases"></app-trigger-action-timer>
-
-            </div>
-
-            <div *ngIf="action.actionType === actionTypes.DisplayDeathRecap">
-
-                <app-trigger-action-death-recap [action]="action"></app-trigger-action-death-recap>
-
-            </div>
-
-            <div *ngIf="action.actionType === actionTypes.ScreenGlow">
-
-                <app-trigger-action-screen-glow [action]="action"></app-trigger-action-screen-glow>
-
-            </div>
-
-            <div *ngIf="action.actionType === actionTypes.ClearAll">
-                <p>This action will clear all render elements, stop all timer types, reset all stored variables, end all audio files and speech, and restart all counters. </p>
-            </div>
-
-        </mat-card-content>
-        <mat-card-actions>
-            <button mat-button color="warn" (click)="deleteAction(i)">Delete</button>
-            <mat-checkbox [(ngModel)]="action.onlyExecuteInDev" name="cbxOnlyShowInDev_{{i}}" *ngIf="isDev && predefined">Only execute in dev</mat-checkbox>
-        </mat-card-actions>
-    </mat-card>
+    
+                <div *ngIf="action.actionType != null">
+    
+                    <div>
+                        <mat-form-field style="width: 100%;">
+                            <mat-label></mat-label>
+                            <mat-select [(ngModel)]="action.phrases" name="ddlActionPhrase_{{i}}" multiple>
+                                <mat-option *ngFor="let phrase of capturePhrases" [value]="phrase.phraseId">{{phrase.phrase}}</mat-option>
+                            </mat-select>
+                            <mat-hint>Trigger on phrase</mat-hint>
+                        </mat-form-field>
+                    </div>
+    
+                </div>
+    
+                <div *ngIf="action.actionType === actionTypes.PlayAudio">
+    
+                    <app-trigger-action-audio [action]="action"></app-trigger-action-audio>
+    
+                </div>
+    
+                <div *ngIf="action.actionType === actionTypes.Counter">
+    
+                    <app-trigger-action-counter [action]="action" [overlayOptions]="alertOverlays"></app-trigger-action-counter>
+    
+                </div>
+    
+                <div *ngIf="action.actionType === actionTypes.Clipboard">
+    
+                    <app-trigger-action-clipboard [action]="action"></app-trigger-action-clipboard>
+    
+                </div>
+    
+                <div *ngIf="action.actionType === actionTypes.DisplayText">
+    
+                    <app-trigger-action-display-text [action]="action" [overlayOptions]="alertOverlays"></app-trigger-action-display-text>
+    
+                </div>
+    
+                <div *ngIf="action.actionType === actionTypes.StoreVariable">
+    
+                    <app-trigger-action-store-variable [action]="action"></app-trigger-action-store-variable>
+    
+                </div>
+    
+                <div *ngIf="action.actionType === actionTypes.ClearVariable">
+    
+                    <app-trigger-action-clear-variable [action]="action"></app-trigger-action-clear-variable>
+    
+                </div>
+    
+                <div *ngIf="action.actionType === actionTypes.DotTimer">
+    
+                    <app-trigger-action-dotTimer [action]="action" [overlayOptions]="timerOverlays" [alertOverlays]="alertOverlays" [capturePhrases]="capturePhrases" ></app-trigger-action-dotTimer>
+    
+                </div>
+    
+                <div *ngIf="action.actionType === actionTypes.Speak">
+    
+                    <app-trigger-action-speak [action]="action"></app-trigger-action-speak>
+    
+                </div>
+    
+                <div *ngIf="action.actionType === actionTypes.Timer">
+    
+                    <app-trigger-action-timer [action]="action" [overlayOptions]="timerOverlays" [alertOverlays]="alertOverlays" [triggerActions]="getOtherActions(action.actionId)" [phrases]="capturePhrases"></app-trigger-action-timer>
+    
+                </div>
+    
+                <div *ngIf="action.actionType === actionTypes.Countdown">
+    
+                    <app-trigger-action-timer [action]="action" [overlayOptions]="timerOverlays" [alertOverlays]="alertOverlays" [triggerActions]="getOtherActions(action.actionId)" [phrases]="capturePhrases"></app-trigger-action-timer>
+    
+                </div>
+    
+                <div *ngIf="action.actionType === actionTypes.BeneficialTimer">
+    
+                    <app-trigger-action-timer [action]="action" [overlayOptions]="timerOverlays" [alertOverlays]="alertOverlays" [triggerActions]="getOtherActions(action.actionId)" [phrases]="capturePhrases"></app-trigger-action-timer>
+    
+                </div>
+    
+                <div *ngIf="action.actionType === actionTypes.DisplayDeathRecap">
+    
+                    <app-trigger-action-death-recap [action]="action"></app-trigger-action-death-recap>
+    
+                </div>
+    
+                <div *ngIf="action.actionType === actionTypes.ScreenGlow">
+    
+                    <app-trigger-action-screen-glow [action]="action"></app-trigger-action-screen-glow>
+    
+                </div>
+    
+                <div *ngIf="action.actionType === actionTypes.ClearAll">
+                    <p>This action will clear all render elements, stop all timer types, reset all stored variables, end all audio files and speech, and restart all counters. </p>
+                </div>
+    
+                <div *ngIf="action.actionType === actionTypes.Stopwatch">
+    
+                    <app-trigger-action-stopwatch [action]="action" [overlayOptions]="timerOverlays" [alertOverlays]="alertOverlays" [triggerActions]="getOtherActions(action.actionId)" [phrases]="capturePhrases"></app-trigger-action-stopwatch>
+    
+                </div>
+    
+            </mat-card-content>
+            <mat-card-actions *ngIf="!scrolling">
+                <button mat-button color="warn" (click)="deleteAction(i)">Delete</button>
+                <mat-checkbox [(ngModel)]="action.onlyExecuteInDev" name="cbxOnlyShowInDev_{{i}}" *ngIf="isDev && predefined">Only execute in dev</mat-checkbox>
+            </mat-card-actions>
+        </mat-card>
+    </div>
 </div>

@@ -24,7 +24,7 @@
                             <div class="trigger-categories-header">
                                 <span>GINA Components</span>
                                 <span class="spacer"></span>
-                                <button mat-icon-button [title]="(showImported ? 'Hide items have have already been imported.' : 'Show items that have already been imported.')" (click)="showImported = !showImported">
+                                <button mat-icon-button [title]="(showImported ? 'Hide items have have already been imported.' : 'Show items that have already been imported.')" (click)="onShowImportedChange( !showImported )">
                                     <mat-icon [ngClass]="{'material-icons-outlined': !showImported}" [inline]="true">check_circle</mat-icon>
                                 </button>
                             </div>
@@ -173,8 +173,9 @@
 
                                                 <div class="field-list">
                                                     <div class="field-line"><label>Timer Type</label>
-                                                        <span *ngIf="selectedTrigger.TimerType == ginaTimerTypes.Timer">Timer (Count Down)</span>
-                                                        <span *ngIf="selectedTrigger.TimerType == ginaTimerTypes.Stopwatch">Stopwatch (Count Up)</span>
+                                                        <span *ngIf="selectedTrigger.TimerType == ginaTimerTypes.Timer">Timer (Count Down)<span><a (click)="changeTimerType(ginaTimerTypes.Countup)">Change</a></span></span>
+                                                        <span *ngIf="selectedTrigger.TimerType == ginaTimerTypes.Countup">Timer (Count Up)<span><a (click)="changeTimerType(ginaTimerTypes.Timer)">Change</a></span></span>
+                                                        <span *ngIf="selectedTrigger.TimerType == ginaTimerTypes.Stopwatch">Stopwatch</span>
                                                         <span *ngIf="selectedTrigger.TimerType == ginaTimerTypes.RepeatingTimer">Repeating Timer</span>
                                                     </div>
                                                     <div class="field-line"><label>Timer Name</label><span>{{selectedTrigger.TimerName}}</span></div>
@@ -316,7 +317,7 @@
                                                         <mat-hint>{{action.displayText}} text overlay.</mat-hint>
                                                     </mat-form-field>
 
-                                                    <ng-template [ngIf]="action.actionType == actionTypes.Countdown || action.actionType == actionTypes.DotTimer || action.actionType == actionTypes.Timer">
+                                                    <ng-template [ngIf]="action.actionType == actionTypes.Countdown || action.actionType == actionTypes.DotTimer || action.actionType == actionTypes.Timer || action.actionType == actionTypes.Stopwatch|| action.actionType == actionTypes.BeneficialTimer">
 
                                                         <mat-form-field *ngIf="action.overlayId == null">
                                                             <mat-label></mat-label>

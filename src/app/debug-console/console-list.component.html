@@ -1,0 +1,11 @@
+<ng-template ngFor let-item [ngForOf]="history" [ngForTrackBy]="trackByFn">
+
+    <div *ngIf="isTriggerEvent(item); then triggerEvent else consoleMessage"></div>
+    <ng-template #triggerEvent>
+        <console-trigger-event [item]="asTriggerParseHistoryModel(item)" (showTriggerHistory)="showTriggerParseHistory($event.triggerId, $event.triggerName)"></console-trigger-event>
+    </ng-template>
+    <ng-template #consoleMessage>
+        <console-message [item]="item"></console-message>
+    </ng-template>
+
+</ng-template>

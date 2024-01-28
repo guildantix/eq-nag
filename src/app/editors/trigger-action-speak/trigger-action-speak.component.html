@@ -17,9 +17,13 @@
                 <div class="content-right"><mat-slider [(ngModel)]="action.speechVolume" thumbLabel tickInterval="1" min="1" max="100" style="width: 100%;" ></mat-slider></div>
             </div>
 
-            <div class="card-property">
+            <div class="card-property" style="align-items: center;">
                 <div class="content-middle">Rate</div>
-                <div class="content-right"><mat-slider [(ngModel)]="action.speechRate" thumbLabel tickInterval="0.25" step="0.25" min="0.25" max="4" style="width: 100%;" ></mat-slider></div>
+                <mat-button-toggle-group name="speakingRate" aria-label="Select the speaking rate for this speak action." [(ngModel)]="action.speechRate">
+                    <mat-button-toggle [value]="1.00">Normal</mat-button-toggle>
+                    <mat-button-toggle [value]="1.75">Fast</mat-button-toggle>
+                    <mat-button-toggle [value]="2.25">Very Fast</mat-button-toggle>
+                </mat-button-toggle-group>
             </div>
 
             <mat-checkbox [(ngModel)]="action.interruptSpeech" name="cbxInterruptSpeech" title="If the TTS engine is currently speaking, that speech will be interrupted when this trigger action executes.">Interrupt speech</mat-checkbox><br />

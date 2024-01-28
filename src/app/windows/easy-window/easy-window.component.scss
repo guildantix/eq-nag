@@ -1,0 +1,61 @@
+
+section {
+    color: #cdcdcd;
+    overflow: hidden;
+
+    .menu {
+        padding: 15px 25px; 
+        display: flex;
+
+        .spacer {
+            flex: 1 1 auto;
+            display: flex;
+            align-items: center;
+            padding: 0 20px 0 5px;
+
+            div.progress-wrapper {
+                position: relative;
+                width: 100%;
+                
+                mat-progress-bar {
+                    height: 25px;
+                }
+
+                span.label {
+                    position: absolute;
+                    top: 0;
+                    height: 100%;
+                    display: flex;
+                    align-items: center;
+                    text-align: center;
+                    padding-left: 9px;
+                }
+            }
+        }
+    }
+
+    mat-stepper {
+        background-color: unset;
+
+        mat-step-header {
+            .mat-step-label {
+                color: #cdcdcd;
+            }
+        }
+
+        .step-options {
+            > mat-card {
+                margin: 25px 100px;
+
+                mat-card-title {
+                    color: #e7e7e7;
+                }
+
+                mat-card-content {
+                    color: #d5d5d5;
+                    padding-top: 20px;
+                }
+            }
+        }
+    }
+}

@@ -9,6 +9,28 @@ mat-form-field {
     }
 }
 
+.action-movers {
+    display: flex;
+    flex-flow: column nowrap;
+    padding: 0 15px;
+
+    > button {
+        opacity: 0.67;
+        &:hover {
+            opacity: 1;
+        }
+    }
+}
+
+.content {
+    overflow: auto;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 76px;
+    top: 107px;
+}
+
 ::ng-deep .card.action-card {
     mat-card-content {
         padding-top: 50px;
@@ -26,4 +48,8 @@ mat-form-field {
 
 .flex-layout {
     padding-top: 30px;
+}
+
+.spacer {
+    flex: 1 1 auto;
 }

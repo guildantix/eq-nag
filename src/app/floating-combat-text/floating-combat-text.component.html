@@ -1,0 +1,251 @@
+<mat-toolbar>
+    <span>Floating Combat Text</span>
+    <span class="spacer"></span>
+    <!-- <button mat-button [disabled]="true">Export</button> -->
+    <button mat-button (click)="createQuickShare()" title="Export your settings to share with other players!" class="color-blue"><mat-icon class="material-icons-outlined">share</mat-icon> Quickshare</button>
+    <button mat-button (click)="installQuickShare()" title="Import settings from another player." class="color-orange"><mat-icon class="material-icons-outlined">cloud_download</mat-icon> Import</button>
+    <button mat-button color="accent" (click)="newCombatGroup()"><mat-icon class="material-icons-outlined">add</mat-icon> New</button>
+</mat-toolbar>
+<div class="tab-content">
+    
+    <div style="text-align: right; padding: 0 25px 20px;"><mat-checkbox [(ngModel)]="enableFct" (change)="onEnableFctChange()">Enable FCT</mat-checkbox></div>
+
+    <mat-accordion class="example-headers-align">
+        <mat-expansion-panel hideToggle [@.disabled]="true" *ngFor="let group of combatGroups; let i = index" [expanded]="selectedPanelIndex === i" (expandedChange)="selectedPanelIndex = $event ? i : selectedPanelIndex">
+            <mat-expansion-panel-header>
+                <mat-panel-title><span class="title header-glow">{{group.name}}</span></mat-panel-title>
+                <mat-panel-description>
+                    <span class="spacer"></span>
+                    <div><button mat-icon-button [disabled]="i === 0" (click)="updatePosition(group, -1, $event)"><mat-icon>expand_less</mat-icon></button></div>
+                    <div><button mat-icon-button [disabled]="i >= combatGroups.length - 1" (click)="updatePosition(group, 1, $event)"><mat-icon>expand_more</mat-icon></button></div>
+                    <div *ngIf="hasChanges(group.combatGroupId)"><button mat-icon-button class="color-green" matTooltip="Save group" matTooltipPosition="above"(click)="saveChanges(group, $event)"><mat-icon>save</mat-icon></button></div>
+                    <div><button mat-icon-button class="color-light" matTooltip="Change group name" matTooltipPosition="above" (click)="changeCombatGroupName(i, $event)"><mat-icon class="material-icons-outlined">edit</mat-icon></button></div>
+                    <div><button mat-icon-button class="color-blue" matTooltip="Copy group" matTooltipPosition="above" (click)="copyCombatGroup(group, $event)"><mat-icon class="material-icons-outlined">content_copy</mat-icon></button></div>
+                    <div><button mat-icon-button class="color-red" matTooltip="Delete group" matTooltipPosition="above" (click)="deleteCombatGroup(i, group.combatGroupId, $event)"><mat-icon class="material-icons-outlined">clear</mat-icon></button></div>
+                </mat-panel-description>
+            </mat-expansion-panel-header>
+            
+
+            <div class="modifiers-list-container">
+            
+                <div style="display: flex; flex-flow: column wrap; min-width: 225px;">
+                    <h3 class="sub-header full-width header-glow">Combat Types</h3>
+                    <mat-checkbox [(ngModel)]="group.combatTypes.myHits" name="myHits_{{i}}">Your Melee Hits</mat-checkbox>
+                    <mat-checkbox [(ngModel)]="group.combatTypes.otherHitsOnMe" name="otherHitsOnMe_{{i}}">You Being Hit by Melee</mat-checkbox>
+                    <mat-checkbox [(ngModel)]="group.combatTypes.mySpellHits" name="mySpellHits_{{i}}">Your Spell Hits</mat-checkbox>
+                    <mat-checkbox [(ngModel)]="group.combatTypes.otherSpellHitsOnMe" name="otherSpellHitsOnMe_{{i}}">You Being Hit by Spells</mat-checkbox>
+                    <mat-checkbox [(ngModel)]="group.combatTypes.myHealing" name="myHealing_{{i}}">Your Healing Done</mat-checkbox>
+                    <mat-checkbox [(ngModel)]="group.combatTypes.otherHealingOnMe" name="otherHealingOnMe_{{i}}">You Being Healed</mat-checkbox>
+                </div>
+                
+                <div style="padding-left: 25px; min-width: 170px;">
+                    <h3 class="sub-header full-width header-glow">Modifiers</h3>
+                    <mat-button-toggle-group name="combatModifiers" aria-label="Modifiers" class="vertical" style="float: right;" [(ngModel)]="group.combatModifiers" name="combatModifiers_{{i}}" multiple>
+                        <mat-button-toggle value="normal">Normal</mat-button-toggle>
+                        <mat-button-toggle value="critical">Critical</mat-button-toggle>
+                        <mat-button-toggle value="crippling_blow">Crippling Blow</mat-button-toggle>
+                        <mat-button-toggle value="flurry">Flurry</mat-button-toggle>
+                        <mat-button-toggle value="lucky">Lucky</mat-button-toggle>
+                        <mat-button-toggle value="twincast">Twincast</mat-button-toggle>
+                        <mat-button-toggle value="riposte">Riposte</mat-button-toggle>
+                        <mat-button-toggle value="strikethrough">Strikethrough</mat-button-toggle>
+                        <mat-button-toggle value="wild_rampage">Wild Rampage</mat-button-toggle>
+                        <mat-button-toggle value="rampage">Rampage</mat-button-toggle>
+                        <mat-button-toggle value="assassinate">Assassinate</mat-button-toggle>
+                        <mat-button-toggle value="headshot">Headshot</mat-button-toggle>
+                        <mat-button-toggle value="double_bow_shot">Double Bow Shot</mat-button-toggle>
+                        <mat-button-toggle value="deadly_strike">Deadly Strike</mat-button-toggle>
+                        <mat-button-toggle value="finishing_blow">Finishing Blow</mat-button-toggle>
+                    </mat-button-toggle-group>
+                </div>
+    
+                <div style="flex: 1 1 auto; margin-left: 25px; max-width: calc(100% - 490px);">
+                    <h3 class="sub-header full-width header-glow">Group Settings</h3>
+    
+                    <mat-tab-group animationDuration="0ms" [selectedIndex]="group.editorTabIndex">
+    
+                        <mat-tab label="Styles">
+                            <div class="card-tab-content">
+
+                                <game-preview class="fct-game-preview" [(color)]="group.displayBackground">
+                                    <div class="fct-container fct-inline" [ngClass]="getGroupPositionNgClass(group.startingPosition)">
+                                        <div class="fct-values" #fctGroupA>
+                                            <div class="fct-sub-animation">
+                                                <div class="fct-text-layer">
+                                                    <span class="fct-text" #fctTexta (click)="group.editStylesType = 'value'">{{group.displayValue}}</span>
+                                                    <span class="fct-dmg-src" #fctSourcea (click)="group.editStylesType = 'source'">({{group.displayType}})</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="fct-values" #fctGroupB>
+                                            <div class="fct-sub-animation">
+                                                <div class="fct-text-layer">
+                                                    <span class="fct-text" #fctTextb (click)="group.editStylesType = 'value'">{{group.displayValue}}</span>
+                                                    <span class="fct-dmg-src" #fctSourceb (click)="group.editStylesType = 'source'">({{group.displayType}})</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <mat-progress-bar [ngClass]="{'hidden': group._animationIntervalId == undefined, 'visible': group._animationIntervalId > 0}" mode="determinate" [value]="group._animationCompletePercent" style="position: absolute; bottom: 0px;"></mat-progress-bar>
+                                    <button mat-icon-button class="play-button" (click)="applyGroupAnimations(group, fctGroupA, fctGroupB)"><mat-icon>play_circle_outline</mat-icon></button>
+                                </game-preview>
+    
+                                <div class="style-header">
+                                    <span (click)="group.editStylesType = 'value'" [ngClass]="{'inactive': group.editStylesType !== 'value', 'active': group.editStylesType === 'value'}">Value</span>
+                                    <span (click)="group.editStylesType = 'source'" [ngClass]="{'inactive': group.editStylesType !== 'source', 'active': group.editStylesType === 'source'}" style="padding-left: 25px;">Source</span>
+                                    <span (click)="group.editStylesType = 'animations'" [ngClass]="{'inactive': group.editStylesType !== 'animations', 'active': group.editStylesType === 'animations'}" style="padding-left: 25px;">Animations</span>
+                                </div>
+    
+                                <app-style-properties label="" [ngClass]="{'hidden': group.editStylesType !== 'value', 'visible': group.editStylesType === 'value'}"
+                                    [style]="group.valueStyles" 
+                                    [style-element]="[fctTexta, fctTextb]" 
+                                    [enable-padding-horizontal]="true" 
+                                    [enable-padding-vertical]="true"
+                                    [enable-justify]="false"></app-style-properties>
+    
+                                <app-style-properties label="" [ngClass]="{'hidden': group.editStylesType !== 'source', 'visible': group.editStylesType === 'source'}"
+                                    [style]="group.sourceStyles" 
+                                    [style-element]="[fctSourcea, fctSourceb]" 
+                                    [enable-padding-horizontal]="true" 
+                                    [enable-padding-vertical]="true"
+                                    [enable-inline-block]="true"
+                                    [enable-justify]="group.sourceStyles.position === 'block'"></app-style-properties>
+                                
+                                <div class="group-options-container" [ngClass]="{'hidden': group.editStylesType !== 'animations', 'visible': group.editStylesType === 'animations'}">
+                                    <div>
+                                        <h4>Animations</h4>
+                                        <mat-checkbox [(ngModel)]="group.combatAnimations.fountain" name="animation_fountain_{{i}}" (change)="applyGroupAnimations(group, fctGroupA, fctGroupB, $event)">Fountain</mat-checkbox>
+                                        <mat-checkbox [(ngModel)]="group.combatAnimations.scroll" name="animation_scroll_{{i}}" (change)="applyGroupAnimations(group, fctGroupA, fctGroupB, $event)">Scroll</mat-checkbox>
+                                        <mat-checkbox [(ngModel)]="group.combatAnimations.blowout" name="animation_blowOut_{{i}}" (change)="applyGroupAnimations(group, fctGroupA, fctGroupB, $event)">Blowout</mat-checkbox>
+                                        <mat-checkbox [(ngModel)]="group.combatAnimations.grow" name="animation_grow_{{i}}" (change)="applyGroupAnimations(group, fctGroupA, fctGroupB)">Grow</mat-checkbox>
+                                        <mat-checkbox [(ngModel)]="group.combatAnimations.shrink" name="animation_shrink_{{i}}" (change)="applyGroupAnimations(group, fctGroupA, fctGroupB)">Shrink</mat-checkbox>
+                                        <mat-checkbox [(ngModel)]="group.combatAnimations.fadeIn" name="animation_fadeIn_{{i}}" (change)="applyGroupAnimations(group, fctGroupA, fctGroupB)">Fade In</mat-checkbox>
+                                        <mat-checkbox [(ngModel)]="group.combatAnimations.fadeOut" name="animation_fadeOut_{{i}}" (change)="applyGroupAnimations(group, fctGroupA, fctGroupB)">Fade Out</mat-checkbox>
+                                    </div>
+                                    <div>
+                                        <h4>Starting Positions</h4>
+                                        <mat-checkbox [checked]="hasFlag(group.startingPosition, hitPositionTypes.random)" (change)="toggleStartingPositionFlag(group, hitPositionTypes.random, fctGroupA, fctGroupB, $event)">Random Position</mat-checkbox>
+                                        <mat-checkbox [checked]="hasFlag(group.startingPosition, hitPositionTypes.right)" (change)="toggleStartingPositionFlag(group, hitPositionTypes.right, fctGroupA, fctGroupB, $event)">Right</mat-checkbox>
+                                        <mat-checkbox [checked]="hasFlag(group.startingPosition, hitPositionTypes.left)" (change)="toggleStartingPositionFlag(group, hitPositionTypes.left, fctGroupA, fctGroupB, $event)">Left</mat-checkbox>
+                                        <mat-checkbox [checked]="hasFlag(group.startingPosition, hitPositionTypes.top)" (change)="toggleStartingPositionFlag(group, hitPositionTypes.top, fctGroupA, fctGroupB, $event)">Top</mat-checkbox>
+                                        <mat-checkbox [checked]="hasFlag(group.startingPosition, hitPositionTypes.bottom)" (change)="toggleStartingPositionFlag(group, hitPositionTypes.bottom, fctGroupA, fctGroupB, $event)">Bottom</mat-checkbox>
+                                    </div>
+                                </div>
+                            </div>
+                        </mat-tab>
+    
+                        <mat-tab label="Properties">
+                            <div class="card-tab-content">
+    
+                                <h4 class="header-glow">Overlay</h4>
+                                <mat-form-field style="width: calc(100% - 3px);" [ngClass]="{'input-error': group.overlayId == null}">
+                                    <mat-label></mat-label>
+                                    <mat-select [(ngModel)]="group.overlayId" name="overlayId_{{i}}">
+                                        <mat-option *ngFor="let option of fctOverlays" [value]="option.overlayId">{{option.name}}</mat-option>
+                                    </mat-select>
+                                    <mat-hint style="font-size: 1.1em;">Select the overlay that should render this group's combat text.</mat-hint>
+                                </mat-form-field>
+    
+                                <div class="group-options-container">
+                                    <div>
+                                        <h4 class="header-glow" style="margin-left: -11px;">Hit Data</h4>
+                                        <mat-checkbox [(ngModel)]="group.accumulateHits" name="accumulateHits_{{i}}" (ngModelChange)="onAccumulateHitsChange(group)">Consolidate Hits</mat-checkbox>
+                                        <mat-checkbox [(ngModel)]="group.ignoreHits" name="ignoreHits_{{i}}" (ngModelChange)="onIgnoreHitsChange(group)">Ignore Hits</mat-checkbox>
+                                    </div>
+                                </div>
+    
+                            </div>
+                        </mat-tab>
+    
+                        <mat-tab label="Ignore Hits" *ngIf="group.ignoreHits">
+                            <div class="card-tab-content color-light">
+                                <p>When ignore hits is enabled, damage below a specified threshold will be be ignored.</p>
+                                <label>Threshold
+                                    <sup class="help-sup"
+                                        matTooltipPosition="above"
+                                        matTooltipClass="tooltip-large"
+                                        (click)="displayIgnoreThresholdDescription()">&nbsp;&nbsp;?</sup>
+                                </label>
+                                <div style="display: flex; flex-flow: row nowrap; justify-content: space-between;">
+                                    <mat-radio-group [(ngModel)]="group.thresholdType" name="thresholdType_{{i}}" style="display: flex; flex-flow: row nowrap; justify-content: flex-start; margin-right: 25px;">
+                                        <mat-radio-button value="percent" style="margin: 10px 10px;">Percent</mat-radio-button>
+                                        <mat-radio-button value="value" style="margin: 10px 10px;">Value</mat-radio-button>
+                                    </mat-radio-group>
+
+                                    <div style="flex: 1 1 auto;">
+                                        <mat-slider thumbLabel min="0" max="100" step="1" value="0" style="width: 100%;" 
+                                            [(ngModel)]="group.thresholdPercent" name="thresholdPercent_{{i}}" 
+                                            *ngIf="group.thresholdType === 'percent' || group.thresholdType == undefined">
+                                        </mat-slider>
+
+                                        <mat-form-field style="width: 192px; margin-left: 15px; width: 100%;" *ngIf="group.thresholdType === 'value'">
+                                            <mat-label></mat-label>
+                                            <input matInput class="no-spinner" [(ngModel)]="group.thresholdValue" name="thresholdValue_{{i}}" type="number" />
+                                            <mat-hint>Threshold value</mat-hint>
+                                        </mat-form-field>
+                                    </div>
+                                </div>
+                                <div>
+                                    <ng-template [ngIf]="group.thresholdType === 'percent' || group.thresholdType == undefined">
+                                        <p>You may see a lot of hits coming in over this threshold as the system calculates your average hit.</p>
+                                        <p><strong>Note:</strong> Hit data is stored separately for each character.</p>
+                                    </ng-template>
+                                </div>
+    
+                            </div>
+                        </mat-tab>
+    
+                        <mat-tab label="Consolidate Hits" *ngIf="group.accumulateHits">
+                            <div class="card-tab-content color-light">
+                                <p>When hit consolidation is enabled, damage below a specified threshold will be added up until a hit that meats the threshold is reached.</p>
+                                <label>Threshold
+                                    <sup class="help-sup"
+                                        matTooltipPosition="above"
+                                        matTooltipClass="tooltip-large"
+                                        (click)="displayConsolidationThresholdDescription()">&nbsp;&nbsp;?</sup>
+                                </label>
+                                <div style="display: flex; flex-flow: row nowrap; justify-content: space-between;">
+                                    <mat-radio-group [(ngModel)]="group.thresholdType" name="thresholdType_{{i}}" style="display: flex; flex-flow: row nowrap; justify-content: flex-start; margin-right: 25px;">
+                                        <mat-radio-button value="percent" style="margin: 10px 10px;">Percent</mat-radio-button>
+                                        <mat-radio-button value="value" style="margin: 10px 10px;">Value</mat-radio-button>
+                                        <mat-radio-button value="dynamic" *ngIf="false">I don't care, just don't clutter my screen.</mat-radio-button>
+                                    </mat-radio-group>
+
+                                    <div style="flex: 1 1 auto;">
+                                        <mat-slider thumbLabel min="0" max="100" step="1" value="0" style="width: 100%;" 
+                                            [(ngModel)]="group.thresholdPercent" name="thresholdPercent_{{i}}" 
+                                            *ngIf="group.thresholdType === 'percent' || group.thresholdType == undefined">
+                                        </mat-slider>
+                                        
+                                        <mat-form-field style="width: 192px; margin-left: 15px; width: 100%;" *ngIf="group.thresholdType === 'value'">
+                                            <mat-label></mat-label>
+                                            <input matInput class="no-spinner" [(ngModel)]="group.thresholdValue" name="thresholdValue_{{i}}" type="number" />
+                                            <mat-hint>Threshold value</mat-hint>
+                                        </mat-form-field>
+                                    </div>
+                                </div>
+                                <div>
+                                    <ng-template [ngIf]="group.thresholdType === 'percent' || group.thresholdType == undefined">
+                                        <p>You may see a lot of hits coming in over this threshold as the system calculates your average hit.</p>
+                                        <p><strong>Note:</strong> Hit data is stored separately for each character.</p>
+                                    </ng-template>
+                                </div>
+    
+                            </div>
+                        </mat-tab>
+    
+                    </mat-tab-group>
+    
+                </div>
+    
+            </div>
+    
+            <div>
+                <button mat-button class="color-green" [disabled]="!hasChanges(group.combatGroupId)" (click)="saveChanges(group)">Save Changes</button>
+                <button mat-button class="color-red" [disabled]="!hasChanges(group.combatGroupId)" (click)="rollbackChanges(group.combatGroupId)">Revert Changes</button>
+                <button mat-button class="color-light" *ngIf="isDev" (click)="copyJson(group)">Copy JSON</button>
+            </div>
+
+        </mat-expansion-panel>
+    </mat-accordion>
+</div>

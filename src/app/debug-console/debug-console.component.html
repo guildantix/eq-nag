@@ -1,0 +1,43 @@
+<div class="debug-console-container" *ngIf="show" nagResizeable location="top" resizeVisibility="hidden" resizeMax="80%" #container>
+    <div class="console-toolbar">
+        <button mat-button (click)="clear()">Clear</button>
+        <button mat-button (click)="show = false">Hide</button>
+        
+        <mat-form-field>
+            <mat-label></mat-label>
+            <mat-select [(ngModel)]="characterId" name="characterId" placeholder="Character">
+                <mat-option [value]="null">All Characters</mat-option>
+                <mat-option *ngFor="let option of characterOptions" [value]="option.id">{{option.server}} | {{option.name}}</mat-option>
+            </mat-select>
+        </mat-form-field>
+
+        <div *ngIf="consoleList.showTriggerHistory">
+            <button mat-button (click)="hideTriggerHistory()">{{consoleList.triggerName}} <mat-icon [inline]="true">clear</mat-icon></button>
+            <button mat-button class="color-red" [ngClass]="{'selected': consoleList.parseType === 'failed'}" (click)="setParseType('failed')">Failed</button>
+            <button mat-button class="color-green" [ngClass]="{'selected': consoleList.parseType === 'successful'}" (click)="setParseType('successful')">Success</button>
+            <button mat-button class="color-bright-white" (click)="showEditTriggerDialog()">Edit Trigger</button>
+        </div>
+
+        <span style="flex: 1 1 auto;"></span>
+
+        <mat-form-field>
+            <input matInput type="text" [(ngModel)]="searchText" name="searchText" />
+            <mat-icon matPrefix style="opacity: 0.5;">search</mat-icon>
+        </mat-form-field>
+
+    </div>
+
+    <console-list #consoleList (onListUpdated)="onListUpdated()"></console-list>
+
+    <div class="console-bottom-buttons" *ngIf="showBottomTools">
+        <button mat-button (click)="scrollToBottom()" *ngIf="!atBottom">Jump to bottom</button>
+    </div>
+
+    <div class="console-input-area" *ngIf="showInput">
+        <span>></span><input type="text" [(ngModel)]="consoleCommand" name="consoleCommand" (keyup.enter)="sendConsoleCommand()" />
+    </div>
+    
+</div>
+<div class="debug-toggle" *ngIf="!show">
+    <button mat-button (click)="show = true">Console</button>
+</div>

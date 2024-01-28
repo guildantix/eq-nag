@@ -6,7 +6,7 @@ import { InputDialogModel } from './input-dialog.model';
 @Component( {
     selector: 'app-input-dialog',
     templateUrl: 'input-dialog.component.html',
-    styleUrls: [ 'input-dialog.component.scss' ],
+    styleUrls: [ 'input-dialog.component.scss', '../dialog.styles.scss' ],
 } )
 export class InputDialogComponent implements OnInit {
 
@@ -15,6 +15,9 @@ export class InputDialogComponent implements OnInit {
 
     @HostListener( 'keyup', [ '$event' ] ) public onKeyUp( e: KeyboardEvent ) {
         if ( e.key === 'Enter' ) {
+            if ( ( e.target as HTMLElement ).tagName === 'TEXTAREA' ) {
+                return;
+            }
             this.accept();
         } else if ( e.key === 'Escape' ) {
             this.cancel();
