@@ -34,7 +34,6 @@ mat-form-field {
         display: flex;
         flex-direction: row;
         background-color: #0000001f;
-        // margin: 5px 5px 0 5px;
         margin: 0;
         padding: 10px;
 
@@ -67,7 +66,6 @@ mat-form-field {
 
     .sub-action-variables {
         margin: 0 5px 5px 5px;
-        // padding: 5px 10px 5px 10px;
         display: flex;
         flex-direction: column;
         padding: 5px 0;
@@ -92,7 +90,6 @@ mat-form-field {
             }
 
             > * {
-                // width: 50%;
                 flex: 1 1;
             }
 

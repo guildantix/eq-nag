@@ -50,6 +50,7 @@ export class LogSimulatorComponent implements OnInit {
         }
         this.scrollIndex = this._simulationLineIndex;
     }
+    public simulationId: string | null = null;
     public get simulationProgressPercent(): number {
         if ( this.simulationExpectedRuntime === 0 ) {
             return 0;
@@ -88,6 +89,15 @@ export class LogSimulatorComponent implements OnInit {
         } );
     }
 
+
+
+
+
+
+
+
+
+    
     /**
      * Closes this modal.
      */
@@ -108,6 +118,20 @@ export class LogSimulatorComponent implements OnInit {
         event.stopPropagation();
     }
 
+
+
+
+
+
+
+
+
+
+
+    
+    /**
+     * Shows the paste dialog.
+     */
     public showPasteDialog(): void {
         this.dialogService.showInputDialog( 'Paste Log Entries', [ 'Enter the lines of the log file that you want to simulate.' ], 'Log lines', null, this.rawData, true ).subscribe( data => {
             if ( data === null || data === undefined ) {
@@ -159,6 +183,18 @@ export class LogSimulatorComponent implements OnInit {
         } );
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Returns the name and server of the selected character.
+     */
     public getSelectValue(): string {
         if ( this.characterId != null ) {
             let c = this.characters.find( c =>  c.characterId === this.characterId );
@@ -168,6 +204,21 @@ export class LogSimulatorComponent implements OnInit {
         return '';
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Returns the css class name for the given table row.
+     * 
+     * @param index The table row index.
+     * @param trRef A reference to the html table row element.
+     */
     public getTrClass( index: number, trRef: HTMLTableRowElement ): string {
         if ( index === this.simulationLineIndex ) {
             if ( this.lastIndexScrolled !== index ) {
@@ -180,7 +231,18 @@ export class LogSimulatorComponent implements OnInit {
         }
     }
 
-    public simulationId: string | null = null;
+
+
+
+
+
+
+
+
+    
+    /**
+     * Begins the simulation.
+     */
     public beginSimulation(): void {
         this.ipcService.beginSimulation( this.lines, this.characterId ).subscribe( simulationId => {
             this.simulationId = simulationId;
@@ -228,107 +290,29 @@ export class LogSimulatorComponent implements OnInit {
         } );
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Stops the simulation.
+     */
     public stopSimulation(): void {
         this.ipcService.stopSimulation( this.simulationId );
     }
 
-    // TODO: Remove this commented code.
-    // public onPaste( event: ClipboardEvent, lineIndex: number ): boolean {
-    //     // console.log( 'onPaste', event.clipboardData.getData( 'text/plain' ) );
-    //     let lines = event.clipboardData.getData( 'text/plain' ).split( /\r\n|\r|\n/gi );
-    //     // console.log( 'lines', lines );
-    //     // console.log( 'lineIndex', lineIndex );
-    //     // window.setTimeout( () => {
-    //     let del = this.lines[ lineIndex ].length > 0 ? 0 : 1;
-    //     this.lines.splice( lineIndex + 1, del, ...lines );
-    //     return false;
-    // }
 
-    // public onKeyDown( event: KeyboardEvent, lineIndex: number ): boolean {
-    //     console.log( 'event, lineIndex', event, lineIndex );
-    //     if ( event.key === 'Enter' ) {
-    //         if ( lineIndex === this.lines.length - 1 )
-    //             this.lines.push( '' );
-    //         else
-    //             this.lines.splice( lineIndex + 1, 0, '' );
-    //         return false;
-    //     } else if ( event.key === 'Backspace' ) {
-    //         if ( lineIndex === 0 && this.lines[ lineIndex ] === '' ) {
-    //             this.lines.splice( lineIndex, 1 );
-    //             return false;
-    //         } else if ( lineIndex > 0 && this.lines[ lineIndex ] === '' ) {
-    //             this.lines.splice( lineIndex, 1 );
-    //             return false;
-    //         }
-    //     } else if ( event.key === 'Delete' ) {
-    //         if ( lineIndex === this.lines.length - 1 && this.lines[ lineIndex ] === '' ) {
-    //             this.lines.splice( lineIndex, 1 );
-    //             return false;
-    //         } else if ( lineIndex < this.lines.length - 1 && this.lines[ lineIndex ] === '' ) {
-    //             this.lines.splice( lineIndex, 1 );
-    //             return false;
-    //         }
-    //     } else if ( event.key === 'ArrowUp' ) {
-    //         if ( lineIndex === 0 ) {
-    //             return false;
-    //         }
-    //     } else if ( event.key === 'ArrowDown' ) {
-    //         if ( lineIndex === this.lines.length - 1 ) {
-    //             return false;
-    //         }
-    //     }
 
-    //     this.lines[ lineIndex ] = event.target[ 'innerText' ];
-    //     // console.log( 'onKeyDown', event );
-    //     // console.log('test data', window)
-    //     return true;
-    // }
 
-    // public onContentChanged( event: InputEvent | any, lineIndex: number ): boolean {
-    //     console.log( 'onContentChanged', event );
-    //     const e = event as InputEvent;
-    //     const target = e.target as HTMLDivElement;
 
-    //     if ( e.inputType === 'insertText' ) {
-    //     } else if ( e.inputType === 'insertParagraph' ) {
-    //         if ( lineIndex === this.lines.length - 1 )
-    //             this.lines.push( '' );
-    //         else
-    //             this.lines.splice( lineIndex + 1, 0, '' );
-    //     } else if ( e.inputType === 'insertFromPaste' ) {
-    //         let lines = target.innerText.split( /\r\n|\r|\n/gi );
-    //         // console.log( 'lines', lines );
-    //         console.log( 'lineIndex', lineIndex );
-    //         // window.setTimeout( () => {
-    //             this.lines.splice( lineIndex, 1, ...lines );
-    //         // }, 500 );
-    //         // this.lines = this.lines.concat( ...lines );
-    //     } else if ( e.inputType === 'insertFromDrop' ) {
-    //     } else if ( e.inputType === 'insertFromYank' ) {
-    //     } else if ( e.inputType === 'deleteContentBackward' ) {
-    //     } else if ( e.inputType === 'deleteContentForward' ) {
-    //     } else if ( e.inputType === 'deleteContent' ) {
-    //     } else if ( e.inputType === 'deleteByCut' ) {
-    //     } else if ( e.inputType === 'deleteByDrag' ) {
-    //     } else if ( e.inputType === 'deleteByKeyboard' ) {
-    //     }
 
-    //     e.preventDefault();
-    //     e.stopPropagation();
-    //     // console.log('this.lines', this.lines);
-    //     // this.lines = this.lines.filter( line => line.length > 0 );
-    //     // if ( event.target.innerText ) {
-    //     //     this.content = event.target.innerText;
-    //     //     this.content = this.content.replace( /\n\n$/gi, '\n' );
-    //     //     let lines = this.content.split( /\r\n|\r|\n/gi );
-    //     //     this.lineNumbers = new Array( lines.length ).fill( 0 ).map( ( x, i ) => i + 1 );
-    //     //     // event.target.innerText = this.content;
-    //     // }
 
-    //     return false
-    // }
 
-    // public someFunction(): void {
-    // }
+
 
 }
