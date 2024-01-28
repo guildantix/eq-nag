@@ -3738,11 +3738,12 @@ function timerExists( overlayId, predicate ) {
 
     } else {
 
-        overlayInstances[ overlayId ].overlayComponents?.forEach( c => {
+        for ( let i = 0; i < overlayInstances[ overlayId ].overlayComponents?.length; i++ ) {
+            const c = overlayInstances[ overlayId ].overlayComponents[ i ];
             if ( predicate( c ) ) {
                 return true;
             }
-        } );
+        }
 
     }
 
