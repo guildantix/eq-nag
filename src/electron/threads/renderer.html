@@ -604,6 +604,7 @@
             border-left: 4px solid #181818;
             height: calc(100% - 34px);
             overflow: hidden;
+            overflow-y: scroll;
             background-color: #00000070;
         }
         .window-content .dps-item {
@@ -613,6 +614,9 @@
             white-space: nowrap;
             text-overflow: clip;
             overflow: hidden;
+        }
+        ::-webkit-scrollbar {
+            display: none;
         }
         .window-content .dps-item .dps-item-name {
             /* position: absolute; */
