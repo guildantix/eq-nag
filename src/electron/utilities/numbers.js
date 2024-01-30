@@ -179,7 +179,7 @@ function randomBounded( min, max ) {
  * @param {number} y The y position.
  */
 function rectContainsPoint( rect, x, y ) {
-    let xContained = x >= rect.x && y <= ( rect.x + rect.width );
+    let xContained = x >= rect.x && x <= ( rect.x + rect.width );
     let yContained = y >= rect.y && y <= ( rect.y + rect.height );
 
     return xContained && yContained;
