@@ -750,7 +750,10 @@ const checkActiveWindow = async () => {
     // // data.owner.name === 'eqgame.exe'
     // let isEq = data?.owner?.name === 'eqgame.exe';
 
-    if ( nagProcessId == undefined && data?.owner?.name === 'Electron' && data?.title === 'Nag' ) {
+    // TODO: Remove this log in a few versions. It's just for debugging. (current v0.1.60)
+    log.info( '[main:active-window] Checking active window.', data );
+
+    if ( nagProcessId == undefined && (data?.owner?.name === 'Electron' || data?.owner?.name === 'EQ Nag') && data?.title === 'Nag' ) {
         nagProcessId = data?.owner?.processId;
     }
     
