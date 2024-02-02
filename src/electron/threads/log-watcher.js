@@ -66,6 +66,7 @@ var baseSpeakingRate = 1;
 var logParseTimeoutId = null;
 const logParseTimer = 50;
 var changingLogFile = false;
+var backupStarted = false;
 var isDev = false;
 var enableLogging = true;
 /** @type {CharacterModel} */
@@ -596,6 +597,7 @@ function waitForLogFile( logPath ) {
     }
 
     if ( fs.existsSync( logPath ) ) {
+        backupStarted = false;
         logInfo( `LogWatcher > ${logPath} file found, starting up again.` );
         startParsingLogFile( logPath, 0 );
     } else {
@@ -630,7 +632,7 @@ function startParsingLogFile( logPath, startLogPosition ) {
             currentPosition = currentPosition === null ? fs.fstatSync( file ).size : currentPosition;
             function parseLogFile() {
 
-                if ( !fs.existsSync( logPath ) ) {
+                if ( !fs.existsSync( logPath ) || backupStarted ) {
                     logInfo( `LogWatcher > ${logPath} does not exist, waiting for new log file.` );
                     waitForLogFile( logPath );
                     return;
@@ -802,6 +804,16 @@ function LogWatcher(character, logPosition) {
          */
         ( event, data ) => {
             dpsMeterSettings = data ?? new DpsMeterSettings();
+        } );
+    
+    ipcRenderer.on( 'log:backup-started',
+        /**
+         * Handles the log:changed event.
+         * 
+         * @param {any} event The event args.
+         */
+        function ( event ) {
+            backupStarted = true;
         } );
 
     ipcRenderer.on( 'log:changed',
