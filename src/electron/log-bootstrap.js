@@ -399,12 +399,13 @@ class LogBootstrapper {
 
         if ( this.#logBackupWindow == null ) {
 
-            this.#logBackupWindow = startLogBackup( this.#filesForArchive.map( f => f.logFile ), this.#userPreferences.everquestInstallFolder, this.#isDev, null, 0 );
+            this.#logBackupWindow = startLogBackup( this.#filesForArchive.map( f => f.logFile ), this.#userPreferences.everquestInstallFolder, this.#isDev, null, this.#userPreferences.logMaintenanceHistory?.length ?? 0 );
 
             // Reset the archive files.
             this.#filesForArchive = [];
             
             this.#logBackupWindow.on( 'closed', () => {
+                this.#userPreferences.addLogMaintenanceHistory( new Date(), 'Backup by Size', true );
                 this.#logBackupWindow = null;
             } );
 
@@ -449,9 +450,11 @@ class LogBootstrapper {
                         // file actually exists.
                         if ( await FsUtilities.existsAsync( logWatchers[ characterId ].logFile ) ) {
                     
+                            logWatchers[ characterId ].window.webContents.send( 'log:backup-started' );
                             // First, let's rename the log file with the archive prefix.
                             const logFilePath = FsUtilities.Path.prependFilename( logWatchers[ characterId ].logFile, ArchiveFilePrefix );
                             await fsp.rename( logWatchers[ characterId ].logFile, logFilePath );
+                            await fsp.writeFile( logWatchers[ characterId ].logFile, '' );
                 
                             // Next, let's reset the current log file size.
                             log.info( `LogBootstrap > Log file renamed to: ${logFilePath}` );
@@ -459,7 +462,7 @@ class LogBootstrapper {
 
                             // Finally, add it to the list of files to archive.
                             logFiles.push( logFilePath );
-                    
+
                         }
                     }
                 }
@@ -555,11 +558,15 @@ class LogBootstrapper {
          * @param {number} fileSize The file size.
          */
         const backupFn = async ( fileSize ) => {
-            log.info( `LogBootstrap > Initializing backup for: ${chr.logFile}` );
+            log.info( `LogBootstrap > Initializing backup for: ${chr.logFile} by size.` );
 
+            if ( logWatchers[ characterId ].window ) {
+                logWatchers[ characterId ].window.webContents.send( 'log:backup-started' );
+            }
             // First, let's rename the log file with a timestamp.
-            const logFilePath = FsUtilities.Path.appendFilename( chr.logFile, FsUtilities.getFileTimestamp() );
+            const logFilePath = FsUtilities.Path.prependFilename( chr.logFile, ArchiveFilePrefix );
             await fsp.rename( chr.logFile, logFilePath );
+            await fsp.writeFile( chr.logFile, '' );
             
             log.info( `LogBootstrap > Log file renamed to: ${logFilePath}` );
             logWatchers[ characterId ].logSize = 0;
@@ -609,14 +616,6 @@ class LogBootstrapper {
 
                 }
                 
-            } else if ( enableLogFileMaintenanceBySize && _stats != null && this.#userPreferences.everquestInstallFolder?.length > 0 && _stats.size / ( 1024 * 1024 ) > this.#userPreferences.logMaintenanceRules?.maxLogFileSizeMb ) {
-                
-                // Clear the watch interval.
-                clearInterval( logWatchers[ characterId ].intervalId );
-
-                // Execute the backup function.
-                backupFn( _stats.size );
-
             } else if ( logWatchers[ characterId ].window != null ) {
 
                 // Increment the null attempt count.
@@ -631,7 +630,7 @@ class LogBootstrapper {
                             
                             // Notify the main window.
                             mainWindowRef.reference.webContents.send( 'log:character:deactivated', characterId );
-        
+
                             if ( logWatchers[ characterId ].window != null && !logWatchers[ characterId ].window.isDestroyed() ) {
                                 logWatchers[ characterId ].window.close();
                                 logWatchers[ characterId ].window = null;
@@ -646,12 +645,24 @@ class LogBootstrapper {
 
                 }
             }
+
+            // 2e-2 => 20KB
+            // this.#userPreferences.logMaintenanceRules?.maxLogFileSizeMb
+            if ( enableLogFileMaintenanceBySize && _stats != null && this.#userPreferences.everquestInstallFolder?.length > 0 && _stats.size / ( 1024 * 1024 ) > this.#userPreferences.logMaintenanceRules?.maxLogFileSizeMb ) {
+                
+                // Clear the watch interval.
+                clearInterval( logWatchers[ characterId ].intervalId );
+
+                // Execute the backup function.
+                backupFn( _stats.size );
+
+            }
             
             logWatchers[ characterId ].model = _chr;
             logWatchers[ characterId ].logSize = _stats == null ? 0 : _stats.size;
 
         }
-        
+
         logWatchers[ characterId ].intervalId = setInterval( () => checkFn().then( () => { } ), checkInterval );
 
     }
