@@ -17,7 +17,7 @@ const GameResources = require( './src/electron/data/game-resources' );
 const FilesDatabaseStore = require( './src/electron/data/files-database' );
 const GinaImporter = require( "./src/electron/gina-importer" );
 const CombatParser = require( "./src/electron/utilities/combat-parser" );
-const { IpcMessage, Progress, ScheduledTask, LogMaintenanceRules, Version, WinInfo } = require( "./src/electron/data/models/common" );
+const { IpcMessage, Progress, ScheduledTask, LogMaintenanceRules, Version, WinInfo, LogMaintenancePlanTypes } = require( "./src/electron/data/models/common" );
 const { LogFileLocation } = require( "./src/electron/data/log-file-location" );
 const VerifiedPlayersStore = require( "./src/electron/data/verified-players" );
 const cronParser = require( 'cron-parser' );
@@ -669,7 +669,7 @@ const executeScheduledLogMaintenance = async ( intervalDate, rules, cronSchedule
 }
 
 const scheduler = async () => {
-    if ( userPreferences.logMaintenanceRules?.enableLogFileMaintenance === true && userPreferences.logMaintenanceRules?.logSchedule != null && !logBootstrap.isBackupProcessing ) {
+    if ( userPreferences.logMaintenanceRules?.enableLogFileMaintenance === true && userPreferences.logMaintenanceRules?.logSchedule != null && userPreferences.logMaintenanceRules.maintenancePlan === LogMaintenancePlanTypes.BySchedule && !logBootstrap.isBackupProcessing ) {
         const logSchedule = Object.assign( new ScheduledTask(), userPreferences.logMaintenanceRules.logSchedule );
         const lastMaintained = userPreferences.lastMaintenanceCycleDate;
         var interval = cronParser.parseExpression( logSchedule.toCronSchedule() );
@@ -746,9 +746,6 @@ ipcMain.on( 'main:active-window:unsubscribe', ( event ) => {
 
 const checkActiveWindow = async () => {
     let data = await activeWindow();
-
-    // TODO: Remove this log in a few versions. It's just for debugging. (current v0.1.60)
-    log.info( '[main:active-window] Checking active window.', data );
 
     if ( nagProcessId == undefined && (data?.owner?.name === 'Electron' || data?.owner?.name === 'EQ Nag') && data?.title === 'Nag' ) {
         nagProcessId = data?.owner?.processId;
