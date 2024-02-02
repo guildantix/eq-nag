@@ -592,34 +592,6 @@ class UserPreferencesStore extends Store {
 
 
     /**
-     * Adds a new log maintenance history event.
-     * 
-     * @param {Date} timestamp The timestamp of the log.
-     * @param {string} logSchedule The event's cron schedule.
-     * @param {boolean} success True if the backup succeeded.
-     */
-    addLogMaintenanceHistory( timestamp, logSchedule, success ) {
-
-        let d = new LogMaintenanceHistory();
-        d.timestamp = timestamp;
-        d.logSchedule = logSchedule;
-        d.success = success;
-
-        this.#data.logMaintenanceHistory = this.#data.logMaintenanceHistory ? this.#data.logMaintenanceHistory : [];
-        this.#data.logMaintenanceHistory.push( d );
-        this.storeDataFile( this.#data );
-    }
-
-
-
-
-
-
-
-
-
-
-    /**
      * Executes handler when specific changes have been made.
      * 
      * @param {() => void} fn Handler method executed after changes have been made.
