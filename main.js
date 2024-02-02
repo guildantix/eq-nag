@@ -746,9 +746,6 @@ ipcMain.on( 'main:active-window:unsubscribe', ( event ) => {
 
 const checkActiveWindow = async () => {
     let data = await activeWindow();
-    // console.log( '!!!!! active window', data );
-    // // data.owner.name === 'eqgame.exe'
-    // let isEq = data?.owner?.name === 'eqgame.exe';
 
     // TODO: Remove this log in a few versions. It's just for debugging. (current v0.1.60)
     log.info( '[main:active-window] Checking active window.', data );
