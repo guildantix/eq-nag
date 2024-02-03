@@ -62,10 +62,18 @@ class FilesDatabaseStore extends Store {
      */
     attachIpcEvents( mainWindowRef ) {
 
-        ipcMain.on( 'audio-file:save', ( event, file ) => {
-            let fileId = this.storeFile( file.buffer, file.name );
-            event.sender.send( 'audio-file:save', fileId );
-        } );
+        ipcMain.on( 'audio-file:save',
+            /**
+             * Saves the posted file to the store and returns the id of the file.
+             * 
+             * @param {import('electron').IpcMainEvent} event 
+             * @param {{name: string, arrayBuffer: ArrayBuffer}} file 
+             */
+            ( event, file ) => {
+                var buffer = Buffer.from( file.arrayBuffer );
+                let fileId = this.storeFile( buffer, file.name );
+                event.sender.send( 'audio-file:save', fileId );
+            } );
 
         ipcMain.on( 'audio-file:import', ( event, filename ) => {
             let fileId = this.storeFileByName( filename );

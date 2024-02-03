@@ -1668,9 +1668,7 @@ export class IpcService {
             let reader = new FileReader();
             reader.onload = () => {
                 if ( reader.readyState === 2 ) {
-                    // TODO: Test to make sure upgrading electron didn't break js file handling.
-                    let buffer = Buffer.from( <any>reader.result );
-                    window.api.ipc.send( 'audio-file:save', { name: name, buffer: buffer } );
+                    window.api.ipc.send( 'audio-file:save', { name: name, arrayBuffer: reader.result } );
                 }
             };
             reader.readAsArrayBuffer( file );
