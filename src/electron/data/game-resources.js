@@ -25,6 +25,13 @@ class GameResources {
      */
     attachIpcEvents( mainWindowRef, userPreferences ) {
 
+        ipcMain.on( 'game-resources:clear:eq:icons', ( event ) => {
+            let storePath = path.join( userDataPath, 'eq-spell-icons.json' );
+            if ( fs.existsSync( storePath ) ) {
+                fs.unlinkSync( storePath );
+            }
+        } );
+
         ipcMain.on( 'game-resources:get:eq:icons', ( event, character ) => {
             try {
                 let spellIcons = this.getEqSpellIcons( userPreferences.everquestInstallFolder );
@@ -69,6 +76,11 @@ class GameResources {
                 for ( let i = 0; i < eqSpellPages; i++ ) {
                     let padded = i < 9 ? `0${i + 1}` : ( i + 1 ).toString();
                     let source = path.join( eqInstallFolder, 'uifiles', 'default', `spells${padded}.tga` );
+
+                    if ( !fs.existsSync( source ) ) {
+                        // If the file does not exist, then we can't continue. This will/can happen with TAKp.
+                        break;
+                    }
 
                     // First we need to convert the images into png, then crop 
                     // the image into sprites.

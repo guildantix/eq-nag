@@ -43,6 +43,37 @@ export class SelectIconDialogComponent implements OnInit {
         this.loadData();
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Resets the icon folder by clearing the current icons and showing the 
+     * file selector to allow the user to select the EverQuest executable.
+     */
+    public resetIconFolder(): void {
+        this.ipcService.clearEqSpellIcons();
+        this.showFileSelector();
+    }
+
+
+
+
+
+
+
+
+
+    
+    /**
+     * Loads the spell icons from the EverQuest folder.  If there is an error, 
+     * the user will be requested to select their EQ folder.
+     */
     public loadData(): void {
 
         this.ipcService
@@ -65,16 +96,56 @@ export class SelectIconDialogComponent implements OnInit {
 
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Selects the icon at the given index and closes the dialog.
+     * 
+     * @param index The index of the icon to select.
+     */
     public selectIcon( index: number ): void {
         this.dialogRef.close( this.spellIcons[ this.paginator.pageIndex * this.paginator.pageSize + index ] );
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Shows the file selector to allow the user to select their EverQuest 
+     * executable.
+     */
     showFileSelector() {
         this.fileSelector.nativeElement.click();
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Handles the file selected event from the file selector.
+     * 
+     * @param e The browser event that contains the selected file.
+     */
     fileSelected( e: any ) {
-        console.log( 'selected', this.fileSelector.nativeElement.files[ 0 ].path );
         if ( this.fileSelector.nativeElement.files?.length > 0 ) {
             let eqGamePath: string = this.fileSelector.nativeElement.files[ 0 ].path;
             if ( eqGamePath.indexOf( 'eqgame.exe' ) < 0 ) {
@@ -89,4 +160,14 @@ export class SelectIconDialogComponent implements OnInit {
             }
         }
     }
+
+
+
+
+
+
+
+
+
+
 }

@@ -1435,6 +1435,10 @@ export class IpcService {
         return obs;
     }
 
+    public clearEqSpellIcons(): void {
+        window.api.ipc.send( 'game-resources:clear:eq:icons' );
+    }
+
     public getEqSpellIcons(): Observable<string[]> {
         let obs: Observable<string[]> = new Observable<string[]>( ( observer: Observer<string[]> ) => {
             
