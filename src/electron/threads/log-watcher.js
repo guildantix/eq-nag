@@ -3668,11 +3668,11 @@ function calculateBeneficialCastingMilliseconds( castTime, timerDuration, trigge
     let wornFocus = characterModel.beneficialCastingSpeedFocusPercent ?? 0;
     let aaFocus = characterModel.beneficialCastingSpeedFocusAaPercent ?? 0;
     let durationLimit = characterModel.beneficialCastingSpeedFocusAaDurationLimit > 0 ? characterModel.beneficialCastingSpeedFocusAaDurationLimit : 6000;
-    let percent = timerDuration >= durationLimit ? wornFocus + aaFocus : wornFocus;
+    let percent = timerDuration * 1000 >= durationLimit ? wornFocus + aaFocus : wornFocus;
     let charClassData = _.find( triggerClasses, ccl => ccl.class === charModel.class );
 
-    if ( charClassData != null && charClassData.level > characterModel.extendedBeneficialFocusDecayLevel ) {
-        let decayPercent = ( charClassData.level - characterModel.extendedBeneficialFocusDecayLevel ) * 5;
+    if ( charClassData != null && charClassData.level > characterModel.beneficialCastingSpeedFocusDecayLevel ) {
+        let decayPercent = ( charClassData.level - characterModel.beneficialCastingSpeedFocusDecayLevel ) * 5;
         percent = percent * ( 1 - decayPercent / 100 );
     }
 
