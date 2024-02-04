@@ -12,9 +12,9 @@
                 <mat-checkbox [(ngModel)]="node.selected" (ngModelChange)="onTriggerSelectChange()"></mat-checkbox>
                 <div class="tree-click-target" title="{{node.name}}" (click)="toggleSelect(node)" style="width: 100%;"><span>{{node.name}}</span></div>
                 <mat-icon *ngIf="!node.exists" class="material-icons-outlined color-green hover-hide" matTooltip="This trigger will be installed.">cloud_download</mat-icon>
-                <mat-icon *ngIf="node.update" class="material-icons-outlined color-orange-dark" matTooltip="This trigger will be updated.">cloud_download</mat-icon>
-                <mat-icon *ngIf="node.overwrite" class="material-icons-outlined color-red" matTooltip="This trigger will be overwritten.">cloud_download</mat-icon>
-                <mat-icon *ngIf="node.duplicate" class="material-icons-outlined color-red" matTooltip="This trigger will be overwritten.">cloud_off</mat-icon>
+                <mat-icon *ngIf="node.update && overwriteExistingTriggers" class="material-icons-outlined color-orange-dark" matTooltip="This trigger will be updated.">cloud_download</mat-icon>
+                <mat-icon *ngIf="node.overwrite && overwriteExistingTriggers" class="material-icons-outlined color-red" matTooltip="This trigger will be overwritten.">cloud_download</mat-icon>
+                <mat-icon *ngIf="node.duplicate || (node.update && !overwriteExistingTriggers)" class="material-icons-outlined color-red" matTooltip="This trigger will be duplicated.">cloud_off</mat-icon>
             </mat-tree-node>
     
             <!-- This is the tree node template for expandable/folder nodes -->
@@ -34,10 +34,10 @@
                 <mat-icon *ngIf="node.overwrite" class="material-icons-outlined color-red" matTooltip="This contains triggers that will be overwritten.">report_problem</mat-icon>
                 
                 <!-- contains triggers with possible duplicates -->
-                <mat-icon *ngIf="!node.overwrite && node.duplicate" class="material-icons-outlined color-orange-dark" matTooltip="This folder contains triggers with possible duplicates.">report_problem</mat-icon>
+                <mat-icon *ngIf="(!node.overwrite && node.duplicate) || (node.update && !overwriteExistingTriggers)" class="material-icons-outlined color-orange-dark" matTooltip="This folder contains triggers with possible duplicates.">report_problem</mat-icon>
                 
                 <!-- contains triggers that will be updated -->
-                <mat-icon *ngIf="!node.overwrite && !node.duplicate && node.update" class="material-icons-outlined color-orange-dark" matTooltip="This folder contains triggers that will be updated.">report</mat-icon>
+                <mat-icon *ngIf="!node.overwrite && !node.duplicate && node.update && overwriteExistingTriggers" class="material-icons-outlined color-orange-dark" matTooltip="This folder contains triggers that will be updated.">report</mat-icon>
 
             </mat-tree-node>
         </mat-tree>
@@ -50,6 +50,7 @@
     <button mat-button [mat-dialog-close]="null" class="t-confirm-no" color="warn">Cancel</button>
     <button mat-button (click)="receiveSelectedTriggers()" class="t-confirm-yes" color="accent">Import</button>
     <span style="flex: 1 1 auto;"></span>
+    <mat-checkbox style="font-size: 14px;" [(ngModel)]="overwriteExistingTriggers" name="overwriteExistingTriggers" style="margin-right: 15px;">Overwrite existing triggers.</mat-checkbox>
     <mat-checkbox style="font-size: 14px;" [(ngModel)]="stageNewTriggers" name="stageNewTriggers">Stage new triggers.</mat-checkbox>
     <button mat-icon-button class="color-blue" style="font-size: 14px;" (click)="showStagingFolderHelp()"><mat-icon>help_outline</mat-icon></button>
 

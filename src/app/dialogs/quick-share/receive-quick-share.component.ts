@@ -76,6 +76,26 @@ export class ReceiveQuickShareDialogComponent implements OnInit {
     public dataSource = new MatTreeFlatDataSource( this.treeControl, this.treeFlattener );
     public hasChild = ( _: number, node: QuickShareTreeNode ) => node.expandable;
     public stageNewTriggers: boolean = false;
+    private _shownOverwriteWarning: boolean = false;
+    private _overwriteExistingTriggers: boolean = true;
+    public get overwriteExistingTriggers(): boolean {
+        return this._overwriteExistingTriggers;
+    }
+    public set overwriteExistingTriggers( value: boolean ) {
+        this._overwriteExistingTriggers = value;
+
+        if ( !value && !this._shownOverwriteWarning ) {
+            this.dialog.open( NotificationDialogComponent, {
+                width: '675px',
+                data: {
+                    title: 'Overwrite Warning',
+                    message: [ 'Disabling this option will not overwrite any existing triggers.','This means that if a trigger with the same id already exists, a new trigger will be created.', 'This may result in multiple duplicate actions (ex: two identical triggers, two speak phrases that say the same thing).' ],
+                    notificationType: NotificationTypes.Warning,
+                },
+                panelClass: 'app-dialog',
+            } ).afterClosed().subscribe( () => this._shownOverwriteWarning = true );
+        }
+    }
 
     private allFolders: PackageFolder[] = [];
     private allTriggers: PackageTrigger[] = [];
@@ -91,6 +111,10 @@ export class ReceiveQuickShareDialogComponent implements OnInit {
     private foldersWithUpdates: string[] = [];
     /** Keeps track of the folders, whose descendants contain an overwritten trigger. */
     private foldersWithOverwrites: string[] = [];
+    /** Keeps track of the original folder ids for each package trigger. */
+    private packageTriggerOriginalFolderIds: Record<string, string> = {};
+    private _realTriggers: TriggerModel[] = [];
+    private _realFolders: TriggerFolder[] = [];
 
     constructor(
         public dialogRef: MatDialogRef<ReceiveQuickShareDialogComponent, boolean>,
@@ -106,6 +130,9 @@ export class ReceiveQuickShareDialogComponent implements OnInit {
             folders: this.ipcService.getTriggerFolders(),
             triggers: this.ipcService.getTriggers(),
         } ).subscribe( result => {
+
+            this._realTriggers = result.triggers;
+            this._realFolders = result.folders;
             
             let data: QuickShareTreeObject[] = [];
             this.data.quickShares.forEach( quickShare => {
@@ -274,6 +301,8 @@ export class ReceiveQuickShareDialogComponent implements OnInit {
      */
     private processExistingTriggers( realTriggers: TriggerModel[], realFolders: TriggerFolder[] ) {
         this.allTriggers.forEach( qst => {
+            this.packageTriggerOriginalFolderIds[ qst.triggerId ] = qst.folderId;
+
             // Find the index of the trigger that is already in my library.
             let i = realTriggers.findIndex( f => f.triggerId === qst.triggerId );
 
@@ -564,7 +593,35 @@ export class ReceiveQuickShareDialogComponent implements OnInit {
                 // Remove from the model triggers and folders that are left un-selected.
                 quickShare.model.triggers = quickShare.model.triggers.filter( f => importTriggerIds.indexOf( f.triggerId ) > -1 );
                 quickShare.model.folders = quickShare.model.folders.filter( f => importFolderIds.indexOf( f.folderId ) > -1 );
-                
+
+                // If the user opts to not overwrite existing triggers, then triggers that already exist in the database will be duplicated.
+                if ( !this.overwriteExistingTriggers ) {
+                    for ( let i = 0; i < quickShare.model.triggers.length; i++ ) {
+                        let packageTrigger = quickShare.model.triggers[ i ];
+                        let existingTrigger = this._realTriggers.find( f => f.triggerId === packageTrigger.triggerId );
+
+                        if ( existingTrigger ) {
+                            let name = `${packageTrigger.name} (Copy)`;
+                            let folderId = existingTrigger.folderId;
+
+                            let copyCount = 1;
+                            while ( existingTrigger ) {
+                                existingTrigger = this._realTriggers.find( f => f.name === name );
+                                if ( existingTrigger ) {
+                                    name = `${packageTrigger.name} (Copy ${++copyCount})`;
+                                }
+                            }
+    
+                            let trigger = PackageTrigger.ToTrigger( packageTrigger );
+                            let newTrigger = TriggerModel.duplicateTrigger( trigger, name );
+
+                            quickShare.model.triggers[ i ] = PackageTrigger.FromTrigger( newTrigger );
+                            quickShare.model.triggers[ i ].folderId = folderId;
+                        }
+                    
+                    }
+                }
+
                 if ( this.stageNewTriggers ) {
                     this.stageTriggers( quickShare, stagedId );
                 }

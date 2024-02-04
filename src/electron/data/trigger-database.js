@@ -1888,7 +1888,7 @@ class TriggerDatabaseStore extends Store {
         } else {
             trigger = new Trigger();
             trigger.triggerId = packageTrigger.triggerId;
-            trigger.folderId = folderMap[ packageTrigger.folderId ];
+            trigger.folderId = folderMap[ packageTrigger.folderId ] ?? ( this.folderExists( packageTrigger.folderId, this.#data.folders ) ? packageTrigger.folderId : undefined );
             trigger.packageId = packageId;
             trigger.enabled = true;
 
@@ -1910,6 +1910,25 @@ class TriggerDatabaseStore extends Store {
         trigger.useCooldown = packageTrigger.useCooldown;
         trigger.cooldownDuration = packageTrigger.cooldownDuration;
 
+    }
+
+
+
+
+
+
+
+
+
+    
+    /**
+     * Returns true if the given folder exists in the list of folders.  This method searches recursively.
+     * 
+     * @param {string} folderId The id of the folder.
+     * @param {TriggerFolder[]} folders The list of folders to search.
+     */
+    folderExists( folderId, folders ) {
+        return _.some( folders, f => f.folderId === folderId ) || _.some( folders, f => this.folderExists( folderId, f.children ) );
     }
 
 
