@@ -152,7 +152,7 @@ class WindowManager {
                 parent: mainWindowRef.reference,
                 modal: false,
                 show: false,
-                width: 700,
+                width: 732,
                 height: 870,
                 frame: false,
                 webPreferences: {
@@ -183,7 +183,7 @@ class WindowManager {
                 parent: mainWindowRef.reference,
                 modal: false,
                 show: false,
-                width: 700,
+                width: 732,
                 height: 870,
                 frame: false,
                 webPreferences: {
@@ -212,8 +212,8 @@ class WindowManager {
                 bwin.setSize( size.width, size.height );
                 bwin.setPosition( ( screen.getPrimaryDisplay().workAreaSize.width / 2 ) - ( size.width / 2 ), ( screen.getPrimaryDisplay().workAreaSize.height / 2 ) - ( size.height / 2 ) );
             } else {
-                bwin.setSize( 700, 870 );
-                bwin.setPosition( ( screen.getPrimaryDisplay().workAreaSize.width / 2 ) - ( 700 / 2 ), ( screen.getPrimaryDisplay().workAreaSize.height / 2 ) - ( 870 / 2 ) );
+                bwin.setSize( 732, 870 );
+                bwin.setPosition( ( screen.getPrimaryDisplay().workAreaSize.width / 2 ) - ( 732 / 2 ), ( screen.getPrimaryDisplay().workAreaSize.height / 2 ) - ( 870 / 2 ) );
             }
 
         } );
@@ -286,7 +286,7 @@ class WindowManager {
                 parent: mainWindowRef.reference,
                 modal: false,
                 show: false,
-                width: 700,
+                width: 732,
                 height: 870,
                 frame: false,
                 x: posData == null ? null : posData.x,
@@ -1521,7 +1521,7 @@ class WindowManager {
                 parent: this.#mainWindow.reference,
                 modal: false,
                 show: false,
-                width: 700,
+                width: 732,
                 height: 870,
                 frame: false,
                 webPreferences: {
