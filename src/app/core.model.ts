@@ -550,6 +550,14 @@ export class FctStylesModel {
 
 }
 
+export class TextOverflowModel {
+
+    public whiteSpace: 'nowrap' | 'normal' = 'nowrap';
+    public overflow: 'hidden'|'visible' = 'hidden';
+    public textOverflow: 'clip' | 'ellipsis' = 'clip';
+
+}
+
 export class OverlayWindowModel {
 
     public overlayId: string = null;
@@ -578,6 +586,7 @@ export class OverlayWindowModel {
     public displayId: number;
     public displayBounds: Electron.Rectangle;
     
+    public textOverflow: TextOverflowModel = new TextOverflowModel();
     public showTextBorder: boolean = false;
     public textBorderColor: string = '#000000';
     public textBorderIntensity: number = 1;
