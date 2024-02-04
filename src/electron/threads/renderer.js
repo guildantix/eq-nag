@@ -1366,7 +1366,39 @@ function updateOverlay( overlayId, model ) {
     titleContainer.style.display = '';
 
     if ( model.overlayType !== 'FCT' ) {
-        contentArea.classList.add( 'no-overflow' );
+
+        if ( model.textOverflow != null ) {
+
+            contentArea.classList.remove( 'white-space-nowrap' );
+            contentArea.classList.remove( 'white-space-normal' );
+            contentArea.classList.remove( 'overflow-hidden' );
+            contentArea.classList.remove( 'overflow-visible' );
+            contentArea.classList.remove( 'text-overflow-clip' );
+            contentArea.classList.remove( 'text-overflow-ellipsis' );
+
+            if ( model.textOverflow.overflow === 'hidden' ) {
+                contentArea.classList.add( 'no-overflow' );
+                contentArea.classList.add( 'overflow-hidden' );
+            } else if ( model.textOverflow.overflow === 'visible' ) {
+                contentArea.classList.remove( 'no-overflow' );
+                contentArea.classList.add( 'overflow-visible' );
+            }
+
+            if ( model.textOverflow.whiteSpace === 'nowrap' ) {
+                contentArea.classList.add( 'white-space-nowrap' );
+            } else if ( model.textOverflow.whiteSpace === 'normal' ) {
+                contentArea.classList.add( 'white-space-normal' );
+            }
+
+            if ( model.textOverflow.textOverflow === 'clip' ) {
+                contentArea.classList.add( 'text-overflow-clip' );
+            } else if ( model.textOverflow.textOverflow === 'ellipsis' ) {
+                contentArea.classList.add( 'text-overflow-ellipsis' );
+            }
+
+        } else {
+            contentArea.classList.add( 'no-overflow' );
+        }
 
         // Content area display styles, the defaults.
         contentArea.style.fontFamily = `"${model.fontFamily}"`;
@@ -1375,7 +1407,19 @@ function updateOverlay( overlayId, model ) {
         contentArea.style.fontWeight = model.fontWeight > 0 ? model.fontWeight : 300;
     
         if ( model.overlayType === 'Alert' ) {
-            contentArea.style.textAlign = model.horizontalAlignment;
+            
+            delete contentArea.style.textAlign;
+
+            if ( model.horizontalAlignment === 'left' ) {
+                contentArea.style.alignItems = 'flex-start';
+            } else if ( model.horizontalAlignment === 'center' ) {
+                contentArea.style.alignItems = 'center';
+            } else if ( model.horizontalAlignment === 'right' ) {
+                contentArea.style.alignItems = 'flex-end';
+            } else {
+                contentArea.style.textAlign = model.horizontalAlignment;
+            }
+            
             if ( model.verticalAlignment === 'bottom' ) {
                 contentArea.style.display = 'flex';
                 contentArea.style.flexDirection = 'column';
@@ -1385,9 +1429,9 @@ function updateOverlay( overlayId, model ) {
                 contentArea.style.flexDirection = 'column';
                 contentArea.style.justifyContent = 'center';
             } else {
-                contentArea.style.display = 'block';
-                contentArea.style.flexDirection = undefined;
-                contentArea.style.justifyContent = undefined;
+                contentArea.style.display = 'flex';
+                contentArea.style.flexDirection = 'column';
+                contentArea.style.justifyContent = 'flex-start';
             }
         }
     
