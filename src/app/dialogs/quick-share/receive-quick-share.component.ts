@@ -601,17 +601,22 @@ export class ReceiveQuickShareDialogComponent implements OnInit {
                         let existingTrigger = this._realTriggers.find( f => f.triggerId === packageTrigger.triggerId );
 
                         if ( existingTrigger ) {
-                            let name = `${packageTrigger.name} (Copy)`;
+                            let name = packageTrigger.name;
                             let folderId = existingTrigger.folderId;
 
-                            let copyCount = 1;
-                            while ( existingTrigger ) {
-                                existingTrigger = this._realTriggers.find( f => f.name === name );
-                                if ( existingTrigger ) {
-                                    name = `${packageTrigger.name} (Copy ${++copyCount})`;
+                            let matchedTriggerName = this._realTriggers.some( f => f.name === name );
+                            if ( matchedTriggerName ) {
+                                name = `${packageTrigger.name} (Copy)`;
+
+                                let copyCount = 1;
+                                while ( matchedTriggerName ) {
+                                    matchedTriggerName = this._realTriggers.some( f => f.name === name );
+                                    if ( matchedTriggerName ) {
+                                        name = `${packageTrigger.name} (Copy ${++copyCount})`;
+                                    }
                                 }
+
                             }
-    
                             let trigger = PackageTrigger.ToTrigger( packageTrigger );
                             let newTrigger = TriggerModel.duplicateTrigger( trigger, name );
 
