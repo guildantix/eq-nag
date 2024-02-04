@@ -98,7 +98,7 @@
                         <!-- <div class="f-row">
                             <div class="f-sm-4 al-center" style="text-align: left !important;"><mat-label>Alignment</mat-label></div>
                             <div class="f-sm-4 al-center" style="text-align: left !important;">
-                                <mat-radio-group [(ngModel)]="model.horizontalAlignment" name="horizontalAlignment" (selectionChange)="broadcastModel()" class="horizontal">
+                                <mat-radio-group [(ngModel)]="model.horizontalAlignment" name="horizontalAlignment" (ngModelChange)="broadcastModel()" class="horizontal">
                                     <mat-radio-button value="left"><mat-icon class="material-icons-outlined">format_align_left</mat-icon></mat-radio-button>
                                     <mat-radio-button value="center"><mat-icon class="material-icons-outlined">format_align_center</mat-icon></mat-radio-button>
                                     <mat-radio-button value="right"><mat-icon class="material-icons-outlined">format_align_right</mat-icon></mat-radio-button>
@@ -109,7 +109,7 @@
                         <div class="f-row">
                             <div class="f-sm-4 al-center" style="text-align: left !important;"><mat-label>Horizontal Alignment</mat-label></div>
                             <div class="f-sm-4 al-center" style="text-align: left !important;">
-                                <mat-radio-group [(ngModel)]="model.horizontalAlignment" name="horizontalAlignment" (selectionChange)="broadcastModel()" class="horizontal">
+                                <mat-radio-group [(ngModel)]="model.horizontalAlignment" name="horizontalAlignment" (ngModelChange)="broadcastModel()" class="horizontal">
                                     <mat-radio-button value="left"><mat-icon class="material-icons-outlined">format_align_left</mat-icon></mat-radio-button>
                                     <mat-radio-button value="center"><mat-icon class="material-icons-outlined">format_align_center</mat-icon></mat-radio-button>
                                     <mat-radio-button value="right"><mat-icon class="material-icons-outlined">format_align_right</mat-icon></mat-radio-button>
@@ -117,10 +117,10 @@
                             </div>
                             <div class="f-sm-4 al-center"></div>
                         </div>
-                        <div class="f-row" style="margin-bottom: 60px;">
+                        <div class="f-row">
                             <div class="f-sm-4 al-center" style="text-align: left !important;"><mat-label>Vertical Alignment</mat-label></div>
                             <div class="f-sm-4 al-center" style="text-align: left !important;">
-                                <mat-radio-group [(ngModel)]="model.verticalAlignment" name="verticalAlignment" (selectionChange)="broadcastModel()" class="horizontal">
+                                <mat-radio-group [(ngModel)]="model.verticalAlignment" name="verticalAlignment" (ngModelChange)="broadcastModel()" class="horizontal">
                                     <mat-radio-button value="top"><mat-icon class="material-icons-outlined">vertical_align_top</mat-icon></mat-radio-button>
                                     <mat-radio-button value="middle"><mat-icon class="material-icons-outlined">vertical_align_center</mat-icon></mat-radio-button>
                                     <mat-radio-button value="bottom"><mat-icon class="material-icons-outlined">vertical_align_bottom</mat-icon></mat-radio-button>
@@ -128,6 +128,40 @@
                             </div>
                             <div class="f-sm-4 al-center"></div>
                         </div>
+                        
+                        <div class="f-row">
+                            <div class="f-sm-4 al-center" style="text-align: left !important;"><mat-label>White Space</mat-label></div>
+                            <div class="f-sm-4 al-center" style="text-align: left !important;">
+                                <mat-radio-group [(ngModel)]="model.textOverflow.whiteSpace" name="whiteSpace" (ngModelChange)="broadcastModel()" class="horizontal">
+                                    <mat-radio-button value="nowrap"><mat-icon class="material-icons-outlined">horizontal_rule</mat-icon></mat-radio-button>
+                                    <mat-radio-button value="normal"><mat-icon class="material-icons-outlined">wrap_text</mat-icon></mat-radio-button>
+                                </mat-radio-group>
+                            </div>
+                            <div class="f-sm-4 al-center"></div>
+                        </div>
+
+                        <div class="f-row">
+                            <div class="f-sm-4 al-center" style="text-align: left !important;"><mat-label>Overflow</mat-label></div>
+                            <div class="f-sm-4 al-center" style="text-align: left !important;">
+                                <mat-radio-group [(ngModel)]="model.textOverflow.overflow" name="overflow" (ngModelChange)="broadcastModel()" class="horizontal">
+                                    <mat-radio-button value="hidden"><mat-icon class="material-icons-outlined">visibility_off</mat-icon></mat-radio-button>
+                                    <mat-radio-button value="visible"><mat-icon class="material-icons-outlined">visibility</mat-icon></mat-radio-button>
+                                </mat-radio-group>
+                            </div>
+                            <div class="f-sm-4 al-center"></div>
+                        </div>
+
+                        <div class="f-row" style="margin-bottom: 60px;">
+                            <div class="f-sm-4 al-center" style="text-align: left !important;"><mat-label>Overflow Style</mat-label></div>
+                            <div class="f-sm-4 al-center" style="text-align: left !important;">
+                                <mat-radio-group [(ngModel)]="model.textOverflow.textOverflow" name="textOverflow" (ngModelChange)="broadcastModel()" class="horizontal">
+                                    <mat-radio-button value="clip" title="Clip text"><mat-icon class="material-icons-outlined">content_cut</mat-icon></mat-radio-button>
+                                    <mat-radio-button value="ellipsis" title="End with ellipsis (ex: testin...)"><mat-icon class="material-icons-outlined">more_horiz</mat-icon></mat-radio-button>
+                                </mat-radio-group>
+                            </div>
+                            <div class="f-sm-4 al-center"></div>
+                        </div>
+
                         <div class="f-row">
                             <div class="f-sm-4 al-center"><mat-checkbox [(ngModel)]="model.showTextBorder" name="cbxShowTextBorder" (change)="broadcastModel()">Text Border</mat-checkbox></div>
                             <div class="f-sm-4 al-center"><mat-checkbox [(ngModel)]="model.showTextGlow" name="cbxShowTextBorder" (change)="broadcastModel()">Text Glow</mat-checkbox></div>
