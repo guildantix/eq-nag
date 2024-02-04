@@ -1,3 +1,24 @@
 table {
     width: 100%;
 }
+.table-container {
+    display: flex;
+    flex-flow: row wrap;
+    justify-content: space-between;
+
+    table {
+        min-width: 100px;
+        flex-grow: 4;
+        width: unset;
+    }
+}
+
+@media only screen and (max-width: 731px) {
+    :host ::ng-deep table {
+        width: 100% !important;
+
+        &.right-table thead {
+            display: none;
+        }
+    }
+}
