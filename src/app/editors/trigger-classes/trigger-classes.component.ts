@@ -51,14 +51,49 @@ export class TriggerClassesComponent implements OnInit {
 
     ngOnInit() { }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Emits the change event for the class levels.
+     */
     public emitChange() {
         this.tableData.forEach( f => f.level = f.selected ? f.level : null ); // clear out levels for unselected classes
         this.classLevelsChange.emit( this.classLevels );
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Toggles the selected state of the class level.
+     * 
+     * @param classLevel The selectable class level to toggle.
+     */
     public toggleSelected( classLevel: SelectableClassLevel ): void {
         classLevel.selected = !classLevel.selected;
         this.emitChange();
     }
+
+
+
+
+
+
+
+
+
 
 }
