@@ -365,6 +365,44 @@ export class TriggerModel {
     public enabled: boolean = true;
     public sequentialRestartBehavior: string = 'none';
     
+    /**
+     * Duplicates the given trigger with the given name.
+     * 
+     * @returns Returns a new trigger with the same properties as the given trigger, but with a new name and new ids.
+     * 
+     * @param trigger The trigger to duplicate.
+     * @param newName The new name for the trigger.
+     */
+    public static duplicateTrigger( trigger: TriggerModel, newName: string ): TriggerModel {
+        
+        let newTrigger = _.cloneDeep( trigger );
+        newTrigger.name = newName;
+
+        // Generate new ids.
+        newTrigger.triggerId = nagId();
+        newTrigger.actions.forEach( action => TriggerAction.resetActionIds( action ) );
+        newTrigger.conditions?.forEach( condition => condition.conditionId = nagId() );
+        newTrigger.packageId = undefined;
+
+        let phraseIdMap: Record<string, string> = {};
+
+        // Generate new phrase ids, and update the map.
+        newTrigger.capturePhrases?.forEach( phrase => {
+            let newId = nagId();
+            phraseIdMap[ phrase.phraseId ] = newId;
+            phrase.phraseId = newId;
+        } );
+
+        newTrigger.actions.forEach( action => {
+            // Update the action trigger phrase ids to the new ones.
+            for ( let i = 0; i < action.phrases.length; i++ ) {
+                action.phrases[ i ] = phraseIdMap[ action.phrases[ i ] ];
+            }
+        } );
+
+        return newTrigger;
+    }
+
 }
 
 export enum TriggerConditionTypes {

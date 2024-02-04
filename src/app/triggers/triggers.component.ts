@@ -690,30 +690,8 @@ export class TriggersComponent implements OnInit {
                 `${trigger.name} (Copy)` )
             .subscribe( newName => {
                 if ( newName ) {
-                    let newTrigger = _.cloneDeep( trigger );
-                    newTrigger.name = newName;
-
-                    // Generate new ids.
-                    newTrigger.triggerId = nanoid();
-                    newTrigger.actions.forEach( action => TriggerAction.resetActionIds( action ) );
-                    newTrigger.conditions?.forEach( condition => condition.conditionId = nanoid() );
-                    newTrigger.packageId = undefined;
-
-                    let phraseIdMap: Record<string, string> = {};
-
-                    // Generate new phrase ids, and update the map.
-                    newTrigger.capturePhrases?.forEach( phrase => {
-                        let newId = nanoid();
-                        phraseIdMap[ phrase.phraseId ] = newId;
-                        phrase.phraseId = newId;
-                    } );
-
-                    newTrigger.actions.forEach( action => {
-                        // Update the action trigger phrase ids to the new ones.
-                        for ( let i = 0; i < action.phrases.length; i++ ) {
-                            action.phrases[ i ] = phraseIdMap[ action.phrases[ i ] ];
-                        }
-                    } );
+                    
+                    let newTrigger = TriggerModel.duplicateTrigger( trigger, newName );
 
                     this.ipcService.createNewTrigger( newTrigger ).subscribe( created => {
                         if ( created ) {
