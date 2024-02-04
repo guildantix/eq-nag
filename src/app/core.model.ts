@@ -335,6 +335,10 @@ export class CharacterClassLevel {
     public level: number;
 }
 
+export class SelectableClassLevel extends CharacterClassLevel {
+    public selected: boolean;
+}
+
 export class BasicError {
     
     public errorCode: string;
