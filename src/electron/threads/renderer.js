@@ -1379,25 +1379,32 @@ function updateOverlay( overlayId, model ) {
             if ( model.textOverflow.overflow === 'hidden' ) {
                 contentArea.classList.add( 'no-overflow' );
                 contentArea.classList.add( 'overflow-hidden' );
+
             } else if ( model.textOverflow.overflow === 'visible' ) {
                 contentArea.classList.remove( 'no-overflow' );
                 contentArea.classList.add( 'overflow-visible' );
+
             }
 
             if ( model.textOverflow.whiteSpace === 'nowrap' ) {
                 contentArea.classList.add( 'white-space-nowrap' );
+
             } else if ( model.textOverflow.whiteSpace === 'normal' ) {
                 contentArea.classList.add( 'white-space-normal' );
+
             }
 
             if ( model.textOverflow.textOverflow === 'clip' ) {
                 contentArea.classList.add( 'text-overflow-clip' );
+
             } else if ( model.textOverflow.textOverflow === 'ellipsis' ) {
                 contentArea.classList.add( 'text-overflow-ellipsis' );
+
             }
 
         } else {
             contentArea.classList.add( 'no-overflow' );
+
         }
 
         // Content area display styles, the defaults.
@@ -1408,16 +1415,22 @@ function updateOverlay( overlayId, model ) {
     
         if ( model.overlayType === 'Alert' ) {
             
-            delete contentArea.style.textAlign;
+            contentArea.classList.remove( 'align-left' );
+            contentArea.classList.remove( 'align-center' );
+            contentArea.classList.remove( 'align-right' );
 
             if ( model.horizontalAlignment === 'left' ) {
-                contentArea.style.alignItems = 'flex-start';
+                contentArea.classList.add( 'align-left' );
+
             } else if ( model.horizontalAlignment === 'center' ) {
-                contentArea.style.alignItems = 'center';
+                contentArea.classList.add( 'align-center' );
+
             } else if ( model.horizontalAlignment === 'right' ) {
-                contentArea.style.alignItems = 'flex-end';
+                contentArea.classList.add( 'align-right' );
+
             } else {
                 contentArea.style.textAlign = model.horizontalAlignment;
+                
             }
             
             if ( model.verticalAlignment === 'bottom' ) {
