@@ -450,7 +450,7 @@ class LogBootstrapper {
                         // file actually exists.
                         if ( await FsUtilities.existsAsync( logWatchers[ characterId ].logFile ) ) {
                     
-                            logWatchers[ characterId ].window.webContents.send( 'log:backup-started' );
+                            logWatchers[ characterId ].window?.webContents.send( 'log:backup-started' );
                             // First, let's rename the log file with the archive prefix.
                             const logFilePath = FsUtilities.Path.prependFilename( logWatchers[ characterId ].logFile, ArchiveFilePrefix );
                             await fsp.rename( logWatchers[ characterId ].logFile, logFilePath );
