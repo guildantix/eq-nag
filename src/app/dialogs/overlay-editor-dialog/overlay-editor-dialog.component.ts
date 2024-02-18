@@ -460,11 +460,11 @@ export class OverlayEditorDialogComponent implements OnInit {
                 { name: 'Dot 01', triggerName: 'Dot 01', duration: 48, target: 'Mob 01', matches: { 0: '', 1: 'Mob 01', groups: { target: 'Mob 01' } }, delay: 0 * 1000, overrideTimerColor: '#CC5500', timerBackgroundColor: ColorUtility.FromHex( '#CC5500' ).darken( 0.93 ).toString( 0.75 ) },
                 { name: 'Dot 02', triggerName: 'Dot 02', duration: 30, target: 'Mob 01', matches: { 0: '', 1: 'Mob 01', groups: { target: 'Mob 01' } }, delay: 2 * 1000, ifEndingSoon: true, endingDuration: 24, endingSoonChangeColor: true, endingSoonColor: '#800000', endingSoonBackgroundColor: ColorUtility.FromHex( '#800000' ).darken( 0.93 ).toString( 0.75 ) },
                 { name: 'Dot 03', triggerName: 'Dot 03', duration: 54, target: 'Mob 01', matches: { 0: '', 1: 'Mob 01', groups: { target: 'Mob 01' } }, delay: 4 * 1000, overrideTimerColor: null, timerBackgroundColor: null },
-                { name: 'Dot 04', triggerName: 'Dot 04', duration: 60, target: 'Mob 01', matches: { 0: '', 1: 'Mob 01', groups: { target: 'Mob 01' } }, delay: 6 * 1000, overrideTimerColor: null, timerBackgroundColor: null },
+                { name: 'Dot 04', triggerName: 'Dot 04', duration: 60, target: 'Mob 02', matches: { 0: '', 1: 'Mob 02', groups: { target: 'Mob 02' } }, delay: 6 * 1000, overrideTimerColor: null, timerBackgroundColor: null },
                 { name: 'Dot 05', triggerName: 'Dot 05', duration: 48, target: 'Mob 02', matches: { 0: '', 1: 'Mob 02', groups: { target: 'Mob 02' } }, delay: 8 * 1000, overrideTimerColor: null, timerBackgroundColor: null },
-                { name: 'Dot 06', triggerName: 'Dot 06', duration: 42, target: 'Mob 02', matches: { 0: '', 1: 'Mob 02', groups: { target: 'Mob 02' } }, delay: 10 * 1000, overrideTimerColor: null, timerBackgroundColor: null },
-                { name: 'Dot 07', triggerName: 'Dot 07', duration: 36, target: 'Mob 02', matches: { 0: '', 1: 'Mob 02', groups: { target: 'Mob 02' } }, delay: 12 * 1000, overrideTimerColor: null, timerBackgroundColor: null },
-                { name: 'Dot 08', triggerName: 'Dot 08', duration: 30, target: 'Mob 02', matches: { 0: '', 1: 'Mob 02', groups: { target: 'Mob 02' } }, delay: 14 * 1000, overrideTimerColor: null, timerBackgroundColor: null },
+                { name: 'Dot 06', triggerName: 'Dot 06', duration: 42, target: 'Mob 03', matches: { 0: '', 1: 'Mob 03', groups: { target: 'Mob 03' } }, delay: 10 * 1000, overrideTimerColor: null, timerBackgroundColor: null },
+                { name: 'Dot 07', triggerName: 'Dot 07', duration: 36, target: 'Mob 03', matches: { 0: '', 1: 'Mob 03', groups: { target: 'Mob 03' } }, delay: 12 * 1000, overrideTimerColor: null, timerBackgroundColor: null },
+                { name: 'Dot 08', triggerName: 'Dot 08', duration: 30, target: 'Mob 03', matches: { 0: '', 1: 'Mob 03', groups: { target: 'Mob 03' } }, delay: 14 * 1000, overrideTimerColor: null, timerBackgroundColor: null },
             ];
             timers.forEach( f => {
                 let comp = {
