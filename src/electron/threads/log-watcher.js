@@ -1344,6 +1344,30 @@ function LogWatcher(character, logPosition) {
 
 
 /**
+ * Returns the regex options for the given capture phrase.
+ * 
+ * @returns {string | undefined} The regex options, if any.
+ * 
+ * @param {CapturePhrase} phrase The capture phrase
+ */
+function getPhraseRegexOptions( phrase ) {
+    let opts = undefined;
+    if ( phrase.ignoreCase ) {
+        opts = 'i';
+    }
+    return opts;
+}
+
+
+
+
+
+
+
+
+
+
+/**
  * Initializes all counter trigger actions.
  */
 function initCounters() {
@@ -1365,7 +1389,7 @@ function initCounters() {
                                 let matched = false;
                                 
                                 renderedPhrases.forEach( ( phrase, i ) => {
-                                    renderedPhraseRegExps[ i ] = renderedPhraseRegExps[ i ] ?? new RegExp( phrase, undefined );
+                                    renderedPhraseRegExps[ i ] = renderedPhraseRegExps[ i ] ?? new RegExp( phrase, getPhraseRegexOptions( action.resetCounterPhrases[ i ] ) );
                                     let _res = renderedPhraseRegExps[ i ].exec( logEntry );
                                     if ( _res?.length > 0 ) {
                                         matched = true;
@@ -1450,7 +1474,7 @@ function generateTriggerFns() {
                                 }
                                 
                                 _renderedPhrases[ phrase.phraseId ] = rgxValue;
-                                _phraseRegEx[ phrase.phraseId ] = _phraseRegEx[ phrase.phraseId ] ?? new RegExp( rgxValue, 'i' );
+                                _phraseRegEx[ phrase.phraseId ] = _phraseRegEx[ phrase.phraseId ] ?? new RegExp( rgxValue, getPhraseRegexOptions( phrase ) );
                                 let _res = _phraseRegEx[ phrase.phraseId ].exec( value );
                                 return {
                                     phraseId: phrase.phraseId,
@@ -2519,7 +2543,7 @@ function displayBeneficialTimerComponent( res, timestamp, action, trigger, spell
                 let matched = false;
                 
                 renderedPhrases.forEach( ( phrase, i ) => {
-                    renderedRegExs[ i ] = renderedRegExs[ i ] ?? new RegExp( phrase, 'i' );
+                    renderedRegExs[ i ] = renderedRegExs[ i ] ?? new RegExp( phrase, getPhraseRegexOptions( comp.action.endEarlyPhrases[ i ] ) );
                     let _res = renderedRegExs[ i ].exec( logEntry );
                     if ( _res?.length > 0 ) {
                         enableLogging && sendInformationToLog( `DoT Timer ended early: [${logEntry}]` );
@@ -2581,7 +2605,7 @@ function displayDotTimerComponent( res, timestamp, action, deltaTime, trigger ) 
             let exclude = false;
 
             if ( action.excludeTargets[ i ].useRegEx ) {
-                exclude = res.result[ 1 ].match( new RegExp( action.excludeTargets[ i ].phrase, undefined ) )?.length > 0;
+                exclude = res.result[ 1 ].match( new RegExp( action.excludeTargets[ i ].phrase, getPhraseRegexOptions( action.excludeTargets[ i ] ) ) )?.length > 0;
             } else {
                 let _rgx = new RegExp( '^' + action.excludeTargets[ i ].phrase.replace( /[.*+?^${}()|[\]\\]/g, '\\$&' ) + '$', 'i' );
                 exclude = res.result[ 1 ].match( _rgx )?.length > 0;
@@ -2690,7 +2714,7 @@ function displayDotTimerComponent( res, timestamp, action, deltaTime, trigger ) 
                 let matched = false;
                 
                 renderedPhrases.forEach( ( phrase, i ) => {
-                    renderedRegExs[ i ] = renderedRegExs[ i ] ?? new RegExp( phrase, 'i' );
+                    renderedRegExs[ i ] = renderedRegExs[ i ] ?? new RegExp( phrase, getPhraseRegexOptions( comp.action.endEarlyPhrases[ i ] ) );
                     let _res = renderedRegExs[ i ].exec( logEntry );
                     if ( _res?.length > 0 ) {
                         enableLogging && sendInformationToLog( `DoT Timer ended early: [${logEntry}]` );
@@ -2738,7 +2762,7 @@ function displayDotTimerComponent( res, timestamp, action, deltaTime, trigger ) 
                 let matched = false;
                 
                 renderedPhrases.forEach( ( phrase, i ) => {
-                    renderedRegExs[ i ] = renderedRegExs[ i ] ?? new RegExp( phrase, 'i' );
+                    renderedRegExs[ i ] = renderedRegExs[ i ] ?? new RegExp( phrase, getPhraseRegexOptions( phrases[ i ] ) );
                     let _res = renderedRegExs[ i ].exec( logEntry );
                     if ( _res?.length > 0 ) {
                         enableLogging && sendInformationToLog( `DoT Timer secondary action: [${logEntry}]` );
@@ -2788,6 +2812,7 @@ function displayDotTimerComponent( res, timestamp, action, deltaTime, trigger ) 
         // ^Your Polybiad Venom(?:\sRk\. III?)? spell has worn off of Combat Dummy Azia\.
         wornOffPhrase.phrase = `^Your ${trigger.name}(?:\\sRk\\. III?)? spell has worn off of ?{target}\\.`;
         wornOffPhrase.useRegEx = true;
+        wornOffPhrase.ignoreCase = true;
         wornOffPhrase.phraseId = nanoid();
         let renderedWornOffPhrases = renderPhrases( [ wornOffPhrase ], trigger._conditionResults, res.result, deltaTime, true );
         /** @type {RegExp[]} */
@@ -2804,7 +2829,7 @@ function displayDotTimerComponent( res, timestamp, action, deltaTime, trigger ) 
                 
                 for ( let i = 0; i < renderedWornOffPhrases.length; i++ ) {
                     const phrase = renderedWornOffPhrases[ i ];
-                    renderedWornOffRegExs[ i ] = renderedWornOffRegExs[ i ] ?? new RegExp( phrase, 'i' );
+                    renderedWornOffRegExs[ i ] = renderedWornOffRegExs[ i ] ?? new RegExp( phrase, getPhraseRegexOptions( wornOffPhrase ) );
                     let _res = renderedWornOffRegExs[ i ].exec( logEntry );
                     if ( _res?.length > 0 ) {
                         enableLogging && sendInformationToLog( `DoT Timer worn off: [${logEntry}]` );
@@ -2983,7 +3008,7 @@ function displayTimerCountdownComponent(res, timestamp, action, deltaTime, trigg
 
                 for ( let i = 0; i < renderedPhrases.length; i++ ) {
                     const phrase = renderedPhrases[ i ];
-                    renderedRegExs[ i ] = renderedRegExs[ i ] ?? new RegExp( phrase, 'i' );
+                    renderedRegExs[ i ] = renderedRegExs[ i ] ?? new RegExp( phrase, getPhraseRegexOptions( comp.action.endEarlyPhrases[ i ] ) );
                     let _res = renderedRegExs[ i ].exec( logEntry );
                     if ( _res?.length > 0 ) {
                         enableLogging && sendInformationToLog( `Timer/Countdown/Stopwatch ended early: [${logEntry}]` );

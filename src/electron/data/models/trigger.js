@@ -153,11 +153,13 @@ var ImportTypes = {
     '2': 'Ability',
     '3': 'Npc',
     '4': 'Buff',
+    '5': 'OthersBuff',
     None: 0,
     DotTimer: 1,
     Ability: 2,
     Npc: 3,
     Buff: 4,
+    OthersBuff: 5,
 }
 
 var TimerRestartBehaviors = {
@@ -218,6 +220,8 @@ class Phrase {
     phrase;
     /** @type {boolean} */
     useRegEx;
+    /** @type {boolean} */
+    ignoreCase;
 
 }
 

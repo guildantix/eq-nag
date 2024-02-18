@@ -297,20 +297,24 @@ export class NewTriggerRaidAbilityComponent implements OnInit {
                 phraseId: nagId(),
                 phrase: '^${target} has been slain by [^!]*!$',
                 useRegEx: true,
+                ignoreCase: true,
             }, <Phrase>{
                 phraseId: nagId(),
                 phrase: '^${target} dies\\.$',
                 useRegEx: true,
+                ignoreCase: true,
             }, <Phrase>{
                 phraseId: nanoid(),
                 phrase: '^${target} died\\.$',
                 useRegEx: true,
+                ignoreCase: true,
             }, <Phrase>{
                 phraseId: nanoid(),
                 // Alora is cured of Mark of Death by Spoilers.
                 // https://regex101.com/r/WSLpJc/1
                 phrase: `^\${target} is cured of ${this.ability.name}.*?`,
                 useRegEx: true,
+                ignoreCase: true,
             } );
 
             trigger.actions.push( trackOtherTimer );
@@ -545,21 +549,25 @@ export class NewTriggerRaidAbilityComponent implements OnInit {
             phraseId: nanoid(),
             phrase: `^${target} has been slain by [^!]*!$`,
             useRegEx: true,
+            ignoreCase: true,
         } );
         phrases.push( <Phrase>{
             phraseId: nanoid(),
             phrase: `^You have slain ${target}!`,
             useRegEx: true,
+            ignoreCase: true,
         } );
         phrases.push( <Phrase>{
             phraseId: nanoid(),
             phrase: `^${target} dies\\.$`,
             useRegEx: true,
+            ignoreCase: true,
         } );
         phrases.push( <Phrase>{
             phraseId: nanoid(),
             phrase: `^${target} died\\.$`,
             useRegEx: true,
+            ignoreCase: true,
         } );
 
         return phrases;

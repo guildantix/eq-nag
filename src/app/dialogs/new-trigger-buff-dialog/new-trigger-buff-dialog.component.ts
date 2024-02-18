@@ -560,11 +560,13 @@ export class NewTriggerBuffDialogComponent implements OnInit {
                 phraseId: nanoid(),
                 phrase: '^${target} has been slain by [^!]*!$',
                 useRegEx: true,
+                ignoreCase: true,
             } ) );
             buffTimers.forEach( timer => timer.endEarlyPhrases.push( <Phrase>{
                 phraseId: nanoid(),
                 phrase: '^You have slain ${target}!$',
                 useRegEx: true,
+                ignoreCase: true,
             } ) );
             // This is apparently just for players
             buffTimers.forEach( timer => timer.endEarlyPhrases.push( <Phrase>{
@@ -572,12 +574,14 @@ export class NewTriggerBuffDialogComponent implements OnInit {
                 // Jhinx dies.
                 phrase: '^${target} dies\\.$',
                 useRegEx: true,
+                ignoreCase: true,
             } ) );
             buffTimers.forEach( timer => timer.endEarlyPhrases.push( <Phrase>{
                 phraseId: nanoid(),
                 // A Valorian Guardian died.
                 phrase: '^${target} died\\.$',
                 useRegEx: true,
+                ignoreCase: true,
             } ) );
 
         }
@@ -598,6 +602,7 @@ export class NewTriggerBuffDialogComponent implements OnInit {
                 // Your Dead Men Floating spell on Xeraphine has been overwritten.
                 phrase: `^Your ${this.spell.name}(?: Rk\. II| Rk\. III){0,1} spell on \${target} has been overwritten\\.$`,
                 useRegEx: true,
+                ignoreCase: true,
             } ) );
 
             // End when the buff fades
@@ -606,6 +611,7 @@ export class NewTriggerBuffDialogComponent implements OnInit {
                 // Your Dead Men Floating spell has worn off of Rodus.
                 phrase: `Your ${this.spell.name}(?: Rk\. II| Rk\. III){0,1} spell has worn off of \${target}\\.$`,
                 useRegEx: true,
+                ignoreCase: true,
             } ) );
         }
 
