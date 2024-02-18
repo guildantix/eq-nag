@@ -114,6 +114,9 @@ class OverlayWindow {
     
     /** @type string */
     groupHeaderColor = '#ffffff';
+
+    /** @type {number} */
+    groupMinWidth = 200;
     
     /** @type {boolean} */
     showTimeRemaining = false;

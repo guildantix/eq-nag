@@ -601,6 +601,7 @@ export class OverlayWindowModel {
     public groupHeaderSize: number = 40;
     public groupHeaderWeight: number = 400;
     public groupHeaderColor: string = '#ffffff';
+    public groupMinWidth: number = 200;
     public showTimeRemaining: boolean = false;
     public hideTargetLabel: boolean = false;
 
