@@ -1515,7 +1515,6 @@ function updateOverlay( overlayId, model ) {
 
         if ( model.groupByTarget ) {
             contentArea.classList.add( 'grouped-mobs' );
-            // TODO: Add settings to let the user decide the min width.
             contentArea.style.setProperty( '--item-min-width', `${overlayInstances[ overlayId ].groupMinWidth ?? 200}px` );
             overlayInstances[ overlayId ].groupByTarget = true;
         } else {
