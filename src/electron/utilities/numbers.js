@@ -24,9 +24,9 @@ function toShorthandString( value ) {
     if ( value !== null && value !== undefined ) {
         let numeric = +value;
         if ( numeric < 1000 ) {
-            return `${value}`;
+            return `${round(numeric)}`;
         } else if ( numeric >= 1000 && numeric < 10000 ) {
-            return numeric.toString().replace( /\B(?=(\d{3})+(?!\d))/g, "," );
+            return round(numeric).toString().replace( /\B(?=(\d{3})+(?!\d))/g, "," );
         } else if ( numeric >= 10000 && numeric < 100000 ) {
             return `${round(numeric / 1000, 1)}k`;
         } else if ( numeric >= 100000 && numeric < 1000000 ) {
