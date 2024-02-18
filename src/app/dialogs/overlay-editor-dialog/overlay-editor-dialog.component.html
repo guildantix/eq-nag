@@ -263,6 +263,13 @@
                             <div class="f-sm-4 al-right"><mat-label *ngIf="model.groupByTarget">Color</mat-label></div>
                             <div class="f-sm-4 al-left"><app-color-picker [(ngModel)]="model.groupHeaderColor" (change)="broadcastModel()" *ngIf="model.groupByTarget"></app-color-picker></div>
                         </div>
+                        
+
+                        <div class="f-row">
+                            <div class="f-sm-4 al-left"><mat-label *ngIf="model.groupByTarget">Item</mat-label></div>
+                            <div class="f-sm-4 al-right"><mat-label *ngIf="model.groupByTarget">Min Width</mat-label></div>
+                            <div class="f-sm-4 al-center"><mat-slider thumbLabel tickInterval="1" step="10" min="50" max="500" style="width: 100%;" [(ngModel)]="model.groupMinWidth" name="groupMinWidth" (change)="broadcastModel()" *ngIf="model.groupByTarget"></mat-slider></div>
+                        </div>
 
                     </fieldset>
 

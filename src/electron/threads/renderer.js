@@ -143,6 +143,8 @@ class OverlayInstance {
     groupHeaderColor;
     /** @type {number} */
     groupHeaderWeight;
+    /** @type {number} */
+    groupMinWidth;
     /** @type {boolean} */
     hideTargetLabel;
     /** @type {OverlayComponent[]} */
@@ -1403,7 +1405,7 @@ function updateOverlay( overlayId, model ) {
             }
 
         } else {
-            contentArea.classList.add( 'no-overflow' );
+            // contentArea.classList.add( 'no-overflow' );
 
         }
 
@@ -1509,8 +1511,12 @@ function updateOverlay( overlayId, model ) {
     
         overlayInstances[ overlayId ].showDuration = model.showTimeRemaining === true;
     
+        overlayInstances[ overlayId ].groupMinWidth = model.groupMinWidth > 0 ? model.groupMinWidth : 200;
+
         if ( model.groupByTarget ) {
             contentArea.classList.add( 'grouped-mobs' );
+            // TODO: Add settings to let the user decide the min width.
+            contentArea.style.setProperty( '--item-min-width', `${overlayInstances[ overlayId ].groupMinWidth ?? 200}px` );
             overlayInstances[ overlayId ].groupByTarget = true;
         } else {
             contentArea.classList.remove( 'grouped-mobs' );
