@@ -893,3 +893,22 @@ a {
         }
     }
 }
+
+.regex-option {
+    font-family: 'Roboto Mono';
+    font-size: 1em;
+    cursor: pointer;
+
+    &.selected {
+        color: $color-green;
+    }
+
+    &:active {
+        color: darken($color-green, 33%);
+    }
+
+    &:hover {
+        // glow green
+        text-shadow:0px 0px 4px #69f0ae, 0px 0px 2px #69f0ae;
+    }
+}
