@@ -85,3 +85,17 @@ input {
         }
     }
 }
+
+div.n-layout {
+    &.n-row {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: wrap;
+        > * {
+            flex: 1 0 0;
+            padding: 5px;
+            margin: 0 5px;
+        }
+        
+    }
+}
