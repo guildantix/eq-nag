@@ -446,7 +446,7 @@ export class PhraseProperties {
 
     public phrase: string;
     public useRegEx: boolean;
-    public ignoreCase: boolean;
+    public ignoreCase: boolean = true;
 
 }
 

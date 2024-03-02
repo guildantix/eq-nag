@@ -221,7 +221,7 @@ class Phrase {
     /** @type {boolean} */
     useRegEx;
     /** @type {boolean} */
-    ignoreCase;
+    ignoreCase = true;
 
 }
 
