@@ -1002,6 +1002,7 @@ export class CharacterModel {
     public triggerProfile: string | undefined = undefined;
     public disabledTriggers: string[] = [];
     public disableTriggersByDefault: boolean = false;
+    public disableFct: boolean = false;
     
 }
 
