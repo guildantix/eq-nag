@@ -83,6 +83,7 @@ export class ResizeableDirective implements OnInit {
     @HostListener( 'document:mouseup', [ '$event' ] ) onMouseupHandler( event: MouseEvent ) {
         this.elementRef.nativeElement.style.userSelect = this._userSelectValue;
         this._dragging = false;
+        this.setPosition();
     }
 
     @HostListener( 'document:mousemove', [ '$event' ] ) onMousemoveHandler( event: MouseEvent ) {
@@ -133,18 +134,50 @@ export class ResizeableDirective implements OnInit {
     private createDragElement() {
         // Create the drag element
         this._dragElement = this.renderer.createElement( 'div' );
+        this._dragElement.style.userSelect = 'none';
 
         // Add the classes
         this.renderer.addClass( this._dragElement, 'resize-handle' );
-        this.renderer.addClass( this._dragElement, `resize-${this._location}` );5
+        this.renderer.addClass( this._dragElement, `resize-${this._location}` );
         
         // Add the element to the parent
-        this.renderer.appendChild( this.elementRef.nativeElement, this._dragElement );
-        
+        this.renderer.appendChild( document.body, this._dragElement );
+
+        this.setPosition();
+
         // Set the visibility
         this.renderer.setStyle( this._dragElement, 'opacity', this.visibility === 'hidden' ? 0 : 1 );
 
         console.log( this._dragElement );
+    }
+
+    private setPosition() {
+        let ownerRect = this.elementRef.nativeElement.getBoundingClientRect();
+
+        if ( ownerRect ) {
+            if ( this._location === 'top' ) {
+                this.renderer.setStyle( this._dragElement, 'top', `${ownerRect.top}px` );
+                this.renderer.setStyle( this._dragElement, 'left', `${ownerRect.left}px` );
+                this.renderer.setStyle( this._dragElement, 'width', `${ownerRect.width}px` );
+                this.renderer.setStyle( this._dragElement, 'height', `5px` );
+            } else if ( this._location === 'bottom' ) {
+                this.renderer.setStyle( this._dragElement, 'top', `${ownerRect.bottom - 5}px` );
+                this.renderer.setStyle( this._dragElement, 'left', `${ownerRect.left}px` );
+                this.renderer.setStyle( this._dragElement, 'width', `${ownerRect.width}px` );
+                this.renderer.setStyle( this._dragElement, 'height', `5px` );
+            } else if ( this._location === 'left' ) {
+                this.renderer.setStyle( this._dragElement, 'top', `${ownerRect.top}px` );
+                this.renderer.setStyle( this._dragElement, 'left', `${ownerRect.left}px` );
+                this.renderer.setStyle( this._dragElement, 'width', `5px` );
+                this.renderer.setStyle( this._dragElement, 'height', `${ownerRect.height}px` );
+            } else if ( this._location === 'right' ) {
+                this.renderer.setStyle( this._dragElement, 'top', `${ownerRect.top}px` );
+                this.renderer.setStyle( this._dragElement, 'left', `${ownerRect.right - 5}px` );
+                this.renderer.setStyle( this._dragElement, 'width', `5px` );
+                this.renderer.setStyle( this._dragElement, 'height', `${ownerRect.height}px` );
+            }
+        
+        }
     }
 
 
