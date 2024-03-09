@@ -16,7 +16,6 @@ const LogBootstrapper = require( './src/electron/log-bootstrap' );
 const GameResources = require( './src/electron/data/game-resources' );
 const FilesDatabaseStore = require( './src/electron/data/files-database' );
 const GinaImporter = require( "./src/electron/gina-importer" );
-const CombatParser = require( "./src/electron/utilities/combat-parser" );
 const { IpcMessage, Progress, ScheduledTask, LogMaintenanceRules, Version, WinInfo, LogMaintenancePlanTypes } = require( "./src/electron/data/models/common" );
 const { LogFileLocation } = require( "./src/electron/data/log-file-location" );
 const VerifiedPlayersStore = require( "./src/electron/data/verified-players" );
