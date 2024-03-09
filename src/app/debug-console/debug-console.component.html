@@ -27,7 +27,7 @@
 
     </div>
 
-    <console-list #consoleList (onListUpdated)="onListUpdated()"></console-list>
+    <console-list #consoleList (onListUpdated)="onListUpdated($event.scrollBottom)"></console-list>
 
     <div class="console-bottom-buttons" *ngIf="showBottomTools">
         <button mat-button (click)="scrollToBottom()" *ngIf="!atBottom">Jump to bottom</button>
