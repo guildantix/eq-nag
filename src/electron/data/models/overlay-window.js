@@ -224,6 +224,7 @@ const combatTypes = [
 ];
 
 class CombatTypes {
+    
     /** @type {boolean} */
     myHits = false;
     /** @type {boolean} */
