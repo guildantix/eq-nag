@@ -117,7 +117,7 @@ class LogRecord {
     actor;
     /** @type {string} */
     target;
-    /** @type {string} */
+    /** @type {'melee' | 'spell' | 'thorns'} */
     attackType;
     /** @type {string} */
     attackName;
@@ -139,6 +139,8 @@ class LogRecord {
     player;
     /** @type {boolean} */
     transmitted = false;
+    /** @type {string | undefined} */
+    resistType;
 }
 
 const attackTypeMap = {
@@ -278,6 +280,8 @@ class DpsMeterSettings {
 
 }
 
+const rgxCombatText = /hit|damage|miss|dodge|riposte|parry|become better|backstab|stun|attack|crush/i;
+
 module.exports = {
     AttackModifiers,
     PlayerInfo,
@@ -291,5 +295,6 @@ module.exports = {
     EncounterEventTypes,
     ServerCombatModel,
     CombatDb,
-    DpsMeterSettings
+    DpsMeterSettings,
+    rgxCombatText
 };
