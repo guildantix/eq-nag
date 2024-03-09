@@ -16,7 +16,7 @@ export class ConsoleListComponent implements OnInit {
     public parseType: 'successful' | 'failed' = 'successful';
     @Input() public searchText: string = null;
     @Input() public characterId: string = null;
-    @Output() public onListUpdated: EventEmitter<void> = new EventEmitter<void>();
+    @Output() public onListUpdated: EventEmitter<{ scrollBottom: boolean }> = new EventEmitter<{ scrollBottom: boolean }>();
 
     private histories: { successful: TriggerParseHistoryModel[], exceptions: TriggerParseHistoryModel[] } = { successful: [], exceptions: [] };
     private triggerHistories: { successful: TriggerParseHistoryModel[], failed: TriggerParseHistoryModel[] } = { successful: [], failed: [] };
@@ -42,17 +42,19 @@ export class ConsoleListComponent implements OnInit {
         } );
         
         this.ipcService.onBatchParseHistory().subscribe( history => {
-            this.appendHistories( history.successful, history.exceptions );
+            if ( history.exceptions?.length > 0 || history.successful?.length > 0 ) {
+                this.appendHistories( history.successful, history.exceptions );
+            }
         } );
 
         this.ipcService.onConsoleSuccess().subscribe( log => {
             this.consoleMessages.push( log );
-            this.renderHistory();
+            this.renderHistory( false );
         } );
 
         this.ipcService.onConsoleError().subscribe( log => {
             this.consoleMessages.push( log );
-            this.renderHistory();
+            this.renderHistory( false );
         } );
 
     }
@@ -109,7 +111,7 @@ export class ConsoleListComponent implements OnInit {
      */
     public setParseType( type: 'successful' | 'failed' ) {
         this.parseType = type;
-        this.renderHistory();
+        this.renderHistory( false );
     }
 
 
@@ -131,7 +133,7 @@ export class ConsoleListComponent implements OnInit {
         this.histories.successful = Array.prototype.concat( this.histories.successful, successful );
         this.histories.exceptions = Array.prototype.concat( this.histories.exceptions, exceptions );
         this.trimHistories();
-        this.renderHistory();
+        this.renderHistory( true );
     }
 
 
@@ -154,7 +156,7 @@ export class ConsoleListComponent implements OnInit {
         this.histories.exceptions = exceptions;
         this.consoleMessages = consoleMessages;
         this.trimHistories();
-        this.renderHistory();
+        this.renderHistory( true );
     }
 
 
@@ -188,7 +190,7 @@ export class ConsoleListComponent implements OnInit {
      * calls for detectChanges.  This should be called whenever the history list 
      * is updated.
      */
-    private renderHistory(): void {
+    private renderHistory( scrollBottom: boolean ): void {
 
         if ( this.triggerId ) {
     
@@ -232,7 +234,7 @@ export class ConsoleListComponent implements OnInit {
         }
 
         this.changeDetector.detectChanges();
-        this.onListUpdated.emit();
+        this.onListUpdated.emit( { scrollBottom: scrollBottom } );
     }
 
 
@@ -293,7 +295,7 @@ export class ConsoleListComponent implements OnInit {
         this.triggerName = null;
         this.triggerHistories = { successful: [], failed: [] };
 
-        this.renderHistory();
+        this.renderHistory( false );
         
     }
 
@@ -318,7 +320,7 @@ export class ConsoleListComponent implements OnInit {
             this.triggerName = triggerName;
             this.triggerId = triggerId;
             this.triggerHistories = history;
-            this.renderHistory();
+            this.renderHistory( false );
         } );
     }
 
