@@ -22,6 +22,8 @@ const {
     ServerCombatModel,
     DpsMeterSettings,
 } = require( '../data/models/combat-parser' );
+const { FctModel } = require( '../data/models/fct' );
+const { CharacterModel } = require( '../data/models/character' );
 
 // TODO: Zhay`s pet hits Vius Vex for 9075 points of damage.
 
@@ -34,6 +36,8 @@ let encounterResetMs = 20 * 1000;
 /** @type {DpsMeterSettings} */
 let dpsMeterSettings = new DpsMeterSettings();
 
+/** @type {CharacterModel[]} */
+let fctCharacters = [];
 
 
 
@@ -244,6 +248,16 @@ class CombatParser {
         console.log( 'initiating combat parser for', characterName, 'on server', serverName );
         this._serverName = serverName;
 
+        ipcRenderer.on( 'character:get',
+            /**
+             * 
+             * @param {Electron.IpcRendererEvent} event The electron event args.
+             * @param {CharacterModel[]} data The list of characters.
+             */
+            ( event, data ) => {
+                fctCharacters = data.filter( f => !f.disableFct );
+            } );
+
         ipcRenderer.on( 'settings:get:dpsMeterSettings:generic',
         /**
          * 
@@ -317,6 +331,9 @@ class CombatParser {
         if ( serverName ) {
             ipcRenderer.send( 'combat-database:get-server', serverName );
         }
+        
+        ipcRenderer.send( 'character:get' );
+
     }
 
 
@@ -532,35 +549,30 @@ class CombatParser {
 
             regxResult = executCombatRgx( combatRgx.MeleeDamage, entry.log );
             if ( regxResult !== null ) {
-                this._addMeleeEvent( timestamp, regxResult.groups.actor, regxResult.groups.target, +regxResult.groups.damage, regxResult.groups.attackType, regxResult.groups.modifiers );
-                return;
+                return this._addMeleeEvent( timestamp, regxResult.groups.actor, regxResult.groups.target, +regxResult.groups.damage, regxResult.groups.attackType, regxResult.groups.modifiers );
             }
             
             regxResult = executCombatRgx( combatRgx.MeleeMiss, entry.log );
             regxResult = regxResult == null ? executCombatRgx( combatRgx.ActiveDefense, entry.log ) : regxResult;
             if ( regxResult !== null ) {
-                this._addMeleeAvoidance( timestamp,  regxResult.groups.actor ,  regxResult.groups.target, regxResult.groups.defenseType, regxResult.groups.attackType, regxResult.groups.modifiers );
-                return;
+                return this._addMeleeAvoidance( timestamp,  regxResult.groups.actor ,  regxResult.groups.target, regxResult.groups.defenseType, regxResult.groups.attackType, regxResult.groups.modifiers );
             }
             
             regxResult = executCombatRgx( combatRgx.DirectDamage, entry.log );
             regxResult = regxResult == null ? executCombatRgx( combatRgx.YourDoT, entry.log ) : regxResult;
             regxResult = regxResult == null ? executCombatRgx( combatRgx.OtherDoT, entry.log ) : regxResult;
             if ( regxResult !== null ) {
-                this._addDetrimentalSpellEvent( timestamp,  regxResult.groups.actor ,  regxResult.groups.target , +regxResult.groups.damage, regxResult.groups.attackType, regxResult.groups.resistType, regxResult.groups.modifiers );
-                return;
+                return this._addDetrimentalSpellEvent( timestamp,  regxResult.groups.actor  ,  regxResult.groups.target , +regxResult.groups.damage, regxResult.groups.attackType, regxResult.groups.resistType, regxResult.groups.modifiers );
             }
             
             regxResult = executCombatRgx( combatRgx.Thorns, entry.log );
             if ( regxResult !== null ) {
-                this._addThornsEvent( timestamp,  regxResult.groups.actor ,  regxResult.groups.target , +regxResult.groups.damage );
-                return;
+                return this._addThornsEvent( timestamp,  regxResult.groups.actor ,  regxResult.groups.target , +regxResult.groups.damage );
             }
             
             regxResult = executCombatRgx( combatRgx.Healing, entry.log );
             if ( regxResult !== null ) {
-                this._addBeneficialSpellEvent( timestamp,  regxResult.groups.actor ,  regxResult.groups.target , regxResult.groups.healDuration, +regxResult.groups.healActual, regxResult.groups.healType, +regxResult.groups.healLiteral, regxResult.groups.modifiers );
-                return;
+                return this._addBeneficialSpellEvent( timestamp,  regxResult.groups.actor ,  regxResult.groups.target , regxResult.groups.healDuration, +regxResult.groups.healActual, regxResult.groups.healType, +regxResult.groups.healLiteral, regxResult.groups.modifiers );
             }
 
             regxResult = executCombatRgx( combatRgx.Defensive, entry.log );
@@ -575,7 +587,7 @@ class CombatParser {
                     duration: 3 * 60,
                     end: DateUtilities.addSeconds( timestamp, 3 * 60 )
                 } );
-                return;
+                return undefined;
             }
 
         }
@@ -1578,9 +1590,106 @@ class CombatParser {
 
 
 
+    
+    /**
+     * Returns a new FCT model from the given log record, or undefined if the log record is not an FCT event.
+     * 
+     * @returns {FctModel?}
+     * 
+     * @param {LogRecord} rec The log record to create an FCT model from.
+     */
+    _getFctModel( rec ) {
+        let model = new FctModel();
+
+        // TODO: This will only work for the character processing combat logs.  Future update needs to allow FCT for all configurable characters in the local config file.
+        let actor = rec.actor;
+        let target = rec.target;
+        let character = fctCharacters.find( f => f.name === actor || f.name === target );
+
+        if ( !character )
+            // If no character was found, then this log record will be treated as a non-FCT event.
+            return undefined;
+
+        let myAction = actor === character.name;
+        let otherAction = target === character.name;
+
+        if ( otherAction || myAction ) {
+
+            if ( rec.attackType === 'melee' ) {
+                model.combatTypes.myHits = myAction;
+                model.combatTypes.otherHitsOnMe = otherAction;
+                model.combatTypes.myHealing = myAction;
+
+            } else if ( rec.attackType === 'spell' ) {
+                model.combatTypes.mySpellHits = myAction;
+                model.combatTypes.otherSpellHitsOnMe = otherAction;
+                model.combatTypes.otherHealingOnMe = otherAction;
+
+            }
+
+            if ( rec.modifiers.dodge ) {
+                model.avoidType = 'dodge';
+            } else if ( rec.modifiers.parry ) {
+                model.avoidType = 'parry';
+            } else if ( rec.modifiers.riposte ) {
+                model.avoidType = 'riposte';
+            } else if ( rec.modifiers.block ) {
+                model.avoidType = 'block';
+            } else if ( rec.modifiers.miss ) {
+                model.avoidType = 'miss';
+            } else {
+                model.amount = rec.spellType === 'direct heal' || rec.spellType === 'heal over time' ? rec.heal : rec.damage;
+            }
+
+            model.actor = actor;
+            model.action = rec.attackName;
+            model.target = target;
+            model.damageType = rec.resistType;
+            model.overHealing = rec.overHeal;
+
+            model.combatModifiers = [];
+
+            rec.modifiers.critical && model.combatModifiers.push( 'critical' );
+            rec.modifiers.cripplingBlow && model.combatModifiers.push( 'crippling_blow' );
+            rec.modifiers.flurry && model.combatModifiers.push( 'flurry' );
+            rec.modifiers.lucky && model.combatModifiers.push( 'lucky' );
+            rec.modifiers.twincast && model.combatModifiers.push( 'twincast' );
+            rec.modifiers.riposte && model.combatModifiers.push( 'riposte' );
+            rec.modifiers.strikethrough && model.combatModifiers.push( 'strikethrough' );
+            rec.modifiers.wild_rampage && model.combatModifiers.push( 'wild_rampage' );
+            rec.modifiers.rampage && model.combatModifiers.push( 'rampage' );
+            rec.modifiers.assassinate && model.combatModifiers.push( 'assassinate' );
+            rec.modifiers.headshot && model.combatModifiers.push( 'headshot' );
+            rec.modifiers.double_bow_shot && model.combatModifiers.push( 'double_bow_shot' );
+            rec.modifiers.deadly_strike && model.combatModifiers.push( 'deadly_strike' );
+            rec.modifiers.finishing_blow && model.combatModifiers.push( 'finishing_blow' );
+            
+            if ( rec.modifiers.length === 0 ) {
+                model.combatModifiers.push( 'normal' );
+            }
+
+            model.timestamp = rec.timestamp;
+            model.characterId = character.characterId;
+
+            return model;
+        }
+
+        return undefined;
+    }
+
+
+
+
+
+
+
+
+
 
     /**
      * Adds the given log record to the encounter statistics.
+     * 
+     * @returns {FctModel?} Returns an FCT model if the log record is an FCT event, otherwise undefined.
      * 
      * @param {LogRecord} rec The log record to add to the encounter.
      */
@@ -1591,7 +1700,10 @@ class CombatParser {
         if ( this._encounterResetTimerId ) {
             clearTimeout( this._encounterResetTimerId );
         }
+        
         this._encounterResetTimerId = window.setTimeout( () => this._resetEncounter(), encounterResetMs );
+
+        return this._getFctModel( rec );
     }
     
     
@@ -1605,6 +1717,8 @@ class CombatParser {
     
     /**
      * Adds a new melee event to the encounter.
+     * 
+     * @returns {FctModel?} Returns an FCT model if the log record is an FCT event, otherwise undefined.
      * 
      * @param {Date} timestamp The timestamp of the event.
      * @param {string} actor The name of the actor.
@@ -1639,7 +1753,7 @@ class CombatParser {
         rec.modifiers.deadly_strike = modifiers?.indexOf( 'Deadly Strike' ) > -1;
         rec.modifiers.finishing_blow = modifiers?.indexOf( 'Finishing Blow' ) > -1;
     
-        this._addEncounterEvent( rec );
+        return this._addEncounterEvent( rec );
 
     }
     
@@ -1654,6 +1768,8 @@ class CombatParser {
     
     /**
      * Adds a new defense event to the encounter.
+     * 
+     * @returns {FctModel?} Returns an FCT model if the log record is an FCT event, otherwise undefined.
      * 
      * @param {Date} timestamp The timestamp of the event.
      * @param {string} actor The name of the actor.
@@ -1681,7 +1797,7 @@ class CombatParser {
         rec.modifiers.block = avoidTypeName === 'block';
         rec.modifiers.miss = avoidTypeName === 'miss';
     
-        this._addEncounterEvent( rec );
+        return this._addEncounterEvent( rec );
         
     }
     
@@ -1696,6 +1812,8 @@ class CombatParser {
     
     /**
      * Adds a new detrimental spell event to the encounter.
+     * 
+     * @returns {FctModel?} Returns an FCT model if the log record is an FCT event, otherwise undefined.
      * 
      * @param {Date} timestamp The timestamp of the event.
      * @param {string} actor The name of the actor.
@@ -1721,8 +1839,9 @@ class CombatParser {
         rec.modifiers.critical = modifiers?.indexOf( 'Critical' ) > -1;
         rec.modifiers.lucky = modifiers?.indexOf( 'Lucky' ) > -1;
         rec.modifiers.strikethrough = modifiers?.indexOf( 'Strikethrough' ) > -1;
+        rec.resistType = resistType;
     
-        this._addEncounterEvent( rec );
+        return this._addEncounterEvent( rec );
         
     }
     
@@ -1737,6 +1856,8 @@ class CombatParser {
     
     /**
      * Adds a new beneficial spell event to the encounter.
+     * 
+     * @returns {FctModel?} Returns an FCT model if the log record is an FCT event, otherwise undefined.
      * 
      * @param {Date} timestamp The timestamp of the event.
      * @param {string} actor The name of the actor.
@@ -1764,7 +1885,7 @@ class CombatParser {
         rec.modifiers.critical = modifiers?.indexOf( 'Critical' ) > -1;
         rec.modifiers.lucky = modifiers?.indexOf( 'Lucky' ) > -1;
     
-        this._addEncounterEvent( rec );
+        return this._addEncounterEvent( rec );
         
     }
     
@@ -1779,6 +1900,8 @@ class CombatParser {
     
     /**
      * Adds a new thorns event to the encounter.
+     * 
+     * @returns {FctModel?} Returns an FCT model if the log record is an FCT event, otherwise undefined.
      * 
      * @param {Date} timestamp The timestamp of the event.
      * @param {string} actor The name of the actor.
@@ -1797,7 +1920,7 @@ class CombatParser {
         rec.thorns = true;
         rec.modifiers = new AttackModifiers();
     
-        this._addEncounterEvent( rec );
+        return this._addEncounterEvent( rec );
         
     }
 
@@ -2041,4 +2164,6 @@ class CombatParser {
     
 }
 
-module.exports = CombatParser;
+module.exports = {
+    CombatParser,
+};
