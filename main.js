@@ -693,7 +693,7 @@ const scheduler = async () => {
 app.on( 'ready', function () {
 
     userPreferences.attachIpcEvents( mainWindowRef, sendTick, logBootstrapRef );
-    winManager.attachIpcEvents( mainWindowRef, overlayDatabase, userPreferences );
+    winManager.attachIpcEvents( mainWindowRef, overlayDatabase, userPreferences, characterDatabase );
     dkpDatabase.attachIpcEvents( mainWindowRef, sendTick );
     fileDatabase.attachIpcEvents( mainWindowRef );
     triggerDatabase.attachIpcEvents( mainWindowRef, sendTick, fileDatabase, userPreferences );
