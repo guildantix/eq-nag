@@ -18,7 +18,7 @@ const { FctModel, FctTypes } = require( '../data/models/fct' );
 const { DateUtilities } = require( '../utilities/dates' );
 const { IpcMessage } = require( '../data/models/common' );
 const ArrayUtilities = require( '../utilities/arrays' );
-const CombatParser = require( '../utilities/combat-parser' );
+const { CombatParser } = require( '../utilities/combat-parser' );
 const { LogRecord, DpsMeterSettings } = require( '../data/models/combat-parser' );
 const chunkSize = 512 * 1024;
 
@@ -163,45 +163,9 @@ let buffRegExs = {};
 
     
 let rgxTimestamp = /^\[(.*?)\]\s*/i;
-let rgxCombatText = /hit|damage|miss|dodge|riposte|parry|become better|backstab|stun|attack|crush/i;
-let rgxFctCritical = /\. \(.*(Critical|Crippling Blow|Strikethrough).*\)/i;
-let rgxCombatModifiers = /\. \((?<combatModifiers>.*)\)$/i;
-let fctRegExs = [
 
-    // 0: rgxMelee
-    /(?<actor>You) (?<action>[a-zA-Z0-9_]*) (?<target>.*) for (?<amount>[0-9]*) points of damage\./i,
 
-    // 1: rgxMeleeMiss
-    /(?<actor>You) try to (?<action>[a-zA-Z0-9_]*) (?<target>.*),/i,
 
-    // 2: rgxSpellDmg
-    /(?<target>.*) has taken (?<amount>[0-9]*) damage from (?<actor>you)r (?<action>.*)\./i,
-
-    // 3: rgxThorns
-    /(?<target>.*) is pierced by (?<actor>YOU)R (?<action>thorns) for (?<amount>[0-9]*) points of non-melee damage\./i,
-
-    // 4: rgxSkillUp
-    /(?<actor>You) have become better at (?<action>[a-zA-Z0-9_\s]*)! \((?<amount>[0-9]*)\)/i,
-
-    // 5: rgxTakeMeleeDmg
-    /(?<actor>.*) (?<action>[a-zA-Z0-9_]*) (?<target>YOU) for (?<amount>[0-9]*) points of damage\./i,
-
-    // 6: rgxAvoidMeleeDmg
-    /(?<actor>.*) tries to (?<action>[a-zA-Z0-9_]*) (?<target>YOU), but (?<avoidType>[a-zA-Z0-9_\s]*)/i,
-
-    // 7: rgxTakeSpellDmg
-    /(?<actor>.*) hit (?<target>you) for (?<amount>[0-9]*) points of (?<damageType>[a-zA-Z0-9_]*) damage by (?<action>.*)\./i,
-
-    // 8: rgxSpellDmg
-    /(?<actor>You) ([a-zA-Z0-9_]*) (?<target>.*) for (?<amount>[0-9]*) points of (?<damageType>.*) damage by (?<action>.*)\./i,
-
-    // 9: Other heal you
-    /^(?<actor>.+?) healed (?<target>you) (over time for|for) (?<amount>[0-9]*) (\((?<overhealing>[0-9]*)\) )?hit points by (?<action>.+?)\./i,
-
-    // 10: You heal other
-    /^(?<actor>You) healed (?<target>.+?) (over time for|for) (?<amount>[0-9]*) (\((?<overhealing>[0-9]*)\) )?hit points by (?<action>.+?)\./i,
-
-];
 
 
 
@@ -1908,12 +1872,22 @@ function parseLogEntries( raw, simulating, padTime ) {
             
             if ( myCombatParserCache?.length > 0 ) {
                 // Add cached log entries to the combat tracker.
-                myCombatParserCache.forEach( c => myCombatParser.addCombatEvent( c ) );
+                myCombatParserCache.forEach( c => {
+                    let fctModel = myCombatParser?.addCombatEvent( c );
+                    
+                    if ( fctModel ) {
+                        ipcRenderer.send( 'overlay:send:fct-component', fctModel );
+                    }
+                } );
                 myCombatParserCache = [];
             }
 
             // Add to the combat tracker.
-            myCombatParser?.addCombatEvent( raw );
+            let fctModel = myCombatParser?.addCombatEvent( raw );
+
+            if ( fctModel ) {
+                ipcRenderer.send( 'overlay:send:fct-component', fctModel );
+            }
 
         } else if ( dpsMeterSettings.show ) {
 
@@ -1973,96 +1947,96 @@ function parseLogEntries( raw, simulating, padTime ) {
             ipcRenderer.send( 'quicksharePackage_captured', quickSharePackage.groups.packageId );
         }
     
-        if ( enableFct && raw.match( rgxCombatText )?.length > 0 ) {
+        // if ( enableFct && raw.match( rgxCombatText )?.length > 0 ) {
 
-            try {
+        //     try {
 
-                for ( let i = 0; i < fctRegExs.length; i++ ) {
-                    let results = fctRegExs[ i ].exec( log );
+        //         for ( let i = 0; i < fctRegExs.length; i++ ) {
+        //             let results = fctRegExs[ i ].exec( log );
                 
-                    if ( results && results.length > 1 ) {
-                        let model = new FctModel();
+        //             if ( results && results.length > 1 ) {
+        //                 let model = new FctModel();
 
-                        // Misses: 1 - My melee misses, 6 - Other melee misses
-                        let misses = [ 1, 6 ];
+        //                 // Misses: 1 - My melee misses, 6 - Other melee misses
+        //                 let misses = [ 1, 6 ];
     
-                        model.combatTypes.myHits = [ 0 ].indexOf( i ) > -1;
-                        model.combatTypes.otherHitsOnMe = [ 5 ].indexOf( i ) > -1;
-                        model.combatTypes.mySpellHits = [ 2, 3, 8 ].indexOf( i ) > -1;
-                        model.combatTypes.otherSpellHitsOnMe = [ 7 ].indexOf( i ) > -1;
-                        model.combatTypes.otherHealingOnMe = [ 9 ].indexOf( i ) > -1;
-                        model.combatTypes.myHealing = [ 10 ].indexOf( i ) > -1;
-                        model.combatTypes.skillUp = [ 4 ].indexOf( i ) > -1;
+        //                 model.combatTypes.myHits = [ 0 ].indexOf( i ) > -1;
+        //                 model.combatTypes.otherHitsOnMe = [ 5 ].indexOf( i ) > -1;
+        //                 model.combatTypes.mySpellHits = [ 2, 3, 8 ].indexOf( i ) > -1;
+        //                 model.combatTypes.otherSpellHitsOnMe = [ 7 ].indexOf( i ) > -1;
+        //                 model.combatTypes.otherHealingOnMe = [ 9 ].indexOf( i ) > -1;
+        //                 model.combatTypes.myHealing = [ 10 ].indexOf( i ) > -1;
+        //                 model.combatTypes.skillUp = [ 4 ].indexOf( i ) > -1;
 
-                        model.actor = results.groups?.actor;
-                        model.action = results.groups?.action;
-                        model.target = results.groups?.target;
-                        model.amount = misses.includes( i ) ? undefined : +results.groups?.amount;
-                        model.avoidType = results.groups?.avoidType;
-                        model.damageType = results.groups?.damageType;
-                        model.overHealing = +results.groups?.overhealing;
+        //                 model.actor = results.groups?.actor;
+        //                 model.action = results.groups?.action;
+        //                 model.target = results.groups?.target;
+        //                 model.amount = misses.includes( i ) ? undefined : +results.groups?.amount;
+        //                 model.avoidType = results.groups?.avoidType;
+        //                 model.damageType = results.groups?.damageType;
+        //                 model.overHealing = +results.groups?.overhealing;
 
-                        // We may use this if performance requires it.  However, most thing late game with have some modifier on it.
-                        // if ( raw.match( /\)$/gi ) ) {
+        //                 // We may use this if performance requires it.  However, most thing late game with have some modifier on it.
+        //                 // if ( raw.match( /\)$/gi ) ) {
                             
-                        // }
+        //                 // }
 
-                        let combatModifiers = /\. \((?<combatModifiers>.*)\)$/gi.exec( raw )?.groups?.combatModifiers;
-                        if ( combatModifiers ) {
+        //                 let combatModifiers = /\. \((?<combatModifiers>.*)\)$/gi.exec( raw )?.groups?.combatModifiers;
+        //                 if ( combatModifiers ) {
 
-                            let checkModifiers = ( modifierName ) => {
+        //                     let checkModifiers = ( modifierName ) => {
                                 
-                                if ( combatModifiers.length === 0 ) {
-                                    return false;
-                                }
+        //                         if ( combatModifiers.length === 0 ) {
+        //                             return false;
+        //                         }
     
-                                let i = combatModifiers.indexOf( modifierName );
+        //                         let i = combatModifiers.indexOf( modifierName );
                                 
-                                if ( i > -1 ) {
-                                    combatModifiers = combatModifiers.substring( 0, i ) + combatModifiers.substring( i + modifierName.length );
-                                    return true;
-                                }
+        //                         if ( i > -1 ) {
+        //                             combatModifiers = combatModifiers.substring( 0, i ) + combatModifiers.substring( i + modifierName.length );
+        //                             return true;
+        //                         }
     
-                                return false;
-                            }
+        //                         return false;
+        //                     }
 
-                            checkModifiers( 'Critical' ) && model.combatModifiers.push( 'critical' );
-                            checkModifiers( 'Crippling Blow' ) && model.combatModifiers.push( 'crippling_blow' );
-                            checkModifiers( 'Flurry' ) && model.combatModifiers.push( 'flurry' );
-                            checkModifiers( 'Lucky' ) && model.combatModifiers.push( 'lucky' );
-                            checkModifiers( 'Twincast' ) && model.combatModifiers.push( 'twincast' );
-                            checkModifiers( 'Riposte' ) && model.combatModifiers.push( 'riposte' );
-                            checkModifiers( 'Strikethrough' ) && model.combatModifiers.push( 'strikethrough' );
-                            checkModifiers( 'Wild Rampage' ) && model.combatModifiers.push( 'wild_rampage' );
-                            checkModifiers( 'Rampage' ) && model.combatModifiers.push( 'rampage' );
-                            checkModifiers( 'Assassinate' ) && model.combatModifiers.push( 'assassinate' );
-                            checkModifiers( 'Headshot' ) && model.combatModifiers.push( 'headshot' );
-                            checkModifiers( 'Double Bow Shot' ) && model.combatModifiers.push( 'double_bow_shot' );
-                            checkModifiers( 'Deadly Strike' ) && model.combatModifiers.push( 'deadly_strike' );
-                            checkModifiers( 'Finishing Blow' ) && model.combatModifiers.push( 'finishing_blow' );
+        //                     checkModifiers( 'Critical' ) && model.combatModifiers.push( 'critical' );
+        //                     checkModifiers( 'Crippling Blow' ) && model.combatModifiers.push( 'crippling_blow' );
+        //                     checkModifiers( 'Flurry' ) && model.combatModifiers.push( 'flurry' );
+        //                     checkModifiers( 'Lucky' ) && model.combatModifiers.push( 'lucky' );
+        //                     checkModifiers( 'Twincast' ) && model.combatModifiers.push( 'twincast' );
+        //                     checkModifiers( 'Riposte' ) && model.combatModifiers.push( 'riposte' );
+        //                     checkModifiers( 'Strikethrough' ) && model.combatModifiers.push( 'strikethrough' );
+        //                     checkModifiers( 'Wild Rampage' ) && model.combatModifiers.push( 'wild_rampage' );
+        //                     checkModifiers( 'Rampage' ) && model.combatModifiers.push( 'rampage' );
+        //                     checkModifiers( 'Assassinate' ) && model.combatModifiers.push( 'assassinate' );
+        //                     checkModifiers( 'Headshot' ) && model.combatModifiers.push( 'headshot' );
+        //                     checkModifiers( 'Double Bow Shot' ) && model.combatModifiers.push( 'double_bow_shot' );
+        //                     checkModifiers( 'Deadly Strike' ) && model.combatModifiers.push( 'deadly_strike' );
+        //                     checkModifiers( 'Finishing Blow' ) && model.combatModifiers.push( 'finishing_blow' );
 
-                        } else {
-                            model.combatModifiers.push( 'normal' );
-                        }
+        //                 } else {
+        //                     model.combatModifiers.push( 'normal' );
+        //                 }
                         
-                        model.timestamp = timestamp;
-                        model.characterId = characterId;
+        //                 model.timestamp = timestamp;
+        //                 model.characterId = characterId;
     
-                        ipcRenderer.send( 'overlay:send:fct-component', model );
+        //                 ipcRenderer.send( 'overlay:send:fct-component', model );
     
-                        // leave the loop, we found the correct FCT type.
-                        break;
+        //                 // leave the loop, we found the correct FCT type.
+        //                 break;
     
-                    } // if ( results && results.length > 1 )
+        //             } // if ( results && results.length > 1 )
     
-                } // for ( let i = 0; i < fctRegExs.length; i++ )
+        //         } // for ( let i = 0; i < fctRegExs.length; i++ )
 
-            } catch ( error ) {
-                logError( error, raw, simulating, padTime, ErrorMessages.fctException(), null );
+        //     } catch ( error ) {
+        //         logError( error, raw, simulating, padTime, ErrorMessages.fctException(), null );
 
-            }
+        //     }
         
-        }
+        // }
 
         // If there are any cancellable actions, evaluate them here.
         if ( cancellableComponents?.length > 0 ) {
