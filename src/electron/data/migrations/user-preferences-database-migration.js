@@ -1,5 +1,5 @@
 const { DpsMeterSettings } = require( '../models/combat-parser' );
-const { UserPreferencesStoreModel, StyleProperties } = require( '../models/common' );
+const { UserPreferencesStoreModel, StyleProperties, QuickShareAuthorListTypes } = require( '../models/common' );
 const { FctStylesModel } = require( '../models/fct' );
 const { backupDatafile } = require( './backup-data-file' );
 const customAlphabet = require( 'nanoid' ).customAlphabet;
