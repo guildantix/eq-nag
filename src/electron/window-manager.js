@@ -10,6 +10,7 @@ const { IpcMessage } = require( "./data/models/common" );
 const { LogFileLocation } = require( "./data/log-file-location" );
 const path = require( "path" );
 const ElectronUtilities = require( "./utilities/electron" );
+const CharacterDatabaseStore = require( "./data/character-database" );
 
 /** 
  * We will occassionally need to disable the 'force on top' of the renderer, so 
@@ -59,6 +60,9 @@ class WindowManager {
     /** @type {OverlayDatabaseStore} */
     #overlayDatabase;
 
+    /** @type {CharacterDatabaseStore} */
+    #characterDatabase;
+
     /** @type {NodeJS.Timeout} */
     #resumeRendererMouseForwardingTimeout = null;
 
@@ -98,12 +102,14 @@ class WindowManager {
      * @param {ForwardRef<BrowserWindow>} mainWindowRef The main window of the application.
      * @param {OverlayDatabaseStore} overlayDatabase The overlay database.
      * @param {UserPreferencesStore} userPreferencesDatabase The user pref database.
+     * @param {CharacterDatabaseStore} characterDatabase The character database.
      */
-    attachIpcEvents( mainWindowRef, overlayDatabase, userPreferencesDatabase ) {
+    attachIpcEvents( mainWindowRef, overlayDatabase, userPreferencesDatabase, characterDatabase ) {
 
         this.#userPrefDb = userPreferencesDatabase;
         this.#mainWindow = mainWindowRef;
         this.#overlayDatabase = overlayDatabase;
+        this.#characterDatabase = characterDatabase;
 
         userPreferencesDatabase.onChanges( () => {
             if ( this.#renderer ) {
@@ -1013,8 +1019,10 @@ class WindowManager {
             x: ( workAreaSize.width - size.width ) / 2,
             y: ( workAreaSize.height - size.height ) / 2,
         } );
+
+        let characterModel = this.#characterDatabase.findCharacterByNameAndServer( characterName, serverName );
         
-        deathRecap.loadURL( `file://${__dirname}/windows/death-recap.html?logFilePath=${encodeURI( logFilePath )}&lineNo=${lineNo}&characterName=${encodeURI(characterName)}&messageId=${encodeURI(messageId)}` );
+        deathRecap.loadURL( `file://${__dirname}/windows/death-recap.html?logFilePath=${encodeURI( logFilePath )}&lineNo=${lineNo}&characterName=${encodeURI( characterName )}&messageId=${encodeURI( messageId )}&takp=${characterModel?.takp ? '1' : '0'}` );
         deathRecap.setAlwaysOnTop( true, "screen-saver" );
         
         // Open the DevTools.
