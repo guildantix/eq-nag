@@ -3,6 +3,7 @@ const Handlebars = require( "handlebars" );
 const _ = require( 'lodash' );
 const { IpcMessage } = require( '../data/models/common' );
 const { CombatParser } = require( '../utilities/combat-parser' );
+const { TakpCombatParser } = require( '../utilities/combat-parser-takp' );
 const customAlphabet = require( 'nanoid' ).customAlphabet;
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const nanoid = customAlphabet( alphabet, 16 );
@@ -98,8 +99,9 @@ function getNumberFormat( numeric ) {
  * @param {string} messageId The ipc message id.
  * @param {string} characterName The name of the character.
  * @param {string} serverName The name of the server.
+ * @param {boolean} takp Whether or not the server is a TAKP server.
  */
-function DeathRecap( logFilePath, lineNo, messageId, characterName, serverName ) {
+function DeathRecap( logFilePath, lineNo, messageId, characterName, serverName, takp ) {
     
     DomUtilities.docReady( f => {
         let title = document.querySelector( '#characterName' );
@@ -115,7 +117,7 @@ function DeathRecap( logFilePath, lineNo, messageId, characterName, serverName )
     } );
 
     // "Constructor"
-    let combatParser = new CombatParser( characterName, serverName );
+    let combatParser = takp ? new TakpCombatParser( characterName, serverName ) : new CombatParser( characterName, serverName );
 
     if ( lineNo !== -1 ) {
         
