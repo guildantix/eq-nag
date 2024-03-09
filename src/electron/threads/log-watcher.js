@@ -19,6 +19,7 @@ const { DateUtilities } = require( '../utilities/dates' );
 const { IpcMessage } = require( '../data/models/common' );
 const ArrayUtilities = require( '../utilities/arrays' );
 const { CombatParser } = require( '../utilities/combat-parser' );
+const { TakpCombatParser } = require( '../utilities/combat-parser-takp' );
 const { LogRecord, DpsMeterSettings } = require( '../data/models/combat-parser' );
 const chunkSize = 512 * 1024;
 
@@ -263,7 +264,7 @@ const logError = ( err, raw, simulating, padTime, errorDesc, trigger, action ) =
     logParseError( err, raw, simulating, padTime, errorDesc, trigger, action );
 };
 
-/** @type {CombatParser | undefined} */
+/** @type {CombatParser | TakpCombatParser | undefined} */
 let myCombatParser = undefined;
 
 /** @type {string[]} */
@@ -1291,7 +1292,7 @@ function LogWatcher(character, logPosition) {
         .invoke( 'app:register-combat-parser', characterId )
         .then( ( registeredCombatParser ) => {
             if ( registeredCombatParser === characterId ) {
-                myCombatParser = new CombatParser( characterName, character.server );
+                myCombatParser = charModel.takp ? new TakpCombatParser( characterName, character.server ) : new CombatParser( characterName, character.server );
                 myCombatParser.onEncounterReset = onEncounterReset;
                 startDpsTracking();
             }
