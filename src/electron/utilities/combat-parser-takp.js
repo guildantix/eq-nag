@@ -122,24 +122,17 @@ const combatRgx = {
     // Melee active defense. [https://regex101.com/r/9fsdCJ/2]
     ActiveDefense: /^(?<actor>.*?) (try|tries) to ([a-zA-Z0-9_]*) (?<target>.*), but ((\k<target> (?<defenseType>.*)))![\s]?(\((?<modifiers>.*)?\))?/gi,
 
-    // TODO: Update for TAKP
-    // Direct Damage spell attacks. [https://regex101.com/r/XBbPTp/2]
-    DirectDamage: /^(?<actor>.*) hit (?<target>.*) for (?<damage>[0-9]*) points of (?<resistType>[a-zA-Z0-9_]*) damage by (?<attackType>.*)\.[\s]?(\((?<modifiers>.*)?\))?/gi,
+    // Direct Damage spell attacks. [https://regex101.com/r/K5N1Ss/1]
+    DirectDamage: /^(?<target>.*) was hit by non-melee for (?<damage>[0-9]*) points of damage\./gi,
 
     // Your Damage Over Time spell reports. [https://regex101.com/r/DaGnUf/2]
     YourDoT: /^(?<target>.*) has taken (?<damage>[0-9]*) damage from (?<actor>you)r (?<attackType>.*)\.[\s]?(\((?<modifiers>.*)?\))?/gi,
 
-    // TODO: Doesn't exist for TAKP, only your own spells are reported.
-    // Other Damage Over Time spell reports. [https://regex101.com/r/PLpfT1/2]
-    OtherDoT: /^(?<target>.*) (has|have) taken (?<damage>[0-9]*) damage from (?<attackType>.*) by (?<actor>.*)\.[\s]?(\((?<modifiers>.*)?\))?/gi,
+    // TAKP: TAKP doesn't distinguish between thorns and other spell damage.
+    // Thorns: /^.*/gi,
 
-    // TODO: TAKP doesn't distinguish between thorns and other spell damage.
-    // Thorns damage. [https://regex101.com/r/w4h5xP/1]
-    Thorns: /^(?<target>.*) is pierced by (?<actor>.+?)('s)? (?<attackType>thorns) for (?<damage>[0-9]*) points of non-melee damage\./gi,
-
-    // TODO: Only the person being healed sees this message. Useless for metrics, will need to remove this.
-    // Healing [https://regex101.com/r/8Xtkrq/2]
-    Healing: /^(?<actor>.+?) (has been\s)?healed (?<target>.+?) (?<healDuration>over time for|for) (?<healActual>[0-9]*) (\((?<healLiteral>[0-9]*)\) )?hit points by (?<healType>.+?)\.[\s]?(\((?<modifiers>.*)?\))?/gi,
+    // TAKP: Only the person being healed has a logged message. Useless for metrics, removed for TAKP.
+    // Healing: /^.*/gi,
     
     SlainBy: /^(?<target>.+?) (has|have) been slain by (?<actor>[^!]*)!$/gi,
 
@@ -151,33 +144,9 @@ const combatRgx = {
     // https://regex101.com/r/zL5Mr4/1
     Chat: /\] (?<player>.*) (tells the raid|tells the guild|tells the group),\s+'.*'$/gi,
 
-    // TODO: Does not exist on TAKP.
-    // https://regex101.com/r/EiZc5a/1
-    Achievement: /\] Your guildmate (?<player>.*) has completed (.*) achievement\.$/gi,
-
-    // TODO: Does not exist on TAKP.
-    // https://regex101.com/r/fjHm0j/1
-    Defensive: /^(?<actor>.+?)\b\s{0,1}'{0,1}s{0,1}\b.* assumes a defensive fighting style\.$/gi,
-
-    // TODO: Does not exist on TAKP.
-    // https://regex101.com/r/AjOthH/1
-    Stonewall: /^(?<actor>.+?)\b\s{0,1}'{0,1}s{0,1}\b.* body becomes as hard as stone\.$/gi,
-
-    // TODO: Does not exist on TAKP.
-    // https://regex101.com/r/Hz44Hy/1
-    FinalStand: /^(?<actor>.+?)\b\s{0,1}'{0,1}s{0,1}\b.* steels themselves for a final stand\.$/gi,
-
-    // TODO: Does not exist on TAKP.
-    // https://regex101.com/r/e1bXss/1
-    LastStand: /^(?<actor>.+?)\b\s{0,1}'{0,1}s{0,1}\b.* steels themselves for a last stand\.$/gi,
-
     // https://regex101.com/r/I4wX9J/1
     PetLeader: /^(?<pet>.+?) says 'My leader is (?<player>.*)\.'/gi,
 
-    // The following match LastStand
-    // CulminatingStand: null,
-    // UltimateStand: null,
-    // ResoluteStand: null,
 }
 
 // https://regex101.com/r/cqfoUU/2
@@ -568,37 +537,15 @@ class TakpCombatParser {
             }
             
             regxResult = executCombatRgx( combatRgx.DirectDamage, entry.log );
-            regxResult = regxResult == null ? executCombatRgx( combatRgx.YourDoT, entry.log ) : regxResult;
-            regxResult = regxResult == null ? executCombatRgx( combatRgx.OtherDoT, entry.log ) : regxResult;
             if ( regxResult !== null ) {
-                return this._addDetrimentalSpellEvent( timestamp,  regxResult.groups.actor  ,  regxResult.groups.target , +regxResult.groups.damage, regxResult.groups.attackType, regxResult.groups.resistType, regxResult.groups.modifiers );
-            }
-            
-            regxResult = executCombatRgx( combatRgx.Thorns, entry.log );
-            if ( regxResult !== null ) {
-                return this._addThornsEvent( timestamp,  regxResult.groups.actor ,  regxResult.groups.target , +regxResult.groups.damage );
-            }
-            
-            regxResult = executCombatRgx( combatRgx.Healing, entry.log );
-            if ( regxResult !== null ) {
-                return this._addBeneficialSpellEvent( timestamp,  regxResult.groups.actor ,  regxResult.groups.target , regxResult.groups.healDuration, +regxResult.groups.healActual, regxResult.groups.healType, +regxResult.groups.healLiteral, regxResult.groups.modifiers );
+                return this._addDetrimentalSpellEvent( timestamp, 'You', regxResult.groups.target, +regxResult.groups.damage, 'Non-melee', null, null );
             }
 
-            regxResult = executCombatRgx( combatRgx.Defensive, entry.log );
-            regxResult = regxResult == null ? executCombatRgx( combatRgx.Stonewall, entry.log ) : regxResult;
-            regxResult = regxResult == null ? executCombatRgx( combatRgx.FinalStand, entry.log ) : regxResult;
-            regxResult = regxResult == null ? executCombatRgx( combatRgx.LastStand, entry.log ) : regxResult;
+            regxResult = executCombatRgx( combatRgx.YourDoT, entry.log );
             if ( regxResult !== null ) {
-                let names = this._getActorTargetNames( regxResult.groups.actor, regxResult.groups.target );
-                this.encounterDefensiveTimers.push( {
-                    name: names.actor,
-                    start: timestamp,
-                    duration: 3 * 60,
-                    end: DateUtilities.addSeconds( timestamp, 3 * 60 )
-                } );
-                return undefined;
+                return this._addDetrimentalSpellEvent( timestamp, regxResult.groups.actor, regxResult.groups.target, +regxResult.groups.damage, regxResult.groups.attackType, regxResult.groups.resistType, regxResult.groups.modifiers );
             }
-
+            
         }
     }
 
@@ -837,41 +784,19 @@ class TakpCombatParser {
                     this._addMeleeAvoidance( timestamp, regxResult.groups.actor, regxResult.groups.target, regxResult.groups.defenseType, regxResult.groups.attackType, regxResult.groups.modifiers );
                     continue;
                 }
-                
-                regxResult = executCombatRgx( combatRgx.DirectDamage, logs[ i ] );
-                regxResult = regxResult == null ? executCombatRgx( combatRgx.YourDoT, logs[ i ] ) : regxResult;
-                regxResult = regxResult == null ? executCombatRgx( combatRgx.OtherDoT, logs[ i ] ) : regxResult;
+
+                regxResult = executCombatRgx( combatRgx.DirectDamage, entry.log );
+                if ( regxResult !== null ) {
+                    this._addDetrimentalSpellEvent( timestamp, 'You', regxResult.groups.target, +regxResult.groups.damage, 'Non-melee', null, null );
+                    continue;
+                }
+    
+                regxResult = executCombatRgx( combatRgx.YourDoT, entry.log );
                 if ( regxResult !== null ) {
                     this._addDetrimentalSpellEvent( timestamp, regxResult.groups.actor, regxResult.groups.target, +regxResult.groups.damage, regxResult.groups.attackType, regxResult.groups.resistType, regxResult.groups.modifiers );
                     continue;
                 }
                 
-                regxResult = executCombatRgx( combatRgx.Thorns, logs[ i ] );
-                if ( regxResult !== null ) {
-                    this._addThornsEvent( timestamp, regxResult.groups.actor, regxResult.groups.target, +regxResult.groups.damage );
-                    continue;
-                }
-                
-                regxResult = executCombatRgx( combatRgx.Healing, logs[ i ] );
-                if ( regxResult !== null ) {
-                    this._addBeneficialSpellEvent( timestamp, regxResult.groups.actor, regxResult.groups.target, regxResult.groups.healDuration, +regxResult.groups.healActual, regxResult.groups.healType, +regxResult.groups.healLiteral, regxResult.groups.modifiers );
-                    continue;
-                }
-
-                regxResult = executCombatRgx( combatRgx.Defensive, logs[ i ] );
-                regxResult = regxResult == null ? executCombatRgx( combatRgx.Stonewall, logs[ i ] ) : regxResult;
-                regxResult = regxResult == null ? executCombatRgx( combatRgx.FinalStand, logs[ i ] ) : regxResult;
-                regxResult = regxResult == null ? executCombatRgx( combatRgx.LastStand, logs[ i ] ) : regxResult;
-                if ( regxResult !== null ) {
-                    defensiveTimers.push( {
-                        name: regxResult.groups.actor,
-                        start: timestamp,
-                        duration: 3 * 60,
-                        end: DateUtilities.addSeconds( timestamp, 3 * 60 )
-                    } );
-                    continue;
-                }
-
             }
         }
 
@@ -905,7 +830,6 @@ class TakpCombatParser {
         for ( let i = 0; i < lines.length; i++ ) {
             let regxResult = executCombatRgx( combatRgx.GroupRaid, lines[ i ] );
             regxResult = regxResult == null ? executCombatRgx( combatRgx.Chat, lines[ i ] ) : regxResult;
-            regxResult = regxResult == null ? executCombatRgx( combatRgx.Achievement, lines[ i ] ) : regxResult;
             if ( regxResult !== null && this._verifiedPlayers.indexOf( regxResult.groups.player ) === -1 ) {
                 this._verifiedPlayers.push( regxResult.groups.player );
                 updateServerModel = true;
