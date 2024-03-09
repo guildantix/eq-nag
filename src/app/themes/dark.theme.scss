@@ -912,3 +912,45 @@ a {
         text-shadow:0px 0px 4px #69f0ae, 0px 0px 2px #69f0ae;
     }
 }
+
+.log-text {
+    a {
+        color: darken($color-blue, 10%);
+        text-decoration: none;
+
+        &:hover {
+            color: $color-blue;
+        }
+        &:active {
+            color: darken($color-blue, 33%);
+        }
+    }
+}
+
+span.links {
+    mat-icon {
+        &.color-blue {
+            color: darken($color-blue, 10%);
+
+            &:hover {
+                color: $color-blue;
+            }
+
+            &:active {
+                color: darken($color-blue, 33%);
+            }
+        }
+
+        &.color-green {
+            color: darken($color-green, 10%);
+
+            &:hover {
+                color: $color-green;
+            }
+
+            &:active {
+                color: darken($color-green, 33%);
+            }
+        }
+    }
+}
