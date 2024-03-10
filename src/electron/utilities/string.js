@@ -1,4 +1,5 @@
 const { result } = require( "lodash" );
+const { NConditionalModel, NConditionalOperationModel } = require( "../data/models/common" );
 
 
 
@@ -720,7 +721,7 @@ function parseShortCodesToRegex( value, characterName ) {
 /**
  * Parses the given phrase and converts any conditional n values into proper regular expressions.  If a conversion occurs, a list of validation functions will be included in the result.
  * 
- * @returns {{value: string, operations: {nIndex: number, validateFns: ((nValue: number) => boolean)[]}[]} | undefined} 
+ * @returns {NConditionalModel | undefined} 
  * 
  * @param {string} value The phrase to search.
  */
@@ -728,7 +729,7 @@ function parseNConditionalCodesToRegex( value ) {
     // Functional matches:
     // {N>=9000} => (?<N>[0-9]+?), with a validation function.
 
-    /** @type {{value: string, operations: {nIndex: number, validateFns: ((nValue: number) => boolean)[]}[]}} */
+    /** @type {NConditionalModel} */
     let output = {};
     let ginaMatches = [ ...value.matchAll( /{N([0-9]*?)(>|>=|<|<=|=|!=)([0-9]*?)}/gi ) ];
 
@@ -738,7 +739,7 @@ function parseNConditionalCodesToRegex( value ) {
         ginaMatches.forEach( m => {
             let operator = m[ 2 ];
             let opVal = +m[ 3 ];
-            /** @type {{nIndex: number, validateFns: ((nValue: number) => boolean)[]}}} */
+            /** @type {NConditionalOperationModel} */
             let operation = {
                 nIndex: +m[ 1 ] > 0 ? +m[ 1 ] : undefined,
                 validateFns: [],
@@ -787,7 +788,7 @@ function parseNConditionalCodesToRegex( value ) {
             let opVal2 = m[ 4 ].match( /[A-z]+/ ) || m[ 4 ] === '' ? undefined : +m[ 4 ];
             let rightHandeOp = m[ 5 ];
 
-            /** @type {{nIndex: number, validateFns: ((nValue: number) => boolean)[]}} */
+            /** @type {NConditionalOperationModel} */
             let operation = {
                 nIndex: nIndex > 0 ? nIndex : undefined,
                 validateFns: [],

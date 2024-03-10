@@ -376,6 +376,20 @@ class WinInfo {
 
 }
 
+class NConditionalOperationModel {
+    /** @type {number} */
+    nIndex;
+    /** @type {( ( nValue: number ) => boolean )[]} */
+    validateFns = [];
+}
+
+class NConditionalModel {
+    /** @type {string} */
+    value;
+    /** @type {NConditionalOperationModel[]} */
+    operations = [];
+}
+
 module.exports = {
     StyleProperties,
     BasicError,
@@ -395,4 +409,6 @@ module.exports = {
     Version, 
     UserPreferencesStoreModel, 
     WinInfo, 
+    NConditionalOperationModel, 
+    NConditionalModel, 
 };
