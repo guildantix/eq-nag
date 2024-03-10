@@ -1428,6 +1428,9 @@ function generateTriggerFns() {
                                 let rgxValue = phrase.phrase;
     
                                 rgxValue = StringUtilities.parseShortCodesToRegex( rgxValue, characterName );
+                                // TODO: n-conditionals must be cached somehow, this is expensive to build each time.
+                                let nConditionals = StringUtilities.parseNConditionalCodesToRegex( rgxValue, characterName );
+                                rgxValue = nConditionals?.value ?? rgxValue;
                                 rgxValue = StringUtilities.parseStoredVariablesToRegex( rgxValue, storedVariables );
     
                                 if ( trigger.captureMethod === 'Sequential' ) {
@@ -1441,6 +1444,28 @@ function generateTriggerFns() {
                                 _renderedPhrases[ phrase.phraseId ] = rgxValue;
                                 _phraseRegEx[ phrase.phraseId ] = _phraseRegEx[ phrase.phraseId ] ?? new RegExp( rgxValue, getPhraseRegexOptions( phrase ) );
                                 let _res = _phraseRegEx[ phrase.phraseId ].exec( value );
+
+                                if ( _res?.length > 0 && nConditionals ) {
+                                    for ( let opI = 0; opI < nConditionals.operations.length; opI++ ) {
+                                        const op = nConditionals.operations[ opI ];
+                                        let value = op.nIndex == undefined ? +_res.groups.N : +_res.groups[ `N${op.nIndex}` ];
+                                        let pass = true;
+
+                                        for ( let vi = 0; vi < op.validateFns?.length ?? 0; vi++ ) {
+                                            pass = op.validateFns[ vi ]( value );
+
+                                            if ( !pass ) {
+                                                break;
+                                            }
+                                        }
+
+                                        if ( !pass ) {
+                                            _res = undefined;
+                                            break;
+                                        }
+                                    }
+                                }
+
                                 return {
                                     phraseId: phrase.phraseId,
                                     match: _res?.length > 0,
