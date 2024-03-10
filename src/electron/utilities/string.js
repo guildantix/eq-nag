@@ -702,7 +702,6 @@ function parseShortCodesToRegex( value, characterName ) {
         // value = value.replace( /{N}/gi, '(?<N>[0-9]+?)' );
         value = value.replace( /{S([0-9]*?)}/gi, '(?<S$1>.+?)' );
         value = value.replace( /{N([0-9]*?)}/gi, '(?<N$1>[0-9]+?)' );
-        value = parseNConditionalCodesToRegex( value );
         // https://regex101.com/r/k4eq0f/1
     }
 
@@ -719,43 +718,107 @@ function parseShortCodesToRegex( value, characterName ) {
 
 
 /**
- * Parses any gina conditional n values to regex.
+ * Parses the given phrase and converts any conditional n values into proper regular expressions.  If a conversion occurs, a list of validation functions will be included in the result.
  * 
- * @param {string} value The input value.
+ * @returns {{value: string, operations: {nIndex: number, validateFns: ((nValue: number) => boolean)[]}[]} | undefined} 
+ * 
+ * @param {string} value The phrase to search.
  */
 function parseNConditionalCodesToRegex( value ) {
-    let allMatches = [ ...value.matchAll( /{N([0-9]*?)(>|>=|<|<=|=|!=)([0-9]*?)}/gi ) ];
+    // Functional matches:
+    // {N>=9000} => (?<N>[0-9]+?), with a validation function.
 
-    if ( allMatches?.length > 0 ) {
-        for ( let i = allMatches.length - 1; i >= 0; i-- ) {
-            let m = allMatches[ i ];
+    /** @type {{value: string, operations: {nIndex: number, validateFns: ((nValue: number) => boolean)[]}[]}} */
+    let output = {};
+    let ginaMatches = [ ...value.matchAll( /{N([0-9]*?)(>|>=|<|<=|=|!=)([0-9]*?)}/gi ) ];
+
+    if ( ginaMatches?.length > 0 ) {
+        output.value = value.replace( /{N([0-9]*?)(>|>=|<|<=|=|!=)([0-9]*?)}/gi, '(?<N$1>-?[0-9]+)' );
+        output.operations = [];
+        ginaMatches.forEach( m => {
+            let operator = m[ 2 ];
             let opVal = +m[ 3 ];
-            let n = 'cN' + m[ 1 ];
-            let rgx = '';
+            /** @type {{nIndex: number, validateFns: ((nValue: number) => boolean)[]}}} */
+            let operation = {
+                nIndex: +m[ 1 ] > 0 ? +m[ 1 ] : undefined,
+                validateFns: [],
+            };
 
-            if ( m[ 2 ] === '>' ) {
-                rgx = _getGreaterThanRegex( opVal.toString() );
-            } else if ( m[ 2 ] === '>=' ) {
-                rgx = _getGreaterThanRegex( ( opVal - 1 ).toString() );
-            } else if ( m[ 2 ] === '<' ) {
-                rgx = _getLessThanRegex( opVal.toString() );
-            } else if ( m[ 2 ] === '<=' ) {
-                rgx = _getLessThanRegex( ( opVal + 1 ).toString() );
-            } else if ( m[ 2 ] === '=' ) {
-                rgx = opVal.toString();
-            } else if ( m[ 2 ] === '!=' ) {
-                rgx = `${_getLessThanRegex( opVal.toString() )}|${_getGreaterThanRegex( opVal.toString() )}`;
+            if ( operator === '>' ) {
+                operation.validateFns.push( ( nValue ) => {
+                    return nValue > opVal;
+                } );
+            } else if ( operator === '>=' ) {
+                operation.validateFns.push( ( nValue ) => {
+                    return nValue >= opVal;
+                } );
+            } else if ( operator === '<' ) {
+                operation.validateFns.push( ( nValue ) => {
+                    return nValue < opVal;
+                } );
+            } else if ( operator === '<=' ) {
+                operation.validateFns.push( ( nValue ) => {
+                    return nValue <= opVal;
+                } );
+            } else if ( operator === '=' ) {
+                operation.validateFns.push( ( nValue ) => {
+                    return nValue == opVal;
+                } );
+            } else if ( operator === '!=' ) {
+                operation.validateFns.push( ( nValue ) => {
+                    return nValue != opVal;
+                } );
             }
-            
-            if ( rgx != '' ) {
-                value = `${value.substring( 0, m.index )}(?<N${m[ 1 ]}>${rgx})${value.substring( m.index + m[ 0 ].length )}`;
-            } else {
-                throw `Invalid conditional n format: [${m[ 2 ]}]. Found in phrase: ${value}`;
-            }
-        }
+
+            output.operations.push( operation );
+        } );
+        return output;
     }
 
-    return value;
+    let nagMatches = [ ...value.matchAll( /{N([0-9]*?)(\[|\()(.*?),(.*?)(\]|\))}/gi ) ];
+    
+    if ( nagMatches?.length > 0 ) {
+        output.value = value.replace( /{N([0-9]*?)(\[|\()(.*?),(.*?)(\]|\))}/gi, '(?<N$1>-?[0-9]+)' );
+        output.operations = [];
+        nagMatches.forEach( m => {
+            let nIndex = +m[ 1 ];
+            let leftHandeOp = m[ 2 ];
+            let opVal1 = m[ 3 ].match( /[A-z]+/ ) || m[ 3 ] === '' ? undefined : +m[ 3 ];
+            let opVal2 = m[ 4 ].match( /[A-z]+/ ) || m[ 4 ] === '' ? undefined : +m[ 4 ];
+            let rightHandeOp = m[ 5 ];
+
+            /** @type {{nIndex: number, validateFns: ((nValue: number) => boolean)[]}} */
+            let operation = {
+                nIndex: nIndex > 0 ? nIndex : undefined,
+                validateFns: [],
+            };
+
+            if ( leftHandeOp === '[' ) {
+                operation.validateFns.push( ( nValue ) => {
+                    return opVal1 === undefined || nValue >= opVal1;
+                } );
+            } else if ( leftHandeOp === '(' ) {
+                operation.validateFns.push( ( nValue ) => {
+                    return opVal1 === undefined || nValue > opVal1;
+                } );
+            }
+
+            if ( rightHandeOp === ']' ) {
+                operation.validateFns.push( ( nValue ) => {
+                    return opVal2 === undefined || nValue <= opVal2;
+                } );
+            } else if ( rightHandeOp === ')' ) {
+                operation.validateFns.push( ( nValue ) => {
+                    return opVal2 === undefined || nValue < opVal2;
+                } );
+            }
+
+            output.operations.push( operation );
+        } );
+        return output;
+    }
+
+    return undefined;
 }
 
 
@@ -832,97 +895,6 @@ function _getLessThanRegex( nval ) {
 
 
 
-// TODO: Why is this commented out?
-// /**
-//  * Parses any gina conditional n values to regex and returns eval functions for each n-value.
-//  * 
-//  * @param {string} value The input value.
-//  */
-// function parseNConditionalCodesToRegex( value ) {
-//     let allMatches = [ ...value.matchAll( /{N([0-9]*?)(>|>=|<|<=|=)([0-9]*?)}/gi ) ];
-//     let result = {
-//         value: value,
-//         operations: {}
-//     };
-
-//     if ( allMatches?.length > 0 ) {
-//         for ( let i = allMatches.length - 1; i >= 0; i-- ) {
-//             let m = allMatches[ i ];
-//             let opVal = +m[ 3 ];
-//             let n = 'cN' + m[ 1 ];
-
-//             if ( m[ 2 ] === '>' ) {
-//                 result.operations[ n ] = ( nValue ) => {
-//                     return +nValue > opVal;
-//                 };
-//             } else if ( m[ 2 ] === '>=' ) {
-//                 result.operations[ n ] = ( nValue ) => {
-//                     return +nValue >= opVal;
-//                 };
-//             } else if ( m[ 2 ] === '<' ) {
-//                 result.operations[ n ] = ( nValue ) => {
-//                     return +nValue < opVal;
-//                 };
-//             } else if ( m[ 2 ] === '<=' ) {
-//                 result.operations[ n ] = ( nValue ) => {
-//                     return +nValue <= opVal;
-//                 };
-//             } else if ( m[ 2 ] === '=' ) {
-//                 result.operations[ n ] = ( nValue ) => {
-//                     return +nValue == opVal;
-//                 };
-//             }
-
-
-//             // let op = {
-//             //     name: 'cN' + m[ 1 ],
-//             //     value: +m[ 3 ],
-//             // };
-
-//             // if ( m[ 2 ] === '>' ) {
-//             //     op._eval = ( nValue, opValue ) => {
-//             //         return +nValue > opValue;
-//             //     };
-//             // } else if ( m[ 2 ] === '>=' ) {
-//             //     op._eval = ( nValue, opValue ) => {
-//             //         return +nValue >= opValue;
-//             //     };
-//             // } else if ( m[ 2 ] === '<' ) {
-//             //     op._eval = ( nValue, opValue ) => {
-//             //         return +nValue < opValue;
-//             //     };
-//             // } else if ( m[ 2 ] === '<=' ) {
-//             //     op._eval = ( nValue, opValue ) => {
-//             //         return +nValue <= opValue;
-//             //     };
-//             // } else if ( m[ 2 ] === '=' ) {
-//             //     op._eval = ( nValue, opValue ) => {
-//             //         return +nValue == opValue;
-//             //     };
-//             // }
-
-//             // // Because we're moving backwards through the matches, we use 
-//             // // unshift to put them in the logical order.  This really isn't 
-//             // // necessary but will be easier if we're tracking down issues in 
-//             // // other areas of the application.
-//             // result.operations.unshift( op );
-
-//             result.value = `${result.value.substring( 0, m.index )}(?<cN${m[ 1 ]}>[0-9]+?)${result.value.substring( m.index + m[ 0 ].length )}`;
-//         }
-//     }
-
-//     return result;
-// }
-
-
-
-
-
-
-
-
-
-
 let StringUtilities = {
     format: format,
     isNullOrWhitespace: isNullOrWhitespace,
@@ -935,8 +907,8 @@ let StringUtilities = {
     parseSequentialGroups: parseSequentialGroups,
     parsePhoneticTransformsToLiteral: parsePhoneticTransformsToLiteral,
     parseShortCodeValuesToLiteral: parseShortCodeValuesToLiteral,
-    parseNConditionalCodesToRegex: parseNConditionalCodesToRegex,
     parseShortCodesToRegex: parseShortCodesToRegex,
+    parseNConditionalCodesToRegex: parseNConditionalCodesToRegex,
     getDurationFromLabel: getDurationFromLabel,
     compare: compare,
     parseDictionaryKeys: parseDictionaryKeys,
