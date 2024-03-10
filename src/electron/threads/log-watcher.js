@@ -2,7 +2,7 @@
 const { ipcRenderer, ipcMain } = require( 'electron' );
 const fs = require( 'fs' );
 const { Trigger, TriggerAction, ActionTypes, TriggerConditionTypes, OperatorTypes, CharacterClassLevel, TriggerSubAction, TriggerFolder, TriggerCondition, CapturePhrase, Phrase, TriggerParseHistoryModel, getActionLabel, LogTypes, ErrorMessages } = require( '../data/models/trigger' );
-const { QuickShareAuthorListTypes, SimulationProgress } = require( '../data/models/common' );
+const { QuickShareAuthorListTypes, SimulationProgress, NConditionalModel } = require( '../data/models/common' );
 const { PhraseParse, LogTrigger } = require( './log.model' );
 const { OverlayComponent, OverlayWindow, TriggerSecondaryActionModel } = require( '../data/models/overlay-window' );
 const { CharacterModel } = require( '../data/models/character' );
@@ -1417,6 +1417,12 @@ function generateTriggerFns() {
 
                 /** @type {Record<string, RegExp>} */
                 let _phraseRegEx = {};
+
+                /** @type {Record<string, string>} */
+                let _phraseStaticCache = {};
+
+                /** @type {Record<string, NConditionalModel>} */
+                let _phraseNConditionals = {};
     
                 trigger.capturePhrases?.forEach( phrase => {
     
@@ -1426,11 +1432,23 @@ function generateTriggerFns() {
                             // Use different parse functions for regex vs normal.
                             _phraseParsers.push( ( value, hasGroups, matchGroups ) => {
                                 let rgxValue = phrase.phrase;
-    
+                                /** @type {NConditionalModel | undefined} */
+                                let nConditionals = undefined;
+
+                                if ( _phraseStaticCache[ phrase.phraseId ] ) {
+                                    rgxValue = _phraseStaticCache[ phrase.phraseId ];
+                                    nConditionals = _phraseNConditionals[ phrase.phraseId ];
+
+                                } else {
+                                    nConditionals = StringUtilities.parseNConditionalCodesToRegex( rgxValue, characterName );
+                                    rgxValue = nConditionals?.value ?? rgxValue;
+
+                                    _phraseStaticCache[ phrase.phraseId ] = rgxValue;
+                                    _phraseNConditionals[ phrase.phraseId ] = nConditionals;
+
+                                }
+                                
                                 rgxValue = StringUtilities.parseShortCodesToRegex( rgxValue, characterName );
-                                // TODO: n-conditionals must be cached somehow, this is expensive to build each time.
-                                let nConditionals = StringUtilities.parseNConditionalCodesToRegex( rgxValue, characterName );
-                                rgxValue = nConditionals?.value ?? rgxValue;
                                 rgxValue = StringUtilities.parseStoredVariablesToRegex( rgxValue, storedVariables );
     
                                 if ( trigger.captureMethod === 'Sequential' ) {
