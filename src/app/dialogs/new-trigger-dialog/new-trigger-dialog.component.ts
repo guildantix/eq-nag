@@ -190,6 +190,7 @@ export class NewTriggerDialogComponent implements OnInit {
                 phraseId: nanoid(),
                 phrase: '^(?:A\\s|An\\s|a\\s|an\\s|[a-z])',
                 useRegEx: true,
+                ignoreCase: false,
             } ) );
         }
         if ( this.cancelTimerIfTargetDies ) {
