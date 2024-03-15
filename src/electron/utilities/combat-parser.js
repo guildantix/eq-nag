@@ -1671,6 +1671,7 @@ class CombatParser {
             model.timestamp = rec.timestamp;
             model.characterId = character.characterId;
 
+            // TODO: This is a temporary fix for the FCT model.  The FCT model should be refactored to handle all combat types.
             return model.amount > 0 ? model : undefined;
         }
 
