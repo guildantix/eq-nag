@@ -1912,7 +1912,7 @@ function parseLogEntries( raw, simulating, padTime ) {
             timestamp = new Date( timestamp.getTime() + ( padTime * 1000 ) );
     
         // This could be optimized better.
-        if ( myCombatParser?.loaded && dpsMeterSettings.show ) {
+        if ( myCombatParser?.loaded && (dpsMeterSettings.show || enableFct) ) {
             
             if ( myCombatParserCache?.length > 0 ) {
                 // Add cached log entries to the combat tracker.
@@ -1933,7 +1933,7 @@ function parseLogEntries( raw, simulating, padTime ) {
                 ipcRenderer.send( 'overlay:send:fct-component', fctModel );
             }
 
-        } else if ( dpsMeterSettings.show ) {
+        } else if ( (dpsMeterSettings.show || enableFct) ) {
 
             // Add to the combat tracker cache.
             myCombatParserCache.push( raw );
