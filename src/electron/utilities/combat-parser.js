@@ -1618,12 +1618,12 @@ class CombatParser {
             if ( rec.attackType === 'melee' ) {
                 model.combatTypes.myHits = myAction;
                 model.combatTypes.otherHitsOnMe = otherAction;
-                model.combatTypes.myHealing = myAction;
 
             } else if ( rec.attackType === 'spell' ) {
                 model.combatTypes.mySpellHits = myAction;
                 model.combatTypes.otherSpellHitsOnMe = otherAction;
-                model.combatTypes.otherHealingOnMe = otherAction;
+                model.combatTypes.myHealing = myAction && rec.heal > 0;
+                model.combatTypes.otherHealingOnMe = otherAction && rec.heal > 0;
 
             }
 
