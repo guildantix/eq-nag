@@ -1671,7 +1671,7 @@ class CombatParser {
             model.timestamp = rec.timestamp;
             model.characterId = character.characterId;
 
-            return model;
+            return model.amount > 0 ? model : undefined;
         }
 
         return undefined;
