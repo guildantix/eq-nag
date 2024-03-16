@@ -1664,7 +1664,7 @@ class CombatParser {
             rec.modifiers.deadly_strike && model.combatModifiers.push( 'deadly_strike' );
             rec.modifiers.finishing_blow && model.combatModifiers.push( 'finishing_blow' );
             
-            if ( rec.modifiers.length === 0 ) {
+            if ( model.combatModifiers.length === 0 ) {
                 model.combatModifiers.push( 'normal' );
             }
 
