@@ -9,15 +9,21 @@
   },
   "scripts": {
     "copy-source-maps": "copyfiles --flat dist/*.map source-maps/%npm_package_version%",
+    "copy-production-env": "copyfiles --flat .env.production .env-holding",
+    "copy-localhost-env": "copyfiles --flat .env.localhost .env-holding",
+    "rename-production-env": "node -e \"require('fs').rename('.env-holding/.env.production', '.env', function(err) { if (err) console.log(err); console.log('PRODUCTION ENV file set!') })\"",
+    "rename-localhost-env": "node -e \"require('fs').rename('.env-holding/.env.localhost', '.env', function(err) { if (err) console.log(err); console.log('LOCALHOST ENV file set!') })\"",
+    "set-production-env": "npm run copy-production-env && npm run rename-production-env",
+    "set-localhost-env": "npm run copy-localhost-env && npm run rename-localhost-env",
     "tsc": "tsc",
     "ng": "ng",
-    "start": "electron .",
+    "start": "npm run set-localhost-env && electron .",
     "test": "ng test",
     "lint": "ng lint",
     "e2e": "ng e2e",
     "start:electron": "tsc && ng build --base-href ./ --configuration=production && electron .",
-    "build": "npm run copy-source-maps && electron-builder build --win --publish never",
-    "deploy": "npm run copy-source-maps && electron-builder build --win --publish always"
+    "build": "npm run set-production-env && npm run copy-source-maps && electron-builder build --win --publish never",
+    "deploy": "npm run set-production-env && npm run copy-source-maps && electron-builder build --win --publish always"
   },
   "private": true,
   "dependencies": {
@@ -51,6 +57,7 @@
     "ngx-mat-timepicker": "^14.0.8",
     "reflect-metadata": "^0.1.13",
     "rxjs": "~6.5.5",
+    "simple-peer": "^9.11.1",
     "tga2png": "^0.1.3",
     "tslib": "^2.0.0",
     "xml2js": "^0.4.23",
@@ -87,6 +94,9 @@
   "build": {
     "productName": "EQ Nag",
     "appId": "scripter.eqNotificationAgent",
+    "extraResources": [
+      ".env"
+    ],
     "win": {
       "signingHashAlgorithms": [
         "sha256"
