@@ -48,9 +48,10 @@ autoUpdater.logger = log;
 /** @type {number | undefined} */
 var nagProcessId = undefined;
 
+require( 'dotenv' ).config();
 require( '@electron/remote/main' ).initialize();
 
-unhandled({
+unhandled( {
     logger: log.error,
     showDialog: false,
 } );
