@@ -893,6 +893,15 @@ function startCombatWatcherWindow( character, isDev, logPosition, logFile, sendT
     }
 }
 
+
+
+
+
+
+
+
+
+
 /**
  * Spins up a new log backup window to backup the specified log files.
  * 
