@@ -39,11 +39,22 @@ class LogWatcherMeta {
     intervalId;
 }
 
+class CombatWatcherMeta {
+    /** @type {BrowserWindow|null} */
+    window;
+
+    /** @type {string} */
+    characterId;
+}
+
 /** @type {Record<string, LogWatcherMeta>} Dictionary of log watcher windows. */
 var logWatchers = {};
 
-/** @type {BrowserWindow | null} */
-var combatWatcher = null;
+/** @type {CombatWatcherMeta} */
+var combatWatcher = {
+    window: null,
+    characterId: null,
+};
 
 /** @type {number} The duration to wait between checking for activity on a log file. */
 const checkInterval = 5 * 1000;
@@ -108,7 +119,7 @@ class LogBootstrapper {
                     logWatchers[ key ].window.webContents.send( 'tick', tickData );
                 }
             }
-            combatWatcher?.webContents.send( 'tick', tickData );
+            combatWatcher.window?.webContents.send( 'tick', tickData );
         } );
 
         ipcMain.on( 'log:send:raw', function ( event, data ) {
@@ -118,7 +129,7 @@ class LogBootstrapper {
                     break;
                 }
             }
-            combatWatcher?.webContents.send( 'log:parse:raw', data );
+            combatWatcher.window?.webContents.send( 'log:parse:raw', data );
         } );
 
         ipcMain.on( 'log:simulate:file', function ( event, data ) {
@@ -128,7 +139,7 @@ class LogBootstrapper {
                     break;
                 }
             }
-            combatWatcher?.webContents.send( 'log:simulate:file', data );
+            combatWatcher.window?.webContents.send( 'log:simulate:file', data );
         } );
 
         ipcMain.on( 'log:store:variable', function ( event, data ) {
@@ -705,7 +716,7 @@ class LogBootstrapper {
                 clearInterval( logWatchers[ key ].intervalId );
             }
         }
-        combatWatcher?.close();
+        combatWatcher.window?.close();
     }
 
 
@@ -731,7 +742,7 @@ class LogBootstrapper {
                 logWatchers[ key ].window.webContents.send( 'tick', tickData );
             }
         }
-        combatWatcher?.webContents.send( 'tick', tickData );
+        combatWatcher.window?.webContents.send( 'tick', tickData );
     }
 
 
@@ -814,6 +825,9 @@ function startLogWatcherWindow( logFile, isDev, sendTick, character, logPosition
 
     logWatcherWindow.on( 'closed', function () {
         logWatcherWindow = null;
+        if ( combatWatcher.characterId === character.characterId ) {
+            combatWatcher.window?.close();
+        }
     } );
 
     logWatcherWindow.webContents.once( 'dom-ready', () => {
@@ -822,26 +836,7 @@ function startLogWatcherWindow( logFile, isDev, sendTick, character, logPosition
     } );
     logWatcherWindow.setPosition( 100, 500 );
 
-    if ( combatWatcher == null ) {
-        // If this is the first active log watcher, then start the combat watcher.
-        combatWatcher = new BrowserWindow( {
-            show: isDev === true,
-            webPreferences: { nodeIntegration: true, contextIsolation: false, webSecurity: false, devTools: isDev === true },
-        } );
-        combatWatcher.webContents.openDevTools( { mode: 'undocked' } );
-        combatWatcher.loadURL( `file://${__dirname}/threads/combat-watcher.html?character=${encodeURI( JSON.stringify( character ) )}&logPosition=${logPosition}` );
-        
-        combatWatcher.on( 'closed', function () {
-            combatWatcher = null;
-        } );
-    
-        combatWatcher.webContents.once( 'dom-ready', () => {
-            combatWatcher.webContents.send( 'log:changed', logFile );
-            sendTick();
-        } );
-
-        combatWatcher.setPosition( 100, 500 );
-    }
+    startCombatWatcherWindow( character, isDev, logPosition, logFile, sendTick );
 
     return logWatcherWindow;
 }
@@ -854,6 +849,49 @@ function startLogWatcherWindow( logFile, isDev, sendTick, character, logPosition
 
 
 
+
+/**
+ * Starts a new combat watcher window for the specified character.
+ * 
+ * @param {CharacterModel} character The character to watch.
+ * @param {boolean} isDev The development environment flag.
+ * @param {number} logPosition The position the log watcher should start processing log entries.
+ * @param {string} logFile The full path to the log file.
+ * @param {() => void} sendTick The send tick method.
+ */
+function startCombatWatcherWindow( character, isDev, logPosition, logFile, sendTick ) {
+    if ( combatWatcher.window == null ) {
+        // If this is the first active log watcher, then start the combat watcher.
+        combatWatcher.characterId = character.characterId;
+        combatWatcher.window = new BrowserWindow( {
+            show: isDev === true,
+            webPreferences: { nodeIntegration: true, contextIsolation: false, webSecurity: false, devTools: isDev === true },
+        } );
+        combatWatcher.window.webContents.openDevTools( { mode: 'undocked' } );
+        combatWatcher.window.loadURL( `file://${__dirname}/threads/combat-watcher.html?character=${encodeURI( JSON.stringify( character ) )}&logPosition=${logPosition}` );
+
+        combatWatcher.window.on( 'closed', function () {
+            combatWatcher.window = null;
+            combatWatcher.characterId = null;
+
+            // If there is still a character being watched, then start the combat watcher for that character.
+            for ( let key in logWatchers ) {
+                if ( logWatchers.hasOwnProperty( key ) && logWatchers[ key ].window != null ) {
+                    startCombatWatcherWindow( logWatchers[ key ].model, isDev, logWatchers[ key ].logSize, logWatchers[ key ].logFile, sendTick );
+                    break;
+                }
+            }
+
+        } );
+
+        combatWatcher.window.webContents.once( 'dom-ready', () => {
+            combatWatcher.window.webContents.send( 'log:changed', logFile );
+            sendTick();
+        } );
+
+        combatWatcher.window.setPosition( 100, 500 );
+    }
+}
 
 /**
  * Spins up a new log backup window to backup the specified log files.
