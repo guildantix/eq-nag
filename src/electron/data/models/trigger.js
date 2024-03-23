@@ -14,6 +14,7 @@ const ErrorMessages = {
      */
     counterExecution: ( counterName ) => `Could not execute counter ${counterName}.`,
     subActionExecution: ( triggerId ) => 'Could not execute sub-action.' + ( triggerId == 'undefined' || !triggerId ? ' Could not find instance data.' : '' ),
+    generalCombatParsingError: () => 'Failed to parse combat log entry.',
 }
 
 var ActionTypes = {
