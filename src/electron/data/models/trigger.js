@@ -12,7 +12,8 @@ const ErrorMessages = {
     /**
      * @param {string} counterName The name of the counter.
      */
-    counterExecution: (counterName) => `Could not execute counter ${counterName}.`,
+    counterExecution: ( counterName ) => `Could not execute counter ${counterName}.`,
+    subActionExecution: ( triggerId ) => 'Could not execute sub-action.' + ( triggerId == 'undefined' || !triggerId ? ' Could not find instance data.' : '' ),
 }
 
 var ActionTypes = {
