@@ -1,5 +1,4 @@
-// const ipc = require( 'electron' ).ipcMain;
-const { ipcRenderer, ipcMain } = require( 'electron' );
+const { ipcRenderer } = require( 'electron' );
 const fs = require( 'fs' );
 const { Trigger, TriggerAction, ActionTypes, TriggerConditionTypes, OperatorTypes, CharacterClassLevel, TriggerSubAction, TriggerFolder, TriggerCondition, CapturePhrase, Phrase, TriggerParseHistoryModel, getActionLabel, LogTypes, ErrorMessages } = require( '../data/models/trigger' );
 const { QuickShareAuthorListTypes, SimulationProgress, NConditionalModel } = require( '../data/models/common' );
@@ -10,17 +9,12 @@ const customAlphabet = require( 'nanoid' ).customAlphabet;
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const nanoid = customAlphabet( alphabet, 16 );
 const _ = require( 'lodash' );
-
 const StringUtilities = require( '../utilities/string' );
 const NumberUtilities = require( '../utilities/numbers' );
 const ThreadUtilities = require( '../utilities/threading' );
-const { FctModel, FctTypes } = require( '../data/models/fct' );
 const { DateUtilities } = require( '../utilities/dates' );
 const { IpcMessage } = require( '../data/models/common' );
 const ArrayUtilities = require( '../utilities/arrays' );
-const { CombatParser } = require( '../utilities/combat-parser' );
-const { TakpCombatParser } = require( '../utilities/combat-parser-takp' );
-const { LogRecord, DpsMeterSettings } = require( '../data/models/combat-parser' );
 const chunkSize = 512 * 1024;
 
 window.onerror = ( error, url, line ) => {
@@ -54,7 +48,6 @@ var secondaryTriggerActions = [];
 var dotWornOffTracking = [];
 /** @type {Record<string, string[]>} */
 var usedConditionValues = {};
-var enableFct = false;
 var enableQuickShareImports = true;
 var damageDealtOverlayId = null;
 var damageReceivedOverlayId = null;
@@ -94,14 +87,6 @@ let failedParses = [];
 let exceptionParses = [];
 let batchTriggerParseHistoryTimeoutId = null;
 const batchTriggerParseHistoryTimeoutDuration = 100;
-let dpsIntervalId = null;
-const dpsInterval = 250;
-const enableDpsTransmit = true; // TODO: Enable transmission of DPS to the api for log event synchronization.
-let dpsTransmitIntervalId = null;
-const dpsTransmitInterval = 5000;
-
-/** @type {DpsMeterSettings} */
-let dpsMeterSettings = new DpsMeterSettings();
 
 /** @type {Record<string, {trigger: LogTrigger, res: PhraseParse}>} */
 let actionInstances = {};
@@ -264,63 +249,6 @@ const logError = ( err, raw, simulating, padTime, errorDesc, trigger, action ) =
     logParseError( err, raw, simulating, padTime, errorDesc, trigger, action );
 };
 
-/** @type {CombatParser | TakpCombatParser | undefined} */
-let myCombatParser = undefined;
-
-/** @type {string[]} */
-let myCombatParserCache = [];
-
-const sendDpsToRenderer = () => {
-    // This is currently a really simple version of DPS tracking.  What we need to do is capture the start/end of each players combat and then calculate the DPS based on that.  In addition to what we're doing now, which is their immediate DPS not encounter DPS.
-    let encounterDps = myCombatParser?.getEncounterOutgoingDps() ?? [];
-    ipcRenderer.send( 'renderer:encounter-dps', { character: characterName, encounterDps: encounterDps } );
-};
-
-const transmitEncounterEvents = () => {
-    let fullEncounterEvents = myCombatParser?.getCharacterEncounterEvents( characterName, true ) ?? [];
-    let minifiedEncounterEvents = myCombatParser?.getMinifiedEncounterEvents( fullEncounterEvents ) ?? [];
-
-    fullEncounterEvents?.forEach( e => e.transmitted = true );
-
-    // TODO: Actually transmit the events.
-}
-
-const dpsTransmitFn = () => {
-    transmitEncounterEvents();
-
-    dpsTransmitIntervalId = window.setTimeout( () => dpsTransmitFn(), dpsTransmitInterval );
-}
-
-const dpsIntervalFn = () => {
-    sendDpsToRenderer();
-
-    dpsIntervalId = window.setTimeout( () => dpsIntervalFn(), dpsInterval );
-}
-
-const startDpsTracking = () => {
-    if ( !dpsIntervalId ) {
-        dpsIntervalId = window.setTimeout( () => dpsIntervalFn(), dpsInterval );
-        enableDpsTransmit && ( dpsTransmitIntervalId = window.setTimeout( () => dpsTransmitFn(), dpsTransmitInterval ) );
-    }
-};
-
-/**
- * Executes when the encounter is reset.
- * 
- * @param {LogRecord[]} encounterEvents The events from the encounter.
- */
-const onEncounterReset = ( encounterEvents ) => {
-    ipcRenderer.send( 'renderer:encounter-reset', { character: characterName } );
-}
-
-const stopDpsTracking = () => {
-    if ( dpsIntervalId ) {
-        window.clearTimeout( dpsIntervalId );
-        dpsIntervalId = null;
-        window.clearTimeout( dpsTransmitIntervalId );
-        dpsTransmitIntervalId = null;
-    }
-};
 
 
 
@@ -754,22 +682,6 @@ function LogWatcher(character, logPosition) {
     loadCachedStoredVariables( () => {
         saveScalarVariable( "Character", characterName );
     } );
-        
-    ipcRenderer
-        .invoke( 'settings:get', { key: 'dpsMeterSettings', subscribe: true } )
-        .then( data => {
-            dpsMeterSettings = data ?? new DpsMeterSettings();
-        } );
-
-    ipcRenderer.on( 'settings:get:dpsMeterSettings:generic',
-        /**
-         * 
-         * @param {Electron.IpcRendererEvent} event The event args
-         * @param {boolean} data True if enabled.
-         */
-        ( event, data ) => {
-            dpsMeterSettings = data ?? new DpsMeterSettings();
-        } );
     
     ipcRenderer.on( 'log:backup-started',
         /**
@@ -815,22 +727,23 @@ function LogWatcher(character, logPosition) {
         } );
 
     ipcRenderer.on( 'log:simulate:file', function ( event, data ) {
-        fs.open( data, 'r', function ( err, fd ) {
-            var file = fd;
-            var stats = fs.fstatSync( fd );
+        throw new Error( 'Not implemented' );
+        // fs.open( data, 'r', function ( err, fd ) {
+        //     var file = fd;
+        //     var stats = fs.fstatSync( fd );
                     
-                fs.read( file, Buffer.alloc( stats.size ), 0, stats.size, 0, ( err, bytecount, buff ) => {
-                    let read = buff.toString( 'utf-8', 0, bytecount );
-                    let lines = read.split( /\r\n|\r|\n/gmi );
-                    lines.forEach( line => {
-                        if ( line && line.length > 0 ) {
-                            parseLogEntries( line, true );
-                        }
-                    } );
-                    console.log( 'lines done' );
-                } );
+        //         fs.read( file, Buffer.alloc( stats.size ), 0, stats.size, 0, ( err, bytecount, buff ) => {
+        //             let read = buff.toString( 'utf-8', 0, bytecount );
+        //             let lines = read.split( /\r\n|\r|\n/gmi );
+        //             lines.forEach( line => {
+        //                 if ( line && line.length > 0 ) {
+        //                     parseLogEntries( line, true );
+        //                 }
+        //             } );
+        //             console.log( 'lines done' );
+        //         } );
 
-        } );
+        // } );
     } );
 
     ipcRenderer.on( 'log:simulate:begin',
@@ -1009,6 +922,7 @@ function LogWatcher(character, logPosition) {
 
         } );
 
+    // TODO: I think this is unused.
     ipcRenderer.on( 'log:simulate:lines', function ( event, data ) {
         /** @type {{lines: string[], delay: number, timestamp: Date}[]} */
         var lineData = [];
@@ -1096,6 +1010,7 @@ function LogWatcher(character, logPosition) {
         }
     } );
 
+    // TODO: I think this is unused.
     ipcRenderer.on( 'log:parse:raw', function ( event, data ) {
         parseLogEntries( data );
     } );
@@ -1196,60 +1111,88 @@ function LogWatcher(character, logPosition) {
          * @param {{subAction: TriggerSubAction, instanceId: string}} v The values.
          */
         ( e, v ) => {
-            let instanceData = actionInstances[ v.instanceId ];
-            if ( instanceData ) {
-                let action = instanceData.trigger.actions.find( f => f.actionId === v.subAction.actionId );
-                let deltaTime = 0;
-
-                if ( v.subAction ) {
-                    
-                    instanceData.res.result.groups = instanceData.res.result.groups ? instanceData.res.result.groups : {};
-                    let expectedDuration = 0;
-            
-                    if ( instanceData.res.result?.groups?.timerDuration ) {
-                        expectedDuration = StringUtilities.getDurationFromLabel( instanceData.res.result?.groups?.timerDuration );
-        
-                    } else {
+            try {
                 
-                        if ( action.storageDuration && action.storageDuration.indexOf( '[' ) > -1 ) {
-                            let dur = +action.duration;
-                            dur = +getPersistentDictionaryValue( action.storageDuration, instanceData.res, timestamp, action, deltaTime, trigger );
-                            expectedDuration = dur > 0 ? dur / 1000 : +action.duration;
+                let instanceData = actionInstances[ v.instanceId ];
+                if ( instanceData ) {
+                    let action = instanceData.trigger.actions.find( f => f.actionId === v.subAction.actionId );
+                    let deltaTime = 0;
 
-                        } else if ( action.storageDuration ) {
-                            let dur = +action.duration;
-                            dur = +getScalarValue( action.storageDuration, 0 );
-                            expectedDuration = dur > 0 ? dur / 1000 : +action.duration;
-
+                    if ( v.subAction ) {
+                    
+                        instanceData.res.result.groups = instanceData.res.result.groups ? instanceData.res.result.groups : {};
+                        let expectedDuration = 0;
+            
+                        if ( instanceData.res.result?.groups?.timerDuration ) {
+                            expectedDuration = StringUtilities.getDurationFromLabel( instanceData.res.result?.groups?.timerDuration );
+        
                         } else {
-                            expectedDuration = +action.duration;
+                
+                            if ( action.storageDuration && action.storageDuration.indexOf( '[' ) > -1 ) {
+                                let dur = +action.duration;
+                                dur = +getPersistentDictionaryValue( action.storageDuration, instanceData.res, timestamp, action, deltaTime, trigger );
+                                expectedDuration = dur > 0 ? dur / 1000 : +action.duration;
+
+                            } else if ( action.storageDuration ) {
+                                let dur = +action.duration;
+                                dur = +getScalarValue( action.storageDuration, 0 );
+                                expectedDuration = dur > 0 ? dur / 1000 : +action.duration;
+
+                            } else {
+                                expectedDuration = +action.duration;
+
+                            }
 
                         }
+
+                        v.subAction.variableValues?.forEach( f => {
+                        
+                            let value = f.value;
+                            let name = /\{(?<name>.+?)\}/gi.exec( f.name )?.groups?.name;
+                        
+                            if ( name ) {
+                                value = StringUtilities.parseShortCodeValuesToLiteral( value, characterName, expectedDuration, instanceData.res.result?.groups, instanceData.res.result ? instanceData.res.result[ 0 ] : null );
+                                value = StringUtilities.parseStoredVariablesToLiteral( value, storedVariables );
+                                value = StringUtilities.parseConditionResultsToLiteral( value, instanceData.trigger._conditionResults );
+                                value = StringUtilities.parseMatchesToLiteral( value, instanceData.res.result, deltaTime );
+                                value = StringUtilities.parseCountersToLiteral( value, counters );
+
+                                instanceData.res.result.groups[ name ] = value;
+                            }
+            
+                        } );
 
                     }
 
-                    v.subAction.variableValues?.forEach( f => {
-                        
-                        let value = f.value;
-                        let name = /\{(?<name>.+?)\}/gi.exec( f.name )?.groups?.name;
-                        
-                        if ( name ) {
-                            value = StringUtilities.parseShortCodeValuesToLiteral( value, characterName, expectedDuration, instanceData.res.result?.groups, instanceData.res.result ? instanceData.res.result[ 0 ] : null );
-                            value = StringUtilities.parseStoredVariablesToLiteral( value, storedVariables );
-                            value = StringUtilities.parseConditionResultsToLiteral( value, instanceData.trigger._conditionResults );
-                            value = StringUtilities.parseMatchesToLiteral( value, instanceData.res.result, deltaTime );
-                            value = StringUtilities.parseCountersToLiteral( value, counters );
+                    enableLogging && sendInformationToLog( `Execute trigger sub-action [${v.instanceId}] : ${ActionTypes[ action.actionType ]}`, 24 );
 
-                            instanceData.res.result.groups[ name ] = value;
-                        }
-            
-                    } );
-
+                    executeTriggerAction( instanceData.trigger, action, new Date(), instanceData.res, deltaTime, false );
                 }
 
-                enableLogging && sendInformationToLog( `Execute trigger sub-action [${v.instanceId}] : ${ActionTypes[ action.actionType ]}`, 24 );
+            } catch ( error ) {
+                let instanceData = actionInstances[ v.instanceId ];
 
-                executeTriggerAction( instanceData.trigger, action, new Date(), instanceData.res, deltaTime, false );
+                instanceData = instanceData ? instanceData : {
+                    trigger: {
+                        triggerId: 'undefined',
+                        name: 'undefined',
+                        _conditionResults: {},
+                        _deltaTime: 0,
+                    }
+                };
+
+                logError(
+                    error,
+                    'Executing Sub Action',
+                    false,
+                    0,
+                    ErrorMessages.subActionExecution( instanceData?.trigger?.triggerId ),
+                    {
+                        triggerId: instanceData?.trigger?.triggerId,
+                        name: instanceData?.trigger?.name,
+                        _conditionResults: instanceData?.trigger?._conditionResults, 
+                        _deltaTime: instanceData?.trigger?._deltaTime, 
+                    } );
             }
         } );
     
@@ -1288,15 +1231,6 @@ function LogWatcher(character, logPosition) {
         voiceOptions = speechSynthesis.getVoices();
     };
 
-    ipcRenderer
-        .invoke( 'app:register-combat-parser', characterId )
-        .then( ( registeredCombatParser ) => {
-            if ( registeredCombatParser === characterId ) {
-                myCombatParser = charModel.takp ? new TakpCombatParser( characterName, character.server ) : new CombatParser( characterName, character.server );
-                myCombatParser.onEncounterReset = onEncounterReset;
-                startDpsTracking();
-            }
-        } );
 }
 
 
@@ -1911,35 +1845,6 @@ function parseLogEntries( raw, simulating, padTime ) {
         else if ( padTime > 0 )
             timestamp = new Date( timestamp.getTime() + ( padTime * 1000 ) );
     
-        // This could be optimized better.
-        if ( myCombatParser?.loaded && (dpsMeterSettings.show || enableFct) ) {
-            
-            if ( myCombatParserCache?.length > 0 ) {
-                // Add cached log entries to the combat tracker.
-                myCombatParserCache.forEach( c => {
-                    let fctModel = myCombatParser?.addCombatEvent( c );
-                    
-                    if ( fctModel ) {
-                        ipcRenderer.send( 'overlay:send:fct-component', fctModel );
-                    }
-                } );
-                myCombatParserCache = [];
-            }
-
-            // Add to the combat tracker.
-            let fctModel = myCombatParser?.addCombatEvent( raw );
-
-            if ( fctModel ) {
-                ipcRenderer.send( 'overlay:send:fct-component', fctModel );
-            }
-
-        } else if ( (dpsMeterSettings.show || enableFct) ) {
-
-            // Add to the combat tracker cache.
-            myCombatParserCache.push( raw );
-
-        }
-        
         let log = raw.replace( rgxTimestamp, '' );
         
         // https://regex101.com/r/FvGiGC/2
