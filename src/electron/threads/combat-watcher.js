@@ -318,6 +318,7 @@ function parseLogEntries( raw, simulating, padTime ) {
         simulating = simulating === true ? true : false;
 
         // This could be optimized better.
+        // TODO: This should be checked in the bootstrap.
         if ( myCombatParser?.loaded && (dpsMeterSettings.show || enableFct) ) {
             
             if ( myCombatParserCache?.length > 0 ) {
