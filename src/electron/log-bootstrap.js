@@ -34,10 +34,16 @@ class LogWatcherMeta {
 
     /** @type {() => void} */
     start;
+
+    /** @type {number} */
+    intervalId;
 }
 
 /** @type {Record<string, LogWatcherMeta>} Dictionary of log watcher windows. */
 var logWatchers = {};
+
+/** @type {BrowserWindow | null} */
+var combatWatcher = null;
 
 /** @type {number} The duration to wait between checking for activity on a log file. */
 const checkInterval = 5 * 1000;
@@ -102,6 +108,7 @@ class LogBootstrapper {
                     logWatchers[ key ].window.webContents.send( 'tick', tickData );
                 }
             }
+            combatWatcher?.webContents.send( 'tick', tickData );
         } );
 
         ipcMain.on( 'log:send:raw', function ( event, data ) {
@@ -111,6 +118,7 @@ class LogBootstrapper {
                     break;
                 }
             }
+            combatWatcher?.webContents.send( 'log:parse:raw', data );
         } );
 
         ipcMain.on( 'log:simulate:file', function ( event, data ) {
@@ -120,6 +128,7 @@ class LogBootstrapper {
                     break;
                 }
             }
+            combatWatcher?.webContents.send( 'log:simulate:file', data );
         } );
 
         ipcMain.on( 'log:store:variable', function ( event, data ) {
@@ -138,6 +147,7 @@ class LogBootstrapper {
             }
         } );
 
+        // TODO: Extend simulation to the combat watcher as well.
         ipcMain.on( 'log:simulate:begin',
             /**
              * Runs the simulation.
@@ -248,6 +258,7 @@ class LogBootstrapper {
                 event.sender?.send( 'log:simulate:begin', simData.simulationId );
             } );
 
+        // TODO: I think this is unused.
         ipcMain.on( 'log:simulate:lines', function ( event, data ) {
             for ( let key in logWatchers ) {
                 if ( logWatchers.hasOwnProperty( key ) && logWatchers[ key ].window != null ) {
@@ -694,6 +705,7 @@ class LogBootstrapper {
                 clearInterval( logWatchers[ key ].intervalId );
             }
         }
+        combatWatcher?.close();
     }
 
 
@@ -719,6 +731,7 @@ class LogBootstrapper {
                 logWatchers[ key ].window.webContents.send( 'tick', tickData );
             }
         }
+        combatWatcher?.webContents.send( 'tick', tickData );
     }
 
 
@@ -733,13 +746,37 @@ class LogBootstrapper {
     /**
      * Sends the event to each log watcher window.
      * 
-     * @param {string} eventId The event identifier.
+     * @param {string} channel The comms channel.
      * @param {string} value The event value.
      */
-    sendToEach( eventId, value ) {
+    sendToEach( channel, value ) {
         for ( let key in logWatchers ) {
             if ( logWatchers.hasOwnProperty( key ) && logWatchers[ key ].window != null ) {
-                logWatchers[ key ].window.webContents.send( eventId, value );
+                logWatchers[ key ].window.webContents.send( channel, value );
+            }
+        }
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Sends the event to each log watcher window.
+     * 
+     * @param {string} channel The comms channel.
+     * @param {string} value The event value.
+     */
+    sendToFirst( channel, value ) {
+        for ( let key in logWatchers ) {
+            if ( logWatchers.hasOwnProperty( key ) && logWatchers[ key ].window != null ) {
+                logWatchers[ key ].window.webContents.send( channel, value );
+                return;
             }
         }
     }
@@ -784,6 +821,27 @@ function startLogWatcherWindow( logFile, isDev, sendTick, character, logPosition
         sendTick();
     } );
     logWatcherWindow.setPosition( 100, 500 );
+
+    if ( combatWatcher == null ) {
+        // If this is the first active log watcher, then start the combat watcher.
+        combatWatcher = new BrowserWindow( {
+            show: isDev === true,
+            webPreferences: { nodeIntegration: true, contextIsolation: false, webSecurity: false, devTools: isDev === true },
+        } );
+        combatWatcher.webContents.openDevTools( { mode: 'undocked' } );
+        combatWatcher.loadURL( `file://${__dirname}/threads/combat-watcher.html?character=${encodeURI( JSON.stringify( character ) )}&logPosition=${logPosition}` );
+        
+        combatWatcher.on( 'closed', function () {
+            combatWatcher = null;
+        } );
+    
+        combatWatcher.webContents.once( 'dom-ready', () => {
+            combatWatcher.webContents.send( 'log:changed', logFile );
+            sendTick();
+        } );
+
+        combatWatcher.setPosition( 100, 500 );
+    }
 
     return logWatcherWindow;
 }
