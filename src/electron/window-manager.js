@@ -617,31 +617,31 @@ class WindowManager {
         } );
 
         ipcMain.on( 'renderer:clear-all', ( event, arg ) => {
-            if ( !this.#renderer.isDestroyed() ) {
+            if ( !this.#renderer?.isDestroyed() ) {
                 this.#renderer.webContents.send( 'renderer:clear-all', null );
             }
         } );
         
         ipcMain.on( 'renderer:get-displays-meta', ( event ) => {
-            if ( !this.#renderer.isDestroyed() ) {
+            if ( !this.#renderer?.isDestroyed() ) {
                 this.#renderer.webContents.send( 'renderer:get-displays-meta', this.getDisplaysMeta() );
             }
         } );
         
         ipcMain.on( 'renderer:encounter-dps', ( event, encounterDps ) => {
-            if ( !this.#renderer.isDestroyed() ) {
+            if ( !this.#renderer?.isDestroyed() ) {
                 this.#renderer.webContents.send( 'renderer:encounter-dps', encounterDps );
             }
         } );
         
         ipcMain.on( 'renderer:encounter-reset', ( event, encounterDps ) => {
-            if ( !this.#renderer.isDestroyed() ) {
+            if ( !this.#renderer?.isDestroyed() ) {
                 this.#renderer.webContents.send( 'renderer:encounter-reset', encounterDps );
             }
         } );
         
         userPreferencesDatabase.onFctStyleChanges.push( fctStyles => {
-            if ( !this.#renderer.isDestroyed() ) {
+            if ( !this.#renderer?.isDestroyed() ) {
                 this.#renderer.webContents.send( 'fctStyles', fctStyles );
             }
         } );
