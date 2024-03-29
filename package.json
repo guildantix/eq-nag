@@ -1,6 +1,6 @@
 {
   "name": "electron-angular-eq-parse",
-  "version": "0.1.69",
+  "version": "0.1.70",
   "main": "main.js",
   "description": "An EverQuest Notification AGent",
   "author": {
@@ -9,10 +9,10 @@
   },
   "scripts": {
     "copy-source-maps": "copyfiles --flat dist/*.map source-maps/%npm_package_version%",
-    "copy-production-env": "copyfiles --flat .env.production .env-holding",
-    "copy-localhost-env": "copyfiles --flat .env.localhost .env-holding",
-    "rename-production-env": "node -e \"require('fs').rename('.env-holding/.env.production', '.env', function(err) { if (err) console.log(err); console.log('PRODUCTION ENV file set!') })\"",
-    "rename-localhost-env": "node -e \"require('fs').rename('.env-holding/.env.localhost', '.env', function(err) { if (err) console.log(err); console.log('LOCALHOST ENV file set!') })\"",
+    "copy-production-env": "copyfiles --flat config.json.production .config-holding",
+    "copy-localhost-env": "copyfiles --flat config.json.localhost .config-holding",
+    "rename-production-env": "node -e \"require('fs').rename('.config-holding/config.json.production', 'config.json', function(err) { if (err) console.log(err); console.log('PRODUCTION CONFIG file set!') })\"",
+    "rename-localhost-env": "node -e \"require('fs').rename('.config-holding/config.json.localhost', 'config.json', function(err) { if (err) console.log(err); console.log('LOCALHOST CONFIG file set!') })\"",
     "set-production-env": "npm run copy-production-env && npm run rename-production-env",
     "set-localhost-env": "npm run copy-localhost-env && npm run rename-localhost-env",
     "tsc": "tsc",
@@ -22,6 +22,7 @@
     "lint": "ng lint",
     "e2e": "ng e2e",
     "start:electron": "tsc && ng build --base-href ./ --configuration=production && electron .",
+    "build:local": "npm run set-localhost-env && npm run copy-source-maps && electron-builder build --win --publish never",
     "build": "npm run set-production-env && npm run copy-source-maps && electron-builder build --win --publish never",
     "deploy": "npm run set-production-env && npm run copy-source-maps && electron-builder build --win --publish always"
   },
@@ -72,7 +73,7 @@
     "@types/jasminewd2": "~2.0.3",
     "codelyzer": "^6.0.0",
     "copyfiles": "^2.4.1",
-    "dotenv": "^16.3.1",
+    "dotenv": "^16.4.5",
     "electron": "^23.1.0",
     "electron-builder": "^23.6.0",
     "jasmine-core": "~3.6.0",

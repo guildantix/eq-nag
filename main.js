@@ -47,8 +47,14 @@ var combatParseCharacterId = undefined;
 autoUpdater.logger = log;
 /** @type {number | undefined} */
 var nagProcessId = undefined;
+const allowMultipleInstances = false;
+const fs = require( 'fs' );
 
-require( 'dotenv' ).config();
+
+const configRootPath = path.join( __dirname, 'config.json' );
+
+const config = JSON.parse( fs.readFileSync( configRootPath, 'utf-8' ) );
+// require( 'dotenv' ).config();
 require( '@electron/remote/main' ).initialize();
 
 unhandled( {
@@ -289,28 +295,31 @@ const bootstrapApp = () => {
 }
 
 // Using the instance lock we can prevent multiple Nag instances from opening.
-const instanceLock = app.requestSingleInstanceLock();
+const instanceLock = allowMultipleInstances ?? app.requestSingleInstanceLock();
 
 if ( !instanceLock ) {
     app.quit();
 } else {
-    app.on( 'second-instance', ( event, argv, workingDir, addtnlData ) => {
 
-        if ( mainWindow ) {
-            // If the main window has been loaded, then let's make sure that 
-            // appears for the user so they don't think Nag isn't running.
+    if ( !allowMultipleInstances ) {
+        app.on( 'second-instance', ( event, argv, workingDir, addtnlData ) => {
 
-            if ( mainWindow.isMinimized() ) {
-                mainWindow.restore();
-            }
+            if ( mainWindow ) {
+                // If the main window has been loaded, then let's make sure that 
+                // appears for the user so they don't think Nag isn't running.
 
-            mainWindow.setAlwaysOnTop( true );
-            mainWindow.show();
-            mainWindow.setAlwaysOnTop( false );
-            mainWindow.focus();
+                if ( mainWindow.isMinimized() ) {
+                    mainWindow.restore();
+                }
+
+                mainWindow.setAlwaysOnTop( true );
+                mainWindow.show();
+                mainWindow.setAlwaysOnTop( false );
+                mainWindow.focus();
             
-        }
-    } );
+            }
+        } );
+    }
 
     bootstrapApp();
 }
@@ -364,6 +373,8 @@ ipcMain.on( 'app:log:exception', ( event, data ) => {
     } else {
         log.error( data );
     }
+
+    mainWindow.webContents.send( 'console:error', { label: 'System Error', message: data?.error?.message ?? 'Unexpected Error', timestamp: new Date(), payload: data?.error ?? data } );
 } );
 
 ipcMain.on( 'app:log:info', ( event, data ) => {
@@ -607,7 +618,28 @@ ipcMain.on( 'console:command',
                 } else {
                     event.sender.send( 'console:success', { label: 'Text Ping', message: `Ping received: ${commands.slice( 1 ).join( ' ' )}`, timestamp: new Date() } );
                 }
+            } else if ( commands[ 0 ] === 'chat' ) {
+                if ( commands[ 1 ] === 'create' ) {
+                    logBootstrap.sendToCombatWatcher( 'log:start-chat-room', null );
+                } else if ( commands[ 1 ] === 'join' ) {
+                    logBootstrap.sendToCombatWatcher( 'log:join-chat-room', commands[ 2 ] );
+                }
             }
+        }
+    } );
+
+ipcMain.on( 'console:message',
+    /**
+     * Sends the console message to the debug console.
+     * 
+     * @param {Electron.IpcMainEvent} event The event args.
+     * @param {string | {label: string, message: string} | undefined} data The message to send.
+     */
+    async ( event, data ) => {
+        if ( typeof data === 'string' ) {
+            mainWindow.webContents.send( 'console:success', { label: 'System Message', message: data, timestamp: new Date() } );
+        } else if ( data?.message ) {
+            mainWindow.webContents.send( 'console:success', { label: data.label ?? 'System Message', message: data.message, timestamp: new Date() } );
         }
     } );
 
@@ -622,6 +654,11 @@ ipcMain.on( 'cache:store',
     ( event, data ) => {
         memoryCache[ data.key ] = data.value;
     } );
+
+ipcMain.handle( 'get:nag-service-url', ( event, data ) => {
+    let nagServiceUri = config.apiEndPoint;
+    return nagServiceUri;
+} );
 
 ipcMain.on( 'cache:retrieve',
     /**

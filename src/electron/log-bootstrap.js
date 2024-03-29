@@ -783,13 +783,8 @@ class LogBootstrapper {
      * @param {string} channel The comms channel.
      * @param {string} value The event value.
      */
-    sendToFirst( channel, value ) {
-        for ( let key in logWatchers ) {
-            if ( logWatchers.hasOwnProperty( key ) && logWatchers[ key ].window != null ) {
-                logWatchers[ key ].window.webContents.send( channel, value );
-                return;
-            }
-        }
+    sendToCombatWatcher( channel, value ) {
+        combatWatcher.window?.webContents.send( channel, value );
     }
 
 }
