@@ -47,7 +47,7 @@ var combatParseCharacterId = undefined;
 autoUpdater.logger = log;
 /** @type {number | undefined} */
 var nagProcessId = undefined;
-const allowMultipleInstances = false;
+const allowMultipleInstances = true;
 const fs = require( 'fs' );
 
 
@@ -134,9 +134,9 @@ function createWindow() {
         mainWindow = null;
     } );
 
-    mainWindow.on( 'close', function () {
+    mainWindow.on( 'close', async () => {
         winManager.unload();
-        logBootstrap.unload();
+        await logBootstrap.unload();
     } );
 
     mainWindow.on( 'resize', function ( e ) {
@@ -295,9 +295,9 @@ const bootstrapApp = () => {
 }
 
 // Using the instance lock we can prevent multiple Nag instances from opening.
-const instanceLock = allowMultipleInstances ?? app.requestSingleInstanceLock();
+const instanceLock = allowMultipleInstances || app.requestSingleInstanceLock();
 
-if ( !instanceLock ) {
+if ( !allowMultipleInstances && !instanceLock ) {
     app.quit();
 } else {
 
@@ -354,27 +354,49 @@ ipcMain.on( `color:darken`, ( e, data ) => {
 } );
 
 ipcMain.on( 'app:log:exception', ( event, data ) => {
+    let error = {
+        label: 'System Error:',
+        message: '',
+        timestamp: new Date(),
+        payload: null,
+    };
+
     if ( data?.source === 'log-watcher.js' ) {
         log.error( data.error,
             '\r\n						  [error] (log entry)  "' + data.logEntry + '"',
             '\r\n						  [error] (simulating) ' + ( data.simulating ? 'true' : 'false' ),
             '\r\n						  [error] (pad time)   ' + data.padTime );
         
+        error.label = 'Log Watcher Error:';
+        error.message = data?.error?.message ?? 'Unexpected Error';
+        error.payload = data?.error;
+        
     } else if ( data?.source === 'renderer.js' && data?.fctModel ) {
         log.error( data.error,
             '\r\n						  [error] (fct model)  ' + JSON.stringify( data.fctModel ),
             '\r\n						  [error] (overlay id) ' + data.overlayId );
+        
+        error.label = 'Renderer FCT Error:';
+        error.message = data?.error?.message ?? 'Unexpected Error';
+        error.payload = data?.error;
         
     } else if ( data?.source === 'renderer.js' && data?.overlayComponent ) {
         log.error( data.error,
             '\r\n						  [error] (overlay component)  ' + JSON.stringify( data.overlayComponent ),
             '\r\n						  [error] (overlay id)         ' + data.overlayId );
         
+        error.label = 'Renderer Trigger Error:';
+        error.message = data?.error?.message ?? 'Unexpected Error';
+        error.payload = data?.error;
+        
     } else {
         log.error( data );
+
+        error.message = data?.message ?? data;
+        error.payload = data?.payload ?? null;
     }
 
-    mainWindow.webContents.send( 'console:error', { label: 'System Error', message: data?.error?.message ?? 'Unexpected Error', timestamp: new Date(), payload: data?.error ?? data } );
+    mainWindow.webContents.send( 'console:error', error );
 } );
 
 ipcMain.on( 'app:log:info', ( event, data ) => {
@@ -382,10 +404,11 @@ ipcMain.on( 'app:log:info', ( event, data ) => {
 } );
 
 var quitCalled = false;
-ipcMain.on( 'app:quit', ( event, forceQuit ) => {
+ipcMain.on( 'app:quit', async ( event, forceQuit ) => {
     if ( forceQuit === true || !logBootstrap.isBackupProcessing ) {
         quitCalled = true;
         winManager.unload();
+        await logBootstrap.unload();
         app.quit();
     } else {
         event.sender.send( 'app:quit:failure', {
@@ -623,6 +646,8 @@ ipcMain.on( 'console:command',
                     logBootstrap.sendToCombatWatcher( 'log:start-chat-room', null );
                 } else if ( commands[ 1 ] === 'join' ) {
                     logBootstrap.sendToCombatWatcher( 'log:join-chat-room', commands[ 2 ] );
+                } else if ( commands[ 1 ] === 'leave' ) {
+                    logBootstrap.sendToCombatWatcher( 'log:leave-chat-room', null );
                 }
             }
         }
@@ -639,7 +664,7 @@ ipcMain.on( 'console:message',
         if ( typeof data === 'string' ) {
             mainWindow.webContents.send( 'console:success', { label: 'System Message', message: data, timestamp: new Date() } );
         } else if ( data?.message ) {
-            mainWindow.webContents.send( 'console:success', { label: data.label ?? 'System Message', message: data.message, timestamp: new Date() } );
+            mainWindow.webContents.send( 'console:success', { label: data.label ?? 'System Message', message: data.message, payload: data.payload, timestamp: new Date() } );
         }
     } );
 

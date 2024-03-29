@@ -14,7 +14,7 @@ export class ConsoleMessageComponent implements OnInit {
         this._item = value;
         this.payloadHtml = undefined;
         if ( value.payload ) {
-            this.renderParseToHtml( value.payload ?? value );
+            this.renderParseToHtml( value.payload );
         }
     }
     public get item(): ConsoleMessageModel {
@@ -92,18 +92,10 @@ export class ConsoleMessageComponent implements OnInit {
             html += '</ul>';
 
             return html;
-        } else if ( this._item.logType === LogTypes.error || this._item.logType === LogTypes.warning ) {
+        } else if ( typeof json === 'string' && ( this._item.logType === LogTypes.error || this._item.logType === LogTypes.warning ) ) {
             let html = '<ul>';
 
             html += `<li><b>message</b>: <span class="color-brown">"${json}"</span></li>`;
-            
-            html += '</ul>';
-            
-            return html;
-        } else if ( this._item.logType === LogTypes.debug || this._item.logType === LogTypes.success ) {
-            let html = '<ul>';
-            
-            html += `<li><b class="color-blue">message</b>: <span class="color-brown">"${json}"</span></li>`;
             
             html += '</ul>';
             
