@@ -701,7 +701,13 @@ class LogBootstrapper {
     /**
      * Unloads all running processes and closes log watcher windows.
      */
-    unload() {
+    async unload() {
+
+        if ( combatWatcher ) {
+            // We need to close the combat watcher window on our terms at this point.
+            combatWatcher.characterId = null;
+        }
+
         for ( let key in logWatchers ) {
             if ( logWatchers.hasOwnProperty( key ) ) {
                 if ( logWatchers[ key ].window != null && !logWatchers[ key ].window.isDestroyed() ) {
@@ -716,7 +722,43 @@ class LogBootstrapper {
                 clearInterval( logWatchers[ key ].intervalId );
             }
         }
-        combatWatcher.window?.close();
+
+        await this.closeCombatWatcher();
+        
+    }
+
+
+
+
+
+
+
+
+
+    
+    /**
+     * Closes the combat watcher window.
+     * 
+     * @returns {Promise<void>} A promise that resolves when the combat watcher window is closed.
+     */
+    closeCombatWatcher() {
+        return new Promise( ( resolve, reject ) => {
+            if (!combatWatcher?.window) {
+                resolve();
+                return;
+
+            } else {
+
+                combatWatcher.window.webContents.send( 'log:combat:unload', null );
+                
+                ipcMain.once( 'log:combat:unloaded', () => {
+                    combatWatcher.window?.close();
+                    resolve();
+                } );
+
+                return;
+            }
+        } );
     }
 
 
@@ -818,10 +860,10 @@ function startLogWatcherWindow( logFile, isDev, sendTick, character, logPosition
     logWatcherWindow.webContents.openDevTools( { mode: 'undocked' } );
     logWatcherWindow.loadURL( `file://${__dirname}/threads/log-watcher.html?character=${encodeURI(JSON.stringify(character))}&logPosition=${logPosition}` );
 
-    logWatcherWindow.on( 'closed', function () {
+    logWatcherWindow.on( 'closed', async () => {
         logWatcherWindow = null;
         if ( combatWatcher.characterId === character.characterId ) {
-            combatWatcher.window?.close();
+            await this.closeCombatWatcher();
         }
     } );
 
