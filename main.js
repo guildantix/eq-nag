@@ -47,7 +47,7 @@ var combatParseCharacterId = undefined;
 autoUpdater.logger = log;
 /** @type {number | undefined} */
 var nagProcessId = undefined;
-const allowMultipleInstances = true;
+const allowMultipleInstances = false;
 const fs = require( 'fs' );
 
 
