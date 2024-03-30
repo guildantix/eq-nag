@@ -54,7 +54,7 @@
 
 const { CharacterModel } = require( "../data/models/character" );
 const { ipcRenderer, ipcMain } = require( 'electron' );
-const { DpsMeterSettings, LogRecord, EncounterResetEventArgs } = require( "../data/models/combat-parser" );
+const { DpsMeterSettings, LogRecord, EncounterResetEventArgs, EncounterModel, ExternalEncounterModel } = require( "../data/models/combat-parser" );
 const { OverlayWindow } = require( "../data/models/overlay-window" );
 const { ErrorMessages, TriggerParseHistoryModel, getActionLabel, LogTypes } = require( "../data/models/trigger" );
 const { CombatParser, minifyCombatLogs } = require( "../utilities/combat-parser" );
@@ -63,7 +63,7 @@ const customAlphabet = require( 'nanoid' ).customAlphabet;
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const nanoid = customAlphabet( alphabet, 16 );
 const fs = require( 'fs' );
-const { LogSync, createChatRoomLink, parseChatRoomLink, PeerDataPackageModel, CombatStatisticsPayloadModel } = require( "../utilities/peer-to-peer" );
+const { LogSync, createChatRoomLink, parseChatRoomLink, PeerDataPackageModel, CombatStatisticsPayloadModel, CombatEncounterPayloadModel } = require( "../utilities/peer-to-peer" );
 const { nagException, nagLog } = require( "../utilities/nag-console" );
 const chunkSize = 512 * 1024;
 
@@ -83,6 +83,8 @@ let enableDpsTransmit = false; // TODO: Enable transmission of DPS to the api fo
 let dpsTransmitIntervalId = null;
 /** @type {number} */
 const dpsTransmitIntervalMs = 12 * 1000;
+/** @type {number} */
+const saveEncounterIntervalMs = 24 * 1000; // Generally twice as long as the transmit interval.
 /** @type {DpsMeterSettings} */
 let dpsMeterSettings = new DpsMeterSettings();
 
@@ -223,19 +225,164 @@ const startDpsTracking = () => {
     }
 };
 
+/** @type {EncounterModel[]} */
+let myEncounters = [];
+
+/** @type {CombatEncounterPayloadModel[]} */
+let externalEncounters = [];
+
+/** @type {Record<string, number>} */
+let myEncounterSaveIntervalIds = {};
+
 /**
  * Executes when the encounter is reset.
  * 
- * @param {EncounterResetEventArgs} encounterEvents The events from the encounter.
+ * @param {EncounterResetEventArgs} e The events from the encounter.
  */
-const onEncounterReset = ( encounterEvents ) => {
+const onEncounterReset = ( e ) => {
+
+    myEncounters.push( {
+        encounterId: e.encounterId,
+        characterName: characterName,
+        serverName: charModel.server,
+        logRecords: e.logRecords,
+        externalEncounterIds: e.externalEncounterIds,
+        externalEncounterIdCharacters: e.externalEncounterIdCharacters,
+        externalEncounterInfos: [],
+        npcs: e.npcs,
+    } );
+
     ipcRenderer.send( 'renderer:encounter-reset', { character: characterName } );
-    // TODO: Transmit my full encounter log to the other peers.
-    // TODO: Receive the full encounter log from the other peers.
+
+    if ( logSync != null ) {
+        submitEncounter( e );
+        processReceivedEncounters( e.encounterId );
+        myEncounterSaveIntervalIds[ e.encounterId ] = window.setTimeout( () => saveEncounter( e.encounterId ), saveEncounterIntervalMs );
+    } else {
+        saveEncounter( e.encounterId );
+    }
+    
     // TODO: Send the full encounter log to disk.  I think that this should work differently than the current db structure.
     //          I think the best way is to have a local directory to store a .json file for each encounter.
     //          Filename format: {characterName}_{serverName}_{timestamp}.json
 }
+
+/**
+ * Saves the encounter to disk.
+ * 
+ * @param {string} encounterId The id of the encounter to save.
+ */
+const saveEncounter = ( encounterId ) => {
+    // TODO: Ask the user if they want to save the encounter.
+    let encounterIndex = myEncounters.findIndex( e => e.encounterId === encounterId );
+
+    if ( encounterIndex >= 0 ) {
+        const encounter = myEncounters[ encounterIndex ];
+
+        ipcRenderer.invoke( 'log:save-encounter', encounter ).then( () => {
+            myEncounters = myEncounters.filter( e => e.encounterId !== encounterId );
+
+            nagLog( {
+                label: 'Encounter Save',
+                message: `Encounter saved for ${characterName}.`,
+            } );
+        } );
+    }
+}
+
+/**
+ * Saves the specified encounter immediately and does not wait for the interval.
+ * 
+ * @param {string} encounterId The encounter id.
+ */
+const saveEncounterNow = ( encounterId ) => {
+    saveEncounter( encounterId );
+    
+    if ( myEncounterSaveIntervalIds[ encounterId ] > 0 ) {
+        window.clearTimeout( myEncounterSaveIntervalIds[ encounterId ] );
+        delete myEncounterSaveIntervalIds[ encounterId ];
+    }
+};
+
+/**
+ * Submits the encounter to all peers.
+ * 
+ * @param {EncounterResetEventArgs} e The encounter reset event args.
+ */
+const submitEncounter = ( e ) => {
+    logSync.sendToAll( {
+        type: 'encounter',
+        timestamp: e.timestamp,
+        payload: {
+            characterName: characterName,
+            logRecords: e.logRecords,
+            timestamp: e.timestamp,
+            encounterId: e.encounterId,
+            npcs: e.npcs,
+        }
+    } );
+
+    nagLog( {
+        label: 'Encounter Sync',
+        message: `Encounter sent to all peers for ${characterName}.`,
+    } );
+};
+
+/**
+ * Processes any received encounters.
+ * 
+ * @param {string} encounterId The encounter id of my encounter.
+ */
+const processReceivedEncounters = ( encounterId ) => {
+    const myEncounter = myEncounters.find( e => e.encounterId === encounterId );
+
+    if ( myEncounter ) {
+        for ( let i = 0; i < myEncounter.externalEncounterIds.length; i++ ) {
+            const exIndex = externalEncounters.findIndex( e => e.encounterId === myEncounter.externalEncounterIds[ i ] );
+            const externalEncounter = externalEncounters[ exIndex ];
+            
+            if ( externalEncounter ) {
+                myEncounter.externalEncounterInfos.push( {
+                    encounterId: externalEncounter.encounterId,
+                    characterName: externalEncounter.characterName,
+                    logRecords: externalEncounter.logRecords,
+                } );
+                externalEncounters.splice( exIndex, 1 );
+            }
+        }
+
+        if ( myEncounter.externalEncounterInfos.length === myEncounter.externalEncounterIds.length ) {
+            saveEncounterNow( encounterId );
+        }
+    }
+};
+
+/**
+ * Receives the encounter log from the peer.  If my encounter is ready, it is 
+ * added to the encounter.  Otherwise it is cached until my encounter is ready.
+ * 
+ * @param {CombatEncounterPayloadModel} externalEncounter The external encounter received.
+ */
+const receiveEncounterLog = ( externalEncounter ) => {
+    const myEncounter = myEncounters.find( e => e.externalEncounterIds.includes( externalEncounter.encounterId ) );
+
+    if ( myEncounter == null ) {
+        // Cache the external encounter.
+        externalEncounters.push( externalEncounter );
+
+    } else {
+        myEncounter.externalEncounterInfos.push( {
+            encounterId: externalEncounter.encounterId,
+            characterName: externalEncounter.characterName,
+            logRecords: externalEncounter.logRecords,
+        } );
+
+        if ( myEncounter.externalEncounterInfos.length === myEncounter.externalEncounterIds.length ) {
+            saveEncounterNow( myEncounter.encounterId );
+        }
+
+    }
+};
 
 const stopDpsTracking = () => {
     if ( dpsIntervalId ) {
@@ -582,12 +729,17 @@ let processChatRoom = async () => {
                         message: m.message,
                         payload: m,
                     } );
+                    
                 } else if ( m.type === 'combatStatistics' ) {
 
                     /** @type {CombatStatisticsPayloadModel} */
                     let data = m.payload;
 
                     myCombatParser.importPlayerEncounterStats( data.characterName, data.encounterStats, data.encounterId );
+
+                } else if ( m.type === 'encounter' ) {
+                    receiveEncounterLog( m.payload );
+
                 }
             } );
         }

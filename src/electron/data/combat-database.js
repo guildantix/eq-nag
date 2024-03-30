@@ -3,7 +3,13 @@ const Store = require( './store' );
 const _ = require( 'lodash' );
 const StringUtilities = require( "../utilities/string" );
 const { app, BrowserWindow, ipcMain, screen } = require( "electron" );
-const { CombatDb, ServerCombatModel } = require( "./models/combat-parser" );
+const { CombatDb, ServerCombatModel, EncounterModel, CombatEncounterModel } = require( "./models/combat-parser" );
+const path = require( 'path' );
+const FsUtilities = require( "../utilities/file-system" );
+const fs = require( 'fs' );
+const ForwardRef = require( "../forward-ref" );
+const fsp = fs.promises;
+const log = require( 'electron-log' );
 
 /*
 
@@ -65,7 +71,7 @@ class CombatDatabase extends Store {
     /**
      * Attaches store events to ipc main and dispatches react events to the main window.
      * 
-     * @param {ForwardRef} mainWindowRef The main window of the application.
+     * @param {ForwardRef<BrowserWindow>} mainWindowRef The main window of the application.
      * @param {function} sendTick The send tick method.
      */
     attachIpcEvents( mainWindowRef, sendTick ) {
@@ -96,6 +102,69 @@ class CombatDatabase extends Store {
                 this.putServer( server );
             } );
 
+        ipcMain.handle( 'log:save-encounter',
+            /**
+             * Saves the encounter to disk.
+             * 
+             * @param {Electron.IpcMainEvent} event Electron event args.
+             * @param {EncounterModel} encounter The encounter to save.
+             */
+            async ( event, encounter ) => {
+                return await this.#saveEncounter( encounter, mainWindowRef.reference );
+            } );
+
+    }
+
+    /**
+     * Saves the encounter to disk.
+     * 
+     * @returns {Promise<boolean>} Returns true if the encounter was saved.
+     * 
+     * @param {EncounterModel} encounter The encounter to save.
+     * @param {BrowserWindow} mainWindow The main window of the application.
+     */
+    async #saveEncounter( encounter, mainWindow ) {
+        
+        try {
+            let encountersPath = path.join( this.userDataPath, 'encounters' );
+                    
+            if ( !fs.existsSync( encountersPath ) ) {
+                await fsp.mkdir( encountersPath );
+            }
+
+            let filePath = path.join( encountersPath, `${encounter.characterName}-${encounter.serverName}${FsUtilities.getFileTimestamp()}.json` );
+
+            await fsp.writeFile( filePath, JSON.stringify( encounter ) );
+
+            this.#data.encounters.push( {
+                encounterId: encounter.encounterId,
+                characterName: encounter.characterName,
+                serverName: encounter.serverName,
+                filePath: filePath,
+                timestamp: new Date(),
+                npcs: encounter.npcs,
+            } );
+            
+            await this.storeDataFileAsync( this.#data );
+
+            return true;
+        } catch ( error ) {
+
+            // Log to the nag log file.
+            log.error( error );
+
+            // Send the error to the main window.
+            let errorMsg = {
+                label: 'Save Error:',
+                message: 'Could not save encounter to disk.',
+                timestamp: new Date(),
+                payload: error,
+            };
+
+            mainWindow?.webContents.send( 'console:error', errorMsg );
+        }
+
+        return false;
     }
 
 
