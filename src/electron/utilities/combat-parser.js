@@ -323,6 +323,7 @@ class CombatParser {
             .invoke( 'settings:get', { key: 'dpsEncounterResetTimeMs', subscribe: true } )
             .then( data => {
                 if ( data > 0 ) {
+                    // TODO: This should be part of the dpsMeterSettings and not a separate setting.
                     this._encounterResetMs = data;
                 }
             } );
@@ -1658,6 +1659,7 @@ class CombatParser {
         eventArgs.encounterId = this._encounterStats.encounterId;
         eventArgs.timestamp = this._encounterStats.lastEncounterEvent;
         eventArgs.logRecords = this.encounterEvents;
+        eventArgs.npcs = [ ...this._encounterStats.npcs ];
         eventArgs.externalEncounterIds = Object.keys( this._externalEncounterIds );
         eventArgs.externalEncounterIdCharacters = this._externalEncounterIds;
 
@@ -2213,7 +2215,12 @@ class CombatParser {
                     // If the player is the target, then we need to add to the player's dps received record.
                     let playerEvents = this._getOrCreatePlayerEncounterStats( this._encounterStats.playerEvents, logRecord.target, timestamp );
                     let playerIncoming = this._getOrCreatePlayerDpsStats( playerEvents.playerDpsIncoming, playerEvents.name, playerEvents.class, timestamp );
+                    
                     this._calculateDpsStats( logRecord, playerIncoming, playerIncoming.time );
+
+                    if ( this._verifiedNpcs.includes( logRecord.actor ) && !this._encounterStats.npcs.includes( logRecord.actor ) ) {
+                        this._encounterStats.npcs.push( logRecord.actor );
+                    }
 
                 } else if ( petTarget ) {
                     // If a player's pet is the target, then we need to grab the pet's owner, and add the dps received to the owner's pet list for dps received.
@@ -2225,6 +2232,10 @@ class CombatParser {
 
                     this._calculateDpsStats( logRecord, petDpsRec, playerIncoming.time );
 
+                    if ( this._verifiedNpcs.includes( logRecord.actor ) && !this._encounterStats.npcs.includes( logRecord.actor ) ) {
+                        this._encounterStats.npcs.push( logRecord.actor );
+                    }
+
                 }
 
                 if ( playerActor ) {
@@ -2233,6 +2244,10 @@ class CombatParser {
                     let playerOutgoing = this._getOrCreatePlayerDpsStats( playerEvents.playerDpsOutgoing, playerEvents.name, playerEvents.class, timestamp );
                     
                     this._calculateDpsStats( logRecord, playerOutgoing, playerOutgoing.time );
+
+                    if ( this._verifiedNpcs.includes( logRecord.target ) && !this._encounterStats.npcs.includes( logRecord.target ) ) {
+                        this._encounterStats.npcs.push( logRecord.target );
+                    }
                     
                 } else if ( petActor ) {
                     // If a player's pet is the actor, then we need to grab the pet's owner, and add the dps to the owner's pet list.
@@ -2243,6 +2258,10 @@ class CombatParser {
                     let petDps = this._getOrCreatePetDpsStats( playerOutgoing.pets, logRecord.actor, timestamp );
 
                     this._calculateDpsStats( logRecord, petDps, playerOutgoing.time );
+
+                    if ( this._verifiedNpcs.includes( logRecord.target ) && !this._encounterStats.npcs.includes( logRecord.target ) ) {
+                        this._encounterStats.npcs.push( logRecord.target );
+                    }
                     
                 }
 
