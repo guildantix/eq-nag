@@ -125,6 +125,8 @@ class EncounterResetEventArgs {
     externalEncounterIds = [];
     /** @type {Record<string, string>} Maps external encounter ids to their owning character names. */
     externalEncounterIdCharacters = {};
+    /** @type {string[]} */
+    npcs = [];
 }
 
 class LogRecord {
@@ -243,33 +245,17 @@ class ServerCombatModel {
 class CombatEncounterModel {
 
     /** @type {string} */
-    server;
-    /** @type {LogRecord} */
-    encounterEvents = [];
+    encounterId;
+    /** @type {string} */
+    characterName;
+    /** @type {string} */
+    serverName;
+    /** @type {string} */
+    filePath;
     /** @type {Date} */
-    start;
-    /** @type {Date | undefined} */
-    end = undefined;
-
-    /**
-     * Initializes a new encounter.
-     * 
-     * @param {string} serverName The name of the server.
-     * @param {Date} timeStamp The start time of the encounter.
-     */
-    constructor( serverName, timeStamp ) {
-
-        if ( !serverName ) {
-            throw new Error( 'serverName is required.' );
-        }
-
-        if ( !timeStamp ) {
-            throw new Error( 'timeStamp is required.' );
-        }
-
-        this.server = serverName;
-        this.start = timeStamp;
-    }
+    timestamp;
+    /** @type {string[]} */
+    npcs;
 
 }
 
@@ -299,6 +285,34 @@ class DpsMeterSettings {
 
 const rgxCombatText = /hit|damage|miss|dodge|riposte|parry|become better|backstab|stun|attack|crush/i;
 
+class ExternalEncounterModel {
+    /** @type {string} */
+    encounterId;
+    /** @type {string} */
+    characterName;
+    /** @type {LogRecord[]} */
+    logRecords = [];
+}
+
+class EncounterModel {
+    /** @type {string} */
+    encounterId;
+    /** @type {string} */
+    characterName;
+    /** @type {string} */
+    serverName;
+    /** @type {LogRecord[]} */
+    logRecords = [];
+    /** @type {string[]} */
+    externalEncounterIds = [];
+    /** @type {Record<string, string>} */
+    externalEncounterIdCharacters = {};
+    /** @type {ExternalEncounterModel[]} */
+    externalEncounterInfos = [];
+    /** @type {string[]} */
+    npcs;
+}
+
 module.exports = {
     AttackModifiers,
     PlayerInfo,
@@ -315,4 +329,7 @@ module.exports = {
     DpsMeterSettings,
     rgxCombatText,
     EncounterResetEventArgs,
+    ExternalEncounterModel,
+    EncounterModel,
+    CombatEncounterModel,
 };
