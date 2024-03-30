@@ -1,3 +1,4 @@
+// TODO: This can be accomplished using web workers.  Buckle up and do it.
 const { ipcRenderer } = require( 'electron' );
 const fs = require( 'fs' );
 const { Trigger, TriggerAction, ActionTypes, TriggerConditionTypes, OperatorTypes, CharacterClassLevel, TriggerSubAction, TriggerFolder, TriggerCondition, CapturePhrase, Phrase, TriggerParseHistoryModel, getActionLabel, LogTypes, ErrorMessages } = require( '../data/models/trigger' );
