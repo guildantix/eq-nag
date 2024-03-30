@@ -10,7 +10,7 @@
 
 // steps
 // 1. User creates a new chat room, and receive a chat room id and their peer id.
-// 2. User then puts a tag in /raid/guild/say/whatever {NAG:peer-to-peer/abcd1234}
+// 2. User then puts a tag in /raid/guild/say/whatever {NAG:p2p/abcd1234}
 // 3. User waits for other users to connect to the chat room.
 // 4. New users start by clicking a UI button to join the chat room, Nag will join them to the
 //    chat room and they will receive a peer id.
@@ -63,7 +63,8 @@ const customAlphabet = require( 'nanoid' ).customAlphabet;
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const nanoid = customAlphabet( alphabet, 16 );
 const fs = require( 'fs' );
-const { LogSync } = require( "../utilities/peer-to-peer" );
+const { LogSync, createChatRoomLink, parseChatRoomLink } = require( "../utilities/peer-to-peer" );
+const { nagException, nagLog } = require( "../utilities/nag-console" );
 const chunkSize = 512 * 1024;
 
 /** @type {CharacterModel} */
@@ -81,7 +82,7 @@ const enableDpsTransmit = false; // TODO: Enable transmission of DPS to the api 
 /** @type {number} */
 let dpsTransmitIntervalId = null;
 /** @type {number} */
-const dpsTransmitInterval = 12 * 1000;
+const dpsTransmitIntervalMs = 12 * 1000;
 /** @type {DpsMeterSettings} */
 let dpsMeterSettings = new DpsMeterSettings();
 
@@ -103,6 +104,8 @@ let enableFct = false;
 let isDev = false;
 /** @type {OverlayWindow} */
 let overlays = [];
+/** @type {LogSync | null} */
+let logSync = null;
 
 /**
  * Sends the error information to the main thread for logging.
@@ -114,8 +117,8 @@ let overlays = [];
  */
 const logParseError = ( err, raw, simulating, padTime ) => {
     if ( raw ) {
-        ipcRenderer.send( 'app:log:exception', {
-            source: 'log-watcher.js',
+        nagException( {
+            source: 'combat-watcher.js',
             error: err,
             logEntry: raw,
             simulating: simulating === true,
@@ -124,7 +127,7 @@ const logParseError = ( err, raw, simulating, padTime ) => {
                     padTime,
         } );
     } else {
-        ipcRenderer.send( 'app:log:exception', err );
+        nagException( err );
     }
 
     // TODO: Implement generic errors shown in console.
@@ -170,15 +173,13 @@ const transmitEncounterEvents = () => {
     // TODO: This should really be done in the combat parser.
     fullEncounterEvents?.forEach( e => e.transmitted = true );
 
-    // console.log( 'fullEncounterEvents size', JSON.stringify( fullEncounterEvents ).length );
-    // console.log( 'transmition size', JSON.stringify( minifiedEncounterEvents ).length );
     // TODO: Actually transmit the events.
 }
 
 const dpsTransmitFn = () => {
     transmitEncounterEvents();
 
-    dpsTransmitIntervalId = window.setTimeout( () => dpsTransmitFn(), dpsTransmitInterval );
+    dpsTransmitIntervalId = window.setTimeout( () => dpsTransmitFn(), dpsTransmitIntervalMs );
 }
 
 const dpsIntervalFn = () => {
@@ -190,7 +191,7 @@ const dpsIntervalFn = () => {
 const startDpsTracking = () => {
     if ( !dpsIntervalId ) {
         dpsIntervalId = window.setTimeout( () => dpsIntervalFn(), dpsInterval );
-        enableDpsTransmit && ( dpsTransmitIntervalId = window.setTimeout( () => dpsTransmitFn(), dpsTransmitInterval ) );
+        enableDpsTransmit && ( dpsTransmitIntervalId = window.setTimeout( () => dpsTransmitFn(), dpsTransmitIntervalMs ) );
     }
 };
 
@@ -359,7 +360,7 @@ function parseLogEntries( raw, simulating, padTime ) {
  * @param {number} logPosition The starting log position.
  */
 function CombatWatcher( character, logPosition ) {
-    
+
     if ( character ) {
         characterName = character.name;
         charModel = character;
@@ -380,10 +381,85 @@ function CombatWatcher( character, logPosition ) {
             dpsMeterSettings = data ?? new DpsMeterSettings();
         } );
     
-    ipcRenderer.on( 'log:start-chat-room', ( event, data ) => {
-        let logSync = new LogSync();
+    ipcRenderer.on( 'log:combat:unload', async () => {
+
+        if ( logSync != null ) {
+            await logSync.dispose();
+            cleanUpChatRoom();
+            logSync = null;
+        }
+
+        ipcRenderer.send( 'log:combat:unloaded', null );
+
+    } );
     
-        console.log( 'done' );
+    ipcRenderer.on( 'log:leave-chat-room', async ( event, data ) => {
+        if ( logSync != null ) {
+            await logSync.dispose();
+            cleanUpChatRoom();
+            nagLog( `Left chat room ${logSync.chatRoomId}.` );
+            logSync = null;
+
+        } else {
+            nagException( 'Not in a chat room.' );
+
+        }
+    } );
+    
+    ipcRenderer.on( 'log:start-chat-room', async ( event, data ) => {
+        try {
+            logSync = new LogSync();
+        
+            await logSync.initialize();
+            let success = await logSync.createChatRoom();
+    
+            if ( success ) {
+                let link = createChatRoomLink( logSync.chatRoomId );
+
+                nagLog( `Chat room created: ${link}, my peer id: ${logSync.peerId}` );
+                nagException( {
+                    source: 'combat-watcher.js',
+                    error: new Error( 'Chat room created' ),
+                    logEntry: 'This is a test of the thing as a log entry.',
+                    simulating: false,
+                    padTime: 0,
+                } );
+
+                processChatRoom();
+
+            } else {
+                throw new Error( 'Failed to create chat room.' );
+    
+            }
+
+        } catch ( error ) {
+            logError( error, 'Failed to create chat room', false, 0 );
+
+        }
+    } );
+
+    ipcRenderer.on( 'log:join-chat-room', async ( event, data ) => {
+        try {
+            logSync = new LogSync();
+
+            await logSync.initialize();
+            let linkId = parseChatRoomLink( data );
+            let success = await logSync.joinChatRoom( linkId );
+
+            if ( success ) {
+                nagLog( `Joined chat room: ${data}, my peer id: ${logSync.peerId}` );
+
+                processChatRoom();
+
+            } else {
+                throw new Error( 'Failed to create chat room.' );
+    
+            }
+
+        } catch ( error ) {
+            logError( error, 'Faile to join chat room', false, 0 );
+
+        }
     } );
     
     ipcRenderer.on( 'settings:get:dpsMeterSettings:generic',
@@ -456,6 +532,42 @@ function CombatWatcher( character, logPosition ) {
 
     } );
 
+}
+
+/** @type {number | null} */
+let chatRoomIntervalId = null;
+
+let processChatRoom = async () => {
+    if ( logSync != null ) {
+        let data = logSync.flushData();
+
+        for ( var peerId in data ) {
+            let messages = data[ peerId ];
+
+            messages.forEach( m => {
+                if ( m.type === 'message' ) {
+                    nagLog( {
+                        label: 'Chat Room',
+                        message: m.message,
+                        payload: m,
+                    } );
+                } else if ( m.type === 'combatStatistics' ) {
+                    // TODO: Implement combat statistics importing.
+                    nagLog( `Received combat statistics from ${peerId}` );
+                    nagException( `(combat-watcher.js) Not implemented yet!` );
+                }
+            } );
+        }
+
+        chatRoomIntervalId = window.setTimeout( async () => await processChatRoom(), dpsTransmitIntervalMs );
+    }
+}
+
+function cleanUpChatRoom() {
+    if ( chatRoomIntervalId > 0 ) {
+        window.clearTimeout( chatRoomIntervalId );
+        chatRoomIntervalId = null;
+    }
 }
 
 module.exports = CombatWatcher;
