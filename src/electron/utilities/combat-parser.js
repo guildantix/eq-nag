@@ -208,7 +208,6 @@ class CombatParser {
     /** @type {number} */
     chunks = 50;
 
-    // TODO: Keep records of entity verifications, by server where appropriate.
     /** @type {string[]} */
     _unknownEntities = [];
     /** @type {string[]} */
@@ -423,7 +422,6 @@ class CombatParser {
      * @param {string} target The name of the target.
      */
     getEncounterEvents( start, end, actor, target ) {
-        // TODO: We should just update this so that DPS statistics are returned instead of the raw encounter events.  That way, we can just update statistics as new combat events are added.
         let actorPets = this._playerPets[ actor ];
         let output = this.encounterEvents.filter( f => {
             return ( start == null || f.timestamp >= start ) && ( end == null || f.timestamp <= end ) && ( actor == null || f.actor === actor ) && ( target == null || f.target === target );
@@ -1048,7 +1046,7 @@ class CombatParser {
             }
         }
 
-        // TODO: Implicit entity verification should be refactored and optimized, and not something to be executed at every log line.
+        // TODO: Implicit entity verification could be refactored and optimized.
         let crazy = 0;
         while ( this._unknownEntities.length > 0 && crazy < 5 ) {
             crazy++;
@@ -1636,9 +1634,6 @@ class CombatParser {
      */
     _resetEncounter() {
 
-        // TODO: Get a list of all attacked NPCs in this encounter.
-        // TODO: Store encounter in combat database.
-
         const eventArgs = new EncounterResetEventArgs();
         eventArgs.encounterId = this._encounterStats.encounterId;
         eventArgs.timestamp = this._encounterStats.lastEncounterEvent;
@@ -1675,7 +1670,6 @@ class CombatParser {
     _getFctModel( rec ) {
         let model = new FctModel();
 
-        // TODO: This will only work for the character processing combat logs.  Future update needs to allow FCT for all configurable characters in the local config file.
         let actor = rec.actor;
         let target = rec.target;
         let character = this._fctCharacters.find( f => f.name === actor || f.name === target );
@@ -2242,12 +2236,14 @@ class CombatParser {
                 } else if ( petTarget ) {
                     // If a player's pet is the target, then we need to grab the pet's owner, and add the dps received to the owner's pet list for dps received.
                     let owner = this._petOwners[ logRecord.target ];
-                    // TODO: Deal with pets that don't have owners.
-                    let playerEvents = this._getOrCreatePlayerEncounterStats( this._encounterStats.playerEvents, owner, timestamp );
-                    let playerIncoming = this._getOrCreatePlayerDpsStats( playerEvents.playerDpsIncoming, playerEvents.name, playerEvents.class, timestamp );
-                    let petDpsRec = this._getOrCreatePetDpsStats( playerIncoming.pets, logRecord.target, timestamp );
 
-                    this._calculateDpsStats( logRecord, petDpsRec, playerIncoming.time );
+                    if ( owner ) {
+                        let playerEvents = this._getOrCreatePlayerEncounterStats( this._encounterStats.playerEvents, owner, timestamp );
+                        let playerIncoming = this._getOrCreatePlayerDpsStats( playerEvents.playerDpsIncoming, playerEvents.name, playerEvents.class, timestamp );
+                        let petDpsRec = this._getOrCreatePetDpsStats( playerIncoming.pets, logRecord.target, timestamp );
+
+                        this._calculateDpsStats( logRecord, petDpsRec, playerIncoming.time );
+                    }
 
                     if ( this._verifiedNpcs.includes( logRecord.actor ) && !this._encounterStats.npcs.includes( logRecord.actor ) ) {
                         this._encounterStats.npcs.push( logRecord.actor );
@@ -2269,12 +2265,14 @@ class CombatParser {
                 } else if ( petActor ) {
                     // If a player's pet is the actor, then we need to grab the pet's owner, and add the dps to the owner's pet list.
                     let owner = this._petOwners[ logRecord.actor ];
-                    // TODO: Deal with pets that don't have owners.
-                    let playerEvents = this._getOrCreatePlayerEncounterStats( this._encounterStats.playerEvents, owner, timestamp );
-                    let playerOutgoing = this._getOrCreatePlayerDpsStats( playerEvents.playerDpsOutgoing, playerEvents.name, playerEvents.class, timestamp );
-                    let petDps = this._getOrCreatePetDpsStats( playerOutgoing.pets, logRecord.actor, timestamp );
+                    
+                    if ( owner ) {
+                        let playerEvents = this._getOrCreatePlayerEncounterStats( this._encounterStats.playerEvents, owner, timestamp );
+                        let playerOutgoing = this._getOrCreatePlayerDpsStats( playerEvents.playerDpsOutgoing, playerEvents.name, playerEvents.class, timestamp );
+                        let petDps = this._getOrCreatePetDpsStats( playerOutgoing.pets, logRecord.actor, timestamp );
 
-                    this._calculateDpsStats( logRecord, petDps, playerOutgoing.time );
+                        this._calculateDpsStats( logRecord, petDps, playerOutgoing.time );
+                    }
 
                     if ( this._verifiedNpcs.includes( logRecord.target ) && !this._encounterStats.npcs.includes( logRecord.target ) ) {
                         this._encounterStats.npcs.push( logRecord.target );
