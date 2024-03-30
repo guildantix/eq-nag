@@ -268,6 +268,9 @@ class CombatParser {
     /** @type {boolean} */
     loaded = false;
 
+    /** @type {boolean} */
+    _updateServerStatistics = false;
+
     /**
      * Constructs a new combat parser.
      * 
@@ -973,8 +976,6 @@ class CombatParser {
      */
     _updateEntityVerifications( lines, myCharacterName ) {
         
-        // TODO: This is in serious need of optimization.
-        let updateServerModel = false;
 
         for ( let i = 0; i < lines.length; i++ ) {
             let regxResult = executCombatRgx( combatRgx.GroupRaid, lines[ i ] );
@@ -982,7 +983,7 @@ class CombatParser {
             regxResult = regxResult == null ? executCombatRgx( combatRgx.Achievement, lines[ i ] ) : regxResult;
             if ( regxResult !== null && this._verifiedPlayers.indexOf( regxResult.groups.player ) === -1 ) {
                 this._verifiedPlayers.push( regxResult.groups.player );
-                updateServerModel = true;
+                this._updateServerStatistics = true;
             }
 
             let petLeader = executCombatRgx( combatRgx.PetLeader, lines[ i ] );
@@ -1003,7 +1004,7 @@ class CombatParser {
                 
                 this._petOwners[ petLeader.groups.pet ] = petKey;
                 this._playerPets[ petKey ].push( petLeader.groups.pet );
-                updateServerModel = true;
+                this._updateServerStatistics = true;
 
             }
 
@@ -1027,19 +1028,9 @@ class CombatParser {
                     this._playerInfos[ playerName ].raceName = playerWho.groups.raceName;
                 }
                 
-                updateServerModel = true;
+                this._updateServerStatistics = true;
             }
             
-        }
-
-        // TODO: This is looping through all of the encounter events, this should be refactored and optimized.
-        for ( let i = 0; i < this.encounterEvents.length; i++ ) {
-            const event = this.encounterEvents[ i ];
-            const rampages = event.modifiers?.rampage || event.modifiers?.wild_rampage;
-            if ( rampages && !this._verifiedPets.includes( event.actor ) && !this._verifiedNpcs.includes( event.actor ) ) {
-                this._verifiedNpcs.push( event.actor );
-                updateServerModel = true;
-            }
         }
 
         // Loop through all verified players, and remove their named pets from the npcs list. Ex: Soandso's warder.
@@ -1052,18 +1043,8 @@ class CombatParser {
                     this._verifiedPets.push( npc );
                     // Pets do not belong in the verified npcs list.
                     this._verifiedNpcs.splice( j, 1 );
-                    updateServerModel = true;
+                    this._updateServerStatistics = true;
                 }
-            }
-        }
-
-
-        // TODO: Another loop that is going through all encounter events, refactor and optimize.
-        for ( let i = 0; i < this.encounterEvents.length; i++ ) {
-            const event = this.encounterEvents[ i ];
-            if ( event.actor != null && !( this._verifiedNpcs.indexOf( event.actor ) >= 0 || this._verifiedPets.indexOf( event.actor ) >= 0 || this._verifiedPlayers.indexOf( event.actor ) >= 0 || this._unknownEntities.indexOf( event.actor ) >= 0 ) ) {
-                this._unknownEntities.push( event.actor );
-                updateServerModel = true;
             }
         }
 
@@ -1077,7 +1058,8 @@ class CombatParser {
 
             // Let's calculate some simple statistics for each unknown entity,
             // and see if we can't figure out what they are implicitly.
-            for ( let i = 0; i < this.encounterEvents.length; i++ ) {
+            const limit = this.encounterEvents.length > 250 ? 250 : this.encounterEvents.length;
+            for ( let i = 0; i < limit; i++ ) {
                 const event = this.encounterEvents[ i ];
 
                 if ( event.actor != null && event.target != null ) {
@@ -1128,7 +1110,8 @@ class CombatParser {
                             // The known(?) is attacking the unknown.
                             if ( this._verifiedNpcs.indexOf( event.actor ) > -1 ) {
                                 stats.attackedByNpc += 1;
-                            } else if ( this._verifiedPlayers.indexOf( event.actor ) > -1 ) {
+                            } else if ( this._verifiedPlayers.indexOf( event.actor ) > -1 || this._verifiedPets.indexOf( event.actor ) > -1 ) {
+                                console.log( 'attacked by pet or player' );
                                 stats.attackedByPlayer += 1;
                             }
 
@@ -1152,35 +1135,35 @@ class CombatParser {
                     this._verifiedPets.push( stats.name );
                     let ui = this._unknownEntities.indexOf( stats.name );
                     this._unknownEntities.splice( ui, 1 );
-                    updateServerModel = true;
+                    this._updateServerStatistics = true;
 
                 } else if ( stats.attackNpc === 0 && stats.attackPlayer === 0 && stats.healPlayer > 0 ) {
 
                     this._verifiedPets.push( stats.name );
                     let ui = this._unknownEntities.indexOf( stats.name );
                     this._unknownEntities.splice( ui, 1 );
-                    updateServerModel = true;
+                    this._updateServerStatistics = true;
 
                 } else if ( stats.attackedByPlayer > 0 && stats.attackNpc === 0 ) {
 
                     this._verifiedNpcs.push( stats.name );
                     let ui = this._unknownEntities.indexOf( stats.name );
                     this._unknownEntities.splice( ui, 1 );
-                    updateServerModel = true;
+                    this._updateServerStatistics = true;
 
                 } else if ( stats.attackedByNpc > 0 && stats.attackPlayer === 0 ) {
 
                     this._verifiedPets.push( stats.name );
                     let ui = this._unknownEntities.indexOf( stats.name );
                     this._unknownEntities.splice( ui, 1 );
-                    updateServerModel = true;
+                    this._updateServerStatistics = true;
 
                 } else if ( stats.attackNpc === 0 && stats.attackPlayer > 0 ) {
 
                     this._verifiedNpcs.push( stats.name );
                     let ui = this._unknownEntities.indexOf( stats.name );
                     this._unknownEntities.splice( ui, 1 );
-                    updateServerModel = true;
+                    this._updateServerStatistics = true;
 
                 } else if ( stats.attackPlayer > 0 && stats.attackNpc > 0 ) {
 
@@ -1188,13 +1171,13 @@ class CombatParser {
                         this._verifiedPets.push( stats.name );
                         let ui = this._unknownEntities.indexOf( stats.name );
                         this._unknownEntities.splice( ui, 1 );
-                        updateServerModel = true;
+                        this._updateServerStatistics = true;
 
                     } else if ( stats / attackNpc / stats.attackPlayer <= 0.5 ) {
                         this._verifiedNpcs.push( stats.name );
                         let ui = this._unknownEntities.indexOf( stats.name );
                         this._unknownEntities.splice( ui, 1 );
-                        updateServerModel = true;
+                        this._updateServerStatistics = true;
                         
                     }
 
@@ -1202,8 +1185,9 @@ class CombatParser {
             }
         }
 
-        if ( updateServerModel ) {
+        if ( this._updateServerStatistics ) {
             this._updateServerModel();
+            this._updateServerStatistics = false;
         }
         
     }
@@ -1794,6 +1778,39 @@ class CombatParser {
         
         this._encounterResetTimerId = window.setTimeout( () => this._resetEncounter(), this._encounterResetMs );
 
+        let actorCategorized = false;
+
+        // Note: Only NPCs rampage.
+        const rampages = rec.modifiers?.rampage || rec.modifiers?.wild_rampage;
+        if ( rampages && !this._verifiedPets.includes( rec.actor ) && !this._verifiedNpcs.includes( rec.actor ) ) {
+            this._verifiedNpcs.push( rec.actor );
+            actorCategorized = true;
+            this._updateServerStatistics = true;
+        }
+
+        // Update uknown verification
+        if ( !actorCategorized && rec.actor != null ) {
+            let known = this._verifiedNpcs.includes( rec.actor )
+                || this._verifiedPets.includes( rec.actor )
+                || this._verifiedPlayers.includes( rec.actor )
+                || this._unknownEntities.includes( rec.actor );
+            if ( !known ) {
+                this._unknownEntities.push( rec.actor );
+                this._updateServerStatistics = true;
+            }
+        }
+
+        if ( rec.target != null ) {
+            let known = this._verifiedNpcs.includes( rec.target )
+                || this._verifiedPets.includes( rec.target )
+                || this._verifiedPlayers.includes( rec.target )
+                || this._unknownEntities.includes( rec.target );
+            if ( !known ) {
+                this._unknownEntities.push( rec.target );
+                this._updateServerStatistics = true;
+            }
+        }
+
         return this._getFctModel( rec );
     }
     
@@ -2215,7 +2232,7 @@ class CombatParser {
                     // If the player is the target, then we need to add to the player's dps received record.
                     let playerEvents = this._getOrCreatePlayerEncounterStats( this._encounterStats.playerEvents, logRecord.target, timestamp );
                     let playerIncoming = this._getOrCreatePlayerDpsStats( playerEvents.playerDpsIncoming, playerEvents.name, playerEvents.class, timestamp );
-                    
+
                     this._calculateDpsStats( logRecord, playerIncoming, playerIncoming.time );
 
                     if ( this._verifiedNpcs.includes( logRecord.actor ) && !this._encounterStats.npcs.includes( logRecord.actor ) ) {
