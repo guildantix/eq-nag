@@ -389,9 +389,17 @@ ipcMain.on( 'app:log:exception', ( event, data ) => {
         error.message = data?.error?.message ?? 'Unexpected Error';
         error.payload = data?.error;
         
+    } else if ( data?.source ) {
+        log.error( data.error );
+
+        error.label = data.source;
+        error.message = data?.error?.message ?? data.error ?? 'Unexpected Error';
+        error.payload = data?.error;
+    
     } else {
         log.error( data );
 
+        error.label = data?.label ?? 'System Error';
         error.message = data?.message ?? data;
         error.payload = data?.payload ?? null;
     }
