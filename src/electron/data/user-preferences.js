@@ -517,10 +517,10 @@ class UserPreferencesStore extends Store {
 
     /** @type {number} */
     get dpsEncounterResetTimeMs() {
-        return this.#data.dpsEncounterResetTimeMs ?? 30000;
+        return this.#data.dpsMeterSettings.encounterResetDelayMs ?? 30000;
     }
     set dpsEncounterResetTimeMs( val ) {
-        this.#data.dpsEncounterResetTimeMs = val;
+        this.#data.dpsMeterSettings.encounterResetDelayMs = val;
         this.storeDataFile( this.#data );
     }
 
