@@ -54,16 +54,16 @@
 
 const { CharacterModel } = require( "../data/models/character" );
 const { ipcRenderer, ipcMain } = require( 'electron' );
-const { DpsMeterSettings } = require( "../data/models/combat-parser" );
+const { DpsMeterSettings, LogRecord, EncounterResetEventArgs } = require( "../data/models/combat-parser" );
 const { OverlayWindow } = require( "../data/models/overlay-window" );
 const { ErrorMessages, TriggerParseHistoryModel, getActionLabel, LogTypes } = require( "../data/models/trigger" );
-const { CombatParser } = require( "../utilities/combat-parser" );
+const { CombatParser, minifyCombatLogs } = require( "../utilities/combat-parser" );
 const { TakpCombatParser } = require( "../utilities/combat-parser-takp" );
 const customAlphabet = require( 'nanoid' ).customAlphabet;
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const nanoid = customAlphabet( alphabet, 16 );
 const fs = require( 'fs' );
-const { LogSync, createChatRoomLink, parseChatRoomLink } = require( "../utilities/peer-to-peer" );
+const { LogSync, createChatRoomLink, parseChatRoomLink, PeerDataPackageModel, CombatStatisticsPayloadModel } = require( "../utilities/peer-to-peer" );
 const { nagException, nagLog } = require( "../utilities/nag-console" );
 const chunkSize = 512 * 1024;
 
@@ -78,7 +78,7 @@ let dpsIntervalId = null;
 /** @type {number} */
 const dpsInterval = 250;
 /** @type {boolean} */
-const enableDpsTransmit = false; // TODO: Enable transmission of DPS to the api for log event synchronization.
+let enableDpsTransmit = false; // TODO: Enable transmission of DPS to the api for log event synchronization.
 /** @type {number} */
 let dpsTransmitIntervalId = null;
 /** @type {number} */
@@ -129,8 +129,6 @@ const logParseError = ( err, raw, simulating, padTime ) => {
     } else {
         nagException( err );
     }
-
-    // TODO: Implement generic errors shown in console.
 };
 
 
@@ -167,13 +165,29 @@ const sendDpsToRenderer = () => {
 };
 
 const transmitEncounterEvents = () => {
-    let fullEncounterEvents = myCombatParser?.getMyCharacterEncounterEvents( true ) ?? [];
-    let minifiedEncounterEvents = myCombatParser?.getMinifiedEncounterEvents( fullEncounterEvents ) ?? [];
+    if ( logSync == null || myCombatParser == null )
+        return;
 
-    // TODO: This should really be done in the combat parser.
-    fullEncounterEvents?.forEach( e => e.transmitted = true );
+    let fullEncounterEvents = myCombatParser.getCharacterEncounterEvents( characterName, true ) ?? [];
+    // let minifiedEncounterEvents = minifyCombatLogs( fullEncounterEvents ) ?? [];
 
-    // TODO: Actually transmit the events.
+    if ( fullEncounterEvents?.logRecords?.length > 0 ) {
+
+        fullEncounterEvents.logRecords.forEach( e => e.transmitted = true );
+
+        // TODO: Actually transmit the events.
+        logSync.sendToAll( {
+            type: 'combatStatistics',
+            timestamp: fullEncounterEvents.logRecords[ 0 ].timestamp,
+            payload: {
+                characterName: characterName,
+                logRecords: fullEncounterEvents.logRecords,
+                encounterStats: fullEncounterEvents.playerStats,
+                // logRecords: minifiedEncounterEvents,
+                chatTimeStamp: new Date(),
+            }
+        } );
+    }
 }
 
 const dpsTransmitFn = () => {
@@ -188,20 +202,39 @@ const dpsIntervalFn = () => {
     dpsIntervalId = window.setTimeout( () => dpsIntervalFn(), dpsInterval );
 }
 
+const startDpsTransmit = () => {
+    nagLog( `Starting DPS transmit for ${characterName}` );
+    enableDpsTransmit = true;
+    dpsTransmitIntervalId = window.setTimeout( () => dpsTransmitFn(), dpsTransmitIntervalMs );
+};
+
+const stopDpsTransmit = () => {
+    nagLog( `Stopping DPS transmit for ${characterName}` );
+    enableDpsTransmit = false;
+    if ( dpsTransmitIntervalId ) {
+        window.clearTimeout( dpsTransmitIntervalId );
+        dpsTransmitIntervalId = null;
+    }
+};
+
 const startDpsTracking = () => {
     if ( !dpsIntervalId ) {
         dpsIntervalId = window.setTimeout( () => dpsIntervalFn(), dpsInterval );
-        enableDpsTransmit && ( dpsTransmitIntervalId = window.setTimeout( () => dpsTransmitFn(), dpsTransmitIntervalMs ) );
     }
 };
 
 /**
  * Executes when the encounter is reset.
  * 
- * @param {LogRecord[]} encounterEvents The events from the encounter.
+ * @param {EncounterResetEventArgs} encounterEvents The events from the encounter.
  */
 const onEncounterReset = ( encounterEvents ) => {
     ipcRenderer.send( 'renderer:encounter-reset', { character: characterName } );
+    // TODO: Transmit my full encounter log to the other peers.
+    // TODO: Receive the full encounter log from the other peers.
+    // TODO: Send the full encounter log to disk.  I think that this should work differently than the current db structure.
+    //          I think the best way is to have a local directory to store a .json file for each encounter.
+    //          Filename format: {characterName}_{serverName}_{timestamp}.json
 }
 
 const stopDpsTracking = () => {
@@ -395,6 +428,7 @@ function CombatWatcher( character, logPosition ) {
     
     ipcRenderer.on( 'log:leave-chat-room', async ( event, data ) => {
         if ( logSync != null ) {
+            stopDpsTransmit();
             await logSync.dispose();
             cleanUpChatRoom();
             nagLog( `Left chat room ${logSync.chatRoomId}.` );
@@ -417,17 +451,12 @@ function CombatWatcher( character, logPosition ) {
                 let link = createChatRoomLink( logSync.chatRoomId );
 
                 nagLog( `Chat room created: ${link}, my peer id: ${logSync.peerId}` );
-                nagException( {
-                    source: 'combat-watcher.js',
-                    error: new Error( 'Chat room created' ),
-                    logEntry: 'This is a test of the thing as a log entry.',
-                    simulating: false,
-                    padTime: 0,
-                } );
 
+                startDpsTransmit();
                 processChatRoom();
 
             } else {
+                stopDpsTransmit();
                 throw new Error( 'Failed to create chat room.' );
     
             }
@@ -449,9 +478,11 @@ function CombatWatcher( character, logPosition ) {
             if ( success ) {
                 nagLog( `Joined chat room: ${data}, my peer id: ${logSync.peerId}` );
 
+                startDpsTransmit();
                 processChatRoom();
 
             } else {
+                stopDpsTransmit();
                 throw new Error( 'Failed to create chat room.' );
     
             }
@@ -552,9 +583,11 @@ let processChatRoom = async () => {
                         payload: m,
                     } );
                 } else if ( m.type === 'combatStatistics' ) {
-                    // TODO: Implement combat statistics importing.
-                    nagLog( `Received combat statistics from ${peerId}` );
-                    nagException( `(combat-watcher.js) Not implemented yet!` );
+
+                    /** @type {CombatStatisticsPayloadModel} */
+                    let data = m.payload;
+
+                    myCombatParser.importPlayerEncounterStats( data.characterName, data.encounterStats, data.encounterId );
                 }
             } );
         }
