@@ -21,23 +21,14 @@ const {
     PetDps,
     ServerCombatModel,
     DpsMeterSettings,
+    EncounterResetEventArgs,
 } = require( '../data/models/combat-parser' );
 const { FctModel } = require( '../data/models/fct' );
 const { CharacterModel } = require( '../data/models/character' );
+const { nagLog, nagException } = require( './nag-console' );
 
 // TODO: Zhay`s pet hits Vius Vex for 9075 points of damage.
 
-/** @type {string} */
-let characterName = 'You';
-
-/** @type {number} */
-let encounterResetMs = 20 * 1000;
-
-/** @type {DpsMeterSettings} */
-let dpsMeterSettings = new DpsMeterSettings();
-
-/** @type {CharacterModel[]} */
-let fctCharacters = [];
 
 
 
@@ -99,6 +90,26 @@ const minifyLogRecord = ( rec ) => {
     }
 
     return minifiedRec;
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Minifies the given list of event logs.
+ * 
+ * @returns Returns the minified encounter events.
+ * 
+ * @param {LogRecord[]} eventLogs The list of event logs to minify.
+ */
+const minifyCombatLogs = ( eventLogs ) => {
+    return eventLogs.map( m => minifyLogRecord( m ) );
 }
 
 
@@ -173,7 +184,7 @@ const combatRgx = {
 
 // https://regex101.com/r/cqfoUU/2
 // This won't capture anon people.
-const playerWhoRgx = /^(OFFLINEMODE)?\[(?<level>\d+)\s(?<classTitleOrName>Savage Lord|Arch Arcanist|Arch Animist|Arch Mage|High Priest|Grave Lord|Feral Lord|Storm Warden|Arch Convoker|Arch Lich|Lord Protector|Forest Stalker|Dread Lord|Arch Magus|Stone Fist|Scourge Knight|Grand Archanist|Storm Caller|Grand Summoner|Holy Defender|.+?)\]?\s(:?\((?<classRealName>.*?)\)\])?\s?(?<player>.*?)\s\((?<raceName>.+?)\)\s/gi;
+const playerWhoRgx = /^(OFFLINEMODE)?\[(?<level>\d+)\s(?<classTitleOrName>Savage Lord|Arch Arcanist|Arch Animist|Arch Mage|High Priest|Grave Lord|Feral Lord|Storm Warden|Arch Convoker|Arch Lich|Lord Protector|Forest Stalker|Dread Lord|Arch Magus|Stone Fist|Scourge Knight|Grand Archanist|Storm Caller|Grand Summoner|Holy Defender|.+?)\]?\s(:?\((?<classRealName>.*?)\)\])?\s?(?<player>.*?)\s\((?<raceName>.+?)\)\s/i;
 
 
 
@@ -215,6 +226,18 @@ class CombatParser {
     /** @type {string} */
     _serverName;
 
+    /** @type {CharacterModel[]} */
+    _fctCharacters = [];
+
+    /** @type {CharacterModel[]} */
+    _myCharacters = [];
+
+    /** @type {DpsMeterSettings} */
+    _dpsMeterSettings = new DpsMeterSettings();
+
+    /** @type {number} */
+    _encounterResetMs = 20 * 1000;
+
     /** @type {LogRecord[]} */
     encounterEvents = [];
 
@@ -223,6 +246,15 @@ class CombatParser {
 
     /** @type {EncounterStats} */
     _encounterStats = undefined;
+
+    /** @type {Record<string, string>} */
+    _externalEncounterIds = {};
+
+    /** @type {string} */
+    _characterName = 'You';
+
+    /** @type {RegExp} */
+    _playerWhoRgx;
 
     /** @type {number} */
     _encounterResetTimerId = undefined;
@@ -243,9 +275,15 @@ class CombatParser {
      * @param {string} serverName The name of the server for the character.
      */
     constructor( myCharacterName, serverName ) {
-        characterName = myCharacterName ?? characterName;
-        this._verifiedPlayers.push( characterName );
-        console.log( 'initiating combat parser for', characterName, 'on server', serverName );
+        
+        this._playerWhoRgx = playerWhoRgx;
+
+        this._characterName = myCharacterName ?? this._characterName;
+        this._verifiedPlayers.push( this._characterName );
+        nagLog( {
+            label: 'Combat Parser',
+            message: `initiating combat parser for ${this._characterName} on server ${serverName}`,
+        }, true );
         this._serverName = serverName;
 
         ipcRenderer.on( 'character:get',
@@ -255,7 +293,8 @@ class CombatParser {
              * @param {CharacterModel[]} data The list of characters.
              */
             ( event, data ) => {
-                fctCharacters = data.filter( f => !f.disableFct );
+                this._myCharacters = data;
+                this._fctCharacters = data.filter( f => !f.disableFct );
             } );
 
         ipcRenderer.on( 'settings:get:dpsMeterSettings:generic',
@@ -265,7 +304,7 @@ class CombatParser {
          * @param {boolean} data True if enabled.
          */
         ( event, data ) => {
-            dpsMeterSettings = data;
+            this._dpsMeterSettings = data;
         } );
 
         ipcRenderer.on( 'settings:get:dpsEncounterResetTimeMs:generic',
@@ -276,7 +315,7 @@ class CombatParser {
              */
             ( event, data ) => {
                 if ( data > 0 ) {
-                    encounterResetMs = data;
+                    this._encounterResetMs = data;
                 }
             } );
         
@@ -284,7 +323,7 @@ class CombatParser {
             .invoke( 'settings:get', { key: 'dpsEncounterResetTimeMs', subscribe: true } )
             .then( data => {
                 if ( data > 0 ) {
-                    encounterResetMs = data;
+                    this._encounterResetMs = data;
                 }
             } );
 
@@ -325,7 +364,7 @@ class CombatParser {
         ipcRenderer
             .invoke( 'settings:get', { key: 'dpsMeterSettings', subscribe: true } )
             .then( data => {
-                dpsMeterSettings = data;
+                this._dpsMeterSettings = data;
             } );
         
         if ( serverName ) {
@@ -479,23 +518,35 @@ class CombatParser {
     /**
      * Returns the list of log records for the specified character.
      * 
-     * @returns {LogRecord[]} The list of log records.
+     * @returns {{logRecords: LogRecord[], playerStats: PlayerEncounterStats}} The list of log records.
      * 
      * @param {string} character The name of the character to pull log records for.
      * @param {boolean | undefined} untransmittedOnly If true, will only pull untransmitted log records.
      */
     getCharacterEncounterEvents( character, untransmittedOnly ) {
+
+        if ( !character ) {
+            nagException( `getCharacterEncounterEvents: character is undefined.` );
+            return {
+                logRecords: [],
+                playerStats: undefined,
+            };
+        }
+
         let actorPets = this._playerPets[ character ];
         let output = this.encounterEvents.filter( f => {
-            return ( !untransmittedOnly || f.transmitted === false ) && ( character == null || f.actor === character );
+            return ( !untransmittedOnly || f.transmitted === false ) && ( f.actor === character || f.target === character );
         } );
 
         if ( actorPets?.length > 0 ) {
-            let petOutput = this.encounterEvents.filter( f => ( !untransmittedOnly || f.transmitted === false ) && actorPets.includes( f.actor ) );
+            let petOutput = this.encounterEvents.filter( f => ( !untransmittedOnly || f.transmitted === false ) && ( actorPets.includes( f.actor ) || actorPets.includes( f.target ) ) );
             output = output.concat( petOutput );
         }
 
-        return output;
+        return {
+            logRecords: output,
+            playerStats: this._encounterStats?.playerEvents[ character ],
+        };
     }
 
 
@@ -508,14 +559,45 @@ class CombatParser {
 
 
     /**
-     * Minifies the given list of event logs.
+     * Imports the given player encounter stats.
      * 
-     * @returns Returns the minified encounter events.
-     * 
-     * @param {LogRecord[]} eventLogs The list of event logs to minify.
+     * @param {string} playerName The name of the character.
+     * @param {PlayerEncounterStats} playerStats The player's encounter stats.
+     * @param {string} externalEncounterId The player's external encounter id.
      */
-    getMinifiedEncounterEvents( eventLogs ) {
-        return eventLogs.map( m => minifyLogRecord( m ) );
+    importPlayerEncounterStats( playerName, playerStats, externalEncounterId ) {
+        
+        if ( !this._verifiedPlayers.includes( playerName ) ) {
+            this._verifiedPlayers.push( playerName );
+            this._updateServerModel();
+        }
+
+        this._encounterStats.playerEvents[ playerName ] = playerStats;
+        this._externalEncounterIds[ externalEncounterId ] = playerName;
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Returns a list of log records for all characters on your profile.
+     * 
+     * @returns {LogRecord[]} The list of log records.
+     * 
+     * @param {boolean | undefined} untransmittedOnly If true, will only pull untransmitted log records.
+     */
+    getMyCharacterEncounterEvents( untransmittedOnly ) {
+        let output = [];
+
+        this._myCharacters.forEach( c => output = output.concat( this.getCharacterEncounterEvents( c.name, untransmittedOnly ) ) );
+
+        return output;
     }
 
 
@@ -924,7 +1006,7 @@ class CombatParser {
 
             }
 
-            let playerWho = executCombatRgx( playerWhoRgx, lines[ i ] );
+            let playerWho = executCombatRgx( this._playerWhoRgx, lines[ i ] );
             if ( playerWho !== null && playerWho.groups != null && playerWho.groups.player != null ) {
                 const playerName = playerWho.groups.player;
 
@@ -1267,7 +1349,7 @@ class CombatParser {
                 const player = this._verifiedPlayers[ j ];
 
                 if ( player === event.target ) {
-                    if ( player === characterName ) {
+                    if ( player === this._characterName ) {
                         let log = new DeathRecapLog();
 
                         log.timestamp = event.timestamp;
@@ -1543,11 +1625,11 @@ class CombatParser {
         };
             
         if ( actor === 'YOU' || actor === 'YOUR' || actor === 'you' || actor === 'You' ) {
-            output.actor = characterName;
+            output.actor = this._characterName;
         }
     
         if ( target === 'YOU' || target === 'YOUR' || target === 'you' || target === 'You' ) {
-            output.target = characterName;
+            output.target = this._characterName;
         } else if ( target === 'himself' || target === 'herself' ) {
             output.target = actor;
         }
@@ -1572,13 +1654,19 @@ class CombatParser {
         // TODO: Get a list of all attacked NPCs in this encounter.
         // TODO: Store encounter in combat database.
 
-        // Clear the current encounter.
-        const events = this.encounterEvents;
+        const eventArgs = new EncounterResetEventArgs();
+        eventArgs.encounterId = this._encounterStats.encounterId;
+        eventArgs.timestamp = this._encounterStats.lastEncounterEvent;
+        eventArgs.logRecords = this.encounterEvents;
+        eventArgs.externalEncounterIds = Object.keys( this._externalEncounterIds );
+        eventArgs.externalEncounterIdCharacters = this._externalEncounterIds;
+
         this.encounterEvents = [];
+        this._externalEncounterIds = {};
         this._encounterStats = new EncounterStats();
 
         if ( this.onEncounterReset ) {
-            this.onEncounterReset( events );
+            this.onEncounterReset( eventArgs );
         }
     }
 
@@ -1604,7 +1692,7 @@ class CombatParser {
         // TODO: This will only work for the character processing combat logs.  Future update needs to allow FCT for all configurable characters in the local config file.
         let actor = rec.actor;
         let target = rec.target;
-        let character = fctCharacters.find( f => f.name === actor || f.name === target );
+        let character = this._fctCharacters.find( f => f.name === actor || f.name === target );
 
         if ( !character )
             // If no character was found, then this log record will be treated as a non-FCT event.
@@ -1702,7 +1790,7 @@ class CombatParser {
             clearTimeout( this._encounterResetTimerId );
         }
         
-        this._encounterResetTimerId = window.setTimeout( () => this._resetEncounter(), encounterResetMs );
+        this._encounterResetTimerId = window.setTimeout( () => this._resetEncounter(), this._encounterResetMs );
 
         return this._getFctModel( rec );
     }
@@ -2007,7 +2095,7 @@ class CombatParser {
             let lastDps = playerDpsRecs[ playerDpsRecs.length - 1 ];
             let delay = DateUtilities.timeSince( lastDps.end, timestamp ).totalMilliseconds;
 
-            if ( delay > dpsMeterSettings.playerInactiveDelayMs ) {
+            if ( delay > this._dpsMeterSettings.playerInactiveDelayMs ) {
                 statBlock = new PlayerDps();
                 statBlock.start = timestamp;
                 statBlock.name = name;
@@ -2115,6 +2203,7 @@ class CombatParser {
                 // 30 seconds of no encounter activity ends the encounter, starting a new one.
                 if ( this._encounterStats == undefined || this._encounterStats.lastEncounterEvent < DateUtilities.addSeconds( timestamp, -30 ) ) {
                     this._encounterStats = new EncounterStats();
+                    this._externalEncounterIds = {};
                     this._encounterStats.encounterStart = timestamp;
                 }
 
@@ -2167,4 +2256,5 @@ class CombatParser {
 
 module.exports = {
     CombatParser,
+    minifyCombatLogs,
 };
