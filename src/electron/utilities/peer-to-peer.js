@@ -37,9 +37,11 @@ class CombatEncounterPayloadModel {
     /** @type {LogRecord[]} */
     logRecords;
     /** @type {Date} */
-    chatTimeStamp;
-    /** @type {PlayerEncounterStats} */
-    encounterStats;
+    timestamp;
+    /** @type {string} */
+    encounterId;
+    /** @type {string[]} */
+    npcs = [];
 }
 
 class PeerDataPackageModel {
@@ -323,6 +325,7 @@ module.exports = {
     LogSync,
     PeerDataPackageModel,
     CombatStatisticsPayloadModel,
+    CombatEncounterPayloadModel,
     createChatRoomLink,
     parseChatRoomLink,
 };
