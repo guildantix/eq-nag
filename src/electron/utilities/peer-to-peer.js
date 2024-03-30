@@ -1,7 +1,7 @@
 const { ipcRenderer } = require( 'electron' );
 const Peer = require( 'simple-peer' );
 const { NagService } = require( './nag-service' );
-const { LogRecord } = require( '../data/models/combat-parser' );
+const { LogRecord, PlayerEncounterStats } = require( '../data/models/combat-parser' );
 const { nagLog, nagException } = require( './nag-console' );
 
 const peerOfferIntervalMs = 6 * 1000;
@@ -23,20 +23,33 @@ class CreateChatRoomResponseModel {
 class CombatStatisticsPayloadModel {
     /** @type {string} */
     characterName;
+    /** @type {Date} */
+    timestamp;
+    /** @type {PlayerEncounterStats} */
+    encounterStats;
+    /** @type {string} */
+    encounterId;
+}
+
+class CombatEncounterPayloadModel {
+    /** @type {string} */
+    characterName;
     /** @type {LogRecord[]} */
     logRecords;
     /** @type {Date} */
     chatTimeStamp;
+    /** @type {PlayerEncounterStats} */
+    encounterStats;
 }
 
 class PeerDataPackageModel {
-    /** @type {'message'|'combatStatistics'|'disconnect'} */
+    /** @type {'message'|'combatStatistics'|'encounter'|'disconnect'} */
     type;
     /** @type {Date} */
     timestamp;
     /** @type {string} */
     message;
-    /** @type {CombatStatisticsPayloadModel} */
+    /** @type {CombatEncounterPayloadModel | CombatStatisticsPayloadModel} */
     payload;
 }
 
@@ -240,7 +253,7 @@ class LogSync {
         peer.on( 'connect', () => {
             this.#connectedPeers[ otherPeerId ] = true;
             this.#onPeerConnectedFn( otherPeerId );
-            
+
             nagLog( `PEER CONNECTED ${otherPeerId}` );
             
             this.sendToPeer( otherPeerId, {
@@ -308,6 +321,8 @@ function parseChatRoomLink( link ) {
 
 module.exports = {
     LogSync,
+    PeerDataPackageModel,
+    CombatStatisticsPayloadModel,
     createChatRoomLink,
     parseChatRoomLink,
 };
