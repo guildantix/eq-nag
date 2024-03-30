@@ -1,3 +1,4 @@
+const { nagId } = require( "../../utilities/nag-id" );
 
 class AttackModifiers {
     
@@ -100,6 +101,9 @@ class PlayerEncounterStats {
 }
 
 class EncounterStats {
+    constructor() {
+        this.encounterId = nagId();
+    }
     /** @type {string[]} */
     npcs = [];
     /** @type {Date} */
@@ -108,6 +112,19 @@ class EncounterStats {
     lastEncounterEvent;
     /** @type {Record<string, PlayerEncounterStats>} */
     playerEvents = {};
+}
+
+class EncounterResetEventArgs {
+    /** @type {string} */
+    encounterId;
+    /** @type {Date} */
+    timestamp;
+    /** @type {LogRecord[]} */
+    logRecords = [];
+    /** @type {string[]} */
+    externalEncounterIds = [];
+    /** @type {Record<string, string>} Maps external encounter ids to their owning character names. */
+    externalEncounterIdCharacters = {};
 }
 
 class LogRecord {
@@ -296,5 +313,6 @@ module.exports = {
     ServerCombatModel,
     CombatDb,
     DpsMeterSettings,
-    rgxCombatText
+    rgxCombatText,
+    EncounterResetEventArgs,
 };
