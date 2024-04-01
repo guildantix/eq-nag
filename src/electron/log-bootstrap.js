@@ -110,6 +110,7 @@ class LogBootstrapper {
 
         this.#userPreferences = userPreferences;
         this.#isDev = isDev;
+        const $this = this;
 
         ipcMain.on( 'tick', ( event, tickData ) => {
             for ( let key in logWatchers ) {
@@ -251,7 +252,7 @@ class LogBootstrapper {
                     let _stats = fs.existsSync( _chr.logFile ) ? fs.statSync( _chr.logFile ) : null;
 
                     // If the window has not been engaged, then open it. // TODO: Start up a log watcher when simulating. Even allow a charcter to be selected from a list.
-                    logWatchers[ _chr.characterId ].window = startLogWatcherWindow( _chr.logFile, isDev, sendTick, _chr, logWatchers[ _chr.characterId ].logSize > _stats.size ? 0 : logWatchers[ _chr.characterId ].logSize );
+                    logWatchers[ _chr.characterId ].window = startLogWatcherWindow( _chr.logFile, isDev, sendTick, _chr, logWatchers[ _chr.characterId ].logSize > _stats.size ? 0 : logWatchers[ _chr.characterId ].logSize, async () => await $this.closeCombatWatcher() );
             
                     // Notify the main window.
                     mainWindowRef.reference.webContents.send( 'log:character:activated', _chr.characterId );
@@ -287,7 +288,7 @@ class LogBootstrapper {
                     let _stats = fs.existsSync( _chr.logFile ) ? fs.statSync( _chr.logFile ) : null;
 
                     // If the window has not been engaged, then open it. // TODO: Start up a log watcher when simulating. Even allow a charcter to be selected from a list.
-                    logWatchers[ _chr.characterId ].window = startLogWatcherWindow( _chr.logFile, isDev, sendTick, _chr, logWatchers[ _chr.characterId ].logSize > _stats.size ? 0 : logWatchers[ _chr.characterId ].logSize );
+                    logWatchers[ _chr.characterId ].window = startLogWatcherWindow( _chr.logFile, isDev, sendTick, _chr, logWatchers[ _chr.characterId ].logSize > _stats.size ? 0 : logWatchers[ _chr.characterId ].logSize, async () => await $this.closeCombatWatcher() );
                 
                     // Notify the main window.
                     mainWindowRef.reference.webContents.send( 'log:character:activated', _chr.characterId );
@@ -631,7 +632,7 @@ class LogBootstrapper {
                 if ( logWatchers[ characterId ].window == null ) {
 
                     // If the window has not been engaged, then open it. // TODO: Start up a log watcher when simulating. Even allow a charcter to be selected from a list.
-                    logWatchers[ characterId ].window = startLogWatcherWindow( _chr.logFile, isDev, sendTick, _chr, logWatchers[ characterId ].logSize > _stats.size ? 0 : logWatchers[ characterId ].logSize );
+                    logWatchers[ characterId ].window = startLogWatcherWindow( _chr.logFile, isDev, sendTick, _chr, logWatchers[ characterId ].logSize > _stats.size ? 0 : logWatchers[ characterId ].logSize, async () => await this.closeCombatWatcher() );
                     
                     // Notify the main window.
                     mainWindowRef.reference.webContents.send( 'log:character:activated', characterId );
@@ -848,8 +849,9 @@ class LogBootstrapper {
  * @param {function} sendTick The send tick method.
  * @param {CharacterModel} character The character to watch.
  * @param {number} logPosition The position the log watcher should start processing log entries.
+ * @param {() => void} closeCombatWatcher The close combat watcher method.
  */
-function startLogWatcherWindow( logFile, isDev, sendTick, character, logPosition ) {
+function startLogWatcherWindow( logFile, isDev, sendTick, character, logPosition, closeCombatWatcher ) {
     let logWatcherWindow = new BrowserWindow( {
         //   width: 800,
         //   height: 600,
@@ -862,8 +864,8 @@ function startLogWatcherWindow( logFile, isDev, sendTick, character, logPosition
 
     logWatcherWindow.on( 'closed', async () => {
         logWatcherWindow = null;
-        if ( combatWatcher.characterId === character.characterId ) {
-            await this.closeCombatWatcher();
+        if ( combatWatcher.characterId === character.characterId && closeCombatWatcher ) {
+            closeCombatWatcher();
         }
     } );
 
