@@ -20,8 +20,6 @@ class NagService {
 
     async initialize() {
         this.url = await ipcRenderer.invoke( 'get:nag-service-url' );
-        console.log( `NagService URL: ${this.url}` );
-        ipcRenderer.send( 'console:message', `NagService URL: ${this.url}` );
     }
 
 
@@ -40,8 +38,6 @@ class NagService {
      */
     createChatRoom() {
         let url = `${this.url}/chat-room`;
-        console.log( `Creating chat room at ${url}` );
-        ipcRenderer.send( 'console:message', `Creating chat room at ${url}` );
         return fetch( url, {
             method: 'POST',
         } ).then( response => response.json() );
