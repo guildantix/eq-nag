@@ -93,7 +93,7 @@ export class CharactersListComponent implements OnInit {
                 tick.characterDisabledTriggers.forEach( cd => {
                     let character = this.characters.find( f => f.characterId === cd.characterId );
                     if ( character ) {
-                        let intersection = character.disabledTriggers.filter( x => cd.disabledTriggers.includes( x ) );
+                        let intersection = character.disabledTriggers?.filter( x => cd.disabledTriggers.includes( x ) ) ?? [];
                         if ( tick.triggerChanges || intersection.length !== character.disabledTriggers.length || intersection.length !== cd.disabledTriggers.length ) {
                             character.disabledTriggers = cd.disabledTriggers;
                             
