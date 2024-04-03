@@ -1948,6 +1948,10 @@ export class IpcService {
             window.api.ipc.invoke<Record<string, CharacterModel[]>>( 'character:get:options', logsPath )
                 .then( characterOptions => {
                     this.ngZone.run( () => {
+                        // Hydrate the models
+                        Object.keys( characterOptions ).forEach( key => {
+                            characterOptions[ key ] = characterOptions[ key ].map( c => Object.assign( new CharacterModel(), c ) );
+                        } );
                         observer.next( characterOptions );
                         observer.complete();
                     } );
