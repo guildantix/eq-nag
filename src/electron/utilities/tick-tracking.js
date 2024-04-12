@@ -101,3 +101,9 @@ let setEqTick = ( timestamp ) => {
 
     }
 }
+
+module.exports = {
+    startEqTickTracking,
+    nextEqTick,
+    setEqTick,
+};
