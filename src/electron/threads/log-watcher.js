@@ -23,10 +23,6 @@ window.onerror = ( error, url, line ) => {
     ipcRenderer.send( 'app:log:exception', `$${error}\r\n    at ${url}:${line}` );
 };
 
-function logInfo( data ) {
-    ipcRenderer.send( 'app:log:info', data );
-}
-
 var currentPosition = null;
 
 var watcher = null;
