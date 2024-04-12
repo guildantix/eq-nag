@@ -16,6 +16,7 @@ const ThreadUtilities = require( '../utilities/threading' );
 const { DateUtilities } = require( '../utilities/dates' );
 const { IpcMessage } = require( '../data/models/common' );
 const ArrayUtilities = require( '../utilities/arrays' );
+const FileMonitor = require( './file-monitor' );
 const chunkSize = 512 * 1024;
 
 window.onerror = ( error, url, line ) => {
@@ -88,6 +89,8 @@ let failedParses = [];
 let exceptionParses = [];
 let batchTriggerParseHistoryTimeoutId = null;
 const batchTriggerParseHistoryTimeoutDuration = 100;
+/** @type {FileMonitor} */
+let fileMonitor = null;
 
 /** @type {Record<string, {trigger: LogTrigger, res: PhraseParse}>} */
 let actionInstances = {};
@@ -477,103 +480,22 @@ let addSuccessfulTriggerParsedEvent = ( rawLogEntry, triggerId, actionId, parseT
 
 
 /**
- * Waits until the specified file exists and executes the startParsingLogFile 
- * method, starting at the beginning of the file.
- * 
- * @param {string} logPath The full path to the log file.
- */
-function waitForLogFile( logPath ) {
-    
-    if ( logParseTimeoutId > 0 ) {
-        window.clearTimeout( logParseTimeoutId );
-        logParseTimeoutId = null;
-        currentPosition = null;
-    }
-
-    if ( fs.existsSync( logPath ) ) {
-        backupStarted = false;
-        logInfo( `LogWatcher > ${logPath} file found, starting up again.` );
-        startParsingLogFile( logPath, 0 );
-    } else {
-        window.setTimeout( () => waitForLogFile( logPath ), logParseTimer );
-    }
-}
-
-
-
-
-
-
-
-
-
-
-/**
  * Starts parsing and watching log file changes for the specified file.
  * 
  * @param {string} logPath The file path to the log file.
  * @param {number} startLogPosition If a value is provided, will start parsing the log file at the given position.
  */
 function startParsingLogFile( logPath, startLogPosition ) {
-    fs.open( logPath, 'r', function ( err, fd ) {
-
-        if ( fd ) {
-            var file = fd;
-            if ( startLogPosition != null && startLogPosition >= 0 ) {
-                currentPosition = startLogPosition;
-                startLogPosition = null;
+    
+    fileMonitor.monitorLines( ( lines ) => {
+        lines.forEach( line => {
+            console.log( line );
+            if ( line && line.length > 0 ) {
+                parseLogEntries( line );
             }
-            currentPosition = currentPosition === null ? fs.fstatSync( file ).size : currentPosition;
-            function parseLogFile() {
-
-                if ( !fs.existsSync( logPath ) || backupStarted ) {
-                    logInfo( `LogWatcher > ${logPath} does not exist, waiting for new log file.` );
-                    waitForLogFile( logPath );
-                    return;
-                }
-
-                var stats = fs.fstatSync( fd );
-                var file = fd;
-                var thisChunkSize = stats.size - currentPosition;
-                
-                // Prevent some overflows, if this is greater than the chunk
-                // size, the something fucky happened with the log file, let's 
-                // just start at the end of the file.
-                if ( thisChunkSize > chunkSize ) {
-                    currentPosition = stats.size;
-                } else if ( currentPosition > stats.size ) {
-                    currentPosition = stats.size;
-                }
-
-                fs.read( file, Buffer.alloc( stats.size - currentPosition ), 0, stats.size - currentPosition, currentPosition, ( err, bytecount, buff ) => {
-                
-                    currentPosition += bytecount;
-                    let read = buff.toString( 'utf-8', 0, bytecount );
-                    let lines = read.split( /\r\n|\r|\n/gmi );
-                
-                    lines.forEach( line => {
-                        if ( line && line.length > 0 ) {
-                            parseLogEntries( line );
-                        }
-                    } );
-
-                } );
-
-                // Wait logParseTimer milliseconds and poll again.
-                if ( !changingLogFile ) {
-                    logParseTimeoutId = window.setTimeout( parseLogFile, logParseTimer );
-                }
-            }
-
-            // Start polling the log file every logParseTimer milliseconds.
-            logParseTimeoutId = window.setTimeout( parseLogFile, logParseTimer );
-
-        } else {
-            // If the log file was not found, then let's wait for it to show up.
-            waitForLogFile( logPath );
-
-        }
-    } );
+        } );
+    }, startLogPosition );
+    
 }
 
 const waitForSimulationResume = async () => {
@@ -678,6 +600,7 @@ function LogWatcher(character, logPosition) {
         characterName = character.name;
         charModel = character;
         characterId = character.characterId;
+        fileMonitor = new FileMonitor( character.logFile );
     }
 
     loadCachedStoredVariables( () => {
@@ -708,7 +631,10 @@ function LogWatcher(character, logPosition) {
             if ( logParseTimeoutId > 0 ) {
                 window.clearTimeout( logParseTimeoutId );
                 currentPosition = null;
-                backfind( data, () => startParsingLogFile( data, logPosition >= 0 ? logPosition : null ) );
+                fileMonitor.stopMonitoringLogFile().then( () => {
+                    fileMonitor = new FileMonitor( data );
+                    backfind( data, () => startParsingLogFile( data, logPosition >= 0 ? logPosition : null ) );
+                } );
             } else {
                 // If there is a timeout id, then we're in the middle of
                 // processing a chunk of log file entries, let's give a 
@@ -717,7 +643,10 @@ function LogWatcher(character, logPosition) {
                 window.setTimeout( () => {
                     changingLogFile = false;
                     currentPosition = null;
-                    backfind( data, () => startParsingLogFile( data, logPosition >= 0 ? logPosition : null ) );
+                    fileMonitor.stopMonitoringLogFile().then( () => {
+                        fileMonitor = new FileMonitor( data );
+                        backfind( data, () => startParsingLogFile( data, logPosition >= 0 ? logPosition : null ) );
+                    } );
                 }, logParseTimer );
             }
 
@@ -2259,7 +2188,9 @@ function clearAll() {
     window.setTimeout( () => {
         changingLogFile = false;
         // currentPosition = null;
-        backfind( logFilePath, () => startParsingLogFile( logFilePath, currentPosition >= 0 ? currentPosition : null ) );
+        fileMonitor.stopMonitoringLogFile().then( () => {
+            backfind( logFilePath, () => startParsingLogFile( logFilePath, currentPosition >= 0 ? currentPosition : null ) );
+        } );
     }, logParseTimer );
 
     ipcRenderer.send( 'renderer:clear-all', null );
