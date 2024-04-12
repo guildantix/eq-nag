@@ -3,17 +3,21 @@
         <span>NAG<span class="hover-only">: An EverQuest Notification Agent</span></span>
         <span class="spacer"></span>
         <div class="progress-bar" *ngIf="archivePercent !== null"><mat-progress-bar mode="determinate" [value]="archivePercent * 100" color="accent" class="color-green"></mat-progress-bar><div>{{archiveLabel}}</div></div>
-        <button mat-icon-button aria-label="Run Setup Wizard" (click)="runSetupWizard()" *ngIf="!setupCompleted">
+        <button mat-icon-button class="connected-button" aria-label="Run Setup Wizard" *ngIf="connected" (click)="disconnectChatRoom()" matTooltip="Turn off log sync" matTooltipPosition="below">
+            <mat-icon class="material-icons-outlined no-hover" style="opacity: 0.95; ">public</mat-icon>
+            <mat-icon class="material-icons-outlined hover" style="opacity: 0.95; ">public_off</mat-icon>
+        </button>
+        <button mat-icon-button aria-label="Run Setup Wizard" (click)="runSetupWizard()" *ngIf="!setupCompleted" matTooltip="Run setup wizard" matTooltipPosition="below">
             <mat-icon class="material-icons-outlined color-green" style="font-size: 32px; line-height: 32px; width: 32px; height: 32px;">settings_suggest</mat-icon>
         </button>
         <!-- <button mat-icon-button aria-label="Easy Mode" (click)="showEasyWindow()" class="hover-green"><mat-icon class="material-icons-outlined">auto_awesome</mat-icon></button> -->
-        <button mat-icon-button aria-label="Minimize to tray" (click)="sendToTray()">
+        <button mat-icon-button aria-label="Minimize to tray" (click)="sendToTray()" matTooltip="Minimize to system tray" matTooltipPosition="below">
             <mat-icon>south_east</mat-icon>
         </button>
-        <button mat-icon-button aria-label="Minimize application" (click)="minimizeTaskbar()">
+        <button mat-icon-button aria-label="Minimize application" (click)="minimizeTaskbar()" matTooltip="Minimize" matTooltipPosition="below">
             <mat-icon>minimize</mat-icon>
         </button>
-        <button mat-icon-button aria-label="Exit application" (click)="quitApp()">
+        <button mat-icon-button aria-label="Exit application" (click)="quitApp()" matTooltip="Quit Nag" matTooltipPosition="below">
             <mat-icon>clear</mat-icon>
         </button>
     </mat-toolbar>

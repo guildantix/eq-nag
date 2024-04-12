@@ -191,3 +191,19 @@ p {
         display: inline;}
     }
 }
+
+button.connected-button {
+    
+    .hover {
+        display: none;
+    }
+
+    &:hover {
+        .hover {
+            display: inline;
+        }
+        .no-hover {
+            display: none;
+        }
+    }
+}

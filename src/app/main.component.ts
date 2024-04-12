@@ -25,6 +25,7 @@ const updateIntervalDuration = 5 * 60 * 1000;
 } )
 export class MainComponent implements OnInit {
 
+    public connected: boolean = true;
     public msg: string;
     public dkpEntries: DkpEntryModel[] = [];
     public logFile: string = 'Not Selected';
@@ -270,6 +271,11 @@ export class MainComponent implements OnInit {
             }
         } );
 
+        this.ipcService.onChatRoomDisconnected().subscribe( reason => {
+            this.connected = false;
+            this.dialogService.showCustomNotificationDialog( 'Disconnected', [ 'You have been disconnected from the server.', `Reason: ${reason}` ], 'public_off' );
+        } );
+
         window.setTimeout( () => {
             this.ipcService.mainWindowLoaded();
         }, 60 * 1000 );
@@ -478,6 +484,10 @@ export class MainComponent implements OnInit {
 
     public showEasyWindow(): void {
         this.ipcService.showEasyWindow().subscribe();
+    }
+
+    public disconnectChatRoom(): void {
+        this.ipcService.disconnectChatRoom();
     }
 
     public testFn(): void {

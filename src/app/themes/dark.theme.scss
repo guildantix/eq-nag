@@ -21,6 +21,7 @@ $color-red-dark: #921f1f;
 $color-titlebar-bg: #4c0e67;
 $color-titlebar-txt: #00000094;
 $color-titlebar-green: #17e883;
+$color-titlebar-red: #ff432e;
 
 $option-odd: #202020;
 $option-even: #1c1c1c;
@@ -952,5 +953,13 @@ span.links {
                 color: darken($color-green, 33%);
             }
         }
+    }
+}
+
+button.connected-button {
+    color: $color-titlebar-green;
+
+    &:hover {
+        color: $color-titlebar-red;
     }
 }
