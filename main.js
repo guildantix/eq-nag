@@ -353,7 +353,7 @@ ipcMain.on( `color:darken`, ( e, data ) => {
     overlayDatabase.update( overlay );
 } );
 
-ipcMain.on( 'app:log:exception', ( event, data ) => {
+const appLogException = ( data ) => {
     let error = {
         label: 'System Error:',
         message: '',
@@ -405,6 +405,10 @@ ipcMain.on( 'app:log:exception', ( event, data ) => {
     }
 
     mainWindow.webContents.send( 'console:error', error );
+}
+
+ipcMain.on( 'app:log:exception', ( event, data ) => {
+    appLogException( data );
 } );
 
 ipcMain.on( 'app:log:info', ( event, data ) => {
@@ -661,6 +665,19 @@ ipcMain.on( 'console:command',
         }
     } );
 
+/**
+* Sends the console message to the debug console.
+* 
+* @param {string | {label: string, message: string} | undefined} data The message to send.
+*/
+const consoleMessage =  async ( data ) => {
+    if ( typeof data === 'string' ) {
+        mainWindow.webContents.send( 'console:success', { label: 'System Message', message: data, timestamp: new Date() } );
+    } else if ( data?.message ) {
+        mainWindow.webContents.send( 'console:success', { label: data.label ?? 'System Message', message: data.message, payload: data.payload, timestamp: new Date() } );
+    }
+ }
+
 ipcMain.on( 'console:message',
     /**
      * Sends the console message to the debug console.
@@ -669,11 +686,7 @@ ipcMain.on( 'console:message',
      * @param {string | {label: string, message: string} | undefined} data The message to send.
      */
     async ( event, data ) => {
-        if ( typeof data === 'string' ) {
-            mainWindow.webContents.send( 'console:success', { label: 'System Message', message: data, timestamp: new Date() } );
-        } else if ( data?.message ) {
-            mainWindow.webContents.send( 'console:success', { label: data.label ?? 'System Message', message: data.message, payload: data.payload, timestamp: new Date() } );
-        }
+        await consoleMessage( data );
     } );
 
 var memoryCache = {};
