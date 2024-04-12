@@ -16,7 +16,7 @@ const ThreadUtilities = require( '../utilities/threading' );
 const { DateUtilities } = require( '../utilities/dates' );
 const { IpcMessage } = require( '../data/models/common' );
 const ArrayUtilities = require( '../utilities/arrays' );
-const FileMonitor = require( './file-monitor' );
+const FileMonitor = require( '../utilities/file-monitor' );
 const chunkSize = 512 * 1024;
 
 window.onerror = ( error, url, line ) => {

@@ -2,7 +2,7 @@
 const fs = require('fs');
 const { ipcRenderer } = require( 'electron' );
 // const { sendMsg, sendException } = require( './thread-comms' );
-const ThreadUtilities = require( '../utilities/threading' );
+const ThreadUtilities = require( './threading' );
 const fsp = fs.promises;
 const chunkSize = 1024 * 1024 * 384; // Max chunk possible is 512MB, but we'll use 384MB to be safe.
 const maxReadErrors = 5;
