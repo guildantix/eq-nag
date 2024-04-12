@@ -20,6 +20,8 @@ const eqTickVariance = 1500;
 /** @type {number|null} */
 let eqTickTimeoutId = null;
 
+const serverTickDuration = 6;
+
 /**
  * Starts tracking the server tick.
  * 
