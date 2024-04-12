@@ -63,9 +63,6 @@ class FileMonitor {
                     danglyBits = lines.pop() ?? '';
 
                     sendLog( `Lines: ${lines.length}, Bytes read: ${bytesRead}` );
-                    // allLines = allLines.concat( ...lines );
-
-                    // position += bytesRead;
 
                     if ( bytesRead < chunkSize ) {
                         await file.close();
@@ -185,50 +182,70 @@ class FileMonitor {
      * @param {number} bytesRead The number of bytes read so far.
      */
     async #doBackfind( onChunkRead, resolve, reject, position = null, danglyBits = '', bytesRead = 0 ) {
+        
+        /** @type {fs.promises.FileHandle} */
+        let file;
+
         try {
+
             let stats = await this.waitForLogFile();
-            let file = await fsp.open( this.filePath, 'r' );
-            let myChunkSize = stats.size < chunkSize ? stats.size : chunkSize;
-            position = position ?? stats.size;
-            let start = stats.size - myChunkSize - bytesRead;
+            file = await fsp.open( this.filePath, 'r' );
 
-            if ( start < 0 ) {
-                start = 0;
-                myChunkSize = stats.size - bytesRead;
-            }
+            const parse = async () => {
+                
+                let myChunkSize = stats.size < chunkSize ? stats.size : chunkSize;
+                position = ( position === null || position === undefined ) ? stats.size : position;
+                let start = stats.size - myChunkSize - bytesRead;
 
-            let data = await file.read( Buffer.alloc( myChunkSize ), 0, myChunkSize, start );
-            bytesRead += data.bytesRead;
-            let read = data.buffer.toString( 'utf-8', 0, bytesRead );
-            let lines = read.split( /\r\n|\r|\n/gmi );
+                if ( start < 0 ) {
+                    start = 0;
+                    myChunkSize = stats.size - bytesRead;
+                }
 
-            if ( position < stats.size ) {
-                lines[ lines.length - 1 ] += danglyBits;
-            }
-            danglyBits = lines.shift() ?? '';
+                let data = await file.read( Buffer.alloc( myChunkSize ), 0, myChunkSize, start );
+                bytesRead += data.bytesRead;
+                let read = data.buffer.toString( 'utf-8', 0, bytesRead );
+                let lines = read.split( /\r\n|\r|\n/gmi );
 
-            let moreToRead = onChunkRead( lines );
+                if ( position < stats.size ) {
+                    lines[ lines.length - 1 ] += danglyBits;
+                }
+                danglyBits = lines.shift() ?? '';
 
-            if ( moreToRead && position > 0 ) {
-                position -= bytesRead;
-                setTimeout( () => this.#doBackfind( onChunkRead, resolve, reject, position, danglyBits, bytesRead ), readDelayMs );
-            } else {
-                resolve();
-            }
+                let moreToRead = onChunkRead( lines );
 
-            if ( bytesRead < chunkSize ) {
-                await file.close();
-                sendLog( 'Backfind finished.' );
-                resolve();
+                position -= data.bytesRead;
 
-            } else {
-                // counter++;
-                setTimeout( () => this.#doReadLines( file, onChunkRead, position + bytesRead, danglyBits, resolve, reject ), readDelayMs );
+                if ( moreToRead && position > 0 ) {
+                    this.#readErrorCount = 0;
+                    setTimeout( () => parse(), readDelayMs );
+                } else {
+                    await file.close();
+                    sendLog( 'Backfind finished.' );
+                    resolve();
+                }
+            };
+            setTimeout( () => parse(), readDelayMs );
 
-            }
 
         } catch ( error ) {
-            reject( error );
+            sendException( {
+                label: 'LogMonitor.Backfind',
+                message: `${error}`,
+                payload: error,
+            } );
+
+            if ( file ) {
+                await file.close();
+            }
+
+            this.#readErrorCount++;
+            if ( this.#readErrorCount >= maxReadErrors ) {
+                this.#monitoring = false;
+                reject( error );
+            } else {
+                setTimeout( () => this.#doBackfind( onChunkRead, resolve, reject, position, danglyBits, bytesRead ), readErrorDelayMs );
+            }
         }
     }
 
@@ -305,6 +322,7 @@ class FileMonitor {
                 }
 
                 if ( !this.#stopMonitor ) {
+                    this.#readErrorCount = 0;
                     setTimeout( () => parse(), readDelayMs );
 
                 } else {
@@ -323,7 +341,11 @@ class FileMonitor {
             setTimeout( () => parse(), readDelayMs );
 
         } catch ( error ) {
-            sendException( error );
+            sendException( {
+                label: 'LogMonitor.MonitorLines',
+                message: `${error}`,
+                payload: error,
+            } );
 
             if ( file ) {
                 await file.close();
