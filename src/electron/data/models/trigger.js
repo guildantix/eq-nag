@@ -51,7 +51,7 @@ var ActionTypes = {
 
 }
 
-var LogTypes = {
+const LogTypes = {
     
     '0': 'info',
     '1': 'error',
