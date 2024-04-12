@@ -409,7 +409,7 @@ function waitForLogFile( logPath ) {
 
     if ( fs.existsSync( logPath ) ) {
         backupStarted = false;
-        logInfo( `LogWatcher > ${logPath} file found, starting up again.` );
+        nagLog( `LogWatcher > ${logPath} file found, starting up again.` );
         startParsingLogFile( logPath, 0 );
     } else {
         window.setTimeout( () => waitForLogFile( logPath ), logParseTimer );
@@ -437,7 +437,7 @@ function startParsingLogFile( logPath, startLogPosition ) {
             function parseLogFile() {
 
                 if ( !fs.existsSync( logPath ) || backupStarted ) {
-                    logInfo( `LogWatcher > ${logPath} does not exist, waiting for new log file.` );
+                    nagLog( `LogWatcher > ${logPath} does not exist, waiting for new log file.` );
                     waitForLogFile( logPath );
                     return;
                 }
