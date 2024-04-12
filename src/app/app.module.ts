@@ -33,6 +33,7 @@ import { ConsoleTriggerEventComponent } from './debug-console/console-lines/trig
 import { ConsoleMessageComponent } from './debug-console/console-lines/message.component';
 import { FormInputModule } from './form-inputs/form-inputs.module';
 import { SettingsModule } from './settings/settings.module';
+import { ConsoleProgressComponent } from './debug-console/console-lines/console-progress.component';
 
 @NgModule( {
     imports: [
@@ -61,6 +62,7 @@ import { SettingsModule } from './settings/settings.module';
         ConsoleTriggerEventComponent,
         ConsoleMessageComponent,
         ConsoleListComponent,
+        ConsoleProgressComponent,
         DebugConsoleComponent,
         MainComponent,
         CharactersListComponent,

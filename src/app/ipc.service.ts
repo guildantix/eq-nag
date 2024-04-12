@@ -3,10 +3,19 @@ import * as Electron from 'electron';
 import { UpdateInfo } from 'electron-updater';
 import { Observable, Observer } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
-import { DataTickModel, DkpEntryModel, TriggerModel, OverlayWindowModel, ActionTypes, FocusEffectSettings, CharacterModel, BasicError, TriggerFolder, FileModel, Tag, AuthorModel, PackageFileModel, TriggerPackageMetaModel, TriggerPackageVersion, FctStylesModel, OverlayBoundsChangedEventArgs, DialogEventArgs, QuickShareMetaModel, LogFileLocation, IpcMessage, DeathRecapPreferences, QuickShareAuthorListTypes, Progress, QuitFailureData, DuplicateTriggerAction, ScrapedSpell, ScrapedClickEffect, TriggerParseHistoryModel, SimulationProgress, FctCombatGroup, CombatTypes, StylePropertiesModel, CombatAnimations, TriggersProfileModel, ConsoleMessageModel, LogTypes, ServerCombatModel } from './core.model';
+import { DataTickModel, DkpEntryModel, TriggerModel, OverlayWindowModel, ActionTypes, FocusEffectSettings, CharacterModel, BasicError, TriggerFolder, FileModel, Tag, AuthorModel, PackageFileModel, TriggerPackageMetaModel, TriggerPackageVersion, FctStylesModel, OverlayBoundsChangedEventArgs, DialogEventArgs, QuickShareMetaModel, LogFileLocation, IpcMessage, DeathRecapPreferences, QuickShareAuthorListTypes, Progress, QuitFailureData, DuplicateTriggerAction, ScrapedSpell, ScrapedClickEffect, TriggerParseHistoryModel, SimulationProgress, FctCombatGroup, CombatTypes, StylePropertiesModel, CombatAnimations, TriggersProfileModel, ConsoleMessageModel, LogTypes, ServerCombatModel, ProgressModel } from './core.model';
 import { GinaConfiguration, GinaTriggerGroups } from './gina.model';
 import { ColorUtility } from './utilities';
 import { nagId } from './core/nag-id.util';
+
+export class ConsoleData {
+
+    successful: TriggerParseHistoryModel[];
+    failed: TriggerParseHistoryModel[];
+    consoleMessages: ConsoleMessageModel[];
+    consoleProgress: ProgressModel[];
+
+}
 
 @Injectable( { providedIn: 'root' })
 export class IpcService {
@@ -14,6 +23,7 @@ export class IpcService {
     private _successfulParses: TriggerParseHistoryModel[] = [];
     private _failedParses: TriggerParseHistoryModel[] = [];
     private _consoleMessages: ConsoleMessageModel[] = [];
+    private _consoleProgress: ProgressModel[] = [];
     
     private _tickObservers: Observer<DataTickModel>[] = [];
     private _transmitObservers: Observer<DkpEntryModel[]>[] = [];
@@ -36,6 +46,7 @@ export class IpcService {
     private _successfulParseHistoryObservers: Observer<{ successful: TriggerParseHistoryModel[], exceptions: TriggerParseHistoryModel[] }>[] = [];
     private _consoleSuccessObservers: Observer<ConsoleMessageModel>[] = [];
     private _consoleErrorObservers: Observer<ConsoleMessageModel>[] = [];
+    private _consoleProgressObservers: Observer<ProgressModel>[] = [];
     private _onCombatGroupMigrationRequestObservers: Observer<boolean>[] = [];
     private _settingsObservableCache: Record<string, Observable<any>> = {};
     private _settingsCacheObservers: Record<string, Observer<any>[]> = {};
@@ -241,12 +252,33 @@ export class IpcService {
                     } );
                 } );
 
+                window.api.ipc.on( 'console:progress-event', ( event: any, data: ProgressModel ) => {
+                    ngZone.run( () => {
+                        this._consoleProgressObservers?.forEach( f => {
+                            let m = Object.assign( new ProgressModel(), data );
+                            m.logType = LogTypes.info;
+                            f.next( m );
+                        } );
+                    } );
+                } );
+
                 this.onConsoleSuccess().subscribe( log => {
                     this._consoleMessages.push( log );
                 } );
 
                 this.onConsoleError().subscribe( log => {
                     this._consoleMessages.push( log );
+                } );
+
+                this.onConsoleProgress().subscribe( log => {
+                    let i = this._consoleProgress.findIndex( x => x.logId === log.logId );
+                    if ( i === -1 ) {
+                        this._consoleProgress.push( log );
+                    } else {
+                        this._consoleProgress[ i ].label = log.label;
+                        this._consoleProgress[ i ].progress = log.progress;
+                        this._consoleProgress[ i ].message = log.message;
+                    }
                 } );
 
                 this.onBatchParseHistory().subscribe( history => {
@@ -298,6 +330,14 @@ export class IpcService {
     public onConsoleError(): Observable<ConsoleMessageModel> {
         let obs: Observable<ConsoleMessageModel> = new Observable<ConsoleMessageModel>( ( observer: Observer<ConsoleMessageModel> ) => {
             this._consoleErrorObservers.push( observer );
+        } );
+
+        return obs;
+    }
+
+    public onConsoleProgress(): Observable<ProgressModel> {
+        let obs: Observable<ProgressModel> = new Observable<ProgressModel>( ( observer: Observer<ProgressModel> ) => {
+            this._consoleProgressObservers.push( observer );
         } );
 
         return obs;
@@ -2304,16 +2344,20 @@ export class IpcService {
         return obs;
     }
 
-    public getConsoleData(): Observable<{ successful: TriggerParseHistoryModel[], failed: TriggerParseHistoryModel[], consoleMessages: ConsoleMessageModel[] }> {
-        let obs: Observable<{ successful: TriggerParseHistoryModel[], failed: TriggerParseHistoryModel[], consoleMessages: ConsoleMessageModel[] }> = new Observable<{ successful: TriggerParseHistoryModel[], failed: TriggerParseHistoryModel[], consoleMessages: ConsoleMessageModel[] }>( ( observer: Observer<{ successful: TriggerParseHistoryModel[], failed: TriggerParseHistoryModel[], consoleMessages: ConsoleMessageModel[] }> ) => {
-            let data: { successful: TriggerParseHistoryModel[], failed: TriggerParseHistoryModel[], consoleMessages: ConsoleMessageModel[] } = {
+    public getConsoleData(): Observable<ConsoleData> {
+        let obs: Observable<ConsoleData> = new Observable<ConsoleData>( ( observer: Observer<ConsoleData> ) => {
+            let data: ConsoleData = {
                 successful: [],
                 failed: [],
                 consoleMessages: [],
+                consoleProgress: [],
             };
+            
             data.successful = this._successfulParses.slice();
             data.failed = this._failedParses.slice();
             data.consoleMessages = this._consoleMessages.slice();
+            data.consoleProgress = this._consoleProgress.slice();
+
             observer.next( data );
             observer.complete();
         } );

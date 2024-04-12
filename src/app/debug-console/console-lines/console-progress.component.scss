@@ -1,0 +1,17 @@
+
+.log-text {
+    &.label {
+        flex: 0 0; 
+        white-space: nowrap; 
+        padding-right: 7px;
+
+        &.success {
+            color: #12ba69;
+        }
+    }
+}
+.links {
+    min-width: 20px;
+    padding-left: 32px;
+    margin-right: 2px;
+}

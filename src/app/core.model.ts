@@ -1569,6 +1569,18 @@ export class SharedTriggerPermissions {
 
 }
 
+export class ProgressModel {
+    
+    public logId: string;
+    public progress: number = 0;
+    public label: string;
+    public message: string;
+    public logType: LogTypes = LogTypes.info;
+    public timestamp: Date;
+
+}
+
+
 export class ConsoleMessageModel {
 
     public timestamp: Date;

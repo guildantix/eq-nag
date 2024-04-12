@@ -1,0 +1,16 @@
+<p>
+    <span class="log-timestamp">[{{item.timestamp | date:'M/d/yyyy, h:mm a'}}]</span>
+    <span class="links" style="margin-right: 2px;">
+        <!-- <mat-icon [ngClass]="{'color-green': item.logType !== logTypes.error}" title="Show more details" *ngIf="renderPayload" (click)="expanded = !expanded">{{!expanded ? 'expand_more' : 'expand_less'}}</mat-icon> -->
+    </span>
+    <span class="log-text label" [ngClass]="{'error': item.logType === logTypes.error, 'success': item.logType !== logTypes.error}">{{item.label}}</span>
+    <span class="log-text">
+        <span class="progress-bar">
+            {{progressBar()}}
+        </span>
+        <span class="progress-message">{{item.message}}</span>
+    </span>
+</p>
+<p class="log-details" [ngClass]="{'error': item.logType === logTypes.error}" *ngIf="expanded">
+    <!-- <span class="log-details-line" [innerHTML]="payloadHtml"></span> -->
+</p>

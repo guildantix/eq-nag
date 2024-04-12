@@ -10,11 +10,11 @@ import { ConsoleMessageModel, LogTypes } from 'src/app/core.model';
 export class ConsoleMessageComponent implements OnInit {
 
     private _item: ConsoleMessageModel;
-    @Input( 'item' ) public set item( value: ConsoleMessageModel ) {
+    @Input( 'item' ) public set item( value: any ) {
         this._item = value;
         this.payloadHtml = undefined;
-        if ( value.payload ) {
-            this.renderParseToHtml( value.payload );
+        if ( this._item.payload ) {
+            this.renderParseToHtml( this._item.payload );
         }
     }
     public get item(): ConsoleMessageModel {
