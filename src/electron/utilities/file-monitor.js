@@ -223,24 +223,6 @@ class FileMonitor {
 
     
     /**
-     * Changes the file path to monitor.
-     * 
-     * @param {string} filePath The new file path.
-     */
-    changeLogFile( filePath ) {
-        this.filePath = filePath;
-    }
-
-
-
-
-
-
-
-
-
-    
-    /**
      * 
      * @param {(lines: string[]) => boolean} onChunkRead The function to call when a chunk of lines is read, if it returns true the operation will continue.
      * @param {(value: any) => void} resolve The function to call when the operation is complete.
