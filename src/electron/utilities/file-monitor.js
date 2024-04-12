@@ -261,10 +261,13 @@ class FileMonitor {
      */
     async #doMonitorLines( onChunkRead, resolve, reject, position = 0, danglyBits = '' ) {
 
+        /** @type {fs.promises.FileHandle} */
+        let file;
+
         try {
 
             let stats = await this.checkFile();
-            let file = await fsp.open( this.filePath, 'r' );
+            file = await fsp.open( this.filePath, 'r' );
 
             const parse = async () => {
 
@@ -321,6 +324,10 @@ class FileMonitor {
 
         } catch ( error ) {
             sendException( error );
+
+            if ( file ) {
+                await file.close();
+            }
 
             this.#readErrorCount++;
             if ( this.#readErrorCount >= maxReadErrors ) {
