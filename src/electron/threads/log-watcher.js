@@ -296,7 +296,7 @@ function LogWatcher(character, logPosition) {
                 currentPosition = null;
                 fileMonitor.stopMonitoringLogFile().then( () => {
                     fileMonitor = new FileMonitor( data );
-                    backfind( data, () => startParsingLogFile( data, logPosition >= 0 ? logPosition : null ) );
+                    backfind().then( () => startParsingLogFile( data, logPosition >= 0 ? logPosition : null ) );
                 } );
             } else {
                 // If there is a timeout id, then we're in the middle of
@@ -308,7 +308,7 @@ function LogWatcher(character, logPosition) {
                     currentPosition = null;
                     fileMonitor.stopMonitoringLogFile().then( () => {
                         fileMonitor = new FileMonitor( data );
-                        backfind( data, () => startParsingLogFile( data, logPosition >= 0 ? logPosition : null ) );
+                        backfind().then( () => startParsingLogFile( data, logPosition >= 0 ? logPosition : null ) );
                     } );
                 }, logParseTimer );
             }
@@ -1851,8 +1851,8 @@ function clearAll() {
     window.setTimeout( () => {
         changingLogFile = false;
         // currentPosition = null;
-        fileMonitor.stopMonitoringLogFile().then( () => {
-            backfind( logFilePath, () => startParsingLogFile( logFilePath, currentPosition >= 0 ? currentPosition : null ) );
+        fileMonitor.stopMonitoringLogFile().then( position => {
+            backfind().then( () => startParsingLogFile( logFilePath, position >= 0 ? position : null ) );
         } );
     }, logParseTimer );
 
@@ -3236,138 +3236,84 @@ function checkParseHistory( phrase, options ) {
 
 /**
  * Parses backwards in the log file to find a match.  If found, returns the matched results.
- * 
- * @param {string} log The log file to parse.
- * @param {() => void} callback When all look-backs are completed, this method is executed.
  */
-function backfind( log, callback ) {
+async function backfind() {
+
+    if ( fileMonitor == null )
+        throw new Error( 'File monitor is not initialized.' );
 
     let _triggers = _.filter( triggers, t => _.some( t.actions, a => a.loopBackForValue === true ) );
 
+    let valueExists = ( variableName ) => {
+        return storedVariables[ variableName ] instanceof Array ? storedVariables[ variableName ].length > 0 : !!storedVariables[ variableName ];
+    }
+
     // TODO: Loopback check, wat!?
     /**
-     * Returns false if there is a trigger requiring loopback and still missing a value.
+     * Returns true if there is a trigger requiring loopback and still missing a value.
      */
     function valuesMissing() {
         for ( let ti = 0; ti < _triggers?.length ?? 0; ti++ ) {
             for ( let ai = 0; ai < _triggers[ ti ].actions?.length ?? 0; ai++ ) {
-                let hasValue = storedVariables[ _triggers[ ti ].actions[ ai ].variableName ] instanceof Array ? storedVariables[ _triggers[ ti ].actions[ ai ].variableName ].length > 0 : !!storedVariables[ _triggers[ ti ].actions[ ai ].variableName ];
-                if ( hasValue ) {
-                    return false;
+                let variableName = _triggers[ ti ].actions[ ai ].variableName;
+                if ( variableName && !valueExists( variableName ) ) {
+                    return true;
                 }
             }
         }
 
-        return true;
+        return false;
     }
 
-    if ( valuesMissing() ) {
-        fs.open( log, 'r', function ( err, fd ) {
-            if ( fd ) {
-                let danglyBits = null;
-                var stats = fs.fstatSync( fd );
-                let myChunkSize = stats.size < chunkSize ? stats.size : chunkSize;
-                // let myChunkSize = stats.size;
-                let position = stats.size; //  Start at the end of the file.
+    await fileMonitor.backfind( lines => {
 
-                /**
-                 * 
-                 * @param {number} readCount 
-                 */
-                function parseChunk( readCount ) {
-                    let start = stats.size - readCount - myChunkSize;
-                    if ( start < 0 ) {
-                        start = 0;
-                        myChunkSize = stats.size - readCount;
-                    }
-                    if ( position <= 0 || !valuesMissing() ) {
-                        // If we've reached the beginning of the file or all values where parsed, execute the callback function and end parsing.
-                        callback();
+        if ( lines?.length > 1 ) {
+            for ( let i = lines.length - 1; i > 0; i-- ) {
+                // We want to parse backwards, reading all lines except for the first in the list, this is because the first in the list could be a partial line.
+                if ( lines[ i ].length > 0 && lines[ i ].charAt( 0 ) === '[' ) {
+                    try {
+                        _triggers.forEach( trigger => {
+                            // Check for a valid timestamp in the line.
+                            let log = lines[ i ].replace( /^\[(.*?)\]\s*/gi, '' );
 
-                    } else {
-                        fs.read( fd, Buffer.alloc( myChunkSize ), 0, myChunkSize, start, ( err, bytecount, buff ) => {
-                        
-                            let read = buff.toString( 'utf-8', 0, bytecount );
-                            let lines = read.split( /\r\n|\r|\n/gmi );
+                            trigger._parse( log, res => {
+                                trigger.actions.forEach( action => {
+                                    if ( action.phrases?.indexOf( res.phraseId ) > -1 && action.actionType === ActionTypes.StoreVariable ) {
+                                        /* --== Store Variable ==-- */
 
-                            if ( position < stats.size ) {
-                                lines[ lines.length - 1 ] += danglyBits;
-                            }
-                            danglyBits = lines[ 0 ];
-
-                            if ( lines?.length > 1 ) {
-                                for ( let i = lines.length - 1; i > 0; i-- ) {
-                                    // We want to parse backwards, reading all lines except for the first in the list, this is because the first in the list could be a partial line.
-                                    if ( lines[ i ].length > 0 && lines[ i ].charAt( 0 ) === '[' ) {
-                                        try {
-                                            _triggers.forEach( trigger => {
-                                                // Check for a valid timestamp in the line.
-                                                let log = lines[ i ].replace( /^\[(.*?)\]\s*/gi, '' );
-
-                                                trigger._parse( log, res => {
-                                                    trigger.actions.forEach( action => {
-                                                        if ( action.phrases?.indexOf( res.phraseId ) > -1 && action.actionType === ActionTypes.StoreVariable ) {
-                                                            /* --== Store Variable ==-- */
-                    
-                                                            if ( action.loopBackForValue ) {
-                                                                if ( res.result.length === 1 ) {
-                                                                    saveVariable( action.variableName, res.result[ 0 ], action.onlyStoreUsedValues );
-                                                                } else {
-                                                                    saveVariable( action.variableName, res.result[ 1 ], action.onlyStoreUsedValues );
-                                                                }
-                                
-                                                                logHistoryMgr.addSuccessfulTriggerParsedEvent(
-                                                                    log,
-                                                                    trigger.triggerId,
-                                                                    action.actionId,
-                                                                    'Trigger Action Loopback',
-                                                                    res.renderedPhrase,
-                                                                    trigger.capturePhrases.find( p => p.phraseId === res.phraseId )?.phrase,
-                                                                    res,
-                                                                    trigger._conditionResults,
-                                                                    undefined );
-                                                            }
-
-                                                        }
-                                                    } );
-                                                } );
-                                            } );
-                                            
-                                        } catch ( error ) {
-                                            enableLogging && sendInformationToLog( `Failure attempting to read line: ${lines[ i ]}` );
+                                        if ( action.loopBackForValue && action.variableName && !valueExists( action.variableName ) ) {
+                                            if ( res.result.length === 1 ) {
+                                                saveVariable( action.variableName, res.result[ 0 ], action.onlyStoreUsedValues );
+                                            } else {
+                                                saveVariable( action.variableName, res.result[ 1 ], action.onlyStoreUsedValues );
+                                            }
+            
+                                            logHistoryMgr.addSuccessfulTriggerParsedEvent(
+                                                log,
+                                                trigger.triggerId,
+                                                action.actionId,
+                                                'Trigger Action Loopback',
+                                                res.renderedPhrase,
+                                                trigger.capturePhrases.find( p => p.phraseId === res.phraseId )?.phrase,
+                                                res,
+                                                trigger._conditionResults,
+                                                undefined );
                                         }
+
                                     }
-                                    
-
-                                    if ( !valuesMissing() ) {
-                                        window.setTimeout( () => callback() );
-                                        return;
-                                    }
-                                }
-                            }
-
-                            if ( bytecount <= 0 ) {
-                                // If bytes read was 0, something went wonky and we need to trigger an exit condition.
-                                position = -1;
-                            }
-                            
-                            position -= bytecount;
-
-                            parseChunk(bytecount);
-
+                                } );
+                            } );
                         } );
+                        
+                    } catch ( error ) {
+                        enableLogging && sendInformationToLog( `Failure attempting to read line: ${lines[ i ]}` );
                     }
                 }
-
-                parseChunk(0);
-                
             }
-        } );
-    } else {
-        callback();
+        }
 
-    }
-
+        return valuesMissing();
+    } );
 }
 
 
