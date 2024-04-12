@@ -573,7 +573,7 @@ function CombatWatcher( character, logPosition ) {
 
     } );
     
-    ipcRenderer.on( 'log:leave-chat-room', async ( event, data ) => {
+    ipcRenderer.on( 'chat-room:disconnect', async ( event, data ) => {
         if ( logSync != null ) {
             stopDpsTransmit();
             await logSync.dispose();
@@ -585,6 +585,8 @@ function CombatWatcher( character, logPosition ) {
             nagException( 'Not in a chat room.' );
 
         }
+
+        ipcRenderer.send( 'chat-room:disconnected', 'User closed connection.' );
     } );
     
     ipcRenderer.on( 'log:start-chat-room', async ( event, data ) => {

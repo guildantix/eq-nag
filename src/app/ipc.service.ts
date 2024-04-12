@@ -52,6 +52,7 @@ export class IpcService {
     private _settingsCacheObservers: Record<string, Observer<any>[]> = {};
     private _watchedSettings: string[] = [];
     private _settingsWatchObservers: Record<string, Observer<any>[]> = {};
+    private _onChatRoomDisconnected: Observer<string>[] = [];
 
     private _ginaConfigCache: GinaConfiguration = null;
 
@@ -80,6 +81,14 @@ export class IpcService {
                 window.api.ipc.on( 'app:quit:failure', ( event: any, data: QuitFailureData ) => {
                     ngZone.run( () => {
                         this._onQuitFalure?.forEach( f => {
+                            f.next( data );
+                        } );
+                    } );
+                } );
+
+                window.api.ipc.on( 'chat-room:disconnected', ( event: any, data: string ) => {
+                    ngZone.run( () => {
+                        this._onChatRoomDisconnected?.forEach( f => {
                             f.next( data );
                         } );
                     } );
@@ -365,6 +374,14 @@ export class IpcService {
         return obs;
     }
 
+    public onChatRoomDisconnected(): Observable<string> {
+        let obs: Observable<string> = new Observable<string>( ( observer: Observer<string> ) => {
+            this._onChatRoomDisconnected.push( observer );
+        } );
+
+        return obs;
+    }
+
     public missingPackageOverlayFound(): Observable<OverlayWindowModel> {
         let obs: Observable<OverlayWindowModel> = new Observable<OverlayWindowModel>( ( observer: Observer<OverlayWindowModel> ) => {
             this._onMissingPackageOverlay.push( observer );
@@ -615,6 +632,10 @@ export class IpcService {
 
     public saveCombatDatabase(db: ServerCombatModel): void {
         window.api.ipc.send( 'combat-database:put-server', db );
+    }
+
+    public disconnectChatRoom(): void {
+        window.api.ipc.send( 'chat-room:disconnect' );
     }
 
     /**
@@ -2352,7 +2373,7 @@ export class IpcService {
                 consoleMessages: [],
                 consoleProgress: [],
             };
-            
+
             data.successful = this._successfulParses.slice();
             data.failed = this._failedParses.slice();
             data.consoleMessages = this._consoleMessages.slice();

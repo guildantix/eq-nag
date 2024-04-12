@@ -659,10 +659,31 @@ ipcMain.on( 'console:command',
                 } else if ( commands[ 1 ] === 'join' ) {
                     logBootstrap.sendToCombatWatcher( 'log:join-chat-room', commands[ 2 ] );
                 } else if ( commands[ 1 ] === 'leave' ) {
-                    logBootstrap.sendToCombatWatcher( 'log:leave-chat-room', null );
+                    logBootstrap.sendToCombatWatcher( 'chat-room:disconnect', null );
                 }
             }
         }
+    } );
+
+ipcMain.on( 'chat-room:disconnect',
+    /**
+     * Disconnects from the chat room.
+     * 
+     * @param {Electron.IpcMainEvent} event The event args.
+     */
+    ( event ) => {
+        logBootstrap.sendToCombatWatcher( 'chat-room:disconnect', null );
+    } );
+
+ipcMain.on( 'chat-room:disconnected',
+    /**
+     * Sends the chat room disconnected event to the main window.
+     * 
+     * @param {Electron.IpcMainEvent} event The event args.
+     * @param {string} reason The reason for the disconnect.
+     */
+    ( event, reason ) => {
+        mainWindow.webContents.send( 'chat-room:disconnected', reason );
     } );
 
 /**
