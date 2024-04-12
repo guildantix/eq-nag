@@ -7,6 +7,7 @@ const fsp = fs.promises;
 const chunkSize = 1024 * 1024 * 384; // Max chunk possible is 512MB, but we'll use 384MB to be safe.
 const maxReadErrors = 5;
 const readDelayMs = 50;
+const readErrorDelayMs = 1000;
 
 const sendLog = ( msg, ...args ) => {
     ipcRenderer.send( 'console:message', `${msg}` );
@@ -21,7 +22,7 @@ class FileMonitor {
     #readErrorCount = 0;
     #monitoring = false;
     #stopMonitor = false;
-    /** @type {() => void} */
+    /** @type {(position: number) => void} */
     #onStopped = null;
 
     /**
@@ -151,12 +152,18 @@ class FileMonitor {
         return p;
     }
 
+    /**
+     * Stops monitoring the log file and returns the position of the last read line.
+     * 
+     * @returns {Promise<number>} On finished callback.
+     */
     stopMonitoringLogFile() {
         return new Promise( ( resolve, reject ) => {
             if ( this.#monitoring ) {
                 this.#stopMonitor = true;
-                this.#onStopped = () => {
-                    resolve();
+                this.#onStopped = ( position ) => {
+                    this.#stopMonitor = false;
+                    resolve( position );
                 };
             } else {
                 resolve();
@@ -209,16 +216,9 @@ class FileMonitor {
                 resolve();
             }
 
-            // danglyBits = lines.shift() ?? '';
-
-            // sendLog( `Lines: ${lines.length}, Bytes read: ${bytesRead}` );
-            // allLines = allLines.concat( ...lines );
-
-            // position += bytesRead;
-
             if ( bytesRead < chunkSize ) {
                 await file.close();
-                sendLog( 'File closed' );
+                sendLog( 'Backfind finished.' );
                 resolve();
 
             } else {
@@ -309,7 +309,7 @@ class FileMonitor {
                     this.#monitoring = false;
 
                     if ( this.#onStopped ) {
-                        this.#onStopped();
+                        this.#onStopped( position );
                     }
 
                     resolve();
@@ -327,7 +327,7 @@ class FileMonitor {
                 this.#monitoring = false;
                 reject( error );
             } else {
-                setImmediate( () => this.#doMonitorLines( onChunkRead, resolve, reject, position, danglyBits ) );
+                setTimeout( () => this.#doMonitorLines( onChunkRead, resolve, reject, position, danglyBits ), readErrorDelayMs );
             }
         }
 
