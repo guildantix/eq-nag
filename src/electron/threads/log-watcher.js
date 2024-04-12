@@ -17,6 +17,7 @@ const { DateUtilities } = require( '../utilities/dates' );
 const { IpcMessage } = require( '../data/models/common' );
 const ArrayUtilities = require( '../utilities/arrays' );
 const FileMonitor = require( '../utilities/file-monitor' );
+const { LogHistoryManager } = require( '../utilities/log-console' );
 const chunkSize = 512 * 1024;
 
 window.onerror = ( error, url, line ) => {
@@ -76,17 +77,10 @@ var persistentDictionary = {};
 var detrimentalOverlayId = null;
 /** @type {string} */
 var characterId = null;
-const serverTickDuration = 6;
-/** @type {TriggerParseHistoryModel[]} */
-let successfulParses = [];
-/** @type {TriggerParseHistoryModel[]} */
-let failedParses = [];
-/** @type {TriggerParseHistoryModel[]} */
-let exceptionParses = [];
-let batchTriggerParseHistoryTimeoutId = null;
-const batchTriggerParseHistoryTimeoutDuration = 100;
 /** @type {FileMonitor} */
 let fileMonitor = null;
+/** @type {LogHistoryManager} */
+let logHistoryMgr = new LogHistoryManager( '', '', () => { }, () => { }, () => [] );
 
 /** @type {Record<string, {trigger: LogTrigger, res: PhraseParse}>} */
 let actionInstances = {};
@@ -130,234 +124,6 @@ let buffRegExs = {};
     
 let rgxTimestamp = /^\[(.*?)\]\s*/i;
 
-
-
-
-
-
-
-
-
-
-
-
-/**
- * Sends the error information to the main thread for logging.
- * 
- * @param {any} err The error object.
- * @param {string} raw The log entry currently processing.
- * @param {boolean} simulating True if we're simulating a log file.
- * @param {number} padTime The number of seconds to add to log time.
- * @param {string} errorDesc An error description to send to the debug console for the user.
- * @param {LogTrigger|undefined|null} trigger The trigger that caused the error.
- * @param {TriggerAction|undefined|null} action The trigger that caused the error.
- * @param {'End Early' | 'Trigger Action' | 'Exclude Target' | 'Trigger Secondary Action'} parseType The type of parse.
- * @param {string} renderedPhrase The rendered phrase.
- * @param {string} unrenderedPhrase The unrendered phrase.
- */
-const logParseError = ( err, raw, simulating, padTime, errorDesc, trigger, action, parseType, renderedPhrase, unrenderedPhrase ) => {
-    if ( raw ) {
-        ipcRenderer.send( 'app:log:exception', {
-            source: 'log-watcher.js',
-            error: err,
-            logEntry: raw,
-            simulating: simulating === true,
-            padTime: padTime === undefined ? 'undefined' :
-                padTime === null ? 'null' :
-                    padTime,
-        } );
-    } else {
-        ipcRenderer.send( 'app:log:exception', err );
-    }
-
-    if ( errorDesc ) {
-        
-        // If there is an error description, send it to the debug console.
-
-        let entry = new TriggerParseHistoryModel();
-
-        entry.parseId = nanoid();
-        entry.timestamp = new Date();
-        entry.triggerId = trigger?.triggerId;
-        entry.triggerName = trigger?.name;
-        entry.actionId = action ? action.actionId : null;
-        entry.actionTypeLabel = action ? getActionLabel( action.actionType ) : null;
-        entry.rawLogEntry = raw;
-        entry.logType = LogTypes.error;
-        entry.error = err + '';
-        entry.errorDescription = errorDesc;
-        entry.parseType = parseType;
-        entry.renderedPhrase = renderedPhrase;
-        entry.unrenderedPhrase = unrenderedPhrase;
-        entry.conditionResults = trigger?._conditionResults;
-        entry.deltaTime = trigger?._deltaTime;
-        entry.phraseId = null;
-        entry.regexResult = null;
-        entry.dependencyRegexResult = null;
-        entry.counters = JSON.parse( JSON.stringify( counters ) );
-        entry.storedVariables = JSON.parse( JSON.stringify( storedVariables ) );
-
-        entry.characterId = characterId;
-        entry.characterName = characterName;
-
-        exceptionParses.push( entry );
-
-    }
-};
-
-
-
-
-
-
-
-
-
-
-/**
- * Sends the error information to the main thread for logging.
- * 
- * @param {any} err The error object.
- * @param {string} raw The log entry currently processing.
- * @param {boolean} simulating True if we're simulating a log file.
- * @param {number} padTime The number of seconds to add to log time.
- * @param {string} errorDesc An error description to send to the debug console for the user.
- * @param {LogTrigger|undefined|null} trigger The trigger that caused the error.
- * @param {TriggerAction|undefined|null} action The trigger that caused the error.
- */
-const logError = ( err, raw, simulating, padTime, errorDesc, trigger, action ) => {
-    logParseError( err, raw, simulating, padTime, errorDesc, trigger, action );
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/**
- * Sends the batch of parses to the main process, clears the batch, and sets 
- * the timeout to run again.
- */
-let _batchTriggerParseHistory = () => {
-
-    ipcRenderer.once( 'trigger:batch:complete', ( event, data ) => {
-
-        // Set the timeout to run again.
-        batchTriggerParseHistoryTimeoutId = window.setTimeout( () => _batchTriggerParseHistory(), batchTriggerParseHistoryTimeoutDuration );
-            
-    } );
-
-    // Send the batch of parses to the main process.
-    ipcRenderer.send( 'trigger:batch-history', { successful: successfulParses, failed: failedParses, exceptions: exceptionParses } );
-
-    // Clear the batch.
-    successfulParses = [];
-    failedParses = [];
-    exceptionParses = [];
-
-}
-batchTriggerParseHistoryTimeoutId = window.setTimeout( () => _batchTriggerParseHistory(), batchTriggerParseHistoryTimeoutDuration );
-
-
-
-
-
-
-
-
-
-
-/**
- * Creates a new parse history entry.
- * 
- * @returns {TriggerParseHistoryModel} Returns the parse history entry.
- * 
- * @param {string} rawLogEntry The raw log entry.
- * @param {LogTypes} logType The log entry type.
- * @param {Trigger} trigger The trigger that was triggered.
- * @param {string} actionId The id of the action that was triggered.
- * @param {'End Early' | 'Trigger Action' | 'Exclude Target' | 'Trigger Secondary Action'} parseType The type of parse.
- * @param {string} renderedPhrase The rendered phrase.
- * @param {string} unrenderedPhrase The unrendered phrase.
- * @param {PhraseParse | undefined} parsedPhrase The parsed phrase.
- * @param {Record<string, string>} conditionResults The results of the trigger condition checks.
- * @param {number | undefined} deltaTime The time in milliseconds between the sequential phrases.
- */
-let _getParseHistoryEntry = ( rawLogEntry, logType, trigger, actionId, parseType, renderedPhrase, unrenderedPhrase, parsedPhrase, conditionResults, deltaTime ) => {
-    let entry = new TriggerParseHistoryModel();
-
-    entry.parseId = nanoid();
-    entry.timestamp = new Date();
-    entry.triggerId = trigger.triggerId;
-    entry.triggerName = trigger.name;
-    entry.actionId = actionId;
-    entry.actionTypeLabel = getActionLabel( trigger.actions.find( a => a.actionId === actionId )?.actionType );
-    entry.parseType = parseType;
-    entry.renderedPhrase = renderedPhrase;
-    entry.unrenderedPhrase = unrenderedPhrase;
-    entry.phraseId = parsedPhrase?.phraseId;
-    entry.regexResult = parsedPhrase?.result;
-    entry.dependencyRegexResult = parsedPhrase?.dependencyResult;
-    entry.conditionResults = conditionResults;
-    entry.deltaTime = deltaTime;
-    entry.counters = JSON.parse( JSON.stringify( counters ) );
-    entry.storedVariables = JSON.parse( JSON.stringify( storedVariables ) );
-    entry.characterId = characterId;
-    entry.characterName = characterName;
-    entry.rawLogEntry = rawLogEntry;
-    entry.logType = logType;
-
-    return entry;
-};
-
-
-
-
-
-
-
-
-// TODO: Remove "Trigger" from option strings, since it's redundant.
-
-/**
- * Adds a successful trigger parsed event to the batch.
- * 
- * @param {string} rawLogEntry The raw log entry.
- * @param {string} triggerId The id of the trigger that was triggered.
- * @param {string} actionId The id of the action that was triggered.
- * @param {'End Early' | 'Trigger Action' | 'Trigger Sequential Action' | 'Trigger Action Loopback' | 'Exclude Target' | 'Trigger Cancel Action' | 'Trigger Secondary Action' | 'Reset Counter'} parseType The type of parse.
- * @param {string} renderedPhrase The rendered phrase.
- * @param {string} unrenderedPhrase The unrendered phrase.
- * @param {PhraseParse | undefined} parsedPhrase The parsed phrase.
- * @param {Record<string, string>} conditionResults The results of the trigger condition checks.
- * @param {number | undefined} deltaTime The time in milliseconds between the sequential phrases.
- */
-let addSuccessfulTriggerParsedEvent = ( rawLogEntry, triggerId, actionId, parseType, renderedPhrase, unrenderedPhrase, parsedPhrase, conditionResults, deltaTime ) => {
-    let trigger = triggers.find( t => t.triggerId === triggerId );
-    if ( trigger ) {
-        let entry = _getParseHistoryEntry( rawLogEntry, LogTypes.info, trigger, actionId, parseType, renderedPhrase, unrenderedPhrase, parsedPhrase, conditionResults, deltaTime );
-
-        // Add the entry to the batch.
-        successfulParses.push( entry );
-    }
-};
-
 // Common errors:
 //  ${C} instead of {C}
 //  ${CharacterName} isntead of ${Character}
@@ -385,7 +151,6 @@ function startParsingLogFile( logPath, startLogPosition ) {
     
     fileMonitor.monitorLines( ( lines ) => {
         lines.forEach( line => {
-            console.log( line );
             if ( line && line.length > 0 ) {
                 parseLogEntries( line );
             }
@@ -496,7 +261,9 @@ function LogWatcher(character, logPosition) {
         characterName = character.name;
         charModel = character;
         characterId = character.characterId;
+        logHistoryMgr = new LogHistoryManager( character.characterId, character.name, () => counters, () => storedVariables, () => triggers );
         fileMonitor = new FileMonitor( character.logFile );
+        logHistoryMgr.startBatchTriggerParseHistory();
     }
 
     loadCachedStoredVariables( () => {
@@ -1007,7 +774,7 @@ function LogWatcher(character, logPosition) {
                     }
                 };
 
-                logError(
+                logHistoryMgr.logError(
                     error,
                     'Executing Sub Action',
                     false,
@@ -1118,7 +885,7 @@ function initCounters() {
                                     let _res = renderedPhraseRegExps[ i ].exec( logEntry );
                                     if ( _res?.length > 0 ) {
                                         matched = true;
-                                        addSuccessfulTriggerParsedEvent(
+                                        logHistoryMgr.addSuccessfulTriggerParsedEvent(
                                             logEntry,
                                             trigger.triggerId,
                                             action.actionId,
@@ -1473,7 +1240,7 @@ function generateTriggerFns() {
                             }
                             
                         } catch ( error ) {
-                            logParseError(
+                            logHistoryMgr.logParseError(
                                 error, value, null, null,
                                 ErrorMessages.triggerParse(),
                                 trigger, null,
@@ -1596,7 +1363,7 @@ function generateTriggerFns() {
                             }
         
                         } catch ( error ) {
-                            logParseError(
+                            logHistoryMgr.logParseError(
                                 error, value, null, null,
                                 ErrorMessages.triggerParse(),
                                 trigger, null,
@@ -1622,7 +1389,7 @@ function generateTriggerFns() {
             }
 
         } catch ( error ) {
-            logError( error, raw, simulating, padTime, ErrorMessages.triggerGeneration(), trigger );
+            logHistoryMgr.logError( error, raw, simulating, padTime, ErrorMessages.triggerGeneration(), trigger );
         }
 
     } );
@@ -1736,7 +1503,7 @@ function parseLogEntries( raw, simulating, padTime ) {
                         tokenIds.push( token.instanceId );
                     }
                 } catch ( error ) {
-                    logError( error, raw, simulating, padTime, ErrorMessages.cancellableParse(), actionInstances[ token.instanceId ]?.trigger );
+                    logHistoryMgr.logError( error, raw, simulating, padTime, ErrorMessages.cancellableParse(), actionInstances[ token.instanceId ]?.trigger );
                 }
 
             } );
@@ -1758,13 +1525,13 @@ function parseLogEntries( raw, simulating, padTime ) {
                             token._trigger( token.instanceId, timestamp );
                             secondaryTriggerActions.splice( i, 1 );
                         } catch (error) {
-                            logError( error, raw, simulating, padTime, ErrorMessages.secondaryTriggerExecution(), actionInstances[ token.instanceId ]?.trigger );
+                            logHistoryMgr.logError( error, raw, simulating, padTime, ErrorMessages.secondaryTriggerExecution(), actionInstances[ token.instanceId ]?.trigger );
                         }
 
                     }
 
                 } catch ( error ) {
-                    logError( error, raw, simulating, padTime, ErrorMessages.secondaryTriggerParse(), actionInstances[ token.instanceId ]?.trigger );
+                    logHistoryMgr.logError( error, raw, simulating, padTime, ErrorMessages.secondaryTriggerParse(), actionInstances[ token.instanceId ]?.trigger );
                 }
             }
             
@@ -1783,13 +1550,13 @@ function parseLogEntries( raw, simulating, padTime ) {
                             token._trigger( token.instanceId, timestamp );
                             dotWornOffTracking.splice( i, 1 );
                         } catch (error) {
-                            logError( error, raw, simulating, padTime, ErrorMessages.secondaryTriggerExecution(), actionInstances[ token.instanceId ]?.trigger );
+                            logHistoryMgr.logError( error, raw, simulating, padTime, ErrorMessages.secondaryTriggerExecution(), actionInstances[ token.instanceId ]?.trigger );
                         }
 
                     }
 
                 } catch ( error ) {
-                    logError( error, raw, simulating, padTime, ErrorMessages.secondaryTriggerParse(), actionInstances[ token.instanceId ]?.trigger );
+                    logHistoryMgr.logError( error, raw, simulating, padTime, ErrorMessages.secondaryTriggerParse(), actionInstances[ token.instanceId ]?.trigger );
                 }
             }
             
@@ -1821,7 +1588,7 @@ function parseLogEntries( raw, simulating, padTime ) {
                     }
 
                 } catch (error) {
-                    logError( error, raw, simulating, padTime, ErrorMessages.counterExecution( key ), null );
+                    logHistoryMgr.logError( error, raw, simulating, padTime, ErrorMessages.counterExecution( key ), null );
                 }
 
             }
@@ -1847,7 +1614,7 @@ function parseLogEntries( raw, simulating, padTime ) {
 
                                 executeTriggerAction( trigger, action, timestamp, res, deltaTime, simulating );
                                 
-                                addSuccessfulTriggerParsedEvent(
+                                logHistoryMgr.addSuccessfulTriggerParsedEvent(
                                     log,
                                     trigger.triggerId,
                                     action.actionId,
@@ -1868,7 +1635,7 @@ function parseLogEntries( raw, simulating, padTime ) {
                         }
                             
                     } catch ( error ) {
-                        logError( error, raw, simulating, padTime, ErrorMessages.triggerExecution(), trigger );
+                        logHistoryMgr.logError( error, raw, simulating, padTime, ErrorMessages.triggerExecution(), trigger );
                     }
                             
 
@@ -1876,7 +1643,7 @@ function parseLogEntries( raw, simulating, padTime ) {
             }
 
             // } catch ( error ) {
-            //     logError( error, raw, simulating, padTime, ErrorMessages.triggerParse(), trigger );
+            //     logHistoryMgr.logError( error, raw, simulating, padTime, ErrorMessages.triggerParse(), trigger );
             // }
             
         } );
@@ -1893,7 +1660,7 @@ function parseLogEntries( raw, simulating, padTime ) {
         // console.log( 'p', p, raw ); //p
 
     } catch ( error ) {
-        logError( error, raw, simulating, padTime, ErrorMessages.generalParsingError(), null );
+        logHistoryMgr.logError( error, raw, simulating, padTime, ErrorMessages.generalParsingError(), null );
     }
 
 }
@@ -2209,7 +1976,7 @@ function displayBeneficialTimerComponent( res, timestamp, action, trigger, spell
                         enableLogging && sendInformationToLog( `DoT Timer ended early: [${logEntry}]` );
                         matched = true;
                         
-                        addSuccessfulTriggerParsedEvent(
+                        logHistoryMgr.addSuccessfulTriggerParsedEvent(
                             logEntry,
                             trigger.triggerId,
                             action.actionId,
@@ -2380,7 +2147,7 @@ function displayDotTimerComponent( res, timestamp, action, deltaTime, trigger ) 
                         enableLogging && sendInformationToLog( `DoT Timer ended early: [${logEntry}]` );
                         matched = true;
                         
-                        addSuccessfulTriggerParsedEvent(
+                        logHistoryMgr.addSuccessfulTriggerParsedEvent(
                             logEntry,
                             trigger.triggerId,
                             action.actionId,
@@ -2428,7 +2195,7 @@ function displayDotTimerComponent( res, timestamp, action, deltaTime, trigger ) 
                         enableLogging && sendInformationToLog( `DoT Timer secondary action: [${logEntry}]` );
                         matched = true;
                         
-                        addSuccessfulTriggerParsedEvent(
+                        logHistoryMgr.addSuccessfulTriggerParsedEvent(
                             logEntry,
                             trigger.triggerId,
                             action.actionId,
@@ -2494,7 +2261,7 @@ function displayDotTimerComponent( res, timestamp, action, deltaTime, trigger ) 
                     if ( _res?.length > 0 ) {
                         enableLogging && sendInformationToLog( `DoT Timer worn off: [${logEntry}]` );
                         
-                        addSuccessfulTriggerParsedEvent(
+                        logHistoryMgr.addSuccessfulTriggerParsedEvent(
                             logEntry,
                             trigger.triggerId,
                             action.actionId,
@@ -2674,7 +2441,7 @@ function displayTimerCountdownComponent(res, timestamp, action, deltaTime, trigg
                         enableLogging && sendInformationToLog( `Timer/Countdown/Stopwatch ended early: [${logEntry}]` );
                         matched = true;
                         
-                        addSuccessfulTriggerParsedEvent(
+                        logHistoryMgr.addSuccessfulTriggerParsedEvent(
                             logEntry,
                             trigger.triggerId,
                             action.actionId,
@@ -3549,7 +3316,7 @@ function backfind( log, callback ) {
                                                                     saveVariable( action.variableName, res.result[ 1 ], action.onlyStoreUsedValues );
                                                                 }
                                 
-                                                                addSuccessfulTriggerParsedEvent(
+                                                                logHistoryMgr.addSuccessfulTriggerParsedEvent(
                                                                     log,
                                                                     trigger.triggerId,
                                                                     action.actionId,
