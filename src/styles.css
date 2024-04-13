@@ -39,8 +39,16 @@ ol, p, ul {
     line-height: 28px;
 }
 
-::-webkit-scrollbar {
+*:not(.show-scrollbar)::-webkit-scrollbar {
     display: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+
+.show-scrollbar {
+    scrollbar-gutter: stable;
 }
 
 .mat-focused .mat-form-field-label {
