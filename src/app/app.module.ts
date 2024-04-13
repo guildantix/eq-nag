@@ -34,6 +34,7 @@ import { ConsoleMessageComponent } from './debug-console/console-lines/message.c
 import { FormInputModule } from './form-inputs/form-inputs.module';
 import { SettingsModule } from './settings/settings.module';
 import { ConsoleProgressComponent } from './debug-console/console-lines/console-progress.component';
+import { CombatStatisticsComponent } from './combat-statistics/combat-statistics.component';
 
 @NgModule( {
     imports: [
@@ -68,6 +69,7 @@ import { ConsoleProgressComponent } from './debug-console/console-lines/console-
         CharactersListComponent,
         SetupWizardComponent,
         FloatingCombatTextComponent,
+        CombatStatisticsComponent,
     ],
     providers: [
         ScraperService,

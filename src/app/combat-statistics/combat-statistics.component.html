@@ -1,0 +1,11 @@
+<mat-toolbar>
+    <span>Combat Statistics</span>
+    <span class="spacer"></span>
+    <!-- <button mat-button [disabled]="true">Export</button> -->
+    <button mat-button title="Start a server to share your combat stats with other connected players." class="color-blue"><mat-icon class="material-icons-outlined">public</mat-icon> Start Log Sync Server</button>
+    <!-- <button mat-button title="Import settings from another player." class="color-orange"><mat-icon class="material-icons-outlined">cloud_download</mat-icon> Import</button> -->
+    <!-- <button mat-button color="accent"><mat-icon class="material-icons-outlined">add</mat-icon> New</button> -->
+</mat-toolbar>
+<div class="tab-content">
+    <div style="text-align: right; padding: 0 25px 20px;"><mat-checkbox [(ngModel)]="enableCombatStatistics" name="enableCombatStatistics">Enable Combat Statistics</mat-checkbox></div>
+</div>
