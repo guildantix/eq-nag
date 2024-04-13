@@ -6,6 +6,29 @@
     <!-- <button mat-button title="Import settings from another player." class="color-orange"><mat-icon class="material-icons-outlined">cloud_download</mat-icon> Import</button> -->
     <!-- <button mat-button color="accent"><mat-icon class="material-icons-outlined">add</mat-icon> New</button> -->
 </mat-toolbar>
-<div class="tab-content">
+<div class="tab-content no-scroller">
+
     <div style="text-align: right; padding: 0 25px 20px;"><mat-checkbox [(ngModel)]="enableCombatStatistics" name="enableCombatStatistics">Enable Combat Statistics</mat-checkbox></div>
+
+    <fieldset>
+        <legend><span class="title">Server Console</span></legend>
+        <div>
+            <button mat-button (click)="clearConsole()">Clear</button>
+            <button mat-button (click)="scrollToBottom()">Bottom</button>
+            <button mat-button (click)="test()">Test</button>
+            <div>
+                <div class="server-console">
+                    <div class="server-console-lines show-scrollbar" #consoleElement>
+
+                        <div class="server-console-line" *ngFor="let line of lines">
+                            <span class="time-stamp">[{{line.timestamp | date:'MM/dd/yy, hh:mm a'}}]</span>
+                            <p [class]="line.cssClass">{{line.message}}</p>
+                        </div>
+                        
+                    </div>
+                </div>
+            </div>
+        </div>
+    </fieldset>
+
 </div>

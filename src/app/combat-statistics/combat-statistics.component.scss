@@ -6,13 +6,14 @@ div.tab-content {
     bottom: 0;
     top: 176px;
     top: 226px;
-    padding: 20px 5px 20px 5px;
+    padding: 20px 1em 20px 1em !important;
 
-    > fieldset:not(:first-child) {
+    > fieldset:not(:first-of-type) {
         margin-top: 50px;
     }
     fieldset {
-        padding-top: 93px;
+        width: calc(100% - 2em);
+        display: inline-block;
 
         p {
             font-weight: 300;
@@ -22,15 +23,75 @@ div.tab-content {
             margin-left: -12px;
             margin-right: -12px;
         }
-        legend {
-            span {
-                font-size: 38px;
-                text-shadow: 0 0 7px #0000008f, 0 0 10px #0000008f, 0 0 21px #0000008f, 0 0 42px #0000008f, 0 0 82px #0000008f, 0 0 92px #0202028f, 0 0 102px #0000008f, 0 0 151px #0000008f;
-            }
-        }
     }
 }
 
 .spacer {
     flex: 1 1 auto;
+}
+
+.server-console {
+    background-color: #242424;
+    padding: 1em 0.5em 1em 1em;
+    height: 10em;
+
+    .server-console-lines {
+        overflow: auto;
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        direction: ltr;
+
+        .server-console-line {
+            display: flex;
+            flex-flow: row nowrap;
+
+            p {
+                overflow: hidden;
+                white-space: wrap;
+                margin: 0;
+                padding: 1px 0;
+                display:inline-block;
+                font-weight: 300;
+                color: #bdbdbd;
+                font-family: "Roboto Mono", Consolas, monospace;
+                font-size: 0.9em;
+                line-height: 1;
+
+                &.color-red {
+                    color: #f06969;
+                }
+    
+                &.color-blue {
+                    color: #69b2f0;
+                }
+    
+                &.color-green {
+                    color: #69f0ae;
+                }
+                
+                &.color-yellow {
+                    color: #f0e069;
+                }
+                
+                &.color-orange {
+                    color: #f0c669;
+                }
+            }
+    
+            .time-stamp {
+                display: inline-block;
+                opacity: 0.5;
+                margin-right: 0.5em;
+                flex: 0 0 auto;
+                font-weight: 300 !important;
+                color: #bdbdbd !important;
+                font-family: "Roboto Mono", Consolas, monospace;
+                font-size: 0.9em;
+                line-height: 1;
+                padding-top: 1px;
+            }
+        }
+    }
+
 }
