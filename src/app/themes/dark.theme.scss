@@ -963,3 +963,12 @@ button.connected-button {
         color: $color-titlebar-red;
     }
 }
+
+mat-tab-group {
+    mat-tab-group {
+        .mat-tab-header {
+            background-color: #181818;
+            padding-left: 5em;
+        }
+    }
+}
