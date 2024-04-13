@@ -34,28 +34,6 @@ div.tab-content {
     flex: 1 1 auto;
 }
 
-.header-glow {
-    text-shadow: 0 0 7px #00000085, 0 0 10px #00000085, 0 0 21px #00000085, 0 0 42px #00000085, 0 0 82px #00000085, 0 0 92px #02020285, 0 0 102px #00000085, 0 0 151px #00000085;
-    &.glow-purple {
-        text-shadow: 0 0 7px #4c0e67, 0 0 10px rgb(0 0 0 / 52%), 0 0 21px rgb(0 0 0 / 52%), 0 0 42px rgb(0 0 0 / 52%), 0 0 82px rgb(0 0 0 / 52%), 0 0 92px rgb(2 2 2 / 52%), 0 0 102px rgb(0 0 0 / 52%), 0 0 151px rgb(0 0 0 / 52%);
-    }
-    &.glow-green {
-        text-shadow: 0 0 7px #17e88385, 0 0 10px rgb(0 0 0 / 52%), 0 0 21px rgb(0 0 0 / 52%), 0 0 42px rgb(0 0 0 / 52%), 0 0 82px rgb(0 0 0 / 52%), 0 0 92px rgb(2 2 2 / 52%), 0 0 102px rgb(0 0 0 / 52%), 0 0 151px rgb(0 0 0 / 52%);
-    }
-    &.glow-red {
-        text-shadow: 0 0 7px #921f1f, 0 0 10px rgb(0 0 0 / 52%), 0 0 21px rgb(0 0 0 / 52%), 0 0 42px rgb(0 0 0 / 52%), 0 0 82px rgb(0 0 0 / 52%), 0 0 92px rgb(2 2 2 / 52%), 0 0 102px rgb(0 0 0 / 52%), 0 0 151px rgb(0 0 0 / 52%);
-    }
-    &.hover-purple:hover {
-        text-shadow: 0 0 7px #4c0e67, 0 0 10px rgb(0 0 0 / 52%), 0 0 21px rgb(0 0 0 / 52%), 0 0 42px rgb(0 0 0 / 52%), 0 0 82px rgb(0 0 0 / 52%), 0 0 92px rgb(2 2 2 / 52%), 0 0 102px rgb(0 0 0 / 52%), 0 0 151px rgb(0 0 0 / 52%);
-    }
-    &.hover-green:hover {
-        text-shadow: 0 0 7px #17e88385, 0 0 10px rgb(0 0 0 / 52%), 0 0 21px rgb(0 0 0 / 52%), 0 0 42px rgb(0 0 0 / 52%), 0 0 82px rgb(0 0 0 / 52%), 0 0 92px rgb(2 2 2 / 52%), 0 0 102px rgb(0 0 0 / 52%), 0 0 151px rgb(0 0 0 / 52%);
-    }
-    &.hover-red:hover {
-        text-shadow: 0 0 7px #921f1f, 0 0 10px rgb(0 0 0 / 52%), 0 0 21px rgb(0 0 0 / 52%), 0 0 42px rgb(0 0 0 / 52%), 0 0 82px rgb(0 0 0 / 52%), 0 0 92px rgb(2 2 2 / 52%), 0 0 102px rgb(0 0 0 / 52%), 0 0 151px rgb(0 0 0 / 52%);
-    }
-}
-
 h2,
 h3 {
     &.header-glow {

@@ -972,3 +972,63 @@ mat-tab-group {
         }
     }
 }
+
+.header-glow {
+    text-shadow: 0 0 7px #00000085, 0 0 10px #00000085, 0 0 21px #00000085, 0 0 42px #00000085, 0 0 82px #00000085, 0 0 92px #02020285, 0 0 102px #00000085, 0 0 151px #00000085;
+    &.glow-purple {
+        text-shadow: 0 0 7px #4c0e67, 0 0 10px rgb(0 0 0 / 52%), 0 0 21px rgb(0 0 0 / 52%), 0 0 42px rgb(0 0 0 / 52%), 0 0 82px rgb(0 0 0 / 52%), 0 0 92px rgb(2 2 2 / 52%), 0 0 102px rgb(0 0 0 / 52%), 0 0 151px rgb(0 0 0 / 52%);
+    }
+    &.glow-green {
+        text-shadow: 0 0 7px #17e88385, 0 0 10px rgb(0 0 0 / 52%), 0 0 21px rgb(0 0 0 / 52%), 0 0 42px rgb(0 0 0 / 52%), 0 0 82px rgb(0 0 0 / 52%), 0 0 92px rgb(2 2 2 / 52%), 0 0 102px rgb(0 0 0 / 52%), 0 0 151px rgb(0 0 0 / 52%);
+    }
+    &.glow-red {
+        text-shadow: 0 0 7px #921f1f, 0 0 10px rgb(0 0 0 / 52%), 0 0 21px rgb(0 0 0 / 52%), 0 0 42px rgb(0 0 0 / 52%), 0 0 82px rgb(0 0 0 / 52%), 0 0 92px rgb(2 2 2 / 52%), 0 0 102px rgb(0 0 0 / 52%), 0 0 151px rgb(0 0 0 / 52%);
+    }
+    &.hover-purple:hover {
+        text-shadow: 0 0 7px #4c0e67, 0 0 10px rgb(0 0 0 / 52%), 0 0 21px rgb(0 0 0 / 52%), 0 0 42px rgb(0 0 0 / 52%), 0 0 82px rgb(0 0 0 / 52%), 0 0 92px rgb(2 2 2 / 52%), 0 0 102px rgb(0 0 0 / 52%), 0 0 151px rgb(0 0 0 / 52%);
+    }
+    &.hover-green:hover {
+        text-shadow: 0 0 7px #17e88385, 0 0 10px rgb(0 0 0 / 52%), 0 0 21px rgb(0 0 0 / 52%), 0 0 42px rgb(0 0 0 / 52%), 0 0 82px rgb(0 0 0 / 52%), 0 0 92px rgb(2 2 2 / 52%), 0 0 102px rgb(0 0 0 / 52%), 0 0 151px rgb(0 0 0 / 52%);
+    }
+    &.hover-red:hover {
+        text-shadow: 0 0 7px #921f1f, 0 0 10px rgb(0 0 0 / 52%), 0 0 21px rgb(0 0 0 / 52%), 0 0 42px rgb(0 0 0 / 52%), 0 0 82px rgb(0 0 0 / 52%), 0 0 92px rgb(2 2 2 / 52%), 0 0 102px rgb(0 0 0 / 52%), 0 0 151px rgb(0 0 0 / 52%);
+    }
+}
+
+h2,
+h3 {
+    &.header-glow {
+        margin-top: -15px;
+        font-size: 21px;
+        font-weight: 300;
+    }
+    &.sub-header {
+        font-weight: 100;
+        opacity: 0.9;
+        margin-top: -16px;
+        padding-bottom: 6px;
+        // font-size: 22px;
+        padding-bottom: 4px;
+        position: relative;
+        padding-right: 11px;
+        text-align: right;
+
+        &.half-width {
+            width: calc(50% - 11px);
+        }
+        &.full-width {
+            width: calc(100% - 11px);
+        }
+
+        &::before {
+            content: "";
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 18px;
+            z-index: -1;
+            background-color: #0000002e;
+        }
+    }
+}
