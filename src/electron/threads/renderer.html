@@ -692,6 +692,7 @@
             align-items: center;
             border: 0.1em solid #e7d36b;
             background-color: #292429;
+            padding-left: 0.45em;
         }
         .window-content .dps-item .progress {
             height: 100%;
@@ -850,8 +851,11 @@
     <!-- =========================== -->
     <template id="dpsWindowItemTemplate">
         <div class="dps-item-label">
-            <img class="dps-item-icon" src="{{iconImage}}" />
-            <span class="dps-item-icon-placeholder"><i class="fa-solid fa-question"></i></span>
+            {{#if (if_neq iconImage '/assets/images/-icon.png')}}
+                <img class="dps-item-icon" src="{{iconImage}}" />
+            {{else}}
+                <span class="dps-item-icon-placeholder"><i class="fa-solid fa-question"></i></span>
+            {{/if}}
             <span class="dps-item-name">{{label}}</span>
             <span class="spacer"></span>
             <span class="dps-line-item damage">{{damage}}</span>

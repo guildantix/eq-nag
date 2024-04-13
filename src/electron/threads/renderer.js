@@ -668,6 +668,16 @@ function Renderer( originX, originY, glowOnStart ) {
     origin.y = originY;
 
     DomUtilities.docReady( f => {
+
+        Handlebars.registerHelper( 'if_eq', function ( a, b ) {
+            console.log( 'a, b', a, b );
+            return a === b;
+        } );
+
+        Handlebars.registerHelper( 'if_neq', function ( a, b ) {
+            console.log( 'a, b', a, b );
+            return a !== b;
+        } );
         
         overlayTemplate = Handlebars.compile( document.querySelector( '#overlay' ).innerHTML );
         overlayFctTemplate = Handlebars.compile( document.querySelector( '#overlayFct' ).innerHTML );
