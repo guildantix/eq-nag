@@ -1646,6 +1646,10 @@ class CombatParser {
         this._externalEncounterIds = {};
         this._encounterStats = new EncounterStats();
 
+        if ( this._encounterResetTimerId ) {
+            clearTimeout( this._encounterResetTimerId );
+        }
+
         if ( this.onEncounterReset ) {
             this.onEncounterReset( eventArgs );
         }
@@ -2214,9 +2218,11 @@ class CombatParser {
             
             if ( playerActor || playerTarget || petActor || petTarget ) {
                 // 30 seconds of no encounter activity ends the encounter, starting a new one.
-                if ( this._encounterStats == undefined || this._encounterStats.lastEncounterEvent < DateUtilities.addSeconds( timestamp, -30 ) ) {
+                if ( this._encounterStats == undefined ) {
                     this._encounterStats = new EncounterStats();
                     this._externalEncounterIds = {};
+                    this._encounterStats.encounterStart = timestamp;
+                } else if ( this._encounterStats.encounterStart == undefined ) {
                     this._encounterStats.encounterStart = timestamp;
                 }
 
