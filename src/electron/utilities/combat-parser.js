@@ -28,6 +28,7 @@ const { CharacterModel } = require( '../data/models/character' );
 const { nagLog, nagException } = require( './nag-console' );
 
 // TODO: Zhay`s pet hits Vius Vex for 9075 points of damage.
+// TODO: Players are appearing the verified pets list.
 
 
 
