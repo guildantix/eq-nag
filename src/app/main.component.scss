@@ -17,25 +17,41 @@ div.tab-content {
 :host ::ng-deep .mat-progress-bar.mat-accent .mat-progress-bar-buffer {
     background-color: #503d5c !important;
 }
-div.progress-bar {
-    width: 350px;
-    margin-right: 25px;
-    height: 18px;
 
-    mat-progress-bar {
+div.progress-bars {
+    display: flex;
+    flex-flow: column nowrap;
+    justify-content: space-evenly;
+    overflow: hidden;
+    height: 100%;
+
+    div.progress-bar {
+        width: 350px;
+        margin-right: 25px;
         height: 18px;
-    }
+        margin-top: 1px;
     
-    > div {
-        position: relative;
-        top: -25px;
-        font-weight: 400;
-        font-size: 13px;
-        color: black;
-        padding-left: 7px;
-        overflow: hidden;
-        padding-right: 7px;
-        text-overflow: ellipsis;
+        mat-progress-bar {
+            height: 18px;
+        }
+        
+        > div {
+            position: relative;
+            top: -25px;
+            font-weight: 400;
+            font-size: 13px;
+            color: black;
+            padding-left: 7px;
+            overflow: hidden;
+            padding-right: 7px;
+            text-overflow: ellipsis;
+    
+            mat-icon {
+                font-size: 1em;
+                width: 1.25em;
+                height: 0.8em;
+            }
+        }
     }
 }
 

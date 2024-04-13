@@ -25,7 +25,6 @@ const updateIntervalDuration = 5 * 60 * 1000;
 } )
 export class MainComponent implements OnInit {
 
-    public connected: boolean = true;
     public msg: string;
     public dkpEntries: DkpEntryModel[] = [];
     public logFile: string = 'Not Selected';
@@ -54,6 +53,9 @@ export class MainComponent implements OnInit {
     public combatType: string = 'DmgOut';
     public fctStyles: FctStylesModel = null;
 
+    public connected: boolean = false;
+    public transmitPercent: number | null = null;
+    public transmitLabel: string | null = null;
     public archivePercent: number |  null = null;
     public archiveLabel: string = null;
     public closeAfterArchive: boolean = false;
