@@ -2,6 +2,7 @@ import { AfterViewChecked, Component, ElementRef, OnInit, ViewChild } from '@ang
 import { DialogService } from '../dialogs/dialog.service';
 import { GoodbyePayloadModel, HandshakePayloadModel, IpcService } from '../ipc.service';
 import { ServerConsoleMessage } from '../core.model';
+import { MatSnackBar } from '@angular/material/snack-bar';
 
 export interface IConnectedPeer {
     
@@ -22,6 +23,10 @@ export class CombatStatisticsComponent implements OnInit, AfterViewChecked {
     @ViewChild( 'consoleElement', { static: true } ) private consoleElement: ElementRef<HTMLElement>;
     public lines: ServerConsoleMessage[] = [];
     public connected: boolean = false;
+    public chatRoomId: string | undefined = undefined;
+    public get serverLink(): string | undefined {
+        return this.chatRoomId ? `{NAG:p2p/${this.chatRoomId}}` : undefined;
+    }
 
     public connectedPeers: IConnectedPeer[] = [];
 
@@ -53,6 +58,7 @@ export class CombatStatisticsComponent implements OnInit, AfterViewChecked {
     constructor(
         private readonly dialogService: DialogService,
         private readonly ipcService: IpcService,
+        private readonly snackBar: MatSnackBar,
     ) { }
 
     ngAfterViewChecked(): void {
@@ -76,8 +82,14 @@ export class CombatStatisticsComponent implements OnInit, AfterViewChecked {
 
         this.ipcService.getChatRoomServerLogData().subscribe( data => data.forEach( x => this.appendLind( x ) ) );
         this.ipcService.onChatRoomServerLog().subscribe( data => this.appendLind( data ) );
-        this.ipcService.onChatRoomConnected().subscribe( () => this.connected = true );
-        this.ipcService.onChatRoomDisconnected().subscribe( () => this.connected = false );
+        this.ipcService.onChatRoomConnected().subscribe( chatRoomId => {
+            this.connected = true;
+            this.chatRoomId = chatRoomId;
+        } );
+        this.ipcService.onChatRoomDisconnected().subscribe( () => {
+            this.connected = false;
+            this.chatRoomId = undefined;
+        } );
         this.ipcService.onServerEvent().subscribe( data => {
 
             if ( data.type === 'handshake' && this.connectedPeers.find( x => x.peerId === data.payload.peerId ) === undefined ) {
@@ -150,6 +162,13 @@ export class CombatStatisticsComponent implements OnInit, AfterViewChecked {
                 this.ipcService.joinChatRoom( result );
             }
         } );
+    }
+
+    public copyServerLink() {
+        if ( this.chatRoomId ) {
+            this.ipcService.sendTextToClipboard( this.serverLink );
+            this.snackBar.open( 'Server link copied to clipboard', 'Dismiss', { duration: 3000 } );
+        }
     }
 
     public disconnect() {

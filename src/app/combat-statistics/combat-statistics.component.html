@@ -15,12 +15,19 @@
         <div class="fieldset-section">
             <h3 class="sub-header full-width header-glow">Server</h3>
             <div class="section-text-content">
-                <div *ngIf="!connected">
+                <div>
                     <div style="display: flex; flex-flow: row nowrap; justify-content: space-between;">
                         <div>
-                            <h2 style="font-weight: 100; margin-top: 0.55em;">You are not connected to a server.</h2>
-                            <button mat-button class="color-blue" (click)="createChatRoom()"><mat-icon class="material-icons-outlined">public</mat-icon> Start a server</button>
-                            <button mat-button class="color-green" (click)="joinChatRoom()"><mat-icon class="material-icons-outlined">travel_explore</mat-icon> Join a server</button>
+                            <ng-template [ngIf]="!connected">
+                                <h2 style="font-weight: 100; margin-top: 0.55em;">You are not connected to a server.</h2>
+                                <button mat-button class="color-blue" (click)="createChatRoom()"><mat-icon class="material-icons-outlined">public</mat-icon> Start a server</button>
+                                <button mat-button class="color-green" (click)="joinChatRoom()"><mat-icon class="material-icons-outlined">travel_explore</mat-icon> Join a server</button>
+                            </ng-template>
+                            <ng-template [ngIf]="connected">
+                                <h2 style="font-weight: 100; margin-top: 0.55em;">Connected to server.</h2>
+                                <button mat-button class="color-red" (click)="disconnect()"><mat-icon class="material-icons-outlined">public_off</mat-icon> Stop log sync server</button>
+                                <button mat-button class="color-blue" (click)="copyServerLink()" *ngIf="chatRoomId != undefined"><mat-icon class="material-icons-outlined">content_copy</mat-icon> Copy server link</button>
+                            </ng-template>
                         </div>
                         <div style="width: 50%;">
                             <p>!! TODO: Put a description and rules on how this operates here. !!</p>
@@ -28,10 +35,9 @@
                     </div>
                 </div>
                 <div *ngIf="connected">
-                    <p>Connected to server.</p>
-                    <button mat-button class="color-red" (click)="disconnect()"><mat-icon class="material-icons-outlined">public_off</mat-icon> Stop log sync server</button>
-                    <h4>Connected Peers</h4>
-                    <div class="connected-peers" [style.maxHeight]="peerHeight + 'px'">
+                    <h2 style="font-weight: 100;">Connected Peers</h2>
+                    <p *ngIf="connectedPeers.length === 0">You are the only peer connected. Invite some friends!</p>
+                    <div *ngIf="connectedPeers.length > 0" class="connected-peers" [style.maxHeight]="peerHeight + 'px'">
                         <p *ngFor="let peer of connectedPeers">
                             {{peer.characterName}}
                         </p>
