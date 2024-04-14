@@ -273,6 +273,7 @@ export class MainComponent implements OnInit {
             }
         } );
 
+        this.ipcService.onChatRoomConnected().subscribe( () => this.connected = true );
         this.ipcService.onChatRoomDisconnected().subscribe( reason => {
             this.connected = false;
             this.dialogService.showCustomNotificationDialog( 'Disconnected', [ 'You have been disconnected from the server.', `Reason: ${reason}` ], 'public_off' );
