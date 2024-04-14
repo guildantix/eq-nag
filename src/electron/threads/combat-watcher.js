@@ -684,7 +684,8 @@ function CombatWatcher( character, logPosition ) {
 
             if ( success ) {
                 ipcRenderer.send( 'chat-room:connected', logSync.chatRoomId );
-                serverLog( `Joined chat room: ${data}, my peer id: ${logSync.peerId}`, 'green' );
+                serverLog( `Joined chat room: ${data}.`, 'green' );
+                serverLog( `My peer id: ${logSync.peerId}` );
 
                 startDpsTransmit();
                 processChatRoom();
