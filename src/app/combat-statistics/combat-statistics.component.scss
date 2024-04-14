@@ -95,3 +95,39 @@ div.tab-content {
     }
 
 }
+
+.server-trust-content {
+    > div {
+        width: calc(50% - 36px);
+        padding: 1em;
+        display: inline-block;
+        vertical-align: top;
+    }
+}
+
+.section-text-content {
+    background-color: #252525;
+    min-height: 5em;
+    padding: 0.5em 1em;
+}
+
+.fieldset-section {
+
+    &:not(:last-of-type) {
+        margin-bottom: 3em;
+    }
+}
+
+.connected-peers {
+    display: flex;
+    flex-flow: column wrap;
+    justify-content: flex-start;
+    align-items: flex-start;
+    max-height: 150px;
+
+    p {
+        padding: 0;
+        margin: 0.25em 0;
+        padding-right: 1em;
+    }
+}

@@ -2,7 +2,7 @@
     <span>Combat Statistics</span>
     <span class="spacer"></span>
     <!-- <button mat-button [disabled]="true">Export</button> -->
-    <button mat-button title="Start a server to share your combat stats with other connected players." class="color-blue"><mat-icon class="material-icons-outlined">public</mat-icon> Start Log Sync Server</button>
+    
     <!-- <button mat-button title="Import settings from another player." class="color-orange"><mat-icon class="material-icons-outlined">cloud_download</mat-icon> Import</button> -->
     <!-- <button mat-button color="accent"><mat-icon class="material-icons-outlined">add</mat-icon> New</button> -->
 </mat-toolbar>
@@ -11,8 +11,37 @@
     <div style="text-align: right; padding: 0 25px 20px;"><mat-checkbox [(ngModel)]="enableCombatStatistics" name="enableCombatStatistics">Enable Combat Statistics</mat-checkbox></div>
 
     <fieldset>
-        <legend><span class="title">Server Console</span></legend>
-        <div>
+        <legend><span class="title">Log Synchronization</span></legend>
+        <div class="fieldset-section">
+            <h3 class="sub-header full-width header-glow">Server</h3>
+            <div class="section-text-content">
+                <div *ngIf="!connected">
+                    <div style="display: flex; flex-flow: row nowrap; justify-content: space-between;">
+                        <div>
+                            <h2 style="font-weight: 100; margin-top: 0.55em;">You are not connected to a server.</h2>
+                            <button mat-button class="color-blue" (click)="createChatRoom()"><mat-icon class="material-icons-outlined">public</mat-icon> Start a server</button>
+                            <button mat-button class="color-green" (click)="joinChatRoom()"><mat-icon class="material-icons-outlined">travel_explore</mat-icon> Join a server</button>
+                        </div>
+                        <div style="width: 50%;">
+                            <p>!! TODO: Put a description and rules on how this operates here. !!</p>
+                        </div>
+                    </div>
+                </div>
+                <div *ngIf="connected">
+                    <p>Connected to server.</p>
+                    <button mat-button class="color-red" (click)="disconnect()"><mat-icon class="material-icons-outlined">public_off</mat-icon> Stop log sync server</button>
+                    <h4>Connected Peers</h4>
+                    <div class="connected-peers" [style.maxHeight]="peerHeight + 'px'">
+                        <p *ngFor="let peer of connectedPeers">
+                            {{peer}}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="fieldset-section">
+            <h3 class="sub-header full-width header-glow">Server Console</h3>
             <button mat-button (click)="clearConsole()">Clear</button>
             <button mat-button (click)="scrollToBottom()">Bottom</button>
             <button mat-button (click)="test()">Test</button>
@@ -24,11 +53,41 @@
                             <span class="time-stamp">[{{line.timestamp | date:'MM/dd/yy, hh:mm a'}}]</span>
                             <p [class]="line.cssClass">{{line.message}}</p>
                         </div>
-                        
+
                     </div>
                 </div>
             </div>
         </div>
+    </fieldset>
+
+    <fieldset>
+        <legend><span class="title">Server Trust</span>
+            <sup class="help-sup"
+                matTooltip="Click here for more help."
+                matTooltipPosition="above"
+                matTooltipClass="tooltip-large"
+                (click)="explainServerTrust()">&nbsp;?</sup></legend>
+
+        <div class="server-trust-content">
+            <div>
+                <h3 class="sub-header full-width header-glow">Trusted Players</h3>
+                <mat-form-field style="width: 100%;">
+                    <mat-label></mat-label>
+                    <textarea matInput [(ngModel)]="whitelist" name="whitelist" rows="5"></textarea>
+                    <mat-hint>Add trusted characters to the whitelist.</mat-hint>
+                </mat-form-field>
+            </div>
+
+            <div>
+                <h3 class="sub-header full-width header-glow">Blocked Players</h3>
+                <mat-form-field style="width: 100%;">
+                    <mat-label></mat-label>
+                    <textarea matInput [(ngModel)]="whitelist" name="whitelist" rows="5"></textarea>
+                    <mat-hint>Any name found in the block list will be ignored.</mat-hint>
+                </mat-form-field>
+            </div>
+        </div>
+
     </fieldset>
 
 </div>
