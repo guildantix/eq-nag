@@ -17,6 +17,29 @@ export class ConsoleData {
 
 }
 
+export class HandshakePayloadModel {
+
+    public version: string;
+    public peerId: string;
+    public characterName: string;
+    public serverName: string;
+
+}
+
+export class GoodbyePayloadModel {
+
+    public version: string;
+    public peerId: string;
+
+}
+
+export class ServerEventModel {
+
+    public type: 'handshake' | 'disconnect';
+    public payload: undefined | HandshakePayloadModel | GoodbyePayloadModel;
+
+}
+
 @Injectable( { providedIn: 'root' })
 export class IpcService {
 
@@ -56,6 +79,7 @@ export class IpcService {
     private _onChatRoomDisconnected: Observer<string>[] = [];
     private _onChatRoomConnected: Observer<string>[] = [];
     private _onChatRoomServerLog: Observer<ServerConsoleMessage>[] = [];
+    private _onServerEvent: Observer<ServerEventModel>[] = [];
 
     private _ginaConfigCache: GinaConfiguration = null;
 
@@ -117,6 +141,14 @@ export class IpcService {
                             }
 
                             f.next( m );
+                        } );
+                    } );
+                } );
+
+                window.api.ipc.on( 'chat-room:server-event', ( event: any, data: ServerEventModel ) => {
+                    ngZone.run( () => {
+                        this._onServerEvent?.forEach( f => {
+                            f.next( data );
                         } );
                     } );
                 } );
@@ -421,6 +453,14 @@ export class IpcService {
     public onChatRoomServerLog(): Observable<ServerConsoleMessage> {
         let obs: Observable<ServerConsoleMessage> = new Observable<ServerConsoleMessage>( ( observer: Observer<ServerConsoleMessage> ) => {
             this._onChatRoomServerLog.push( observer );
+        } );
+
+        return obs;
+    }
+
+    public onServerEvent(): Observable<ServerEventModel> {
+        let obs: Observable<ServerEventModel> = new Observable<ServerEventModel>( ( observer: Observer<ServerEventModel> ) => {
+            this._onServerEvent.push( observer );
         } );
 
         return obs;

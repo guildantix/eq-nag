@@ -102,6 +102,19 @@ const serverLog = ( message, color ) => {
     } );
 }
 
+/**
+ * Sends server message to the main process.
+ * 
+ * @param {'handshake' | 'disconnect'} type The type of message.
+ * @param {any|undefined} payload The payload.
+ */
+const serverMessage = ( type, payload ) => {
+    ipcRenderer.send( 'chat-room:server-event', {
+        type: type,
+        payload: payload,
+    } );
+}
+
 /** @type {CharacterModel} */
 let charModel = null;
 /** @type {string} */
@@ -796,10 +809,12 @@ let processChatRoom = async () => {
                 } else if ( m.type === 'handshake' ) {
                     playerPeers.push( m.payload );
                     serverLog( `${m.payload.characterName} has joined the server.`, 'blue' );
+                    serverMessage( 'handshake', m.payload );
                     
                 } else if ( m.type === 'disconnect' ) {
                     playerPeers = playerPeers.filter( p => p.peerId !== m.payload.peerId );
                     serverLog( `${m.payload.characterName} has disconnected from the server.`, 'orange' );
+                    serverMessage( 'disconnect', m.payload );
 
                 }
             } );

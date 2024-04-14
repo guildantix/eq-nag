@@ -1,83 +1,16 @@
 import { AfterViewChecked, Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { DialogService } from '../dialogs/dialog.service';
-import { IpcService } from '../ipc.service';
+import { GoodbyePayloadModel, HandshakePayloadModel, IpcService } from '../ipc.service';
 import { ServerConsoleMessage } from '../core.model';
 
-// Create 72 test player names
-const testPlayerNames: string[] = [
-    'Ent',
-    'Aaagent',
-    'Aaagentding',
-    'Aachent',
-    'Aagent',
-    'Aagent',
-    'Aament',
-    'Aarenthyl',
-    'Aargent',
-    'Abatement',
-    'Abcent',
-    'Abhorrentx',
-    'Abisenthe',
-    'Aborent',
-    'Abrentos',
-    'Absent',
-    'Absente',
-    'Absente',
-    'Absenth',
-    'Absenth',
-    'Absenth',
-    'Absenth',
-    'Absorbent',
-    'Abssent',
-    'Accidental',
-    'Accidents',
-    'Acentia',
-    'Achentrader',
-    'Achievements',
-    'Achievements',
-    'Abscam',
-    'Acam',
-    'Aicamglorcam',
-    'Amancamgurth',
-    'Arcam',
-    'Arcamedes',
-    'Arcamedies',
-    'Arcametese',
-    'Arcamp',
-    'Bandcamp',
-    'Bandcampp',
-    'Bocamdon',
-    'Bowcam',
-    'Brucambell',
-    'Bucamore',
-    'Cama',
-    'Cama',
-    'Cama1',
-    'Camaan',
-    'Camaboom',
-    'Camac',
-    'Camacho',
-    'Camadarion',
-    'Camadary',
-    'Camaddar',
-    'Camaddar',
-    'Camaddor',
-    'Camaden',
-    'Aaashamanaaa',
-    'Aaashammy',
-    'Ablaham',
-    'Abrham',
-    'Abrham',
-    'ABshaman',
-    'Aceshammy',
-    'Adhamh',
-    'Adhamh',
-    'Ahamanx',
-    'Ahamay',
-    'Ahamix',
-    'Alashama',
-    'Aldhamerst',
-];
+export interface IConnectedPeer {
+    
+    version: string;
+    peerId: string;
+    characterName: string;
+    serverName: string;
+
+}
 
 @Component( {
     selector: 'app-combat-statistics',
@@ -90,7 +23,7 @@ export class CombatStatisticsComponent implements OnInit, AfterViewChecked {
     public lines: ServerConsoleMessage[] = [];
     public connected: boolean = false;
 
-    public connectedPeers: string[] = [].concat( ...testPlayerNames );
+    public connectedPeers: IConnectedPeer[] = [];
 
     private visible: boolean = false;
     private scheduleScroll: boolean = false;
@@ -145,6 +78,23 @@ export class CombatStatisticsComponent implements OnInit, AfterViewChecked {
         this.ipcService.onChatRoomServerLog().subscribe( data => this.appendLind( data ) );
         this.ipcService.onChatRoomConnected().subscribe( () => this.connected = true );
         this.ipcService.onChatRoomDisconnected().subscribe( () => this.connected = false );
+        this.ipcService.onServerEvent().subscribe( data => {
+
+            if ( data.type === 'handshake' && this.connectedPeers.find( x => x.peerId === data.payload.peerId ) === undefined ) {
+                let payload = data.payload as HandshakePayloadModel;
+                this.connectedPeers.push( {
+                    version: payload.version,
+                    peerId: payload.peerId,
+                    characterName: payload.characterName,
+                    serverName: payload.serverName,
+                } );
+                
+            } else if ( data.type === 'disconnect' ) {
+                this.connectedPeers = this.connectedPeers.filter( x => x.peerId !== data.payload.peerId );
+
+            }
+
+        } );
 
     }
 
