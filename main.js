@@ -655,9 +655,9 @@ ipcMain.on( 'console:command',
                 }
             } else if ( commands[ 0 ] === 'chat' ) {
                 if ( commands[ 1 ] === 'create' ) {
-                    logBootstrap.sendToCombatWatcher( 'log:start-chat-room', null );
+                    logBootstrap.sendToCombatWatcher( 'chat-room:start-chat-room', null );
                 } else if ( commands[ 1 ] === 'join' ) {
-                    logBootstrap.sendToCombatWatcher( 'log:join-chat-room', commands[ 2 ] );
+                    logBootstrap.sendToCombatWatcher( 'chat-room:join-chat-room', commands[ 2 ] );
                 } else if ( commands[ 1 ] === 'leave' ) {
                     logBootstrap.sendToCombatWatcher( 'chat-room:disconnect', null );
                 }
@@ -665,15 +665,48 @@ ipcMain.on( 'console:command',
         }
     } );
 
+ipcMain.on( 'chat-room:server-log',
+    /**
+     * Forwards the chat room log event to the main window.
+     * 
+     * @param {Electron.IpcMainEvent} event The event args.
+     * @param {string} data The chat room id.
+     */
+    ( event, data ) => mainWindow.webContents.send( 'chat-room:server-log', data ) );
+
+ipcMain.on( 'chat-room:start-chat-room',
+    /**
+     * Sends the create chat room event to the combat watcher.
+     * 
+     * @param {Electron.IpcMainEvent} event The event args.
+     */
+    ( event ) => logBootstrap.sendToCombatWatcher( 'chat-room:start-chat-room', null ) );
+
+ipcMain.on( 'chat-room:join-chat-room',
+    /**
+     * Sends the create chat room event to the combat watcher.
+     * 
+     * @param {Electron.IpcMainEvent} event The event args.
+     * @param {string} data The chat room link.
+     */
+    ( event, data ) => logBootstrap.sendToCombatWatcher( 'chat-room:join-chat-room', data ) );
+
+ipcMain.on( 'chat-room:connected',
+    /**
+     * Forwards the chat room connected event to the main window.
+     * 
+     * @param {Electron.IpcMainEvent} event The event args.
+     * @param {string} data The chat room id.
+     */
+    ( event, data ) => mainWindow.webContents.send( 'chat-room:connected', data ) );
+
 ipcMain.on( 'chat-room:disconnect',
     /**
      * Disconnects from the chat room.
      * 
      * @param {Electron.IpcMainEvent} event The event args.
      */
-    ( event ) => {
-        logBootstrap.sendToCombatWatcher( 'chat-room:disconnect', null );
-    } );
+    ( event ) => logBootstrap.sendToCombatWatcher( 'chat-room:disconnect', null ) );
 
 ipcMain.on( 'chat-room:disconnected',
     /**
@@ -682,9 +715,7 @@ ipcMain.on( 'chat-room:disconnected',
      * @param {Electron.IpcMainEvent} event The event args.
      * @param {string} reason The reason for the disconnect.
      */
-    ( event, reason ) => {
-        mainWindow.webContents.send( 'chat-room:disconnected', reason );
-    } );
+    ( event, reason ) => mainWindow.webContents.send( 'chat-room:disconnected', reason ) );
 
 /**
 * Sends the console message to the debug console.

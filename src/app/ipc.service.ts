@@ -24,6 +24,7 @@ export class IpcService {
     private _failedParses: TriggerParseHistoryModel[] = [];
     private _consoleMessages: ConsoleMessageModel[] = [];
     private _consoleProgress: ProgressModel[] = [];
+    private _serverLogData: string[] = [];
     
     private _tickObservers: Observer<DataTickModel>[] = [];
     private _transmitObservers: Observer<DkpEntryModel[]>[] = [];
@@ -53,6 +54,8 @@ export class IpcService {
     private _watchedSettings: string[] = [];
     private _settingsWatchObservers: Record<string, Observer<any>[]> = {};
     private _onChatRoomDisconnected: Observer<string>[] = [];
+    private _onChatRoomConnected: Observer<string>[] = [];
+    private _onChatRoomServerLog: Observer<string>[] = [];
 
     private _ginaConfigCache: GinaConfiguration = null;
 
@@ -89,6 +92,22 @@ export class IpcService {
                 window.api.ipc.on( 'chat-room:disconnected', ( event: any, data: string ) => {
                     ngZone.run( () => {
                         this._onChatRoomDisconnected?.forEach( f => {
+                            f.next( data );
+                        } );
+                    } );
+                } );
+
+                window.api.ipc.on( 'chat-room:connected', ( event: any, data: string ) => {
+                    ngZone.run( () => {
+                        this._onChatRoomConnected?.forEach( f => {
+                            f.next( data );
+                        } );
+                    } );
+                } );
+
+                window.api.ipc.on( 'chat-room:server-log', ( event: any, data: string ) => {
+                    ngZone.run( () => {
+                        this._onChatRoomServerLog?.forEach( f => {
                             f.next( data );
                         } );
                     } );
@@ -295,6 +314,7 @@ export class IpcService {
                     this._failedParses.push( ...history.exceptions );
                 } );
 
+                this.onChatRoomServerLog().subscribe( log => this._serverLogData.push( log ) );
 
             } catch ( e ) {
                 throw e;
@@ -377,6 +397,22 @@ export class IpcService {
     public onChatRoomDisconnected(): Observable<string> {
         let obs: Observable<string> = new Observable<string>( ( observer: Observer<string> ) => {
             this._onChatRoomDisconnected.push( observer );
+        } );
+
+        return obs;
+    }
+
+    public onChatRoomConnected(): Observable<string> {
+        let obs: Observable<string> = new Observable<string>( ( observer: Observer<string> ) => {
+            this._onChatRoomConnected.push( observer );
+        } );
+
+        return obs;
+    }
+
+    public onChatRoomServerLog(): Observable<string> {
+        let obs: Observable<string> = new Observable<string>( ( observer: Observer<string> ) => {
+            this._onChatRoomServerLog.push( observer );
         } );
 
         return obs;
@@ -817,6 +853,14 @@ export class IpcService {
 
     public mainWindowAngularReady(): void {
         window.api.ipc.send( 'main:angular-ready' );
+    }
+
+    public createChatRoom(): void {
+        window.api.ipc.send( 'chat-room:start-chat-room' );
+    }
+
+    public joinChatRoom( link: string ): void {
+        window.api.ipc.send( 'chat-room:join-chat-room', link );
     }
 
     public findPlayerCharacterDeaths( logFile: string ): Observable<LogFileLocation[]> {
@@ -2380,6 +2424,19 @@ export class IpcService {
             data.consoleProgress = this._consoleProgress.slice();
 
             observer.next( data );
+            observer.complete();
+        } );
+
+        return obs;
+    }
+
+    public clearChatRoomServerLogData(): void {
+        this._serverLogData = [];
+    }
+
+    public getChatRoomServerLogData(): Observable<string[]> {
+        let obs: Observable<string[]> = new Observable<string[]>( ( observer: Observer<string[]> ) => {
+            observer.next( this._serverLogData );
             observer.complete();
         } );
 
