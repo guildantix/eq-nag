@@ -694,6 +694,7 @@ fieldset.trigger-property-group {
     input {
         font-family: Roboto;
         -webkit-appearance: none;
+        appearance: none;
         text-align: right;
         outline: none !important;
         background-color: #0000002e;
@@ -965,7 +966,7 @@ button.connected-button {
 }
 
 mat-tab-group {
-    mat-tab-group {
+    mat-tab-group.sub-tabs {
         .mat-tab-header {
             background-color: #181818;
             padding-left: 5em;
