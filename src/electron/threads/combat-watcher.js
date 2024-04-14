@@ -22,6 +22,11 @@
 // 7. Any users already in the chat room will create a new Peer and signal the new user's offer.
 // 8. Each peer will be responsible for sending their own messages/data to the other peers.
 
+// TODO: Synchronize encounters between peers.  Keep encounters active while other peers are sending synchronization data.
+//          We could send an "encounter ended" message to all peers when the encounter is over, and only end the encounter when all peers have responded with their own ended event.
+//          If an encounter is kicked up again with the same NPCs as the previous encounter, then we can merge the encounters together.
+//          ! We can keep a map of peer encounter ids mapped to my encounter id, allowing any peer to continue submitting data to an encounter I have closed.
+
 // Troubleshooting
 //  1. If a peer is unable to connect, delete the peer, create a new one as the initiator,
 //     and send the signal to the other peer.
@@ -63,9 +68,32 @@ const customAlphabet = require( 'nanoid' ).customAlphabet;
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const nanoid = customAlphabet( alphabet, 16 );
 const fs = require( 'fs' );
-const { LogSync, createChatRoomLink, parseChatRoomLink, PeerDataPackageModel, CombatStatisticsPayloadModel, CombatEncounterPayloadModel } = require( "../utilities/peer-to-peer" );
+const { LogSync, createChatRoomLink, parseChatRoomLink, PeerDataPackageModel, CombatStatisticsPayloadModel, CombatEncounterPayloadModel, HandshakePayloadModel } = require( "../utilities/peer-to-peer" );
 const { nagException, nagLog } = require( "../utilities/nag-console" );
 const chunkSize = 512 * 1024;
+
+/**
+ * Sends to the main thread to log the message.
+ * 
+ * @param {string} message The message to log.
+ * @param {any | undefined} payload The payload to log.
+ */
+const log = ( message, payload ) => {
+    nagLog( {
+        label: 'Chat Room',
+        message: message,
+        payload: payload,
+    } );
+}
+
+/**
+ * Sends the given message to the user's server log.
+ * 
+ * @param {string} message The message to log.
+ */
+const serverLog = ( message ) => {
+    ipcRenderer.send( 'chat-room:server-log', message );
+}
 
 /** @type {CharacterModel} */
 let charModel = null;
@@ -108,6 +136,8 @@ let isDev = false;
 let overlays = [];
 /** @type {LogSync | null} */
 let logSync = null;
+/** @type {HandshakePayloadModel[]} */
+let playerPeers = [];
 
 /**
  * Sends the error information to the main thread for logging.
@@ -257,6 +287,7 @@ const onEncounterReset = ( e ) => {
     if ( logSync != null ) {
         submitEncounter( e );
         processReceivedEncounters( e.encounterId );
+        // This needs to reset when receiving encounter data.
         myEncounterSaveIntervalIds[ e.encounterId ] = window.setTimeout( () => saveEncounter( e.encounterId ), saveEncounterIntervalMs );
     } else {
         saveEncounter( e.encounterId );
@@ -567,6 +598,8 @@ function CombatWatcher( character, logPosition ) {
             await logSync.dispose();
             cleanUpChatRoom();
             logSync = null;
+
+            ipcRenderer.send( 'chat-room:disconnected', 'Unloading the combat statistics.' );
         }
 
         ipcRenderer.send( 'log:combat:unloaded', null );
@@ -578,7 +611,7 @@ function CombatWatcher( character, logPosition ) {
             stopDpsTransmit();
             await logSync.dispose();
             cleanUpChatRoom();
-            nagLog( `Left chat room ${logSync.chatRoomId}.` );
+            serverLog( `Left chat room ${logSync.chatRoomId}.` );
             logSync = null;
 
         } else {
@@ -589,7 +622,7 @@ function CombatWatcher( character, logPosition ) {
         ipcRenderer.send( 'chat-room:disconnected', 'User closed connection.' );
     } );
     
-    ipcRenderer.on( 'log:start-chat-room', async ( event, data ) => {
+    ipcRenderer.on( 'chat-room:start-chat-room', async ( event, data ) => {
         try {
             logSync = new LogSync();
         
@@ -597,9 +630,10 @@ function CombatWatcher( character, logPosition ) {
             let success = await logSync.createChatRoom();
     
             if ( success ) {
+                ipcRenderer.send( 'chat-room:connected', logSync.chatRoomId );
                 let link = createChatRoomLink( logSync.chatRoomId );
 
-                nagLog( `Chat room created: ${link}, my peer id: ${logSync.peerId}` );
+                serverLog( `Chat room created: ${link}, my peer id: ${logSync.peerId}` );
 
                 startDpsTransmit();
                 processChatRoom();
@@ -612,11 +646,12 @@ function CombatWatcher( character, logPosition ) {
 
         } catch ( error ) {
             logError( error, 'Failed to create chat room', false, 0 );
+            serverLog( `Failed to create chat room. Check the console for more information.` );
 
         }
     } );
 
-    ipcRenderer.on( 'log:join-chat-room', async ( event, data ) => {
+    ipcRenderer.on( 'chat-room:join-chat-room', async ( event, data ) => {
         try {
             logSync = new LogSync();
 
@@ -625,7 +660,8 @@ function CombatWatcher( character, logPosition ) {
             let success = await logSync.joinChatRoom( linkId );
 
             if ( success ) {
-                nagLog( `Joined chat room: ${data}, my peer id: ${logSync.peerId}` );
+                ipcRenderer.send( 'chat-room:connected', logSync.chatRoomId );
+                serverLog( `Joined chat room: ${data}, my peer id: ${logSync.peerId}` );
 
                 startDpsTransmit();
                 processChatRoom();
@@ -638,6 +674,7 @@ function CombatWatcher( character, logPosition ) {
 
         } catch ( error ) {
             logError( error, 'Faile to join chat room', false, 0 );
+            serverLog( `Failed to join chat room: ${data}. Check the console for more information.` );
 
         }
     } );
@@ -723,14 +760,11 @@ let processChatRoom = async () => {
 
         for ( var peerId in data ) {
             let messages = data[ peerId ];
+            let playerPeer = playerPeers.find( p => p.peerId === peerId );
 
             messages.forEach( m => {
                 if ( m.type === 'message' ) {
-                    nagLog( {
-                        label: 'Chat Room',
-                        message: m.message,
-                        payload: m,
-                    } );
+                    serverLog( `${playerPeer?.characterName ?? 'Unknown Player'}: ${m.message}` );
                     
                 } else if ( m.type === 'combatStatistics' ) {
 
@@ -740,7 +774,21 @@ let processChatRoom = async () => {
                     myCombatParser.importPlayerEncounterStats( data.characterName, data.encounterStats, data.encounterId );
 
                 } else if ( m.type === 'encounter' ) {
-                    receiveEncounterLog( m.payload );
+                    if ( playerPeer != null ) {
+                        receiveEncounterLog( m.payload );
+                        serverLog( `Received encounter log from ${playerPeer?.characterName ?? 'Unknown Player'}.` );
+
+                    } else {
+                        serverLog( `Received encounter from unknown player, ignoring.` );
+                    }
+
+                } else if ( m.type === 'handshake' ) {
+                    playerPeers.push( m.payload );
+                    serverLog( `${m.payload.characterName} has joined the server.` );
+                    
+                } else if ( m.type === 'disconnect' ) {
+                    playerPeers = playerPeers.filter( p => p.peerId !== m.payload.peerId );
+                    serverLog( `${m.payload.characterName} has disconnected from the server.` );
 
                 }
             } );
