@@ -3,7 +3,7 @@ import * as Electron from 'electron';
 import { UpdateInfo } from 'electron-updater';
 import { Observable, Observer } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
-import { DataTickModel, DkpEntryModel, TriggerModel, OverlayWindowModel, ActionTypes, FocusEffectSettings, CharacterModel, BasicError, TriggerFolder, FileModel, Tag, AuthorModel, PackageFileModel, TriggerPackageMetaModel, TriggerPackageVersion, FctStylesModel, OverlayBoundsChangedEventArgs, DialogEventArgs, QuickShareMetaModel, LogFileLocation, IpcMessage, DeathRecapPreferences, QuickShareAuthorListTypes, Progress, QuitFailureData, DuplicateTriggerAction, ScrapedSpell, ScrapedClickEffect, TriggerParseHistoryModel, SimulationProgress, FctCombatGroup, CombatTypes, StylePropertiesModel, CombatAnimations, TriggersProfileModel, ConsoleMessageModel, LogTypes, ServerCombatModel, ProgressModel } from './core.model';
+import { DataTickModel, DkpEntryModel, TriggerModel, OverlayWindowModel, ActionTypes, FocusEffectSettings, CharacterModel, BasicError, TriggerFolder, FileModel, Tag, AuthorModel, PackageFileModel, TriggerPackageMetaModel, TriggerPackageVersion, FctStylesModel, OverlayBoundsChangedEventArgs, DialogEventArgs, QuickShareMetaModel, LogFileLocation, IpcMessage, DeathRecapPreferences, QuickShareAuthorListTypes, Progress, QuitFailureData, DuplicateTriggerAction, ScrapedSpell, ScrapedClickEffect, TriggerParseHistoryModel, SimulationProgress, FctCombatGroup, CombatTypes, StylePropertiesModel, CombatAnimations, TriggersProfileModel, ConsoleMessageModel, LogTypes, ServerCombatModel, ProgressModel, ServerConsoleMessage } from './core.model';
 import { GinaConfiguration, GinaTriggerGroups } from './gina.model';
 import { ColorUtility } from './utilities';
 import { nagId } from './core/nag-id.util';
@@ -24,7 +24,7 @@ export class IpcService {
     private _failedParses: TriggerParseHistoryModel[] = [];
     private _consoleMessages: ConsoleMessageModel[] = [];
     private _consoleProgress: ProgressModel[] = [];
-    private _serverLogData: string[] = [];
+    private _serverLogData: ServerConsoleMessage[] = [];
     
     private _tickObservers: Observer<DataTickModel>[] = [];
     private _transmitObservers: Observer<DkpEntryModel[]>[] = [];
@@ -55,7 +55,7 @@ export class IpcService {
     private _settingsWatchObservers: Record<string, Observer<any>[]> = {};
     private _onChatRoomDisconnected: Observer<string>[] = [];
     private _onChatRoomConnected: Observer<string>[] = [];
-    private _onChatRoomServerLog: Observer<string>[] = [];
+    private _onChatRoomServerLog: Observer<ServerConsoleMessage>[] = [];
 
     private _ginaConfigCache: GinaConfiguration = null;
 
@@ -105,10 +105,18 @@ export class IpcService {
                     } );
                 } );
 
-                window.api.ipc.on( 'chat-room:server-log', ( event: any, data: string ) => {
+                window.api.ipc.on( 'chat-room:server-log', ( event: any, data: { message: string, color: string } ) => {
                     ngZone.run( () => {
                         this._onChatRoomServerLog?.forEach( f => {
-                            f.next( data );
+                            let m = new ServerConsoleMessage();
+                            m.message = data.message;
+                            m.timestamp = new Date();
+                            
+                            if ( data.color ) {
+                                m.cssClass = `color-${data.color}`;
+                            }
+
+                            f.next( m );
                         } );
                     } );
                 } );
@@ -410,8 +418,8 @@ export class IpcService {
         return obs;
     }
 
-    public onChatRoomServerLog(): Observable<string> {
-        let obs: Observable<string> = new Observable<string>( ( observer: Observer<string> ) => {
+    public onChatRoomServerLog(): Observable<ServerConsoleMessage> {
+        let obs: Observable<ServerConsoleMessage> = new Observable<ServerConsoleMessage>( ( observer: Observer<ServerConsoleMessage> ) => {
             this._onChatRoomServerLog.push( observer );
         } );
 
@@ -2434,8 +2442,8 @@ export class IpcService {
         this._serverLogData = [];
     }
 
-    public getChatRoomServerLogData(): Observable<string[]> {
-        let obs: Observable<string[]> = new Observable<string[]>( ( observer: Observer<string[]> ) => {
+    public getChatRoomServerLogData(): Observable<ServerConsoleMessage[]> {
+        let obs: Observable<ServerConsoleMessage[]> = new Observable<ServerConsoleMessage[]>( ( observer: Observer<ServerConsoleMessage[]> ) => {
             observer.next( this._serverLogData );
             observer.complete();
         } );

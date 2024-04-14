@@ -27,6 +27,9 @@
 //          If an encounter is kicked up again with the same NPCs as the previous encounter, then we can merge the encounters together.
 //          ! We can keep a map of peer encounter ids mapped to my encounter id, allowing any peer to continue submitting data to an encounter I have closed.
 
+// TODO: Keep log watcher active while connected to a chat room.
+// TODO: Move the peer to peer stuff into a thread, maybe? Damnit, yes.
+
 // Troubleshooting
 //  1. If a peer is unable to connect, delete the peer, create a new one as the initiator,
 //     and send the signal to the other peer.
@@ -90,9 +93,13 @@ const log = ( message, payload ) => {
  * Sends the given message to the user's server log.
  * 
  * @param {string} message The message to log.
+ * @param {undefined | 'red' | 'blue' | 'green' | 'yellow' | 'orange'} color The color of message.
  */
-const serverLog = ( message ) => {
-    ipcRenderer.send( 'chat-room:server-log', message );
+const serverLog = ( message, color ) => {
+    ipcRenderer.send( 'chat-room:server-log', {
+        message: message,
+        color: color,
+    } );
 }
 
 /** @type {CharacterModel} */
@@ -599,7 +606,8 @@ function CombatWatcher( character, logPosition ) {
             cleanUpChatRoom();
             logSync = null;
 
-            ipcRenderer.send( 'chat-room:disconnected', 'Unloading the combat statistics.' );
+            serverLog( `Left chat room ${logSync.chatRoomId}.`, 'yellow' );
+            ipcRenderer.send( 'chat-room:disconnected', 'Combat watcher was unloaded.' );
         }
 
         ipcRenderer.send( 'log:combat:unloaded', null );
@@ -611,7 +619,7 @@ function CombatWatcher( character, logPosition ) {
             stopDpsTransmit();
             await logSync.dispose();
             cleanUpChatRoom();
-            serverLog( `Left chat room ${logSync.chatRoomId}.` );
+            serverLog( `Left chat room ${logSync.chatRoomId}.`, 'yellow' );
             logSync = null;
 
         } else {
@@ -633,7 +641,8 @@ function CombatWatcher( character, logPosition ) {
                 ipcRenderer.send( 'chat-room:connected', logSync.chatRoomId );
                 let link = createChatRoomLink( logSync.chatRoomId );
 
-                serverLog( `Chat room created: ${link}, my peer id: ${logSync.peerId}` );
+                serverLog( `Chat room created: ${link}.`, 'green' );
+                serverLog( `My peer id: ${logSync.peerId}` );
 
                 startDpsTransmit();
                 processChatRoom();
@@ -646,7 +655,8 @@ function CombatWatcher( character, logPosition ) {
 
         } catch ( error ) {
             logError( error, 'Failed to create chat room', false, 0 );
-            serverLog( `Failed to create chat room. Check the console for more information.` );
+            serverLog( `Failed to create chat room.`, 'red' );
+            serverLog( `Check the console for more information.` );
 
         }
     } );
@@ -661,7 +671,7 @@ function CombatWatcher( character, logPosition ) {
 
             if ( success ) {
                 ipcRenderer.send( 'chat-room:connected', logSync.chatRoomId );
-                serverLog( `Joined chat room: ${data}, my peer id: ${logSync.peerId}` );
+                serverLog( `Joined chat room: ${data}, my peer id: ${logSync.peerId}`, 'green' );
 
                 startDpsTransmit();
                 processChatRoom();
@@ -674,7 +684,8 @@ function CombatWatcher( character, logPosition ) {
 
         } catch ( error ) {
             logError( error, 'Faile to join chat room', false, 0 );
-            serverLog( `Failed to join chat room: ${data}. Check the console for more information.` );
+            serverLog( `Failed to join chat room: ${data}.`, 'red' );
+            serverLog( `Check the console for more information.` );
 
         }
     } );
@@ -779,16 +790,16 @@ let processChatRoom = async () => {
                         serverLog( `Received encounter log from ${playerPeer?.characterName ?? 'Unknown Player'}.` );
 
                     } else {
-                        serverLog( `Received encounter from unknown player, ignoring.` );
+                        serverLog( `Received encounter from unknown player, ignoring.`, 'yellow' );
                     }
 
                 } else if ( m.type === 'handshake' ) {
                     playerPeers.push( m.payload );
-                    serverLog( `${m.payload.characterName} has joined the server.` );
+                    serverLog( `${m.payload.characterName} has joined the server.`, 'blue' );
                     
                 } else if ( m.type === 'disconnect' ) {
                     playerPeers = playerPeers.filter( p => p.peerId !== m.payload.peerId );
-                    serverLog( `${m.payload.characterName} has disconnected from the server.` );
+                    serverLog( `${m.payload.characterName} has disconnected from the server.`, 'orange' );
 
                 }
             } );

@@ -1,14 +1,7 @@
 import { AfterViewChecked, Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { DialogService } from '../dialogs/dialog.service';
 import { IpcService } from '../ipc.service';
-
-export class ServerConsoleMessage {
-    
-    public message: string;
-    public cssClass?: string;
-    public timestamp: Date;
-
-}
+import { ServerConsoleMessage } from '../core.model';
 
 // Create 72 test player names
 const testPlayerNames: string[] = [
@@ -148,11 +141,8 @@ export class CombatStatisticsComponent implements OnInit, AfterViewChecked {
 
     ngOnInit(): void {
 
-        this.ipcService.getChatRoomServerLogData().subscribe( data => {
-            data.forEach( x => this.addLine( x ) );
-        } );
-        
-        this.ipcService.onChatRoomServerLog().subscribe( data => this.addLine( data ) );
+        this.ipcService.getChatRoomServerLogData().subscribe( data => data.forEach( x => this.appendLind( x ) ) );
+        this.ipcService.onChatRoomServerLog().subscribe( data => this.appendLind( data ) );
         this.ipcService.onChatRoomConnected().subscribe( () => this.connected = true );
         this.ipcService.onChatRoomDisconnected().subscribe( () => this.connected = false );
 
@@ -175,6 +165,11 @@ export class CombatStatisticsComponent implements OnInit, AfterViewChecked {
         this.lines.push( { message, cssClass, timestamp: new Date() } );
         
         // Because we can't scroll to the bottom until the view is updated, we need to schedule it.
+        this.scheduleScroll = true;
+    }
+
+    public appendLind( line: ServerConsoleMessage ): void {
+        this.lines.push( line );
         this.scheduleScroll = true;
     }
 

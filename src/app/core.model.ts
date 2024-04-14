@@ -1828,3 +1828,11 @@ export class ServerCombatModel {
     public petOwners: Record<string, string> = {};
 
 }
+
+export class ServerConsoleMessage {
+    
+    public message: string;
+    public cssClass?: string;
+    public timestamp: Date;
+
+}
