@@ -5,6 +5,7 @@ const { LogRecord, PlayerEncounterStats } = require( '../data/models/combat-pars
 const { nagLog, nagException } = require( './nag-console' );
 
 const peerOfferIntervalMs = 6 * 1000;
+const p2pVersion = '0.1.0';
 
 // Notes:
 
@@ -21,6 +22,12 @@ class CreateChatRoomResponseModel {
 }
 
 class CombatStatisticsPayloadModel {
+
+    constructor() {
+        /** @type {string} */
+        this.version = p2pVersion;
+    }
+
     /** @type {string} */
     characterName;
     /** @type {Date} */
@@ -32,6 +39,12 @@ class CombatStatisticsPayloadModel {
 }
 
 class CombatEncounterPayloadModel {
+
+    constructor() {
+        /** @type {string} */
+        this.version = p2pVersion;
+    }
+
     /** @type {string} */
     characterName;
     /** @type {LogRecord[]} */
@@ -44,14 +57,41 @@ class CombatEncounterPayloadModel {
     npcs = [];
 }
 
+class HandshakePayloadModel {
+
+    constructor() {
+        /** @type {string} */
+        this.version = p2pVersion;
+    }
+
+    /** @type {string} */
+    peerId;
+    /** @type {string} */
+    characterName;
+    /** @type {string} */
+    serverName;
+}
+
+class GoodbyePayloadModel {
+    
+    constructor() {
+        /** @type {string} */
+        this.version = p2pVersion;
+    }
+    
+    /** @type {string} */
+    peerId;
+    
+}
+
 class PeerDataPackageModel {
-    /** @type {'message'|'combatStatistics'|'encounter'|'disconnect'} */
+    /** @type {'message'|'combatStatistics'|'encounter'|'disconnect'|'handshake'} */
     type;
     /** @type {Date} */
     timestamp;
     /** @type {string} */
     message;
-    /** @type {CombatEncounterPayloadModel | CombatStatisticsPayloadModel} */
+    /** @type {CombatEncounterPayloadModel | CombatStatisticsPayloadModel | HandshakePayloadModel | GoodbyePayloadModel} */
     payload;
 }
 
@@ -77,8 +117,15 @@ class LogSync {
 
     /**
      * Initializes a new log sync.
+     * 
+     * @param {string} character The character name.
+     * @param {string} server The server name.
      */
-    constructor() {
+    constructor( character, server ) {
+        /** @type {string} */
+        this.characterName = character;
+        /** @type {string} */
+        this.serverName = server;
     }
 
     async interval() {
@@ -101,13 +148,14 @@ class LogSync {
 
     async dispose() {
 
+        let payload = new GoodbyePayloadModel();
+        payload.peerId = this.peerId;
+
         this.sendToAll( {
             type: 'disconnect',
             timestamp: new Date(),
             message: 'Goodbye',
-            payload: {
-                peerId: this.peerId,
-            },
+            payload: payload,
         } );
         
         window.clearInterval( this.#intervalId );
@@ -155,7 +203,6 @@ class LogSync {
     }
 
     removePeer( peerId ) {
-        nagLog( `REMOVING PEER ${peerId}` );
         delete this.#peers[ peerId ];
     }
 
@@ -256,15 +303,17 @@ class LogSync {
             this.#connectedPeers[ otherPeerId ] = true;
             this.#onPeerConnectedFn( otherPeerId );
 
-            nagLog( `PEER CONNECTED ${otherPeerId}` );
+            let payload = new HandshakePayloadModel();
             
+            payload.peerId = this.peerId;
+            payload.characterName = this.characterName;
+            payload.serverName = this.serverName;
+
             this.sendToPeer( otherPeerId, {
-                type: 'message',
+                type: 'handshake',
                 timestamp: new Date(),
                 message: 'Hello from peer',
-                payload: {
-                    peerId: this.peerId,
-                },
+                payload: payload,
             } );
 
         } );
@@ -326,6 +375,7 @@ module.exports = {
     PeerDataPackageModel,
     CombatStatisticsPayloadModel,
     CombatEncounterPayloadModel,
+    HandshakePayloadModel,
     createChatRoomLink,
     parseChatRoomLink,
 };
