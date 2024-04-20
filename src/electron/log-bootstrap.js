@@ -45,6 +45,9 @@ class CombatWatcherMeta {
 
     /** @type {string} */
     characterId;
+
+    /** @type {CharacterModel | undefined | null} */
+    character;
 }
 
 /** @type {Record<string, LogWatcherMeta>} Dictionary of log watcher windows. */
@@ -54,7 +57,12 @@ var logWatchers = {};
 var combatWatcher = {
     window: null,
     characterId: null,
+    character: null,
 };
+
+let cwReady = false;
+/** @type {(() => void) | undefined} */
+let cwOnDomReady;
 
 /** @type {number} The duration to wait between checking for activity on a log file. */
 const checkInterval = 5 * 1000;
@@ -374,6 +382,7 @@ class LogBootstrapper {
             }
         } );
 
+        startCombatWatcherWindow( isDev );
     }
 
 
@@ -707,6 +716,7 @@ class LogBootstrapper {
         if ( combatWatcher ) {
             // We need to close the combat watcher window on our terms at this point.
             combatWatcher.characterId = null;
+            combatWatcher.character = null;
         }
 
         for ( let key in logWatchers ) {
@@ -846,7 +856,7 @@ class LogBootstrapper {
  * 
  * @param {string} logFile The full path to the log file.
  * @param {boolean} isDev Sets up the log watcher window for development environment if true.
- * @param {function} sendTick The send tick method.
+ * @param {() => void} sendTick The send tick method.
  * @param {CharacterModel} character The character to watch.
  * @param {number} logPosition The position the log watcher should start processing log entries.
  * @param {() => void} closeCombatWatcher The close combat watcher method.
@@ -860,12 +870,19 @@ function startLogWatcherWindow( logFile, isDev, sendTick, character, logPosition
         webPreferences: { nodeIntegration: true, contextIsolation: false, webSecurity: false, devTools: isDev === true },
     } );
     logWatcherWindow.webContents.openDevTools( { mode: 'undocked' } );
-    logWatcherWindow.loadURL( `file://${__dirname}/threads/log-watcher.html?character=${encodeURI(JSON.stringify(character))}&logPosition=${logPosition}` );
+    logWatcherWindow.loadURL( `file://${__dirname}/threads/log-watcher.html?character=${encodeURI( JSON.stringify( character ) )}&logPosition=${logPosition}` );
 
     logWatcherWindow.on( 'closed', async () => {
         logWatcherWindow = null;
-        if ( combatWatcher.characterId === character.characterId && closeCombatWatcher ) {
-            closeCombatWatcher();
+        
+        if ( combatWatcher.characterId === character.characterId ) {
+            // If there is still a character being watched, then start the combat watcher for that character.
+            for ( let key in logWatchers ) {
+                if ( logWatchers.hasOwnProperty( key ) && logWatchers[ key ].window != null ) {
+                    changeCombatCharacter( logWatchers[ key ].model, logWatchers[ key ].logSize, sendTick );
+                    break;
+                }
+            }
         }
     } );
 
@@ -875,7 +892,9 @@ function startLogWatcherWindow( logFile, isDev, sendTick, character, logPosition
     } );
     logWatcherWindow.setPosition( 100, 500 );
 
-    startCombatWatcherWindow( character, isDev, logPosition, logFile, sendTick );
+    if ( combatWatcher?.character == null ) {
+        changeCombatCharacter( character, logPosition, sendTick );
+    }
 
     return logWatcherWindow;
 }
@@ -892,44 +911,59 @@ function startLogWatcherWindow( logFile, isDev, sendTick, character, logPosition
 /**
  * Starts a new combat watcher window for the specified character.
  * 
- * @param {CharacterModel} character The character to watch.
  * @param {boolean} isDev The development environment flag.
- * @param {number} logPosition The position the log watcher should start processing log entries.
- * @param {string} logFile The full path to the log file.
- * @param {() => void} sendTick The send tick method.
  */
-function startCombatWatcherWindow( character, isDev, logPosition, logFile, sendTick ) {
+function startCombatWatcherWindow( isDev ) {
+    // This should be changed.  The combat watcher should spin up with nag, and if the character is null then it should send the character to the combat watcher.
     if ( combatWatcher.window == null ) {
         // If this is the first active log watcher, then start the combat watcher.
-        combatWatcher.characterId = character.characterId;
+        // combatWatcher.characterId = character.characterId;
         combatWatcher.window = new BrowserWindow( {
             show: isDev === true,
             webPreferences: { nodeIntegration: true, contextIsolation: false, webSecurity: false, devTools: isDev === true },
         } );
         combatWatcher.window.webContents.openDevTools( { mode: 'undocked' } );
-        combatWatcher.window.loadURL( `file://${__dirname}/threads/combat-watcher.html?character=${encodeURI( JSON.stringify( character ) )}&logPosition=${logPosition}` );
-
-        combatWatcher.window.on( 'closed', function () {
-            combatWatcher.window = null;
-            combatWatcher.characterId = null;
-
-            // If there is still a character being watched, then start the combat watcher for that character.
-            for ( let key in logWatchers ) {
-                if ( logWatchers.hasOwnProperty( key ) && logWatchers[ key ].window != null ) {
-                    startCombatWatcherWindow( logWatchers[ key ].model, isDev, logWatchers[ key ].logSize, logWatchers[ key ].logFile, sendTick );
-                    break;
-                }
-            }
-
-        } );
+        combatWatcher.window.loadURL( `file://${__dirname}/threads/combat-watcher.html` );
 
         combatWatcher.window.webContents.once( 'dom-ready', () => {
-            combatWatcher.window.webContents.send( 'log:changed', logFile );
-            sendTick();
+            cwReady = true;
+            if ( cwOnDomReady ) {
+                cwOnDomReady();
+                cwOnDomReady = undefined;
+            }
         } );
 
         combatWatcher.window.setPosition( 100, 500 );
     }
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Starts/changes the combat watcher to watch the specified character.
+ * 
+ * @param {CharacterModel} character The character to watch.
+ * @param {number | undefined} logPosition The position the log watcher should start processing log entries.
+ * @param {() => void} sendTick The send tick method.
+ * @returns 
+ */
+function changeCombatCharacter( character, logPosition, sendTick ) {
+    if ( !cwReady ) {
+        cwOnDomReady = () => changeCombatCharacter( character, logPosition, sendTick );
+        return;
+    }
+
+    combatWatcher.characterId = character.characterId;
+    combatWatcher.character = character;
+
+    combatWatcher.window.webContents.send( 'log:character:changed', { character: character, logPosition: logPosition } );
 }
 
 

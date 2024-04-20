@@ -14,7 +14,7 @@
     <script type="text/javascript">
         const urlParams = new URLSearchParams(window.location.search);
         var CombatWatcher = require('./combat-watcher');
-        CombatWatcher(JSON.parse(decodeURI(urlParams.get('character'))), +urlParams.get('logPosition'));
+        CombatWatcher();
     </script>
     <h1>Combat Watcher</h1>
 </body>

@@ -160,6 +160,8 @@ let logSync = null;
 let playerPeers = [];
 /** @type {FileMonitor} */
 let fileMonitor = null;
+let logPosition = 0;
+
 /**
  * Sends the error information to the main thread for logging.
  * 
@@ -466,7 +468,7 @@ const stopDpsTracking = () => {
  * @param {number} startLogPosition If a value is provided, will start parsing the log file at the given position.
  */
 function startParsingLogFile( logPath, startLogPosition ) {
-    console.log( `Starting to parse log file: ${logPath}` );
+    
     fileMonitor.monitorLines( ( lines ) => {
         lines.forEach( line => {
             if ( line && line.length > 0 ) {
@@ -519,27 +521,8 @@ function parseLogEntries( raw, simulating, padTime ) {
 
 /**
  * Initializes the combat watcher.
- * 
- * @param {CharacterModel} character The character details.
- * @param {number} logPosition The starting log position.
  */
-function CombatWatcher( character, logPosition ) {
-    // TODO: Remove the need for the character model.
-    if ( character ) {
-
-        characterName = character.name;
-        charModel = character;
-        characterId = character.characterId;
-
-        fileMonitor = new FileMonitor( character.logFile );
-        myCombatParser = charModel.takp ? new TakpCombatParser( characterName, character.server ) : new CombatParser( characterName, character.server );
-        myCombatParser.onEncounterReset = onEncounterReset;
-        startDpsTracking();
-
-    } else {
-        throw new Error( 'Character model is required.' );
-
-    }
+function CombatWatcher() {
 
     ipcRenderer
         .invoke( 'settings:get', { key: 'dpsMeterSettings', subscribe: true } )
@@ -552,22 +535,25 @@ function CombatWatcher( character, logPosition ) {
          * Handles the changing of the parse character.
          * 
          * @param {Electron.IpcRendererEvent} event The event args.
-         * @param {CharacterModel} data The character model.
+         * @param {{character: CharacterModel, logPosition: number | undefined}} data The character model.
          */
         ( event, data ) => {
-            if ( data && data.characterId ) {
+            if ( data && data.character?.characterId ) {
                 
+                // TODO: Need to update the log sync character, and send that change to all other peers.
+
                 stopDpsTracking();
 
-                characterName = data.name;
-                charModel = data;
-                characterId = data.characterId;
+                characterName = data.character.name;
+                charModel = data.character;
+                characterId = data.character.characterId;
 
                 myCombatParser = charModel.takp ? new TakpCombatParser( characterName, charModel.server ) : new CombatParser( characterName, charModel.server );
                 myCombatParser.onEncounterReset = onEncounterReset;
                 startDpsTracking();
 
-                logFilePath = data.logFile;
+                logFilePath = data.character.logFile;
+                logPosition = data.logPosition;
 
                 let fn = () => {
                     fileMonitor = new FileMonitor( logFilePath );
@@ -579,6 +565,28 @@ function CombatWatcher( character, logPosition ) {
                 else
                     fn();
             
+            } else {
+                // Stop watching combat stats.
+                stopDpsTracking();
+
+                let fn = () => {
+                    characterName = null;
+                    charModel = null;
+                    characterId = null;
+
+                    myCombatParser = undefined;
+
+                    logFilePath = null;
+                    logPosition = 0;
+
+                    fileMonitor = null;
+                }
+
+                if ( fileMonitor ) {
+                    fileMonitor.stopMonitoringLogFile().then( () => fn() );
+                } else {
+                    fn();
+                }
             }
         } );
     
