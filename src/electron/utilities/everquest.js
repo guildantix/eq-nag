@@ -66,6 +66,58 @@ const getEverQuestClassAbbreviation = ( value ) => {
     }
 }
 
+/**
+ * Returns the full class name for the given class abbreviation.
+ * 
+ * @returns {string} The full class name.
+ * 
+ * @param {string} classAbbreviation The class abbreviation.
+ */
+const getEverQuestClassName = ( classAbbreviation ) => {
+    if ( !classAbbreviation ) {
+        return '';
+    } else {
+        let v = classAbbreviation.toUpperCase();
+
+        if ( v === 'BRD' ) {
+            return 'Bard';
+        } else if ( v === 'BST' ) {
+            return 'Beastlord';
+        } else if ( v === 'BER' ) {
+            return 'Berserker';
+        } else if ( v === 'CLR' ) {
+            return 'Cleric';
+        } else if ( v === 'DRU' ) {
+            return 'Druid';
+        } else if ( v === 'ENC' ) {
+            return 'Enchanter';
+        } else if ( v === 'MAG' ) {
+            return 'Magician';
+        } else if ( v === 'MNK' ) {
+            return 'Monk';
+        } else if ( v === 'NEC' ) {
+            return 'Necromancer';
+        } else if ( v === 'PAL' ) {
+            return 'Paladin';
+        } else if ( v === 'RNG' ) {
+            return 'Ranger';
+        } else if ( v === 'ROG' ) {
+            return 'Rogue';
+        } else if ( v === 'SHD' ) {
+            return 'Shadow Knight';
+        } else if ( v === 'SHM' ) {
+            return 'Shaman';
+        } else if ( v === 'WAR' ) {
+            return 'Warrior';
+        } else if ( v === 'WIZ' ) {
+            return 'Wizard';
+        } else {
+            return classAbbreviation;
+        }
+    }
+
+}
+
 const getEverQuestClassIcon = ( value ) => {
     return `${getEverQuestClassAbbreviation(value)}-icon.png`;
 }
@@ -114,6 +166,7 @@ const getEverQuestClassColor = ( value ) => {
 
 module.exports = {
     getEverQuestClassAbbreviation,
+    getEverQuestClassName,
     getEverQuestClassIcon,
     getEverQuestClassColor,
     bardColor,
