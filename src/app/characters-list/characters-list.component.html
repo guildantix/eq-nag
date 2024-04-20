@@ -7,6 +7,15 @@
             <ng-template [ngIf]="character.p99">P1999&nbsp;</ng-template>
             <ng-template [ngIf]="character.takp">TAKP&nbsp;</ng-template>
             {{character.server}}
+            <button mat-icon-button 
+                [ngClass]="{'color-orange-dark': isCombatCharacter(character)}" 
+                [matTooltip]="getCombatTooltipMessage(character)"
+                matTooltipPosition="left"
+                (click)="toggleCombatTrackingForCharacter($event, character)" 
+                *ngIf="true">
+                <mat-icon class="material-icons-outlined" >whatshot</mat-icon>
+            </button>
+            
             <mat-icon *ngIf="activeLogFilesDictionary[character.characterId] === true" color="accent">cast_connected</mat-icon>
             <mat-icon *ngIf="activeLogFilesDictionary[character.characterId] !== true">cast</mat-icon>
         </mat-panel-description>

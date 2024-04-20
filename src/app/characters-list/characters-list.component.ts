@@ -63,6 +63,7 @@ export class CharactersListComponent implements OnInit {
     public selectedTabIndex: number = -1;
     public activeLogFilesDictionary: any = {};
     public triggerProfiles: TriggersProfileModel[] = [];
+    public combatCharacter: CharacterModel | undefined = undefined;
     
     @ViewChild( 'fileSelector' ) private fileSelector: ElementRef<HTMLInputElement>;
     @ViewChild( 'savedLabel' ) private savedLabel: ElementRef<HTMLDivElement>;
@@ -142,7 +143,7 @@ export class CharactersListComponent implements OnInit {
      */
     public loadCharacters( characterId?: string ): void {
         this.ipcService.getCharacters().subscribe( data => {
-            this.characters = data;
+            this.characters = _.sortBy( data, [ 'server', 'name' ] );
             if ( characterId != null ) {
                 let i: number = _.findIndex( this.characters, f => f.characterId === characterId );
                 this.selectedTabIndex = i >= 0 && i < this.characters.length ? i : -1;
@@ -897,6 +898,65 @@ export class CharactersListComponent implements OnInit {
             } );
 
         }
+    }
+
+
+
+
+
+
+
+
+
+    
+    /**
+     * Toggle combat tracking for the given character.
+     * 
+     * @param e The mouse click event args.
+     * @param character The character to toggle combat tracking on.
+     */
+    toggleCombatTrackingForCharacter( e: MouseEvent, character: CharacterModel ) {
+        if ( this.combatCharacter != character ) {
+            this.combatCharacter = character;
+            e.stopImmediatePropagation();
+            e.stopPropagation();
+        }
+    }
+
+
+
+
+
+
+
+
+
+    
+    /**
+     * Returns true if the given character is the current combat character.
+     * 
+     * @param character The character to check.
+     */
+    isCombatCharacter( character: CharacterModel ): boolean {
+        return this.combatCharacter && this.combatCharacter.name === character.name && this.combatCharacter.server === character.server;
+    }
+
+
+
+
+
+
+
+
+
+    
+    /**
+     * Returns the combat tooltip message for the given character.
+     * 
+     * @param character The character to check.
+     */
+    getCombatTooltipMessage( character: CharacterModel ): string {
+        return this.isCombatCharacter( character ) ? `Currently tracking combat statistics for ${character.name}.` : `Change combat tracking to ${character.name}.`;
     }
 
 
