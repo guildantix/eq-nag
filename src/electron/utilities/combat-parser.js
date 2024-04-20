@@ -607,6 +607,8 @@ class CombatParser {
                 this._updateServerModel();
             }
 
+            this._refreshEncounter();
+            
             this._encounterStats.playerEvents[ playerName ] = playerStats;
             this._externalEncounterIds[ externalEncounterId ] = playerName;
         }
@@ -1802,6 +1804,46 @@ class CombatParser {
 
 
     /**
+     * Refreshes the encounter.
+     * 
+     * @param {LogRecord | undefined} rec The log record being added to the encounter.
+     */
+    _refreshEncounter( rec ) {
+        
+        // 30 seconds of no encounter activity ends the encounter, starting a new one.
+        if ( this._encounterStats == undefined ) {
+            this._encounterStats = new EncounterStats();
+            this._externalEncounterIds = {};
+            this._encounterStats.encounterStart = rec?.timestamp || new Date();
+
+        } else if ( this._encounterStats.encounterStart == undefined ) {
+            this._encounterStats.encounterStart = rec?.timestamp || new Date();
+
+        }
+        
+        if ( rec != undefined ) {
+            this.encounterEvents.push( rec );
+            this._updateEncounterStats( rec );
+        }
+
+        if ( this._encounterResetTimerId ) {
+            clearTimeout( this._encounterResetTimerId );
+        }
+        
+        this._encounterResetTimerId = window.setTimeout( () => this._resetEncounter(), this._encounterResetMs );
+
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
      * Adds the given log record to the encounter statistics.
      * 
      * @returns {FctModel?} Returns an FCT model if the log record is an FCT event, otherwise undefined.
@@ -1809,14 +1851,7 @@ class CombatParser {
      * @param {LogRecord} rec The log record to add to the encounter.
      */
     _addEncounterEvent( rec ) {
-        this.encounterEvents.push( rec );
-        this._updateEncounterStats( rec );
-
-        if ( this._encounterResetTimerId ) {
-            clearTimeout( this._encounterResetTimerId );
-        }
-        
-        this._encounterResetTimerId = window.setTimeout( () => this._resetEncounter(), this._encounterResetMs );
+        this._refreshEncounter( rec );
 
         let actorCategorized = false;
 
@@ -2259,14 +2294,6 @@ class CombatParser {
             // TODO: FCT should be calculated from the encounter stats for the player, not separate parsed data.
             
             if ( playerActor || playerTarget || petActor || petTarget ) {
-                // 30 seconds of no encounter activity ends the encounter, starting a new one.
-                if ( this._encounterStats == undefined ) {
-                    this._encounterStats = new EncounterStats();
-                    this._externalEncounterIds = {};
-                    this._encounterStats.encounterStart = timestamp;
-                } else if ( this._encounterStats.encounterStart == undefined ) {
-                    this._encounterStats.encounterStart = timestamp;
-                }
 
                 this._encounterStats.lastEncounterEvent = timestamp;
 
