@@ -104,6 +104,13 @@ export class CombatStatisticsComponent implements OnInit, AfterViewChecked {
             } else if ( data.type === 'disconnect' ) {
                 this.connectedPeers = this.connectedPeers.filter( x => x.peerId !== data.payload.peerId );
 
+            } else if ( data.type === 'character' ) {
+                let payload = data.payload as HandshakePayloadModel;
+                let peer = this.connectedPeers.find( x => x.peerId === payload.peerId );
+                if ( peer ) {
+                    peer.characterName = payload.characterName;
+                }
+                
             }
 
         } );

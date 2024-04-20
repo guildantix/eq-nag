@@ -540,7 +540,10 @@ function CombatWatcher() {
         ( event, data ) => {
             if ( data && data.character?.characterId ) {
                 
-                // TODO: Need to update the log sync character, and send that change to all other peers.
+                if ( logSync != null ) {
+                    logSync.changeCharacter( data.character.name, data.character.server );
+                    serverLog( `Changed character to ${data.character.name} [${data.character.server}].`, 'orange' );
+                }
 
                 stopDpsTracking();
 
@@ -565,7 +568,7 @@ function CombatWatcher() {
                 else
                     fn();
             
-            } else {
+            } else if ( logSync != null && data.character == null ) {
                 // Stop watching combat stats.
                 stopDpsTracking();
 
@@ -587,6 +590,8 @@ function CombatWatcher() {
                 } else {
                     fn();
                 }
+            } else {
+
             }
         } );
     
@@ -595,9 +600,9 @@ function CombatWatcher() {
         if ( logSync != null ) {
             await logSync.dispose();
             cleanUpChatRoom();
-            logSync = null;
 
             serverLog( `Left chat room ${logSync.chatRoomId}.`, 'yellow' );
+            logSync = null;
             ipcRenderer.send( 'chat-room:disconnected', 'Combat watcher was unloaded.' );
         }
 
@@ -623,7 +628,16 @@ function CombatWatcher() {
     
     ipcRenderer.on( 'chat-room:start-chat-room', async ( event, data ) => {
         try {
-            logSync = new LogSync();
+
+            if ( charModel == null ) {
+                throw new Error( 'The combat watcher has not been loaded yet.  Login or add a character to connect to a server.' );
+            }
+
+            if ( logSync != null ) {
+                throw new Error( 'Already connected to a server.' );
+            }
+
+            logSync = new LogSync( charModel.name, charModel.server );
         
             await logSync.initialize();
             let success = await logSync.createChatRoom();
@@ -654,7 +668,16 @@ function CombatWatcher() {
 
     ipcRenderer.on( 'chat-room:join-chat-room', async ( event, data ) => {
         try {
-            logSync = new LogSync();
+            
+            if ( charModel == null ) {
+                throw new Error( 'The combat watcher has not been loaded yet.  Login or add a character to connect to a server.' );
+            }
+
+            if ( logSync != null ) {
+                throw new Error( 'Already connected to a server.' );
+            }
+
+            logSync = new LogSync( charModel.name, charModel.server );
 
             await logSync.initialize();
             let linkId = parseChatRoomLink( data );
@@ -776,6 +799,18 @@ let processChatRoom = async () => {
                     playerPeers.push( m.payload );
                     serverLog( `${m.payload.characterName} has joined the server.`, 'blue' );
                     serverMessage( 'handshake', m.payload );
+                    
+                } else if ( m.type === 'character' ) {
+                    let peer = playerPeers.find( p => p.peerId === m.payload.peerId );
+
+                    if ( peer ) {
+                        
+                        serverLog( `${peer.characterName} [${peer.serverName}] has changed to ${m.payload.characterName} [${m.payload.serverName}].`, 'orange' );
+                        serverMessage( 'character', m.payload );
+                        
+                        peer.characterName = m.payload.characterName;
+                        peer.serverName = m.payload.serverName;
+                    }
                     
                 } else if ( m.type === 'disconnect' ) {
                     playerPeers = playerPeers.filter( p => p.peerId !== m.payload.peerId );

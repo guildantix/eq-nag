@@ -36,7 +36,7 @@ export class GoodbyePayloadModel {
 
 export class ServerEventModel {
 
-    public type: 'handshake' | 'disconnect';
+    public type: 'handshake' | 'disconnect' | 'character';
     public payload: undefined | HandshakePayloadModel | GoodbyePayloadModel;
 
 }

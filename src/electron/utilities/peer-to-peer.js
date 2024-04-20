@@ -85,7 +85,7 @@ class GoodbyePayloadModel {
 }
 
 class PeerDataPackageModel {
-    /** @type {'message'|'combatStatistics'|'encounter'|'disconnect'|'handshake'} */
+    /** @type {'message'|'combatStatistics'|'encounter'|'disconnect'|'handshake'|'character'} */
     type;
     /** @type {Date} */
     timestamp;
@@ -126,6 +126,29 @@ class LogSync {
         this.characterName = character;
         /** @type {string} */
         this.serverName = server;
+    }
+
+    /**
+     * Changes the character.
+     * 
+     * @param {string} character The name of the character.
+     * @param {string} server The name of the server.
+     */
+    changeCharacter( character, server ) {
+        this.characterName = character;
+        this.serverName = server;
+
+        let payload = new HandshakePayloadModel();
+        payload.peerId = this.peerId;
+        payload.characterName = this.characterName;
+        payload.serverName = this.serverName;
+
+        this.sendToAll( {
+            type: 'character',
+            timestamp: new Date(),
+            message: 'Character changed',
+            payload: payload,
+        } );
     }
 
     async interval() {
