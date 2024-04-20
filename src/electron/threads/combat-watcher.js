@@ -73,6 +73,7 @@ const nanoid = customAlphabet( alphabet, 16 );
 const fs = require( 'fs' );
 const { LogSync, createChatRoomLink, parseChatRoomLink, PeerDataPackageModel, CombatStatisticsPayloadModel, CombatEncounterPayloadModel, HandshakePayloadModel } = require( "../utilities/peer-to-peer" );
 const { nagException, nagLog } = require( "../utilities/nag-console" );
+const FileMonitor = require( "../utilities/file-monitor" );
 const chunkSize = 512 * 1024;
 
 /**
@@ -126,7 +127,6 @@ let dpsIntervalId = null;
 /** @type {number} */
 const dpsInterval = 250;
 /** @type {boolean} */
-let enableDpsTransmit = false; // TODO: Enable transmission of DPS to the api for log event synchronization.
 /** @type {number} */
 let dpsTransmitIntervalId = null;
 /** @type {number} */
@@ -158,7 +158,8 @@ let overlays = [];
 let logSync = null;
 /** @type {HandshakePayloadModel[]} */
 let playerPeers = [];
-
+/** @type {FileMonitor} */
+let fileMonitor = null;
 /**
  * Sends the error information to the main thread for logging.
  * 
@@ -256,13 +257,11 @@ const dpsIntervalFn = () => {
 
 const startDpsTransmit = () => {
     nagLog( `Starting DPS transmit for ${characterName}` );
-    enableDpsTransmit = true;
     dpsTransmitIntervalId = window.setTimeout( () => dpsTransmitFn(), dpsTransmitIntervalMs );
 };
 
 const stopDpsTransmit = () => {
     nagLog( `Stopping DPS transmit for ${characterName}` );
-    enableDpsTransmit = false;
     if ( dpsTransmitIntervalId ) {
         window.clearTimeout( dpsTransmitIntervalId );
         dpsTransmitIntervalId = null;
@@ -461,104 +460,21 @@ const stopDpsTracking = () => {
 };
 
 /**
- * Waits until the specified file exists and executes the startParsingLogFile 
- * method, starting at the beginning of the file.
- * 
- * @param {string} logPath The full path to the log file.
- */
-function waitForLogFile( logPath ) {
-    
-    if ( logParseTimeoutId > 0 ) {
-        window.clearTimeout( logParseTimeoutId );
-        logParseTimeoutId = null;
-        currentPosition = null;
-    }
-
-    if ( fs.existsSync( logPath ) ) {
-        backupStarted = false;
-        nagLog( `LogWatcher > ${logPath} file found, starting up again.` );
-        startParsingLogFile( logPath, 0 );
-    } else {
-        window.setTimeout( () => waitForLogFile( logPath ), logParseTimer );
-    }
-}
-
-/**
  * Starts parsing and watching log file changes for the specified file.
  * 
  * @param {string} logPath The file path to the log file.
  * @param {number} startLogPosition If a value is provided, will start parsing the log file at the given position.
  */
 function startParsingLogFile( logPath, startLogPosition ) {
-    // TODO: Use the new File Monitor.
-    var danglyBit = '';
-
-    fs.open( logPath, 'r', function ( err, fd ) {
-
-        if ( fd ) {
-            var file = fd;
-            if ( startLogPosition != null && startLogPosition >= 0 ) {
-                currentPosition = startLogPosition;
-                startLogPosition = null;
+    console.log( `Starting to parse log file: ${logPath}` );
+    fileMonitor.monitorLines( ( lines ) => {
+        lines.forEach( line => {
+            if ( line && line.length > 0 ) {
+                parseLogEntries( line );
             }
-            currentPosition = currentPosition === null ? fs.fstatSync( file ).size : currentPosition;
-            function parseLogFile() {
-
-                if ( !fs.existsSync( logPath ) || backupStarted ) {
-                    nagLog( `LogWatcher > ${logPath} does not exist, waiting for new log file.` );
-                    waitForLogFile( logPath );
-                    return;
-                }
-
-                var stats = fs.fstatSync( fd );
-                var file = fd;
-                var thisChunkSize = stats.size - currentPosition;
-
-                // Prevent some overflows, if this is greater than the chunk
-                // size, the something fucky happened with the log file, let's 
-                // just start at the end of the file.
-                if ( thisChunkSize > chunkSize ) {
-                    currentPosition = stats.size;
-                } else if ( currentPosition > stats.size ) {
-                    currentPosition = stats.size;
-                }
-
-                fs.read( file, Buffer.alloc( stats.size - currentPosition ), 0, stats.size - currentPosition, currentPosition, ( err, bytecount, buff ) => {
-                
-                    currentPosition += bytecount;
-                    let read = buff.toString( 'utf-8', 0, bytecount );
-                    let dangling = !read.endsWith( '\r\n' );
-                    let lines = (danglyBit + read).split( /\r\n|\r|\n/gmi );
-                
-                    if ( dangling ) {
-                        danglyBit = lines.splice( lines.length - 1, 1 )[ 0 ];
-                    } else {
-                        danglyBit = '';
-                    }
-
-                    lines.forEach( line => {
-                        if ( line && line.length > 0 ) {
-                            parseLogEntries( line );
-                        }
-                    } );
-
-                } );
-
-                // Wait logParseTimer milliseconds and poll again.
-                if ( !changingLogFile ) {
-                    logParseTimeoutId = window.setTimeout( parseLogFile, logParseTimer );
-                }
-            }
-
-            // Start polling the log file every logParseTimer milliseconds.
-            logParseTimeoutId = window.setTimeout( parseLogFile, logParseTimer );
-
-        } else {
-            // If the log file was not found, then let's wait for it to show up.
-            waitForLogFile( logPath );
-
-        }
-    } );
+        } );
+    }, startLogPosition );
+    
 }
 
 function parseLogEntries( raw, simulating, padTime ) {
@@ -610,10 +526,12 @@ function parseLogEntries( raw, simulating, padTime ) {
 function CombatWatcher( character, logPosition ) {
     // TODO: Remove the need for the character model.
     if ( character ) {
+
         characterName = character.name;
         charModel = character;
         characterId = character.characterId;
 
+        fileMonitor = new FileMonitor( character.logFile );
         myCombatParser = charModel.takp ? new TakpCombatParser( characterName, character.server ) : new CombatParser( characterName, character.server );
         myCombatParser.onEncounterReset = onEncounterReset;
         startDpsTracking();
@@ -649,7 +567,18 @@ function CombatWatcher( character, logPosition ) {
                 myCombatParser.onEncounterReset = onEncounterReset;
                 startDpsTracking();
 
-                // TODO: This should start a new file monitor.
+                logFilePath = data.logFile;
+
+                let fn = () => {
+                    fileMonitor = new FileMonitor( logFilePath );
+                    startParsingLogFile( logFilePath, logPosition >= 0 ? logPosition : null );
+                }
+    
+                if ( fileMonitor != null )
+                    fileMonitor.stopMonitoringLogFile().then( () => fn() );
+                else
+                    fn();
+            
             }
         } );
     
@@ -757,9 +686,7 @@ function CombatWatcher( character, logPosition ) {
     
     ipcRenderer.on( 'log:backup-started',
         /**
-         * Handles the log:changed event.
-         * 
-         * @param {any} event The event args.
+         * @param {Electron.IpcRendererEvent} event The event args.
          */
         function ( event ) {
             backupStarted = true;
@@ -769,33 +696,22 @@ function CombatWatcher( character, logPosition ) {
         /**
          * Handles the log:changed event.
          * 
-         * @param {any} event The event args.
+         * @param {Electron.IpcRendererEvent} event The event args.
          * @param {string} data The log file path.
          */
         function ( event, data ) {
             
             logFilePath = data;
 
-            if ( logParseTimeoutId > 0 ) {
-                window.clearTimeout( logParseTimeoutId );
-                currentPosition = null;
-                startParsingLogFile( data, logPosition >= 0 ? logPosition : null );
-
-            } else {
-                // If there is not a timeout id, then we're in the middle of
-                // processing a chunk of log file entries, let's give a 
-                // millisecond for that to complete.
-                changingLogFile = true;
-                window.setTimeout( () => {
-                    changingLogFile = false;
-                    currentPosition = null;
-                    startParsingLogFile( data, logPosition >= 0 ? logPosition : null );
-                }, logParseTimer );
+            let fn = () => {
+                fileMonitor = new FileMonitor( logFilePath );
+                startParsingLogFile( logFilePath, logPosition >= 0 ? logPosition : null );
             }
 
-            if ( watcher != null ) {
-                watcher.close();
-            }
+            if ( fileMonitor != null )
+                fileMonitor.stopMonitoringLogFile().then( () => fn() );
+            else
+                fn();
         
         } );
 
