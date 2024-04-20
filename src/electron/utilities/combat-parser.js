@@ -250,6 +250,9 @@ class CombatParser {
     /** @type {Record<string, string>} */
     _externalEncounterIds = {};
 
+    /** @type {string[]} */
+    _closedExternalEncounterIds = [];
+
     /** @type {string} */
     _characterName = 'You';
 
@@ -562,21 +565,26 @@ class CombatParser {
 
 
     /**
-     * Imports the given player encounter stats.
+     * Imports the given player encounter stats.  Encounter stats are the 
+     * calculated stats for the player during the encounter.
      * 
      * @param {string} playerName The name of the character.
      * @param {PlayerEncounterStats} playerStats The player's encounter stats.
      * @param {string} externalEncounterId The player's external encounter id.
      */
     importPlayerEncounterStats( playerName, playerStats, externalEncounterId ) {
-        
-        if ( !this._verifiedPlayers.includes( playerName ) ) {
-            this._verifiedPlayers.push( playerName );
-            this._updateServerModel();
+
+        // If the encounter is already closed, then we need to ignore the data.
+        if ( !this._closedExternalEncounterIds.includes( externalEncounterId ) ) {
+            if ( !this._verifiedPlayers.includes( playerName ) ) {
+                this._verifiedPlayers.push( playerName );
+                this._updateServerModel();
+            }
+
+            this._encounterStats.playerEvents[ playerName ] = playerStats;
+            this._externalEncounterIds[ externalEncounterId ] = playerName;
         }
 
-        this._encounterStats.playerEvents[ playerName ] = playerStats;
-        this._externalEncounterIds[ externalEncounterId ] = playerName;
     }
 
 
@@ -1642,6 +1650,13 @@ class CombatParser {
         eventArgs.npcs = [ ...this._encounterStats.npcs ];
         eventArgs.externalEncounterIds = Object.keys( this._externalEncounterIds );
         eventArgs.externalEncounterIdCharacters = this._externalEncounterIds;
+
+        // Once the encounter is over, we may continue to receive stats from
+        // connected players.  Since there is no point to tracking stats for an 
+        // encounter that has, for us, ended then we need to ignore them.  To 
+        // do that, we need to know that the external encounter id has been 
+        // closed.
+        this._closedExternalEncounterIds = this._closedExternalEncounterIds.concat( ...eventArgs.externalEncounterIds );
 
         this.encounterEvents = [];
         this._externalEncounterIds = {};
