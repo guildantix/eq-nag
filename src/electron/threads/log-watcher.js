@@ -24,9 +24,6 @@ window.onerror = ( error, url, line ) => {
     ipcRenderer.send( 'app:log:exception', `$${error}\r\n    at ${url}:${line}` );
 };
 
-var currentPosition = null;
-
-var watcher = null;
 /** @type {OverlayWindow} */
 var overlays = [];
 /** @type {LogTrigger[]} */
@@ -56,7 +53,6 @@ var masterVolume = 100;
 var speechVolume = 100;
 var audioVolume = 100;
 var baseSpeakingRate = 1;
-var logParseTimeoutId = null;
 const logParseTimer = 50;
 var changingLogFile = false;
 var backupStarted = false;
@@ -291,32 +287,11 @@ function LogWatcher(character, logPosition) {
             
             logFilePath = data;
 
-            if ( logParseTimeoutId > 0 ) {
-                window.clearTimeout( logParseTimeoutId );
-                currentPosition = null;
-                fileMonitor.stopMonitoringLogFile().then( () => {
-                    fileMonitor = new FileMonitor( data );
-                    backfind().then( () => startParsingLogFile( data, logPosition >= 0 ? logPosition : null ) );
-                } );
-            } else {
-                // If there is a timeout id, then we're in the middle of
-                // processing a chunk of log file entries, let's give a 
-                // millisecond for that to complete.
-                changingLogFile = true;
-                window.setTimeout( () => {
-                    changingLogFile = false;
-                    currentPosition = null;
-                    fileMonitor.stopMonitoringLogFile().then( () => {
-                        fileMonitor = new FileMonitor( data );
-                        backfind().then( () => startParsingLogFile( data, logPosition >= 0 ? logPosition : null ) );
-                    } );
-                }, logParseTimer );
-            }
+            fileMonitor.stopMonitoringLogFile().then( () => {
+                fileMonitor = new FileMonitor( logFilePath );
+                backfind().then( () => startParsingLogFile( logFilePath, logPosition >= 0 ? logPosition : null ) );
+            } );
 
-            if ( watcher != null ) {
-                watcher.close();
-            }
-        
         } );
 
     ipcRenderer.on( 'log:simulate:file', function ( event, data ) {
@@ -1850,7 +1825,6 @@ function clearAll() {
     changingLogFile = true;
     window.setTimeout( () => {
         changingLogFile = false;
-        // currentPosition = null;
         fileMonitor.stopMonitoringLogFile().then( position => {
             backfind().then( () => startParsingLogFile( logFilePath, position >= 0 ? position : null ) );
         } );
