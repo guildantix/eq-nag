@@ -26,6 +26,7 @@ const {
 const { FctModel } = require( '../data/models/fct' );
 const { CharacterModel } = require( '../data/models/character' );
 const { nagLog, nagException } = require( './nag-console' );
+const { getEverQuestClassName } = require( './everquest' );
 
 // TODO: Zhay`s pet hits Vius Vex for 9075 points of damage.
 // TODO: Players are appearing the verified pets list.
@@ -301,6 +302,11 @@ class CombatParser {
             ( event, data ) => {
                 this._myCharacters = data;
                 this._fctCharacters = data.filter( f => !f.disableFct );
+                
+                if ( serverName ) {
+                    ipcRenderer.send( 'combat-database:get-server', serverName );
+                }
+        
             } );
 
         ipcRenderer.on( 'settings:get:dpsMeterSettings:generic',
@@ -349,6 +355,26 @@ class CombatParser {
                     this._verifiedPets = data.verifiedPets;
                     this._petOwners = data.petOwners;
 
+                    // Add all of my server characters to the verified players list.
+                    let serverCharacters = this._myCharacters.filter( f => f.server === this._serverName );
+                    let scheduleSave = false;
+                    for ( let i = 0; i < serverCharacters.length; i++ ) {
+                        const character = serverCharacters[ i ];
+                        if ( !this._verifiedPlayers.includes( character.name ) ) {
+                            this._verifiedPlayers.push( character.name );
+
+                            if ( this._playerInfos[ character.name ] == null ) {
+                                this._playerInfos[ character.name ] = {
+                                    level: 0,
+                                    className: getEverQuestClassName( character.class ),
+                                    raceName: null,
+                                };
+                            }
+
+                            scheduleSave = true;
+                        }
+                    }
+
                     // Calculate the pets each player has.
                     this._playerPets = this._playerPets ?? {};
                     let petKeys = Object.keys( this._petOwners );
@@ -365,6 +391,10 @@ class CombatParser {
                     if ( this.onReady ) {
                         this.onReady();
                     }
+
+                    if ( scheduleSave ) {
+                        window.setTimeout( () => this._updateServerModel(), 0 );
+                    }
                 }
             } );
         
@@ -373,10 +403,6 @@ class CombatParser {
             .then( data => {
                 this._dpsMeterSettings = data;
             } );
-        
-        if ( serverName ) {
-            ipcRenderer.send( 'combat-database:get-server', serverName );
-        }
         
         ipcRenderer.send( 'character:get' );
 
