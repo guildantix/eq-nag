@@ -178,6 +178,12 @@ const combatRgx = {
     // https://regex101.com/r/cPfBq5/1
     PetLeader: /^(?<pet>.+?) says, 'My leader is (?<player>.*)\.'$/gi,
 
+    // https://regex101.com/r/Sm6SVR/1
+    PetAttack: /^(?<pet>.+?) told you, 'Attacking (?<target>.*) Master\.'$/gi,
+
+    // https://regex101.com/r/nVsfms/1
+    NamedPet: /^(?<pet>(?<player>.+?)`s pet)\s/gi,
+
     // The following match LastStand
     // CulminatingStand: null,
     // UltimateStand: null,
@@ -1021,26 +1027,94 @@ class CombatParser {
                 this._updateServerStatistics = true;
             }
 
-            let petLeader = executCombatRgx( combatRgx.PetLeader, lines[ i ] );
-            if ( petLeader !== null && petLeader.groups != null && petLeader.groups.player != null && petLeader.groups.pet != null ) {
-                let petKey = petLeader.groups.player;
+            let petAssigned = false;
+            let petAttack = executCombatRgx( combatRgx.PetAttack, lines[ i ] );
+            if ( petAttack !== null && petAttack.groups != null && petAttack.groups.pet != null ) {
+                petAssigned = true;
 
-                if ( this._verifiedPlayers.indexOf( petLeader.groups.player ) === -1 ) {
-                    this._verifiedPlayers.push( petLeader.groups.player );
-                }
+                if ( !this._verifiedPlayers.includes( petAttack.groups.pet ) ) {
+                    // Some guy playing a prank.
+                    
+                } else if ( this._verifiedPets.indexOf( petAttack.groups.pet ) === -1 ) {
+                    this._verifiedPets.push( petAttack.groups.pet );
 
-                if ( this._verifiedPets.indexOf( petLeader.groups.pet ) === -1 ) {
-                    this._verifiedPets.push( petLeader.groups.pet );
-                }
+                    // This is "my" pet.
+                    let petKey = this._characterName;
 
-                if ( !this._playerPets[ petKey ] ) {
-                    this._playerPets[ petKey ] = [];
-                }
+                    if ( !this._playerPets[ petKey ] ) {
+                        this._playerPets[ petKey ] = [];
+                    }
                 
-                this._petOwners[ petLeader.groups.pet ] = petKey;
-                this._playerPets[ petKey ].push( petLeader.groups.pet );
-                this._updateServerStatistics = true;
+                    this._petOwners[ petLeader.groups.pet ] = petKey;
+                    this._playerPets[ petKey ].push( petLeader.groups.pet );
+                    this._updateServerStatistics = true;
 
+                }
+            }
+
+            if ( !petAssigned ) {
+                let namedPet = executCombatRgx( combatRgx.NamedPet, lines[ i ] );
+                if ( namedPet != null && namedPet.groups != null && namedPet.groups.pet != null && namedPet.groups.player != null ) {
+                    petAssigned = true;
+
+                    if ( this._verifiedPlayers.indexOf( namedPet.groups.player ) === -1 ) {
+                        this._verifiedPlayers.push( namedPet.groups.player );
+                        this._updateServerStatistics = true;
+                    }
+
+                    if ( this._verifiedPets.indexOf( namedPet.groups.pet ) === -1 ) {
+                        this._verifiedPets.push( namedPet.groups.pet );
+                        this._updateServerStatistics = true;
+                    }
+
+                    if ( !this._playerPets[ namedPet.groups.player ] ) {
+                        this._playerPets[ namedPet.groups.player ] = [];
+                        this._updateServerStatistics = true;
+                    }
+                
+                    if ( this._petOwners[ namedPet.groups.pet ] !== namedPet.groups.player ) {
+                        this._petOwners[ namedPet.groups.pet ] = namedPet.groups.player;
+                        this._updateServerStatistics = true;
+                    }
+
+                    if ( this._playerPets[ namedPet.groups.player ].indexOf( namedPet.groups.pet ) === -1 ) {
+                        this._playerPets[ namedPet.groups.player ].push( namedPet.groups.pet );
+                        this._updateServerStatistics = true;
+                    }
+                }
+            }
+
+            if ( !petAssigned ) {
+                let petLeader = executCombatRgx( combatRgx.PetLeader, lines[ i ] );
+                if ( petLeader !== null && petLeader.groups != null && petLeader.groups.player != null && petLeader.groups.pet != null ) {
+                    let petKey = petLeader.groups.player;
+
+                    if ( this._verifiedPlayers.indexOf( petLeader.groups.player ) === -1 ) {
+                        this._verifiedPlayers.push( petLeader.groups.player );
+                        this._updateServerStatistics = true;
+                    }
+
+                    if ( this._verifiedPets.indexOf( petLeader.groups.pet ) === -1 ) {
+                        this._verifiedPets.push( petLeader.groups.pet );
+                        this._updateServerStatistics = true;
+                    }
+
+                    if ( !this._playerPets[ petKey ] ) {
+                        this._playerPets[ petKey ] = [];
+                        this._updateServerStatistics = true;
+                    }
+                
+                    if ( this._petOwners[ petLeader.groups.pet ] !== petKey ) {
+                        this._petOwners[ petLeader.groups.pet ] = petKey;
+                        this._updateServerStatistics = true;
+                    }
+
+                    if ( this._playerPets[ petKey ].indexOf( petLeader.groups.pet ) === -1 ) {
+                        this._playerPets[ petKey ].push( petLeader.groups.pet );
+                        this._updateServerStatistics = true;
+                    }
+
+                }
             }
 
             let playerWho = executCombatRgx( this._playerWhoRgx, lines[ i ] );
