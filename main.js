@@ -665,6 +665,15 @@ ipcMain.on( 'console:command',
         }
     } );
 
+ipcMain.on( 'chat-room:server-event',
+    /**
+     * Forwards server events to the main window.
+     * 
+     * @param {Electron.IpcMainEvent} event The event args.
+     * @param {{type: 'handshake' | 'disconnect', payload: any}} data The message data.
+     */
+    ( event, data ) => mainWindow.webContents.send( 'chat-room:server-event', data ) );
+
 ipcMain.on( 'chat-room:server-log',
     /**
      * Forwards the chat room log event to the main window.
