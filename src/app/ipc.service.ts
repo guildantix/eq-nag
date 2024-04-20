@@ -7,6 +7,7 @@ import { DataTickModel, DkpEntryModel, TriggerModel, OverlayWindowModel, ActionT
 import { GinaConfiguration, GinaTriggerGroups } from './gina.model';
 import { ColorUtility } from './utilities';
 import { nagId } from './core/nag-id.util';
+import { DialogService } from './dialogs/dialog.service';
 
 export class ConsoleData {
 
@@ -80,12 +81,16 @@ export class IpcService {
     private _onChatRoomConnected: Observer<string>[] = [];
     private _onChatRoomServerLog: Observer<ServerConsoleMessage>[] = [];
     private _onServerEvent: Observer<ServerEventModel>[] = [];
+    private _onCombatCharacterChanged: Observer<string>[] = [];
 
     private _ginaConfigCache: GinaConfiguration = null;
 
     private _timeoutIds: Record<string, number> = {};
 
-    constructor( private ngZone: NgZone ) {
+    constructor(
+        private readonly ngZone: NgZone,
+        private readonly dialogService: DialogService,
+    ) {
         if ( window.api ) {
             try {
 
@@ -148,6 +153,14 @@ export class IpcService {
                 window.api.ipc.on( 'chat-room:server-event', ( event: any, data: ServerEventModel ) => {
                     ngZone.run( () => {
                         this._onServerEvent?.forEach( f => {
+                            f.next( data );
+                        } );
+                    } );
+                } );
+
+                window.api.ipc.on( 'combat:character:changed', ( event: any, data: string ) => {
+                    ngZone.run( () => {
+                        this._onCombatCharacterChanged?.forEach( f => {
                             f.next( data );
                         } );
                     } );
@@ -336,6 +349,10 @@ export class IpcService {
 
                 this.onConsoleError().subscribe( log => {
                     this._consoleMessages.push( log );
+
+                    if ( log.present === true && log.message ) {
+                        this.dialogService.showErrorDialog( log.label ?? 'Error', log.message );
+                    }
                 } );
 
                 this.onConsoleProgress().subscribe( log => {
@@ -461,6 +478,14 @@ export class IpcService {
     public onServerEvent(): Observable<ServerEventModel> {
         let obs: Observable<ServerEventModel> = new Observable<ServerEventModel>( ( observer: Observer<ServerEventModel> ) => {
             this._onServerEvent.push( observer );
+        } );
+
+        return obs;
+    }
+
+    public onCombatCharacterChanged(): Observable<string> {
+        let obs: Observable<string> = new Observable<string>( ( observer: Observer<string> ) => {
+            this._onCombatCharacterChanged.push( observer );
         } );
 
         return obs;
@@ -720,6 +745,10 @@ export class IpcService {
 
     public disconnectChatRoom(): void {
         window.api.ipc.send( 'chat-room:disconnect' );
+    }
+
+    public changeCombatCharacter( characterId: string ): void {
+        window.api.ipc.send( 'combat:character:change', characterId );
     }
 
     /**

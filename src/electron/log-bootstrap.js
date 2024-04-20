@@ -64,6 +64,9 @@ let cwReady = false;
 /** @type {(() => void) | undefined} */
 let cwOnDomReady;
 
+/** @type {ForwardRef<BrowserWindow>} */
+let mainWinRef = undefined;
+
 /** @type {number} The duration to wait between checking for activity on a log file. */
 const checkInterval = 5 * 1000;
 
@@ -111,11 +114,13 @@ class LogBootstrapper {
      * @param {ForwardRef<BrowserWindow>} mainWindowRef The main window of the application.
      * @param {boolean} isDev Sets up the log watcher window for development environment if true.
      * @param {CharacterDatabaseStore} characterDatabase The character database.
-     * @param {function} sendTick The send tick method.
+     * @param {() => void} sendTick The send tick method.
      * @param {UserPreferencesStore} userPreferences The user preferences store.
+     * @param {(error: Error) => void} appLogException The application log exception method.
      */
-    boostrapLogWatchers( mainWindowRef, isDev, characterDatabase, sendTick, userPreferences ) {
+    boostrapLogWatchers( mainWindowRef, isDev, characterDatabase, sendTick, userPreferences, appLogException ) {
 
+        mainWinRef = mainWindowRef;
         this.#userPreferences = userPreferences;
         this.#isDev = isDev;
         const $this = this;
@@ -260,7 +265,7 @@ class LogBootstrapper {
                     let _stats = fs.existsSync( _chr.logFile ) ? fs.statSync( _chr.logFile ) : null;
 
                     // If the window has not been engaged, then open it. // TODO: Start up a log watcher when simulating. Even allow a charcter to be selected from a list.
-                    logWatchers[ _chr.characterId ].window = startLogWatcherWindow( _chr.logFile, isDev, sendTick, _chr, logWatchers[ _chr.characterId ].logSize > _stats.size ? 0 : logWatchers[ _chr.characterId ].logSize, async () => await $this.closeCombatWatcher() );
+                    logWatchers[ _chr.characterId ].window = startLogWatcherWindow( _chr.logFile, isDev, sendTick, _chr, logWatchers[ _chr.characterId ].logSize > _stats.size ? 0 : logWatchers[ _chr.characterId ].logSize );
             
                     // Notify the main window.
                     mainWindowRef.reference.webContents.send( 'log:character:activated', _chr.characterId );
@@ -276,7 +281,7 @@ class LogBootstrapper {
                 }
 
                 event.sender?.send( 'log:simulate:begin', simData.simulationId );
-            } );
+            } ); // ipcMain 'log:simulate:begin'
 
         // TODO: I think this is unused.
         ipcMain.on( 'log:simulate:lines', function ( event, data ) {
@@ -296,7 +301,7 @@ class LogBootstrapper {
                     let _stats = fs.existsSync( _chr.logFile ) ? fs.statSync( _chr.logFile ) : null;
 
                     // If the window has not been engaged, then open it. // TODO: Start up a log watcher when simulating. Even allow a charcter to be selected from a list.
-                    logWatchers[ _chr.characterId ].window = startLogWatcherWindow( _chr.logFile, isDev, sendTick, _chr, logWatchers[ _chr.characterId ].logSize > _stats.size ? 0 : logWatchers[ _chr.characterId ].logSize, async () => await $this.closeCombatWatcher() );
+                    logWatchers[ _chr.characterId ].window = startLogWatcherWindow( _chr.logFile, isDev, sendTick, _chr, logWatchers[ _chr.characterId ].logSize > _stats.size ? 0 : logWatchers[ _chr.characterId ].logSize );
                 
                     // Notify the main window.
                     mainWindowRef.reference.webContents.send( 'log:character:activated', _chr.characterId );
@@ -381,6 +386,23 @@ class LogBootstrapper {
                 }
             }
         } );
+
+        ipcMain.on( 'combat:character:change',
+            /**
+             * @param {Electron.IpcMainEvent} event The event args.
+             * @param {string} characterId The character id.
+             */
+            async ( event, characterId ) => {
+                const character = characterDatabase.find( characterId );
+                if ( character ) {
+                    let _stats = await FsUtilities.existsAsync( character.logFile ) ? await fsp.stat( character.logFile ) : null;
+                    if ( _stats == null ) {
+                        appLogException( new Error( `Log file not found: ${character.logFile}` ), true );
+                        return;
+                    }
+                    changeCombatCharacter( character, _stats.size, sendTick );
+                }
+            } );
 
         startCombatWatcherWindow( isDev );
     }
@@ -641,7 +663,7 @@ class LogBootstrapper {
                 if ( logWatchers[ characterId ].window == null ) {
 
                     // If the window has not been engaged, then open it. // TODO: Start up a log watcher when simulating. Even allow a charcter to be selected from a list.
-                    logWatchers[ characterId ].window = startLogWatcherWindow( _chr.logFile, isDev, sendTick, _chr, logWatchers[ characterId ].logSize > _stats.size ? 0 : logWatchers[ characterId ].logSize, async () => await this.closeCombatWatcher() );
+                    logWatchers[ characterId ].window = startLogWatcherWindow( _chr.logFile, isDev, sendTick, _chr, logWatchers[ characterId ].logSize > _stats.size ? 0 : logWatchers[ characterId ].logSize );
                     
                     // Notify the main window.
                     mainWindowRef.reference.webContents.send( 'log:character:activated', characterId );
@@ -859,9 +881,8 @@ class LogBootstrapper {
  * @param {() => void} sendTick The send tick method.
  * @param {CharacterModel} character The character to watch.
  * @param {number} logPosition The position the log watcher should start processing log entries.
- * @param {() => void} closeCombatWatcher The close combat watcher method.
  */
-function startLogWatcherWindow( logFile, isDev, sendTick, character, logPosition, closeCombatWatcher ) {
+function startLogWatcherWindow( logFile, isDev, sendTick, character, logPosition ) {
     let logWatcherWindow = new BrowserWindow( {
         //   width: 800,
         //   height: 600,
@@ -964,6 +985,9 @@ function changeCombatCharacter( character, logPosition, sendTick ) {
     combatWatcher.character = character;
 
     combatWatcher.window.webContents.send( 'log:character:changed', { character: character, logPosition: logPosition } );
+    sendTick();
+
+    mainWinRef?.reference?.webContents.send( 'combat:character:changed', character.characterId );
 }
 
 

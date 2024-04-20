@@ -46,6 +46,7 @@ const channelPrefixes = [
     'cache',
     'combat-database',
     'chat-room',
+    'combat',
 ];
 
 const styleSheetUtil = new StyleSheetUtil();

@@ -1589,6 +1589,7 @@ export class ConsoleMessageModel {
     public logType: LogTypes = LogTypes.info;
     public logId: string;
     public payload: any;
+    public present: boolean | undefined = undefined;
 
 }
 

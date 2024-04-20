@@ -353,12 +353,19 @@ ipcMain.on( `color:darken`, ( e, data ) => {
     overlayDatabase.update( overlay );
 } );
 
-const appLogException = ( data ) => {
+/**
+ * Sends the error to the user.
+ * 
+ * @param {any} data The error data.
+ * @param {boolean|undefined} present If true, the user should be presented with the error.
+ */
+const appLogException = ( data, present ) => {
     let error = {
         label: 'System Error:',
         message: '',
         timestamp: new Date(),
         payload: null,
+        present: present === true,
     };
 
     if ( data?.source === 'log-watcher.js' ) {
@@ -844,7 +851,7 @@ app.on( 'ready', function () {
     triggerDatabase.attachIpcEvents( mainWindowRef, sendTick, fileDatabase, userPreferences );
     overlayDatabase.attachIpcEvents( mainWindowRef, sendTick, triggerDatabase, userPreferences );
     characterDatabase.attachIpcEvents( mainWindowRef, sendTick );
-    logBootstrap.boostrapLogWatchers( mainWindowRef, app.isDev(), characterDatabase, sendTick, userPreferences );
+    logBootstrap.boostrapLogWatchers( mainWindowRef, app.isDev(), characterDatabase, sendTick, userPreferences, appLogException );
     gameResources.attachIpcEvents( mainWindowRef, userPreferences );
     ginaImporter.initGinaImporter( mainWindowRef, app.isDev() );
     combatDatabase.attachIpcEvents( mainWindowRef, sendTick );

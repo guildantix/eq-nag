@@ -70,7 +70,11 @@ export class CharactersListComponent implements OnInit {
 
     private snackBarTimeoutId: number = null;
 
-    constructor( private dialogService: DialogService, private ipcService: IpcService, private snackBar: MatSnackBar ) { }
+    constructor(
+        private readonly dialogService: DialogService,
+        private readonly ipcService: IpcService,
+        private readonly snackBar: MatSnackBar
+    ) { }
 
     ngOnInit(): void {
         this.loadCharacters();
@@ -108,6 +112,10 @@ export class CharactersListComponent implements OnInit {
                     }
                 } );
             }
+        } );
+
+        this.ipcService.onCombatCharacterChanged().subscribe( characterId => {
+            this.combatCharacter = this.characters.find( f => f.characterId === characterId );
         } );
     }
 
@@ -917,7 +925,7 @@ export class CharactersListComponent implements OnInit {
      */
     toggleCombatTrackingForCharacter( e: MouseEvent, character: CharacterModel ) {
         if ( this.combatCharacter != character ) {
-            this.combatCharacter = character;
+            this.ipcService.changeCombatCharacter( character.characterId );
             e.stopImmediatePropagation();
             e.stopPropagation();
         }
