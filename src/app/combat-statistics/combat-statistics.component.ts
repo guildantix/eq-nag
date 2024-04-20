@@ -110,15 +110,11 @@ export class CombatStatisticsComponent implements OnInit, AfterViewChecked {
                 if ( peer ) {
                     peer.characterName = payload.characterName;
                 }
-                
+
             }
 
         } );
 
-    }
-
-    public test() {
-        this.addLine( `This is a test of the national broadcasting system.  This is only a test.` );
     }
 
     public clearConsole() {
