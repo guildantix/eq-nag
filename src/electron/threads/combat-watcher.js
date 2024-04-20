@@ -307,8 +307,7 @@ const onEncounterReset = ( e ) => {
     if ( logSync != null ) {
         submitEncounter( e );
         processReceivedEncounters( e.encounterId );
-        // This needs to reset when receiving encounter data.
-        myEncounterSaveIntervalIds[ e.encounterId ] = window.setTimeout( () => saveEncounter( e.encounterId ), saveEncounterIntervalMs );
+        scheduleSaveEncounter( e.encounterId );
     } else {
         saveEncounter( e.encounterId );
     }
@@ -353,6 +352,22 @@ const saveEncounterNow = ( encounterId ) => {
         window.clearTimeout( myEncounterSaveIntervalIds[ encounterId ] );
         delete myEncounterSaveIntervalIds[ encounterId ];
     }
+};
+
+/**
+ * Schedules the encounter to be saved.
+ * 
+ * @param {string} encounterId The encounter id.
+ */
+const scheduleSaveEncounter = ( encounterId ) => {
+    if ( myEncounterSaveIntervalIds[ encounterId ] > 0 ) {
+        window.clearTimeout( myEncounterSaveIntervalIds[ encounterId ] );
+    }
+
+    myEncounterSaveIntervalIds[ encounterId ] = window.setTimeout( () => {
+        saveEncounter( encounterId );
+        delete myEncounterSaveIntervalIds[ encounterId ];
+    }, saveEncounterIntervalMs );
 };
 
 /**
@@ -404,6 +419,9 @@ const processReceivedEncounters = ( encounterId ) => {
 
         if ( myEncounter.externalEncounterInfos.length === myEncounter.externalEncounterIds.length ) {
             saveEncounterNow( encounterId );
+        } else {
+            // If there are more encounters we are waiting on, then schedule the save again.  But we won't wait forever.
+            scheduleSaveEncounter( encounterId );
         }
     }
 };
@@ -428,9 +446,7 @@ const receiveEncounterLog = ( externalEncounter ) => {
             logRecords: externalEncounter.logRecords,
         } );
 
-        if ( myEncounter.externalEncounterInfos.length === myEncounter.externalEncounterIds.length ) {
-            saveEncounterNow( myEncounter.encounterId );
-        }
+        scheduleSaveEncounter( myEncounter.encounterId );
 
     }
 };
@@ -474,6 +490,7 @@ function waitForLogFile( logPath ) {
  * @param {number} startLogPosition If a value is provided, will start parsing the log file at the given position.
  */
 function startParsingLogFile( logPath, startLogPosition ) {
+    // TODO: Use the new File Monitor.
     var danglyBit = '';
 
     fs.open( logPath, 'r', function ( err, fd ) {
@@ -591,7 +608,7 @@ function parseLogEntries( raw, simulating, padTime ) {
  * @param {number} logPosition The starting log position.
  */
 function CombatWatcher( character, logPosition ) {
-
+    // TODO: Remove the need for the character model.
     if ( character ) {
         characterName = character.name;
         charModel = character;
@@ -610,6 +627,30 @@ function CombatWatcher( character, logPosition ) {
         .invoke( 'settings:get', { key: 'dpsMeterSettings', subscribe: true } )
         .then( data => {
             dpsMeterSettings = data ?? new DpsMeterSettings();
+        } );
+    
+    ipcRenderer.on( 'log:character:changed',
+        /**
+         * Handles the changing of the parse character.
+         * 
+         * @param {Electron.IpcRendererEvent} event The event args.
+         * @param {CharacterModel} data The character model.
+         */
+        ( event, data ) => {
+            if ( data && data.characterId ) {
+                
+                stopDpsTracking();
+
+                characterName = data.name;
+                charModel = data;
+                characterId = data.characterId;
+
+                myCombatParser = charModel.takp ? new TakpCombatParser( characterName, charModel.server ) : new CombatParser( characterName, charModel.server );
+                myCombatParser.onEncounterReset = onEncounterReset;
+                startDpsTracking();
+
+                // TODO: This should start a new file monitor.
+            }
         } );
     
     ipcRenderer.on( 'log:combat:unload', async () => {
