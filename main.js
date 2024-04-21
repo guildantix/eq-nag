@@ -269,7 +269,7 @@ const bootstrapApp = () => {
                 }
             }
     
-            if ( !app.isDev() ) {
+            if ( !app.isDev() && !filePath.match( /\.png$/i ) ) {
                 log.info( '[main:interceptFileProtocol] Intercepted file protocol.', {
                     req: req,
                     filePath: filePath,
