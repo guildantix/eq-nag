@@ -74,7 +74,6 @@ const fs = require( 'fs' );
 const { LogSync, createChatRoomLink, parseChatRoomLink, PeerDataPackageModel, CombatStatisticsPayloadModel, CombatEncounterPayloadModel, HandshakePayloadModel } = require( "../utilities/peer-to-peer" );
 const { nagException, nagLog } = require( "../utilities/nag-console" );
 const FileMonitor = require( "../utilities/file-monitor" );
-const chunkSize = 512 * 1024;
 
 /**
  * Sends to the main thread to log the message.
@@ -146,6 +145,8 @@ let logParseTimeoutId = null;
 const logParseTimer = 50;
 /** @type {boolean} */
 let changingLogFile = false;
+
+let simStoppedFileMonitor = false;
 
 /** @type {number} */
 let currentPosition = null;
@@ -253,8 +254,6 @@ const dpsTransmitFn = () => {
 
 const dpsIntervalFn = () => {
     sendDpsToRenderer();
-
-    dpsIntervalId = window.setTimeout( () => dpsIntervalFn(), dpsInterval );
 }
 
 const startDpsTransmit = () => {
@@ -272,7 +271,8 @@ const stopDpsTransmit = () => {
 
 const startDpsTracking = () => {
     if ( !dpsIntervalId ) {
-        dpsIntervalId = window.setTimeout( () => dpsIntervalFn(), dpsInterval );
+        // TODO: Remove the interval calls.  We'll need a new way to send DPS to peers.
+        dpsIntervalId = window.setInterval( () => dpsIntervalFn(), dpsInterval );
     }
 };
 
@@ -454,7 +454,7 @@ const receiveEncounterLog = ( externalEncounter ) => {
 
 const stopDpsTracking = () => {
     if ( dpsIntervalId ) {
-        window.clearTimeout( dpsIntervalId );
+        window.clearInterval( dpsIntervalId );
         dpsIntervalId = null;
         window.clearTimeout( dpsTransmitIntervalId );
         dpsTransmitIntervalId = null;
@@ -467,8 +467,8 @@ const stopDpsTracking = () => {
  * @param {string} logPath The file path to the log file.
  * @param {number} startLogPosition If a value is provided, will start parsing the log file at the given position.
  */
-function startParsingLogFile( logPath, startLogPosition ) {
-    
+async function startParsingLogFile( logPath, startLogPosition ) {
+
     fileMonitor.monitorLines( ( lines ) => {
         lines.forEach( line => {
             if ( line && line.length > 0 ) {
@@ -479,6 +479,13 @@ function startParsingLogFile( logPath, startLogPosition ) {
     
 }
 
+/**
+ * Parses the given log entry.
+ * 
+ * @param {string} raw The raw log entry.
+ * @param {boolean} simulating If true, only simulates executing triggers via a consol.log call.
+ * @param {padTime} padTime The amount of time to add to the timestamps of log entries.
+ */
 function parseLogEntries( raw, simulating, padTime ) {
     try {
         
@@ -493,7 +500,7 @@ function parseLogEntries( raw, simulating, padTime ) {
                 myCombatParserCache.forEach( c => {
                     let fctModel = myCombatParser?.addCombatEvent( c );
 
-                    if ( fctModel && enableFct ) {
+                    if ( fctModel && enableFct && !simulating ) {
                         ipcRenderer.send( 'overlay:send:fct-component', fctModel );
                     }
                 } );
@@ -503,7 +510,7 @@ function parseLogEntries( raw, simulating, padTime ) {
             // Add to the combat tracker.
             let fctModel = myCombatParser?.addCombatEvent( raw );
 
-            if ( fctModel && enableFct ) {
+            if ( fctModel && enableFct && !simulating ) {
                 ipcRenderer.send( 'overlay:send:fct-component', fctModel );
             }
 
@@ -537,7 +544,7 @@ function CombatWatcher() {
          * @param {Electron.IpcRendererEvent} event The event args.
          * @param {{character: CharacterModel, logPosition: number | undefined}} data The character model.
          */
-        ( event, data ) => {
+        async ( event, data ) => {
             if ( data && data.character?.characterId ) {
                 
                 if ( logSync != null ) {
@@ -558,9 +565,9 @@ function CombatWatcher() {
                 logFilePath = data.character.logFile;
                 logPosition = data.logPosition;
 
-                let fn = () => {
+                let fn = async () => {
                     fileMonitor = new FileMonitor( logFilePath );
-                    startParsingLogFile( logFilePath, logPosition >= 0 ? logPosition : null );
+                    await startParsingLogFile( logFilePath, logPosition >= 0 ? logPosition : null );
                 }
     
                 if ( fileMonitor != null )
@@ -730,13 +737,13 @@ function CombatWatcher() {
          * @param {Electron.IpcRendererEvent} event The event args.
          * @param {string} data The log file path.
          */
-        function ( event, data ) {
+        async ( event, data ) => {
             
             logFilePath = data;
 
-            let fn = () => {
+            let fn = async () => {
                 fileMonitor = new FileMonitor( logFilePath );
-                startParsingLogFile( logFilePath, logPosition >= 0 ? logPosition : null );
+                await startParsingLogFile( logFilePath, logPosition >= 0 ? logPosition : null );
             }
 
             if ( fileMonitor != null )
@@ -749,9 +756,51 @@ function CombatWatcher() {
     ipcRenderer.on( 'log:simulate:file', function ( event, data ) {
         throw new Error( 'Not implemented' );
     } );
-    
-    // TODO: Enable simulation for combat watcher.
-    // ipcRenderer.on( 'log:simulate:begin', function ( event, data ) {});
+
+
+    ipcRenderer.on( 'log:simulate:begin',
+        /**
+         * @param {Electron.IpcRendererEvent} event 
+         * @param {any} data 
+         */
+        async ( event, data ) => {
+            stopDpsTracking();
+            
+            myCombatParser?.resetEncounter();
+
+            if ( fileMonitor != null ) {
+                // We only want to start the file monitor if we stopped it.
+                // The 'log:change' event waits for a sim to end on its own 
+                // before starting the file monitor again.
+                simStoppedFileMonitor = true;
+                await fileMonitor.stopMonitoringLogFile();
+            }
+        } );
+
+    ipcRenderer.on( 'log:simulate:end',
+        /**
+         * @param {Electron.IpcRendererEvent} event 
+         * @param {any} data 
+         */
+        async ( event, data ) => {
+            if ( simStoppedFileMonitor ) {
+                let logStats = await fs.promises.stat( logFilePath );
+                await startParsingLogFile( logFilePath, logStats ? logStats.size : Number.MAX_SAFE_INTEGER );
+                startDpsTracking();
+            }
+        } );
+
+    ipcRenderer.on( 'log:simulate:lines',
+        /**
+         * 
+         * @param {Electron.IpcRendererEvent} event 
+         * @param {{lines: string[], padTime: number}} data 
+         */
+        ( event, data ) => {
+            data.lines.forEach( line => parseLogEntries( line, true, data.padTime ) );
+        
+            sendDpsToRenderer();
+        } );
 
     ipcRenderer.on( 'tick', function ( event, data ) {
 

@@ -5,14 +5,7 @@
  * @param {number} duration The number of milliseconds to sleep.
  */
 function sleep( duration ) {
-
-    let p = new Promise( resolve => {
-        setTimeout( () => {
-            resolve();
-        }, duration );
-    } );
-
-    return p;
+    return new Promise( resolve => window.setTimeout( resolve, duration ) );
 }
 
 const ThreadUtilities = {

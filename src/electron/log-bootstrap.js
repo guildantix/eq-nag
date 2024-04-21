@@ -181,6 +181,13 @@ class LogBootstrapper {
              * @param {{ lines: string[], characterId: string, lineIndex: number|null }} data The data to simulate.
              */
             function ( event, data ) {
+                
+                let powerSaveBlockerId = null;
+                const powerSaveBlocker = require( 'electron' ).powerSaveBlocker;
+
+                // Prevent the system from suspending while simulating.
+                powerSaveBlockerId = powerSaveBlocker.start( 'prevent-app-suspension' );
+
                 let simulationId = nanoid();
                 let simData = {
                     lines: data.lines,
@@ -194,8 +201,26 @@ class LogBootstrapper {
                     ipcMain.removeAllListeners( `log:simulation:${simulationId}:pause` );
                     ipcMain.removeAllListeners( `log:simulation:${simulationId}:resume` );
                     ipcMain.removeAllListeners( `log:simulation:${simulationId}:stop` );
+                    ipcMain.removeAllListeners( `log:simulation:${simulationId}:lines` );
+
+                    combatWatcher.window?.webContents.send( 'log:simulate:end', {} );
                     event.sender?.send( `simulation:${simulationId}:progress`, { isComplete: true, completePercent: 100, label: 'Simulation complete' } );
+                    
+                    logWatchers[ data.characterId ].window.setAlwaysOnTop( false );
+                    
+                    if ( powerSaveBlocker.isStarted( powerSaveBlockerId ) ) {
+                        powerSaveBlocker.stop( powerSaveBlockerId );
+                    }
                 };
+
+                ipcMain.on( `log:simulation:${simulationId}:lines`,
+                    /**
+                     * @param {Electron.IpcMainEvent} childEvent Electron event args.
+                     * @param {{lines: string[], padTime: number}} lines 
+                     */
+                    function ( childEvent, lines ) {
+                        combatWatcher.window?.webContents.send( 'log:simulate:lines', lines );
+                    } );
                     
                 // Setup sim events that handle progress and control.
 
@@ -272,14 +297,17 @@ class LogBootstrapper {
                 
                     logWatchers[ _chr.characterId ].window.webContents.once( 'dom-ready', () => {
                         logWatchers[ _chr.characterId ].window.webContents.send( 'log:simulate:begin', simData );
+                        logWatchers[ _chr.characterId ].window.setAlwaysOnTop( true );
                         logWatchers[ _chr.characterId ].simulating = true;
                     } );
 
                 } else {
                     logWatchers[ _chr.characterId ].window.webContents.send( 'log:simulate:begin', simData );
+                    logWatchers[ _chr.characterId ].window.setAlwaysOnTop( true );
                     logWatchers[ _chr.characterId ].simulating = true;
                 }
 
+                combatWatcher.window?.webContents.send( 'log:simulate:begin', {} );
                 event.sender?.send( 'log:simulate:begin', simData.simulationId );
             } ); // ipcMain 'log:simulate:begin'
 
@@ -935,13 +963,13 @@ function startLogWatcherWindow( logFile, isDev, sendTick, character, logPosition
  * @param {boolean} isDev The development environment flag.
  */
 function startCombatWatcherWindow( isDev ) {
-    // This should be changed.  The combat watcher should spin up with nag, and if the character is null then it should send the character to the combat watcher.
+    
     if ( combatWatcher.window == null ) {
-        // If this is the first active log watcher, then start the combat watcher.
-        // combatWatcher.characterId = character.characterId;
+
         combatWatcher.window = new BrowserWindow( {
             show: isDev === true,
             webPreferences: { nodeIntegration: true, contextIsolation: false, webSecurity: false, devTools: isDev === true },
+            // alwaysOnTop: true,
         } );
         combatWatcher.window.webContents.openDevTools( { mode: 'undocked' } );
         combatWatcher.window.loadURL( `file://${__dirname}/threads/combat-watcher.html` );

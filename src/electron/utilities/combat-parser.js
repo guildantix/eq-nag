@@ -1136,12 +1136,32 @@ class CombatParser {
                     this._playerInfos[ playerName ].className = playerWho.groups.classRealName ?? playerWho.groups.classTitleOrName;
                     this._playerInfos[ playerName ].raceName = playerWho.groups.raceName;
                 }
+
+                // Let's remove the player from the pets list, if they are there.
+                if ( this._verifiedPets.includes( playerName ) ) {
+
+                    let pi = this._verifiedPets.indexOf( playerName );
+                    this._verifiedPets.splice( pi, 1 );
+
+                    if ( this._petOwners[ playerName ] != null ) {
+
+                        if ( this._playerPets[ this._petOwners[ playerName ] ] != null ) {
+                            let pi = this._playerPets[ this._petOwners[ playerName ] ].indexOf( playerName );
+                            if ( pi > -1 ) {
+                                this._playerPets[ this._petOwners[ playerName ] ].splice( pi, 1 );
+                            }
+                        }
+
+                        delete this._petOwners[ playerName ];
+                    }
+                }
                 
                 this._updateServerStatistics = true;
             }
             
         }
 
+        // TODO: This may be in need of change, only new players should be checked right?
         // Loop through all verified players, and remove their named pets from the npcs list. Ex: Soandso's warder.
         for ( let i = 0; i < this._verifiedPlayers.length; i++ ) {
             const player = this._verifiedPlayers[ i ];
@@ -1743,7 +1763,7 @@ class CombatParser {
     /**
      * Resets the encounter.
      */
-    _resetEncounter() {
+    resetEncounter() {
 
         const eventArgs = new EncounterResetEventArgs();
         eventArgs.encounterId = this._encounterStats.encounterId;
@@ -1904,7 +1924,7 @@ class CombatParser {
             clearTimeout( this._encounterResetTimerId );
         }
         
-        this._encounterResetTimerId = window.setTimeout( () => this._resetEncounter(), this._encounterResetMs );
+        this._encounterResetTimerId = window.setTimeout( () => this.resetEncounter(), this._encounterResetMs );
 
     }
 

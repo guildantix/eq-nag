@@ -319,7 +319,7 @@ function LogWatcher(character, logPosition) {
          * Begins the simulation.
          * 
          * @param {any} event Electron event args.
-         * @param {{lines: string, lineIndex: number|null, simluationId: string}} model Simulation data.
+         * @param {{lines: string, lineIndex: number|null, simulationId: string}} model Simulation data.
          */
         async ( event, model ) => {
         
@@ -439,6 +439,8 @@ function LogWatcher(character, logPosition) {
             for ( let i = 0; i < lineData.length; i++ ) {
                 const lineCount = lineData[ i ].lines.length;
 
+                ipcRenderer.send( `log:simulation:${simulationId}:lines`, { lines: lineData[ i ].lines, padTime: padTime } );
+
                 // let startp = performance.now();
                 // TODO: Remove the simulating argument from parse log entries, it's not used any more.
                 lineData[ i ].lines.forEach( line => parseLogEntries( line, false, padTime ) );
@@ -450,7 +452,7 @@ function LogWatcher(character, logPosition) {
                 // let endp = performance.now();
                 // let duration = endp - startp;
                 // let avgp = duration / lineCount;
-                // console.log( 'Line count, duration, avg', lineCount, duration, avgp );
+                // console.log( '[i/m] Line count, duration, avg', i, lineData.length - 1, lineCount, duration, avgp );
 
                 // TODO: When paused, all timed actions should be paused as well.
 
