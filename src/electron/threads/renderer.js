@@ -670,12 +670,10 @@ function Renderer( originX, originY, glowOnStart ) {
     DomUtilities.docReady( f => {
 
         Handlebars.registerHelper( 'if_eq', function ( a, b ) {
-            console.log( 'a, b', a, b );
             return a === b;
         } );
 
         Handlebars.registerHelper( 'if_neq', function ( a, b ) {
-            console.log( 'a, b', a, b );
             return a !== b;
         } );
         
