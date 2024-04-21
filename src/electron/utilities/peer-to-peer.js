@@ -113,7 +113,10 @@ class LogSync {
     #connectedPeers = {};
 
     /** @type {(peerId: string) => void} */
-    #onPeerConnectedFn = () => {};
+    #onPeerConnectedFn = () => { };
+    
+    /** @type {() => void} */
+    #onDataReceivedFn = () => { };
 
     /**
      * Initializes a new log sync.
@@ -266,6 +269,14 @@ class LogSync {
         }
     }
 
+    onDataReceived( fn ) {
+        if ( fn ) {
+            this.#onDataReceivedFn = fn;
+        } else {
+            this.#onDataReceivedFn = () => { };
+        }
+    }
+
     /**
      * Sends a message to a peer.
      * 
@@ -350,14 +361,15 @@ class LogSync {
             ( data ) => {
                 let m = JSON.parse( data );
 
+                this.#data[ otherPeerId ] = this.#data[ otherPeerId ] ?? [];
+                this.#data[ otherPeerId ].push( m );
+
                 if ( m?.type == 'disconnect' ) {
                     this.removePeer( otherPeerId );
-
-                } else {
-                    this.#data[ otherPeerId ] = this.#data[ otherPeerId ] ?? [];
-                    this.#data[ otherPeerId ].push( m );
-
                 }
+
+                this.#onDataReceivedFn();
+                
             } );
 
         peer.on( 'error', error => {

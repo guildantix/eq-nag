@@ -121,13 +121,12 @@ let charModel = null;
 let characterName = null;
 /** @type {string} */
 let characterId = null;
-/** @type {number} */
-let dpsIntervalId = null;
-/** @type {number} */
-const dpsInterval = 250;
 /** @type {boolean} */
-/** @type {number} */
-let dpsTransmitIntervalId = null;
+let dpsTrackingEnabled = false;
+/** @type {boolean} */
+let dpsTransmitEnabled = false;
+/** @type {Date} */
+let lastDpsTransmit = null;
 /** @type {number} */
 const dpsTransmitIntervalMs = 12 * 1000;
 /** @type {number} */
@@ -214,10 +213,18 @@ let myCombatParser = undefined;
 /** @type {string[]} */
 let myCombatParserCache = [];
 
-const sendDpsToRenderer = () => {
+const sendDpsToRenderer = async () => {
     // This is currently a really simple version of DPS tracking.  What we need to do is capture the start/end of each players combat and then calculate the DPS based on that.  In addition to what we're doing now, which is their immediate DPS not encounter DPS.
     let encounterDps = myCombatParser?.getEncounterOutgoingDps() ?? [];
     ipcRenderer.send( 'renderer:encounter-dps', { character: characterName, encounterDps: encounterDps } );
+
+    if ( dpsTransmitEnabled ) {
+        if ( lastDpsTransmit == null || ( ( Date.now() - lastDpsTransmit ) >= dpsTransmitIntervalMs ) ) {
+            transmitEncounterEvents();
+            lastDpsTransmit = Date.now();
+            await processChatRoom();
+        }
+    }
 };
 
 const transmitEncounterEvents = () => {
@@ -246,34 +253,18 @@ const transmitEncounterEvents = () => {
     }
 }
 
-const dpsTransmitFn = () => {
-    transmitEncounterEvents();
-
-    dpsTransmitIntervalId = window.setTimeout( () => dpsTransmitFn(), dpsTransmitIntervalMs );
-}
-
-const dpsIntervalFn = () => {
-    sendDpsToRenderer();
-}
-
 const startDpsTransmit = () => {
-    nagLog( `Starting DPS transmit for ${characterName}` );
-    dpsTransmitIntervalId = window.setTimeout( () => dpsTransmitFn(), dpsTransmitIntervalMs );
+    nagLog( `Enabling combat statistics sharing for ${characterName}.` );
+    dpsTransmitEnabled = true;
 };
 
 const stopDpsTransmit = () => {
-    nagLog( `Stopping DPS transmit for ${characterName}` );
-    if ( dpsTransmitIntervalId ) {
-        window.clearTimeout( dpsTransmitIntervalId );
-        dpsTransmitIntervalId = null;
-    }
+    nagLog( `Combat statistics sharing for ${characterName} has been disabled.` );
+    dpsTransmitEnabled = false;
 };
 
 const startDpsTracking = () => {
-    if ( !dpsIntervalId ) {
-        // TODO: Remove the interval calls.  We'll need a new way to send DPS to peers.
-        dpsIntervalId = window.setInterval( () => dpsIntervalFn(), dpsInterval );
-    }
+    dpsTrackingEnabled = true;
 };
 
 /** @type {EncounterModel[]} */
@@ -453,9 +444,8 @@ const receiveEncounterLog = ( externalEncounter ) => {
 };
 
 const stopDpsTracking = () => {
-    if ( dpsIntervalId ) {
-        window.clearInterval( dpsIntervalId );
-        dpsIntervalId = null;
+    dpsTrackingEnabled = false;
+    if ( dpsTransmitIntervalId ) {
         window.clearTimeout( dpsTransmitIntervalId );
         dpsTransmitIntervalId = null;
     }
@@ -470,11 +460,15 @@ const stopDpsTracking = () => {
 async function startParsingLogFile( logPath, startLogPosition ) {
 
     fileMonitor.monitorLines( ( lines ) => {
+        
         lines.forEach( line => {
             if ( line && line.length > 0 ) {
                 parseLogEntries( line );
             }
         } );
+        
+        dpsTrackingEnabled === true && sendDpsToRenderer();
+
     }, startLogPosition );
     
 }
@@ -657,7 +651,9 @@ function CombatWatcher() {
                 serverLog( `My peer id: ${logSync.peerId}` );
 
                 startDpsTransmit();
-                processChatRoom();
+                logSync.onDataReceived( async () => {
+                    await processChatRoom();
+                } );
 
             } else {
                 stopDpsTransmit();
@@ -696,7 +692,9 @@ function CombatWatcher() {
                 serverLog( `My peer id: ${logSync.peerId}` );
 
                 startDpsTransmit();
-                processChatRoom();
+                logSync.onDataReceived( async () => {
+                    await processChatRoom();
+                } );
 
             } else {
                 stopDpsTransmit();
@@ -765,7 +763,7 @@ function CombatWatcher() {
          */
         async ( event, data ) => {
             stopDpsTracking();
-            
+
             myCombatParser?.resetEncounter();
 
             if ( fileMonitor != null ) {
@@ -812,9 +810,6 @@ function CombatWatcher() {
     } );
 
 }
-
-/** @type {number | null} */
-let chatRoomIntervalId = null;
 
 let processChatRoom = async () => {
     if ( logSync != null ) {
@@ -870,15 +865,11 @@ let processChatRoom = async () => {
             } );
         }
 
-        chatRoomIntervalId = window.setTimeout( async () => await processChatRoom(), dpsTransmitIntervalMs );
     }
 }
 
 function cleanUpChatRoom() {
-    if ( chatRoomIntervalId > 0 ) {
-        window.clearTimeout( chatRoomIntervalId );
-        chatRoomIntervalId = null;
-    }
+    // this used to be a function that would clean up the chat room, but now it's just a placeholder.
 }
 
 module.exports = CombatWatcher;
