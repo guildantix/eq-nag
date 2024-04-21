@@ -445,10 +445,6 @@ const receiveEncounterLog = ( externalEncounter ) => {
 
 const stopDpsTracking = () => {
     dpsTrackingEnabled = false;
-    if ( dpsTransmitIntervalId ) {
-        window.clearTimeout( dpsTransmitIntervalId );
-        dpsTransmitIntervalId = null;
-    }
 };
 
 /**
