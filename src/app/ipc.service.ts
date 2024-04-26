@@ -940,6 +940,10 @@ export class IpcService {
         window.api.ipc.send( 'chat-room:join-chat-room', link );
     }
 
+    public showSettingsWindow( name: 'combatStatistics' ): void {
+        window.api.ipc.send( 'show-settings', name );
+    }
+
     public findPlayerCharacterDeaths( logFile: string ): Observable<LogFileLocation[]> {
         let obs: Observable<LogFileLocation[]> = new Observable<LogFileLocation[]>( ( observer: Observer<LogFileLocation[]> ) => {
             
@@ -2639,6 +2643,22 @@ export class IpcService {
                 } );
             } );
             window.api.ipc.send( 'combat-database:get-all', undefined );
+
+        } );
+
+        return obs;
+    }
+
+    public getServerList(): Observable<string[]> {
+        let obs: Observable<string[]> = new Observable<string[]>( ( observer: Observer<string[]> ) => {
+                
+            window.api.ipc.once( 'combat-database:get-server-names', ( e, data: string[] ) => {
+                this.ngZone.run( () => {
+                    observer.next( data );
+                    observer.complete();
+                } );
+            } );
+            window.api.ipc.send( 'combat-database:get-server-names', undefined );
 
         } );
 
