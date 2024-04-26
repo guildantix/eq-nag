@@ -477,6 +477,7 @@ ipcMain.on( 'chat-room:link-received',
 
         } else {
             mainWindow.webContents.send( 'chat-room:link-received', data );
+            mainWindow.flashFrame( true );
         }
 
     } );
