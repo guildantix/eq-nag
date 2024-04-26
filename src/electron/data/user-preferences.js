@@ -539,6 +539,13 @@ class UserPreferencesStore extends Store {
     }
     set serverTrustedPlayers( val ) {
         this.#data.serverTrustedPlayers = val;
+
+        if ( this.#data.serverTrustedPlayers ) {
+            for ( let key in this.#data.serverTrustedPlayers ) {
+                this.#data.serverTrustedPlayers[ key ] = this.#data.serverTrustedPlayers[ key ].filter( f => f != '' ) ?? [];
+            }
+        }
+
         this.storeDataFile( this.#data );
     }
 
@@ -548,6 +555,13 @@ class UserPreferencesStore extends Store {
     }
     set serverBlockedPlayers( val ) {
         this.#data.serverBlockedPlayers = val;
+
+        if ( this.#data.serverBlockedPlayers ) {
+            for ( let key in this.#data.serverBlockedPlayers ) {
+                this.#data.serverBlockedPlayers[ key ] = this.#data.serverBlockedPlayers[ key ].filter( f => f != '' ) ?? [];
+            }
+        }
+
         this.storeDataFile( this.#data );
     }
 
