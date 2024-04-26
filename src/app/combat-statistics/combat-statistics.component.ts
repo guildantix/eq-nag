@@ -62,7 +62,7 @@ export class CombatStatisticsComponent implements OnInit, AfterViewChecked {
     public set trustedPlayers( value: string ) {
         this._trustedPlayers = value;
 
-        this.serverTrustedPlayers[ this.serverTrustServer ] = value.split( '\r\n' );
+        this.serverTrustedPlayers[ this.serverTrustServer ] = value.split( /\r?\n/g );
         this.ipcService.updateSetting( SettingsKeys.serverTrustedPlayers, this.serverTrustedPlayers, 1500, () => this.snackBar.open( 'Trusted players updated', 'Dismiss', { duration: 3000 } ) );
     }
 
@@ -73,7 +73,7 @@ export class CombatStatisticsComponent implements OnInit, AfterViewChecked {
     public set blockedPlayers( value: string ) {
         this._blockedPlayers = value;
         
-        this.serverBlockedPlayers[ this.serverTrustServer ] = value.split( '\r\n' );
+        this.serverBlockedPlayers[ this.serverTrustServer ] = value.split( /\r?\n/g );
         this.ipcService.updateSetting( SettingsKeys.serverBlockedPlayers, this.serverBlockedPlayers, 1500, () => this.snackBar.open( 'Blocked players updated', 'Dismiss', { duration: 3000 } ) );
     }
 
@@ -84,8 +84,8 @@ export class CombatStatisticsComponent implements OnInit, AfterViewChecked {
     public set serverTrustServer( value: string ) {
         this._serverTrustServer = value;
 
-        this._trustedPlayers = ( this.serverTrustedPlayers[ value ] || [] ).join( '\r\n' );
-        this._blockedPlayers = ( this.serverBlockedPlayers[ value ] || [] ).join( '\r\n' );
+        this._trustedPlayers = ( this.serverTrustedPlayers[ value ] || [] ).join( '\r\n' ) + '\r\n';
+        this._blockedPlayers = ( this.serverBlockedPlayers[ value ] || [] ).join( '\r\n' ) + '\r\n';
 
         localStorage.setItem( 'cachedServerTrustServer', value );
     }
@@ -120,8 +120,18 @@ export class CombatStatisticsComponent implements OnInit, AfterViewChecked {
 
     ngOnInit(): void {
 
-        this.ipcService.watchSetting<Record<string, string[]>>( SettingsKeys.serverTrustedPlayers ).subscribe( data => this.serverTrustedPlayers = data );
-        this.ipcService.watchSetting<Record<string, string[]>>( SettingsKeys.serverBlockedPlayers ).subscribe( data => this.serverBlockedPlayers = data );
+        this.ipcService.watchSetting<Record<string, string[]>>( SettingsKeys.serverTrustedPlayers ).subscribe( data => {
+            this.serverTrustedPlayers = data;
+            if ( this.serverTrustServer ) {
+                this._trustedPlayers = ( data[ this.serverTrustServer ] || [] ).join( '\r\n' ) + '\r\n';
+            }
+        } );
+        this.ipcService.watchSetting<Record<string, string[]>>( SettingsKeys.serverBlockedPlayers ).subscribe( data => {
+            this.serverBlockedPlayers = data;
+            if ( this.serverTrustServer ) {
+                this._blockedPlayers = ( data[ this.serverTrustServer ] || [] ).join( '\r\n' ) + '\r\n';
+            }
+        } );
         this.ipcService.getServerList().subscribe( data => {
             this.serverTrustServerOptions = data;
             this.serverTrustServer = localStorage.getItem( 'cachedServerTrustServer' ) ?? data[ 0 ];
