@@ -28,7 +28,8 @@ export class InputDialogComponent implements OnInit {
         public dialogRef: MatDialogRef<InputDialogComponent>,
         @Inject( MAT_DIALOG_DATA ) public data: InputDialogModel,
         public dialog: MatDialog,
-        private ipcService: IpcService ) {
+        private ipcService: IpcService,
+    ) {
         if ( data.message instanceof Array ) {
             this.messages = data.message;
         } else {
