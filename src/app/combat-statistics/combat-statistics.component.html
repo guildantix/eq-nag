@@ -24,7 +24,7 @@
                             </ng-template>
                             <ng-template [ngIf]="connected">
                                 <h2 style="font-weight: 100; margin-top: 0.55em;">Connected to server.</h2>
-                                <button mat-button class="color-red" (click)="disconnect()"><mat-icon class="material-icons-outlined">public_off</mat-icon> Stop log sync server</button>
+                                <button mat-button class="color-red" (click)="disconnect()"><mat-icon class="material-icons-outlined">public_off</mat-icon> Disconnect from server</button>
                                 <button mat-button class="color-blue" (click)="copyServerLink()" *ngIf="chatRoomId != undefined"><mat-icon class="material-icons-outlined">content_copy</mat-icon> Copy server link</button>
                             </ng-template>
                         </div>
