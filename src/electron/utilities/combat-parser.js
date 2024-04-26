@@ -2281,7 +2281,7 @@ class CombatParser {
 
         if ( playerDpsRecs?.length > 0 ) {
             let lastDps = playerDpsRecs[ playerDpsRecs.length - 1 ];
-            let delay = DateUtilities.timeSince( lastDps.end, timestamp ).totalMilliseconds;
+            let delay = DateUtilities.timeSince( lastDps?.end ?? timestamp, timestamp ).totalMilliseconds;
 
             if ( delay > this._dpsMeterSettings.playerInactiveDelayMs ) {
                 statBlock = new PlayerDps();
