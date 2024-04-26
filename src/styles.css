@@ -63,7 +63,7 @@ ol, p, ul {
 }
 
 .show-scrollbar::-webkit-scrollbar-thumb {
-    border-radius: 100px;
+    /* border-radius: 100px; */
     background-color: #0000004d;
 }
 .show-scrollbar::-webkit-scrollbar-thumb:hover {
