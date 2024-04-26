@@ -1161,22 +1161,6 @@ class CombatParser {
             
         }
 
-        // TODO: This may be in need of change, only new players should be checked right?
-        // Loop through all verified players, and remove their named pets from the npcs list. Ex: Soandso's warder.
-        for ( let i = 0; i < this._verifiedPlayers.length; i++ ) {
-            const player = this._verifiedPlayers[ i ];
-            for ( let j = 0; j < this._verifiedNpcs.length; j++ ) {
-                const npc = this._verifiedNpcs[ j ];
-
-                if ( npc.indexOf( player ) === 0 ) {
-                    this._verifiedPets.push( npc );
-                    // Pets do not belong in the verified npcs list.
-                    this._verifiedNpcs.splice( j, 1 );
-                    this._updateServerStatistics = true;
-                }
-            }
-        }
-
         // TODO: Implicit entity verification could be refactored and optimized.
         let crazy = 0;
         while ( this._unknownEntities.length > 0 && crazy < 5 ) {
@@ -1259,21 +1243,7 @@ class CombatParser {
             for ( let i = 0; i < entitySimpleStats.length; i++ ) {
                 const stats = entitySimpleStats[ i ];
 
-                if ( stats.attackPlayer === 0 && stats.attackNpc > 0 ) {
-
-                    this._verifiedPets.push( stats.name );
-                    let ui = this._unknownEntities.indexOf( stats.name );
-                    this._unknownEntities.splice( ui, 1 );
-                    this._updateServerStatistics = true;
-
-                } else if ( stats.attackNpc === 0 && stats.attackPlayer === 0 && stats.healPlayer > 0 ) {
-
-                    this._verifiedPets.push( stats.name );
-                    let ui = this._unknownEntities.indexOf( stats.name );
-                    this._unknownEntities.splice( ui, 1 );
-                    this._updateServerStatistics = true;
-
-                } else if ( stats.attackedByPlayer > 0 && stats.attackNpc === 0 ) {
+                if ( stats.attackedByPlayer > 0 && stats.attackNpc === 0 ) {
 
                     this._verifiedNpcs.push( stats.name );
                     let ui = this._unknownEntities.indexOf( stats.name );
