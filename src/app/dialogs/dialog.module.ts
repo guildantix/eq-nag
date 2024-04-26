@@ -34,6 +34,7 @@ import { WebComponentsModule } from '../web-components/web-components.module';
 import { ActionOverlayReassignmentDialogComponent } from './action-overlay-reassignment-dialog/action-overlay-reassignment-dialog.component';
 import { MonitorSelectDialogComponent } from './monitor-select-dialog/monitor-select-dialog.component';
 import { QuestionDialogComponent } from './question-dialog/question-dialog.component';
+import { JoinChatRoomDialogComponent } from './join-chat-room-dialog/join-chat-room-dialog.component';
 
 @NgModule( {
     imports: [
@@ -100,6 +101,7 @@ import { QuestionDialogComponent } from './question-dialog/question-dialog.compo
         MapPackageOverlayDialogComponent,
         ActionOverlayReassignmentDialogComponent,
         MonitorSelectDialogComponent,
+        JoinChatRoomDialogComponent,
     ],
     providers: [
         DialogService,
