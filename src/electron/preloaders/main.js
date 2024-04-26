@@ -47,6 +47,7 @@ const channelPrefixes = [
     'combat-database',
     'chat-room',
     'combat',
+    'show-settings',
 ];
 
 const styleSheetUtil = new StyleSheetUtil();

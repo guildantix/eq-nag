@@ -11,6 +11,7 @@ const channelPrefixes = [
     'combat-database', 
     'chat-room',
     'combat',
+    'show-settings',
 ];
 let mouseEnabled = false;
 
