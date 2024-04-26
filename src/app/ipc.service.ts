@@ -3,7 +3,7 @@ import * as Electron from 'electron';
 import { UpdateInfo } from 'electron-updater';
 import { Observable, Observer } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
-import { DataTickModel, DkpEntryModel, TriggerModel, OverlayWindowModel, ActionTypes, FocusEffectSettings, CharacterModel, BasicError, TriggerFolder, FileModel, Tag, AuthorModel, PackageFileModel, TriggerPackageMetaModel, TriggerPackageVersion, FctStylesModel, OverlayBoundsChangedEventArgs, DialogEventArgs, QuickShareMetaModel, LogFileLocation, IpcMessage, DeathRecapPreferences, QuickShareAuthorListTypes, Progress, QuitFailureData, DuplicateTriggerAction, ScrapedSpell, ScrapedClickEffect, TriggerParseHistoryModel, SimulationProgress, FctCombatGroup, CombatTypes, StylePropertiesModel, CombatAnimations, TriggersProfileModel, ConsoleMessageModel, LogTypes, ServerCombatModel, ProgressModel, ServerConsoleMessage } from './core.model';
+import { DataTickModel, DkpEntryModel, TriggerModel, OverlayWindowModel, ActionTypes, FocusEffectSettings, CharacterModel, BasicError, TriggerFolder, FileModel, Tag, AuthorModel, PackageFileModel, TriggerPackageMetaModel, TriggerPackageVersion, FctStylesModel, OverlayBoundsChangedEventArgs, DialogEventArgs, QuickShareMetaModel, LogFileLocation, IpcMessage, DeathRecapPreferences, QuickShareAuthorListTypes, Progress, QuitFailureData, DuplicateTriggerAction, ScrapedSpell, ScrapedClickEffect, TriggerParseHistoryModel, SimulationProgress, FctCombatGroup, CombatTypes, StylePropertiesModel, CombatAnimations, TriggersProfileModel, ConsoleMessageModel, LogTypes, ServerCombatModel, ProgressModel, ServerConsoleMessage, ChatRoomLinkReceivedEventArgs } from './core.model';
 import { GinaConfiguration, GinaTriggerGroups } from './gina.model';
 import { ColorUtility } from './utilities';
 import { nagId } from './core/nag-id.util';
@@ -82,6 +82,7 @@ export class IpcService {
     private _onChatRoomServerLog: Observer<ServerConsoleMessage>[] = [];
     private _onServerEvent: Observer<ServerEventModel>[] = [];
     private _onCombatCharacterChanged: Observer<string>[] = [];
+    private _onReceivedChatRoomLink: Observer<ChatRoomLinkReceivedEventArgs>[] = [];
 
     private _ginaConfigCache: GinaConfiguration = null;
 
@@ -161,6 +162,14 @@ export class IpcService {
                 window.api.ipc.on( 'combat:character:changed', ( event: any, data: string ) => {
                     ngZone.run( () => {
                         this._onCombatCharacterChanged?.forEach( f => {
+                            f.next( data );
+                        } );
+                    } );
+                } );
+
+                window.api.ipc.on( 'chat-room:link-received', ( event: any, data: ChatRoomLinkReceivedEventArgs ) => {
+                    ngZone.run( () => {
+                        this._onReceivedChatRoomLink?.forEach( f => {
                             f.next( data );
                         } );
                     } );
@@ -486,6 +495,14 @@ export class IpcService {
     public onCombatCharacterChanged(): Observable<string> {
         let obs: Observable<string> = new Observable<string>( ( observer: Observer<string> ) => {
             this._onCombatCharacterChanged.push( observer );
+        } );
+
+        return obs;
+    }
+
+    public onReceivedChatRoomLink(): Observable<ChatRoomLinkReceivedEventArgs> {
+        let obs: Observable<ChatRoomLinkReceivedEventArgs> = new Observable<ChatRoomLinkReceivedEventArgs>( ( observer: Observer<ChatRoomLinkReceivedEventArgs> ) => {
+            this._onReceivedChatRoomLink.push( observer );
         } );
 
         return obs;
@@ -825,9 +842,11 @@ export class IpcService {
      * 
      * @param key The setting key.
      */
-    public getSetting<T>( key: string ): Observable<T> {
+    public getSetting<T>( key: string, cache: boolean = true ): Observable<T> {
         
-        if ( this._settingsObservableCache[ key ] ) {
+        cache = cache !== false;
+
+        if ( cache && this._settingsObservableCache[ key ] ) {
             return this._settingsObservableCache[ key ];
 
         } else {

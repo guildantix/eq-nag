@@ -460,6 +460,27 @@ ipcMain.on( 'app:get:all-display', ( event ) => {
     event.sender.send( 'app:get:all-display', screen.getAllDisplays() );
 } );
 
+ipcMain.on( 'chat-room:link-received',
+    /**
+     * @param {Electron.IpcMainEvent} event The event args.
+     * @param {{link: string, player: string, server: string}} data The chat link received args.
+     */
+    ( event, data ) => {
+        
+        if ( userPreferences.serverTrustedPlayers[ data.server ] && userPreferences.serverTrustedPlayers[ data.server ].includes( data.player ) ) {
+            // join server.
+            logBootstrap.sendToCombatWatcher( 'chat-room:join-chat-room', data.link );
+
+        } else if ( userPreferences.serverBlockedPlayers[ data.server ] && userPreferences.serverBlockedPlayers[ data.server ].includes( data.player ) ) {
+            // ignore
+            appLogException( { label: 'Chat Room', message: `Blocked player ${data.player} from server ${data.server}.`, payload: data } );
+
+        } else {
+            mainWindow.webContents.send( 'chat-room:link-received', data );
+        }
+
+    } );
+
 ipcMain.on( 'main:console:log', ( event, data ) => { mainWindow.webContents.send( 'console:log', data ); } );
 
 let _tickTimeoutId = -1;

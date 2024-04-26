@@ -18,6 +18,7 @@ const { IpcMessage } = require( '../data/models/common' );
 const ArrayUtilities = require( '../utilities/arrays' );
 const FileMonitor = require( '../utilities/file-monitor' );
 const { LogHistoryManager } = require( '../utilities/log-console' );
+const { createChatRoomLink } = require( '../utilities/peer-to-peer' );
 const chunkSize = 512 * 1024;
 
 window.onerror = ( error, url, line ) => {
@@ -1423,8 +1424,10 @@ function parseLogEntries( raw, simulating, padTime ) {
         // let quickShareRegx = /{NAG:(?!package\/)(quick-share\/)?(?<quickShareId>.+?)}/g;
     
         // https://regex101.com/r/ZrNaZM/2
-        let quickShareRegx = /^(:?(?<author>\w+) .*)?{NAG:(?!package\/)(quick-share\/)?(?<quickShareId>.+?)}/g;
+        let quickShareRegx = /^(:?(?<author>\w+) .*)?{NAG:(?!package\/)(?!p2p\/)(quick-share\/)?(?<quickShareId>.+?)}/g;
 
+        // https://regex101.com/r/L8V7Ip/2
+        let p2pRegex = /^(:?(?<player>\w+) .*)?{NAG:(p2p\/)(?<chatRoomId>.+?)}/g;
 
         // https://regex101.com/r/RwCLkN/1
         let packageShareRegx = /{NAG:package\/(?<packageId>.+?)}/g;
@@ -1460,7 +1463,17 @@ function parseLogEntries( raw, simulating, padTime ) {
             }
 
         }
-    
+
+        let p2p = p2pRegex.exec( log );
+        if ( p2p && p2p.groups?.chatRoomId ) {
+            let link = createChatRoomLink( p2p.groups.chatRoomId );
+            ipcRenderer.send( 'chat-room:link-received', {
+                link: link,
+                player: p2p.groups.player,
+                server: charModel.server,
+            } );
+        }
+
         let quickSharePackage = packageShareRegx.exec( log );
         if ( quickSharePackage && quickSharePackage.groups?.packageId ) {
             ipcRenderer.send( 'quicksharePackage_captured', quickSharePackage.groups.packageId );

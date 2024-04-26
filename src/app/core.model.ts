@@ -1839,3 +1839,11 @@ export class ServerConsoleMessage {
     public timestamp: Date;
 
 }
+
+export class ChatRoomLinkReceivedEventArgs {
+    
+    public link: string;
+    public player: string;
+    public server: string;
+
+}
