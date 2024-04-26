@@ -37,10 +37,13 @@ div.tab-content {
 
     .server-console-lines {
         overflow: auto;
-        margin: 0;
-        padding: 0;
-        height: 100%;
+        margin: 0px;
+        padding: 0.3em 0.15em;
         direction: ltr;
+        width: calc(100% - 0.6em);
+        height: calc(100% - 0.6em);
+        border: 2px solid #0000006b;
+        background-color: #0000002e;
 
         .server-console-line {
             display: flex;

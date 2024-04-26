@@ -33,6 +33,8 @@ export enum SettingsKeys {
     enableGpuAcceleration = 'enableGpuAcceleration',
     dpsWindowPosition = 'dpsWindowPosition',
     dpsMeterSettings = 'dpsMeterSettings',
+    serverTrustedPlayers = 'serverTrustedPlayers',
+    serverBlockedPlayers = 'serverBlockedPlayers',
 };
 
 export enum ActionTypes {

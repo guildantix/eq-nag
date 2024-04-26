@@ -533,6 +533,24 @@ class UserPreferencesStore extends Store {
         this.storeDataFile( this.#data );
     }
 
+    /** @type {Record<string, string[]>} */
+    get serverTrustedPlayers() {
+        return this.#data.serverTrustedPlayers ?? {};
+    }
+    set serverTrustedPlayers( val ) {
+        this.#data.serverTrustedPlayers = val;
+        this.storeDataFile( this.#data );
+    }
+
+    /** @type {Record<string, string[]>} */
+    get serverBlockedPlayers() {
+        return this.#data.serverBlockedPlayers ?? {};
+    }
+    set serverBlockedPlayers( val ) {
+        this.#data.serverBlockedPlayers = val;
+        this.storeDataFile( this.#data );
+    }
+
     /** @type {(fctStyles: FctStylesModel) => void[]} */
     onFctStyleChanges = [];
 

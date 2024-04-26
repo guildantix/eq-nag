@@ -1,7 +1,7 @@
 import { AfterViewChecked, Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { DialogService } from '../dialogs/dialog.service';
 import { GoodbyePayloadModel, HandshakePayloadModel, IpcService } from '../ipc.service';
-import { ServerConsoleMessage } from '../core.model';
+import { ServerConsoleMessage, SettingsKeys } from '../core.model';
 import { MatSnackBar } from '@angular/material/snack-bar';
 
 export interface IConnectedPeer {
@@ -55,6 +55,46 @@ export class CombatStatisticsComponent implements OnInit, AfterViewChecked {
         return Math.ceil( this.connectedPeers.length / 9 ) * 36 + 36;
     }
 
+    private _trustedPlayers: string = '';
+    public get trustedPlayers(): string {
+        return this._trustedPlayers;
+    }
+    public set trustedPlayers( value: string ) {
+        this._trustedPlayers = value;
+
+        this.serverTrustedPlayers[ this.serverTrustServer ] = value.split( '\r\n' );
+        this.ipcService.updateSetting( SettingsKeys.serverTrustedPlayers, this.serverTrustedPlayers, 1500, () => this.snackBar.open( 'Trusted players updated', 'Dismiss', { duration: 3000 } ) );
+    }
+
+    private _blockedPlayers: string = '';
+    public get blockedPlayers(): string {
+        return this._blockedPlayers;
+    }
+    public set blockedPlayers( value: string ) {
+        this._blockedPlayers = value;
+        
+        this.serverBlockedPlayers[ this.serverTrustServer ] = value.split( '\r\n' );
+        this.ipcService.updateSetting( SettingsKeys.serverBlockedPlayers, this.serverBlockedPlayers, 1500, () => this.snackBar.open( 'Blocked players updated', 'Dismiss', { duration: 3000 } ) );
+    }
+
+    private _serverTrustServer: string | undefined = undefined;
+    public get serverTrustServer(): string {
+        return this._serverTrustServer || '';
+    }
+    public set serverTrustServer( value: string ) {
+        this._serverTrustServer = value;
+
+        this._trustedPlayers = ( this.serverTrustedPlayers[ value ] || [] ).join( '\r\n' );
+        this._blockedPlayers = ( this.serverBlockedPlayers[ value ] || [] ).join( '\r\n' );
+
+        localStorage.setItem( 'cachedServerTrustServer', value );
+    }
+
+    public serverTrustServerOptions: string[] = [];
+    private serverTrustedPlayers: Record<string, string[]> = {};
+    private serverBlockedPlayers: Record<string, string[]> = {};
+
+
     constructor(
         private readonly dialogService: DialogService,
         private readonly ipcService: IpcService,
@@ -79,6 +119,13 @@ export class CombatStatisticsComponent implements OnInit, AfterViewChecked {
     }
 
     ngOnInit(): void {
+
+        this.ipcService.watchSetting<Record<string, string[]>>( SettingsKeys.serverTrustedPlayers ).subscribe( data => this.serverTrustedPlayers = data );
+        this.ipcService.watchSetting<Record<string, string[]>>( SettingsKeys.serverBlockedPlayers ).subscribe( data => this.serverBlockedPlayers = data );
+        this.ipcService.getServerList().subscribe( data => {
+            this.serverTrustServerOptions = data;
+            this.serverTrustServer = localStorage.getItem( 'cachedServerTrustServer' ) ?? data[ 0 ];
+        } );
 
         this.ipcService.getChatRoomServerLogData().subscribe( data => data.forEach( x => this.appendLind( x ) ) );
         this.ipcService.onChatRoomServerLog().subscribe( data => this.appendLind( data ) );
@@ -117,6 +164,10 @@ export class CombatStatisticsComponent implements OnInit, AfterViewChecked {
 
     }
 
+    public openCombatStatsSettings(): void {
+        this.ipcService.showSettingsWindow( 'combatStatistics' );
+    }
+
     public clearConsole() {
         this.lines = [];
         this.ipcService.clearChatRoomServerLogData();
@@ -142,9 +193,9 @@ export class CombatStatisticsComponent implements OnInit, AfterViewChecked {
         this.dialogService.showInfoDialog(
             'Server Trust',
             [
-                'Server trust will allow you add players to a trusted/blocked list.',
-                'If you use a trusted player list, then only players in this list can trigger the join server dialog.',
-                'Any player from the blocked list posting a server will be ignored.',
+                'When someone links a server, you will get a popup asking if you want to join the server.',
+                'If the player is in the trusted list, you will automatically join the server.',
+                'Any player from the blocked list will be ignored.',
             ],
             'wide',
         );

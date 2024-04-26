@@ -1,14 +1,13 @@
 <mat-toolbar>
     <span>Combat Statistics</span>
     <span class="spacer"></span>
+    <button mat-icon-button (click)="openCombatStatsSettings()"><mat-icon class="material-icons-outlined" style="opacity: 0.75;">settings</mat-icon></button>
     <!-- <button mat-button [disabled]="true">Export</button> -->
     
     <!-- <button mat-button title="Import settings from another player." class="color-orange"><mat-icon class="material-icons-outlined">cloud_download</mat-icon> Import</button> -->
     <!-- <button mat-button color="accent"><mat-icon class="material-icons-outlined">add</mat-icon> New</button> -->
 </mat-toolbar>
 <div class="tab-content no-scroller">
-
-    <div style="text-align: right; padding: 0 25px 20px;"><mat-checkbox [(ngModel)]="enableCombatStatistics" name="enableCombatStatistics">Enable Combat Statistics</mat-checkbox></div>
 
     <fieldset>
         <legend><span class="title">Log Synchronization</span></legend>
@@ -30,7 +29,10 @@
                             </ng-template>
                         </div>
                         <div style="width: 50%;">
-                            <p>!! TODO: Put a description and rules on how this operates here. !!</p>
+                            <h3 style="font-weight: 100;">Combat Log Sync</h3>
+                            <p>When syncing your combat log, during an encounter you will send and receive overall combat statistics with the group.  This will include, per player, the total damage done, time engaged, dps, heals, and hps.</p>
+                            <p>At the end of an encounter, you will sync with the group by transmitting and receiving the combat logs for the encounter.</p>
+                            <!-- <p>Once an encounter is over, you can then export the combat statistics into a spreadsheet.  You can choose to include shared combat logs at that time.</p> -->
                         </div>
                     </div>
                 </div>
@@ -73,23 +75,35 @@
                 matTooltipClass="tooltip-large"
                 (click)="explainServerTrust()">&nbsp;?</sup></legend>
 
+        <div>
+            <mat-form-field>
+                <mat-label></mat-label>
+                <mat-select [(ngModel)]="serverTrustServer" name="serverTrustServer" style="text-transform: capitalize;">
+                    <mat-option *ngFor="let server of serverTrustServerOptions" [value]="server" style="text-transform: capitalize;">{{server}}</mat-option>
+                </mat-select>
+                <mat-hint>Server</mat-hint>
+            </mat-form-field>
+        </div>
+
         <div class="server-trust-content">
             <div>
                 <h3 class="sub-header full-width header-glow">Trusted Players</h3>
                 <mat-form-field style="width: 100%;">
                     <mat-label></mat-label>
-                    <textarea matInput [(ngModel)]="whitelist" name="whitelist" rows="5"></textarea>
-                    <mat-hint>Add trusted characters to the whitelist.</mat-hint>
+                    <textarea matInput [(ngModel)]="trustedPlayers" name="trustedPlayers" rows="5" spellcheck="false" ></textarea>
+                    <mat-hint>Add trusted characters to the list, separated by new lines.</mat-hint>
                 </mat-form-field>
+                <p>When any player in this list links to a server, and you are not already connected to one, you will automatically connect to the linked server.</p>
             </div>
 
             <div>
                 <h3 class="sub-header full-width header-glow">Blocked Players</h3>
                 <mat-form-field style="width: 100%;">
                     <mat-label></mat-label>
-                    <textarea matInput [(ngModel)]="whitelist" name="whitelist" rows="5"></textarea>
-                    <mat-hint>Any name found in the block list will be ignored.</mat-hint>
+                    <textarea matInput [(ngModel)]="blockedPlayers" name="blockedPlayers" rows="5" spellcheck="false" ></textarea>
+                    <mat-hint>Add blocked characters to the list, separated by new lines.</mat-hint>
                 </mat-form-field>
+                <p>Any server linked by a player in the blocked list will be ignored.</p>
             </div>
         </div>
 
