@@ -1830,8 +1830,8 @@ class CombatParser {
                 model.combatTypes.otherHitsOnMe = otherAction;
 
             } else if ( rec.attackType === 'spell' ) {
-                model.combatTypes.mySpellHits = myAction;
-                model.combatTypes.otherSpellHitsOnMe = otherAction;
+                model.combatTypes.mySpellHits = myAction && !rec.heal;
+                model.combatTypes.otherSpellHitsOnMe = otherAction && !rec.heal;
                 model.combatTypes.myHealing = myAction && rec.heal > 0;
                 model.combatTypes.otherHealingOnMe = otherAction && rec.heal > 0;
 
@@ -1848,7 +1848,7 @@ class CombatParser {
             } else if ( rec.modifiers.miss ) {
                 model.avoidType = 'miss';
             } else {
-                model.amount = rec.spellType === 'direct heal' || rec.spellType === 'heal over time' ? rec.heal : rec.damage;
+                model.amount = model.combatTypes.myHealing || model.combatTypes.otherHealingOnMe ? rec.heal : rec.damage;
             }
 
             model.actor = actor;
