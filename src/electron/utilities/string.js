@@ -428,7 +428,9 @@ function parseMatchesToLiteral( value, matches, deltaTime ) {
     //                      Match 2
     //                      Full match	40-44	#{2}
     //                      Group 1.	42-43	2
-    let indexedResults = [ ...value.matchAll( /#{([0-9]+?)}/g ) ];
+    //
+    // Having alternate syntax including ${1} and {1}.
+    let indexedResults = [ ...value.matchAll( /(:?#|\$)?{([0-9]+?)}/g ) ];
 
     if ( indexedResults?.length > 0 ) {
         for ( let i = 0; i < indexedResults.length; i++ ) {
@@ -437,9 +439,13 @@ function parseMatchesToLiteral( value, matches, deltaTime ) {
             //      (.+?) has been slain by (.+?)!
             //  matches the log entry
             //      Mob Name A has been slain by Soandso!
-            let index = +indexedResults[ i ][ 1 ];
+            let index = +indexedResults[ i ][ indexedResults[ i ].length - 1 ];
             if ( matches[ index ] != null ) {
-                value = value.replace( RegExp( `#{${index}}`, 'g' ), matches[ index ] );
+                if ( indexedResults[ i ][ 1 ] === '$' || indexedResults[ i ][ 1 ] === '#' ) {
+                    value = value.replace( RegExp( `(#|\\$)\\{${index}\\}`, 'g' ), matches[ index ] );
+                } else {
+                    value = value.replace( RegExp( `\\{${index}\\}`, 'g' ), matches[ index ] );
+                }
             }
         }
     }
