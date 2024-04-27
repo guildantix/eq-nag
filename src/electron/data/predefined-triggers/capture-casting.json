@@ -11,6 +11,22 @@
             "phraseId": "v7GDFrDCcFwhTAOP"
         },
         {
+            "ignoreCase": false,
+            "requirePreviousPhrase": false,
+            "duration": null,
+            "phraseId": "1nl8HaPwOjAFOoFO",
+            "useRegEx": true,
+            "phrase": "^You activate (.*)\\."
+        },
+        {
+            "ignoreCase": false,
+            "requirePreviousPhrase": false,
+            "duration": null,
+            "phraseId": "7iax6y76baIan4jq",
+            "useRegEx": true,
+            "phrase": "^You begin singing (.*)\\."
+        },
+        {
             "useRegEx": true,
             "requirePreviousPhrase": false,
             "duration": null,
