@@ -2547,9 +2547,6 @@ function displayTextComponent( res, timestamp, action, deltaTime, simulating, tr
     
     comp.action.displayText = StringUtilities.parseShortCodeValuesToLiteral( comp.action.displayText, characterName, comp.action.duration, res.result?.groups, res.result ? res.result[ 0 ] : null );
     comp.action.displayText = StringUtilities.parseStoredVariablesToLiteral( comp.action.displayText, storedVariables );
-    // console.log( 'StringUtilities.parseConditionResultsToLiteral', comp.action.displayText, conditionResults );
-    // TODO: Why not parseConditionResultsToLiteral?
-    // comp.action.displayText = StringUtilities.parseConditionResultsToLiteral( comp.action.displayText, conditionResults );
     comp.action.displayText = StringUtilities.parseCountersToLiteral( comp.action.displayText, counters );
     comp.action.displayText = StringUtilities.parseMatchesToLiteral( comp.action.displayText, res.result, deltaTime );
 
