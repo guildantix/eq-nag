@@ -146,11 +146,12 @@ function parseStoredVariablesToLiteral( value, storedVariables ) {
     // \${(.[^}]*)}     Your ${SpellBeingCast} spell is interrupted.
     //                      Full match	47-63	{SpellBeingCast}
     //                      Group 1.	n/a	SpellBeingCast
-    let result = /\${(.[^}]*)}/g.exec( value );
+    let namedResults = [ ...value.matchAll( /\${(.[^}]*)}/g ) ];
     
-    if ( result?.length > 1 ) {
-        for ( let i = 1; i < result.length; i++ ) {
-            let values = storedVariables[ result[ i ] ];
+    if ( namedResults?.length > 0 ) {
+        for ( let m = 0; m < namedResults.length; m++ ) {
+            let key = namedResults[ m ][ 1 ];
+            let values = storedVariables[ key ];
             if ( values?.length > 0 ) {
                 let text = values[ 0 ];
                 
@@ -158,7 +159,7 @@ function parseStoredVariablesToLiteral( value, storedVariables ) {
                     text += ',' + values[ i ];
                 }
             
-                value = value.replace( RegExp( `\\\${${result[ i ]}}`, 'g' ), text );
+                value = value.replace( RegExp( `\\\${${key}}`, 'g' ), text );
             }
         }
     }
