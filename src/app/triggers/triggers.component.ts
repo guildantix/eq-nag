@@ -1702,6 +1702,12 @@ export class TriggersComponent implements OnInit {
      */
     public getFolderContextMenu( folderId: string, name: string ): ContextMenuModel[] {
         return [ <ContextMenuModel>{
+            label: 'Comments',
+            action: () => this.showFolderComments( folderId ),
+            disabled: () => false,
+            hide: () => false,
+            matIcon: 'chat',
+        }, <ContextMenuModel>{
             label: 'Rename',
             action: () => this.renameFolder( folderId, name ),
             disabled: () => false,
@@ -1822,6 +1828,38 @@ export class TriggersComponent implements OnInit {
             hide: () => false,
             matIcon: 'clear',
         } ];
+    }
+
+
+
+
+
+
+
+
+
+    
+    /**
+     * Opens the input dialog to allow the user to input or view the comments 
+     * for the specified folder.
+     * 
+     * @param folderId The id of the folder.
+     */
+    showFolderComments( folderId: string ): void {
+        let folder = this.findFolderById( folderId );
+        
+        this.dialogService.showInputDialog(
+            `${folder.name} Comments`,
+            [''],
+            'Comments',
+            'Enter comments for the folder',
+            folder.comments, true
+        ).subscribe( comments => {
+            if ( comments != null ) {
+                folder.comments = comments;
+                this.updateTriggerFolders();
+            }
+         } );
     }
 
 
