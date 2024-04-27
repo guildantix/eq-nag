@@ -116,12 +116,22 @@ export class TriggerDialogComponent implements OnInit {
         } );
         if ( this.triggerId == null ) {
             this.model.folderId = this.folderId?.length > 0 ? this.folderId : null;
-            this.ipcService.createNewTrigger( this.model ).subscribe( triggerId => { } );
-            this.closeModal();
+            this.ipcService.createNewTrigger( this.model ).subscribe( triggerId => {
+                this.triggerId = triggerId;
+                this.model.triggerId = triggerId;
+            } );
         } else {
             this.ipcService.updateTrigger( this.model ).subscribe( success => { } );
-            this.closeModal();
         }
+    }
+
+    public saveAndClose(): void {
+        this.save();
+        this.closeModal();
+    }
+
+    public applyChanges(): void {
+        this.save();
     }
 
     public copyJson(): void {
