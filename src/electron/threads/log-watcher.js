@@ -118,6 +118,11 @@ let disabledTriggerIds = [];
 /** @type {Record<string, RegExp>} */
 let buffRegExs = {};
 
+/** @type {(() => void)[]} */
+let onTriggerGenCompleteHandlers = [];
+
+/** @type {boolean} */
+let triggerGenComplete = false;
     
 let rgxTimestamp = /^\[(.*?)\]\s*/i;
 
@@ -290,7 +295,13 @@ function LogWatcher(character, logPosition) {
 
             fileMonitor.stopMonitoringLogFile().then( () => {
                 fileMonitor = new FileMonitor( logFilePath );
-                backfind().then( () => startParsingLogFile( logFilePath, logPosition >= 0 ? logPosition : null ) );
+                if ( !triggerGenComplete ) {
+                    onTriggerGenCompleteHandlers.push( () => backfind().then( () => startParsingLogFile( logFilePath, logPosition >= 0 ? logPosition : null ) ) );
+
+                } else {
+                    backfind().then( () => startParsingLogFile( logFilePath, logPosition >= 0 ? logPosition : null ) );
+
+                }
             } );
 
         } );
@@ -1016,7 +1027,7 @@ function generateTriggerFns() {
                                     return {
                                         phraseId: phrase.phraseId,
                                         match: matched,
-                                        result: [ value ], 
+                                        result: [ value ],
                                         renderedPhrase: _phrs,
                                     };
                                 } else {
@@ -1371,6 +1382,12 @@ function generateTriggerFns() {
         }
 
     } );
+
+    triggerGenComplete = true;
+    if ( onTriggerGenCompleteHandlers?.length > 0 ) {
+        let fns = onTriggerGenCompleteHandlers.splice( 0, onTriggerGenCompleteHandlers.length );
+        fns.forEach( f => f() );
+    }
 }
 
 
@@ -2530,6 +2547,9 @@ function displayTextComponent( res, timestamp, action, deltaTime, simulating, tr
     
     comp.action.displayText = StringUtilities.parseShortCodeValuesToLiteral( comp.action.displayText, characterName, comp.action.duration, res.result?.groups, res.result ? res.result[ 0 ] : null );
     comp.action.displayText = StringUtilities.parseStoredVariablesToLiteral( comp.action.displayText, storedVariables );
+    // console.log( 'StringUtilities.parseConditionResultsToLiteral', comp.action.displayText, conditionResults );
+    // TODO: Why not parseConditionResultsToLiteral?
+    // comp.action.displayText = StringUtilities.parseConditionResultsToLiteral( comp.action.displayText, conditionResults );
     comp.action.displayText = StringUtilities.parseCountersToLiteral( comp.action.displayText, counters );
     comp.action.displayText = StringUtilities.parseMatchesToLiteral( comp.action.displayText, res.result, deltaTime );
 
@@ -3231,17 +3251,16 @@ async function backfind() {
     if ( fileMonitor == null )
         throw new Error( 'File monitor is not initialized.' );
 
-    let _triggers = _.filter( triggers, t => _.some( t.actions, a => a.loopBackForValue === true ) );
+    let _triggers = triggers.filter( t => t.actions?.some( a => a.loopBackForValue === true ) );
 
     let valueExists = ( variableName ) => {
         return storedVariables[ variableName ] instanceof Array ? storedVariables[ variableName ].length > 0 : !!storedVariables[ variableName ];
     }
 
-    // TODO: Loopback check, wat!?
     /**
      * Returns true if there is a trigger requiring loopback and still missing a value.
      */
-    function valuesMissing() {
+    const valuesMissing = () => {
         for ( let ti = 0; ti < _triggers?.length ?? 0; ti++ ) {
             for ( let ai = 0; ai < _triggers[ ti ].actions?.length ?? 0; ai++ ) {
                 let variableName = _triggers[ ti ].actions[ ai ].variableName;
@@ -3255,27 +3274,28 @@ async function backfind() {
     }
 
     await fileMonitor.backfind( lines => {
-
         if ( lines?.length > 1 ) {
             for ( let i = lines.length - 1; i > 0; i-- ) {
-                // We want to parse backwards, reading all lines except for the first in the list, this is because the first in the list could be a partial line.
-                if ( lines[ i ].length > 0 && lines[ i ].charAt( 0 ) === '[' ) {
+                
+                if ( !valuesMissing() )
+                    // If all values are found, stop looking.
+                    return false;
+
+                // Check for a valid timestamp in the line.
+                let log = lines[ i ]?.replace( /^\[(.*?)\]\s*/gi, '' );
+
+                if ( log ) {
                     try {
                         _triggers.forEach( trigger => {
-                            // Check for a valid timestamp in the line.
-                            let log = lines[ i ].replace( /^\[(.*?)\]\s*/gi, '' );
-
                             trigger._parse( log, res => {
                                 trigger.actions.forEach( action => {
                                     if ( action.phrases?.indexOf( res.phraseId ) > -1 && action.actionType === ActionTypes.StoreVariable ) {
                                         /* --== Store Variable ==-- */
 
                                         if ( action.loopBackForValue && action.variableName && !valueExists( action.variableName ) ) {
-                                            if ( res.result.length === 1 ) {
-                                                saveVariable( action.variableName, res.result[ 0 ], action.onlyStoreUsedValues );
-                                            } else {
-                                                saveVariable( action.variableName, res.result[ 1 ], action.onlyStoreUsedValues );
-                                            }
+
+                                            const v = res.result.length === 1 ? res.result[ 0 ] : res.result[ 1 ];
+                                            saveVariable( action.variableName, v, action.onlyStoreUsedValues );
             
                                             logHistoryMgr.addSuccessfulTriggerParsedEvent(
                                                 log,
