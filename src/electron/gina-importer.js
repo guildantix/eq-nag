@@ -140,7 +140,7 @@ function getGinaConfig( onLoaded ) {
     // TODO: This should be done in a thread, with a direct reference to the GINA importer window.
     let ginaConfigPath = path.join( ginaDataPath, ginaConfigFileName );
     fs.readFile( ginaConfigPath, { encoding: 'utf8' }, ( err, data ) => {
-        parseStringPromise( data, { normalize: true, normalizeTags: false, explicitArray: false, ignoreAttrs: true } ).then( result => onLoaded( result ) );
+        parseStringPromise( data, { normalize: false, normalizeTags: false, explicitArray: false, ignoreAttrs: true } ).then( result => onLoaded( result ) );
     } );
 }
 
