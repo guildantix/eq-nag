@@ -39,7 +39,14 @@ export class ColorPickerComponent implements OnInit, ControlValueAccessor {
     onTouch: any = () => { }
     public colorPalette: Color[][] = [];
     public showPopup: boolean = false;
-    public paletteName: string = 'nag';
+    private _paletteName: 'nag' | 'gina' = 'nag';
+    public get paletteName(): 'nag' | 'gina' {
+        return this._paletteName;
+    }
+    public set paletteName( val: 'nag' | 'gina' ) {
+        this._paletteName = val;
+        this.updateColorPalette();
+    }
     private _value: Color;
     private _colors: Color[];
 
@@ -64,9 +71,9 @@ export class ColorPickerComponent implements OnInit, ControlValueAccessor {
     constructor( private ipcService: IpcService ) { }
 
     ngOnInit() {
+        this.updateColorPalette();
         this.ipcService.getSetting<string>( 'defaultPaletteName' ).subscribe( pn => {
-            this.paletteName = pn ? pn : this.paletteName;
-            this.updateColorPalette();
+            this.paletteName = pn === 'nag' ? pn : pn === 'gina' ? 'gina' : this.paletteName;
         } );
     }
 
