@@ -123,6 +123,14 @@ export class CombatStatisticsComponent implements OnInit {
         this.updatePlayerInactiveDelay( v );
     }
 
+    public get encounterMinimumDamage(): number {
+        return this._dpsMeterSettings.encounterMinimumDamage;
+    }
+    public set encounterMinimumDamage( v: number ) {
+        this._dpsMeterSettings.encounterMinimumDamage = v;
+        this.updateSetting( SettingsKeys.dpsMeterSettings, this._dpsMeterSettings, 500 );
+    }
+
     public updatedSettings: string[] = [];
 
     public playerNames: Record<string, string[]> = {};

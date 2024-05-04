@@ -4,6 +4,12 @@
     <div>
         <h2 class="sub-header full-width">Encounter Settings</h2>
 
+        <mat-form-field style="width: 100%;">
+            <mat-label></mat-label>
+            <input matInput type="number" [(ngModel)]="encounterMinimumDamage" name="encounterMinimumDamage" />
+            <mat-hint>Encounter Minimum Damage</mat-hint>
+        </mat-form-field>
+
         <div class="formless-hint full-width">
             <div class="formless-input" style="height: 70px; align-items: center;">
                 <span>Encounter Reset Time</span>

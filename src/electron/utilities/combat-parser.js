@@ -489,11 +489,19 @@ class CombatParser {
     /**
      * Returns the DPS for a 10 second encounter.
      * 
+     * @description Returns an empty array if the total encounter damage done 
+     *              is less than the minimum encounter damage value.
+     * 
      * @returns {PlayerDps[]} The list of player DPS.
      */
     getEncounterOutgoingDps() {
         /** @type {PlayerDps[]} */
         let output = [];
+
+        let underMinDmg = this._dpsMeterSettings.encounterMinimumDamage > 0 && ( this._encounterStats?.encounterDamageDone ?? 0 ) < this._dpsMeterSettings.encounterMinimumDamage;
+        if ( underMinDmg ) {
+            return output;
+        }
 
         for ( let i = 0; i < this._verifiedPlayers.length; i++ ) {
             let playerEvents = this._encounterStats?.playerEvents[ this._verifiedPlayers[ i ] ];
@@ -1742,6 +1750,8 @@ class CombatParser {
      */
     resetEncounter() {
 
+        let underMinDmg = this._dpsMeterSettings.encounterMinimumDamage > 0 && ( this._encounterStats?.encounterDamageDone ?? 0 ) < this._dpsMeterSettings.encounterMinimumDamage;
+
         const eventArgs = new EncounterResetEventArgs();
         eventArgs.encounterId = this._encounterStats.encounterId;
         eventArgs.timestamp = this._encounterStats.lastEncounterEvent;
@@ -1767,7 +1777,7 @@ class CombatParser {
             clearTimeout( this._encounterResetTimerId );
         }
 
-        if ( this.onEncounterReset ) {
+        if ( this.onEncounterReset && !underMinDmg ) {
             this.onEncounterReset( eventArgs );
         }
     }
@@ -2373,6 +2383,7 @@ class CombatParser {
             if ( playerActor || playerTarget || petActor || petTarget ) {
 
                 this._encounterStats.lastEncounterEvent = timestamp;
+                this._encounterStats.encounterDamageDone += ( ( playerActor || petActor ) ? logRecord.damage ?? 0 : 0 );
 
                 if ( playerTarget ) {
                     // If the player is the target, then we need to add to the player's dps received record.
