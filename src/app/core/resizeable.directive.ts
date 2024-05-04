@@ -148,7 +148,6 @@ export class ResizeableDirective implements OnInit {
         // Set the visibility
         this.renderer.setStyle( this._dragElement, 'opacity', this.visibility === 'hidden' ? 0 : 1 );
 
-        console.log( this._dragElement );
     }
 
     private setPosition() {
