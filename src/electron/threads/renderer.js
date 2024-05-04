@@ -575,6 +575,10 @@ function renderDpsItems( characterName ) {
 
     dpsItems = dpsItems.sort( ( a, b ) => damageDoneRecs[ b.playerDps.name ] - damageDoneRecs[ a.playerDps.name ] );
 
+    // Wipe-out the existing lines.
+    dpsWindow.querySelector( '.dps-items' ).innerHTML = '';
+
+    // Create new lines.
     for ( let i = 0; i < dpsItems.length; i++ ) {
         const dpsItem = dpsItems[ i ];
         const damageDone = dpsItem.playerDps.damage;
@@ -596,67 +600,27 @@ function renderDpsItems( characterName ) {
             sec: dpsSec > 0 ? `${dpsSec}s` : '-',
         };
 
-        if ( !dpsItem.dom ) {
-            dpsItem.dom = createElement( 'div' );
-            dpsItem.dom.classList.add( 'dps-item' );
-            dpsMeterSettings?.highlightMyName && mine && dpsItem.dom.classList.add( 'mine' );
-            dpsItem.dom.innerHTML = dpsWindowItemTemplate( model );
-            dpsWindow.querySelector( '.dps-items' ).appendChild( dpsItem.dom );
+        dpsItem.dom = createElement( 'div' );
+        dpsItem.dom.classList.add( 'dps-item' );
+        dpsMeterSettings?.highlightMyName && mine && dpsItem.dom.classList.add( 'mine' );
+        dpsItem.dom.innerHTML = dpsWindowItemTemplate( model );
+        dpsWindow.querySelector( '.dps-items' ).appendChild( dpsItem.dom );
 
-            let bar = dpsItem.dom.querySelector( '.determinate' );
-            let colorCode = darkenColor( getEverQuestClassColor( classAbbr ), 0.667 );
+        let bar = dpsItem.dom.querySelector( '.determinate' );
+        let colorCode = darkenColor( getEverQuestClassColor( classAbbr ), 0.667 );
+    
+        bar.style.backgroundColor = colorCode;
+        bar.style.width = `${pctDone}%`;
+
+        let topBorder = bar.querySelector( '.border.top' );
+        let bottomBorder = bar.querySelector( '.border.bottom' );
+        let borderColor = lightenColor( colorCode, 0.13 );
+
+        topBorder.style.background = `linear-gradient(to right, transparent, ${borderColor})`;
+        bottomBorder.style.background = `linear-gradient(to right, transparent, ${borderColor})`;
         
-            bar.style.backgroundColor = colorCode;
-            bar.style.width = `${pctDone}%`;
-
-            let topBorder = bar.querySelector( '.border.top' );
-            let bottomBorder = bar.querySelector( '.border.bottom' );
-            let borderColor = lightenColor( colorCode, 0.13 );
-
-            topBorder.style.background = `linear-gradient(to right, transparent, ${borderColor})`;
-            bottomBorder.style.background = `linear-gradient(to right, transparent, ${borderColor})`;
-
-        } else {
-
-            /** @type {HTMLSpanElement} */
-            let labelSpan = dpsItem.dom.querySelector( '.dps-item-name' );
-            labelSpan != null && ( labelSpan.innerText = model.label );
-
-            /** @type {HTMLSpanElement} */
-            let valueSpan = dpsItem.dom.querySelector( '.dps-item-values' );
-            valueSpan != null && ( valueSpan.innerText = model.value );
-
-            /** @type {HTMLSpanElement} */
-            let damageSpan = dpsItem.dom.querySelector( '.dps-line-item.damage' );
-            damageSpan != null && ( damageSpan.innerText = model.damage );
-
-            /** @type {HTMLSpanElement} */
-            let dpsSpan = dpsItem.dom.querySelector( '.dps-line-item.dps' );
-            dpsSpan != null && ( dpsSpan.innerText = model.dps );
-
-            /** @type {HTMLSpanElement} */
-            let secSpan = dpsItem.dom.querySelector( '.dps-line-item.sec' );
-            secSpan != null && ( secSpan.innerText = model.sec );
-
-            /** @type {HTMLImageElement} */
-            let iconImg = dpsItem.dom.querySelector( '.dps-item-icon' );
-            iconImg != null && ( iconImg.src = model.iconImage );
-
-            let bar = dpsItem.dom.querySelector( '.determinate' );
-            bar.style.width = `${pctDone}%`;
-
-            dpsItem.dom.parentNode.append( dpsItem.dom );
-
-            if ( dpsMeterSettings?.highlightMyName && mine && !dpsItem.dom.classList.contains( 'mine' ) ) {
-                dpsItem.dom.classList.add( 'mine' );
-            } else if ( !dpsMeterSettings?.highlightMyName && mine && dpsItem.dom.classList.contains( 'mine' ) ) {
-                dpsItem.dom.classList.remove( 'mine' );
-            }
-            
-        }
-            
         if ( dpsItem.playerDps.class ) {
-
+            
             /** @type {HTMLSpanElement} */
             let placeholderSpan = dpsItem.dom.querySelector( '.dps-item-icon-placeholder' );
             placeholderSpan != null && ( placeholderSpan.style.display = 'none' );
