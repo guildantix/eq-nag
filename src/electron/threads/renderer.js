@@ -845,6 +845,35 @@ function Renderer( originX, originY, glowOnStart ) {
             combatGroups.forEach( group => {
                 group._combatTypesFlags = CombatTypes.getFlagsValue( group.combatTypes );
                 group._combatModifiersFlags = getCombatModifiersFlags( group.combatModifiers );
+
+                // If the render group has no animation, set it to scroll with fadeIn and faceOut.
+                if ( group.combatAnimations == null ) {
+                    group.combatAnimations = {
+                        fadeIn: true,
+                        fadeOut: true,
+                        scroll: true,
+                    };
+                } else {
+                    let noAnimations = true;
+                    for ( let key in group.combatAnimations ) {
+                        if ( group.combatAnimations[ key ] ) {
+                            noAnimations = false;
+                            break;
+                        }
+                    }
+                    if ( noAnimations ) {
+                        group.combatAnimations = {
+                            fadeIn: true,
+                            fadeOut: true,
+                            scroll: true,
+                        };
+                    }
+                }
+
+                // If the render group has no starting position, set it to bottom left.
+                if ( group.startingPosition == null ) {
+                    group.startingPosition = HitStartPositionTypes.bottom | HitStartPositionTypes.left;
+                }
             } );
 
             // Send a request for the combat data, now that we have our render groups.
@@ -2053,7 +2082,11 @@ function renderFct2( model ) {
         
         if ( renderGroup.combatAnimations.fadeIn ) {
             animation += ( animation.length > 0 ? ', ' : '' ) + `animate-fadein ${animateFadeInDuration}ms ease-out`;
-            duration = duration < animateFadeInDuration ? animateFadeInDuration : duration;
+            if ( renderGroup.combatAnimations.fadeOut ) {
+                duration = duration < animateFadeInDuration ? animateFadeInDuration : duration;
+            } else {
+                duration = animateFadeOutDuration;
+            }
             
         }
         
