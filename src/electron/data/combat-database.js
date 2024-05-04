@@ -41,6 +41,9 @@ As important: only players can kill NPCs.
 
 class CombatDatabase extends Store {
 
+    /** @type {Record<string, Electron.WebContents>} */
+    #serverDataListeners = {};
+
     /** The data store for this object.
      * @type {CombatDb}
      * */
@@ -82,7 +85,8 @@ class CombatDatabase extends Store {
              * @param {string} serverName The name of the server.
              */
             ( event, serverName ) => {
-                event.sender.send( 'combat-database:get-server', this.getOrInitServer( serverName ) );
+                event.sender.send( `combat-database:get-server:${serverName}`, this.getOrInitServer( serverName ) );
+                this.#serverDataListeners[ serverName ] = event.sender;
             } );
 
             ipcMain.on( 'combat-database:get-server-names',
@@ -107,8 +111,12 @@ class CombatDatabase extends Store {
              * @param {import("electron").IpcMainEvent} event The event args.
              * @param {ServerCombatModel} server Theserver combat model.
              */
-            ( event, server ) => {
-                this.putServer( server );
+            async ( event, server ) => {
+                await this.putServer( server );
+
+                if ( this.#serverDataListeners[ server.server ] && this.#serverDataListeners[ server.server ] != event.sender ) {
+                    this.#serverDataListeners[ server.server ].send( `combat-database:get-server:${server.server}`, server );
+                }
             } );
 
         ipcMain.handle( 'log:save-encounter',

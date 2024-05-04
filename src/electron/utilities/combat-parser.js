@@ -352,7 +352,7 @@ class CombatParser {
                 }
             } );
 
-        ipcRenderer.on( 'combat-database:get-server',
+        ipcRenderer.on( `combat-database:get-server:${serverName}`,
             /**
              * Handles the get-server event.
              * 
@@ -360,53 +360,11 @@ class CombatParser {
              * @param {ServerCombatModel} data The server combat model.
              */
             ( event, data ) => {
-                if ( data ) {
-                    this._playerInfos = data.verifiedPlayers;
-                    this._verifiedPlayers = Object.keys( data.verifiedPlayers );
-                    this._verifiedNpcs = data.verifiedNpcs;
-                    this._verifiedPets = data.verifiedPets;
-                    this._petOwners = data.petOwners;
+                this._loadServerData( data );
 
-                    // Add all of my server characters to the verified players list.
-                    let serverCharacters = this._myCharacters.filter( f => f.server === this._serverName );
-                    let scheduleSave = false;
-                    for ( let i = 0; i < serverCharacters.length; i++ ) {
-                        const character = serverCharacters[ i ];
-                        if ( !this._verifiedPlayers.includes( character.name ) ) {
-                            this._verifiedPlayers.push( character.name );
-
-                            if ( this._playerInfos[ character.name ] == null ) {
-                                this._playerInfos[ character.name ] = {
-                                    level: 0,
-                                    className: getEverQuestClassName( character.class ),
-                                    raceName: null,
-                                };
-                            }
-
-                            scheduleSave = true;
-                        }
-                    }
-
-                    // Calculate the pets each player has.
-                    this._playerPets = this._playerPets ?? {};
-                    let petKeys = Object.keys( this._petOwners );
-                    for ( let i = 0; i < petKeys.length; i++ ) {
-                        let pet = petKeys[ i ];
-                        let owner = this._petOwners[ pet ];
-                        if ( !this._playerPets[ owner ] ) {
-                            this._playerPets[ owner ] = [];
-                        }
-                        this._playerPets[ owner ].push( pet );
-                    }
-
-                    this.loaded = true;
-                    if ( this.onReady ) {
-                        this.onReady();
-                    }
-
-                    if ( scheduleSave ) {
-                        window.setTimeout( () => this._updateServerModel(), 0 );
-                    }
+                this.loaded = true;
+                if ( this.onReady ) {
+                    this.onReady();
                 }
             } );
         
@@ -418,6 +376,74 @@ class CombatParser {
         
         ipcRenderer.send( 'character:get' );
 
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Loads the given server data.
+     * 
+     * @param {ServerCombatModel} data The server data.
+     */
+    _loadServerData( data ) {
+        if ( data ) {
+            this._playerInfos = data.verifiedPlayers;
+            this._verifiedPlayers = Object.keys( data.verifiedPlayers );
+            this._verifiedNpcs = data.verifiedNpcs;
+            this._verifiedPets = data.verifiedPets;
+            this._petOwners = data.petOwners;
+
+            // Add all of my server characters to the verified players list.
+            let serverCharacters = this._myCharacters.filter( f => f.server === this._serverName );
+            let scheduleSave = false;
+            for ( let i = 0; i < serverCharacters.length; i++ ) {
+                const character = serverCharacters[ i ];
+                if ( !this._verifiedPlayers.includes( character.name ) ) {
+                    this._verifiedPlayers.push( character.name );
+
+                    if ( this._playerInfos[ character.name ] == null ) {
+                        this._playerInfos[ character.name ] = {
+                            level: 0,
+                            className: getEverQuestClassName( character.class ),
+                            raceName: null,
+                        };
+                    }
+
+                    scheduleSave = true;
+                }
+            }
+
+            // Calculate the pets each player has.
+            this._playerPets = this._playerPets ?? {};
+            let petKeys = Object.keys( this._petOwners );
+            for ( let i = 0; i < petKeys.length; i++ ) {
+                let pet = petKeys[ i ];
+                let owner = this._petOwners[ pet ];
+                if ( !this._playerPets[ owner ] ) {
+                    this._playerPets[ owner ] = [];
+                }
+                this._playerPets[ owner ].push( pet );
+            }
+
+            if ( this._encounterStats ) {
+                this._verifiedPlayers.forEach( f => {
+                    if ( this._encounterStats.playerEvents[ f ] != null ) {
+                        this._encounterStats.playerEvents[ f ].class = this._playerInfos[ f ].className;
+                    }
+                } );
+            }
+    
+            if ( scheduleSave ) {
+                window.setTimeout( () => this._updateServerModel(), 0 );
+            }
+        }
     }
 
 
@@ -1750,6 +1776,9 @@ class CombatParser {
      */
     resetEncounter() {
 
+        if ( this._encounterStats == null )
+            return;
+        
         let underMinDmg = this._dpsMeterSettings.encounterMinimumDamage > 0 && ( this._encounterStats?.encounterDamageDone ?? 0 ) < this._dpsMeterSettings.encounterMinimumDamage;
 
         const eventArgs = new EncounterResetEventArgs();
