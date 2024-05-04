@@ -251,6 +251,9 @@ const accumulationIntervalDelay = 25;
 /** @type {DisplayMetaModel[]} */
 let displayMetas = [];
 
+/** @type {(() => void)[]} */
+let waitingForDisplays = [];
+
 // let perfTimeTotal = 0;
 // let perfIntervalId = null;
 
@@ -384,7 +387,7 @@ function verifyDomRectOnDisplay( bounds ) {
 
     for ( let i = 0; i < displayMetas.length; i++ ) {
         const display = displayMetas[ i ];
-        
+
         if ( domBounds.x >= display.bounds.x && domBounds.x <= display.bounds.x + display.bounds.width && domBounds.y >= display.bounds.y && domBounds.y <= display.bounds.y + display.bounds.height ) {
             nw = true;
         }
@@ -401,6 +404,28 @@ function verifyDomRectOnDisplay( bounds ) {
     }
 
     return nw && ne && sw && se;
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Executes the given function when the displays are loaded.
+ * 
+ * @param {() => void} fn The callback function to execute once the displays are loaded.
+ */
+function waitForDisplaysLoaded( fn ) {
+    if ( displayMetas?.length > 0 ) {
+        fn();
+    } else {
+        waitingForDisplays.push( fn );
+    }
 }
 
 
@@ -445,13 +470,13 @@ function createDpsWindow() {
     let dpsWindowHtml = dpsWindowTemplate( {} );
     // document.write( dpsWindowHtml );
     let div = createElement( 'div' );
-        
+
     div.innerHTML = dpsWindowHtml;
     document.body.appendChild( div );
-        
-        
+
+    div.style.zIndex = overlayTopZIndex + 1;
     div.style.position = 'relative';
-        
+
     return div.querySelector( '.window' );
 
 }
@@ -718,6 +743,33 @@ function Renderer( originX, originY, glowOnStart ) {
 
                 if ( dpsWindowBounds ) {
                     moveResizeDomElement( dpsWindow, dpsWindowBounds );
+
+                    waitForDisplaysLoaded( () => {
+                        if ( !verifyDomRectOnDisplay( dpsWindow.getBoundingClientRect() ) ) {
+                            
+                            logError( { label: 'renderer.js', message: 'DPS Window was rendered outside the viewable area.  Resetting the DPS window size and position.' } );
+    
+                            dpsWindow.style.width = '350px';
+                            dpsWindow.style.height = '350px';
+    
+                            // center element on main monitor
+                            dpsWindow.style.left = ( origin.x + ( screen.getPrimaryDisplay().workArea.width / 2 ) - ( dpsWindow.offsetWidth / 2 ) ) + 'px';
+                            dpsWindow.style.top = ( origin.y + ( screen.getPrimaryDisplay().workArea.height / 2 ) - ( dpsWindow.offsetHeight / 2 ) ) + 'px';
+
+                            // Re-engage move/resize.
+                            disableMoveResize( dpsWindow );
+                            enableMoveResize(
+                                dpsWindow,
+                                dpsWindow.querySelector( '.window-title' ),
+                                bounds => {
+                                    ipcRenderer.send( 'settings:set', { key: 'dpsWindowPosition', value: bounds } );
+                                },
+                                true
+                            );
+                            
+                        }
+                    } );
+                    
                 } else {
                     dpsWindow.style.width = '250px';
                     dpsWindow.style.height = '350px';
@@ -727,12 +779,17 @@ function Renderer( originX, originY, glowOnStart ) {
                     dpsWindow.style.top = ( origin.y + ( screen.getPrimaryDisplay().workArea.height / 2 ) - ( dpsWindow.offsetHeight / 2 ) ) + 'px';
                 }
 
+                dpsWindow.style.display = 'block';
+
                 enableMoveResize(
                     dpsWindow,
                     dpsWindow.querySelector( '.window-title' ),
                     bounds => {
                         ipcRenderer.send( 'settings:set', { key: 'dpsWindowPosition', value: bounds } );
-                    } );
+                    },
+                    true
+                );
+
             } );
         
         ipcRenderer
@@ -964,8 +1021,9 @@ function Renderer( originX, originY, glowOnStart ) {
          * @param {DisplayMetaModel[]} data The list of display metas.
          */
         function ( event, data ) {
-            console.log( 'renderer:get-displays-meta', data );
             displayMetas = data;
+            waitingForDisplays.forEach( f => f() );
+            waitingForDisplays = [];
         } );
     
     ipcRenderer.on( 'renderer:overlay:new',
@@ -2594,10 +2652,11 @@ function disableMoveResize( dom ) {
  * @param {HTMLElement} dom The element to enable resize event on.
  * @param {HTMLElement} moveHandle The element to use as the move handle.
  * @param {(import('electron').Rectangle) => void} onMoveResize The callback to call when the element is moved or resized.
+ * @param {boolean} skipDynamicMouse If true, the dynamic mouse class will not be added to the given dom element.
  */
-function enableMoveResize( dom, moveHandle, onMoveResize ) {
-    dom.classList.add( 'dynamic-mouse' );
-    const domContentArea = dom.querySelectorAll( ':scope *' );
+function enableMoveResize( dom, moveHandle, onMoveResize, skipDynamicMouse ) {
+    !skipDynamicMouse && dom.classList.add( 'dynamic-mouse' );
+    const domContentArea = dom.querySelectorAll( ':scope *:not(.click-through)' );
     domContentArea.forEach( d => d.classList.add( 'dynamic-mouse' ) );
     
     /** @type {import('electron').Rectangle} */

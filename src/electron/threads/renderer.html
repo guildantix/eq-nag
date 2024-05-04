@@ -805,8 +805,8 @@
     <!--          DPS Meter          -->
     <!-- =========================== -->
     <template id="dpsWindowTemplate">
-        <div class="window dps-meter dynamic-mouse damage dps sec" style="display: none;">
-            <div class="window-title">
+        <div class="window dps-meter damage dps sec" style="display: none;">
+            <div class="window-title dynamic-mouse">
                 <span class="window-title-col text">Damage Done</span>
                 <span class="window-title-col spacer"></span>
                 <span class="window-title-col damage mouse-hide">Damage</span>
@@ -818,7 +818,7 @@
                 <span class="window-title-col title-btn mouse-show" onclick="window.api.showSettings('combatStatistics')"><i class="fas fa-gear"></i><span class="tooltip">Window Settings</span></span>
                 <span class="window-title-col right-pad"></span>
             </div>
-            <div class="window-content dps-items">
+            <div class="window-content dps-items click-through">
                 <!-- <div class="dps-item">
                     
                     <div class="dps-item-label">
