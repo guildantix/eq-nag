@@ -112,6 +112,8 @@ class EncounterStats {
     lastEncounterEvent;
     /** @type {Record<string, PlayerEncounterStats>} */
     playerEvents = {};
+    /** @type {number} */
+    encounterDamageDone = 0;
 }
 
 class EncounterResetEventArgs {
@@ -121,6 +123,8 @@ class EncounterResetEventArgs {
     timestamp;
     /** @type {LogRecord[]} */
     logRecords = [];
+    /** @type {string[]} */
+    rawLogs = [];
     /** @type {string[]} */
     externalEncounterIds = [];
     /** @type {Record<string, string>} Maps external encounter ids to their owning character names. */
@@ -280,6 +284,7 @@ class DpsMeterSettings {
     encounterResetDelayMs = 30000;
     encounterInactiveDelayMs = 8000;
     playerInactiveDelayMs = 7000;
+    encounterMinimumDamage = 0;
 
 }
 

@@ -1811,6 +1811,7 @@ export class DpsMeterSettings {
     public encounterResetDelayMs: number = 8000;
     public encounterInactiveDelayMs: number = 8000;
     public playerInactiveDelayMs: number = 7000;
+    public encounterMinimumDamage: number = 0;
 
 }
 

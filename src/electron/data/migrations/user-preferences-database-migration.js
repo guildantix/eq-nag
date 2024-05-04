@@ -6,7 +6,7 @@ const customAlphabet = require( 'nanoid' ).customAlphabet;
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const nanoid = customAlphabet( alphabet, 16 );
 
-const currentUserPreferencesDbVersion = 8;
+const currentUserPreferencesDbVersion = 9;
 
 /**
  * 
@@ -123,6 +123,15 @@ function executeDataMigration( data ) {
         // Create a new DPS meter settings object.
         data.dpsMeterSettings = new DpsMeterSettings();
         data.version = 8;
+
+    }
+    if ( !data.version || data.version < 9 ) {
+        
+        // Create a new DPS meter settings object.
+        data.dpsMeterSettings = data.dpsMeterSettings ?? new DpsMeterSettings();
+        data.dpsMeterSettings.encounterMinimumDamage = 0;
+
+        data.version = 9;
 
     }
     
