@@ -285,6 +285,7 @@ class DpsMeterSettings {
     encounterInactiveDelayMs = 8000;
     playerInactiveDelayMs = 7000;
     encounterMinimumDamage = 0;
+    highlightMyName = false;
 
 }
 

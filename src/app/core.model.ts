@@ -1812,6 +1812,7 @@ export class DpsMeterSettings {
     public encounterInactiveDelayMs: number = 8000;
     public playerInactiveDelayMs: number = 7000;
     public encounterMinimumDamage: number = 0;
+    public highlightMyName: boolean = false;
 
 }
 

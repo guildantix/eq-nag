@@ -131,6 +131,14 @@ export class CombatStatisticsComponent implements OnInit {
         this.updateSetting( SettingsKeys.dpsMeterSettings, this._dpsMeterSettings, 500 );
     }
 
+    public get highlightMyName(): boolean {
+        return this._dpsMeterSettings.highlightMyName;
+    }
+    public set highlightMyName( v: boolean ) {
+        this._dpsMeterSettings.highlightMyName = v;
+        this.updateSetting( SettingsKeys.dpsMeterSettings, this._dpsMeterSettings, 500 );
+    }
+
     public updatedSettings: string[] = [];
 
     public playerNames: Record<string, string[]> = {};

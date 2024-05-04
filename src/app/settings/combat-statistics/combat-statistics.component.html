@@ -41,9 +41,11 @@
     <div>
         <h2 class="sub-header full-width">Combat Statistics Window Settings</h2>
 
-        <mat-checkbox [(ngModel)]="dpsOnlyShowWhenFocused" name="dpsOnlyShowWhenFocused">Only show when Nag or EverQuest have focus.</mat-checkbox>
+        <mat-checkbox [(ngModel)]="dpsOnlyShowWhenFocused" name="dpsOnlyShowWhenFocused" style="width: 100%;">Only show when Nag or EverQuest have focus.</mat-checkbox>
         
-        <mat-checkbox [(ngModel)]="dpsShowOnlyInCombat" name="dpsShowOnlyInCombat">Only show when there is an encounter.</mat-checkbox>
+        <mat-checkbox [(ngModel)]="dpsShowOnlyInCombat" name="dpsShowOnlyInCombat" style="width: 100%;">Only show when there is an encounter.</mat-checkbox>
+        
+        <mat-checkbox [(ngModel)]="highlightMyName" name="highlightMyName" style="width: 100%;">Highlight my name in the meters.</mat-checkbox>
         
     </div>
 </div>

@@ -550,8 +550,10 @@ function clearDpsItems() {
 
 /**
  * Renders the current dps items.
+ * 
+ * @param {string} characterName The name of the character.
  */
-function renderDpsItems() {
+function renderDpsItems( characterName ) {
 
     /** @type {Record<string, number>} */
     let damageDoneRecs = {};
@@ -582,6 +584,7 @@ function renderDpsItems() {
         const classAbbr = getEverQuestClassAbbreviation( dpsItem.playerDps.class );
         const dpsSec = dpsItem.playerDps.time;
         const pctDone = topDamage > 0 ? Math.round( ( damageDone + petDamageDone ) / topDamage * 100 ) : 0;
+        const mine = dpsItem.playerDps.name === characterName;
 
         // Create a new DPS item dom.
         let model = {
@@ -596,6 +599,7 @@ function renderDpsItems() {
         if ( !dpsItem.dom ) {
             dpsItem.dom = createElement( 'div' );
             dpsItem.dom.classList.add( 'dps-item' );
+            dpsMeterSettings?.highlightMyName && mine && dpsItem.dom.classList.add( 'mine' );
             dpsItem.dom.innerHTML = dpsWindowItemTemplate( model );
             dpsWindow.querySelector( '.dps-items' ).appendChild( dpsItem.dom );
 
@@ -642,6 +646,12 @@ function renderDpsItems() {
             bar.style.width = `${pctDone}%`;
 
             dpsItem.dom.parentNode.append( dpsItem.dom );
+
+            if ( dpsMeterSettings?.highlightMyName && mine && !dpsItem.dom.classList.contains( 'mine' ) ) {
+                dpsItem.dom.classList.add( 'mine' );
+            } else if ( !dpsMeterSettings?.highlightMyName && mine && dpsItem.dom.classList.contains( 'mine' ) ) {
+                dpsItem.dom.classList.remove( 'mine' );
+            }
             
         }
             
@@ -843,8 +853,6 @@ function Renderer( originX, originY, glowOnStart ) {
          * @param {{character: string, encounterDps: PlayerDps[]}} data The data for combat group hits.
          */
         ( event, data ) => {
-            // This may or may not include duplicate information based on the character's you have active.
-            // TODO: Synchronize local data.
             for ( let i = 0; i < data.encounterDps.length; i++ ) {
                 let dpsItem = dpsItems.find( f => f.playerDps.name === data.encounterDps[ i ].name );
                 if ( dpsItem ) {
@@ -854,7 +862,7 @@ function Renderer( originX, originY, glowOnStart ) {
                 }
             }
 
-            renderDpsItems();
+            renderDpsItems( data.character );
         } );
     
     ipcRenderer.on( 'renderer:encounter-reset',
