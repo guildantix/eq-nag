@@ -248,6 +248,9 @@ class CombatParser {
     /** @type {LogRecord[]} */
     encounterEvents = [];
 
+    /** @type {string[]} */
+    encounterRawLogs = [];
+
     /** @type {{name: string, start: Date, duration: number, end: Date}[]} */
     encounterDefensiveTimers = [];
 
@@ -269,7 +272,7 @@ class CombatParser {
     /** @type {number} */
     _encounterResetTimerId = undefined;
 
-    /** @type {({encounterEvents: LogRecord[]}) => void} */
+    /** @type {({encounterEvents: LogRecord[], encounterRawLogs: string[]}) => void} */
     onEncounterReset = undefined;
 
     /** @type {() => void} */
@@ -675,21 +678,21 @@ class CombatParser {
             let regxResult = null;
 
             regxResult = executCombatRgx( combatRgx.MeleeDamage, entry.log );
-            if ( regxResult !== null ) {
+            if ( regxResult !== null && regxResult.groups.actor !== regxResult.groups.target ) {
                 return this._addMeleeEvent( timestamp, regxResult.groups.actor, regxResult.groups.target, +regxResult.groups.damage, regxResult.groups.attackType, regxResult.groups.modifiers );
             }
             
             regxResult = executCombatRgx( combatRgx.MeleeMiss, entry.log );
             regxResult = regxResult == null ? executCombatRgx( combatRgx.ActiveDefense, entry.log ) : regxResult;
-            if ( regxResult !== null ) {
+            if ( regxResult !== null && regxResult.groups.actor !== regxResult.groups.target) {
                 return this._addMeleeAvoidance( timestamp,  regxResult.groups.actor ,  regxResult.groups.target, regxResult.groups.defenseType, regxResult.groups.attackType, regxResult.groups.modifiers );
             }
             
             regxResult = executCombatRgx( combatRgx.DirectDamage, entry.log );
             regxResult = regxResult == null ? executCombatRgx( combatRgx.YourDoT, entry.log ) : regxResult;
             regxResult = regxResult == null ? executCombatRgx( combatRgx.OtherDoT, entry.log ) : regxResult;
-            if ( regxResult !== null ) {
-                return this._addDetrimentalSpellEvent( timestamp,  regxResult.groups.actor  ,  regxResult.groups.target , +regxResult.groups.damage, regxResult.groups.attackType, regxResult.groups.resistType, regxResult.groups.modifiers );
+            if ( regxResult !== null && regxResult.groups.actor !== regxResult.groups.target ) {
+                return this._addDetrimentalSpellEvent( timestamp, regxResult.groups.actor, regxResult.groups.target, +regxResult.groups.damage, regxResult.groups.attackType, regxResult.groups.resistType, regxResult.groups.modifiers );
             }
             
             regxResult = executCombatRgx( combatRgx.Thorns, entry.log );
@@ -1739,6 +1742,7 @@ class CombatParser {
         eventArgs.encounterId = this._encounterStats.encounterId;
         eventArgs.timestamp = this._encounterStats.lastEncounterEvent;
         eventArgs.logRecords = this.encounterEvents;
+        eventArgs.rawLogs = this.encounterRawLogs;
         eventArgs.npcs = [ ...this._encounterStats.npcs ];
         eventArgs.externalEncounterIds = Object.keys( this._externalEncounterIds );
         eventArgs.externalEncounterIdCharacters = this._externalEncounterIds;
@@ -1751,6 +1755,7 @@ class CombatParser {
         this._closedExternalEncounterIds = this._closedExternalEncounterIds.concat( ...eventArgs.externalEncounterIds );
 
         this.encounterEvents = [];
+        this.encounterRawLogs = [];
         this._externalEncounterIds = {};
         this._encounterStats = new EncounterStats();
 
