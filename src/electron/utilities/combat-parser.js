@@ -144,6 +144,9 @@ const combatRgx = {
     // Other Damage Over Time spell reports. [https://regex101.com/r/PLpfT1/2]
     OtherDoT: /^(?<target>.*) (has|have) taken (?<damage>[0-9]*) damage from (?<attackType>.*) by (?<actor>.*)\.[\s]?(\((?<modifiers>.*)?\))?/gi,
 
+    // Other Damage Over Time spell reports. [https://regex101.com/r/PLpfT1/2]
+    SelfDot: /^(?<target>.*) have taken (?<damage>[0-9]*) damage from (?<attackType>.*)\.[\s]?(\((?<modifiers>.*)?\))?/gi,
+
     // Thorns damage. [https://regex101.com/r/w4h5xP/1]
     Thorns: /^(?<target>.*) is pierced by (?<actor>.+?)('s)? (?<attackType>thorns) for (?<damage>[0-9]*) points of non-melee damage\./gi,
 
@@ -678,20 +681,20 @@ class CombatParser {
             let regxResult = null;
 
             regxResult = executCombatRgx( combatRgx.MeleeDamage, entry.log );
-            if ( regxResult !== null && regxResult.groups.actor !== regxResult.groups.target ) {
+            if ( regxResult !== null ) {
                 return this._addMeleeEvent( timestamp, regxResult.groups.actor, regxResult.groups.target, +regxResult.groups.damage, regxResult.groups.attackType, regxResult.groups.modifiers );
             }
             
             regxResult = executCombatRgx( combatRgx.MeleeMiss, entry.log );
             regxResult = regxResult == null ? executCombatRgx( combatRgx.ActiveDefense, entry.log ) : regxResult;
-            if ( regxResult !== null && regxResult.groups.actor !== regxResult.groups.target) {
+            if ( regxResult !== null ) {
                 return this._addMeleeAvoidance( timestamp,  regxResult.groups.actor ,  regxResult.groups.target, regxResult.groups.defenseType, regxResult.groups.attackType, regxResult.groups.modifiers );
             }
             
             regxResult = executCombatRgx( combatRgx.DirectDamage, entry.log );
             regxResult = regxResult == null ? executCombatRgx( combatRgx.YourDoT, entry.log ) : regxResult;
             regxResult = regxResult == null ? executCombatRgx( combatRgx.OtherDoT, entry.log ) : regxResult;
-            if ( regxResult !== null && regxResult.groups.actor !== regxResult.groups.target ) {
+            if ( regxResult !== null && regxResult.groups.actor !== regxResult.groups.target && regxResult.groups.target !== 'yourself' ) {
                 return this._addDetrimentalSpellEvent( timestamp, regxResult.groups.actor, regxResult.groups.target, +regxResult.groups.damage, regxResult.groups.attackType, regxResult.groups.resistType, regxResult.groups.modifiers );
             }
             
