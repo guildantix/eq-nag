@@ -817,6 +817,10 @@ function Renderer( originX, originY, glowOnStart ) {
          * @param {{character: string, encounterDps: PlayerDps[]}} data The data for combat group hits.
          */
         ( event, data ) => {
+
+            // Remove all players from dpsItems if they are not in encounterDps.
+            dpsItems = dpsItems.filter( f => data.encounterDps.find( g => g.name === f.playerDps.name ) );
+
             for ( let i = 0; i < data.encounterDps.length; i++ ) {
                 let dpsItem = dpsItems.find( f => f.playerDps.name === data.encounterDps[ i ].name );
                 if ( dpsItem ) {

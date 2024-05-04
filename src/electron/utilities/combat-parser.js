@@ -433,11 +433,27 @@ class CombatParser {
             }
 
             if ( this._encounterStats ) {
+
                 this._verifiedPlayers.forEach( f => {
                     if ( this._encounterStats.playerEvents[ f ] != null ) {
                         this._encounterStats.playerEvents[ f ].class = this._playerInfos[ f ].className;
                     }
                 } );
+
+                this._verifiedNpcs.forEach( f => {
+                    // Remove from player events
+                    if ( this._encounterStats.playerEvents[ f ] != null ) {
+                        delete this._encounterStats.playerEvents[ f ];
+                    }
+                } );
+
+                this._verifiedPets.forEach( f => {
+                    // Remove from player events
+                    if ( this._encounterStats.playerEvents[ f ] != null ) {
+                        delete this._encounterStats.playerEvents[ f ];
+                    }
+                } );
+                
             }
     
             if ( scheduleSave ) {
@@ -1778,7 +1794,7 @@ class CombatParser {
 
         if ( this._encounterStats == null )
             return;
-        
+
         let underMinDmg = this._dpsMeterSettings.encounterMinimumDamage > 0 && ( this._encounterStats?.encounterDamageDone ?? 0 ) < this._dpsMeterSettings.encounterMinimumDamage;
 
         const eventArgs = new EncounterResetEventArgs();
