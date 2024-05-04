@@ -694,7 +694,8 @@ class CombatParser {
             regxResult = executCombatRgx( combatRgx.DirectDamage, entry.log );
             regxResult = regxResult == null ? executCombatRgx( combatRgx.YourDoT, entry.log ) : regxResult;
             regxResult = regxResult == null ? executCombatRgx( combatRgx.OtherDoT, entry.log ) : regxResult;
-            if ( regxResult !== null && regxResult.groups.actor !== regxResult.groups.target && regxResult.groups.target !== 'yourself' ) {
+            regxResult = regxResult == null ? executCombatRgx( combatRgx.SelfDot, entry.log ) : regxResult;
+            if ( regxResult !== null ) {
                 return this._addDetrimentalSpellEvent( timestamp, regxResult.groups.actor, regxResult.groups.target, +regxResult.groups.damage, regxResult.groups.attackType, regxResult.groups.resistType, regxResult.groups.modifiers );
             }
             
@@ -1718,7 +1719,7 @@ class CombatParser {
             output.actor = this._characterName;
         }
     
-        if ( target === 'YOU' || target === 'YOUR' || target === 'you' || target === 'You' ) {
+        if ( target === 'YOU' || target === 'YOUR' || target === 'you' || target === 'You' || target === 'yourself' ) {
             output.target = this._characterName;
         } else if ( target === 'himself' || target === 'herself' ) {
             output.target = actor;
@@ -1808,9 +1809,9 @@ class CombatParser {
                 model.combatTypes.otherHitsOnMe = otherAction;
 
             } else if ( rec.attackType === 'spell' ) {
-                model.combatTypes.mySpellHits = myAction && !rec.heal;
+                model.combatTypes.mySpellHits = myAction && !rec.heal && actor !== target;
                 model.combatTypes.otherSpellHitsOnMe = otherAction && !rec.heal;
-                model.combatTypes.myHealing = myAction && rec.heal > 0;
+                model.combatTypes.myHealing = myAction && rec.heal > 0 && actor !== target;
                 model.combatTypes.otherHealingOnMe = otherAction && rec.heal > 0;
 
             }
@@ -2096,7 +2097,11 @@ class CombatParser {
         rec.modifiers.strikethrough = modifiers?.indexOf( 'Strikethrough' ) > -1;
         rec.resistType = resistType;
     
-        return this._addEncounterEvent( rec );
+        if ( rec.actor !== rec.target ) {
+            return this._addEncounterEvent( rec );
+        } else {
+            return this._getFctModel( rec );
+        }
         
     }
     
