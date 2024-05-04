@@ -53,6 +53,9 @@ class CombatWatcherMeta {
 /** @type {Record<string, LogWatcherMeta>} Dictionary of log watcher windows. */
 var logWatchers = {};
 
+/** @type {boolean} */
+var userSelectedCombatWatcher = false;
+
 /** @type {CombatWatcherMeta} */
 var combatWatcher = {
     window: null,
@@ -428,6 +431,7 @@ class LogBootstrapper {
                         appLogException( new Error( `Log file not found: ${character.logFile}` ), true );
                         return;
                     }
+                    userSelectedCombatWatcher = true;
                     changeCombatCharacter( character, _stats.size, sendTick );
                 }
             } );
@@ -703,8 +707,15 @@ class LogBootstrapper {
                 // Increment the null attempt count.
                 logWatchers[ characterId ].nullAttemptCount += 1;
 
-                // If after # of attempts without seeing any changes in the log file, then kill the process.
-                if ( !logWatchers[ characterId ].simulating && logWatchers[ characterId ].nullAttemptCount >= killAfterNAttempts ) {
+                // Keep the combat watcher alive, even after null checks, if
+                // the user has manually selected a combat watcher.  We'll still 
+                // keep counting the null checks, if the user changes the combat 
+                // watcher we can immediately kill this log watcher.
+                const block = userSelectedCombatWatcher && characterId === combatWatcher?.characterId;
+
+                // If after # of attempts without seeing any changes in the log
+                // file, then kill the process.
+                if (  !block && !logWatchers[ characterId ].simulating && logWatchers[ characterId ].nullAttemptCount >= killAfterNAttempts ) {
                     
                     logWatchers[ characterId ].window.send( 'log:check:pulse', null );
                     ipcMain.once( 'log:pulse', function ( e, alive ) {
