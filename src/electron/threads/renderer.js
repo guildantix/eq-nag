@@ -471,9 +471,15 @@ function createDpsWindow() {
 function updateDpsWindowSettings() {
     
     if ( dpsWindow ) {
-        let showDpsWindow = dpsMeterSettings.show;
 
-        showDpsWindow = dpsMeterSettings.showOnlyInCombat ? dpsItems?.length > 0 : showDpsWindow;
+        if ( !dpsMeterSettings.show ) {
+            // Combat stats not enabled?
+            dpsWindow.style.display = 'none';
+            return;
+        }
+
+        // TODO: Show for healing.
+        let showDpsWindow = dpsMeterSettings.showOnlyInCombat ? dpsItems?.filter( f => f.playerDps?.damage > 0 ).length > 0 : true;
 
         if ( !dpsMeterSettings.keepOnScreen && showDpsWindow ) {
 
