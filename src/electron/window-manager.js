@@ -885,7 +885,7 @@ class WindowManager {
         let windowSize = { width: 1000, height: 800 };
 
         if ( name === 'combatStatistics' ) {
-            windowSize = { width: 1100, height: 1000 };
+            windowSize = { width: 1150, height: 1000 };
         }
 
         let settingsWindow = new BrowserWindow( {
