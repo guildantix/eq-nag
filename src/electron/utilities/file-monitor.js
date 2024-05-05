@@ -360,6 +360,13 @@ class FileMonitor {
 
                 stats = await this.checkFile();
 
+                const readSize = stats.size - position;
+                if ( readSize > 0 && readSize < 26 ) {
+                    sendLog( `File Monitor > ${this.filePath} is too small, waiting for more data.` );
+                    setTimeout( () => parse(), readDelayMs );
+                    return;
+                }
+
                 if ( !exists ) {
                     sendLog( `File Monitor > ${this.filePath} does not exist, waiting for new log file.` );
                     stats = await this.waitForLogFile();
@@ -372,14 +379,14 @@ class FileMonitor {
                     position = 0;
                 }
 
-                let data = await file.read( Buffer.alloc( stats.size - position ), 0, stats.size - position, position );
+                let data = await file.read( Buffer.alloc( readSize ), 0, readSize, position );
                 let bytesRead = data.bytesRead;
                 position += bytesRead;
                 let read = danglyBits + data.buffer.toString( 'utf-8', 0, bytesRead );
                 let lines = read.split( /\r\n|\r|\n/gmi ).filter( f => f != '' );
 
-                // If the last line doesn't end with new line, we'll keep it for the next read.
-                if ( lines.length > 1 && !read.endsWith( '\n' ) ) {
+                // If the last line doesn't have a full timestamp in it, carry it over to the next read.
+                if ( lines.length > 1 && !lines[ lines.length - 1 ].match( /^\[.+\]\s./i ) ) {
                     danglyBits = lines.pop();
                 } else {
                     danglyBits = '';

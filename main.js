@@ -761,7 +761,7 @@ ipcMain.on( 'chat-room:disconnected',
 * 
 * @param {string | {label: string, message: string} | undefined} data The message to send.
 */
-const consoleMessage =  async ( data ) => {
+const consoleMessage = async ( data ) => {
     if ( typeof data === 'string' ) {
         mainWindow.webContents.send( 'console:success', { label: 'System Message', message: data, timestamp: new Date() } );
     } else if ( data?.message ) {

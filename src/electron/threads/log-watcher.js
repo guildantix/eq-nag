@@ -19,6 +19,7 @@ const ArrayUtilities = require( '../utilities/arrays' );
 const FileMonitor = require( '../utilities/file-monitor' );
 const { LogHistoryManager } = require( '../utilities/log-console' );
 const { createChatRoomLink } = require( '../utilities/peer-to-peer' );
+const { nagException } = require( '../utilities/nag-console' );
 const chunkSize = 512 * 1024;
 
 window.onerror = ( error, url, line ) => {
@@ -1404,7 +1405,7 @@ function generateTriggerFns() {
  * 
  * @param {string} raw The raw log entry.
  * @param {boolean} simulating If true, only simulates executing triggers via a consol.log call.
- * @param {padTime} padTime The amount of time to add to the timestamps of log entries.
+ * @param {number|undefined} padTime The amount of time to add to the timestamps of log entries.
  */
 function parseLogEntries( raw, simulating, padTime ) {
 
@@ -1426,11 +1427,23 @@ function parseLogEntries( raw, simulating, padTime ) {
         // https://regex101.com/r/0btqKz/1
         // ^(?<healer>You) healed (?<target>.+?) (over time for|for) (?<healAmount>[0-9]*) (\(([0-9]*)\) )?hit points by (?<healType>.+?)\.
 
-        let timestamp = new Date( rgxTimestamp.exec( raw )[ 1 ] );
+        let tsRgx = rgxTimestamp.exec( raw );
+        let timestamp = tsRgx ? new Date( tsRgx[ 1 ] ) : null;
 
-        if ( !timestamp || timestamp.length === 0 || timestamp.length === 1 )
-            console.log( 'failed parse', raw );
-        else if ( padTime > 0 )
+        if ( !timestamp || timestamp.length === 0 || timestamp.length === 1 ) {
+            nagException( {
+                label: 'log-watcher.js',
+                message: `Timestamp not found in log entry.`,
+                payload: {
+                    logEntry: raw,
+                    simulating: simulating === true,
+                    padTime: padTime,
+                },
+            } );
+
+            return;
+            
+        } else if ( padTime > 0 )
             timestamp = new Date( timestamp.getTime() + ( padTime * 1000 ) );
     
         let log = raw.replace( rgxTimestamp, '' );
