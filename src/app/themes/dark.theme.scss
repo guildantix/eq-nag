@@ -314,6 +314,16 @@ $bg-extreme-dark: #191919;
         background-color: $option-panel;
     }
 
+    mat-select {
+        mat-select-trigger {
+            color: $text;
+
+            small {
+                color: $option-small;
+            }
+        }
+    }
+
     .mat-menu-panel {
         button:nth-of-type(odd) {
             background-color: $option-odd !important;

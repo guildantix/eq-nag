@@ -1,6 +1,17 @@
 <mat-toolbar>
     <span>Combat Statistics</span>
     <span class="spacer"></span>
+    <mat-form-field>
+        <mat-label></mat-label>
+        <mat-select [(ngModel)]="combatCharacterId" name="combatCharacterId" >
+            <mat-select-trigger>
+                {{getCombatName()}}<small style="float: right; margin-right: 0.5em;">{{getCombatServer()}}</small>
+            </mat-select-trigger>
+            <mat-option [value]="null">Auto</mat-option>
+            <mat-option *ngFor="let option of characterOptions" [value]="option.characterId">{{option.name}}<small style="float: right;">{{option.server}}</small></mat-option>
+        </mat-select>
+        <mat-hint>Combat Character</mat-hint>
+    </mat-form-field>
     <button mat-icon-button (click)="openCombatStatsSettings()"><mat-icon class="material-icons-outlined" style="opacity: 0.75;">settings</mat-icon></button>
     <!-- <button mat-button [disabled]="true">Export</button> -->
     

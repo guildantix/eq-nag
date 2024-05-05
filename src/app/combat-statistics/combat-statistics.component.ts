@@ -1,7 +1,7 @@
 import { AfterViewChecked, Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { DialogService } from '../dialogs/dialog.service';
 import { GoodbyePayloadModel, HandshakePayloadModel, IpcService } from '../ipc.service';
-import { ServerConsoleMessage, SettingsKeys } from '../core.model';
+import { CharacterModel, CharacterOptionModel, ServerConsoleMessage, SettingsKeys } from '../core.model';
 import { MatSnackBar } from '@angular/material/snack-bar';
 
 export interface IConnectedPeer {
@@ -26,6 +26,16 @@ export class CombatStatisticsComponent implements OnInit, AfterViewChecked {
     public chatRoomId: string | undefined = undefined;
     public get serverLink(): string | undefined {
         return this.chatRoomId ? `{NAG:p2p/${this.chatRoomId}}` : undefined;
+    }
+
+    public characterOptions: CharacterOptionModel[] = [];
+    private _combatCharacterId: string | null = null;
+    public get combatCharacterId(): string {
+        return this._combatCharacterId || '';
+    }
+    public set combatCharacterId( value: string | null ) {
+        this._combatCharacterId = value;
+        this.ipcService.changeCombatCharacter( value );
     }
 
     public connectedPeers: IConnectedPeer[] = [];
@@ -172,6 +182,46 @@ export class CombatStatisticsComponent implements OnInit, AfterViewChecked {
 
         } );
 
+        this.ipcService.getCharacters().subscribe( characters => {
+            this.characterOptions = characters?.length > 0 ? characters
+                .sort( ( a, b ) => a.name.localeCompare( b.name ) )
+                .sort( ( a, b ) => a.server.localeCompare( b.server ) )
+                .map( x => ( { characterId: x.characterId, name: x.name, server: x.server, } ) ) : [];
+        } );
+        this.ipcService.tickReceived().subscribe( data => this.characterOptions = data.characters?.length > 0 ? data.characters : this.characterOptions );
+
+
+        this.ipcService.onCombatCharacterChanged().subscribe( characterId => {
+            this._combatCharacterId = characterId;
+        } );
+
+    }
+
+    // public getSelectValue(): string {
+    //     if ( this._combatCharacterId ) {
+    //         let character = this.characterOptions.find( x => x.characterId === this._combatCharacterId );
+    //         return character ? `${character.name} (${character.server})` : 'Unknown';
+    //     } else {
+    //         return 'Auto';
+    //     }
+    // }
+
+    public getCombatName(): string {
+        if ( this._combatCharacterId ) {
+            let character = this.characterOptions.find( x => x.characterId === this._combatCharacterId );
+            return character ? character.name : 'Unknown';
+        } else {
+            return 'Auto';
+        }
+    }
+
+    public getCombatServer(): string {
+        if (this._combatCharacterId) {
+            let character = this.characterOptions.find( x => x.characterId === this._combatCharacterId );
+            return character ? character.server : 'Unknown';
+        } else {
+            return 'Auto';
+        }
     }
 
     public openCombatStatsSettings(): void {
