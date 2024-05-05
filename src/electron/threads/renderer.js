@@ -842,6 +842,7 @@ function Renderer( originX, originY, glowOnStart ) {
          */
         ( event, data ) => {
             clearDpsItems();
+            updateDpsWindowSettings();
         } );
 
     ipcRenderer.on( 'character:get:combatGroupHits',
