@@ -615,8 +615,17 @@ export class OverlayWindowModel {
 
 }
 
+export class CharacterOptionModel {
+    
+    public characterId: string;
+    public name: string;
+    public server: string;
+    
+}
+
 export class DataTickModel {
 
+    public characters: CharacterOptionModel[] = [];
     public dkpEntries: DkpEntryModel[] = [];
     public logFile: string;
     public voiceIndex: number;

@@ -491,6 +491,7 @@ function sendTick( delay ) {
     let _triggers = triggerDatabase.getAll();
     let _folders = triggerDatabase.getFolders();
     let tickData = {
+        characterOptions: characterDatabase.getAll().map( f => { f.characterId, f.name, f.server } ),
         dkpEntries: dkpDatabase.getAllUnentered(),
         logFile: userPreferences.logFile,
         voiceIndex: userPreferences.voiceIndex,
