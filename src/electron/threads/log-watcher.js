@@ -20,6 +20,7 @@ const FileMonitor = require( '../utilities/file-monitor' );
 const { LogHistoryManager } = require( '../utilities/log-console' );
 const { createChatRoomLink } = require( '../utilities/peer-to-peer' );
 const { nagException } = require( '../utilities/nag-console' );
+// const { nagId } = require( '../utilities/nag-id' );
 const chunkSize = 512 * 1024;
 
 window.onerror = ( error, url, line ) => {
@@ -34,6 +35,8 @@ var triggers = [];
 var triggerFolders = [];
 /** @type {Record<string, string[]>} */
 var storedVariables = {};
+// /** @type {Record<string, string>} */
+// var storedVariableHash = {};
 /** @type {string[]} A list of all component instance ids originated by this log watcher. */
 var logInstanceIds = [];
 /** @type {Record<string, {value: number, lastUpdate: Date, resetDelay: number, _parse: (logEntry: string) => boolean}>} */
@@ -1064,6 +1067,9 @@ function generateTriggerFns() {
                     }
                 } );
     
+                // /** @type {Record<string, {exists: boolean, value: any, hash: string}>} */
+                // let conditionVariableHash = {};
+
                 /**
                  * Returns true if all conditions are passed.
                  * @returns {boolean}
@@ -1114,52 +1120,80 @@ function generateTriggerFns() {
                      * @param {TriggerCondition} condition The condition to check.
                      */
                     const checkCondition = condition => {
+                        const variableName = condition.variableName;
                         if ( condition.conditionType === TriggerConditionTypes.VariableValue ) {
                             if ( condition.operatorType === OperatorTypes.Equals ) {
+
+                                let storedValue = storeHasValue( variableName, _conditionValues[ variableName ] );
+                                // let storedValue = undefined;
+
+                                // if ( storedVariableHash[ variableName ] !== undefined && storedVariableHash[ variableName ] === conditionVariableHash[ variableName ]?.hash ) {
+                                //     storedValue = conditionVariableHash[ variableName ];
+                                // } else {
+                                //     storedValue = storeHasValue( variableName, _conditionValues[ variableName ] );
+                                //     conditionVariableHash[ variableName ] = storedValue;
+                                // }
                                 
-                                let storedValue = storeHasValue( condition.variableName, _conditionValues[ condition.variableName ] );
-    
                                 if ( !storedValue.exists ) {
                                     conditionsPassed = false;
                                 } else {
                                     // Store what value passed.
-                                    trigger._conditionResults[ condition.variableName ] = storedValue.value;
+                                    trigger._conditionResults[ variableName ] = storedValue.value;
                                 }
                                 
                             } else if ( condition.operatorType === OperatorTypes.IsNull ) {
     
-                                if ( storedVariables[ condition.variableName ]?.length > 0 ) {
+                                if ( storedVariables[ variableName ]?.length > 0 ) {
                                     conditionsPassed = false;
                                 } else {
                                     // Store the condition result for this key as null.
-                                    trigger._conditionResults[ condition.variableName ] = null;
+                                    trigger._conditionResults[ variableName ] = null;
                                 }
     
                             } else if ( condition.operatorType === OperatorTypes.DoesNotEqual ) {
     
-                                let storedValue = storeHasValue( condition.variableName, _conditionValues[ condition.variableName ] );
+                                let storedValue = storeHasValue( variableName, _conditionValues[ variableName ] );
+                                // let storedValue = undefined;
+
+                                // if ( storedVariableHash[ variableName ] !== undefined && storedVariableHash[ variableName ] === conditionVariableHash[ variableName ]?.hash ) {
+                                //     storedValue = conditionVariableHash[ variableName ];
+                                // } else {
+                                //     storedValue = storeHasValue( variableName, _conditionValues[ variableName ] );
+                                //     conditionVariableHash[ variableName ] = storedValue;
+                                // }
                                 
-                                if ( _conditionValues[ condition.variableName ] && storedValue.exists ) {
+                                
+                                if ( _conditionValues[ variableName ] && storedValue.exists ) {
                                     // If the condition value is not null, then check if the store has that value.
                                     conditionsPassed = false;
-                                } else if ( _conditionValues[ condition.variableName ] == null && ( storedVariables[ condition.variableName ] == null || storedVariables[ condition.variableName ]?.length == 0 ) ) {
+                                } else if ( _conditionValues[ variableName ] == null && ( storedVariables[ variableName ] == null || storedVariables[ variableName ]?.length == 0 ) ) {
                                     // If the condition value is null, then check to make sure that the stored value(s) have at least 1 value;
                                     //  ex: If CurrentZone == null and the condition requires that CurrentZone DoesNotEqual Null
                                     conditionsPassed = false;
                                 } else {
                                     // Store what value passed.
-                                    trigger._conditionResults[ condition.variableName ] = storedValue.value;
+                                    trigger._conditionResults[ variableName ] = storedValue.value;
                                 }
     
                             } else if ( condition.operatorType === OperatorTypes.Contains ) {
-                                let storedValue = storeContainsValue( condition.variableName, _conditionValues[ condition.variableName ] );
+                                
+                                let storedValue = storeContainsValue( variableName, _conditionValues[ variableName ] );
+                                // let storedValue = undefined;
+
+                                // if ( storedVariableHash[ variableName ] !== undefined && storedVariableHash[ variableName ] === conditionVariableHash[ variableName ]?.hash ) {
+                                //     storedValue = conditionVariableHash[ variableName ];
+                                // } else {
+                                //     storedValue = storeContainsValue( variableName, _conditionValues[ variableName ] );
+                                //     conditionVariableHash[ variableName ] = storedValue;
+                                // }
+                                
     
                                 if ( !storedValue.exists ) {
                                     conditionsPassed = false;
     
                                 } else {
                                     // Store what value passed.
-                                    trigger._conditionResults[ condition.variableName ] = storedValue.value;
+                                    trigger._conditionResults[ variableName ] = storedValue.value;
     
                                 }
                                 
@@ -1657,8 +1691,7 @@ function parseLogEntries( raw, simulating, padTime ) {
                     } catch ( error ) {
                         logHistoryMgr.logError( error, raw, simulating, padTime, ErrorMessages.triggerExecution(), trigger );
                     }
-                            
-
+                    
                 } );
             }
 
@@ -1853,6 +1886,7 @@ function clearAll() {
         counters[ key ].value = 0;
     }
 
+    // storedVariableHash = {};
     for ( const key of Object.keys( storedVariables ) ) {
         storedVariables[ key ] = [];
     }
@@ -2717,6 +2751,7 @@ function saveVariable( key, value, restricted ) {
     if ( storeValue ) {
         storedVariables[ key ] = storedVariables[ key ]?.length > 0 ? storedVariables[ key ] : [];
         storedVariables[ key ].push( value );
+        // storedVariableHash[ key ] = nagId();
 
         enableLogging && sendInformationToLog( `Storing value [${value}] into [${key}]`, 12 );
         enableLogging && sendInformationToLog( `Current values are: ${storedVariables[ key ].join( '|' )}` );
@@ -2767,6 +2802,7 @@ function incrementCounter( key ) {
  */
 function saveScalarVariable( key, value ) {
     storedVariables[ key ] = [ value ];
+    // storedVariableHash[ key ] = nagId();
 
     enableLogging && sendInformationToLog( `Storing scalar value [${value}] into [${key}]`, 12 );
     enableLogging && sendInformationToLog( `Current values are: ${storedVariables[ key ].join( '|' )}` );
@@ -2818,12 +2854,12 @@ function storeHasValue( key, value ) {
             for ( let i = 0; i < value.length; i++ ) {
                 let index = storedVariables[ key ].indexOf( value[ i ] );
                 if ( index > -1 ) {
-                    return { exists: true, value: value[ i ] };
+                    return { exists: true, value: value[ i ] }; //, hash: storedVariableHash[ key ]
                 }
             }
         } else {
             let index = storedVariables[ key ].indexOf( value );
-            return index > -1 ? { exists: true, value: value } : { exists: false };
+            return index > -1 ? { exists: true, value: value } : { exists: false }; // , hash: storedVariableHash[ key ]
         }
     }
 
@@ -2850,23 +2886,21 @@ function storeHasValue( key, value ) {
  */
 function storeContainsValue( key, value ) {
     
-    if ( storedVariables[ key ]?.length > 0 ) {
+    if ( storedVariables[ key ]?.length > 0 && value?.length > 0 ) {
         if ( value instanceof Array ) {
+            let values = value.map( v => v.toLowerCase() );
             for ( let i = 0; i < storedVariables[ key ].length; i++ ) {
-                for ( let v = 0; v < value.length; v++ ) {
-                    let rgx = new RegExp( value[ v ].replace( /[.*+?^${}()|[\]\\]/g, '\\$&' ), 'i' );
-                    
-                    if ( storedVariables[ key ][ i ].match( rgx ) ) {
-                        return { exists: true, value: storedVariables[ key ][ i ] };
+                for ( let v = 0; v < values.length; v++ ) {
+                    if ( storedVariables[ key ][ i ].toLowerCase().indexOf( values[ v ] ) > -1 ) {
+                        return { exists: true, value: storedVariables[ key ][ i ] }; // , hash: storedVariableHash[ key ]
                     }
                 }
             }
         } else {
+            let v = value.toLowerCase();
             for ( let i = 0; i < storedVariables[ key ].length; i++ ) {
-                let rgx = new RegExp( value.replace( /[.*+?^${}()|[\]\\]/g, '\\$&' ), 'i' );
-
-                if ( storedVariables[ key ][ i ].match( rgx ) ) {
-                    return { exists: true, value: storedVariables[ key ][ i ] };
+                if ( storedVariables[ key ][ i ].toLowerCase().indexOf( v ) > -1 ) {
+                    return { exists: true, value: storedVariables[ key ][ i ] }; // , hash: storedVariableHash[ key ]
                 }
             }
         }
