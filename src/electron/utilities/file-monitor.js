@@ -9,8 +9,13 @@ const maxReadErrors = 5;
 const readDelayMs = 50;
 const readErrorDelayMs = 1000;
 
+/**
+ * 
+ * @param {string|{label: string,message: string,payload: any|undefined}} msg 
+ * @param  {...any} args 
+ */
 const sendLog = ( msg, ...args ) => {
-    ipcRenderer.send( 'console:message', `${msg}` );
+    ipcRenderer.send( 'console:message', msg );
 }
 
 const sendException = ( error ) => {
@@ -362,7 +367,11 @@ class FileMonitor {
 
                 const readSize = stats.size - position;
                 if ( readSize > 0 && readSize < 26 ) {
-                    sendLog( `File Monitor > ${this.filePath} is too small, waiting for more data.` );
+                    sendLog( {
+                        label: 'File Monitor',
+                        message: `File size is too small: ${readSize} bytes.`,
+                        payload: { readSize, position, stats },
+                    } );
                     setTimeout( () => parse(), readDelayMs );
                     return;
                 }
