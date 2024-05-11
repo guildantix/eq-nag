@@ -524,8 +524,8 @@ const backupBySchedule = async ( logFilePaths, everquestInstallFolder, daysOfWee
     logFilePaths.forEach( async logFile => {
         log.info( `LogBackup > Deleting file ${logFile}` );
         // TODO: Enable file deletion.
-        // fsp.rm( logFile );
-        await fsp.rename( logFile, FsUtilities.Path.prependFilename( logFile, FsUtilities.getFileTimestamp() ) );
+        // await fsp.unlink( logFile );
+        await fsp.rename( logFile, FsUtilities.Path.prependFilename( logFile, '-' + FsUtilities.getFileTimestamp() ) );
     } );
 
     log.info( 'LogBackup > Clean up done.' );
