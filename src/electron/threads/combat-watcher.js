@@ -594,14 +594,7 @@ function CombatWatcher() {
     
     ipcRenderer.on( 'log:combat:unload', async () => {
 
-        if ( logSync != null ) {
-            await logSync.dispose();
-            cleanUpChatRoom();
-
-            serverLog( `Left chat room ${logSync.chatRoomId}.`, 'yellow' );
-            logSync = null;
-            ipcRenderer.send( 'chat-room:disconnected', 'Combat watcher was unloaded.' );
-        }
+        await disconnectChatRoom();
 
         ipcRenderer.send( 'log:combat:unloaded', null );
 
@@ -609,18 +602,10 @@ function CombatWatcher() {
     
     ipcRenderer.on( 'chat-room:disconnect', async ( event, data ) => {
         if ( logSync != null ) {
-            stopDpsTransmit();
-            await logSync.dispose();
-            cleanUpChatRoom();
-            serverLog( `Left chat room ${logSync.chatRoomId}.`, 'yellow' );
-            logSync = null;
-
+            await disconnectChatRoom();
         } else {
             nagException( 'Not in a chat room.' );
-
         }
-
-        ipcRenderer.send( 'chat-room:disconnected', 'User closed connection.' );
     } );
     
     ipcRenderer.on( 'chat-room:start-chat-room', async ( event, data ) => {
@@ -712,8 +697,19 @@ function CombatWatcher() {
          * @param {Electron.IpcRendererEvent} event The event args
          * @param {boolean} data True if enabled.
          */
-        ( event, data ) => {
+        async ( event, data ) => {
+            let prevShow = dpsMeterSettings.show;
             dpsMeterSettings = data ?? new DpsMeterSettings();
+
+            if ( dpsMeterSettings.show && !prevShow ) {
+                startDpsTracking();
+
+            } else if ( !dpsMeterSettings.show && prevShow ) {
+                stopDpsTracking();
+
+                await disconnectChatRoom();
+            }
+
         } );
     
     ipcRenderer.on( 'log:backup-started',
@@ -868,6 +864,19 @@ let processChatRoom = async () => {
 
 function cleanUpChatRoom() {
     // this used to be a function that would clean up the chat room, but now it's just a placeholder.
+}
+
+const disconnectChatRoom = async () => {
+
+    if ( logSync != null ) {
+        stopDpsTransmit();
+        await logSync.dispose();
+        cleanUpChatRoom();
+        serverLog( `Left chat room ${logSync.chatRoomId}.`, 'yellow' );
+        logSync = null;
+
+        ipcRenderer.send( 'chat-room:disconnected', 'User closed connection.' );
+    }
 }
 
 module.exports = CombatWatcher;
