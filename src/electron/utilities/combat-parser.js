@@ -28,9 +28,20 @@ const { CharacterModel } = require( '../data/models/character' );
 const { nagLog, nagException } = require( './nag-console' );
 const { getEverQuestClassName } = require( './everquest' );
 
-// TODO: Zhay`s pet hits Vius Vex for 9075 points of damage.
-// TODO: Players are appearing the verified pets list.
+const npcTimeoutMs = 8000;
+const namedNpcTimeoutMs = 32000; // 4 * npcTimeoutMs
+const encounterTimeoutMs = 30000;
+const deathCheckDelayMs = npcTimeoutMs + 100;
 
+//  Preamble: When connected to a server, each connected peer must end encounters at the same time.
+//
+//  1. ✅ Use statistics to end encounters.  Is there a named in the encounter? Yes? Longer timeout period to end encounter.
+//  2. ✅ New NPC appears in the encounter, add them to a list.
+//  3. ✅ When that NPC is dead, remove them from the list.
+//  4. ✅ Start a "timeout" of 8 seconds.  If no new combat information is received with that NPC name, end the encounter.
+//  5. ✅ Once all NPCs are dead, end the encounter.
+//  6. ✅ If the NPC is named then extend the timeout to 30 seconds.
+//  7. ✅ Receiving combat logs of peers with the same encounter id will extend the timeout.
 
 
 
@@ -153,8 +164,14 @@ const combatRgx = {
     // Healing [https://regex101.com/r/8Xtkrq/2]
     Healing: /^(?<actor>.+?) (has been\s)?healed (?<target>.+?) (?<healDuration>over time for|for) (?<healActual>[0-9]*) (\((?<healLiteral>[0-9]*)\) )?hit points by (?<healType>.+?)\.[\s]?(\((?<modifiers>.*)?\))?/gi,
     
+    // ^${target} has been slain by [^!]*!$
     SlainBy: /^(?<target>.+?) (has|have) been slain by (?<actor>[^!]*)!$/gi,
 
+    // ^You have slain ${target}!$
+    YouHaveSlain: /^(?<actor>You) have slain (?<target>.*)!$/gi,
+
+    // ^${target} dies\.$
+    // ^${target} died\.$
     Died: /(?<target>.+?) (died|dies)\.$/gi,
 
     // https://regex101.com/r/bdaD56/3
@@ -245,14 +262,8 @@ class CombatParser {
     /** @type {DpsMeterSettings} */
     _dpsMeterSettings = new DpsMeterSettings();
 
-    /** @type {number} */
-    _encounterResetMs = 20 * 1000;
-
     /** @type {LogRecord[]} */
     encounterEvents = [];
-
-    /** @type {string[]} */
-    encounterRawLogs = [];
 
     /** @type {{name: string, start: Date, duration: number, end: Date}[]} */
     encounterDefensiveTimers = [];
@@ -275,7 +286,10 @@ class CombatParser {
     /** @type {number} */
     _encounterResetTimerId = undefined;
 
-    /** @type {({encounterEvents: LogRecord[], encounterRawLogs: string[]}) => void} */
+    /** @type {number|undefined} */
+    #encounterNpcDeathTimeoutId = undefined;
+
+    /** @type {(e: EncounterResetEventArgs) => void} */
     onEncounterReset = undefined;
 
     /** @type {() => void} */
@@ -330,27 +344,6 @@ class CombatParser {
         ( event, data ) => {
             this._dpsMeterSettings = data;
         } );
-
-        ipcRenderer.on( 'settings:get:dpsEncounterResetTimeMs:generic',
-            /**
-             * 
-             * @param {Electron.IpcRendererEvent} event The event args
-             * @param {number} data True if enabled.
-             */
-            ( event, data ) => {
-                if ( data > 0 ) {
-                    this._encounterResetMs = data;
-                }
-            } );
-        
-        ipcRenderer
-            .invoke( 'settings:get', { key: 'dpsEncounterResetTimeMs', subscribe: true } )
-            .then( data => {
-                if ( data > 0 ) {
-                    // TODO: This should be part of the dpsMeterSettings and not a separate setting.
-                    this._encounterResetMs = data;
-                }
-            } );
 
         ipcRenderer.on( `combat-database:get-server:${serverName}`,
             /**
@@ -729,6 +722,15 @@ class CombatParser {
             const timestamp = new Date( entry.timestamp );
             
             let regxResult = null;
+
+            // Dead tracking
+            regxResult = executCombatRgx( combatRgx.SlainBy, entry.log );
+            regxResult = regxResult == null ? executCombatRgx( combatRgx.YouHaveSlain, entry.log ) : regxResult;
+            regxResult = regxResult == null ? executCombatRgx( combatRgx.Died, entry.log ) : regxResult;
+            if ( regxResult !== null ) {
+                this._addDeathEvent( timestamp, regxResult.groups.target, regxResult.groups.actor, entry.log );
+                return undefined;
+            }
 
             regxResult = executCombatRgx( combatRgx.MeleeDamage, entry.log );
             if ( regxResult !== null ) {
@@ -1935,30 +1937,97 @@ class CombatParser {
      * Refreshes the encounter.
      * 
      * @param {LogRecord | undefined} rec The log record being added to the encounter.
+     * @param {string | undefined} rawLog The raw log record.
      */
-    _refreshEncounter( rec ) {
+    _refreshEncounter( rec, rawLog ) {
+
+        this.#restartEncounterTimeout();
+
+        this.#initializeEncounter( rec );
         
-        // 30 seconds of no encounter activity ends the encounter, starting a new one.
+        this.#recordEncounterEvent( rec, rawLog );
+
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Adds the given log record to the encounter and updates the encounter statistics.
+     * 
+     * @param {LogRecord|undefined} rec The log record to add to the encounter.
+     * @param {string|undefined} rawLog The raw log record.
+     */
+    #recordEncounterEvent( rec, rawLog ) {
+        if ( rec != undefined ) {
+            this.encounterEvents.push( rec );
+            this._updateEncounterStats( rec );
+            
+            this._resetNpcDeath( rec.actor, rec.target );
+        }
+
+        if ( rawLog ) {
+            this._encounterStats.ownedLogs.push( {
+                actor: rec?.actor,
+                target: rec?.target,
+                log: rawLog,
+            } );
+        }
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Initializes the encounter, setting the encounter start time if it's not already set.
+     * 
+     * @param {LogRecord|undefined} rec The log record to initialize to the encounter.
+     */
+    #initializeEncounter( rec ) {
         if ( this._encounterStats == undefined ) {
+            // Start a new encounter.
             this._encounterStats = new EncounterStats();
             this._externalEncounterIds = {};
             this._encounterStats.encounterStart = rec?.timestamp || new Date();
 
         } else if ( this._encounterStats.encounterStart == undefined ) {
+            // Set the encounter start time, if it's not already set.
             this._encounterStats.encounterStart = rec?.timestamp || new Date();
 
         }
-        
-        if ( rec != undefined ) {
-            this.encounterEvents.push( rec );
-            this._updateEncounterStats( rec );
-        }
+    }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Restarts the encounter timeout, letting the encounter end after a period of inactivity.
+     */
+    #restartEncounterTimeout() {
+        
         if ( this._encounterResetTimerId ) {
             clearTimeout( this._encounterResetTimerId );
         }
         
-        this._encounterResetTimerId = window.setTimeout( () => this.resetEncounter(), this._encounterResetMs );
+        this._encounterResetTimerId = window.setTimeout( () => this.resetEncounter(), encounterTimeoutMs );
 
     }
 
@@ -1977,9 +2046,12 @@ class CombatParser {
      * @returns {FctModel?} Returns an FCT model if the log record is an FCT event, otherwise undefined.
      * 
      * @param {LogRecord} rec The log record to add to the encounter.
+     * @param {string} rawLog The raw log record.
+     * @param {boolean|undefined} noFct If true, the log record will not be treated as an FCT event.
      */
-    _addEncounterEvent( rec ) {
-        this._refreshEncounter( rec );
+    _addEncounterEvent( rec, rawLog, noFct ) {
+        noFct = noFct === true;
+        this._refreshEncounter( rec, rawLog );
 
         let actorCategorized = false;
 
@@ -2014,7 +2086,115 @@ class CombatParser {
             }
         }
 
-        return this._getFctModel( rec );
+        return noFct ? undefined : this._getFctModel( rec );
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Adds a death event to the encounter.
+     * 
+     * @param {Date} timestamp The timestamp of the event.
+     * @param {string} target The name of the target.
+     * @param {string | undefined} actor The name of the actor.
+     * @param {string} rawLog The raw log record.
+     */
+    _addDeathEvent( timestamp, target, actor, rawLog  ) {
+
+        let names = this._getActorTargetNames( actor, target );
+    
+        let rec = new LogRecord();
+        rec.timestamp = timestamp;
+        rec.actor = names.actor;
+        rec.target = names.target;
+
+        this._addEncounterEvent( rec, rawLog, true );
+        
+        if ( this._encounterStats != null ) {
+            if ( this._encounterStats.npcs.includes( names.target ) ) {
+
+                // This is not a named NPC if it begins with A,a,An,an, or a lower case letter.
+                const named = names.target.match( /^(?:A\s|An\s|a\s|an\s|[a-z])/ ) == null;
+                const timeoutMs = named ? namedNpcTimeoutMs : npcTimeoutMs;
+
+                this._encounterStats.npcDeathTimeoutTimestamps[ names.target ] = timestamp.getTime() + timeoutMs;
+
+            }
+        }
+
+        this._startEncounterNpcDeathTimeout();
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    /**
+     * Resets the death timer for the given NPC.
+     * 
+     * @param {string[]} names The names of the NPC to reset the death timer for.
+     */
+    _resetNpcDeath( ...names ) {
+        if ( this._encounterStats != null && this.#encounterNpcDeathTimeoutId > 0 ) {
+            for ( let i = 0; i < names.length; i++ ) {
+                const name = names[ i ];
+                if ( this._encounterStats.npcs.includes( name ) && this._encounterStats.npcDeathTimeoutTimestamps[ name ] ) {
+                    this._encounterStats.npcDeathTimeoutTimestamps[ name ] = undefined;
+                }
+            }
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    /**
+     * Starts the encounter NPC death timeout.
+     */
+    _startEncounterNpcDeathTimeout() {
+        if ( !this.#encounterNpcDeathTimeoutId ) {
+            this.#encounterNpcDeathTimeoutId = setTimeout( () => {
+                let now = new Date().getTime();
+                let npcDeathKeys = Object.keys( this._encounterStats.npcDeathTimeoutTimestamps );
+                let endEncounter = true;
+
+                for ( let i = 0; i < npcDeathKeys.length; i++ ) {
+                    const npc = npcDeathKeys[ i ];
+                    let deathTime = this._encounterStats.npcDeathTimeoutTimestamps[ npc ];
+
+                    if ( deathTime == undefined || deathTime > now ) {
+                        endEncounter = false;
+                        break;
+                    }
+                }
+
+                if ( endEncounter ) {
+                    this.#encounterNpcDeathTimeoutId = undefined;
+                    this.resetEncounter();
+                } else {
+                    this.#encounterNpcDeathTimeoutId = undefined;
+                    this._startEncounterNpcDeathTimeout();
+                }
+            }, deathCheckDelayMs );
+        }
     }
     
     

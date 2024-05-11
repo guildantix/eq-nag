@@ -106,6 +106,8 @@ class EncounterStats {
     }
     /** @type {string[]} */
     npcs = [];
+    /** @type {Record<string, number|undefined>} */
+    npcDeathTimeoutTimestamps = {};
     /** @type {Date} */
     encounterStart;
     /** @type {Date} */
