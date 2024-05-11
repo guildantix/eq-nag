@@ -605,33 +605,31 @@ class CombatParser {
     /**
      * Returns the list of log records for the specified character.
      * 
-     * @returns {{logRecords: LogRecord[], playerStats: PlayerEncounterStats}} The list of log records.
+     * @returns {{rawLogs: string[], playerStats: PlayerEncounterStats}} The list of log records.
      * 
      * @param {string} character The name of the character to pull log records for.
      * @param {boolean | undefined} untransmittedOnly If true, will only pull untransmitted log records.
      */
-    getCharacterEncounterEvents( character, untransmittedOnly ) {
+    getCharacterFullEncounter( character, untransmittedOnly ) {
 
         if ( !character ) {
-            nagException( `getCharacterEncounterEvents: character is undefined.` );
+            nagException( `getCharacterFullEncounter: character is undefined.` );
             return {
                 logRecords: [],
                 playerStats: undefined,
             };
         }
 
-        let actorPets = this._playerPets[ character ];
-        let output = this.encounterEvents.filter( f => {
-            return ( !untransmittedOnly || f.transmitted === false ) && ( f.actor === character || f.target === character );
-        } );
+        /** @type {string[]} */
+        let logs = [];
 
-        if ( actorPets?.length > 0 ) {
-            let petOutput = this.encounterEvents.filter( f => ( !untransmittedOnly || f.transmitted === false ) && ( actorPets.includes( f.actor ) || actorPets.includes( f.target ) ) );
-            output = output.concat( petOutput );
+        if ( this._encounterStats ) {
+            let characterOwned = [ character, ...this._playerPets[ character ] ];
+            logs = this._encounterStats.ownedLogs.filter( f => characterOwned.includes( f.actor ) || characterOwned.includes( f.target ) );
         }
 
         return {
-            logRecords: output,
+            rawLogs: this._encounterStats?.ownedLogs.filter( f => f.actor === character || f.target === character ) ?? [],
             playerStats: this._encounterStats?.playerEvents[ character ],
         };
     }
@@ -708,10 +706,10 @@ class CombatParser {
      * 
      * @param {boolean | undefined} untransmittedOnly If true, will only pull untransmitted log records.
      */
-    getMyCharacterEncounterEvents( untransmittedOnly ) {
+    getMyCharacterFullEncounter( untransmittedOnly ) {
         let output = [];
 
-        this._myCharacters.forEach( c => output = output.concat( this.getCharacterEncounterEvents( c.name, untransmittedOnly ) ) );
+        this._myCharacters.forEach( c => output = output.concat( this.getCharacterFullEncounter( c.name, untransmittedOnly ) ) );
 
         return output;
     }
@@ -733,6 +731,10 @@ class CombatParser {
     addCombatEvent( logLine ) {
         let timeLog = /^\[(?<timestamp>.*?)\]\s*(?<log>.*)/gi.exec( logLine )?.groups;
         if ( timeLog ) {
+
+            if ( this._encounterStats != null ) {
+                this._encounterStats.logs.push( logLine );
+            }
 
             let entry = {
                 timestamp: timeLog.timestamp,
@@ -1818,16 +1820,26 @@ class CombatParser {
         if ( this._encounterStats == null )
             return;
 
+        // We still want to reset this encounter if we're under the min damage,
+        // but we don't want to trigger the event.
         let underMinDmg = this._dpsMeterSettings.encounterMinimumDamage > 0 && ( this._encounterStats?.encounterDamageDone ?? 0 ) < this._dpsMeterSettings.encounterMinimumDamage;
 
         const eventArgs = new EncounterResetEventArgs();
         eventArgs.encounterId = this._encounterStats.encounterId;
-        eventArgs.timestamp = this._encounterStats.lastEncounterEvent;
+        eventArgs.timestamp = new Date();
+        eventArgs.timezoneOffset = eventArgs.timestamp.getTimezoneOffset();
+        eventArgs.firstEncounterEventTimestamp = this._encounterStats.encounterStart;
+        eventArgs.lastEncounterEventTimestamp = this._encounterStats.lastEncounterEvent;
         eventArgs.logRecords = this.encounterEvents;
-        eventArgs.rawLogs = this.encounterRawLogs;
+        eventArgs.logs = this._encounterStats.logs;
         eventArgs.npcs = [ ...this._encounterStats.npcs ];
         eventArgs.externalEncounterIds = Object.keys( this._externalEncounterIds );
         eventArgs.externalEncounterIdCharacters = this._externalEncounterIds;
+        
+        /** @type {string[]} */
+        let names = [].concat( 'You', this._characterName, ...( this._playerPets[ this._characterName ] ?? [] ) );
+
+        eventArgs.myOwnedLogs = this._encounterStats.ownedLogs.filter( f => names.includes( f.actor ) || names.includes( f.target ) );
 
         // Once the encounter is over, we may continue to receive stats from
         // connected players.  Since there is no point to tracking stats for an 
@@ -1964,7 +1976,7 @@ class CombatParser {
 
         this.#restartEncounterTimeout();
 
-        this.#initializeEncounter( rec );
+        this.#initializeEncounter( rec, rawLog );
         
         this.#recordEncounterEvent( rec, rawLog );
 
@@ -2015,13 +2027,18 @@ class CombatParser {
      * Initializes the encounter, setting the encounter start time if it's not already set.
      * 
      * @param {LogRecord|undefined} rec The log record to initialize to the encounter.
+     * @param {string|undefined} rawLog The raw log record.
      */
-    #initializeEncounter( rec ) {
+    #initializeEncounter( rec, rawLog ) {
         if ( this._encounterStats == undefined ) {
             // Start a new encounter.
             this._encounterStats = new EncounterStats();
             this._externalEncounterIds = {};
             this._encounterStats.encounterStart = rec?.timestamp || new Date();
+
+            if ( rawLog ) {
+                this._encounterStats.logs.push( rawLog );
+            }
 
         } else if ( this._encounterStats.encounterStart == undefined ) {
             // Set the encounter start time, if it's not already set.

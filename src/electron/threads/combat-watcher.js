@@ -286,6 +286,7 @@ const onEncounterReset = ( e ) => {
         externalEncounterIdCharacters: e.externalEncounterIdCharacters,
         externalEncounterInfos: [],
         npcs: e.npcs,
+        logs: e.logs,
     } );
 
     ipcRenderer.send( 'renderer:encounter-reset', { character: characterName } );
@@ -365,13 +366,13 @@ const submitEncounter = ( e ) => {
     logSync.sendToAll( {
         type: 'encounter',
         timestamp: e.timestamp,
-        payload: {
+        payload: Object.assign( new CombatEncounterPayloadModel(), {
             characterName: characterName,
-            logRecords: e.logRecords,
+            logs: e.myOwnedLogs,
             timestamp: e.timestamp,
             encounterId: e.encounterId,
             npcs: e.npcs,
-        }
+        } ),
     } );
 
     nagLog( {
@@ -391,15 +392,20 @@ const processReceivedEncounters = ( encounterId ) => {
     if ( myEncounter ) {
         for ( let i = 0; i < myEncounter.externalEncounterIds.length; i++ ) {
             const exIndex = externalEncounters.findIndex( e => e.encounterId === myEncounter.externalEncounterIds[ i ] );
-            const externalEncounter = externalEncounters[ exIndex ];
+
+            if ( exIndex > -1 ) {
+                /** @type {CombatEncounterPayloadModel} */
+                const externalEncounter = externalEncounters[ exIndex ];
             
-            if ( externalEncounter ) {
-                myEncounter.externalEncounterInfos.push( {
-                    encounterId: externalEncounter.encounterId,
-                    characterName: externalEncounter.characterName,
-                    logRecords: externalEncounter.logRecords,
-                } );
-                externalEncounters.splice( exIndex, 1 );
+                if ( externalEncounter ) {
+                    myEncounter.externalEncounterInfos.push( {
+                        encounterId: externalEncounter.encounterId,
+                        characterName: externalEncounter.characterName,
+                        npcs: externalEncounter.npcs,
+                        logs: externalEncounter.logs,
+                    } );
+                    externalEncounters.splice( exIndex, 1 );
+                }
             }
         }
 
@@ -429,7 +435,8 @@ const receiveEncounterLog = ( externalEncounter ) => {
         myEncounter.externalEncounterInfos.push( {
             encounterId: externalEncounter.encounterId,
             characterName: externalEncounter.characterName,
-            logRecords: externalEncounter.logRecords,
+            npcs: externalEncounter.npcs,
+            logs: externalEncounter.logs,
         } );
 
         scheduleSaveEncounter( myEncounter.encounterId );

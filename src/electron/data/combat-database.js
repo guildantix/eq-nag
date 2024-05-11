@@ -11,6 +11,9 @@ const ForwardRef = require( "../forward-ref" );
 const fsp = fs.promises;
 const log = require( 'electron-log' );
 const { migrateCombatData } = require( "./migrations/combat-database-migration" );
+// TODO: Unzip with: https://github.com/max-mapper/extract-zip
+const archiver = require( 'archiver' );
+
 
 /*
 
@@ -148,26 +151,60 @@ class CombatDatabase extends Store {
     async #saveEncounter( encounter, mainWindow ) {
         
         try {
-            let encountersPath = path.join( this.userDataPath, 'encounters' );
+            const encountersPath = path.join( this.userDataPath, 'encounters' );
                     
             if ( !fs.existsSync( encountersPath ) ) {
                 await fsp.mkdir( encountersPath );
             }
 
-            let filePath = path.join( encountersPath, `${encounter.characterName}-${encounter.serverName}${FsUtilities.getFileTimestamp()}.json` );
 
-            await fsp.writeFile( filePath, JSON.stringify( encounter ) );
+            const name = `${encounter.characterName}_${encounter.serverName}_${FsUtilities.getFileTimestamp( new Date( Date.now() ), 'readable' )}`;
+            // ex: encounters/charactername_servername_2021-12-31-12-59-59
+            const tempDir = path.join( encountersPath, name );
+
+            if ( !fs.existsSync( tempDir ) ) {
+                await fsp.mkdir( tempDir );
+            }
+
+            const zip = archiver( 'zip' );
+
+            const myFilename = `eqlog_${encounter.characterName}_${encounter.serverName}.txt`;
+            const myFilePath = path.join( tempDir, myFilename );
+            // Save my logs to the file.
+            await fsp.writeFile( myFilePath, encounter.logs.join( '\r\n' ) );
+            // Add the file to the zip.
+            zip.file( myFilePath, { name: myFilename } );
+            
+            encounter.externalEncounterInfos.forEach( async info => {
+                const filename = `eqlog_${info.characterName}_${encounter.serverName}.txt`;
+                const filePath = path.join( tempDir, filename );
+                // Save the logs to the file.
+                await fsp.writeFile( filePath, info.logs.join( '\r\n' ) );
+                // Add the file to the zip.
+                zip.file( filePath, { name: filename } );
+            } );
+            
+            const zipFilename = `${name}.zip`;
+            const zipFilePath = path.join( encountersPath, zipFilename );
+            let output = fs.createWriteStream( zipFilePath );
+
+            zip.pipe( output );
+            await zip.finalize();
 
             this.#data.encounters.push( {
                 encounterId: encounter.encounterId,
                 characterName: encounter.characterName,
                 serverName: encounter.serverName,
-                filePath: filePath,
+                filePath: zipFilePath,
                 timestamp: new Date(),
                 npcs: encounter.npcs,
+                externalPlayerNames: encounter.externalEncounterInfos.map( f => f.characterName ),
             } );
             
             await this.storeDataFileAsync( this.#data );
+
+            // Delete the temp directory.
+            await fsp.rm( tempDir, { recursive: true } );
 
             return true;
         } catch ( error ) {

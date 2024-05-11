@@ -47,14 +47,14 @@ class CombatEncounterPayloadModel {
 
     /** @type {string} */
     characterName;
-    /** @type {LogRecord[]} */
-    logRecords;
     /** @type {Date} */
     timestamp;
     /** @type {string} */
     encounterId;
     /** @type {string[]} */
     npcs = [];
+    /** @type {string[]} */
+    logs = [];
 }
 
 class HandshakePayloadModel {

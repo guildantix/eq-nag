@@ -100,6 +100,17 @@ class PlayerEncounterStats {
     lastEncounterEvent;
 }
 
+class OwnedRawLog {
+    /** @type {string | undefined} */
+    actor;
+    /** @type {string | undefined} */
+    target;
+    /** @type {string } */
+    log;
+    /** @type {boolean} */
+    transmitted = false;
+}
+
 class EncounterStats {
     constructor() {
         this.encounterId = nagId();
@@ -116,6 +127,10 @@ class EncounterStats {
     playerEvents = {};
     /** @type {number} */
     encounterDamageDone = 0;
+    /** @type {string[]} */
+    logs = [];
+    /** @type {OwnedRawLog[]} */
+    ownedLogs = [];
 }
 
 class EncounterResetEventArgs {
@@ -123,16 +138,24 @@ class EncounterResetEventArgs {
     encounterId;
     /** @type {Date} */
     timestamp;
+    /** @type {Date} */
+    firstEncounterEventTimestamp;
+    /** @type {Date} */
+    lastEncounterEventTimestamp;
     /** @type {LogRecord[]} */
     logRecords = [];
     /** @type {string[]} */
-    rawLogs = [];
+    logs = [];
+    /** @type {string[]} */
+    myOwnedLogs = [];
     /** @type {string[]} */
     externalEncounterIds = [];
     /** @type {Record<string, string>} Maps external encounter ids to their owning character names. */
     externalEncounterIdCharacters = {};
     /** @type {string[]} */
     npcs = [];
+    /** @type {number} */
+    timezoneOffset = 0;
 }
 
 class LogRecord {
@@ -262,6 +285,8 @@ class CombatEncounterModel {
     timestamp;
     /** @type {string[]} */
     npcs;
+    /** @type {string[]} */
+    externalPlayerNames = [];
 
 }
 
@@ -306,8 +331,10 @@ class ExternalEncounterModel {
     encounterId;
     /** @type {string} */
     characterName;
-    /** @type {LogRecord[]} */
-    logRecords = [];
+    /** @type {string[]} */
+    logs = [];
+    /** @type {string[]} */
+    npcs = [];
 }
 
 class EncounterModel {
@@ -327,6 +354,8 @@ class EncounterModel {
     externalEncounterInfos = [];
     /** @type {string[]} */
     npcs;
+    /** @type {string[]} */
+    logs = [];
 }
 
 module.exports = {
@@ -336,6 +365,7 @@ module.exports = {
     PlayerDps,
     PetDps,
     PlayerEncounterStats,
+    OwnedRawLog,
     EncounterStats,
     avoidTypeMap,
     attackTypeMap,
