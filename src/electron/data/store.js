@@ -68,7 +68,7 @@ class Store {
      * @param {(string) => void)} onComplete Callback function executed when the backup file is created that receives the backup file location.
      */
     backupDatafile( onComplete ) {
-        let backupFile = path.join( this.userDataPath, `${FsUtilities.getFileTimestamp()}-backup.zip` );
+        let backupFile = path.join( this.userDataPath, `-${FsUtilities.getFileTimestamp()}-backup.zip` );
         let output = fs.createWriteStream( backupFile );
         let zip = archiver( 'zip' );
 
