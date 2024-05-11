@@ -100,29 +100,6 @@ export class CombatStatisticsComponent implements OnInit {
     //     this.updateSetting( SettingsKeys.dpsMeterSettings, this._dpsMeterSettings, 500 );
     // }
     
-    public get dpsEncounterResetTimeSec(): number {
-        return this._dpsMeterSettings.encounterResetDelayMs / 1000;
-    }
-    public set dpsEncounterResetTimeSec( value: number ) {
-        this._dpsMeterSettings.encounterResetDelayMs = value * 1000;
-        this.updateSetting( SettingsKeys.dpsMeterSettings, this._dpsMeterSettings, 500 );
-    }
-    
-    public get dpsEncounterInactiveDelaySec(): number {
-        return this._dpsMeterSettings.encounterInactiveDelayMs / 1000;
-    }
-    public set dpsEncounterInactiveDelaySec( v: number ) {
-        this._dpsMeterSettings.encounterInactiveDelayMs = v * 1000;
-        this.updateSetting( SettingsKeys.dpsMeterSettings, this._dpsMeterSettings, 500 );
-    }
-    
-    public get dpsPlayerInactiveDelaySec(): number {
-        return this._dpsMeterSettings.playerInactiveDelayMs / 1000;
-    }
-    public set dpsPlayerInactiveDelaySec( v: number ) {
-        this.updatePlayerInactiveDelay( v );
-    }
-
     public get encounterMinimumDamage(): number {
         return this._dpsMeterSettings.encounterMinimumDamage;
     }
