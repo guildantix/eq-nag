@@ -3,13 +3,14 @@ const Store = require( './store' );
 const _ = require( 'lodash' );
 const StringUtilities = require( "../utilities/string" );
 const { app, BrowserWindow, ipcMain, screen } = require( "electron" );
-const { CombatDb, ServerCombatModel, EncounterModel, CombatEncounterModel } = require( "./models/combat-parser" );
+const { CombatDb, ServerCombatModel, EncounterModel, CombatEncounterModel, combatDbDefault } = require( "./models/combat-parser" );
 const path = require( 'path' );
 const FsUtilities = require( "../utilities/file-system" );
 const fs = require( 'fs' );
 const ForwardRef = require( "../forward-ref" );
 const fsp = fs.promises;
 const log = require( 'electron-log' );
+const { migrateCombatData } = require( "./migrations/combat-database-migration" );
 
 /*
 
@@ -52,14 +53,18 @@ class CombatDatabase extends Store {
     constructor() {
         super( {
             configName: "combat-database",
-            defaults: { servers: [], encounters: [], version: 1 },
+            defaults: combatDbDefault,
         } );
 
         this.#data = this.parseDataFile();
 
-        if ( !this.#data.version || this.#data.version < 1 ) {
-            
-        }
+        app.on( 'ready', () => {
+            migrateCombatData( this.#data, this.configName, data => {
+                this.#data = data;
+                this.storeDataFile( this.#data );
+            } );
+        } );
+
     }
 
 

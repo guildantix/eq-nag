@@ -271,8 +271,16 @@ class CombatDb {
     servers = [];
     /** @type {CombatEncounterModel[]} */
     encounters = [];
+    /** @type {number} */
+    version;
 
 }
+
+const combatDbDefault = {
+    servers: [],
+    encounters: [],
+    version: 1,
+};
 
 class DpsMeterSettings {
 
@@ -334,6 +342,7 @@ module.exports = {
     EncounterEventTypes,
     ServerCombatModel,
     CombatDb,
+    combatDbDefault,
     DpsMeterSettings,
     rgxCombatText,
     EncounterResetEventArgs,
