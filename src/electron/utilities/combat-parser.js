@@ -646,6 +646,28 @@ class CombatParser {
 
 
     /**
+     * Returns the player stats for the specified player.
+     * 
+     * @param {string} character The name of the character.
+     * @returns {{encounterId: string, playerStats: PlayerEncounterStats} | undefined}
+     */
+    getCharacterStatistics( character ) {
+        return this._encounterStats && this._encounterStats.playerEvents[ character ] ? {
+            encounterId: this._encounterStats.encounterId,
+            playerStats: this._encounterStats.playerEvents[ character ],
+        } : undefined;
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
      * Imports the given player encounter stats.  Encounter stats are the 
      * calculated stats for the player during the encounter.
      * 
@@ -1283,7 +1305,6 @@ class CombatParser {
                             if ( this._verifiedNpcs.indexOf( event.actor ) > -1 ) {
                                 stats.attackedByNpc += 1;
                             } else if ( this._verifiedPlayers.indexOf( event.actor ) > -1 || this._verifiedPets.indexOf( event.actor ) > -1 ) {
-                                console.log( 'attacked by pet or player' );
                                 stats.attackedByPlayer += 1;
                             }
 

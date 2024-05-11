@@ -218,36 +218,30 @@ const sendDpsToRenderer = async () => {
     let encounterDps = myCombatParser?.getEncounterOutgoingDps() ?? [];
     ipcRenderer.send( 'renderer:encounter-dps', { character: characterName, encounterDps: encounterDps } );
 
-    if ( dpsTransmitEnabled ) {
+    if ( dpsTransmitEnabled && dpsMeterSettings.show ) {
         if ( lastDpsTransmit == null || ( ( Date.now() - lastDpsTransmit ) >= dpsTransmitIntervalMs ) ) {
-            transmitEncounterEvents();
+            transmitEncounterStats();
             lastDpsTransmit = Date.now();
             await processChatRoom();
         }
     }
 };
 
-const transmitEncounterEvents = () => {
+const transmitEncounterStats = () => {
     if ( logSync == null || myCombatParser == null )
         return;
 
-    let fullEncounterEvents = myCombatParser.getCharacterEncounterEvents( characterName, true ) ?? [];
-    // let minifiedEncounterEvents = minifyCombatLogs( fullEncounterEvents ) ?? [];
+    let myStats = myCombatParser.getCharacterStatistics( characterName );
 
-    if ( fullEncounterEvents?.logRecords?.length > 0 ) {
-
-        fullEncounterEvents.logRecords.forEach( e => e.transmitted = true );
-
-        // TODO: Actually transmit the events.
+    if ( myStats ) {
         logSync.sendToAll( {
             type: 'combatStatistics',
             timestamp: fullEncounterEvents.logRecords[ 0 ].timestamp,
             payload: {
                 characterName: characterName,
-                logRecords: fullEncounterEvents.logRecords,
-                encounterStats: fullEncounterEvents.playerStats,
-                // logRecords: minifiedEncounterEvents,
+                encounterStats: myStats.playerStats,
                 chatTimeStamp: new Date(),
+                encounterId: myStats.encounterId,
             }
         } );
     }
