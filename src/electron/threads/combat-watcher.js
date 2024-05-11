@@ -826,10 +826,12 @@ let processChatRoom = async () => {
 
                     myCombatParser.importPlayerEncounterStats( data.characterName, data.encounterStats, data.encounterId );
 
+                    serverLog( `Updating stats for ${playerPeer?.characterName ?? 'Unknown Player'}.` );
+
                 } else if ( m.type === 'encounter' ) {
                     if ( playerPeer != null ) {
                         receiveEncounterLog( m.payload );
-                        serverLog( `Received encounter log from ${playerPeer?.characterName ?? 'Unknown Player'}.` );
+                        serverLog( `Received full encounter from ${playerPeer?.characterName ?? 'Unknown Player'}.` );
 
                     } else {
                         serverLog( `Received encounter from unknown player, ignoring.`, 'yellow' );
