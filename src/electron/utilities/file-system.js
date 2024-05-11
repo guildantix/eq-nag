@@ -104,16 +104,35 @@ function pathPrependFilename( filePath, prefix ) {
  * Returns a filename timestamp.
  * 
  * @param {Date|undefined} time The time for the timestamp.  The current time is used if no value is provided.
+ * @param {'original'|'readable'|undefined} version The version of the file.
  */
-function getFileTimestamp( time ) {
-    const now = time ? time : new Date( Date.now() );
+function getFileTimestamp( time, version ) {
     
-    const y = `${now.getFullYear()}`.padStart( 4, '0' );
-    const m = `${now.getMonth() + 1}`.padStart( 2, '0' );
-    const d = `${now.getDate()}`.padStart( 2, '0' );
-    const t = `${( now.getHours() * 60 * 60 * 1000 ) + ( now.getMinutes() * 60 * 1000 ) + ( now.getSeconds() * 1000 ) + now.getMilliseconds()}`.padStart( 4, '0' );
+    version = version ? version : 'original';
 
-    return `-${y}${m}${d}_${t}`;
+    if ( version === 'readable' ) {
+        const now = time ? time : new Date( Date.now() );
+        
+        const y = `${now.getFullYear()}`.padStart( 4, '0' );
+        const m = `${now.getMonth() + 1}`.padStart( 2, '0' );
+        const d = `${now.getDate()}`.padStart( 2, '0' );
+        const h = `${now.getHours()}`.padStart( 2, '0' );
+        const mi = `${now.getMinutes()}`.padStart( 2, '0' );
+        const s = `${now.getSeconds()}`.padStart( 2, '0' );
+        const ms = `${now.getMilliseconds()}`.padStart( 4, '0' );
+        
+        return `${y}_${m}_${d}_${h}_${mi}_${s}_${ms}`;
+
+    } else if ( version === 'original' ) {
+        const now = time ? time : new Date( Date.now() );
+        
+        const y = `${now.getFullYear()}`.padStart( 4, '0' );
+        const m = `${now.getMonth() + 1}`.padStart( 2, '0' );
+        const d = `${now.getDate()}`.padStart( 2, '0' );
+        const t = `${( now.getHours() * 60 * 60 * 1000 ) + ( now.getMinutes() * 60 * 1000 ) + ( now.getSeconds() * 1000 ) + now.getMilliseconds()}`.padStart( 4, '0' );
+    
+        return `${y}${m}${d}_${t}`;
+    }
 }
 
 const Path = {
