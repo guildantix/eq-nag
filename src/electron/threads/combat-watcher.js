@@ -319,7 +319,7 @@ const saveEncounter = ( encounterId ) => {
     let encounterIndex = myEncounters.findIndex( e => e.encounterId === encounterId );
 
     if ( encounterIndex >= 0 ) {
-        const encounter = myEncounters[ encounterIndex ];
+        const encounter = myEncounters.splice( encounterIndex, 1 )[ 0 ];
 
         ipcRenderer.invoke( 'log:save-encounter', encounter ).then( () => {
             myEncounters = myEncounters.filter( e => e.encounterId !== encounterId );
