@@ -499,8 +499,46 @@ function createDpsWindow() {
     div.style.zIndex = overlayTopZIndex + 1;
     div.style.position = 'relative';
 
+    let clearFightBtn = div.querySelector( '.clear-encounter' );
+    if ( clearFightBtn ) {
+        clearFightBtn.addEventListener( 'click', () => {
+            clearEncounter();
+        } );
+    }
+
     return div.querySelector( '.window' );
 
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Clears the current encounter without saving to history.
+ */
+function clearEncounter() {
+    if ( dpsWindow ) {
+        dpsWindow.querySelector( '.dps-items' ).innerHTML = '';
+
+        let encounterName = dpsWindow.querySelector( '.encounter-name' );
+        if ( encounterName ) {
+            encounterName.innerHTML = '';
+        }
+    
+        let encounterTime = dpsWindow.querySelector( '.encounter-time' );
+        if ( encounterTime ) {
+            encounterTime.innerHTML = '';
+            encounterTime.classList.remove( 'strong' );
+        }
+    }
+    
+    currentEncounter = undefined;
 }
 
 
