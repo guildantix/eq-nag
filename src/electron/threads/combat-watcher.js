@@ -125,6 +125,8 @@ let characterId = null;
 let dpsTrackingEnabled = false;
 /** @type {boolean} */
 let dpsTransmitEnabled = false;
+/** @type {boolean} */
+let recordEncounters = false;
 /** @type {Date} */
 let lastDpsTransmit = null;
 /** @type {number} */
@@ -314,16 +316,27 @@ const saveEncounter = ( encounterId ) => {
     let encounterIndex = myEncounters.findIndex( e => e.encounterId === encounterId );
 
     if ( encounterIndex >= 0 ) {
-        const encounter = myEncounters.splice( encounterIndex, 1 )[ 0 ];
 
-        ipcRenderer.invoke( 'log:save-encounter', encounter ).then( () => {
+        if ( !recordEncounters ) {
             myEncounters = myEncounters.filter( e => e.encounterId !== encounterId );
 
             nagLog( {
-                label: 'Encounter Save',
-                message: `Encounter saved for ${characterName}.`,
+                label: 'Encounter Reset',
+                message: `Encounter will not be saved for ${characterName}.`,
             } );
-        } );
+            
+        } else {
+            const encounter = myEncounters.splice( encounterIndex, 1 )[ 0 ];
+
+            ipcRenderer.invoke( 'log:save-encounter', encounter ).then( () => {
+                myEncounters = myEncounters.filter( e => e.encounterId !== encounterId );
+
+                nagLog( {
+                    label: 'Encounter Save',
+                    message: `Encounter saved for ${characterName}.`,
+                } );
+            } );
+        }
     }
 }
 
@@ -801,6 +814,16 @@ function CombatWatcher() {
         overlays = data.overlays;
 
     } );
+    
+    ipcRenderer.on( 'combat:record-encounters',
+        /**
+         * 
+         * @param {import("electron").IpcRendererEvent} event The event args.
+         * @param {{recordEncounters: boolean}} data The data.
+         */
+        function ( event, data ) {
+            recordEncounters = data.recordEncounters;
+        } );
 
 }
 

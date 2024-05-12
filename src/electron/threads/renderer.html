@@ -524,6 +524,17 @@
         var Renderer = window.api.getRenderer();
         var data = Renderer( +urlParams.get( 'originX' ), +urlParams.get( 'originY' ), urlParams.get('glowOnStart') === 'true' );
 
+        var recordEncounters = false;
+        function toggleRecordEncounters() {
+            recordEncounters = !recordEncounters;
+            window.api.recordEncounters(recordEncounters);
+
+            if (recordEncounters) {
+                document.getElementById('encounterRecordBtn').classList.add('record-enabled');
+            } else {
+                document.getElementById('encounterRecordBtn').classList.remove('record-enabled');
+            }
+        }
     </script>
 
     <!-- =========================== -->
@@ -630,11 +641,14 @@
             margin: 0 0.5em 0 0;
             position: relative;
         }
-        .window.dps-meter .window-title .window-title-col.title-btn:hover {
+        .window.dps-meter .window-title .window-title-col.title-btn:not(.record-button):hover {
             color: #b8b8b8;
         }
         .window.dps-meter .window-title .window-title-col.title-btn:active {
             color: #929292;
+        }
+        .window.dps-meter .window-title .window-title-col.title-btn.record-button:active {
+            color: #920000;
         }
         .tooltip {
             display: none;
@@ -804,6 +818,9 @@
         .window-settings-row .spacer {
             flex: 1 1 auto;
         }
+        .record-enabled {
+            color: #ff0000;
+        }
     </style>
     
     <!-- =========================== -->
@@ -821,6 +838,7 @@
                 <!-- <span class="window-title-col title-btn mouse-show"><i class="fa-solid fa-magnifying-glass-chart"></i><span class="tooltip">Select Columns</span></span> -->
                 <!-- <span class="window-title-col title-btn mouse-show" onclick="window.api.showSettings('combatDatabase')"><i class="fa-solid fa-user-check"></i><span class="tooltip">Edit Data</span></span> -->
                 <span class="window-title-col title-btn mouse-show" onclick="window.api.showSettings('combatStatistics')"><i class="fas fa-gear"></i><span class="tooltip">Window Settings</span></span>
+                <span class="window-title-col title-btn mouse-show record-button" id="encounterRecordBtn" onclick="toggleRecordEncounters()"><i class="fa-solid fa-circle"></i><span class="tooltip">Record Encounters</span></span>
                 <span class="window-title-col right-pad"></span>
             </div>
             <div class="window-content dps-items click-through">
