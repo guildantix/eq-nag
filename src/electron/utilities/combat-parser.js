@@ -752,19 +752,19 @@ class CombatParser {
             regxResult = regxResult == null ? executCombatRgx( combatRgx.YouHaveSlain, entry.log ) : regxResult;
             regxResult = regxResult == null ? executCombatRgx( combatRgx.Died, entry.log ) : regxResult;
             if ( regxResult !== null ) {
-                this._addDeathEvent( timestamp, regxResult.groups.target, regxResult.groups.actor, entry.log );
+                this._addDeathEvent( timestamp, regxResult.groups.target, regxResult.groups.actor, logLine );
                 return undefined;
             }
 
             regxResult = executCombatRgx( combatRgx.MeleeDamage, entry.log );
             if ( regxResult !== null ) {
-                return this._addMeleeEvent( timestamp, regxResult.groups.actor, regxResult.groups.target, +regxResult.groups.damage, regxResult.groups.attackType, regxResult.groups.modifiers );
+                return this._addMeleeEvent( timestamp, regxResult.groups.actor, regxResult.groups.target, +regxResult.groups.damage, regxResult.groups.attackType, regxResult.groups.modifiers, logLine );
             }
             
             regxResult = executCombatRgx( combatRgx.MeleeMiss, entry.log );
             regxResult = regxResult == null ? executCombatRgx( combatRgx.ActiveDefense, entry.log ) : regxResult;
             if ( regxResult !== null ) {
-                return this._addMeleeAvoidance( timestamp,  regxResult.groups.actor ,  regxResult.groups.target, regxResult.groups.defenseType, regxResult.groups.attackType, regxResult.groups.modifiers );
+                return this._addMeleeAvoidance( timestamp,  regxResult.groups.actor ,  regxResult.groups.target, regxResult.groups.defenseType, regxResult.groups.attackType, regxResult.groups.modifiers, logLine );
             }
             
             regxResult = executCombatRgx( combatRgx.DirectDamage, entry.log );
@@ -772,17 +772,17 @@ class CombatParser {
             regxResult = regxResult == null ? executCombatRgx( combatRgx.OtherDoT, entry.log ) : regxResult;
             regxResult = regxResult == null ? executCombatRgx( combatRgx.SelfDot, entry.log ) : regxResult;
             if ( regxResult !== null ) {
-                return this._addDetrimentalSpellEvent( timestamp, regxResult.groups.actor, regxResult.groups.target, +regxResult.groups.damage, regxResult.groups.attackType, regxResult.groups.resistType, regxResult.groups.modifiers );
+                return this._addDetrimentalSpellEvent( timestamp, regxResult.groups.actor, regxResult.groups.target, +regxResult.groups.damage, regxResult.groups.attackType, regxResult.groups.resistType, regxResult.groups.modifiers, logLine );
             }
             
             regxResult = executCombatRgx( combatRgx.Thorns, entry.log );
             if ( regxResult !== null ) {
-                return this._addThornsEvent( timestamp,  regxResult.groups.actor ,  regxResult.groups.target , +regxResult.groups.damage );
+                return this._addThornsEvent( timestamp,  regxResult.groups.actor ,  regxResult.groups.target , +regxResult.groups.damage, logLine );
             }
             
             regxResult = executCombatRgx( combatRgx.Healing, entry.log );
             if ( regxResult !== null ) {
-                return this._addBeneficialSpellEvent( timestamp,  regxResult.groups.actor ,  regxResult.groups.target , regxResult.groups.healDuration, +regxResult.groups.healActual, regxResult.groups.healType, +regxResult.groups.healLiteral, regxResult.groups.modifiers );
+                return this._addBeneficialSpellEvent( timestamp,  regxResult.groups.actor ,  regxResult.groups.target , regxResult.groups.healDuration, +regxResult.groups.healActual, regxResult.groups.healType, +regxResult.groups.healLiteral, regxResult.groups.modifiers, logLine );
             }
 
             regxResult = executCombatRgx( combatRgx.Defensive, entry.log );
@@ -1839,7 +1839,7 @@ class CombatParser {
         /** @type {string[]} */
         let names = [].concat( 'You', this._characterName, ...( this._playerPets[ this._characterName ] ?? [] ) );
 
-        eventArgs.myOwnedLogs = this._encounterStats.ownedLogs.filter( f => names.includes( f.actor ) || names.includes( f.target ) );
+        eventArgs.myOwnedLogs = this._encounterStats.ownedLogs.filter( f => names.includes( f.actor ) || names.includes( f.target ) ).map( f => f.log );
 
         // Once the encounter is over, we may continue to receive stats from
         // connected players.  Since there is no point to tracking stats for an 
@@ -2255,8 +2255,9 @@ class CombatParser {
      * @param {number} damage The damage amount.
      * @param {string} attackType The attack type.
      * @param {string?} modifiers The modifiers of the attack.
+     * @param {string?} rawLog The raw log record.
      */
-    _addMeleeEvent( timestamp, actor, target, damage, attackType, modifiers ) {
+    _addMeleeEvent( timestamp, actor, target, damage, attackType, modifiers, rawLog ) {
         let names = this._getActorTargetNames( actor, target );
         let attackTypeName = this._getAttackType( attackType );
     
@@ -2282,7 +2283,7 @@ class CombatParser {
         rec.modifiers.deadly_strike = modifiers?.indexOf( 'Deadly Strike' ) > -1;
         rec.modifiers.finishing_blow = modifiers?.indexOf( 'Finishing Blow' ) > -1;
     
-        return this._addEncounterEvent( rec );
+        return this._addEncounterEvent( rec, rawLog );
 
     }
     
@@ -2306,8 +2307,9 @@ class CombatParser {
      * @param {string} defenseType The type of defense.
      * @param {string?} attackType The type of defense.
      * @param {string?} modifiers The modifiers of the attack.
+     * @param {string?} rawLog The raw log record.
      */
-    _addMeleeAvoidance( timestamp, actor, target, defenseType, attackType, modifiers ) {
+    _addMeleeAvoidance( timestamp, actor, target, defenseType, attackType, modifiers, rawLog ) {
         let names = this._getActorTargetNames( actor, target );
         let attackTypeName = this._getAttackType( attackType );
         let avoidTypeName = avoidTypeMap[ defenseType ];
@@ -2326,7 +2328,7 @@ class CombatParser {
         rec.modifiers.block = avoidTypeName === 'block';
         rec.modifiers.miss = avoidTypeName === 'miss';
     
-        return this._addEncounterEvent( rec );
+        return this._addEncounterEvent( rec, rawLog );
         
     }
     
@@ -2351,8 +2353,9 @@ class CombatParser {
      * @param {string} attackType The name of the spell.
      * @param {string?} resistType The resist check of the spell.
      * @param {string?} modifiers The modifiers of the spell.
+     * @param {string?} rawLog The raw log record.
      */
-    _addDetrimentalSpellEvent( timestamp, actor, target, damage, attackType, resistType, modifiers ) {
+    _addDetrimentalSpellEvent( timestamp, actor, target, damage, attackType, resistType, modifiers, rawLog ) {
         let names = this._getActorTargetNames( actor, target );
         let attackTypeName = this._getAttackType( attackType );
     
@@ -2371,7 +2374,7 @@ class CombatParser {
         rec.resistType = resistType;
     
         if ( rec.actor !== rec.target ) {
-            return this._addEncounterEvent( rec );
+            return this._addEncounterEvent( rec, rawLog );
         } else {
             return this._getFctModel( rec );
         }
@@ -2400,8 +2403,9 @@ class CombatParser {
      * @param {string} healType The name of the heal spell.
      * @param {number?} healLiteral The total amount of possible healing, if supplied in the capture groups.
      * @param {string?} modifiers The modifiers of the spell.
+     * @param {string?} rawLog The raw log record.
      */
-    _addBeneficialSpellEvent(timestamp, actor, target, healDuration, healActual, healType, healLiteral, modifiers) {
+    _addBeneficialSpellEvent(timestamp, actor, target, healDuration, healActual, healType, healLiteral, modifiers, rawLog ) {
         let names = this._getActorTargetNames( actor, target );
         let healTypeName = this._getAttackType( healType );
     
@@ -2418,7 +2422,7 @@ class CombatParser {
         rec.modifiers.critical = modifiers?.indexOf( 'Critical' ) > -1;
         rec.modifiers.lucky = modifiers?.indexOf( 'Lucky' ) > -1;
     
-        return this._addEncounterEvent( rec );
+        return this._addEncounterEvent( rec, rawLog );
         
     }
     
@@ -2440,8 +2444,9 @@ class CombatParser {
      * @param {string} actor The name of the actor.
      * @param {string} target The name of the target.
      * @param {number} damage The thorns damage.
+     * @param {string} rawLog The raw log record.
      */
-    _addThornsEvent( timestamp, actor, target, damage ) {
+    _addThornsEvent( timestamp, actor, target, damage, rawLog ) {
         let names = this._getActorTargetNames( actor, target );
     
         let rec = new LogRecord();
@@ -2453,7 +2458,7 @@ class CombatParser {
         rec.thorns = true;
         rec.modifiers = new AttackModifiers();
     
-        return this._addEncounterEvent( rec );
+        return this._addEncounterEvent( rec, rawLog );
         
     }
 
