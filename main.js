@@ -720,7 +720,7 @@ ipcMain.on( 'chat-room:server-log',
      * @param {Electron.IpcMainEvent} event The event args.
      * @param {string} data The chat room id.
      */
-    ( event, data ) => mainWindow.webContents.send( 'chat-room:server-log', data ) );
+    ( event, data ) => mainWindow?.webContents.send( 'chat-room:server-log', data ) );
 
 ipcMain.on( 'chat-room:start-chat-room',
     /**
@@ -763,7 +763,7 @@ ipcMain.on( 'chat-room:disconnected',
      * @param {Electron.IpcMainEvent} event The event args.
      * @param {string} reason The reason for the disconnect.
      */
-    ( event, reason ) => mainWindow.webContents.send( 'chat-room:disconnected', reason ) );
+    ( event, reason ) => mainWindow?.webContents.send( 'chat-room:disconnected', reason ) );
 
 /**
 * Sends the console message to the debug console.
@@ -772,9 +772,9 @@ ipcMain.on( 'chat-room:disconnected',
 */
 const consoleMessage = async ( data ) => {
     if ( typeof data === 'string' ) {
-        mainWindow.webContents.send( 'console:success', { label: 'System Message', message: data, timestamp: new Date() } );
+        mainWindow?.webContents.send( 'console:success', { label: 'System Message', message: data, timestamp: new Date() } );
     } else if ( data?.message ) {
-        mainWindow.webContents.send( 'console:success', { label: data.label ?? 'System Message', message: data.message, payload: data.payload, timestamp: new Date() } );
+        mainWindow?.webContents.send( 'console:success', { label: data.label ?? 'System Message', message: data.message, payload: data.payload, timestamp: new Date() } );
     }
  }
 
