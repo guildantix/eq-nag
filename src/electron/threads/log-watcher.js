@@ -1497,7 +1497,7 @@ function parseLogEntries( raw, simulating, padTime ) {
         }
 
         let p2p = p2pRegex.exec( log );
-        if ( p2p && p2p.groups?.chatRoomId ) {
+        if ( p2p && p2p.groups?.chatRoomId && p2p.groups?.player != 'You' && p2p.groups?.player != 'you' && p2p.groups?.player != characterName ) {
             let link = createChatRoomLink( p2p.groups.chatRoomId );
             ipcRenderer.send( 'chat-room:link-received', {
                 link: link,
