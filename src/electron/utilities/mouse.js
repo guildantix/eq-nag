@@ -98,6 +98,10 @@ function trackDynamicMouse() {
     
     for ( let i = 0; i < mouseEnabledDoms.length; i++ ) {
         const dom = mouseEnabledDoms[i];
+        // If the dom is a child of .no-mouse, then we want to ignore it.
+        if ( dom.closest( '.no-mouse' ) ) {
+            continue;
+        }
         let rect = dom.getBoundingClientRect();
         if ( (rect.x - origin.x) <= mouseCoords.x && (rect.x - origin.x) + rect.width >= mouseCoords.x && (rect.y - origin.y) <= mouseCoords.y && (rect.y - origin.y) + rect.height >= mouseCoords.y ) {
             setHandleMouseEvents();
