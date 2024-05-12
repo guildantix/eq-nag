@@ -174,15 +174,16 @@ class CombatDatabase extends Store {
             await fsp.writeFile( myFilePath, encounter.logs.join( '\r\n' ) );
             // Add the file to the zip.
             zip.file( myFilePath, { name: myFilename } );
-            
-            encounter.externalEncounterInfos.forEach( async info => {
+
+            for ( let i = 0; i < encounter.externalEncounterInfos.length; i++ ) {
+                const info = encounter.externalEncounterInfos[ i ];
                 const filename = `eqlog_${info.characterName}_${encounter.serverName}.txt`;
                 const filePath = path.join( tempDir, filename );
                 // Save the logs to the file.
                 await fsp.writeFile( filePath, info.logs.join( '\r\n' ) );
                 // Add the file to the zip.
                 zip.file( filePath, { name: filename } );
-            } );
+            }
             
             const zipFilename = `${name}.zip`;
             const zipFilePath = path.join( encountersPath, zipFilename );
