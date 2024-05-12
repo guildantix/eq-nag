@@ -215,6 +215,9 @@ let myCombatParser = undefined;
 /** @type {string[]} */
 let myCombatParserCache = [];
 
+/** @type {number|undefined} */
+let lastTransmitTimestamp = undefined;
+
 const sendDpsToRenderer = async () => {
     // This is currently a really simple version of DPS tracking.  What we need to do is capture the start/end of each players combat and then calculate the DPS based on that.  In addition to what we're doing now, which is their immediate DPS not encounter DPS.
     let encounterDps = myCombatParser?.getEncounterOutgoingDps() ?? [];
@@ -236,16 +239,21 @@ const transmitEncounterStats = () => {
     let myStats = myCombatParser.getCharacterStatistics( characterName );
 
     if ( myStats ) {
-        logSync.sendToAll( {
-            type: 'combatStatistics',
-            timestamp: fullEncounterEvents.logRecords[ 0 ].timestamp,
-            payload: {
-                characterName: characterName,
-                encounterStats: myStats.playerStats,
-                chatTimeStamp: new Date(),
-                encounterId: myStats.encounterId,
-            }
-        } );
+        let timestamp = myStats.playerStats.lastEncounterEvent ?? new Date();
+        if ( lastTransmitTimestamp != timestamp.getTime() ) {
+            logSync.sendToAll( {
+                type: 'combatStatistics',
+                timestamp: timestamp,
+                payload: {
+                    characterName: characterName,
+                    encounterStats: myStats.playerStats,
+                    chatTimeStamp: new Date(),
+                    encounterId: myStats.encounterId,
+                }
+            } );
+
+            lastTransmitTimestamp = timestamp.getTime();
+        }
     }
 }
 
@@ -844,9 +852,9 @@ let processChatRoom = async () => {
                     /** @type {CombatStatisticsPayloadModel} */
                     let data = m.payload;
 
-                    myCombatParser.importPlayerEncounterStats( data.characterName, data.encounterStats, data.encounterId );
-
                     serverLog( `Updating stats for ${playerPeer?.characterName ?? 'Unknown Player'}.` );
+
+                    myCombatParser.importPlayerEncounterStats( data.characterName, data.encounterStats, data.encounterId );
 
                 } else if ( m.type === 'encounter' ) {
                     if ( playerPeer != null ) {
