@@ -527,15 +527,15 @@ class CombatParser {
      * @description Returns an empty array if the total encounter damage done 
      *              is less than the minimum encounter damage value.
      * 
-     * @returns {PlayerDps[]} The list of player DPS.
+     * @returns {{playerDps: PlayerDps[], npcs: string[], encounterId: string, start: Date} | undefined} The list of player DPS.
      */
     getEncounterOutgoingDps() {
         /** @type {PlayerDps[]} */
         let output = [];
 
         let underMinDmg = this._dpsMeterSettings.encounterMinimumDamage > 0 && ( this._encounterStats?.encounterDamageDone ?? 0 ) < this._dpsMeterSettings.encounterMinimumDamage;
-        if ( underMinDmg ) {
-            return output;
+        if ( this._encounterStats == undefined || underMinDmg ) {
+            return undefined;
         }
 
         for ( let i = 0; i < this._verifiedPlayers.length; i++ ) {
@@ -590,7 +590,12 @@ class CombatParser {
             }
         }
 
-        return output;
+        return {
+            playerDps: output,
+            npcs: this._encounterStats.npcs,
+            encounterId: this._encounterStats.encounterId,
+            start: this._encounterStats.encounterStart,
+        };
     }
 
 
