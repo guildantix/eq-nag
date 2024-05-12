@@ -6,7 +6,7 @@ const ThreadUtilities = require( './threading' );
 const fsp = fs.promises;
 const chunkSize = 1024 * 1024 * 384; // Max chunk possible is 512MB, but we'll use 384MB to be safe.
 const maxReadErrors = 5;
-const readDelayMs = 50;
+const readDelayMs = 200;
 const readErrorDelayMs = 1000;
 
 /**
