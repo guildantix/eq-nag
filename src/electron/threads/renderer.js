@@ -518,7 +518,14 @@ function updateDpsWindowSettings() {
 
         }
 
-        dpsWindow.style.display = showDpsWindow ? 'block' : 'none';
+        dpsWindow.style.display = 'block';
+        if ( showDpsWindow ) {
+            dpsWindow.classList.remove( 'no-mouse' );
+            dpsWindow.style.visibility = 'visible';
+        } else {
+            dpsWindow.classList.add( 'no-mouse' );
+            dpsWindow.style.visibility = 'hidden';
+        }
     }
 }
 
@@ -719,9 +726,16 @@ function Renderer( originX, originY, glowOnStart ) {
                     moveResizeDomElement( dpsWindow, dpsWindowBounds );
 
                     waitForDisplaysLoaded( () => {
+
+                        // Check to see if the DPS window is off the screen.
+                        // This requires that the displays are loaded and that 
+                        // the DPS window is display block.
+                        let display = dpsWindow.style.display;
+                        dpsWindow.style.display = 'block';
+        
                         if ( !verifyDomRectOnDisplay( dpsWindow.getBoundingClientRect() ) ) {
                             
-                            logError( { label: 'renderer.js', message: 'DPS Window was rendered outside the viewable area.  Resetting the DPS window size and position.' } );
+                            logError( { label: 'renderer.js', message: 'DPS Window was rendered outside the viewable area.  Resetting the DPS window size and position.', payload: { dpsWindowBounds, displayMetas } } );
     
                             dpsWindow.style.width = '350px';
                             dpsWindow.style.height = '350px';
@@ -742,6 +756,10 @@ function Renderer( originX, originY, glowOnStart ) {
                             );
                             
                         }
+
+                        // Restore the display setting.
+                        dpsWindow.style.display = display;
+                        
                     } );
                     
                 } else {
