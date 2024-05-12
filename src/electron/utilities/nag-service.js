@@ -30,6 +30,36 @@ class NagService {
 
 
 
+
+    /**
+     * Handles the response from the server.
+     * 
+     * @returns Returns the response data.
+     * 
+     * @param {Response} response The response from the server.
+     */
+    async #handleResponse( response ) {
+        if ( response.status >= 200 && response.status < 300 ) {
+            return await response.json();
+        } else {
+            let error = await response.json();
+
+            if ( error?.ExceptionMessage ) {
+                throw new Error( error.ExceptionMessage );
+            } else {
+                throw new Error( `Server request failed. Status: ${response.status}` );
+            }
+        }
+    }
+
+
+
+
+
+
+
+
+
     
     /**
      * Requests the server to create a chat room.
@@ -40,7 +70,7 @@ class NagService {
         let url = `${this.url}/chat-room`;
         return fetch( url, {
             method: 'POST',
-        } ).then( response => response.json() );
+        } ).then( response => this.#handleResponse( response ) );
     }
 
 
@@ -63,7 +93,7 @@ class NagService {
         let url = `${this.url}/chat-room/${chatRoomId}/join`;
         return fetch( url, {
             method: 'POST',
-        } ).then( response => response.json() );
+        } ).then( async response => this.#handleResponse( response ) );
     }
 
 
@@ -84,7 +114,7 @@ class NagService {
      */
     getChatRoomPeers( chatRoomId ) {
         let url = `${this.url}/chat-room/${chatRoomId}/peers`;
-        return fetch( url ).then( response => response.json() );
+        return fetch( url ).then( response => this.#handleResponse( response ) );
     }
 
 
@@ -106,7 +136,7 @@ class NagService {
      */
     getMyOffers( chatRoomId, peerId ) {
         let url = `${this.url}/chat-room/${chatRoomId}/peer/${peerId}/offers`;
-        return fetch( url ).then( response => response.json() );
+        return fetch( url ).then( response => this.#handleResponse( response ) );
     }
 
 
