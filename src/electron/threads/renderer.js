@@ -924,7 +924,7 @@ function Renderer( originX, originY, glowOnStart ) {
          * Handles receiving the combat group hits.
          * 
          * @param {Electron.IpcRendererEvent} event The event args.
-         * @param {{character: string, encounterDps: PlayerDps[]}} data The data for combat group hits.
+         * @param {{character: string, encounterDps: PlayerDps[], npcs: string[], encounterId: string, start: Date}} data The data for combat group hits.
          */
         ( event, data ) => {
 
