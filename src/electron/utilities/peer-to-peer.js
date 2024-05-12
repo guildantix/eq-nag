@@ -5,7 +5,7 @@ const { LogRecord, PlayerEncounterStats } = require( '../data/models/combat-pars
 const { nagLog, nagException } = require( './nag-console' );
 
 const peerOfferIntervalMs = 6 * 1000;
-const p2pVersion = '0.1.0';
+const p2pVersion = '0.1.1';
 
 // Notes:
 
@@ -337,8 +337,8 @@ class LogSync {
             objectMode: true,
             config: {
                 iceServers: [
-                    { urls: 'stun:stun.l.google.com:19302' },
                     { urls: 'stun:stun1.l.google.com:19302' },
+                    { urls: 'stun:stun.l.google.com:19302' },
                 ]
             },
             // sdpTransform: sdp => sdp,
