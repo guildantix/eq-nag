@@ -568,6 +568,11 @@ function clearDpsItems() {
         
         currentEncounter.end = new Date();
 
+        let encounterTime = dpsWindow?.querySelector( '.encounter-time' );
+        if ( encounterTime ) {
+            encounterTime.classList.add( 'strong' );
+        }
+
         if ( currentEncounter.dpsItems.length > 0 && encounterHistory.findIndex( f => f.encounterId === currentEncounter.encounterId ) === -1 ) {
             encounterHistory.push( currentEncounter );
 
@@ -691,6 +696,19 @@ function renderDpsItems( characterName ) {
 
     }
 
+    let encounterName = dpsWindow.querySelector( '.encounter-name' );
+    if ( encounterName ) {
+        encounterName.innerHTML = currentEncounter.npcs.join( ', ' );
+    }
+
+    let encounterTime = dpsWindow.querySelector( '.encounter-time' );
+    if ( encounterTime ) {
+        encounterTime.innerHTML = `(${currentEncounter.totalEngagementTime}s)`;
+
+        if ( currentEncounter.end == undefined ) {
+            encounterTime.classList.remove( 'strong' );
+        }
+    }
     updateDpsWindowSettings();
 }
 

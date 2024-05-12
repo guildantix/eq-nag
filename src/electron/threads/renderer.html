@@ -624,9 +624,30 @@
             overflow: visible;
         }
         .window.dps-meter .window-footer {
-            height: 4px;
+            min-height: 4px;
             background-color: #181818;
             position: relative;
+            width: calc(100% + 2px);
+            left: -1px;
+        }
+        .window.dps-meter .window-footer .window-footer-text {
+            padding: .5em .75em;
+            color: #c1c1c1;
+            font-size: .75em;
+            display: flex;
+            flex-flow: row nowrap;
+            width: 100%;
+        }
+        .window.dps-meter .window-footer .window-footer-text .encounter-name {
+            overflow: hidden;
+            flex: 1 1 auto;
+        }
+        .window.dps-meter .window-footer .window-footer-text .encounter-time {
+            flex: 0 0 auto;
+        }
+        .window.dps-meter .window-footer .window-footer-text .encounter-time.strong {
+            font-weight: bold;
+            color: #cfcfcf;
         }
         .window.dps-meter .window-title .spacer {
             flex: 1 1 auto;
@@ -828,8 +849,8 @@
     <!-- =========================== -->
     <template id="dpsWindowTemplate">
         <div class="window dps-meter damage dps sec" style="display: none;">
-            <div class="window-title dynamic-mouse">
-                <span class="window-title-col text">Damage Done</span>
+            <div class="window-title dynamic-mouse" style="overflow: hidden;">
+                <span class="window-title-col text" style="white-space: nowrap;">Damage Done</span>
                 <span class="window-title-col spacer"></span>
                 <span class="window-title-col damage mouse-hide">Damage</span>
                 <span class="window-title-col dps mouse-hide">DPS</span>
@@ -864,7 +885,10 @@
                 </div> -->
             </div>
             <div class="window-footer">
-                <span class="window-footer-text"></span>
+                <span class="window-footer-text">
+                    <span class="encounter-name"></span>
+                    <span class="encounter-time"></span>
+                </span>
             </div>
         </div>
     </template>
