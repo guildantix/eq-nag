@@ -460,6 +460,15 @@ ipcMain.on( 'app:get:all-display', ( event ) => {
     event.sender.send( 'app:get:all-display', screen.getAllDisplays() );
 } );
 
+ipcMain.on( 'combat:record-encounters',
+    /**
+     * @param {Electron.IpcMainEvent} event The event args.
+     * @param {{recordEncounters: boolean}} data The data.
+     */
+    ( event, data ) => {
+        logBootstrap.sendToCombatWatcher( 'combat:record-encounters', data );
+    } );
+
 ipcMain.on( 'chat-room:link-received',
     /**
      * @param {Electron.IpcMainEvent} event The event args.
