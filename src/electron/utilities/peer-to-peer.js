@@ -118,6 +118,16 @@ class LogSync {
     /** @type {() => void} */
     #onDataReceivedFn = () => { };
 
+    /** @type {boolean} */
+    get connected() {
+        return this.chatRoomId != null;
+    }
+
+    /** @type {boolean} */
+    get hasData() {
+        return this.#data?.length > 0;
+    }
+
     /**
      * Initializes a new log sync.
      * 
@@ -141,17 +151,19 @@ class LogSync {
         this.characterName = character;
         this.serverName = server;
 
-        let payload = new HandshakePayloadModel();
-        payload.peerId = this.peerId;
-        payload.characterName = this.characterName;
-        payload.serverName = this.serverName;
+        if ( this.connected ) {
+            let payload = new HandshakePayloadModel();
+            payload.peerId = this.peerId;
+            payload.characterName = this.characterName;
+            payload.serverName = this.serverName;
 
-        this.sendToAll( {
-            type: 'character',
-            timestamp: new Date(),
-            message: 'Character changed',
-            payload: payload,
-        } );
+            this.sendToAll( {
+                type: 'character',
+                timestamp: new Date(),
+                message: 'Character changed',
+                payload: payload,
+            } );
+        }
     }
 
     async interval() {
@@ -174,23 +186,28 @@ class LogSync {
 
     async dispose() {
 
-        let payload = new GoodbyePayloadModel();
-        payload.peerId = this.peerId;
+        if ( this.connected ) {
+            let payload = new GoodbyePayloadModel();
+            payload.peerId = this.peerId;
 
-        this.sendToAll( {
-            type: 'disconnect',
-            timestamp: new Date(),
-            message: 'Goodbye',
-            payload: payload,
-        } );
-        
-        window.clearInterval( this.#intervalId );
+            this.sendToAll( {
+                type: 'disconnect',
+                timestamp: new Date(),
+                message: 'Goodbye',
+                payload: payload,
+            } );
 
-        for ( let peerId in this.#peers ) {
-            delete this.#peers[ peerId ];
+            await this.service.deleteChatRoomPeer( this.chatRoomId, this.peerId );
         }
 
-        await this.service.deleteChatRoomPeer( this.chatRoomId, this.peerId );
+        this.#intervalId > 0 && window.clearInterval( this.#intervalId );
+
+        if ( this.#peers != undefined ) {
+            for ( let peerId in this.#peers ) {
+                delete this.#peers[ peerId ];
+            }
+        }
+
     }
 
     async createChatRoom() {
@@ -200,24 +217,30 @@ class LogSync {
 
         this.#intervalId = window.setInterval( async () => await this.interval(), peerOfferIntervalMs );
 
-        return data.ChatRoomId != undefined && data.PeerId != undefined;
+        return data.ChatRoomId != undefined && data.PeerId != undefined && this.peerId != undefined && typeof this.peerId == 'string';
     }
 
     async joinChatRoom( chatRoomId ) {
-        this.chatRoomId = chatRoomId;
-        this.peerId = await this.service.joinChatRoom( chatRoomId );
-
-        let peerIds = await this.service.getChatRoomPeers( chatRoomId );
-
-        for ( let peerId of peerIds ) {
-            if ( peerId != this.peerId ) {
-                this.createPeer( peerId );
+        try {
+            this.peerId = await this.service.joinChatRoom( chatRoomId );
+    
+            let peerIds = await this.service.getChatRoomPeers( chatRoomId );
+            
+            this.chatRoomId = chatRoomId;
+    
+            for ( let peerId of peerIds ) {
+                if ( peerId != this.peerId ) {
+                    this.createPeer( peerId );
+                }
             }
+    
+            this.#intervalId = window.setInterval( async () => await this.interval(), 1000 );
+    
+            return this.peerId != undefined && typeof this.peerId == 'string';
+        } catch ( error ) {
+            nagException( `(peer-to-peer.js) ${error}` );
+            return false;
         }
-
-        this.#intervalId = window.setInterval( async () => await this.interval(), 1000 );
-
-        return this.peerId != undefined;
     }
 
     async checkForPeers() {
@@ -402,7 +425,8 @@ function createChatRoomLink( chatRoomId ) {
  * @param {string} link The chat room link.
  */
 function parseChatRoomLink( link ) {
-    return link.match( /{NAG:p2p\/(.*)}/ )[1];
+    let match = link.match( /{NAG:p2p\/(.*)}/ );
+    return match ? match[ 1 ] : undefined;
 }
 
 module.exports = {

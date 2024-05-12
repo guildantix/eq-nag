@@ -301,7 +301,7 @@ const onEncounterReset = ( e ) => {
 
     ipcRenderer.send( 'renderer:encounter-reset', { character: characterName } );
 
-    if ( logSync != null ) {
+    if ( logSync?.connected ) {
         submitEncounter( e );
         processReceivedEncounters( e.encounterId );
         scheduleSaveEncounter( e.encounterId );
@@ -587,7 +587,7 @@ function CombatWatcher() {
                 else
                     fn();
             
-            } else if ( logSync != null && data.character == null ) {
+            } else if ( data.character == null ) {
                 // Stop watching combat stats.
                 stopDpsTracking();
 
@@ -637,7 +637,7 @@ function CombatWatcher() {
                 throw new Error( 'The combat watcher has not been loaded yet.  Login or add a character to connect to a server.' );
             }
 
-            if ( logSync != null ) {
+            if ( logSync?.connected ) {
                 throw new Error( 'Already connected to a server.' );
             }
 
@@ -679,7 +679,7 @@ function CombatWatcher() {
                 throw new Error( 'The combat watcher has not been loaded yet.  Login or add a character to connect to a server.' );
             }
 
-            if ( logSync != null ) {
+            if ( logSync?.connected ) {
                 throw new Error( 'Already connected to a server.' );
             }
 
@@ -687,7 +687,7 @@ function CombatWatcher() {
 
             await logSync.initialize();
             let linkId = parseChatRoomLink( data );
-            let success = await logSync.joinChatRoom( linkId );
+            let success = linkId && await logSync.joinChatRoom( linkId );
 
             if ( success ) {
                 ipcRenderer.send( 'chat-room:connected', logSync.chatRoomId );
@@ -836,7 +836,7 @@ function CombatWatcher() {
 }
 
 let processChatRoom = async () => {
-    if ( logSync != null ) {
+    if ( logSync?.hasData ) {
         let data = logSync.flushData();
 
         for ( var peerId in data ) {
