@@ -220,14 +220,23 @@ let lastTransmitTimestamp = undefined;
 
 const sendDpsToRenderer = async () => {
     // This is currently a really simple version of DPS tracking.  What we need to do is capture the start/end of each players combat and then calculate the DPS based on that.  In addition to what we're doing now, which is their immediate DPS not encounter DPS.
-    let encounterDps = myCombatParser?.getEncounterOutgoingDps() ?? [];
-    ipcRenderer.send( 'renderer:encounter-dps', { character: characterName, encounterDps: encounterDps } );
+    let e = myCombatParser?.getEncounterOutgoingDps();
 
-    if ( dpsTransmitEnabled && dpsMeterSettings.show ) {
-        if ( lastDpsTransmit == null || ( ( Date.now() - lastDpsTransmit ) >= dpsTransmitIntervalMs ) ) {
-            transmitEncounterStats();
-            lastDpsTransmit = Date.now();
-            await processChatRoom();
+    if ( e != undefined ) {
+        ipcRenderer.send( 'renderer:encounter-dps', {
+            character: characterName,
+            encounterDps: e.playerDps,
+            npcs: e.npcs,
+            encounterId: e.encounterId,
+            start: e.start,
+        } );
+
+        if ( dpsTransmitEnabled && dpsMeterSettings.show ) {
+            if ( lastDpsTransmit == null || ( ( Date.now() - lastDpsTransmit ) >= dpsTransmitIntervalMs ) ) {
+                transmitEncounterStats();
+                lastDpsTransmit = Date.now();
+                await processChatRoom();
+            }
         }
     }
 };

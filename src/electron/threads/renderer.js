@@ -25,6 +25,8 @@ const { PlayerDps, DpsMeterSettings } = require( '../data/models/combat-parser' 
 const { getEverQuestClassIcon, getEverQuestClassAbbreviation, getEverQuestClassColor } = require( '../utilities/everquest' );
 const { lightenColor, darkenColor } = require( '../utilities/colors' );
 
+const encounterHistoryLimit = 25;
+
 // TODO: List
 //  3. Update the log watcher to capture data that is required by the new combat groups.
 //  4. Bring in the new combat groups when the renderer loads.
@@ -181,6 +183,23 @@ class DpsItem {
     dom;
 }
 
+class RendererEncounterModel {
+    /** @type {string} */
+    encounterId;
+    /** @type {Date} */
+    start;
+    /** @type {Date | undefined} */
+    end;
+    /** @type {DpsItem[]} */
+    dpsItems;
+    /** @type {string[]} */
+    npcs;
+    /** @type {number} */
+    totalEngagementTime;
+    /** @type {string} */
+    characterName;
+}
+
 /** @type {Record<string, OverlayInstance>} */
 var overlayInstances = {};
 
@@ -263,8 +282,11 @@ let fct2Template;
 /** @type {HTMLElement | undefined} */
 let dpsWindow = undefined;
 
-/** @type {DpsItem[]} */
-let dpsItems = [];
+/** @type {RendererEncounterModel[]} */
+let encounterHistory = [];
+
+/** @type {RendererEncounterModel|undefined} */
+let currentEncounter = undefined;
 
 /** @type {DpsMeterSettings} */
 let dpsMeterSettings = new DpsMeterSettings();
@@ -504,7 +526,7 @@ function updateDpsWindowSettings() {
         }
 
         // TODO: Show for healing.
-        let showDpsWindow = dpsMeterSettings.showOnlyInCombat ? dpsItems?.filter( f => f.playerDps?.damage > 0 ).length > 0 : true;
+        let showDpsWindow = dpsMeterSettings.showOnlyInCombat ? currentEncounter?.dpsItems?.filter( f => f.playerDps?.damage > 0 ).length > 0 : true;
 
         if ( !dpsMeterSettings.keepOnScreen && showDpsWindow ) {
 
@@ -542,8 +564,18 @@ function updateDpsWindowSettings() {
  * Clears the current dps items.
  */
 function clearDpsItems() {
-    dpsItems.forEach( f => f?.dom?.remove() );
-    dpsItems = [];
+    if ( currentEncounter ) {
+        
+        currentEncounter.end = new Date();
+
+        if ( currentEncounter.dpsItems.length > 0 && encounterHistory.findIndex( f => f.encounterId === currentEncounter.encounterId ) === -1 ) {
+            encounterHistory.push( currentEncounter );
+
+            if ( encounterHistory.length > encounterHistoryLimit ) {
+                encounterHistory.shift();
+            }
+        }
+    }
 }
 
 
@@ -562,6 +594,10 @@ function clearDpsItems() {
  */
 function renderDpsItems( characterName ) {
 
+    if ( !currentEncounter ) {
+        return;
+    }
+
     /** @type {Record<string, number>} */
     let damageDoneRecs = {};
     /** @type {Record<string, number>} */
@@ -569,7 +605,7 @@ function renderDpsItems( characterName ) {
     let totalDamage = 0;
     let topDamage = 0;
 
-    dpsItems.forEach( f => {
+    currentEncounter.dpsItems.forEach( f => {
         let damageDone = f.playerDps.damage + f.playerDps.pets.reduce( ( a, b ) => a + b.damage, 0 );
         let dpsDone = f.playerDps.dps + f.playerDps.pets.reduce( ( a, b ) => a + b.dps, 0 );
 
@@ -580,14 +616,14 @@ function renderDpsItems( characterName ) {
         topDamage = Math.max( topDamage, damageDone );
     } );
 
-    dpsItems = dpsItems.sort( ( a, b ) => damageDoneRecs[ b.playerDps.name ] - damageDoneRecs[ a.playerDps.name ] );
+    currentEncounter.dpsItems = currentEncounter.dpsItems.sort( ( a, b ) => damageDoneRecs[ b.playerDps.name ] - damageDoneRecs[ a.playerDps.name ] );
 
     // Wipe-out the existing lines.
     dpsWindow.querySelector( '.dps-items' ).innerHTML = '';
 
     // Create new lines.
-    for ( let i = 0; i < dpsItems.length; i++ ) {
-        const dpsItem = dpsItems[ i ];
+    for ( let i = 0; i < currentEncounter.dpsItems.length; i++ ) {
+        const dpsItem = currentEncounter.dpsItems[ i ];
         const damageDone = dpsItem.playerDps.damage;
         const petDamageDone = dpsItem.playerDps.pets.reduce( ( a, b ) => a + b.damage, 0 );
         const dpsDone = dpsItem.playerDps.dps;
@@ -759,7 +795,7 @@ function Renderer( originX, originY, glowOnStart ) {
 
                         // Restore the display setting.
                         dpsWindow.style.display = display;
-                        
+
                     } );
                     
                 } else {
@@ -836,19 +872,52 @@ function Renderer( originX, originY, glowOnStart ) {
          */
         ( event, data ) => {
 
-            // Remove all players from dpsItems if they are not in encounterDps.
-            dpsItems = dpsItems.filter( f => data.encounterDps.find( g => g.name === f.playerDps.name ) );
+            if ( data?.encounterId && data?.encounterDps.length > 0 ) {
+    
+                if ( currentEncounter?.encounterId != data.encounterId ) {
+                    
+                    currentEncounter = {
+                        encounterId: data.encounterId,
+                        start: new Date(),
+                        end: undefined,
+                        dpsItems: [],
+                        npcs: data.npcs,
+                        totalEngagementTime: 0,
+                        characterName: data.character,
+                    };
+                    
+                    let encounterName = dpsWindow?.querySelector( '.encounter-name' );
+                    if ( encounterName ) {
+                        encounterName.innerHTML = '';
+                    }
+                
+                    let encounterTime = dpsWindow?.querySelector( '.encounter-time' );
+                    if ( encounterTime ) {
+                        encounterTime.innerHTML = '';
+                    }
 
-            for ( let i = 0; i < data.encounterDps.length; i++ ) {
-                let dpsItem = dpsItems.find( f => f.playerDps.name === data.encounterDps[ i ].name );
-                if ( dpsItem ) {
-                    dpsItem.playerDps = data.encounterDps[ i ];
                 } else {
-                    dpsItems.push( { playerDps: data.encounterDps[ i ], dom: undefined } );
+                    currentEncounter.start = data.start ?? new Date();
+                    currentEncounter.totalEngagementTime = Math.round( ( ( new Date() ).getTime() - currentEncounter.start.getTime() ) / 1000 );
+                    currentEncounter.npcs = data.npcs;
+                    currentEncounter.characterName = data.character;
                 }
+    
+                // Remove all players from dpsItems if they are not in encounterDps.
+                currentEncounter.dpsItems = currentEncounter.dpsItems.filter( f => data.encounterDps.find( g => g.name === f.playerDps.name ) );
+        
+                for ( let i = 0; i < data.encounterDps.length; i++ ) {
+                    let dpsItem = currentEncounter.dpsItems.find( f => f.playerDps.name === data.encounterDps[ i ].name );
+                    if ( dpsItem ) {
+                        dpsItem.playerDps = data.encounterDps[ i ];
+                    } else {
+                        currentEncounter.dpsItems.push( { playerDps: data.encounterDps[ i ], dom: undefined } );
+                    }
+                }
+    
+                renderDpsItems( data.character );
             }
 
-            renderDpsItems( data.character );
         } );
     
     ipcRenderer.on( 'renderer:encounter-reset',
