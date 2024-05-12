@@ -52,13 +52,13 @@ class TimeSpan {
  * @returns {TimeSpan} Returns the amount of time from start to end.
  */
 function _timeSince( start, end ) {
-    let delta = end.getTime() - start.getTime();
+    let delta = ( end?.getTime() ?? 0 ) - ( start?.getTime() ?? 0 );
 
     if ( delta < 0 ) {
         delta = 0;
     }
     
-    return new TimeSpan(delta);
+    return new TimeSpan( delta );
 }
 
 
