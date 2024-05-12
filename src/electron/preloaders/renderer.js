@@ -36,5 +36,8 @@ contextBridge.exposeInMainWorld( 'api', {
     },
     showSettings: ( name ) => {
         ipcRenderer.send( 'show-settings', name );
+    },
+    recordEncounters: ( record ) => {
+        ipcRenderer.send( 'combat:record-encounters', { recordEncounters: record } );
     }
 } );
