@@ -143,6 +143,10 @@ function parseStoredVariablesToRegex(value, storedVariables) {
  * @param {Record<string, string[]>} storedVariables The dictionary of stored variables.
  */
 function parseStoredVariablesToLiteral( value, storedVariables ) {
+    if ( isNullOrWhitespace( value ) ) {
+        return value;
+    }
+
     // \${(.[^}]*)}     Your ${SpellBeingCast} spell is interrupted.
     //                      Full match	47-63	{SpellBeingCast}
     //                      Group 1.	n/a	SpellBeingCast
@@ -397,6 +401,7 @@ function parseMatchesToLiteral( value, matches, deltaTime ) {
     if ( isNullOrWhitespace( value ) || matches == null ) {
         return value;
     }
+
     // \${(.[^}]*)}     Your ${SpellBeingCast} spell is interrupted.
     //                      Full match	47-63	{SpellBeingCast}
     //                      Group 1.	n/a	SpellBeingCast
@@ -734,6 +739,10 @@ function parseShortCodesToRegex( value, characterName ) {
  * @param {string} value The phrase to search.
  */
 function parseNConditionalCodesToRegex( value ) {
+    if ( isNullOrWhitespace( value ) ) {
+        return undefined;
+    }
+    
     // Functional matches:
     // {N>=9000} => (?<N>[0-9]+?), with a validation function.
 

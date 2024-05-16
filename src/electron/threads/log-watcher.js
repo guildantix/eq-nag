@@ -3066,8 +3066,8 @@ function speakPhrase( phrase, interrupt, speakNext, conditionResults, simulating
     
         }
         
-    } else {
-        console.log( 'speaking', StringUtilities.parseStoredVariablesToLiteral( action.displayText, storedVariables ) );
+    } else if ( !simulating ) {
+        nagException( { label: 'Speech Synthesis', message: phrase == null ? 'No phrase to speak' : 'No voice selected.', payload: { phrase: phrase, interrupt: interrupt, speakNext: speakNext, conditionResults: conditionResults, simulating: simulating, parseResult: parseResult, timerDuration: timerDuration, deltaTime: deltaTime, volume: volume, rate: rate } } );
 
     }
     
