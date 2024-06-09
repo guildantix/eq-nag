@@ -110,9 +110,9 @@ function parseStoredVariablesToRegex(value, storedVariables) {
             //value = value.replace(/\${SpellBeingCast}/g, '(?:Envenomed Bolt|Pyre of Mori)');
             if ( values?.length > 0 ) {
 
-                let captureGroupRgx = '(?<' + result[ i ] + '>' + values[ 0 ];
+                let captureGroupRgx = '(?<' + result[ i ] + '>' + getEscapedString( values[ 0 ] );
                 for ( let i = 1; i < values.length; i++ ) {
-                    captureGroupRgx += '|' + values[ i ];
+                    captureGroupRgx += '|' + getEscapedString( values[ i ] );
                 }
                 captureGroupRgx += ')';
                 
@@ -121,6 +121,24 @@ function parseStoredVariablesToRegex(value, storedVariables) {
         }
     }
     return value;
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Returns the given value with escaped regex characters.
+ * 
+ * @param {string} value The value to escape.
+ */
+function getEscapedString( value ) {
+    return value.replace( /[-\/\\^$*+?.()|[\]{}]/g, '\\$&' );
 }
 
 
