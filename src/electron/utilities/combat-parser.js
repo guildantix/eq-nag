@@ -2012,7 +2012,10 @@ class CombatParser {
             this.encounterEvents.push( rec );
             this._updateEncounterStats( rec );
             
-            this._resetNpcDeath( rec.actor, rec.target );
+            if ( rec.damage > 0 ) {
+                // If damage is still being dealt, then the encounter is still active.
+                this._resetNpcDeath( rec.actor, rec.target );
+            }
         }
 
         if ( rawLog ) {
@@ -2174,10 +2177,9 @@ class CombatParser {
 
                 this._encounterStats.npcDeathTimeoutTimestamps[ names.target ] = timestamp.getTime() + timeoutMs;
 
+                this._startEncounterNpcDeathTimeout();
             }
         }
-
-        this._startEncounterNpcDeathTimeout();
     }
 
     
@@ -2190,12 +2192,18 @@ class CombatParser {
     
     
     /**
-     * Resets the death timer for the given NPC.
+     * Resets the death timer for the given NPC and stops the npc death timeout.
      * 
      * @param {string[]} names The names of the NPC to reset the death timer for.
      */
     _resetNpcDeath( ...names ) {
-        if ( this._encounterStats != null && this.#encounterNpcDeathTimeoutId > 0 ) {
+
+        if ( this.#encounterNpcDeathTimeoutId > 0 ) {
+            clearTimeout( this.#encounterNpcDeathTimeoutId );
+            this.#encounterNpcDeathTimeoutId = undefined;
+        }
+
+        if ( this._encounterStats != null ) {
             for ( let i = 0; i < names.length; i++ ) {
                 const name = names[ i ];
                 if ( this._encounterStats.npcs.includes( name ) && this._encounterStats.npcDeathTimeoutTimestamps[ name ] ) {
@@ -2221,11 +2229,14 @@ class CombatParser {
         if ( !this.#encounterNpcDeathTimeoutId ) {
             this.#encounterNpcDeathTimeoutId = setTimeout( () => {
                 let now = new Date().getTime();
-                let npcDeathKeys = Object.keys( this._encounterStats.npcDeathTimeoutTimestamps );
+                let deadNpcNames = Object.keys( this._encounterStats.npcDeathTimeoutTimestamps );
                 let endEncounter = true;
 
-                for ( let i = 0; i < npcDeathKeys.length; i++ ) {
-                    const npc = npcDeathKeys[ i ];
+                for ( let i = 0; i < deadNpcNames.length; i++ ) {
+                    const npc = deadNpcNames[ i ];
+                    // The death timestamp includes the timeout delay, so now could be less
+                    // than the death timestamp.  If now is less than the death timestamp, 
+                    // then the encounter should be kept alive.
                     let deathTime = this._encounterStats.npcDeathTimeoutTimestamps[ npc ];
 
                     if ( deathTime == undefined || deathTime > now ) {
@@ -2234,13 +2245,13 @@ class CombatParser {
                     }
                 }
 
+                this.#encounterNpcDeathTimeoutId = undefined;
                 if ( endEncounter ) {
-                    this.#encounterNpcDeathTimeoutId = undefined;
                     this.resetEncounter();
                 } else {
-                    this.#encounterNpcDeathTimeoutId = undefined;
                     this._startEncounterNpcDeathTimeout();
                 }
+
             }, deathCheckDelayMs );
         }
     }
