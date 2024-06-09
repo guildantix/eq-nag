@@ -114,8 +114,9 @@ class TakpCombatParser extends CombatParser {
      * Adds the given log line to the encounter events.
      * 
      * @param {string} logLine The log file line to process and add to the combat events.
+     * @param {number | undefined} padTime The number of s to add to the time log.
      */
-    addCombatEvent( logLine ) {
+    addCombatEvent( logLine, padTime ) {
         let timeLog = /^\[(?<timestamp>.*?)\]\s*(?<log>.*)/gi.exec( logLine )?.groups;
         if ( timeLog ) {
 
@@ -127,6 +128,10 @@ class TakpCombatParser extends CombatParser {
             this._updateEntityVerifications( [ entry.log ] );
 
             const timestamp = new Date( entry.timestamp );
+            
+            if ( padTime > 0 ) {
+                timestamp.setSeconds( timestamp.getSeconds() + padTime );
+            }
             
             let regxResult = null;
 

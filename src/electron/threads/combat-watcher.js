@@ -519,7 +519,7 @@ function parseLogEntries( raw, simulating, padTime ) {
             if ( myCombatParserCache?.length > 0 ) {
                 // Add cached log entries to the combat tracker.
                 myCombatParserCache.forEach( c => {
-                    let fctModel = myCombatParser?.addCombatEvent( c );
+                    let fctModel = myCombatParser?.addCombatEvent( c, padTime );
 
                     if ( fctModel && enableFct && !simulating ) {
                         ipcRenderer.send( 'overlay:send:fct-component', fctModel );
@@ -529,7 +529,7 @@ function parseLogEntries( raw, simulating, padTime ) {
             }
 
             // Add to the combat tracker.
-            let fctModel = myCombatParser?.addCombatEvent( raw );
+            let fctModel = myCombatParser?.addCombatEvent( raw, padTime );
 
             if ( fctModel && enableFct && !simulating ) {
                 ipcRenderer.send( 'overlay:send:fct-component', fctModel );
