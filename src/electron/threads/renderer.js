@@ -586,6 +586,18 @@ function updateDpsWindowSettings() {
             dpsWindow.classList.add( 'no-mouse' );
             dpsWindow.style.visibility = 'hidden';
         }
+
+        // TODO: Hide clear button if there is no encounter.
+        let clearFightBtn = dpsWindow.querySelector( '.clear-encounter' );
+        if ( clearFightBtn ) {
+            if ( currentEncounter == null ) {
+                clearFightBtn.classList.remove( 'mouse-show' );
+                clearFightBtn.classList.add( 'hide' );
+            } else {
+                clearFightBtn.classList.remove( 'hide' );
+                clearFightBtn.classList.add( 'mouse-show' );
+            }
+        }
     }
 }
 
