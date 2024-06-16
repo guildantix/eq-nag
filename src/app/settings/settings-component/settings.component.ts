@@ -120,6 +120,24 @@ export class SettingsComponent implements OnInit {
 
 
 
+    
+    /**
+     * Shows the update notes window.
+     */
+    showUpdateNotes(): void {
+        this.ipcService.getAppVersion().subscribe( currentVersion => {
+            this.ipcService.showUpdateNotesWindow( `v${currentVersion}` );
+        } );
+    }
+
+
+
+
+
+
+
+
+
 
     /**
      * Loads the settings data.
