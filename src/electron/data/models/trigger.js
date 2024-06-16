@@ -224,6 +224,8 @@ class Phrase {
     useRegEx;
     /** @type {boolean} */
     ignoreCase = true;
+    /** @type {boolean} */
+    dynamic = false;
 
 }
 

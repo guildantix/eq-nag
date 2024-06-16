@@ -942,6 +942,13 @@ function generateTriggerFns() {
                 let _phraseNConditionals = {};
     
                 trigger.capturePhrases?.forEach( phrase => {
+
+                    // If a phrase is dynamic, we'll need to re-create the regex each time.
+                    // Note: we may be able to squeeze a little more performance out of this 
+                    // by ensuring that each { is not preceeded by a \.  Because this only 
+                    // executes when generating the parse functions, we can be a little heavy 
+                    // handed computationally.
+                    phrase.dynamic = phrase.dynamic === true || phrase.phrase?.indexOf( '{' ) > -1;
     
                     // Only create parse functions for phrases that have content.
                     if ( phrase.phrase?.length > 0 ) {
@@ -977,9 +984,11 @@ function generateTriggerFns() {
                                 }
                                 
                                 _renderedPhrases[ phrase.phraseId ] = rgxValue;
-                                _phraseRegEx[ phrase.phraseId ] = _phraseRegEx[ phrase.phraseId ] ?? new RegExp( rgxValue, getPhraseRegexOptions( phrase ) );
-                                let _res = _phraseRegEx[ phrase.phraseId ].exec( value );
+                                if ( _phraseRegEx[ phrase.phraseId ] == null || phrase.dynamic ) {
+                                    _phraseRegEx[ phrase.phraseId ] = new RegExp( rgxValue, getPhraseRegexOptions( phrase ) );
+                                }
 
+                                let _res = _phraseRegEx[ phrase.phraseId ].exec( value );
                                 if ( _res?.length > 0 && nConditionals ) {
                                     for ( let opI = 0; opI < nConditionals.operations.length; opI++ ) {
                                         const op = nConditionals.operations[ opI ];
