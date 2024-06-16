@@ -82,6 +82,7 @@ let _routes: Routes = [
     { path: 'overlay/arrange', component: MoveOverlaysDialogComponent },
     { path: 'overlay/:id', component: OverlayEditorDialogComponent },
     { path: 'gina/import', component: GinaImportWindowComponent },
+    { path: 'update-notes/:tag', component: UpdateNotesWindowComponent },
     { path: 'update-notes', component: UpdateNotesWindowComponent },
     { path: 'log/simulator', component: LogSimulatorComponent },
     { path: 'easy', component: EasyWindowComponent },
