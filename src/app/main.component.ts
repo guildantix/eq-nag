@@ -205,9 +205,6 @@ export class MainComponent implements OnInit {
         this.ipcService.getAppVersion().subscribe( currentVersion => {
             this.ipcService.getLastUpdateNotesViewed().subscribe( updateNotesVersion => {
 
-                // TODO: Re-enable this when the update notes are ready.  Right now, there are some formatting issues.
-                return;
-                
                 if ( updateNotesVersion == null ) {
                     // If the version seen is null, show the update notes.
                     this.showLatestUpdateNotes();
@@ -215,11 +212,10 @@ export class MainComponent implements OnInit {
                 let versionCurrent = new VersionNumber( currentVersion );
                 let versionNotesLastSeen = new VersionNumber( updateNotesVersion );
 
-                if ( VersionNumber.CompareVersions( versionCurrent, versionNotesLastSeen ) === -1 ) {
+                if ( VersionNumber.CompareVersions( versionNotesLastSeen, versionCurrent ) === -1 ) {
                     // If the version seen is less than version latest, show the update notes.
-                    this.showLatestUpdateNotes();
+                    this.showLatestUpdateNotes( currentVersion );
                 }
-                // TODO: Show pre-release notes if the user has a pre-release installed.
             } );
         } );
 
@@ -356,8 +352,8 @@ export class MainComponent implements OnInit {
     /**
      * Loads the latest update notes window.
      */
-    public showLatestUpdateNotes() {
-        this.ipcService.showUpdateNotesWindow();
+    public showLatestUpdateNotes( version: string | undefined = undefined ) {
+        this.ipcService.showUpdateNotesWindow( version ? `v${version}` : undefined );
     }
 
 
