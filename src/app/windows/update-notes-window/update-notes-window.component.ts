@@ -1,8 +1,13 @@
 import { HttpClient } from '@angular/common/http';
 import { Component, OnInit } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 
 // 'https://api.github.com/repos/guildantix/eq-nag/releases/79376270';
-const releaseUrl: string = 'https://api.github.com/repositories/276931539/releases/latest'; 
+// 'https://api.github.com/repos/guildantix/eq-nag/releases/tags/v0.2.0';
+// 'https://api.github.com/repos/guildantix/eq-nag/releases/tags/v0.1.77';
+// 'https://api.github.com/repositories/276931539/releases/latest';
+// const releaseUrl: string = 'https://api.github.com/repos/guildantix/eq-nag/releases/tags/v0.1.77';
+const releaseUrl: string = 'https://api.github.com/repos/guildantix/eq-nag/releases';
 
 interface IReleaseInfo {
     html_url: string;
@@ -25,19 +30,26 @@ export class UpdateNotesWindowComponent implements OnInit {
 
     constructor(
         private httpClient: HttpClient,
+        private readonly route: ActivatedRoute,
     ) { }
 
     ngOnInit() {
-        this.httpClient.get<IReleaseInfo>( releaseUrl ).subscribe( data => {
-            this.updateNotes = data.body;
-            this.updateLink = data.html_url;
-            this.updateTimestamp = data.published_at;
-            this.versionNumber = data.name;
+        this.route.params.subscribe( params => {
+            let tag = params[ 'tag' ] ? `tags/${params[ 'tag' ]}` : 'latest';
+
+            this.httpClient.get<IReleaseInfo>( `${releaseUrl}/${tag}` ).subscribe( data => {
+                this.updateNotes = data.body;
+                this.updateLink = data.html_url;
+                this.updateTimestamp = data.published_at;
+                this.versionNumber = data.name;
+            } );
         } );
     }
 
     public close() {
-        window.api.setVersionNumberViewed( this.versionNumber );
+        if ( this.versionNumber ) {
+            window.api.setVersionNumberViewed( this.versionNumber );
+        }
         window.api.close();
     }
 

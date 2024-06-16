@@ -1,3 +1,8 @@
 .update-notes {
     padding: 25px;
 }
+
+:host ::ng-deep img {
+    display: block;
+    max-width: 100%;
+}
