@@ -2455,8 +2455,8 @@ export class IpcService {
         return obs;
     }
 
-    public showUpdateNotesWindow(): void {
-        window.api.ipc.send( 'window:update-notes:show' );
+    public showUpdateNotesWindow( versionTag: string | undefined ): void {
+        window.api.ipc.send( 'window:update-notes:show', versionTag );
     }
     
     public updateDeathRecapPreferences( model: DeathRecapPreferences ): void {
