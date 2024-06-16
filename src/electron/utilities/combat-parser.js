@@ -1248,6 +1248,14 @@ class CombatParser {
                         delete this._petOwners[ playerName ];
                     }
                 }
+
+                // Let's remove them from the NPC list, if they are there.
+                if ( this._verifiedNpcs.includes( playerName ) ) {
+                    
+                    let npci = this._verifiedNpcs.indexOf( playerName );
+                    this._verifiedNpcs.splice( npci, 1 );
+
+                }
                 
                 this._updateServerStatistics = true;
             }
