@@ -31,7 +31,16 @@ const pageSize = 10;
 } )
 export class CombatStatisticsComponent implements OnInit {
 
-    @Input() public showCombatDatabase: boolean = false;
+    public showCombatDatabase: boolean = false;
+
+    private _showMinimalInterface: boolean = false;
+    @Input() public get showMinimalInterface(): boolean {
+        return this._showMinimalInterface;
+    }
+    public set showMinimalInterface( v: boolean ) {
+        this._showMinimalInterface = v;
+        this.showCombatDatabase = !v;
+    }
 
     private _dpsMeterSettings: DpsMeterSettings = new DpsMeterSettings();
     private _dpsPlayerDelayIntervalId: number = null;

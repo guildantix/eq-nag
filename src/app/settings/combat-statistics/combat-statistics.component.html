@@ -23,6 +23,15 @@
     </div>
 </div>
 
+<div class="combat-database-header" *ngIf="showMinimalInterface">
+    <h2 *ngIf="showCombatDatabase">Combat Database</h2>
+    <span class="spacer"></span>
+    <a href="javascript:void(0);" (click)="showCombatDatabase = !showCombatDatabase">
+        <ng-template [ngIf]="!showCombatDatabase">Show More ...</ng-template>
+        <ng-template [ngIf]="showCombatDatabase">Show Less ...</ng-template>
+    </a>
+</div>
+
 <div *ngIf="showCombatDatabase">
 
     <mat-tab-group>

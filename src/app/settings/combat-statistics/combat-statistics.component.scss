@@ -125,6 +125,55 @@
     }
 }
 
+.combat-database-header {
+    position: relative;
+    display: flex;
+    flex-flow: row nowrap;
+    align-items: flex-end;
+    height: 31px;
+
+    .spacer {
+        flex: 1 1 auto;
+    }
+
+    h2 {
+        font-weight: 100;
+        opacity: 0.9;
+        margin: 0 1em;
+        padding-bottom: 6px;
+        font-size: 22px;
+        padding-bottom: 4px;
+        position: relative;
+        padding-right: 11px;
+        z-index: 1;
+    }
+
+    a {
+        color: #69b2f0;
+        font-size: 14px;
+        text-decoration: none;
+        padding: 0 1em;
+        z-index: 1;
+
+        &:hover {
+            color: #4a8bc2;
+        }
+        &:active {
+            color: #c269f0;
+        }
+    }
+    
+    &::before {
+        content: "";
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 18px;
+        background-color: #0000002e;
+    }
+}
+
 .custom-select {
     position: relative;
 
