@@ -684,7 +684,6 @@ function LogWatcher(character, logPosition) {
 
     ipcRenderer.on( 'settings:get:persistent-storage', ( e, v ) => {
         persistentDictionary = v;
-        console.log( 'new dictionary', v );
     } );
 
     ipcRenderer.on( 'log:action:execute-sub-action',
@@ -984,6 +983,15 @@ function generateTriggerFns() {
                                 }
                                 
                                 _renderedPhrases[ phrase.phraseId ] = rgxValue;
+                                // Optimizations:
+                                // Here, we could use formula to add named capture groups for variable insertion, letting the system create one regex once.
+                                // ex: (?<number_VariableName>\d+), (?<string_VariableName>.+), etc.
+                                // If the regex matches, do a simple regex.groups?.string_VariableName == 'value' to determine if the value is a match.
+                                // It is possible that we would need to do an includes or startswith to correctly capture variable values.
+
+                                // Further, we can do a better job of caching phrases, maybe an array of some type that we can loop through.
+
+                                // If we really want to, we could divine a way to determine if the variables have changed since last check.
                                 if ( _phraseRegEx[ phrase.phraseId ] == null || phrase.dynamic ) {
                                     _phraseRegEx[ phrase.phraseId ] = new RegExp( rgxValue, getPhraseRegexOptions( phrase ) );
                                 }
