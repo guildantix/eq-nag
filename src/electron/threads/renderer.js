@@ -880,7 +880,7 @@ function Renderer( originX, originY, glowOnStart ) {
                             if ( encounterId === 'current fight' ) {
                                 let e = encounterHistory.find( f => f.encounterId === currentEncounterId );
                                 if ( e ) {
-                                    refreshEncounterStats( e, e.characterName );
+                                    displayedEncounter = refreshEncounterStats( e, e.characterName );
     
                                     renderDpsItems( e.characterName );
                                 }
@@ -892,7 +892,7 @@ function Renderer( originX, originY, glowOnStart ) {
                                 let mobName = target.getAttribute( 'data-mob-name' );
                                 let e = encounterHistory.find( f => f.encounterId === encounterId );
                                 if ( e ) {
-                                    refreshEncounterStats( e, e.characterName, mobName );
+                                    displayedEncounter = refreshEncounterStats( e, e.characterName, mobName );
     
                                     renderDpsItems( e.characterName );
                                 }
@@ -1098,7 +1098,7 @@ function Renderer( originX, originY, glowOnStart ) {
             if ( displayedEncounter?.encounterId == data.encounter.encounterId || currentEncounterId === displayedEncounter?.encounterId ) {
                 
                 // If this is a new encounter we are to render, we need to clear the current encounter.
-                refreshEncounterStats( data.encounter, data.characterName );
+                displayedEncounter = refreshEncounterStats( data.encounter, data.characterName );
     
                 renderDpsItems( data.characterName );
 
@@ -1586,16 +1586,21 @@ function Renderer( originX, originY, glowOnStart ) {
 /**
  * Refreshes the stats on the display encounter, resetting it if the encounter id does not match the given encounter's id.
  * 
+ * @returns {RendererEncounterModel} The a renderer encounter model of the given encounter.
+ * 
  * @param {EncounterStats} encounter The encounter to process.
  * @param {string} characterName The character name.
  * @param {string} npcName The NPC name, when provided will show only that NPC in the encounter stats.
  */
 function refreshEncounterStats( encounter, characterName, npcName ) {
 
+    /** @type {RendererEncounterModel} */
+    let m = undefined;
+
     if ( npcName != null || displayedEncounter?.encounterId != encounter.encounterId ) {
         clearEncounter();
 
-        displayedEncounter = {
+        m = {
             encounterId: encounter.encounterId,
             start: new Date(),
             end: undefined,
@@ -1606,8 +1611,8 @@ function refreshEncounterStats( encounter, characterName, npcName ) {
             ended: encounter.ended === true,
         };
         
-        displayedEncounter.start = encounter.encounterStart ?? new Date();
-        displayedEncounter.totalEngagementTime = Math.round( ( ( encounter.lastEncounterEvent ?? new Date() ).getTime() - displayedEncounter.start.getTime() ) / 1000 );
+        m.start = encounter.encounterStart ?? new Date();
+        m.totalEngagementTime = Math.round( ( ( encounter.lastEncounterEvent ?? new Date() ).getTime() - m.start.getTime() ) / 1000 );
 
         let encounterName = dpsWindow?.querySelector( '.encounter-name' );
         if ( encounterName ) {
@@ -1619,15 +1624,17 @@ function refreshEncounterStats( encounter, characterName, npcName ) {
             encounterTime.innerHTML = '';
         }
     } else {
-        displayedEncounter.start = encounter.encounterStart ?? new Date();
-        displayedEncounter.totalEngagementTime = Math.round( ( ( encounter.lastEncounterEvent ?? new Date() ).getTime() - displayedEncounter.start.getTime() ) / 1000 );
-        displayedEncounter.npcs = encounter.npcs;
-        displayedEncounter.characterName = characterName;
+        m = Object.assign( new RendererEncounterModel(), displayedEncounter );
+
+        m.start = encounter.encounterStart ?? new Date();
+        m.totalEngagementTime = Math.round( ( ( encounter.lastEncounterEvent ?? new Date() ).getTime() - m.start.getTime() ) / 1000 );
+        m.npcs = encounter.npcs;
+        m.characterName = characterName;
     }
 
     // Remove all players from dpsItems if they are not in encounterDps.
     let playerNames = Object.keys( encounter.playerEvents );
-    displayedEncounter.dpsItems = displayedEncounter.dpsItems.filter( f => playerNames.find( g => g === f.playerDps.name ) );
+    m.dpsItems = m.dpsItems.filter( f => playerNames.find( g => g === f.playerDps.name ) );
 
     // TODO: These calculations really should be executed on the
     // combat watcher/parser side of things.  The renderer is 
@@ -1681,17 +1688,19 @@ function refreshEncounterStats( encounter, characterName, npcName ) {
                 f.hps = f.healing / ( playerDps.time > 0 ? playerDps.time : 1 );
             } );
 
-            let dpsItem = displayedEncounter.dpsItems.find( f => f.playerDps.name === playerDps.name );
+            let dpsItem = m.dpsItems.find( f => f.playerDps.name === playerDps.name );
             if ( dpsItem ) {
                 dpsItem.playerDps = playerDps;
             } else {
-                displayedEncounter.dpsItems.push( {
+                m.dpsItems.push( {
                     playerDps: playerDps,
                     dom: undefined,
                 } );
             }
         }
     }
+
+    return m;
 }
 
 
