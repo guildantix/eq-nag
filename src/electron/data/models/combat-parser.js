@@ -143,6 +143,8 @@ class EncounterStats {
     namedEvent = false;
     /** @type {boolean} If true, the encounter has ended. */
     ended = false;
+    /** @type {boolean} If true, a player has engaged in combat. */
+    active = false;
 }
 
 class EncounterStatsEventArgs {

@@ -232,7 +232,7 @@ const sendDpsToRenderer = async () => {
 
     let e = myCombatParser?.getCurrentEncounterStats();
 
-    if ( e != undefined ) {
+    if ( e?.encounter?.active === true ) {
         ipcRenderer.send( 'renderer:current-encounter', { ...e, characterName: characterName } );
     }
     

@@ -2971,15 +2971,17 @@ class CombatParser {
                             this._encounterStats.npcs.push( logRecord.target );
                         }
                         this._encounterStats.lastPlayerNpcAction[ logRecord.target ] = timestamp;
+                        this._encounterStats.active = true;
                     }
                     
                 } else if ( petActor ) {
                     // If a player's pet is the actor, then we need to grab the pet's owner, and add the dps to the owner's pet list.
                     let owner = this._petOwners[ logRecord.actor ];
+                    let isNpcTarget = logRecord.target.indexOf( ' ' ) > -1;
                     
                     if ( owner ) {
                         let playerEvents = this._getOrCreatePlayerEncounterStats( this._encounterStats.playerEvents, owner, timestamp );
-                        let playerOutgoing = this._getOrCreatePlayerDpsStats( playerEvents.playerDpsOutgoing, playerEvents.name, playerEvents.class, timestamp, logRecord.target.indexOf( ' ' ) > -1 || ( !playerTarget && !petTarget ), logRecord.target );
+                        let playerOutgoing = this._getOrCreatePlayerDpsStats( playerEvents.playerDpsOutgoing, playerEvents.name, playerEvents.class, timestamp, isNpcTarget || ( !playerTarget && !petTarget ), logRecord.target );
                         let petDps = this._getOrCreatePetDpsStats( playerOutgoing.pets, logRecord.actor, timestamp );
 
                         this._calculateDpsStats( logRecord, petDps, playerOutgoing.time );
@@ -2990,6 +2992,10 @@ class CombatParser {
                             this._encounterStats.npcs.push( logRecord.target );
                         }
                         this._encounterStats.lastPlayerNpcAction[ logRecord.target ] = timestamp;
+                        // Here, we need to make sure that the pet activity is not
+                        // a charm pet attacking a player, but a pet (charmed or 
+                        // otherwise) attacking another NPC.
+                        this._encounterStats.active = this._encounterStats.active ?? isNpcTarget;
                     }
                     
                 }
