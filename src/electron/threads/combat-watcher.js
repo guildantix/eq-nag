@@ -219,26 +219,23 @@ let myCombatParserCache = [];
 let lastTransmitTimestamp = undefined;
 
 const sendDpsToRenderer = async () => {
-    // This is currently a really simple version of DPS tracking.  What we need to do is capture the start/end of each players combat and then calculate the DPS based on that.  In addition to what we're doing now, which is their immediate DPS not encounter DPS.
-    let e = myCombatParser?.getEncounterOutgoingDps();
+
+    // Notes: We send the updated encounter stats to
+    // the renderer, not just the current state of things.  This must come 
+    // with an encounter id.  When an encounter ends, we send the renderer the 
+    // last bucket of updated stats instead of a copy of the entire encounter.
+    // The renderer will then choose which encounters to display based on the
+    // player selected encounter settings.  This should be simple, if the 
+    // encounter start time - last encounter end time < value, then we display
+    // both encounters. Extrapolate for more than 2 at a time.
+    // Ideally, we would not need an encounter ended event.
+
+    let e = myCombatParser?.getCurrentEncounterStats();
 
     if ( e != undefined ) {
-        ipcRenderer.send( 'renderer:encounter-dps', {
-            character: characterName,
-            encounterDps: e.playerDps,
-            npcs: e.npcs,
-            encounterId: e.encounterId,
-            start: e.start,
-        } );
-
-        if ( dpsTransmitEnabled && dpsMeterSettings.show ) {
-            if ( lastDpsTransmit == null || ( ( Date.now() - lastDpsTransmit ) >= dpsTransmitIntervalMs ) ) {
-                transmitEncounterStats();
-                lastDpsTransmit = Date.now();
-                await processChatRoom();
-            }
-        }
+        ipcRenderer.send( 'renderer:current-encounter', { ...e, characterName: characterName } );
     }
+    
 };
 
 const transmitEncounterStats = () => {
@@ -308,7 +305,7 @@ const onEncounterReset = ( e ) => {
         logs: e.logs,
     } );
 
-    ipcRenderer.send( 'renderer:encounter-reset', { character: characterName } );
+    ipcRenderer.send( 'renderer:encounter-reset', { character: characterName, encounter: e.encounter } );
 
     if ( logSync?.connected ) {
         submitEncounter( e );
@@ -329,7 +326,6 @@ const onEncounterReset = ( e ) => {
  * @param {string} encounterId The id of the encounter to save.
  */
 const saveEncounter = ( encounterId ) => {
-    // TODO: Ask the user if they want to save the encounter.
     let encounterIndex = myEncounters.findIndex( e => e.encounterId === encounterId );
 
     if ( encounterIndex >= 0 ) {

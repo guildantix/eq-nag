@@ -628,9 +628,9 @@ class WindowManager {
             }
         } );
         
-        ipcMain.on( 'renderer:encounter-dps', ( event, encounterDps ) => {
+        ipcMain.on( 'renderer:current-encounter', ( event, encounter ) => {
             if ( !this.#renderer?.isDestroyed() ) {
-                this.#renderer?.webContents.send( 'renderer:encounter-dps', encounterDps );
+                this.#renderer?.webContents.send( 'renderer:current-encounter', encounter );
             }
         } );
         
