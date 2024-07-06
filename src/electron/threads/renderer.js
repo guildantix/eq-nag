@@ -761,7 +761,8 @@ function renderDpsItems( characterName ) {
     displayedEncounter.dpsItems = displayedEncounter.dpsItems.sort( ( a, b ) => damageDoneRecs[ b.playerDps.name ] - damageDoneRecs[ a.playerDps.name ] );
 
     // Wipe-out the existing lines.
-    dpsWindow.querySelector( '.dps-items' ).innerHTML = '';
+    const dpsItemsDom = dpsWindow.querySelector( '.dps-items' );
+    dpsItemsDom.innerHTML = '';
 
     // Create new lines.
     for ( let i = 0; i < displayedEncounter.dpsItems.length; i++ ) {
@@ -789,7 +790,7 @@ function renderDpsItems( characterName ) {
         dpsItem.dom.classList.add( 'dps-item' );
         dpsMeterSettings?.highlightMyName && mine && dpsItem.dom.classList.add( 'mine' );
         dpsItem.dom.innerHTML = dpsWindowItemTemplate( model );
-        dpsWindow.querySelector( '.dps-items' ).appendChild( dpsItem.dom );
+        dpsItemsDom.appendChild( dpsItem.dom );
 
         let bar = dpsItem.dom.querySelector( '.determinate' );
         let colorCode = darkenColor( getEverQuestClassColor( classAbbr ), 0.667 );
