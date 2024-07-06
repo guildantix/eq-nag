@@ -198,6 +198,8 @@ class RendererEncounterModel {
     totalEngagementTime;
     /** @type {string} */
     characterName;
+    /** @type {boolean} */
+    ended = false;
 }
 
 class EncounterHistoryModel extends EncounterStats {
@@ -831,7 +833,11 @@ function renderDpsItems( characterName ) {
     if ( encounterTime ) {
         encounterTime.innerHTML = `(${displayedEncounter.totalEngagementTime}s)`;
 
-        if ( displayedEncounter.end == undefined ) {
+        if ( displayedEncounter.ended ) {
+            if ( !encounterTime.classList.contains( 'strong' ) ) {
+                encounterTime.classList.add( 'strong' );
+            }
+        } else if ( displayedEncounter.end == undefined ) {
             encounterTime.classList.remove( 'strong' );
         }
     }
@@ -872,13 +878,25 @@ function Renderer( originX, originY, glowOnStart ) {
                         let encounterId = target.getAttribute( 'data-encounter-id' );
                         if ( encounterId ) {
                             if ( encounterId === 'current fight' ) {
-                                console.log( 'Show current fight' );
+                                let e = encounterHistory.find( f => f.encounterId === currentEncounterId );
+                                if ( e ) {
+                                    refreshEncounterStats( e, e.characterName );
+    
+                                    renderDpsItems( e.characterName );
+                                }
+
                             } else if ( encounterId === 'all data' ) {
                                 console.log( 'Show all data' );
+
                             } else {
                                 let mobName = target.getAttribute( 'data-mob-name' );
-                                console.log( `Show encounter: ${encounterId}` );
-                                console.log( `Mob Name: ${mobName}` );
+                                let e = encounterHistory.find( f => f.encounterId === encounterId );
+                                if ( e ) {
+                                    refreshEncounterStats( e, e.characterName, mobName );
+    
+                                    renderDpsItems( e.characterName );
+                                }
+
                             }
                         }
                     }
@@ -1570,9 +1588,11 @@ function Renderer( originX, originY, glowOnStart ) {
  * 
  * @param {EncounterStats} encounter The encounter to process.
  * @param {string} characterName The character name.
+ * @param {string} npcName The NPC name, when provided will show only that NPC in the encounter stats.
  */
-function refreshEncounterStats( encounter, characterName ) {
-    if ( displayedEncounter?.encounterId != encounter.encounterId ) {
+function refreshEncounterStats( encounter, characterName, npcName ) {
+
+    if ( npcName != null || displayedEncounter?.encounterId != encounter.encounterId ) {
         clearEncounter();
 
         displayedEncounter = {
@@ -1580,10 +1600,14 @@ function refreshEncounterStats( encounter, characterName ) {
             start: new Date(),
             end: undefined,
             dpsItems: [],
-            npcs: encounter.npcs,
+            npcs: npcName ? [ npcName ] : encounter.npcs,
             totalEngagementTime: 0,
             characterName: characterName,
+            ended: encounter.ended === true,
         };
+        
+        displayedEncounter.start = encounter.encounterStart ?? new Date();
+        displayedEncounter.totalEngagementTime = Math.round( ( ( encounter.lastEncounterEvent ?? new Date() ).getTime() - displayedEncounter.start.getTime() ) / 1000 );
 
         let encounterName = dpsWindow?.querySelector( '.encounter-name' );
         if ( encounterName ) {
@@ -1603,7 +1627,7 @@ function refreshEncounterStats( encounter, characterName ) {
 
     // Remove all players from dpsItems if they are not in encounterDps.
     let playerNames = Object.keys( encounter.playerEvents );
-    displayedEncounter.dpsItems = displayedEncounter.dpsItems.filter( f => playerNames.find( g => name === f.playerDps.name ) );
+    displayedEncounter.dpsItems = displayedEncounter.dpsItems.filter( f => playerNames.find( g => g === f.playerDps.name ) );
 
     // TODO: These calculations really should be executed on the
     // combat watcher/parser side of things.  The renderer is 
@@ -1622,8 +1646,9 @@ function refreshEncounterStats( encounter, characterName ) {
             playerDps.time = 0;
             playerDps.pets = [];
 
-            for ( let j = 0; j < playerEvents.playerDpsOutgoing.length; j++ ) {
-                const event = playerEvents.playerDpsOutgoing[ j ];
+            const outgoingDps = playerEvents.playerDpsOutgoing.filter( f => !npcName || f.npcName === npcName );
+            for ( let j = 0; j < outgoingDps.length; j++ ) {
+                const event = outgoingDps[ j ];
 
                 playerDps.damage += event.damage;
                 playerDps.healing += event.healing;
