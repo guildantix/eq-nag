@@ -1089,101 +1089,7 @@ function Renderer( originX, originY, glowOnStart ) {
             if ( displayedEncounter?.encounterId == data.encounter.encounterId || currentEncounterId === displayedEncounter?.encounterId ) {
                 
                 // If this is a new encounter we are to render, we need to clear the current encounter.
-                if ( displayedEncounter?.encounterId != data.encounter.encounterId ) {
-                    clearEncounter();
-
-                    displayedEncounter = {
-                        encounterId: data.encounter.encounterId,
-                        start: new Date(),
-                        end: undefined,
-                        dpsItems: [],
-                        npcs: data.encounter.npcs,
-                        totalEngagementTime: 0,
-                        characterName: data.characterName,
-                    };
-                    
-                    let encounterName = dpsWindow?.querySelector( '.encounter-name' );
-                    if ( encounterName ) {
-                        encounterName.innerHTML = '';
-                    }
-                
-                    let encounterTime = dpsWindow?.querySelector( '.encounter-time' );
-                    if ( encounterTime ) {
-                        encounterTime.innerHTML = '';
-                    }
-                } else {
-                    displayedEncounter.start = data.encounter.encounterStart ?? new Date();
-                    displayedEncounter.totalEngagementTime = Math.round( ( ( data.encounter.lastEncounterEvent ?? new Date() ).getTime() - displayedEncounter.start.getTime() ) / 1000 );
-                    displayedEncounter.npcs = data.encounter.npcs;
-                    displayedEncounter.characterName = data.characterName;
-                }
-
-                // Remove all players from dpsItems if they are not in encounterDps.
-                let playerNames = Object.keys( data.encounter.playerEvents );
-                displayedEncounter.dpsItems = displayedEncounter.dpsItems.filter( f => playerNames.find( g => name === f.playerDps.name ) );
-        
-                // TODO: These calculations really should be executed on the
-                // combat watcher/parser side of things.  The renderer is 
-                // already doing a lot of lifting.
-                for ( let i = 0; i < verifiedPlayers.length; i++ ) {
-                    const playerEvents = data.encounter.playerEvents[ verifiedPlayers[ i ] ];
-                    if ( playerEvents ) {
-                        const playerDps = new PlayerDps();
-
-                        playerDps.name = playerEvents.name;
-                        playerDps.class = playerEvents.class;
-                        playerDps.dps = 0;
-                        playerDps.hps = 0;
-                        playerDps.damage = 0;
-                        playerDps.healing = 0;
-                        playerDps.time = 0;
-                        playerDps.pets = [];
-
-                        for ( let j = 0; j < playerEvents.playerDpsOutgoing.length; j++ ) {
-                            const event = playerEvents.playerDpsOutgoing[ j ];
-
-                            playerDps.damage += event.damage;
-                            playerDps.healing += event.healing;
-                            playerDps.time += event.time;
-
-                            for ( let k = 0; k < event.pets.length; k++ ) {
-                                const petDps = event.pets[ k ];
-                                let pet = playerDps.pets.find( f => f.name === petDps.name );
-                                if ( !pet ) {
-                                    pet = new PetDps();
-                                    pet.name = petDps.name;
-                                    pet.class = petDps.class;
-                                    pet.damage = 0;
-                                    pet.healing = 0;
-                                    pet.time = 0;
-                                    playerDps.pets.push( pet );
-                                }
-
-                                pet.damage += petDps.damage;
-                                pet.healing += petDps.healing;
-                            }
-                        }
-                        
-                        // Calculate the DPS and HPS.
-                        playerDps.dps = playerDps.damage / ( playerDps.time > 0 ? playerDps.time : 1 );
-                        playerDps.hps = playerDps.healing / ( playerDps.time > 0 ? playerDps.time : 1 );
-
-                        playerDps.pets.forEach( f => {
-                            f.dps = f.damage / ( playerDps.time > 0 ? playerDps.time : 1 );
-                            f.hps = f.healing / ( playerDps.time > 0 ? playerDps.time : 1 );
-                        } );
-
-                        let dpsItem = displayedEncounter.dpsItems.find( f => f.playerDps.name === playerDps.name );
-                        if ( dpsItem ) {
-                            dpsItem.playerDps = playerDps;
-                        } else {
-                            displayedEncounter.dpsItems.push( {
-                                playerDps: playerDps,
-                                dom: undefined,
-                            } );
-                        }
-                    }
-                }
+                refreshEncounterStats( data.encounter, data.characterName );
     
                 renderDpsItems( data.characterName );
 
@@ -1657,6 +1563,119 @@ function Renderer( originX, originY, glowOnStart ) {
     return {
         origin: origin,
     };
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Refreshes the stats on the display encounter, resetting it if the encounter id does not match the given encounter's id.
+ * 
+ * @param {EncounterStats} encounter The encounter to process.
+ * @param {string} characterName The character name.
+ */
+function refreshEncounterStats( encounter, characterName ) {
+    if ( displayedEncounter?.encounterId != encounter.encounterId ) {
+        clearEncounter();
+
+        displayedEncounter = {
+            encounterId: encounter.encounterId,
+            start: new Date(),
+            end: undefined,
+            dpsItems: [],
+            npcs: encounter.npcs,
+            totalEngagementTime: 0,
+            characterName: characterName,
+        };
+
+        let encounterName = dpsWindow?.querySelector( '.encounter-name' );
+        if ( encounterName ) {
+            encounterName.innerHTML = '';
+        }
+
+        let encounterTime = dpsWindow?.querySelector( '.encounter-time' );
+        if ( encounterTime ) {
+            encounterTime.innerHTML = '';
+        }
+    } else {
+        displayedEncounter.start = encounter.encounterStart ?? new Date();
+        displayedEncounter.totalEngagementTime = Math.round( ( ( encounter.lastEncounterEvent ?? new Date() ).getTime() - displayedEncounter.start.getTime() ) / 1000 );
+        displayedEncounter.npcs = encounter.npcs;
+        displayedEncounter.characterName = characterName;
+    }
+
+    // Remove all players from dpsItems if they are not in encounterDps.
+    let playerNames = Object.keys( encounter.playerEvents );
+    displayedEncounter.dpsItems = displayedEncounter.dpsItems.filter( f => playerNames.find( g => name === f.playerDps.name ) );
+
+    // TODO: These calculations really should be executed on the
+    // combat watcher/parser side of things.  The renderer is 
+    // already doing a lot of lifting.
+    for ( let i = 0; i < verifiedPlayers.length; i++ ) {
+        const playerEvents = encounter.playerEvents[ verifiedPlayers[ i ] ];
+        if ( playerEvents ) {
+            const playerDps = new PlayerDps();
+
+            playerDps.name = playerEvents.name;
+            playerDps.class = playerEvents.class;
+            playerDps.dps = 0;
+            playerDps.hps = 0;
+            playerDps.damage = 0;
+            playerDps.healing = 0;
+            playerDps.time = 0;
+            playerDps.pets = [];
+
+            for ( let j = 0; j < playerEvents.playerDpsOutgoing.length; j++ ) {
+                const event = playerEvents.playerDpsOutgoing[ j ];
+
+                playerDps.damage += event.damage;
+                playerDps.healing += event.healing;
+                playerDps.time += event.time;
+
+                for ( let k = 0; k < event.pets.length; k++ ) {
+                    const petDps = event.pets[ k ];
+                    let pet = playerDps.pets.find( f => f.name === petDps.name );
+                    if ( !pet ) {
+                        pet = new PetDps();
+                        pet.name = petDps.name;
+                        pet.class = petDps.class;
+                        pet.damage = 0;
+                        pet.healing = 0;
+                        pet.time = 0;
+                        playerDps.pets.push( pet );
+                    }
+
+                    pet.damage += petDps.damage;
+                    pet.healing += petDps.healing;
+                }
+            }
+
+            // Calculate the DPS and HPS.
+            playerDps.dps = playerDps.damage / ( playerDps.time > 0 ? playerDps.time : 1 );
+            playerDps.hps = playerDps.healing / ( playerDps.time > 0 ? playerDps.time : 1 );
+
+            playerDps.pets.forEach( f => {
+                f.dps = f.damage / ( playerDps.time > 0 ? playerDps.time : 1 );
+                f.hps = f.healing / ( playerDps.time > 0 ? playerDps.time : 1 );
+            } );
+
+            let dpsItem = displayedEncounter.dpsItems.find( f => f.playerDps.name === playerDps.name );
+            if ( dpsItem ) {
+                dpsItem.playerDps = playerDps;
+            } else {
+                displayedEncounter.dpsItems.push( {
+                    playerDps: playerDps,
+                    dom: undefined,
+                } );
+            }
+        }
+    }
 }
 
 
