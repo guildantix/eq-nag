@@ -65,6 +65,10 @@ class PetDps {
 class PlayerDps {
     /** @type {string} */
     name;
+    /** @type {string | undefined} */
+    npcName;
+    /** @type {string | undefined} */
+    otherPlayerName;
     /** @type {string} */
     class;
     /** @type {number} */
@@ -119,6 +123,10 @@ class EncounterStats {
     npcs = [];
     /** @type {Record<string, number|undefined>} */
     npcDeathTimeoutTimestamps = {};
+    /** @type {string[]} */
+    deadNpcs = [];
+    /** @type {Record<string, Date>} */
+    lastPlayerNpcAction = {};
     /** @type {Date} */
     encounterStart;
     /** @type {Date} */
@@ -131,6 +139,25 @@ class EncounterStats {
     logs = [];
     /** @type {OwnedRawLog[]} */
     ownedLogs = [];
+    /** @type {boolean} If true, a named NPC is part of this event. */
+    namedEvent = false;
+    /** @type {boolean} If true, the encounter has ended. */
+    ended = false;
+}
+
+class EncounterStatsEventArgs {
+    /** @type {EncounterStats} */
+    encounter;
+    /** @type {string[]} */
+    verifiedPlayers;
+    /** @type {string[]} */
+    verifiedNpcs;
+    /** @type {string[]} */
+    verifiedPets;
+    /** @type {Record<string, string>} */
+    petOwners;
+    /** @type {string} */
+    characterName;
 }
 
 class EncounterResetEventArgs {
@@ -156,6 +183,8 @@ class EncounterResetEventArgs {
     npcs = [];
     /** @type {number} */
     timezoneOffset = 0;
+    /** @type {EncounterStats} */
+    encounter;
 }
 
 class LogRecord {
@@ -189,6 +218,8 @@ class LogRecord {
     transmitted = false;
     /** @type {string | undefined} */
     resistType;
+    /** @type {boolean} */
+    corpse = false;
 }
 
 const attackTypeMap = {
@@ -379,4 +410,5 @@ module.exports = {
     ExternalEncounterModel,
     EncounterModel,
     CombatEncounterModel,
+    EncounterStatsEventArgs,
 };
