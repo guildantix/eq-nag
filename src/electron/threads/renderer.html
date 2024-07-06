@@ -867,6 +867,12 @@
         .dropdown-menu .dropdown-menu-item i {
             min-width: 1.2em;
         }
+        .dropdown-menu .dropdown-menu-content {
+            max-height: 21em;
+            overflow: hidden;
+            scroll-behavior: auto;
+            overflow-y: scroll;
+        }
     </style>
     
     <!-- =============================== -->
@@ -875,7 +881,7 @@
 
     <template id="dropdownMenu">
         <div class="dropdown-menu">
-            <div class="dropdown-menu-content dynamic-mouse" style="padding: 1em 0">
+            <div class="dropdown-menu-content dynamic-mouse">
                 {{#each menuItems}}
                     <div class="dropdown-menu-item menu-item" data-item-type="{{this.itemType}}" data-encounter-id="{{this.encounterId}}" data-mob-name="{{this.mobName}}">
                         <i class="fas {{this.cssClass}}"></i>
