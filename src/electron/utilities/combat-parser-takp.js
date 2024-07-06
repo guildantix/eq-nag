@@ -77,6 +77,15 @@ const combatRgx = {
     // https://regex101.com/r/I4wX9J/1
     PetLeader: /^(?<pet>.+?) says 'My leader is (?<player>.*)\.'/gi,
 
+    // https://regex101.com/r/kOmGrB/2
+    Charmed: /^(?<charmPet>.+?) (is|has been) charmed\.$/gi,
+
+    // https://regex101.com/r/GiGkwf/1
+    NecroCharmed: /^(?<charmPet>.+?) moans\.$/gi,
+
+    // Not named NPC if it begins with A,a,An,an, or a lower case letter.
+    NotNamedNpc: /^(?:A\s|An\s|a\s|an\s|[a-z])/,
+
 }
 
 // https://regex101.com/r/cqfoUU/2
@@ -134,6 +143,24 @@ class TakpCombatParser extends CombatParser {
             }
             
             let regxResult = null;
+
+            // Dead tracking
+            regxResult = executCombatRgx( combatRgx.SlainBy, entry.log );
+            regxResult = regxResult == null ? executCombatRgx( combatRgx.YouHaveSlain, entry.log ) : regxResult;
+            regxResult = regxResult == null ? executCombatRgx( combatRgx.Died, entry.log ) : regxResult;
+            if ( regxResult !== null ) {
+                this._addDeathEvent( timestamp, regxResult.groups.target, regxResult.groups.actor, logLine );
+                log( 'Adding death event', { target: regxResult.groups.target, deadNpcs: this._encounterStats.deadNpcs }, true );
+                return undefined;
+            }
+
+            // Charm tracking
+            regxResult = executCombatRgx( combatRgx.Charmed, entry.log );
+            regxResult = regxResult == null ? executCombatRgx( combatRgx.NecroCharmed, entry.log ) : regxResult;
+            if ( regxResult !== null ) {
+                this._addCharmEvent( timestamp, regxResult.groups.charmPet, logLine );
+                return undefined;
+            }
 
             regxResult = executCombatRgx( combatRgx.MeleeDamage, entry.log );
             if ( regxResult !== null ) {

@@ -22,16 +22,19 @@ const {
     ServerCombatModel,
     DpsMeterSettings,
     EncounterResetEventArgs,
+    EncounterStatsEventArgs,
 } = require( '../data/models/combat-parser' );
 const { FctModel } = require( '../data/models/fct' );
 const { CharacterModel } = require( '../data/models/character' );
 const { nagLog, nagException } = require( './nag-console' );
 const { getEverQuestClassName } = require( './everquest' );
 
+const playerNpcInteractionTimeoutMs = 2000;
 const npcTimeoutMs = 8000;
-const namedNpcTimeoutMs = 32000; // 4 * npcTimeoutMs
-const encounterTimeoutMs = 30000;
+const namedNpcTimeoutMs = 8000; // 4 * npcTimeoutMs
+const encounterTimeoutMs = 8000;
 const deathCheckDelayMs = npcTimeoutMs + 100;
+const renderDebugMessages = false;
 
 //  Preamble: When connected to a server, each connected peer must end encounters at the same time.
 //
@@ -43,13 +46,56 @@ const deathCheckDelayMs = npcTimeoutMs + 100;
 //  6. ✅ If the NPC is named then extend the timeout to 30 seconds.
 //  7. ✅ Receiving combat logs of peers with the same encounter id will extend the timeout.
 
+// TODO: Keep combat stats on the renderer so the user may choose to look at the stats of a closed encounter.
+// TODO: Add the ability for the user to choose between overall data, and data for the current encounter.
+// TODO: Update settings so that FCT can be enabled without the DPS meters.
+// TODO: Front-end encounters should be able to combine with multiple encounters.
+// TODO: Shared combat data should be incremental instead of total, allowing the merging of shared data.
+// TODO: When a charm pet is found, remove it from the pets list.  Charm pets are not pets, but are still pets in the encounter.
+// TODO: Share charm pet information with the server.
+// TODO: Do not show the name of an NPC in the encounter if it is not attacked by a player.
+
+// TODO: Run an update script that fixes in the petOwners list:
+//          "A huge slime hits Warrie`s pet": "A huge slime hits Warrie",
+
+// TODO: List of keystone events that should be shared:
+//      Charm pets
+//      NPC deaths
+//      Player deaths
+
+
+// TODO: !!Important!! End encounters immediately when everything is dead. Allow
+// the user to choose their own "encounter timeout", but this value will be for
+// display purposes only. This will require some renderer work to calculate totals
+// for a group of encounters. This will allow encounters to sync up with other
+// users, and still allow the user to set their own settings. Just use a flat x ms
+// timeout for all things. Let the renderer handle the display.
 
 
 
 
+// Notes: Npcs must timeout if an NPC has not hit a player/pet in x time.
+// Because there are NPCs in the npcs list that are charm pets, and are never
+// removed because the "has been charmed"/"moans" text doesn't appear in our
+// logs, the encounter goes into "long wait" mode instead of the quick on
+// death wait mode.
 
-
-
+/**
+ * Sends to the main thread to log the message.
+ * 
+ * @param {string} message The message to log.
+ * @param {any | undefined} payload The payload to log.
+ * @param {boolean | undefined} isDebug If true, the message is a debug message.
+ */
+const log = ( message, payload, isDebug ) => {
+    if ( !isDebug || renderDebugMessages ) {
+        nagLog( {
+            label: 'Combat Parser',
+            message: message,
+            payload: payload,
+        } );
+    }
+}
 
 /**
  * Executes the given regular expression against the given log line.
@@ -204,6 +250,15 @@ const combatRgx = {
     // https://regex101.com/r/nVsfms/1
     NamedPet: /^(?<pet>(?<player>.+?)`s pet)\s/gi,
 
+    // https://regex101.com/r/kOmGrB/2
+    Charmed: /^(?<charmPet>.+?) (is|has been) charmed\.$/gi,
+
+    // https://regex101.com/r/GiGkwf/1
+    NecroCharmed: /^(?<charmPet>.+?) moans\.$/gi,
+
+    // Not named NPC if it begins with A,a,An,an, or a lower case letter.
+    NotNamedNpc: /^(?:A\s|An\s|a\s|an\s|[a-z])/,
+
     // The following match LastStand
     // CulminatingStand: null,
     // UltimateStand: null,
@@ -253,6 +308,8 @@ class CombatParser {
     _playerInfos = {}; // needs to be by server
     /** @type {string} */
     _serverName;
+    /** @type {string[]} */
+    _charmPets = [];
 
     /** @type {CharacterModel[]} */
     _fctCharacters = [];
@@ -523,6 +580,37 @@ class CombatParser {
 
 
     /**
+     * Returns the current encounter stats.
+     * 
+     * @returns {EncounterStatsEventArgs | undefined} Returns the current encounter stats.
+     */
+    getCurrentEncounterStats() {
+
+        // If there is no encounter, or the total damage in the encounter is under the minimum value, then return undefined.
+        let underMinDmg = this._dpsMeterSettings.encounterMinimumDamage > 0 && ( this._encounterStats?.encounterDamageDone ?? 0 ) < this._dpsMeterSettings.encounterMinimumDamage;
+        if ( this._encounterStats == undefined || underMinDmg ) {
+            return undefined;
+        }
+
+        return {
+            encounter: Object.assign( new EncounterStats(), this._encounterStats ),
+            verifiedPlayers: [ ...this._verifiedPlayers ],
+            verifiedNpcs: [ ...this._verifiedNpcs ],
+            verifiedPets: [ ...this._verifiedPets ],
+            petOwners: Object.assign( {}, this._petOwners ),
+        };
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
      * Returns the DPS for a 10 second encounter.
      * 
      * @description Returns an empty array if the total encounter damage done 
@@ -764,6 +852,15 @@ class CombatParser {
             regxResult = regxResult == null ? executCombatRgx( combatRgx.Died, entry.log ) : regxResult;
             if ( regxResult !== null ) {
                 this._addDeathEvent( timestamp, regxResult.groups.target, regxResult.groups.actor, logLine );
+                log( 'Adding death event', { target: regxResult.groups.target, deadNpcs: this._encounterStats.deadNpcs }, true );
+                return undefined;
+            }
+
+            // Charm tracking
+            regxResult = executCombatRgx( combatRgx.Charmed, entry.log );
+            regxResult = regxResult == null ? executCombatRgx( combatRgx.NecroCharmed, entry.log ) : regxResult;
+            if ( regxResult !== null ) {
+                this._addCharmEvent( timestamp, regxResult.groups.charmPet, logLine );
                 return undefined;
             }
 
@@ -1181,30 +1278,44 @@ class CombatParser {
             if ( !petAssigned ) {
                 let petLeader = executCombatRgx( combatRgx.PetLeader, lines[ i ] );
                 if ( petLeader !== null && petLeader.groups != null && petLeader.groups.player != null && petLeader.groups.pet != null ) {
-                    let petKey = petLeader.groups.player;
+                    const ownerName = petLeader.groups.player;
+                    const petName = petLeader.groups.pet;
 
-                    if ( this._verifiedPlayers.indexOf( petLeader.groups.player ) === -1 ) {
-                        this._verifiedPlayers.push( petLeader.groups.player );
+                    // If the pet leader is not in the players list, add them.
+                    if ( this._verifiedPlayers.indexOf( ownerName ) === -1 ) {
+                        this._verifiedPlayers.push( ownerName );
                         this._updateServerStatistics = true;
                     }
 
-                    if ( this._verifiedPets.indexOf( petLeader.groups.pet ) === -1 ) {
-                        this._verifiedPets.push( petLeader.groups.pet );
+                    // Determine if this is an NPC pet.
+                    let isNpc = petName.indexOf( ' ' ) > -1;
+                    if ( isNpc && this._verifiedNpcs.indexOf( petName ) === -1 ) {
+                        this._verifiedNpcs.push( petName );
+                    }
+
+                    let petIdx = this._verifiedPets.indexOf( petName );
+                    if ( petIdx === -1 && !isNpc ) {
+                        // Add this pet to the pets list, if it's not an NPC pet.
+                        this._verifiedPets.push( petName );
+                        this._updateServerStatistics = true;
+                    } else if ( isNpc && petIdx > -1 ) {
+                        // If it's already in the pet list as an NPC, then remove it from the pet list.
+                        this._verifiedPets.splice( petIdx, 1 );
                         this._updateServerStatistics = true;
                     }
 
-                    if ( !this._playerPets[ petKey ] ) {
-                        this._playerPets[ petKey ] = [];
+                    if ( !this._playerPets[ ownerName ] ) {
+                        this._playerPets[ ownerName ] = [];
                         this._updateServerStatistics = true;
                     }
                 
-                    if ( this._petOwners[ petLeader.groups.pet ] !== petKey ) {
-                        this._petOwners[ petLeader.groups.pet ] = petKey;
+                    if ( this._petOwners[ petName ] !== ownerName ) {
+                        this._petOwners[ petName ] = ownerName;
                         this._updateServerStatistics = true;
                     }
 
-                    if ( this._playerPets[ petKey ].indexOf( petLeader.groups.pet ) === -1 ) {
-                        this._playerPets[ petKey ].push( petLeader.groups.pet );
+                    if ( this._playerPets[ ownerName ].indexOf( petName ) === -1 ) {
+                        this._playerPets[ ownerName ].push( petName );
                         this._updateServerStatistics = true;
                     }
 
@@ -1373,7 +1484,7 @@ class CombatParser {
                         this._unknownEntities.splice( ui, 1 );
                         this._updateServerStatistics = true;
 
-                    } else if ( stats / attackNpc / stats.attackPlayer <= 0.5 ) {
+                    } else if ( stats.attackNpc / stats.attackPlayer <= 0.5 ) {
                         this._verifiedNpcs.push( stats.name );
                         let ui = this._unknownEntities.indexOf( stats.name );
                         this._unknownEntities.splice( ui, 1 );
@@ -1832,12 +1943,30 @@ class CombatParser {
 
 
     /**
-     * Resets the encounter.
+     * Resets the encounter, triggering the onEncounterReset event and 
+     * initializing a new encounter object.
      */
     resetEncounter() {
 
+        const realEncounter = this._encounterStats?.npcs?.length > 0;
+        if ( realEncounter ) {
+            log( 'Resetting Encounter', undefined, true );
+        }
+
+        if ( this._encounterResetTimerId ) {
+            clearTimeout( this._encounterResetTimerId );
+            this._encounterResetTimerId = null;
+        }
+
+        if ( this.#encounterNpcDeathTimeoutId > 0 ) {
+            clearTimeout( this.#encounterNpcDeathTimeoutId );
+            this.#encounterNpcDeathTimeoutId = undefined;
+        }
+
         if ( this._encounterStats == null )
             return;
+        else
+            this._encounterStats.ended = true;
 
         // We still want to reset this encounter if we're under the min damage,
         // but we don't want to trigger the event.
@@ -1854,6 +1983,7 @@ class CombatParser {
         eventArgs.npcs = [ ...this._encounterStats.npcs ];
         eventArgs.externalEncounterIds = Object.keys( this._externalEncounterIds );
         eventArgs.externalEncounterIdCharacters = this._externalEncounterIds;
+        eventArgs.encounter = this._encounterStats;
         
         /** @type {string[]} */
         let names = [].concat( 'You', this._characterName, ...( this._playerPets[ this._characterName ] ?? [] ) );
@@ -1872,11 +2002,7 @@ class CombatParser {
         this._externalEncounterIds = {};
         this._encounterStats = new EncounterStats();
 
-        if ( this._encounterResetTimerId ) {
-            clearTimeout( this._encounterResetTimerId );
-        }
-
-        if ( this.onEncounterReset && !underMinDmg ) {
+        if ( realEncounter && this.onEncounterReset && !underMinDmg ) {
             this.onEncounterReset( eventArgs );
         }
     }
@@ -1993,7 +2119,11 @@ class CombatParser {
      */
     _refreshEncounter( rec, rawLog ) {
 
-        this.#restartEncounterTimeout();
+        if ( !rec.corpse && this._charmPets.indexOf( rec.actor ) === -1 && this._charmPets.indexOf( rec.target ) === -1 ) {
+            this.#restartEncounterTimeout();
+        } else if ( this._encounterStats.npcs.length > 0 ) {
+            log( 'Not resetting encounter timeout', { actor: rec.actor, target: rec.target, location: '#_refreshEncounter' }, true );
+        }
 
         this.#initializeEncounter( rec, rawLog );
         
@@ -2018,12 +2148,13 @@ class CombatParser {
      */
     #recordEncounterEvent( rec, rawLog ) {
         if ( rec != undefined ) {
+            let encounterBegins = this._encounterStats.npcs.length === 0;
             this.encounterEvents.push( rec );
-            this._updateEncounterStats( rec );
-            
-            if ( rec.damage > 0 ) {
-                // If damage is still being dealt, then the encounter is still active.
-                this._resetNpcDeath( rec.actor, rec.target );
+            this._updateEncounterStats( rec, rawLog );
+            encounterBegins = encounterBegins && this._encounterStats.npcs.length > 0;
+
+            if ( encounterBegins ) {
+                log( 'Beginning a new encounter', { location: '#recordEncounterEvent', npcs: this._encounterStats.npcs }, true );
             }
         }
 
@@ -2085,9 +2216,15 @@ class CombatParser {
         
         if ( this._encounterResetTimerId ) {
             clearTimeout( this._encounterResetTimerId );
+            this._encounterResetTimerId = undefined;
         }
         
-        this._encounterResetTimerId = window.setTimeout( () => this.resetEncounter(), encounterTimeoutMs );
+        this._encounterResetTimerId = window.setTimeout( () => {
+            if ( this._encounterStats.npcs.length > 0 ) {
+                log( 'Encounter timeout reached, resetting encounter.', { location: '#restartEncounterTimeout' }, true );
+            }
+            this.resetEncounter();
+        }, this._encounterStats?.namedEvent ? namedNpcTimeoutMs : encounterTimeoutMs);
 
     }
 
@@ -2110,6 +2247,7 @@ class CombatParser {
      * @param {boolean|undefined} noFct If true, the log record will not be treated as an FCT event.
      */
     _addEncounterEvent( rec, rawLog, noFct ) {
+        rec.corpse = /'s corpse$/gi.exec( rec.actor ) != null; // || /'s corpse$/gi.exec( rec.target ) != null;
         noFct = noFct === true;
         this._refreshEncounter( rec, rawLog );
 
@@ -2180,13 +2318,71 @@ class CombatParser {
         if ( this._encounterStats != null ) {
             if ( this._encounterStats.npcs.includes( names.target ) ) {
 
-                // This is not a named NPC if it begins with A,a,An,an, or a lower case letter.
-                const named = names.target.match( /^(?:A\s|An\s|a\s|an\s|[a-z])/ ) == null;
-                const timeoutMs = named ? namedNpcTimeoutMs : npcTimeoutMs;
+                if ( !this._encounterStats.deadNpcs.includes( names.target ) ) {
+                    this._encounterStats.deadNpcs.push( names.target );
+                }
 
-                this._encounterStats.npcDeathTimeoutTimestamps[ names.target ] = timestamp.getTime() + timeoutMs;
+                this._onNpcDeath();
+            }
+        }
+    }
 
-                this._startEncounterNpcDeathTimeout();
+
+
+
+
+
+
+
+
+
+    /**
+     * Adds a charm event to the encounter.
+     * 
+     * @description This method will also add the charm pet as a pet to the 
+     * encounter, if they are not already added. And if the charmed target is 
+     * not in the PC list, they will be added to the NPC list and removed from 
+     * the Pets list.
+     * 
+     * @param {Date} timestamp The timestamp of the event.
+     * @param {string} petName The name of the pet.
+     * @param {string} rawLog The raw log record.
+     */
+    _addCharmEvent( timestamp, petName, rawLog ) {
+        
+        // Let's keep track of this pet.
+        this._charmPets.push( petName );
+
+        // If the pet is not already in the pet list, add it.
+        this._petOwners[ petName ] = this._petOwners[ petName ] ?? undefined;
+
+        // This is a "temporary" pet, so if they are in the server pet list, we need to remove it.
+        if ( !this._verifiedPlayers.includes( petName ) ) {
+            let idx = this._verifiedPets.indexOf( petName );
+            if ( idx >= 0 ) {
+                this._verifiedPets.splice( idx, 1 );
+                this._updateServerStatistics = true;
+            }
+            if ( !this._verifiedNpcs.includes( petName ) ) {
+                this._verifiedNpcs.push( petName );
+                this._updateServerStatistics = true;
+            }
+        }
+
+        if ( this._encounterStats == null ) {
+            return;
+        } else {
+            if ( this._encounterStats.npcs.some( f => f.toLowerCase() === petName.toLowerCase() ) ) {
+                this._encounterStats.npcs = this._encounterStats.npcs.filter( f => f.toLowerCase() !== petName.toLowerCase() );
+                delete this._encounterStats.npcDeathTimeoutTimestamps[ petName ];
+
+                if ( this._encounterStats.npcs.length === 0 ) {
+                    log( 'Immediately resetting encounter', { location: '_addCharmEvent' }, true );
+                    this.resetEncounter();
+                } else {
+                    // For the purposes of the encounter, this can be considered a death event.
+                    this._onNpcDeath();
+                }
             }
         }
     }
@@ -2203,65 +2399,55 @@ class CombatParser {
     /**
      * Resets the death timer for the given NPC and stops the npc death timeout.
      * 
-     * @param {string[]} names The names of the NPC to reset the death timer for.
+     * @param {string} names The names of the NPC to reset the death timer for.
      */
-    _resetNpcDeath( ...names ) {
+    _resetNpcDeath( names ) {
 
         if ( this.#encounterNpcDeathTimeoutId > 0 ) {
-            clearTimeout( this.#encounterNpcDeathTimeoutId );
-            this.#encounterNpcDeathTimeoutId = undefined;
+            
+            // If all NPCs are dead in the encounter, and this name does not
+            // exist in the NPCs list, we need to end the encounter immediately.
+            // The reason we don't reset if the NPC name is in the list is because
+            // we can't know if the NPC was originally part of the encounter.  The 
+            // EQ log does not uniquely identify NPCs.
+            if ( this._encounterStats != null && !this._verifiedPlayers.includes( names ) && !this._verifiedPets.includes( names ) ) {
+                if ( !this._encounterStats.npcs.includes( names ) ) {
+                    if ( this._encounterStats.npcs.every( f => this._encounterStats.deadNpcs.includes( f ) ) ) {
+                        log( 'Immediately resetting encounter', { names: names, npcs: this._encounterStats.npcs, location: '_resetNpcDeath' }, true );
+                        this.resetEncounter();
+                    }
+                } else {
+                    this._encounterStats.deadNpcs = this._encounterStats.deadNpcs.filter( f => f !== names );
+                }
+            }
         }
 
         if ( this._encounterStats != null ) {
-            for ( let i = 0; i < names.length; i++ ) {
-                const name = names[ i ];
-                if ( this._encounterStats.npcs.includes( name ) && this._encounterStats.npcDeathTimeoutTimestamps[ name ] ) {
-                    this._encounterStats.npcDeathTimeoutTimestamps[ name ] = undefined;
-                }
+            if ( this._encounterStats.npcs.includes( names ) && this._encounterStats.npcDeathTimeoutTimestamps[ names ] ) {
+                this._encounterStats.npcDeathTimeoutTimestamps[ names ] = undefined;
             }
         }
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
+
+
+
+
+
+
+
+
     
     /**
-     * Starts the encounter NPC death timeout.
+     * Checks if all NPCs in the encounter are dead.  If true, the encounter is 
+     * ended.
      */
-    _startEncounterNpcDeathTimeout() {
-        if ( !this.#encounterNpcDeathTimeoutId ) {
-            this.#encounterNpcDeathTimeoutId = setTimeout( () => {
-                let now = new Date().getTime();
-                let deadNpcNames = Object.keys( this._encounterStats.npcDeathTimeoutTimestamps );
-                let endEncounter = true;
-
-                for ( let i = 0; i < deadNpcNames.length; i++ ) {
-                    const npc = deadNpcNames[ i ];
-                    // The death timestamp includes the timeout delay, so now could be less
-                    // than the death timestamp.  If now is less than the death timestamp, 
-                    // then the encounter should be kept alive.
-                    let deathTime = this._encounterStats.npcDeathTimeoutTimestamps[ npc ];
-
-                    if ( deathTime == undefined || deathTime > now ) {
-                        endEncounter = false;
-                        break;
-                    }
-                }
-
-                this.#encounterNpcDeathTimeoutId = undefined;
-                if ( endEncounter ) {
-                    this.resetEncounter();
-                } else {
-                    this._startEncounterNpcDeathTimeout();
-                }
-
-            }, deathCheckDelayMs );
+    _onNpcDeath() {
+        if ( this._encounterStats != null ) {
+            if ( this._encounterStats.npcs.every( f => this._encounterStats.deadNpcs.includes( f ) ) ) {
+                log( 'All NPCs are dead, ending encounter.', { location: '_onNpcDeath' }, true );
+                this.resetEncounter();
+            }
         }
     }
     
@@ -2562,35 +2748,54 @@ class CombatParser {
      * @returns {PlayerDps} Returns the player dps stat block.
      * 
      * @param {PlayerDps[]} playerDpsRecs The player's stat blocks.
-     * @param {string} name The name of the player.
-     * @param {string} className The class of the player.
+     * @param {string} playerName The name of the player.
+     * @param {string} playerClassName The class of the player.
      * @param {Date} timestamp The timestamp for the latest event.
+     * @param {boolean} otherIsNpc If true, the other entity is an NPC.
+     * @param {string} otherName The name of the other entity.
      */
-    _getOrCreatePlayerDpsStats( playerDpsRecs, name, className, timestamp ) {
+    _getOrCreatePlayerDpsStats( playerDpsRecs, playerName, playerClassName, timestamp, otherIsNpc, otherName ) {
         /** @type {PlayerDps} */
         let statBlock = undefined;
 
         if ( playerDpsRecs?.length > 0 ) {
-            let lastDps = playerDpsRecs[ playerDpsRecs.length - 1 ];
+            /** @type {PlayerDps | undefined} Find the last dps record for the player and the other entity. */
+            let lastDps = otherIsNpc ? playerDpsRecs.findLast( f => f.npcName === otherName ) : playerDpsRecs.findLast( f => f.otherPlayerName === otherName );
             let delay = DateUtilities.timeSince( lastDps?.end ?? timestamp, timestamp ).totalMilliseconds;
 
-            if ( delay > this._dpsMeterSettings.playerInactiveDelayMs ) {
+            if ( lastDps == null || delay > this._dpsMeterSettings.playerInactiveDelayMs ) {
                 statBlock = new PlayerDps();
                 statBlock.start = timestamp;
-                statBlock.name = name;
-                statBlock.class = className;
+                statBlock.name = playerName;
+                statBlock.class = playerClassName;
                 statBlock.pets = [];
+                
+                if ( otherIsNpc ) {
+                    statBlock.npcName = otherName;
+                } else {
+                    statBlock.otherPlayerName = otherName;
+                }
+
                 playerDpsRecs.push( statBlock );
             } else {
                 statBlock = lastDps;
             }
+
         } else {
             statBlock = new PlayerDps();
             statBlock.start = timestamp;
-            statBlock.name = name;
-            statBlock.class = className;
+            statBlock.name = playerName;
+            statBlock.class = playerClassName;
             statBlock.pets = [];
+
+            if ( otherIsNpc ) {
+                statBlock.npcName = otherName;
+            } else {
+                statBlock.otherPlayerName = otherName;
+            }
+
             playerDpsRecs.push( statBlock );
+
         }
 
         statBlock.end = timestamp;
@@ -2642,6 +2847,27 @@ class CombatParser {
 
         return statBlock;
     }
+
+
+
+
+
+
+
+
+
+    
+    /**
+     * Determines if the entity is a named NPC.
+     * 
+     * @returns Returns true if the entity is a named NPC, otherwise false.
+     * 
+     * @param {string} name The name of the entity.
+     */
+    _isNamedNpc( name ) {
+        // If NotNamedNpc is null, then it's a named npc.
+        return name.match( combatRgx.NotNamedNpc ) == null;
+    }
     
 
 
@@ -2657,7 +2883,7 @@ class CombatParser {
      * 
      * @param {LogRecord} logRecord The log record to update the encounter stats with.
      */
-    _updateEncounterStats( logRecord ) {
+    _updateEncounterStats( logRecord, rawLog ) {
         const timestamp = logRecord.timestamp || new Date();
         
         if ( logRecord != undefined ) {
@@ -2683,31 +2909,52 @@ class CombatParser {
                 this._encounterStats.lastEncounterEvent = timestamp;
                 this._encounterStats.encounterDamageDone += ( ( playerActor || petActor ) ? logRecord.damage ?? 0 : 0 );
 
+                if ( !this._encounterStats.namedEvent ) {
+                    this._encounterStats.namedEvent = playerTarget || petTarget ? this._isNamedNpc( logRecord.actor ) : this._isNamedNpc( logRecord.target );
+                }
+
                 if ( playerTarget ) {
                     // If the player is the target, then we need to add to the player's dps received record.
                     let playerEvents = this._getOrCreatePlayerEncounterStats( this._encounterStats.playerEvents, logRecord.target, timestamp );
-                    let playerIncoming = this._getOrCreatePlayerDpsStats( playerEvents.playerDpsIncoming, playerEvents.name, playerEvents.class, timestamp );
+                    let playerIncoming = this._getOrCreatePlayerDpsStats( playerEvents.playerDpsIncoming, playerEvents.name, playerEvents.class, timestamp, !playerActor && !petActor, logRecord.actor );
 
                     this._calculateDpsStats( logRecord, playerIncoming, playerIncoming.time );
 
-                    if ( this._verifiedNpcs.includes( logRecord.actor ) && !this._encounterStats.npcs.includes( logRecord.actor ) ) {
-                        this._encounterStats.npcs.push( logRecord.actor );
+                    if ( !logRecord.corpse && this._verifiedNpcs.includes( logRecord.actor ) ) {
+                        if ( !this._encounterStats.npcs.includes( logRecord.actor ) ) {
+                            this._encounterStats.npcs.push( logRecord.actor );
+                        }
+                        this._encounterStats.lastPlayerNpcAction[ logRecord.actor ] = timestamp;
                     }
-
+                    
                 } else if ( petTarget ) {
                     // If a player's pet is the target, then we need to grab the pet's owner, and add the dps received to the owner's pet list for dps received.
                     let owner = this._petOwners[ logRecord.target ];
 
                     if ( owner ) {
                         let playerEvents = this._getOrCreatePlayerEncounterStats( this._encounterStats.playerEvents, owner, timestamp );
-                        let playerIncoming = this._getOrCreatePlayerDpsStats( playerEvents.playerDpsIncoming, playerEvents.name, playerEvents.class, timestamp );
+                        let playerIncoming = this._getOrCreatePlayerDpsStats( playerEvents.playerDpsIncoming, playerEvents.name, playerEvents.class, timestamp, !playerActor && !petActor, logRecord.actor );
                         let petDpsRec = this._getOrCreatePetDpsStats( playerIncoming.pets, logRecord.target, timestamp );
 
                         this._calculateDpsStats( logRecord, petDpsRec, playerIncoming.time );
                     }
 
-                    if ( this._verifiedNpcs.includes( logRecord.actor ) && !this._encounterStats.npcs.includes( logRecord.actor ) ) {
-                        this._encounterStats.npcs.push( logRecord.actor );
+                    if ( !logRecord.corpse ) {
+                        if ( playerActor && logRecord.target.indexOf( ' ' ) > -1 ) {
+                            // If a player is hitting a pet with a space in the name, then we add that to the npcs list.
+                            // This will fail if the player is charmed...
+                            if ( !this._encounterStats.npcs.includes( logRecord.target ) ) {
+                                this._encounterStats.npcs.push( logRecord.target );
+                            }
+                            this._encounterStats.lastPlayerNpcAction[ logRecord.target ] = timestamp;
+
+                        } else if ( this._verifiedNpcs.includes( logRecord.actor ) ) {
+                            if ( !this._encounterStats.npcs.includes( logRecord.actor ) ) {
+                                this._encounterStats.npcs.push( logRecord.actor );
+                            }
+                            this._encounterStats.lastPlayerNpcAction[ logRecord.actor ] = timestamp;
+
+                        }
                     }
 
                 }
@@ -2715,12 +2962,15 @@ class CombatParser {
                 if ( playerActor ) {
                     // If the player is the actor, then we need to add to the player's dps record.
                     let playerEvents = this._getOrCreatePlayerEncounterStats( this._encounterStats.playerEvents, logRecord.actor, timestamp );
-                    let playerOutgoing = this._getOrCreatePlayerDpsStats( playerEvents.playerDpsOutgoing, playerEvents.name, playerEvents.class, timestamp );
+                    let playerOutgoing = this._getOrCreatePlayerDpsStats( playerEvents.playerDpsOutgoing, playerEvents.name, playerEvents.class, timestamp, logRecord.target.indexOf( ' ' ) > -1 || ( !playerTarget && !petTarget ), logRecord.target );
                     
                     this._calculateDpsStats( logRecord, playerOutgoing, playerOutgoing.time );
 
-                    if ( this._verifiedNpcs.includes( logRecord.target ) && !this._encounterStats.npcs.includes( logRecord.target ) ) {
-                        this._encounterStats.npcs.push( logRecord.target );
+                    if ( !logRecord.corpse && this._verifiedNpcs.includes( logRecord.target ) ) {
+                        if ( !this._encounterStats.npcs.includes( logRecord.target ) ) {
+                            this._encounterStats.npcs.push( logRecord.target );
+                        }
+                        this._encounterStats.lastPlayerNpcAction[ logRecord.target ] = timestamp;
                     }
                     
                 } else if ( petActor ) {
@@ -2729,14 +2979,17 @@ class CombatParser {
                     
                     if ( owner ) {
                         let playerEvents = this._getOrCreatePlayerEncounterStats( this._encounterStats.playerEvents, owner, timestamp );
-                        let playerOutgoing = this._getOrCreatePlayerDpsStats( playerEvents.playerDpsOutgoing, playerEvents.name, playerEvents.class, timestamp );
+                        let playerOutgoing = this._getOrCreatePlayerDpsStats( playerEvents.playerDpsOutgoing, playerEvents.name, playerEvents.class, timestamp, logRecord.target.indexOf( ' ' ) > -1 || ( !playerTarget && !petTarget ), logRecord.target );
                         let petDps = this._getOrCreatePetDpsStats( playerOutgoing.pets, logRecord.actor, timestamp );
 
                         this._calculateDpsStats( logRecord, petDps, playerOutgoing.time );
                     }
 
-                    if ( this._verifiedNpcs.includes( logRecord.target ) && !this._encounterStats.npcs.includes( logRecord.target ) ) {
-                        this._encounterStats.npcs.push( logRecord.target );
+                    if ( !logRecord.corpse && this._verifiedNpcs.includes( logRecord.target ) ) {
+                        if ( !this._encounterStats.npcs.includes( logRecord.target ) ) {
+                            this._encounterStats.npcs.push( logRecord.target );
+                        }
+                        this._encounterStats.lastPlayerNpcAction[ logRecord.target ] = timestamp;
                     }
                     
                 }
