@@ -220,6 +220,8 @@ var targetGroupTimerTemplate;
 var dpsWindowTemplate;
 /** @type {HandlebarsTemplateDelegate<any>} */
 var dpsWindowItemTemplate;
+/** @type {HandlebarsTemplateDelegate<any>} */
+var dropdownMenuTemplate;
 var voiceOptions = [];
 /** @type {Record<number, number>} */
 var destroySchedule = {};
@@ -519,10 +521,82 @@ function createDpsWindow() {
     div.style.zIndex = overlayTopZIndex + 1;
     div.style.position = 'relative';
 
+    MouseUtilities.refreshDom();
+
     let clearFightBtn = div.querySelector( '.clear-encounter' );
     if ( clearFightBtn ) {
         clearFightBtn.addEventListener( 'click', () => {
             clearEncounter();
+        } );
+    }
+
+    let databaseBtn = div.querySelector( '.database-dropdown-menu' );
+    if ( databaseBtn ) {
+        databaseBtn.addEventListener( 'click', () => {
+            let dropdownHtml = dropdownMenuTemplate( {
+                menuItems: [
+                    {
+                        label: 'Mob Name Aaaa',
+                        cssClass: 'fa-chevron-right',
+                        encounterId: 'a',
+                        mobName: 'Mob Name Aaaa',
+                        itemType: 'encounter-filter',
+                    },
+                    {
+                        label: 'Mob Name Bbbb',
+                        cssClass: 'fa-chevron-right',
+                        encounterId: 'b',
+                        mobName: 'Mob Name Bbbb',
+                        itemType: 'encounter-filter',
+                    },
+                    {
+                        label: 'Mob Name Cccc',
+                        cssClass: 'fa-chevron-right',
+                        encounterId: 'c',
+                        mobName: 'Mob Name Cccc',
+                        itemType: 'encounter-filter',
+                    },
+                    {
+                        label: 'Mob Name Dddd',
+                        cssClass: 'fa-chevron-right',
+                        encounterId: 'd',
+                        mobName: 'Mob Name Dddd',
+                        itemType: 'encounter-filter',
+                    },
+                    {
+                        label: 'Show Current Fight',
+                        cssClass: 'fa-eye',
+                        encounterId: 'current fight',
+                        mobName: undefined,
+                        itemType: 'encounter-filter',
+                    },
+                    {
+                        label: 'Show All Data',
+                        cssClass: 'fa-bars',
+                        encounterId: 'all data',
+                        mobName: undefined,
+                        itemType: 'encounter-filter',
+                    }
+                ]
+            } );
+
+            let menuDiv = document.createElement( 'div' );
+            menuDiv.innerHTML = dropdownHtml;
+            document.body.appendChild( menuDiv );
+
+            let dropdown = menuDiv.firstElementChild;
+            let mouseCoords = MouseUtilities.getMouseUpdate();
+            const mousePadding = 15;
+            dropdown.style.left = ( mouseCoords.x - mousePadding + origin.x ) + 'px';
+            dropdown.style.top = ( mouseCoords.y - mousePadding + origin.y ) + 'px';
+
+            MouseUtilities.refreshDom();
+
+            let clearDropdown = ( ev ) => {
+                menuDiv.remove();
+                menuDiv.removeEventListener( 'mouseleave', clearDropdown );
+            }
+            dropdown.addEventListener( 'mouseleave', clearDropdown );
         } );
     }
 
@@ -798,6 +872,44 @@ function Renderer( originX, originY, glowOnStart ) {
 
     DomUtilities.docReady( f => {
 
+        // Dynamic menu item handlers
+        document.addEventListener( 'click', ( ev ) => {
+            let target = ev.target;
+            while ( target != null ) {
+                if ( target.classList.contains( 'menu-item' ) ) {
+                    let itemType = target.getAttribute( 'data-item-type' );
+
+                    if ( itemType === 'encounter-filter' ) {
+                        let encounterId = target.getAttribute( 'data-encounter-id' );
+                        if ( encounterId ) {
+                            if ( encounterId === 'current fight' ) {
+                                console.log( 'Show current fight' );
+                            } else if ( encounterId === 'all data' ) {
+                                console.log( 'Show all data' );
+                            } else {
+                                let mobName = target.getAttribute( 'data-mob-name' );
+                                console.log( `Show encounter: ${encounterId}` );
+                                console.log( `Mob Name: ${mobName}` );
+                            }
+                        }
+                    }
+
+                    // Remove the dropdown menu.
+                    let menu = target.parentElement;
+                    while ( menu != null ) {
+                        if ( menu.classList.contains( 'dropdown-menu' ) ) {
+                            menu.parentElement.remove();
+                            break;
+                        }
+                        menu = menu.parentElement;
+                    }
+
+                    break;
+                }
+                target = target.parentElement;
+            }
+        } );
+
         Handlebars.registerHelper( 'if_eq', function ( a, b ) {
             return a === b;
         } );
@@ -818,6 +930,7 @@ function Renderer( originX, originY, glowOnStart ) {
         targetGroupTimerTemplate = Handlebars.compile( document.querySelector( '#targetGroupTimerTemplate' ).innerHTML );
         dpsWindowTemplate = Handlebars.compile( document.querySelector( '#dpsWindowTemplate' ).innerHTML );
         dpsWindowItemTemplate = Handlebars.compile( document.querySelector( '#dpsWindowItemTemplate' ).innerHTML );
+        dropdownMenuTemplate = Handlebars.compile( document.querySelector( '#dropdownMenu' ).innerHTML );
 
         logInfo( '[Info:Renderer:Templates] (Renderer docReady) Templates have been compiled!' );
     

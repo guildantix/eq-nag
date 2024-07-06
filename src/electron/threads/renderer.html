@@ -845,7 +845,46 @@
         .record-enabled {
             color: #ff0000;
         }
+
+        .dropdown-menu {
+            position: absolute;
+            z-index: 10;
+            background-color: #181818;
+            border: 1px solid #222222;
+        }
+        .dropdown-menu .dropdown-menu-item {
+            min-width: 200px;
+            color: #adadad;
+            cursor: pointer;
+            padding: 0.25em 0.5em;
+        }
+        .dropdown-menu .dropdown-menu-item:hover {
+            background-color: #222222;
+        }
+        .dropdown-menu .dropdown-menu-item span {
+            padding-left: 0.5em;
+        }
+        .dropdown-menu .dropdown-menu-item i {
+            min-width: 1.2em;
+        }
     </style>
+    
+    <!-- =============================== -->
+    <!--          Dropdown Menu          -->
+    <!-- =============================== -->
+
+    <template id="dropdownMenu">
+        <div class="dropdown-menu">
+            <div class="dropdown-menu-content dynamic-mouse" style="padding: 1em 0">
+                {{#each menuItems}}
+                    <div class="dropdown-menu-item menu-item" data-item-type="{{this.itemType}}" data-encounter-id="{{this.encounterId}}" data-mob-name="{{this.mobName}}">
+                        <i class="fas {{this.cssClass}}"></i>
+                        <span>{{this.label}}</span>
+                    </div>
+                {{/each}}
+            </div>
+        </div>
+    </template>
     
     <!-- =========================== -->
     <!--          DPS Meter          -->
@@ -864,6 +903,7 @@
                 <span class="window-title-col title-btn mouse-show" onclick="window.api.showSettings('combatStatistics')"><i class="fas fa-gear"></i><span class="tooltip">Window Settings</span></span>
                 <span class="window-title-col title-btn mouse-show clear-encounter"><i class="fa-solid fa-ban"></i><span class="tooltip">Clear Fight</span></span>
                 <span class="window-title-col title-btn mouse-show record-button" id="encounterRecordBtn" onclick="toggleRecordEncounters()"><i class="fa-solid fa-circle"></i><span class="tooltip">Record Encounters</span></span>
+                <span class="window-title-col title-btn mouse-show database-dropdown-menu"><i class="fa-solid fa-database"></i><span class="tooltip">Show Encounters</span></span>
                 <span class="window-title-col right-pad"></span>
             </div>
             <div class="window-content dps-items click-through">
