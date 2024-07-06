@@ -1068,12 +1068,15 @@ function Renderer( originX, originY, glowOnStart ) {
         ( event, data ) => {
 
             // If the encounter is not in the history, add it.
-            if ( !encounterHistory.some( f => f.encounterId === data.encounterId ) ) {
+            let historyItem = encounterHistory.find( f => f.encounterId === data.encounter.encounterId );
+            if ( !historyItem ) {
                 encounterHistory.push( { ...data.encounter, characterName: data.characterName } );
 
                 if ( encounterHistory.length > encounterHistoryLimit ) {
                     encounterHistory.shift();
                 }
+            } else {
+                Object.assign( historyItem, data.encounter );
             }
 
             // Update the local combat database.
