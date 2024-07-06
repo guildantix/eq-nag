@@ -533,36 +533,8 @@ function createDpsWindow() {
     let databaseBtn = div.querySelector( '.database-dropdown-menu' );
     if ( databaseBtn ) {
         databaseBtn.addEventListener( 'click', () => {
-            let dropdownHtml = dropdownMenuTemplate( {
+            let menuObject = {
                 menuItems: [
-                    {
-                        label: 'Mob Name Aaaa',
-                        cssClass: 'fa-chevron-right',
-                        encounterId: 'a',
-                        mobName: 'Mob Name Aaaa',
-                        itemType: 'encounter-filter',
-                    },
-                    {
-                        label: 'Mob Name Bbbb',
-                        cssClass: 'fa-chevron-right',
-                        encounterId: 'b',
-                        mobName: 'Mob Name Bbbb',
-                        itemType: 'encounter-filter',
-                    },
-                    {
-                        label: 'Mob Name Cccc',
-                        cssClass: 'fa-chevron-right',
-                        encounterId: 'c',
-                        mobName: 'Mob Name Cccc',
-                        itemType: 'encounter-filter',
-                    },
-                    {
-                        label: 'Mob Name Dddd',
-                        cssClass: 'fa-chevron-right',
-                        encounterId: 'd',
-                        mobName: 'Mob Name Dddd',
-                        itemType: 'encounter-filter',
-                    },
                     {
                         label: 'Show Current Fight',
                         cssClass: 'fa-eye',
@@ -576,9 +548,25 @@ function createDpsWindow() {
                         encounterId: 'all data',
                         mobName: undefined,
                         itemType: 'encounter-filter',
-                    }
+                    },
                 ]
-            } );
+            };
+
+            for ( let i = encounterHistory.length - 1; i >= 0; i-- ) {
+                const encounter = encounterHistory[ i ];
+                for ( let j = encounter.npcs.length - 1; j >= 0; j-- ) {
+                    const npc = encounter.npcs[ j ];
+                    menuObject.menuItems.push( {
+                        label: npc,
+                        cssClass: 'fa-chevron-right',
+                        encounterId: encounter.encounterId,
+                        mobName: npc,
+                        itemType: 'encounter-filter',
+                    } );
+                }
+            }
+
+            let dropdownHtml = dropdownMenuTemplate( menuObject );
 
             let menuDiv = document.createElement( 'div' );
             menuDiv.innerHTML = dropdownHtml;
