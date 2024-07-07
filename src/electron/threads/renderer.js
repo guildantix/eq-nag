@@ -1276,12 +1276,17 @@ function Renderer( originX, originY, glowOnStart ) {
                 }
             }
 
-            displayedEncounter = Object.assign( new RendererEncounterModel(), allDataEncounter );
-            displayedEncounter.dpsItems = allDataEncounter.dpsItems.map( f => {
-                let x = Object.assign( new DpsItem(), f );
-                x.playerDps = f.playerDps.map( y => Object.assign( new PlayerDps(), y ) );
-                return x;
-            } );
+            if ( dpsWindowDisplayType === EncounterDisplayTypes.allData ) {
+                displayedEncounter = Object.assign( new RendererEncounterModel(), allDataEncounter );
+                displayedEncounter.dpsItems = allDataEncounter.dpsItems.map( f => {
+                    let x = Object.assign( new DpsItem(), f );
+                    x.playerDps = f.playerDps.map( y => Object.assign( new PlayerDps(), y ) );
+                    return x;
+                } );
+            } else {
+                displayedEncounter = m;
+            }
+
             displayedEncounter.ended = true;
             renderDpsItems( data.character );
 
