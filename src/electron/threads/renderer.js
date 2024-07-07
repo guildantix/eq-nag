@@ -668,10 +668,9 @@ function clearEncounter() {
         dpsWindowDisplayType = dpsWindowDisplayType !== EncounterDisplayTypes.current && dpsWindowDisplayType !== EncounterDisplayTypes.allData ?
             EncounterDisplayTypes.current :
             dpsWindowDisplayType;
-
     }
-    
-    displayedEncounter = undefined;
+        
+    updateDpsWindowSettings();
 }
 
 
@@ -723,12 +722,12 @@ function updateDpsWindowSettings() {
         // TODO: Hide clear button if there is no encounter.
         let clearFightBtn = dpsWindow.querySelector( '.clear-encounter' );
         if ( clearFightBtn ) {
-            if ( displayedEncounter == null ) {
-                clearFightBtn.classList.remove( 'mouse-show' );
-                clearFightBtn.classList.add( 'hide' );
-            } else {
+            if ( encounterHistory?.length > 0 ) {
                 clearFightBtn.classList.remove( 'hide' );
                 clearFightBtn.classList.add( 'mouse-show' );
+            } else {
+                clearFightBtn.classList.remove( 'mouse-show' );
+                clearFightBtn.classList.add( 'hide' );
             }
         }
     }
@@ -1769,7 +1768,6 @@ function refreshEncounterStats( encounter, characterName, npcName ) {
     let m = undefined;
 
     if ( npcName != null || displayedEncounter?.encounterId != encounter.encounterId ) {
-        // clearEncounter();
 
         m = {
             encounterId: encounter.encounterId,
