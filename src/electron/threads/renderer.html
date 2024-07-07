@@ -675,17 +675,16 @@
         }
         .tooltip {
             display: none;
-            position: absolute;
+            position: fixed;
             white-space: nowrap;
             padding: 2px 15px;
             background-color: #000000a6;
             color: #dfdfdf;
             border: 2px solid black;
-            top: -2.75em;
-            transform: translateX(-50%);
         }
         .window.dps-meter .window-title .window-title-col.title-btn:hover .tooltip {
-            display: inline-block;
+            display: block;
+            transform: translate(-50%, -210%);
         }
         .window-content {
             border-right: 4px solid #181818;
@@ -908,10 +907,10 @@
                 <!-- <span class="window-title-col title-btn mouse-show"><i class="fa-solid fa-table-columns"></i></span> -->
                 <!-- <span class="window-title-col title-btn mouse-show"><i class="fa-solid fa-magnifying-glass-chart"></i><span class="tooltip">Select Columns</span></span> -->
                 <!-- <span class="window-title-col title-btn mouse-show" onclick="window.api.showSettings('combatDatabase')"><i class="fa-solid fa-user-check"></i><span class="tooltip">Edit Data</span></span> -->
-                <span class="window-title-col title-btn mouse-show" onclick="window.api.showSettings('combatStatistics')"><i class="fas fa-gear"></i><span class="tooltip">Window Settings</span></span>
-                <span class="window-title-col title-btn mouse-show clear-encounter"><i class="fa-solid fa-ban"></i><span class="tooltip">Clear Fight</span></span>
-                <span class="window-title-col title-btn mouse-show record-button" id="encounterRecordBtn" onclick="toggleRecordEncounters()"><i class="fa-solid fa-circle"></i><span class="tooltip">Record Encounters</span></span>
-                <span class="window-title-col title-btn mouse-show database-dropdown-menu"><i class="fa-solid fa-database"></i><span class="tooltip">Show Encounters</span></span>
+                <span class="window-title-col title-btn mouse-show" onclick="window.api.showSettings('combatStatistics')"><i class="fas fa-gear"></i><span class="tooltip">Settings</span></span>
+                <span class="window-title-col title-btn mouse-show clear-encounter"><i class="fa-solid fa-ban"></i><span class="tooltip">Clear History</span></span>
+                <span class="window-title-col title-btn mouse-show record-button" id="encounterRecordBtn" onclick="toggleRecordEncounters()"><i class="fa-solid fa-circle"></i><span class="tooltip">Record</span></span>
+                <span class="window-title-col title-btn mouse-show database-dropdown-menu"><i class="fa-solid fa-database"></i><span class="tooltip">Change View</span></span>
                 <span class="window-title-col right-pad"></span>
             </div>
             <div class="window-content dps-items click-through">
