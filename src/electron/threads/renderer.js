@@ -642,18 +642,33 @@ function createDpsWindow() {
  */
 function clearEncounter() {
     if ( dpsWindow ) {
-        dpsWindow.querySelector( '.dps-items' ).innerHTML = '';
+        
+        encounterHistory = [];
+        allDataEncounter = undefined;
 
-        let encounterName = dpsWindow.querySelector( '.encounter-name' );
-        if ( encounterName ) {
-            encounterName.innerHTML = '';
-        }
+        if ( displayedEncounter?.encounterId != currentEncounterId || displayedEncounter?.ended ) {
+            
+            dpsWindow.querySelector( '.dps-items' ).innerHTML = '';
+
+            let encounterName = dpsWindow.querySelector( '.encounter-name' );
+            if ( encounterName ) {
+                encounterName.innerHTML = '';
+            }
     
-        let encounterTime = dpsWindow.querySelector( '.encounter-time' );
-        if ( encounterTime ) {
-            encounterTime.innerHTML = '';
-            encounterTime.classList.remove( 'strong' );
+            let encounterTime = dpsWindow.querySelector( '.encounter-time' );
+            if ( encounterTime ) {
+                encounterTime.innerHTML = '';
+                encounterTime.classList.remove( 'strong' );
+            }
+
+            displayedEncounter = undefined;
         }
+
+        // If the current display is not the current encounter or all data, reset it to current encounter.
+        dpsWindowDisplayType = dpsWindowDisplayType !== EncounterDisplayTypes.current && dpsWindowDisplayType !== EncounterDisplayTypes.allData ?
+            EncounterDisplayTypes.current :
+            dpsWindowDisplayType;
+
     }
     
     displayedEncounter = undefined;
@@ -1754,7 +1769,7 @@ function refreshEncounterStats( encounter, characterName, npcName ) {
     let m = undefined;
 
     if ( npcName != null || displayedEncounter?.encounterId != encounter.encounterId ) {
-        clearEncounter();
+        // clearEncounter();
 
         m = {
             encounterId: encounter.encounterId,
