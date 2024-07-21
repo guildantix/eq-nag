@@ -1,9 +1,25 @@
 const _ = require( 'lodash' );
 const { CombatParser } = require( './combat-parser' );
+const { nagLog } = require( './nag-console' );
 
 // TODO: Zhay`s pet hits Vius Vex for 9075 points of damage.
 
-
+/**
+ * Sends to the main thread to log the message.
+ * 
+ * @param {string} message The message to log.
+ * @param {any | undefined} payload The payload to log.
+ * @param {boolean | undefined} isDebug If true, the message is a debug message.
+ */
+const log = ( message, payload, isDebug ) => {
+    if ( !isDebug || renderDebugMessages ) {
+        nagLog( {
+            label: 'Combat Parser',
+            message: message,
+            payload: payload,
+        } );
+    }
+}
 
 
 
