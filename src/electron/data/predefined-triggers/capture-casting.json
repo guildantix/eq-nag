@@ -53,6 +53,14 @@
             "phraseId": "9ccr5pJj08H9rEi7",
             "phrase": "^Your ${SpellBeingCast} spell fizzles!$",
             "useRegEx": true
+        },
+        {
+            "ignoreCase": true,
+            "requirePreviousPhrase": false,
+            "duration": null,
+            "phraseId": "z4i5GLKVp79M5FAV",
+            "phrase": "^${Character}'s ${SpellBeingCast} spell has been reflected",
+            "useRegEx": true
         }
     ],
     "comments": "This trigger will capture the spell casting of the caster and store the spell being cast into a variable for use with other triggers.",
@@ -80,7 +88,8 @@
                 "SmZAE0oEzuhq1cqh",
                 "iNy1LoUUFcXnaHws",
                 "CC31CtgDiqwi8xV4",
-                "9ccr5pJj08H9rEi7"
+                "9ccr5pJj08H9rEi7",
+                "z4i5GLKVp79M5FAV"
             ],
             "variableName": "SpellBeingCast",
             "restartBehavior": 0,
