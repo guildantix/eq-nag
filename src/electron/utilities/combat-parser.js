@@ -184,7 +184,9 @@ const combatRgx = {
     // Melee damage. (learn|learns|) [https://regex101.com/r/oMsgre/3]
     // NOTES: 
     //  - If we change "points" to "point(s)?" then we can capture the 1 point of damage attacks, but the processing cost doesn't seem worth it.
-    MeleeDamage: /^(?<actor>.*?) (?<attackType>backstab|backstabs|bash|bashes|bite|bites|claw|claws|crush|crushes|frenzy|frenzies|gore|gores|hit|hits|kick|kicks|maul|mauls|pierce|pierces|punch|punches|rend|rends|shoot|shoots|slam|slams|slash|slashes|slice|slices|smash|smashes|sting|stings|strike|strikes|sweep|sweeps+?) (?<target>.*) for (?<damage>[0-9]*) points of damage\.[\s]?(\((?<modifiers>.*)?\))?/gi,
+    // MeleeDamage: /^(?<actor>.*?) (?<attackType>backstab|backstabs|bash|bashes|bite|bites|claw|claws|crush|crushes|frenzy|frenzies|gore|gores|hit|hits|kick|kicks|maul|mauls|pierce|pierces|punch|punches|rend|rends|shoot|shoots|slam|slams|slash|slashes|slice|slices|smash|smashes|sting|stings|strike|strikes|sweep|sweeps+?) (?<target>.*) for (?<damage>[0-9]*) points of damage\.[\s]?(\((?<modifiers>.*)?\))?/gi,
+    // Maxxer [https://regex101.com/r/CNjMVp/2]
+    MeleeDamage: /^(?<actor>.*?) (?<attackType>(?:b(?:a(?:ckstabs?|sh(?:es)?)|ites?))|c(?:laws?|rush(?:es)?)|frenz(?:y|ies)|gores?|hits?|kicks?|mauls?|p(?:ierces?|unch(?:es)?)|rends?|s(?:hoots?|l(?:a(?:ms?|sh(?:es)?)|ices?)|mash(?:es)?|t(?:ings?|rikes?)|weeps?)) (on\s)?(?<target>.*) for (?<damage>[0-9]*) points of damage\.[\s]?(\((?<modifiers>.*)?\))?/gi,
     
     // Melee miss|es. [https://regex101.com/r/1sfdm4/1]
     MeleeMiss: /^(?<actor>.*?) (try|tries) to ([a-zA-Z0-9_]*) (?<target>.*), but ((?<defenseType>misses|miss))![\s]?(\((?<modifiers>.*)?\))?/gi,
