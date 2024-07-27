@@ -2580,6 +2580,10 @@ function renderFct2( model ) {
         let damageSourceText = model.action;
 
         let fctOverlay = overlayInstances[ renderGroup.overlayId ];
+        if ( !fctOverlay ) {
+            logError( { errorMessage: '[Error:Undefined:Overlay] (renderFct2) fctOverlay is undefined!' }, 'fct', overlayId, model );
+            return;
+        }
         fctOverlay.overlayFctComponents.push( model );
         
         /** @type {HTMLDivElement} */
