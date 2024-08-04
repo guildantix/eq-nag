@@ -106,7 +106,6 @@ const log = ( message, payload, isDebug ) => {
  * @param {string} logLine The log line to execute the regular expression against.
  */
 const executCombatRgx = ( rgx, logLine ) => {
-    rgx.lastIndex = 0;
     return rgx.exec( logLine );
 }
 
@@ -186,77 +185,77 @@ const combatRgx = {
     //  - If we change "points" to "point(s)?" then we can capture the 1 point of damage attacks, but the processing cost doesn't seem worth it.
     // MeleeDamage: /^(?<actor>.*?) (?<attackType>backstab|backstabs|bash|bashes|bite|bites|claw|claws|crush|crushes|frenzy|frenzies|gore|gores|hit|hits|kick|kicks|maul|mauls|pierce|pierces|punch|punches|rend|rends|shoot|shoots|slam|slams|slash|slashes|slice|slices|smash|smashes|sting|stings|strike|strikes|sweep|sweeps+?) (?<target>.*) for (?<damage>[0-9]*) points of damage\.[\s]?(\((?<modifiers>.*)?\))?/gi,
     // Maxxer [https://regex101.com/r/CNjMVp/2]
-    MeleeDamage: /^(?<actor>.*?) (?<attackType>(?:b(?:a(?:ckstabs?|sh(?:es)?)|ites?))|c(?:laws?|rush(?:es)?)|frenz(?:y|ies)|gores?|hits?|kicks?|mauls?|p(?:ierces?|unch(?:es)?)|rends?|s(?:hoots?|l(?:a(?:ms?|sh(?:es)?)|ices?)|mash(?:es)?|t(?:ings?|rikes?)|weeps?)) (on\s)?(?<target>.*) for (?<damage>[0-9]*) points of damage\.[\s]?(\((?<modifiers>.*)?\))?/gi,
+    MeleeDamage: /^(?<actor>.*?) (?<attackType>(?:b(?:a(?:ckstabs?|sh(?:es)?)|ites?))|c(?:laws?|rush(?:es)?)|frenz(?:y|ies)|gores?|hits?|kicks?|mauls?|p(?:ierces?|unch(?:es)?)|rends?|s(?:hoots?|l(?:a(?:ms?|sh(?:es)?)|ices?)|mash(?:es)?|t(?:ings?|rikes?)|weeps?)) (on\s)?(?<target>.*) for (?<damage>[0-9]*) points of damage\.[\s]?(\((?<modifiers>.*)?\))?/i,
     
     // Melee miss|es. [https://regex101.com/r/1sfdm4/1]
-    MeleeMiss: /^(?<actor>.*?) (try|tries) to ([a-zA-Z0-9_]*) (?<target>.*), but ((?<defenseType>misses|miss))![\s]?(\((?<modifiers>.*)?\))?/gi,
+    MeleeMiss: /^(?<actor>.*?) (try|tries) to ([a-zA-Z0-9_]*) (?<target>.*), but ((?<defenseType>misses|miss))![\s]?(\((?<modifiers>.*)?\))?/i,
 
     // Melee active defense. [https://regex101.com/r/9fsdCJ/2]
-    ActiveDefense: /^(?<actor>.*?) (try|tries) to ([a-zA-Z0-9_]*) (?<target>.*), but ((\k<target> (?<defenseType>.*)))![\s]?(\((?<modifiers>.*)?\))?/gi,
+    ActiveDefense: /^(?<actor>.*?) (try|tries) to ([a-zA-Z0-9_]*) (?<target>.*), but ((\k<target> (?<defenseType>.*)))![\s]?(\((?<modifiers>.*)?\))?/i,
 
     // Direct Damage spell attacks. [https://regex101.com/r/XBbPTp/2]
-    DirectDamage: /^(?<actor>.*) hit (?<target>.*) for (?<damage>[0-9]*) points of (?<resistType>[a-zA-Z0-9_]*) damage by (?<attackType>.*)\.[\s]?(\((?<modifiers>.*)?\))?/gi,
+    DirectDamage: /^(?<actor>.*) hit (?<target>.*) for (?<damage>[0-9]*) points of (?<resistType>[a-zA-Z0-9_]*) damage by (?<attackType>.*)\.[\s]?(\((?<modifiers>.*)?\))?/i,
 
     // Your Damage Over Time spell reports. [https://regex101.com/r/DaGnUf/2]
-    YourDoT: /^(?<target>.*) has taken (?<damage>[0-9]*) damage from (?<actor>you)r (?<attackType>.*)\.[\s]?(\((?<modifiers>.*)?\))?/gi,
+    YourDoT: /^(?<target>.*) has taken (?<damage>[0-9]*) damage from (?<actor>you)r (?<attackType>.*)\.[\s]?(\((?<modifiers>.*)?\))?/i,
 
     // Other Damage Over Time spell reports. [https://regex101.com/r/PLpfT1/2]
-    OtherDoT: /^(?<target>.*) (has|have) taken (?<damage>[0-9]*) damage from (?<attackType>.*) by (?<actor>.*)\.[\s]?(\((?<modifiers>.*)?\))?/gi,
+    OtherDoT: /^(?<target>.*) (has|have) taken (?<damage>[0-9]*) damage from (?<attackType>.*) by (?<actor>.*)\.[\s]?(\((?<modifiers>.*)?\))?/i,
 
     // Other Damage Over Time spell reports. [https://regex101.com/r/PLpfT1/2]
-    SelfDot: /^(?<target>.*) have taken (?<damage>[0-9]*) damage from (?<attackType>.*)\.[\s]?(\((?<modifiers>.*)?\))?/gi,
+    SelfDot: /^(?<target>.*) have taken (?<damage>[0-9]*) damage from (?<attackType>.*)\.[\s]?(\((?<modifiers>.*)?\))?/i,
 
     // Thorns damage. [https://regex101.com/r/w4h5xP/1]
-    Thorns: /^(?<target>.*) is pierced by (?<actor>.+?)('s)? (?<attackType>thorns) for (?<damage>[0-9]*) points of non-melee damage\./gi,
+    Thorns: /^(?<target>.*) is pierced by (?<actor>.+?)('s)? (?<attackType>thorns) for (?<damage>[0-9]*) points of non-melee damage\./,
 
     // Healing [https://regex101.com/r/8Xtkrq/2]
-    Healing: /^(?<actor>.+?) (has been\s)?healed (?<target>.+?) (?<healDuration>over time for|for) (?<healActual>[0-9]*) (\((?<healLiteral>[0-9]*)\) )?hit points by (?<healType>.+?)\.[\s]?(\((?<modifiers>.*)?\))?/gi,
+    Healing: /^(?<actor>.+?) (has been\s)?healed (?<target>.+?) (?<healDuration>over time for|for) (?<healActual>[0-9]*) (\((?<healLiteral>[0-9]*)\) )?hit points by (?<healType>.+?)\.[\s]?(\((?<modifiers>.*)?\))?/i,
     
     // ^${target} has been slain by [^!]*!$
-    SlainBy: /^(?<target>.+?) (has|have) been slain by (?<actor>[^!]*)!$/gi,
+    SlainBy: /^(?<target>.+?) (has|have) been slain by (?<actor>.+?)!/i,
 
     // ^You have slain ${target}!$
-    YouHaveSlain: /^(?<actor>You) have slain (?<target>.*)!$/gi,
+    YouHaveSlain: /^(?<actor>You) have slain (?<target>.+?)!/i,
 
     // ^${target} dies\.$
     // ^${target} died\.$
-    Died: /(?<target>.+?) (died|dies)\.$/gi,
+    Died: /(?<target>.+?) (died|dies)\.$/i,
 
     // https://regex101.com/r/bdaD56/3
-    GroupRaid: /\] (?<player>[A-Z][^\s]+?) (joined the|has left the|has joined the|have joined the)\s(raid|group)\.$/gi,
+    GroupRaid: /\] (?<player>[A-Z][^\s]+?) (joined the|has left the|has joined the|have joined the)\s(raid|group)\.$/i,
 
     // https://regex101.com/r/zL5Mr4/1
-    Chat: /\] (?<player>.*) (tells the raid|tells the guild|tells the group),\s+'.*'$/gi,
+    Chat: /\] (?<player>.*) (tells the raid|tells the guild|tells the group),\s+'.*'$/i,
 
     // https://regex101.com/r/EiZc5a/1
-    Achievement: /\] Your guildmate (?<player>.*) has completed (.*) achievement\.$/gi,
+    Achievement: /\] Your guildmate (?<player>.*) has completed (.*) achievement\.$/i,
 
     // https://regex101.com/r/fjHm0j/1
-    Defensive: /^(?<actor>.+?)\b\s{0,1}'{0,1}s{0,1}\b.* assumes a defensive fighting style\.$/gi,
+    Defensive: /^(?<actor>.+?)\b\s{0,1}'{0,1}s{0,1}\b.* assumes a defensive fighting style\./i,
 
     // https://regex101.com/r/AjOthH/1
-    Stonewall: /^(?<actor>.+?)\b\s{0,1}'{0,1}s{0,1}\b.* body becomes as hard as stone\.$/gi,
+    Stonewall: /^(?<actor>.+?)\b\s{0,1}'{0,1}s{0,1}\b.* body becomes as hard as stone\./i,
 
     // https://regex101.com/r/Hz44Hy/1
-    FinalStand: /^(?<actor>.+?)\b\s{0,1}'{0,1}s{0,1}\b.* steels themselves for a final stand\.$/gi,
+    FinalStand: /^(?<actor>.+?)\b\s{0,1}'{0,1}s{0,1}\b.* steels themselves for a final stand\./i,
 
     // https://regex101.com/r/e1bXss/1
-    LastStand: /^(?<actor>.+?)\b\s{0,1}'{0,1}s{0,1}\b.* steels themselves for a last stand\.$/gi,
+    LastStand: /^(?<actor>.+?)\b\s{0,1}'{0,1}s{0,1}\b.* steels themselves for a last stand\./i,
 
     // https://regex101.com/r/cPfBq5/1
-    PetLeader: /^(?<pet>.+?) says, 'My leader is (?<player>.*)\.'$/gi,
+    PetLeader: /^(?<pet>.+?) says, 'My leader is (?<player>.*)\.'/i,
 
     // https://regex101.com/r/Sm6SVR/1
-    PetAttack: /^(?<pet>.+?) told you, 'Attacking (?<target>.*) Master\.'$/gi,
+    PetAttack: /^(?<pet>.+?) told you, 'Attacking (?<target>.*) Master\.'/i,
 
     // https://regex101.com/r/nVsfms/1
-    NamedPet: /^(?<pet>(?<player>.+?)`s pet)\s/gi,
+    NamedPet: /^(?<pet>(?<player>.+?)`s (pet|familiar))\s/i,
 
     // https://regex101.com/r/kOmGrB/2
-    Charmed: /^(?<charmPet>.+?) (is|has been) charmed\.$/gi,
+    Charmed: /^(?<charmPet>.+?) (is|has been) charmed\./i,
 
     // https://regex101.com/r/GiGkwf/1
-    NecroCharmed: /^(?<charmPet>.+?) moans\.$/gi,
+    NecroCharmed: /^(?<charmPet>.+?) moans\./i,
 
     // Not named NPC if it begins with A,a,An,an, or a lower case letter.
     NotNamedNpc: /^(?:A\s|An\s|a\s|an\s|[a-z])/,
