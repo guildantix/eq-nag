@@ -153,11 +153,15 @@ let rgxTimestamp = /^\[(.*?)\]\s*/i;
 function startParsingLogFile( logPath, startLogPosition ) {
     
     fileMonitor.monitorLines( ( lines ) => {
+        // let start = performance.now();
+
         lines.forEach( line => {
             if ( line && line.length > 0 ) {
                 parseLogEntries( line );
             }
         } );
+        
+        // console.log( 'done processing lines, total time', performance.now() - start );
     }, startLogPosition );
     
 }
