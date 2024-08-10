@@ -819,6 +819,10 @@ export class TriggerActionProperties {
 
     public createListPhrase: string = null;
     public autoEnumerateList: boolean = false;
+    public listRegexVarName: string = null;
+    public autoEnumerateSpecifyTime: boolean = false;
+    public autoEnumerateUseVariable: boolean = false;
+    public autoEnumerateListTimerName: string = null;
 
 }
 

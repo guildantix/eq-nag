@@ -7,10 +7,23 @@
                 <div class="full-width">
                     <mat-form-field style="width: 100%;">
                         <mat-label></mat-label>
-                        <mat-select [(ngModel)]="action.createListPhrase" name="ddlCreateListPhrase">
+                        <mat-select [(ngModel)]="action.createListPhrase" name="ddlCreateListPhrase" (ngModelChange)="onListCapturePhraseChange(action.createListPhrase)">
                             <mat-option *ngFor="let phrase of phrases" [value]="phrase.phraseId">{{phrase.phrase}}</mat-option>
                         </mat-select>
                         <mat-hint>Select the capture phrase that will initialize the list.</mat-hint>
+                    </mat-form-field>
+                </div>
+            </div>
+
+            <div class="card-property">
+                <div class="content-middle">Select the variable that contains the list of names.</div>
+                <div>
+                    <mat-form-field style="width: 100%;">
+                        <mat-label></mat-label>
+                        <mat-select [(ngModel)]="action.listRegexVarName" name="listRegexVarName">
+                            <mat-option *ngFor="let name of variableNames" [value]="name">{{name}}</mat-option>
+                        </mat-select>
+                        <mat-hint>Value should be comma-separated list.</mat-hint>
                     </mat-form-field>
                 </div>
             </div>
@@ -25,6 +38,30 @@
             </div>
 
             <div class="card-property" *ngIf="action.autoEnumerateList">
+                <div class="content-top">
+                    <mat-checkbox [(ngModel)]="action.autoEnumerateUseVariable" name="autoEnumerateUseVariable">User Phrase Timer</mat-checkbox>
+                </div>
+                <div class="content-top">
+                    <mat-checkbox [(ngModel)]="action.autoEnumerateSpecifyTime" name="autoEnumerateSpecifyTime">Specify Timer</mat-checkbox>
+                </div>
+            </div>
+
+            <div class="card-property" *ngIf="action.autoEnumerateList && action.autoEnumerateUseVariable">
+                <div class="content-top">
+                    <p>The timer between each item will be set by the capture phrase.</p>
+                </div>
+                <div class="content-top">
+                    <mat-form-field style="width: 100%;">
+                        <mat-label></mat-label>
+                        <mat-select [(ngModel)]="action.autoEnumerateListTimerName" name="autoEnumerateListTimerName">
+                            <mat-option *ngFor="let name of variableNames" [value]="name">{{name}}</mat-option>
+                        </mat-select>
+                        <mat-hint>Value should be a time stamp.</mat-hint>
+                    </mat-form-field>
+                </div>
+            </div>
+
+            <div class="card-property" *ngIf="action.autoEnumerateList && action.autoEnumerateSpecifyTime">
                 <div class="content-middle">Timer Duration</div>
                 <div class="content-right"><app-duration [(ngModel)]="action.duration" name="durActionDuration" style="display: inline-block;" ></app-duration></div>
             </div>
