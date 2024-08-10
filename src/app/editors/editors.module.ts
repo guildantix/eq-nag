@@ -28,6 +28,7 @@ import { CoreModule } from '../core/core.module';
 import { TriggerActionScreenGlowComponent } from './trigger-action-screen-glow/trigger-action-screen-glow.component';
 import { TriggerActionStopwatchComponent } from './trigger-action-stopwatch/trigger-action-stopwatch.component';
 import { GamePreviewComponent } from './game-preview/game-preview.component';
+import { TriggerActionListComponent } from './trigger-action-list/trigger-action-list.component';
 
 @NgModule({
     imports: [
@@ -82,6 +83,7 @@ import { GamePreviewComponent } from './game-preview/game-preview.component';
         TriggerActionScreenGlowComponent,
         TriggerActionStopwatchComponent,
         GamePreviewComponent,
+        TriggerActionListComponent,
     ],
     providers: [],
 })
