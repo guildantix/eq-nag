@@ -54,6 +54,7 @@ export enum ActionTypes {
     ScreenGlow = 12,
     ClearAll = 13,
     Stopwatch = 14,
+    List = 15,
 
 }
 
@@ -99,6 +100,7 @@ export function ActionTypeLabels(actionType: ActionTypes): string {
         actionType === ActionTypes.ScreenGlow ? 'Screen Glow' :
         actionType === ActionTypes.ClearAll ? 'Clear All' :
         actionType === ActionTypes.Stopwatch ? 'Stopwatch' :
+        actionType === ActionTypes.List ? 'List' :
         'Unset Action';
     
 }
@@ -119,6 +121,7 @@ export function ActionTypeIcons( actionType: ActionTypes ): string {
         actionType === ActionTypes.ScreenGlow ? 'brightness_5' :
         actionType === ActionTypes.ClearAll ? 'layers_clear' :
         actionType === ActionTypes.Stopwatch ? 'timer' :
+        actionType === ActionTypes.List ? 'format_list_numbered' :
         'block';
 }
 
