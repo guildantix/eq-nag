@@ -8,6 +8,8 @@ const chunkSize = 1024 * 1024 * 384; // Max chunk possible is 512MB, but we'll u
 const maxReadErrors = 5;
 const readDelayMs = 200;
 const readErrorDelayMs = 1000;
+const flushDelayMs = 1000;
+const flushCount = Math.ceil( flushDelayMs / readDelayMs );
 
 /**
  * 
@@ -344,12 +346,17 @@ class FileMonitor {
      * Function to monitor new lines from a file.
      * 
      * @param {(lines: string[]) => void} onChunkRead The function to call when a chunk of lines is read.
-     * @param {number} position The position to start reading from.
-     * @param {string} danglyBits Any dangling bits from the previous read.
      * @param {(value: any) => void} resolve The function to call when the operation is complete.
      * @param {(reason: any) => void} reject The function to call when the operation fails.
+     * @param {number} position The position to start reading from.
+     * @param {string[]} prevLines The previous lines read.
      */
-    async #doMonitorLines( onChunkRead, resolve, reject, position = 0, danglyBits = '' ) {
+    async #doMonitorLines( onChunkRead, resolve, reject, position = 0, prevLines = [] ) {
+
+        // Ensure prevLines is an array.
+        if ( !Array.isArray( prevLines ) ) {
+            prevLines = [];
+        }
 
         /** @type {fs.promises.FileHandle} */
         let file;
@@ -358,6 +365,9 @@ class FileMonitor {
 
             let stats = await this.checkFile();
             file = await fsp.open( this.filePath, 'r' );
+
+            let emptyReadCount = 0;
+            let readCount = 0;
 
             const parse = async () => {
 
@@ -374,6 +384,8 @@ class FileMonitor {
                     } );
                     setTimeout( () => parse(), readDelayMs );
                     return;
+                } else {
+                    // console.log( 'Read size', readSize );
                 }
 
                 if ( !exists ) {
@@ -391,18 +403,39 @@ class FileMonitor {
                 let data = await file.read( Buffer.alloc( readSize ), 0, readSize, position );
                 let bytesRead = data.bytesRead;
                 position += bytesRead;
-                let read = danglyBits + data.buffer.toString( 'utf-8', 0, bytesRead );
-                let lines = read.split( /\r\n|\r|\n/gmi ).filter( f => f != '' );
-
-                // If the last line doesn't have a full timestamp in it, carry it over to the next read.
-                if ( lines.length > 1 && !lines[ lines.length - 1 ].match( /^\[.+\]\s./i ) ) {
-                    danglyBits = lines.pop();
+                let read = data.buffer.toString( 'utf-8', 0, bytesRead );
+                
+                readCount += 1;
+                if ( read.length === 0 && prevLines.length > 0 ) {
+                    emptyReadCount += 1;
                 } else {
-                    danglyBits = '';
+                    emptyReadCount = 0;
                 }
+                
+                let lines = read.split( /\r\n|\r|\n/gmi ).filter( l => l?.length > 0 );
 
-                if ( lines.length > 0 ) {
-                    onChunkRead( lines );
+                if ( prevLines.length > 0 ) {
+                    if ( lines.length > 0 ) {
+                        if ( !prevLines[ prevLines.length - 1 ].match( /^\[(.*?)\]\s*/i ) || !lines[ 0 ].match( /^\[(.*?)\]\s*/i ) ) {
+                            prevLines[ prevLines.length - 1 ] += lines.shift();
+                        }
+
+                        onChunkRead( prevLines );
+                        prevLines = lines;
+
+                        readCount = 0;
+                        emptyReadCount = 0;
+                    }
+                    
+                    if ( emptyReadCount > flushCount ) {
+                        
+                        onChunkRead( prevLines );
+                        prevLines = [];
+                        readCount = 0;
+                        emptyReadCount = 0;
+                    }
+                } else {
+                    prevLines = lines;
                 }
 
                 if ( !this.#stopMonitor ) {
@@ -440,7 +473,7 @@ class FileMonitor {
                 this.#monitoring = false;
                 reject( error );
             } else {
-                setTimeout( () => this.#doMonitorLines( onChunkRead, resolve, reject, position, danglyBits ), readErrorDelayMs );
+                setTimeout( () => this.#doMonitorLines( onChunkRead, resolve, reject, position, prevLines ), readErrorDelayMs );
             }
         }
 
