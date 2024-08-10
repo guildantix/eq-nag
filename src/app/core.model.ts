@@ -817,6 +817,9 @@ export class TriggerActionProperties {
     public textGlowIntensity: number = null;
     public textGlowSize: number = null;
 
+    public createListPhrase: string = null;
+    public autoEnumerateList: boolean = false;
+
 }
 
 export class TriggerAction extends TriggerActionProperties {

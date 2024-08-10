@@ -4,8 +4,32 @@
         <div class="card-tab-content">
         
             <div class="card-property">
+                <div class="full-width">
+                    <mat-form-field style="width: 100%;">
+                        <mat-label></mat-label>
+                        <mat-select [(ngModel)]="action.createListPhrase" name="ddlCreateListPhrase">
+                            <mat-option *ngFor="let phrase of phrases" [value]="phrase.phraseId">{{phrase.phrase}}</mat-option>
+                        </mat-select>
+                        <mat-hint>Select the capture phrase that will initialize the list.</mat-hint>
+                    </mat-form-field>
+                </div>
             </div>
+
+            <div class="card-property">
+                <div class="content-top">
+                    <mat-checkbox [(ngModel)]="action.autoEnumerateList" name="autoEnumerateList">Auto Enumerate List</mat-checkbox>
+                </div>
+                <div class="content-top">
+                    <p>When enabled, the list will automatically enumerate the items on a timer, announcing items per iteration.</p>
+                </div>
+            </div>
+
+            <div class="card-property" *ngIf="action.autoEnumerateList">
+                <div class="content-middle">Timer Duration</div>
+                <div class="content-right"><app-duration [(ngModel)]="action.duration" name="durActionDuration" style="display: inline-block;" ></app-duration></div>
+            </div>
+
         </div>
-        
+
     </mat-tab>
 </mat-tab-group>
