@@ -815,13 +815,13 @@ class LogBootstrapper {
      */
     closeCombatWatcher() {
         return new Promise( ( resolve, reject ) => {
-            if (!combatWatcher?.window) {
+            if ( !combatWatcher?.window || combatWatcher.window.isDestroyed() ) {
                 resolve();
                 return;
 
             } else {
 
-                combatWatcher.window.webContents.send( 'log:combat:unload', null );
+                combatWatcher?.window.webContents.send( 'log:combat:unload', null );
                 
                 ipcMain.once( 'log:combat:unloaded', () => {
                     combatWatcher.window?.close();
