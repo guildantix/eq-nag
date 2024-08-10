@@ -11,6 +11,7 @@
                     <span class="material-icons" *ngIf="action.actionType === actionTypes.Speak">volume_up</span>
                     <span class="material-icons material-icons-outlined" *ngIf="action.actionType === actionTypes.Timer">alarm</span>
                     <span class="material-icons" *ngIf="action.actionType === actionTypes.Countdown">watch</span>
+                    <span class="material-icons" *ngIf="action.actionType === actionTypes.List">{{actionTypeIcons(actionTypes.List)}}</span>
                     <span class="material-icons" *ngIf="action.actionType === actionTypes.StoreVariable">sd_storage</span>
                     <span class="material-icons" *ngIf="action.actionType === actionTypes.ClearVariable">sd_storage</span>
                     <span class="material-icons" *ngIf="action.actionType === actionTypes.DotTimer">watch_later</span>
@@ -30,6 +31,7 @@
                     <span *ngIf="action.actionType === actionTypes.Speak">Speak a phrase.</span>
                     <span *ngIf="action.actionType === actionTypes.Timer">Start a timer.</span>
                     <span *ngIf="action.actionType === actionTypes.Countdown">Start a countdown.</span>
+                    <span *ngIf="action.actionType === actionTypes.List">Start and manage a list.</span>
                     <span *ngIf="action.actionType === actionTypes.StoreVariable">Store a value in a variable.</span>
                     <span *ngIf="action.actionType === actionTypes.ClearVariable">Empties the value in a variable.</span>
                     <span *ngIf="action.actionType === actionTypes.Counter">Track the number of times an event occurs.</span>
@@ -59,6 +61,7 @@
                             <mat-option [value]="actionTypes.Speak">{{actionTypeLabels(actionTypes.Speak)}}</mat-option>
                             <mat-option [value]="actionTypes.Timer">{{actionTypeLabels(actionTypes.Timer)}}</mat-option>
                             <mat-option [value]="actionTypes.Countdown">{{actionTypeLabels(actionTypes.Countdown)}}</mat-option>
+                            <mat-option [value]="actionTypes.List">{{actionTypeLabels(actionTypes.List)}}</mat-option>
                             <mat-option [value]="actionTypes.StoreVariable">{{actionTypeLabels(actionTypes.StoreVariable)}}</mat-option>
                             <mat-option [value]="actionTypes.ClearVariable">{{actionTypeLabels(actionTypes.ClearVariable)}}</mat-option>
                             <mat-option [value]="actionTypes.Counter">{{actionTypeLabels(actionTypes.Counter)}}</mat-option>
@@ -73,7 +76,7 @@
                     </mat-form-field>
                 </div>
     
-                <div *ngIf="action.actionType != null">
+                <div *ngIf="action.actionType != null && action.actionType != actionTypes.List">
     
                     <div>
                         <mat-form-field style="width: 100%;">
@@ -144,6 +147,12 @@
                 <div *ngIf="action.actionType === actionTypes.Countdown">
     
                     <app-trigger-action-timer [action]="action" [overlayOptions]="timerOverlays" [alertOverlays]="alertOverlays" [triggerActions]="getOtherActions(action.actionId)" [phrases]="capturePhrases"></app-trigger-action-timer>
+    
+                </div>
+    
+                <div *ngIf="action.actionType === actionTypes.List">
+    
+                    <app-trigger-action-list [action]="action" [overlayOptions]="timerOverlays" [alertOverlays]="alertOverlays" [triggerActions]="getOtherActions(action.actionId)" [phrases]="capturePhrases"></app-trigger-action-list>
     
                 </div>
     
