@@ -184,10 +184,17 @@ app.isDev = () => enableDevMode === true && process.defaultApp === true;
 
 app.commandLine.appendSwitch( 'enable-speech-dispatcher' );
 
-app.on( 'before-quit', () => {
+app.on( 'before-quit', async () => {
     trayMenu.destroy();
     trayMenu = null;
 } );
+
+app.on( 'child-process-gone', ( event, details ) => {
+    log.info( '[main:child-process-gone] Child process gone.', details );
+} );
+
+// Deprecated: This event is superceded by the child-process-gone event which contains more information about why the child process disappeared. It isn't always because it crashed. The killed boolean can be replaced by checking reason === 'killed' when you switch to that event.
+// app.on('gpu-process-crashed', (event, killed) => {
 
 const registerDevToolsShortcut = () => {
     globalShortcut.register( 'CommandOrControl+Shift+D', function () {
