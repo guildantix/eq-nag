@@ -23,6 +23,7 @@ const {
     DpsMeterSettings,
     EncounterResetEventArgs,
     EncounterStatsEventArgs,
+    EntityStatsModel,
 } = require( '../data/models/combat-parser' );
 const { FctModel } = require( '../data/models/fct' );
 const { CharacterModel } = require( '../data/models/character' );
@@ -311,6 +312,9 @@ class CombatParser {
     _serverName;
     /** @type {string[]} */
     _charmPets = [];
+
+    /** @type {EntityStatsModel[]} */
+    _entityStats = [];
 
     /** @type {CharacterModel[]} */
     _fctCharacters = [];
@@ -774,6 +778,10 @@ class CombatParser {
         if ( !this._closedExternalEncounterIds.includes( externalEncounterId ) ) {
             if ( !this._verifiedPlayers.includes( playerName ) ) {
                 this._verifiedPlayers.push( playerName );
+                let eNpcIdx = this._encounterStats.npcs.indexOf( playerName );
+                if ( eNpcIdx > -1 ) {
+                    this._encounterStats.npcs.splice( eNpcIdx, 1 );
+                }
                 this._updateServerModel();
             }
 
@@ -847,24 +855,6 @@ class CombatParser {
             
             let regxResult = null;
 
-            // Dead tracking
-            regxResult = executCombatRgx( combatRgx.SlainBy, entry.log );
-            regxResult = regxResult == null ? executCombatRgx( combatRgx.YouHaveSlain, entry.log ) : regxResult;
-            regxResult = regxResult == null ? executCombatRgx( combatRgx.Died, entry.log ) : regxResult;
-            if ( regxResult !== null ) {
-                this._addDeathEvent( timestamp, regxResult.groups.target, regxResult.groups.actor, logLine );
-                log( 'Adding death event', { target: regxResult.groups.target, deadNpcs: this._encounterStats.deadNpcs }, true );
-                return undefined;
-            }
-
-            // Charm tracking
-            regxResult = executCombatRgx( combatRgx.Charmed, entry.log );
-            regxResult = regxResult == null ? executCombatRgx( combatRgx.NecroCharmed, entry.log ) : regxResult;
-            if ( regxResult !== null ) {
-                this._addCharmEvent( timestamp, regxResult.groups.charmPet, logLine );
-                return undefined;
-            }
-
             regxResult = executCombatRgx( combatRgx.MeleeDamage, entry.log );
             if ( regxResult !== null ) {
                 return this._addMeleeEvent( timestamp, regxResult.groups.actor, regxResult.groups.target, +regxResult.groups.damage, regxResult.groups.attackType, regxResult.groups.modifiers, logLine );
@@ -882,6 +872,24 @@ class CombatParser {
             regxResult = regxResult == null ? executCombatRgx( combatRgx.SelfDot, entry.log ) : regxResult;
             if ( regxResult !== null ) {
                 return this._addDetrimentalSpellEvent( timestamp, regxResult.groups.actor, regxResult.groups.target, +regxResult.groups.damage, regxResult.groups.attackType, regxResult.groups.resistType, regxResult.groups.modifiers, logLine );
+            }
+
+            // Dead tracking
+            regxResult = executCombatRgx( combatRgx.SlainBy, entry.log );
+            regxResult = regxResult == null ? executCombatRgx( combatRgx.YouHaveSlain, entry.log ) : regxResult;
+            regxResult = regxResult == null ? executCombatRgx( combatRgx.Died, entry.log ) : regxResult;
+            if ( regxResult !== null ) {
+                this._addDeathEvent( timestamp, regxResult.groups.target, regxResult.groups.actor, logLine );
+                log( 'Adding death event', { target: regxResult.groups.target, deadNpcs: this._encounterStats.deadNpcs }, true );
+                return undefined;
+            }
+
+            // Charm tracking
+            regxResult = executCombatRgx( combatRgx.Charmed, entry.log );
+            regxResult = regxResult == null ? executCombatRgx( combatRgx.NecroCharmed, entry.log ) : regxResult;
+            if ( regxResult !== null ) {
+                this._addCharmEvent( timestamp, regxResult.groups.charmPet, logLine );
+                return undefined;
             }
             
             regxResult = executCombatRgx( combatRgx.Thorns, entry.log );
@@ -1216,13 +1224,19 @@ class CombatParser {
             regxResult = regxResult == null ? executCombatRgx( combatRgx.Achievement, lines[ i ] ) : regxResult;
             if ( regxResult !== null && this._verifiedPlayers.indexOf( regxResult.groups.player ) === -1 ) {
                 this._verifiedPlayers.push( regxResult.groups.player );
+                let eNpcIdx = this._encounterStats.npcs.indexOf( regxResult.groups.player );
+                if ( eNpcIdx > -1 ) {
+                    this._encounterStats.npcs.splice( eNpcIdx, 1 );
+                }
                 this._updateServerStatistics = true;
             }
 
             let petAssigned = false;
+            let petName = '';
             let petAttack = executCombatRgx( combatRgx.PetAttack, lines[ i ] );
             if ( petAttack !== null && petAttack.groups != null && petAttack.groups.pet != null ) {
                 petAssigned = true;
+                petName = petAttack.groups.pet;
 
                 if ( !this._verifiedPlayers.includes( petAttack.groups.pet ) ) {
                     // Some guy playing a prank.
@@ -1248,9 +1262,14 @@ class CombatParser {
                 let namedPet = executCombatRgx( combatRgx.NamedPet, lines[ i ] );
                 if ( namedPet != null && namedPet.groups != null && namedPet.groups.pet != null && namedPet.groups.player != null ) {
                     petAssigned = true;
+                    petName = namedPet.groups.pet;
 
                     if ( this._verifiedPlayers.indexOf( namedPet.groups.player ) === -1 ) {
                         this._verifiedPlayers.push( namedPet.groups.player );
+                        let eNpcIdx = this._encounterStats.npcs.indexOf( namedPet.groups.player );
+                        if ( eNpcIdx > -1 ) {
+                            this._encounterStats.npcs.splice( eNpcIdx, 1 );
+                        }
                         this._updateServerStatistics = true;
                     }
 
@@ -1280,15 +1299,19 @@ class CombatParser {
                 let petLeader = executCombatRgx( combatRgx.PetLeader, lines[ i ] );
                 if ( petLeader !== null && petLeader.groups != null && petLeader.groups.player != null && petLeader.groups.pet != null ) {
                     const ownerName = petLeader.groups.player;
-                    const petName = petLeader.groups.pet;
+                    petName = petLeader.groups.pet;
 
                     // If the pet leader is not in the players list, add them.
                     if ( this._verifiedPlayers.indexOf( ownerName ) === -1 ) {
                         this._verifiedPlayers.push( ownerName );
+                        let eNpcIdx = this._encounterStats.npcs.indexOf( ownerName );
+                        if ( eNpcIdx > -1 ) {
+                            this._encounterStats.npcs.splice( eNpcIdx, 1 );
+                        }
                         this._updateServerStatistics = true;
                     }
 
-                    // Determine if this is an NPC pet.
+                    // Determine if this is an NPC pet (charm).
                     let isNpc = petName.indexOf( ' ' ) > -1;
                     if ( isNpc && this._verifiedNpcs.indexOf( petName ) === -1 ) {
                         this._verifiedNpcs.push( petName );
@@ -1323,12 +1346,23 @@ class CombatParser {
                 }
             }
 
+            if ( petName?.length > 0 ) {
+                let eNpcIdx = this._encounterStats.npcs.indexOf( petName );
+                if ( eNpcIdx > -1 ) {
+                    this._encounterStats.npcs.splice( eNpcIdx, 1 );
+                }
+            }
+
             let playerWho = executCombatRgx( this._playerWhoRgx, lines[ i ] );
             if ( playerWho !== null && playerWho.groups != null && playerWho.groups.player != null ) {
                 const playerName = playerWho.groups.player;
 
                 if ( this._verifiedPlayers.indexOf( playerName ) === -1 ) {
                     this._verifiedPlayers.push( playerName );
+                    let npcIdx = this._encounterStats.npcs.indexOf( playerName );
+                    if ( npcIdx > -1 ) {
+                        this._encounterStats.npcs.splice( npcIdx, 1 );
+                    }
                 }
 
                 if ( this._playerInfos[ playerName ] == null ) {
@@ -1375,125 +1409,59 @@ class CombatParser {
             
         }
 
-        // TODO: Implicit entity verification could be refactored and optimized.
-        let crazy = 0;
-        while ( this._unknownEntities.length > 0 && crazy < 5 ) {
-            crazy++;
+        for ( let i = 0; i < this._entityStats.length; i++ ) {
+            const stats = this._entityStats[ i ];
+            let ui = this._unknownEntities.indexOf( stats.name );
+            let playerNameMaybe = !this._verifiedPlayers.includes( stats.name ) && stats.name.indexOf( ' ' ) === -1;
 
-            /** @type {{name: string, attackNpc: number, attackPlayer: number, healNpc: number, healPlayer: number, attackedByNpc: 0, attackedByPlayer: 0}[]} */
-            let entitySimpleStats = [];
-
-            // Let's calculate some simple statistics for each unknown entity,
-            // and see if we can't figure out what they are implicitly.
-            const limit = this.encounterEvents.length > 250 ? 250 : this.encounterEvents.length;
-            for ( let i = 0; i < limit; i++ ) {
-                const event = this.encounterEvents[ i ];
-
-                if ( event.actor != null && event.target != null ) {
-                    // Someone might be unaccounted for.
-                    if ( this._unknownEntities.indexOf( event.actor ) > -1 ) {
-                        // It's the actor!
-                        let stats = entitySimpleStats.find( f => f.name === event.actor );
-                        let add = false;
-
-                        if ( stats == null ) {
-                            stats = { name: event.actor, attackNpc: 0, attackPlayer: 0, healNpc: 0, healPlayer: 0, attackedByNpc: 0, attackedByPlayer: 0 };
-                            add = true;
-                        }
-
-                        if ( event.damage > 0 || event.attackAvoided ) {
-                            // The actor is attacking something.
-                            if ( this._verifiedNpcs.indexOf( event.target ) > -1 ) {
-                                stats.attackNpc += 1;
-                            } else if ( this._verifiedPlayers.indexOf( event.target ) > -1 ) {
-                                stats.attackPlayer += 1;
-                            }
-
-                        } else if ( event.heal > 0 ) {
-                            // The actor is healing something.
-                            if ( this._verifiedNpcs.indexOf( event.target ) > -1 ) {
-                                stats.healNpc += 1;
-                            } else if ( this._verifiedPlayers.indexOf( event.target ) > -1 ) {
-                                stats.healPlayer += 1;
-                            }
-
-                        }
-
-                        if ( add ) {
-                            entitySimpleStats.push( stats );
-                        }
-
-                    } else if ( this._unknownEntities.indexOf( event.target ) > -1 ) {
-                        // It's the target!
-                        let stats = entitySimpleStats.find( f => f.name === event.target );
-                        let add = false;
-
-                        if ( stats == null ) {
-                            stats = { name: event.target, attackNpc: 0, attackPlayer: 0, healNpc: 0, healPlayer: 0, attackedByNpc: 0, attackedByPlayer: 0 };
-                            add = true;
-                        }
-
-                        if ( event.damage > 0 || event.attackAvoided ) {
-                            // The known(?) is attacking the unknown.
-                            if ( this._verifiedNpcs.indexOf( event.actor ) > -1 ) {
-                                stats.attackedByNpc += 1;
-                            } else if ( this._verifiedPlayers.indexOf( event.actor ) > -1 || this._verifiedPets.indexOf( event.actor ) > -1 ) {
-                                stats.attackedByPlayer += 1;
-                            }
-
-                        }
-                        // NPCs can heal just players, so this doesn't tell us anything.
-                        // Players can heal NPCs (and can only receive healing by NPCs. Charming a pet that can't heal themselves, so all healing comes from players), so this doesn't tell us anything.
-                        if ( add ) {
-                            entitySimpleStats.push( stats );
-                        }
-
+            if ( playerNameMaybe ) {
+                if ( stats.attackPlayer === 0 && ( stats.attackNpc > 10 || stats.healPlayer > 10 ) ) {
+                    this._verifiedPlayers.push( stats.name );
+                    let eNpcIdx = this._encounterStats.npcs.indexOf( stats.name );
+                    if ( eNpcIdx > -1 ) {
+                        this._encounterStats.npcs.splice( eNpcIdx, 1 );
                     }
+                    if ( ui > -1 ) {
+                        this._unknownEntities.splice( ui, 1 );
+                        ui = -1;
+                    }
+                    let npcIdx = this._verifiedNpcs.indexOf( stats.name );
+                    if ( npcIdx > -1 ) {
+                        this._verifiedNpcs.splice( npcIdx, 1 );
+                    }
+                    let petIdx = this._verifiedPets.indexOf( stats.name );
+                    if ( petIdx > -1 ) {
+                        this._verifiedPets.splice( petIdx, 1 );
+                    }
+                    this._updateServerStatistics = true;
                 }
-
             }
 
-            for ( let i = 0; i < entitySimpleStats.length; i++ ) {
-                const stats = entitySimpleStats[ i ];
+            if ( ui === -1 ) {
+                continue;
+            }
 
-                if ( stats.attackedByPlayer > 0 && stats.attackNpc === 0 ) {
+            if ( stats.attackedByPlayer > 0 && stats.attackNpc === 0 && stats.healPlayer === 0 ) {
 
+                this._verifiedNpcs.push( stats.name );
+                this._unknownEntities.splice( ui, 1 );
+                this._updateServerStatistics = true;
+
+            } else if ( stats.attackNpc === 0 && stats.healPlayer === 0 && stats.attackPlayer > 0 ) {
+
+                this._verifiedNpcs.push( stats.name );
+                this._unknownEntities.splice( ui, 1 );
+                this._updateServerStatistics = true;
+
+            } else if ( stats.attackPlayer > 0 && stats.attackNpc > 0 ) {
+
+                if ( stats.attackNpc / stats.attackPlayer <= 0.5 ) {
                     this._verifiedNpcs.push( stats.name );
-                    let ui = this._unknownEntities.indexOf( stats.name );
                     this._unknownEntities.splice( ui, 1 );
                     this._updateServerStatistics = true;
-
-                } else if ( stats.attackedByNpc > 0 && stats.attackPlayer === 0 ) {
-
-                    this._verifiedPets.push( stats.name );
-                    let ui = this._unknownEntities.indexOf( stats.name );
-                    this._unknownEntities.splice( ui, 1 );
-                    this._updateServerStatistics = true;
-
-                } else if ( stats.attackNpc === 0 && stats.attackPlayer > 0 ) {
-
-                    this._verifiedNpcs.push( stats.name );
-                    let ui = this._unknownEntities.indexOf( stats.name );
-                    this._unknownEntities.splice( ui, 1 );
-                    this._updateServerStatistics = true;
-
-                } else if ( stats.attackPlayer > 0 && stats.attackNpc > 0 ) {
-
-                    if ( stats.attackPlayer / stats.attackNpc <= 0.5 ) {
-                        this._verifiedPets.push( stats.name );
-                        let ui = this._unknownEntities.indexOf( stats.name );
-                        this._unknownEntities.splice( ui, 1 );
-                        this._updateServerStatistics = true;
-
-                    } else if ( stats.attackNpc / stats.attackPlayer <= 0.5 ) {
-                        this._verifiedNpcs.push( stats.name );
-                        let ui = this._unknownEntities.indexOf( stats.name );
-                        this._unknownEntities.splice( ui, 1 );
-                        this._updateServerStatistics = true;
                         
-                    }
-
                 }
+
             }
         }
 
@@ -2451,6 +2419,74 @@ class CombatParser {
             }
         }
     }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Updates the entity statistics with the given information.
+     * 
+     * @param {string} name The name of the entity.
+     * @param {string} targetName The name of the target entity.
+     * @param {boolean} damage If true, the entity is attacking.
+     * @param {boolean} heal If true, the entity is healing.
+     */
+    _updateEntityStats( name, targetName, damage, heal ) {
+        
+        let stats = this._entityStats.find( f => f.name === name );
+
+        if ( !stats ) {
+            stats = new EntityStatsModel();
+            stats.name = name;
+            this._entityStats.push( stats );
+        }
+    
+
+        let targetNpc = this._verifiedNpcs.includes( targetName );
+        let targetPlayer = this._verifiedPlayers.includes( targetName );
+
+        if ( damage === true ) {
+            stats.attackNpc += targetNpc ? 1 : 0;
+            stats.attackPlayer += targetPlayer ? 1 : 0;
+        }
+
+        if ( heal === true ) {
+            stats.healNpc += targetNpc ? 1 : 0;
+            stats.healPlayer += targetPlayer ? 1 : 0;
+        }
+
+        if ( this._verifiedPlayers.includes( name ) && damage === true ) {
+            // If 'name' is a player, then we need to update the stats for the target's attacked by player.
+            let targetStats = this._entityStats.find( f => f.name === targetName );
+
+            if ( !targetStats ) {
+                targetStats = new EntityStatsModel();
+                targetStats.name = targetName;
+                this._entityStats.push( targetStats );
+            }
+
+            targetStats.attackedByPlayer += 1;
+
+        } else if ( this._verifiedNpcs.includes( name ) && damage === true ) {
+            // If 'name' is an NPC, then we need to update the stats for the target's attacked by NPC.
+            let targetStats = this._entityStats.find( f => f.name === targetName );
+
+            if ( !targetStats ) {
+                targetStats = new EntityStatsModel();
+                targetStats.name = targetName;
+                this._entityStats.push( targetStats );
+            }
+
+            targetStats.attackedByNpc += 1;
+
+        }
+    }
     
     
     
@@ -2499,7 +2535,9 @@ class CombatParser {
         rec.modifiers.double_bow_shot = modifiers?.indexOf( 'Double Bow Shot' ) > -1;
         rec.modifiers.deadly_strike = modifiers?.indexOf( 'Deadly Strike' ) > -1;
         rec.modifiers.finishing_blow = modifiers?.indexOf( 'Finishing Blow' ) > -1;
-    
+
+        this._updateEntityStats( rec.actor, rec.target, true, false );
+
         return this._addEncounterEvent( rec, rawLog );
 
     }
@@ -2544,6 +2582,8 @@ class CombatParser {
         rec.modifiers.riposte = avoidTypeName === 'riposte';
         rec.modifiers.block = avoidTypeName === 'block';
         rec.modifiers.miss = avoidTypeName === 'miss';
+
+        this._updateEntityStats( rec.actor, rec.target, true, false );
     
         return this._addEncounterEvent( rec, rawLog );
         
@@ -2591,6 +2631,7 @@ class CombatParser {
         rec.resistType = resistType;
     
         if ( rec.actor !== rec.target ) {
+            this._updateEntityStats( rec.actor, rec.target, true, false );
             return this._addEncounterEvent( rec, rawLog );
         } else {
             return this._getFctModel( rec );
@@ -2638,6 +2679,10 @@ class CombatParser {
         rec.modifiers = new AttackModifiers();
         rec.modifiers.critical = modifiers?.indexOf( 'Critical' ) > -1;
         rec.modifiers.lucky = modifiers?.indexOf( 'Lucky' ) > -1;
+
+        if ( healActual + healLiteral > 0 ) {
+            this._updateEntityStats( rec.actor, rec.target, false, true );
+        }
     
         return this._addEncounterEvent( rec, rawLog );
         
@@ -2941,7 +2986,7 @@ class CombatParser {
                     }
 
                     if ( !logRecord.corpse ) {
-                        if ( playerActor && logRecord.target.indexOf( ' ' ) > -1 ) {
+                        if ( playerActor && logRecord.target.indexOf( '`s pet' ) === -1 && logRecord.target.indexOf( '`s familiar' ) === -1 && logRecord.target.indexOf( ' ' ) > -1 ) {
                             // If a player is hitting a pet with a space in the name, then we add that to the npcs list.
                             // This will fail if the player is charmed...
                             if ( !this._encounterStats.npcs.includes( logRecord.target ) ) {
@@ -2968,7 +3013,7 @@ class CombatParser {
                     this._calculateDpsStats( logRecord, playerOutgoing, playerOutgoing.time );
 
                     if ( !logRecord.corpse && this._verifiedNpcs.includes( logRecord.target ) ) {
-                        if ( !this._encounterStats.npcs.includes( logRecord.target ) ) {
+                        if ( logRecord.damage > 0 && !this._encounterStats.npcs.includes( logRecord.target ) ) {
                             this._encounterStats.npcs.push( logRecord.target );
                         }
                         this._encounterStats.lastPlayerNpcAction[ logRecord.target ] = timestamp;

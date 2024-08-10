@@ -115,6 +115,31 @@ class OwnedRawLog {
     transmitted = false;
 }
 
+const EntityVerifiedConfidenceTypes = {
+    none: 0,
+    likely: 1,
+    assured: 2,
+}
+
+class EntityStatsModel {
+    /** @type {string} */
+    name;
+    /** @type {number} */
+    attackNpc = 0;
+    /** @type {number} */
+    attackPlayer = 0;
+    /** @type {number} */
+    healNpc = 0;
+    /** @type {number} */
+    healPlayer = 0;
+    /** @type {number} */
+    attackedByNpc = 0;
+    /** @type {number} */
+    attackedByPlayer = 0;
+    /** @type {EntityVerifiedConfidenceTypes} */
+    verfiedStatus = EntityVerifiedConfidenceTypes.none;
+}
+
 class EncounterStats {
     constructor() {
         this.encounterId = nagId();
@@ -413,4 +438,6 @@ module.exports = {
     EncounterModel,
     CombatEncounterModel,
     EncounterStatsEventArgs,
+    EntityVerifiedConfidenceTypes,
+    EntityStatsModel,
 };
