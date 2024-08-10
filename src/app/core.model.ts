@@ -823,6 +823,14 @@ export class TriggerActionProperties {
     public autoEnumerateSpecifyTime: boolean = false;
     public autoEnumerateUseVariable: boolean = false;
     public autoEnumerateListTimerName: string = null;
+    public enableListEnrollment: boolean = false;
+    public listEnrollmentSkipPhrase: string = null;
+    public listEnrollmentSkipVarName: string = null;
+    public listEnrollmentRemovePhrase: string = null;
+    public listEnrollmentRemoveVarName: string = null;
+    public listEnrollmentAddPhrase: string = null;
+    public listEnrollmentAddVarName: string = null;
+    public listEnrollmentShowTimer: boolean = false;
 
 }
 

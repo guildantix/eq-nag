@@ -69,4 +69,107 @@
         </div>
 
     </mat-tab>
+    <mat-tab label="Enrollment">
+
+        <div class="card-tab-content">
+            
+            <div class="card-property">
+                <div class="content-top">
+                    <mat-checkbox [(ngModel)]="action.enableListEnrollment" name="enableListEnrollment">Enable Enrollment</mat-checkbox>
+                </div>
+                <div class="content-top">
+                    <p>When enabled, users running nag will receive notifications if their name is in the list.</p>
+                </div>
+            </div>
+
+            <div class="card-property" *ngIf="action.enableListEnrollment">
+                <div class="content-top">
+                    <mat-checkbox [(ngModel)]="action.listEnrollmentShowTimer" name="listEnrollmentShowTimer">Show Timer</mat-checkbox>
+                </div>
+                <div class="content-top">
+                    <p>When enabled, users will see a timer counting down until their turn in the list.  If the list is modified, this timer duration will update accordingly.</p>
+                </div>
+            </div>
+
+            <div class="card-property" *ngIf="action.enableListEnrollment">
+                <div class="full-width">
+                    <mat-form-field style="width: 100%;">
+                        <mat-label></mat-label>
+                        <mat-select [(ngModel)]="action.listEnrollmentSkipPhrase" name="listEnrollmentSkipPhrase" (ngModelChange)="onSkipCapturePhraseChange(action.listEnrollmentSkipPhrase)">
+                            <mat-option [value]="null">None</mat-option>
+                            <mat-option *ngFor="let phrase of phrases" [value]="phrase.phraseId">{{phrase.phrase}}</mat-option>
+                        </mat-select>
+                        <mat-hint>Select the capture phrase that will skip a name.</mat-hint>
+                    </mat-form-field>
+                </div>
+            </div>
+
+            <div class="card-property" *ngIf="action.enableListEnrollment">
+                <div class="content-middle">Select the variable that contains the name.</div>
+                <div>
+                    <mat-form-field style="width: 100%;">
+                        <mat-label></mat-label>
+                        <mat-select [(ngModel)]="action.listEnrollmentSkipVarName" name="listEnrollmentSkipVarName">
+                            <mat-option *ngFor="let name of skipVariableNames" [value]="name">{{name}}</mat-option>
+                        </mat-select>
+                        <mat-hint>Value should be a name in the list.</mat-hint>
+                    </mat-form-field>
+                </div>
+            </div>
+
+            <div class="card-property" *ngIf="action.enableListEnrollment">
+                <div class="full-width">
+                    <mat-form-field style="width: 100%;">
+                        <mat-label></mat-label>
+                        <mat-select [(ngModel)]="action.listEnrollmentRemovePhrase" name="listEnrollmentRemovePhrase" (ngModelChange)="onRemoveCapturePhraseChange(action.listEnrollmentRemovePhrase)">
+                            <mat-option [value]="null">None</mat-option>
+                            <mat-option *ngFor="let phrase of phrases" [value]="phrase.phraseId">{{phrase.phrase}}</mat-option>
+                        </mat-select>
+                        <mat-hint>Select the capture phrase that will remove a name.</mat-hint>
+                    </mat-form-field>
+                </div>
+            </div>
+
+            <div class="card-property" *ngIf="action.enableListEnrollment">
+                <div class="content-middle">Select the variable that contains the name.</div>
+                <div>
+                    <mat-form-field style="width: 100%;">
+                        <mat-label></mat-label>
+                        <mat-select [(ngModel)]="action.listEnrollmentRemoveVarName" name="listEnrollmentRemoveVarName">
+                            <mat-option *ngFor="let name of removeVariableNames" [value]="name">{{name}}</mat-option>
+                        </mat-select>
+                        <mat-hint>Value should be a name in the list.</mat-hint>
+                    </mat-form-field>
+                </div>
+            </div>
+
+            <div class="card-property" *ngIf="action.enableListEnrollment">
+                <div class="full-width">
+                    <mat-form-field style="width: 100%;">
+                        <mat-label></mat-label>
+                        <mat-select [(ngModel)]="action.listEnrollmentAddPhrase" name="listEnrollmentAddPhrase" (ngModelChange)="onAddCapturePhraseChange(action.listEnrollmentAddPhrase)">
+                            <mat-option [value]="null">None</mat-option>
+                            <mat-option *ngFor="let phrase of phrases" [value]="phrase.phraseId">{{phrase.phrase}}</mat-option>
+                        </mat-select>
+                        <mat-hint>Select the capture phrase that will remove a name.</mat-hint>
+                    </mat-form-field>
+                </div>
+            </div>
+
+            <div class="card-property" *ngIf="action.enableListEnrollment">
+                <div class="content-middle">Select the variable that contains the name.</div>
+                <div>
+                    <mat-form-field style="width: 100%;">
+                        <mat-label></mat-label>
+                        <mat-select [(ngModel)]="action.listEnrollmentAddVarName" name="listEnrollmentAddVarName">
+                            <mat-option *ngFor="let name of addVariableNames" [value]="name">{{name}}</mat-option>
+                        </mat-select>
+                        <mat-hint>Value should be a name not in the list.</mat-hint>
+                    </mat-form-field>
+                </div>
+            </div>
+
+        </div>
+
+    </mat-tab>
 </mat-tab-group>
