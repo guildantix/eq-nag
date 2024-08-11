@@ -100,4 +100,16 @@ export class TriggerActionListComponent implements OnInit {
         this.addVariableNames = variables;
     }
 
+    onChangeAutoEnumerationSpecifyTime(): void {
+        if ( this.action.autoEnumerateSpecifyTime ) {
+            this.action.autoEnumerateUseVariable = false;
+        }
+    }
+
+    onChangeAutoEnumerationVariable(): void {
+        if ( this.action.autoEnumerateUseVariable ) {
+            this.action.autoEnumerateSpecifyTime = false;
+        }
+    }
+
 }
