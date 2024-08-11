@@ -819,6 +819,7 @@ export class TriggerActionProperties {
 
     public createListPhrase: string = null;
     public autoEnumerateList: boolean = false;
+    public manualEnumerateList: boolean = false;
     public listRegexVarName: string = null;
     public autoEnumerateSpecifyTime: boolean = false;
     public autoEnumerateUseVariable: boolean = false;
@@ -831,6 +832,9 @@ export class TriggerActionProperties {
     public listEnrollmentAddPhrase: string = null;
     public listEnrollmentAddVarName: string = null;
     public listEnrollmentShowTimer: boolean = false;
+    public listEnumerateBeginPhrase: string = null;
+    public listEnumerateEndPhrase: string = null;
+    public listManualEnumeratePhrase: string = null;
 
 }
 
