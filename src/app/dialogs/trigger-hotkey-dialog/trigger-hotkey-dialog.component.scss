@@ -1,0 +1,54 @@
+p {
+    code {
+        white-space: nowrap;
+    }
+}
+
+form {
+    .trigger-hotkey-inputs {
+        width: 100%;
+
+        mat-form-field {
+            width: 100%;
+        }
+    }
+    .trigger-hotkey-inputs {
+        display: flex;
+        flex-flow: column nowrap;
+
+        > div {
+            display: flex;
+            flex-flow: row nowrap;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #0000002e;
+            border: 2px solid #0000006b;
+            border: 4px solid #ffffff17;
+            border-radius: 3px;
+            margin: 0.25em 0;
+
+            span {
+                display: inline-block;
+                padding: 0 0em 0 0.5em;
+                flex: 0 0;
+                font-family: "Roboto Mono", monospace;
+                font-weight: 300;
+                font-size: 14px;
+                opacity: 0.4;
+            }
+
+            input {
+                font-family: "Roboto Mono", monospace;
+                -webkit-appearance: none;
+                appearance: none;
+                background-color: rgba(0, 0, 0, 0);
+                padding: 0.5em;
+                font-weight: 300;
+                flex: 1 1 auto;
+                color: white;
+                outline: none !important;
+                border: 0;
+            }
+        }
+    }
+}

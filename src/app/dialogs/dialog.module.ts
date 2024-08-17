@@ -35,6 +35,7 @@ import { ActionOverlayReassignmentDialogComponent } from './action-overlay-reass
 import { MonitorSelectDialogComponent } from './monitor-select-dialog/monitor-select-dialog.component';
 import { QuestionDialogComponent } from './question-dialog/question-dialog.component';
 import { JoinChatRoomDialogComponent } from './join-chat-room-dialog/join-chat-room-dialog.component';
+import { TriggerHotkeyDialogComponent } from './trigger-hotkey-dialog/trigger-hotkey-dialog.component';
 
 @NgModule( {
     imports: [
@@ -102,6 +103,7 @@ import { JoinChatRoomDialogComponent } from './join-chat-room-dialog/join-chat-r
         ActionOverlayReassignmentDialogComponent,
         MonitorSelectDialogComponent,
         JoinChatRoomDialogComponent,
+        TriggerHotkeyDialogComponent,
     ],
     providers: [
         DialogService,

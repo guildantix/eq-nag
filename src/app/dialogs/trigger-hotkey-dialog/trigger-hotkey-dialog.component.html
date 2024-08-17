@@ -1,0 +1,59 @@
+<h2 mat-dialog-title>Edit Trigger Hotkey</h2>
+
+<mat-dialog-content>
+
+    <p>To create a hotkey, enter up to 5 text lines for the commands.</p>
+    <p>You may use interpolation with <code>{{'{{Your Character Name}}'}}</code>.  When using interpolation, the user will be asked to enter values for each one when they generate their hotkey.  Use descriptive names so that the user intuitively knows what to put in each value.</p>
+
+    <form #form="ngForm">
+        <div class="trigger-hotkey-inputs">
+            <mat-form-field>
+                <input matInput type="text" [(ngModel)]="model.name" name="name" required />
+                <mat-hint>Name</mat-hint>
+            </mat-form-field>
+    
+            <mat-form-field>
+                <input matInput type="text" [(ngModel)]="model.description" name="description" rows="5" required />
+                <mat-hint>Description</mat-hint>
+            </mat-form-field>
+        </div>
+    
+        <div class="trigger-hotkey-inputs">
+    
+            <div>
+                <span>1</span>
+                <input type="text" [(ngModel)]="model.lines[0]" name="line_{{0}}" />
+            </div>
+
+            <div>
+                <span>2</span>
+                <input type="text" [(ngModel)]="model.lines[1]" name="line_{{1}}" />
+            </div>
+
+            <div>
+                <span>3</span>
+                <input type="text" [(ngModel)]="model.lines[2]" name="line_{{2}}" />
+            </div>
+
+            <div>
+                <span>4</span>
+                <input type="text" [(ngModel)]="model.lines[3]" name="line_{{3}}" />
+            </div>
+
+            <div>
+                <span>5</span>
+                <input type="text" [(ngModel)]="model.lines[4]" name="line_{{4}}" />
+            </div>
+
+        </div>
+    </form>
+
+</mat-dialog-content>
+
+<mat-dialog-actions>
+    
+    <button mat-button (click)="cancel()" class="t-confirm-no" color="warn">Cancel</button>
+    <button mat-button (click)="accept()" class="t-confirm-no">OK</button>
+
+</mat-dialog-actions>
+
