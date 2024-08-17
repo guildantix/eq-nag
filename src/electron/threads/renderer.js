@@ -1516,12 +1516,20 @@ function Renderer( originX, originY, glowOnStart ) {
         /**
          * Handles receiving a new trigger action.
          * @param {*} event The event object.
-         * @param {FctModel} model The trigger action.
+         * @param {FctModel | FctModel[]} model The trigger action.
          */
         function ( event, model ) {
+            // let now = performance.now();
             model.added = new Date();
             // renderFct( model.overlayId, model );
-            renderFct2( model );
+
+            if ( Array.isArray( model ) ) {
+                model.forEach( m => renderFct2( m ) );
+            } else {
+                renderFct2( model );
+            }
+
+            // console.log( 'fct render time:', Array.isArray( model ) ? model.length : 'naa', performance.now() - now );
         } );
 
     ipcRenderer.on( 'renderer:window:enable-edit', function ( event, overlayId ) {

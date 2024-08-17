@@ -74,6 +74,7 @@ const fs = require( 'fs' );
 const { LogSync, createChatRoomLink, parseChatRoomLink, PeerDataPackageModel, CombatStatisticsPayloadModel, CombatEncounterPayloadModel, HandshakePayloadModel } = require( "../utilities/peer-to-peer" );
 const { nagException, nagLog } = require( "../utilities/nag-console" );
 const FileMonitor = require( "../utilities/file-monitor" );
+const { FctModel } = require( "../data/models/fct" );
 
 /**
  * Sends to the main thread to log the message.
@@ -484,14 +485,22 @@ async function startParsingLogFile( logPath, startLogPosition ) {
 
     fileMonitor.monitorLines( ( lines ) => {
         // let start = performance.now();
+        let fcts = [];
 
         lines.forEach( line => {
             if ( line && line.length > 0 ) {
-                parseLogEntries( line );
+                let fct = parseLogEntries( line );
+                if ( fct ) {
+                    fcts = fcts.concat( fct );
+                }
             }
         } );
         
         dpsTrackingEnabled === true && sendDpsToRenderer();
+
+        if ( fcts.length > 0 && enableFct ) {
+            ipcRenderer.send( 'overlay:send:fct-component', fcts );
+        }
 
         // console.log( 'done processing lines, total time', performance.now() - start );
     }, startLogPosition );
@@ -501,13 +510,17 @@ async function startParsingLogFile( logPath, startLogPosition ) {
 /**
  * Parses the given log entry.
  * 
+ * @returns {FctModel[]} Returns the FCT Models.
+ * 
  * @param {string} raw The raw log entry.
  * @param {boolean} simulating If true, only simulates executing triggers via a consol.log call.
  * @param {padTime} padTime The amount of time to add to the timestamps of log entries.
  */
 function parseLogEntries( raw, simulating, padTime ) {
     try {
-        
+        /** @type {FctModel[]} */
+        let output = [];
+
         simulating = simulating === true ? true : false;
 
         // This could be optimized better.
@@ -519,9 +532,13 @@ function parseLogEntries( raw, simulating, padTime ) {
                 myCombatParserCache.forEach( c => {
                     let fctModel = myCombatParser?.addCombatEvent( c, padTime );
 
-                    if ( fctModel && enableFct && !simulating ) {
-                        ipcRenderer.send( 'overlay:send:fct-component', fctModel );
+                    if ( fctModel ) {
+                        output.push( fctModel );
                     }
+
+                    // if ( fctModel && enableFct && !simulating ) {
+                    //     ipcRenderer.send( 'overlay:send:fct-component', fctModel );
+                    // }
                 } );
                 myCombatParserCache = [];
             }
@@ -529,9 +546,13 @@ function parseLogEntries( raw, simulating, padTime ) {
             // Add to the combat tracker.
             let fctModel = myCombatParser?.addCombatEvent( raw, padTime );
 
-            if ( fctModel && enableFct && !simulating ) {
-                ipcRenderer.send( 'overlay:send:fct-component', fctModel );
+            if ( fctModel ) {
+                output.push( fctModel );
             }
+
+            // if ( fctModel && enableFct && !simulating ) {
+            //     ipcRenderer.send( 'overlay:send:fct-component', fctModel );
+            // }
 
         } else if ( (dpsMeterSettings.show || enableFct) ) {
 
@@ -539,6 +560,8 @@ function parseLogEntries( raw, simulating, padTime ) {
             myCombatParserCache.push( raw );
 
         }
+
+        return output;
 
     } catch ( error ) {
         logError( error, raw, simulating, padTime );
@@ -816,6 +839,9 @@ function CombatWatcher() {
          * @param {{lines: string[], padTime: number}} data 
          */
         ( event, data ) => {
+
+            // Simulations do not render FCT.
+            // TODO: Enable FCT for simulations.
             data.lines.forEach( line => parseLogEntries( line, true, data.padTime ) );
         
             sendDpsToRenderer();
