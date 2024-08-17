@@ -29,6 +29,7 @@ import { TriggerActionScreenGlowComponent } from './trigger-action-screen-glow/t
 import { TriggerActionStopwatchComponent } from './trigger-action-stopwatch/trigger-action-stopwatch.component';
 import { GamePreviewComponent } from './game-preview/game-preview.component';
 import { TriggerActionListComponent } from './trigger-action-list/trigger-action-list.component';
+import { TriggerHotkeysComponent } from './trigger-hotkeys/trigger-hotkeys.component';
 
 @NgModule({
     imports: [
@@ -62,6 +63,7 @@ import { TriggerActionListComponent } from './trigger-action-list/trigger-action
         TriggerActionScreenGlowComponent,
         TriggerActionStopwatchComponent,
         GamePreviewComponent,
+        TriggerHotkeysComponent,
     ],
     declarations: [
         ConditionsComponent,
@@ -84,6 +86,7 @@ import { TriggerActionListComponent } from './trigger-action-list/trigger-action
         TriggerActionStopwatchComponent,
         GamePreviewComponent,
         TriggerActionListComponent,
+        TriggerHotkeysComponent,
     ],
     providers: [],
 })
