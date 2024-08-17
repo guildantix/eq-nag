@@ -351,6 +351,13 @@ export class BasicError {
 
 }
 
+export class TriggerHotkey {
+    public hotkeyId: string;
+    public name: string;
+    public description: string;
+    public lines: string[] = [];
+}
+
 export class TriggerModel {
     
     public triggerId: string = null;
@@ -373,6 +380,8 @@ export class TriggerModel {
     public cooldownDuration: number = 0;
     public enabled: boolean = true;
     public sequentialRestartBehavior: string = 'none';
+
+    public hotkeys: TriggerHotkey[] = [];
     
     /**
      * Duplicates the given trigger with the given name.
