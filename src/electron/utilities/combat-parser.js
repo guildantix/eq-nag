@@ -838,6 +838,8 @@ class CombatParser {
 
             if ( this._encounterStats != null ) {
                 this._encounterStats.logs.push( logLine );
+            } else {
+                this.#initializeEncounter( undefined, logLine );
             }
 
             let entry = {
