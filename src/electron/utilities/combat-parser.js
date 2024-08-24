@@ -1168,6 +1168,11 @@ class CombatParser {
                     this._addDetrimentalSpellEvent( timestamp, regxResult.groups.actor, regxResult.groups.target, +regxResult.groups.damage, regxResult.groups.attackType, regxResult.groups.resistType, regxResult.groups.modifiers );
                     continue;
                 }
+                regxResult = regxResult == null ? executCombatRgx( combatRgx.SelfDot, entry.log ) : regxResult;
+                if ( regxResult !== null ) {
+                    this._addDetrimentalSpellEvent( timestamp, 'You', regxResult.groups.target, +regxResult.groups.damage, regxResult.groups.attackType, regxResult.groups.resistType, regxResult.groups.modifiers, logLine );
+                    continue;
+                }
                 
                 regxResult = executCombatRgx( combatRgx.Thorns, logs[ i ] );
                 if ( regxResult !== null ) {
