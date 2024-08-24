@@ -871,9 +871,12 @@ class CombatParser {
             regxResult = executCombatRgx( combatRgx.DirectDamage, entry.log );
             regxResult = regxResult == null ? executCombatRgx( combatRgx.YourDoT, entry.log ) : regxResult;
             regxResult = regxResult == null ? executCombatRgx( combatRgx.OtherDoT, entry.log ) : regxResult;
-            regxResult = regxResult == null ? executCombatRgx( combatRgx.SelfDot, entry.log ) : regxResult;
             if ( regxResult !== null ) {
                 return this._addDetrimentalSpellEvent( timestamp, regxResult.groups.actor, regxResult.groups.target, +regxResult.groups.damage, regxResult.groups.attackType, regxResult.groups.resistType, regxResult.groups.modifiers, logLine );
+            }
+            regxResult = regxResult == null ? executCombatRgx( combatRgx.SelfDot, entry.log ) : regxResult;
+            if ( regxResult !== null ) {
+                return this._addDetrimentalSpellEvent( timestamp, 'You', regxResult.groups.target, +regxResult.groups.damage, regxResult.groups.attackType, regxResult.groups.resistType, regxResult.groups.modifiers, logLine );
             }
 
             // Dead tracking
