@@ -276,6 +276,16 @@ function LogWatcher(character, logPosition) {
     loadCachedStoredVariables( () => {
         saveScalarVariable( "Character", characterName );
     } );
+
+    ipcRenderer.on( 'app:clear-log-history',
+        /**
+         * Handles the log:changed event.
+         * 
+         * @param {any} event The event args.
+         */
+        ( event ) => {
+            logHistoryMgr?.clearHistory();
+        } );
     
     ipcRenderer.on( 'log:backup-started',
         /**

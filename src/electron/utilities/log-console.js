@@ -64,6 +64,25 @@ class LogHistoryManager {
 
     
     /**
+     * Clears the history.
+     */
+    clearHistory() {
+        this.errorHashes = [];
+        this.successfulParses = [];
+        this.failedParses = [];
+        this.exceptionParses = [];
+    }
+
+
+
+
+
+
+
+
+
+    
+    /**
      * Sends the error information to the main thread for logging.
      * 
      * @param {any} err The error object.

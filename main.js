@@ -364,6 +364,10 @@ ipcMain.on( `color:darken`, ( e, data ) => {
 /** @type {string[]} */
 let errorHashes = [];
 
+ipcMain.on( 'app:clear-log-history', ( event ) => {
+    errorHashes = [];
+} );
+
 /**
  * Sends the error to the user.
  * 

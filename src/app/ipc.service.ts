@@ -696,6 +696,10 @@ export class IpcService {
         return obs;
     }
 
+    public clearLogHistory(): void {
+        window.api.ipc.send( 'app:clear-log-history', null );
+    }
+
     public mainWindowLoaded(): void {
         window.api.ipc.send( 'app:main-window-loaded', null );
     }

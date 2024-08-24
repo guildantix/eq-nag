@@ -128,6 +128,14 @@ class LogBootstrapper {
         this.#isDev = isDev;
         const $this = this;
 
+        ipcMain.on( 'app:clear-log-history', ( event ) => {
+            for ( let key in logWatchers ) {
+                if ( logWatchers.hasOwnProperty( key ) && logWatchers[ key ].window != null ) {
+                    logWatchers[ key ].window.webContents.send( 'app:clear-log-history', undefined );
+                }
+            }
+        } );
+        
         ipcMain.on( 'tick', ( event, tickData ) => {
             for ( let key in logWatchers ) {
                 if ( logWatchers.hasOwnProperty( key ) && logWatchers[ key ].window != null ) {

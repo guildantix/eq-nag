@@ -295,6 +295,7 @@ export class ConsoleListComponent implements OnInit {
         this.triggerId = null;
         this.triggerName = null;
         this.hideTriggerHistory();
+        this.ipcService.clearLogHistory();
     }
 
 
