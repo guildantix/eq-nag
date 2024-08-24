@@ -23,6 +23,7 @@ const cronParser = require( 'cron-parser' );
 const { DateUtilities } = require( "./src/electron/utilities/dates" );
 const CombatDatabase = require( "./src/electron/data/combat-database" );
 const activeWindow = require( "active-win" );
+const hasher = require( 'crypto' ).createHash;
 
 /** @type {BrowserWindow} */
 var mainWindow, logWatcherWindow, testWindow;
@@ -360,6 +361,9 @@ ipcMain.on( `color:darken`, ( e, data ) => {
     overlayDatabase.update( overlay );
 } );
 
+/** @type {string[]} */
+let errorHashes = [];
+
 /**
  * Sends the error to the user.
  * 
@@ -367,12 +371,21 @@ ipcMain.on( `color:darken`, ( e, data ) => {
  * @param {boolean|undefined} present If true, the user should be presented with the error.
  */
 const appLogException = ( data, present ) => {
+    let eid = ( data?.source ?? 'unknown' ) + ( data?.error?.message ?? data?.message ?? 'Unknown Error' ) + ( data?.error?.stack ?? '' );
+    let hash = hasher( 'sha1' ).update( eid ).digest( 'base64' );
+    if ( errorHashes.includes( hash ) ) {
+        return;
+    } else {
+        errorHashes.push( hash );
+    }
+    
     let error = {
         label: 'System Error:',
         message: '',
         timestamp: new Date(),
         payload: null,
         present: present === true,
+        hash: hash,
     };
 
     if ( data?.source === 'log-watcher.js' ) {

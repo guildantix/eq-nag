@@ -2,6 +2,7 @@ const { ipcRenderer } = require( "electron" );
 const { TriggerParseHistoryModel, getActionLabel, TriggerAction, LogTypes, Trigger } = require( "../data/models/trigger" );
 const { nagId } = require( "./nag-id" );
 const { LogTrigger, PhraseParse } = require( "../threads/log.model" );
+const hasher = require( 'crypto' ).createHash;
 
 const batchTriggerParseHistoryTimeoutDuration = 100;
 
@@ -15,6 +16,8 @@ class LogHistoryManager {
     exceptionParses = [];
     /** @type {number} */
     batchTriggerParseHistoryTimeoutId = null;
+    /** @type {string[]} */
+    errorHashes = [];
 
     #counters = () => { };
     get counters() {
@@ -75,6 +78,15 @@ class LogHistoryManager {
      * @param {string} unrenderedPhrase The unrendered phrase.
      */
     logParseError( err, raw, simulating, padTime, errorDesc, trigger, action, parseType, renderedPhrase, unrenderedPhrase ) {
+        
+        let eid = ( trigger?.triggerId ?? '' ) + ( action?.actionId ?? '' ) + ( errorDesc ?? '' ) + ( errorDesc ? err ?? '' : '' ) + ( parseType ?? '' );
+        let hash = hasher( 'sha1' ).update( eid ).digest( 'base64' );
+        if ( this.errorHashes.includes( hash ) ) {
+            return;
+        } else {
+            this.errorHashes.push( hash );
+        }
+
         if ( raw ) {
             ipcRenderer.send( 'app:log:exception', {
                 source: 'log-watcher.js',
@@ -115,6 +127,7 @@ class LogHistoryManager {
             entry.dependencyRegexResult = null;
             entry.counters = JSON.parse( JSON.stringify( this.counters ?? {} ) );
             entry.storedVariables = JSON.parse( JSON.stringify( this.storedVariables ?? {} ) );
+            entry.hash = hash;
     
             entry.characterId = this.characterId;
             entry.characterName = this.characterName;

@@ -815,6 +815,8 @@ class TriggerParseHistoryModel {
     error;
     /** @type {string} */
     errorDescription;
+    /** @type {string} */
+    hash;
 
 }
 
