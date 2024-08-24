@@ -1218,7 +1218,6 @@ class CombatParser {
      * @param {string} myCharacterName The character name of the log file owner.
      */
     _updateEntityVerifications( lines, myCharacterName ) {
-        
 
         for ( let i = 0; i < lines.length; i++ ) {
             let regxResult = executCombatRgx( combatRgx.GroupRaid, lines[ i ] );
