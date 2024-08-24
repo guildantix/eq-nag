@@ -203,7 +203,7 @@ const combatRgx = {
     // Other Damage Over Time spell reports. [https://regex101.com/r/PLpfT1/2]
     OtherDoT: /^(?<target>.*) (has|have) taken (?<damage>[0-9]*) damage from (?<attackType>.*) by (?<actor>.*)\.[\s]?(\((?<modifiers>.*)?\))?/i,
 
-    // Other Damage Over Time spell reports. [https://regex101.com/r/PLpfT1/2]
+    // Other Damage Over Time spell reports. [https://regex101.com/r/voSAFu/1]
     SelfDot: /^(?<target>.*) have taken (?<damage>[0-9]*) damage from (?<attackType>.*)\.[\s]?(\((?<modifiers>.*)?\))?/i,
 
     // Thorns damage. [https://regex101.com/r/w4h5xP/1]
