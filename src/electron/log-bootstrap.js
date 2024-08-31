@@ -567,12 +567,22 @@ class LogBootstrapper {
                     return;
                 }
 
+                ipcMain.on( 'log:backup:critical-failure', ( event, error ) => {
+                    if ( this.#logBackupWindow ) {
+                        this.#logBackupWindow.close();
+                        this.#logBackupWindow = null;
+                    }
+    
+                    reject( error );
+                } );
+
                 this.#logBackupWindow = startLogBackup( logFiles, this.#userPreferences.everquestInstallFolder, this.#isDev, logMaintenanceRules.logSchedule.dayOfWeek, backupIndex ?? 0 );
 
                 // Reset the archive files.
                 this.#filesForArchive = [];
         
                 this.#logBackupWindow.on( 'closed', () => {
+                    ipcMain.removeAllListeners( 'log:backup:critical-failure' );
                     this.#logBackupWindow = null;
                     resolve();
                 } );
