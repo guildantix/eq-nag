@@ -373,7 +373,19 @@ class FileMonitor {
 
                 let exists = fs.existsSync( this.filePath );
 
+                if ( !exists ) {
+                    sendLog( `File Monitor > ${this.filePath} does not exist, waiting for new log file.` );
+                    stats = await this.waitForLogFile();
+                    file?.close();
+                    file = await fsp.open( this.filePath, 'r' );
+                }
+
                 stats = await this.checkFile();
+
+                if ( stats.size < position ) {
+                    sendLog( `File Monitor > ${this.filePath} exists, resetting read position.` );
+                    position = 0;
+                }
 
                 const readSize = stats.size - position;
                 if ( readSize > 0 && readSize < 26 ) {
@@ -384,80 +396,90 @@ class FileMonitor {
                     } );
                     setTimeout( () => parse(), readDelayMs );
                     return;
-                } else {
-                    // console.log( 'Read size', readSize );
                 }
 
-                if ( !exists ) {
-                    sendLog( `File Monitor > ${this.filePath} does not exist, waiting for new log file.` );
-                    stats = await this.waitForLogFile();
-                    file?.close();
-                    file = await fsp.open( this.filePath, 'r' );
-                }
+                try {
+                    let data = await file.read( Buffer.alloc( readSize ), 0, readSize, position );
+                    let bytesRead = data.bytesRead;
+                    position += bytesRead;
+                    let read = data.buffer.toString( 'utf-8', 0, bytesRead );
 
-                if ( stats.size < position ) {
-                    sendLog( `File Monitor > ${this.filePath} exists, resetting read position.` );
-                    position = 0;
-                }
-
-                let data = await file.read( Buffer.alloc( readSize ), 0, readSize, position );
-                let bytesRead = data.bytesRead;
-                position += bytesRead;
-                let read = data.buffer.toString( 'utf-8', 0, bytesRead );
-                
-                readCount += 1;
-                if ( read.length === 0 && prevLines.length > 0 ) {
-                    emptyReadCount += 1;
-                } else {
-                    emptyReadCount = 0;
-                }
-                
-                let lines = read.split( /\r\n|\r|\n/gmi ).filter( l => l?.length > 0 );
-
-                if ( prevLines.length > 0 ) {
-                    if ( lines.length > 0 ) {
-                        if ( !prevLines[ prevLines.length - 1 ].match( /^\[(.*?)\]\s*/i ) || !lines[ 0 ].match( /^\[(.*?)\]\s*/i ) ) {
-                            prevLines[ prevLines.length - 1 ] += lines.shift();
-                        }
-
-                        onChunkRead( prevLines );
-                        prevLines = lines;
-
-                        readCount = 0;
+                    readCount += 1;
+                    if ( read.length === 0 && prevLines.length > 0 ) {
+                        emptyReadCount += 1;
+                    } else {
                         emptyReadCount = 0;
                     }
                     
-                    if ( emptyReadCount > flushCount ) {
+                    let lines = read.split( /\r\n|\r|\n/gmi ).filter( l => l?.length > 0 );
+    
+                    if ( prevLines.length > 0 ) {
+                        if ( lines.length > 0 ) {
+                            if ( !prevLines[ prevLines.length - 1 ].match( /^\[(.*?)\]\s*/i ) || !lines[ 0 ].match( /^\[(.*?)\]\s*/i ) ) {
+                                prevLines[ prevLines.length - 1 ] += lines.shift();
+                            }
+    
+                            onChunkRead( prevLines );
+                            prevLines = lines;
+    
+                            readCount = 0;
+                            emptyReadCount = 0;
+                        }
                         
-                        onChunkRead( prevLines );
-                        prevLines = [];
-                        readCount = 0;
-                        emptyReadCount = 0;
+                        if ( emptyReadCount > flushCount ) {
+                            
+                            onChunkRead( prevLines );
+                            prevLines = [];
+                            readCount = 0;
+                            emptyReadCount = 0;
+                        }
+                    } else {
+                        prevLines = lines;
                     }
-                } else {
-                    prevLines = lines;
-                }
-
-                if ( !this.#stopMonitor ) {
-                    this.#readErrorCount = 0;
-                    setTimeout( () => parse(), readDelayMs );
-
-                } else {
-                    await file.close();
-                    this.#monitoring = false;
-
-                    if ( this.#onStopped ) {
-                        this.#onStopped( position );
+    
+                    if ( !this.#stopMonitor ) {
+                        this.#readErrorCount = 0;
+                        setTimeout( () => parse(), readDelayMs );
+    
+                    } else {
+                        await file.close();
+                        this.#monitoring = false;
+    
+                        if ( this.#onStopped ) {
+                            this.#onStopped( position );
+                        }
+    
+                        resolve();
                     }
 
-                    resolve();
+                } catch ( error ) {
+
+                    sendException( {
+                        label: 'LogMonitor.MonitorLines',
+                        message: `${error}`,
+                        payload: error,
+                    } );
+
+                    if ( file ) {
+                        await file.close();
+                    }
+
+                    this.#readErrorCount++;
+                    if ( this.#readErrorCount >= maxReadErrors ) {
+                        this.#monitoring = false;
+                        reject( error );
+                    } else {
+                        setTimeout( () => this.#doMonitorLines( onChunkRead, resolve, reject, position, prevLines ), readErrorDelayMs );
+                    }
                 }
+                
 
             };
 
             setTimeout( () => parse(), readDelayMs );
 
         } catch ( error ) {
+            
             sendException( {
                 label: 'LogMonitor.MonitorLines',
                 message: `${error}`,
