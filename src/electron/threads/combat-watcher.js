@@ -62,7 +62,7 @@
 
 const { CharacterModel } = require( "../data/models/character" );
 const { ipcRenderer, ipcMain } = require( 'electron' );
-const { DpsMeterSettings, LogRecord, EncounterResetEventArgs, EncounterModel, ExternalEncounterModel } = require( "../data/models/combat-parser" );
+const { DpsMeterSettings, LogRecord, EncounterResetEventArgs, EncounterModel, ExternalEncounterModel, PlayerDps } = require( "../data/models/combat-parser" );
 const { OverlayWindow } = require( "../data/models/overlay-window" );
 const { ErrorMessages, TriggerParseHistoryModel, getActionLabel, LogTypes } = require( "../data/models/trigger" );
 const { CombatParser, minifyCombatLogs } = require( "../utilities/combat-parser" );
@@ -235,6 +235,77 @@ const sendDpsToRenderer = async () => {
     let e = myCombatParser?.getCurrentEncounterStats();
 
     if ( e?.encounter?.active === true ) {
+        
+        let encounterNpcs = [ null, ...e.encounter.npcs ];
+
+        for ( let i = 0; i < e.verifiedPlayers.length; i++ ) {
+            const playerEvents = e.encounter.playerEvents[ e.verifiedPlayers[ i ] ];
+
+            if ( !playerEvents ) {
+                continue;
+            }
+
+            for ( let iNpc = 0; iNpc < encounterNpcs.length; iNpc++ ) {
+                const npcName = encounterNpcs[ iNpc ];
+                const playerDps = new PlayerDps();
+
+                playerDps.characterName = e.verifiedPlayers[ i ];
+                playerDps.name = e.verifiedPlayers[ i ];
+                playerDps.class = playerEvents.class;
+                playerDps.dps = 0;
+                playerDps.hps = 0;
+                playerDps.damage = 0;
+                playerDps.healing = 0;
+                playerDps.time = 0;
+                playerDps.pets = [];
+                playerDps.npcName = npcName ?? undefined;
+                
+                const outgoingDps = playerEvents.playerDpsOutgoing.filter( f => !npcName || f.npcName === npcName );
+                for ( let iDps = 0; iDps < outgoingDps.length; iDps++ ) {
+                    const event = outgoingDps[ iDps ];
+
+                    playerDps.damage += event.damage;
+                    playerDps.healing += event.healing;
+                    playerDps.time += event.time;
+
+                    if ( event.pets ) {
+                        for ( let iPet = 0; iPet < event.pets.length; iPet++ ) {
+                            const pet = event.pets[ iPet ];
+                            let petDps = playerDps.pets.find( p => p.name === pet.name );
+
+                            if ( petDps == null ) {
+                                petDps = {
+                                    name: pet.name,
+                                    dps: 0,
+                                    damage: 0,
+                                    time: 0,
+                                };
+                                playerDps.pets.push( petDps );
+                            }
+
+                            petDps.damage += pet.damage;
+                            petDps.healing += pet.healing;
+                            petDps.time += pet.time;
+                        }
+                    }
+
+                    // Calculate the DPS and HPS.
+                    playerDps.dps = playerDps.damage / ( playerDps.time > 0 ? playerDps.time : 1 );
+                    playerDps.hps = playerDps.healing / ( playerDps.time > 0 ? playerDps.time : 1 );
+
+                    playerDps.pets.forEach( p => {
+                        p.dps = p.damage / ( p.time > 0 ? p.time : 1 );
+                        p.hps = p.healing / ( p.time > 0 ? p.time : 1 );
+                    } );
+                }
+
+                e.playerDps.push( playerDps );
+            }
+
+        }
+
+        e.encounter.playerEvents = [];
+
         ipcRenderer.send( 'renderer:current-encounter', { ...e, characterName: characterName } );
     }
     
