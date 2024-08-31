@@ -9,6 +9,7 @@ const FsUtilities = require( "./utilities/file-system" );
 const log = require( 'electron-log' );
 const ForwardRef = require( './forward-ref' );
 const { LogMaintenancePlanTypes, LogMaintenanceRules, ArchiveFilePrefix, SimulationProgress } = require( "./data/models/common" );
+const { nagLog } = require( "./utilities/nag-console" );
 const customAlphabet = require( 'nanoid' ).customAlphabet;
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const nanoid = customAlphabet( alphabet, 16 );
@@ -563,6 +564,7 @@ class LogBootstrapper {
 
                 if ( logFiles.length === 0 ) {
                     log.info( 'LogBootstrap > No log files to backup, exiting.' );
+                    nagLog( 'No log files to backup.' );
                     resolve();
                     return;
                 }
