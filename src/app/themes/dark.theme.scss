@@ -338,6 +338,11 @@ $bg-extreme-dark: #191919;
     }
 
     fieldset {
+        legend {
+            &.danger {
+                color: $color-titlebar-red;
+            }
+        }
         small {
             color: rgba($text, .25);
         }
@@ -1030,6 +1035,10 @@ h3 {
         &.full-width {
             width: calc(100% - 11px);
         }
+        &.warning {
+            font-weight: 300;
+            color: $color-titlebar-red;
+        }
 
         &::before {
             content: "";
@@ -1042,4 +1051,23 @@ h3 {
             background-color: #0000002e;
         }
     }
+}
+
+
+p {
+    &.danger {
+        color: $color-red-warn;
+        padding: 0.5em 1em;
+        background-color: rgba($color-red-warn, .11);
+        border-left: 0.4em solid $color-red-warn;
+        display: inline-block;
+    }
+}
+
+.material-symbols-outlined {
+    font-variation-settings:
+    'FILL' 0,
+    'wght' 100,
+    'GRAD' 0,
+    'opsz' 24
 }
