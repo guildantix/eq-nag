@@ -19,12 +19,26 @@ const ArrayUtilities = require( '../utilities/arrays' );
 const FileMonitor = require( '../utilities/file-monitor' );
 const { LogHistoryManager } = require( '../utilities/log-console' );
 const { createChatRoomLink } = require( '../utilities/peer-to-peer' );
-const { nagException } = require( '../utilities/nag-console' );
+const { nagException, nagLog } = require( '../utilities/nag-console' );
 const chunkSize = 512 * 1024;
 
 window.onerror = ( error, url, line ) => {
     ipcRenderer.send( 'app:log:exception', `$${error}\r\n    at ${url}:${line}` );
 };
+
+/**
+ * Sends to the main thread to log the message.
+ * 
+ * @param {string} message The message to log.
+ * @param {any | undefined} payload The payload to log.
+ */
+const log = ( message, payload ) => {
+    nagLog( {
+        label: 'Log Watcher',
+        message: message,
+        payload: payload,
+    } );
+}
 
 /** @type {OverlayWindow} */
 var overlays = [];
@@ -162,7 +176,13 @@ function startParsingLogFile( logPath, startLogPosition ) {
         } );
         
         // console.log( 'done processing lines, total time', performance.now() - start );
-    }, startLogPosition );
+    }, startLogPosition )
+        .then( () => {
+            log( `Monitoring log file: ${logPath}` );
+        } )
+        .catch( error => {
+            log( `Error monitoring log file: ${logPath}`, error );
+        } );
     
 }
 

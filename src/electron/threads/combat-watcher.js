@@ -504,7 +504,13 @@ async function startParsingLogFile( logPath, startLogPosition ) {
         }
 
         // console.log( 'done processing lines, total time', performance.now() - start );
-    }, startLogPosition );
+    }, startLogPosition )
+        .then( () => {
+            log( `Monitoring log file: ${logPath}`, undefined, 'Combat Watcher' );
+        } )
+        .catch( error => {
+            log( `Error monitoring log file: ${logPath}`, error, 'Combat Watcher' );
+        } );
     
 }
 
