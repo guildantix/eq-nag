@@ -597,13 +597,19 @@ class CombatParser {
             return undefined;
         }
 
-        return {
+        let output = {
             encounter: Object.assign( new EncounterStats(), this._encounterStats ),
             verifiedPlayers: [ ...this._verifiedPlayers ],
             verifiedNpcs: [ ...this._verifiedNpcs ],
             verifiedPets: [ ...this._verifiedPets ],
             petOwners: Object.assign( {}, this._petOwners ),
+            playerDps: [],
         };
+
+        output.encounter.logs = [];
+        output.encounter.ownedLogs = [];
+
+        return output;
     }
 
 
