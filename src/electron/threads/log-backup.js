@@ -134,6 +134,8 @@ let progressPercent = 0.0;
  */
 const reportProgress = ( current, max, label ) => {
     progressLabel = label ?? progressLabel;
+    current = max > 0 ? current : 1;
+    max = max > 0 ? max : 1;
     progressPercent = current / max;
     ipcRenderer.send( progressCommChannel, { completePercent: progressPercent, label: progressLabel } );
 }
