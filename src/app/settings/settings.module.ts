@@ -13,6 +13,7 @@ import { MaterialModule } from '../material.module';
 import { WebComponentsModule } from '../web-components/web-components.module';
 import { NgxMatTimepickerModule } from 'ngx-mat-timepicker';
 import { CombatStatisticsComponent } from './combat-statistics/combat-statistics.component';
+import { LogFileComponent } from './log-file/log-file.component';
 
 @NgModule({
     imports: [
@@ -33,6 +34,7 @@ import { CombatStatisticsComponent } from './combat-statistics/combat-statistics
     declarations: [
         CombatStatisticsComponent,
         SettingsComponent,
+        LogFileComponent,
     ],
     exports: [
         CombatStatisticsComponent,

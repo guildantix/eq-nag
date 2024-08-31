@@ -6,10 +6,11 @@ const ThreadUtilities = require( './threading' );
 const fsp = fs.promises;
 const chunkSize = 1024 * 1024 * 384; // Max chunk possible is 512MB, but we'll use 384MB to be safe.
 const maxReadErrors = 5;
-const readDelayMs = 200;
-const readErrorDelayMs = 1000;
-const flushDelayMs = 1000;
-const flushCount = Math.ceil( flushDelayMs / readDelayMs );
+
+let readDelayMs = 200;
+let readErrorDelayMs = 1000;
+let flushDelayMs = 1000;
+let flushCount = Math.ceil( flushDelayMs / readDelayMs );
 
 /**
  * 
@@ -38,6 +39,16 @@ class FileMonitor {
      */
     constructor( filePath ) {
         this.filePath = filePath;
+
+        ipcRenderer
+            .invoke( 'settings:get', { key: 'fileReadDelays', subscribe: true } )
+            .then( data => {
+                readDelayMs = data.readDelayMs ?? readDelayMs;
+                readErrorDelayMs = data.readErrorDelayMs ?? readErrorDelayMs;
+                flushDelayMs = data.flushDelayMs ?? flushDelayMs;
+                flushCount = Math.ceil( flushDelayMs / readDelayMs );
+            } );
+        
     }
 
 
