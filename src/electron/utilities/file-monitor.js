@@ -512,7 +512,7 @@ class FileMonitor {
             };
             let rejector = ( reason ) => {
                 reject( reason );
-                sendException( error );
+                sendException( reason );
             };
             this.#doMonitorLines( onChunkRead, resolver, rejector, startPosition ).catch( error => {
                 this.#monitoring = false;
