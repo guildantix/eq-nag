@@ -81,10 +81,11 @@ const { FctModel } = require( "../data/models/fct" );
  * 
  * @param {string} message The message to log.
  * @param {any | undefined} payload The payload to log.
+ * @param {string | undefined} label The label to log.
  */
-const log = ( message, payload ) => {
+const log = ( message, payload, label ) => {
     nagLog( {
-        label: 'Chat Room',
+        label: label ?? 'Chat Room',
         message: message,
         payload: payload,
     } );
