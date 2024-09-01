@@ -3,6 +3,7 @@ const fs = require('fs');
 const { ipcRenderer } = require( 'electron' );
 // const { sendMsg, sendException } = require( './thread-comms' );
 const ThreadUtilities = require( './threading' );
+const { nagLog } = require( './nag-console' );
 const fsp = fs.promises;
 const chunkSize = 1024 * 1024 * 384; // Max chunk possible is 512MB, but we'll use 384MB to be safe.
 const maxReadErrors = 5;
@@ -412,6 +413,21 @@ class FileMonitor {
                 try {
                     let data = await file.read( Buffer.alloc( readSize ), 0, readSize, position );
                     let bytesRead = data.bytesRead;
+
+                    if ( bytesRead === 0 && readSize > 0 ) {
+                        // No data read, try again.
+                        nagLog( `No data read, trying again.`, 'File Monitor', { position, readSize, bytesRead } );
+                        
+                        stats = await this.waitForLogFile();
+                        file?.close();
+                        file = await fsp.open( this.filePath, 'r' );
+
+                        this.#readErrorCount++;
+
+                        setTimeout( () => parse(), readDelayMs );
+                        return;
+                    }
+
                     position += bytesRead;
                     let read = data.buffer.toString( 'utf-8', 0, bytesRead );
 
