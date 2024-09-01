@@ -7,6 +7,10 @@ const { nagLog } = require( './nag-console' );
 const fsp = fs.promises;
 const chunkSize = 1024 * 1024 * 384; // Max chunk possible is 512MB, but we'll use 384MB to be safe.
 const maxReadErrors = 5;
+// Set a maximum read size of 5500 lines.
+const lineReadLengthLimit = 5500;
+const averageLineLength = 100;
+const maxReadSize = lineReadLengthLimit * averageLineLength;
 
 let readDelayMs = 200;
 let readErrorDelayMs = 1000;
@@ -406,6 +410,15 @@ class FileMonitor {
                         message: `File size is too small: ${readSize} bytes.`,
                         payload: { readSize, position, stats },
                     } );
+                    setTimeout( () => parse(), readDelayMs );
+                    return;
+                } else if ( readSize > maxReadSize ) {
+                    sendLog( {
+                        label: 'File Monitor',
+                        message: `Read size is too large: ${readSize} bytes.`,
+                        payload: { readSize, position, stats },
+                    } );
+                    position = stats.size;
                     setTimeout( () => parse(), readDelayMs );
                     return;
                 }
