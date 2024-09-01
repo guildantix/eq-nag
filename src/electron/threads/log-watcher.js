@@ -175,7 +175,7 @@ function startParsingLogFile( logPath, startLogPosition ) {
             }
         } );
         
-        // console.log( 'done processing lines, total time', performance.now() - start );
+        // console.log( 'done processing lines, total time', performance.now() - start, 'line count', lines.length );
     }, startLogPosition )
         .then( () => {
             log( `Monitoring log file: ${logPath}` );
