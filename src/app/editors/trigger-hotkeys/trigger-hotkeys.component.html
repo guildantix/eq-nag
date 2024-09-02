@@ -41,7 +41,7 @@
 
         <ng-container matColumnDef="description">
             <th mat-header-cell *matHeaderCellDef> Description </th>
-            <td mat-cell *matCellDef="let element"> {{element.description}} </td>
+            <td mat-cell *matCellDef="let element" style="vertical-align: top; padding-top: 14px !important;"> <span [innerHTML]="element.description | safeHtmlContent"></span> </td>
         </ng-container>
 
         <ng-container matColumnDef="delete">
