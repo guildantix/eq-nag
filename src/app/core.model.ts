@@ -844,7 +844,10 @@ export class TriggerActionProperties {
     public listEnumerateBeginPhrase: string = null;
     public listEnumerateEndPhrase: string = null;
     public listManualEnumeratePhrase: string = null;
-
+    public listEnableActionTracking: boolean = false;
+    public listActionTrackingPhrase: string = null;
+    public listActionTrackingVarName: string = null;
+    
 }
 
 export class TriggerAction extends TriggerActionProperties {

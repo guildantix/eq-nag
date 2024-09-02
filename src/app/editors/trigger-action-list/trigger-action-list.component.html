@@ -216,6 +216,41 @@
                 </div>
             </div>
 
+            <div class="card-property" *ngIf="action.enableListEnrollment">
+                <div class="content-top">
+                    <mat-checkbox [(ngModel)]="action.listEnableActionTracking" name="listEnableActionTracking">Enable Action Tracking</mat-checkbox>
+                </div>
+                <div class="content-top">
+                    <p>When enabled, if the selected phrase is not captured by the end of the timer, the list name will appear as a warning.</p>
+                </div>
+            </div>
+
+            <div class="card-property" *ngIf="action.listEnableActionTracking">
+                <div class="full-width">
+                    <mat-form-field style="width: 100%;">
+                        <mat-label></mat-label>
+                        <mat-select [(ngModel)]="action.listActionTrackingPhrase" name="listActionTrackingPhrase" (ngModelChange)="onActionTrackingPhraseChange(action.listActionTrackingPhrase)">
+                            <mat-option [value]="null">None</mat-option>
+                            <mat-option *ngFor="let phrase of phrases" [value]="phrase.phraseId">{{phrase.phrase}}</mat-option>
+                        </mat-select>
+                        <mat-hint>Select the capture phrase that satisfy the list timer.</mat-hint>
+                    </mat-form-field>
+                </div>
+            </div>
+
+            <div class="card-property" *ngIf="action.listEnableActionTracking">
+                <div class="content-middle">Select the variable that contains the name of the item/player in the list.</div>
+                <div>
+                    <mat-form-field style="width: 100%;">
+                        <mat-label></mat-label>
+                        <mat-select [(ngModel)]="action.listActionTrackingVarName" name="listActionTrackingVarName">
+                            <mat-option *ngFor="let name of actionTrackingVariableNames" [value]="name">{{name}}</mat-option>
+                        </mat-select>
+                        <mat-hint>Value should be a name in the list.</mat-hint>
+                    </mat-form-field>
+                </div>
+            </div>
+
         </div>
 
     </mat-tab>
