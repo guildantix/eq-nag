@@ -400,7 +400,16 @@ class FileMonitor {
 
                 if ( stats.size < position ) {
                     sendLog( `File Monitor > ${this.filePath} exists, resetting read position.` );
+
+                    this.#readErrorCount++;
                     position = 0;
+
+                    stats = await this.waitForLogFile();
+                    file?.close();
+                    file = await fsp.open( this.filePath, 'r' );
+
+                    setTimeout( () => parse(), readDelayMs );
+                    return;
                 }
 
                 const readSize = stats.size - position;
@@ -452,7 +461,7 @@ class FileMonitor {
                     }
                     
                     let lines = read.split( /\r\n|\r|\n/gmi ).filter( l => l?.length > 0 );
-    
+                    
                     if ( prevLines.length > 0 ) {
                         if ( lines.length > 0 ) {
                             if ( !prevLines[ prevLines.length - 1 ].match( /^\[(.*?)\]\s*/i ) || !lines[ 0 ].match( /^\[(.*?)\]\s*/i ) ) {
