@@ -2171,10 +2171,12 @@ class CombatParser {
             // Start a new encounter.
             this._encounterStats = new EncounterStats();
             this._externalEncounterIds = {};
-            this._encounterStats.encounterStart = rec?.timestamp || new Date();
+            if ( rec != undefined ) {
+                this._encounterStats.encounterStart = rec?.timestamp || new Date();
 
-            if ( rawLog ) {
-                this._encounterStats.logs.push( rawLog );
+                if ( rawLog ) {
+                    this._encounterStats.logs.push( rawLog );
+                }
             }
 
         } else if ( this._encounterStats.encounterStart == undefined ) {
