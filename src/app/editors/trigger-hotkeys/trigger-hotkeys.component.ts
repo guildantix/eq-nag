@@ -1,4 +1,5 @@
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { concat, forkJoin, Observable, of } from 'rxjs';
 import { concatAll, map } from 'rxjs/operators';
 import { TriggerHotkey } from 'src/app/core.model';
@@ -27,6 +28,8 @@ export class TriggerHotkeysComponent implements OnInit {
     editHotkey( hotkey: TriggerHotkey ): void {
         this.dialogService.showTriggerHotkey( hotkey ).subscribe( hotkey => {
             if ( hotkey ) {
+                let index = this.hotkeys.findIndex( f => f.hotkeyId === hotkey.hotkeyId );
+                this.hotkeys[ index ] = hotkey;
                 this.hotkeys = [ ...this.hotkeys ];
                 this.hotkeysChange.emit( this.hotkeys );
             }
