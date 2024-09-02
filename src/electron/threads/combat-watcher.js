@@ -62,7 +62,7 @@
 
 const { CharacterModel } = require( "../data/models/character" );
 const { ipcRenderer, ipcMain } = require( 'electron' );
-const { DpsMeterSettings, LogRecord, EncounterResetEventArgs, EncounterModel, ExternalEncounterModel } = require( "../data/models/combat-parser" );
+const { DpsMeterSettings, LogRecord, EncounterResetEventArgs, EncounterModel, ExternalEncounterModel, PlayerDps } = require( "../data/models/combat-parser" );
 const { OverlayWindow } = require( "../data/models/overlay-window" );
 const { ErrorMessages, TriggerParseHistoryModel, getActionLabel, LogTypes } = require( "../data/models/trigger" );
 const { CombatParser, minifyCombatLogs } = require( "../utilities/combat-parser" );
@@ -74,16 +74,18 @@ const fs = require( 'fs' );
 const { LogSync, createChatRoomLink, parseChatRoomLink, PeerDataPackageModel, CombatStatisticsPayloadModel, CombatEncounterPayloadModel, HandshakePayloadModel } = require( "../utilities/peer-to-peer" );
 const { nagException, nagLog } = require( "../utilities/nag-console" );
 const FileMonitor = require( "../utilities/file-monitor" );
+const { FctModel } = require( "../data/models/fct" );
 
 /**
  * Sends to the main thread to log the message.
  * 
  * @param {string} message The message to log.
  * @param {any | undefined} payload The payload to log.
+ * @param {string | undefined} label The label to log.
  */
-const log = ( message, payload ) => {
+const log = ( message, payload, label ) => {
     nagLog( {
-        label: 'Chat Room',
+        label: label ?? 'Chat Room',
         message: message,
         payload: payload,
     } );
@@ -233,6 +235,77 @@ const sendDpsToRenderer = async () => {
     let e = myCombatParser?.getCurrentEncounterStats();
 
     if ( e?.encounter?.active === true ) {
+        
+        let encounterNpcs = [ null, ...e.encounter.npcs ];
+
+        for ( let i = 0; i < e.verifiedPlayers.length; i++ ) {
+            const playerEvents = e.encounter.playerEvents[ e.verifiedPlayers[ i ] ];
+
+            if ( !playerEvents ) {
+                continue;
+            }
+
+            for ( let iNpc = 0; iNpc < encounterNpcs.length; iNpc++ ) {
+                const npcName = encounterNpcs[ iNpc ];
+                const playerDps = new PlayerDps();
+
+                playerDps.characterName = e.verifiedPlayers[ i ];
+                playerDps.name = e.verifiedPlayers[ i ];
+                playerDps.class = playerEvents.class;
+                playerDps.dps = 0;
+                playerDps.hps = 0;
+                playerDps.damage = 0;
+                playerDps.healing = 0;
+                playerDps.time = 0;
+                playerDps.pets = [];
+                playerDps.npcName = npcName ?? undefined;
+                
+                const outgoingDps = playerEvents.playerDpsOutgoing.filter( f => !npcName || f.npcName === npcName );
+                for ( let iDps = 0; iDps < outgoingDps.length; iDps++ ) {
+                    const event = outgoingDps[ iDps ];
+
+                    playerDps.damage += event.damage;
+                    playerDps.healing += event.healing;
+                    playerDps.time += event.time;
+
+                    if ( event.pets ) {
+                        for ( let iPet = 0; iPet < event.pets.length; iPet++ ) {
+                            const pet = event.pets[ iPet ];
+                            let petDps = playerDps.pets.find( p => p.name === pet.name );
+
+                            if ( petDps == null ) {
+                                petDps = {
+                                    name: pet.name,
+                                    dps: 0,
+                                    damage: 0,
+                                    time: 0,
+                                };
+                                playerDps.pets.push( petDps );
+                            }
+
+                            petDps.damage += pet.damage;
+                            petDps.healing += pet.healing;
+                            petDps.time += pet.time;
+                        }
+                    }
+
+                    // Calculate the DPS and HPS.
+                    playerDps.dps = playerDps.damage / ( playerDps.time > 0 ? playerDps.time : 1 );
+                    playerDps.hps = playerDps.healing / ( playerDps.time > 0 ? playerDps.time : 1 );
+
+                    playerDps.pets.forEach( p => {
+                        p.dps = p.damage / ( p.time > 0 ? p.time : 1 );
+                        p.hps = p.healing / ( p.time > 0 ? p.time : 1 );
+                    } );
+                }
+
+                e.playerDps.push( playerDps );
+            }
+
+        }
+
+        e.encounter.playerEvents = [];
+
         ipcRenderer.send( 'renderer:current-encounter', { ...e, characterName: characterName } );
     }
     
@@ -484,22 +557,38 @@ async function startParsingLogFile( logPath, startLogPosition ) {
 
     fileMonitor.monitorLines( ( lines ) => {
         // let start = performance.now();
+        let fcts = [];
 
         lines.forEach( line => {
             if ( line && line.length > 0 ) {
-                parseLogEntries( line );
+                let fct = parseLogEntries( line );
+                if ( fct ) {
+                    fcts = fcts.concat( fct );
+                }
             }
         } );
         
         dpsTrackingEnabled === true && sendDpsToRenderer();
 
+        if ( fcts.length > 0 && enableFct ) {
+            ipcRenderer.send( 'overlay:send:fct-component', fcts );
+        }
+
         // console.log( 'done processing lines, total time', performance.now() - start );
-    }, startLogPosition );
+    }, startLogPosition )
+        .then( () => {
+            log( `Monitoring log file: ${logPath}`, undefined, 'Combat Watcher' );
+        } )
+        .catch( error => {
+            log( `Error monitoring log file: ${logPath}`, error, 'Combat Watcher' );
+        } );
     
 }
 
 /**
  * Parses the given log entry.
+ * 
+ * @returns {FctModel[]} Returns the FCT Models.
  * 
  * @param {string} raw The raw log entry.
  * @param {boolean} simulating If true, only simulates executing triggers via a consol.log call.
@@ -507,7 +596,9 @@ async function startParsingLogFile( logPath, startLogPosition ) {
  */
 function parseLogEntries( raw, simulating, padTime ) {
     try {
-        
+        /** @type {FctModel[]} */
+        let output = [];
+
         simulating = simulating === true ? true : false;
 
         // This could be optimized better.
@@ -519,9 +610,13 @@ function parseLogEntries( raw, simulating, padTime ) {
                 myCombatParserCache.forEach( c => {
                     let fctModel = myCombatParser?.addCombatEvent( c, padTime );
 
-                    if ( fctModel && enableFct && !simulating ) {
-                        ipcRenderer.send( 'overlay:send:fct-component', fctModel );
+                    if ( fctModel ) {
+                        output.push( fctModel );
                     }
+
+                    // if ( fctModel && enableFct && !simulating ) {
+                    //     ipcRenderer.send( 'overlay:send:fct-component', fctModel );
+                    // }
                 } );
                 myCombatParserCache = [];
             }
@@ -529,9 +624,13 @@ function parseLogEntries( raw, simulating, padTime ) {
             // Add to the combat tracker.
             let fctModel = myCombatParser?.addCombatEvent( raw, padTime );
 
-            if ( fctModel && enableFct && !simulating ) {
-                ipcRenderer.send( 'overlay:send:fct-component', fctModel );
+            if ( fctModel ) {
+                output.push( fctModel );
             }
+
+            // if ( fctModel && enableFct && !simulating ) {
+            //     ipcRenderer.send( 'overlay:send:fct-component', fctModel );
+            // }
 
         } else if ( (dpsMeterSettings.show || enableFct) ) {
 
@@ -539,6 +638,8 @@ function parseLogEntries( raw, simulating, padTime ) {
             myCombatParserCache.push( raw );
 
         }
+
+        return output;
 
     } catch ( error ) {
         logError( error, raw, simulating, padTime );
@@ -816,6 +917,9 @@ function CombatWatcher() {
          * @param {{lines: string[], padTime: number}} data 
          */
         ( event, data ) => {
+
+            // Simulations do not render FCT.
+            // TODO: Enable FCT for simulations.
             data.lines.forEach( line => parseLogEntries( line, true, data.padTime ) );
         
             sendDpsToRenderer();

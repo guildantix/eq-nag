@@ -337,6 +337,9 @@ let petOwners = {};
 /** @type {RendererEncounterModel|undefined} */
 let displayedEncounter = undefined;
 
+/** @type {Record<string, PlayerDps[]>} */
+let encounterPlayerDps = {};
+
 /** @type {EncounterDisplayTypes} */
 let dpsWindowDisplayType = EncounterDisplayTypes.current;
 
@@ -1179,6 +1182,8 @@ function Renderer( originX, originY, glowOnStart ) {
             verifiedPets = data.verifiedPets;
             petOwners = data.petOwners;
 
+            encounterPlayerDps[ data.encounter.encounterId ] = data.playerDps;
+
             // If the user is displaying the current encounter or the display
             // encounter id is set to the current encounter id (indicating 
             // that they were showing the current encounter, but we now have a 
@@ -1516,12 +1521,20 @@ function Renderer( originX, originY, glowOnStart ) {
         /**
          * Handles receiving a new trigger action.
          * @param {*} event The event object.
-         * @param {FctModel} model The trigger action.
+         * @param {FctModel | FctModel[]} model The trigger action.
          */
         function ( event, model ) {
+            // let now = performance.now();
             model.added = new Date();
             // renderFct( model.overlayId, model );
-            renderFct2( model );
+
+            if ( Array.isArray( model ) ) {
+                model.forEach( m => renderFct2( m ) );
+            } else {
+                renderFct2( model );
+            }
+
+            // console.log( 'fct render time:', Array.isArray( model ) ? model.length : 'naa', performance.now() - now );
         } );
 
     ipcRenderer.on( 'renderer:window:enable-edit', function ( event, overlayId ) {
@@ -1810,70 +1823,24 @@ function refreshEncounterStats( encounter, characterName, npcName ) {
     let playerNames = Object.keys( encounter.playerEvents );
     m.dpsItems = m.dpsItems.filter( f => playerNames.find( g => g === f.name ) );
 
-    // TODO: These calculations really should be executed on the
-    // combat watcher/parser side of things.  The renderer is 
-    // already doing a lot of lifting.
-    for ( let i = 0; i < verifiedPlayers.length; i++ ) {
-        const playerEvents = encounter.playerEvents[ verifiedPlayers[ i ] ];
-        if ( playerEvents ) {
-            const playerDps = new PlayerDps();
+    let playersDps = encounterPlayerDps[ encounter.encounterId ] ?? [];
 
-            playerDps.name = playerEvents.name;
-            playerDps.class = playerEvents.class;
-            playerDps.dps = 0;
-            playerDps.hps = 0;
-            playerDps.damage = 0;
-            playerDps.healing = 0;
-            playerDps.time = 0;
-            playerDps.pets = [];
+    playersDps = playersDps.filter( f => f.npcName === npcName );
 
-            const outgoingDps = playerEvents.playerDpsOutgoing.filter( f => !npcName || f.npcName === npcName );
-            for ( let j = 0; j < outgoingDps.length; j++ ) {
-                const event = outgoingDps[ j ];
+    for ( let i = 0; i < playersDps.length; i++ ) {
+        const playerDps = playersDps[ i ];
 
-                playerDps.damage += event.damage;
-                playerDps.healing += event.healing;
-                playerDps.time += event.time;
-
-                for ( let k = 0; k < event.pets.length; k++ ) {
-                    const petDps = event.pets[ k ];
-                    let pet = playerDps.pets.find( f => f.name === petDps.name );
-                    if ( !pet ) {
-                        pet = new PetDps();
-                        pet.name = petDps.name;
-                        pet.class = petDps.class;
-                        pet.damage = 0;
-                        pet.healing = 0;
-                        pet.time = 0;
-                        playerDps.pets.push( pet );
-                    }
-
-                    pet.damage += petDps.damage;
-                    pet.healing += petDps.healing;
-                }
-            }
-
-            // Calculate the DPS and HPS.
-            playerDps.dps = playerDps.damage / ( playerDps.time > 0 ? playerDps.time : 1 );
-            playerDps.hps = playerDps.healing / ( playerDps.time > 0 ? playerDps.time : 1 );
-
-            playerDps.pets.forEach( f => {
-                f.dps = f.damage / ( playerDps.time > 0 ? playerDps.time : 1 );
-                f.hps = f.healing / ( playerDps.time > 0 ? playerDps.time : 1 );
-            } );
-
-            let dpsItem = m.dpsItems.find( f => f.name === playerDps.name );
-            if ( dpsItem ) {
-                dpsItem.playerDps = [ playerDps ];
-            } else {
-                dpsItem = new DpsItem();
-                dpsItem.name = playerDps.name;
-                dpsItem.className = playerEvents.class;
-                dpsItem.playerDps = [ playerDps ];
-                dpsItem.dom = undefined;
-                
-                m.dpsItems.push( dpsItem );
-            }
+        let dpsItem = m.dpsItems.find( f => f.name === playerDps.name );
+        if ( dpsItem ) {
+            dpsItem.playerDps = [ playerDps ];
+        } else {
+            dpsItem = new DpsItem();
+            dpsItem.name = playerDps.name;
+            dpsItem.className = playerDps.class;
+            dpsItem.playerDps = [ playerDps ];
+            dpsItem.dom = undefined;
+            
+            m.dpsItems.push( dpsItem );
         }
     }
 

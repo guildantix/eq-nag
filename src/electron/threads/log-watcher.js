@@ -19,12 +19,26 @@ const ArrayUtilities = require( '../utilities/arrays' );
 const FileMonitor = require( '../utilities/file-monitor' );
 const { LogHistoryManager } = require( '../utilities/log-console' );
 const { createChatRoomLink } = require( '../utilities/peer-to-peer' );
-const { nagException } = require( '../utilities/nag-console' );
+const { nagException, nagLog } = require( '../utilities/nag-console' );
 const chunkSize = 512 * 1024;
 
 window.onerror = ( error, url, line ) => {
     ipcRenderer.send( 'app:log:exception', `$${error}\r\n    at ${url}:${line}` );
 };
+
+/**
+ * Sends to the main thread to log the message.
+ * 
+ * @param {string} message The message to log.
+ * @param {any | undefined} payload The payload to log.
+ */
+const log = ( message, payload ) => {
+    nagLog( {
+        label: 'Log Watcher',
+        message: message,
+        payload: payload,
+    } );
+}
 
 /** @type {OverlayWindow} */
 var overlays = [];
@@ -161,8 +175,14 @@ function startParsingLogFile( logPath, startLogPosition ) {
             }
         } );
         
-        // console.log( 'done processing lines, total time', performance.now() - start );
-    }, startLogPosition );
+        // console.log( 'done processing lines, total time', performance.now() - start, 'line count', lines.length );
+    }, startLogPosition )
+        .then( () => {
+            log( `Monitoring log file: ${logPath}` );
+        } )
+        .catch( error => {
+            log( `Error monitoring log file: ${logPath}`, error );
+        } );
     
 }
 
@@ -276,6 +296,16 @@ function LogWatcher(character, logPosition) {
     loadCachedStoredVariables( () => {
         saveScalarVariable( "Character", characterName );
     } );
+
+    ipcRenderer.on( 'app:clear-log-history',
+        /**
+         * Handles the log:changed event.
+         * 
+         * @param {any} event The event args.
+         */
+        ( event ) => {
+            logHistoryMgr?.clearHistory();
+        } );
     
     ipcRenderer.on( 'log:backup-started',
         /**
@@ -2464,56 +2494,61 @@ function displayTimerCountdownComponent(res, timestamp, action, deltaTime, trigg
     // reset the trigger.
     trigger._reset();
 
-    ipcRenderer.send( 'overlay:send:component', comp );
+    if ( comp.action.duration > 0 ) {
+        // Timers with zero duration are non-sensical, or "undefined" if you like.
+        ipcRenderer.send( 'overlay:send:component', comp );
 
-    if ( comp.action.endEarlyPhrases?.length > 0 ) {
-        let renderedPhrases = renderPhrases( comp.action.endEarlyPhrases, trigger._conditionResults, res.result, deltaTime );
-        /** @type {RegExp[]} */
-        let renderedRegExs = [];
+        if ( comp.action.endEarlyPhrases?.length > 0 ) {
+            let renderedPhrases = renderPhrases( comp.action.endEarlyPhrases, trigger._conditionResults, res.result, deltaTime );
+            /** @type {RegExp[]} */
+            let renderedRegExs = [];
 
-        cancellableComponents.push( {
-            _parse: ( logEntry ) => {
-                let matched = false;
+            cancellableComponents.push( {
+                _parse: ( logEntry ) => {
+                    let matched = false;
 
-                for ( let i = 0; i < renderedPhrases.length; i++ ) {
-                    const phrase = renderedPhrases[ i ];
-                    renderedRegExs[ i ] = renderedRegExs[ i ] ?? new RegExp( phrase, getPhraseRegexOptions( comp.action.endEarlyPhrases[ i ] ) );
-                    let _res = renderedRegExs[ i ].exec( logEntry );
-                    if ( _res?.length > 0 ) {
-                        enableLogging && sendInformationToLog( `Timer/Countdown/Stopwatch ended early: [${logEntry}]` );
-                        matched = true;
+                    for ( let i = 0; i < renderedPhrases.length; i++ ) {
+                        const phrase = renderedPhrases[ i ];
+                        renderedRegExs[ i ] = renderedRegExs[ i ] ?? new RegExp( phrase, getPhraseRegexOptions( comp.action.endEarlyPhrases[ i ] ) );
+                        let _res = renderedRegExs[ i ].exec( logEntry );
+                        if ( _res?.length > 0 ) {
+                            enableLogging && sendInformationToLog( `Timer/Countdown/Stopwatch ended early: [${logEntry}]` );
+                            matched = true;
                         
-                        logHistoryMgr.addSuccessfulTriggerParsedEvent(
-                            logEntry,
-                            trigger.triggerId,
-                            action.actionId,
-                            'Trigger Cancel Action',
-                            phrase,
-                            comp.action.endEarlyPhrases[ i ].phrase,
-                            {
-                                phraseId: comp.action.endEarlyPhrases[ i ].phraseId,
-                                result: _res,
-                                renderedPhrase: phrase,
-                                dependencyResult: res.result,
-                            },
-                            trigger._conditionResults,
-                            deltaTime );
+                            logHistoryMgr.addSuccessfulTriggerParsedEvent(
+                                logEntry,
+                                trigger.triggerId,
+                                action.actionId,
+                                'Trigger Cancel Action',
+                                phrase,
+                                comp.action.endEarlyPhrases[ i ].phrase,
+                                {
+                                    phraseId: comp.action.endEarlyPhrases[ i ].phraseId,
+                                    result: _res,
+                                    renderedPhrase: phrase,
+                                    dependencyResult: res.result,
+                                },
+                                trigger._conditionResults,
+                                deltaTime );
                         
 
-                        if ( comp.action.actionType === ActionTypes.Stopwatch ) {
-                            // TODO: This should be done with actual capture phrase properties instead of intercepting the end early phrases and modifying the results unnaturally.
-                            ipcRenderer.send( 'renderer:stopwatch:stop', comp.instanceId );
+                            if ( comp.action.actionType === ActionTypes.Stopwatch ) {
+                                // TODO: This should be done with actual capture phrase properties instead of intercepting the end early phrases and modifying the results unnaturally.
+                                ipcRenderer.send( 'renderer:stopwatch:stop', comp.instanceId );
 
-                            // If this is a stopwatch, we need to send the stop command to the renderer, and tell the log watcher that the parse failed to prevent the log parser from destroying the component entirely.
-                            return false;
+                                // If this is a stopwatch, we need to send the stop command to the renderer, and tell the log watcher that the parse failed to prevent the log parser from destroying the component entirely.
+                                return false;
+                            }
                         }
                     }
-                }
 
-                return matched;
-            },
-            instanceId: comp.instanceId
-        } );
+                    return matched;
+                },
+                instanceId: comp.instanceId
+            } );
+        }
+    } else {
+        log( 'Timer/Countdown/Stopwatch with zero duration will not be rendered.', comp.action );
     }
 
     return comp.instanceId;

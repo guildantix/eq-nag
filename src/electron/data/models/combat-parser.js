@@ -185,6 +185,8 @@ class EncounterStatsEventArgs {
     petOwners;
     /** @type {string} */
     characterName;
+    /** @type {PlayerDps[]} */
+    playerDps = [];
 }
 
 class EncounterResetEventArgs {

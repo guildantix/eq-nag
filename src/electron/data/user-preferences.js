@@ -14,6 +14,7 @@ const { GinaToNagOverlay } = require( "./models/trigger" );
 const log = require( 'electron-log' );
 const { DpsMeterSettings } = require( "./models/combat-parser" );
 const { migrateUserPreferencesData } = require( "./migrations/user-preferences-database-migration" );
+const { FileReadDelays } = require( "./models/core" );
 
 const possibleEqFolders = [
     '\\users\\public\\Everquest',
@@ -530,6 +531,15 @@ class UserPreferencesStore extends Store {
     }
     set dpsMeterSettings( val ) {
         this.#data.dpsMeterSettings = val;
+        this.storeDataFile( this.#data );
+    }
+
+    /** @type {FileReadDelays} */
+    get fileReadDelays() {
+        return this.#data.fileReadDelays ?? new FileReadDelays();
+    }
+    set fileReadDelays( val ) {
+        this.#data.fileReadDelays = val ?? new FileReadDelays();
         this.storeDataFile( this.#data );
     }
 

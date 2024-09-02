@@ -1889,3 +1889,11 @@ export class ChatRoomLinkReceivedEventArgs {
     public server: string;
 
 }
+
+export class FileReadDelays {
+
+    public readDelayMs: number = 200;
+    public readErrorDelayMs: number = 1000;
+    public flushDelayMs: number = 1000;
+
+}

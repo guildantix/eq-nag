@@ -21,6 +21,17 @@ const logError = ( err ) => {
     ipcRenderer.send( 'app:log:exception', err );
 };
 
+/**
+ * Sends the error information to the main thread for logging.
+ * 
+ * @param {*} err The error object.
+ * @param {string} critical A message indicating the critical failure.
+ */
+const logCriticalFailure = ( err, critical ) => {
+    ipcRenderer.send( 'app:log:exception', err );
+    ipcRenderer.send( 'log:backup:critical-failure', critical );
+};
+
 
 
 
@@ -134,6 +145,8 @@ let progressPercent = 0.0;
  */
 const reportProgress = ( current, max, label ) => {
     progressLabel = label ?? progressLabel;
+    current = max > 0 ? current : 1;
+    max = max > 0 ? max : 1;
     progressPercent = current / max;
     ipcRenderer.send( progressCommChannel, { completePercent: progressPercent, label: progressLabel } );
 }
@@ -266,6 +279,11 @@ const backup = async ( logFilePaths, everquestInstallFolder, backupIndex ) => {
  * @param {number} backupIndex The index of this backup event in the history.
  */
 const backupBySchedule = async ( logFilePaths, everquestInstallFolder, daysOfWeek, backupIndex ) => {
+
+    if ( !fs.existsSync( everquestInstallFolder ) ) {
+        logCriticalFailure( new Error( `The EverQuest installation folder does not exist: ${everquestInstallFolder}` ), 'A critical error has occured during the archive process. Unable to execute archive.' );
+        return;
+    }
 
     const logArchivePath = path.join( everquestInstallFolder, 'Logs', 'LogArchive.zip' );
     const logArchiveProcDir = path.join( everquestInstallFolder, 'Logs', FsUtilities.getFileTimestamp() + '_Archiving' );

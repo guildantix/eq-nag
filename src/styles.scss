@@ -99,3 +99,12 @@ div.n-layout {
         
     }
 }
+
+div.flex-row {
+    display: flex;
+    flex-flow: row nowrap;
+
+    .spacer {
+        flex: 1 1 auto;
+    }
+}

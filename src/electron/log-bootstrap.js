@@ -9,6 +9,7 @@ const FsUtilities = require( "./utilities/file-system" );
 const log = require( 'electron-log' );
 const ForwardRef = require( './forward-ref' );
 const { LogMaintenancePlanTypes, LogMaintenanceRules, ArchiveFilePrefix, SimulationProgress } = require( "./data/models/common" );
+const { nagLog } = require( "./utilities/nag-console" );
 const customAlphabet = require( 'nanoid' ).customAlphabet;
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const nanoid = customAlphabet( alphabet, 16 );
@@ -128,6 +129,14 @@ class LogBootstrapper {
         this.#isDev = isDev;
         const $this = this;
 
+        ipcMain.on( 'app:clear-log-history', ( event ) => {
+            for ( let key in logWatchers ) {
+                if ( logWatchers.hasOwnProperty( key ) && logWatchers[ key ].window != null ) {
+                    logWatchers[ key ].window.webContents.send( 'app:clear-log-history', undefined );
+                }
+            }
+        } );
+        
         ipcMain.on( 'tick', ( event, tickData ) => {
             for ( let key in logWatchers ) {
                 if ( logWatchers.hasOwnProperty( key ) && logWatchers[ key ].window != null ) {
@@ -555,9 +564,19 @@ class LogBootstrapper {
 
                 if ( logFiles.length === 0 ) {
                     log.info( 'LogBootstrap > No log files to backup, exiting.' );
+                    nagLog( 'No log files to backup.' );
                     resolve();
                     return;
                 }
+
+                ipcMain.on( 'log:backup:critical-failure', ( event, error ) => {
+                    if ( this.#logBackupWindow ) {
+                        this.#logBackupWindow.close();
+                        this.#logBackupWindow = null;
+                    }
+    
+                    reject( error );
+                } );
 
                 this.#logBackupWindow = startLogBackup( logFiles, this.#userPreferences.everquestInstallFolder, this.#isDev, logMaintenanceRules.logSchedule.dayOfWeek, backupIndex ?? 0 );
 
@@ -565,6 +584,7 @@ class LogBootstrapper {
                 this.#filesForArchive = [];
         
                 this.#logBackupWindow.on( 'closed', () => {
+                    ipcMain.removeAllListeners( 'log:backup:critical-failure' );
                     this.#logBackupWindow = null;
                     resolve();
                 } );

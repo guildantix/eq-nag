@@ -3,13 +3,19 @@ const fs = require('fs');
 const { ipcRenderer } = require( 'electron' );
 // const { sendMsg, sendException } = require( './thread-comms' );
 const ThreadUtilities = require( './threading' );
+const { nagLog } = require( './nag-console' );
 const fsp = fs.promises;
 const chunkSize = 1024 * 1024 * 384; // Max chunk possible is 512MB, but we'll use 384MB to be safe.
 const maxReadErrors = 5;
-const readDelayMs = 200;
-const readErrorDelayMs = 1000;
-const flushDelayMs = 1000;
-const flushCount = Math.ceil( flushDelayMs / readDelayMs );
+// Set a maximum read size of 5500 lines.
+const lineReadLengthLimit = 5500;
+const averageLineLength = 100;
+const maxReadSize = lineReadLengthLimit * averageLineLength;
+
+let readDelayMs = 200;
+let readErrorDelayMs = 1000;
+let flushDelayMs = 1000;
+let flushCount = Math.ceil( flushDelayMs / readDelayMs );
 
 /**
  * 
@@ -38,6 +44,16 @@ class FileMonitor {
      */
     constructor( filePath ) {
         this.filePath = filePath;
+
+        ipcRenderer
+            .invoke( 'settings:get', { key: 'fileReadDelays', subscribe: true } )
+            .then( data => {
+                readDelayMs = data.readDelayMs ?? readDelayMs;
+                readErrorDelayMs = data.readErrorDelayMs ?? readErrorDelayMs;
+                flushDelayMs = data.flushDelayMs ?? flushDelayMs;
+                flushCount = Math.ceil( flushDelayMs / readDelayMs );
+            } );
+        
     }
 
 
@@ -373,7 +389,28 @@ class FileMonitor {
 
                 let exists = fs.existsSync( this.filePath );
 
+                if ( !exists ) {
+                    sendLog( `File Monitor > ${this.filePath} does not exist, waiting for new log file.` );
+                    stats = await this.waitForLogFile();
+                    file?.close();
+                    file = await fsp.open( this.filePath, 'r' );
+                }
+
                 stats = await this.checkFile();
+
+                if ( stats.size < position ) {
+                    sendLog( `File Monitor > ${this.filePath} exists, resetting read position.` );
+
+                    this.#readErrorCount++;
+                    position = 0;
+
+                    stats = await this.waitForLogFile();
+                    file?.close();
+                    file = await fsp.open( this.filePath, 'r' );
+
+                    setTimeout( () => parse(), readDelayMs );
+                    return;
+                }
 
                 const readSize = stats.size - position;
                 if ( readSize > 0 && readSize < 26 ) {
@@ -384,80 +421,114 @@ class FileMonitor {
                     } );
                     setTimeout( () => parse(), readDelayMs );
                     return;
-                } else {
-                    // console.log( 'Read size', readSize );
+                } else if ( readSize > maxReadSize ) {
+                    sendLog( {
+                        label: 'File Monitor',
+                        message: `Read size is too large: ${readSize} bytes.`,
+                        payload: { readSize, position, stats },
+                    } );
+                    position = stats.size;
+                    setTimeout( () => parse(), readDelayMs );
+                    return;
                 }
 
-                if ( !exists ) {
-                    sendLog( `File Monitor > ${this.filePath} does not exist, waiting for new log file.` );
-                    stats = await this.waitForLogFile();
-                    file?.close();
-                    file = await fsp.open( this.filePath, 'r' );
-                }
+                try {
+                    let data = await file.read( Buffer.alloc( readSize ), 0, readSize, position );
+                    let bytesRead = data.bytesRead;
 
-                if ( stats.size < position ) {
-                    sendLog( `File Monitor > ${this.filePath} exists, resetting read position.` );
-                    position = 0;
-                }
+                    if ( bytesRead === 0 && readSize > 0 ) {
+                        // No data read, try again.
+                        nagLog( `No data read, trying again.`, 'File Monitor', { position, readSize, bytesRead } );
+                        
+                        stats = await this.waitForLogFile();
+                        file?.close();
+                        file = await fsp.open( this.filePath, 'r' );
 
-                let data = await file.read( Buffer.alloc( readSize ), 0, readSize, position );
-                let bytesRead = data.bytesRead;
-                position += bytesRead;
-                let read = data.buffer.toString( 'utf-8', 0, bytesRead );
-                
-                readCount += 1;
-                if ( read.length === 0 && prevLines.length > 0 ) {
-                    emptyReadCount += 1;
-                } else {
-                    emptyReadCount = 0;
-                }
-                
-                let lines = read.split( /\r\n|\r|\n/gmi ).filter( l => l?.length > 0 );
+                        this.#readErrorCount++;
 
-                if ( prevLines.length > 0 ) {
-                    if ( lines.length > 0 ) {
-                        if ( !prevLines[ prevLines.length - 1 ].match( /^\[(.*?)\]\s*/i ) || !lines[ 0 ].match( /^\[(.*?)\]\s*/i ) ) {
-                            prevLines[ prevLines.length - 1 ] += lines.shift();
-                        }
+                        setTimeout( () => parse(), readDelayMs );
+                        return;
+                    }
 
-                        onChunkRead( prevLines );
-                        prevLines = lines;
+                    position += bytesRead;
+                    let read = data.buffer.toString( 'utf-8', 0, bytesRead );
 
-                        readCount = 0;
+                    readCount += 1;
+                    if ( read.length === 0 && prevLines.length > 0 ) {
+                        emptyReadCount += 1;
+                    } else {
                         emptyReadCount = 0;
                     }
                     
-                    if ( emptyReadCount > flushCount ) {
+                    let lines = read.split( /\r\n|\r|\n/gmi ).filter( l => l?.length > 0 );
+                    
+                    if ( prevLines.length > 0 ) {
+                        if ( lines.length > 0 ) {
+                            if ( !prevLines[ prevLines.length - 1 ].match( /^\[(.*?)\]\s*/i ) || !lines[ 0 ].match( /^\[(.*?)\]\s*/i ) ) {
+                                prevLines[ prevLines.length - 1 ] += lines.shift();
+                            }
+    
+                            onChunkRead( prevLines );
+                            prevLines = lines;
+    
+                            readCount = 0;
+                            emptyReadCount = 0;
+                        }
                         
-                        onChunkRead( prevLines );
-                        prevLines = [];
-                        readCount = 0;
-                        emptyReadCount = 0;
+                        if ( emptyReadCount > flushCount ) {
+                            
+                            onChunkRead( prevLines );
+                            prevLines = [];
+                            readCount = 0;
+                            emptyReadCount = 0;
+                        }
+                    } else {
+                        prevLines = lines;
                     }
-                } else {
-                    prevLines = lines;
-                }
-
-                if ( !this.#stopMonitor ) {
-                    this.#readErrorCount = 0;
-                    setTimeout( () => parse(), readDelayMs );
-
-                } else {
-                    await file.close();
-                    this.#monitoring = false;
-
-                    if ( this.#onStopped ) {
-                        this.#onStopped( position );
+    
+                    if ( !this.#stopMonitor ) {
+                        this.#readErrorCount = 0;
+                        setTimeout( () => parse(), readDelayMs );
+    
+                    } else {
+                        await file.close();
+                        this.#monitoring = false;
+    
+                        if ( this.#onStopped ) {
+                            this.#onStopped( position );
+                        }
+    
+                        resolve();
                     }
 
-                    resolve();
+                } catch ( error ) {
+
+                    sendException( {
+                        label: 'LogMonitor.MonitorLines',
+                        message: `${error}`,
+                        payload: error,
+                    } );
+
+                    if ( file ) {
+                        await file.close();
+                    }
+
+                    this.#readErrorCount++;
+                    if ( this.#readErrorCount >= maxReadErrors ) {
+                        this.#monitoring = false;
+                        reject( error );
+                    } else {
+                        setTimeout( () => this.#doMonitorLines( onChunkRead, resolve, reject, position, prevLines ), readErrorDelayMs );
+                    }
                 }
+                
 
             };
 
             setTimeout( () => parse(), readDelayMs );
 
         } catch ( error ) {
+            
             sendException( {
                 label: 'LogMonitor.MonitorLines',
                 message: `${error}`,
@@ -512,7 +583,7 @@ class FileMonitor {
             };
             let rejector = ( reason ) => {
                 reject( reason );
-                sendException( error );
+                sendException( reason );
             };
             this.#doMonitorLines( onChunkRead, resolver, rejector, startPosition ).catch( error => {
                 this.#monitoring = false;

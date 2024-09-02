@@ -203,7 +203,7 @@ const combatRgx = {
     // Other Damage Over Time spell reports. [https://regex101.com/r/PLpfT1/2]
     OtherDoT: /^(?<target>.*) (has|have) taken (?<damage>[0-9]*) damage from (?<attackType>.*) by (?<actor>.*)\.[\s]?(\((?<modifiers>.*)?\))?/i,
 
-    // Other Damage Over Time spell reports. [https://regex101.com/r/PLpfT1/2]
+    // Other Damage Over Time spell reports. [https://regex101.com/r/voSAFu/1]
     SelfDot: /^(?<target>.*) have taken (?<damage>[0-9]*) damage from (?<attackType>.*)\.[\s]?(\((?<modifiers>.*)?\))?/i,
 
     // Thorns damage. [https://regex101.com/r/w4h5xP/1]
@@ -597,13 +597,19 @@ class CombatParser {
             return undefined;
         }
 
-        return {
+        let output = {
             encounter: Object.assign( new EncounterStats(), this._encounterStats ),
             verifiedPlayers: [ ...this._verifiedPlayers ],
             verifiedNpcs: [ ...this._verifiedNpcs ],
             verifiedPets: [ ...this._verifiedPets ],
             petOwners: Object.assign( {}, this._petOwners ),
+            playerDps: [],
         };
+
+        output.encounter.logs = [];
+        output.encounter.ownedLogs = [];
+
+        return output;
     }
 
 
@@ -838,6 +844,8 @@ class CombatParser {
 
             if ( this._encounterStats != null ) {
                 this._encounterStats.logs.push( logLine );
+            } else {
+                this.#initializeEncounter( undefined, logLine );
             }
 
             let entry = {
@@ -869,9 +877,12 @@ class CombatParser {
             regxResult = executCombatRgx( combatRgx.DirectDamage, entry.log );
             regxResult = regxResult == null ? executCombatRgx( combatRgx.YourDoT, entry.log ) : regxResult;
             regxResult = regxResult == null ? executCombatRgx( combatRgx.OtherDoT, entry.log ) : regxResult;
-            regxResult = regxResult == null ? executCombatRgx( combatRgx.SelfDot, entry.log ) : regxResult;
             if ( regxResult !== null ) {
                 return this._addDetrimentalSpellEvent( timestamp, regxResult.groups.actor, regxResult.groups.target, +regxResult.groups.damage, regxResult.groups.attackType, regxResult.groups.resistType, regxResult.groups.modifiers, logLine );
+            }
+            regxResult = regxResult == null ? executCombatRgx( combatRgx.SelfDot, entry.log ) : regxResult;
+            if ( regxResult !== null ) {
+                return this._addDetrimentalSpellEvent( timestamp, 'You', regxResult.groups.target, +regxResult.groups.damage, regxResult.groups.attackType, regxResult.groups.resistType, regxResult.groups.modifiers, logLine );
             }
 
             // Dead tracking
@@ -1163,6 +1174,11 @@ class CombatParser {
                     this._addDetrimentalSpellEvent( timestamp, regxResult.groups.actor, regxResult.groups.target, +regxResult.groups.damage, regxResult.groups.attackType, regxResult.groups.resistType, regxResult.groups.modifiers );
                     continue;
                 }
+                regxResult = regxResult == null ? executCombatRgx( combatRgx.SelfDot, entry.log ) : regxResult;
+                if ( regxResult !== null ) {
+                    this._addDetrimentalSpellEvent( timestamp, 'You', regxResult.groups.target, +regxResult.groups.damage, regxResult.groups.attackType, regxResult.groups.resistType, regxResult.groups.modifiers, logLine );
+                    continue;
+                }
                 
                 regxResult = executCombatRgx( combatRgx.Thorns, logs[ i ] );
                 if ( regxResult !== null ) {
@@ -1216,7 +1232,6 @@ class CombatParser {
      * @param {string} myCharacterName The character name of the log file owner.
      */
     _updateEntityVerifications( lines, myCharacterName ) {
-        
 
         for ( let i = 0; i < lines.length; i++ ) {
             let regxResult = executCombatRgx( combatRgx.GroupRaid, lines[ i ] );
@@ -2156,10 +2171,12 @@ class CombatParser {
             // Start a new encounter.
             this._encounterStats = new EncounterStats();
             this._externalEncounterIds = {};
-            this._encounterStats.encounterStart = rec?.timestamp || new Date();
+            if ( rec != undefined ) {
+                this._encounterStats.encounterStart = rec?.timestamp || new Date();
 
-            if ( rawLog ) {
-                this._encounterStats.logs.push( rawLog );
+                if ( rawLog ) {
+                    this._encounterStats.logs.push( rawLog );
+                }
             }
 
         } else if ( this._encounterStats.encounterStart == undefined ) {
