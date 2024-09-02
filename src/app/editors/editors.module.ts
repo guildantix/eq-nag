@@ -30,6 +30,7 @@ import { TriggerActionStopwatchComponent } from './trigger-action-stopwatch/trig
 import { GamePreviewComponent } from './game-preview/game-preview.component';
 import { TriggerActionListComponent } from './trigger-action-list/trigger-action-list.component';
 import { TriggerHotkeysComponent } from './trigger-hotkeys/trigger-hotkeys.component';
+import { PipesModule } from '../pipes/pipes.module';
 
 @NgModule({
     imports: [
@@ -42,6 +43,7 @@ import { TriggerHotkeysComponent } from './trigger-hotkeys/trigger-hotkeys.compo
         FormInputModule,
         ContextMenuModule,
         WebComponentsModule,
+        PipesModule,
     ],
     exports: [
         ConditionsComponent,
