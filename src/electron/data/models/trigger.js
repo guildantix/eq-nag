@@ -33,6 +33,7 @@ var ActionTypes = {
     '12': 'ScreenGlow',
     '13': 'ClearAll',
     '14': 'Stopwatch',
+    '15': 'List',
     DisplayText: 0,
     PlayAudio: 1,
     Speak: 2,
@@ -48,6 +49,7 @@ var ActionTypes = {
     ScreenGlow: 12,
     ClearAll: 13,
     Stopwatch: 14,
+    List: 15,
 
 }
 
@@ -490,6 +492,70 @@ class TriggerAction {
     
     /** @type {number} */
     textGlowSize = null;
+
+    /** @type {string} */
+    createListPhrase = null;
+
+    /** @type {boolean} */
+    autoEnumerateList = false;
+
+    /** @type {boolean} */
+    manualEnumerateList = false;
+
+    /** @type {string} */
+    listRegexVarName = null;
+
+    /** @type {boolean} */
+    autoEnumerateSpecifyTime = false;
+
+    /** @type {boolean} */
+    autoEnumerateUseVariable = false;
+
+    /** @type {string} */
+    autoEnumerateListTimerName = null;
+
+    /** @type {boolean} */
+    enableListEnrollment = false;
+
+    /** @type {string} */
+    listEnrollmentSkipPhrase = null;
+
+    /** @type {string} */
+    listEnrollmentSkipVarName = null;
+
+    /** @type {string} */
+    listEnrollmentRemovePhrase = null;
+
+    /** @type {string} */
+    listEnrollmentRemoveVarName = null;
+
+    /** @type {string} */
+    listEnrollmentAddPhrase = null;
+
+    /** @type {string} */
+    listEnrollmentAddVarName = null;
+
+    /** @type {boolean} */
+    listEnrollmentShowTimer = false;
+
+    /** @type {string} */
+    listEnumerateBeginPhrase = null;
+
+    /** @type {string} */
+    listEnumerateEndPhrase = null;
+
+    /** @type {string} */
+    listManualEnumeratePhrase = null;
+
+    /** @type {boolean} */
+    listEnableActionTracking = false;
+
+    /** @type {string} */
+    listActionTrackingPhrase = null;
+
+    /** @type {string} */
+    listActionTrackingVarName = null;
+
 }
 
 class OwnedTriggerAction extends TriggerAction {
