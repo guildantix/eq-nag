@@ -1,6 +1,6 @@
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, Input, OnDestroy, OnInit } from '@angular/core';
 import { Subscription } from 'rxjs';
-import { ActionTypes, ListObjectModel, OverlayWindowModel, Phrase, RenderTokenModel, TriggerAction } from 'src/app/core.model';
+import { ActionTypes, availableFonts, ListObjectModel, OverlayWindowModel, Phrase, RenderTokenModel, TriggerAction } from 'src/app/core.model';
 import { IpcService } from 'src/app/ipc.service';
 import { StringUtility } from 'src/app/utilities';
 
@@ -24,9 +24,34 @@ export class TriggerActionListComponent implements OnInit, OnDestroy {
     public addVariableNames: string[] = [];
     public actionTrackingVariableNames: string[] = [];
     public tokenSubscription: Subscription | null = null;
+    public fontWeightIndex: number = 0;
 
     public get isRenderingToken(): boolean {
         return this.tokenSubscription ? true : false;
+    }
+
+    public get fontFamily(): string {
+        if ( this.action.textUseCustomFont && this.action.textFont ) {
+            return `${this.action.textFont}`;
+        } else {
+            return null;
+        }
+    }
+
+    public get fontWeight(): string {
+        if ( this.action.textUseCustomFont && this.action.textWeight ) {
+            return `${this.action.textWeight}`;
+        } else {
+            return null;
+        }
+    }
+    
+    public get maxFontWeightIndex(): number {
+        if ( this.fontFamily != null ) {
+            return availableFonts[ this.fontFamily ].length - 1;
+        } else {
+            return 1;
+        }
     }
 
     constructor(
@@ -150,7 +175,7 @@ export class TriggerActionListComponent implements OnInit, OnDestroy {
         }
     }
 
-    showRendererToken(): void {
+    private generateRenderToken(): RenderTokenModel {
         let token = new RenderTokenModel();
 
         token.actionId = this.action.actionId;
@@ -174,9 +199,16 @@ export class TriggerActionListComponent implements OnInit, OnDestroy {
             ];
         }
 
+        return token;
+    }
+
+    showRendererToken(): void {
+        let token = this.generateRenderToken();
+
         this.tokenSubscription = this.ipcService
             .renderActionToken( token )
             .subscribe( changeEventArgs => {
+                // TODO: Save the x/y position to the action.
                 console.log( 'token moved', changeEventArgs );
             } );
     }
@@ -185,6 +217,56 @@ export class TriggerActionListComponent implements OnInit, OnDestroy {
         this.tokenSubscription.unsubscribe();
         this.tokenSubscription = null;
         this.ipcService.destroyActionToken( this.action.actionId );
+    }
+
+    updateRenderToken(): void {
+        if ( !this.isRenderingToken ) {
+            return;
+        }
+        let token = this.generateRenderToken();
+        this.ipcService.updateActionToken( token );
+    }
+
+    /**
+     * When the user changes the font family, this loads the selected font 
+     * family's availabe properties.
+     */
+    public onChangeFontFamily(): void {
+        let fi: number = availableFonts[ this.fontFamily ].indexOf( this.action.textWeight );
+        this.fontWeightIndex = -1;
+
+        if ( fi > -1 ) {
+            this.fontWeightIndex = fi;
+
+        } else {
+
+            for ( let i = 100; i < 500; i += 100 ) {
+                let lfi: number = availableFonts[ this.fontFamily ].indexOf( this.action.textWeight - i );
+                let ufi: number = availableFonts[ this.fontFamily ].indexOf( this.action.textWeight + i );
+                if ( lfi > -1 ) {
+                    this.fontWeightIndex = lfi;
+                    break;
+                } else if ( ufi > -1 ) {
+                    this.fontWeightIndex = ufi;
+                    break;
+                }
+            }
+            
+        }
+
+        this.fontWeightIndex = this.fontWeightIndex > -1 ? this.fontWeightIndex : 0;
+
+        this.updateRenderToken();
+    }
+
+    /**
+     * Changes the preview's font weight value based on the selected font 
+     * weight index.
+     */
+    onFontWeightChange(): void {
+        this.action.textWeight = availableFonts[ this.fontFamily ][ this.fontWeightIndex ];
+
+        this.updateRenderToken();
     }
 
 }

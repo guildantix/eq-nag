@@ -277,6 +277,34 @@
                 </div>
             </div>
 
+            <div class="card-property">
+                <div class="content-middle"><mat-checkbox [(ngModel)]="action.textUseCustomFont" name="cbxUseCustomFont">Custom font</mat-checkbox></div>
+                <div class="content-middle content-right">
+                    <mat-form-field *ngIf="action.textUseCustomFont">
+                        <mat-label></mat-label>
+                        <mat-select class="font-ddl" [(ngModel)]="action.textFont" name="ddlFontFamily" disableOptionCentering style="max-width: unset;" (selectionChange)="onChangeFontFamily()">
+                            <mat-option class="font-option" value="Roboto" style="font-family: Roboto, sans-serif; font-size: 16px;"><small>Roboto</small></mat-option>
+                            <mat-option class="font-option" value="Red Rose" style="font-family: 'Red Rose', sans-serif; font-size: 16px;"><small>Red Rose</small></mat-option>
+                            <mat-option class="font-option" value="Oswald" style="font-family: Oswald, sans-serif; font-size: 16px;"><small>Oswald</small></mat-option>
+                            <mat-option class="font-option" value="Roboto Mono" style="font-family: 'Roboto Mono', sans-serif; font-size: 16px;"><small>Roboto Mono</small></mat-option>
+                            <mat-option class="font-option" value="Open Sans Condensed" style="font-family: 'Open Sans Condensed', sans-serif; font-size: 16px;"><small>Open Sans Condensed</small></mat-option>
+                            <mat-option class="font-option" value="Ranchers" style="font-family: Ranchers, sans-serif; font-size: 16px;"><small>Ranchers</small></mat-option>
+                            <mat-option class="font-option" value="Press Start 2P" style="font-family: 'Press Start 2P', sans-serif; font-size: 14px;"><small>Press Start 2P</small></mat-option>
+                        </mat-select>
+                        <mat-hint>Font</mat-hint>
+                    </mat-form-field>
+                    <mat-slider thumbLabel tickInterval="1" step="1" min="0" [max]="maxFontWeightIndex" style="width: 100%;" [(ngModel)]="fontWeightIndex" name="sldrFontWeight" (change)="onFontWeightChange()" *ngIf="action.textUseCustomFont"></mat-slider>
+                </div>
+            </div>
+
+            <div class="card-property">
+                <div class="content-middle"><mat-checkbox [(ngModel)]="action.textUseCustomSize" name="cbxUseCustomSize">Custom size</mat-checkbox></div>
+                <div class="content-middle content-right">
+                    <label *ngIf="action.textUseCustomSize">Size</label>
+                    <mat-slider thumbLabel tickInterval="1" min="1" max="64" style="width: 100%;" [(ngModel)]="action.textSize" name="sldrFontSize" *ngIf="action.textUseCustomSize" (ngModelChange)="updateRenderToken()"></mat-slider>
+                </div>
+            </div>
+
         </div>
     </mat-tab>
 </mat-tab-group>
