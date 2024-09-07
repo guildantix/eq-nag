@@ -1852,9 +1852,9 @@ function renderToken( token ) {
         document.body.appendChild( listDiv );
         token.dom = listDiv;
 
-        listDiv.style.fontSize = `${listObj.fontSize}px`;
-        listDiv.style.fontWeight = `${listObj.fontWeight}`;
-        listDiv.style.fontFamily = listObj.fontFamily;
+        listDiv.style.fontSize = `${listObj.fontSize ?? 16}px`;
+        listDiv.style.fontWeight = `${listObj.fontWeight ?? 400}`;
+        listDiv.style.fontFamily = listObj.fontFamily ?? 'Oswald';
         listDiv.style.position = 'fixed';
 
         if ( existingBounds != undefined ) {
