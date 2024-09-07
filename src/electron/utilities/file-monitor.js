@@ -462,30 +462,37 @@ class FileMonitor {
                     
                     let lines = read.split( /\r\n|\r|\n/gmi ).filter( l => l?.length > 0 );
                     
-                    if ( prevLines.length > 0 ) {
-                        if ( lines.length > 0 ) {
-                            if ( !prevLines[ prevLines.length - 1 ].match( /^\[(.*?)\]\s*/i ) || !lines[ 0 ].match( /^\[(.*?)\]\s*/i ) ) {
-                                prevLines[ prevLines.length - 1 ] += lines.shift();
+                    if ( lines.length > 0 ) {
+
+                        if ( !lines[ 0 ].match( /^\[(.*?)\]\s*/i ) ) {
+                            if ( prevLines?.length > 0 ) {
+                                // If the first line is incomplete, append it to the last line of the previous read.
+                                lines[ 0 ] = prevLines[ prevLines.length - 1 ] + lines[ 0 ];
+                            } else {
+                                // If there are no previous lines, we ignore the first line.
+                                lines.shift();
                             }
-    
-                            onChunkRead( prevLines );
-                            prevLines = lines;
-    
-                            readCount = 0;
-                            emptyReadCount = 0;
                         }
-                        
-                        if ( emptyReadCount > flushCount ) {
-                            
-                            onChunkRead( prevLines );
-                            prevLines = [];
-                            readCount = 0;
-                            emptyReadCount = 0;
+
+                        let incompleteLine = undefined;
+                        if ( !lines[ lines.length - 1 ].match( /^\[(.*?)\]\s*/i ) ) {
+                            // If the last line is incomplete, we ignore it for now.
+                            incompleteLine = lines.pop();
                         }
-                    } else {
+    
+                        onChunkRead( lines );
+
+                        if ( incompleteLine ) {
+                            // If there was an incomplete line, we add it to the prevLines array.  This will be prepended to the next read's first line.
+                            lines.push( incompleteLine );
+                            incompleteLine = undefined;
+                        }
                         prevLines = lines;
-                    }
     
+                        readCount = 0;
+                        emptyReadCount = 0;
+                    }
+                    
                     if ( !this.#stopMonitor ) {
                         this.#readErrorCount = 0;
                         setTimeout( () => parse(), readDelayMs );
