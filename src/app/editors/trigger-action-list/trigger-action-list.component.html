@@ -2,6 +2,16 @@
     <mat-tab label="List">
         
         <div class="card-tab-content">
+
+            <div class="card-property">
+                <div class="full-width">
+                    <mat-form-field style="width: 100%;">
+                        <mat-label></mat-label>
+                        <input matInput [(ngModel)]="action.displayText" name="txtDisplayText" />
+                        <mat-hint>List Name</mat-hint>
+                    </mat-form-field>
+                </div>
+            </div>
         
             <div class="card-property">
                 <div class="full-width">
