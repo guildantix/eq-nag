@@ -3,6 +3,18 @@ import * as _ from 'lodash-es';
 import { nagId } from './core/nag-id.util';
 import { TriggerPackageExportTypes, TriggerPackageProperty } from './core.decorators';
 
+
+export const availableFonts = {
+    'Roboto': [ 100, 300, 400, 500, 700, 900 ],
+    'Red Rose': [ 300, 400, 700 ],
+    'Oswald': [ 200, 300, 400, 500, 600, 700 ],
+    'Roboto Mono': [ 100, 200, 300, 400, 500, 600, 700 ],
+    'Open Sans Condensed': [ 300, 700 ],
+    'Ranchers': [ 400 ],
+    'Press Start 2P': [ 400 ],
+};
+
+
 export const ErrorCodes = {
     EqFolderNotFound: {
         code: 'EQDIRNULL',
