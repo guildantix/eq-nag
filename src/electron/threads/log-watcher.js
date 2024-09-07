@@ -3,7 +3,7 @@ const { ipcRenderer } = require( 'electron' );
 const fs = require( 'fs' );
 const { Trigger, TriggerAction, ActionTypes, TriggerConditionTypes, OperatorTypes, CharacterClassLevel, TriggerSubAction, TriggerFolder, TriggerCondition, CapturePhrase, Phrase, TriggerParseHistoryModel, getActionLabel, LogTypes, ErrorMessages } = require( '../data/models/trigger' );
 const { QuickShareAuthorListTypes, SimulationProgress, NConditionalModel } = require( '../data/models/common' );
-const { PhraseParse, LogTrigger } = require( './log.model' );
+const { PhraseParse, LogTrigger, LogList } = require( './log.model' );
 const { OverlayComponent, OverlayWindow, TriggerSecondaryActionModel } = require( '../data/models/overlay-window' );
 const { CharacterModel } = require( '../data/models/character' );
 const customAlphabet = require( 'nanoid' ).customAlphabet;
@@ -20,6 +20,7 @@ const FileMonitor = require( '../utilities/file-monitor' );
 const { LogHistoryManager } = require( '../utilities/log-console' );
 const { createChatRoomLink } = require( '../utilities/peer-to-peer' );
 const { nagException, nagLog } = require( '../utilities/nag-console' );
+const { nagId } = require( '../utilities/nag-id' );
 const chunkSize = 512 * 1024;
 
 window.onerror = ( error, url, line ) => {
@@ -140,6 +141,9 @@ let onTriggerGenCompleteHandlers = [];
 let triggerGenComplete = false;
     
 let rgxTimestamp = /^\[(.*?)\]\s*/i;
+
+/** @type {LogList[]} */
+let lists = [];
 
 // Common errors:
 //  ${C} instead of {C}
@@ -1680,7 +1684,7 @@ function parseLogEntries( raw, simulating, padTime ) {
                         trigger.actions.forEach( action => {
                             // This used to execute actions if there are no phrases on the action, but now it doesn't because the action may exist only as a subaction
                             // ( action.phrases == null || action.phrases?.length === 0 || action.phrases?.indexOf( res.phraseId ) > -1 )
-                            if ( ( isDev || !action.onlyExecuteInDev ) && action.phrases?.indexOf( res.phraseId ) > -1 ) {
+                            if ( ( isDev || !action.onlyExecuteInDev ) && ( action.actionType === ActionTypes.List || action.phrases?.indexOf( res.phraseId ) > -1 ) ) {
 
                                 enableLogging && sendInformationToLog( `Execute trigger action [${trigger.name}] : ${ActionTypes[ action.actionType ]}`, 24 );
                                 enableLogging && sendInformationToLog( `    ||${raw}||`, 24 );
@@ -1884,6 +1888,82 @@ function executeTriggerAction( trigger, action, timestamp, res, deltaTime, simul
         /* --== Clear All ==-- */
 
         clearAll();
+    } else if ( action.actionType === ActionTypes.List ) {
+        /* --== List Action ==-- */
+        
+        displayListAction( res, action, trigger );
+    }
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Sends the list action to the renderer.
+ * 
+ * @param {PhraseParse} res The information from the parsed phrase.
+ * @param {TriggerAction} action The screen glow action to render.
+ * @param {Trigger} trigger The action trigger.
+ */
+function displayListAction( res, action, trigger ) {
+
+    if ( action.createListPhrase === res.phraseId ) {
+
+        // Create a new list.
+        let list = lists.find( f => f.action.actionId === action.actionId ) ?? new LogList();
+
+        if ( list.instanceId ) {
+            ipcRenderer.send( 'overlay:destroy:component', list.instanceId );
+            lists = lists.filter( f => f.instanceId !== list.instanceId );
+            list.instanceId = null;
+        }
+
+        list.name = action.listName;
+        list.instanceId = nagId();
+        list.trigger = trigger;
+        list.action = action;
+
+        lists.push( list );
+        
+        list.component = new OverlayComponent();
+        list.component.instanceId = list.instanceId;
+        list.component.triggerId = trigger.triggerId;
+        list.component.action = action;
+        list.component.matches = res.result;
+        
+        let listSource = '';
+        if ( action.listRegexVarName ) {
+            if ( res.result?.groups && res.result.groups[ action.listRegexVarName ] ) {
+                listSource = res.result.groups[ action.listRegexVarName ];
+            }
+
+            if ( !listSource ) {
+                throw new Error( 'Unable to execute list action. A list variable was specified, but not found in the log entry.' );
+            }
+        } else {
+            // use the first capture group if no name is given.
+            listSource = res.result[ 1 ] ?? '';
+
+            if ( !listSource ) {
+                throw new Error( 'Unable to execute list action. A list could not be generated with the log entry.' );
+            }
+        }
+
+        list.component.listNames = listSource.split( /,/g ).map( s => s.trim() );
+
+        if ( list.component.listNames == null || list.component.listNames.length === 0 ) {
+            throw new Error( 'Unable to execute list action. No items were found in the list from the log entry.' );
+        }
+
+        logInstanceIds.push( list.component.instanceId );
+
+        ipcRenderer.send( 'overlay:send:component', list.component );
     }
 }
 
