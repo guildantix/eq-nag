@@ -1775,6 +1775,18 @@ function Renderer( originX, originY, glowOnStart ) {
             renderTokens.push( data );
             renderToken( data );
         } );
+
+    ipcRenderer.on( 'renderer:token:update',
+        /**
+         * Renders a token. A token is a pre-defined action that is rendered on 
+         * the screen that will send move and resize events to the caller.
+         * 
+         * @param {Electron.IpcRendererEvent} event The event args.
+         * @param {RenderTokenModel} data The render token model.
+         */
+        ( event, data ) => {
+            renderToken( data );
+        } );
     
     ipcRenderer.on( 'renderer:token:destroy',
         /**

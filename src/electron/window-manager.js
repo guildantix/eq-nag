@@ -168,6 +168,17 @@ class WindowManager {
                 this.#tokenObservers[ data.actionId ] = event.sender;
                 this.#renderer.webContents.send( 'renderer:token:create', data );
             } );
+
+        ipcMain.on( 'renderer:token:update',
+            /**
+             * Sends the given render token to the renderer.
+             * 
+             * @param {Electron.IpcMainEvent} event The event args.
+             * @param {RenderTokenModel} data The token data.
+             */
+            ( event, data ) => {
+                this.#renderer.webContents.send( 'renderer:token:update', data );
+            } );
         
         ipcMain.on( 'renderer:token:move',
             /**
