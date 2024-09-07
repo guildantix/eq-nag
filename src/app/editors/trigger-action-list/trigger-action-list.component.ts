@@ -1,5 +1,7 @@
 import { Component, Input, OnInit } from '@angular/core';
-import { OverlayWindowModel, Phrase, TriggerAction } from 'src/app/core.model';
+import { Subscription } from 'rxjs';
+import { ActionTypes, ListObjectModel, OverlayWindowModel, Phrase, RenderTokenModel, TriggerAction } from 'src/app/core.model';
+import { IpcService } from 'src/app/ipc.service';
 import { StringUtility } from 'src/app/utilities';
 
 @Component( {
@@ -10,6 +12,7 @@ import { StringUtility } from 'src/app/utilities';
 export class TriggerActionListComponent implements OnInit {
     
     @Input( 'action' ) public action: TriggerAction;
+    @Input( 'triggerId' ) public triggerId: string;
     @Input( 'triggerActions' ) public actionOptions: TriggerAction[] = [];
     @Input( 'overlayOptions' ) public timerOverlays: OverlayWindowModel[] = [];
     @Input( 'alertOverlays' ) public alertOverlays: OverlayWindowModel[] = [];
@@ -20,8 +23,15 @@ export class TriggerActionListComponent implements OnInit {
     public removeVariableNames: string[] = [];
     public addVariableNames: string[] = [];
     public actionTrackingVariableNames: string[] = [];
+    public tokenSubscription: Subscription | null = null;
 
-    constructor() { }
+    public get isRenderingToken(): boolean {
+        return this.tokenSubscription ? true : false;
+    }
+
+    constructor(
+        private readonly ipcService: IpcService,
+    ) { }
 
     ngOnInit(): void {
         if ( this.action ) {
@@ -131,6 +141,43 @@ export class TriggerActionListComponent implements OnInit {
         if ( this.action.autoEnumerateUseVariable ) {
             this.action.autoEnumerateSpecifyTime = false;
         }
+    }
+
+    showRendererToken(): void {
+        let token = new RenderTokenModel();
+
+        token.actionId = this.action.actionId;
+        token.triggerId = this.triggerId;
+        token.actionType = this.action.actionType;
+
+        if ( this.action.actionType === ActionTypes.List ) {
+            token.objectModel = new ListObjectModel();
+            token.objectModel.listTitle = this.action.displayText;
+            token.objectModel.fontSize = this.action.textSize;
+            token.objectModel.fontFamily = this.action.textFont;
+            token.objectModel.fontWeight = this.action.textWeight;
+            token.objectModel.items = [
+                { name: 'Player 1', iconCssClass: 'fa-chevron-right', textCssClass: 'success' },
+                { name: 'Player 2' },
+                { name: 'Player 3' },
+                { name: 'Player 4' },
+                { name: 'Player 5' },
+                { name: 'Player 6' },
+                { name: 'Player 7' },
+            ];
+        }
+
+        this.tokenSubscription = this.ipcService
+            .renderActionToken( token )
+            .subscribe( changeEventArgs => {
+                console.log( 'token moved', changeEventArgs );
+            } );
+    }
+
+    destroyRendererToken(): void {
+        this.tokenSubscription.unsubscribe();
+        this.tokenSubscription = null;
+        this.ipcService.destroyActionToken( this.action.actionId );
     }
 
 }

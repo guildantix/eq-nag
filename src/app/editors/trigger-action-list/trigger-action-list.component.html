@@ -264,4 +264,19 @@
         </div>
 
     </mat-tab>
+    <mat-tab label="Display">
+        <div class="card-tab-content">
+            
+            <div class="card-property">
+                <div class="content-top">
+                    <p>Show a template list that will allow you to place the list on your monitor, as well as see the selected styles.</p>
+                </div>
+                <div class="content-top">
+                    <button mat-button class="color-green" (click)="showRendererToken()" *ngIf="!isRenderingToken">Show List</button>
+                    <button mat-button class="color-red-warn" (click)="destroyRendererToken()" *ngIf="isRenderingToken">Hide List</button>
+                </div>
+            </div>
+
+        </div>
+    </mat-tab>
 </mat-tab-group>
