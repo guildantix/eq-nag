@@ -920,6 +920,10 @@ export class IpcService {
         return obs;
     }
 
+    public updateActionToken( token: RenderTokenModel ): void {
+        window.api.ipc.send( 'renderer:token:update', token );
+    }
+
     public destroyActionToken( actionId: string ): void {
         window.api.ipc.send( 'renderer:token:destroy', actionId );
     }
