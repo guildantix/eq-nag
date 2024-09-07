@@ -9,7 +9,7 @@ import { StringUtility } from 'src/app/utilities';
     templateUrl: './trigger-action-list.component.html',
     styleUrls: [ './trigger-action-list.component.scss' ]
 } )
-export class TriggerActionListComponent implements OnInit {
+export class TriggerActionListComponent implements OnInit, OnDestroy {
     
     @Input( 'action' ) public action: TriggerAction;
     @Input( 'triggerId' ) public triggerId: string;
@@ -50,6 +50,13 @@ export class TriggerActionListComponent implements OnInit {
             if ( this.action.listActionTrackingPhrase ) {
                 this.onActionTrackingPhraseChange( this.action.listActionTrackingPhrase );
             }
+        }
+        window.addEventListener( 'beforeunload', () => this.ngOnDestroy() );
+    }
+
+    ngOnDestroy(): void {
+        if ( this.isRenderingToken ) {
+            this.destroyRendererToken();
         }
     }
     
