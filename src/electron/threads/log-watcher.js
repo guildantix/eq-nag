@@ -710,7 +710,7 @@ function LogWatcher(character, logPosition) {
             }
         }
 
-        if ( activeCounters || cancellableComponents?.length > 0 || secondaryTriggerActions?.length > 0 ) {
+        if ( lists.length > 0 || activeCounters || cancellableComponents?.length > 0 || secondaryTriggerActions?.length > 0 ) {
             // We're still alive, don't kill us!
             e.sender.send( 'log:pulse', true );
         } else {
