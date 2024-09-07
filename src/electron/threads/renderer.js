@@ -24,6 +24,7 @@ const { overlayZIndex, overlayTopZIndex, imagesPath } = require( '../utilities/c
 const { PlayerDps, DpsMeterSettings, EncounterStats, EncounterStatsEventArgs, PetDps } = require( '../data/models/combat-parser' );
 const { getEverQuestClassIcon, getEverQuestClassAbbreviation, getEverQuestClassColor } = require( '../utilities/everquest' );
 const { lightenColor, darkenColor } = require( '../utilities/colors' );
+const { RenderTokenModel, RendererComponent, ListObjectModel } = require( '../data/models/renderer' );
 
 const encounterHistoryLimit = 25;
 
@@ -252,6 +253,8 @@ var dpsWindowTemplate;
 var dpsWindowItemTemplate;
 /** @type {HandlebarsTemplateDelegate<any>} */
 var dropdownMenuTemplate;
+/** @type {HandlebarsTemplateDelegate<any>} */
+var listTemplate;
 var voiceOptions = [];
 /** @type {Record<number, number>} */
 var destroySchedule = {};
@@ -354,6 +357,12 @@ let dpsMeterSettings = new DpsMeterSettings();
 
 /** @type {WinInfo} */
 let activeWinInfo = undefined;
+
+/** @type {RendererComponent[]} */
+let rendererComponents = [];
+
+/** @type {RenderTokenModel[]} */
+let renderTokens = [];
 
 
 
@@ -1041,9 +1050,10 @@ function Renderer( originX, originY, glowOnStart ) {
         dpsWindowTemplate = Handlebars.compile( document.querySelector( '#dpsWindowTemplate' ).innerHTML );
         dpsWindowItemTemplate = Handlebars.compile( document.querySelector( '#dpsWindowItemTemplate' ).innerHTML );
         dropdownMenuTemplate = Handlebars.compile( document.querySelector( '#dropdownMenu' ).innerHTML );
+        listTemplate = Handlebars.compile( document.querySelector( '#listTemplate' ).innerHTML );
 
         logInfo( '[Info:Renderer:Templates] (Renderer docReady) Templates have been compiled!' );
-    
+
         /** Tell the main thread that we need a list of all overlays. */
         ipcRenderer.send( 'overlay:get', null );
 
@@ -1752,6 +1762,38 @@ function Renderer( originX, originY, glowOnStart ) {
     ipcRenderer.on( 'renderer:clear-all', function () {
         clearAll();
     } );
+
+    ipcRenderer.on( 'renderer:token:create',
+        /**
+         * Renders a token. A token is a pre-defined action that is rendered on 
+         * the screen that will send move and resize events to the caller.
+         * 
+         * @param {Electron.IpcRendererEvent} event The event args.
+         * @param {RenderTokenModel} data The render token model.
+         */
+        ( event, data ) => {
+            renderTokens.push( data );
+            renderToken( data );
+        } );
+    
+    ipcRenderer.on( 'renderer:token:destroy',
+        /**
+         * Clears a token from the screen.
+         * 
+         * @param {Electron.IpcRendererEvent} event The event args.
+         * @param {string} data The action id of the token to clear.
+         */
+        ( event, data ) => {
+            let existing = renderTokens.find( f => f.actionId === data );
+            if ( existing ) {
+                renderTokens = renderTokens.filter( f => f.actionId !== data );
+                if ( existing.dom ) {
+                    disableMoveResize( existing.dom );
+                    document.body.removeChild( existing.dom );
+                    existing.dom.remove();
+                }
+            }
+        } );
     
     speechSynthesis.onvoiceschanged = () => {
         voiceOptions = speechSynthesis.getVoices();
@@ -1760,6 +1802,76 @@ function Renderer( originX, originY, glowOnStart ) {
     return {
         origin: origin,
     };
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Renders the given token.
+ * 
+ * @param {RenderTokenModel} token The token to render.
+ */
+function renderToken( token ) {
+
+    if ( rendererComponents.findIndex( f => f.actionId === token.actionId ) > -1 ) {
+        logInfo( `[Info:Renderer:Token] (renderToken) There is already an active component on screen with the same action id.` );
+        return;
+    }
+
+    if ( token.actionType === ActionTypes.List && token.objectModel != null ) {
+        
+        let existing = renderTokens.find( f => f.actionId === token.actionId );
+        /** @type {DOMRect} */
+        let existingBounds = undefined;
+        if ( existing ) {
+            // Remove the existing token so we can build a new one.
+            renderTokens = renderTokens.filter( f => f.actionId !== token.actionId );
+            renderTokens.push( token );
+
+            if ( existing.dom ) {
+                existingBounds = existing?.dom.getBoundingClientRect();
+                disableMoveResize( existing.dom );
+                document.body.removeChild( existing.dom );
+            }
+
+        }
+        
+        /** @type {ListObjectModel} */
+        let listObj = token.objectModel;
+        let listHtml = listTemplate( listObj );
+
+        let listDiv = document.createElement( 'div' );
+        listDiv.innerHTML = listHtml;
+        document.body.appendChild( listDiv );
+        token.dom = listDiv;
+
+        listDiv.style.fontSize = `${listObj.fontSize}px`;
+        listDiv.style.fontWeight = `${listObj.fontWeight}`;
+        listDiv.style.fontFamily = listObj.fontFamily;
+        listDiv.style.position = 'fixed';
+
+        if ( existingBounds != undefined ) {
+            listDiv.style.left = existingBounds.left + 'px';
+            listDiv.style.top = existingBounds.top + 'px';
+        } else {
+            // center element on main monitor
+            listDiv.style.left = ( origin.x + ( screen.getPrimaryDisplay().workArea.width / 2 ) - ( listDiv.offsetWidth / 2 ) ) + 'px';
+            listDiv.style.top = ( origin.y + ( screen.getPrimaryDisplay().workArea.height / 2 ) - ( listDiv.offsetHeight / 2 ) ) + 'px';
+        }
+
+        enableMoveResize( listDiv, listDiv.querySelector( '.list-container' ), bounds => {
+            ipcRenderer.send( `renderer:token:move`, { actionId: token.actionId, bounds: bounds } );
+        } );
+        MouseUtilities.refreshDom();
+    }
+
 }
 
 
@@ -3126,6 +3238,8 @@ function render( overlayId, comp ) {
                     sortOverlayComponents( overlayId );
             
                 }
+
+            } else if ( comp?.action?.actionType === ActionTypes.List ) {
 
             }
         }
