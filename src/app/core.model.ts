@@ -1900,3 +1900,38 @@ export class FileReadDelays {
     public flushDelayMs: number = 1000;
 
 }
+
+export class ListItemModel {
+
+    public name: string;
+    public iconCssClass?: string;
+    public textCssClass?: string;
+
+}
+
+export class ListObjectModel {
+
+    public listCssClass: 'background' | 'no-background' = 'background';
+    public listTitle: string;
+    public fontSize: number = 16;
+    public fontWeight: number = 400;
+    public fontFamily: string = 'Oswald';
+    public items: ListItemModel[] = [];
+
+}
+
+export class RenderTokenModel {
+
+    public triggerId: string;
+    public actionId: string;
+    public actionType: ActionTypes;
+    public objectModel: ListObjectModel;
+
+}
+
+export class TokenChangeModel {
+
+    public actionId: string;
+    public bounds: Rectangle;
+
+}
