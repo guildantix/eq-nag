@@ -556,6 +556,8 @@ class TriggerAction {
     /** @type {string} */
     listActionTrackingVarName = null;
 
+    /** @type {Electron.Rectangle} */
+    staticPosition = null;
 }
 
 class OwnedTriggerAction extends TriggerAction {
