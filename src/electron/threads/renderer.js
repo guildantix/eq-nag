@@ -1872,6 +1872,9 @@ function renderToken( token ) {
         if ( existingBounds != undefined ) {
             listDiv.style.left = existingBounds.left + 'px';
             listDiv.style.top = existingBounds.top + 'px';
+        } else if ( listObj.bounds != undefined ) {
+            listDiv.style.left = listObj.bounds.x + 'px';
+            listDiv.style.top = listObj.bounds.y + 'px';
         } else {
             // center element on main monitor
             listDiv.style.left = ( origin.x + ( screen.getPrimaryDisplay().workArea.width / 2 ) - ( listDiv.offsetWidth / 2 ) ) + 'px';

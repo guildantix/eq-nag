@@ -860,6 +860,7 @@ export class TriggerActionProperties {
     public listActionTrackingPhrase: string = null;
     public listActionTrackingVarName: string = null;
     
+    public staticPosition: Rectangle = null;
 }
 
 export class TriggerAction extends TriggerActionProperties {
@@ -1929,6 +1930,7 @@ export class ListObjectModel {
     public fontWeight: number = 400;
     public fontFamily: string = 'Oswald';
     public items: ListItemModel[] = [];
+    public bounds?: Rectangle;
 
 }
 

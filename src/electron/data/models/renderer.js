@@ -36,6 +36,8 @@ class ListObjectModel {
     fontFamily = 'Oswald';
     /** @type {ListItemModel[]} */
     items = [];
+    /** @type {Electron.Rectangle | undefined} */
+    bounds = undefined;
 }
 
 class RenderTokenModel {

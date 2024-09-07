@@ -197,6 +197,10 @@ export class TriggerActionListComponent implements OnInit, OnDestroy {
                 { name: 'Player 6' },
                 { name: 'Player 7' },
             ];
+
+            if ( this.action.staticPosition != null ) {
+                token.objectModel.bounds = this.action.staticPosition;
+            }
         }
 
         return token;
@@ -208,8 +212,7 @@ export class TriggerActionListComponent implements OnInit, OnDestroy {
         this.tokenSubscription = this.ipcService
             .renderActionToken( token )
             .subscribe( changeEventArgs => {
-                // TODO: Save the x/y position to the action.
-                console.log( 'token moved', changeEventArgs );
+                this.action.staticPosition = changeEventArgs.bounds;
             } );
     }
 
