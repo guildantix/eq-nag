@@ -1,4 +1,5 @@
-const { Trigger, TriggerFolder, TriggerCondition } = require( "../data/models/trigger" );
+const { OverlayComponent } = require( "../data/models/overlay-window" );
+const { Trigger, TriggerFolder, TriggerCondition, TriggerAction } = require( "../data/models/trigger" );
 
 class PhraseParse {
     /** @type {string} */
@@ -59,4 +60,19 @@ class LogTrigger extends Trigger {
     _profileDisabled = false;
 }
 
-module.exports = { PhraseParse, LogTrigger };
+class LogList {
+    /** @type {string} */
+    name;
+    /** @type {string} */
+    instanceId;
+    /** @type {Trigger} */
+    trigger;
+    /** @type {TriggerAction} */
+    action;
+    /** @type {'created'|'running'|'stopped'} */
+    state = 'created';
+    /** @type {OverlayComponent} */
+    component;
+}
+
+module.exports = { PhraseParse, LogTrigger, LogList };
