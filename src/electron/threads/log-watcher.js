@@ -1961,6 +1961,13 @@ function displayListAction( res, action, trigger ) {
             throw new Error( 'Unable to execute list action. No items were found in the list from the log entry.' );
         }
 
+        if ( action.autoEnumerateListTimerName && res.result.groups[ action.autoEnumerateListTimerName ] ) {
+            list.action.duration = StringUtilities.getDurationFromLabel( res.result.groups[ action.autoEnumerateListTimerName ] );
+        }
+
+        // Ensure the duration is at least numerical.
+        list.action.duration = list.action.duration ? list.action.duration : 0;
+        
         logInstanceIds.push( list.component.instanceId );
 
         ipcRenderer.send( 'overlay:send:component', list.component );
