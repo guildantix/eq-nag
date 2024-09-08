@@ -173,6 +173,8 @@ class OverlayComponent {
     stopwatchState = 'running';
     /** @type {string[]} */
     listNames = [];
+    /** @type {string[]} */
+    skipNames = [];
 }
 
 class OverlayStoreModel {
