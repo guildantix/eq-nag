@@ -278,6 +278,11 @@
             </div>
 
             <div class="card-property">
+                <div class="content-middle"><mat-checkbox [(ngModel)]="action.useBackground" name="cbxUseCustomFont" (ngModelChange)="updateRenderToken()">Use backdrop</mat-checkbox></div>
+                <div class="content-middle content-right"></div>
+            </div>
+
+            <div class="card-property">
                 <div class="content-middle"><mat-checkbox [(ngModel)]="action.textUseCustomFont" name="cbxUseCustomFont">Custom font</mat-checkbox></div>
                 <div class="content-middle content-right">
                     <mat-form-field *ngIf="action.textUseCustomFont">

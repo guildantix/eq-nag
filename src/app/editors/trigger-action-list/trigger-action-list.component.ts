@@ -188,6 +188,7 @@ export class TriggerActionListComponent implements OnInit, OnDestroy {
             token.objectModel.fontSize = this.action.textSize;
             token.objectModel.fontFamily = this.action.textFont;
             token.objectModel.fontWeight = this.action.textWeight;
+            token.objectModel.listCssClass = this.action.useBackground ? 'background' : 'no-background';
             token.objectModel.items = [
                 { name: 'Player 1', iconCssClass: 'fa-chevron-right', textCssClass: 'success' },
                 { name: 'Player 2' },

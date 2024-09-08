@@ -556,6 +556,9 @@ class TriggerAction {
     /** @type {string} */
     listActionTrackingVarName = null;
 
+    /** @type {boolean} */
+    useBackground = false;
+
     /** @type {Electron.Rectangle} */
     staticPosition = null;
 }

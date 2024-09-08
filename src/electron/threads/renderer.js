@@ -3291,6 +3291,7 @@ function renderListAction( component ) {
         listObj.fontSize = component.action.textSize;
         listObj.fontFamily = component.action.textFont;
         listObj.fontWeight = component.action.textWeight;
+        listObj.listCssClass = component.action.useBackground ? 'background' : 'no-background';
 
         listObj.items = component.listNames.map( name => {
             return { name: name };
