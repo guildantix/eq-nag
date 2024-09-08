@@ -1993,14 +1993,20 @@ function displayListAction( res, action, trigger ) {
                 ipcRenderer.send( 'overlay:send:component', list.component );
 
                 if ( list.action.duration > 0 ) {
-                    // set timeout is often a few ms off, to account for this drifting over time we'll alter the timeout duration.
-                    let expected = list.timestamp + ( list.action.duration * 1000 );
-                    let drift = now - expected;
-                    let duration = ( list.action.duration * 1000 ) - drift;
+                    let duration = list.action.duration * 1000;
 
-                    // Now that we have our duration, we can set our timestamp, nudging it to account for drift.
-                    list.timestamp = now - drift;
+                    if ( list.timestamp === 0 ) {
+                        list.timestamp = now;
+                    } else {
+                        // set timeout is often a few ms off, to account for this drifting over time we'll alter the timeout duration.
+                        let expected = list.timestamp + duration;
+                        let drift = now - expected;
+                        duration = duration - drift;
 
+                        // Now that we have our duration, we can set our timestamp, nudging it to account for drift.
+                        list.timestamp = now - drift;
+                    }
+                    
                     if ( duration > 0 ) {
                         list.component.intervalId = window.setTimeout( () => {
                             list.updateListFn();
@@ -2008,19 +2014,14 @@ function displayListAction( res, action, trigger ) {
                     } else {
                         list.updateListFn();
                     }
+
+                } else {
+                    throw new Error( 'Unable to execute list action. The duration for the list enumeration is not set and cannot auto enumerate.' );
                 }
             }
 
         };
         
-        if ( list.action.autoEnumerateList ) {
-            list.component.currentName = list.component.listNames[ 0 ];
-            list.timestamp = Math.round( performance.now() );
-            list.component.intervalId = window.setTimeout( () => {
-                list.updateListFn();
-            }, action.duration * 1000 );
-        }
-
         ipcRenderer.send( 'overlay:send:component', list.component );
 
     } else if ( action.enableListEnrollment && action.listEnrollmentAddPhrase === res.phraseId ) {
@@ -2088,6 +2089,37 @@ function displayListAction( res, action, trigger ) {
         
         ipcRenderer.send( 'overlay:send:component', list.component );
 
+    } else if ( action.autoEnumerateList && action.listEnumerateBeginPhrase === res.phraseId ) {
+        let list = lists.find( f => f.action.actionId === action.actionId );
+
+        if ( !list ) {
+            throw new Error( 'Unable to execute list action. The list to begin enumeration was not found.' );
+        }
+
+        if ( list.component.intervalId === -1 ) {
+            list.timestamp = 0;
+            list.updateListFn();
+        }
+    } else if ( action.autoEnumerateList && action.listEnumerateEndPhrase === res.phraseId ) {
+        let list = lists.find( f => f.action.actionId === action.actionId );
+
+        if ( !list ) {
+            throw new Error( 'Unable to execute list action. The list to end enumeration was not found.' );
+        }
+
+        if ( list.component.intervalId !== -1 ) {
+            window.clearTimeout( list.component.intervalId );
+            list.component.intervalId = -1;
+
+            list.component.currentName = undefined;
+
+            ipcRenderer.send( 'overlay:send:component', list.component );
+        } else {
+            // If the list is already stopped, then we'll delete the list.
+            ipcRenderer.send( 'overlay:destroy:component', list.instanceId );
+
+            lists = lists.filter( f => f.instanceId !== list.instanceId );
+        }
     }
 }
 
