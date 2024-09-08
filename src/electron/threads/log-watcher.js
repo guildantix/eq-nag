@@ -2036,6 +2036,7 @@ function displayListAction( res, action, trigger ) {
         list.component.skipNames = list.component.skipNames?.length > 0 ? [ ...list.component.skipNames, skipName ] : [ skipName ];
         
         ipcRenderer.send( 'overlay:send:component', list.component );
+        
     }
 }
 
