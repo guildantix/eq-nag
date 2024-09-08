@@ -3156,7 +3156,7 @@ function render( overlayId, comp ) {
             }
         } else if ( comp?.action?.actionType === ActionTypes.List ) {
             
-            renderListAction( comp );
+            renderListAction( Object.assign( new RendererComponent(), comp ) );
 
         } else {
 
@@ -3277,60 +3277,65 @@ function render( overlayId, comp ) {
 /**
  * Renders a list action component.
  * 
- * @param {OverlayComponent} component The component to render.
+ * @param {RendererComponent} component The component to render.
  */
 function renderListAction( component ) {
 
+    // iconCssClass: 'fa-chevron-right'
+
     let existing = rendererComponents.find( f => f.instanceId === component.instanceId );
 
-    if ( !existing ) {
-        /** @type {ListObjectModel} */
-        let listObj = new ListObjectModel();
-
-        listObj.listTitle = component.action.displayText;
-        listObj.fontSize = component.action.textSize;
-        listObj.fontFamily = component.action.textFont;
-        listObj.fontWeight = component.action.textWeight;
-        listObj.listCssClass = component.action.useBackground ? 'background' : 'no-background';
-
-        listObj.items = component.listNames.map( name => {
-            return { name: name };
-        } );
-
-        if ( component.action.staticPosition != null ) {
-            listObj.bounds = component.action.staticPosition;
-        }
-
-        let listHtml = listTemplate( listObj );
-        let listDiv = document.createElement( 'div' );
-
-        listDiv.innerHTML = listHtml;
-        document.body.appendChild( listDiv );
-
-        component.dom = listDiv;
-
-        component.dom.style.fontSize = `${listObj.fontSize ?? 16}px`;
-        component.dom.style.fontWeight = `${listObj.fontWeight ?? 400}`;
-        component.dom.style.fontFamily = listObj.fontFamily ?? 'Oswald';
-        component.dom.style.position = 'fixed';
-
-        if ( listObj.bounds != null ) {
-            component.dom.style.left = listObj.bounds.x + 'px';
-            component.dom.style.top = listObj.bounds.y + 'px';
-        } else {
-            // Put it on the center of the main monitor.
-            component.dom.style.left = ( screen.getPrimaryDisplay().workArea.width / 2 ) - ( component.dom.offsetWidth / 2 ) + 'px';
-            component.dom.style.top = ( screen.getPrimaryDisplay().workArea.height / 2 ) - ( component.dom.offsetHeight / 2 ) + 'px';
-        }
-
-        component.removeComponent = () => {
-            component.dom.parentNode && component.dom.parentNode.removeChild( component.dom );
-            ArrayUtilities.remove( rendererComponents, f => f.instanceId === component.instanceId );
-        };
-
-        rendererComponents.push( component );
+    if ( existing ) {
+        existing.removeComponent();
+        existing = undefined;
     }
 
+    /** @type {ListObjectModel} */
+    let listObj = new ListObjectModel();
+
+    listObj.listTitle = component.action.displayText;
+    listObj.fontSize = component.action.textSize;
+    listObj.fontFamily = component.action.textFont;
+    listObj.fontWeight = component.action.textWeight;
+    listObj.listCssClass = component.action.useBackground ? 'background' : 'no-background';
+
+    listObj.items = component.listNames.map( name => {
+        return { name: name };
+    } );
+
+    if ( component.action.staticPosition != null ) {
+        listObj.bounds = component.action.staticPosition;
+    }
+
+    let listHtml = listTemplate( listObj );
+    let listDiv = document.createElement( 'div' );
+
+    listDiv.innerHTML = listHtml;
+    document.body.appendChild( listDiv );
+
+    component.dom = listDiv;
+
+    component.dom.style.fontSize = `${listObj.fontSize ?? 16}px`;
+    component.dom.style.fontWeight = `${listObj.fontWeight ?? 400}`;
+    component.dom.style.fontFamily = listObj.fontFamily ?? 'Oswald';
+    component.dom.style.position = 'fixed';
+
+    if ( listObj.bounds != null ) {
+        component.dom.style.left = listObj.bounds.x + 'px';
+        component.dom.style.top = listObj.bounds.y + 'px';
+    } else {
+        // Put it on the center of the main monitor.
+        component.dom.style.left = ( screen.getPrimaryDisplay().workArea.width / 2 ) - ( component.dom.offsetWidth / 2 ) + 'px';
+        component.dom.style.top = ( screen.getPrimaryDisplay().workArea.height / 2 ) - ( component.dom.offsetHeight / 2 ) + 'px';
+    }
+
+    component.removeComponent = () => {
+        component.dom.parentNode && component.dom.parentNode.removeChild( component.dom );
+        ArrayUtilities.remove( rendererComponents, f => f.instanceId === component.instanceId );
+    };
+
+    rendererComponents.push( component );
+    
 }
 
 

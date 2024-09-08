@@ -1,17 +1,11 @@
 const { OverlayComponent } = require( "./overlay-window" );
 const { ActionTypes } = require( "./trigger" );
 
-class RendererComponent {
-    /** @type {string} */
-    instanceId;
-    /** @type {string} */
-    triggerId;
+class RendererComponent extends OverlayComponent {
     /** @type {string} */
     actionId;
     /** @type {ListObjectModel | OverlayComponent} */
     objectModel;
-    /** @type {HTMLDivElement | undefined} The containing div element. */
-    dom = undefined;
 }
 
 class ListItemModel {
