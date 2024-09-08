@@ -2100,14 +2100,14 @@ function displayListAction( res, action, trigger ) {
             list.timestamp = 0;
             list.updateListFn();
         }
-    } else if ( action.autoEnumerateList && action.listEnumerateEndPhrase === res.phraseId ) {
+    } else if ( action.listEnumerateEndPhrase === res.phraseId ) {
         let list = lists.find( f => f.action.actionId === action.actionId );
 
         if ( !list ) {
             throw new Error( 'Unable to execute list action. The list to end enumeration was not found.' );
         }
 
-        if ( list.component.intervalId !== -1 ) {
+        if ( action.autoEnumerateList && list.component.intervalId !== -1 ) {
             window.clearTimeout( list.component.intervalId );
             list.component.intervalId = -1;
 
