@@ -74,6 +74,10 @@ class LogList {
     state = 'created';
     /** @type {RendererComponent} */
     component;
+    /** @type {() => void} */
+    updateListFn;
+    /** @type {number} */
+    timestamp;
 }
 
 module.exports = { PhraseParse, LogTrigger, LogList };
