@@ -1971,6 +1971,71 @@ function displayListAction( res, action, trigger ) {
         logInstanceIds.push( list.component.instanceId );
 
         ipcRenderer.send( 'overlay:send:component', list.component );
+
+    } else if ( action.enableListEnrollment && action.listEnrollmentAddPhrase === res.phraseId ) {
+        let list = lists.find( f => f.action.actionId === action.actionId );
+
+        if ( !list ) {
+            throw new Error( 'Unable to execute list action. The list to enroll in was not found.' );
+        }
+
+        if ( action.listEnrollmentAddVarName ) {
+            if ( res.result?.groups && res.result.groups[ action.listEnrollmentAddVarName ] ) {
+                list.component.listNames += `,${res.result.groups[ action.listEnrollmentAddVarName ]}`;
+            } else {
+                throw new Error( 'Unable to execute list action. The enrollment variable was not found in the log entry.' );
+            }
+        } else {
+            list.component.listNames += `,${res.result[ 1 ]}`;
+        }
+
+        ipcRenderer.send( 'overlay:send:component', list.component );
+        
+    } else if ( action.enableListEnrollment && action.listEnrollmentRemovePhrase === res.phraseId ) {
+        let list = lists.find( f => f.action.actionId === action.actionId );
+
+        if ( !list ) {
+            throw new Error( 'Unable to execute list action. The list to remove from was not found.' );
+        }
+
+        if ( action.listEnrollmentRemoveVarName ) {
+            if ( res.result?.groups && res.result.groups[ action.listEnrollmentRemoveVarName ] ) {
+                list.component.listNames = list.component.listNames.filter( f => f !== res.result.groups[ action.listEnrollmentRemoveVarName ] );
+            } else {
+                throw new Error( 'Unable to execute list action. The removal variable was not found in the log entry.' );
+            }
+        } else {
+            list.component.listNames = list.component.listNames.filter( f => f !== res.result[ 1 ] );
+        }
+        
+        ipcRenderer.send( 'overlay:send:component', list.component );
+        
+    } else if ( action.enableListEnrollment && action.listEnrollmentSkipPhrase === res.phraseId ) {
+        let list = lists.find( f => f.action.actionId === action.actionId );
+
+        if ( !list ) {
+            throw new Error( 'Unable to execute list action. The list to skip enrollment in was not found.' );
+        }
+
+        let skipName = '';
+
+        if ( action.listEnrollmentSkipVarName ) {
+            if ( res.result?.groups && res.result.groups[ action.listEnrollmentSkipVarName ] ) {
+                skipName = res.result.groups[ action.listEnrollmentSkipVarName ];
+            } else {
+                throw new Error( 'Unable to execute list action. The skip variable was not found in the log entry.' );
+            }
+        } else {
+            skipName = res.result[ 1 ];
+        }
+
+        if ( !skipName ) {
+            throw new Error( 'Unable to execute list action. The skip name was not found in the log entry.' );
+        }
+
+        list.component.skipNames = list.component.skipNames?.length > 0 ? [ ...list.component.skipNames, skipName ] : [ skipName ];
+        
+        ipcRenderer.send( 'overlay:send:component', list.component );
     }
 }
 
