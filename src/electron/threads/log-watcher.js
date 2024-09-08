@@ -1971,6 +1971,56 @@ function displayListAction( res, action, trigger ) {
         
         logInstanceIds.push( list.component.instanceId );
 
+        list.updateListFn = () => {
+            let now = Math.round( performance.now() );
+            let currentIndex = 0;
+
+            if ( list.component.currentName ) {
+                currentIndex = list.component.listNames.indexOf( list.component.currentName ) + 1;
+            }
+
+            if ( currentIndex >= list.component.listNames.length ) {
+                currentIndex = 0;
+            }
+
+            list.component.currentName = list.component.listNames[ currentIndex ];
+
+            if ( list.component.skipNames.includes( list.component.currentName ) ) {
+                list.component.skipNames = list.component.skipNames.filter( f => f !== list.component.currentName );
+                list.updateListFn();
+
+            } else if ( list.action.autoEnumerateList ) {
+                ipcRenderer.send( 'overlay:send:component', list.component );
+
+                if ( list.action.duration > 0 ) {
+                    // set timeout is often a few ms off, to account for this drifting over time we'll alter the timeout duration.
+                    let expected = list.timestamp + ( list.action.duration * 1000 );
+                    let drift = now - expected;
+                    let duration = ( list.action.duration * 1000 ) - drift;
+
+                    // Now that we have our duration, we can set our timestamp, nudging it to account for drift.
+                    list.timestamp = now - drift;
+
+                    if ( duration > 0 ) {
+                        list.component.intervalId = window.setTimeout( () => {
+                            list.updateListFn();
+                        }, duration );
+                    } else {
+                        list.updateListFn();
+                    }
+                }
+            }
+
+        };
+        
+        if ( list.action.autoEnumerateList ) {
+            list.component.currentName = list.component.listNames[ 0 ];
+            list.timestamp = Math.round( performance.now() );
+            list.component.intervalId = window.setTimeout( () => {
+                list.updateListFn();
+            }, action.duration * 1000 );
+        }
+
         ipcRenderer.send( 'overlay:send:component', list.component );
 
     } else if ( action.enableListEnrollment && action.listEnrollmentAddPhrase === res.phraseId ) {
@@ -1982,12 +2032,12 @@ function displayListAction( res, action, trigger ) {
 
         if ( action.listEnrollmentAddVarName ) {
             if ( res.result?.groups && res.result.groups[ action.listEnrollmentAddVarName ] ) {
-                list.component.listNames += `,${res.result.groups[ action.listEnrollmentAddVarName ]}`;
+                list.component.listNames.push( res.result.groups[ action.listEnrollmentAddVarName ] );
             } else {
                 throw new Error( 'Unable to execute list action. The enrollment variable was not found in the log entry.' );
             }
-        } else {
-            list.component.listNames += `,${res.result[ 1 ]}`;
+        } else if ( res.result[ 1 ] ) {
+            list.component.listNames.push( res.result[ 1 ] );
         }
 
         ipcRenderer.send( 'overlay:send:component', list.component );
