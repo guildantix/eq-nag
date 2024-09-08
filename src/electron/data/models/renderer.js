@@ -10,6 +10,8 @@ class RendererComponent extends OverlayComponent {
     listNames = [];
     /** @type {string[]} */
     skipNames = [];
+    /** @type {string} */
+    currentName = '';
 }
 
 class ListItemModel {
