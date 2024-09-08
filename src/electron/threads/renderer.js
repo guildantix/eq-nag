@@ -3300,7 +3300,11 @@ function renderListAction( component ) {
     listObj.listCssClass = component.action.useBackground ? 'background' : 'no-background';
 
     listObj.items = component.listNames.map( name => {
-        return { name: name };
+        return {
+            name: name,
+            textCssClass: component.skipNames.includes( name ) ? 'error' : undefined,
+            iconCssClass: component.currentName === name ? 'fa-chevron-right' : undefined,
+        };
     } );
 
     if ( component.action.staticPosition != null ) {
