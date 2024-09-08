@@ -171,10 +171,6 @@ class OverlayComponent {
     removeComponent;
     /** @type {'pause'|'stop'|'continue'|'running'|'paused'|'ended'} */
     stopwatchState = 'running';
-    /** @type {string[]} */
-    listNames = [];
-    /** @type {string[]} */
-    skipNames = [];
 }
 
 class OverlayStoreModel {

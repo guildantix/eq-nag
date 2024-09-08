@@ -21,6 +21,7 @@ const { LogHistoryManager } = require( '../utilities/log-console' );
 const { createChatRoomLink } = require( '../utilities/peer-to-peer' );
 const { nagException, nagLog } = require( '../utilities/nag-console' );
 const { nagId } = require( '../utilities/nag-id' );
+const { RendererComponent } = require( '../data/models/renderer' );
 const chunkSize = 512 * 1024;
 
 window.onerror = ( error, url, line ) => {
@@ -1931,7 +1932,7 @@ function displayListAction( res, action, trigger ) {
 
         lists.push( list );
         
-        list.component = new OverlayComponent();
+        list.component = new RendererComponent();
         list.component.instanceId = list.instanceId;
         list.component.triggerId = trigger.triggerId;
         list.component.action = action;
@@ -2036,7 +2037,7 @@ function displayListAction( res, action, trigger ) {
         list.component.skipNames = list.component.skipNames?.length > 0 ? [ ...list.component.skipNames, skipName ] : [ skipName ];
         
         ipcRenderer.send( 'overlay:send:component', list.component );
-        
+
     }
 }
 

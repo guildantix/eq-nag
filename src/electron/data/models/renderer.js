@@ -6,6 +6,10 @@ class RendererComponent extends OverlayComponent {
     actionId;
     /** @type {ListObjectModel | OverlayComponent} */
     objectModel;
+    /** @type {string[]} */
+    listNames = [];
+    /** @type {string[]} */
+    skipNames = [];
 }
 
 class ListItemModel {

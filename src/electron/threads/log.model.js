@@ -1,4 +1,5 @@
 const { OverlayComponent } = require( "../data/models/overlay-window" );
+const { RendererComponent } = require( "../data/models/renderer" );
 const { Trigger, TriggerFolder, TriggerCondition, TriggerAction } = require( "../data/models/trigger" );
 
 class PhraseParse {
@@ -71,7 +72,7 @@ class LogList {
     action;
     /** @type {'created'|'running'|'stopped'} */
     state = 'created';
-    /** @type {OverlayComponent} */
+    /** @type {RendererComponent} */
     component;
 }
 
