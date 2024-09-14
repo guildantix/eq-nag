@@ -8,6 +8,8 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 @Injectable( { providedIn: 'root' } )
 export class QuickActionService {
 
+    private _variableCache: Map<string, Map<string, string>> = new Map<string, Map<string, string>>();
+
     constructor(
         private readonly dialogService: DialogService,
         private readonly ipcService: IpcService,
@@ -27,13 +29,14 @@ export class QuickActionService {
             }
 
             if ( variables.length > 0 ) {
-                let variableMap = new Map<string, string>();
+                let variableMap = this._variableCache.get( hotkey.hotkeyId ) ?? new Map<string, string>();
                 let i = 0;
 
                 const ask = ( variable: string ) => {
-                    this.dialogService.showInputDialog( `${variable}`, `Enter a value for ${variable}`, null, 'Enter a value to be inserted into the macro.' ).subscribe( value => {
+                    this.dialogService.showInputDialog( `${variable}`, `Enter a value for ${variable}`, null, 'Enter a value to be inserted into the macro.', variableMap.get( variable ) ).subscribe( value => {
                         if ( value ) {
                             variableMap.set( variable, value );
+                            this._variableCache.set( hotkey.hotkeyId, variableMap );
                         } else {
                             variableMap.set( variable, 'n/a' );
                             return;
@@ -64,7 +67,7 @@ export class QuickActionService {
                             }
                         }
                     } );
-                }
+                };
 
                 ask( variables[ i ] );
             } else {
