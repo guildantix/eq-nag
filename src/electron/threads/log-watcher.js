@@ -1012,6 +1012,13 @@ function generateTriggerFns() {
                                 
                                 rgxValue = StringUtilities.parseShortCodesToRegex( rgxValue, characterName );
                                 rgxValue = StringUtilities.parseStoredVariablesToRegex( rgxValue, storedVariables );
+
+                                // If the trigger has any List action types.
+                                let listAction = trigger.actions?.find( a => a.actionType === ActionTypes.List );
+                                if ( listAction ) {
+                                    let list = lists.find( f => f.action.actionId === listAction.actionId );
+                                    rgxValue = StringUtilities.parseListCodesToLiteral( rgxValue, list?.component?.listNames ?? [] );
+                                }
     
                                 if ( trigger.captureMethod === 'Sequential' ) {
                                     rgxValue = StringUtilities.parseMatchesToLiteral( rgxValue, { groups: matchGroups }, trigger._deltaTime );

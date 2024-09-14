@@ -750,6 +750,42 @@ function parseShortCodesToRegex( value, characterName ) {
 
 
 /**
+ * Updates the given phrase, replacing matching list values with the list 
+ * values by 1-based index.
+ * 
+ * @description https://regex101.com/r/jsiqH1/1
+ * 
+ * @param {string} value The phrase to search.
+ * @param {string[] | undefined} list The list of values to search for.
+ */
+function parseListCodesToLiteral( value, list ) {
+
+    if ( list != undefined ) {
+        let listMatches = [ ...value.matchAll( /{L([0-9]*?)}/gi ) ];
+
+        if ( listMatches?.length > 0 ) {
+            for ( let i = listMatches.length - 1; i >= 0; i-- ) {
+                let valueIndex = +listMatches[ i ][ 1 ] - 1;
+                let strIndex = listMatches[ i ].index;
+                let length = listMatches[ i ].length + 2;
+                value = value.substring( 0, strIndex ) + ( list[ valueIndex ] ?? '' ) + value.substring( strIndex + length );
+            }
+        }
+    }
+    
+    return value;
+}
+
+
+
+
+
+
+
+
+
+
+/**
  * Parses the given phrase and converts any conditional n values into proper regular expressions.  If a conversion occurs, a list of validation functions will be included in the result.
  * 
  * @returns {NConditionalModel | undefined} 
@@ -944,6 +980,7 @@ let StringUtilities = {
     parsePhoneticTransformsToLiteral: parsePhoneticTransformsToLiteral,
     parseShortCodeValuesToLiteral: parseShortCodeValuesToLiteral,
     parseShortCodesToRegex: parseShortCodesToRegex,
+    parseListCodesToLiteral: parseListCodesToLiteral,
     parseNConditionalCodesToRegex: parseNConditionalCodesToRegex,
     getDurationFromLabel: getDurationFromLabel,
     compare: compare,
