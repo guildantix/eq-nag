@@ -7,6 +7,7 @@ import { IpcService } from 'src/app/ipc.service';
 import { DialogService } from '../dialog.service';
 import { ColorUtility } from 'src/app/utilities';
 import { TriggerModel, ActionTypes, TriggerAction, OverlayWindowModel, OperatorTypes, ImportTypes, ExternalDataSources } from 'src/app/core.model';
+import { Observable } from 'rxjs';
 
 @Component( {
     selector: 'app-trigger-dialog',
@@ -71,67 +72,90 @@ export class TriggerDialogComponent implements OnInit {
         
     }
 
-    public save(): void {
-        this.model.actions?.forEach( ( action: TriggerAction ) => {
+    public save(): Observable<boolean> {
 
-            if ( action.actionType === ActionTypes.StoreVariable ) {
-                // No special processing operations are required for store variable actions.
-                
-            } else {
+        return new Observable( observer => {
 
-                if ( action.useCustomColor === true ) {
-                    action.overrideTimerColor = action.overrideTimerColor;
-                    action.timerBackgroundColor = ColorUtility.FromHex( action.overrideTimerColor ).darken( 0.93 ).toString( 0.75 );
-                } else {
-                    action.overrideTimerColor = null;
-                    action.timerBackgroundColor = null;
-                }
+            let listActionCount = this.model.actions?.filter( x => x.actionType === ActionTypes.List ).length ?? 0;
 
-                if ( action.ifEndingSoon === true && action.endingDuration > 0 ) {
-                    if ( action.endingSoonChangeColor === true ) {
-                        action.endingSoonBackgroundColor = ColorUtility.FromHex( action.endingSoonColor ).darken( 0.93 ).toString( 0.75 );
-                    } else {
-                        action.endingSoonBackgroundColor = null;
-                    }
-                } else {
-                    action.endingDuration = null;
-                    action.endingSoonColor = null;
-                }
-
-                if ( action.actionType === ActionTypes.Stopwatch || ( action.remainAfterEnded === true && action.remainDuration > 0 ) ) {
-                    if ( action.endedChangeColor === true ) {
-                        action.endedBackgroundColor = ColorUtility.FromHex( action.endedColor ).darken( 0.93 ).toString( 0.75 );
-                    } else {
-                        action.endedBackgroundColor = null;
-                    }
-                } else {
-                    action.remainAfterEnded = false;
-                    action.remainDuration = null;
-                    action.endedColor = null;
-                    action.endedBackgroundColor = null;
-                }
-
+            if ( listActionCount > 1 ) {
+                this.dialogService.showErrorDialog( 'Error!', 'Only one list action is allowed per trigger.' );
+                observer.next( false );
+                observer.complete();
+                return;
             }
 
-        } );
-        if ( this.triggerId == null ) {
-            this.model.folderId = this.folderId?.length > 0 ? this.folderId : null;
-            this.ipcService.createNewTrigger( this.model ).subscribe( triggerId => {
-                this.triggerId = triggerId;
-                this.model.triggerId = triggerId;
+            this.model.actions?.forEach( ( action: TriggerAction ) => {
+    
+                if ( action.actionType === ActionTypes.StoreVariable ) {
+                    // No special processing operations are required for store variable actions.
+                    
+                } else {
+    
+                    if ( action.useCustomColor === true ) {
+                        action.overrideTimerColor = action.overrideTimerColor;
+                        action.timerBackgroundColor = ColorUtility.FromHex( action.overrideTimerColor ).darken( 0.93 ).toString( 0.75 );
+                    } else {
+                        action.overrideTimerColor = null;
+                        action.timerBackgroundColor = null;
+                    }
+    
+                    if ( action.ifEndingSoon === true && action.endingDuration > 0 ) {
+                        if ( action.endingSoonChangeColor === true ) {
+                            action.endingSoonBackgroundColor = ColorUtility.FromHex( action.endingSoonColor ).darken( 0.93 ).toString( 0.75 );
+                        } else {
+                            action.endingSoonBackgroundColor = null;
+                        }
+                    } else {
+                        action.endingDuration = null;
+                        action.endingSoonColor = null;
+                    }
+    
+                    if ( action.actionType === ActionTypes.Stopwatch || ( action.remainAfterEnded === true && action.remainDuration > 0 ) ) {
+                        if ( action.endedChangeColor === true ) {
+                            action.endedBackgroundColor = ColorUtility.FromHex( action.endedColor ).darken( 0.93 ).toString( 0.75 );
+                        } else {
+                            action.endedBackgroundColor = null;
+                        }
+                    } else {
+                        action.remainAfterEnded = false;
+                        action.remainDuration = null;
+                        action.endedColor = null;
+                        action.endedBackgroundColor = null;
+                    }
+    
+                }
+    
             } );
-        } else {
-            this.ipcService.updateTrigger( this.model ).subscribe( success => { } );
-        }
+
+            if ( this.triggerId == null ) {
+                this.model.folderId = this.folderId?.length > 0 ? this.folderId : null;
+                this.ipcService.createNewTrigger( this.model ).subscribe( triggerId => {
+                    this.triggerId = triggerId;
+                    this.model.triggerId = triggerId;
+                    observer.next( true );
+                    observer.complete();
+                } );
+            } else {
+                this.ipcService.updateTrigger( this.model ).subscribe( success => {
+                    observer.next( success );
+                    observer.complete();
+                } );
+            }
+        } );
+
     }
 
     public saveAndClose(): void {
-        this.save();
-        this.closeModal();
+        this.save().subscribe( success => {
+            if ( success ) {
+                this.closeModal();
+            }
+        } );
     }
 
     public applyChanges(): void {
-        this.save();
+        this.save().subscribe();
     }
 
     public copyJson(): void {

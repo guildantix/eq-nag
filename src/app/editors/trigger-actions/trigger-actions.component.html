@@ -61,7 +61,7 @@
                             <mat-option [value]="actionTypes.Speak">{{actionTypeLabels(actionTypes.Speak)}}</mat-option>
                             <mat-option [value]="actionTypes.Timer">{{actionTypeLabels(actionTypes.Timer)}}</mat-option>
                             <mat-option [value]="actionTypes.Countdown">{{actionTypeLabels(actionTypes.Countdown)}}</mat-option>
-                            <mat-option [value]="actionTypes.List">{{actionTypeLabels(actionTypes.List)}}</mat-option>
+                            <mat-option [value]="actionTypes.List" *ngIf="canSelectList(action)">{{actionTypeLabels(actionTypes.List)}}</mat-option>
                             <mat-option [value]="actionTypes.StoreVariable">{{actionTypeLabels(actionTypes.StoreVariable)}}</mat-option>
                             <mat-option [value]="actionTypes.ClearVariable">{{actionTypeLabels(actionTypes.ClearVariable)}}</mat-option>
                             <mat-option [value]="actionTypes.Counter">{{actionTypeLabels(actionTypes.Counter)}}</mat-option>
