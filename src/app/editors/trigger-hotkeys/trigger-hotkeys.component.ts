@@ -83,65 +83,6 @@ export class TriggerHotkeysComponent implements OnInit {
 
                 ask( variables[ i ] );
             }
-
-            // let variableMap = new Map<string, string>();
-            // let observables: Observable<boolean>[] = [];
-            // for ( let i = 0; i < variables.length; i++ ) {
-            //     const variable = variables[ i ];
-            //     observables.push( this.dialogService
-            //         .showInputDialog( `${variable}`, `Enter a value for ${variable}`, null, 'Enter a value to be inserted into the macro.' )
-            //         .pipe( map<string, boolean>( value => {
-            //             if ( value ) {
-            //                 variableMap.set( variable, value );
-            //             } else {
-            //                 variableMap.set( variable, 'n/a' );
-            //             }
-            //             return true;
-            //         } ) )
-            //     );
-            //     // this.dialogService.showInputDialog( `${variable}`, `Enter a value for ${variable}`, null, 'Enter a value to be inserted into the macro.' ).subscribe( value => {
-            //     //     if ( value ) {
-            //     //         variableMap.set( variable, value );
-            //     //         // hotkey.lines = hotkey.lines.map( line => line.replace( `{{${variable}}}`, value ) );
-            //     //     } else {
-            //     //         variableMap.set( variable, 'n/a' );
-            //     //     }
-            //     // } );
-            // }
-
-            // let source = of( ...observables ).pipe( concatAll() );
-
-            // source.subscribe( () => {
-            //     let lines = hotkey.lines.map( line => {
-            //         for ( let [ key, value ] of variableMap ) {
-            //             line = line.replace( `{{${key}}}`, value );
-            //         }
-            //         return line;
-            //     } );
-
-            //     console.log( 'hotkey lines', lines );
-            // } );
-
-            // // Wait for all observables to complete.
-            // concat( observables ).subscribe( () => {
-            //     let lines = hotkey.lines.map( line => {
-            //         for ( let [ key, value ] of variableMap ) {
-            //             line = line.replace( `{{${key}}}`, value );
-            //         }
-            //         return line;
-            //     } );
-
-            //     console.log( 'hotkey lines', lines );
-            // } );
-
-            // let lines = hotkey.lines.map( line => {
-            //     for ( let [ key, value ] of variableMap ) {
-            //         line = line.replace( `{{${key}}}`, value );
-            //     }
-            //     return line;
-            // } );
-
-            // console.log( 'hotkey lines', lines );
         }
     }
 
