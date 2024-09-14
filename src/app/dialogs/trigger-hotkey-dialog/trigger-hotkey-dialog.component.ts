@@ -6,6 +6,12 @@ import { IpcService } from 'src/app/ipc.service';
 import { NotificationDialogModel, NotificationTypes } from '../notification-dialog/notification-dialog.model';
 import { NotificationDialogComponent } from '../notification-dialog/notification-dialog.component';
 import { StringUtility } from 'src/app/utilities';
+import { MatSnackBar } from '@angular/material/snack-bar';
+
+export interface ITriggerHotkeyDialogData {
+    hotkey: TriggerHotkey;
+    renderedLines?: string[];
+}
 
 @Component( {
     selector: 'app-trigger-hotkey-dialog',
@@ -15,16 +21,27 @@ import { StringUtility } from 'src/app/utilities';
 export class TriggerHotkeyDialogComponent implements OnInit {
 
     public model: TriggerHotkey;
+    public renderedLines: string[] = [];
+
+    public get showRenderedLines(): boolean {
+        return this.renderedLines.length > 0;
+    }
 
     @ViewChild( NgForm ) form: NgForm | undefined;
 
     constructor(
         public dialogRef: MatDialogRef<TriggerHotkeyDialogComponent>,
-        @Inject( MAT_DIALOG_DATA ) public data: TriggerHotkey,
+        @Inject( MAT_DIALOG_DATA ) public data: ITriggerHotkeyDialogData,
         public dialog: MatDialog,
         private ipcService: IpcService,
+        private readonly snackBar: MatSnackBar,
     ) {
-        this.model = { ...data };
+        this.model = { ...data.hotkey };
+        this.renderedLines = data.renderedLines ?? [];
+        
+        if ( this.renderedLines.length > 0 ) {
+            this.renderedLines[ 0 ] = `/hot "${data.hotkey.name}" ` + this.renderedLines[ 0 ];
+        }
 
         if ( this.model.lines?.length < 5 ) {
             // Ensure there are at least 5 lines.
@@ -38,6 +55,27 @@ export class TriggerHotkeyDialogComponent implements OnInit {
     }
 
     ngOnInit(): void {
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Sends the given line to the clipboard.
+     * 
+     * @param {string} line The line to send to the clipboard.
+     */
+    sendToClipboard( line: string ): void {
+        this.ipcService.sendTextToClipboard( line );
+        this.snackBar.open( 'Line copied to clipboard.', 'Dismiss', {
+            duration: 3000,
+        } );
     }
 
 

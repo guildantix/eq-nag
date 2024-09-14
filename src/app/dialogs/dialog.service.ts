@@ -32,7 +32,7 @@ import { MonitorSelectDialogComponent } from './monitor-select-dialog/monitor-se
 import { QuestionDialogAnswerModel, QuestionDialogModel } from './question-dialog/question-dialog.model';
 import { QuestionDialogComponent } from './question-dialog/question-dialog.component';
 import { JoinChatRoomDialogComponent, JoinChatRoomDialogResult } from './join-chat-room-dialog/join-chat-room-dialog.component';
-import { TriggerHotkeyDialogComponent } from './trigger-hotkey-dialog/trigger-hotkey-dialog.component';
+import { ITriggerHotkeyDialogData, TriggerHotkeyDialogComponent } from './trigger-hotkey-dialog/trigger-hotkey-dialog.component';
 
 @Injectable()
 export class DialogService {
@@ -1104,9 +1104,41 @@ export class DialogService {
      * @param hotkey The trigger hotkey to show.
      */
     public showTriggerHotkey( hotkey: TriggerHotkey ): Observable<TriggerHotkey | null> {
-        let af =  this.dialog.open<TriggerHotkeyDialogComponent, TriggerHotkey, TriggerHotkey | null>( TriggerHotkeyDialogComponent, {
+        let af =  this.dialog.open<TriggerHotkeyDialogComponent, ITriggerHotkeyDialogData, TriggerHotkey | null>( TriggerHotkeyDialogComponent, {
             width: '750px',
-            data: hotkey,
+            data: {
+                hotkey,
+            },
+            panelClass: 'app-dialog',
+        } ).afterClosed();
+
+        af.subscribe( e => {
+
+            if ( document.activeElement instanceof HTMLElement ) {
+                // This is a workaround to prevent the error:
+                // 
+                //      ExpressionChangedAfterItHasBeenCheckedError: Expression has changed after it was checked. Previous value for 'mat-form-field-should-float': 'false'. Current value: 'true'.
+                //
+                // I'm sure there's some deeper meaning behind it, but for some 
+                // reason when the confirm dialog's `Yes` button is still the 
+                // active element at this point, that error is written to the 
+                // console.
+                // This error only happens when a list is reloaded after.
+                document.activeElement.blur();
+            }
+
+        } );
+
+        return af;
+    }
+
+    public showRenderedTriggerHotkey( hotkey: TriggerHotkey, renderedLines: string[] ): Observable<any> {
+        let af = this.dialog.open<TriggerHotkeyDialogComponent, ITriggerHotkeyDialogData, TriggerHotkey | null>( TriggerHotkeyDialogComponent, {
+            width: '750px',
+            data: {
+                hotkey,
+                renderedLines,
+            },
             panelClass: 'app-dialog',
         } ).afterClosed();
 
