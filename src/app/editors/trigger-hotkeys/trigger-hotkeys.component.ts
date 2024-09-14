@@ -52,6 +52,10 @@ export class TriggerHotkeysComponent implements OnInit {
                 let variableMap = new Map<string, string>();
                 let i = 0;
 
+                const complete = ( lines: string[] ) => {
+                    this.dialogService.showRenderedTriggerHotkey( hotkey, lines ).subscribe();
+                };
+
                 const ask = ( variable: string ) => {
                     this.dialogService.showInputDialog( `${variable}`, `Enter a value for ${variable}`, null, 'Enter a value to be inserted into the macro.' ).subscribe( value => {
                         if ( value ) {
@@ -72,7 +76,7 @@ export class TriggerHotkeysComponent implements OnInit {
                                 return line;
                             } );
 
-                            console.log( 'hotkey lines', lines );
+                            complete( lines );
                         }
                     } );
                 }
@@ -157,6 +161,12 @@ export class TriggerHotkeysComponent implements OnInit {
     }
 
     deleteHotkey( index: number ): void {
-
+        this.dialogService.showConfirmationDialog( 'Are you sure you want to delete this hotkey?', 'Click "Yes" to delete this hotkey', 'Click "No" to close this dialog without deleting the hotkey.' ).subscribe( result => {
+            if ( result ) {
+                this.hotkeys.splice( index, 1 );
+                this.hotkeys = [ ...this.hotkeys ];
+                this.hotkeysChange.emit( this.hotkeys );
+            }
+        } );
     }
 }
