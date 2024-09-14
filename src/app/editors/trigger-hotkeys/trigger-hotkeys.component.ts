@@ -52,10 +52,6 @@ export class TriggerHotkeysComponent implements OnInit {
                 let variableMap = new Map<string, string>();
                 let i = 0;
 
-                const complete = ( lines: string[] ) => {
-                    this.dialogService.showRenderedTriggerHotkey( hotkey, lines ).subscribe();
-                };
-
                 const ask = ( variable: string ) => {
                     this.dialogService.showInputDialog( `${variable}`, `Enter a value for ${variable}`, null, 'Enter a value to be inserted into the macro.' ).subscribe( value => {
                         if ( value ) {
@@ -76,7 +72,8 @@ export class TriggerHotkeysComponent implements OnInit {
                                 return line;
                             } );
 
-                            complete( lines );
+                            // Show the hotkey with the variables replaced.
+                            this.dialogService.showRenderedTriggerHotkey( hotkey, lines ).subscribe();
                         }
                     } );
                 }
