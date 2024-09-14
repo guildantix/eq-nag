@@ -6,11 +6,13 @@
         <p>To create a hotkey, enter up to 5 text lines for the commands.</p>
         <p>You may use interpolation with <code>{{'{{Your Character Name}}'}}</code>.  When using interpolation, the user will be asked to enter values for each variable when they generate a hotkey.  Use descriptive names so that the user intuitively knows what to put in each value.</p>
         <div>
-            <p>When the "Command" option is enabled, the hotkey will consist of a single line.  When the user enters their variable values, and hotkey will not be created and the line will be immediately copied to the users clipboard.</p>
-            <p>A command is a one-time use item.</p>
             <mat-checkbox [(ngModel)]="model.simpleCommand" name="simpleCommand">Command</mat-checkbox>
+            <ng-template [ngIf]="model.simpleCommand">
+                <p>When the "Command" option is enabled, the hotkey will consist of a single line.</p>
+                <p>When the user executes this hotkey, the line will be copied to the users clipboard without the /hot "Name" command that generates a hotkey.</p>
+            </ng-template>
         </div>
-    </ng-template>
+    </ng-template>  
 
     <ng-template [ngIf]="showRenderedLines">
         <p>Here are the hotkey lines you can copy and paste into EverQuest</p>
@@ -75,22 +77,22 @@
                 <input type="text" [(ngModel)]="model.lines[0]" name="line_{{0}}" />
             </div>
 
-            <div>
+            <div *ngIf="!model.simpleCommand">
                 <span>2</span>
                 <input type="text" [(ngModel)]="model.lines[1]" name="line_{{1}}" />
             </div>
 
-            <div>
+            <div *ngIf="!model.simpleCommand">
                 <span>3</span>
                 <input type="text" [(ngModel)]="model.lines[2]" name="line_{{2}}" />
             </div>
 
-            <div>
+            <div *ngIf="!model.simpleCommand">
                 <span>4</span>
                 <input type="text" [(ngModel)]="model.lines[3]" name="line_{{3}}" />
             </div>
 
-            <div>
+            <div *ngIf="!model.simpleCommand">
                 <span>5</span>
                 <input type="text" [(ngModel)]="model.lines[4]" name="line_{{4}}" />
             </div>
