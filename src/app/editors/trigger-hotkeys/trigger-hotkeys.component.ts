@@ -7,6 +7,7 @@ import { TriggerHotkey } from 'src/app/core.model';
 import { nagId } from 'src/app/core/nag-id.util';
 import { DialogService } from 'src/app/dialogs/dialog.service';
 import { IpcService } from 'src/app/ipc.service';
+import { QuickActionService } from 'src/app/services/quick-action.service';
 import { StringUtility } from 'src/app/utilities';
 
 @Component( {
@@ -19,7 +20,7 @@ export class TriggerHotkeysComponent implements OnInit {
     @Input() public hotkeys: TriggerHotkey[] = [];
     @Output() public hotkeysChange: EventEmitter<TriggerHotkey[]> = new EventEmitter<TriggerHotkey[]>();
 
-    public hotkeyTableColumns = [ 'action', 'name', 'description', 'delete' ];
+    public hotkeyTableColumns = [ 'action', 'quickAction', 'name', 'description', 'delete' ];
 
     constructor(
         private readonly dialogService: DialogService,

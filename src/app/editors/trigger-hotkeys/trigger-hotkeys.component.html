@@ -34,6 +34,13 @@
             </td>
         </ng-container>
 
+        <ng-container matColumnDef="quickAction">
+            <th mat-header-cell *matHeaderCellDef> Quick Action </th>
+            <td mat-cell *matCellDef="let element" style="vertical-align: top; padding-top: 14px !important;">
+                <mat-checkbox [(ngModel)]="element.quickAction" name="cbxQuickAction" [disabled]="!element.simpleCommand" [matTooltip]="element.simpleCommand ? 'When enabled, Nag will add a quick action button to the bottom right of the main Nag window.' : 'Enable this by enabling the Command option for this hotkey.'"></mat-checkbox>
+            </td>
+        </ng-container>
+
         <ng-container matColumnDef="name">
             <th mat-header-cell *matHeaderCellDef> Name </th>
             <td mat-cell *matCellDef="let element" style="white-space: nowrap; vertical-align: top; padding-top: 14px !important;"> {{element.name}} </td>

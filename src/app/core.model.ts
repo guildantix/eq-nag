@@ -369,6 +369,7 @@ export class TriggerHotkey {
     public description: string;
     public lines: string[] = [];
     public simpleCommand: boolean = false;
+    public quickAction: boolean = false;
 }
 
 export class TriggerModel {
