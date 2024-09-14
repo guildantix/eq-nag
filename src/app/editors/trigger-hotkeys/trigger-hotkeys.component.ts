@@ -89,6 +89,8 @@ export class TriggerHotkeysComponent implements OnInit {
     addNewHotkey(): void {
         this.dialogService.showTriggerHotkey( new TriggerHotkey() ).subscribe( hotkey => {
             if ( hotkey ) {
+
+                hotkey.hotkeyId = nagId();
                 
                 if ( this.hotkeys?.length > 0 ) {
                     this.hotkeys = [ ...this.hotkeys, hotkey ];
