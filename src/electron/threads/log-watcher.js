@@ -2171,6 +2171,20 @@ function clearAll() {
         } );
     }, logParseTimer );
 
+    for ( let i = 0; i < lists.length; i++ ) {
+        const list = lists[ i ];
+
+        if ( list.component.intervalId !== -1 ) {
+            window.clearTimeout( list.component.intervalId );
+            list.component.intervalId = -1;
+        }
+        
+        if ( list.instanceId ) {
+            ipcRenderer.send( 'overlay:destroy:component', list.instanceId );
+        }
+    }
+    lists = [];
+
     ipcRenderer.send( 'renderer:clear-all', null );
 
 }
