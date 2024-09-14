@@ -5,6 +5,11 @@
     <ng-template [ngIf]="!showRenderedLines">
         <p>To create a hotkey, enter up to 5 text lines for the commands.</p>
         <p>You may use interpolation with <code>{{'{{Your Character Name}}'}}</code>.  When using interpolation, the user will be asked to enter values for each variable when they generate a hotkey.  Use descriptive names so that the user intuitively knows what to put in each value.</p>
+        <div>
+            <p>When the "Command" option is enabled, the hotkey will consist of a single line.  When the user enters their variable values, and hotkey will not be created and the line will be immediately copied to the users clipboard.</p>
+            <p>A command is a one-time use item.</p>
+            <mat-checkbox [(ngModel)]="model.simpleCommand" name="simpleCommand">Command</mat-checkbox>
+        </div>
     </ng-template>
 
     <ng-template [ngIf]="showRenderedLines">

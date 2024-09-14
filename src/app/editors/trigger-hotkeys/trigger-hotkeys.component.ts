@@ -1,10 +1,12 @@
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { concat, forkJoin, Observable, of } from 'rxjs';
 import { concatAll, map } from 'rxjs/operators';
 import { TriggerHotkey } from 'src/app/core.model';
 import { nagId } from 'src/app/core/nag-id.util';
 import { DialogService } from 'src/app/dialogs/dialog.service';
+import { IpcService } from 'src/app/ipc.service';
 import { StringUtility } from 'src/app/utilities';
 
 @Component( {
@@ -21,6 +23,8 @@ export class TriggerHotkeysComponent implements OnInit {
 
     constructor(
         private readonly dialogService: DialogService,
+        private readonly ipcService: IpcService,
+        private readonly snackBar: MatSnackBar,
     ) { }
 
     ngOnInit(): void {
@@ -73,8 +77,18 @@ export class TriggerHotkeysComponent implements OnInit {
                                 return line;
                             } );
 
-                            // Show the hotkey with the variables replaced.
-                            this.dialogService.showRenderedTriggerHotkey( hotkey, lines ).subscribe();
+                            if ( hotkey.simpleCommand ) {
+                                // If this is a command, we immediately send the first line to the clipboard.
+                                this.ipcService.sendTextToClipboard( lines[ 0 ] );
+                                this.snackBar.open( 'Line copied to clipboard.', 'Dismiss', {
+                                    duration: 3000,
+                                } );
+
+                            } else {
+                                // Show the hotkey with the variables replaced.
+                                this.dialogService.showRenderedTriggerHotkey( hotkey, lines ).subscribe();
+
+                            }
                         }
                     } );
                 }
