@@ -82,6 +82,9 @@ export class TriggerHotkeysComponent implements OnInit {
                 }
 
                 ask( variables[ i ] );
+            } else {
+                // If there are no variables, just show the hotkey.
+                this.dialogService.showRenderedTriggerHotkey( hotkey, hotkey.lines ).subscribe();
             }
         }
     }
