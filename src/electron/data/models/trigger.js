@@ -556,6 +556,9 @@ class TriggerAction {
     /** @type {string} */
     listActionTrackingVarName = null;
 
+    /** @type {string} */
+    listTimerActionId = null;
+
     /** @type {boolean} */
     useBackground = false;
 

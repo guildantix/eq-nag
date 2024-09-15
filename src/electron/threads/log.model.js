@@ -78,6 +78,8 @@ class LogList {
     updateListFn;
     /** @type {number} */
     timestamp;
+    /** @type {string} */
+    timerInstanceId;
 }
 
 module.exports = { PhraseParse, LogTrigger, LogList };
