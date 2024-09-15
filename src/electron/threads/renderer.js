@@ -4584,6 +4584,13 @@ function findComponent( predicate ) {
         }
     }
 
+    for ( let i = 0; i < rendererComponents.length; i++ ) {
+        const c = rendererComponents[ i ];
+        if ( predicate( c ) ) {
+            return c;
+        }
+    }
+
     return null;
 }
 
