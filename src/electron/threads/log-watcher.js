@@ -1947,6 +1947,28 @@ function executeTriggerAction( trigger, action, timestamp, res, deltaTime, simul
  */
 function displayListAction( res, action, trigger ) {
 
+    /**
+     * Executes the "Show Timer" timer for a list.
+     * 
+     * @param {LogList} list The list to execute.
+     * @param {number} duration The timer duration.
+     */
+    const executeListTimerAction = ( list, duration ) => {
+        let subAct = new TriggerSubAction();
+        subAct.actionId = list.action.listTimerActionId;
+        
+        // We need to create a new instance id for the timer.
+        list.timerInstanceId = nagId();
+
+        executeSubAction( {
+            subAction: subAct,
+            instanceId: list.instanceId,
+        }, {
+            duration: duration,
+            instanceId: list.timerInstanceId,
+        } );
+    };
+
     if ( action.createListPhrase === res.phraseId ) {
 
         // Create a new list.
@@ -2025,6 +2047,10 @@ function displayListAction( res, action, trigger ) {
             }
 
             list.component.currentName = list.component.listNames[ currentIndex ];
+
+            if ( list.component.currentName === characterName ) {
+                executeListTimerAction( list, list.action.duration * list.component.listNames.length );
+            }
 
             if ( list.component.skipNames.includes( list.component.currentName ) ) {
                 list.component.skipNames = list.component.skipNames.filter( f => f !== list.component.currentName );
@@ -2140,7 +2166,24 @@ function displayListAction( res, action, trigger ) {
         if ( list.component.intervalId === -1 ) {
             list.timestamp = 0;
             list.updateListFn();
+
+            if ( list.action.listEnrollmentShowTimer && list.action.listTimerActionId ) {
+                // If the list has begun enumeration and the character is in the list, then we'll show the timer.
+                let myIndex = list.component.listNames.indexOf( characterName );
+    
+                let duration = 0;
+                if ( myIndex > 0 ) {
+                    duration = list.action.duration * myIndex;
+                } else if ( myIndex === 0 ) {
+                    duration = list.action.duration * list.component.listNames.length;
+                }
+    
+                if ( duration > 0 ) {
+                    executeListTimerAction( list, duration );
+                }
+            }
         }
+
     } else if ( action.listEnumerateEndPhrase === res.phraseId ) {
         let list = lists.find( f => f.action.actionId === action.actionId );
 
