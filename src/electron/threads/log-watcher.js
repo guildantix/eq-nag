@@ -732,89 +732,7 @@ function LogWatcher(character, logPosition) {
          * @param {{subAction: TriggerSubAction, instanceId: string}} v The values.
          */
         ( e, v ) => {
-            try {
-                
-                let instanceData = actionInstances[ v.instanceId ];
-                if ( instanceData ) {
-                    let action = instanceData.trigger.actions.find( f => f.actionId === v.subAction.actionId );
-                    let deltaTime = 0;
-
-                    if ( v.subAction ) {
-                    
-                        instanceData.res.result.groups = instanceData.res.result.groups ? instanceData.res.result.groups : {};
-                        let expectedDuration = 0;
-            
-                        if ( instanceData.res.result?.groups?.timerDuration ) {
-                            expectedDuration = StringUtilities.getDurationFromLabel( instanceData.res.result?.groups?.timerDuration );
-        
-                        } else {
-                
-                            if ( action.storageDuration && action.storageDuration.indexOf( '[' ) > -1 ) {
-                                let dur = +action.duration;
-                                dur = +getPersistentDictionaryValue( action.storageDuration, instanceData.res, timestamp, action, deltaTime, trigger );
-                                expectedDuration = dur > 0 ? dur / 1000 : +action.duration;
-
-                            } else if ( action.storageDuration ) {
-                                let dur = +action.duration;
-                                dur = +getScalarValue( action.storageDuration, 0 );
-                                expectedDuration = dur > 0 ? dur / 1000 : +action.duration;
-
-                            } else {
-                                expectedDuration = +action.duration;
-
-                            }
-
-                        }
-
-                        v.subAction.variableValues?.forEach( f => {
-                        
-                            let value = f.value;
-                            let name = /\{(?<name>.+?)\}/gi.exec( f.name )?.groups?.name;
-                        
-                            if ( name ) {
-                                value = StringUtilities.parseShortCodeValuesToLiteral( value, characterName, expectedDuration, instanceData.res.result?.groups, instanceData.res.result ? instanceData.res.result[ 0 ] : null );
-                                value = StringUtilities.parseStoredVariablesToLiteral( value, storedVariables );
-                                value = StringUtilities.parseConditionResultsToLiteral( value, instanceData.trigger._conditionResults );
-                                value = StringUtilities.parseMatchesToLiteral( value, instanceData.res.result, deltaTime );
-                                value = StringUtilities.parseCountersToLiteral( value, counters );
-
-                                instanceData.res.result.groups[ name ] = value;
-                            }
-            
-                        } );
-
-                    }
-
-                    enableLogging && sendInformationToLog( `Execute trigger sub-action [${v.instanceId}] : ${ActionTypes[ action.actionType ]}`, 24 );
-
-                    executeTriggerAction( instanceData.trigger, action, new Date(), instanceData.res, deltaTime, false );
-                }
-
-            } catch ( error ) {
-                let instanceData = actionInstances[ v.instanceId ];
-
-                instanceData = instanceData ? instanceData : {
-                    trigger: {
-                        triggerId: 'undefined',
-                        name: 'undefined',
-                        _conditionResults: {},
-                        _deltaTime: 0,
-                    }
-                };
-
-                logHistoryMgr.logError(
-                    error,
-                    'Executing Sub Action',
-                    false,
-                    0,
-                    ErrorMessages.subActionExecution( instanceData?.trigger?.triggerId ),
-                    {
-                        triggerId: instanceData?.trigger?.triggerId,
-                        name: instanceData?.trigger?.name,
-                        _conditionResults: instanceData?.trigger?._conditionResults, 
-                        _deltaTime: instanceData?.trigger?._deltaTime, 
-                    } );
-            }
+            executeSubAction( v );
         } );
     
     ipcRenderer.on( 'log:clear-all:done', () => {
@@ -852,6 +770,113 @@ function LogWatcher(character, logPosition) {
         voiceOptions = speechSynthesis.getVoices();
     };
 
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Executes the given sub-action.
+ * 
+ * @param {{subAction: TriggerSubAction, instanceId: string}} v The values.
+ * @param {{duration?: number, instanceId?: string} | undefined} options The options.
+ */
+function executeSubAction( v, options ) {
+    try {
+
+        let instanceData = actionInstances[ v.instanceId ];
+        if ( instanceData ) {
+            let action = instanceData.trigger.actions.find( f => f.actionId === v.subAction.actionId );
+            let deltaTime = 0;
+
+            if ( v.subAction ) {
+
+                instanceData.res.result.groups = instanceData.res.result.groups ? instanceData.res.result.groups : {};
+                let expectedDuration = 0;
+
+                if ( options?.duration > 0 ) {
+                    expectedDuration = options.duration;
+                    action.duration = options.duration;
+                    
+                } else if ( instanceData.res.result?.groups?.timerDuration ) {
+                    expectedDuration = StringUtilities.getDurationFromLabel( instanceData.res.result?.groups?.timerDuration );
+
+                } else {
+
+                    if ( action.storageDuration && action.storageDuration.indexOf( '[' ) > -1 ) {
+                        let dur = +action.duration;
+                        dur = +getPersistentDictionaryValue( action.storageDuration, instanceData.res, timestamp, action, deltaTime, trigger );
+                        expectedDuration = dur > 0 ? dur / 1000 : +action.duration;
+
+                    } else if ( action.storageDuration ) {
+                        let dur = +action.duration;
+                        dur = +getScalarValue( action.storageDuration, 0 );
+                        expectedDuration = dur > 0 ? dur / 1000 : +action.duration;
+
+                    } else {
+                        expectedDuration = +action.duration;
+
+                    }
+
+                }
+
+                v.subAction.variableValues?.forEach( f => {
+
+                    let value = f.value;
+                    let name = /\{(?<name>.+?)\}/gi.exec( f.name )?.groups?.name;
+
+                    if ( name ) {
+                        value = StringUtilities.parseShortCodeValuesToLiteral( value, characterName, expectedDuration, instanceData.res.result?.groups, instanceData.res.result ? instanceData.res.result[ 0 ] : null );
+                        value = StringUtilities.parseStoredVariablesToLiteral( value, storedVariables );
+                        value = StringUtilities.parseConditionResultsToLiteral( value, instanceData.trigger._conditionResults );
+                        value = StringUtilities.parseMatchesToLiteral( value, instanceData.res.result, deltaTime );
+                        value = StringUtilities.parseCountersToLiteral( value, counters );
+
+                        instanceData.res.result.groups[ name ] = value;
+                    }
+
+                } );
+
+            }
+
+            enableLogging && sendInformationToLog( `Execute trigger sub-action [${v.instanceId}] : ${ActionTypes[ action.actionType ]}`, 24 );
+
+            executeTriggerAction( instanceData.trigger, action, new Date(), instanceData.res, deltaTime, false, options );
+        } else {
+            console.log( 'No instance data', v );
+        }
+
+    } catch ( error ) {
+        let instanceData = actionInstances[ v.instanceId ];
+
+        instanceData = instanceData ? instanceData : {
+            trigger: {
+                triggerId: 'undefined',
+                name: 'undefined',
+                _conditionResults: {},
+                _deltaTime: 0,
+            }
+        };
+
+        logHistoryMgr.logError(
+            error,
+            'Executing Sub Action',
+            false,
+            0,
+            ErrorMessages.subActionExecution( instanceData?.trigger?.triggerId ),
+            {
+                triggerId: instanceData?.trigger?.triggerId,
+                name: instanceData?.trigger?.name,
+                _conditionResults: instanceData?.trigger?._conditionResults,
+                _deltaTime: instanceData?.trigger?._deltaTime,
+            } );
+    }
 }
 
 
