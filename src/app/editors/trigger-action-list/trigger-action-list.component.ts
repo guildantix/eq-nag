@@ -25,6 +25,11 @@ export class TriggerActionListComponent implements OnInit, OnDestroy {
     public actionTrackingVariableNames: string[] = [];
     public tokenSubscription: Subscription | null = null;
     public fontWeightIndex: number = 0;
+    public actionTypes: typeof ActionTypes = ActionTypes;
+
+    public get timerTypeActions(): TriggerAction[] {
+        return this.actionOptions.filter( f => f.actionId && ( f.actionType === ActionTypes.Timer || f.actionType === ActionTypes.Countdown ) );
+    }
 
     public get isRenderingToken(): boolean {
         return this.tokenSubscription ? true : false;

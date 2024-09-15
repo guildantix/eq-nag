@@ -861,6 +861,7 @@ export class TriggerActionProperties {
     public listEnableActionTracking: boolean = false;
     public listActionTrackingPhrase: string = null;
     public listActionTrackingVarName: string = null;
+    public listTimerActionId: string = null;
     public useBackground: boolean = false;
     
     public staticPosition: Rectangle = null;

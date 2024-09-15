@@ -148,6 +148,23 @@
                 </div>
             </div>
 
+            <div class="card-property" *ngIf="action.enableListEnrollment && action.listEnrollmentShowTimer">
+                <div class="full-width">
+                    <mat-form-field style="width: 100%;">
+                        <mat-label></mat-label>
+                        <mat-select [(ngModel)]="action.listTimerActionId" name="listTimerActionId">
+                            <mat-option [value]="null">None</mat-option>
+                            <mat-option *ngFor="let action of timerTypeActions" [value]="action.actionId">
+                                <span>{{action.displayText}}</span>
+                                <span *ngIf="action.actionType === actionTypes.Countdown"> (Countdown)</span>
+                                <span *ngIf="action.actionType === actionTypes.Timer"> (Timer)</span>
+                            </mat-option>
+                        </mat-select>
+                        <mat-hint>Select the timer.</mat-hint>
+                    </mat-form-field>
+                </div>
+            </div>
+
             <div class="card-property" *ngIf="action.enableListEnrollment">
                 <div class="full-width">
                     <mat-form-field style="width: 100%;">
