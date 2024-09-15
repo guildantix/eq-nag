@@ -1791,8 +1791,9 @@ function parseLogEntries( raw, simulating, padTime ) {
  * @param {PhraseParse} res 
  * @param {number} deltaTime 
  * @param {boolean} simulating
+ * @param {{instanceId?: string} | undefined} options
  */
-function executeTriggerAction( trigger, action, timestamp, res, deltaTime, simulating ) {
+function executeTriggerAction( trigger, action, timestamp, res, deltaTime, simulating, options ) {
 
     if ( action.actionType === ActionTypes.DisplayText ) {
         /* --== Display Text ==-- */
@@ -1841,7 +1842,7 @@ function executeTriggerAction( trigger, action, timestamp, res, deltaTime, simul
     } else if ( action.actionType === ActionTypes.Timer || action.actionType === ActionTypes.Countdown || action.actionType === ActionTypes.Stopwatch ) {
         /* --== Start a Timer/Countdown ==-- */
     
-        let instanceId = displayTimerCountdownComponent( res, timestamp, action, deltaTime, trigger );
+        let instanceId = displayTimerCountdownComponent( res, timestamp, action, deltaTime, trigger, options );
 
         let subRes = _.cloneDeep( res );
         subRes.result.groups = _.cloneDeep( res.result.groups );
@@ -2678,15 +2679,16 @@ function displayDotTimerComponent( res, timestamp, action, deltaTime, trigger ) 
  * @param {TriggerAction} action The trigger's display text action.
  * @param {number} deltaTime The change in time, in milliseconds, since the previous sequential capture.
  * @param {LogTrigger} trigger If true the component is written to the console instead of sent to the overlay window.
+ * @param {{instanceId?: string} | undefined} options
  * 
  * @return {string} Returns the instance id of the renderer component
  */
-function displayTimerCountdownComponent(res, timestamp, action, deltaTime, trigger) {
+function displayTimerCountdownComponent(res, timestamp, action, deltaTime, trigger, options) {
       
     // ${target} has been slain by (.+?)!
     let comp = new OverlayComponent();
 
-    comp.instanceId = nanoid();
+    comp.instanceId = options?.instanceId ?? nagId();
     comp.triggerId = trigger.triggerId;
     comp.triggerName = trigger.name;
     comp.action = Object.assign( new TriggerAction(), action );
