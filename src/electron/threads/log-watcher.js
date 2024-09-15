@@ -2004,6 +2004,14 @@ function displayListAction( res, action, trigger ) {
         
         logInstanceIds.push( list.component.instanceId );
 
+        let subRes = _.cloneDeep( res );
+        subRes.result.groups = _.cloneDeep( res.result.groups );
+
+        actionInstances[ list.component.instanceId ] = {
+            trigger: trigger,
+            res: subRes,
+        };
+
         list.updateListFn = () => {
             let now = Math.round( performance.now() );
             let currentIndex = 0;
