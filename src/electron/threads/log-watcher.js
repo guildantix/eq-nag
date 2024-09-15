@@ -2198,6 +2198,12 @@ function displayListAction( res, action, trigger ) {
             list.component.currentName = undefined;
 
             ipcRenderer.send( 'overlay:send:component', list.component );
+
+            // If there's a timer, destroy that as well.
+            if ( list.timerInstanceId ) {
+                ipcRenderer.send( 'renderer:kill:component', list.timerInstanceId );
+            }
+            
         } else {
             // If the list is already stopped, then we'll delete the list.
             ipcRenderer.send( 'overlay:destroy:component', list.instanceId );
