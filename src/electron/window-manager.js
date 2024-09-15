@@ -451,6 +451,10 @@ class WindowManager {
         ipcMain.on( 'overlay:destroy:component', ( event, instanceId ) => {
             this.#renderer.webContents.send( 'component:destroy', instanceId );
         } );
+
+        ipcMain.on( 'renderer:kill:component', ( event, instanceId ) => {
+            this.#renderer.webContents.send( 'renderer:kill:component', instanceId );
+        } );
         
         ipcMain.on( 'renderer:stopwatch:stop', ( event, instanceId ) => {
             this.#renderer.webContents.send( 'renderer:stopwatch:stop', instanceId );

@@ -1635,6 +1635,51 @@ function Renderer( originX, originY, glowOnStart ) {
         }
     } );
 
+    ipcRenderer.on( 'renderer:kill:component',
+        /**
+         * The kill operation will destroy a component without executing any 
+         * following ended/ending actions.
+         * 
+         * @param {Electron.IpcRendererEvent} e The event args.
+         * @param {string} instanceId The instance id of the component to kill.
+         */
+        ( e, instanceId ) => {
+            for ( let overlayId in overlayInstances ) {
+                if ( overlayInstances.hasOwnProperty( overlayId ) ) {
+                    
+                    if ( overlayInstances[ overlayId ].groupByTarget ) {
+    
+                        for ( let key in overlayInstances[ overlayId ].overlayGroups ) {
+                            if ( overlayInstances[ overlayId ].overlayGroups.hasOwnProperty( key ) ) {
+                        
+                                let i = _.findIndex( overlayInstances[ overlayId ].overlayGroups[ key ].components, comp => comp.instanceId === instanceId );
+                                if ( i > -1 ) {
+                                    let comp = overlayInstances[ overlayId ].overlayGroups[ key ].components[ i ];
+                                    comp.removeComponent();
+                                }
+                        
+                            }
+                        }
+                
+                    } else {
+                        let i = _.findIndex( overlayInstances[ overlayId ].overlayComponents, comp => comp.instanceId === instanceId );
+    
+                        if ( i > -1 ) {
+                            overlayInstances[ overlayId ].overlayComponents[ i ].removeComponent();
+                        }
+    
+                    }
+                }
+            }
+    
+            for ( let i = 0; i < rendererComponents.length; i++ ) {
+                if ( rendererComponents[ i ].instanceId === instanceId ) {
+                    rendererComponents[ i ].removeComponent();
+                    break;
+                }
+            }
+        } );
+
     ipcRenderer.on( 'component:destroy', function ( event, instanceId ) {
         
         for ( let overlayId in overlayInstances ) {
