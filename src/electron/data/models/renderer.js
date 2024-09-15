@@ -53,9 +53,19 @@ class RenderTokenModel {
     dom = undefined;
 }
 
+class UpdateComponentArgs {
+    /** @type {string} */
+    instanceId;
+    /** @type {'alter-start'} */
+    updateType;
+    /** @type {number} */
+    duration;
+}
+
 module.exports = {
     ListItemModel,
     ListObjectModel,
     RenderTokenModel,
     RendererComponent,
+    UpdateComponentArgs,
 };

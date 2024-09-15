@@ -24,7 +24,7 @@ const { overlayZIndex, overlayTopZIndex, imagesPath } = require( '../utilities/c
 const { PlayerDps, DpsMeterSettings, EncounterStats, EncounterStatsEventArgs, PetDps } = require( '../data/models/combat-parser' );
 const { getEverQuestClassIcon, getEverQuestClassAbbreviation, getEverQuestClassColor } = require( '../utilities/everquest' );
 const { lightenColor, darkenColor } = require( '../utilities/colors' );
-const { RenderTokenModel, RendererComponent, ListObjectModel } = require( '../data/models/renderer' );
+const { RenderTokenModel, RendererComponent, ListObjectModel, UpdateComponentArgs } = require( '../data/models/renderer' );
 
 const encounterHistoryLimit = 25;
 
@@ -1500,6 +1500,25 @@ function Renderer( originX, originY, glowOnStart ) {
         function ( event, model ) {
             model.added = new Date();
             render( model.overlayId, model );
+        } );
+
+    ipcRenderer.on( 'renderer:update:component',
+        /**
+         * Handles updating existing components.
+         * 
+         * @param {Electron.IpcRendererEvent} event The event object.
+         * @param {UpdateComponentArgs} model The component args.
+         */
+        function ( event, model ) {
+            let component = findComponent( c => c.instanceId === model.instanceId );
+
+            if ( component ) {
+                if ( model.updateType === 'alter-start' ) {
+                    if ( model.duration !== null && model.duration !== undefined ) {
+                        component.start = DateUtilities.addSeconds( component.start, model.duration );
+                    }
+                }
+            }
         } );
 
     ipcRenderer.on( 'renderer:receive:secondary-action',
