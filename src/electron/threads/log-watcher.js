@@ -2048,8 +2048,16 @@ function displayListAction( res, action, trigger ) {
 
             list.component.currentName = list.component.listNames[ currentIndex ];
 
-            if ( list.component.currentName === characterName ) {
-                executeListTimerAction( list, list.action.duration * list.component.listNames.length );
+            if ( list.component.currentName === characterName && !list.component.skipNames.includes( characterName ) ) {
+                // Reduce the list by the number of skipped names.
+                let skipCount = list.component.skipNames.length;
+                let duration = list.action.duration * list.component.listNames.length;
+                if ( skipCount > 0 ) {
+                    duration -= ( skipCount * list.action.duration );
+                }
+                if ( duration > 0 ) {
+                    executeListTimerAction( list, duration );
+                }
             }
 
             if ( list.component.skipNames.includes( list.component.currentName ) ) {
@@ -2093,42 +2101,118 @@ function displayListAction( res, action, trigger ) {
 
     } else if ( action.enableListEnrollment && action.listEnrollmentAddPhrase === res.phraseId ) {
         let list = lists.find( f => f.action.actionId === action.actionId );
+        let addName = null;
 
         if ( !list ) {
             throw new Error( 'Unable to execute list action. The list to enroll in was not found.' );
         }
 
         if ( action.listEnrollmentAddVarName ) {
-            if ( res.result?.groups && res.result.groups[ action.listEnrollmentAddVarName ] ) {
-                list.component.listNames.push( res.result.groups[ action.listEnrollmentAddVarName ] );
+            addName = res.result.groups[ action.listEnrollmentAddVarName ];
+            if ( res.result?.groups && addName ) {
+                list.component.listNames.push( addName );
             } else {
                 throw new Error( 'Unable to execute list action. The enrollment variable was not found in the log entry.' );
             }
         } else if ( res.result[ 1 ] ) {
-            list.component.listNames.push( res.result[ 1 ] );
+            addName = res.result[ 1 ];
+            list.component.listNames.push( addName );
         }
 
         ipcRenderer.send( 'overlay:send:component', list.component );
         
+        if ( list.action.listEnrollmentShowTimer && list.component.intervalId !== -1 ) {
+
+            if ( list.timerInstanceId && list.component.listNames.includes( characterName ) ) {
+                let currentIndex = list.component.listNames.indexOf( list.component.currentName );
+                let myIndex = list.component.listNames.indexOf( characterName );
+
+                if ( currentIndex < myIndex ) {
+                    // Do nothing, we're already ahead of the new name.
+
+                } else {
+                    // We need to increase the time remaining on the timer, so
+                    // we'll add the duration of the list to the timer's start 
+                    // time.
+                    ipcRenderer.send( 'renderer:update:component', {
+                        instanceId: list.timerInstanceId,
+                        updateType: 'alter-start',
+                        duration: list.action.duration,
+                    } );
+                }
+                
+            } else if ( !list.timerInstanceId && addName === characterName ) {
+                // If our name was added, we need to start the timer.
+                let myIndex = list.component.listNames.indexOf( characterName );
+                let now = Math.round( performance.now() );
+
+                let duration = list.timestamp + ( myIndex * list.action.duration * 1000 ) - now;
+
+                if ( duration > 0 ) {
+                    executeListTimerAction( list, Math.round( duration / 1000 ) );
+                }
+
+            }
+
+        }
+
     } else if ( action.enableListEnrollment && action.listEnrollmentRemovePhrase === res.phraseId ) {
         let list = lists.find( f => f.action.actionId === action.actionId );
+        let removeName = null;
+        let removedIndex = -1;
 
         if ( !list ) {
             throw new Error( 'Unable to execute list action. The list to remove from was not found.' );
         }
 
         if ( action.listEnrollmentRemoveVarName ) {
-            if ( res.result?.groups && res.result.groups[ action.listEnrollmentRemoveVarName ] ) {
-                list.component.listNames = list.component.listNames.filter( f => f !== res.result.groups[ action.listEnrollmentRemoveVarName ] );
+            removeName = res.result.groups[ action.listEnrollmentRemoveVarName ];
+            if ( res.result?.groups && removeName) {
+                removedIndex = list.component.listNames.indexOf( removeName );
+                list.component.listNames = list.component.listNames.filter( f => f !== removeName );
             } else {
                 throw new Error( 'Unable to execute list action. The removal variable was not found in the log entry.' );
             }
         } else {
-            list.component.listNames = list.component.listNames.filter( f => f !== res.result[ 1 ] );
+            removeName = res.result[ 1 ];
+            removedIndex = list.component.listNames.indexOf( removeName );
+            list.component.listNames = list.component.listNames.filter( f => f !== removeName );
         }
         
         ipcRenderer.send( 'overlay:send:component', list.component );
         
+        if ( list.action.listEnrollmentShowTimer && list.component.intervalId !== -1 ) {
+
+            if ( list.timerInstanceId ) {
+                if ( list.component.listNames.length === 0 || removeName === characterName ) {
+                    // If the list is empty, then we'll stop the timer.
+                    ipcRenderer.send( 'renderer:kill:component', list.timerInstanceId );
+                    list.timerInstanceId = null;
+
+                } else {
+                    let currentIndex = list.component.listNames.indexOf( list.component.currentName );
+                    let myIndex = list.component.listNames.indexOf( characterName );
+
+                    if ( currentIndex >= myIndex && currentIndex <= removedIndex ) {
+                        // If the current index is inclusively between mine and
+                        // the removed name, then we'll need to adjust the timer.
+
+                        // We need to reduce the time remaining on the timer, so we'll
+                        // subtract the duration of the list from the timer's start 
+                        // time. That will reduce the time remaining on the timer by 
+                        // one iteration of the list.
+                        ipcRenderer.send( 'renderer:update:component', {
+                            instanceId: list.timerInstanceId,
+                            updateType: 'alter-start',
+                            duration: -1 * list.action.duration,
+                        } );
+                    }
+
+                }
+            }
+
+        }
+
     } else if ( action.enableListEnrollment && action.listEnrollmentSkipPhrase === res.phraseId ) {
         let list = lists.find( f => f.action.actionId === action.actionId );
 
@@ -2155,6 +2239,59 @@ function displayListAction( res, action, trigger ) {
         list.component.skipNames = list.component.skipNames?.length > 0 ? [ ...list.component.skipNames, skipName ] : [ skipName ];
         
         ipcRenderer.send( 'overlay:send:component', list.component );
+
+        if ( list.action.listEnrollmentShowTimer && list.component.intervalId !== -1 ) {
+            let currentIndex = list.component.listNames.indexOf( list.component.currentName );
+            let myIndex = list.component.listNames.indexOf( characterName );
+
+            if ( list.timerInstanceId ) {
+                if ( skipName === characterName ) {
+                    // If we're skipping ourselves, then we need to kill the current timer and start a new one. The duration of this new timer will be a full round, minus our time.
+                    ipcRenderer.send( 'renderer:kill:component', list.timerInstanceId );
+                    list.timerInstanceId = null;
+
+                    let duration = list.action.duration * list.component.listNames.length - list.action.duration;
+
+                    if ( currentIndex < myIndex ) {
+                        // If we're ahead of the current name, then we'll need to add a duration matching the number of names ahead of us.
+                        duration += list.action.duration * ( myIndex - currentIndex );
+                    } else if ( currentIndex >= myIndex ) {
+                        // If we're behind the current name, then we'll need to add a duration matching the number of names ahead of us.
+                        duration += list.action.duration * ( list.component.listNames.length - currentIndex + myIndex );
+                    }
+
+                    // // If our name was added, we need to start the timer.
+                    // let myIndex = list.component.listNames.indexOf( characterName );
+                    let now = Math.round( performance.now() );
+    
+                    duration += ( list.timestamp - now ) / 1000;
+
+                    if ( duration > 0 ) {
+                        executeListTimerAction( list, duration );
+                    }
+
+                } else {
+                    let skipIndex = list.component.listNames.indexOf( skipName );
+
+                    if ( currentIndex >= myIndex && currentIndex <= skipIndex ) {
+                        // If the current index is inclusively between mine and
+                        // the skipped name, then we'll need to adjust the timer.
+
+                        // We need to reduce the time remaining on the timer, so we'll
+                        // subtract the duration of the list from the timer's start 
+                        // time. That will reduce the time remaining on the timer by 
+                        // one iteration of the list.
+                        ipcRenderer.send( 'renderer:update:component', {
+                            instanceId: list.timerInstanceId,
+                            updateType: 'alter-start',
+                            duration: -1 * list.action.duration,
+                        } );
+                    }
+
+                }
+            }
+
+        }
 
     } else if ( action.autoEnumerateList && action.listEnumerateBeginPhrase === res.phraseId ) {
         let list = lists.find( f => f.action.actionId === action.actionId );
