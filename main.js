@@ -100,11 +100,37 @@ const checkForUpdates = () => {
 }
 
 function createWindow() {
-    mainWindow = new BrowserWindow( {
+    const nagBounds = {
         width: userPreferences.windowWidth,
         height: userPreferences.windowHeight,
         x: userPreferences.windowX,
         y: userPreferences.windowY,
+    };
+
+    // If the nag window bounds are outside of the screen bounds, or any of the dimensions are undefined or less than 100, then we need to reset the bounds.
+    let widthInvalid = nagBounds.width == null || nagBounds.width < 100;
+    let heightInvalid = nagBounds.height == null || nagBounds.height < 100;
+    let xInvalid = nagBounds.x == null || nagBounds.x < 0;
+    let yInvalid = nagBounds.y == null || nagBounds.y < 0;
+    if ( widthInvalid || heightInvalid || xInvalid || yInvalid ) {
+        const screenBounds = screen.getPrimaryDisplay().workArea;
+
+        // Set the window to be a natural size for their monitor.
+        const maxWidth = Math.min( screenBounds.width * 0.8, 1100 );
+        const maxHeight = Math.min( screenBounds.height * 0.8, 900 );
+        nagBounds.width = Math.max( Math.min( screenBounds.width, 800 ), maxWidth );
+        nagBounds.height = Math.max( Math.min( screenBounds.height, 600 ), maxHeight );
+
+        // Position the window in the center of the screen.
+        nagBounds.x = Math.floor( ( screenBounds.width - nagBounds.width ) / 2 );
+        nagBounds.y = Math.floor( ( screenBounds.height - nagBounds.height ) / 2 );
+    }
+
+    mainWindow = new BrowserWindow( {
+        width: nagBounds.width,
+        height: nagBounds.height,
+        x: nagBounds.x,
+        y: nagBounds.y,
         //   transparent: true,
         frame: false,
         webPreferences: {

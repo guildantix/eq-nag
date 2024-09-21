@@ -582,9 +582,8 @@ class UserPreferencesStore extends Store {
         super( {
             // We'll call our data file 'user-preferences'
             configName: 'user-preferences',
-            defaults: { logFile: null, windowBounds: { width: 800, height: 600, x: undefined, y: undefined }, version: 1 }
+            defaults: { logFile: null, windowBounds: { width: undefined, height: undefined, x: undefined, y: undefined }, version: 1 }
         } );
-        // var defaults = { windowBounds: { width: 800, height: 600 } };
         
         this.#data = this.parseDataFile();
 
