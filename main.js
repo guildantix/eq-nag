@@ -1,3 +1,6 @@
+// My to do list for Nag:
+// TODO: Update the copy trigger function to copy the action id specified in the list timer property.
+
 const { app, BrowserWindow, ipcMain, protocol, session, screen, Tray, Menu, globalShortcut } = require( "electron" );
 const { autoUpdater, updaterSignal } = require('electron-updater');
 const url = require( "url" );
