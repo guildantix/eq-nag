@@ -1,7 +1,7 @@
 import { Injectable, NgZone } from '@angular/core';
 import * as Electron from 'electron';
 import { UpdateInfo } from 'electron-updater';
-import { Observable, Observer } from 'rxjs';
+import { Observable, Observer, Subject } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
 import { DataTickModel, DkpEntryModel, TriggerModel, OverlayWindowModel, ActionTypes, FocusEffectSettings, CharacterModel, BasicError, TriggerFolder, FileModel, Tag, AuthorModel, PackageFileModel, TriggerPackageMetaModel, TriggerPackageVersion, FctStylesModel, OverlayBoundsChangedEventArgs, DialogEventArgs, QuickShareMetaModel, LogFileLocation, IpcMessage, DeathRecapPreferences, QuickShareAuthorListTypes, Progress, QuitFailureData, DuplicateTriggerAction, ScrapedSpell, ScrapedClickEffect, TriggerParseHistoryModel, SimulationProgress, FctCombatGroup, CombatTypes, StylePropertiesModel, CombatAnimations, TriggersProfileModel, ConsoleMessageModel, LogTypes, ServerCombatModel, ProgressModel, ServerConsoleMessage, ChatRoomLinkReceivedEventArgs } from './core.model';
 import { GinaConfiguration, GinaTriggerGroups } from './gina.model';
@@ -83,6 +83,8 @@ export class IpcService {
     private _onServerEvent: Observer<ServerEventModel>[] = [];
     private _onCombatCharacterChanged: Observer<string>[] = [];
     private _onReceivedChatRoomLink: Observer<ChatRoomLinkReceivedEventArgs>[] = [];
+
+    public onCombatGroupsInitialized: Subject<void> = new Subject<void>();
 
     private _ginaConfigCache: GinaConfiguration = null;
 
