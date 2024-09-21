@@ -71,16 +71,53 @@ export class SetupWizardComponent implements OnInit {
         if ( this.stepper.selected?.label === 'Overlays' ) {
             // Now we can create our default overlays.
             // And 'close' is good enough, in regards to default overlay positions.  I expect most people to move them after created.
-            let standardVerticalRatio = 1080 / 300;
-            let standardVertical = Math.round( this._displaySize.height / standardVerticalRatio );
-            let tallVerticalRatio = 1080 / 500;
-            let tallVertical = Math.round( this._displaySize.height / tallVerticalRatio );
+            const standardVerticalRatio = 1080 / 300;
+            const standardVertical = Math.round( this._displaySize.height / standardVerticalRatio );
+            
+            const standardHorizontalRatio = 1920 / 500;
+            const standardHorizontal = Math.round( this._displaySize.width / standardHorizontalRatio );
 
-            let detrimentalBounds: Rectangle = new Rectangle( 1, 1, this._displaySize.width * 0.25, standardVertical );
-            let beneficialBounds: Rectangle = new Rectangle( this._displaySize.width - ( this._displaySize.width * 0.25 ), 1, this._displaySize.width * 0.25 - 1, standardVertical );
-            let fctOutBounds: Rectangle = new Rectangle( 1, standardVertical, this._displaySize.width * 0.25, tallVertical );
-            let fctInBounds: Rectangle = new Rectangle( this._displaySize.width - ( this._displaySize.width * 0.25 ), standardVertical, this._displaySize.width * 0.25, tallVertical );
-            let textBounds: Rectangle = new Rectangle( this._displaySize.width * 0.2, 150, this._displaySize.width - ( this._displaySize.width * .2 ) * 2, standardVertical );
+            const tallVerticalRatio = 1080 / 500;
+            const tallVertical = Math.round( this._displaySize.height / tallVerticalRatio );
+            
+            const longHorizontalRatio = 1920 / 800;
+            const longHorizontal = Math.round( this._displaySize.width / longHorizontalRatio );
+
+            const borderPadding = 20;
+            // Put the Detrimental on the top left
+            let detrimentalBounds: Rectangle = new Rectangle(
+                borderPadding,
+                borderPadding,
+                standardHorizontal,
+                standardVertical );
+            
+            // Put the Beneficial on the top right
+            let beneficialBounds: Rectangle = new Rectangle(
+                this._displaySize.width - standardHorizontal - borderPadding,
+                borderPadding,
+                standardHorizontal,
+                standardVertical );
+            
+            // Put the FCT Out offset from the middle by 25% of the screen width
+            let fctOutBounds: Rectangle = new Rectangle(
+                ( this._displaySize.width / 2 ) - ( this._displaySize.width * 0.1 ) - standardHorizontal,
+                Math.round(( this._displaySize.height / 2 ) - ( tallVertical / 3 )),
+                standardHorizontal,
+                tallVertical );
+
+            // Put the FCT In offset from the middle by 25% of the screen width
+            let fctInBounds: Rectangle = new Rectangle(
+                ( this._displaySize.width / 2 ) + ( this._displaySize.width * 0.1 ),
+                Math.round(( this._displaySize.height / 2 ) - ( tallVertical / 3 )),
+                standardHorizontal,
+                tallVertical );
+            
+            // Put the Text Notifications on the top center.
+            let textBounds: Rectangle = new Rectangle(
+                ( this._displaySize.width / 2 ) - ( longHorizontal / 2 ),
+                borderPadding,
+                longHorizontal,
+                standardVertical );
 
             let detrimentalOveraly = Object.assign( new OverlayWindowModel(), <OverlayWindowModel>{
                 overlayId: nanoid(),
