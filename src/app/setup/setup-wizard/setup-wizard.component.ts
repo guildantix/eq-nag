@@ -3,7 +3,7 @@ import { MatDialogRef, MatDialog, MAT_DIALOG_DATA } from '@angular/material/dial
 import { MatStepper } from '@angular/material/stepper';
 import { Size } from 'electron';
 import { CharactersListComponent } from 'src/app/characters-list/characters-list.component';
-import { OverlayWindowModel, Point, Rectangle } from 'src/app/core.model';
+import { DpsMeterSettings, OverlayWindowModel, Point, Rectangle, SettingsKeys } from 'src/app/core.model';
 import { IpcService } from 'src/app/ipc.service';
 import { customAlphabet } from 'nanoid';
 import { forkJoin, Observable, timer } from 'rxjs';
@@ -21,6 +21,17 @@ export class SetupWizardComponent implements OnInit {
     public groupedTimers: boolean = null;
     public get onLastStep(): boolean {
         return this.stepper?.selectedIndex > 0 && this.stepper?.selectedIndex === this.stepper?.steps.length - 1;
+    }
+    private _enableDpsMeter: boolean = false;
+    public get enableDpsMeter(): boolean {
+        return this._enableDpsMeter;
+    }
+    public set enableDpsMeter( value: boolean ) {
+        this._enableDpsMeter = value;
+        
+        let dpsMeterSettings = new DpsMeterSettings();
+        dpsMeterSettings.show = value;
+        this.ipcService.updateSetting( SettingsKeys.dpsMeterSettings, dpsMeterSettings, 0 );
     }
 
     private _displaySize: Size = null;
