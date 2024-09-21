@@ -296,17 +296,23 @@ export class SetupWizardComponent implements OnInit {
 
             forkJoin( creates ).subscribe( () => {
 
-                this.ipcService.updateEnableFct( this.enableFct );
+                this.ipcService.initializeFctCombatGroups().subscribe( () => {
+
+                    // Let observers know that the combat groups are initialized.
+                    this.ipcService.onCombatGroupsInitialized.next();
+
+                    this.ipcService.updateEnableFct( this.enableFct );
                 
-                this.ipcService.saveDetrimentalOverlayId( this._detrimentalId );
-                this.ipcService.saveBeneficialOverlayId( this._benficialId );
-                this.ipcService.saveAlertOverlayId( this._alertId );
-                this.ipcService.saveDamageDealtOverlayId( this._fctOutId );
-                this.ipcService.saveDamageReceivedOverlayId( this._fctInId );
+                    this.ipcService.saveDetrimentalOverlayId( this._detrimentalId );
+                    this.ipcService.saveBeneficialOverlayId( this._benficialId );
+                    this.ipcService.saveAlertOverlayId( this._alertId );
+                    this.ipcService.saveDamageDealtOverlayId( this._fctOutId );
+                    this.ipcService.saveDamageReceivedOverlayId( this._fctInId );
 
-                this.ipcService.showArrangeOverlaysDialog();
+                    this.ipcService.showArrangeOverlaysDialog();
 
-                this.stepper.next();
+                    this.stepper.next();
+                } );
             } );
             
         } else {
