@@ -79,6 +79,11 @@ class UserPreferencesStore extends Store {
      */
     #data;
 
+    /** @type {booleana} This will only be true when the user preferences database file is not found.  This is set by having the default for the user preferences. */
+    get setup() {
+        return this.#data.setup === true;
+    }
+
     /** @type {boolean} If true, then Nag will enable GPU acceleration on load. */
     get enableGpuAcceleration() {
         return this.#data.enableGpuAcceleration === true ? true : false;
@@ -582,7 +587,8 @@ class UserPreferencesStore extends Store {
         super( {
             // We'll call our data file 'user-preferences'
             configName: 'user-preferences',
-            defaults: { logFile: null, windowBounds: { width: undefined, height: undefined, x: undefined, y: undefined }, version: 1 }
+            defaults: { logFile: null, windowBounds: { width: undefined, height: undefined, x: undefined, y: undefined }, setup: true, version: 1 },
+            virtual: [ 'setup' ]
         } );
         
         this.#data = this.parseDataFile();
