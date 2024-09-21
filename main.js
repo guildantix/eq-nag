@@ -232,6 +232,11 @@ function createWindow() {
             mainWindow.show();
         }
     } );
+
+    if ( userPreferences.setup ) {
+        // Set the last viewed version to the current version.
+        userPreferences.lastViewedUpdateNotes = app.getVersion();
+    }
     
 };
 
@@ -641,7 +646,6 @@ var updateInfo = null;
 autoUpdater.on( 'update-downloaded', () => {
     log.info( 'update-downloaded executed' );
 
-    // TODO: Test this feature.
     if ( !userPreferences.allowPrerelease || Version.compareVersions( updateInfo.version, app.getVersion() ) === 1 ) {
 
         mainWindow.webContents.send( 'update_downloaded', updateInfo );
