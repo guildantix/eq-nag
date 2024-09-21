@@ -380,35 +380,38 @@ class OverlayDatabaseStore extends Store {
 
     /**
      * Initializes and creates the default combat groups.
+     * 
+     * @param {string | undefined} fctOutId The overlay id for outgoing FCT combat groups.
+     * @param {string | undefined} fctInId overlay id for incoming FCT combat groups.
      */
-    initializeFctCombatGroups() {
+    initializeFctCombatGroups( fctOutId, fctInId ) {
         let criticalsGroup = Object.assign( new FctCombatGroup(), defaultCriticalsGroup );
         criticalsGroup.combatGroupId = nanoid();
-        criticalsGroup.overlayId = this.#userPrefDb.damageDealtOverlayId;
+        criticalsGroup.overlayId = fctOutId ?? this.#userPrefDb.damageDealtOverlayId;
 
         let hitsGroup = Object.assign( new FctCombatGroup(), defaultHitsGroup );
         hitsGroup.combatGroupId = nanoid();
-        hitsGroup.overlayId = this.#userPrefDb.damageDealtOverlayId;
+        hitsGroup.overlayId = fctOutId ?? this.#userPrefDb.damageDealtOverlayId;
 
         let healingCriticalsGroup = Object.assign( new FctCombatGroup(), defaultHealingCriticalsGroup );
         healingCriticalsGroup.combatGroupId = nanoid();
-        healingCriticalsGroup.overlayId = this.#userPrefDb.damageDealtOverlayId;
+        healingCriticalsGroup.overlayId = fctOutId ?? this.#userPrefDb.damageDealtOverlayId;
 
         let healingGroup = Object.assign( new FctCombatGroup(), defaultHealingGroup );
         healingGroup.combatGroupId = nanoid();
-        healingGroup.overlayId = this.#userPrefDb.damageDealtOverlayId;
+        healingGroup.overlayId = fctOutId ?? this.#userPrefDb.damageDealtOverlayId;
 
         let otherCriticalsGroup = Object.assign( new FctCombatGroup(), defaultOtherCriticalsGroup );
         otherCriticalsGroup.combatGroupId = nanoid();
-        otherCriticalsGroup.overlayId = this.#userPrefDb.damageReceivedOverlayId;
+        otherCriticalsGroup.overlayId = fctInId ?? this.#userPrefDb.damageReceivedOverlayId;
 
         let otherHitsGroup = Object.assign( new FctCombatGroup(), defaultOtherHitsGroup );
         otherHitsGroup.combatGroupId = nanoid();
-        otherHitsGroup.overlayId = this.#userPrefDb.damageReceivedOverlayId;
+        otherHitsGroup.overlayId = fctInId ?? this.#userPrefDb.damageReceivedOverlayId;
 
         let otherHealingGroup = Object.assign( new FctCombatGroup(), defaultOtherHealingGroup );
         otherHealingGroup.combatGroupId = nanoid();
-        otherHealingGroup.overlayId = this.#userPrefDb.damageReceivedOverlayId;
+        otherHealingGroup.overlayId = fctInId ?? this.#userPrefDb.damageReceivedOverlayId;
 
         
         this.#data.fctCombatGroups.push( criticalsGroup );
@@ -722,12 +725,16 @@ class OverlayDatabaseStore extends Store {
              */
             ( event, overlay ) => {
 
-                // New overlays should be centered on the selected/primary display.
-                let displays = screen.getAllDisplays();
+                const displays = screen.getAllDisplays();
                 const display = displays.find( f => f.id === overlay.displayId ) ?? screen.getPrimaryDisplay();
 
-                overlay.x = ( display.size.width - overlay.windowWidth ) / 2;
-                overlay.y = ( display.size.height - overlay.windowHeight ) / 2;
+                if ( ( !overlay.x && !overlay.y ) || overlay.x < display.bounds.x || overlay.x > display.bounds.x + display.bounds.width || overlay.y < display.bounds.y || overlay.y > display.bounds.y + display.bounds.height ) {
+                    // If the overlay bounds are offscreen, then center it on the primary display.
+                    // New overlays should be centered on the selected/primary display.
+                    overlay.x = ( display.size.width - overlay.windowWidth ) / 2;
+                    overlay.y = ( display.size.height - overlay.windowHeight ) / 2;
+                }
+                
                 overlay.displayId = display.id;
                 overlay.displayBounds = display.bounds;
 
@@ -757,10 +764,17 @@ class OverlayDatabaseStore extends Store {
             event.sender.send( 'overlay:migrate-fct', true );
         } );
 
-        ipcMain.on( 'overlay:initialize-fct', ( event ) => {
-            this.initializeFctCombatGroups();
-            event.sender.send( 'overlay:initialize-fct', true );
-        } );
+        ipcMain.on( 'overlay:initialize-fct',
+            /**
+             * Initializes the FCT combat groups.
+             * 
+             * @param {Electron.IpcMainEvent} event The event args.
+             * @param {{fctOutId?: string, fctInId?: string} | undefined} data The data to initialize the FCT combat groups.
+             */
+            ( event, data ) => {
+                this.initializeFctCombatGroups( data?.fctOutId, data?.fctInId );
+                event.sender.send( 'overlay:initialize-fct', true );
+            } );
         
         // TODO: Figure out wtf this was?
         // ipcMain.on( 'overlays:update:position', ( event, overlays ) => {

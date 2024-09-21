@@ -12,10 +12,24 @@
             <div class="img-float-left"><img src="/assets/images/fct-example.png" /></div>
             <p>Floating combat text will display the damage amounts from your hits or hits to you on your screen.</p>
             <p>Would you like to enable floating combat text?</p>
-            <mat-slide-toggle [(ngModel)]="enableFct" name="enableFct" style="margin-bottom: 14px;"></mat-slide-toggle>
+            <mat-slide-toggle [(ngModel)]="enableFct" name="enableFct" style="margin-bottom: 14px;">Enable FCT</mat-slide-toggle>
             <p class="notice border-green" *ngIf="enableFct">
-                <mat-icon class="material-icons color-green">engineering</mat-icon><span>This feature is in an early phase and doesn't support a lot of customization options, but more options are in development.</span>
+                <mat-icon class="material-icons color-green">engineering</mat-icon><span>This feature is still in development and more customization options will be added later.</span>
             </p>
+        </mat-step>
+
+        <mat-step label="DPS Meter" ariaLabel="DPS Meter">
+            
+            <div class="img-float-left"><img src="/assets/images/dps-meter.png" /></div>
+            <p>DPS Meter will display the DPS and total damage for you and your group/raid members. To add people to the list, be sure to type in /who.</p>
+            <p>Would you like to enable damage meters?</p>
+
+            <mat-slide-toggle [(ngModel)]="enableDpsMeter" name="enableDpsMeter" style="margin-bottom: 14px;">Enable DPS Meter</mat-slide-toggle>
+
+            <p class="notice border-green" *ngIf="enableDpsMeter">
+                <mat-icon class="material-icons color-green">engineering</mat-icon><span>This feature is still in development and more parsing functions will be added later.</span>
+            </p>
+
         </mat-step>
 
         <mat-step label="Overlays" ariaLabel="Overlays">

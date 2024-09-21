@@ -61,11 +61,6 @@ export class FloatingCombatTextComponent implements OnInit, DoCheck {
             this.combatGroups.forEach( ( group, i ) => this.changeTracking[ group.combatGroupId ] = FctCombatGroup.getHashValue( group ) );
         } );
         this.ipcService.getOverlayWindows().subscribe( data => this.overlays = data );
-        this.ipcService.tickReceived().subscribe( data => {
-            
-            this.overlays = data.overlays;
-
-        } );
 
         this.ipcService.tickReceived().subscribe( data => {
             
@@ -121,6 +116,13 @@ export class FloatingCombatTextComponent implements OnInit, DoCheck {
 
             this.dialogService.showQuestionDialog( `Floating Combat Text ${canMigrate ? 'Migration' : 'Initialization'}`, statements, questions, true, 'wide' );
 
+        } );
+
+        this.ipcService.onCombatGroupsInitialized.subscribe( () => {
+            this.ipcService.getFctCombatGroups().subscribe( data => {
+                this.combatGroups = data;
+                this.combatGroups.forEach( ( group, i ) => this.changeTracking[ group.combatGroupId ] = FctCombatGroup.getHashValue( group ) );
+            } );
         } );
     }
 

@@ -12,6 +12,8 @@ class Store {
     userDataPath;
     /** This object's default values. */
     #defaults;
+    /** Virtual properties */
+    #virtual = [];
     /** The config name of this object. */
     configName;
 
@@ -23,6 +25,7 @@ class Store {
         this.#path = path.join( this.userDataPath, opts.configName + '.json' );
         this.#defaults = opts.defaults;
         this.configName = opts.configName;
+        this.#virtual = opts.virtual || [];
         // this.data = parseDataFile( this.path, opts.defaults );
     }
     
@@ -39,11 +42,23 @@ class Store {
     }
 
     storeDataFile( data ) {
-        if ( !data )
+
+        let storeData = JSON.parse( JSON.stringify( data ) );
+
+        if ( !storeData )
             throw 'Attmept to store null data file!';
+
+        if ( this.#virtual.length > 0 ) {
+            for ( let i = 0; i < this.#virtual.length; i++ ) {
+                let virtual = this.#virtual[i];
+                if ( storeData[virtual] ) {
+                    delete storeData[virtual];
+                }
+            }
+        }
         
         try {
-            fs.writeFileSync( this.#path, JSON.stringify( data ) );
+            fs.writeFileSync( this.#path, JSON.stringify( storeData ) );
         } catch ( error ) {
             console.error( 'Error storing ' + this.configName, error );
         }
@@ -51,11 +66,22 @@ class Store {
 
     storeDataFileAsync( data ) {
 
-        if ( !data )
+        let storeData = JSON.parse( JSON.stringify( data ) );
+
+        if ( !storeData )
             throw 'Attmept to store null data file!';
         
+        if ( this.#virtual.length > 0 ) {
+            for ( let i = 0; i < this.#virtual.length; i++ ) {
+                let virtual = this.#virtual[i];
+                if ( storeData[virtual] ) {
+                    delete storeData[virtual];
+                }
+            }
+        }
+        
         try {
-            return fsp.writeFile( this.#path, JSON.stringify( data ) );
+            return fsp.writeFile( this.#path, JSON.stringify( storeData ) );
         } catch ( error ) {
             console.error( 'Error storing ' + this.configName, error );
         }

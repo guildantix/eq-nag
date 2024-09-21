@@ -1,7 +1,7 @@
 import { Injectable, NgZone } from '@angular/core';
 import * as Electron from 'electron';
 import { UpdateInfo } from 'electron-updater';
-import { Observable, Observer } from 'rxjs';
+import { Observable, Observer, Subject } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
 import { DataTickModel, DkpEntryModel, TriggerModel, OverlayWindowModel, ActionTypes, FocusEffectSettings, CharacterModel, BasicError, TriggerFolder, FileModel, Tag, AuthorModel, PackageFileModel, TriggerPackageMetaModel, TriggerPackageVersion, FctStylesModel, OverlayBoundsChangedEventArgs, DialogEventArgs, QuickShareMetaModel, LogFileLocation, IpcMessage, DeathRecapPreferences, QuickShareAuthorListTypes, Progress, QuitFailureData, DuplicateTriggerAction, ScrapedSpell, ScrapedClickEffect, TriggerParseHistoryModel, SimulationProgress, FctCombatGroup, CombatTypes, StylePropertiesModel, CombatAnimations, TriggersProfileModel, ConsoleMessageModel, LogTypes, ServerCombatModel, ProgressModel, ServerConsoleMessage, ChatRoomLinkReceivedEventArgs, RenderTokenModel, TokenChangeModel } from './core.model';
 import { GinaConfiguration, GinaTriggerGroups } from './gina.model';
@@ -84,6 +84,8 @@ export class IpcService {
     private _onCombatCharacterChanged: Observer<string>[] = [];
     private _onReceivedChatRoomLink: Observer<ChatRoomLinkReceivedEventArgs>[] = [];
     private _tokenChangeObservers: Record<string, Observer<TokenChangeModel>[]> = {};
+
+    public onCombatGroupsInitialized: Subject<void> = new Subject<void>();
 
     private _ginaConfigCache: GinaConfiguration = null;
 
@@ -2624,16 +2626,19 @@ export class IpcService {
         return obs;
     }
 
-    public initializeFctCombatGroups(): Observable<boolean> {
+    public initializeFctCombatGroups( options: { fctOutId?: string, fctInId?: string } | undefined = undefined ): Observable<boolean> {
         let obs: Observable<boolean> = new Observable<boolean>( ( observer: Observer<boolean> ) => {
                     
             window.api.ipc.once( 'overlay:initialize-fct', ( e, success: boolean ) => {
                 this.ngZone.run( () => {
                     observer.next( success );
                     observer.complete();
+
+                    // Let observers know that the combat groups are initialized.
+                    this.onCombatGroupsInitialized.next();
                 } );
             } );
-            window.api.ipc.send( 'overlay:initialize-fct', undefined );
+            window.api.ipc.send( 'overlay:initialize-fct', options );
 
         } );
 

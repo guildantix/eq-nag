@@ -102,12 +102,66 @@ const checkForUpdates = () => {
     autoUpdater.checkForUpdates();
 }
 
+const getDefaultMainWindowBounds = () => {
+    let nagBounds = {
+        width: 0,
+        height: 0,
+        x: 0,
+        y: 0,
+    };
+    const screenBounds = screen.getPrimaryDisplay().workArea;
+
+    // Set the window to be a natural size for their monitor.
+    const maxWidth = Math.min( screenBounds.width * 0.8, 1100 );
+    const maxHeight = Math.min( screenBounds.height * 0.8, 900 );
+    nagBounds.width = Math.max( Math.min( screenBounds.width, 800 ), maxWidth );
+    nagBounds.height = Math.max( Math.min( screenBounds.height, 600 ), maxHeight );
+
+    // Position the window in the center of the screen.
+    nagBounds.x = Math.floor( ( screenBounds.width - nagBounds.width ) / 2 );
+    nagBounds.y = Math.floor( ( screenBounds.height - nagBounds.height ) / 2 );
+
+    return nagBounds;
+}
+
 function createWindow() {
-    mainWindow = new BrowserWindow( {
+    let nagBounds = {
         width: userPreferences.windowWidth,
         height: userPreferences.windowHeight,
         x: userPreferences.windowX,
         y: userPreferences.windowY,
+    };
+
+    // If the nag window bounds any of the dimensions are undefined or less than 100, then we need to reset the bounds.
+    let widthInvalid = nagBounds.width == null || nagBounds.width < 100;
+    let heightInvalid = nagBounds.height == null || nagBounds.height < 100;
+    let xInvalid = nagBounds.x == null || nagBounds.x < 0;
+    let yInvalid = nagBounds.y == null || nagBounds.y < 0;
+    if ( widthInvalid || heightInvalid || xInvalid || yInvalid ) {
+        log.warn( '[main:createWindow] Main window bounds are invalid. Resetting window bounds.' );
+        nagBounds = getDefaultMainWindowBounds();
+    }
+
+    // If the main window has any part that is not on any screen, then we need to reset the bounds.
+    const displays = screen.getAllDisplays();
+    let isWindowOutOfBounds = false;
+    displays.forEach( display => {
+        if ( !isWindowOutOfBounds ) {
+            let out = nagBounds.x + nagBounds.width < display.bounds.x || nagBounds.x > display.bounds.x + display.bounds.width || nagBounds.y + nagBounds.height < display.bounds.y || nagBounds.y > display.bounds.y + display.bounds.height;
+            isWindowOutOfBounds = out;
+        }
+    } );
+
+    if ( isWindowOutOfBounds ) {
+        log.warn( '[main:createWindow] Main window is out of bounds. Resetting window bounds.' );
+        nagBounds = getDefaultMainWindowBounds();
+    }
+
+    mainWindow = new BrowserWindow( {
+        width: nagBounds.width,
+        height: nagBounds.height,
+        x: nagBounds.x,
+        y: nagBounds.y,
         //   transparent: true,
         frame: false,
         webPreferences: {
@@ -181,6 +235,11 @@ function createWindow() {
             mainWindow.show();
         }
     } );
+
+    if ( userPreferences.setup ) {
+        // Set the last viewed version to the current version.
+        userPreferences.lastViewedUpdateNotes = app.getVersion();
+    }
     
 };
 
@@ -218,7 +277,7 @@ const registerDevToolsShortcut = () => {
 
 const checkCombatGroups = () => {
     if ( overlayDatabase.getCombatGroups().length === 0 ) {
-        if ( userPreferences.askForCombatGroupMigrations ) {
+        if ( userPreferences.askForCombatGroupMigrations && !userPreferences.setup ) {
             mainWindow.webContents.send( 'ask_combat_group_migration', userPreferences.fctStyles?.fctDmgInStyle != null );
         }
     }
@@ -590,7 +649,6 @@ var updateInfo = null;
 autoUpdater.on( 'update-downloaded', () => {
     log.info( 'update-downloaded executed' );
 
-    // TODO: Test this feature.
     if ( !userPreferences.allowPrerelease || Version.compareVersions( updateInfo.version, app.getVersion() ) === 1 ) {
 
         mainWindow.webContents.send( 'update_downloaded', updateInfo );
