@@ -269,7 +269,7 @@ const registerDevToolsShortcut = () => {
 
 const checkCombatGroups = () => {
     if ( overlayDatabase.getCombatGroups().length === 0 ) {
-        if ( userPreferences.askForCombatGroupMigrations ) {
+        if ( userPreferences.askForCombatGroupMigrations && !userPreferences.setup ) {
             mainWindow.webContents.send( 'ask_combat_group_migration', userPreferences.fctStyles?.fctDmgInStyle != null );
         }
     }
