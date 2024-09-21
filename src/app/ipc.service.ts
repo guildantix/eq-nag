@@ -2597,7 +2597,7 @@ export class IpcService {
         return obs;
     }
 
-    public initializeFctCombatGroups(): Observable<boolean> {
+    public initializeFctCombatGroups( options: { fctOutId?: string, fctInId?: string } | undefined = undefined ): Observable<boolean> {
         let obs: Observable<boolean> = new Observable<boolean>( ( observer: Observer<boolean> ) => {
                     
             window.api.ipc.once( 'overlay:initialize-fct', ( e, success: boolean ) => {
@@ -2609,7 +2609,7 @@ export class IpcService {
                     this.onCombatGroupsInitialized.next();
                 } );
             } );
-            window.api.ipc.send( 'overlay:initialize-fct', undefined );
+            window.api.ipc.send( 'overlay:initialize-fct', options );
 
         } );
 
