@@ -2271,22 +2271,16 @@ function displayListAction( res, action, trigger ) {
                     }
 
                 } else {
-                    let skipIndex = list.component.listNames.indexOf( skipName );
 
-                    if ( currentIndex >= myIndex && currentIndex <= skipIndex ) {
-                        // If the current index is inclusively between mine and
-                        // the skipped name, then we'll need to adjust the timer.
-
-                        // We need to reduce the time remaining on the timer, so we'll
-                        // subtract the duration of the list from the timer's start 
-                        // time. That will reduce the time remaining on the timer by 
-                        // one iteration of the list.
-                        ipcRenderer.send( 'renderer:update:component', {
-                            instanceId: list.timerInstanceId,
-                            updateType: 'alter-start',
-                            duration: -1 * list.action.duration,
-                        } );
-                    }
+                    // We need to reduce the time remaining on the timer, so we'll
+                    // subtract the duration of the list from the timer's start 
+                    // time. That will reduce the time remaining on the timer by 
+                    // one iteration of the list.
+                    ipcRenderer.send( 'renderer:update:component', {
+                        instanceId: list.timerInstanceId,
+                        updateType: 'alter-start',
+                        duration: -1 * list.action.duration,
+                    } );
 
                 }
             }
