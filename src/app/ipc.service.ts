@@ -2604,6 +2604,9 @@ export class IpcService {
                 this.ngZone.run( () => {
                     observer.next( success );
                     observer.complete();
+
+                    // Let observers know that the combat groups are initialized.
+                    this.onCombatGroupsInitialized.next();
                 } );
             } );
             window.api.ipc.send( 'overlay:initialize-fct', undefined );
