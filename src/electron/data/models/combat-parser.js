@@ -369,7 +369,7 @@ const combatDbDefault = {
 
 class DpsMeterSettings {
 
-    show = true;
+    show = false;
     autoFade = false;
     showOnlyInCombat = false;
     keepOnScreen = false;
