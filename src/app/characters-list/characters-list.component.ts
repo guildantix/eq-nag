@@ -152,6 +152,7 @@ export class CharactersListComponent implements OnInit {
     public loadCharacters( characterId?: string ): void {
         this.ipcService.getCharacters().subscribe( data => {
             this.characters = _.sortBy( data, [ 'server', 'name' ] );
+            this.characters?.forEach( character => character.disabledTriggers = character.disabledTriggers ?? [] );
             if ( characterId != null ) {
                 let i: number = _.findIndex( this.characters, f => f.characterId === characterId );
                 this.selectedTabIndex = i >= 0 && i < this.characters.length ? i : -1;
