@@ -1,8 +1,168 @@
 .update-notes {
     padding: 25px;
+    min-height: calc(100vh - 470px);
+
+    .patreon-button {
+        display: inline-block;
+        margin-left: 2em;
+        margin-top: 1.25em;
+        padding-top: 0.2em;
+    }
+}
+
+footer {
+    display: flex;
+    flex-flow: row nowrap;
+
+    .spacer {
+        flex: 1 1 auto;
+    }
+
+    &:hover {
+        .patreon-button {
+            .btn {
+                opacity: 0.5;
+            }
+        }
+    }
+
+    .patreon-button {
+        margin-left: 0;
+
+        .btn {
+            opacity: 0.1;
+            background-color: white !important;
+        }
+    }
+
+    button {
+        &:hover {
+            .patreon-button {
+                .btn {
+                    opacity: 1;
+                }
+            }
+        }
+    }
 }
 
 :host ::ng-deep img {
     display: block;
     max-width: 100%;
+}
+
+.patreon {
+    margin: 2em 5em;
+    background-color: #212121;
+    padding: 1em;
+
+    h1 {
+        font-weight: 100;
+        font-size: 2.5em;
+        width: 100%;
+        text-align: center;
+        margin-top: 0.3em;
+    }
+
+    &.footer {
+
+        .actions {
+            opacity: 0.5;
+        }
+
+        &:hover {
+            .actions {
+                opacity: 1;
+            }
+        }
+    }
+
+    .patreon-button {
+        display: inline-block;
+        margin-left: 2em;
+        margin-top: 1.25em;
+        padding-top: 0.2em;
+        margin-left: 0;
+        margin-right: 2em;
+    }
+
+    .actions {
+        display: flex;
+        flex-flow: row nowrap;
+
+        > div {
+            display: flex;
+            flex-flow: column nowrap;
+            justify-content: space-around;
+        }
+
+        .spacer {
+            flex: 1 1 auto;
+        }
+
+        a {
+            text-decoration: none;
+            font-size: .9em;
+            margin-right: 2em;
+        }
+    }
+}
+
+.patreon-button {
+    display: inline-block;
+    font-size: 7px;
+    cursor: pointer;
+    position: relative;
+    display: inline-block;
+    margin-left: 2em;
+    margin-top: 1.25em;
+    padding-top: 0.2em;
+
+    &:hover {
+        .white {
+            display: flex !important;
+        }
+        .black {
+            display: none !important;
+        }
+    }
+
+    &:active {
+        opacity: 0.5;
+    }
+
+    .logo {
+        display: inline-block;
+
+        > div {
+            padding: 0.35em 4em;
+            border-radius: 3em;
+
+            img {
+                &:first-of-type {
+                    width: 3em;
+                }
+                &:nth-of-type(2) {
+                    width: 12em;
+                }
+            }
+
+        }
+
+        .white {
+            display: none;
+            background-color: #c269f0;
+        }
+
+        .black {
+            display: flex;
+            background-color: #4c0e67;
+        }
+
+        .btn {
+            display: flex;
+            background-color: #17e883;
+        }
+    }
+
 }
