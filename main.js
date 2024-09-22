@@ -531,6 +531,10 @@ ipcMain.on( 'app:minimize:tray', ( event, data ) => {
     mainWindow.hide();
 } );
 
+ipcMain.on( 'app:open-patreon', ( event ) => {
+    require( 'electron' ).shell.openExternal( 'https://www.patreon.com/EverQuestNag' );
+} );
+
 ipcMain.on( 'app:request:tick', ( event, data ) => {
     sendTick();
 } );

@@ -122,5 +122,8 @@ contextBridge.exposeInMainWorld( 'api', {
     },
     logger: {
         info: log.info,
-    }
+    },
+    openPatreon: () => {
+        ipcRenderer.send( 'app:open-patreon' );
+    },
 } );

@@ -9,6 +9,7 @@ export class WindowApi {
     ipc: WindowApiIpc;
     close: () => void;
     setVersionNumberViewed: ( version: string ) => void;
+    openPatreon: () => void;
     utils: {
         dates: {
             /**
