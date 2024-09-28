@@ -1264,7 +1264,10 @@ class CombatParser {
                     }
                 
                     this._petOwners[ petName ] = petKey;
-                    this._playerPets[ petKey ].push( petLeader.groups.pet );
+                    if ( this._playerPets[ petKey ].indexOf( petName ) === -1 ) {
+                        this._playerPets[ petKey ].push( petName );
+                    }
+
                     this._updateServerStatistics = true;
 
                 }
