@@ -1071,3 +1071,13 @@ p {
     'GRAD' 0,
     'opsz' 24
 }
+
+
+mat-form-field {
+    &.consolas {
+        input, textarea {
+            font-family: Consolas, monospace;
+        }
+    }
+}
+
