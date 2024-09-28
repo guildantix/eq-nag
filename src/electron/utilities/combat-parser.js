@@ -1253,11 +1253,8 @@ class CombatParser {
                 petAssigned = true;
                 petName = petAttack.groups.pet;
 
-                if ( !this._verifiedPlayers.includes( petAttack.groups.pet ) ) {
-                    // Some guy playing a prank.
-                    
-                } else if ( this._verifiedPets.indexOf( petAttack.groups.pet ) === -1 ) {
-                    this._verifiedPets.push( petAttack.groups.pet );
+                if ( this._verifiedPets.indexOf( petName ) === -1 ) {
+                    this._verifiedPets.push( petName );
 
                     // This is "my" pet.
                     let petKey = this._characterName;
@@ -1266,8 +1263,11 @@ class CombatParser {
                         this._playerPets[ petKey ] = [];
                     }
                 
-                    this._petOwners[ petLeader.groups.pet ] = petKey;
-                    this._playerPets[ petKey ].push( petLeader.groups.pet );
+                    this._petOwners[ petName ] = petKey;
+                    if ( this._playerPets[ petKey ].indexOf( petName ) === -1 ) {
+                        this._playerPets[ petKey ].push( petName );
+                    }
+
                     this._updateServerStatistics = true;
 
                 }
@@ -1319,10 +1319,6 @@ class CombatParser {
                     // If the pet leader is not in the players list, add them.
                     if ( this._verifiedPlayers.indexOf( ownerName ) === -1 ) {
                         this._verifiedPlayers.push( ownerName );
-                        let eNpcIdx = this._encounterStats.npcs.indexOf( ownerName );
-                        if ( eNpcIdx > -1 ) {
-                            this._encounterStats.npcs.splice( eNpcIdx, 1 );
-                        }
                         this._updateServerStatistics = true;
                     }
 
@@ -1330,6 +1326,7 @@ class CombatParser {
                     let isNpc = petName.indexOf( ' ' ) > -1;
                     if ( isNpc && this._verifiedNpcs.indexOf( petName ) === -1 ) {
                         this._verifiedNpcs.push( petName );
+                        this._updateServerStatistics = true;
                     }
 
                     let petIdx = this._verifiedPets.indexOf( petName );
@@ -1427,7 +1424,7 @@ class CombatParser {
         for ( let i = 0; i < this._entityStats.length; i++ ) {
             const stats = this._entityStats[ i ];
             let ui = this._unknownEntities.indexOf( stats.name );
-            let playerNameMaybe = !this._verifiedPlayers.includes( stats.name ) && stats.name.indexOf( ' ' ) === -1;
+            let playerNameMaybe = !this._verifiedPets.includes( stats.name ) && !this._verifiedPlayers.includes( stats.name ) && stats.name.indexOf( ' ' ) === -1;
 
             if ( playerNameMaybe ) {
                 if ( stats.attackPlayer === 0 && ( stats.attackNpc > 10 || stats.healPlayer > 10 ) ) {
@@ -2952,7 +2949,7 @@ class CombatParser {
         if ( logRecord != undefined ) {
             let playerActor = this._verifiedPlayers.includes( logRecord.actor );
             let playerTarget = this._verifiedPlayers.includes( logRecord.target );
-            let petActor = this._verifiedPets.includes( logRecord.actor );
+            let petActor = this._verifiedPets.includes( logRecord.actor ) || this._petOwners[ logRecord.actor ] != undefined;
             let petTarget = this._verifiedPets.includes( logRecord.target );
 
             // TODO: This needs to be done for a single player, instead
@@ -3040,17 +3037,17 @@ class CombatParser {
                 } else if ( petActor ) {
                     // If a player's pet is the actor, then we need to grab the pet's owner, and add the dps to the owner's pet list.
                     let owner = this._petOwners[ logRecord.actor ];
-                    let isNpcTarget = logRecord.target.indexOf( ' ' ) > -1;
+                    let isNpcTarget = logRecord.target.indexOf( ' ' ) > -1 || this._encounterStats.npcs.includes( logRecord.target );
                     
                     if ( owner ) {
                         let playerEvents = this._getOrCreatePlayerEncounterStats( this._encounterStats.playerEvents, owner, timestamp );
                         let playerOutgoing = this._getOrCreatePlayerDpsStats( playerEvents.playerDpsOutgoing, playerEvents.name, playerEvents.class, timestamp, isNpcTarget || ( !playerTarget && !petTarget ), logRecord.target );
                         let petDps = this._getOrCreatePetDpsStats( playerOutgoing.pets, logRecord.actor, timestamp );
 
-                        this._calculateDpsStats( logRecord, petDps, playerOutgoing.time );
+                        this._calculateDpsStats( logRecord, playerOutgoing, playerOutgoing.time );
                     }
 
-                    if ( !logRecord.corpse && this._verifiedNpcs.includes( logRecord.target ) ) {
+                    if ( !logRecord.corpse && !this._verifiedPlayers.includes( logRecord.target ) ) {
                         if ( !this._encounterStats.npcs.includes( logRecord.target ) ) {
                             this._encounterStats.npcs.push( logRecord.target );
                         }
@@ -3058,7 +3055,9 @@ class CombatParser {
                         // Here, we need to make sure that the pet activity is not
                         // a charm pet attacking a player, but a pet (charmed or 
                         // otherwise) attacking another NPC.
-                        this._encounterStats.active = this._encounterStats.active ?? isNpcTarget;
+                        if ( this._encounterStats.active !== true ) {
+                            this._encounterStats.active = isNpcTarget;
+                        }
                     }
                     
                 }

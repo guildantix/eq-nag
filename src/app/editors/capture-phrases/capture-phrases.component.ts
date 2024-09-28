@@ -50,7 +50,7 @@ export class CapturePhrasesComponent implements OnInit {
 
     public updatePhraseInputTypes(): void {
         this.capturePhrases.forEach( ( phrase, index ) => {
-            this.showPhraseTextArea[ phrase.phraseId ] = phrase.phrase?.length >= 75;
+            this.showPhraseTextArea[ phrase.phraseId ] = phrase.phrase?.length > 50;
         } );
     }
 

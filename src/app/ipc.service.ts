@@ -401,6 +401,12 @@ export class IpcService {
         }
     }
 
+    public openPatreon(): void {
+        if ( window.api ) {
+            window.api.openPatreon();
+        }
+    }
+
     /**
      * Returns an observable that will emit when the main process requests a 
      * combat group migration.  The value will be true if the user has existing 
@@ -1356,6 +1362,22 @@ export class IpcService {
                 } );
             } );
             window.api.ipc.send( 'trigger:get:stored-variables', null );
+
+        } );
+
+        return obs;
+    }
+
+    public getCounterNames(): Observable<string[]> {
+        let obs: Observable<string[]> = new Observable<string[]>( ( observer: Observer<string[]> ) => {
+            
+            window.api.ipc.once( 'trigger:get:counters', ( e, counterNames: string[] ) => {
+                this.ngZone.run( () => {
+                    observer.next( counterNames );
+                    observer.complete();
+                } );
+            } );
+            window.api.ipc.send( 'trigger:get:counters', null );
 
         } );
 
