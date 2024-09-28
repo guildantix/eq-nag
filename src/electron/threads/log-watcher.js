@@ -1217,6 +1217,28 @@ function generateTriggerFns() {
                                 }
                                 
                             }
+                        } else if ( condition.conditionType === TriggerConditionTypes.CounterValue ) {
+                            const counterValue = counters[ variableName ]?.value ?? null;
+                            const conditionValue = condition.variableValue && !StringUtilities.isNullOrWhitespace( condition.variableValue ) ? +condition.variableValue : null;
+                            const conditionNullMatch = counterValue === null && conditionValue === null;
+
+                            if ( condition.operatorType === OperatorTypes.Equals ) {
+                                if ( !conditionNullMatch && counterValue - conditionValue !== 0 ) {
+                                    conditionsPassed = false;
+                                }
+                            } else if ( condition.operatorType === OperatorTypes.GreaterThan ) {
+                                if ( conditionNullMatch || counterValue - conditionValue <= 0 ) {
+                                    conditionsPassed = false;
+                                }
+                            } else if ( condition.operatorType === OperatorTypes.LessThan ) {
+                                if ( conditionNullMatch || conditionValue - counterValue <= 0 ) {
+                                    conditionsPassed = false;
+                                }
+                            } else if ( condition.operatorType === OperatorTypes.DoesNotEqual ) {
+                                if ( conditionNullMatch || counterValue - conditionValue === 0 ) {
+                                    conditionsPassed = false;
+                                }
+                            }
                         }
                     }
     

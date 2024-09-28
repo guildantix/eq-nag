@@ -13,13 +13,16 @@ import { IpcService } from 'src/app/ipc.service';
 export class ConditionsComponent implements OnInit {
 
     @Input() public conditions: TriggerCondition[];
-    @Input() public conditionType: TriggerConditionTypes = TriggerConditionTypes.VariableValue;
     @Input() public lighter: boolean = false;
     @Output() public conditionsChange: EventEmitter<TriggerCondition[]> = new EventEmitter<TriggerCondition[]>();
 
     public triggerConditionTypes: typeof TriggerConditionTypes = TriggerConditionTypes;
     public operatorTypes: typeof OperatorTypes = OperatorTypes;
     public storedVariables: string[] = [];
+    public counters: string[] = [];
+    public get storedVariableNames(): string[] {
+        return [ ...this.storedVariables, ...this.counters ];
+    }
     public conditionTableColumns = [ 'variable', 'operator', 'value', 'delete' ];
 
     @ViewChild( 'conditionsTable' ) private conditionsTable: MatTable<any>;
@@ -28,22 +31,23 @@ export class ConditionsComponent implements OnInit {
 
     ngOnInit() {
         this.ipcService.getStoredVariables().subscribe( variables => this.storedVariables = variables );
+        this.ipcService.getCounterNames().subscribe( counters => this.counters = counters );
     }
 
     public addNewCondition(): void {
         let condition: TriggerCondition = new TriggerCondition();
-        condition.conditionType = this.conditionType;
+        condition.conditionType = TriggerConditionTypes.VariableValue;
         this.conditions.push( condition );
         this.conditionsChange.emit( this.conditions );
         this.conditionsTable?.renderRows();
     }
 
     public deleteCondition( index: number ): void {
-        this.dialogService.showConfirmDialog(
+        this.dialogService.showConfirmationDialog(
             'Are you certain you want to delete this condition?',
             'Click "Yes" to delete the condition.',
-            'Click "No" to cancel and close this dialog without deleting the condition.',
-            ( confirmed ) => {
+            'Click "No" to cancel and close this dialog without deleting the condition.' )
+            .subscribe( confirmed => {
                 if ( confirmed ) {
                     this.doDeleteCondition( index );
                 }
@@ -52,8 +56,16 @@ export class ConditionsComponent implements OnInit {
 
     private doDeleteCondition( index: number ): void {
         this.conditions?.splice( index, 1 );
-        this.conditionsChange.emit( this.conditions );
+        this.onConditionChange();
         this.conditionsTable?.renderRows();
+    }
+
+    public onConditionChange(): void {
+        for ( let i = 0; i < this.conditions.length; i++ ) {
+            const condition = this.conditions[ i ];
+            condition.conditionType = this.counters.includes( condition.variableName ) ? TriggerConditionTypes.CounterValue : TriggerConditionTypes.VariableValue;
+        }
+        this.conditionsChange.emit( this.conditions );
     }
 
 }

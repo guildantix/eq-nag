@@ -1339,6 +1339,22 @@ export class IpcService {
         return obs;
     }
 
+    public getCounterNames(): Observable<string[]> {
+        let obs: Observable<string[]> = new Observable<string[]>( ( observer: Observer<string[]> ) => {
+            
+            window.api.ipc.once( 'trigger:get:counters', ( e, counterNames: string[] ) => {
+                this.ngZone.run( () => {
+                    observer.next( counterNames );
+                    observer.complete();
+                } );
+            } );
+            window.api.ipc.send( 'trigger:get:counters', null );
+
+        } );
+
+        return obs;
+    }
+
     public updateFctCombatGroup( model: FctCombatGroup, sort: string[] | undefined = undefined ): Observable<string> {
         let obs: Observable<string> = new Observable<string>( ( observer: Observer<string> ) => {
             

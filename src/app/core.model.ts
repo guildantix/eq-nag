@@ -415,6 +415,7 @@ export enum TriggerConditionTypes {
     
     VariableValue = 1,
     NamedGroupValue = 2,
+    CounterValue = 3,
 
 }
 

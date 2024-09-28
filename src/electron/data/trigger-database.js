@@ -506,6 +506,10 @@ class TriggerDatabaseStore extends Store {
         ipcMain.on( 'trigger:get:stored-variables', ( event, data ) => {
             event.sender.send( 'trigger:get:stored-variables', this.getVariableNames() );
         } );
+
+        ipcMain.on( 'trigger:get:counters', ( event, data ) => {
+            event.sender.send( 'trigger:get:counters', this.getCounterNames() );
+        } );
         
         // Folder methods.
         ipcMain.on( 'folders:get', ( event, args ) => {
@@ -1097,6 +1101,7 @@ class TriggerDatabaseStore extends Store {
 
     /**
      * Returns all variable names.
+     * @returns {string[]}
      */
     getVariableNames() {
         let variables = [];
@@ -1108,6 +1113,31 @@ class TriggerDatabaseStore extends Store {
             } );
         } );
         return variables;
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Returns all counter names.
+     * @returns {string[]}
+     */
+    getCounterNames() {
+        let counters = [];
+        this.#data?.triggers?.forEach( trigger => {
+            trigger.actions?.forEach( action => {
+                if ( action.actionType === ActionTypes.Counter ) {
+                    counters.push( action.displayText );
+                }
+            } );
+        } );
+        return counters;
     }
     
 

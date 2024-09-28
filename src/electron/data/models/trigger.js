@@ -119,8 +119,12 @@ var ExternalDataSources = {
 var TriggerConditionTypes = {
     '0': 'Unknown',
     '1': 'VariableValue',
+    '2': 'NamedGroupValue',
+    '3': 'CounterValue',
     Unknown: 0,
     VariableValue: 1,
+    NamedGroupValue: 2,
+    CounterValue: 3,
 }
 
 var MediaTypes = {
