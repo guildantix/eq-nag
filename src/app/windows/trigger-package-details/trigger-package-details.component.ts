@@ -8,6 +8,7 @@ import { TriggerLibraryService } from '../trigger-library.service';
 import { SettingsService } from 'src/app/settings/settings-http.service';
 import { forkJoin, Observable, timer } from 'rxjs';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { ColoredString } from 'src/app/dialogs/dialog.model';
 
 @Component( {
     selector: 'app-trigger-package-details',
@@ -270,9 +271,28 @@ export class TriggerPackageDetailsComponent implements OnInit {
      * Creates and copies the quick share code for the current package.
      */
     copyQuickSharePackage() {
-        let code = `{NAG:package/${this.package.triggerPackageId}}`;
-        this.ipcService.sendTextToClipboard( code );
-        this.snackBar.open( 'Package quick share code copied to clipboard', 'Dismiss', { duration: 5000 } );
+        const fn = () => {
+            let code = `{NAG:package/${this.package.triggerPackageId}}`;
+            this.ipcService.sendTextToClipboard( code );
+            this.snackBar.open( 'Package quick share code copied to clipboard', 'Dismiss', { duration: 5000 } );
+        };
+
+        if ( this.package?.privatePackage === true ) {
+            this.dialogService.showConfirmationDialog( [
+                    new ColoredString( 'This package is marked as private.', '#f06969', true ),
+                    'Are you sure you want to share this package?' ], 
+                'Click "Yes" to share this package.', 
+                'Click "No" to cancel.', 
+            ).subscribe( confirmed => {
+                if ( confirmed ) {
+                    fn();
+                }
+            } );
+
+        } else {
+            fn();
+        }
+        
     }
 
 
