@@ -36,6 +36,8 @@ export class NewTriggerPackageComponent implements OnInit {
         this.package.category = value;
     }
 
+    @Input() public newPackage: boolean = true;
+
     @Input() public authorId: string;
     @Input()
     public get packageId(): string { return this._pkgId; }

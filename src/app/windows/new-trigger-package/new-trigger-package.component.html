@@ -40,7 +40,7 @@
 </mat-form-field>
 
 <div style="width: 100%">
-    <mat-checkbox [(ngModel)]="package.privatePackage" name="newPackagePrivate">Private Package</mat-checkbox>
+    <mat-checkbox [(ngModel)]="package.privatePackage" name="newPackagePrivate" [disabled]="!newPackage">Private Package</mat-checkbox>
     <sup class="help-sup"
         matTooltip="Click here for more help."
         matTooltipPosition="above"
