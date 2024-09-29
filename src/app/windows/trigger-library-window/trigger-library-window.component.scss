@@ -81,3 +81,17 @@ button.back-to-list-btn {
 .selected-category {
     font-weight: bold;
 }
+
+:host::ng-deep table {
+    th {
+        user-select: none;
+
+        > div {
+            display: flex;
+            flex-flow: row nowrap;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+        }
+    }
+}

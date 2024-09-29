@@ -21,15 +21,15 @@ export class TriggerLibraryService {
 
 
     
-    /**
-     * Returns all trigger packages.
-     * 
-     * @deprecated The method should not be used, use getPackagesList instead.
-     */
-    getLibrary(): Observable<TriggerPackageMetaModel[]> {
-        return this.httpClient.get<TriggerPackageMetaModel[]>( `${environment.shareServiceUrl}/triggers/library` )
-            .pipe( catchError( error => this.handleError( error ) ) );
-    }
+    // /**
+    //  * Returns all trigger packages.
+    //  * 
+    //  * @deprecated The method should not be used, use getPackagesList instead.
+    //  */
+    // getLibrary(): Observable<TriggerPackageMetaModel[]> {
+    //     return this.httpClient.get<TriggerPackageMetaModel[]>( `${environment.shareServiceUrl}/triggers/library` )
+    //         .pipe( catchError( error => this.handleError( error ) ) );
+    // }
     
 
 
@@ -43,10 +43,27 @@ export class TriggerLibraryService {
     /**
      * Returns all trigger packages.
      */
-    getPackagesList(): Observable<TriggerPackageListModel[]> {
-        return this.httpClient.get<TriggerPackageListModel[]>( `${environment.shareServiceUrl}/triggers/library/list` )
+    getPackagesList( authorId: string, installedPackageIds: string[] ): Observable<TriggerPackageListModel[]> {
+        return this.httpClient.post<TriggerPackageListModel[]>( `${environment.shareServiceUrl}/triggers/library/list`, { authorId, installedPackageIds } )
             .pipe( catchError( error => this.handleError( error ) ) );
     }
+    
+
+
+
+
+
+
+
+
+
+    // /**
+    //  * Returns all trigger packages.
+    //  */
+    // getPackagesList_old(): Observable<TriggerPackageListModel[]> {
+    //     return this.httpClient.get<TriggerPackageListModel[]>( `${environment.shareServiceUrl}/triggers/library/list` )
+    //         .pipe( catchError( error => this.handleError( error ) ) );
+    // }
 
 
 

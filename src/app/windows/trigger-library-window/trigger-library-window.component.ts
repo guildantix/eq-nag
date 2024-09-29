@@ -48,6 +48,8 @@ export class TriggerLibraryWindowComponent implements OnInit {
     private category: string = null;
     public tags: string[] = [];
     public installedTriggers: Record<string, boolean> = {};
+    public sortColumns: string[] = [ 'name' ];
+    public sortDirection: 'asc' | 'desc' = 'asc';
 
     private panel: LibraryPanels = LibraryPanels.browse;
 
@@ -91,15 +93,35 @@ export class TriggerLibraryWindowComponent implements OnInit {
 
     ngOnInit() {
 
-        this.loadPackages();
+        this.loadingLibrary = true;
 
         this.ipcService.getAuthor().subscribe( author => {
             this.author = author;
             if ( author?.authorId ) {
                 this.settingsService.isTrusted( author.authorId ).subscribe( trusted => this.trustedAuthor = trusted );
             }
+            this.loadPackages();
         } );
 
+    }
+
+    changeSort( column: 'name' | 'author' ) {
+        if ( this.sortColumns[ 0 ] === column ) {
+            this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
+        } else {
+            this.sortDirection = 'asc';
+        }
+
+        let sortDir: ( 'asc' | 'desc' )[] = [];
+        if ( column === 'name' ) {
+            this.sortColumns = [ column ];
+            sortDir = [ this.sortDirection ];
+        } else {
+            this.sortColumns = [ column, 'name' ];
+            sortDir = [ this.sortDirection, 'asc' ];
+        }
+
+        this.packages = _.orderBy( this.packages, this.sortColumns, sortDir );
     }
 
 
@@ -317,12 +339,14 @@ export class TriggerLibraryWindowComponent implements OnInit {
      */
     loadPackages() {
         this.loadingLibrary = true;
-        this.libraryService.getPackagesList().subscribe( packages => {
-            this.packages = packages.sort( ( a, b ) => a.name < b.name ? -1 : a.name == b.name ? 0 : 1 );
-            packages.forEach( pkg => {
-                this.ipcService.isPackageInstalled( pkg.triggerPackageId ).subscribe( installed => this.installedTriggers[ pkg.triggerPackageId ] = installed );
+        this.ipcService.getInstalledPackages().subscribe( installed => {
+            this.libraryService.getPackagesList( this.author.authorId, installed.map( f => f.packageId ) ).subscribe( packages => {
+                this.packages = _.orderBy( packages.filter(f => f.name?.length > 0), [ 'name' ] );
+                packages.forEach( pkg => {
+                    this.ipcService.isPackageInstalled( pkg.triggerPackageId ).subscribe( installed => this.installedTriggers[ pkg.triggerPackageId ] = installed );
+                } );
+                this.loadingLibrary = false;
             } );
-            this.loadingLibrary = false;
         } );
     }
     
