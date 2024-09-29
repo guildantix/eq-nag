@@ -1317,6 +1317,7 @@ export class TriggerPackageListModel {
     public description: string;
     public category: string;
     public tags: string[] = [];
+    public privatePackage: boolean = false;
 
 }
 
