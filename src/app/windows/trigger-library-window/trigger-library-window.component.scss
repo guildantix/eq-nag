@@ -94,4 +94,16 @@ button.back-to-list-btn {
             cursor: pointer;
         }
     }
+    .private-package-icon {
+        position: absolute;
+        left: -24px;
+        top: 2px;
+        opacity: 0.75;
+        
+        mat-icon {
+            font-size: 22px;
+            width: 22px;
+            height: 22px;
+        }
+    }
 }
