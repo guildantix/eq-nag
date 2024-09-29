@@ -39,6 +39,15 @@
     <mat-hint></mat-hint>
 </mat-form-field>
 
+<div style="width: 100%">
+    <mat-checkbox [(ngModel)]="package.privatePackage" name="newPackagePrivate">Private Package</mat-checkbox>
+    <sup class="help-sup"
+        matTooltip="Click here for more help."
+        matTooltipPosition="above"
+        matTooltipClass="tooltip-large"
+        (click)="explainWindowPrivatePackage()">&nbsp;&nbsp;?</sup>
+</div>
+
 <mat-form-field style="width: 100%">
     <mat-label>Update Notes</mat-label>
     <textarea matInput [(ngModel)]="notes" name="newPackageUpdateNotes" rows="8"></textarea>

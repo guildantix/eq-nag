@@ -1090,6 +1090,7 @@ export class TriggerPackageTransferModel {
     public files: PackageFileModel[] = [];
     public category: string;
     public tags: string[] = [];
+    public privatePackage: boolean = false;
     
 }
 
@@ -1334,6 +1335,7 @@ export class TriggerPackageMetaModel {
     public description: string;
     public category: string;
     public tags: string[] = [];
+    public privatePackage: boolean = false;
 
 }
 
