@@ -14,6 +14,9 @@
     <!-- Compiled and minified JavaScript -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
 
+    <!-- Font Awesome library for guildantix -->
+    <script src="https://kit.fontawesome.com/c86e83cb34.js" crossorigin="anonymous"></script>
+
     <style>
         body {
             color: #ffffff;
@@ -34,14 +37,16 @@
         }
 
         .drag {
-            background-color: rgba(0,0,0,0.15);
             resize: both;
         }
 
-        .resize-n::after {
-            content: '';
-            background-color: rgba(0,0,0,0.5);
+        .overlay-container.drag {
+            background-color: rgba(0,0,0,0.15);
+        }
+
+        .resize-n {
             position: absolute;
+            z-index: 111;
             right: -6px;
             left: -6px;
             top: -6px;
@@ -49,10 +54,9 @@
             cursor: ns-resize;
         }
 
-        .resize-s::after {
-            content: '';
-            background-color: rgba(0,0,0,0.5);
+        .resize-s {
             position: absolute;
+            z-index: 111;
             right: -6px;
             left: -6px;
             bottom: -6px;
@@ -60,10 +64,9 @@
             cursor: ns-resize;
         }
 
-        .resize-e::after {
-            content: '';
-            background-color: rgba(0,0,0,0.5);
+        .resize-e {
             position: absolute;
+            z-index: 111;
             right: -6px;
             top: -6px;
             width: 6px;
@@ -71,10 +74,9 @@
             cursor: ew-resize;
         }
 
-        .resize-w::after {
-            content: '';
-            background-color: rgba(0,0,0,0.5);
+        .resize-w {
             position: absolute;
+            z-index: 111;
             left: -6px;
             top: -6px;
             width: 6px;
@@ -82,43 +84,50 @@
             cursor: ew-resize;
         }
 
-        .resize-ne::after {
-            content: '';
+        .overlay-container .resize-n,
+        .overlay-container .resize-s,
+        .overlay-container .resize-e,
+        .overlay-container .resize-w {
+            background-color: rgba(0,0,0,0.5);
+        }
+
+        .resize-ne {
             right: -6px;
             top: -6px;
             height: 12px;
             width: 12px;
             position: absolute;
+            z-index: 111;
             cursor: ne-resize;
         }
 
-        .resize-se::after {
-            content: '';
+        .resize-se {
             right: -6px;
             bottom: -6px;
             height: 12px;
             width: 12px;
             position: absolute;
+            z-index: 111;
             cursor: se-resize;
         }
 
-        .resize-sw::after {
-            content: '';
+        .resize-sw {
             left: -6px;
             bottom: -6px;
             height: 12px;
             width: 12px;
             position: absolute;
+            z-index: 111;
             cursor: sw-resize;
         }
 
-        .resize-nw::after {
-            content: '';
+        .resize-nw {
             left: -6px;
             top: -6px;
             height: 12px;
             width: 12px;
             position: absolute;
+            z-index: 111;
             cursor: nw-resize;
         }
 
@@ -169,6 +178,58 @@
             overflow: hidden;
             white-space: nowrap;
         }
+
+        .overlay-content-area p {
+            width: 100%;
+        }
+
+        .overlay-content-area.white-space-nowrap p {
+            white-space: nowrap;
+        }
+
+        .overlay-content-area.white-space-normal p {
+            white-space: normal;
+        }
+
+        .overlay-content-area.overflow-hidden p {
+            overflow: hidden;
+        }
+
+        .overlay-content-area.overflow-hidden > div:not(.mob-dot-group) {
+            width: 100%;
+        }
+
+        .overlay-content-area.overflow-visible p {
+            overflow: visible;
+        }
+
+        .overlay-content-area.text-overflow-clip p {
+            text-overflow: clip;
+        }
+
+        .overlay-content-area.text-overflow-ellipsis p {
+            text-overflow: ellipsis;
+        }
+
+        .overlay-content-area.align-left {
+            align-items: flex-start;
+        }
+
+        .overlay-content-area.align-center {
+            align-items: center;
+        }
+
+            .overlay-content-area.align-center p {
+                text-align: center;
+            }
+
+        .overlay-content-area.align-right {
+            align-items: flex-end;
+        }
+
+            .overlay-content-area.align-right p {
+                text-align: right;
+            }
 
         .overlay-content-area p,
         .healing-content-area p {
@@ -338,38 +399,38 @@
         }
 
         .grouped-mobs {
-            display: flex;
-            flex-flow: row wrap;
-            align-content: flex-start;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(var(--item-min-width), 1fr));
+            grid-auto-rows: min-content;
+            grid-gap: 5px;
         }
 
-        .grouped-mobs.reverse {
-            flex-flow: row wrap !important;
-            align-content: flex-end;
+        .grouped-mobs.reverse > .mob-dot-group {
+            direction:ltr;
+        }
+
+        /* double rotate grid and item */
+        .grouped-mobs.reverse, .grouped-mobs.reverse > .mob-dot-group {
+            transform:rotate(180deg);
         }
 
         .mob-dot-group {
             display: flex;
             flex-flow: column nowrap;
-            width: 200px;
         }
-
-            .grouped-mobs.reverse .mob-dot-group {
-                flex-flow: column-reverse nowrap;
-            }
-
+        
         .mob-dot-group:nth-child(n+0) {
             margin-left: 25px;
         }
 
             .mob-dot-group > div {
-                width: 200px;
+                min-width: var(--item-min-width);
             }
 
                 .mob-dot-group > div > p {
                     text-overflow: ellipsis;
                     white-space: nowrap;
-                    width: 200px;
+                    width: 100%;
                     overflow: hidden;
                 }
 
@@ -461,19 +522,19 @@
     <script type="text/javascript">
         const urlParams = new URLSearchParams( window.location.search );
         var Renderer = window.api.getRenderer();
-        Renderer( +urlParams.get( 'originX' ), +urlParams.get( 'originY' ), urlParams.get('glowOnStart') === 'true' );
-        
-        window.addEventListener( "mousemove", event => {
+        var data = Renderer( +urlParams.get( 'originX' ), +urlParams.get( 'originY' ), urlParams.get('glowOnStart') === 'true' );
 
-            if ( event.target && event.target.classList && event.target.classList.contains( 'mouse-enabled' ) === true ) {
-                window.api.setHandleMouseEvents();
+        var recordEncounters = false;
+        function toggleRecordEncounters() {
+            recordEncounters = !recordEncounters;
+            window.api.recordEncounters(recordEncounters);
 
+            if (recordEncounters) {
+                document.getElementById('encounterRecordBtn').classList.add('record-enabled');
             } else {
-                window.api.setIgnoreMouseEvents();
-                
+                document.getElementById('encounterRecordBtn').classList.remove('record-enabled');
             }
-        } );
-        
+        }
     </script>
 
     <!-- =========================== -->
@@ -540,6 +601,373 @@
             position: absolute;
         }
     </style>
+
+    <style>
+        .window.dps-meter {
+            border: 1px solid #222222;
+            width: 222px;
+            position: absolute;
+            left: 1470px;
+            top: 1678px;
+            font-size: 14px;
+            /* display: none; */
+        }
+        .window.dps-meter.hide {
+            display: none;
+        }
+        .window.dps-meter .window-title {
+            background-color: #181818;
+            display: flex;
+            flex-flow: row nowrap;
+            padding: 5px 0 7px;
+            color: #adadad;
+            overflow: visible;
+        }
+        .window.dps-meter .window-footer {
+            min-height: 4px;
+            background-color: #181818;
+            position: relative;
+            width: calc(100% + 2px);
+            left: -1px;
+        }
+        .window.dps-meter .window-footer .window-footer-text {
+            padding: .5em .75em;
+            color: #c1c1c1;
+            font-size: .75em;
+            display: flex;
+            flex-flow: row nowrap;
+            width: 100%;
+        }
+        .window.dps-meter .window-footer .window-footer-text .encounter-name {
+            overflow: hidden;
+            flex: 1 1 auto;
+            max-height: 6em;
+            text-overflow: ellipsis;
+        }
+        .window.dps-meter .window-footer .window-footer-text .encounter-time {
+            flex: 0 0 auto;
+        }
+        .window.dps-meter .window-footer .window-footer-text .encounter-time.strong {
+            font-weight: bold;
+            color: #cfcfcf;
+        }
+        .window.dps-meter .window-title .spacer {
+            flex: 1 1 auto;
+        }
+        .window.dps-meter .window-title .window-title-col.text {
+            padding-left: 1em;
+        }
+        .window.dps-meter .window-title .window-title-col.title-btn {
+            width: 1em;
+            height: 1em;
+            cursor: pointer;
+            margin: 0 0.5em 0 0;
+            position: relative;
+        }
+        .window.dps-meter .window-title .window-title-col.title-btn:not(.record-button):hover {
+            color: #b8b8b8;
+        }
+        .window.dps-meter .window-title .window-title-col.title-btn:active {
+            color: #929292;
+        }
+        .window.dps-meter .window-title .window-title-col.title-btn.record-button:active {
+            color: #920000;
+        }
+        .tooltip {
+            display: none;
+            position: fixed;
+            white-space: nowrap;
+            padding: 2px 15px;
+            background-color: #000000a6;
+            color: #dfdfdf;
+            border: 2px solid black;
+        }
+        .window.dps-meter .window-title .window-title-col.title-btn:hover .tooltip {
+            display: block;
+            transform: translate(-50%, -210%);
+        }
+        .window-content {
+            border-right: 4px solid #181818;
+            margin: 0;
+            border-left: 4px solid #181818;
+            height: calc(100% - 34px);
+            overflow: hidden;
+            overflow-y: scroll;
+            background-color: #00000070;
+        }
+        .window-content .dps-item {
+            position: relative;
+            height: 1.75em;
+            background-color: #181818;
+            white-space: nowrap;
+            text-overflow: clip;
+            overflow: hidden;
+        }
+        ::-webkit-scrollbar {
+            display: none;
+        }
+        .window-content .dps-item .dps-item-name {
+            /* position: absolute; */
+            z-index: 1;
+            padding: 0.25em;
+            line-height: 1.15em;
+            letter-spacing: 1px;
+            color: white;
+            font-weight: 400 !important;
+            text-shadow: -1px -1px 2px #000, 1px -1px 2px #000, -1px 1px 2px #000, 1px 1px 2px #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
+            padding-left: 1em;
+        }
+        .window-content .dps-item .dps-item-icon {
+            height: 1.75em;
+        }
+        .window-content .dps-item .dps-item-icon-placeholder {
+            height: 1.75em;
+            width: 1.75em;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border: 0.1em solid #e7d36b;
+            background-color: #292429;
+            padding-left: 0.45em;
+        }
+        .window-content .dps-item .progress {
+            height: 100%;
+            border-radius: 0;
+            margin: 0;
+        }
+        /* .window.dps-meter .window-content .dps-item .progress .determinate .border {
+            background: linear-gradient(to right, attr(data-left-color), attr(data-right-color));
+        } */
+        .window.dps-meter .window-content .dps-item .progress .determinate .border.top {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+        }
+        .window.dps-meter .window-content .dps-item .progress .determinate .border.bottom {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+        }
+        .dps-item-label {
+            position: absolute;
+            display: flex;
+            flex-flow: row nowrap;
+            left: 0;
+            right: 0;
+            z-index: 1;
+            align-items: center;
+        }
+        .dps-item-label .spacer {
+            flex: 1 1 auto;
+        }
+        .dps-item-values {
+            text-shadow: -1px -1px 2px #000, 1px -1px 2px #000, -1px 1px 2px #000, 1px 1px 2px #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
+        }
+        .dps-item.mine {
+            box-shadow: inset 0 0 5px #fbff00;
+            border: 1px solid #fbff00;
+            border-radius: 2px;
+        }
+        .dps-line-item {
+            text-shadow: -1px -1px 2px #000, 1px -1px 2px #000, -1px 1px 2px #000, 1px 1px 2px #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
+        }
+        .window.dps-meter .damage {
+            width: 75px;
+        }
+        .window.dps-meter .sec,
+        .window.dps-meter .dps {
+            width: 50px;
+        }
+        .window.dps-meter .damage,
+        .window.dps-meter .dps,
+        .window.dps-meter .sec {
+            text-align: right;
+        }
+        .window.dps-meter .right-pad {
+            width: 1em;
+            display: inline-block;
+            background-color: unset;
+        }
+        .dps-line-item.damage,
+        .dps-line-item.dps,
+        .dps-line-item.sec {
+            padding-right: 0.25em;
+        }
+        .window-title-col.damage,
+        .window-title-col.dps,
+        .window-title-col.sec {
+            padding-right: 0.25em;
+        }
+        .window.dps-meter .damage,
+        .window.dps-meter .dps,
+        .window.dps-meter .sec {
+            display: none;
+        }
+        .window.dps-meter.damage .damage,
+        .window.dps-meter.dps .dps,
+        .window.dps-meter.sec .sec {
+            display: inline;
+            background-color: unset;
+        }
+        .window-title .hide {
+            display: none;
+        }
+        .window-title:hover .window-title-col.mouse-hide {
+            display: none;
+        }
+        .window-title .window-title-col.mouse-show {
+            display: none;
+        }
+        .window-title:hover .window-title-col.mouse-show {
+            display: inline !important;
+        }
+
+        .window-settings {
+            position: absolute;
+            z-index: 11111;
+            left:0;
+            right:0;
+        }
+        .window-settings-row {
+            display: flex;
+            flex-flow: row nowrap;
+            align-items: center;
+            justify-content: flex-start;
+            padding: 0.25em 0.5em;
+            width: 100%;
+        }
+        .window-settings-row .spacer {
+            flex: 1 1 auto;
+        }
+        .record-enabled {
+            color: #ff0000;
+        }
+
+        .dropdown-menu {
+            position: absolute;
+            z-index: 10;
+            background-color: #181818;
+            border: 1px solid #222222;
+        }
+        .dropdown-menu .dropdown-menu-item {
+            min-width: 200px;
+            color: #adadad;
+            cursor: pointer;
+            padding: 0.25em 0.5em;
+        }
+        .dropdown-menu .dropdown-menu-item:hover {
+            background-color: #222222;
+        }
+        .dropdown-menu .dropdown-menu-item span {
+            padding-left: 0.5em;
+        }
+        .dropdown-menu .dropdown-menu-item i {
+            min-width: 1.2em;
+        }
+        .dropdown-menu .dropdown-menu-content {
+            max-height: 21em;
+            overflow: hidden;
+            scroll-behavior: auto;
+            overflow-y: scroll;
+        }
+    </style>
+    
+    <!-- =============================== -->
+    <!--          Dropdown Menu          -->
+    <!-- =============================== -->
+
+    <template id="dropdownMenu">
+        <div class="dropdown-menu">
+            <div class="dropdown-menu-content dynamic-mouse">
+                {{#each menuItems}}
+                    <div class="dropdown-menu-item menu-item" data-item-type="{{this.itemType}}" data-encounter-id="{{this.encounterId}}" data-mob-name="{{this.mobName}}">
+                        <i class="fas {{this.cssClass}}"></i>
+                        <span>{{this.label}}</span>
+                    </div>
+                {{/each}}
+            </div>
+        </div>
+    </template>
+    
+    <!-- =========================== -->
+    <!--          DPS Meter          -->
+    <!-- =========================== -->
+    <template id="dpsWindowTemplate">
+        <div class="window dps-meter damage dps sec" style="display: none;">
+            <div class="window-title dynamic-mouse" style="overflow: hidden;">
+                <span class="window-title-col text" style="white-space: nowrap;">Damage Done</span>
+                <span class="window-title-col spacer"></span>
+                <span class="window-title-col damage mouse-hide">Damage</span>
+                <span class="window-title-col dps mouse-hide">DPS</span>
+                <span class="window-title-col sec mouse-hide">Time</span>
+                <!-- <span class="window-title-col title-btn mouse-show"><i class="fa-solid fa-table-columns"></i></span> -->
+                <!-- <span class="window-title-col title-btn mouse-show"><i class="fa-solid fa-magnifying-glass-chart"></i><span class="tooltip">Select Columns</span></span> -->
+                <!-- <span class="window-title-col title-btn mouse-show" onclick="window.api.showSettings('combatDatabase')"><i class="fa-solid fa-user-check"></i><span class="tooltip">Edit Data</span></span> -->
+                <span class="window-title-col title-btn mouse-show" onclick="window.api.showSettings('combatStatistics')"><i class="fas fa-gear"></i><span class="tooltip">Settings</span></span>
+                <span class="window-title-col title-btn mouse-show clear-encounter"><i class="fa-solid fa-ban"></i><span class="tooltip">Clear History</span></span>
+                <span class="window-title-col title-btn mouse-show record-button" id="encounterRecordBtn" onclick="toggleRecordEncounters()"><i class="fa-solid fa-circle"></i><span class="tooltip">Record</span></span>
+                <span class="window-title-col title-btn mouse-show database-dropdown-menu"><i class="fa-solid fa-database"></i><span class="tooltip">Change View</span></span>
+                <span class="window-title-col right-pad"></span>
+            </div>
+            <div class="window-content dps-items click-through">
+                <!-- <div class="dps-item mine">
+                    
+                    <div class="dps-item-label">
+                        <img class="dps-item-icon" style="display: none;" />
+                        <span class="dps-item-icon-placeholder"><i class="fa-solid fa-question"></i></span>
+                        <span class="dps-item-name">Ryvn</span>
+                        <span class="spacer"></span>
+                        <span class="dps-line-item damage">456k</span>
+                        <span class="dps-line-item dps">26.3k</span>
+                        <span class="dps-line-item sec">32s</span>
+                        <span class="dps-line-item right-pad"></span>
+                    </div>
+                    <div class="progress" style="background-color: unset;"><p style="margin: 4px;">&nbsp;</p>
+                        <div class="determinate" style="background-color: red; width: 100%;" >
+                            <div class="border top" style="background-color: white;"></div>
+                            <div class="border bottom" style="background-color: white;"></div>
+                        </div>
+                    </div>
+
+                </div> -->
+            </div>
+            <div class="window-footer">
+                <span class="window-footer-text">
+                    <span class="encounter-name"></span>
+                    <span class="encounter-time"></span>
+                </span>
+            </div>
+        </div>
+    </template>
+
+    <!-- =========================== -->
+    <!--      DPS Meter - Item       -->
+    <!-- =========================== -->
+    <template id="dpsWindowItemTemplate">
+        <div class="dps-item-label">
+            {{#if (if_neq iconImage '/assets/images/-icon.png')}}
+                <img class="dps-item-icon" src="{{iconImage}}" />
+            {{else}}
+                <span class="dps-item-icon-placeholder"><i class="fa-solid fa-question"></i></span>
+            {{/if}}
+            <span class="dps-item-name">{{label}}</span>
+            <span class="spacer"></span>
+            <span class="dps-line-item damage">{{damage}}</span>
+            <span class="dps-line-item dps">{{dps}}</span>
+            <span class="dps-line-item sec">{{sec}}</span>
+            <span class="dps-line-item right-pad"></span>
+        </div>
+        <div class="progress" style="background-color: unset"><p style="margin: 4px;">&nbsp;</p>
+            <div class="determinate" >
+                <div class="border top"></div>
+                <div class="border bottom"></div>
+            </div>
+        </div>
+    </template>
     
     <!-- =========================== -->
     <!--    FCT Overlay Template     -->

@@ -1,7 +1,5 @@
-import { Component, ElementRef, HostListener, OnInit, ViewChild } from '@angular/core';
+import { Component, DoCheck, ElementRef, HostListener, OnInit, ViewChild } from '@angular/core';
 import { IpcService } from '../ipc.service';
-import { LogTypes, TriggerParseHistoryModel } from '../core.model';
-import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import * as _ from 'lodash-es';
 import { ConsoleListComponent } from './console-list.component';
 
@@ -10,7 +8,7 @@ import { ConsoleListComponent } from './console-list.component';
     templateUrl: 'debug-console.component.html',
     styleUrls: [ 'debug-console.component.scss' ],
 } )
-export class DebugConsoleComponent implements OnInit {
+export class DebugConsoleComponent implements OnInit, DoCheck {
 
     public show: boolean = false;
     public showInput: boolean = true;
@@ -22,9 +20,6 @@ export class DebugConsoleComponent implements OnInit {
     public characterOptions: { id: string, name: string, server: string }[] = [];
     private _atBottom: boolean = true;
     public get atBottom(): boolean {
-        if ( this.container ) {
-            this._atBottom = this.container.nativeElement.scrollTop >= this.container.nativeElement.scrollHeight - this.container.nativeElement.offsetHeight;
-        }
         return this._atBottom;
     }
     public get showBottomTools(): boolean {
@@ -62,6 +57,12 @@ export class DebugConsoleComponent implements OnInit {
             this.characterOptions = _.orderBy( options.map( x => ( { id: x.characterId, name: x.name, server: x.server } ) ), [ 'server', 'name' ] );
         } );
 
+    }
+
+    ngDoCheck(): void {
+        if ( this.container?.nativeElement ) {
+            this._atBottom = this.container.nativeElement.scrollTop >= this.container.nativeElement.scrollHeight - this.container.nativeElement.offsetHeight;
+        }
     }
 
 
@@ -162,12 +163,12 @@ export class DebugConsoleComponent implements OnInit {
     /**
      * Scrolls to the bottom of the console when the list is updated.
      */
-    public onListUpdated(): void {
-        window.setTimeout( () => {
-            if ( !this.scrolling ) {
+    public onListUpdated( scrollBottom: boolean ): void {
+        if ( scrollBottom ) {
+            if ( !this.scrolling && this.container?.nativeElement ) {
                 this.container.nativeElement.scrollTop = this.container.nativeElement.scrollHeight;
             }
-        } );
+        }
     }
 
 

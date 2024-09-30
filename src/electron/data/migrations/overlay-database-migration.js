@@ -1,4 +1,4 @@
-const { OverlayStoreModel } = require( '../models/overlay-window' );
+const { OverlayStoreModel, TextOverflowModel } = require( '../models/overlay-window' );
 const { backupDatafile } = require( './backup-data-file' );
 const log = require( 'electron-log' );
 const { screen } = require( "electron" );
@@ -8,7 +8,7 @@ const nanoid = customAlphabet( alphabet, 16 );
 const { StyleProperties } = require( '../models/common' );
 const ElectronUtilities = require( '../../utilities/electron' );
 
-const currentOverlayDbVersion = 17;
+const currentOverlayDbVersion = 19;
 
 /**
  * 
@@ -286,6 +286,30 @@ function executeDataMigration( data ) {
         data.fctCombatGroups = [];
 
         data.version = 17;
+
+    }
+    if ( !data.version || data.version < 18 ) {
+        log.log( '[Migrations] Migrating overlay database to version -> 18.' );
+       
+        data.overlays?.forEach( overlay => {
+            if ( overlay ) {
+                overlay.textOverflow = overlay.textOverflow ?? new TextOverflowModel();
+            }
+        } );
+
+        data.version = 18;
+
+    }
+    if ( !data.version || data.version < 19 ) {
+        log.log( '[Migrations] Migrating overlay database to version -> 19.' );
+       
+        data.overlays?.forEach( overlay => {
+            if ( overlay ) {
+                overlay.groupMinWidth = 200;
+            }
+        } );
+
+        data.version = 19;
 
     }
 

@@ -7,6 +7,15 @@
             <ng-template [ngIf]="character.p99">P1999&nbsp;</ng-template>
             <ng-template [ngIf]="character.takp">TAKP&nbsp;</ng-template>
             {{character.server}}
+            <button mat-icon-button 
+                [ngClass]="{'color-orange-dark': isCombatCharacter(character)}" 
+                [matTooltip]="getCombatTooltipMessage(character)"
+                matTooltipPosition="left"
+                (click)="toggleCombatTrackingForCharacter($event, character)" 
+                *ngIf="true">
+                <mat-icon class="material-icons-outlined" >whatshot</mat-icon>
+            </button>
+            
             <mat-icon *ngIf="activeLogFilesDictionary[character.characterId] === true" color="accent">cast_connected</mat-icon>
             <mat-icon *ngIf="activeLogFilesDictionary[character.characterId] !== true">cast</mat-icon>
         </mat-panel-description>
@@ -23,8 +32,6 @@
                         </mat-card-title>
                     </mat-card-header>
                     <mat-card-content>
-                        <button mat-button color="accent" (click)="showFileSelector(character.characterId)">Select Log File</button>
-                        <div><small>Current: {{character.logFile}}</small></div>
                     </mat-card-content>
                 </mat-card>
 
@@ -33,28 +40,42 @@
                         <mat-card-title>Character</mat-card-title>
                     </mat-card-header>
                     <mat-card-content>
-                        
-                        <mat-form-field style="width: 50%;">
-                            <mat-label>Character Class</mat-label>
-                            <mat-select [(ngModel)]="character.class" name="ddlCharacterClass_{{i}}" (selectionChange)="updateCharacter(character)">
-                                <mat-option value="BRD">Bard</mat-option>
-                                <mat-option value="BST">Beastlord</mat-option>
-                                <mat-option value="BER">Berserker</mat-option>
-                                <mat-option value="CLR">Cleric</mat-option>
-                                <mat-option value="DRU">Druid</mat-option>
-                                <mat-option value="ENC">Enchanter</mat-option>
-                                <mat-option value="MAG">Magician</mat-option>
-                                <mat-option value="MNK">Monk</mat-option>
-                                <mat-option value="NEC">Necromancer</mat-option>
-                                <mat-option value="PAL">Paladin</mat-option>
-                                <mat-option value="RNG">Ranger</mat-option>
-                                <mat-option value="ROG">Rogue</mat-option>
-                                <mat-option value="SHD">Shadowknight</mat-option>
-                                <mat-option value="SHM">Shaman</mat-option>
-                                <mat-option value="WAR">Warrior</mat-option>
-                                <mat-option value="WIZ">Wizard</mat-option>
-                            </mat-select>
-                        </mat-form-field>
+
+                        <div class="n-layout n-row">
+                            <div>
+                                <mat-form-field style="width: 100%;">
+                                    <mat-label>Character Class</mat-label>
+                                    <mat-select [(ngModel)]="character.class" name="ddlCharacterClass_{{i}}" (selectionChange)="updateCharacter(character)">
+                                        <mat-option value="BRD">Bard</mat-option>
+                                        <mat-option value="BST">Beastlord</mat-option>
+                                        <mat-option value="BER">Berserker</mat-option>
+                                        <mat-option value="CLR">Cleric</mat-option>
+                                        <mat-option value="DRU">Druid</mat-option>
+                                        <mat-option value="ENC">Enchanter</mat-option>
+                                        <mat-option value="MAG">Magician</mat-option>
+                                        <mat-option value="MNK">Monk</mat-option>
+                                        <mat-option value="NEC">Necromancer</mat-option>
+                                        <mat-option value="PAL">Paladin</mat-option>
+                                        <mat-option value="RNG">Ranger</mat-option>
+                                        <mat-option value="ROG">Rogue</mat-option>
+                                        <mat-option value="SHD">Shadowknight</mat-option>
+                                        <mat-option value="SHM">Shaman</mat-option>
+                                        <mat-option value="WAR">Warrior</mat-option>
+                                        <mat-option value="WIZ">Wizard</mat-option>
+                                    </mat-select>
+                                </mat-form-field>
+                            </div>
+                            <div>
+                                <button mat-button color="accent" (click)="showFileSelector(character.characterId)">Select Log File</button>
+                                <div><small>Current: {{character.logFile}}</small></div>
+                            </div>
+                        </div>
+                        <div class="n-layout n-row">
+                            <div>
+                                <mat-checkbox [(ngModel)]="character.disableFct" name="disableFct_{{i}}" (ngModelChange)="updateCharacter(character)">Disable Floating Combat Text</mat-checkbox>
+                            </div>
+                        </div>
+
 
                     </mat-card-content>
                 </mat-card>

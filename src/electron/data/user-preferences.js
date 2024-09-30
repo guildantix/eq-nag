@@ -1,17 +1,20 @@
-const { ipcMain, BrowserWindow, dialog, shell } = require( "electron" );
+const { ipcMain, BrowserWindow, dialog, shell, app } = require( "electron" );
 const Store = require( './store' );
 const ForwardRef = require( '../forward-ref' );
 const path = require( 'path' );
 const fs = require( 'fs' );
 const { AuthorModel, SharedTriggerPermissions } = require( './models/sharing-service' );
 const { FctStylesModel } = require( './models/fct' );
-const { StyleProperties, LogMaintenanceRules, LogMaintenanceHistory } = require( './models/common' );
+const { StyleProperties, LogMaintenanceRules, LogMaintenanceHistory, UserPreferencesStoreModel } = require( './models/common' );
 const archiver = require( 'archiver' );
 const LogBootstrapper = require( "../log-bootstrap" );
 const { DeathRecapPreferences } = require( '../data/models/death-recap' );
 const { QuickShareAuthorListTypes } = require( '../data/models/common' );
 const { GinaToNagOverlay } = require( "./models/trigger" );
 const log = require( 'electron-log' );
+const { DpsMeterSettings } = require( "./models/combat-parser" );
+const { migrateUserPreferencesData } = require( "./migrations/user-preferences-database-migration" );
+const { FileReadDelays } = require( "./models/core" );
 
 const possibleEqFolders = [
     '\\users\\public\\Everquest',
@@ -72,18 +75,14 @@ function get_win_drives( success_cb, error_cb ) {
 class UserPreferencesStore extends Store {
 
     /** The data store for this object.
-     * @type {{
-     * phoneticTransforms: Record<string, string>,
-     * ignoreGinaObjects: string[],
-     * fctStyles: FctStylesModel,
-     * deathRecap: DeathRecapPreferences,
-     * minimizeToTrayOnLoad: boolean,
-     * lastViewedUpdateNotes: string,
-     * logMaintenanceRules: LogMaintenanceRules,
-     * logMaintenanceHistory: LogMaintenanceHistory[],
-     * }}
+     * @type {UserPreferencesStoreModel}
      */
     #data;
+
+    /** @type {booleana} This will only be true when the user preferences database file is not found.  This is set by having the default for the user preferences. */
+    get setup() {
+        return this.#data.setup === true;
+    }
 
     /** @type {boolean} If true, then Nag will enable GPU acceleration on load. */
     get enableGpuAcceleration() {
@@ -513,6 +512,74 @@ class UserPreferencesStore extends Store {
         this.storeDataFile( this.#data );
     }
 
+    /** @type {import('electron').Rectangle} */
+    get dpsWindowPosition() {
+        return this.#data.dpsWindowPosition;
+    }
+    set dpsWindowPosition( val ) {
+        this.#data.dpsWindowPosition = val;
+        this.storeDataFile( this.#data );
+    }
+
+    /** @type {number} */
+    get dpsEncounterResetTimeMs() {
+        return this.#data.dpsMeterSettings.encounterResetDelayMs ?? 30000;
+    }
+    set dpsEncounterResetTimeMs( val ) {
+        this.#data.dpsMeterSettings.encounterResetDelayMs = val;
+        this.storeDataFile( this.#data );
+    }
+
+    /** @type {DpsMeterSettings} */
+    get dpsMeterSettings() {
+        return this.#data.dpsMeterSettings;
+    }
+    set dpsMeterSettings( val ) {
+        this.#data.dpsMeterSettings = val;
+        this.storeDataFile( this.#data );
+    }
+
+    /** @type {FileReadDelays} */
+    get fileReadDelays() {
+        return this.#data.fileReadDelays ?? new FileReadDelays();
+    }
+    set fileReadDelays( val ) {
+        this.#data.fileReadDelays = val ?? new FileReadDelays();
+        this.storeDataFile( this.#data );
+    }
+
+    /** @type {Record<string, string[]>} */
+    get serverTrustedPlayers() {
+        return this.#data.serverTrustedPlayers ?? {};
+    }
+    set serverTrustedPlayers( val ) {
+        this.#data.serverTrustedPlayers = val;
+
+        if ( this.#data.serverTrustedPlayers ) {
+            for ( let key in this.#data.serverTrustedPlayers ) {
+                this.#data.serverTrustedPlayers[ key ] = this.#data.serverTrustedPlayers[ key ].filter( f => f != '' ) ?? [];
+            }
+        }
+
+        this.storeDataFile( this.#data );
+    }
+
+    /** @type {Record<string, string[]>} */
+    get serverBlockedPlayers() {
+        return this.#data.serverBlockedPlayers ?? {};
+    }
+    set serverBlockedPlayers( val ) {
+        this.#data.serverBlockedPlayers = val;
+
+        if ( this.#data.serverBlockedPlayers ) {
+            for ( let key in this.#data.serverBlockedPlayers ) {
+                this.#data.serverBlockedPlayers[ key ] = this.#data.serverBlockedPlayers[ key ].filter( f => f != '' ) ?? [];
+            }
+        }
+
+        this.storeDataFile( this.#data );
+    }
+
     /** @type {(fctStyles: FctStylesModel) => void[]} */
     onFctStyleChanges = [];
 
@@ -520,128 +587,18 @@ class UserPreferencesStore extends Store {
         super( {
             // We'll call our data file 'user-preferences'
             configName: 'user-preferences',
-            defaults: { logFile: null, windowBounds: { width: 800, height: 600, x: undefined, y: undefined } }
+            defaults: { logFile: null, windowBounds: { width: undefined, height: undefined, x: undefined, y: undefined }, setup: true, version: 1 },
+            virtual: [ 'setup' ]
         } );
-        // var defaults = { windowBounds: { width: 800, height: 600 } };
         
         this.#data = this.parseDataFile();
 
-        if ( !this.#data.version || this.#data.version < 3 ) {
-            
-            this.#data.fctStyles = new FctStylesModel();
-            
-            this.#data.fctStyles.fctDmgOutStyle = new StyleProperties();
-            this.#data.fctStyles.fctDmgOutStyle.fontSize = 32;
-            this.#data.fctStyles.fctDmgOutStyle.lineHeight = 95;
-            this.#data.fctStyles.fctDmgOutStyle.fontWeight = 700;
-            this.#data.fctStyles.fctDmgOutStyle.glowSize = 10;
-
-            this.#data.fctStyles.fctDmgInStyle = new StyleProperties();
-            this.#data.fctStyles.fctDmgInStyle.fontSize = 32;
-            this.#data.fctStyles.fctDmgInStyle.lineHeight = 95;
-            this.#data.fctStyles.fctDmgInStyle.fontWeight = 700;
-            this.#data.fctStyles.fctDmgInStyle.fontColor = '#b71c1c';
-            this.#data.fctStyles.fctDmgInStyle.glowSize = 10;
-
-            this.#data.fctStyles.fctSpellDmgOutStyle = new StyleProperties();
-            this.#data.fctStyles.fctSpellDmgOutStyle.fontSize = 32;
-            this.#data.fctStyles.fctSpellDmgOutStyle.lineHeight = 95;
-            this.#data.fctStyles.fctSpellDmgOutStyle.fontWeight = 700;
-            this.#data.fctStyles.fctSpellDmgOutStyle.glowSize = 10;
-
-            this.#data.fctStyles.fctSpellDmgInStyle = new StyleProperties();
-            this.#data.fctStyles.fctSpellDmgInStyle.fontSize = 32;
-            this.#data.fctStyles.fctSpellDmgInStyle.lineHeight = 95;
-            this.#data.fctStyles.fctSpellDmgInStyle.fontWeight = 700;
-            this.#data.fctStyles.fctSpellDmgInStyle.fontColor = '#b71c1c';
-            this.#data.fctStyles.fctSpellDmgInStyle.glowSize = 10;
-
-            this.#data.fctStyles.fctHealingOutStyle = new StyleProperties();
-            this.#data.fctStyles.fctHealingOutStyle.fontSize = 32;
-            this.#data.fctStyles.fctHealingOutStyle.lineHeight = 95;
-            this.#data.fctStyles.fctHealingOutStyle.fontWeight = 700;
-            this.#data.fctStyles.fctHealingOutStyle.fontColor = '#42a5f5';
-            this.#data.fctStyles.fctHealingOutStyle.glowSize = 10;
-
-            this.#data.fctStyles.fctHealingInStyle = new StyleProperties();
-            this.#data.fctStyles.fctHealingInStyle.fontSize = 32;
-            this.#data.fctStyles.fctHealingInStyle.lineHeight = 95;
-            this.#data.fctStyles.fctHealingInStyle.fontWeight = 700;
-            this.#data.fctStyles.fctHealingInStyle.fontColor = '#42a5f5';
-            this.#data.fctStyles.fctHealingInStyle.glowSize = 10;
-
-            this.#data.fctStyles.fctSkillStyle = new StyleProperties();
-            this.#data.fctStyles.fctSkillStyle.fontSize = 12;
-            this.#data.fctStyles.fctSkillStyle.fontWeight = 400;
-            this.#data.fctStyles.fctSkillStyle.fontColor = '#005aff';
-
-            this.#data.version = 3;
-            this.storeDataFile( this.#data );
-
-        }
-        if ( !this.#data.version || this.#data.version < 4 ) {
-            
-            // QuickSharing should be enabled by default, so we use database
-            // upgrade to set that state.
-            this.#data.enableQuickShareImports = true;
-            this.#data.version = 4;
-            this.storeDataFile( this.#data );
-
-        }
-        if ( !this.#data.version || this.#data.version < 5 ) {
-            
-            // Enable the glow on startup.
-            this.#data.glowOnStartup = true;
-            this.#data.version = 5;
-            this.storeDataFile( this.#data );
-
-        }
-        if ( !this.#data.version || this.#data.version < 6 ) {
-            
-            // Set the master volume to 100%.
-            this.#data.masterVolume = 100;
-            this.#data.version = 6;
-            this.storeDataFile( this.#data );
-
-        }
-        if ( !this.#data.version || this.#data.version < 7 ) {
-            
-            // Set the master volume to 100%.
-            this.#data.quickShareAuthorsList = [];
-            this.#data.quickShareAuthorsListType = QuickShareAuthorListTypes.Disabled;
-            this.#data.version = 7;
-            this.storeDataFile( this.#data );
-
-        }
-        
-    }
-
-
-
-
-
-
-
-
-
-
-    /**
-     * Adds a new log maintenance history event.
-     * 
-     * @param {Date} timestamp The timestamp of the log.
-     * @param {string} logSchedule The event's cron schedule.
-     * @param {boolean} success True if the backup succeeded.
-     */
-    addLogMaintenanceHistory( timestamp, logSchedule, success ) {
-
-        let d = new LogMaintenanceHistory();
-        d.timestamp = timestamp;
-        d.logSchedule = logSchedule;
-        d.success = success;
-
-        this.#data.logMaintenanceHistory = this.#data.logMaintenanceHistory ? this.#data.logMaintenanceHistory : [];
-        this.#data.logMaintenanceHistory.push( d );
-        this.storeDataFile( this.#data );
+        app.on( 'ready', () => {
+            migrateUserPreferencesData( this.#data, this.configName, async ( data ) => {
+                this.#data = data;
+                await this.storeDataFileAsync( this.#data );
+            } );
+        } );
     }
 
 
@@ -788,15 +745,36 @@ class UserPreferencesStore extends Store {
                 sendTick();
                 this.emitChanges();
                 if ( keySubscribers[ arg.key ]?.length > 0 ) {
-                    keySubscribers[ arg.key ].forEach( s => s.send( `settings:get:${arg.key}:generic`, this[ arg.key ] ) );
+                    for ( let i = keySubscribers[ arg.key ].length - 1; i >= 0; i-- ) {
+                        const subscriber = keySubscribers[ arg.key ][ i ];
+                        if ( subscriber && !subscriber.isDestroyed() ) {
+                            subscriber.send( `settings:get:${arg.key}:generic`, this[ arg.key ] );
+                        } else {
+                            keySubscribers[ arg.key ].splice( i, 1 );
+                        }
+                    }
                 }
+            } );
+        
+        ipcMain.handle( 'settings:get',
+            /**
+             * 
+             * @param {Electron.IpcMainEvent} event The Event args.
+             * @param {{key: string, subscribe: boolean}} arg The setting data.
+             */
+            ( event, arg ) => {
+                if ( arg.subscribe === true ) {
+                    keySubscribers[ arg.key ] = keySubscribers[ arg.key ] ? keySubscribers[ arg.key ] : [];
+                    keySubscribers[ arg.key ].push( event.sender );
+                }
+                return this[ arg.key ];
             } );
 
         ipcMain.on( 'settings:get',
             /**
              * 
              * @param {Electron.IpcMainEvent} event The Event args.
-             * @param {{key: string}} arg The setting data.
+             * @param {{key: string, subscribe: boolean}} arg The setting data.
              */
             ( event, arg ) => {
                 if ( arg.subscribe === true ) {

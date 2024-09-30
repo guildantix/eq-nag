@@ -28,6 +28,10 @@ mat-tree-node {
     .hover-hide {
         display: none;
     }
+
+    mat-icon {
+        overflow: unset !important;
+    }
 }
 
 .disabled-label {

@@ -1,15 +1,43 @@
 const { contextBridge, ipcRenderer } = require( 'electron' );
 const { getCurrentWindow, screen } = require( '@electron/remote' );
 
-const channelPrefixes = [ 'app', 'overlay', 'clipboard', 'log', 'audio-file', 'cache' ];
+const channelPrefixes = [
+    'app',
+    'overlay',
+    'clipboard',
+    'log',
+    'audio-file',
+    'cache',
+    'combat-database', 
+    'chat-room',
+    'combat',
+    'show-settings',
+];
+let mouseEnabled = false;
 
 contextBridge.exposeInMainWorld( 'api', {
     // TODO: THis should be updated and methods using require should be methods on the preloader.
     getRenderer: () => require( '../threads/renderer' ),
     setIgnoreMouseEvents: () => {
-        getCurrentWindow().setIgnoreMouseEvents( true, { forward: true } );
+        if ( mouseEnabled ) {
+            mouseEnabled = false;
+            getCurrentWindow().setIgnoreMouseEvents( true, { forward: false } );
+        }
     },
     setHandleMouseEvents: () => {
-        getCurrentWindow().setIgnoreMouseEvents( false );
+        if ( !mouseEnabled ) {
+            mouseEnabled = true;
+            getCurrentWindow().setIgnoreMouseEvents( false );
+        }
+    },
+    getMouseUpdate: () => {
+        const { x, y } = screen.getCursorScreenPoint();
+        return { x, y };
+    },
+    showSettings: ( name ) => {
+        ipcRenderer.send( 'show-settings', name );
+    },
+    recordEncounters: ( record ) => {
+        ipcRenderer.send( 'combat:record-encounters', { recordEncounters: record } );
     }
 } );

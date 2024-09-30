@@ -16,12 +16,14 @@ const LogBootstrapper = require( './src/electron/log-bootstrap' );
 const GameResources = require( './src/electron/data/game-resources' );
 const FilesDatabaseStore = require( './src/electron/data/files-database' );
 const GinaImporter = require( "./src/electron/gina-importer" );
-const CombatParser = require( "./src/electron/utilities/combat-parser" );
-const { IpcMessage, Progress, ScheduledTask, LogMaintenanceRules, Version } = require( "./src/electron/data/models/common" );
+const { IpcMessage, Progress, ScheduledTask, LogMaintenanceRules, Version, WinInfo, LogMaintenancePlanTypes } = require( "./src/electron/data/models/common" );
 const { LogFileLocation } = require( "./src/electron/data/log-file-location" );
 const VerifiedPlayersStore = require( "./src/electron/data/verified-players" );
 const cronParser = require( 'cron-parser' );
 const { DateUtilities } = require( "./src/electron/utilities/dates" );
+const CombatDatabase = require( "./src/electron/data/combat-database" );
+const activeWindow = require( "active-win" );
+const hasher = require( 'crypto' ).createHash;
 
 /** @type {BrowserWindow} */
 var mainWindow, logWatcherWindow, testWindow;
@@ -37,15 +39,26 @@ const logBootstrap = new LogBootstrapper();
 const gameResources = new GameResources();
 const fileDatabase = new FilesDatabaseStore();
 const ginaImporter = new GinaImporter();
-const verifiedPlayersDatabase = new VerifiedPlayersStore();
+// const verifiedPlayersDatabase = new VerifiedPlayersStore();
+const combatDatabase = new CombatDatabase();
 /** @type {Tray} */
 var trayMenu = null;
-
+/** @type {string | undefined} */
+var combatParseCharacterId = undefined;
 autoUpdater.logger = log;
+/** @type {number | undefined} */
+var nagProcessId = undefined;
+const allowMultipleInstances = false;
+const fs = require( 'fs' );
 
+
+const configRootPath = path.join( __dirname, 'config.json' );
+
+const config = JSON.parse( fs.readFileSync( configRootPath, 'utf-8' ) );
+// require( 'dotenv' ).config();
 require( '@electron/remote/main' ).initialize();
 
-unhandled({
+unhandled( {
     logger: log.error,
     showDialog: false,
 } );
@@ -86,12 +99,66 @@ const checkForUpdates = () => {
     autoUpdater.checkForUpdates();
 }
 
+const getDefaultMainWindowBounds = () => {
+    let nagBounds = {
+        width: 0,
+        height: 0,
+        x: 0,
+        y: 0,
+    };
+    const screenBounds = screen.getPrimaryDisplay().workArea;
+
+    // Set the window to be a natural size for their monitor.
+    const maxWidth = Math.min( screenBounds.width * 0.8, 1100 );
+    const maxHeight = Math.min( screenBounds.height * 0.8, 900 );
+    nagBounds.width = Math.max( Math.min( screenBounds.width, 800 ), maxWidth );
+    nagBounds.height = Math.max( Math.min( screenBounds.height, 600 ), maxHeight );
+
+    // Position the window in the center of the screen.
+    nagBounds.x = Math.floor( ( screenBounds.width - nagBounds.width ) / 2 );
+    nagBounds.y = Math.floor( ( screenBounds.height - nagBounds.height ) / 2 );
+
+    return nagBounds;
+}
+
 function createWindow() {
-    mainWindow = new BrowserWindow( {
+    let nagBounds = {
         width: userPreferences.windowWidth,
         height: userPreferences.windowHeight,
         x: userPreferences.windowX,
         y: userPreferences.windowY,
+    };
+
+    // If the nag window bounds any of the dimensions are undefined or less than 100, then we need to reset the bounds.
+    let widthInvalid = nagBounds.width == null || nagBounds.width < 100;
+    let heightInvalid = nagBounds.height == null || nagBounds.height < 100;
+    let xInvalid = nagBounds.x == null || nagBounds.x < 0;
+    let yInvalid = nagBounds.y == null || nagBounds.y < 0;
+    if ( widthInvalid || heightInvalid || xInvalid || yInvalid ) {
+        log.warn( '[main:createWindow] Main window bounds are invalid. Resetting window bounds.' );
+        nagBounds = getDefaultMainWindowBounds();
+    }
+
+    // If the main window has any part that is not on any screen, then we need to reset the bounds.
+    const displays = screen.getAllDisplays();
+    let isWindowOutOfBounds = false;
+    displays.forEach( display => {
+        if ( !isWindowOutOfBounds ) {
+            let out = nagBounds.x + nagBounds.width < display.bounds.x || nagBounds.x > display.bounds.x + display.bounds.width || nagBounds.y + nagBounds.height < display.bounds.y || nagBounds.y > display.bounds.y + display.bounds.height;
+            isWindowOutOfBounds = out;
+        }
+    } );
+
+    if ( isWindowOutOfBounds ) {
+        log.warn( '[main:createWindow] Main window is out of bounds. Resetting window bounds.' );
+        nagBounds = getDefaultMainWindowBounds();
+    }
+
+    mainWindow = new BrowserWindow( {
+        width: nagBounds.width,
+        height: nagBounds.height,
+        x: nagBounds.x,
+        y: nagBounds.y,
         //   transparent: true,
         frame: false,
         webPreferences: {
@@ -122,9 +189,9 @@ function createWindow() {
         mainWindow = null;
     } );
 
-    mainWindow.on( 'close', function () {
+    mainWindow.on( 'close', async () => {
         winManager.unload();
-        logBootstrap.unload();
+        await logBootstrap.unload();
     } );
 
     mainWindow.on( 'resize', function ( e ) {
@@ -153,6 +220,11 @@ function createWindow() {
         } );
 
         checkCombatGroups();
+
+        // nagProcessId = mainWindow.webContents.getOSProcessId();
+        // console.log( 'testing main window things' );
+        // console.log( 'get OS proc id', mainWindow.webContents.getOSProcessId() );
+        // console.log( 'get process id', mainWindow.webContents.getProcessId() );
     } );
 
     mainWindow.once( 'ready-to-show', () => {
@@ -160,6 +232,11 @@ function createWindow() {
             mainWindow.show();
         }
     } );
+
+    if ( userPreferences.setup ) {
+        // Set the last viewed version to the current version.
+        userPreferences.lastViewedUpdateNotes = app.getVersion();
+    }
     
 };
 
@@ -167,10 +244,17 @@ app.isDev = () => enableDevMode === true && process.defaultApp === true;
 
 app.commandLine.appendSwitch( 'enable-speech-dispatcher' );
 
-app.on( 'before-quit', () => {
+app.on( 'before-quit', async () => {
     trayMenu.destroy();
     trayMenu = null;
 } );
+
+app.on( 'child-process-gone', ( event, details ) => {
+    log.info( '[main:child-process-gone] Child process gone.', details );
+} );
+
+// Deprecated: This event is superceded by the child-process-gone event which contains more information about why the child process disappeared. It isn't always because it crashed. The killed boolean can be replaced by checking reason === 'killed' when you switch to that event.
+// app.on('gpu-process-crashed', (event, killed) => {
 
 const registerDevToolsShortcut = () => {
     globalShortcut.register( 'CommandOrControl+Shift+D', function () {
@@ -190,7 +274,7 @@ const registerDevToolsShortcut = () => {
 
 const checkCombatGroups = () => {
     if ( overlayDatabase.getCombatGroups().length === 0 ) {
-        if ( userPreferences.askForCombatGroupMigrations ) {
+        if ( userPreferences.askForCombatGroupMigrations && !userPreferences.setup ) {
             mainWindow.webContents.send( 'ask_combat_group_migration', userPreferences.fctStyles?.fctDmgInStyle != null );
         }
     }
@@ -223,7 +307,7 @@ const bootstrapApp = () => {
         } );
         protocol.interceptFileProtocol( 'file', ( req, callback ) => {
             let filePath = new url.URL( req.url ).pathname;
-    
+            
             if ( !filePath.match( /electron/ ) ) {
                 if ( process.platform === 'win32' ) {
     
@@ -235,7 +319,7 @@ const bootstrapApp = () => {
                     if ( filePath.match( /^[A-Za-z]:\/(css|img|js|fonts)/ ) ) {
                         filePath = path.join( app.getAppPath(), 'dist', filePath.slice( 3 ) );
     
-                    } else if ( filePath.match( /^[A-Za-z]:\/.*\.(js|css|png|jpeg|jpg|ico|svg|woff|woff2|ttf)$/ ) ) {
+                    } else if ( filePath.match( /^[A-Za-z]:\/.*\.(js|css|png|jpeg|jpg|ico|svg|woff|woff2|ttf|webp)$/ ) ) {
                         // case of "vue-cli-service build --mode development"
                         filePath = path.join( app.getAppPath(), 'dist', filePath.slice( 3 ) );
                     }
@@ -252,12 +336,14 @@ const bootstrapApp = () => {
                 }
             }
     
-            log.info( '[main:interceptFileProtocol] Intercepted file protocol.', {
-                req: req,
-                filePath: filePath,
-                normalizedFilePath: path.normalize( filePath ),
-                appPath: app.getAppPath(),
-            } );
+            if ( !app.isDev() && !filePath.match( /\.png$/i ) ) {
+                log.info( '[main:interceptFileProtocol] Intercepted file protocol.', {
+                    req: req,
+                    filePath: filePath,
+                    normalizedFilePath: path.normalize( filePath ),
+                    appPath: app.getAppPath(),
+                } );
+            }
 
             callback( path.normalize( filePath ).replace( /%20/g, ' ' ) );
         } );
@@ -269,33 +355,38 @@ const bootstrapApp = () => {
             registerDevToolsShortcut();
         }
 
+        setTimeout( checkActiveWindow, 100 );
+
     } );
     
 }
 
 // Using the instance lock we can prevent multiple Nag instances from opening.
-const instanceLock = app.requestSingleInstanceLock();
+const instanceLock = allowMultipleInstances || app.requestSingleInstanceLock();
 
-if ( !instanceLock ) {
+if ( !allowMultipleInstances && !instanceLock ) {
     app.quit();
 } else {
-    app.on( 'second-instance', ( event, argv, workingDir, addtnlData ) => {
 
-        if ( mainWindow ) {
-            // If the main window has been loaded, then let's make sure that 
-            // appears for the user so they don't think Nag isn't running.
+    if ( !allowMultipleInstances ) {
+        app.on( 'second-instance', ( event, argv, workingDir, addtnlData ) => {
 
-            if ( mainWindow.isMinimized() ) {
-                mainWindow.restore();
-            }
+            if ( mainWindow ) {
+                // If the main window has been loaded, then let's make sure that 
+                // appears for the user so they don't think Nag isn't running.
 
-            mainWindow.setAlwaysOnTop( true );
-            mainWindow.show();
-            mainWindow.setAlwaysOnTop( false );
-            mainWindow.focus();
+                if ( mainWindow.isMinimized() ) {
+                    mainWindow.restore();
+                }
+
+                mainWindow.setAlwaysOnTop( true );
+                mainWindow.show();
+                mainWindow.setAlwaysOnTop( false );
+                mainWindow.focus();
             
-        }
-    } );
+            }
+        } );
+    }
 
     bootstrapApp();
 }
@@ -308,6 +399,20 @@ app.on( 'activate', function () {
     if ( mainWindow === null ) createWindow()
 } );
 
+ipcMain.handle( 'app:register-combat-parser', ( event, characterId ) => {
+    if ( combatParseCharacterId == undefined ) {
+        combatParseCharacterId = characterId;
+    }
+
+    return combatParseCharacterId;
+} );
+
+ipcMain.on( 'app:unregister-combat-parser', ( event, characterId ) => {
+    if ( combatParseCharacterId === characterId ) {
+        combatParseCharacterId = undefined;
+    }
+} );
+
 // TODO: Remove this in a few versions.
 ipcMain.on( `color:darken`, ( e, data ) => {
     let overlay = overlayDatabase.find( data.overlayId );
@@ -315,26 +420,85 @@ ipcMain.on( `color:darken`, ( e, data ) => {
     overlayDatabase.update( overlay );
 } );
 
-ipcMain.on( 'app:log:exception', ( event, data ) => {
+/** @type {string[]} */
+let errorHashes = [];
+
+ipcMain.on( 'app:clear-log-history', ( event ) => {
+    errorHashes = [];
+} );
+
+/**
+ * Sends the error to the user.
+ * 
+ * @param {any} data The error data.
+ * @param {boolean|undefined} present If true, the user should be presented with the error.
+ */
+const appLogException = ( data, present ) => {
+    let eid = ( data?.source ?? 'unknown' ) + ( data?.error?.message ?? data?.message ?? 'Unknown Error' ) + ( data?.error?.stack ?? '' );
+    let hash = hasher( 'sha1' ).update( eid ).digest( 'base64' );
+    if ( errorHashes.includes( hash ) ) {
+        return;
+    } else {
+        errorHashes.push( hash );
+    }
+    
+    let error = {
+        label: 'System Error:',
+        message: '',
+        timestamp: new Date(),
+        payload: null,
+        present: present === true,
+        hash: hash,
+    };
+
     if ( data?.source === 'log-watcher.js' ) {
         log.error( data.error,
             '\r\n						  [error] (log entry)  "' + data.logEntry + '"',
             '\r\n						  [error] (simulating) ' + ( data.simulating ? 'true' : 'false' ),
             '\r\n						  [error] (pad time)   ' + data.padTime );
         
+        error.label = 'Log Watcher Error:';
+        error.message = data?.error?.message ?? 'Unexpected Error';
+        error.payload = data?.error;
+        
     } else if ( data?.source === 'renderer.js' && data?.fctModel ) {
         log.error( data.error,
             '\r\n						  [error] (fct model)  ' + JSON.stringify( data.fctModel ),
             '\r\n						  [error] (overlay id) ' + data.overlayId );
+        
+        error.label = 'Renderer FCT Error:';
+        error.message = data?.error?.message ?? 'Unexpected Error';
+        error.payload = data?.error;
         
     } else if ( data?.source === 'renderer.js' && data?.overlayComponent ) {
         log.error( data.error,
             '\r\n						  [error] (overlay component)  ' + JSON.stringify( data.overlayComponent ),
             '\r\n						  [error] (overlay id)         ' + data.overlayId );
         
+        error.label = 'Renderer Trigger Error:';
+        error.message = data?.error?.message ?? 'Unexpected Error';
+        error.payload = data?.error;
+        
+    } else if ( data?.source ) {
+        log.error( data.error );
+
+        error.label = data.source;
+        error.message = data?.error?.message ?? data.error ?? 'Unexpected Error';
+        error.payload = data?.error;
+    
     } else {
         log.error( data );
+
+        error.label = data?.label ?? 'System Error';
+        error.message = data?.message ?? data;
+        error.payload = data?.payload ?? null;
     }
+
+    mainWindow.webContents.send( 'console:error', error );
+}
+
+ipcMain.on( 'app:log:exception', ( event, data ) => {
+    appLogException( data );
 } );
 
 ipcMain.on( 'app:log:info', ( event, data ) => {
@@ -342,9 +506,11 @@ ipcMain.on( 'app:log:info', ( event, data ) => {
 } );
 
 var quitCalled = false;
-ipcMain.on( 'app:quit', ( event, forceQuit ) => {
+ipcMain.on( 'app:quit', async ( event, forceQuit ) => {
     if ( forceQuit === true || !logBootstrap.isBackupProcessing ) {
         quitCalled = true;
+        winManager.unload();
+        await logBootstrap.unload();
         app.quit();
     } else {
         event.sender.send( 'app:quit:failure', {
@@ -365,6 +531,10 @@ ipcMain.on( 'app:minimize:tray', ( event, data ) => {
     mainWindow.hide();
 } );
 
+ipcMain.on( 'app:open-patreon', ( event ) => {
+    require( 'electron' ).shell.openExternal( 'https://www.patreon.com/EverQuestNag' );
+} );
+
 ipcMain.on( 'app:request:tick', ( event, data ) => {
     sendTick();
 } );
@@ -377,6 +547,37 @@ ipcMain.on( 'app:get:all-display', ( event ) => {
     event.sender.send( 'app:get:all-display', screen.getAllDisplays() );
 } );
 
+ipcMain.on( 'combat:record-encounters',
+    /**
+     * @param {Electron.IpcMainEvent} event The event args.
+     * @param {{recordEncounters: boolean}} data The data.
+     */
+    ( event, data ) => {
+        logBootstrap.sendToCombatWatcher( 'combat:record-encounters', data );
+    } );
+
+ipcMain.on( 'chat-room:link-received',
+    /**
+     * @param {Electron.IpcMainEvent} event The event args.
+     * @param {{link: string, player: string, server: string}} data The chat link received args.
+     */
+    ( event, data ) => {
+        
+        if ( userPreferences.serverTrustedPlayers[ data.server ] && userPreferences.serverTrustedPlayers[ data.server ].includes( data.player ) ) {
+            // join server.
+            logBootstrap.sendToCombatWatcher( 'chat-room:join-chat-room', data.link );
+
+        } else if ( userPreferences.serverBlockedPlayers[ data.server ] && userPreferences.serverBlockedPlayers[ data.server ].includes( data.player ) ) {
+            // ignore
+            appLogException( { label: 'Chat Room', message: `Blocked player ${data.player} from server ${data.server}.`, payload: data } );
+
+        } else {
+            mainWindow.webContents.send( 'chat-room:link-received', data );
+            mainWindow.flashFrame( true );
+        }
+
+    } );
+
 ipcMain.on( 'main:console:log', ( event, data ) => { mainWindow.webContents.send( 'console:log', data ); } );
 
 let _tickTimeoutId = -1;
@@ -386,6 +587,7 @@ function sendTick( delay ) {
     let _triggers = triggerDatabase.getAll();
     let _folders = triggerDatabase.getFolders();
     let tickData = {
+        characterOptions: characterDatabase.getAll().map( f => { f.characterId, f.name, f.server } ),
         dkpEntries: dkpDatabase.getAllUnentered(),
         logFile: userPreferences.logFile,
         voiceIndex: userPreferences.voiceIndex,
@@ -448,7 +650,6 @@ var updateInfo = null;
 autoUpdater.on( 'update-downloaded', () => {
     log.info( 'update-downloaded executed' );
 
-    // TODO: Test this feature.
     if ( !userPreferences.allowPrerelease || Version.compareVersions( updateInfo.version, app.getVersion() ) === 1 ) {
 
         mainWindow.webContents.send( 'update_downloaded', updateInfo );
@@ -507,6 +708,11 @@ ipcMain.on( 'context:store:pseudo-clipboard', ( event, model ) => {
 } );
 ipcMain.on( 'context:get:pseudo-clipboard', ( event, key ) => {
     event.sender.send( `context:get:pseudo-clipboard:${key}`, pseudoClipboard[ key ] );
+} );
+
+ipcMain.on( 'window:unfocus', ( event ) => {
+    const win = BrowserWindow.fromId( event.sender.id );
+    win?.blur();
 } );
 
 ipcMain.on( 'death-recap:find-deaths',
@@ -572,8 +778,101 @@ ipcMain.on( 'console:command',
                 } else {
                     event.sender.send( 'console:success', { label: 'Text Ping', message: `Ping received: ${commands.slice( 1 ).join( ' ' )}`, timestamp: new Date() } );
                 }
+            } else if ( commands[ 0 ] === 'chat' ) {
+                if ( commands[ 1 ] === 'create' ) {
+                    logBootstrap.sendToCombatWatcher( 'chat-room:start-chat-room', null );
+                } else if ( commands[ 1 ] === 'join' ) {
+                    logBootstrap.sendToCombatWatcher( 'chat-room:join-chat-room', commands[ 2 ] );
+                } else if ( commands[ 1 ] === 'leave' ) {
+                    logBootstrap.sendToCombatWatcher( 'chat-room:disconnect', null );
+                }
             }
         }
+    } );
+
+ipcMain.on( 'chat-room:server-event',
+    /**
+     * Forwards server events to the main window.
+     * 
+     * @param {Electron.IpcMainEvent} event The event args.
+     * @param {{type: 'handshake' | 'disconnect', payload: any}} data The message data.
+     */
+    ( event, data ) => mainWindow.webContents.send( 'chat-room:server-event', data ) );
+
+ipcMain.on( 'chat-room:server-log',
+    /**
+     * Forwards the chat room log event to the main window.
+     * 
+     * @param {Electron.IpcMainEvent} event The event args.
+     * @param {string} data The chat room id.
+     */
+    ( event, data ) => mainWindow?.webContents.send( 'chat-room:server-log', data ) );
+
+ipcMain.on( 'chat-room:start-chat-room',
+    /**
+     * Sends the create chat room event to the combat watcher.
+     * 
+     * @param {Electron.IpcMainEvent} event The event args.
+     */
+    ( event ) => logBootstrap.sendToCombatWatcher( 'chat-room:start-chat-room', null ) );
+
+ipcMain.on( 'chat-room:join-chat-room',
+    /**
+     * Sends the create chat room event to the combat watcher.
+     * 
+     * @param {Electron.IpcMainEvent} event The event args.
+     * @param {string} data The chat room link.
+     */
+    ( event, data ) => logBootstrap.sendToCombatWatcher( 'chat-room:join-chat-room', data ) );
+
+ipcMain.on( 'chat-room:connected',
+    /**
+     * Forwards the chat room connected event to the main window.
+     * 
+     * @param {Electron.IpcMainEvent} event The event args.
+     * @param {string} data The chat room id.
+     */
+    ( event, data ) => mainWindow.webContents.send( 'chat-room:connected', data ) );
+
+ipcMain.on( 'chat-room:disconnect',
+    /**
+     * Disconnects from the chat room.
+     * 
+     * @param {Electron.IpcMainEvent} event The event args.
+     */
+    ( event ) => logBootstrap.sendToCombatWatcher( 'chat-room:disconnect', null ) );
+
+ipcMain.on( 'chat-room:disconnected',
+    /**
+     * Sends the chat room disconnected event to the main window.
+     * 
+     * @param {Electron.IpcMainEvent} event The event args.
+     * @param {string} reason The reason for the disconnect.
+     */
+    ( event, reason ) => mainWindow?.webContents.send( 'chat-room:disconnected', reason ) );
+
+/**
+* Sends the console message to the debug console.
+* 
+* @param {string | {label: string, message: string} | undefined} data The message to send.
+*/
+const consoleMessage = async ( data ) => {
+    if ( typeof data === 'string' ) {
+        mainWindow?.webContents.send( 'console:success', { label: 'System Message', message: data, timestamp: new Date() } );
+    } else if ( data?.message ) {
+        mainWindow?.webContents.send( 'console:success', { label: data.label ?? 'System Message', message: data.message, payload: data.payload, timestamp: new Date() } );
+    }
+ }
+
+ipcMain.on( 'console:message',
+    /**
+     * Sends the console message to the debug console.
+     * 
+     * @param {Electron.IpcMainEvent} event The event args.
+     * @param {string | {label: string, message: string} | undefined} data The message to send.
+     */
+    async ( event, data ) => {
+        await consoleMessage( data );
     } );
 
 var memoryCache = {};
@@ -587,6 +886,11 @@ ipcMain.on( 'cache:store',
     ( event, data ) => {
         memoryCache[ data.key ] = data.value;
     } );
+
+ipcMain.handle( 'get:nag-service-url', ( event, data ) => {
+    let nagServiceUri = config.apiEndPoint;
+    return nagServiceUri;
+} );
 
 ipcMain.on( 'cache:retrieve',
     /**
@@ -634,7 +938,7 @@ const executeScheduledLogMaintenance = async ( intervalDate, rules, cronSchedule
 }
 
 const scheduler = async () => {
-    if ( userPreferences.logMaintenanceRules?.enableLogFileMaintenance === true && userPreferences.logMaintenanceRules?.logSchedule != null && !logBootstrap.isBackupProcessing ) {
+    if ( userPreferences.logMaintenanceRules?.enableLogFileMaintenance === true && userPreferences.logMaintenanceRules?.logSchedule != null && userPreferences.logMaintenanceRules.maintenancePlan === LogMaintenancePlanTypes.BySchedule && !logBootstrap.isBackupProcessing ) {
         const logSchedule = Object.assign( new ScheduledTask(), userPreferences.logMaintenanceRules.logSchedule );
         const lastMaintained = userPreferences.lastMaintenanceCycleDate;
         var interval = cronParser.parseExpression( logSchedule.toCronSchedule() );
@@ -659,18 +963,20 @@ const scheduler = async () => {
 app.on( 'ready', function () {
 
     userPreferences.attachIpcEvents( mainWindowRef, sendTick, logBootstrapRef );
-    winManager.attachIpcEvents( mainWindowRef, overlayDatabase, userPreferences );
+    winManager.attachIpcEvents( mainWindowRef, overlayDatabase, userPreferences, characterDatabase );
     dkpDatabase.attachIpcEvents( mainWindowRef, sendTick );
     fileDatabase.attachIpcEvents( mainWindowRef );
     triggerDatabase.attachIpcEvents( mainWindowRef, sendTick, fileDatabase, userPreferences );
     overlayDatabase.attachIpcEvents( mainWindowRef, sendTick, triggerDatabase, userPreferences );
     characterDatabase.attachIpcEvents( mainWindowRef, sendTick );
-    logBootstrap.boostrapLogWatchers( mainWindowRef, app.isDev(), characterDatabase, sendTick, userPreferences );
+    logBootstrap.boostrapLogWatchers( mainWindowRef, app.isDev(), characterDatabase, sendTick, userPreferences, appLogException );
     gameResources.attachIpcEvents( mainWindowRef, userPreferences );
     ginaImporter.initGinaImporter( mainWindowRef, app.isDev() );
-    verifiedPlayersDatabase.attachIpcEvents( mainWindowRef, sendTick );
+    combatDatabase.attachIpcEvents( mainWindowRef, sendTick );
 
-    winManager.configureRendererMouseBlockingOnMoveResize( mainWindow );
+    // TODO: Update this method with the new mouse.js implementation.
+    // TODO: There may still be some renderer forwarding that needs to be removed.
+    winManager.configureRendererMouseBlockingOnMoveResize( mainWindow ); 
 
     winManager.loadRenderer();
 
@@ -688,6 +994,47 @@ app.on( 'ready', function () {
         scheduler();
     }, 1000 );
 } );
+
+/** @type {Electron.WebContents[]} */
+const activeWindowSubscribers = [];
+/** @type {WinInfo} */
+let activeWinInfo = undefined;
+
+ipcMain.on( 'main:active-window:subscribe', ( event ) => {
+    if ( !activeWindowSubscribers.includes( event.sender ) ) {
+        activeWindowSubscribers.push( event.sender );
+        activeWinInfo && event.sender.send( 'active-window:changed', activeWinInfo );
+    }
+} );
+
+ipcMain.on( 'main:active-window:unsubscribe', ( event ) => {
+    if ( activeWindowSubscribers.includes( event.sender ) ) {
+        activeWindowSubscribers.splice( activeWindowSubscribers.indexOf( event.sender ), 1 );
+    }
+} );
+
+const checkActiveWindow = async () => {
+    let data = await activeWindow();
+
+    if ( nagProcessId == undefined && (data?.owner?.name === 'Electron' || data?.owner?.name === 'EQ Nag') && data?.title === 'Nag' ) {
+        nagProcessId = data?.owner?.processId;
+    }
+    
+    if ( activeWinInfo?.id !== data?.id ) {
+        activeWinInfo = new WinInfo( data, nagProcessId );
+
+        for ( let i = activeWindowSubscribers.length - 1; i >= 0; i-- ) {
+            const webContents = activeWindowSubscribers[ i ];
+            if ( !webContents?.isDestroyed() ) {
+                webContents.send( 'active-window:changed', activeWinInfo );
+            } else {
+                activeWindowSubscribers.splice( i, 1 );
+            }
+        }
+    }
+
+    setTimeout( checkActiveWindow, 100 );
+};
 
 // let x = userPreferences.everquestInstallFolder;
 

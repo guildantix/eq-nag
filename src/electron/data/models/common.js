@@ -1,4 +1,6 @@
+const activeWindow = require( 'active-win' );
 const StringUtilities = require( '../../utilities/string' );
+const { DpsMeterSettings } = require( './combat-parser' );
 
 const customAlphabet = require( 'nanoid' ).customAlphabet;
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
@@ -245,6 +247,29 @@ const LogMaintenancePlanTypes = {
 
 const ArchiveFilePrefix = 'archive_';
 
+class UserPreferencesStoreModel {
+    /** @type {Record<string, string>} */
+    phoneticTransforms;
+    /** @type {string[]} */
+    ignoreGinaObjects;
+    /** @type {FctStylesModel} */
+    fctStyles;
+    /** @type {DeathRecapPreferences} */
+    deathRecap;
+    /** @type {boolean} */
+    minimizeToTrayOnLoad;
+    /** @type {string} */
+    lastViewedUpdateNotes;
+    /** @type {LogMaintenanceRules} */
+    logMaintenanceRules;
+    /** @type {LogMaintenanceHistory[]} */
+    logMaintenanceHistory;
+    /** @type {DpsMeterSettings} */
+    dpsMeterSettings;
+    /** @type {number} */
+    version = 0;
+}
+
 class LogMaintenanceRules {
 
     /** @type {boolean} */
@@ -314,6 +339,58 @@ class Version {
 
 }
 
+class WinInfo {
+
+    /**
+     * 
+     * @param {activeWindow.Result} window The active window.
+     * @param {number} nagPid The process id of the nag window.
+     */
+    constructor( window, nagPid ) {
+
+        if ( window ) {
+            this.title = window.title;
+            this.processId = window.owner?.processId ?? 0;
+            this.id = window.id;
+            this.platform = window.platform;
+            this.ownerName = window.owner?.name ?? '';
+            this.ownerPath = window.owner?.path ?? '';
+        }
+        
+        this.nagProcessId = nagPid;
+    }
+
+    /** @type {string} */
+    title;
+    /** @type {number} */
+    processId;
+    /** @type {number} */
+    id;
+    /** @type {string} */
+    platform;
+    /** @type {string} */
+    ownerName;
+    /** @type {string} */
+    ownerPath;
+    /** @type {number} */
+    nagProcessId;
+
+}
+
+class NConditionalOperationModel {
+    /** @type {number} */
+    nIndex;
+    /** @type {( ( nValue: number ) => boolean )[]} */
+    validateFns = [];
+}
+
+class NConditionalModel {
+    /** @type {string} */
+    value;
+    /** @type {NConditionalOperationModel[]} */
+    operations = [];
+}
+
 module.exports = {
     StyleProperties,
     BasicError,
@@ -331,4 +408,8 @@ module.exports = {
     ArchiveFilePrefix, 
     LogMaintenanceHistory, 
     Version, 
+    UserPreferencesStoreModel, 
+    WinInfo, 
+    NConditionalOperationModel, 
+    NConditionalModel, 
 };

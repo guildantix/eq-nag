@@ -2,7 +2,7 @@ import { Component, ViewChild, ElementRef, OnInit } from '@angular/core';
 import * as _ from 'lodash-es';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { IpcService } from './ipc.service';
-import { DkpEntryModel, OverlayWindowModel, FocusEffectSettings, StylePropertiesModel, FctStylesModel, QuickShareMetaModel, QuickShareFileModel, TriggerPackageMetaModel, VersionNumber, AuthorModel } from './core.model';
+import { DkpEntryModel, OverlayWindowModel, FocusEffectSettings, StylePropertiesModel, FctStylesModel, QuickShareMetaModel, QuickShareFileModel, TriggerPackageMetaModel, VersionNumber, AuthorModel, SettingsKeys } from './core.model';
 import { DialogService } from './dialogs/dialog.service';
 import { customAlphabet } from 'nanoid';
 import { SetupService } from './setup/setup.service';
@@ -13,6 +13,7 @@ import { ColoredString } from './dialogs/dialog.model';
 import { SettingsComponent } from './settings/settings-component/settings.component';
 import { QuickShareService } from './core/quick-share.service';
 import { TriggersComponent } from './triggers/triggers.component';
+import { JoinChatRoomDialogResult } from './dialogs/join-chat-room-dialog/join-chat-room-dialog.component';
 
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const nanoid = customAlphabet( alphabet, 16 );
@@ -53,6 +54,9 @@ export class MainComponent implements OnInit {
     public combatType: string = 'DmgOut';
     public fctStyles: FctStylesModel = null;
 
+    public connected: boolean = false;
+    public transmitPercent: number | null = null;
+    public transmitLabel: string | null = null;
     public archivePercent: number |  null = null;
     public archiveLabel: string = null;
     public closeAfterArchive: boolean = false;
@@ -200,14 +204,18 @@ export class MainComponent implements OnInit {
 
         this.ipcService.getAppVersion().subscribe( currentVersion => {
             this.ipcService.getLastUpdateNotesViewed().subscribe( updateNotesVersion => {
+
+                if ( updateNotesVersion == null ) {
+                    // If the version seen is null, show the update notes.
+                    this.showLatestUpdateNotes();
+                }
                 let versionCurrent = new VersionNumber( currentVersion );
                 let versionNotesLastSeen = new VersionNumber( updateNotesVersion );
 
-                if ( VersionNumber.CompareVersions( versionCurrent, versionNotesLastSeen ) === -1 ) {
+                if ( VersionNumber.CompareVersions( versionNotesLastSeen, versionCurrent ) === -1 ) {
                     // If the version seen is less than version latest, show the update notes.
-                    this.showLatestUpdateNotes();
+                    this.showLatestUpdateNotes( currentVersion );
                 }
-                // TODO: Show pre-release notes if the user has a pre-release installed.
             } );
         } );
 
@@ -270,9 +278,65 @@ export class MainComponent implements OnInit {
             }
         } );
 
+        this.ipcService.onChatRoomConnected().subscribe( () => this.connected = true );
+        this.ipcService.onChatRoomDisconnected().subscribe( reason => {
+            this.connected = false;
+            this.dialogService.showCustomNotificationDialog( 'Disconnected', [ 'You have been disconnected from the server.', `Reason: ${reason}` ], 'public_off' );
+        } );
+
         window.setTimeout( () => {
+            // TODO: I don't think this is functionally doing anything.
             this.ipcService.mainWindowLoaded();
         }, 60 * 1000 );
+
+        // Handles the chat room link received event.
+        this.ipcService.onReceivedChatRoomLink().subscribe( linkArgs => {
+            this.dialogService.showJoinChatRoomDialog( linkArgs.server, linkArgs.player ).subscribe( result => {
+
+                if ( result === JoinChatRoomDialogResult.Trust ) {
+                    // If the user trusts the player, add them to the trusted list.
+                    this.ipcService.getSetting<Record<string, string[]>>( SettingsKeys.serverTrustedPlayers, false ).subscribe( trustedPlayers => {
+                        if ( !trustedPlayers ) {
+                            trustedPlayers = {};
+                        }
+
+                        if ( !trustedPlayers[ linkArgs.server ] ) {
+                            trustedPlayers[ linkArgs.server ] = [];
+                        }
+
+                        if ( trustedPlayers[ linkArgs.server ].indexOf( linkArgs.player ) === -1 ) {
+                            trustedPlayers[ linkArgs.server ].push( linkArgs.player );
+                        }
+
+                        this.ipcService.updateSetting( SettingsKeys.serverTrustedPlayers, trustedPlayers );
+                    } );
+                }
+
+                if ( result === JoinChatRoomDialogResult.Block ) {
+                    // If the user blocks the player, add them to the blocked list.
+                    this.ipcService.getSetting<Record<string, string[]>>( SettingsKeys.serverBlockedPlayers, false ).subscribe( blockedPlayers => {
+                        if ( !blockedPlayers ) {
+                            blockedPlayers = {};
+                        }
+
+                        if ( !blockedPlayers[ linkArgs.server ] ) {
+                            blockedPlayers[ linkArgs.server ] = [];
+                        }
+
+                        if ( blockedPlayers[ linkArgs.server ].indexOf( linkArgs.player ) === -1 ) {
+                            blockedPlayers[ linkArgs.server ].push( linkArgs.player );
+                        }
+
+                        this.ipcService.updateSetting( SettingsKeys.serverBlockedPlayers, blockedPlayers );
+                    } );
+                }
+
+                if ( result === JoinChatRoomDialogResult.Trust || result === JoinChatRoomDialogResult.Join ) {
+                    // If the user trusts or joins the player, then join the chat room.
+                    this.ipcService.joinChatRoom( linkArgs.link );
+                }
+            } );
+        } );
 
     }
 
@@ -288,8 +352,8 @@ export class MainComponent implements OnInit {
     /**
      * Loads the latest update notes window.
      */
-    public showLatestUpdateNotes() {
-        this.ipcService.showUpdateNotesWindow();
+    public showLatestUpdateNotes( version: string | undefined = undefined ) {
+        this.ipcService.showUpdateNotesWindow( version ? `v${version}` : undefined );
     }
 
 
@@ -478,6 +542,10 @@ export class MainComponent implements OnInit {
 
     public showEasyWindow(): void {
         this.ipcService.showEasyWindow().subscribe();
+    }
+
+    public disconnectChatRoom(): void {
+        this.ipcService.disconnectChatRoom();
     }
 
     public testFn(): void {

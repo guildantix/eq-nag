@@ -2,13 +2,14 @@ const { app, BrowserWindow, ipcMain, screen } = require( "electron" );
 const fs = require('fs');
 const fsp = fs.promises;
 const CharacterDatabaseStore = require( './data/character-database' );
-const CharacterModel = require( './data/models/character' );
+const { CharacterModel } = require( './data/models/character' );
 const _ = require( 'lodash' );
 const UserPreferencesStore = require( "./data/user-preferences" );
 const FsUtilities = require( "./utilities/file-system" );
 const log = require( 'electron-log' );
 const ForwardRef = require( './forward-ref' );
 const { LogMaintenancePlanTypes, LogMaintenanceRules, ArchiveFilePrefix, SimulationProgress } = require( "./data/models/common" );
+const { nagLog } = require( "./utilities/nag-console" );
 const customAlphabet = require( 'nanoid' ).customAlphabet;
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const nanoid = customAlphabet( alphabet, 16 );
@@ -34,10 +35,41 @@ class LogWatcherMeta {
 
     /** @type {() => void} */
     start;
+
+    /** @type {number} */
+    intervalId;
+}
+
+class CombatWatcherMeta {
+    /** @type {BrowserWindow|null} */
+    window;
+
+    /** @type {string} */
+    characterId;
+
+    /** @type {CharacterModel | undefined | null} */
+    character;
 }
 
 /** @type {Record<string, LogWatcherMeta>} Dictionary of log watcher windows. */
 var logWatchers = {};
+
+/** @type {boolean} */
+var userSelectedCombatWatcher = false;
+
+/** @type {CombatWatcherMeta} */
+var combatWatcher = {
+    window: null,
+    characterId: null,
+    character: null,
+};
+
+let cwReady = false;
+/** @type {(() => void) | undefined} */
+let cwOnDomReady;
+
+/** @type {ForwardRef<BrowserWindow>} */
+let mainWinRef = undefined;
 
 /** @type {number} The duration to wait between checking for activity on a log file. */
 const checkInterval = 5 * 1000;
@@ -68,6 +100,9 @@ class LogBootstrapper {
         return this.#logBackupWindow != null;
     }
 
+    /** @type {(character: string) => void} */
+    onLogWatcherWindowClosed = undefined;
+
 
 
 
@@ -83,14 +118,25 @@ class LogBootstrapper {
      * @param {ForwardRef<BrowserWindow>} mainWindowRef The main window of the application.
      * @param {boolean} isDev Sets up the log watcher window for development environment if true.
      * @param {CharacterDatabaseStore} characterDatabase The character database.
-     * @param {function} sendTick The send tick method.
+     * @param {() => void} sendTick The send tick method.
      * @param {UserPreferencesStore} userPreferences The user preferences store.
+     * @param {(error: Error) => void} appLogException The application log exception method.
      */
-    boostrapLogWatchers( mainWindowRef, isDev, characterDatabase, sendTick, userPreferences ) {
+    boostrapLogWatchers( mainWindowRef, isDev, characterDatabase, sendTick, userPreferences, appLogException ) {
 
+        mainWinRef = mainWindowRef;
         this.#userPreferences = userPreferences;
         this.#isDev = isDev;
+        const $this = this;
 
+        ipcMain.on( 'app:clear-log-history', ( event ) => {
+            for ( let key in logWatchers ) {
+                if ( logWatchers.hasOwnProperty( key ) && logWatchers[ key ].window != null ) {
+                    logWatchers[ key ].window.webContents.send( 'app:clear-log-history', undefined );
+                }
+            }
+        } );
+        
         ipcMain.on( 'tick', ( event, tickData ) => {
             for ( let key in logWatchers ) {
                 if ( logWatchers.hasOwnProperty( key ) && logWatchers[ key ].window != null ) {
@@ -99,6 +145,7 @@ class LogBootstrapper {
                     logWatchers[ key ].window.webContents.send( 'tick', tickData );
                 }
             }
+            combatWatcher.window?.webContents.send( 'tick', tickData );
         } );
 
         ipcMain.on( 'log:send:raw', function ( event, data ) {
@@ -108,6 +155,7 @@ class LogBootstrapper {
                     break;
                 }
             }
+            combatWatcher.window?.webContents.send( 'log:parse:raw', data );
         } );
 
         ipcMain.on( 'log:simulate:file', function ( event, data ) {
@@ -117,6 +165,7 @@ class LogBootstrapper {
                     break;
                 }
             }
+            combatWatcher.window?.webContents.send( 'log:simulate:file', data );
         } );
 
         ipcMain.on( 'log:store:variable', function ( event, data ) {
@@ -135,6 +184,7 @@ class LogBootstrapper {
             }
         } );
 
+        // TODO: Extend simulation to the combat watcher as well.
         ipcMain.on( 'log:simulate:begin',
             /**
              * Runs the simulation.
@@ -143,6 +193,13 @@ class LogBootstrapper {
              * @param {{ lines: string[], characterId: string, lineIndex: number|null }} data The data to simulate.
              */
             function ( event, data ) {
+                
+                let powerSaveBlockerId = null;
+                const powerSaveBlocker = require( 'electron' ).powerSaveBlocker;
+
+                // Prevent the system from suspending while simulating.
+                powerSaveBlockerId = powerSaveBlocker.start( 'prevent-app-suspension' );
+
                 let simulationId = nanoid();
                 let simData = {
                     lines: data.lines,
@@ -156,8 +213,26 @@ class LogBootstrapper {
                     ipcMain.removeAllListeners( `log:simulation:${simulationId}:pause` );
                     ipcMain.removeAllListeners( `log:simulation:${simulationId}:resume` );
                     ipcMain.removeAllListeners( `log:simulation:${simulationId}:stop` );
+                    ipcMain.removeAllListeners( `log:simulation:${simulationId}:lines` );
+
+                    combatWatcher.window?.webContents.send( 'log:simulate:end', {} );
                     event.sender?.send( `simulation:${simulationId}:progress`, { isComplete: true, completePercent: 100, label: 'Simulation complete' } );
+                    
+                    logWatchers[ data.characterId ].window.setAlwaysOnTop( false );
+                    
+                    if ( powerSaveBlocker.isStarted( powerSaveBlockerId ) ) {
+                        powerSaveBlocker.stop( powerSaveBlockerId );
+                    }
                 };
+
+                ipcMain.on( `log:simulation:${simulationId}:lines`,
+                    /**
+                     * @param {Electron.IpcMainEvent} childEvent Electron event args.
+                     * @param {{lines: string[], padTime: number}} lines 
+                     */
+                    function ( childEvent, lines ) {
+                        combatWatcher.window?.webContents.send( 'log:simulate:lines', lines );
+                    } );
                     
                 // Setup sim events that handle progress and control.
 
@@ -234,17 +309,21 @@ class LogBootstrapper {
                 
                     logWatchers[ _chr.characterId ].window.webContents.once( 'dom-ready', () => {
                         logWatchers[ _chr.characterId ].window.webContents.send( 'log:simulate:begin', simData );
+                        logWatchers[ _chr.characterId ].window.setAlwaysOnTop( true );
                         logWatchers[ _chr.characterId ].simulating = true;
                     } );
 
                 } else {
                     logWatchers[ _chr.characterId ].window.webContents.send( 'log:simulate:begin', simData );
+                    logWatchers[ _chr.characterId ].window.setAlwaysOnTop( true );
                     logWatchers[ _chr.characterId ].simulating = true;
                 }
 
+                combatWatcher.window?.webContents.send( 'log:simulate:begin', {} );
                 event.sender?.send( 'log:simulate:begin', simData.simulationId );
-            } );
+            } ); // ipcMain 'log:simulate:begin'
 
+        // TODO: I think this is unused.
         ipcMain.on( 'log:simulate:lines', function ( event, data ) {
             for ( let key in logWatchers ) {
                 if ( logWatchers.hasOwnProperty( key ) && logWatchers[ key ].window != null ) {
@@ -328,6 +407,10 @@ class LogBootstrapper {
                 if ( logWatchers[ chr.characterId ].window != null ) {
                     logWatchers[ chr.characterId ].window.close();
                     logWatchers[ chr.characterId ].window = null;
+
+                    if ( this.onLogWatcherWindowClosed ) {
+                        this.onLogWatcherWindowClosed( chr.characterId );
+                    }
                 }
 
                 clearInterval( logWatchers[ chr.characterId ].intervalId );
@@ -344,6 +427,25 @@ class LogBootstrapper {
             }
         } );
 
+        ipcMain.on( 'combat:character:change',
+            /**
+             * @param {Electron.IpcMainEvent} event The event args.
+             * @param {string} characterId The character id.
+             */
+            async ( event, characterId ) => {
+                const character = characterDatabase.find( characterId );
+                if ( character ) {
+                    let _stats = await FsUtilities.existsAsync( character.logFile ) ? await fsp.stat( character.logFile ) : null;
+                    if ( _stats == null ) {
+                        appLogException( new Error( `Log file not found: ${character.logFile}` ), true );
+                        return;
+                    }
+                    userSelectedCombatWatcher = true;
+                    changeCombatCharacter( character, _stats.size, sendTick );
+                }
+            } );
+
+        startCombatWatcherWindow( isDev );
     }
 
 
@@ -392,12 +494,13 @@ class LogBootstrapper {
 
         if ( this.#logBackupWindow == null ) {
 
-            this.#logBackupWindow = startLogBackup( this.#filesForArchive.map( f => f.logFile ), this.#userPreferences.everquestInstallFolder, this.#isDev, null, 0 );
+            this.#logBackupWindow = startLogBackup( this.#filesForArchive.map( f => f.logFile ), this.#userPreferences.everquestInstallFolder, this.#isDev, null, this.#userPreferences.logMaintenanceHistory?.length ?? 0 );
 
             // Reset the archive files.
             this.#filesForArchive = [];
             
             this.#logBackupWindow.on( 'closed', () => {
+                this.#userPreferences.addLogMaintenanceHistory( new Date(), 'Backup by Size', true );
                 this.#logBackupWindow = null;
             } );
 
@@ -442,9 +545,11 @@ class LogBootstrapper {
                         // file actually exists.
                         if ( await FsUtilities.existsAsync( logWatchers[ characterId ].logFile ) ) {
                     
+                            logWatchers[ characterId ].window?.webContents.send( 'log:backup-started' );
                             // First, let's rename the log file with the archive prefix.
                             const logFilePath = FsUtilities.Path.prependFilename( logWatchers[ characterId ].logFile, ArchiveFilePrefix );
                             await fsp.rename( logWatchers[ characterId ].logFile, logFilePath );
+                            await fsp.writeFile( logWatchers[ characterId ].logFile, '' );
                 
                             // Next, let's reset the current log file size.
                             log.info( `LogBootstrap > Log file renamed to: ${logFilePath}` );
@@ -452,16 +557,26 @@ class LogBootstrapper {
 
                             // Finally, add it to the list of files to archive.
                             logFiles.push( logFilePath );
-                    
+
                         }
                     }
                 }
 
                 if ( logFiles.length === 0 ) {
                     log.info( 'LogBootstrap > No log files to backup, exiting.' );
+                    nagLog( 'No log files to backup.' );
                     resolve();
                     return;
                 }
+
+                ipcMain.on( 'log:backup:critical-failure', ( event, error ) => {
+                    if ( this.#logBackupWindow ) {
+                        this.#logBackupWindow.close();
+                        this.#logBackupWindow = null;
+                    }
+    
+                    reject( error );
+                } );
 
                 this.#logBackupWindow = startLogBackup( logFiles, this.#userPreferences.everquestInstallFolder, this.#isDev, logMaintenanceRules.logSchedule.dayOfWeek, backupIndex ?? 0 );
 
@@ -469,6 +584,7 @@ class LogBootstrapper {
                 this.#filesForArchive = [];
         
                 this.#logBackupWindow.on( 'closed', () => {
+                    ipcMain.removeAllListeners( 'log:backup:critical-failure' );
                     this.#logBackupWindow = null;
                     resolve();
                 } );
@@ -548,11 +664,15 @@ class LogBootstrapper {
          * @param {number} fileSize The file size.
          */
         const backupFn = async ( fileSize ) => {
-            log.info( `LogBootstrap > Initializing backup for: ${chr.logFile}` );
+            log.info( `LogBootstrap > Initializing backup for: ${chr.logFile} by size.` );
 
+            if ( logWatchers[ characterId ].window ) {
+                logWatchers[ characterId ].window.webContents.send( 'log:backup-started' );
+            }
             // First, let's rename the log file with a timestamp.
-            const logFilePath = FsUtilities.Path.appendFilename( chr.logFile, FsUtilities.getFileTimestamp() );
+            const logFilePath = FsUtilities.Path.prependFilename( chr.logFile, ArchiveFilePrefix );
             await fsp.rename( chr.logFile, logFilePath );
+            await fsp.writeFile( chr.logFile, '' );
             
             log.info( `LogBootstrap > Log file renamed to: ${logFilePath}` );
             logWatchers[ characterId ].logSize = 0;
@@ -602,21 +722,20 @@ class LogBootstrapper {
 
                 }
                 
-            } else if ( enableLogFileMaintenanceBySize && _stats != null && this.#userPreferences.everquestInstallFolder?.length > 0 && _stats.size / ( 1024 * 1024 ) > this.#userPreferences.logMaintenanceRules?.maxLogFileSizeMb ) {
-                
-                // Clear the watch interval.
-                clearInterval( logWatchers[ characterId ].intervalId );
-
-                // Execute the backup function.
-                backupFn( _stats.size );
-
             } else if ( logWatchers[ characterId ].window != null ) {
 
                 // Increment the null attempt count.
                 logWatchers[ characterId ].nullAttemptCount += 1;
 
-                // If after # of attempts without seeing any changes in the log file, then kill the process.
-                if ( !logWatchers[ characterId ].simulating && logWatchers[ characterId ].nullAttemptCount >= killAfterNAttempts ) {
+                // Keep the combat watcher alive, even after null checks, if
+                // the user has manually selected a combat watcher.  We'll still 
+                // keep counting the null checks, if the user changes the combat 
+                // watcher we can immediately kill this log watcher.
+                const block = userSelectedCombatWatcher && characterId === combatWatcher?.characterId;
+
+                // If after # of attempts without seeing any changes in the log
+                // file, then kill the process.
+                if (  !block && !logWatchers[ characterId ].simulating && logWatchers[ characterId ].nullAttemptCount >= killAfterNAttempts ) {
                     
                     logWatchers[ characterId ].window.send( 'log:check:pulse', null );
                     ipcMain.once( 'log:pulse', function ( e, alive ) {
@@ -624,10 +743,14 @@ class LogBootstrapper {
                             
                             // Notify the main window.
                             mainWindowRef.reference.webContents.send( 'log:character:deactivated', characterId );
-        
+
                             if ( logWatchers[ characterId ].window != null && !logWatchers[ characterId ].window.isDestroyed() ) {
                                 logWatchers[ characterId ].window.close();
                                 logWatchers[ characterId ].window = null;
+
+                                if ( this.onLogWatcherWindowClosed ) {
+                                    this.onLogWatcherWindowClosed( characterId );
+                                }
                             }
 
                         }
@@ -635,12 +758,24 @@ class LogBootstrapper {
 
                 }
             }
+
+            // 2e-2 => 20KB
+            // this.#userPreferences.logMaintenanceRules?.maxLogFileSizeMb
+            if ( enableLogFileMaintenanceBySize && _stats != null && this.#userPreferences.everquestInstallFolder?.length > 0 && _stats.size / ( 1024 * 1024 ) > this.#userPreferences.logMaintenanceRules?.maxLogFileSizeMb ) {
+                
+                // Clear the watch interval.
+                clearInterval( logWatchers[ characterId ].intervalId );
+
+                // Execute the backup function.
+                backupFn( _stats.size );
+
+            }
             
             logWatchers[ characterId ].model = _chr;
             logWatchers[ characterId ].logSize = _stats == null ? 0 : _stats.size;
 
         }
-        
+
         logWatchers[ characterId ].intervalId = setInterval( () => checkFn().then( () => { } ), checkInterval );
 
     }
@@ -657,17 +792,65 @@ class LogBootstrapper {
     /**
      * Unloads all running processes and closes log watcher windows.
      */
-    unload() {
+    async unload() {
+
+        if ( combatWatcher ) {
+            // We need to close the combat watcher window on our terms at this point.
+            combatWatcher.characterId = null;
+            combatWatcher.character = null;
+        }
+
         for ( let key in logWatchers ) {
             if ( logWatchers.hasOwnProperty( key ) ) {
                 if ( logWatchers[ key ].window != null && !logWatchers[ key ].window.isDestroyed() ) {
                     logWatchers[ key ].window.close();
                     logWatchers[ key ].window = null;
+
+                    if ( this.onLogWatcherWindowClosed ) {
+                        this.onLogWatcherWindowClosed( key );
+                    }
                 }
 
                 clearInterval( logWatchers[ key ].intervalId );
             }
         }
+
+        await this.closeCombatWatcher();
+        
+    }
+
+
+
+
+
+
+
+
+
+    
+    /**
+     * Closes the combat watcher window.
+     * 
+     * @returns {Promise<void>} A promise that resolves when the combat watcher window is closed.
+     */
+    closeCombatWatcher() {
+        return new Promise( ( resolve, reject ) => {
+            if ( !combatWatcher?.window || combatWatcher.window.isDestroyed() ) {
+                resolve();
+                return;
+
+            } else {
+
+                combatWatcher?.window.webContents.send( 'log:combat:unload', null );
+                
+                ipcMain.once( 'log:combat:unloaded', () => {
+                    combatWatcher.window?.close();
+                    resolve();
+                } );
+
+                return;
+            }
+        } );
     }
 
 
@@ -693,6 +876,7 @@ class LogBootstrapper {
                 logWatchers[ key ].window.webContents.send( 'tick', tickData );
             }
         }
+        combatWatcher.window?.webContents.send( 'tick', tickData );
     }
 
 
@@ -707,15 +891,34 @@ class LogBootstrapper {
     /**
      * Sends the event to each log watcher window.
      * 
-     * @param {string} eventId The event identifier.
+     * @param {string} channel The comms channel.
      * @param {string} value The event value.
      */
-    sendToEach( eventId, value ) {
+    sendToEach( channel, value ) {
         for ( let key in logWatchers ) {
             if ( logWatchers.hasOwnProperty( key ) && logWatchers[ key ].window != null ) {
-                logWatchers[ key ].window.webContents.send( eventId, value );
+                logWatchers[ key ].window.webContents.send( channel, value );
             }
         }
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Sends the event to each log watcher window.
+     * 
+     * @param {string} channel The comms channel.
+     * @param {string} value The event value.
+     */
+    sendToCombatWatcher( channel, value ) {
+        combatWatcher.window?.webContents.send( channel, value );
     }
 
 }
@@ -734,7 +937,7 @@ class LogBootstrapper {
  * 
  * @param {string} logFile The full path to the log file.
  * @param {boolean} isDev Sets up the log watcher window for development environment if true.
- * @param {function} sendTick The send tick method.
+ * @param {() => void} sendTick The send tick method.
  * @param {CharacterModel} character The character to watch.
  * @param {number} logPosition The position the log watcher should start processing log entries.
  */
@@ -747,10 +950,20 @@ function startLogWatcherWindow( logFile, isDev, sendTick, character, logPosition
         webPreferences: { nodeIntegration: true, contextIsolation: false, webSecurity: false, devTools: isDev === true },
     } );
     logWatcherWindow.webContents.openDevTools( { mode: 'undocked' } );
-    logWatcherWindow.loadURL( `file://${__dirname}/threads/log-watcher.html?character=${encodeURI(JSON.stringify(character))}&logPosition=${logPosition}` );
+    logWatcherWindow.loadURL( `file://${__dirname}/threads/log-watcher.html?character=${encodeURI( JSON.stringify( character ) )}&logPosition=${logPosition}` );
 
-    logWatcherWindow.on( 'closed', function () {
+    logWatcherWindow.on( 'closed', async () => {
         logWatcherWindow = null;
+        
+        if ( combatWatcher.characterId === character.characterId ) {
+            // If there is still a character being watched, then start the combat watcher for that character.
+            for ( let key in logWatchers ) {
+                if ( logWatchers.hasOwnProperty( key ) && logWatchers[ key ].window != null ) {
+                    changeCombatCharacter( logWatchers[ key ].model, logWatchers[ key ].logSize, sendTick );
+                    break;
+                }
+            }
+        }
     } );
 
     logWatcherWindow.webContents.once( 'dom-ready', () => {
@@ -759,7 +972,81 @@ function startLogWatcherWindow( logFile, isDev, sendTick, character, logPosition
     } );
     logWatcherWindow.setPosition( 100, 500 );
 
+    if ( combatWatcher?.character == null ) {
+        changeCombatCharacter( character, logPosition, sendTick );
+    }
+
     return logWatcherWindow;
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Starts a new combat watcher window for the specified character.
+ * 
+ * @param {boolean} isDev The development environment flag.
+ */
+function startCombatWatcherWindow( isDev ) {
+    
+    if ( combatWatcher.window == null ) {
+
+        combatWatcher.window = new BrowserWindow( {
+            show: isDev === true,
+            webPreferences: { nodeIntegration: true, contextIsolation: false, webSecurity: false, devTools: isDev === true },
+            // alwaysOnTop: true,
+        } );
+        combatWatcher.window.webContents.openDevTools( { mode: 'undocked' } );
+        combatWatcher.window.loadURL( `file://${__dirname}/threads/combat-watcher.html` );
+
+        combatWatcher.window.webContents.once( 'dom-ready', () => {
+            cwReady = true;
+            if ( cwOnDomReady ) {
+                cwOnDomReady();
+                cwOnDomReady = undefined;
+            }
+        } );
+
+        combatWatcher.window.setPosition( 100, 500 );
+    }
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Starts/changes the combat watcher to watch the specified character.
+ * 
+ * @param {CharacterModel} character The character to watch.
+ * @param {number | undefined} logPosition The position the log watcher should start processing log entries.
+ * @param {() => void} sendTick The send tick method.
+ * @returns 
+ */
+function changeCombatCharacter( character, logPosition, sendTick ) {
+    if ( !cwReady ) {
+        cwOnDomReady = () => changeCombatCharacter( character, logPosition, sendTick );
+        return;
+    }
+
+    combatWatcher.characterId = character.characterId;
+    combatWatcher.character = character;
+
+    combatWatcher.window.webContents.send( 'log:character:changed', { character: character, logPosition: logPosition } );
+    sendTick();
+
+    mainWinRef?.reference?.webContents.send( 'combat:character:changed', character.characterId );
 }
 
 

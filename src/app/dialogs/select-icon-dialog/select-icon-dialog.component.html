@@ -35,6 +35,8 @@
 <mat-dialog-actions>
 
   <button mat-button [mat-dialog-close]="null" class="t-confirm-no" color="warn">Cancel</button>
+  <span style="flex: 1 1 auto;"></span>
+  <button mat-button (click)="resetIconFolder()" class="t-confirm-no color-orange" title="Change your available icons by selecting an EverQuest executable.">Select EverQuest Executable</button>
   <!-- <button mat-button (click)="selectIcon(0)" class="t-confirm-yes" color="accent">Select</button> -->
 
 </mat-dialog-actions>

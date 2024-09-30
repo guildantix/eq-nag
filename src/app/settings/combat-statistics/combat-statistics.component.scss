@@ -1,0 +1,218 @@
+.players-table,
+.pets-table,
+.npcs-table {
+    width: unset;
+
+    tr {
+        th {
+            font-weight: 500;
+            opacity: 0.6;
+        }
+        td {
+            .dim {
+                opacity: 0.4;
+
+                &:hover {
+                    opacity: 1;
+                }
+            }
+            .pet-owner {
+                cursor: pointer;
+                
+                &:hover {
+                    text-decoration: underline;
+                }
+            }
+
+            .hover-show {
+                display: none;
+            }
+
+            &:hover {
+                .hover-hide {
+                    display: none;
+                }
+                .hover-show {
+                    display: unset;
+                }
+            }
+
+            &.flex {
+                display: flex;
+                flex-flow: row nowrap;
+                align-items: center;
+
+                .spacer {
+                    flex: 1 1 auto;
+                }
+            }
+        }
+    }
+}
+
+:host ::ng-deep {
+
+    .mat-tab-label-content {
+        text-transform: capitalize;
+    }
+    
+    .players-table,
+    .pets-table,
+    .npcs-table {
+        tr {
+            td {
+                mat-paginator {
+                    background-color: #1a1a1a;
+                    color: #bdbdbd;
+                }
+                .mat-paginator-outer-container {
+                    height: 35px;
+
+                    .mat-paginator-container {
+                        // margin-top: -21px;
+                        min-height: unset;
+                    }
+                }
+            }
+        }
+    }
+
+    .mat-form-field-label-wrapper {
+        mat-label {
+            margin-left: 4px;
+        }
+    }
+}
+
+.server-tab-container {
+    display: flex;
+    flex-flow: row wrap;
+    align-items: flex-start;
+
+    h1, h2 {
+        font-weight: 100;
+        padding: 0;
+    }
+    h1 {
+        margin: 10px 15px;
+    }
+    h2 {
+        margin: 3px 15px;
+    }
+
+    .server-search {
+        width: 100%;
+        margin: 10px;
+
+        > div {
+            padding: 15px;
+            background-color: #2a2a2a;
+
+            &:first-child {
+                background-color: #3a3a3a;
+            }
+
+            > mat-form-field {
+                width: 50%;
+            }
+        }
+
+    }
+
+    .server-content-panel {
+        margin: 10px;
+        background-color: #3a3a3a;
+    }
+}
+
+.combat-database-header {
+    position: relative;
+    display: flex;
+    flex-flow: row nowrap;
+    align-items: flex-end;
+    height: 31px;
+
+    .spacer {
+        flex: 1 1 auto;
+    }
+
+    h2 {
+        font-weight: 100;
+        opacity: 0.9;
+        margin: 0 1em;
+        padding-bottom: 6px;
+        font-size: 22px;
+        padding-bottom: 4px;
+        position: relative;
+        padding-right: 11px;
+        z-index: 1;
+    }
+
+    a {
+        color: #69b2f0;
+        font-size: 14px;
+        text-decoration: none;
+        padding: 0 1em;
+        z-index: 1;
+
+        &:hover {
+            color: #4a8bc2;
+        }
+        &:active {
+            color: #c269f0;
+        }
+    }
+    
+    &::before {
+        content: "";
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 18px;
+        background-color: #0000002e;
+    }
+}
+
+.custom-select {
+    position: relative;
+
+    .custom-select-list {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        z-index: 1;
+        background-color: #202020;
+        border: 2px solid black;
+        border-radius: 3px;
+        padding: 4px 8px;
+        cursor: pointer;
+        min-width: 104px;
+        max-height: 200px;
+        overflow-y: auto;
+        overflow-x: hidden;
+        -webkit-overflow-scrolling: touch;
+        -ms-overflow-style: -ms-autohiding-scrollbar;
+        -webkit-box-shadow: 0 2px 5px 0 rgba(0, 0, 0, 0.26);
+        box-shadow: 0 2px 5px 0 rgba(0, 0, 0, 0.26);
+        -webkit-transition: opacity 0.2s ease-in-out;
+        transition: opacity 0.2s ease-in-out;
+        opacity: 0;
+        pointer-events: none;
+    }
+    // select {
+    //     appearance: none;
+    //     /*  safari  */
+    //     -webkit-appearance: none;
+    //     /*  other styles for aesthetics */
+    //     background-color: #202020;
+    //     border: 2px solid black;
+    //     color: #dbdbdb;
+    //     border-radius: 3px;
+    //     padding: 4px 8px;
+    //     cursor: pointer;
+    //     min-width: 104px;
+    // }
+
+}

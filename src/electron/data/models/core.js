@@ -81,4 +81,15 @@ class StylePropertiesModel {
     }
 }
 
-module.exports = { StylePropertiesModel };
+class FileReadDelays {
+    
+    /** @type {number} */
+    readDelayMs = 200;
+    /** @type {number} */
+    readErrorDelayMs = 1000;
+    /** @type {number} */
+    flushDelayMs = 1000;
+
+}
+
+module.exports = { StylePropertiesModel, FileReadDelays };

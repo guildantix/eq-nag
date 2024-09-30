@@ -1,7 +1,7 @@
 <mat-toolbar>
     <span>Settings</span>
     <span class="spacer"></span>
-    <small>EverQuest Notification Agent v{{version}}</small>
+    <small>EverQuest Notification Agent v{{version}} <a class="color-blue" (click)="showUpdateNotes()">Notes</a></small>
 </mat-toolbar>
 <div class="tab-content">
 
@@ -116,6 +116,12 @@
                 </div>
             </div>
         </div>
+    </fieldset>
+
+    <fieldset #combatStatisticsGroup>
+        <legend><span class="title">Combat Statistics</span></legend>
+        
+        <combat-statistics [showMinimalInterface]="true"></combat-statistics>
     </fieldset>
 
     <fieldset>
@@ -360,14 +366,19 @@
             </tr>
         </table>
 
-
-
-
-
-
         <p>If you need to re-run the setup wizard, click on the "Run Setup Wizard" button.</p>
 
         <button mat-button (click)="runSetupWizard()">Run Setup Wizard</button>
+    </fieldset>
+
+    <fieldset #logFileSettings>
+        <legend class="danger">
+            <span class="title">Log File Settings</span>
+            <span class="spacer"></span>
+            <span class="material-symbols-outlined">warning</span>
+        </legend>
+
+        <app-log-file></app-log-file>
     </fieldset>
 
     <fieldset>

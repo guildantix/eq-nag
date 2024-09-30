@@ -34,7 +34,7 @@ export class CapturePhrasesComponent implements OnInit {
 
     @Input() public startWithNewPhrase: boolean = true;
 
-    public capturePhraseTableColumns = [ 'moveIndex', 'number', 'phrase', 'regEx', 'delete' ];
+    public capturePhraseTableColumns = [ 'moveIndex', 'number', 'phrase', 'regEx', 'regExOptions', 'delete' ];
 
     public showPhraseTextArea: Record<string, boolean> = {};
 
@@ -50,7 +50,7 @@ export class CapturePhrasesComponent implements OnInit {
 
     public updatePhraseInputTypes(): void {
         this.capturePhrases.forEach( ( phrase, index ) => {
-            this.showPhraseTextArea[ phrase.phraseId ] = phrase.phrase?.length >= 75;
+            this.showPhraseTextArea[ phrase.phraseId ] = phrase.phrase?.length > 50;
         } );
     }
 
@@ -65,6 +65,10 @@ export class CapturePhrasesComponent implements OnInit {
         this.capturePhrasesChange.emit( this.capturePhrases );
         this.capturePhrasesTable?.renderRows();
         this.updatePhraseInputTypes();
+    }
+
+    public toggleIgnoreCase( phrase: CapturePhrase ): void {
+        phrase.ignoreCase = !phrase.ignoreCase;
     }
 
     public deleteCapturePhrase( index: number ): void {

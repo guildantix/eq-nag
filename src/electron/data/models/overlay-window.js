@@ -40,6 +40,15 @@ class OverlayDimensions {
     displayBounds = null;
 }
 
+class TextOverflowModel {
+    /** @type {'nowrap'|'normal'} */
+    whiteSpace = 'nowrap';
+    /** @type {'hidden'|'visible'} */
+    overflow = 'hidden';
+    /** @type {'clip'|'ellipsis'} */
+    textOverflow = 'clip';
+}
+
 class OverlayWindow {
 
     overlayId = null;
@@ -76,6 +85,8 @@ class OverlayWindow {
     /** @type {{x: number, y: number}|null} */
     position = null;
     
+    /** @type {TextOverflowModel} */
+    textOverflow = null;
     /** @type {boolean} */
     showTextBorder = false;
     /** @type string */
@@ -103,6 +114,9 @@ class OverlayWindow {
     
     /** @type string */
     groupHeaderColor = '#ffffff';
+
+    /** @type {number} */
+    groupMinWidth = 200;
     
     /** @type {boolean} */
     showTimeRemaining = false;
@@ -210,6 +224,7 @@ const combatTypes = [
 ];
 
 class CombatTypes {
+    
     /** @type {boolean} */
     myHits = false;
     /** @type {boolean} */
@@ -327,4 +342,29 @@ class FctCombatGroup {
     _combatModifiersFlags = 0;
 }
 
-module.exports = { OverlayDimensions, OverlayWindow, OverlayComponent, TimerSortTypes, OverlayStoreModel, TriggerSecondaryActionModel, CombatAnimations, CombatTypes, FctCombatGroup, HitStartPositionTypes, getCombatModifiersFlags };
+class DisplayMetaModel {
+    /** @type {string} */
+    id;
+    /** @type {string} */
+    label;
+    /** @type {Electron.Rectangle} */
+    bounds;
+    /** @type {boolean} */
+    isPrimary = false;
+}
+
+module.exports = {
+    OverlayDimensions,
+    OverlayWindow,
+    OverlayComponent,
+    TimerSortTypes,
+    OverlayStoreModel,
+    TriggerSecondaryActionModel,
+    CombatAnimations,
+    CombatTypes,
+    FctCombatGroup,
+    HitStartPositionTypes,
+    getCombatModifiersFlags,
+    DisplayMetaModel,
+    TextOverflowModel,
+};

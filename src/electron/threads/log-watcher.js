@@ -1,8 +1,8 @@
-// const ipc = require( 'electron' ).ipcMain;
-const { ipcRenderer, ipcMain } = require( 'electron' );
+// TODO: This can be accomplished using web workers.  Buckle up and do it.
+const { ipcRenderer } = require( 'electron' );
 const fs = require( 'fs' );
 const { Trigger, TriggerAction, ActionTypes, TriggerConditionTypes, OperatorTypes, CharacterClassLevel, TriggerSubAction, TriggerFolder, TriggerCondition, CapturePhrase, Phrase, TriggerParseHistoryModel, getActionLabel, LogTypes, ErrorMessages } = require( '../data/models/trigger' );
-const { QuickShareAuthorListTypes, SimulationProgress } = require( '../data/models/common' );
+const { QuickShareAuthorListTypes, SimulationProgress, NConditionalModel } = require( '../data/models/common' );
 const { PhraseParse, LogTrigger } = require( './log.model' );
 const { OverlayComponent, OverlayWindow, TriggerSecondaryActionModel } = require( '../data/models/overlay-window' );
 const { CharacterModel } = require( '../data/models/character' );
@@ -10,27 +10,36 @@ const customAlphabet = require( 'nanoid' ).customAlphabet;
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const nanoid = customAlphabet( alphabet, 16 );
 const _ = require( 'lodash' );
-
 const StringUtilities = require( '../utilities/string' );
 const NumberUtilities = require( '../utilities/numbers' );
 const ThreadUtilities = require( '../utilities/threading' );
-const { FctModel, FctTypes } = require( '../data/models/fct' );
 const { DateUtilities } = require( '../utilities/dates' );
 const { IpcMessage } = require( '../data/models/common' );
 const ArrayUtilities = require( '../utilities/arrays' );
+const FileMonitor = require( '../utilities/file-monitor' );
+const { LogHistoryManager } = require( '../utilities/log-console' );
+const { createChatRoomLink } = require( '../utilities/peer-to-peer' );
+const { nagException, nagLog } = require( '../utilities/nag-console' );
 const chunkSize = 512 * 1024;
 
 window.onerror = ( error, url, line ) => {
     ipcRenderer.send( 'app:log:exception', `$${error}\r\n    at ${url}:${line}` );
 };
 
-function logInfo( data ) {
-    ipcRenderer.send( 'app:log:info', data );
+/**
+ * Sends to the main thread to log the message.
+ * 
+ * @param {string} message The message to log.
+ * @param {any | undefined} payload The payload to log.
+ */
+const log = ( message, payload ) => {
+    nagLog( {
+        label: 'Log Watcher',
+        message: message,
+        payload: payload,
+    } );
 }
 
-var currentPosition = null;
-
-var watcher = null;
 /** @type {OverlayWindow} */
 var overlays = [];
 /** @type {LogTrigger[]} */
@@ -51,7 +60,6 @@ var secondaryTriggerActions = [];
 var dotWornOffTracking = [];
 /** @type {Record<string, string[]>} */
 var usedConditionValues = {};
-var enableFct = false;
 var enableQuickShareImports = true;
 var damageDealtOverlayId = null;
 var damageReceivedOverlayId = null;
@@ -61,9 +69,9 @@ var masterVolume = 100;
 var speechVolume = 100;
 var audioVolume = 100;
 var baseSpeakingRate = 1;
-var logParseTimeoutId = null;
 const logParseTimer = 50;
 var changingLogFile = false;
+var backupStarted = false;
 var isDev = false;
 var enableLogging = true;
 /** @type {CharacterModel} */
@@ -81,15 +89,10 @@ var persistentDictionary = {};
 var detrimentalOverlayId = null;
 /** @type {string} */
 var characterId = null;
-const serverTickDuration = 6;
-/** @type {TriggerParseHistoryModel[]} */
-let successfulParses = [];
-/** @type {TriggerParseHistoryModel[]} */
-let failedParses = [];
-/** @type {TriggerParseHistoryModel[]} */
-let exceptionParses = [];
-let batchTriggerParseHistoryTimeoutId = null;
-const batchTriggerParseHistoryTimeoutDuration = 100;
+/** @type {FileMonitor} */
+let fileMonitor = null;
+/** @type {LogHistoryManager} */
+let logHistoryMgr = new LogHistoryManager( '', '', () => { }, () => { }, () => [] );
 
 /** @type {Record<string, {trigger: LogTrigger, res: PhraseParse}>} */
 let actionInstances = {};
@@ -105,26 +108,6 @@ let audioPlayers = [];
 
 /** @type {string} */
 let logFilePath = null;
-
-/** @type {number|null} */
-let eqTick = null;
-
-/** @type {number[]} */
-let outOfSyncEqTicks = [];
-
-const resetEqTickOnCount = 3;
-
-/** @type {number} */
-let eqTickUpdate = 0;
-
-/** @type {number|null} */
-let eqTickIntervalId = null;
-
-const eqTickMaxUpdateDistance = 60 * 1000;
-const eqTickVariance = 1500;
-
-/** @type {number|null} */
-let eqTickTimeoutId = null;
 
 /** @type {string} */
 let simulationId = null;
@@ -147,342 +130,16 @@ let simulationCache = {};
 /** @type {string[]} */
 let disabledTriggerIds = [];
 
+/** @type {Record<string, RegExp>} */
+let buffRegExs = {};
 
+/** @type {(() => void)[]} */
+let onTriggerGenCompleteHandlers = [];
 
-
-
-
-
-
-
-/**
- * Sends the error information to the main thread for logging.
- * 
- * @param {any} err The error object.
- * @param {string} raw The log entry currently processing.
- * @param {boolean} simulating True if we're simulating a log file.
- * @param {number} padTime The number of seconds to add to log time.
- * @param {string} errorDesc An error description to send to the debug console for the user.
- * @param {LogTrigger|undefined|null} trigger The trigger that caused the error.
- * @param {TriggerAction|undefined|null} action The trigger that caused the error.
- * @param {'End Early' | 'Trigger Action' | 'Exclude Target' | 'Trigger Secondary Action'} parseType The type of parse.
- * @param {string} renderedPhrase The rendered phrase.
- * @param {string} unrenderedPhrase The unrendered phrase.
- */
-const logParseError = ( err, raw, simulating, padTime, errorDesc, trigger, action, parseType, renderedPhrase, unrenderedPhrase ) => {
-    if ( raw ) {
-        ipcRenderer.send( 'app:log:exception', {
-            source: 'log-watcher.js',
-            error: err,
-            logEntry: raw,
-            simulating: simulating === true,
-            padTime: padTime === undefined ? 'undefined' :
-                padTime === null ? 'null' :
-                    padTime,
-        } );
-    } else {
-        ipcRenderer.send( 'app:log:exception', err );
-    }
-
-    if ( errorDesc ) {
-        
-        // If there is an error description, send it to the debug console.
-
-        let entry = new TriggerParseHistoryModel();
-
-        entry.parseId = nanoid();
-        entry.timestamp = new Date();
-        entry.triggerId = trigger?.triggerId;
-        entry.triggerName = trigger?.name;
-        entry.actionId = action ? action.actionId : null;
-        entry.actionTypeLabel = action ? getActionLabel( action.actionType ) : null;
-        entry.rawLogEntry = raw;
-        entry.logType = LogTypes.error;
-        entry.error = err + '';
-        entry.errorDescription = errorDesc;
-        entry.parseType = parseType;
-        entry.renderedPhrase = renderedPhrase;
-        entry.unrenderedPhrase = unrenderedPhrase;
-        entry.conditionResults = trigger?._conditionResults;
-        entry.deltaTime = trigger?._deltaTime;
-        entry.phraseId = null;
-        entry.regexResult = null;
-        entry.dependencyRegexResult = null;
-        entry.counters = JSON.parse( JSON.stringify( counters ) );
-        entry.storedVariables = JSON.parse( JSON.stringify( storedVariables ) );
-
-        entry.characterId = characterId;
-        entry.characterName = characterName;
-
-        exceptionParses.push( entry );
-
-    }
-};
-
-
-
-
-
-
-
-
-
-
-/**
- * Sends the error information to the main thread for logging.
- * 
- * @param {any} err The error object.
- * @param {string} raw The log entry currently processing.
- * @param {boolean} simulating True if we're simulating a log file.
- * @param {number} padTime The number of seconds to add to log time.
- * @param {string} errorDesc An error description to send to the debug console for the user.
- * @param {LogTrigger|undefined|null} trigger The trigger that caused the error.
- * @param {TriggerAction|undefined|null} action The trigger that caused the error.
- */
-const logError = ( err, raw, simulating, padTime, errorDesc, trigger, action ) => {
-    logParseError( err, raw, simulating, padTime, errorDesc, trigger, action );
-};
-
-
-
-
-
-
-
-
-
-
-/**
- * Starts tracking the server tick.
- * 
- * @param {number} time The eq tick time in milliseconds since midnight, January 1, 1970 UTC.
- */
-let startEqTickTracking = ( time ) => {
+/** @type {boolean} */
+let triggerGenComplete = false;
     
-    if ( eqTickTimeoutId > 0 ) {
-        window.clearTimeout( eqTickTimeoutId );
-    }
-    if ( eqTickIntervalId > 0 ) {
-        window.clearInterval( eqTickIntervalId );
-    }
-
-    // Set a timeout that will start the interval at the next server tick.
-    eqTickTimeoutId = window.setTimeout( () => {
-
-        // Set the current eq tick time.
-        eqTick = new Date().getTime();
-
-        // We should be synced with EQ time (for a bit at least) so let's start the 6 second interval tracking ticks.
-        eqTickIntervalId = window.setInterval( () => {
-            // Set the current eq tick time.
-            eqTick = new Date().getTime();
-        }, 6000 );
-
-    // The duration of the timeout needs to sync the computer clock with the timestamp given from the log entry.
-    }, time + ( 6 * 1000 ) - ( new Date().getTime() ) );
-}
-
-/**
- * Returns the next estimated EQ Server Tick for this character.
- * 
- * @returns {Date}
- */
-let nextEqTick = () => {
-    if ( eqTick > 0 ) {
-        return new Date( eqTick + 6 * 1000 );
-    } else {
-        return null;
-    }
-}
-
-/**
- * Sets the current tick value.
- * 
- * @param {Date} timestamp The timestamp of the tick.
- */
-let setEqTick = ( timestamp ) => {
-    if ( timestamp ) {
-        let time = timestamp.getTime();
-
-        let updateTime = new Date().getTime();
-        let updateDistance = Math.abs( eqTickUpdate - updateTime );
-        let nextTickTime = eqTick + 6 * 1000;
-
-        let update = () => {
-            eqTick = time;
-            startEqTickTracking( time );
-        }
-
-        if ( updateDistance >= eqTickMaxUpdateDistance || Math.abs( nextTickTime - time ) > eqTickVariance ) {
-            // If we haven't had a tick update in a while or the tick is way out of variance, then we'll just go with it.
-            update();
-
-        } else {
-
-            if ( !outOfSyncEqTicks.includes( time ) ) {
-                outOfSyncEqTicks.push( time );
-            }
-
-            // If the tick time is inside the variance amount for more than the configured number of distinct ticks, then let's update the tick timer.
-            if ( outOfSyncEqTicks.length >= resetEqTickOnCount ) {
-                update();
-            }
-        }
-        
-
-
-    }
-}
-
-
-
-
-
-
-
-
-
-
-/**
- * Sends the batch of parses to the main process, clears the batch, and sets 
- * the timeout to run again.
- */
-let _batchTriggerParseHistory = () => {
-
-    ipcRenderer.once( 'trigger:batch:complete', ( event, data ) => {
-
-        // Set the timeout to run again.
-        batchTriggerParseHistoryTimeoutId = window.setTimeout( () => _batchTriggerParseHistory(), batchTriggerParseHistoryTimeoutDuration );
-            
-    } );
-
-    // Send the batch of parses to the main process.
-    ipcRenderer.send( 'trigger:batch-history', { successful: successfulParses, failed: failedParses, exceptions: exceptionParses } );
-
-    // Clear the batch.
-    successfulParses = [];
-    failedParses = [];
-    exceptionParses = [];
-
-}
-batchTriggerParseHistoryTimeoutId = window.setTimeout( () => _batchTriggerParseHistory(), batchTriggerParseHistoryTimeoutDuration );
-
-
-
-
-
-
-
-
-
-
-/**
- * Creates a new parse history entry.
- * 
- * @returns {TriggerParseHistoryModel} Returns the parse history entry.
- * 
- * @param {string} rawLogEntry The raw log entry.
- * @param {LogTypes} logType The log entry type.
- * @param {Trigger} trigger The trigger that was triggered.
- * @param {string} actionId The id of the action that was triggered.
- * @param {'End Early' | 'Trigger Action' | 'Exclude Target' | 'Trigger Secondary Action'} parseType The type of parse.
- * @param {string} renderedPhrase The rendered phrase.
- * @param {string} unrenderedPhrase The unrendered phrase.
- * @param {PhraseParse | undefined} parsedPhrase The parsed phrase.
- * @param {Record<string, string>} conditionResults The results of the trigger condition checks.
- * @param {number | undefined} deltaTime The time in milliseconds between the sequential phrases.
- */
-let _getParseHistoryEntry = ( rawLogEntry, logType, trigger, actionId, parseType, renderedPhrase, unrenderedPhrase, parsedPhrase, conditionResults, deltaTime ) => {
-    let entry = new TriggerParseHistoryModel();
-
-    entry.parseId = nanoid();
-    entry.timestamp = new Date();
-    entry.triggerId = trigger.triggerId;
-    entry.triggerName = trigger.name;
-    entry.actionId = actionId;
-    entry.actionTypeLabel = getActionLabel( trigger.actions.find( a => a.actionId === actionId )?.actionType );
-    entry.parseType = parseType;
-    entry.renderedPhrase = renderedPhrase;
-    entry.unrenderedPhrase = unrenderedPhrase;
-    entry.phraseId = parsedPhrase?.phraseId;
-    entry.regexResult = parsedPhrase?.result;
-    entry.dependencyRegexResult = parsedPhrase?.dependencyResult;
-    entry.conditionResults = conditionResults;
-    entry.deltaTime = deltaTime;
-    entry.counters = JSON.parse( JSON.stringify( counters ) );
-    entry.storedVariables = JSON.parse( JSON.stringify( storedVariables ) );
-    entry.characterId = characterId;
-    entry.characterName = characterName;
-    entry.rawLogEntry = rawLogEntry;
-    entry.logType = logType;
-
-    return entry;
-};
-
-
-
-
-
-
-
-
-// TODO: Remove "Trigger" from option strings, since it's redundant.
-
-/**
- * Adds a successful trigger parsed event to the batch.
- * 
- * @param {string} rawLogEntry The raw log entry.
- * @param {string} triggerId The id of the trigger that was triggered.
- * @param {string} actionId The id of the action that was triggered.
- * @param {'End Early' | 'Trigger Action' | 'Trigger Sequential Action' | 'Trigger Action Loopback' | 'Exclude Target' | 'Trigger Cancel Action' | 'Trigger Secondary Action' | 'Reset Counter'} parseType The type of parse.
- * @param {string} renderedPhrase The rendered phrase.
- * @param {string} unrenderedPhrase The unrendered phrase.
- * @param {PhraseParse | undefined} parsedPhrase The parsed phrase.
- * @param {Record<string, string>} conditionResults The results of the trigger condition checks.
- * @param {number | undefined} deltaTime The time in milliseconds between the sequential phrases.
- */
-let addSuccessfulTriggerParsedEvent = ( rawLogEntry, triggerId, actionId, parseType, renderedPhrase, unrenderedPhrase, parsedPhrase, conditionResults, deltaTime ) => {
-    let trigger = triggers.find( t => t.triggerId === triggerId );
-    if ( trigger ) {
-        let entry = _getParseHistoryEntry( rawLogEntry, LogTypes.info, trigger, actionId, parseType, renderedPhrase, unrenderedPhrase, parsedPhrase, conditionResults, deltaTime );
-
-        // Add the entry to the batch.
-        successfulParses.push( entry );
-    }
-};
-
-
-
-
-
-
-
-
-
-
-/**
- * Adds a failed trigger parse history entry.
- * 
- * @param {string} rawLogEntry The raw log entry.
- * @param {string} triggerId The id of the trigger that was triggered.
- * @param {string} actionId The id of the action that was triggered.
- * @param {'End Early' | 'Trigger Action' | 'Trigger Sequential Action' | 'Trigger Action Loopback' | 'Exclude Target' | 'Trigger Secondary Action' | 'Reset Counter'} parseType The type of parse.
- * @param {string | string[]} renderedPhrase The rendered phrase.
- * @param {string | string[]} unrenderedPhrase The unrendered phrase.
- * @param {PhraseParse | undefined} parsedPhrase The parsed phrase.
- * @param {Record<string, string>} conditionResults The results of the trigger condition checks.
- * @param {number | undefined} deltaTime The time in milliseconds between the sequential phrases.
- */
-let addFailedTriggerParsedEvent = ( rawLogEntry, triggerId, actionId, parseType, renderedPhrase, unrenderedPhrase, parsedPhrase, conditionResults, deltaTime ) => {
-    // let trigger = triggers.find( t => t.triggerId === triggerId );
-
-    // if ( trigger ) {
-    //     let entry = _getParseHistoryEntry( rawLogEntry, LogTypes.info, trigger, actionId, parseType, renderedPhrase, unrenderedPhrase, parsedPhrase, conditionResults, deltaTime );
-        
-    //     // Add the entry to the batch.
-    //     failedParses.push( entry );
-    // }
-};
+let rgxTimestamp = /^\[(.*?)\]\s*/i;
 
 // Common errors:
 //  ${C} instead of {C}
@@ -502,102 +159,31 @@ let addFailedTriggerParsedEvent = ( rawLogEntry, triggerId, actionId, parseType,
 
 
 /**
- * Waits until the specified file exists and executes the startParsingLogFile 
- * method, starting at the beginning of the file.
- * 
- * @param {string} logPath The full path to the log file.
- */
-function waitForLogFile( logPath ) {
-    
-    if ( logParseTimeoutId > 0 ) {
-        window.clearTimeout( logParseTimeoutId );
-        logParseTimeoutId = null;
-        currentPosition = null;
-    }
-
-    if ( fs.existsSync( logPath ) ) {
-        logInfo( `LogWatcher > ${logPath} file found, starting up again.` );
-        startParsingLogFile( logPath, 0 );
-    } else {
-        window.setTimeout( () => waitForLogFile( logPath ), logParseTimer );
-    }
-}
-
-
-
-
-
-
-
-
-
-
-/**
  * Starts parsing and watching log file changes for the specified file.
  * 
  * @param {string} logPath The file path to the log file.
  * @param {number} startLogPosition If a value is provided, will start parsing the log file at the given position.
  */
 function startParsingLogFile( logPath, startLogPosition ) {
-    fs.open( logPath, 'r', function ( err, fd ) {
+    
+    fileMonitor.monitorLines( ( lines ) => {
+        // let start = performance.now();
 
-        if ( fd ) {
-            var file = fd;
-            if ( startLogPosition != null && startLogPosition >= 0 ) {
-                currentPosition = startLogPosition;
-                startLogPosition = null;
+        lines.forEach( line => {
+            if ( line && line.length > 0 ) {
+                parseLogEntries( line );
             }
-            currentPosition = currentPosition === null ? fs.fstatSync( file ).size : currentPosition;
-            function parseLogFile() {
-
-                if ( !fs.existsSync( logPath ) ) {
-                    logInfo( `LogWatcher > ${logPath} does not exist, waiting for new log file.` );
-                    waitForLogFile( logPath );
-                    return;
-                }
-
-                var stats = fs.fstatSync( fd );
-                var file = fd;
-                var thisChunkSize = stats.size - currentPosition;
-                
-                // Prevent some overflows, if this is greater than the chunk
-                // size, the something fucky happened with the log file, let's 
-                // just start at the end of the file.
-                if ( thisChunkSize > chunkSize ) {
-                    currentPosition = stats.size;
-                } else if ( currentPosition > stats.size ) {
-                    currentPosition = stats.size;
-                }
-
-                fs.read( file, Buffer.alloc( stats.size - currentPosition ), 0, stats.size - currentPosition, currentPosition, ( err, bytecount, buff ) => {
-                
-                    currentPosition += bytecount;
-                    let read = buff.toString( 'utf-8', 0, bytecount );
-                    let lines = read.split( /\r\n|\r|\n/gmi );
-                
-                    lines.forEach( line => {
-                        if ( line && line.length > 0 ) {
-                            parseLogEntries( line );
-                        }
-                    } );
-
-                } );
-
-                // Wait logParseTimer milliseconds and poll again.
-                if ( !changingLogFile ) {
-                    logParseTimeoutId = window.setTimeout( parseLogFile, logParseTimer );
-                }
-            }
-
-            // Start polling the log file every logParseTimer milliseconds.
-            logParseTimeoutId = window.setTimeout( parseLogFile, logParseTimer );
-
-        } else {
-            // If the log file was not found, then let's wait for it to show up.
-            waitForLogFile( logPath );
-
-        }
-    } );
+        } );
+        
+        // console.log( 'done processing lines, total time', performance.now() - start, 'line count', lines.length );
+    }, startLogPosition )
+        .then( () => {
+            log( `Monitoring log file: ${logPath}` );
+        } )
+        .catch( error => {
+            log( `Error monitoring log file: ${logPath}`, error );
+        } );
+    
 }
 
 const waitForSimulationResume = async () => {
@@ -702,11 +288,34 @@ function LogWatcher(character, logPosition) {
         characterName = character.name;
         charModel = character;
         characterId = character.characterId;
+        logHistoryMgr = new LogHistoryManager( character.characterId, character.name, () => counters, () => storedVariables, () => triggers );
+        fileMonitor = new FileMonitor( character.logFile );
+        logHistoryMgr.startBatchTriggerParseHistory();
     }
 
     loadCachedStoredVariables( () => {
         saveScalarVariable( "Character", characterName );
     } );
+
+    ipcRenderer.on( 'app:clear-log-history',
+        /**
+         * Handles the log:changed event.
+         * 
+         * @param {any} event The event args.
+         */
+        ( event ) => {
+            logHistoryMgr?.clearHistory();
+        } );
+    
+    ipcRenderer.on( 'log:backup-started',
+        /**
+         * Handles the log:changed event.
+         * 
+         * @param {any} event The event args.
+         */
+        function ( event ) {
+            backupStarted = true;
+        } );
 
     ipcRenderer.on( 'log:changed',
         /**
@@ -719,45 +328,37 @@ function LogWatcher(character, logPosition) {
             
             logFilePath = data;
 
-            if ( logParseTimeoutId > 0 ) {
-                window.clearTimeout( logParseTimeoutId );
-                currentPosition = null;
-                backfind( data, () => startParsingLogFile( data, logPosition >= 0 ? logPosition : null ) );
-            } else {
-                // If there is a timeout id, then we're in the middle of
-                // processing a chunk of log file entries, let's give a 
-                // millisecond for that to complete.
-                changingLogFile = true;
-                window.setTimeout( () => {
-                    changingLogFile = false;
-                    currentPosition = null;
-                    backfind( data, () => startParsingLogFile( data, logPosition >= 0 ? logPosition : null ) );
-                }, logParseTimer );
-            }
+            fileMonitor.stopMonitoringLogFile().then( () => {
+                fileMonitor = new FileMonitor( logFilePath );
+                if ( !triggerGenComplete ) {
+                    onTriggerGenCompleteHandlers.push( () => backfind().then( () => startParsingLogFile( logFilePath, logPosition >= 0 ? logPosition : null ) ) );
 
-            if ( watcher != null ) {
-                watcher.close();
-            }
-        
+                } else {
+                    backfind().then( () => startParsingLogFile( logFilePath, logPosition >= 0 ? logPosition : null ) );
+
+                }
+            } );
+
         } );
 
     ipcRenderer.on( 'log:simulate:file', function ( event, data ) {
-        fs.open( data, 'r', function ( err, fd ) {
-            var file = fd;
-            var stats = fs.fstatSync( fd );
+        throw new Error( 'Not implemented' );
+        // fs.open( data, 'r', function ( err, fd ) {
+        //     var file = fd;
+        //     var stats = fs.fstatSync( fd );
                     
-                fs.read( file, Buffer.alloc( stats.size ), 0, stats.size, 0, ( err, bytecount, buff ) => {
-                    let read = buff.toString( 'utf-8', 0, bytecount );
-                    let lines = read.split( /\r\n|\r|\n/gmi );
-                    lines.forEach( line => {
-                        if ( line && line.length > 0 ) {
-                            parseLogEntries( line, true );
-                        }
-                    } );
-                    console.log( 'lines done' );
-                } );
+        //         fs.read( file, Buffer.alloc( stats.size ), 0, stats.size, 0, ( err, bytecount, buff ) => {
+        //             let read = buff.toString( 'utf-8', 0, bytecount );
+        //             let lines = read.split( /\r\n|\r|\n/gmi );
+        //             lines.forEach( line => {
+        //                 if ( line && line.length > 0 ) {
+        //                     parseLogEntries( line, true );
+        //                 }
+        //             } );
+        //             console.log( 'lines done' );
+        //         } );
 
-        } );
+        // } );
     } );
 
     ipcRenderer.on( 'log:simulate:begin',
@@ -765,7 +366,7 @@ function LogWatcher(character, logPosition) {
          * Begins the simulation.
          * 
          * @param {any} event Electron event args.
-         * @param {{lines: string, lineIndex: number|null, simluationId: string}} model Simulation data.
+         * @param {{lines: string, lineIndex: number|null, simulationId: string}} model Simulation data.
          */
         async ( event, model ) => {
         
@@ -883,45 +484,24 @@ function LogWatcher(character, logPosition) {
             ipcRenderer.send( `log:simulation:${simulationId}:progress`, progress );
 
             for ( let i = 0; i < lineData.length; i++ ) {
+                const lineCount = lineData[ i ].lines.length;
+
+                ipcRenderer.send( `log:simulation:${simulationId}:lines`, { lines: lineData[ i ].lines, padTime: padTime } );
+
+                // let startp = performance.now();
+                // TODO: Remove the simulating argument from parse log entries, it's not used any more.
+                lineData[ i ].lines.forEach( line => parseLogEntries( line, false, padTime ) );
                 
-                for ( let j = 0; j < lineData[ i ].lines.length; j++ ) {
-                    
-                    if ( stopSimulation ) {
-                        break;
-                    }
-                    
-                    if ( simulationPaused ) {
-                    
-                        progress.msRemaining = calculateRemainingTime( i );
-                        progress.simulationPaused = true;
-                        ipcRenderer.send( `log:simulation:${simulationId}:progress`, progress );
+                simulationLineIndex += lineCount;
+                progress.lineIndex = simulationLineIndex;
+                progress.completePercent = ( simulationLineIndex / simulationMaxIndex ) * 100;
 
-                        while ( simulationPaused ) {
-                            await ThreadUtilities.sleep( 250 );
-                        }
+                // let endp = performance.now();
+                // let duration = endp - startp;
+                // let avgp = duration / lineCount;
+                // console.log( '[i/m] Line count, duration, avg', i, lineData.length - 1, lineCount, duration, avgp );
 
-                        // TODO: Enable pause resume at a specific line.
-                        // TODO: When paused, all timed actions should be paused as well.
-                        let newIndex = 0;
-                        for ( let k = 0; k < lineData.length; k++ ) {
-                            for(let l = 0; l < lineData[ k ].lines.length; l++) {
-                                newIndex += 1;
-
-                                if ( newIndex > simulationLineIndex ) {
-                                    simulationLineIndex = newIndex;
-                                    break;
-                                }
-                            }
-                        }
-                        
-                    }
-
-                    simulationLineIndex += 1;
-                    progress.lineIndex = simulationLineIndex;
-                    progress.completePercent = ( simulationLineIndex / simulationMaxIndex ) * 100;
-
-                    parseLogEntries( lineData[ i ].lines[ j ], false, padTime ); // The simulating argument will not execute most triggers. // TODO: Remove the simulating argument from parse log entries, it's not used any more.
-                }
+                // TODO: When paused, all timed actions should be paused as well.
 
                 if ( stopSimulation ) {
                     break;
@@ -937,8 +517,10 @@ function LogWatcher(character, logPosition) {
                     // the current chunk and the next chunk.  By using async, 
                     // the log watcher will continue to process log entries 
                     // while we wait.
-                    let waitMs = DateUtilities.timeSince( new Date(), new Date( lineData[ i + 1 ].timestamp.getTime() + ( padTime * 1000 ) ) ).totalMilliseconds;
-
+                    // let waitMs = DateUtilities.timeSince( new Date(), new Date( lineData[ i + 1 ].timestamp.getTime() + ( padTime * 1000 ) ) ).totalMilliseconds;
+                    let waitMs = new Date( lineData[ i + 1 ].timestamp.getTime() + ( padTime * 1000 ) ).getTime() - new Date().getTime();
+                    // console.log( 'waitMs', waitMs );
+                    waitMs = waitMs > logParseTimer ? waitMs : logParseTimer;
 
                     await ThreadUtilities.sleep( waitMs );
                     
@@ -957,6 +539,7 @@ function LogWatcher(character, logPosition) {
 
         } );
 
+    // TODO: I think this is unused.
     ipcRenderer.on( 'log:simulate:lines', function ( event, data ) {
         /** @type {{lines: string[], delay: number, timestamp: Date}[]} */
         var lineData = [];
@@ -1044,6 +627,7 @@ function LogWatcher(character, logPosition) {
         }
     } );
 
+    // TODO: I think this is unused.
     ipcRenderer.on( 'log:parse:raw', function ( event, data ) {
         parseLogEntries( data );
     } );
@@ -1134,7 +718,6 @@ function LogWatcher(character, logPosition) {
 
     ipcRenderer.on( 'settings:get:persistent-storage', ( e, v ) => {
         persistentDictionary = v;
-        console.log( 'new dictionary', v );
     } );
 
     ipcRenderer.on( 'log:action:execute-sub-action',
@@ -1144,60 +727,88 @@ function LogWatcher(character, logPosition) {
          * @param {{subAction: TriggerSubAction, instanceId: string}} v The values.
          */
         ( e, v ) => {
-            let instanceData = actionInstances[ v.instanceId ];
-            if ( instanceData ) {
-                let action = instanceData.trigger.actions.find( f => f.actionId === v.subAction.actionId );
-                let deltaTime = 0;
-
-                if ( v.subAction ) {
-                    
-                    instanceData.res.result.groups = instanceData.res.result.groups ? instanceData.res.result.groups : {};
-                    let expectedDuration = 0;
-            
-                    if ( instanceData.res.result?.groups?.timerDuration ) {
-                        expectedDuration = StringUtilities.getDurationFromLabel( instanceData.res.result?.groups?.timerDuration );
-        
-                    } else {
+            try {
                 
-                        if ( action.storageDuration && action.storageDuration.indexOf( '[' ) > -1 ) {
-                            let dur = +action.duration;
-                            dur = +getPersistentDictionaryValue( action.storageDuration, instanceData.res, timestamp, action, deltaTime, trigger );
-                            expectedDuration = dur > 0 ? dur / 1000 : +action.duration;
+                let instanceData = actionInstances[ v.instanceId ];
+                if ( instanceData ) {
+                    let action = instanceData.trigger.actions.find( f => f.actionId === v.subAction.actionId );
+                    let deltaTime = 0;
 
-                        } else if ( action.storageDuration ) {
-                            let dur = +action.duration;
-                            dur = +getScalarValue( action.storageDuration, 0 );
-                            expectedDuration = dur > 0 ? dur / 1000 : +action.duration;
-
+                    if ( v.subAction ) {
+                    
+                        instanceData.res.result.groups = instanceData.res.result.groups ? instanceData.res.result.groups : {};
+                        let expectedDuration = 0;
+            
+                        if ( instanceData.res.result?.groups?.timerDuration ) {
+                            expectedDuration = StringUtilities.getDurationFromLabel( instanceData.res.result?.groups?.timerDuration );
+        
                         } else {
-                            expectedDuration = +action.duration;
+                
+                            if ( action.storageDuration && action.storageDuration.indexOf( '[' ) > -1 ) {
+                                let dur = +action.duration;
+                                dur = +getPersistentDictionaryValue( action.storageDuration, instanceData.res, timestamp, action, deltaTime, trigger );
+                                expectedDuration = dur > 0 ? dur / 1000 : +action.duration;
+
+                            } else if ( action.storageDuration ) {
+                                let dur = +action.duration;
+                                dur = +getScalarValue( action.storageDuration, 0 );
+                                expectedDuration = dur > 0 ? dur / 1000 : +action.duration;
+
+                            } else {
+                                expectedDuration = +action.duration;
+
+                            }
 
                         }
+
+                        v.subAction.variableValues?.forEach( f => {
+                        
+                            let value = f.value;
+                            let name = /\{(?<name>.+?)\}/gi.exec( f.name )?.groups?.name;
+                        
+                            if ( name ) {
+                                value = StringUtilities.parseShortCodeValuesToLiteral( value, characterName, expectedDuration, instanceData.res.result?.groups, instanceData.res.result ? instanceData.res.result[ 0 ] : null );
+                                value = StringUtilities.parseStoredVariablesToLiteral( value, storedVariables );
+                                value = StringUtilities.parseConditionResultsToLiteral( value, instanceData.trigger._conditionResults );
+                                value = StringUtilities.parseMatchesToLiteral( value, instanceData.res.result, deltaTime );
+                                value = StringUtilities.parseCountersToLiteral( value, counters );
+
+                                instanceData.res.result.groups[ name ] = value;
+                            }
+            
+                        } );
 
                     }
 
-                    v.subAction.variableValues?.forEach( f => {
-                        
-                        let value = f.value;
-                        let name = /\{(?<name>.+?)\}/gi.exec( f.name )?.groups?.name;
-                        
-                        if ( name ) {
-                            value = StringUtilities.parseShortCodeValuesToLiteral( value, characterName, expectedDuration, instanceData.res.result?.groups, instanceData.res.result ? instanceData.res.result[ 0 ] : null );
-                            value = StringUtilities.parseStoredVariablesToLiteral( value, storedVariables );
-                            value = StringUtilities.parseConditionResultsToLiteral( value, instanceData.trigger._conditionResults );
-                            value = StringUtilities.parseMatchesToLiteral( value, instanceData.res.result, deltaTime );
-                            value = StringUtilities.parseCountersToLiteral( value, counters );
+                    enableLogging && sendInformationToLog( `Execute trigger sub-action [${v.instanceId}] : ${ActionTypes[ action.actionType ]}`, 24 );
 
-                            instanceData.res.result.groups[ name ] = value;
-                        }
-            
-                    } );
-
+                    executeTriggerAction( instanceData.trigger, action, new Date(), instanceData.res, deltaTime, false );
                 }
 
-                enableLogging && sendInformationToLog( `Execute trigger sub-action [${v.instanceId}] : ${ActionTypes[ action.actionType ]}`, 24 );
+            } catch ( error ) {
+                let instanceData = actionInstances[ v.instanceId ];
 
-                executeTriggerAction( instanceData.trigger, action, new Date(), instanceData.res, deltaTime, false );
+                instanceData = instanceData ? instanceData : {
+                    trigger: {
+                        triggerId: 'undefined',
+                        name: 'undefined',
+                        _conditionResults: {},
+                        _deltaTime: 0,
+                    }
+                };
+
+                logHistoryMgr.logError(
+                    error,
+                    'Executing Sub Action',
+                    false,
+                    0,
+                    ErrorMessages.subActionExecution( instanceData?.trigger?.triggerId ),
+                    {
+                        triggerId: instanceData?.trigger?.triggerId,
+                        name: instanceData?.trigger?.name,
+                        _conditionResults: instanceData?.trigger?._conditionResults, 
+                        _deltaTime: instanceData?.trigger?._deltaTime, 
+                    } );
             }
         } );
     
@@ -1235,6 +846,31 @@ function LogWatcher(character, logPosition) {
     speechSynthesis.onvoiceschanged = () => {
         voiceOptions = speechSynthesis.getVoices();
     };
+
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Returns the regex options for the given capture phrase.
+ * 
+ * @returns {string | undefined} The regex options, if any.
+ * 
+ * @param {CapturePhrase} phrase The capture phrase
+ */
+function getPhraseRegexOptions( phrase ) {
+    let opts = undefined;
+    if ( phrase.ignoreCase ) {
+        opts = 'i';
+    }
+    return opts;
 }
 
 
@@ -1257,6 +893,8 @@ function initCounters() {
                 if ( action.actionType === ActionTypes.Counter ) {
                     let resetsOnPhrases = action.resetCounterPhrases?.length > 0;
                     let renderedPhrases = resetsOnPhrases ? renderPhrases( action.resetCounterPhrases ) : [];
+                    /** @type {RegExp[]} */
+                    let renderedPhraseRegExps = [];
                     counters[ action.displayText ] = {
                         value: 0,
                         lastUpdate: new Date(),
@@ -1266,10 +904,11 @@ function initCounters() {
                                 let matched = false;
                                 
                                 renderedPhrases.forEach( ( phrase, i ) => {
-                                    let _res = new RegExp( phrase, 'g' ).exec( logEntry );
+                                    renderedPhraseRegExps[ i ] = renderedPhraseRegExps[ i ] ?? new RegExp( phrase, getPhraseRegexOptions( action.resetCounterPhrases[ i ] ) );
+                                    let _res = renderedPhraseRegExps[ i ].exec( logEntry );
                                     if ( _res?.length > 0 ) {
                                         matched = true;
-                                        addSuccessfulTriggerParsedEvent(
+                                        logHistoryMgr.addSuccessfulTriggerParsedEvent(
                                             logEntry,
                                             trigger.triggerId,
                                             action.actionId,
@@ -1285,20 +924,6 @@ function initCounters() {
                                     }
                                 } );
 
-                                if ( !matched ) {
-                                    addFailedTriggerParsedEvent(
-                                        logEntry,
-                                        trigger.triggerId,
-                                        action.actionId,
-                                        'Reset Counter',
-                                        renderedPhrases,
-                                        action.resetCounterPhrases,
-                                        null,
-                                        trigger._conditionResults,
-                                        undefined,
-                                    );
-                                }
-    
                                 return matched;
                             } else {
                                 return false;
@@ -1339,8 +964,24 @@ function generateTriggerFns() {
     
                 /** @type {Record<string, string>} */
                 let _renderedPhrases = {};
+
+                /** @type {Record<string, RegExp>} */
+                let _phraseRegEx = {};
+
+                /** @type {Record<string, string>} */
+                let _phraseStaticCache = {};
+
+                /** @type {Record<string, NConditionalModel>} */
+                let _phraseNConditionals = {};
     
                 trigger.capturePhrases?.forEach( phrase => {
+
+                    // If a phrase is dynamic, we'll need to re-create the regex each time.
+                    // Note: we may be able to squeeze a little more performance out of this 
+                    // by ensuring that each { is not preceeded by a \.  Because this only 
+                    // executes when generating the parse functions, we can be a little heavy 
+                    // handed computationally.
+                    phrase.dynamic = phrase.dynamic === true || phrase.phrase?.indexOf( '{' ) > -1;
     
                     // Only create parse functions for phrases that have content.
                     if ( phrase.phrase?.length > 0 ) {
@@ -1348,7 +989,22 @@ function generateTriggerFns() {
                             // Use different parse functions for regex vs normal.
                             _phraseParsers.push( ( value, hasGroups, matchGroups ) => {
                                 let rgxValue = phrase.phrase;
-    
+                                /** @type {NConditionalModel | undefined} */
+                                let nConditionals = undefined;
+
+                                if ( _phraseStaticCache[ phrase.phraseId ] ) {
+                                    rgxValue = _phraseStaticCache[ phrase.phraseId ];
+                                    nConditionals = _phraseNConditionals[ phrase.phraseId ];
+
+                                } else {
+                                    nConditionals = StringUtilities.parseNConditionalCodesToRegex( rgxValue, characterName );
+                                    rgxValue = nConditionals?.value ?? rgxValue;
+
+                                    _phraseStaticCache[ phrase.phraseId ] = rgxValue;
+                                    _phraseNConditionals[ phrase.phraseId ] = nConditionals;
+
+                                }
+                                
                                 rgxValue = StringUtilities.parseShortCodesToRegex( rgxValue, characterName );
                                 rgxValue = StringUtilities.parseStoredVariablesToRegex( rgxValue, storedVariables );
     
@@ -1361,7 +1017,41 @@ function generateTriggerFns() {
                                 }
                                 
                                 _renderedPhrases[ phrase.phraseId ] = rgxValue;
-                                let _res = new RegExp( rgxValue, 'gi' ).exec( value );
+                                // Optimizations:
+                                // Here, we could use formula to add named capture groups for variable insertion, letting the system create one regex once.
+                                // ex: (?<number_VariableName>\d+), (?<string_VariableName>.+), etc.
+                                // If the regex matches, do a simple regex.groups?.string_VariableName == 'value' to determine if the value is a match.
+                                // It is possible that we would need to do an includes or startswith to correctly capture variable values.
+
+                                // Further, we can do a better job of caching phrases, maybe an array of some type that we can loop through.
+
+                                // If we really want to, we could divine a way to determine if the variables have changed since last check.
+                                if ( _phraseRegEx[ phrase.phraseId ] == null || phrase.dynamic ) {
+                                    _phraseRegEx[ phrase.phraseId ] = new RegExp( rgxValue, getPhraseRegexOptions( phrase ) );
+                                }
+
+                                let _res = _phraseRegEx[ phrase.phraseId ].exec( value );
+                                if ( _res?.length > 0 && nConditionals ) {
+                                    for ( let opI = 0; opI < nConditionals.operations.length; opI++ ) {
+                                        const op = nConditionals.operations[ opI ];
+                                        let value = op.nIndex == undefined ? +_res.groups.N : +_res.groups[ `N${op.nIndex}` ];
+                                        let pass = true;
+
+                                        for ( let vi = 0; vi < op.validateFns?.length ?? 0; vi++ ) {
+                                            pass = op.validateFns[ vi ]( value );
+
+                                            if ( !pass ) {
+                                                break;
+                                            }
+                                        }
+
+                                        if ( !pass ) {
+                                            _res = undefined;
+                                            break;
+                                        }
+                                    }
+                                }
+
                                 return {
                                     phraseId: phrase.phraseId,
                                     match: _res?.length > 0,
@@ -1389,7 +1079,7 @@ function generateTriggerFns() {
                                     return {
                                         phraseId: phrase.phraseId,
                                         match: matched,
-                                        result: [ value ], 
+                                        result: [ value ],
                                         renderedPhrase: _phrs,
                                     };
                                 } else {
@@ -1475,55 +1165,79 @@ function generateTriggerFns() {
                      * @param {TriggerCondition} condition The condition to check.
                      */
                     const checkCondition = condition => {
+                        const variableName = condition.variableName;
                         if ( condition.conditionType === TriggerConditionTypes.VariableValue ) {
                             if ( condition.operatorType === OperatorTypes.Equals ) {
-                                
-                                let storedValue = storeHasValue( condition.variableName, _conditionValues[ condition.variableName ] );
-    
+
+                                let storedValue = storeHasValue( variableName, _conditionValues[ variableName ] );
+
                                 if ( !storedValue.exists ) {
                                     conditionsPassed = false;
                                 } else {
                                     // Store what value passed.
-                                    trigger._conditionResults[ condition.variableName ] = storedValue.value;
+                                    trigger._conditionResults[ variableName ] = storedValue.value;
                                 }
                                 
                             } else if ( condition.operatorType === OperatorTypes.IsNull ) {
     
-                                if ( storedVariables[ condition.variableName ]?.length > 0 ) {
+                                if ( storedVariables[ variableName ]?.length > 0 ) {
                                     conditionsPassed = false;
                                 } else {
                                     // Store the condition result for this key as null.
-                                    trigger._conditionResults[ condition.variableName ] = null;
+                                    trigger._conditionResults[ variableName ] = null;
                                 }
     
                             } else if ( condition.operatorType === OperatorTypes.DoesNotEqual ) {
     
-                                let storedValue = storeHasValue( condition.variableName, _conditionValues[ condition.variableName ] );
+                                let storedValue = storeHasValue( variableName, _conditionValues[ variableName ] );
                                 
-                                if ( _conditionValues[ condition.variableName ] && storedValue.exists ) {
+                                if ( _conditionValues[ variableName ] && storedValue.exists ) {
                                     // If the condition value is not null, then check if the store has that value.
                                     conditionsPassed = false;
-                                } else if ( _conditionValues[ condition.variableName ] == null && ( storedVariables[ condition.variableName ] == null || storedVariables[ condition.variableName ]?.length == 0 ) ) {
+                                } else if ( _conditionValues[ variableName ] == null && ( storedVariables[ variableName ] == null || storedVariables[ variableName ]?.length == 0 ) ) {
                                     // If the condition value is null, then check to make sure that the stored value(s) have at least 1 value;
                                     //  ex: If CurrentZone == null and the condition requires that CurrentZone DoesNotEqual Null
                                     conditionsPassed = false;
                                 } else {
                                     // Store what value passed.
-                                    trigger._conditionResults[ condition.variableName ] = storedValue.value;
+                                    trigger._conditionResults[ variableName ] = storedValue.value;
                                 }
     
                             } else if ( condition.operatorType === OperatorTypes.Contains ) {
-                                let storedValue = storeContainsValue( condition.variableName, _conditionValues[ condition.variableName ] );
+                                
+                                let storedValue = storeContainsValue( variableName, _conditionValues[ variableName ] );
     
                                 if ( !storedValue.exists ) {
                                     conditionsPassed = false;
     
                                 } else {
                                     // Store what value passed.
-                                    trigger._conditionResults[ condition.variableName ] = storedValue.value;
+                                    trigger._conditionResults[ variableName ] = storedValue.value;
     
                                 }
                                 
+                            }
+                        } else if ( condition.conditionType === TriggerConditionTypes.CounterValue ) {
+                            const counterValue = counters[ variableName ]?.value ?? null;
+                            const conditionValue = condition.variableValue && !StringUtilities.isNullOrWhitespace( condition.variableValue ) ? +condition.variableValue : null;
+                            const conditionNullMatch = counterValue === null && conditionValue === null;
+
+                            if ( condition.operatorType === OperatorTypes.Equals ) {
+                                if ( !conditionNullMatch && counterValue - conditionValue !== 0 ) {
+                                    conditionsPassed = false;
+                                }
+                            } else if ( condition.operatorType === OperatorTypes.GreaterThan ) {
+                                if ( conditionNullMatch || counterValue - conditionValue <= 0 ) {
+                                    conditionsPassed = false;
+                                }
+                            } else if ( condition.operatorType === OperatorTypes.LessThan ) {
+                                if ( conditionNullMatch || conditionValue - counterValue <= 0 ) {
+                                    conditionsPassed = false;
+                                }
+                            } else if ( condition.operatorType === OperatorTypes.DoesNotEqual ) {
+                                if ( conditionNullMatch || counterValue - conditionValue === 0 ) {
+                                    conditionsPassed = false;
+                                }
                             }
                         }
                     }
@@ -1581,31 +1295,17 @@ function generateTriggerFns() {
         
                             // If all conditions passed, then parse the phrase.
                             if ( trigger._checkConditions() ) {
-                                for ( let i = 0; i < _phraseParsers?.length; i++ ) {
-                                    let _res = _phraseParsers[ i ]( value );
+                                _phraseParsers.forEach( ( parser, i ) => {
+                                    let _res = parser( value );
                                     if ( _res?.match ) {
                                         onMatch( _res, 0 );
                                         passed = true;
                                     }
-                                }
-                            }
-        
-                            if ( !passed ) {
-                                addFailedTriggerParsedEvent(
-                                    value,
-                                    trigger.triggerId,
-                                    null,
-                                    'Trigger Action',
-                                    Object.keys( _renderedPhrases ).map( k => _renderedPhrases[ k ] ),
-                                    trigger.capturePhrases.map( p => p.phrase ),
-                                    null,
-                                    trigger._conditionResults,
-                                    undefined,
-                                );
+                                } );
                             }
                             
                         } catch ( error ) {
-                            logParseError(
+                            logHistoryMgr.logParseError(
                                 error, value, null, null,
                                 ErrorMessages.triggerParse(),
                                 trigger, null,
@@ -1654,9 +1354,9 @@ function generateTriggerFns() {
         
                                     let groupKeys = _res.result?.groups ? Object.keys( _res.result.groups ) : [];
                                     if ( groupKeys.length > 0 ) {
-                                        for ( let key of groupKeys ) {
+                                        groupKeys.forEach( key => {
                                             _newSeqMatch.groups[ key ] = _res.result.groups[ key ];
-                                        }
+                                        } );
                                     }
         
                                     _newSeqMatch.hasGroups = groupKeys?.length > 0;
@@ -1682,24 +1382,24 @@ function generateTriggerFns() {
                                     /** @type {number[]} */
                                     let removeSequenceIndices = [];
         
-                                    for ( let i = 0; i < _sequentialMatchs.length; i++ ) {
-                                        if ( _sequentialMatchs[ i ].captureIndex < _phraseParsers?.length ) {
-                                            let _res = _phraseParsers[ _sequentialMatchs[ i ].captureIndex ]( value, _sequentialMatchs[ i ].hasGroups, _sequentialMatchs[ i ].groups );
+                                    _sequentialMatchs.forEach( ( sequentialMatch, i ) => {
+                                        if ( sequentialMatch.captureIndex < _phraseParsers?.length ) {
+                                            let _res = _phraseParsers[ sequentialMatch.captureIndex ]( value, sequentialMatch.hasGroups, sequentialMatch.groups );
                                                 
                                             if ( _res?.match ) {
-                                                _sequentialMatchs[ i ].captureIndex += 1;
+                                                sequentialMatch.captureIndex += 1;
         
-                                                trigger._deltaTime = Date.now() - _sequentialMatchs[ i ].time;
-                                                _sequentialMatchs[ i ].time = Date.now();
+                                                trigger._deltaTime = Date.now() - sequentialMatch.time;
+                                                sequentialMatch.time = Date.now();
                                                     
                                                 let groupKeys = _res.result?.groups ? Object.keys( _res.result.groups ) : [];
                                                 if ( groupKeys.length > 0 ) {
                                                     for ( let key of groupKeys ) {
-                                                        _sequentialMatchs[ i ].groups[ key ] = _res.result.groups[ key ];
+                                                        sequentialMatch.groups[ key ] = _res.result.groups[ key ];
                                                     }
                                                 }
                         
-                                                _sequentialMatchs[ i ].hasGroups = _sequentialMatchs[ i ].hasGroups || groupKeys.length > 0;
+                                                sequentialMatch.hasGroups = sequentialMatch.hasGroups || groupKeys.length > 0;
                         
                                                 onMatch( _res, trigger._deltaTime );
                                                 passed = true;
@@ -1712,7 +1412,7 @@ function generateTriggerFns() {
                                                 }
                                             }
                                         }
-                                    }
+                                    } );
         
                                     // Remove any sequences.
                                     for ( let i = removeSequenceIndices.length - 1; i >= 0; i-- ) {
@@ -1727,22 +1427,8 @@ function generateTriggerFns() {
                                 
                             }
         
-                            if ( !passed ) {
-                                addFailedTriggerParsedEvent(
-                                    value,
-                                    trigger.triggerId,
-                                    null,
-                                    'Trigger Sequential Action',
-                                    Object.keys( _renderedPhrases ).map( k => _renderedPhrases[ k ] ),
-                                    trigger.capturePhrases.map( p => p.phrase ),
-                                    null,
-                                    trigger._conditionResults,
-                                    trigger._deltaTime,
-                                );
-                            }
-                            
                         } catch ( error ) {
-                            logParseError(
+                            logHistoryMgr.logParseError(
                                 error, value, null, null,
                                 ErrorMessages.triggerParse(),
                                 trigger, null,
@@ -1764,26 +1450,20 @@ function generateTriggerFns() {
                 trigger._reset = () => { };
                 trigger._parse = ( value, onMatch ) => {
                     
-                    addFailedTriggerParsedEvent(
-                        value,
-                        trigger.triggerId,
-                        null,
-                        'Trigger Sequential Action',
-                        [],
-                        [],
-                        null,
-                        trigger._conditionResults,
-                        undefined,
-                    );
-    
                 };
             }
 
         } catch ( error ) {
-            logError( error, raw, simulating, padTime, ErrorMessages.triggerGeneration(), trigger );
+            logHistoryMgr.logError( error, raw, simulating, padTime, ErrorMessages.triggerGeneration(), trigger );
         }
 
     } );
+
+    triggerGenComplete = true;
+    if ( onTriggerGenCompleteHandlers?.length > 0 ) {
+        let fns = onTriggerGenCompleteHandlers.splice( 0, onTriggerGenCompleteHandlers.length );
+        fns.forEach( f => f() );
+    }
 }
 
 
@@ -1800,22 +1480,19 @@ function generateTriggerFns() {
  * 
  * @param {string} raw The raw log entry.
  * @param {boolean} simulating If true, only simulates executing triggers via a consol.log call.
- * @param {padTime} padTime The amount of time to add to the timestamps of log entries.
+ * @param {number|undefined} padTime The amount of time to add to the timestamps of log entries.
  */
 function parseLogEntries( raw, simulating, padTime ) {
 
     try {
+        // let startp = performance.now(); //p
         
         simulating = simulating === true ? true : false;
     
         // let rgxTrigger = /grats;/gi;
-        let rgxTimestamp = /^\[(.*?)\]\s*/gi;
         // let rgxGrabText = /\'(.*?)\'$/gi;
         // let rgxDelimiter = /;/gi;
         // let rgxNum = /(\d+)/gi;
-        let rgxCombatText = /hit|damage|miss|dodge|riposte|parry|become better|backstab|stun|attack|crush/gi;
-        let rgxFctCritical = /\. \(.*(Critical|Crippling Blow|Strikethrough).*\)/gi;
-        let rgxCombatModifiers = /\. \((?<combatModifiers>.*)\)$/gi;
 
         // Someone healed you.
         // https://regex101.com/r/Jdtzsf/3
@@ -1824,49 +1501,24 @@ function parseLogEntries( raw, simulating, padTime ) {
         // You healed someone else.
         // https://regex101.com/r/0btqKz/1
         // ^(?<healer>You) healed (?<target>.+?) (over time for|for) (?<healAmount>[0-9]*) (\(([0-9]*)\) )?hit points by (?<healType>.+?)\.
-    
-        let fctRegExs = [
 
-            // 0: rgxMelee
-            /(?<actor>You) (?<action>[a-zA-Z0-9_]*) (?<target>.*) for (?<amount>[0-9]*) points of damage\./gi,
+        let tsRgx = rgxTimestamp.exec( raw );
+        let timestamp = tsRgx ? new Date( tsRgx[ 1 ] ) : null;
 
-            // 1: rgxMeleeMiss
-            /(?<actor>You) try to (?<action>[a-zA-Z0-9_]*) (?<target>.*),/gi,
+        if ( !timestamp || timestamp.length === 0 || timestamp.length === 1 ) {
+            nagException( {
+                label: 'log-watcher.js',
+                message: `Timestamp not found in log entry.`,
+                payload: {
+                    logEntry: raw,
+                    simulating: simulating === true,
+                    padTime: padTime,
+                },
+            } );
 
-            // 2: rgxSpellDmg
-            /(?<target>.*) has taken (?<amount>[0-9]*) damage from (?<actor>you)r (?<action>.*)\./gi,
-
-            // 3: rgxThorns
-            /(?<target>.*) is pierced by (?<actor>YOU)R (?<action>thorns) for (?<amount>[0-9]*) points of non-melee damage\./gi,
-
-            // 4: rgxSkillUp
-            /(?<actor>You) have become better at (?<action>[a-zA-Z0-9_\s]*)! \((?<amount>[0-9]*)\)/gi,
-
-            // 5: rgxTakeMeleeDmg
-            /(?<actor>.*) (?<action>[a-zA-Z0-9_]*) (?<target>YOU) for (?<amount>[0-9]*) points of damage\./gi,
-
-            // 6: rgxAvoidMeleeDmg
-            /(?<actor>.*) tries to (?<action>[a-zA-Z0-9_]*) (?<target>YOU), but (?<avoidType>[a-zA-Z0-9_\s]*)/gi,
-
-            // 7: rgxTakeSpellDmg
-            /(?<actor>.*) hit (?<target>you) for (?<amount>[0-9]*) points of (?<damageType>[a-zA-Z0-9_]*) damage by (?<action>.*)\./gi,
-
-            // 8: rgxSpellDmg
-            /(?<actor>You) ([a-zA-Z0-9_]*) (?<target>.*) for (?<amount>[0-9]*) points of (?<damageType>.*) damage by (?<action>.*)\./gi,
-
-            // 9: Other heal you
-            /^(?<actor>.+?) healed (?<target>you) (over time for|for) (?<amount>[0-9]*) (\((?<overhealing>[0-9]*)\) )?hit points by (?<action>.+?)\./gi,
-
-            // 10: You heal other
-            /^(?<actor>You) healed (?<target>.+?) (over time for|for) (?<amount>[0-9]*) (\((?<overhealing>[0-9]*)\) )?hit points by (?<action>.+?)\./gi,
-
-        ];
-
-        let timestamp = new Date( rgxTimestamp.exec( raw )[ 1 ] );
-
-        if ( !timestamp || timestamp.length === 0 || timestamp.length === 1 )
-            console.log( 'failed parse', raw );
-        else if ( padTime > 0 )
+            return;
+            
+        } else if ( padTime > 0 )
             timestamp = new Date( timestamp.getTime() + ( padTime * 1000 ) );
     
         let log = raw.replace( rgxTimestamp, '' );
@@ -1877,8 +1529,10 @@ function parseLogEntries( raw, simulating, padTime ) {
         // let quickShareRegx = /{NAG:(?!package\/)(quick-share\/)?(?<quickShareId>.+?)}/g;
     
         // https://regex101.com/r/ZrNaZM/2
-        let quickShareRegx = /^(:?(?<author>\w+) .*)?{NAG:(?!package\/)(quick-share\/)?(?<quickShareId>.+?)}/g;
+        let quickShareRegx = /^(:?(?<author>\w+) .*)?{NAG:(?!package\/)(?!p2p\/)(quick-share\/)?(?<quickShareId>.+?)}/g;
 
+        // https://regex101.com/r/L8V7Ip/2
+        let p2pRegex = /^(:?(?<player>\w+) .*)?{NAG:(p2p\/)(?<chatRoomId>.+?)}/g;
 
         // https://regex101.com/r/RwCLkN/1
         let packageShareRegx = /{NAG:package\/(?<packageId>.+?)}/g;
@@ -1914,103 +1568,22 @@ function parseLogEntries( raw, simulating, padTime ) {
             }
 
         }
-    
+
+        let p2p = p2pRegex.exec( log );
+        if ( p2p && p2p.groups?.chatRoomId && p2p.groups?.player != 'You' && p2p.groups?.player != 'you' && p2p.groups?.player != characterName ) {
+            let link = createChatRoomLink( p2p.groups.chatRoomId );
+            ipcRenderer.send( 'chat-room:link-received', {
+                link: link,
+                player: p2p.groups.player,
+                server: charModel.server,
+            } );
+        }
+
         let quickSharePackage = packageShareRegx.exec( log );
         if ( quickSharePackage && quickSharePackage.groups?.packageId ) {
             ipcRenderer.send( 'quicksharePackage_captured', quickSharePackage.groups.packageId );
         }
     
-        if ( enableFct && raw.match( rgxCombatText )?.length > 0 ) {
-
-            try {
-
-                for ( let i = 0; i < fctRegExs.length; i++ ) {
-                    let results = fctRegExs[ i ].exec( log );
-                
-                    if ( results && results.length > 1 ) {
-                        let model = new FctModel();
-
-                        // Misses: 1 - My melee misses, 6 - Other melee misses
-                        let misses = [ 1, 6 ];
-    
-                        model.combatTypes.myHits = [ 0 ].indexOf( i ) > -1;
-                        model.combatTypes.otherHitsOnMe = [ 5 ].indexOf( i ) > -1;
-                        model.combatTypes.mySpellHits = [ 2, 3, 8 ].indexOf( i ) > -1;
-                        model.combatTypes.otherSpellHitsOnMe = [ 7 ].indexOf( i ) > -1;
-                        model.combatTypes.otherHealingOnMe = [ 9 ].indexOf( i ) > -1;
-                        model.combatTypes.myHealing = [ 10 ].indexOf( i ) > -1;
-                        model.combatTypes.skillUp = [ 4 ].indexOf( i ) > -1;
-
-                        model.actor = results.groups?.actor;
-                        model.action = results.groups?.action;
-                        model.target = results.groups?.target;
-                        model.amount = misses.includes( i ) ? undefined : +results.groups?.amount;
-                        model.avoidType = results.groups?.avoidType;
-                        model.damageType = results.groups?.damageType;
-                        model.overHealing = +results.groups?.overhealing;
-
-                        // We may use this if performance requires it.  However, most thing late game with have some modifier on it.
-                        // if ( raw.match( /\)$/gi ) ) {
-                            
-                        // }
-
-                        let combatModifiers = /\. \((?<combatModifiers>.*)\)$/gi.exec( raw )?.groups?.combatModifiers;
-                        if ( combatModifiers ) {
-
-                            let checkModifiers = ( modifierName ) => {
-                                
-                                if ( combatModifiers.length === 0 ) {
-                                    return false;
-                                }
-    
-                                let i = combatModifiers.indexOf( modifierName );
-                                
-                                if ( i > -1 ) {
-                                    combatModifiers = combatModifiers.substring( 0, i ) + combatModifiers.substring( i + modifierName.length );
-                                    return true;
-                                }
-    
-                                return false;
-                            }
-
-                            checkModifiers( 'Critical' ) && model.combatModifiers.push( 'critical' );
-                            checkModifiers( 'Crippling Blow' ) && model.combatModifiers.push( 'crippling_blow' );
-                            checkModifiers( 'Flurry' ) && model.combatModifiers.push( 'flurry' );
-                            checkModifiers( 'Lucky' ) && model.combatModifiers.push( 'lucky' );
-                            checkModifiers( 'Twincast' ) && model.combatModifiers.push( 'twincast' );
-                            checkModifiers( 'Riposte' ) && model.combatModifiers.push( 'riposte' );
-                            checkModifiers( 'Strikethrough' ) && model.combatModifiers.push( 'strikethrough' );
-                            checkModifiers( 'Wild Rampage' ) && model.combatModifiers.push( 'wild_rampage' );
-                            checkModifiers( 'Rampage' ) && model.combatModifiers.push( 'rampage' );
-                            checkModifiers( 'Assassinate' ) && model.combatModifiers.push( 'assassinate' );
-                            checkModifiers( 'Headshot' ) && model.combatModifiers.push( 'headshot' );
-                            checkModifiers( 'Double Bow Shot' ) && model.combatModifiers.push( 'double_bow_shot' );
-                            checkModifiers( 'Deadly Strike' ) && model.combatModifiers.push( 'deadly_strike' );
-                            checkModifiers( 'Finishing Blow' ) && model.combatModifiers.push( 'finishing_blow' );
-
-                        } else {
-                            model.combatModifiers.push( 'normal' );
-                        }
-                        
-                        model.timestamp = timestamp;
-                        model.characterId = characterId;
-    
-                        ipcRenderer.send( 'overlay:send:fct-component', model );
-    
-                        // leave the loop, we found the correct FCT type.
-                        break;
-    
-                    } // if ( results && results.length > 1 )
-    
-                } // for ( let i = 0; i < fctRegExs.length; i++ )
-
-            } catch ( error ) {
-                logError( error, raw, simulating, padTime, ErrorMessages.fctException(), null );
-
-            }
-        
-        }
-
         // If there are any cancellable actions, evaluate them here.
         if ( cancellableComponents?.length > 0 ) {
             let tokenIds = [];
@@ -2025,7 +1598,7 @@ function parseLogEntries( raw, simulating, padTime ) {
                         tokenIds.push( token.instanceId );
                     }
                 } catch ( error ) {
-                    logError( error, raw, simulating, padTime, ErrorMessages.cancellableParse(), actionInstances[ token.instanceId ]?.trigger );
+                    logHistoryMgr.logError( error, raw, simulating, padTime, ErrorMessages.cancellableParse(), actionInstances[ token.instanceId ]?.trigger );
                 }
 
             } );
@@ -2047,13 +1620,13 @@ function parseLogEntries( raw, simulating, padTime ) {
                             token._trigger( token.instanceId, timestamp );
                             secondaryTriggerActions.splice( i, 1 );
                         } catch (error) {
-                            logError( error, raw, simulating, padTime, ErrorMessages.secondaryTriggerExecution(), actionInstances[ token.instanceId ]?.trigger );
+                            logHistoryMgr.logError( error, raw, simulating, padTime, ErrorMessages.secondaryTriggerExecution(), actionInstances[ token.instanceId ]?.trigger );
                         }
 
                     }
 
                 } catch ( error ) {
-                    logError( error, raw, simulating, padTime, ErrorMessages.secondaryTriggerParse(), actionInstances[ token.instanceId ]?.trigger );
+                    logHistoryMgr.logError( error, raw, simulating, padTime, ErrorMessages.secondaryTriggerParse(), actionInstances[ token.instanceId ]?.trigger );
                 }
             }
             
@@ -2072,13 +1645,13 @@ function parseLogEntries( raw, simulating, padTime ) {
                             token._trigger( token.instanceId, timestamp );
                             dotWornOffTracking.splice( i, 1 );
                         } catch (error) {
-                            logError( error, raw, simulating, padTime, ErrorMessages.secondaryTriggerExecution(), actionInstances[ token.instanceId ]?.trigger );
+                            logHistoryMgr.logError( error, raw, simulating, padTime, ErrorMessages.secondaryTriggerExecution(), actionInstances[ token.instanceId ]?.trigger );
                         }
 
                     }
 
                 } catch ( error ) {
-                    logError( error, raw, simulating, padTime, ErrorMessages.secondaryTriggerParse(), actionInstances[ token.instanceId ]?.trigger );
+                    logHistoryMgr.logError( error, raw, simulating, padTime, ErrorMessages.secondaryTriggerParse(), actionInstances[ token.instanceId ]?.trigger );
                 }
             }
             
@@ -2110,7 +1683,7 @@ function parseLogEntries( raw, simulating, padTime ) {
                     }
 
                 } catch (error) {
-                    logError( error, raw, simulating, padTime, ErrorMessages.counterExecution( key ), null );
+                    logHistoryMgr.logError( error, raw, simulating, padTime, ErrorMessages.counterExecution( key ), null );
                 }
 
             }
@@ -2136,7 +1709,7 @@ function parseLogEntries( raw, simulating, padTime ) {
 
                                 executeTriggerAction( trigger, action, timestamp, res, deltaTime, simulating );
                                 
-                                addSuccessfulTriggerParsedEvent(
+                                logHistoryMgr.addSuccessfulTriggerParsedEvent(
                                     log,
                                     trigger.triggerId,
                                     action.actionId,
@@ -2157,15 +1730,14 @@ function parseLogEntries( raw, simulating, padTime ) {
                         }
                             
                     } catch ( error ) {
-                        logError( error, raw, simulating, padTime, ErrorMessages.triggerExecution(), trigger );
+                        logHistoryMgr.logError( error, raw, simulating, padTime, ErrorMessages.triggerExecution(), trigger );
                     }
-                            
-
+                    
                 } );
             }
 
             // } catch ( error ) {
-            //     logError( error, raw, simulating, padTime, ErrorMessages.triggerParse(), trigger );
+            //     logHistoryMgr.logError( error, raw, simulating, padTime, ErrorMessages.triggerParse(), trigger );
             // }
             
         } );
@@ -2176,8 +1748,13 @@ function parseLogEntries( raw, simulating, padTime ) {
             parsedLogEntries[ t ].push( log );
         }
 
+        // let endp = performance.now(); //p
+        // let p = ( endp - startp ); //p
+
+        // console.log( 'p', p, raw ); //p
+
     } catch ( error ) {
-        logError( error, raw, simulating, padTime, ErrorMessages.generalParsingError(), null );
+        logHistoryMgr.logError( error, raw, simulating, padTime, ErrorMessages.generalParsingError(), null );
     }
 
 }
@@ -2276,7 +1853,8 @@ function executeTriggerAction( trigger, action, timestamp, res, deltaTime, simul
         /* --== Buff Timers ==-- */
     
         let spellName = trigger?._conditionResults?.SpellBeingCast ?? action.displayText;
-        let rgx = new RegExp( `^You begin casting ${spellName}\\.$`, 'gmi' );
+        buffRegExs[ spellName ] = buffRegExs[ spellName ] ?? new RegExp( `^You begin casting ${spellName}\\.$`, 'mi' );
+        rgx = buffRegExs[ spellName ];
         let time = timestamp.getTime();
         let _t = timestamp.getTime();
         if ( action.castTime >= 3000 && charModel.hasBeneficialCastingSpeedFocus && !action.skipBenCastingTimeFocus ) {
@@ -2349,6 +1927,7 @@ function clearAll() {
         counters[ key ].value = 0;
     }
 
+    // storedVariableHash = {};
     for ( const key of Object.keys( storedVariables ) ) {
         storedVariables[ key ] = [];
     }
@@ -2366,8 +1945,9 @@ function clearAll() {
     changingLogFile = true;
     window.setTimeout( () => {
         changingLogFile = false;
-        // currentPosition = null;
-        backfind( logFilePath, () => startParsingLogFile( logFilePath, currentPosition >= 0 ? currentPosition : null ) );
+        fileMonitor.stopMonitoringLogFile().then( position => {
+            backfind().then( () => startParsingLogFile( logFilePath, position >= 0 ? position : null ) );
+        } );
     }, logParseTimer );
 
     ipcRenderer.send( 'renderer:clear-all', null );
@@ -2476,18 +2056,21 @@ function displayBeneficialTimerComponent( res, timestamp, action, trigger, spell
 
     if ( comp.action.endEarlyPhrases?.length > 0 ) {
         let renderedPhrases = renderPhrases( comp.action.endEarlyPhrases, trigger._conditionResults, res.result );
+        /** @type {RegExp[]} */
+        let renderedRegExs = [];
 
         cancellableComponents.push( {
             _parse: ( logEntry ) => {
                 let matched = false;
                 
-                renderedPhrases.forEach( (phrase, i) => {
-                    let _res = new RegExp( phrase, 'gi' ).exec( logEntry );
+                renderedPhrases.forEach( ( phrase, i ) => {
+                    renderedRegExs[ i ] = renderedRegExs[ i ] ?? new RegExp( phrase, getPhraseRegexOptions( comp.action.endEarlyPhrases[ i ] ) );
+                    let _res = renderedRegExs[ i ].exec( logEntry );
                     if ( _res?.length > 0 ) {
                         enableLogging && sendInformationToLog( `DoT Timer ended early: [${logEntry}]` );
                         matched = true;
                         
-                        addSuccessfulTriggerParsedEvent(
+                        logHistoryMgr.addSuccessfulTriggerParsedEvent(
                             logEntry,
                             trigger.triggerId,
                             action.actionId,
@@ -2505,25 +2088,6 @@ function displayBeneficialTimerComponent( res, timestamp, action, trigger, spell
                         
                     }
                 } );
-
-                if ( !matched ) {
-                    addFailedTriggerParsedEvent(
-                        logEntry,
-                        trigger.triggerId,
-                        action.actionId,
-                        'Trigger Cancel Action',
-                        renderedPhrases,
-                        comp.action.endEarlyPhrases.map( p => p.phrase ),
-                        {
-                            phraseId: null,
-                            result: null,
-                            renderedPhrase: null,
-                            dependencyResult: res.result,
-                        },
-                        trigger._conditionResults,
-                        undefined,
-                    );
-                }
 
                 return matched;
             },
@@ -2562,9 +2126,9 @@ function displayDotTimerComponent( res, timestamp, action, deltaTime, trigger ) 
             let exclude = false;
 
             if ( action.excludeTargets[ i ].useRegEx ) {
-                exclude = res.result[ 1 ].match( new RegExp( action.excludeTargets[ i ].phrase, 'g' ) )?.length > 0;
+                exclude = res.result[ 1 ].match( new RegExp( action.excludeTargets[ i ].phrase, getPhraseRegexOptions( action.excludeTargets[ i ] ) ) )?.length > 0;
             } else {
-                let _rgx = new RegExp( '^' + action.excludeTargets[ i ].phrase.replace( /[.*+?^${}()|[\]\\]/g, '\\$&' ) + '$', 'gi' );
+                let _rgx = new RegExp( '^' + action.excludeTargets[ i ].phrase.replace( /[.*+?^${}()|[\]\\]/g, '\\$&' ) + '$', 'i' );
                 exclude = res.result[ 1 ].match( _rgx )?.length > 0;
             }
 
@@ -2663,18 +2227,21 @@ function displayDotTimerComponent( res, timestamp, action, deltaTime, trigger ) 
 
     if ( comp.action.endEarlyPhrases?.length > 0 ) {
         let renderedPhrases = renderPhrases( comp.action.endEarlyPhrases, trigger._conditionResults, res.result, deltaTime );
+        /** @type {RegExp[]} */
+        let renderedRegExs = [];
 
         cancellableComponents.push( {
             _parse: ( logEntry ) => {
                 let matched = false;
                 
-                renderedPhrases.forEach( (phrase, i) => {
-                    let _res = new RegExp( phrase, 'gi' ).exec( logEntry );
+                renderedPhrases.forEach( ( phrase, i ) => {
+                    renderedRegExs[ i ] = renderedRegExs[ i ] ?? new RegExp( phrase, getPhraseRegexOptions( comp.action.endEarlyPhrases[ i ] ) );
+                    let _res = renderedRegExs[ i ].exec( logEntry );
                     if ( _res?.length > 0 ) {
                         enableLogging && sendInformationToLog( `DoT Timer ended early: [${logEntry}]` );
                         matched = true;
                         
-                        addSuccessfulTriggerParsedEvent(
+                        logHistoryMgr.addSuccessfulTriggerParsedEvent(
                             logEntry,
                             trigger.triggerId,
                             action.actionId,
@@ -2693,25 +2260,6 @@ function displayDotTimerComponent( res, timestamp, action, deltaTime, trigger ) 
                     }
                 } );
 
-                if ( !matched ) {
-                    addFailedTriggerParsedEvent(
-                        logEntry,
-                        trigger.triggerId,
-                        action.actionId,
-                        'Trigger Cancel Action',
-                        renderedPhrases,
-                        comp.action.endEarlyPhrases.map( p => p.phrase ),
-                        {
-                            phraseId: null,
-                            result: null,
-                            renderedPhrase: null,
-                            dependencyResult: res.result,
-                        },
-                        trigger._conditionResults,
-                        deltaTime,
-                    );
-                }
-
                 return matched;
             },
             instanceId: comp.instanceId
@@ -2721,6 +2269,8 @@ function displayDotTimerComponent( res, timestamp, action, deltaTime, trigger ) 
     if ( comp.action.secondaryPhrases?.length > 0 ) {
         let phrases = trigger.capturePhrases.filter( f => comp.action.secondaryPhrases.indexOf( f.phraseId ) > -1 );
         let renderedPhrases = renderPhrases( phrases, trigger._conditionResults, res.result, deltaTime, true );
+        /** @type {RegExp[]} */
+        let renderedRegExs = [];
 
         secondaryTriggerActions.push( {
             /**
@@ -2733,12 +2283,13 @@ function displayDotTimerComponent( res, timestamp, action, deltaTime, trigger ) 
                 let matched = false;
                 
                 renderedPhrases.forEach( ( phrase, i ) => {
-                    let _res = new RegExp( phrase, 'gi' ).exec( logEntry );
+                    renderedRegExs[ i ] = renderedRegExs[ i ] ?? new RegExp( phrase, getPhraseRegexOptions( phrases[ i ] ) );
+                    let _res = renderedRegExs[ i ].exec( logEntry );
                     if ( _res?.length > 0 ) {
                         enableLogging && sendInformationToLog( `DoT Timer secondary action: [${logEntry}]` );
                         matched = true;
                         
-                        addSuccessfulTriggerParsedEvent(
+                        logHistoryMgr.addSuccessfulTriggerParsedEvent(
                             logEntry,
                             trigger.triggerId,
                             action.actionId,
@@ -2755,25 +2306,6 @@ function displayDotTimerComponent( res, timestamp, action, deltaTime, trigger ) 
                             deltaTime );
                     }
                 } );
-
-                if ( !matched ) {
-                    addFailedTriggerParsedEvent(
-                        logEntry,
-                        trigger.triggerId,
-                        action.actionId,
-                        'Trigger Secondary Action',
-                        renderedPhrases,
-                        phrases.map( p => p.phrase ),
-                        {
-                            phraseId: null,
-                            result: null,
-                            renderedPhrase: null,
-                            dependencyResult: res.result,
-                        },
-                        trigger._conditionResults,
-                        deltaTime,
-                    );
-                }
 
                 return matched;
             },
@@ -2801,8 +2333,11 @@ function displayDotTimerComponent( res, timestamp, action, deltaTime, trigger ) 
         // ^Your Polybiad Venom(?:\sRk\. III?)? spell has worn off of Combat Dummy Azia\.
         wornOffPhrase.phrase = `^Your ${trigger.name}(?:\\sRk\\. III?)? spell has worn off of ?{target}\\.`;
         wornOffPhrase.useRegEx = true;
+        wornOffPhrase.ignoreCase = true;
         wornOffPhrase.phraseId = nanoid();
         let renderedWornOffPhrases = renderPhrases( [ wornOffPhrase ], trigger._conditionResults, res.result, deltaTime, true );
+        /** @type {RegExp[]} */
+        let renderedWornOffRegExs = [];
         
         dotWornOffTracking.push( {
             /**
@@ -2815,11 +2350,12 @@ function displayDotTimerComponent( res, timestamp, action, deltaTime, trigger ) 
                 
                 for ( let i = 0; i < renderedWornOffPhrases.length; i++ ) {
                     const phrase = renderedWornOffPhrases[ i ];
-                    let _res = new RegExp( phrase, 'gi' ).exec( logEntry );
+                    renderedWornOffRegExs[ i ] = renderedWornOffRegExs[ i ] ?? new RegExp( phrase, getPhraseRegexOptions( wornOffPhrase ) );
+                    let _res = renderedWornOffRegExs[ i ].exec( logEntry );
                     if ( _res?.length > 0 ) {
                         enableLogging && sendInformationToLog( `DoT Timer worn off: [${logEntry}]` );
                         
-                        addSuccessfulTriggerParsedEvent(
+                        logHistoryMgr.addSuccessfulTriggerParsedEvent(
                             logEntry,
                             trigger.triggerId,
                             action.actionId,
@@ -2838,23 +2374,6 @@ function displayDotTimerComponent( res, timestamp, action, deltaTime, trigger ) 
                         return true;
                     }
                 }
-
-                addFailedTriggerParsedEvent(
-                    logEntry,
-                    trigger.triggerId,
-                    action.actionId,
-                    'Trigger Cancel Action',
-                    renderedWornOffPhrases,
-                    [ wornOffPhrase.phrase ],
-                    {
-                        phraseId: null,
-                        result: null,
-                        renderedPhrase: null,
-                        dependencyResult: res.result,
-                    },
-                    trigger._conditionResults,
-                    deltaTime,
-                );
 
                 return false;
             },
@@ -2997,72 +2516,61 @@ function displayTimerCountdownComponent(res, timestamp, action, deltaTime, trigg
     // reset the trigger.
     trigger._reset();
 
-    ipcRenderer.send( 'overlay:send:component', comp );
+    if ( comp.action.duration > 0 ) {
+        // Timers with zero duration are non-sensical, or "undefined" if you like.
+        ipcRenderer.send( 'overlay:send:component', comp );
 
-    if ( comp.action.endEarlyPhrases?.length > 0 ) {
-        let renderedPhrases = renderPhrases( comp.action.endEarlyPhrases, trigger._conditionResults, res.result, deltaTime );
+        if ( comp.action.endEarlyPhrases?.length > 0 ) {
+            let renderedPhrases = renderPhrases( comp.action.endEarlyPhrases, trigger._conditionResults, res.result, deltaTime );
+            /** @type {RegExp[]} */
+            let renderedRegExs = [];
 
-        cancellableComponents.push( {
-            _parse: ( logEntry ) => {
-                let matched = false;
+            cancellableComponents.push( {
+                _parse: ( logEntry ) => {
+                    let matched = false;
 
-                for ( let i = 0; i < renderedPhrases.length; i++ ) {
-                    const phrase = renderedPhrases[ i ];
-                    let _res = new RegExp( phrase, 'gi' ).exec( logEntry );
-                    if ( _res?.length > 0 ) {
-                        enableLogging && sendInformationToLog( `Timer/Countdown/Stopwatch ended early: [${logEntry}]` );
-                        matched = true;
+                    for ( let i = 0; i < renderedPhrases.length; i++ ) {
+                        const phrase = renderedPhrases[ i ];
+                        renderedRegExs[ i ] = renderedRegExs[ i ] ?? new RegExp( phrase, getPhraseRegexOptions( comp.action.endEarlyPhrases[ i ] ) );
+                        let _res = renderedRegExs[ i ].exec( logEntry );
+                        if ( _res?.length > 0 ) {
+                            enableLogging && sendInformationToLog( `Timer/Countdown/Stopwatch ended early: [${logEntry}]` );
+                            matched = true;
                         
-                        addSuccessfulTriggerParsedEvent(
-                            logEntry,
-                            trigger.triggerId,
-                            action.actionId,
-                            'Trigger Cancel Action',
-                            phrase,
-                            comp.action.endEarlyPhrases[ i ].phrase,
-                            {
-                                phraseId: comp.action.endEarlyPhrases[ i ].phraseId,
-                                result: _res,
-                                renderedPhrase: phrase,
-                                dependencyResult: res.result,
-                            },
-                            trigger._conditionResults,
-                            deltaTime );
+                            logHistoryMgr.addSuccessfulTriggerParsedEvent(
+                                logEntry,
+                                trigger.triggerId,
+                                action.actionId,
+                                'Trigger Cancel Action',
+                                phrase,
+                                comp.action.endEarlyPhrases[ i ].phrase,
+                                {
+                                    phraseId: comp.action.endEarlyPhrases[ i ].phraseId,
+                                    result: _res,
+                                    renderedPhrase: phrase,
+                                    dependencyResult: res.result,
+                                },
+                                trigger._conditionResults,
+                                deltaTime );
                         
 
-                        if ( comp.action.actionType === ActionTypes.Stopwatch ) {
-                            // TODO: This should be done with actual capture phrase properties instead of intercepting the end early phrases and modifying the results unnaturally.
-                            ipcRenderer.send( 'renderer:stopwatch:stop', comp.instanceId );
+                            if ( comp.action.actionType === ActionTypes.Stopwatch ) {
+                                // TODO: This should be done with actual capture phrase properties instead of intercepting the end early phrases and modifying the results unnaturally.
+                                ipcRenderer.send( 'renderer:stopwatch:stop', comp.instanceId );
 
-                            // If this is a stopwatch, we need to send the stop command to the renderer, and tell the log watcher that the parse failed to prevent the log parser from destroying the component entirely.
-                            return false;
+                                // If this is a stopwatch, we need to send the stop command to the renderer, and tell the log watcher that the parse failed to prevent the log parser from destroying the component entirely.
+                                return false;
+                            }
                         }
                     }
-                }
 
-                if ( !matched ) {
-                    addFailedTriggerParsedEvent(
-                        logEntry,
-                        trigger.triggerId,
-                        action.actionId,
-                        'Trigger Cancel Action',
-                        renderedPhrases,
-                        comp.action.endEarlyPhrases.map( p => p.phrase ),
-                        {
-                            phraseId: null,
-                            result: null,
-                            renderedPhrase: null,
-                            dependencyResult: res.result,
-                        },
-                        trigger._conditionResults,
-                        deltaTime,
-                    );
-                }
-
-                return matched;
-            },
-            instanceId: comp.instanceId
-        } );
+                    return matched;
+                },
+                instanceId: comp.instanceId
+            } );
+        }
+    } else {
+        log( 'Timer/Countdown/Stopwatch with zero duration will not be rendered.', comp.action );
     }
 
     return comp.instanceId;
@@ -3422,22 +2930,20 @@ function storeHasValue( key, value ) {
  */
 function storeContainsValue( key, value ) {
     
-    if ( storedVariables[ key ]?.length > 0 ) {
+    if ( storedVariables[ key ]?.length > 0 && value?.length > 0 ) {
         if ( value instanceof Array ) {
+            let values = value.map( v => v.toLowerCase() );
             for ( let i = 0; i < storedVariables[ key ].length; i++ ) {
-                for ( let v = 0; v < value.length; v++ ) {
-                    let rgx = new RegExp( value[ v ].replace( /[.*+?^${}()|[\]\\]/g, '\\$&' ), 'gi' );
-                    
-                    if ( storedVariables[ key ][ i ].match( rgx ) ) {
+                for ( let v = 0; v < values.length; v++ ) {
+                    if ( storedVariables[ key ][ i ].toLowerCase().indexOf( values[ v ] ) > -1 ) {
                         return { exists: true, value: storedVariables[ key ][ i ] };
                     }
                 }
             }
         } else {
+            let v = value.toLowerCase();
             for ( let i = 0; i < storedVariables[ key ].length; i++ ) {
-                let rgx = new RegExp( value.replace( /[.*+?^${}()|[\]\\]/g, '\\$&' ), 'gi' );
-
-                if ( storedVariables[ key ][ i ].match( rgx ) ) {
+                if ( storedVariables[ key ][ i ].toLowerCase().indexOf( v ) > -1 ) {
                     return { exists: true, value: storedVariables[ key ][ i ] };
                 }
             }
@@ -3638,8 +3144,8 @@ function speakPhrase( phrase, interrupt, speakNext, conditionResults, simulating
     
         }
         
-    } else {
-        console.log( 'speaking', StringUtilities.parseStoredVariablesToLiteral( action.displayText, storedVariables ) );
+    } else if ( !simulating ) {
+        nagException( { label: 'Speech Synthesis', message: phrase == null ? 'No phrase to speak' : 'No voice selected.', payload: { phrase: phrase, interrupt: interrupt, speakNext: speakNext, conditionResults: conditionResults, simulating: simulating, parseResult: parseResult, timerDuration: timerDuration, deltaTime: deltaTime, volume: volume, rate: rate } } );
 
     }
     
@@ -3711,11 +3217,11 @@ function calculateBeneficialCastingMilliseconds( castTime, timerDuration, trigge
     let wornFocus = characterModel.beneficialCastingSpeedFocusPercent ?? 0;
     let aaFocus = characterModel.beneficialCastingSpeedFocusAaPercent ?? 0;
     let durationLimit = characterModel.beneficialCastingSpeedFocusAaDurationLimit > 0 ? characterModel.beneficialCastingSpeedFocusAaDurationLimit : 6000;
-    let percent = timerDuration >= durationLimit ? wornFocus + aaFocus : wornFocus;
+    let percent = timerDuration * 1000 >= durationLimit ? wornFocus + aaFocus : wornFocus;
     let charClassData = _.find( triggerClasses, ccl => ccl.class === charModel.class );
 
-    if ( charClassData != null && charClassData.level > characterModel.extendedBeneficialFocusDecayLevel ) {
-        let decayPercent = ( charClassData.level - characterModel.extendedBeneficialFocusDecayLevel ) * 5;
+    if ( charClassData != null && charClassData.level > characterModel.beneficialCastingSpeedFocusDecayLevel ) {
+        let decayPercent = ( charClassData.level - characterModel.beneficialCastingSpeedFocusDecayLevel ) * 5;
         percent = percent * ( 1 - decayPercent / 100 );
     }
 
@@ -3827,138 +3333,84 @@ function checkParseHistory( phrase, options ) {
 
 /**
  * Parses backwards in the log file to find a match.  If found, returns the matched results.
- * 
- * @param {string} log The log file to parse.
- * @param {() => void} callback When all look-backs are completed, this method is executed.
  */
-function backfind( log, callback ) {
+async function backfind() {
 
-    let _triggers = _.filter( triggers, t => _.some( t.actions, a => a.loopBackForValue === true ) );
+    if ( fileMonitor == null )
+        throw new Error( 'File monitor is not initialized.' );
 
-    // TODO: Loopback check, wat!?
+    let _triggers = triggers.filter( t => t.actions?.some( a => a.loopBackForValue === true ) );
+
+    let valueExists = ( variableName ) => {
+        return storedVariables[ variableName ] instanceof Array ? storedVariables[ variableName ].length > 0 : !!storedVariables[ variableName ];
+    }
+
     /**
-     * Returns false if there is a trigger requiring loopback and still missing a value.
+     * Returns true if there is a trigger requiring loopback and still missing a value.
      */
-    function valuesMissing() {
+    const valuesMissing = () => {
         for ( let ti = 0; ti < _triggers?.length ?? 0; ti++ ) {
             for ( let ai = 0; ai < _triggers[ ti ].actions?.length ?? 0; ai++ ) {
-                let hasValue = storedVariables[ _triggers[ ti ].actions[ ai ].variableName ] instanceof Array ? storedVariables[ _triggers[ ti ].actions[ ai ].variableName ].length > 0 : !!storedVariables[ _triggers[ ti ].actions[ ai ].variableName ];
-                if ( hasValue ) {
-                    return false;
+                let variableName = _triggers[ ti ].actions[ ai ].variableName;
+                if ( variableName && !valueExists( variableName ) ) {
+                    return true;
                 }
             }
         }
 
-        return true;
+        return false;
     }
 
-    if ( valuesMissing() ) {
-        fs.open( log, 'r', function ( err, fd ) {
-            if ( fd ) {
-                let danglyBits = null;
-                var stats = fs.fstatSync( fd );
-                let myChunkSize = stats.size < chunkSize ? stats.size : chunkSize;
-                // let myChunkSize = stats.size;
-                let position = stats.size; //  Start at the end of the file.
+    await fileMonitor.backfind( lines => {
+        if ( lines?.length > 1 ) {
+            for ( let i = lines.length - 1; i > 0; i-- ) {
+                
+                if ( !valuesMissing() )
+                    // If all values are found, stop looking.
+                    return false;
 
-                /**
-                 * 
-                 * @param {number} readCount 
-                 */
-                function parseChunk( readCount ) {
-                    let start = stats.size - readCount - myChunkSize;
-                    if ( start < 0 ) {
-                        start = 0;
-                        myChunkSize = stats.size - readCount;
-                    }
-                    if ( position <= 0 || !valuesMissing() ) {
-                        // If we've reached the beginning of the file or all values where parsed, execute the callback function and end parsing.
-                        callback();
+                // Check for a valid timestamp in the line.
+                let log = lines[ i ]?.replace( /^\[(.*?)\]\s*/gi, '' );
 
-                    } else {
-                        fs.read( fd, Buffer.alloc( myChunkSize ), 0, myChunkSize, start, ( err, bytecount, buff ) => {
-                        
-                            let read = buff.toString( 'utf-8', 0, bytecount );
-                            let lines = read.split( /\r\n|\r|\n/gmi );
+                if ( log ) {
+                    try {
+                        _triggers.forEach( trigger => {
+                            trigger._parse( log, res => {
+                                trigger.actions.forEach( action => {
+                                    if ( action.phrases?.indexOf( res.phraseId ) > -1 && action.actionType === ActionTypes.StoreVariable ) {
+                                        /* --== Store Variable ==-- */
 
-                            if ( position < stats.size ) {
-                                lines[ lines.length - 1 ] += danglyBits;
-                            }
-                            danglyBits = lines[ 0 ];
+                                        if ( action.loopBackForValue && action.variableName && !valueExists( action.variableName ) ) {
 
-                            if ( lines?.length > 1 ) {
-                                for ( let i = lines.length - 1; i > 0; i-- ) {
-                                    // We want to parse backwards, reading all lines except for the first in the list, this is because the first in the list could be a partial line.
-                                    if ( lines[ i ].length > 0 && lines[ i ].charAt( 0 ) === '[' ) {
-                                        try {
-                                            _triggers.forEach( trigger => {
-                                                // Check for a valid timestamp in the line.
-                                                let log = lines[ i ].replace( /^\[(.*?)\]\s*/gi, '' );
-
-                                                trigger._parse( log, res => {
-                                                    trigger.actions.forEach( action => {
-                                                        if ( action.phrases?.indexOf( res.phraseId ) > -1 && action.actionType === ActionTypes.StoreVariable ) {
-                                                            /* --== Store Variable ==-- */
-                    
-                                                            if ( action.loopBackForValue ) {
-                                                                if ( res.result.length === 1 ) {
-                                                                    saveVariable( action.variableName, res.result[ 0 ], action.onlyStoreUsedValues );
-                                                                } else {
-                                                                    saveVariable( action.variableName, res.result[ 1 ], action.onlyStoreUsedValues );
-                                                                }
-                                
-                                                                addSuccessfulTriggerParsedEvent(
-                                                                    log,
-                                                                    trigger.triggerId,
-                                                                    action.actionId,
-                                                                    'Trigger Action Loopback',
-                                                                    res.renderedPhrase,
-                                                                    trigger.capturePhrases.find( p => p.phraseId === res.phraseId )?.phrase,
-                                                                    res,
-                                                                    trigger._conditionResults,
-                                                                    undefined );
-                                                            }
-
-                                                        }
-                                                    } );
-                                                } );
-                                            } );
-                                            
-                                        } catch ( error ) {
-                                            enableLogging && sendInformationToLog( `Failure attempting to read line: ${lines[ i ]}` );
+                                            const v = res.result.length === 1 ? res.result[ 0 ] : res.result[ 1 ];
+                                            saveVariable( action.variableName, v, action.onlyStoreUsedValues );
+            
+                                            logHistoryMgr.addSuccessfulTriggerParsedEvent(
+                                                log,
+                                                trigger.triggerId,
+                                                action.actionId,
+                                                'Trigger Action Loopback',
+                                                res.renderedPhrase,
+                                                trigger.capturePhrases.find( p => p.phraseId === res.phraseId )?.phrase,
+                                                res,
+                                                trigger._conditionResults,
+                                                undefined );
                                         }
+
                                     }
-                                    
-
-                                    if ( !valuesMissing() ) {
-                                        window.setTimeout( () => callback() );
-                                        return;
-                                    }
-                                }
-                            }
-
-                            if ( bytecount <= 0 ) {
-                                // If bytes read was 0, something went wonky and we need to trigger an exit condition.
-                                position = -1;
-                            }
-                            
-                            position -= bytecount;
-
-                            parseChunk(bytecount);
-
+                                } );
+                            } );
                         } );
+                        
+                    } catch ( error ) {
+                        enableLogging && sendInformationToLog( `Failure attempting to read line: ${lines[ i ]}` );
                     }
                 }
-
-                parseChunk(0);
-                
             }
-        } );
-    } else {
-        callback();
+        }
 
-    }
-
+        return valuesMissing();
+    } );
 }
 
 
@@ -4100,7 +3552,7 @@ function getPersistentDictionaryValue( key, res, timestamp, action, deltaTime, t
  */
 function loadLastDeathRecap() {
 
-    let message = new IpcMessage( { logFilePath: charModel.logFile, characterName: characterName } );
+    let message = new IpcMessage( { logFilePath: charModel.logFile, characterName: characterName, serverName: charModel.server } );
     ipcRenderer.send( 'window:last-death-recap', message );
     
 }

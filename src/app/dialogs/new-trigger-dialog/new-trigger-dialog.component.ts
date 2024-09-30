@@ -134,6 +134,7 @@ export class NewTriggerDialogComponent implements OnInit {
         trigger.capturePhrases.push( <CapturePhrase>{
             phraseId: nanoid(),
             useRegEx: true,
+            ignoreCase: true,
             requirePreviousPhrase: false,
             duration: null,
             // ^?{target} has taken (?<damage>[0-9]*) ?damage from your Poison Bolt\.
@@ -189,6 +190,7 @@ export class NewTriggerDialogComponent implements OnInit {
                 phraseId: nanoid(),
                 phrase: '^(?:A\\s|An\\s|a\\s|an\\s|[a-z])',
                 useRegEx: true,
+                ignoreCase: false,
             } ) );
         }
         if ( this.cancelTimerIfTargetDies ) {
@@ -197,27 +199,32 @@ export class NewTriggerDialogComponent implements OnInit {
                 phraseId: nanoid(),
                 phrase: '^${target} has been slain by [^!]*!$',
                 useRegEx: true,
+                ignoreCase: true,
             } ) );
             actions.forEach( action => action.endEarlyPhrases.push( <Phrase>{
                 phraseId: nanoid(),
                 phrase: '^You have slain ${target}!$',
                 useRegEx: true,
+                ignoreCase: true,
             } ) );
             actions.forEach( action => action.endEarlyPhrases.push( <Phrase>{
                 phraseId: nanoid(),
                 phrase: '^${target} dies\\.$',
                 useRegEx: true,
+                ignoreCase: true,
             } ) );
             actions.forEach( action => action.endEarlyPhrases.push( <Phrase>{
                 phraseId: nanoid(),
                 // You have been slain by a lightning warrior staticfist!
                 phrase: '^You have been slain by [^!]*!$',
                 useRegEx: true,
+                ignoreCase: true,
             } ) );
             actions.forEach( action => action.endEarlyPhrases.push( <Phrase>{
                 phraseId: nanoid(),
                 phrase: '^${target} died\\.$',
                 useRegEx: true,
+                ignoreCase: true,
             } ) );
         }
         

@@ -12,7 +12,9 @@ const ErrorMessages = {
     /**
      * @param {string} counterName The name of the counter.
      */
-    counterExecution: (counterName) => `Could not execute counter ${counterName}.`,
+    counterExecution: ( counterName ) => `Could not execute counter ${counterName}.`,
+    subActionExecution: ( triggerId ) => 'Could not execute sub-action.' + ( triggerId == 'undefined' || !triggerId ? ' Could not find instance data.' : '' ),
+    generalCombatParsingError: () => 'Failed to parse combat log entry.',
 }
 
 var ActionTypes = {
@@ -49,7 +51,7 @@ var ActionTypes = {
 
 }
 
-var LogTypes = {
+const LogTypes = {
     
     '0': 'info',
     '1': 'error',
@@ -117,8 +119,12 @@ var ExternalDataSources = {
 var TriggerConditionTypes = {
     '0': 'Unknown',
     '1': 'VariableValue',
+    '2': 'NamedGroupValue',
+    '3': 'CounterValue',
     Unknown: 0,
     VariableValue: 1,
+    NamedGroupValue: 2,
+    CounterValue: 3,
 }
 
 var MediaTypes = {
@@ -153,11 +159,13 @@ var ImportTypes = {
     '2': 'Ability',
     '3': 'Npc',
     '4': 'Buff',
+    '5': 'OthersBuff',
     None: 0,
     DotTimer: 1,
     Ability: 2,
     Npc: 3,
     Buff: 4,
+    OthersBuff: 5,
 }
 
 var TimerRestartBehaviors = {
@@ -218,6 +226,10 @@ class Phrase {
     phrase;
     /** @type {boolean} */
     useRegEx;
+    /** @type {boolean} */
+    ignoreCase = true;
+    /** @type {boolean} */
+    dynamic = false;
 
 }
 
@@ -807,6 +819,8 @@ class TriggerParseHistoryModel {
     error;
     /** @type {string} */
     errorDescription;
+    /** @type {string} */
+    hash;
 
 }
 

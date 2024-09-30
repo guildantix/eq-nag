@@ -3,7 +3,7 @@ const DomUtilities = require( '../utilities/dom' );
 const StringUtilities = require( '../utilities/string' );
 const NumberUtilities = require( '../utilities/numbers' );
 const ArrayUtilities = require( '../utilities/arrays' );
-const { OverlayDimensions, OverlayWindow, OverlayComponent, TimerSortTypes, TriggerSecondaryActionModel, FctCombatGroup, CombatTypes, getCombatModifiersFlags, HitStartPositionTypes } = require( '../data/models/overlay-window' );
+const { OverlayDimensions, OverlayWindow, OverlayComponent, TimerSortTypes, TriggerSecondaryActionModel, FctCombatGroup, CombatTypes, getCombatModifiersFlags, HitStartPositionTypes, DisplayMetaModel } = require( '../data/models/overlay-window' );
 const { ActionTypes, TriggerAction, TriggerConditionTypes, OperatorTypes, TimerRestartBehaviors } = require( '../data/models/trigger' );
 const { ipcRenderer } = require( 'electron' );
 const Handlebars = require( "handlebars" );
@@ -14,11 +14,18 @@ const nanoid = customAlphabet( alphabet, 16 );
 const StyleSheetUtil = require( '../utilities/style-sheet' );
 const { FctStylesModel, FctModel, FctTypes, FctRenderComponent, HitAccumulationModel } = require( '../data/models/fct' );
 const ElectronUtilities = require( '../utilities/electron' );
-const { StyleProperties } = require( '../data/models/common' );
+const { StyleProperties, WinInfo } = require( '../data/models/common' );
 const { getCurrentWindow, screen } = require( '@electron/remote' );
 const { DateUtilities } = require( '../utilities/dates' );
 const { SharedTriggerPermissions } = require( '../data/models/sharing-service' );
 const { StylePropertiesModel } = require( '../data/models/core' );
+const MouseUtilities = require( '../utilities/mouse' );
+const { overlayZIndex, overlayTopZIndex, imagesPath } = require( '../utilities/constants' );
+const { PlayerDps, DpsMeterSettings, EncounterStats, EncounterStatsEventArgs, PetDps } = require( '../data/models/combat-parser' );
+const { getEverQuestClassIcon, getEverQuestClassAbbreviation, getEverQuestClassColor } = require( '../utilities/everquest' );
+const { lightenColor, darkenColor } = require( '../utilities/colors' );
+
+const encounterHistoryLimit = 25;
 
 // TODO: List
 //  3. Update the log watcher to capture data that is required by the new combat groups.
@@ -36,6 +43,22 @@ const { StylePropertiesModel } = require( '../data/models/core' );
 
 
 // TODO: Some day we need to remove the old FCT data structure.
+
+
+// TODO: DPS Meter list.
+// DPS Meter:
+//  1. We need to create a new overlay type that is a DPS meter.
+//  2. We need to create the DPS calculations, building on the existing FCT parses.
+//  3. We need to create the rendering routines for the DPS meter.
+//  4. We need to create the animations for the DPS meter.
+//  5. Add pet damage tracking to both the FCT and DPS meter.
+
+// DPS Meter wants:
+//  1. A list of the top 10 DPSers.
+//  2. A way to share your DPS with others.
+//      a. Add class colors and icons to the DPS meter.
+//      b. Add a way to determine classes from the combat log.
+//      c. Persist the class data for each character.
 
 /**
  * Sends the error information to the main thread for logging.
@@ -122,6 +145,8 @@ class OverlayInstance {
     groupHeaderColor;
     /** @type {number} */
     groupHeaderWeight;
+    /** @type {number} */
+    groupMinWidth;
     /** @type {boolean} */
     hideTargetLabel;
     /** @type {OverlayComponent[]} */
@@ -151,6 +176,65 @@ class ReceivedOverlayComponent {
     overlayId;
 }
 
+class DpsItem {
+    /** @type {string} */
+    name;
+    /** @type {PlayerDps[]} */
+    playerDps = [];
+    /** @type {HTMLElement} */
+    dom;
+    /** @type {number} */
+    damage = 0;
+    /** @type {number} */
+    healing = 0;
+    /** @type {number} */
+    dps = 0;
+    /** @type {number} */
+    time = 0;
+    /** @type {boolean} */
+    hasPets = false;
+    /** @type {boolean} */
+    classIsDefined = false;
+    /** @type {string | undefined} */
+    className = undefined;
+}
+
+class EncounterPlayerDps extends PlayerDps {
+    /** @type {string} */
+    encounterId;
+}
+
+const EncounterDisplayTypes = {
+    current: 0,
+    encounter: 1,
+    encounterMob: 2,
+    allData: 3,
+}
+
+class RendererEncounterModel {
+    /** @type {string} */
+    encounterId;
+    /** @type {Date} */
+    start;
+    /** @type {Date | undefined} */
+    end;
+    /** @type {DpsItem[]} */
+    dpsItems;
+    /** @type {string[]} */
+    npcs;
+    /** @type {number} */
+    totalEngagementTime;
+    /** @type {string} */
+    characterName;
+    /** @type {boolean} */
+    ended = false;
+}
+
+class EncounterHistoryModel extends EncounterStats {
+    /** @type {string} */
+    characterName;
+}
+
 /** @type {Record<string, OverlayInstance>} */
 var overlayInstances = {};
 
@@ -162,6 +246,12 @@ var timerTemplate;
 var timerIconTemplate;
 var targetGroupTemplate;
 var targetGroupTimerTemplate;
+/** @type {HandlebarsTemplateDelegate<any>} */
+var dpsWindowTemplate;
+/** @type {HandlebarsTemplateDelegate<any>} */
+var dpsWindowItemTemplate;
+/** @type {HandlebarsTemplateDelegate<any>} */
+var dropdownMenuTemplate;
 var voiceOptions = [];
 /** @type {Record<number, number>} */
 var destroySchedule = {};
@@ -214,11 +304,56 @@ const animateGrowShrinkDuration = 500;
 const accumulationDelay = 750;
 const accumulationIntervalDelay = 25;
 
+/** @type {DisplayMetaModel[]} */
+let displayMetas = [];
+
+/** @type {(() => void)[]} */
+let waitingForDisplays = [];
+
 // let perfTimeTotal = 0;
 // let perfIntervalId = null;
 
 /** @type {HandlebarsTemplateDelegate<any>} */
 let fct2Template;
+
+/** @type {HTMLElement | undefined} */
+let dpsWindow = undefined;
+
+/** @type {EncounterHistoryModel[]} */
+let encounterHistory = [];
+
+/** @type {string[]} */
+let verifiedPlayers = [];
+
+/** @type {string[]} */
+let verifiedNpcs = [];
+
+/** @type {string[]} */
+let verifiedPets = [];
+
+/** @type {Record<string, string>} */
+let petOwners = {};
+
+/** @type {RendererEncounterModel|undefined} */
+let displayedEncounter = undefined;
+
+/** @type {Record<string, PlayerDps[]>} */
+let encounterPlayerDps = {};
+
+/** @type {EncounterDisplayTypes} */
+let dpsWindowDisplayType = EncounterDisplayTypes.current;
+
+/** @type {RendererEncounterModel|undefined} */
+let allDataEncounter = undefined;
+
+/** @type {string | undefined} This is the id of the most current encounter, and is not necessarily the rendered encounter. */
+let currentEncounterId = undefined;
+
+/** @type {DpsMeterSettings} */
+let dpsMeterSettings = new DpsMeterSettings();
+
+/** @type {WinInfo} */
+let activeWinInfo = undefined;
 
 
 
@@ -317,6 +452,475 @@ function setCombatGroupHits( characterId, combatGroupId, value ) {
 
 
 
+
+/**
+ * Returns true if the dom rect is inside a display.
+ * 
+ * @param {DOMRect} bounds The dom bounds.
+ */
+function verifyDomRectOnDisplay( bounds ) {
+    let nw = false;
+    let ne = false;
+    let sw = false;
+    let se = false;
+
+    let domBounds = { x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height };
+    domBounds.x -= origin.x;
+    domBounds.y -= origin.y;
+
+    for ( let i = 0; i < displayMetas.length; i++ ) {
+        const display = displayMetas[ i ];
+
+        if ( domBounds.x >= display.bounds.x && domBounds.x <= display.bounds.x + display.bounds.width && domBounds.y >= display.bounds.y && domBounds.y <= display.bounds.y + display.bounds.height ) {
+            nw = true;
+        }
+        if ( domBounds.x + domBounds.width >= display.bounds.x && domBounds.x + domBounds.width <= display.bounds.x + display.bounds.width && domBounds.y >= display.bounds.y && domBounds.y <= display.bounds.y + display.bounds.height ) {
+            ne = true;
+        }
+        if ( domBounds.x >= display.bounds.x && domBounds.x <= display.bounds.x + display.bounds.width && domBounds.y + domBounds.height >= display.bounds.y && domBounds.y + domBounds.height <= display.bounds.y + display.bounds.height ) {
+            sw = true;
+        }
+        if ( domBounds.x + domBounds.width >= display.bounds.x && domBounds.x + domBounds.width <= display.bounds.x + display.bounds.width && domBounds.y + domBounds.height >= display.bounds.y && domBounds.y + domBounds.height <= display.bounds.y + display.bounds.height ) {
+            se = true;
+        }
+
+    }
+
+    return nw && ne && sw && se;
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Executes the given function when the displays are loaded.
+ * 
+ * @param {() => void} fn The callback function to execute once the displays are loaded.
+ */
+function waitForDisplaysLoaded( fn ) {
+    if ( displayMetas?.length > 0 ) {
+        fn();
+    } else {
+        waitingForDisplays.push( fn );
+    }
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Moves/resizes the given element by the given bounds.
+ * 
+ * @param {HTMLElement} dom The dom element.
+ * @param {import('electron').Rectangle} bounds The bounds.
+ */
+function moveResizeDomElement( dom, bounds ) {
+    dom.style.left = bounds.x + 'px';
+    dom.style.top = bounds.y + 'px';
+    dom.style.width = bounds.width + 'px';
+    dom.style.height = bounds.height + 'px';
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Creates a new dps window.
+ * 
+ * @returns {HTMLElement} Returns the dps window.
+ */
+function createDpsWindow() {
+    
+    /** @type {string} */
+    let dpsWindowHtml = dpsWindowTemplate( {} );
+    // document.write( dpsWindowHtml );
+    let div = createElement( 'div' );
+
+    div.innerHTML = dpsWindowHtml;
+    document.body.appendChild( div );
+
+    div.style.zIndex = overlayTopZIndex + 1;
+    div.style.position = 'relative';
+
+    MouseUtilities.refreshDom();
+
+    let clearFightBtn = div.querySelector( '.clear-encounter' );
+    if ( clearFightBtn ) {
+        clearFightBtn.addEventListener( 'click', () => {
+            clearEncounter();
+        } );
+    }
+
+    let databaseBtn = div.querySelector( '.database-dropdown-menu' );
+    if ( databaseBtn ) {
+        databaseBtn.addEventListener( 'click', () => {
+            let menuObject = {
+                menuItems: [
+                    {
+                        label: 'Show Current Fight',
+                        cssClass: 'fa-eye',
+                        encounterId: 'current fight',
+                        mobName: undefined,
+                        itemType: 'encounter-filter',
+                    },
+                    {
+                        label: 'Show All Data',
+                        cssClass: 'fa-bars',
+                        encounterId: 'all data',
+                        mobName: undefined,
+                        itemType: 'encounter-filter',
+                    },
+                ]
+            };
+
+            for ( let i = encounterHistory.length - 1; i >= 0; i-- ) {
+                const encounter = encounterHistory[ i ];
+                for ( let j = encounter.npcs.length - 1; j >= 0; j-- ) {
+                    const npc = encounter.npcs[ j ];
+                    menuObject.menuItems.push( {
+                        label: npc,
+                        cssClass: 'fa-chevron-right',
+                        encounterId: encounter.encounterId,
+                        mobName: npc,
+                        itemType: 'encounter-filter',
+                    } );
+                }
+            }
+
+            let dropdownHtml = dropdownMenuTemplate( menuObject );
+
+            let menuDiv = document.createElement( 'div' );
+            menuDiv.innerHTML = dropdownHtml;
+            document.body.appendChild( menuDiv );
+
+            let dropdown = menuDiv.firstElementChild;
+            let mouseCoords = MouseUtilities.getMouseUpdate();
+            const mousePadding = 15;
+            dropdown.style.left = ( mouseCoords.x - mousePadding + origin.x ) + 'px';
+            dropdown.style.top = ( mouseCoords.y - mousePadding + origin.y ) + 'px';
+
+            MouseUtilities.refreshDom();
+
+            let clearDropdown = ( ev ) => {
+                menuDiv.remove();
+                menuDiv.removeEventListener( 'mouseleave', clearDropdown );
+            }
+            dropdown.addEventListener( 'mouseleave', clearDropdown );
+        } );
+    }
+
+    return div.querySelector( '.window' );
+
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Clears the current encounter without saving to history.
+ */
+function clearEncounter() {
+    if ( dpsWindow ) {
+        
+        encounterHistory = [];
+        allDataEncounter = undefined;
+
+        if ( displayedEncounter?.encounterId != currentEncounterId || displayedEncounter?.ended ) {
+            
+            dpsWindow.querySelector( '.dps-items' ).innerHTML = '';
+
+            let encounterName = dpsWindow.querySelector( '.encounter-name' );
+            if ( encounterName ) {
+                encounterName.innerHTML = '';
+            }
+    
+            let encounterTime = dpsWindow.querySelector( '.encounter-time' );
+            if ( encounterTime ) {
+                encounterTime.innerHTML = '';
+                encounterTime.classList.remove( 'strong' );
+            }
+
+            displayedEncounter = undefined;
+        }
+
+        // If the current display is not the current encounter or all data, reset it to current encounter.
+        dpsWindowDisplayType = dpsWindowDisplayType !== EncounterDisplayTypes.current && dpsWindowDisplayType !== EncounterDisplayTypes.allData ?
+            EncounterDisplayTypes.current :
+            dpsWindowDisplayType;
+    }
+        
+    updateDpsWindowSettings();
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Updates the settings for the dps meter window.
+ */
+function updateDpsWindowSettings() {
+    
+    if ( dpsWindow ) {
+
+        if ( !dpsMeterSettings.show ) {
+            // Combat stats not enabled?
+            dpsWindow.style.display = 'none';
+            return;
+        }
+
+        // TODO: Show for healing.
+        let showDpsWindow = dpsMeterSettings.showOnlyInCombat ? displayedEncounter?.dpsItems?.filter( f => f.playerDps?.reduce( ( a, b ) => a + b.damage, 0 ) > 0 ).length > 0 : true;
+
+        if ( !dpsMeterSettings.keepOnScreen && showDpsWindow ) {
+
+            if ( activeWinInfo?.ownerName === 'Windows Explorer' && ( activeWinInfo?.title === '' || activeWinInfo?.title === 'Task Switching' ) ) {
+                // Do nothing, the user has clicked on the taskbar.
+            } else if ( activeWinInfo?.ownerName === 'eqgame.exe' || ( activeWinInfo?.nagProcessId != null && activeWinInfo?.processId != null && activeWinInfo.nagProcessId === activeWinInfo.processId ) ) {
+                showDpsWindow = true;
+            } else {
+                showDpsWindow = false;
+            }
+
+        }
+
+        dpsWindow.style.display = 'block';
+        if ( showDpsWindow ) {
+            dpsWindow.classList.remove( 'no-mouse' );
+            dpsWindow.style.visibility = 'visible';
+        } else {
+            dpsWindow.classList.add( 'no-mouse' );
+            dpsWindow.style.visibility = 'hidden';
+        }
+
+        // TODO: Hide clear button if there is no encounter.
+        let clearFightBtn = dpsWindow.querySelector( '.clear-encounter' );
+        if ( clearFightBtn ) {
+            if ( encounterHistory?.length > 0 ) {
+                clearFightBtn.classList.remove( 'hide' );
+                clearFightBtn.classList.add( 'mouse-show' );
+            } else {
+                clearFightBtn.classList.remove( 'mouse-show' );
+                clearFightBtn.classList.add( 'hide' );
+            }
+        }
+    }
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Clears the current dps items.
+ */
+function clearDpsItems() {
+    if ( displayedEncounter ) {
+        
+        displayedEncounter.end = new Date();
+
+        let encounterTime = dpsWindow?.querySelector( '.encounter-time' );
+        if ( encounterTime ) {
+            encounterTime.classList.add( 'strong' );
+        }
+
+    }
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Renders the current dps items.
+ * 
+ * @param {string} characterName The name of the character. Used to highlight the character's name.
+ */
+function renderDpsItems( characterName ) {
+
+    if ( !displayedEncounter ) {
+        return;
+    }
+
+    let totalDamage = 0;
+    let topDamage = 0;
+
+    displayedEncounter.dpsItems.forEach( dpsItem => {
+
+        dpsItem.damage = 0;
+        dpsItem.time = 0;
+        dpsItem.hasPets = false;
+        dpsItem.dps = 0;
+
+        dpsItem.playerDps.forEach( pDps => {
+            dpsItem.damage += pDps.damage + ( pDps.pets?.length > 0 ? pDps.pets.reduce( ( a, b ) => a + b.damage, 0 ) : 0 );
+            dpsItem.time += pDps.time;
+            dpsItem.hasPets = dpsItem.hasPets || pDps.pets.length > 0;
+            dpsItem.classIsDefined = dpsItem.classIsDefined || pDps.class != null;
+            dpsItem.className = dpsItem.className ?? pDps.class;
+        } );
+
+        dpsItem.dps = dpsItem.damage / ( dpsItem.time > 0 ? dpsItem.time : 1 );
+
+        totalDamage += dpsItem.damage;
+        topDamage = Math.max( topDamage, dpsItem.damage );
+    } );
+
+    displayedEncounter.dpsItems = displayedEncounter.dpsItems.sort( ( a, b ) => b.damage - a.damage );
+
+    // Wipe-out the existing lines.
+    const dpsItemsDom = dpsWindow.querySelector( '.dps-items' );
+    dpsItemsDom.innerHTML = '';
+
+    // Create new lines.
+    for ( let i = 0; i < displayedEncounter.dpsItems.length; i++ ) {
+        const dpsItem = displayedEncounter.dpsItems[ i ];
+        let damageDone = dpsItem.damage;
+        let dpsDone = dpsItem.dps;
+        const classAbbr = getEverQuestClassAbbreviation( dpsItem.className );
+        let dpsSec = dpsItem.time;
+        let pctDone = topDamage > 0 ? Math.round( ( damageDone ) / topDamage * 100 ) : 0;
+        const mine = dpsItem.name === characterName;
+
+        // Create a new DPS item dom.
+        let model = {
+            iconImage: `${imagesPath}/${getEverQuestClassIcon( classAbbr )}`,
+            label: dpsItem.hasPets ? `${dpsItem.name} + pet(s)` : `${dpsItem.name}`,
+            value: `${NumberUtilities.toShorthandString( damageDone )} (${NumberUtilities.toShorthandString( dpsDone )}, ${pctDone}%)`,
+            damage: NumberUtilities.toShorthandString( damageDone ),
+            dps: NumberUtilities.toShorthandString( dpsDone ),
+            sec: dpsSec > 0 ? `${dpsSec}s` : '-',
+        };
+
+        dpsItem.dom = createElement( 'div' );
+        dpsItem.dom.classList.add( 'dps-item' );
+        dpsMeterSettings?.highlightMyName && mine && dpsItem.dom.classList.add( 'mine' );
+        dpsItem.dom.innerHTML = dpsWindowItemTemplate( model );
+        dpsItemsDom.appendChild( dpsItem.dom );
+
+        let bar = dpsItem.dom.querySelector( '.determinate' );
+        let colorCode = darkenColor( getEverQuestClassColor( classAbbr ), 0.667 );
+    
+        bar.style.backgroundColor = colorCode;
+        bar.style.width = `${pctDone}%`;
+
+        let topBorder = bar.querySelector( '.border.top' );
+        let bottomBorder = bar.querySelector( '.border.bottom' );
+        let borderColor = lightenColor( colorCode, 0.13 );
+
+        topBorder.style.background = `linear-gradient(to right, transparent, ${borderColor})`;
+        bottomBorder.style.background = `linear-gradient(to right, transparent, ${borderColor})`;
+        
+        if ( dpsItem.classIsDefined ) {
+            
+            /** @type {HTMLSpanElement} */
+            let placeholderSpan = dpsItem.dom.querySelector( '.dps-item-icon-placeholder' );
+            placeholderSpan != null && ( placeholderSpan.style.display = 'none' );
+
+            /** @type {HTMLImageElement} */
+            let iconImg = dpsItem.dom.querySelector( '.dps-item-icon' );
+            iconImg != null && ( iconImg.style.display = 'inline' );
+
+        } else {
+
+            /** @type {HTMLSpanElement} */
+            let placeholderSpan = dpsItem.dom.querySelector( '.dps-item-icon-placeholder' );
+            placeholderSpan != null && ( placeholderSpan.style.display = 'inline' );
+
+            /** @type {HTMLImageElement} */
+            let iconImg = dpsItem.dom.querySelector( '.dps-item-icon' );
+            iconImg != null && ( iconImg.style.display = 'none' );
+        }
+
+        if ( ( damageDone ) > 0 ) {
+            dpsItem.dom.style.display = 'block';
+        } else {
+            dpsItem.dom.style.display = 'none';
+        }
+
+    }
+
+    let encounterName = dpsWindow.querySelector( '.encounter-name' );
+    if ( encounterName ) {
+        if ( dpsWindowDisplayType === EncounterDisplayTypes.allData ) {
+            encounterName.innerHTML = 'All Encounters';
+        } else {
+            encounterName.innerHTML = displayedEncounter.npcs.join( ', ' );
+        }
+    }
+
+    let encounterTime = dpsWindow.querySelector( '.encounter-time' );
+    if ( encounterTime ) {
+        let engagementTime = displayedEncounter.totalEngagementTime;
+        if ( dpsWindowDisplayType === EncounterDisplayTypes.allData ) {
+            if ( displayedEncounter.ended ) {
+                engagementTime = allDataEncounter?.totalEngagementTime ?? 0;
+            } else {
+                engagementTime += allDataEncounter?.totalEngagementTime ?? 0;
+            }
+        }
+        // console.log( 'rendering times: current, all', engagementTime, displayedEncounter.totalEngagementTime, allDataEncounter?.totalEngagementTime ?? 'undefined' );
+        encounterTime.innerHTML = `(${engagementTime}s)`;
+
+        if ( displayedEncounter.ended ) {
+            if ( !encounterTime.classList.contains( 'strong' ) ) {
+                encounterTime.classList.add( 'strong' );
+            }
+        } else if ( displayedEncounter.end == undefined ) {
+            encounterTime.classList.remove( 'strong' );
+        }
+    }
+    updateDpsWindowSettings();
+}
+
+
+
+
+
+
+
+
+
+
 /**
  * Initializes and starts the rendering system.
  * 
@@ -330,6 +934,99 @@ function Renderer( originX, originY, glowOnStart ) {
     origin.y = originY;
 
     DomUtilities.docReady( f => {
+
+        // Dynamic menu item handlers
+        document.addEventListener( 'click', ( ev ) => {
+            let target = ev.target;
+            while ( target != null ) {
+                if ( target.classList.contains( 'menu-item' ) ) {
+                    let itemType = target.getAttribute( 'data-item-type' );
+
+                    if ( itemType === 'encounter-filter' ) {
+                        let encounterId = target.getAttribute( 'data-encounter-id' );
+                        if ( encounterId ) {
+                            if ( encounterId === 'current fight' ) {
+                                dpsWindowDisplayType = EncounterDisplayTypes.current;
+
+                                let e = encounterHistory.find( f => f.encounterId === currentEncounterId );
+                                if ( e ) {
+                                    // If the current encounter is in the history, then it is ended and will not be updated via the normal method.
+                                    displayedEncounter = refreshEncounterStats( e, e.characterName );
+    
+                                    renderDpsItems( e.characterName );
+                                }
+
+                            } else if ( encounterId === 'all data' ) {
+                                dpsWindowDisplayType = EncounterDisplayTypes.allData;
+
+                                if ( allDataEncounter != null ) {
+                                    let encounter = displayedEncounter;
+    
+                                    displayedEncounter = Object.assign( new RendererEncounterModel(), allDataEncounter );
+                                    displayedEncounter.dpsItems = allDataEncounter.dpsItems.map( f => {
+                                        let x = Object.assign( new DpsItem(), f );
+                                        x.playerDps = f.playerDps.map( y => Object.assign( new PlayerDps(), y ) );
+                                        return x;
+                                    } );
+                                    displayedEncounter.ended = encounter.ended;
+
+                                    if ( encounter?.encounterId === currentEncounterId ) {
+                                        for ( let i = 0; i < encounter.dpsItems.length; i++ ) {
+                                            const eDpsItem = encounter.dpsItems[ i ];
+                                            let mDpsItem = displayedEncounter.dpsItems.find( f => f.name === eDpsItem.name );
+                                            if ( !mDpsItem ) {
+                                                mDpsItem = new DpsItem();
+                                                mDpsItem.name = eDpsItem.name;
+                                                mDpsItem.damage = 0;
+                                                mDpsItem.time = 0;
+                                                mDpsItem.dps = 0;
+                                                mDpsItem.playerDps = [];
+                                                displayedEncounter.dpsItems.push( mDpsItem );
+                                            }
+                                            mDpsItem.playerDps = [ ...eDpsItem.playerDps, ...mDpsItem.playerDps ];
+                                        }
+                                    }
+
+                                    renderDpsItems( displayedEncounter.characterName );
+                                }
+
+                            } else {
+                                let mobName = target.getAttribute( 'data-mob-name' );
+                                let e = encounterHistory.find( f => f.encounterId === encounterId );
+                                if ( e ) {
+                                    dpsWindowDisplayType = EncounterDisplayTypes.encounterMob;
+                                    displayedEncounter = refreshEncounterStats( e, e.characterName, mobName );
+    
+                                    renderDpsItems( e.characterName );
+                                }
+
+                            }
+                        }
+                    }
+
+                    // Remove the dropdown menu.
+                    let menu = target.parentElement;
+                    while ( menu != null ) {
+                        if ( menu.classList.contains( 'dropdown-menu' ) ) {
+                            menu.parentElement.remove();
+                            break;
+                        }
+                        menu = menu.parentElement;
+                    }
+
+                    break;
+                }
+                target = target.parentElement;
+            }
+        } );
+
+        Handlebars.registerHelper( 'if_eq', function ( a, b ) {
+            return a === b;
+        } );
+
+        Handlebars.registerHelper( 'if_neq', function ( a, b ) {
+            return a !== b;
+        } );
         
         overlayTemplate = Handlebars.compile( document.querySelector( '#overlay' ).innerHTML );
         overlayFctTemplate = Handlebars.compile( document.querySelector( '#overlayFct' ).innerHTML );
@@ -341,13 +1038,268 @@ function Renderer( originX, originY, glowOnStart ) {
         fctCriticalTemplate = Handlebars.compile( document.querySelector( '#fctCriticalTemplate' ).innerHTML );
         targetGroupTemplate = Handlebars.compile( document.querySelector( '#targetGroupTemplate' ).innerHTML );
         targetGroupTimerTemplate = Handlebars.compile( document.querySelector( '#targetGroupTimerTemplate' ).innerHTML );
+        dpsWindowTemplate = Handlebars.compile( document.querySelector( '#dpsWindowTemplate' ).innerHTML );
+        dpsWindowItemTemplate = Handlebars.compile( document.querySelector( '#dpsWindowItemTemplate' ).innerHTML );
+        dropdownMenuTemplate = Handlebars.compile( document.querySelector( '#dropdownMenu' ).innerHTML );
 
         logInfo( '[Info:Renderer:Templates] (Renderer docReady) Templates have been compiled!' );
     
         /** Tell the main thread that we need a list of all overlays. */
         ipcRenderer.send( 'overlay:get', null );
 
+        /** Tell the main thread we want a list of all display metas */
+        ipcRenderer.send( 'renderer:get-displays-meta', null );
+        
+        MouseUtilities.trackDynamicMouse( origin );
+                
+        dpsWindow = createDpsWindow();
+
+        ipcRenderer.send( 'main:active-window:subscribe', undefined );
+
+        ipcRenderer
+            .invoke( 'settings:get', { key: 'dpsWindowPosition', subscribe: true } )
+            .then( dpsWindowBounds => {
+
+                MouseUtilities.refreshDom();
+
+                if ( dpsWindowBounds ) {
+                    moveResizeDomElement( dpsWindow, dpsWindowBounds );
+
+                    waitForDisplaysLoaded( () => {
+
+                        // Check to see if the DPS window is off the screen.
+                        // This requires that the displays are loaded and that 
+                        // the DPS window is display block.
+                        let display = dpsWindow.style.display;
+                        dpsWindow.style.display = 'block';
+        
+                        if ( !verifyDomRectOnDisplay( dpsWindow.getBoundingClientRect() ) ) {
+                            
+                            logError( { label: 'renderer.js', message: 'DPS Window was rendered outside the viewable area.  Resetting the DPS window size and position.', payload: { dpsWindowBounds, displayMetas } } );
+    
+                            dpsWindow.style.width = '350px';
+                            dpsWindow.style.height = '350px';
+    
+                            // center element on main monitor
+                            dpsWindow.style.left = ( origin.x + ( screen.getPrimaryDisplay().workArea.width / 2 ) - ( dpsWindow.offsetWidth / 2 ) ) + 'px';
+                            dpsWindow.style.top = ( origin.y + ( screen.getPrimaryDisplay().workArea.height / 2 ) - ( dpsWindow.offsetHeight / 2 ) ) + 'px';
+
+                            // Re-engage move/resize.
+                            disableMoveResize( dpsWindow );
+                            enableMoveResize(
+                                dpsWindow,
+                                dpsWindow.querySelector( '.window-title' ),
+                                bounds => {
+                                    ipcRenderer.send( 'settings:set', { key: 'dpsWindowPosition', value: bounds } );
+                                },
+                                true
+                            );
+                            
+                        }
+
+                        // Restore the display setting.
+                        dpsWindow.style.display = display;
+
+                    } );
+                    
+                } else {
+                    dpsWindow.style.width = '250px';
+                    dpsWindow.style.height = '350px';
+
+                    // center element on main monitor
+                    dpsWindow.style.left = ( origin.x + ( screen.getPrimaryDisplay().workArea.width / 2 ) - ( dpsWindow.offsetWidth / 2 ) ) + 'px';
+                    dpsWindow.style.top = ( origin.y + ( screen.getPrimaryDisplay().workArea.height / 2 ) - ( dpsWindow.offsetHeight / 2 ) ) + 'px';
+                }
+
+                dpsWindow.style.display = 'block';
+
+                enableMoveResize(
+                    dpsWindow,
+                    dpsWindow.querySelector( '.window-title' ),
+                    bounds => {
+                        ipcRenderer.send( 'settings:set', { key: 'dpsWindowPosition', value: bounds } );
+                    },
+                    true
+                );
+
+            } );
+        
+        ipcRenderer
+            .invoke( 'settings:get', { key: 'dpsMeterSettings', subscribe: true } )
+            .then( data => {
+                dpsMeterSettings = data;
+                updateDpsWindowSettings();
+            } );
+
     } );
+
+    ipcRenderer.on( 'active-window:changed',
+        /**
+         * 
+         * @param {Electron.IpcRendererEvent} event The event args.
+         * @param {WinInfo} data The window information.
+         */
+        ( event, data ) => {
+
+            activeWinInfo = data;
+            updateDpsWindowSettings();
+
+        } );
+
+    ipcRenderer.on( 'settings:get:dpsMeterSettings:generic',
+        /**
+         * 
+         * @param {Electron.IpcRendererEvent} event The event args
+         * @param {boolean} data True if enabled.
+         */
+        ( event, data ) => {
+            dpsMeterSettings = data;
+            updateDpsWindowSettings( data );
+        } );
+
+    ipcRenderer.on( 'settings:get:dpsWindowPosition:generic',
+        /**
+         * 
+         * @param {Electron.IpcRendererEvent} event The event args.
+         * @param {DOMRect} data The bounds of the dps window.
+         */
+        ( event, data ) => {
+            dpsWindow && data && moveResizeDomElement( dpsWindow, data );
+        } );
+    
+    ipcRenderer.on( 'renderer:current-encounter',
+        /**
+         * Handles receiving the combat group hits.
+         * 
+         * @param {Electron.IpcRendererEvent} event The event args.
+         * @param {EncounterStatsEventArgs} data The encounter event args model.
+         */
+        ( event, data ) => {
+
+            // Update the local combat database.
+            verifiedPlayers = data.verifiedPlayers;
+            verifiedNpcs = data.verifiedNpcs;
+            verifiedPets = data.verifiedPets;
+            petOwners = data.petOwners;
+
+            encounterPlayerDps[ data.encounter.encounterId ] = data.playerDps;
+
+            // If the user is displaying the current encounter or the display
+            // encounter id is set to the current encounter id (indicating 
+            // that they were showing the current encounter, but we now have a 
+            // new encounter) then we need to update the displayed encounter.
+            if ( dpsWindowDisplayType === EncounterDisplayTypes.current ) {
+                
+                // If this is a new encounter we are to render, we need to clear the current encounter.
+                displayedEncounter = refreshEncounterStats( data.encounter, data.characterName );
+
+            } else if ( dpsWindowDisplayType === EncounterDisplayTypes.allData ) {
+
+                let m = refreshEncounterStats( data.encounter, data.characterName );
+
+                if ( !allDataEncounter ) {
+                    allDataEncounter = new RendererEncounterModel();
+
+                    allDataEncounter.encounterId = 'all-data';
+                    allDataEncounter.start = data.encounter.encounterStart;
+                    allDataEncounter.dpsItems = [];
+                    allDataEncounter.npcs = [ 'All Data' ];
+                    // The total engagement time is calculated in the refreshEncounterStats
+                    // function, and the display value is added to the current encounter at 
+                    // render time.
+                    allDataEncounter.totalEngagementTime = 0; 
+                    allDataEncounter.characterName = data.characterName;
+                }
+
+                for ( let i = 0; i < allDataEncounter.dpsItems.length; i++ ) {
+                    const allDpsItem = allDataEncounter.dpsItems[ i ];
+                    let mDpsItem = m.dpsItems.find( f => f.name === allDpsItem.name );
+                    if ( !mDpsItem ) {
+                        mDpsItem = new DpsItem();
+                        mDpsItem.name = allDpsItem.name;
+                        mDpsItem.damage = 0;
+                        mDpsItem.time = 0;
+                        mDpsItem.dps = 0;
+                        mDpsItem.playerDps = [];
+                        m.dpsItems.push( mDpsItem );
+                    }
+                    mDpsItem.playerDps = [ ...allDpsItem.playerDps, ...mDpsItem.playerDps ];
+                }
+                
+                displayedEncounter = m;
+            }
+
+            // Update the current encounter id.
+            currentEncounterId = data.encounter.encounterId;
+    
+            renderDpsItems( data.characterName );
+        } );
+    
+    ipcRenderer.on( 'renderer:encounter-reset',
+        /**
+         * Handles receiving the combat group hits.
+         * 
+         * @param {Electron.IpcRendererEvent} event The event args.
+         * @param {{character: string, encounter: EncounterStats}} data The data for combat group hits.
+         */
+        ( event, data ) => {
+
+            let history = { ...data.encounter, characterName: data.character };
+            encounterHistory.push( history );
+
+            history.ended = true;
+            history.end = data.encounter.lastEncounterEvent ?? new Date();
+
+            // Calculate the encounter stats, and pack that into the all encounters renderer encounter.
+            let m = refreshEncounterStats( data.encounter, data.character );
+
+            if ( !allDataEncounter ) {
+                allDataEncounter = new RendererEncounterModel();
+
+                allDataEncounter.encounterId = 'all-data';
+                allDataEncounter.start = data.encounter.encounterStart;
+                allDataEncounter.dpsItems = [];
+                allDataEncounter.npcs = [ 'All Data' ];
+                allDataEncounter.totalEngagementTime = m.totalEngagementTime;
+                allDataEncounter.characterName = data.character;
+            } else {
+                console.log( 'encounter reset, times:', m.totalEngagementTime, allDataEncounter.totalEngagementTime );
+                allDataEncounter.totalEngagementTime += m.totalEngagementTime;
+            }
+
+            for ( let i = 0; i < m.dpsItems.length; i++ ) {
+                const dpsItem = m.dpsItems[ i ];
+
+                let aDpsItem = allDataEncounter.dpsItems.find( f => f.name === dpsItem.name );
+
+                if ( aDpsItem == null ) {
+                    allDataEncounter.dpsItems.push( dpsItem );
+                } else if ( aDpsItem.playerDps?.length > 0 ) {
+                    aDpsItem.playerDps.push( ...dpsItem.playerDps );
+                } else {
+                    aDpsItem.playerDps = [ ...dpsItem.playerDps ];
+                }
+            }
+
+            if ( dpsWindowDisplayType === EncounterDisplayTypes.allData ) {
+                displayedEncounter = Object.assign( new RendererEncounterModel(), allDataEncounter );
+                displayedEncounter.dpsItems = allDataEncounter.dpsItems.map( f => {
+                    let x = Object.assign( new DpsItem(), f );
+                    x.playerDps = f.playerDps.map( y => Object.assign( new PlayerDps(), y ) );
+                    return x;
+                } );
+            } else {
+                displayedEncounter = m;
+            }
+
+            displayedEncounter.ended = true;
+            renderDpsItems( data.character );
+
+            if ( dpsWindowDisplayType !== EncounterDisplayTypes.allData && data.encounter.encounterId === displayedEncounter?.encounterId ) {
+                clearDpsItems();
+                updateDpsWindowSettings();
+            }
+        } );
 
     ipcRenderer.on( 'character:get:combatGroupHits',
         /**
@@ -358,7 +1310,6 @@ function Renderer( originX, originY, glowOnStart ) {
          */
         ( event, data ) => {
             combatGroupHits = data ?? {};
-            console.log( 'combatGroupHits', combatGroupHits );
         } );
 
     ipcRenderer.on( 'character:get:combatGroupMedian',
@@ -384,6 +1335,35 @@ function Renderer( originX, originY, glowOnStart ) {
             combatGroups.forEach( group => {
                 group._combatTypesFlags = CombatTypes.getFlagsValue( group.combatTypes );
                 group._combatModifiersFlags = getCombatModifiersFlags( group.combatModifiers );
+
+                // If the render group has no animation, set it to scroll with fadeIn and faceOut.
+                if ( group.combatAnimations == null ) {
+                    group.combatAnimations = {
+                        fadeIn: true,
+                        fadeOut: true,
+                        scroll: true,
+                    };
+                } else {
+                    let noAnimations = true;
+                    for ( let key in group.combatAnimations ) {
+                        if ( group.combatAnimations[ key ] ) {
+                            noAnimations = false;
+                            break;
+                        }
+                    }
+                    if ( noAnimations ) {
+                        group.combatAnimations = {
+                            fadeIn: true,
+                            fadeOut: true,
+                            scroll: true,
+                        };
+                    }
+                }
+
+                // If the render group has no starting position, set it to bottom left.
+                if ( group.startingPosition == null ) {
+                    group.startingPosition = HitStartPositionTypes.bottom | HitStartPositionTypes.left;
+                }
             } );
 
             // Send a request for the combat data, now that we have our render groups.
@@ -465,6 +1445,19 @@ function Renderer( originX, originY, glowOnStart ) {
             } );
             
         } );
+
+    ipcRenderer.on( 'renderer:get-displays-meta',
+        /**
+         * Handles the display meta response.
+         * 
+         * @param {any} event 
+         * @param {DisplayMetaModel[]} data The list of display metas.
+         */
+        function ( event, data ) {
+            displayMetas = data;
+            waitingForDisplays.forEach( f => f() );
+            waitingForDisplays = [];
+        } );
     
     ipcRenderer.on( 'renderer:overlay:new',
         /**
@@ -528,17 +1521,26 @@ function Renderer( originX, originY, glowOnStart ) {
         /**
          * Handles receiving a new trigger action.
          * @param {*} event The event object.
-         * @param {FctModel} model The trigger action.
+         * @param {FctModel | FctModel[]} model The trigger action.
          */
         function ( event, model ) {
+            // let now = performance.now();
             model.added = new Date();
             // renderFct( model.overlayId, model );
-            renderFct2( model );
+
+            if ( Array.isArray( model ) ) {
+                model.forEach( m => renderFct2( m ) );
+            } else {
+                renderFct2( model );
+            }
+
+            // console.log( 'fct render time:', Array.isArray( model ) ? model.length : 'naa', performance.now() - now );
         } );
 
     ipcRenderer.on( 'renderer:window:enable-edit', function ( event, overlayId ) {
         moveToTop( overlayInstances[ overlayId ].dom );
         enableMoveResize( overlayInstances[ overlayId ].dom );
+        MouseUtilities.refreshDom();
     } );
 
     ipcRenderer.on( 'renderer:overlay:move',
@@ -564,18 +1566,21 @@ function Renderer( originX, originY, glowOnStart ) {
         if ( overlayInstances[ overlayId ] ) {
             disableMoveResize( overlayInstances[ overlayId ].dom );
         }
+        MouseUtilities.refreshDom();
     } );
 
     ipcRenderer.on( 'renderer:arrange-overlays', function ( event ) {
         eachOverlay( function ( overlay ) {
             enableMoveResize( overlay.dom );
         } );
+        MouseUtilities.refreshDom();
     } );
 
     ipcRenderer.on( 'renderer:end-arrange-overlays', function ( event ) {
         eachOverlay( function ( overlay ) {
             disableMoveResize( overlay.dom );
         } );
+        MouseUtilities.refreshDom();
     } );
 
     ipcRenderer.on( 'renderer:window:highlight', function ( event, overlayId ) {
@@ -752,6 +1757,94 @@ function Renderer( originX, originY, glowOnStart ) {
         voiceOptions = speechSynthesis.getVoices();
     };
 
+    return {
+        origin: origin,
+    };
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Refreshes the stats on the display encounter, resetting it if the encounter id does not match the given encounter's id.
+ * 
+ * @returns {RendererEncounterModel} The a renderer encounter model of the given encounter.
+ * 
+ * @param {EncounterStats} encounter The encounter to process.
+ * @param {string} characterName The character name.
+ * @param {string} npcName The NPC name, when provided will show only that NPC in the encounter stats.
+ */
+function refreshEncounterStats( encounter, characterName, npcName ) {
+
+    /** @type {RendererEncounterModel} */
+    let m = undefined;
+
+    if ( npcName != null || displayedEncounter?.encounterId != encounter.encounterId ) {
+
+        m = {
+            encounterId: encounter.encounterId,
+            start: new Date(),
+            end: undefined,
+            dpsItems: [],
+            npcs: npcName ? [ npcName ] : encounter.npcs,
+            totalEngagementTime: 0,
+            characterName: characterName,
+            ended: encounter.ended === true,
+        };
+        
+        m.start = encounter.encounterStart ?? new Date();
+        m.totalEngagementTime = Math.round( ( ( encounter.lastEncounterEvent ?? new Date() ).getTime() - m.start.getTime() ) / 1000 );
+
+        let encounterName = dpsWindow?.querySelector( '.encounter-name' );
+        if ( encounterName ) {
+            encounterName.innerHTML = '';
+        }
+
+        let encounterTime = dpsWindow?.querySelector( '.encounter-time' );
+        if ( encounterTime ) {
+            encounterTime.innerHTML = '';
+        }
+    } else {
+        m = Object.assign( new RendererEncounterModel(), displayedEncounter );
+
+        m.start = encounter.encounterStart ?? new Date();
+        m.totalEngagementTime = Math.round( ( ( encounter.lastEncounterEvent ?? new Date() ).getTime() - m.start.getTime() ) / 1000 );
+        m.npcs = encounter.npcs;
+        m.characterName = characterName;
+    }
+
+    // Remove all players from dpsItems if they are not in encounterDps.
+    let playerNames = Object.keys( encounter.playerEvents );
+    m.dpsItems = m.dpsItems.filter( f => playerNames.find( g => g === f.name ) );
+
+    let playersDps = encounterPlayerDps[ encounter.encounterId ] ?? [];
+
+    playersDps = playersDps.filter( f => f.npcName === npcName );
+
+    for ( let i = 0; i < playersDps.length; i++ ) {
+        const playerDps = playersDps[ i ];
+
+        let dpsItem = m.dpsItems.find( f => f.name === playerDps.name );
+        if ( dpsItem ) {
+            dpsItem.playerDps = [ playerDps ];
+        } else {
+            dpsItem = new DpsItem();
+            dpsItem.name = playerDps.name;
+            dpsItem.className = playerDps.class;
+            dpsItem.playerDps = [ playerDps ];
+            dpsItem.dom = undefined;
+            
+            m.dpsItems.push( dpsItem );
+        }
+    }
+
+    return m;
 }
 
 
@@ -786,6 +1879,7 @@ function initializeOverlay( overlay ) {
 
     div.innerHTML = content;
     div.style.position = 'absolute';
+    div.classList.add( 'overlay-container' );
     
 
     if ( overlay.overlayType === 'Timer' ) {
@@ -901,7 +1995,46 @@ function updateOverlay( overlayId, model ) {
     titleContainer.style.display = '';
 
     if ( model.overlayType !== 'FCT' ) {
-        contentArea.classList.add( 'no-overflow' );
+
+        if ( model.textOverflow != null ) {
+
+            contentArea.classList.remove( 'white-space-nowrap' );
+            contentArea.classList.remove( 'white-space-normal' );
+            contentArea.classList.remove( 'overflow-hidden' );
+            contentArea.classList.remove( 'overflow-visible' );
+            contentArea.classList.remove( 'text-overflow-clip' );
+            contentArea.classList.remove( 'text-overflow-ellipsis' );
+
+            if ( model.textOverflow.overflow === 'hidden' ) {
+                contentArea.classList.add( 'no-overflow' );
+                contentArea.classList.add( 'overflow-hidden' );
+
+            } else if ( model.textOverflow.overflow === 'visible' ) {
+                contentArea.classList.remove( 'no-overflow' );
+                contentArea.classList.add( 'overflow-visible' );
+
+            }
+
+            if ( model.textOverflow.whiteSpace === 'nowrap' ) {
+                contentArea.classList.add( 'white-space-nowrap' );
+
+            } else if ( model.textOverflow.whiteSpace === 'normal' ) {
+                contentArea.classList.add( 'white-space-normal' );
+
+            }
+
+            if ( model.textOverflow.textOverflow === 'clip' ) {
+                contentArea.classList.add( 'text-overflow-clip' );
+
+            } else if ( model.textOverflow.textOverflow === 'ellipsis' ) {
+                contentArea.classList.add( 'text-overflow-ellipsis' );
+
+            }
+
+        } else {
+            // contentArea.classList.add( 'no-overflow' );
+
+        }
 
         // Content area display styles, the defaults.
         contentArea.style.fontFamily = `"${model.fontFamily}"`;
@@ -910,7 +2043,25 @@ function updateOverlay( overlayId, model ) {
         contentArea.style.fontWeight = model.fontWeight > 0 ? model.fontWeight : 300;
     
         if ( model.overlayType === 'Alert' ) {
-            contentArea.style.textAlign = model.horizontalAlignment;
+            
+            contentArea.classList.remove( 'align-left' );
+            contentArea.classList.remove( 'align-center' );
+            contentArea.classList.remove( 'align-right' );
+
+            if ( model.horizontalAlignment === 'left' ) {
+                contentArea.classList.add( 'align-left' );
+
+            } else if ( model.horizontalAlignment === 'center' ) {
+                contentArea.classList.add( 'align-center' );
+
+            } else if ( model.horizontalAlignment === 'right' ) {
+                contentArea.classList.add( 'align-right' );
+
+            } else {
+                contentArea.style.textAlign = model.horizontalAlignment;
+                
+            }
+            
             if ( model.verticalAlignment === 'bottom' ) {
                 contentArea.style.display = 'flex';
                 contentArea.style.flexDirection = 'column';
@@ -920,9 +2071,9 @@ function updateOverlay( overlayId, model ) {
                 contentArea.style.flexDirection = 'column';
                 contentArea.style.justifyContent = 'center';
             } else {
-                contentArea.style.display = 'block';
-                contentArea.style.flexDirection = undefined;
-                contentArea.style.justifyContent = undefined;
+                contentArea.style.display = 'flex';
+                contentArea.style.flexDirection = 'column';
+                contentArea.style.justifyContent = 'flex-start';
             }
         }
     
@@ -987,8 +2138,11 @@ function updateOverlay( overlayId, model ) {
     
         overlayInstances[ overlayId ].showDuration = model.showTimeRemaining === true;
     
+        overlayInstances[ overlayId ].groupMinWidth = model.groupMinWidth > 0 ? model.groupMinWidth : 200;
+
         if ( model.groupByTarget ) {
             contentArea.classList.add( 'grouped-mobs' );
+            contentArea.style.setProperty( '--item-min-width', `${overlayInstances[ overlayId ].groupMinWidth ?? 200}px` );
             overlayInstances[ overlayId ].groupByTarget = true;
         } else {
             contentArea.classList.remove( 'grouped-mobs' );
@@ -1393,6 +2547,10 @@ function renderFct2( model ) {
         let damageSourceText = model.action;
 
         let fctOverlay = overlayInstances[ renderGroup.overlayId ];
+        if ( !fctOverlay ) {
+            logError( { errorMessage: '[Error:Undefined:Overlay] (renderFct2) fctOverlay is undefined!' }, 'fct', overlayId, model );
+            return;
+        }
         fctOverlay.overlayFctComponents.push( model );
         
         /** @type {HTMLDivElement} */
@@ -1512,7 +2670,11 @@ function renderFct2( model ) {
         
         if ( renderGroup.combatAnimations.fadeIn ) {
             animation += ( animation.length > 0 ? ', ' : '' ) + `animate-fadein ${animateFadeInDuration}ms ease-out`;
-            duration = duration < animateFadeInDuration ? animateFadeInDuration : duration;
+            if ( renderGroup.combatAnimations.fadeOut ) {
+                duration = duration < animateFadeInDuration ? animateFadeInDuration : duration;
+            } else {
+                duration = animateFadeOutDuration;
+            }
             
         }
         
@@ -1998,11 +3160,10 @@ function disableMoveResize( dom ) {
         }
     }
 
-    getCurrentWindow().setIgnoreMouseEvents( true, { forward: false } );
     dom.classList.remove( 'drag' );
-    dom.classList.remove( 'mouse-enabled' );
+    dom.classList.remove( 'dynamic-mouse' );
     const domContentArea = dom.querySelectorAll( ':scope *' );
-    domContentArea.forEach( d => d.classList.remove( 'mouse-enabled' ) );
+    domContentArea.forEach( d => d.classList.remove( 'dynamic-mouse' ) );
     dom.dispatchEvent( stopTrackingMoveResizeEvent );
 }
 
@@ -2019,13 +3180,14 @@ function disableMoveResize( dom ) {
  * Enables resize events on the given dom element.
  * 
  * @param {HTMLElement} dom The element to enable resize event on.
+ * @param {HTMLElement} moveHandle The element to use as the move handle.
+ * @param {(import('electron').Rectangle) => void} onMoveResize The callback to call when the element is moved or resized.
+ * @param {boolean} skipDynamicMouse If true, the dynamic mouse class will not be added to the given dom element.
  */
-function enableMoveResize( dom ) {
-
-    getCurrentWindow().setIgnoreMouseEvents( true, { forward: true } );
-    dom.classList.add( 'mouse-enabled' );
-    const domContentArea = dom.querySelectorAll( ':scope *' );
-    domContentArea.forEach( d => d.classList.add( 'mouse-enabled' ) );
+function enableMoveResize( dom, moveHandle, onMoveResize, skipDynamicMouse ) {
+    !skipDynamicMouse && dom.classList.add( 'dynamic-mouse' );
+    const domContentArea = dom.querySelectorAll( ':scope *:not(.click-through)' );
+    domContentArea.forEach( d => d.classList.add( 'dynamic-mouse' ) );
     
     /** @type {import('electron').Rectangle} */
     let bounds = {
@@ -2040,46 +3202,81 @@ function enableMoveResize( dom ) {
         x: 0,
         y: 0,
     };
-    
+
     let trackN = function ( evt ) {
-        dom.style.top = `${evt.y}px`;
-        const dy = bounds.y - dom.offsetTop;
-        bounds.y = dom.offsetTop;
+        const dy = bounds.y - evt.y;
+        bounds.y = evt.y;
         bounds.height += dy;
-        dom.style.height = `${bounds.height}px`;
+
+        if ( verifyDomRectOnDisplay( bounds ) ) {
+            dom.style.top = `${bounds.y}px`;
+            dom.style.height = `${bounds.height}px`;
+        }
     }
 
     let trackS = function ( evt ) {
         const dy = evt.y - (bounds.y + bounds.height);
         bounds.height += dy;
-        dom.style.height = `${bounds.height}px`;
+
+        if ( verifyDomRectOnDisplay( bounds ) ) {
+            dom.style.height = `${bounds.height}px`;
+        }
     }
 
     let trackE = function ( evt ) {
         const dx = evt.x - ( bounds.x + bounds.width );
         bounds.width += dx;
-        dom.style.width = `${bounds.width}px`;
+
+        if ( verifyDomRectOnDisplay( bounds ) ) {
+            dom.style.width = `${bounds.width}px`;
+        }
     }
 
     let trackW = function ( evt ) {
-        dom.style.left = `${evt.x}px`;
-        const dx = bounds.x - dom.offsetLeft;
-        bounds.x = dom.offsetLeft;
+        const dx = bounds.x - evt.x;
+        bounds.x = evt.x;
         bounds.width += dx;
-        dom.style.width = `${bounds.width}px`;
+
+        if ( verifyDomRectOnDisplay( bounds ) ) {
+            dom.style.left = `${bounds.x}px`;
+            dom.style.width = `${bounds.width}px`;
+        }
     }
 
-    let trackMove = function ( evt ) {
-        bounds.x = evt.x - relMousePos.x;
-        bounds.y = evt.y - relMousePos.y;
+    let trackMoveX = function ( evt ) {
+        const dx = evt.x - relMousePos.x;
+
+        const x = bounds.x;
+        bounds.x = dx;
+        if ( !verifyDomRectOnDisplay( bounds ) ) {
+            bounds.x = x;
+        }
+
         dom.style.left = `${bounds.x}px`;
+    }
+
+    let trackMoveY = function ( evt ) {
+        const dy = evt.y - relMousePos.y;
+
+        const y = bounds.y;
+        bounds.y = dy;
+        if ( !verifyDomRectOnDisplay( bounds ) ) {
+            bounds.y = y;
+        }
+
         dom.style.top = `${bounds.y}px`;
     }
 
+    /**
+     * Handles the mouse down event.
+     * 
+     * @param {PointerEvent} evt The pointer event.
+     */
     let onMouseDown = function ( evt ) {
         const dx = evt.x - bounds.x;
         const dy = evt.y - bounds.y;
 
+        const m = evt.target === moveHandle || DomUtilities.getParents( evt.target ).includes( moveHandle );
         const n = dy >= 0 - dragBorderSize && dy < 0;
         const s = dy <= bounds.height + dragBorderSize && dy >= bounds.height;
         const e = dx <= bounds.width + dragBorderSize && dx >= bounds.width;
@@ -2090,29 +3287,30 @@ function enableMoveResize( dom ) {
         // 
         //      if 'n' then attach the 'trackN' event.
         // 
-        n && document.addEventListener( 'pointermove', trackN );
-        s && document.addEventListener( 'pointermove', trackS );
-        e && document.addEventListener( 'pointermove', trackE );
-        w && document.addEventListener( 'pointermove', trackW );
+        n && !m && document.addEventListener( 'pointermove', trackN );
+        s && !m && document.addEventListener( 'pointermove', trackS );
+        e && !m && document.addEventListener( 'pointermove', trackE );
+        w && !m && document.addEventListener( 'pointermove', trackW );
 
         const ne = ( dy >= dragBorderSize - dragCornerSize && dy < dragBorderSize ) && ( dx <= bounds.width + dragBorderSize && dx >= bounds.width - dragBorderSize );
         const se = ( dy <= bounds.height + dragBorderSize && dy >= bounds.height - dragBorderSize ) && ( dx <= bounds.width + dragBorderSize && dx >= bounds.width - dragBorderSize );
         const sw = ( dy <= bounds.height + dragBorderSize && dy >= bounds.height - dragBorderSize ) && ( dx >= dragBorderSize - dragCornerSize && dx < dragBorderSize );
         const nw = ( dy >= dragBorderSize - dragCornerSize && dy < dragBorderSize ) && ( dx >= dragBorderSize - dragCornerSize && dx < dragBorderSize );
 
-        ne && !n && document.addEventListener( 'pointermove', trackN );
-        ne && !e && document.addEventListener( 'pointermove', trackE );
-        se && !s && document.addEventListener( 'pointermove', trackS );
-        se && !e && document.addEventListener( 'pointermove', trackE );
-        sw && !s && document.addEventListener( 'pointermove', trackS );
-        sw && !w && document.addEventListener( 'pointermove', trackW );
-        nw && !n && document.addEventListener( 'pointermove', trackN );
-        nw && !w && document.addEventListener( 'pointermove', trackW );
+        ne && !n && !m && document.addEventListener( 'pointermove', trackN );
+        ne && !e && !m && document.addEventListener( 'pointermove', trackE );
+        se && !s && !m && document.addEventListener( 'pointermove', trackS );
+        se && !e && !m && document.addEventListener( 'pointermove', trackE );
+        sw && !s && !m && document.addEventListener( 'pointermove', trackS );
+        sw && !w && !m && document.addEventListener( 'pointermove', trackW );
+        nw && !n && !m && document.addEventListener( 'pointermove', trackN );
+        nw && !w && !m && document.addEventListener( 'pointermove', trackW );
 
-        if ( !n && !s && !e && !w && !ne && !se && !sw && !nw ) {
+        if ( m || ( !moveHandle && !n && !s && !e && !w && !ne && !se && !sw && !nw ) ) {
             relMousePos.x = dx;
             relMousePos.y = dy;
-            document.addEventListener( 'pointermove', trackMove );
+            document.addEventListener( 'pointermove', trackMoveX );
+            document.addEventListener( 'pointermove', trackMoveY );
         }
     }
 
@@ -2124,7 +3322,8 @@ function enableMoveResize( dom ) {
         document.removeEventListener( 'pointermove', trackS );
         document.removeEventListener( 'pointermove', trackE );
         document.removeEventListener( 'pointermove', trackW );
-        document.removeEventListener( 'pointermove', trackMove );
+        document.removeEventListener( 'pointermove', trackMoveX );
+        document.removeEventListener( 'pointermove', trackMoveY );
 
         // Next, lets check if the user made any changes.  If they have, then 
         // we need to let the overlay database know.
@@ -2158,6 +3357,8 @@ function enableMoveResize( dom ) {
                 }
             }
         }
+
+        onMoveResize && onMoveResize( bounds );
     }
 
     let stopTracking = function ( evt ) {
@@ -2168,7 +3369,8 @@ function enableMoveResize( dom ) {
         document.removeEventListener( 'pointermove', trackS );
         document.removeEventListener( 'pointermove', trackE );
         document.removeEventListener( 'pointermove', trackW );
-        document.removeEventListener( 'pointermove', trackMove );
+        document.removeEventListener( 'pointermove', trackMoveX );
+        document.removeEventListener( 'pointermove', trackMoveY );
     }
 
     dom.classList.add( 'drag' );
@@ -2176,7 +3378,7 @@ function enableMoveResize( dom ) {
     for ( let i = 0; i < resizeHandles.length; i++ ) {
         let handle = createElement( 'span' );
         handle.classList.add( resizeHandles[ i ] );
-        handle.classList.add( 'mouse-enabled' );
+        handle.classList.add( 'dynamic-mouse' );
         dom.appendChild( handle );
     }
 
@@ -2203,9 +3405,9 @@ function moveToTop( dom ) {
     for ( let overlayId in overlayInstances ) {
         if ( overlayId && overlayInstances.hasOwnProperty( overlayId ) ) {
             if ( dom === overlayInstances[ overlayId ].dom ) {
-                overlayInstances[ overlayId ].dom.style.zIndex = 2;
+                overlayInstances[ overlayId ].dom.style.zIndex = overlayTopZIndex;
             } else {
-                overlayInstances[ overlayId ].dom.style.zIndex = 1;
+                overlayInstances[ overlayId ].dom.style.zIndex = overlayZIndex;
             }
         }
     }
@@ -3226,21 +4428,26 @@ function timerExists( overlayId, predicate ) {
 
     if ( overlayInstances[ overlayId ].groupByTarget ) {
 
-        for ( let key of Object.keys( overlayInstances[ overlayId ].overlayGroups ) ) {
-            overlayInstances[ overlayId ].overlayGroups[ key ].components?.forEach( c => {
+        let groupNames = Object.keys( overlayInstances[ overlayId ].overlayGroups );
+        for ( let i = 0; i < groupNames.length; i++ ) {
+            const key = groupNames[ i ];
+
+            for ( let j = 0; j < overlayInstances[ overlayId ].overlayGroups[ key ].components?.length; j++ ) {
+                const c = overlayInstances[ overlayId ].overlayGroups[ key ].components[ j ];
                 if ( predicate( c ) ) {
                     return true;
                 }
-            } );
+            }
         }
 
     } else {
 
-        overlayInstances[ overlayId ].overlayComponents?.forEach( c => {
+        for ( let i = 0; i < overlayInstances[ overlayId ].overlayComponents?.length; i++ ) {
+            const c = overlayInstances[ overlayId ].overlayComponents[ i ];
             if ( predicate( c ) ) {
                 return true;
             }
-        } );
+        }
 
     }
 

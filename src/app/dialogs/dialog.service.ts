@@ -31,6 +31,7 @@ import * as _ from 'lodash-es';
 import { MonitorSelectDialogComponent } from './monitor-select-dialog/monitor-select-dialog.component';
 import { QuestionDialogAnswerModel, QuestionDialogModel } from './question-dialog/question-dialog.model';
 import { QuestionDialogComponent } from './question-dialog/question-dialog.component';
+import { JoinChatRoomDialogComponent, JoinChatRoomDialogResult } from './join-chat-room-dialog/join-chat-room-dialog.component';
 
 @Injectable()
 export class DialogService {
@@ -182,9 +183,16 @@ export class DialogService {
      * @param noText The description of the action taken when the user declines the question.
      * @param cancelText The description of the action taken when the user declines the question. If no value is provided, the cancel button is not rendered.
      */
-    public showConfirmationDialog( message: string | (string|ColoredString)[], yesText: string, noText: string, cancelText: string|null = null, size: 'narrow'|'normal'|'wide' = 'normal', moreInfo: () => void|null = null ): Observable<boolean|null> {
+    public showConfirmationDialog(
+        message: string | ( string | ColoredString )[],
+        yesText: string, noText: string,
+        cancelText: string | null = null,
+        size: 'narrow' | 'normal' | 'wide' = 'normal',
+        moreInfo: () => void | null = null,
+        buttonTexts: { 'Yes'?: string, 'No'?: string, 'Cancel'?: string } = null
+    ): Observable<boolean | null> {
         size = size ? size : 'normal';
-        let dialogRef: MatDialogRef<ConfirmDialogComponent, boolean|null> = this.dialog.open<ConfirmDialogComponent, any, boolean|null>( ConfirmDialogComponent, {
+        let dialogRef: MatDialogRef<ConfirmDialogComponent, boolean | null> = this.dialog.open<ConfirmDialogComponent, any, boolean | null>( ConfirmDialogComponent, {
             width: size === 'narrow' ? '450px' : size === 'wide' ? '650px' : '550px',
             data: {
                 message: message,
@@ -192,6 +200,7 @@ export class DialogService {
                 noMessage: noText,
                 cancelMessage: cancelText,
                 moreInfo: moreInfo,
+                buttonTexts: buttonTexts
             },
             panelClass: 'app-dialog',
         } );
@@ -1074,6 +1083,31 @@ export class DialogService {
         } );
 
         return af;
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Shows the join chatroom dialog.
+     * 
+     * @returns Returns the join chat room dialog result.
+     * 
+     * @param server The server the player is on.
+     * @param player The player's name.
+     */
+    public showJoinChatRoomDialog( server: string, player: string ): Observable<JoinChatRoomDialogResult> {
+        return this.dialog.open<JoinChatRoomDialogComponent, any, JoinChatRoomDialogResult>( JoinChatRoomDialogComponent, {
+            // width: '450px',
+            data: { server: server, player: player },
+            panelClass: 'app-dialog',
+        } ).afterClosed();
     }
     
 }

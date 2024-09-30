@@ -21,6 +21,7 @@ $color-red-dark: #921f1f;
 $color-titlebar-bg: #4c0e67;
 $color-titlebar-txt: #00000094;
 $color-titlebar-green: #17e883;
+$color-titlebar-red: #ff432e;
 
 $option-odd: #202020;
 $option-even: #1c1c1c;
@@ -313,6 +314,16 @@ $bg-extreme-dark: #191919;
         background-color: $option-panel;
     }
 
+    mat-select {
+        mat-select-trigger {
+            color: $text;
+
+            small {
+                color: $option-small;
+            }
+        }
+    }
+
     .mat-menu-panel {
         button:nth-of-type(odd) {
             background-color: $option-odd !important;
@@ -327,6 +338,11 @@ $bg-extreme-dark: #191919;
     }
 
     fieldset {
+        legend {
+            &.danger {
+                color: $color-titlebar-red;
+            }
+        }
         small {
             color: rgba($text, .25);
         }
@@ -689,6 +705,31 @@ fieldset.trigger-property-group {
 
 }
 
+.nag-form-field {
+    input {
+        font-family: Roboto;
+        -webkit-appearance: none;
+        appearance: none;
+        text-align: right;
+        outline: none !important;
+        background-color: #0000002e;
+        border: 2px solid #0000006b;
+        color: $text;
+        border-radius: 3px;
+        margin: 5px;
+        padding: 5px;
+        font-size: 12px;
+        font-weight: 500;
+    }
+    
+    input::-webkit-outer-spin-button,
+    input::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+
+}
+
 .duration-wrapper {
 
     input[type=number] {
@@ -841,3 +882,202 @@ mat-button-toggle-group {
 .cursor-pointer {
     cursor: pointer;
 }
+
+.pets-table {
+    .pet-owner {
+        &:hover {
+            text-decoration: underline;
+            color: $color-red;
+            &:active {
+                color: $color-red-dark;
+            }
+        }
+    }
+}
+
+a {
+    &.color-blue {
+        text-decoration: none;
+        color: $color-blue;
+        cursor: pointer;
+
+        &:hover {
+            color: $color-blue;
+        }
+
+        &:active {
+            color: darken($color-blue, 33%);
+        }
+    }
+}
+
+.regex-option {
+    font-family: 'Roboto Mono';
+    font-size: 1em;
+    cursor: pointer;
+
+    &.selected {
+        color: $color-green;
+    }
+
+    &:active {
+        color: darken($color-green, 33%);
+    }
+
+    &:hover {
+        // glow green
+        text-shadow:0px 0px 4px #69f0ae, 0px 0px 2px #69f0ae;
+    }
+}
+
+.log-text {
+    a {
+        color: darken($color-blue, 10%);
+        text-decoration: none;
+
+        &:hover {
+            color: $color-blue;
+        }
+        &:active {
+            color: darken($color-blue, 33%);
+        }
+    }
+}
+
+span.links {
+    mat-icon {
+        &.color-blue {
+            color: darken($color-blue, 10%);
+
+            &:hover {
+                color: $color-blue;
+            }
+
+            &:active {
+                color: darken($color-blue, 33%);
+            }
+        }
+
+        &.color-green {
+            color: darken($color-green, 10%);
+
+            &:hover {
+                color: $color-green;
+            }
+
+            &:active {
+                color: darken($color-green, 33%);
+            }
+        }
+    }
+}
+
+button.connected-button {
+    color: $color-titlebar-green;
+
+    &:hover {
+        color: $color-titlebar-red;
+    }
+}
+
+mat-tab-group {
+    mat-tab-group.sub-tabs {
+        .mat-tab-header {
+            background-color: #181818;
+            padding-left: 5em;
+        }
+    }
+}
+
+.header-glow {
+    text-shadow: 0 0 7px #00000085, 0 0 10px #00000085, 0 0 21px #00000085, 0 0 42px #00000085, 0 0 82px #00000085, 0 0 92px #02020285, 0 0 102px #00000085, 0 0 151px #00000085;
+    &.glow-purple {
+        text-shadow: 0 0 7px #4c0e67, 0 0 10px rgb(0 0 0 / 52%), 0 0 21px rgb(0 0 0 / 52%), 0 0 42px rgb(0 0 0 / 52%), 0 0 82px rgb(0 0 0 / 52%), 0 0 92px rgb(2 2 2 / 52%), 0 0 102px rgb(0 0 0 / 52%), 0 0 151px rgb(0 0 0 / 52%);
+    }
+    &.glow-green {
+        text-shadow: 0 0 7px #17e88385, 0 0 10px rgb(0 0 0 / 52%), 0 0 21px rgb(0 0 0 / 52%), 0 0 42px rgb(0 0 0 / 52%), 0 0 82px rgb(0 0 0 / 52%), 0 0 92px rgb(2 2 2 / 52%), 0 0 102px rgb(0 0 0 / 52%), 0 0 151px rgb(0 0 0 / 52%);
+    }
+    &.glow-red {
+        text-shadow: 0 0 7px #921f1f, 0 0 10px rgb(0 0 0 / 52%), 0 0 21px rgb(0 0 0 / 52%), 0 0 42px rgb(0 0 0 / 52%), 0 0 82px rgb(0 0 0 / 52%), 0 0 92px rgb(2 2 2 / 52%), 0 0 102px rgb(0 0 0 / 52%), 0 0 151px rgb(0 0 0 / 52%);
+    }
+    &.hover-purple:hover {
+        text-shadow: 0 0 7px #4c0e67, 0 0 10px rgb(0 0 0 / 52%), 0 0 21px rgb(0 0 0 / 52%), 0 0 42px rgb(0 0 0 / 52%), 0 0 82px rgb(0 0 0 / 52%), 0 0 92px rgb(2 2 2 / 52%), 0 0 102px rgb(0 0 0 / 52%), 0 0 151px rgb(0 0 0 / 52%);
+    }
+    &.hover-green:hover {
+        text-shadow: 0 0 7px #17e88385, 0 0 10px rgb(0 0 0 / 52%), 0 0 21px rgb(0 0 0 / 52%), 0 0 42px rgb(0 0 0 / 52%), 0 0 82px rgb(0 0 0 / 52%), 0 0 92px rgb(2 2 2 / 52%), 0 0 102px rgb(0 0 0 / 52%), 0 0 151px rgb(0 0 0 / 52%);
+    }
+    &.hover-red:hover {
+        text-shadow: 0 0 7px #921f1f, 0 0 10px rgb(0 0 0 / 52%), 0 0 21px rgb(0 0 0 / 52%), 0 0 42px rgb(0 0 0 / 52%), 0 0 82px rgb(0 0 0 / 52%), 0 0 92px rgb(2 2 2 / 52%), 0 0 102px rgb(0 0 0 / 52%), 0 0 151px rgb(0 0 0 / 52%);
+    }
+}
+
+h2,
+h3 {
+    &.header-glow {
+        margin-top: -15px;
+        font-size: 21px;
+        font-weight: 300;
+    }
+    &.sub-header {
+        font-weight: 100;
+        opacity: 0.9;
+        margin-top: -16px;
+        padding-bottom: 6px;
+        // font-size: 22px;
+        padding-bottom: 4px;
+        position: relative;
+        padding-right: 11px;
+        text-align: right;
+
+        &.half-width {
+            width: calc(50% - 11px);
+        }
+        &.full-width {
+            width: calc(100% - 11px);
+        }
+        &.warning {
+            font-weight: 300;
+            color: $color-titlebar-red;
+        }
+
+        &::before {
+            content: "";
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 18px;
+            z-index: -1;
+            background-color: #0000002e;
+        }
+    }
+}
+
+
+p {
+    &.danger {
+        color: $color-red-warn;
+        padding: 0.5em 1em;
+        background-color: rgba($color-red-warn, .11);
+        border-left: 0.4em solid $color-red-warn;
+        display: inline-block;
+    }
+}
+
+.material-symbols-outlined {
+    font-variation-settings:
+    'FILL' 0,
+    'wght' 100,
+    'GRAD' 0,
+    'opsz' 24
+}
+
+
+mat-form-field {
+    &.consolas {
+        input, textarea {
+            font-family: Consolas, monospace;
+        }
+    }
+}
+

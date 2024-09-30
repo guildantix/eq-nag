@@ -11,6 +11,7 @@ import { StringUtility } from 'src/app/utilities';
 
 // TODO: Move away from highlighting the current line and instead highlight all lines at the current second.  And remove the intervals, scrolling the last element into view immediately.
 // TODO: On close, stop the sim.
+// TODO: Speed up the loading of large log files.
 
 @Component( {
     selector: 'app-log-simulator',
@@ -35,7 +36,20 @@ export class LogSimulatorComponent implements OnInit {
     public simulationTimerId: number | null = null;
     public simulationRuntime: number = 0;
     public simulationExpectedRuntime: number = 0;
-    public simulationLineIndex: number = -1;
+    private _simulationLineIndex: number = -1;
+    public get simulationLineIndex(): number {
+        return this._simulationLineIndex;
+    }
+    public set simulationLineIndex( value: number ) {
+        this._simulationLineIndex = value;
+        if ( value >= this.lines.length ) {
+            this._simulationLineIndex = this.lines.length - 1;
+        }
+        if ( value < 0 ) {
+            this._simulationLineIndex = 0;
+        }
+        this.scrollIndex = this._simulationLineIndex;
+    }
     public simulationId: string | null = null;
     public get simulationProgressPercent(): number {
         if ( this.simulationExpectedRuntime === 0 ) {
@@ -54,6 +68,13 @@ export class LogSimulatorComponent implements OnInit {
         return window.api.utils.dates.getDurationLabel( remaining / 1000 );
     }
     public lastIndexScrolled: number = -1;
+    public scrollIndex: number = 0;
+    public get startIndex(): number {
+        return Math.max( 0, this.scrollIndex - 26 );
+    }
+    public get endIndex(): number {
+        return Math.min( this.lines.length, this.scrollIndex + 26 );
+    }
 
     constructor(
         private readonly ipcService: IpcService,
@@ -83,6 +104,21 @@ export class LogSimulatorComponent implements OnInit {
     public closeModal(): void {
         this.ipcService.closeThisChild();
     }
+
+    public onTableScroll( event: WheelEvent ): void {
+        this.scrollIndex += Math.ceil( event.deltaY / 100 );
+        if ( this.scrollIndex < 26 ) {
+            this.scrollIndex = 26;
+        }
+        if ( this.scrollIndex >= this.lines.length ) {
+            this.scrollIndex = this.lines.length - 1;
+        }
+
+        event.preventDefault();
+        event.stopPropagation();
+    }
+
+
 
 
 
@@ -142,6 +178,7 @@ export class LogSimulatorComponent implements OnInit {
                     }
                 }
             }
+            this.scrollIndex = 26 > lines.length ? lines.length : 26;
             this.lines = lines;
         } );
     }
@@ -218,19 +255,7 @@ export class LogSimulatorComponent implements OnInit {
                 } else {
                     this.simulationStatus = 'running';
                 }
-                let lineDistance = status.lineIndex - this.simulationLineIndex;
-                if ( lineDistance > 1 ) {
-                    let _ms = 500 / lineDistance;
-                    let _fn = () => {
-                        this.simulationLineIndex++;
-                        if ( this.simulationLineIndex < status.lineIndex ) {
-                            window.setTimeout( _fn, _ms );
-                        }
-                    }
-                    window.setTimeout( _fn, _ms );
-                } else {
                     this.simulationLineIndex = status.lineIndex;
-                }
 
                 if ( status.lineIndex === 0 ) {
                     this.simulationExpectedRuntime = status.msRemaining;

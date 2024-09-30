@@ -1,12 +1,45 @@
 import { Injectable, NgZone } from '@angular/core';
 import * as Electron from 'electron';
 import { UpdateInfo } from 'electron-updater';
-import { Observable, Observer } from 'rxjs';
+import { Observable, Observer, Subject } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
-import { DataTickModel, DkpEntryModel, TriggerModel, OverlayWindowModel, ActionTypes, FocusEffectSettings, CharacterModel, BasicError, TriggerFolder, FileModel, Tag, AuthorModel, PackageFileModel, TriggerPackageMetaModel, TriggerPackageVersion, FctStylesModel, OverlayBoundsChangedEventArgs, DialogEventArgs, QuickShareMetaModel, LogFileLocation, IpcMessage, DeathRecapPreferences, QuickShareAuthorListTypes, Progress, QuitFailureData, DuplicateTriggerAction, ScrapedSpell, ScrapedClickEffect, TriggerParseHistoryModel, SimulationProgress, FctCombatGroup, CombatTypes, StylePropertiesModel, CombatAnimations, TriggersProfileModel, ConsoleMessageModel, LogTypes } from './core.model';
+import { DataTickModel, DkpEntryModel, TriggerModel, OverlayWindowModel, ActionTypes, FocusEffectSettings, CharacterModel, BasicError, TriggerFolder, FileModel, Tag, AuthorModel, PackageFileModel, TriggerPackageMetaModel, TriggerPackageVersion, FctStylesModel, OverlayBoundsChangedEventArgs, DialogEventArgs, QuickShareMetaModel, LogFileLocation, IpcMessage, DeathRecapPreferences, QuickShareAuthorListTypes, Progress, QuitFailureData, DuplicateTriggerAction, ScrapedSpell, ScrapedClickEffect, TriggerParseHistoryModel, SimulationProgress, FctCombatGroup, CombatTypes, StylePropertiesModel, CombatAnimations, TriggersProfileModel, ConsoleMessageModel, LogTypes, ServerCombatModel, ProgressModel, ServerConsoleMessage, ChatRoomLinkReceivedEventArgs } from './core.model';
 import { GinaConfiguration, GinaTriggerGroups } from './gina.model';
 import { ColorUtility } from './utilities';
 import { nagId } from './core/nag-id.util';
+import { DialogService } from './dialogs/dialog.service';
+
+export class ConsoleData {
+
+    successful: TriggerParseHistoryModel[];
+    failed: TriggerParseHistoryModel[];
+    consoleMessages: ConsoleMessageModel[];
+    consoleProgress: ProgressModel[];
+
+}
+
+export class HandshakePayloadModel {
+
+    public version: string;
+    public peerId: string;
+    public characterName: string;
+    public serverName: string;
+
+}
+
+export class GoodbyePayloadModel {
+
+    public version: string;
+    public peerId: string;
+
+}
+
+export class ServerEventModel {
+
+    public type: 'handshake' | 'disconnect' | 'character';
+    public payload: undefined | HandshakePayloadModel | GoodbyePayloadModel;
+
+}
 
 @Injectable( { providedIn: 'root' })
 export class IpcService {
@@ -14,6 +47,8 @@ export class IpcService {
     private _successfulParses: TriggerParseHistoryModel[] = [];
     private _failedParses: TriggerParseHistoryModel[] = [];
     private _consoleMessages: ConsoleMessageModel[] = [];
+    private _consoleProgress: ProgressModel[] = [];
+    private _serverLogData: ServerConsoleMessage[] = [];
     
     private _tickObservers: Observer<DataTickModel>[] = [];
     private _transmitObservers: Observer<DkpEntryModel[]>[] = [];
@@ -36,15 +71,29 @@ export class IpcService {
     private _successfulParseHistoryObservers: Observer<{ successful: TriggerParseHistoryModel[], exceptions: TriggerParseHistoryModel[] }>[] = [];
     private _consoleSuccessObservers: Observer<ConsoleMessageModel>[] = [];
     private _consoleErrorObservers: Observer<ConsoleMessageModel>[] = [];
+    private _consoleProgressObservers: Observer<ProgressModel>[] = [];
     private _onCombatGroupMigrationRequestObservers: Observer<boolean>[] = [];
     private _settingsObservableCache: Record<string, Observable<any>> = {};
     private _settingsCacheObservers: Record<string, Observer<any>[]> = {};
+    private _watchedSettings: string[] = [];
+    private _settingsWatchObservers: Record<string, Observer<any>[]> = {};
+    private _onChatRoomDisconnected: Observer<string>[] = [];
+    private _onChatRoomConnected: Observer<string>[] = [];
+    private _onChatRoomServerLog: Observer<ServerConsoleMessage>[] = [];
+    private _onServerEvent: Observer<ServerEventModel>[] = [];
+    private _onCombatCharacterChanged: Observer<string>[] = [];
+    private _onReceivedChatRoomLink: Observer<ChatRoomLinkReceivedEventArgs>[] = [];
+
+    public onCombatGroupsInitialized: Subject<void> = new Subject<void>();
 
     private _ginaConfigCache: GinaConfiguration = null;
 
     private _timeoutIds: Record<string, number> = {};
 
-    constructor( private ngZone: NgZone ) {
+    constructor(
+        private readonly ngZone: NgZone,
+        private readonly dialogService: DialogService,
+    ) {
         if ( window.api ) {
             try {
 
@@ -67,6 +116,62 @@ export class IpcService {
                 window.api.ipc.on( 'app:quit:failure', ( event: any, data: QuitFailureData ) => {
                     ngZone.run( () => {
                         this._onQuitFalure?.forEach( f => {
+                            f.next( data );
+                        } );
+                    } );
+                } );
+
+                window.api.ipc.on( 'chat-room:disconnected', ( event: any, data: string ) => {
+                    ngZone.run( () => {
+                        this._onChatRoomDisconnected?.forEach( f => {
+                            f.next( data );
+                        } );
+                    } );
+                } );
+
+                window.api.ipc.on( 'chat-room:connected', ( event: any, data: string ) => {
+                    ngZone.run( () => {
+                        this._onChatRoomConnected?.forEach( f => {
+                            f.next( data );
+                        } );
+                    } );
+                } );
+
+                window.api.ipc.on( 'chat-room:server-log', ( event: any, data: { message: string, color: string } ) => {
+                    ngZone.run( () => {
+                        this._onChatRoomServerLog?.forEach( f => {
+                            let m = new ServerConsoleMessage();
+                            m.message = data.message;
+                            m.timestamp = new Date();
+                            
+                            if ( data.color ) {
+                                m.cssClass = `color-${data.color}`;
+                            }
+
+                            f.next( m );
+                        } );
+                    } );
+                } );
+
+                window.api.ipc.on( 'chat-room:server-event', ( event: any, data: ServerEventModel ) => {
+                    ngZone.run( () => {
+                        this._onServerEvent?.forEach( f => {
+                            f.next( data );
+                        } );
+                    } );
+                } );
+
+                window.api.ipc.on( 'combat:character:changed', ( event: any, data: string ) => {
+                    ngZone.run( () => {
+                        this._onCombatCharacterChanged?.forEach( f => {
+                            f.next( data );
+                        } );
+                    } );
+                } );
+
+                window.api.ipc.on( 'chat-room:link-received', ( event: any, data: ChatRoomLinkReceivedEventArgs ) => {
+                    ngZone.run( () => {
+                        this._onReceivedChatRoomLink?.forEach( f => {
                             f.next( data );
                         } );
                     } );
@@ -239,12 +344,37 @@ export class IpcService {
                     } );
                 } );
 
+                window.api.ipc.on( 'console:progress-event', ( event: any, data: ProgressModel ) => {
+                    ngZone.run( () => {
+                        this._consoleProgressObservers?.forEach( f => {
+                            let m = Object.assign( new ProgressModel(), data );
+                            m.logType = LogTypes.info;
+                            f.next( m );
+                        } );
+                    } );
+                } );
+
                 this.onConsoleSuccess().subscribe( log => {
                     this._consoleMessages.push( log );
                 } );
 
                 this.onConsoleError().subscribe( log => {
                     this._consoleMessages.push( log );
+
+                    if ( log.present === true && log.message ) {
+                        this.dialogService.showErrorDialog( log.label ?? 'Error', log.message );
+                    }
+                } );
+
+                this.onConsoleProgress().subscribe( log => {
+                    let i = this._consoleProgress.findIndex( x => x.logId === log.logId );
+                    if ( i === -1 ) {
+                        this._consoleProgress.push( log );
+                    } else {
+                        this._consoleProgress[ i ].label = log.label;
+                        this._consoleProgress[ i ].progress = log.progress;
+                        this._consoleProgress[ i ].message = log.message;
+                    }
                 } );
 
                 this.onBatchParseHistory().subscribe( history => {
@@ -252,12 +382,19 @@ export class IpcService {
                     this._failedParses.push( ...history.exceptions );
                 } );
 
+                this.onChatRoomServerLog().subscribe( log => this._serverLogData.push( log ) );
 
             } catch ( e ) {
                 throw e;
             }
         } else {
             console.warn( 'App not running inside Electron!' );
+        }
+    }
+
+    public openPatreon(): void {
+        if ( window.api ) {
+            window.api.openPatreon();
         }
     }
 
@@ -301,6 +438,14 @@ export class IpcService {
         return obs;
     }
 
+    public onConsoleProgress(): Observable<ProgressModel> {
+        let obs: Observable<ProgressModel> = new Observable<ProgressModel>( ( observer: Observer<ProgressModel> ) => {
+            this._consoleProgressObservers.push( observer );
+        } );
+
+        return obs;
+    }
+
     /**
      * Returns a backup progress when backup emits a progress update.
      */
@@ -318,6 +463,54 @@ export class IpcService {
     public onQuitFalure(): Observable<QuitFailureData> {
         let obs: Observable<QuitFailureData> = new Observable<QuitFailureData>( ( observer: Observer<QuitFailureData> ) => {
             this._onQuitFalure.push( observer );
+        } );
+
+        return obs;
+    }
+
+    public onChatRoomDisconnected(): Observable<string> {
+        let obs: Observable<string> = new Observable<string>( ( observer: Observer<string> ) => {
+            this._onChatRoomDisconnected.push( observer );
+        } );
+
+        return obs;
+    }
+
+    public onChatRoomConnected(): Observable<string> {
+        let obs: Observable<string> = new Observable<string>( ( observer: Observer<string> ) => {
+            this._onChatRoomConnected.push( observer );
+        } );
+
+        return obs;
+    }
+
+    public onChatRoomServerLog(): Observable<ServerConsoleMessage> {
+        let obs: Observable<ServerConsoleMessage> = new Observable<ServerConsoleMessage>( ( observer: Observer<ServerConsoleMessage> ) => {
+            this._onChatRoomServerLog.push( observer );
+        } );
+
+        return obs;
+    }
+
+    public onServerEvent(): Observable<ServerEventModel> {
+        let obs: Observable<ServerEventModel> = new Observable<ServerEventModel>( ( observer: Observer<ServerEventModel> ) => {
+            this._onServerEvent.push( observer );
+        } );
+
+        return obs;
+    }
+
+    public onCombatCharacterChanged(): Observable<string> {
+        let obs: Observable<string> = new Observable<string>( ( observer: Observer<string> ) => {
+            this._onCombatCharacterChanged.push( observer );
+        } );
+
+        return obs;
+    }
+
+    public onReceivedChatRoomLink(): Observable<ChatRoomLinkReceivedEventArgs> {
+        let obs: Observable<ChatRoomLinkReceivedEventArgs> = new Observable<ChatRoomLinkReceivedEventArgs>( ( observer: Observer<ChatRoomLinkReceivedEventArgs> ) => {
+            this._onReceivedChatRoomLink.push( observer );
         } );
 
         return obs;
@@ -511,6 +704,10 @@ export class IpcService {
         return obs;
     }
 
+    public clearLogHistory(): void {
+        window.api.ipc.send( 'app:clear-log-history', null );
+    }
+
     public mainWindowLoaded(): void {
         window.api.ipc.send( 'app:main-window-loaded', null );
     }
@@ -571,6 +768,18 @@ export class IpcService {
         window.api.ipc.send( 'console:command', command );
     }
 
+    public saveCombatDatabase(db: ServerCombatModel): void {
+        window.api.ipc.send( 'combat-database:put-server', db );
+    }
+
+    public disconnectChatRoom(): void {
+        window.api.ipc.send( 'chat-room:disconnect' );
+    }
+
+    public changeCombatCharacter( characterId: string ): void {
+        window.api.ipc.send( 'combat:character:change', characterId );
+    }
+
     /**
      * Generic setting update function.
      * 
@@ -578,7 +787,7 @@ export class IpcService {
      * @param value The setting value.
      * @param delay Wait the given milliseconds before sending changes.  If another change for the same key comes, the timeout is restarted.
      */
-    public updateSetting<T>( key: string, value: T, delay: number = null ): void {
+    public updateSetting<T>( key: string, value: T, delay: number = null, onExecuted: () => void = null ): void {
         
         if ( delay > 0 ) {
 
@@ -590,13 +799,54 @@ export class IpcService {
             // Start a new timer.
             this._timeoutIds[ key ] = window.setTimeout( () => {
                 window.api.ipc.send( 'settings:set', { key: key, value: value } );
+                this._timeoutIds[ key ] = 0;
+                if ( onExecuted ) {
+                    onExecuted();
+                }
             }, delay );
             
         } else {
             window.api.ipc.send( 'settings:set', { key: key, value: value } );
+            this._timeoutIds[ key ] = 0;
+            if ( onExecuted ) {
+                onExecuted();
+            }
 
         }
 
+    }
+
+    /**
+     * Returns an observable that continually updates when the specified setting changess.
+     * 
+     * @param key The setting key.
+     */
+    public watchSetting<T>( key: string ): Observable<T> {
+        let obs: Observable<T> = new Observable<T>( ( observer: Observer<T> ) => {
+
+            if ( !this._watchedSettings.includes( key ) ) {
+                this._watchedSettings.push( key );
+
+                window.api.ipc.on( `settings:get:${key}:generic`, ( e, value: T ) => {
+                    this.ngZone.run( () => {
+                        observer.next( value );
+
+                        if ( this._settingsWatchObservers[ key ]?.length > 0 ) {
+                            this._settingsWatchObservers[ key ].forEach( f => {
+                                f.next( value );
+                            } );
+                        }
+                    } );
+                } );
+            } else {
+                this._settingsWatchObservers[ key ].push( observer );
+            }
+
+            window.api.ipc.send( 'settings:get', { key: key, subscribe: true } );
+
+        } );
+
+        return obs;
     }
 
     /**
@@ -604,9 +854,11 @@ export class IpcService {
      * 
      * @param key The setting key.
      */
-    public getSetting<T>( key: string ): Observable<T> {
+    public getSetting<T>( key: string, cache: boolean = true ): Observable<T> {
         
-        if ( this._settingsObservableCache[ key ] ) {
+        cache = cache !== false;
+
+        if ( cache && this._settingsObservableCache[ key ] ) {
             return this._settingsObservableCache[ key ];
 
         } else {
@@ -711,6 +963,18 @@ export class IpcService {
         window.api.ipc.send( 'main:angular-ready' );
     }
 
+    public createChatRoom(): void {
+        window.api.ipc.send( 'chat-room:start-chat-room' );
+    }
+
+    public joinChatRoom( link: string ): void {
+        window.api.ipc.send( 'chat-room:join-chat-room', link );
+    }
+
+    public showSettingsWindow( name: 'combatStatistics' ): void {
+        window.api.ipc.send( 'show-settings', name );
+    }
+
     public findPlayerCharacterDeaths( logFile: string ): Observable<LogFileLocation[]> {
         let obs: Observable<LogFileLocation[]> = new Observable<LogFileLocation[]>( ( observer: Observer<LogFileLocation[]> ) => {
             
@@ -729,8 +993,8 @@ export class IpcService {
         return obs;
     }
 
-    public showDeathRecap( logFileLoc: LogFileLocation, characterName: string ) {
-        let message = new IpcMessage( { logFileLoc: logFileLoc, characterName: characterName } );
+    public showDeathRecap( logFileLoc: LogFileLocation, characterName: string, serverName: string ) {
+        let message = new IpcMessage( { logFileLoc: logFileLoc, characterName: characterName, serverName: serverName } );
         window.api.ipc.send( 'window:death-recap', message );
     }
 
@@ -1075,6 +1339,22 @@ export class IpcService {
         return obs;
     }
 
+    public getCounterNames(): Observable<string[]> {
+        let obs: Observable<string[]> = new Observable<string[]>( ( observer: Observer<string[]> ) => {
+            
+            window.api.ipc.once( 'trigger:get:counters', ( e, counterNames: string[] ) => {
+                this.ngZone.run( () => {
+                    observer.next( counterNames );
+                    observer.complete();
+                } );
+            } );
+            window.api.ipc.send( 'trigger:get:counters', null );
+
+        } );
+
+        return obs;
+    }
+
     public updateFctCombatGroup( model: FctCombatGroup, sort: string[] | undefined = undefined ): Observable<string> {
         let obs: Observable<string> = new Observable<string>( ( observer: Observer<string> ) => {
             
@@ -1388,6 +1668,10 @@ export class IpcService {
         return obs;
     }
 
+    public clearEqSpellIcons(): void {
+        window.api.ipc.send( 'game-resources:clear:eq:icons' );
+    }
+
     public getEqSpellIcons(): Observable<string[]> {
         let obs: Observable<string[]> = new Observable<string[]>( ( observer: Observer<string[]> ) => {
             
@@ -1621,9 +1905,7 @@ export class IpcService {
             let reader = new FileReader();
             reader.onload = () => {
                 if ( reader.readyState === 2 ) {
-                    // TODO: Test to make sure upgrading electron didn't break js file handling.
-                    let buffer = Buffer.from( <any>reader.result );
-                    window.api.ipc.send( 'audio-file:save', { name: name, buffer: buffer } );
+                    window.api.ipc.send( 'audio-file:save', { name: name, arrayBuffer: reader.result } );
                 }
             };
             reader.readAsArrayBuffer( file );
@@ -1899,6 +2181,10 @@ export class IpcService {
             window.api.ipc.invoke<Record<string, CharacterModel[]>>( 'character:get:options', logsPath )
                 .then( characterOptions => {
                     this.ngZone.run( () => {
+                        // Hydrate the models
+                        Object.keys( characterOptions ).forEach( key => {
+                            characterOptions[ key ] = characterOptions[ key ].map( c => Object.assign( new CharacterModel(), c ) );
+                        } );
                         observer.next( characterOptions );
                         observer.complete();
                     } );
@@ -2197,8 +2483,8 @@ export class IpcService {
         return obs;
     }
 
-    public showUpdateNotesWindow(): void {
-        window.api.ipc.send( 'window:update-notes:show' );
+    public showUpdateNotesWindow( versionTag: string | undefined ): void {
+        window.api.ipc.send( 'window:update-notes:show', versionTag );
     }
     
     public updateDeathRecapPreferences( model: DeathRecapPreferences ): void {
@@ -2251,17 +2537,34 @@ export class IpcService {
         return obs;
     }
 
-    public getConsoleData(): Observable<{ successful: TriggerParseHistoryModel[], failed: TriggerParseHistoryModel[], consoleMessages: ConsoleMessageModel[] }> {
-        let obs: Observable<{ successful: TriggerParseHistoryModel[], failed: TriggerParseHistoryModel[], consoleMessages: ConsoleMessageModel[] }> = new Observable<{ successful: TriggerParseHistoryModel[], failed: TriggerParseHistoryModel[], consoleMessages: ConsoleMessageModel[] }>( ( observer: Observer<{ successful: TriggerParseHistoryModel[], failed: TriggerParseHistoryModel[], consoleMessages: ConsoleMessageModel[] }> ) => {
-            let data: { successful: TriggerParseHistoryModel[], failed: TriggerParseHistoryModel[], consoleMessages: ConsoleMessageModel[] } = {
+    public getConsoleData(): Observable<ConsoleData> {
+        let obs: Observable<ConsoleData> = new Observable<ConsoleData>( ( observer: Observer<ConsoleData> ) => {
+            let data: ConsoleData = {
                 successful: [],
                 failed: [],
                 consoleMessages: [],
+                consoleProgress: [],
             };
+
             data.successful = this._successfulParses.slice();
             data.failed = this._failedParses.slice();
             data.consoleMessages = this._consoleMessages.slice();
+            data.consoleProgress = this._consoleProgress.slice();
+
             observer.next( data );
+            observer.complete();
+        } );
+
+        return obs;
+    }
+
+    public clearChatRoomServerLogData(): void {
+        this._serverLogData = [];
+    }
+
+    public getChatRoomServerLogData(): Observable<ServerConsoleMessage[]> {
+        let obs: Observable<ServerConsoleMessage[]> = new Observable<ServerConsoleMessage[]>( ( observer: Observer<ServerConsoleMessage[]> ) => {
+            observer.next( this._serverLogData );
             observer.complete();
         } );
 
@@ -2316,16 +2619,19 @@ export class IpcService {
         return obs;
     }
 
-    public initializeFctCombatGroups(): Observable<boolean> {
+    public initializeFctCombatGroups( options: { fctOutId?: string, fctInId?: string } | undefined = undefined ): Observable<boolean> {
         let obs: Observable<boolean> = new Observable<boolean>( ( observer: Observer<boolean> ) => {
                     
             window.api.ipc.once( 'overlay:initialize-fct', ( e, success: boolean ) => {
                 this.ngZone.run( () => {
                     observer.next( success );
                     observer.complete();
+
+                    // Let observers know that the combat groups are initialized.
+                    this.onCombatGroupsInitialized.next();
                 } );
             } );
-            window.api.ipc.send( 'overlay:initialize-fct', undefined );
+            window.api.ipc.send( 'overlay:initialize-fct', options );
 
         } );
 
@@ -2371,6 +2677,38 @@ export class IpcService {
                 } );
             } );
             window.api.ipc.send( 'overlay:install-combat-groups', fctGroups );
+
+        } );
+
+        return obs;
+    }
+
+    public getCombatDatabases(): Observable<ServerCombatModel[]> {
+        let obs: Observable<ServerCombatModel[]> = new Observable<ServerCombatModel[]>( ( observer: Observer<ServerCombatModel[]> ) => {
+                
+            window.api.ipc.once( 'combat-database:get-all', ( e, data: ServerCombatModel[] ) => {
+                this.ngZone.run( () => {
+                    observer.next( data );
+                    observer.complete();
+                } );
+            } );
+            window.api.ipc.send( 'combat-database:get-all', undefined );
+
+        } );
+
+        return obs;
+    }
+
+    public getServerList(): Observable<string[]> {
+        let obs: Observable<string[]> = new Observable<string[]>( ( observer: Observer<string[]> ) => {
+                
+            window.api.ipc.once( 'combat-database:get-server-names', ( e, data: string[] ) => {
+                this.ngZone.run( () => {
+                    observer.next( data );
+                    observer.complete();
+                } );
+            } );
+            window.api.ipc.send( 'combat-database:get-server-names', undefined );
 
         } );
 

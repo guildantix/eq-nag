@@ -31,7 +31,10 @@ export enum SettingsKeys {
     audioVolume = 'audioVolume',
     baseSpeakingRate = 'baseSpeakingRate',
     enableGpuAcceleration = 'enableGpuAcceleration',
-
+    dpsWindowPosition = 'dpsWindowPosition',
+    dpsMeterSettings = 'dpsMeterSettings',
+    serverTrustedPlayers = 'serverTrustedPlayers',
+    serverBlockedPlayers = 'serverBlockedPlayers',
 };
 
 export enum ActionTypes {
@@ -154,6 +157,25 @@ export enum CharacterClasses {
     Warrior = 'WAR',
     Wizard = 'WIZ',
 }
+
+export const CharacterClassNames: string[] = [
+    'Bard',
+    'Beastlord',
+    'Berserker',
+    'Cleric',
+    'Druid',
+    'Enchanter',
+    'Magician',
+    'Monk',
+    'Necromancer',
+    'Paladin',
+    'Ranger',
+    'Rogue',
+    'Shadowknight',
+    'Shaman',
+    'Warrior',
+    'Wizard',
+]
 
 export enum ExternalDataSources {
     Allakhazam = 'ZAM',
@@ -315,6 +337,10 @@ export class CharacterClassLevel {
     public level: number;
 }
 
+export class SelectableClassLevel extends CharacterClassLevel {
+    public selected: boolean;
+}
+
 export class BasicError {
     
     public errorCode: string;
@@ -345,12 +371,51 @@ export class TriggerModel {
     public enabled: boolean = true;
     public sequentialRestartBehavior: string = 'none';
     
+    /**
+     * Duplicates the given trigger with the given name.
+     * 
+     * @returns Returns a new trigger with the same properties as the given trigger, but with a new name and new ids.
+     * 
+     * @param trigger The trigger to duplicate.
+     * @param newName The new name for the trigger.
+     */
+    public static duplicateTrigger( trigger: TriggerModel, newName: string ): TriggerModel {
+        
+        let newTrigger = _.cloneDeep( trigger );
+        newTrigger.name = newName;
+
+        // Generate new ids.
+        newTrigger.triggerId = nagId();
+        newTrigger.actions.forEach( action => TriggerAction.resetActionIds( action ) );
+        newTrigger.conditions?.forEach( condition => condition.conditionId = nagId() );
+        newTrigger.packageId = undefined;
+
+        let phraseIdMap: Record<string, string> = {};
+
+        // Generate new phrase ids, and update the map.
+        newTrigger.capturePhrases?.forEach( phrase => {
+            let newId = nagId();
+            phraseIdMap[ phrase.phraseId ] = newId;
+            phrase.phraseId = newId;
+        } );
+
+        newTrigger.actions.forEach( action => {
+            // Update the action trigger phrase ids to the new ones.
+            for ( let i = 0; i < action.phrases.length; i++ ) {
+                action.phrases[ i ] = phraseIdMap[ action.phrases[ i ] ];
+            }
+        } );
+
+        return newTrigger;
+    }
+
 }
 
 export enum TriggerConditionTypes {
     
     VariableValue = 1,
     NamedGroupValue = 2,
+    CounterValue = 3,
 
 }
 
@@ -384,6 +449,7 @@ export class PhraseProperties {
 
     public phrase: string;
     public useRegEx: boolean;
+    public ignoreCase: boolean = true;
 
 }
 
@@ -488,6 +554,14 @@ export class FctStylesModel {
 
 }
 
+export class TextOverflowModel {
+
+    public whiteSpace: 'nowrap' | 'normal' = 'nowrap';
+    public overflow: 'hidden'|'visible' = 'hidden';
+    public textOverflow: 'clip' | 'ellipsis' = 'clip';
+
+}
+
 export class OverlayWindowModel {
 
     public overlayId: string = null;
@@ -516,6 +590,7 @@ export class OverlayWindowModel {
     public displayId: number;
     public displayBounds: Electron.Rectangle;
     
+    public textOverflow: TextOverflowModel = new TextOverflowModel();
     public showTextBorder: boolean = false;
     public textBorderColor: string = '#000000';
     public textBorderIntensity: number = 1;
@@ -529,6 +604,7 @@ export class OverlayWindowModel {
     public groupHeaderSize: number = 40;
     public groupHeaderWeight: number = 400;
     public groupHeaderColor: string = '#ffffff';
+    public groupMinWidth: number = 200;
     public showTimeRemaining: boolean = false;
     public hideTargetLabel: boolean = false;
 
@@ -540,8 +616,17 @@ export class OverlayWindowModel {
 
 }
 
+export class CharacterOptionModel {
+    
+    public characterId: string;
+    public name: string;
+    public server: string;
+    
+}
+
 export class DataTickModel {
 
+    public characters: CharacterOptionModel[] = [];
     public dkpEntries: DkpEntryModel[] = [];
     public logFile: string;
     public voiceIndex: number;
@@ -770,6 +855,32 @@ export class TriggerAction extends TriggerActionProperties {
 
         return _.uniq( variableNames );
     }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Resets the ids of all sub-objects in the given action.
+     * 
+     * @param action The action to reset.
+     */
+    public static resetActionIds( action: TriggerAction ): void {
+
+        action.actionId = nagId();
+        action.hideConditions?.forEach( condition => condition.conditionId = nagId() );
+        action.endingSoonSubActions?.forEach( subAction => subAction.actionId = nagId() );
+        action.endedSubActions?.forEach( subAction => subAction.actionId = nagId() );
+        action.excludeTargets?.forEach( phrase => phrase.phraseId = nagId() );
+        action.endEarlyPhrases?.forEach( phrase => phrase.phraseId = nagId() );
+        action.resetCounterPhrases?.forEach( phrase => phrase.phraseId = nagId() );
+
+    }
 }
 
 export class OwnedTriggerAction extends TriggerAction {
@@ -903,6 +1014,7 @@ export class CharacterModel {
     public triggerProfile: string | undefined = undefined;
     public disabledTriggers: string[] = [];
     public disableTriggersByDefault: boolean = false;
+    public disableFct: boolean = false;
     
 }
 
@@ -1127,6 +1239,8 @@ export class PackageTrigger {
      */
     public static matchesTrigger( packageTrigger: PackageTrigger, trigger: TriggerModel ): string[] {
         let changes: string[] = [];
+        // TODO: Targeted package updates by trigger/folder.
+        // TODO: When updating a trigger, if you're the author of that trigger and the trigger is in a package, you should be able to update the package.
         
         if ( packageTrigger.triggerId !== trigger.triggerId ) {
             return changes;
@@ -1467,6 +1581,18 @@ export class SharedTriggerPermissions {
 
 }
 
+export class ProgressModel {
+    
+    public logId: string;
+    public progress: number = 0;
+    public label: string;
+    public message: string;
+    public logType: LogTypes = LogTypes.info;
+    public timestamp: Date;
+
+}
+
+
 export class ConsoleMessageModel {
 
     public timestamp: Date;
@@ -1475,6 +1601,7 @@ export class ConsoleMessageModel {
     public logType: LogTypes = LogTypes.info;
     public logId: string;
     public payload: any;
+    public present: boolean | undefined = undefined;
 
 }
 
@@ -1680,4 +1807,63 @@ export class FctCombatGroup {
 
         return m;
     }
+}
+
+export class DpsMeterSettings {
+    
+    public show: boolean = true;
+    public autoFade: boolean = false;
+    public showOnlyInCombat: boolean = false;
+    public keepOnScreen: boolean = false;
+    public fadeDelayMs: number = 5000;
+    public fadeDurationMs: number = 5000;
+    public fadeOpacity: number = 0.5;
+    public encounterResetDelayMs: number = 8000;
+    public encounterInactiveDelayMs: number = 8000;
+    public playerInactiveDelayMs: number = 7000;
+    public encounterMinimumDamage: number = 0;
+    public highlightMyName: boolean = false;
+
+}
+
+export class PlayerInfo {
+
+    public level: number;
+    public className: string;
+    public raceName: string;
+
+}
+
+export class ServerCombatModel {
+    
+    public server: string | undefined = undefined;
+    public verifiedPlayers: Record<string, PlayerInfo> = {};
+    public verifiedNpcs: string[] = [];
+    public verifiedPets: string[] = [];
+    public petOwners: Record<string, string> = {};
+
+}
+
+export class ServerConsoleMessage {
+    
+    public message: string;
+    public cssClass?: string;
+    public timestamp: Date;
+
+}
+
+export class ChatRoomLinkReceivedEventArgs {
+    
+    public link: string;
+    public player: string;
+    public server: string;
+
+}
+
+export class FileReadDelays {
+
+    public readDelayMs: number = 200;
+    public readErrorDelayMs: number = 1000;
+    public flushDelayMs: number = 1000;
+
 }

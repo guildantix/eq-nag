@@ -1,6 +1,6 @@
 import { Component, EventEmitter, Input, OnInit, Output, ViewChild } from '@angular/core';
 import { MatTable } from '@angular/material/table';
-import { Phrase } from 'src/app/core.model';
+import { CapturePhrase, Phrase } from 'src/app/core.model';
 import { DialogService } from 'src/app/dialogs/dialog.service';
 import { customAlphabet } from 'nanoid';
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
@@ -20,7 +20,7 @@ export class PhrasesComponent implements OnInit {
 
     @ViewChild( 'phrasesTable' ) private phrasesTable: MatTable<any>;
 
-    public phraseTableColumns = [ 'phrase', 'regEx', 'delete' ];
+    public phraseTableColumns = [ 'phrase', 'regEx', 'regExOptions', 'delete' ];
 
     constructor( private dialogService: DialogService ) { }
 
@@ -36,21 +36,26 @@ export class PhrasesComponent implements OnInit {
     }
 
     public deletePhrase( deleteIndex: number ): void {
-        this.dialogService.showConfirmDialog(
+        
+        this.dialogService.showConfirmationDialog(
             'Are you certain you want to delete this phrase?',
             'Click "Yes" to delete the phrase.',
-            'Click "No" to cancel and close this dialog without deleting the phrase.',
-            ( confirmed ) => {
+            'Click "No" to cancel and close this dialog without deleting the phrase.' ).subscribe( ( confirmed ) => {
                 if ( confirmed ) {
                     this.doDelete( deleteIndex );
                 }
             } );
+        
     }
 
     private doDelete( index: number ): void {
         this.phrases?.splice( index, 1 );
         this.phrasesChange.emit( this.phrases );
         this.phrasesTable?.renderRows();
+    }
+
+    public toggleIgnoreCase( phrase: CapturePhrase ): void {
+        phrase.ignoreCase = !phrase.ignoreCase;
     }
 
 }

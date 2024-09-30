@@ -31,6 +31,10 @@ import { ConsoleListComponent } from './debug-console/console-list.component';
 import { FloatingCombatTextComponent } from './floating-combat-text/floating-combat-text.component';
 import { ConsoleTriggerEventComponent } from './debug-console/console-lines/trigger-event.component';
 import { ConsoleMessageComponent } from './debug-console/console-lines/message.component';
+import { FormInputModule } from './form-inputs/form-inputs.module';
+import { SettingsModule } from './settings/settings.module';
+import { ConsoleProgressComponent } from './debug-console/console-lines/console-progress.component';
+import { CombatStatisticsComponent } from './combat-statistics/combat-statistics.component';
 
 @NgModule( {
     imports: [
@@ -45,8 +49,10 @@ import { ConsoleMessageComponent } from './debug-console/console-lines/message.c
         ContextMenuModule,
         WindowsModule,
         // SetupModule,
+        SettingsModule,
         EditorsModule,
         NgxMatTimepickerModule,
+        FormInputModule,
     ],
     declarations: [
         AppComponent,
@@ -57,12 +63,13 @@ import { ConsoleMessageComponent } from './debug-console/console-lines/message.c
         ConsoleTriggerEventComponent,
         ConsoleMessageComponent,
         ConsoleListComponent,
+        ConsoleProgressComponent,
         DebugConsoleComponent,
         MainComponent,
         CharactersListComponent,
-        SettingsComponent,
         SetupWizardComponent,
         FloatingCombatTextComponent,
+        CombatStatisticsComponent,
     ],
     providers: [
         ScraperService,

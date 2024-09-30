@@ -1,9 +1,9 @@
-import { Component, Input, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, ElementRef, Input, OnInit, ViewChild } from '@angular/core';
 import { DialogService } from 'src/app/dialogs/dialog.service';
 import { IpcService } from 'src/app/ipc.service';
 import { MatTable } from '@angular/material/table';
 import { customAlphabet } from 'nanoid';
-import { ActionTypes, AuthorModel, CapturePhrase, DeathRecapPreferences, LogMaintenanceRules, LogMaintenancePlanTypes, OverlayWindowModel, QuickShareAuthorListTypes, TriggerAction, TriggerModel, ScheduledTask, Range, SettingsKeys, SharedTriggerPermissions } from 'src/app/core.model';
+import { ActionTypes, AuthorModel, CapturePhrase, DeathRecapPreferences, LogMaintenanceRules, LogMaintenancePlanTypes, OverlayWindowModel, QuickShareAuthorListTypes, TriggerAction, TriggerModel, ScheduledTask, Range, SettingsKeys, SharedTriggerPermissions, DpsMeterSettings } from 'src/app/core.model';
 import { SettingsService } from '../settings-http.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { SetupService } from 'src/app/setup/setup.service';
@@ -74,8 +74,15 @@ export class SettingsComponent implements OnInit {
     private overlays: OverlayWindowModel[] = [];
 
     @Input() public characterList: CharactersListComponent;
+    @ViewChild( 'combatStatisticsGroup', { static: true } ) public combatStatisticsGroup: ElementRef<HTMLFieldSetElement>;
 
-    constructor( private ipcService: IpcService, private dialogService: DialogService, private settingsService: SettingsService, private snackBar: MatSnackBar, private setupService: SetupService ) {
+    constructor(
+        private readonly ipcService: IpcService,
+        private readonly dialogService: DialogService,
+        private readonly settingsService: SettingsService,
+        private readonly snackBar: MatSnackBar,
+        private readonly setupService: SetupService,
+    ) {
         speechSynthesis.onvoiceschanged = () => {
             this.voiceOptions = speechSynthesis.getVoices();
         };
@@ -103,6 +110,24 @@ export class SettingsComponent implements OnInit {
         } );
 
         this.loadSettings();
+    }
+
+
+
+
+
+
+
+
+
+    
+    /**
+     * Shows the update notes window.
+     */
+    showUpdateNotes(): void {
+        this.ipcService.getAppVersion().subscribe( currentVersion => {
+            this.ipcService.showUpdateNotesWindow( `v${currentVersion}` );
+        } );
     }
 
 
@@ -150,6 +175,7 @@ export class SettingsComponent implements OnInit {
 
         this.ipcService.getSetting<boolean>( SettingsKeys.allowPrerelease ).subscribe( f => this.allowPrerelease = f );
         this.ipcService.getSetting<boolean>( SettingsKeys.enableCheckWindowPosition ).subscribe( f => this.enableCheckWindowPosition = f );
+
         // this.ipcService.getSetting<boolean>( SettingsKeys.enableGpuAcceleration ).subscribe( f => this.enableGpuAcceleration = f );
         this.ipcService.getSetting<LogMaintenanceRules>( SettingsKeys.logMaintenanceRules ).subscribe( f => {
 
@@ -214,8 +240,8 @@ export class SettingsComponent implements OnInit {
      * @param value The setting value.
      * @param delay Wait the given milliseconds before submitting changes.  If another change for the same key comes, the timeout is restarted.
      */
-    public updateSetting<T>( key: SettingsKeys, value: T, delay: number = null ) {
-        this.ipcService.updateSetting( key, value, delay );
+    public updateSetting<T>( key: SettingsKeys, value: T, delay: number = null, onExecuted: () => void = null ) {
+        this.ipcService.updateSetting( key, value, delay, onExecuted );
         this.updatedSettings.push( key );
     }
 

@@ -11,7 +11,7 @@ const customAlphabet = require( 'nanoid' ).customAlphabet;
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const nanoid = customAlphabet( alphabet, 16 );
 
-const currentTriggerDbVersion = 88;
+const currentTriggerDbVersion = 91;
 
 
 
@@ -823,6 +823,85 @@ function executeDataMigration( data ) {
         } );
         
         data.version = 88;
+        
+    }
+    if ( data.version < 89 ) {
+        
+
+        data?.triggers?.forEach( trigger => {
+            if ( trigger ) {
+                if ( trigger.externalSource != null && trigger.importType === ImportTypes.DotTimer ) {
+                    trigger.capturePhrases?.forEach( phrase => {
+                        if ( phrase?.phrase.match( /{target}/i ) ) {
+                            phrase.ignoreCase = true;
+                        }
+                    } );
+                    trigger.actions?.forEach( action => {
+                        action.endEarlyPhrases?.forEach( phrase => {
+                            if ( phrase?.phrase.match( /\${target}/i ) ) {
+                                phrase.ignoreCase = true;
+                            }
+                        } );
+                    } );
+                } else if ( trigger.externalSource != null && trigger.importType === ImportTypes.OthersBuff ) {
+                    trigger.actions?.forEach( action => {
+                        action.endEarlyPhrases?.forEach( phrase => {
+                            if ( phrase?.phrase.match( /\${target}/i ) ) {
+                                phrase.ignoreCase = true;
+                            }
+                        } );
+                    } );
+                } else if ( trigger.externalSource != null && trigger.importType === ImportTypes.Ability ) {
+                    trigger.actions?.forEach( action => {
+                        action.endEarlyPhrases?.forEach( phrase => {
+                            if ( phrase?.phrase.match( /\${target}/i ) ) {
+                                phrase.ignoreCase = true;
+                            }
+                        } );
+                    } );
+                }
+            }
+        } );
+
+        data.version = 89;
+        
+    }
+    if ( data.version < 90 ) {
+        
+
+        data?.triggers?.forEach( trigger => {
+            if ( trigger ) {
+                
+                trigger.capturePhrases?.forEach( phrase => phrase.ignoreCase = true );
+
+                trigger.actions?.forEach( action => {
+                    action.resetCounterPhrases?.forEach( phrase => phrase.ignoreCase = true );
+                    action.endEarlyPhrases?.forEach( phrase => phrase.ignoreCase = true );
+                    action.excludeTargets?.forEach( phrase => phrase.ignoreCase = true );
+                } );
+                
+            }
+        } );
+
+        data.version = 90;
+        
+    }
+    if ( data.version < 91 ) {
+        
+
+        data?.triggers?.forEach( trigger => {
+            if ( trigger ) {
+                
+                trigger.capturePhrases?.forEach( phrase => phrase.ignoreCase = true );
+
+                trigger.actions?.filter( a => a.actionType === ActionTypes.DotTimer ).forEach( action => {
+                    action.excludeTargets?.forEach( phrase => phrase.ignoreCase = false );
+                } );
+                
+            }
+        } );
+
+        data.version = 91;
         
     }
 

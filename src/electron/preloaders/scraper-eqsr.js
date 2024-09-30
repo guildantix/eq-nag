@@ -1,7 +1,16 @@
 const { contextBridge, ipcRenderer } = require( 'electron' );
 // const { getCurrentWindow, screen } = require( '@electron/remote' );
 
-const channelPrefixes = [ 'app', 'overlay', 'clipboard', 'log', 'audio-file', 'cache' ];
+const channelPrefixes = [
+    'app',
+    'overlay',
+    'clipboard',
+    'log',
+    'audio-file',
+    'cache',
+    'combat-database',
+    'show-settings',
+];
 let i = 0;
 
 contextBridge.exposeInMainWorld( 'api', {

@@ -10,11 +10,11 @@ import { ConsoleMessageModel, LogTypes } from 'src/app/core.model';
 export class ConsoleMessageComponent implements OnInit {
 
     private _item: ConsoleMessageModel;
-    @Input( 'item' ) public set item( value: ConsoleMessageModel ) {
+    @Input( 'item' ) public set item( value: any ) {
         this._item = value;
         this.payloadHtml = undefined;
-        if ( value.payload ) {
-            this.renderParseToHtml( value.payload );
+        if ( this._item.payload ) {
+            this.renderParseToHtml( this._item.payload );
         }
     }
     public get item(): ConsoleMessageModel {
@@ -91,6 +91,14 @@ export class ConsoleMessageComponent implements OnInit {
 
             html += '</ul>';
 
+            return html;
+        } else if ( typeof json === 'string' && ( this._item.logType === LogTypes.error || this._item.logType === LogTypes.warning ) ) {
+            let html = '<ul>';
+
+            html += `<li><b>message</b>: <span class="color-brown">"${json}"</span></li>`;
+            
+            html += '</ul>';
+            
             return html;
         } else {
             

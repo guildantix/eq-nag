@@ -48,7 +48,7 @@
         <ng-container matColumnDef="phrase">
             <th mat-header-cell *matHeaderCellDef> Phrase </th>
             <td mat-cell *matCellDef="let element; let i = index">
-                <mat-form-field>
+                <mat-form-field class="consolas">
                     <mat-label></mat-label>
 
                     <!-- Smaller phrases show a simple input box. -->
@@ -76,6 +76,15 @@
         <ng-container matColumnDef="regEx">
             <th mat-header-cell *matHeaderCellDef style="text-align: center; width: 50px;"> RegEx </th>
             <td mat-cell *matCellDef="let element; let i = index"> <div style="text-align: center; padding: 20px;"><mat-checkbox name="cbxUseRegEx_{{i}}" [(ngModel)]="element.useRegEx" (ngModelChange)="capturePhrasesChange.emit(capturePhrases)"></mat-checkbox></div> </td>
+        </ng-container>
+
+        <ng-container matColumnDef="regExOptions">
+            <th mat-header-cell *matHeaderCellDef style="text-align: center; width: 50px;"> Ops </th>
+            <td mat-cell *matCellDef="let element; let i = index">
+                <div style="text-align: center; padding: 20px;" title="Ignore Case">
+                    <span class="regex-option" (click)="toggleIgnoreCase(element)" [ngClass]="{ 'selected': element.ignoreCase }">i</span>
+                </div>
+            </td>
         </ng-container>
 
         <ng-container matColumnDef="delete">

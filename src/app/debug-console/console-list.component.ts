@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, HostListener, Input, OnInit, Output } from '@angular/core';
-import { ConsoleMessageModel, LogTypes, TriggerParseHistoryModel } from '../core.model';
+import { ConsoleMessageModel, LogTypes, ProgressModel, TriggerParseHistoryModel } from '../core.model';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import * as _ from 'lodash-es';
 import { IpcService } from '../ipc.service';
@@ -16,17 +16,18 @@ export class ConsoleListComponent implements OnInit {
     public parseType: 'successful' | 'failed' = 'successful';
     @Input() public searchText: string = null;
     @Input() public characterId: string = null;
-    @Output() public onListUpdated: EventEmitter<void> = new EventEmitter<void>();
+    @Output() public onListUpdated: EventEmitter<{ scrollBottom: boolean }> = new EventEmitter<{ scrollBottom: boolean }>();
 
     private histories: { successful: TriggerParseHistoryModel[], exceptions: TriggerParseHistoryModel[] } = { successful: [], exceptions: [] };
     private triggerHistories: { successful: TriggerParseHistoryModel[], failed: TriggerParseHistoryModel[] } = { successful: [], failed: [] };
     private consoleMessages: ConsoleMessageModel[] = [];
-
+    private consoleProgress: ProgressModel[] = [];
+    
     public logTypes: typeof LogTypes = LogTypes;
     public triggerId: string | null = null;
     public triggerName: string | null = null;
 
-    public history: ( ConsoleMessageModel | TriggerParseHistoryModel )[] = [];
+    public history: ( ConsoleMessageModel | TriggerParseHistoryModel | ProgressModel )[] = [];
 
     constructor(
         private readonly ipcService: IpcService,
@@ -38,21 +39,36 @@ export class ConsoleListComponent implements OnInit {
 
         // This is called because the console list is destroyed when hidden.
         this.ipcService.getConsoleData().subscribe( history => {
-            this.setHistories( history.successful, history.failed, history.consoleMessages );
+            this.setHistories( history.successful, history.failed, history.consoleMessages, history.consoleProgress );
         } );
         
         this.ipcService.onBatchParseHistory().subscribe( history => {
-            this.appendHistories( history.successful, history.exceptions );
+            if ( history.exceptions?.length > 0 || history.successful?.length > 0 ) {
+                this.appendHistories( history.successful, history.exceptions );
+            }
         } );
 
         this.ipcService.onConsoleSuccess().subscribe( log => {
             this.consoleMessages.push( log );
-            this.renderHistory();
+            this.renderHistory( false );
         } );
 
         this.ipcService.onConsoleError().subscribe( log => {
             this.consoleMessages.push( log );
-            this.renderHistory();
+            this.renderHistory( false );
+        } );
+
+        this.ipcService.onConsoleProgress().subscribe( log => {
+            if ( this.consoleProgress.findIndex( x => x.logId === log.logId ) === -1 ) {
+                this.consoleProgress.push( log );
+                this.renderHistory( false );
+            } else {
+                let index = this.consoleProgress.findIndex( x => x.logId === log.logId );
+                this.consoleProgress[ index ].label = log.label;
+                this.consoleProgress[ index ].message = log.message;
+                this.consoleProgress[ index ].progress = log.progress;
+                this.renderHistory( false );
+            }
         } );
 
     }
@@ -71,7 +87,7 @@ export class ConsoleListComponent implements OnInit {
      * 
      * @param log The log entry item.
      */
-    public asTriggerParseHistoryModel( log: ConsoleMessageModel ): TriggerParseHistoryModel {
+    public asTriggerParseHistoryModel( log: any ): TriggerParseHistoryModel {
         return log as TriggerParseHistoryModel;
     }
 
@@ -89,8 +105,14 @@ export class ConsoleListComponent implements OnInit {
      * 
      * @param log The log to evaluate.
      */
-    public isTriggerEvent( log: ConsoleMessageModel | TriggerParseHistoryModel ): boolean {
-        return log instanceof TriggerParseHistoryModel;
+    public getLogType( log: ConsoleMessageModel | TriggerParseHistoryModel | ProgressModel ): 'message' | 'trigger' | 'progress' {
+        if ( log instanceof TriggerParseHistoryModel ) {
+            return 'trigger';
+        } else if ( log instanceof ConsoleMessageModel ) {
+            return 'message';
+        }  else if ( log instanceof ProgressModel ) {
+            return 'progress';
+        }
     }
 
 
@@ -109,7 +131,7 @@ export class ConsoleListComponent implements OnInit {
      */
     public setParseType( type: 'successful' | 'failed' ) {
         this.parseType = type;
-        this.renderHistory();
+        this.renderHistory( false );
     }
 
 
@@ -131,7 +153,7 @@ export class ConsoleListComponent implements OnInit {
         this.histories.successful = Array.prototype.concat( this.histories.successful, successful );
         this.histories.exceptions = Array.prototype.concat( this.histories.exceptions, exceptions );
         this.trimHistories();
-        this.renderHistory();
+        this.renderHistory( true );
     }
 
 
@@ -149,12 +171,13 @@ export class ConsoleListComponent implements OnInit {
      * @param successful The list of successful parses.
      * @param exceptions The list of failed parses.
      */
-    public setHistories( successful: TriggerParseHistoryModel[], exceptions: TriggerParseHistoryModel[], consoleMessages: ConsoleMessageModel[] ) {
+    public setHistories( successful: TriggerParseHistoryModel[], exceptions: TriggerParseHistoryModel[], consoleMessages: ConsoleMessageModel[], consoleProgress: ProgressModel[] ) {
         this.histories.successful = successful;
         this.histories.exceptions = exceptions;
         this.consoleMessages = consoleMessages;
+        this.consoleProgress = consoleProgress;
         this.trimHistories();
-        this.renderHistory();
+        this.renderHistory( true );
     }
 
 
@@ -188,7 +211,7 @@ export class ConsoleListComponent implements OnInit {
      * calls for detectChanges.  This should be called whenever the history list 
      * is updated.
      */
-    private renderHistory(): void {
+    private renderHistory( scrollBottom: boolean ): void {
 
         if ( this.triggerId ) {
     
@@ -196,7 +219,7 @@ export class ConsoleListComponent implements OnInit {
             
         } else {
 
-            this.history = Array.prototype.concat( this.histories.successful, this.histories.exceptions, this.consoleMessages );
+            this.history = Array.prototype.concat( this.histories.successful, this.histories.exceptions, this.consoleMessages, this.consoleProgress );
             this.history = _.orderBy( this.history, [ 'timestamp' ], [ 'asc' ] );
 
         }
@@ -232,7 +255,7 @@ export class ConsoleListComponent implements OnInit {
         }
 
         this.changeDetector.detectChanges();
-        this.onListUpdated.emit();
+        this.onListUpdated.emit( { scrollBottom: scrollBottom } );
     }
 
 
@@ -250,7 +273,7 @@ export class ConsoleListComponent implements OnInit {
      * @param index The index of the log in the list.
      * @param item The log item.
      */
-    public trackByFn( index: number, item: ConsoleMessageModel ) {
+    public trackByFn( index: number, item: ConsoleMessageModel | TriggerParseHistoryModel | ProgressModel ) {
         return item.logId;
     }
 
@@ -272,6 +295,7 @@ export class ConsoleListComponent implements OnInit {
         this.triggerId = null;
         this.triggerName = null;
         this.hideTriggerHistory();
+        this.ipcService.clearLogHistory();
     }
 
 
@@ -293,7 +317,7 @@ export class ConsoleListComponent implements OnInit {
         this.triggerName = null;
         this.triggerHistories = { successful: [], failed: [] };
 
-        this.renderHistory();
+        this.renderHistory( false );
         
     }
 
@@ -318,7 +342,7 @@ export class ConsoleListComponent implements OnInit {
             this.triggerName = triggerName;
             this.triggerId = triggerId;
             this.triggerHistories = history;
-            this.renderHistory();
+            this.renderHistory( false );
         } );
     }
 

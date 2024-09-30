@@ -12,9 +12,9 @@
 
 <mat-dialog-actions>
 
-    <button mat-button [mat-dialog-close]="false" class="t-confirm-no" color="default">No</button>
-    <button mat-button [mat-dialog-close]="true" class="t-confirm-yes" color="accent">Yes</button>
-    <button mat-button [mat-dialog-close]="null" class="t-confirm-yes" color="warn" *ngIf="data.cancelMessage != null">Cancel</button>
+    <button mat-button [mat-dialog-close]="false" class="t-confirm-no" color="default">{{noText}}</button>
+    <button mat-button [mat-dialog-close]="true" class="t-confirm-yes" color="accent">{{yesText}}</button>
+    <button mat-button [mat-dialog-close]="null" class="t-confirm-yes" color="warn" *ngIf="data.cancelMessage != null">{{cancelText}}</button>
     <ng-template [ngIf]="data.moreInfo != null">
         <span style="flex: 1 1 auto;"></span>
         <button mat-button class="color-blue" (click)="data.moreInfo()">More Info</button>

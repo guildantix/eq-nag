@@ -97,7 +97,7 @@ export class DeathRecapDialogComponent implements OnInit {
     }
 
     showDeathRecap( logFileLoc: LogFileLocation ) {
-        this.ipcService.showDeathRecap( logFileLoc, this.model.name );
+        this.ipcService.showDeathRecap( logFileLoc, this.model.name, this.model.server );
         this.dialogRef.close();
     }
     

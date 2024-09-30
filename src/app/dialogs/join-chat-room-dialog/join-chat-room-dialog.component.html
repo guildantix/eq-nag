@@ -1,0 +1,16 @@
+<h2 mat-dialog-title>Combat Sync Server</h2>
+
+<mat-dialog-content>
+    <p>{{data.player}} has linked a log sync server on <span style="text-transform: capitalize;">{{data.server}}</span>.</p>
+    <p>Would you like to join the server?</p>
+</mat-dialog-content>
+
+<mat-dialog-actions>
+    
+    <button mat-button (click)="cancel()" class="t-confirm-no color-orange">Ignore</button>
+    <button mat-button (click)="joinServer(false)" class="t-confirm-no">Join server</button>
+    <button mat-button (click)="joinServer(true)" class="t-confirm-no color-green">Trust this player</button>
+    <span style="flex: 1 1 auto;"></span>
+    <button mat-button (click)="blockUser()" class="t-confirm-no" color="warn">Block this player</button>
+
+</mat-dialog-actions>

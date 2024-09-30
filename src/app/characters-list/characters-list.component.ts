@@ -63,13 +63,18 @@ export class CharactersListComponent implements OnInit {
     public selectedTabIndex: number = -1;
     public activeLogFilesDictionary: any = {};
     public triggerProfiles: TriggersProfileModel[] = [];
+    public combatCharacter: CharacterModel | undefined = undefined;
     
     @ViewChild( 'fileSelector' ) private fileSelector: ElementRef<HTMLInputElement>;
     @ViewChild( 'savedLabel' ) private savedLabel: ElementRef<HTMLDivElement>;
 
     private snackBarTimeoutId: number = null;
 
-    constructor( private dialogService: DialogService, private ipcService: IpcService, private snackBar: MatSnackBar ) { }
+    constructor(
+        private readonly dialogService: DialogService,
+        private readonly ipcService: IpcService,
+        private readonly snackBar: MatSnackBar
+    ) { }
 
     ngOnInit(): void {
         this.loadCharacters();
@@ -93,7 +98,7 @@ export class CharactersListComponent implements OnInit {
                 tick.characterDisabledTriggers.forEach( cd => {
                     let character = this.characters.find( f => f.characterId === cd.characterId );
                     if ( character ) {
-                        let intersection = character.disabledTriggers.filter( x => cd.disabledTriggers.includes( x ) );
+                        let intersection = character.disabledTriggers?.filter( x => cd.disabledTriggers.includes( x ) ) ?? [];
                         if ( tick.triggerChanges || intersection.length !== character.disabledTriggers.length || intersection.length !== cd.disabledTriggers.length ) {
                             character.disabledTriggers = cd.disabledTriggers;
                             
@@ -107,6 +112,10 @@ export class CharactersListComponent implements OnInit {
                     }
                 } );
             }
+        } );
+
+        this.ipcService.onCombatCharacterChanged().subscribe( characterId => {
+            this.combatCharacter = this.characters.find( f => f.characterId === characterId );
         } );
     }
 
@@ -142,7 +151,8 @@ export class CharactersListComponent implements OnInit {
      */
     public loadCharacters( characterId?: string ): void {
         this.ipcService.getCharacters().subscribe( data => {
-            this.characters = data;
+            this.characters = _.sortBy( data, [ 'server', 'name' ] );
+            this.characters?.forEach( character => character.disabledTriggers = character.disabledTriggers ?? [] );
             if ( characterId != null ) {
                 let i: number = _.findIndex( this.characters, f => f.characterId === characterId );
                 this.selectedTabIndex = i >= 0 && i < this.characters.length ? i : -1;
@@ -897,6 +907,65 @@ export class CharactersListComponent implements OnInit {
             } );
 
         }
+    }
+
+
+
+
+
+
+
+
+
+    
+    /**
+     * Toggle combat tracking for the given character.
+     * 
+     * @param e The mouse click event args.
+     * @param character The character to toggle combat tracking on.
+     */
+    toggleCombatTrackingForCharacter( e: MouseEvent, character: CharacterModel ) {
+        if ( this.combatCharacter != character ) {
+            this.ipcService.changeCombatCharacter( character.characterId );
+            e.stopImmediatePropagation();
+            e.stopPropagation();
+        }
+    }
+
+
+
+
+
+
+
+
+
+    
+    /**
+     * Returns true if the given character is the current combat character.
+     * 
+     * @param character The character to check.
+     */
+    isCombatCharacter( character: CharacterModel ): boolean {
+        return this.combatCharacter && this.combatCharacter.name === character.name && this.combatCharacter.server === character.server;
+    }
+
+
+
+
+
+
+
+
+
+    
+    /**
+     * Returns the combat tooltip message for the given character.
+     * 
+     * @param character The character to check.
+     */
+    getCombatTooltipMessage( character: CharacterModel ): string {
+        return this.isCombatCharacter( character ) ? `Currently tracking combat statistics for ${character.name}.` : `Change combat tracking to ${character.name}.`;
     }
 
 

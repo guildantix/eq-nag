@@ -215,7 +215,7 @@ export class GinaImportWindowComponent implements OnInit {
                     this.ginaConfig = ginaConfig;
 
                     // Build the category to overlay map
-                    ginaConfig.Categories.Category.forEach( category => {
+                    ginaConfig.Categories?.Category?.forEach( category => {
                         this.categoryOverlayMap[ category.Name ] = { textOverlayName: category.TextOverlay, timerOverlayName: category.TimerOverlay };
                     } );
                     let transformsNode = new GinaTreeObject();

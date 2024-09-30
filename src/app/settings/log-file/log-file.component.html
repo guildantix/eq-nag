@@ -1,0 +1,45 @@
+
+<div *ngIf="!showSettings">
+    <div style="text-align: right;">
+        <h2 class="sub-header full-width">Show Settings</h2>
+
+        <p class="danger">Changing any settings in this section may drastically alter your performance.</p>
+
+        <mat-checkbox [(ngModel)]="showSettings" name="showSettings" style="width: 100%;">I aim to misbehave, show me the settings!</mat-checkbox>
+
+    </div>
+</div>
+<div *ngIf="showSettings">
+    <h2 class="sub-header full-width">Log File Settings</h2>
+
+</div>
+<div class="fifty-grid" *ngIf="showSettings">
+    <div>
+        <h3 class="sub-header">Read Settings</h3>
+        <div class="flex-row">
+            <span>Read Delay</span>
+            <span class="spacer"></span>
+            <small>How often should Nag check for new log entries.</small>
+        </div>
+        <mat-slider [(ngModel)]="readDelay" thumbLabel step="10" tickInterval="1" min="50" max="1000" style="width: 100%;" (change)="onSettingsChanged()" ></mat-slider>
+        <!-- <div class="flex-row">
+            <span>Flush Delay</span>
+            <span class="spacer"></span>
+            <small>How often to flush cached log files.</small>
+        </div>
+        <mat-slider [(ngModel)]="flushDelay" thumbLabel step="10" tickInterval="1" min="50" max="1000" style="width: 100%;" (change)="onSettingsChanged()" ></mat-slider> -->
+    </div>
+    <div>
+        <h3 class="sub-header">Error Settings</h3>
+        <div class="flex-row">
+            <span>Error Delay</span>
+            <span class="spacer"></span>
+            <small>How long to wait before retrying a read operation after an error.</small>
+        </div>
+        <mat-slider [(ngModel)]="readErrorDelay" thumbLabel step="10" tickInterval="1" min="50" max="1000" style="width: 100%;" (change)="onSettingsChanged()" ></mat-slider>
+    </div>
+</div>
+<div style="text-align: right;" *ngIf="showSaveButton">
+    <button mat-button class="color-yellow" (click)="saveSettings()">Save Changes</button>
+    <button mat-button class="color-green" (click)="cancelSettings()">Nevermind, get me out of here!</button>
+</div>

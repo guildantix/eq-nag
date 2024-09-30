@@ -26,10 +26,33 @@ div.character-tab-content {
     flex: 1 1 0px;
 }
 
+:host ::ng-deep .mat-content {
+    overflow: visible;
+
+    .mat-button-ripple.mat-ripple, 
+    .mat-button-focus-overlay {
+        top: -5px;
+        left: -5px;
+        width: 34px;
+        height: 34px;
+    }
+}
+
 mat-panel-description {
     
     mat-icon {
         margin-left:15px;
+    }
+
+    button[mat-icon-button] {
+        width: 24px;
+        height: 24px;
+        line-height: 24px;
+        margin-left: 15px;
+
+        mat-icon {
+            margin-left: 0;
+        }
     }
     
     text-transform: capitalize;

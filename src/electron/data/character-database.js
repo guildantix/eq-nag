@@ -251,6 +251,25 @@ class CharacterDatabaseStore extends Store {
 
 
 
+    
+    /**
+     * Returns the character with the given name and server.
+     * 
+     * @param {string} name The name of the character.
+     * @param {string} server The name of the server.
+     */
+    findCharacterByNameAndServer( name, server ) {
+        return this.#data.characters.find( c => c.name === name && c.server === server );
+    }
+
+
+
+
+
+
+
+
+
 
     /**
      * Returns all trigger profiles.

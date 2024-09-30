@@ -74,6 +74,9 @@ class CharacterModel {
 
     /** @type {boolean} */
     disableTriggersByDefault = false;
+
+    /** @type {boolean} */
+    disableFct = false;
     
 }
 

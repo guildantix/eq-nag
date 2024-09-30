@@ -1,0 +1,207 @@
+<mat-checkbox [(ngModel)]="dpsShow" name="dpsShow">Enable Combat Statistics</mat-checkbox>
+
+<div class="fifty-grid">
+    <div>
+        <h2 class="sub-header full-width">Encounter Settings</h2>
+
+        <mat-form-field style="width: 100%;">
+            <mat-label></mat-label>
+            <input matInput type="number" [(ngModel)]="encounterMinimumDamage" name="encounterMinimumDamage" />
+            <mat-hint>Encounter Minimum Damage</mat-hint>
+        </mat-form-field>
+
+    </div>
+    <div>
+        <h2 class="sub-header full-width">Combat Statistics Window Settings</h2>
+
+        <mat-checkbox [(ngModel)]="dpsOnlyShowWhenFocused" name="dpsOnlyShowWhenFocused" style="width: 100%;">Only show when Nag or EverQuest have focus.</mat-checkbox>
+        
+        <mat-checkbox [(ngModel)]="dpsShowOnlyInCombat" name="dpsShowOnlyInCombat" style="width: 100%;">Only show when there is an encounter.</mat-checkbox>
+        
+        <mat-checkbox [(ngModel)]="highlightMyName" name="highlightMyName" style="width: 100%;">Highlight my name in the meters.</mat-checkbox>
+        
+    </div>
+</div>
+
+<div class="combat-database-header" *ngIf="showMinimalInterface">
+    <h2 *ngIf="showCombatDatabase">Combat Database</h2>
+    <span class="spacer"></span>
+    <a href="javascript:void(0);" (click)="showCombatDatabase = !showCombatDatabase">
+        <ng-template [ngIf]="!showCombatDatabase">Show More ...</ng-template>
+        <ng-template [ngIf]="showCombatDatabase">Show Less ...</ng-template>
+    </a>
+</div>
+
+<div *ngIf="showCombatDatabase">
+
+    <mat-tab-group>
+        <mat-tab label="{{db.server}}" *ngFor="let db of combatDatabases">
+            <div class="server-tab-container">
+                
+                <div class="server-search">
+
+                    <div><h2>Filters</h2></div>
+
+                    <div>
+                        <mat-form-field>
+                            <input matInput [(ngModel)]="serverSearchText[db.server]" name="serverSearchText" (keyup)="handleSearchTextChange(db.server)" />
+                            <mat-hint>Search by name or class.</mat-hint>
+                        </mat-form-field>
+                    </div>
+
+                </div>
+
+                <div class="server-content-panel">
+                    <h1>Players</h1>
+    
+                    <table class="players-table">
+                        <tr>
+                            <th>Name</th>
+                            <th>Class</th>
+                            <th>Level</th>
+                            <th></th>
+                        </tr>
+                        <tr *ngFor="let player of verifiedPlayersGridData[db.server]">
+                            <td>{{player.name}}</td>
+                            <td *ngIf="player.className">
+                                <span class="hover-hide">{{player.className}}</span>
+                                <span class="hover-show"><a (click)="selectPlayerClass(db.server, player.name)" class="color-blue">{{player.className}}</a></span>
+                            </td>
+                            <td *ngIf="!player.className">
+                                <a (click)="selectPlayerClass(db.server, player.name)" class="color-blue dim">Choose Class</a>
+                            </td>
+                            <!-- <td>{{player.className}}</td> -->
+                            <td *ngIf="player.level > 0">
+                                <span class="hover-hide">{{player.level}}</span>
+                                <span class="hover-show"><a (click)="enterPlayerLevel(db.server, player.name)" class="color-blue">{{player.level}}</a></span>
+                                <!-- <span>{{player.level}}</span> -->
+                            </td>
+                            <td  *ngIf="!player.level">
+                                <a (click)="enterPlayerLevel(db.server, player.name)" class="color-blue dim">N/A</a>
+                            </td>
+                            <!-- <td>{{player.level}}</td> -->
+                            <td>
+                                <!-- <button mat-icon-button class="color-red dim" title="Remove player and move to unknown/NPCs."><mat-icon>clear</mat-icon></button> -->
+                                <button mat-icon-button [matMenuTriggerFor]="menu"><mat-icon>more_vert</mat-icon></button>
+                                <mat-menu #menu="matMenu">
+                                    <button mat-menu-item (click)="moveToPets(db.server, player.name, 'player')"><mat-icon class="material-icons-outlined">pets</mat-icon>Move to pets</button>
+                                    <button mat-menu-item (click)="moveToNpcs(db.server, player.name, 'player')"><mat-icon class="material-icons-outlined">sentiment_very_dissatisfied</mat-icon>Move to NPCs</button>
+                                    <button mat-menu-item (click)="enterPlayerLevel(db.server, player.name)"><mat-icon class="material-icons-outlined">work_history</mat-icon>Change Level</button>
+                                    <button mat-menu-item (click)="selectPlayerClass(db.server, player.name)"><mat-icon class="material-icons-outlined">school</mat-icon>Change Class</button>
+                                    <button mat-menu-item (click)="removePlayer(db.server, player.name)"><mat-icon class="color-red">clear</mat-icon><span class="color-red">Remove</span></button>
+                                </mat-menu>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td colspan="4" style="padding-left: 0;">
+                                <mat-paginator #paginator
+                                    class="demo-paginator"
+                                    (page)="handlePlayerPageEvent(db.server, $event)"
+                                    [length]="playersDataLength[db.server]"
+                                    [pageSize]="pageSize"
+                                    [disabled]="playersDataLength[db.server] <= pageSize"
+                                    [showFirstLastButtons]="true"
+                                    [pageSizeOptions]="[]"
+                                    [hidePageSize]="true"
+                                    [pageIndex]="playerPageIndices[db.server]"
+                                    aria-label="Select page">
+                                </mat-paginator>
+                            </td>
+                        </tr>
+                    </table>
+    
+                </div>
+
+                <div class="server-content-panel">
+                    <h1>Pets</h1>
+
+                    <table class="pets-table">
+                        <tr>
+                            <th>Owner</th>
+                            <th>Pet</th>
+                            <th></th>
+                        </tr>
+                        <tr *ngFor="let pet of verifiedPetsGridData[db.server]">
+                            <td *ngIf="pet.ownerName">
+                                <span class="hover-hide">{{pet.ownerName}}</span>
+                                <span class="hover-show"><a (click)="assignPetOwner(db.server, pet.name)" class="color-blue">{{pet.ownerName}}</a></span>
+                            </td>
+                            <td *ngIf="!pet.ownerName">
+                                <a (click)="assignPetOwner(db.server, pet.name)" class="color-blue dim">Assign Owner</a>
+                            </td>
+                            <td>{{pet.name}}</td>
+                            <td>
+                                <!-- <button mat-icon-button class="color-red dim" title="Remove pet and move to unknown/NPCs."><mat-icon>clear</mat-icon></button> -->
+                                <button mat-icon-button [matMenuTriggerFor]="menu"><mat-icon>more_vert</mat-icon></button>
+                                <mat-menu #menu="matMenu">
+                                    <button mat-menu-item (click)="moveToPlayers(db.server, pet.name, 'pet')"><mat-icon class="material-icons-outlined">account_circle</mat-icon>Move to players</button>
+                                    <button mat-menu-item (click)="moveToNpcs(db.server, pet.name, 'pet')"><mat-icon class="material-icons-outlined">sentiment_very_dissatisfied</mat-icon>Move to NPCs</button>
+                                    <button mat-menu-item (click)="assignPetOwner(db.server, pet.name)"><mat-icon class="material-icons-outlined">supervisor_account</mat-icon>Change/Assign Owner</button>
+                                    <button mat-menu-item (click)="removePet(db.server, pet.name)"><mat-icon class="color-red">clear</mat-icon><span class="color-red">Remove</span></button>
+                                </mat-menu>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td colspan="3" style="padding-left: 0;">
+                                <mat-paginator #paginator
+                                    class="demo-paginator"
+                                    (page)="handlePetPageEvent(db.server, $event)"
+                                    [length]="petDataLength[db.server]"
+                                    [pageSize]="pageSize"
+                                    [disabled]="petDataLength[db.server] <= pageSize"
+                                    [showFirstLastButtons]="true"
+                                    [pageSizeOptions]="[]"
+                                    [hidePageSize]="true"
+                                    [pageIndex]="petPageIndices[db.server]"
+                                    aria-label="Select page">
+                                </mat-paginator>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+
+                <div class="server-content-panel">
+                    <h1>NPCs</h1>
+
+                    <table class="npcs-table">
+                        <tr>
+                            <th>Name</th>
+                            <th></th>
+                        </tr>
+                        <tr *ngFor="let npc of verifiedNpcsGridData[db.server]">
+                            <td>
+                                {{npc}}
+                            </td>
+                            <td>
+                                <button mat-icon-button [matMenuTriggerFor]="menu"><mat-icon>more_vert</mat-icon></button>
+                                <mat-menu #menu="matMenu">
+                                    <button mat-menu-item (click)="moveToPlayers(db.server, npc, 'npc')"><mat-icon class="material-icons-outlined">account_circle</mat-icon>Move to players</button>
+                                    <button mat-menu-item (click)="moveToPets(db.server, npc, 'npc')"><mat-icon class="material-icons-outlined">pets</mat-icon>Move to pets</button>
+                                    <button mat-menu-item (click)="removeNpc(db.server, npc)"><mat-icon class="color-red">clear</mat-icon><span class="color-red">Remove</span></button>
+                                </mat-menu>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td colspan="3" style="padding-left: 0;">
+                                <mat-paginator #paginator
+                                    class="demo-paginator"
+                                    (page)="handleNpcPageEvent(db.server, $event)"
+                                    [length]="npcDataLength[db.server]"
+                                    [pageSize]="pageSize"
+                                    [disabled]="npcDataLength[db.server] <= pageSize"
+                                    [showFirstLastButtons]="true"
+                                    [pageSizeOptions]="[]"
+                                    [hidePageSize]="true"
+                                    [pageIndex]="npcPageIndices[db.server]"
+                                    aria-label="Select page">
+                                </mat-paginator>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+
+            </div>
+        </mat-tab>
+    </mat-tab-group>
+
+</div>

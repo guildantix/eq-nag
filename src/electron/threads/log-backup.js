@@ -21,6 +21,17 @@ const logError = ( err ) => {
     ipcRenderer.send( 'app:log:exception', err );
 };
 
+/**
+ * Sends the error information to the main thread for logging.
+ * 
+ * @param {*} err The error object.
+ * @param {string} critical A message indicating the critical failure.
+ */
+const logCriticalFailure = ( err, critical ) => {
+    ipcRenderer.send( 'app:log:exception', err );
+    ipcRenderer.send( 'log:backup:critical-failure', critical );
+};
+
 
 
 
@@ -134,6 +145,8 @@ let progressPercent = 0.0;
  */
 const reportProgress = ( current, max, label ) => {
     progressLabel = label ?? progressLabel;
+    current = max > 0 ? current : 1;
+    max = max > 0 ? max : 1;
     progressPercent = current / max;
     ipcRenderer.send( progressCommChannel, { completePercent: progressPercent, label: progressLabel } );
 }
@@ -157,12 +170,15 @@ const updateProgressLabel = ( label ) => {
  * 
  * @param {string[]} logFilePaths The list of log files to archive.
  * @param {string} everquestInstallFolder The everquest installation folder.
+ * @param {number} backupIndex The index of this backup event in the history.
  */
-const backup = async ( logFilePaths, everquestInstallFolder ) => {
+const backup = async ( logFilePaths, everquestInstallFolder, backupIndex ) => {
 
     const logArchivePath = path.join( everquestInstallFolder, 'Logs', 'LogArchive.zip' );
     const archiveExists = fs.existsSync( logArchivePath );
     let archive = archiveExists ? new AdmZip( logArchivePath ) : new AdmZip();
+    let archiveDate = new Date();
+    let datePrefix = `${archiveDate.getFullYear()}-${( archiveDate.getMonth() + 1 ).toString().padStart( 2, '0' )}${archiveDate.toLocaleDateString( 'en-us', { month: "short" } )}-${archiveDate.getDate().toString().padStart( 2, '0' )}${archiveDate.toLocaleDateString( 'en-us', { weekday: "short" } )}-`;
 
     /** @type {{logFile: string, stats: fs.Stats & fs.BigIntStats}[]} */
     let logFilesMeta = [];
@@ -204,7 +220,7 @@ const backup = async ( logFilePaths, everquestInstallFolder ) => {
                 let chunkBuffer = await readChunk( logFileMeta.logFile, logFileMeta.stats, pos );
                 pos += chunkBuffer.length;
 
-                const archiveName = FsUtilities.Path.appendFilename( fileName, `-${++counter}` );
+                const archiveName = datePrefix + `[${backupIndex}]` +  FsUtilities.Path.appendFilename( fileName.replace('archive_',''), `-${++counter}` );
 
                 log.info( `LogBackup > Adding to the archive: ${archiveName}.` );
                 archive.addFile( archiveName, chunkBuffer );
@@ -216,7 +232,7 @@ const backup = async ( logFilePaths, everquestInstallFolder ) => {
             }
 
         } else {
-            const archiveName = FsUtilities.Path.getFilename( logFileMeta.logFile );
+            const archiveName = datePrefix + `[${backupIndex}]` + FsUtilities.Path.getFilename( logFileMeta.logFile ).replace('archive_','');
 
             log.info( `LogBackup > Adding to the archive: ${archiveName}.` );
             archive.addLocalFile( logFileMeta.logFile, '', archiveName );
@@ -234,10 +250,9 @@ const backup = async ( logFilePaths, everquestInstallFolder ) => {
 
     log.info( 'LogBackup > Backup done, beginning cleanup.' );
 
-    processedFiles.forEach( logFile => {
+    processedFiles.forEach( async logFile => {
         log.info( `LogBackup > Deleting file ${logFile}` );
-        // TODO: Enable file deletion.
-        // fsp.rm( logFile );
+        await fsp.rm( logFile );
     } );
 
     log.info( 'LogBackup > Clean up done.' );
@@ -264,6 +279,11 @@ const backup = async ( logFilePaths, everquestInstallFolder ) => {
  * @param {number} backupIndex The index of this backup event in the history.
  */
 const backupBySchedule = async ( logFilePaths, everquestInstallFolder, daysOfWeek, backupIndex ) => {
+
+    if ( !fs.existsSync( everquestInstallFolder ) ) {
+        logCriticalFailure( new Error( `The EverQuest installation folder does not exist: ${everquestInstallFolder}` ), 'A critical error has occured during the archive process. Unable to execute archive.' );
+        return;
+    }
 
     const logArchivePath = path.join( everquestInstallFolder, 'Logs', 'LogArchive.zip' );
     const logArchiveProcDir = path.join( everquestInstallFolder, 'Logs', FsUtilities.getFileTimestamp() + '_Archiving' );
@@ -379,8 +399,6 @@ const backupBySchedule = async ( logFilePaths, everquestInstallFolder, daysOfWee
             let chunkBuffer = await readChunk( logFile, stats, pos );
             pos += chunkBuffer.length;
 
-            // const currentFileName = FsUtilities.Path.prependFilename( fileName, logDate.getTime().toString() );
-
             let read = chunkBuffer.toString( 'utf-8', 0, chunkBuffer.byteLength );
             let lines = read.split( /\r\n|\r|\n/gmi );
             let logLines = [];
@@ -410,9 +428,7 @@ const backupBySchedule = async ( logFilePaths, everquestInstallFolder, daysOfWee
                     if ( lineDate.getTime() > logDate.getTime() && daysOfWeek.indexOf( lineDate.getDay() ) > -1 ) {
 
                         await streamData( FsUtilities.Path.prependFilename( fileName, `${logDate.getTime()}_` ), logLines, stats.size );
-                        // await writeData( FsUtilities.Path.prependFilename( fileName, `${logDate.getTime()}_` ), logLines, stats.size );
 
-                        // processedSize += ArrayUtilities.getSize( logLines );
                         logLines = [];
                         logDate = lineDate;
                     }
@@ -526,8 +542,8 @@ const backupBySchedule = async ( logFilePaths, everquestInstallFolder, daysOfWee
     logFilePaths.forEach( async logFile => {
         log.info( `LogBackup > Deleting file ${logFile}` );
         // TODO: Enable file deletion.
-        // fsp.rm( logFile );
-        await fsp.rename( logFile, FsUtilities.Path.prependFilename( logFile, FsUtilities.getFileTimestamp() ) );
+        // await fsp.unlink( logFile );
+        await fsp.rename( logFile, FsUtilities.Path.prependFilename( logFile, '-' + FsUtilities.getFileTimestamp() ) );
     } );
 
     log.info( 'LogBackup > Clean up done.' );
@@ -559,7 +575,7 @@ const backupBySchedule = async ( logFilePaths, everquestInstallFolder, daysOfWee
  */
 function LogBackup( logFiles, everquestInstallFolder, daysOfWeek, backupIndex ) {
     if ( daysOfWeek == null || daysOfWeek.length === 0 ) {
-        backup( logFiles, everquestInstallFolder ).then( () => { } );
+        backup( logFiles, everquestInstallFolder, backupIndex ).then( () => { } );
     } else {
         backupBySchedule( logFiles, everquestInstallFolder, daysOfWeek ?? [], backupIndex ?? 0 ).then( () => { } );
     }

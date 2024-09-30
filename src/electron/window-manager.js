@@ -2,7 +2,7 @@ const { app, BrowserWindow, ipcMain, screen } = require( "electron" );
 const ForwardRef = require( './forward-ref' );
 const OverlayDatabaseStore = require( "./data/overlay-database" );
 const UserPreferencesStore = require( "./data/user-preferences" );
-const { OverlayWindow } = require( "./data/models/overlay-window" );
+const { OverlayWindow, DisplayMetaModel } = require( "./data/models/overlay-window" );
 const ArrayUtilities = require( "./utilities/arrays" );
 const log = require( 'electron-log' );
 const CharacterModel = require( './data/models/character' );
@@ -10,6 +10,7 @@ const { IpcMessage } = require( "./data/models/common" );
 const { LogFileLocation } = require( "./data/log-file-location" );
 const path = require( "path" );
 const ElectronUtilities = require( "./utilities/electron" );
+const CharacterDatabaseStore = require( "./data/character-database" );
 
 /** 
  * We will occassionally need to disable the 'force on top' of the renderer, so 
@@ -33,6 +34,9 @@ class WindowManager {
     /** @type {BrowserWindow} */
     easyWindow;
 
+    /** @type {Record<string, BrowserWindow>} */
+    settingsWindows = {};
+
     /** @type {BrowserWindow} */
     updateNotesWindow;
 
@@ -55,6 +59,9 @@ class WindowManager {
 
     /** @type {OverlayDatabaseStore} */
     #overlayDatabase;
+
+    /** @type {CharacterDatabaseStore} */
+    #characterDatabase;
 
     /** @type {NodeJS.Timeout} */
     #resumeRendererMouseForwardingTimeout = null;
@@ -95,12 +102,14 @@ class WindowManager {
      * @param {ForwardRef<BrowserWindow>} mainWindowRef The main window of the application.
      * @param {OverlayDatabaseStore} overlayDatabase The overlay database.
      * @param {UserPreferencesStore} userPreferencesDatabase The user pref database.
+     * @param {CharacterDatabaseStore} characterDatabase The character database.
      */
-    attachIpcEvents( mainWindowRef, overlayDatabase, userPreferencesDatabase ) {
+    attachIpcEvents( mainWindowRef, overlayDatabase, userPreferencesDatabase, characterDatabase ) {
 
         this.#userPrefDb = userPreferencesDatabase;
         this.#mainWindow = mainWindowRef;
         this.#overlayDatabase = overlayDatabase;
+        this.#characterDatabase = characterDatabase;
 
         userPreferencesDatabase.onChanges( () => {
             if ( this.#renderer ) {
@@ -126,6 +135,16 @@ class WindowManager {
             this.#renderer.webContents.send( 'renderer:overlay:delete', overlayId );
         } );
 
+        ipcMain.on( 'show-settings',
+            /**
+             * 
+             * @param {Electron.IpcMainEvent} event The event args.
+             * @param {string} name The name of the setting to show.
+             */
+            ( event, name ) => {
+                this.openSettingsWindow( name, mainWindowRef.reference );
+            } );
+
         ipcMain.handle( 'scraper:get:eqsr-spell', async ( event, eqsrUrl ) => {
             return await this.scrapeEqsrResource( eqsrUrl, 'spell' );
         } );
@@ -139,7 +158,7 @@ class WindowManager {
                 parent: mainWindowRef.reference,
                 modal: false,
                 show: false,
-                width: 700,
+                width: 732,
                 height: 870,
                 frame: false,
                 webPreferences: {
@@ -170,7 +189,7 @@ class WindowManager {
                 parent: mainWindowRef.reference,
                 modal: false,
                 show: false,
-                width: 700,
+                width: 732,
                 height: 870,
                 frame: false,
                 webPreferences: {
@@ -199,8 +218,8 @@ class WindowManager {
                 bwin.setSize( size.width, size.height );
                 bwin.setPosition( ( screen.getPrimaryDisplay().workAreaSize.width / 2 ) - ( size.width / 2 ), ( screen.getPrimaryDisplay().workAreaSize.height / 2 ) - ( size.height / 2 ) );
             } else {
-                bwin.setSize( 700, 870 );
-                bwin.setPosition( ( screen.getPrimaryDisplay().workAreaSize.width / 2 ) - ( 700 / 2 ), ( screen.getPrimaryDisplay().workAreaSize.height / 2 ) - ( 870 / 2 ) );
+                bwin.setSize( 732, 870 );
+                bwin.setPosition( ( screen.getPrimaryDisplay().workAreaSize.width / 2 ) - ( 732 / 2 ), ( screen.getPrimaryDisplay().workAreaSize.height / 2 ) - ( 870 / 2 ) );
             }
 
         } );
@@ -215,10 +234,10 @@ class WindowManager {
              * Loads the death recap for the specified player death.
              * 
              * @param {any} event Event args.
-             * @param {IpcMessage<{logFileLoc: LogFileLocation, characterName: string}>} arg The character model.
+             * @param {IpcMessage<{logFileLoc: LogFileLocation, characterName: string, serverName: string}>} arg The character model.
              */
             ( event, arg ) => {
-                this.loadDeathRecap( arg.value.logFileLoc, arg.id, arg.value.characterName );
+                this.loadDeathRecap( arg.value.logFileLoc, arg.id, arg.value.characterName, arg.value.serverName );
             }
         );
         
@@ -227,10 +246,10 @@ class WindowManager {
              * Loads the death recap for the specified player death.
              * 
              * @param {any} event Event args.
-             * @param {IpcMessage<{logFilePath: string, characterName: string}>} arg The character model.
+             * @param {IpcMessage<{logFilePath: string, characterName: string, serverName: string}>} arg The character model.
              */
             ( event, arg ) => {
-                this.loadLastDeathRecap( arg.value.logFilePath, arg.id, arg.value.characterName );
+                this.loadLastDeathRecap( arg.value.logFilePath, arg.id, arg.value.characterName, arg.value.serverName );
             }
         );
 
@@ -273,7 +292,7 @@ class WindowManager {
                 parent: mainWindowRef.reference,
                 modal: false,
                 show: false,
-                width: 700,
+                width: 732,
                 height: 870,
                 frame: false,
                 x: posData == null ? null : posData.x,
@@ -598,11 +617,33 @@ class WindowManager {
         } );
 
         ipcMain.on( 'renderer:clear-all', ( event, arg ) => {
-            this.#renderer.webContents.send( 'renderer:clear-all', null );
+            if ( !this.#renderer?.isDestroyed() ) {
+                this.#renderer?.webContents.send( 'renderer:clear-all', null );
+            }
+        } );
+        
+        ipcMain.on( 'renderer:get-displays-meta', ( event ) => {
+            if ( !this.#renderer?.isDestroyed() ) {
+                this.#renderer?.webContents.send( 'renderer:get-displays-meta', this.getDisplaysMeta() );
+            }
+        } );
+        
+        ipcMain.on( 'renderer:current-encounter', ( event, encounter ) => {
+            if ( !this.#renderer?.isDestroyed() ) {
+                this.#renderer?.webContents.send( 'renderer:current-encounter', encounter );
+            }
+        } );
+        
+        ipcMain.on( 'renderer:encounter-reset', ( event, encounterDps ) => {
+            if ( !this.#renderer?.isDestroyed() ) {
+                this.#renderer?.webContents.send( 'renderer:encounter-reset', encounterDps );
+            }
         } );
         
         userPreferencesDatabase.onFctStyleChanges.push( fctStyles => {
-            this.#renderer.webContents.send( 'fctStyles', fctStyles );
+            if ( !this.#renderer?.isDestroyed() ) {
+                this.#renderer?.webContents.send( 'fctStyles', fctStyles );
+            }
         } );
     }
 
@@ -826,6 +867,68 @@ class WindowManager {
         
     }
 
+    openSettingsWindow( name, mainWindow ) {
+        
+        if ( this.settingsWindows[ name ] != null ) {
+            
+            if ( this.settingsWindows[ name ].isMinimized() ) {
+                this.settingsWindows[ name ].restore();
+            }
+
+            this.settingsWindows[ name ].setAlwaysOnTop( true );
+            this.settingsWindows[ name ].focus();
+            this.settingsWindows[ name ].setAlwaysOnTop( false );
+                
+            return;
+        }
+
+        let windowSize = { width: 1000, height: 800 };
+
+        if ( name === 'combatStatistics' ) {
+            windowSize = { width: 1150, height: 1000 };
+        }
+
+        let settingsWindow = new BrowserWindow( {
+            modal: false,
+            show: false,
+            width: windowSize.width,
+            height: windowSize.height,
+            frame: false,
+            skipTaskbar: false,
+            maximizable: true,
+            minimizable: true,
+            resizable: true,
+            webPreferences: {
+                nodeIntegration: false,
+                contextIsolation: true,
+                devTools: app.isDev(),
+                sandbox: false,
+                preload: path.join( __dirname, '/preloaders/main.js' ),
+            }
+        } );
+
+        this.settingsWindows[ name ] = settingsWindow;
+
+        require( "@electron/remote/main" ).enable( settingsWindow.webContents );
+
+        if ( app.isDev() ) {
+            settingsWindow.webContents.openDevTools( { mode: 'undocked' } );
+        }
+        
+        let url = `file://${this.#dirname}/dist/index.html#/settings/${name}`;
+
+        settingsWindow.loadURL( url );
+        settingsWindow.once( "ready-to-show", () => {
+            settingsWindow.show();
+        } );
+        settingsWindow.on( 'closed', () => {
+            this.settingsWindows[ name ] = null;
+        } );
+        settingsWindow.setBackgroundColor( '#1a1a1a' );
+        this.configureRendererMouseBlockingOnMoveResize( settingsWindow );
+
+    }
+
 
 
 
@@ -841,9 +944,10 @@ class WindowManager {
      * @param {string} logFilePath The full path to the log file.
      * @param {string} messageId The message id.
      * @param {string} characterName The name of the character that died.
+     * @param {string} serverName The name of the server.
      */
-    loadLastDeathRecap( logFilePath, messageId, characterName ) {
-        this._loadDeathRecap( logFilePath, 'last', messageId, characterName );
+    loadLastDeathRecap( logFilePath, messageId, characterName, serverName ) {
+        this._loadDeathRecap( logFilePath, 'last', messageId, characterName, serverName );
     }
 
 
@@ -861,9 +965,10 @@ class WindowManager {
      * @param {LogFileLocation} logFileLocation The location in the log file where death happened.
      * @param {string} messageId The ipc message id.
      * @param {string} characterName The name of the character.
+     * @param {string} serverName The name of the server.
      */
-    loadDeathRecap( logFileLocation, messageId, characterName ) {
-        this._loadDeathRecap( logFileLocation.logFilePath, logFileLocation.lineNo, messageId, characterName );
+    loadDeathRecap( logFileLocation, messageId, characterName, serverName ) {
+        this._loadDeathRecap( logFileLocation.logFilePath, logFileLocation.lineNo, messageId, characterName, serverName );
     }
 
 
@@ -882,8 +987,9 @@ class WindowManager {
      * @param {number|'last'} lineNo The line number of the death, or 'last' to pull the latest death.
      * @param {string} messageId The message id.
      * @param {string} characterName The name of the character that died.
+     * @param {string} serverName The name of the server.
      */
-    _loadDeathRecap( logFilePath, lineNo, messageId, characterName ) {
+    _loadDeathRecap( logFilePath, lineNo, messageId, characterName, serverName ) {
         
         let deathRecap = new BrowserWindow( {
             transparent: true,
@@ -913,8 +1019,10 @@ class WindowManager {
             x: ( workAreaSize.width - size.width ) / 2,
             y: ( workAreaSize.height - size.height ) / 2,
         } );
+
+        let characterModel = this.#characterDatabase.findCharacterByNameAndServer( characterName, serverName );
         
-        deathRecap.loadURL( `file://${__dirname}/windows/death-recap.html?logFilePath=${encodeURI( logFilePath )}&lineNo=${lineNo}&characterName=${encodeURI(characterName)}&messageId=${encodeURI(messageId)}` );
+        deathRecap.loadURL( `file://${__dirname}/windows/death-recap.html?logFilePath=${encodeURI( logFilePath )}&lineNo=${lineNo}&characterName=${encodeURI( characterName )}&messageId=${encodeURI( messageId )}&takp=${characterModel?.takp ? '1' : '0'}` );
         deathRecap.setAlwaysOnTop( true, "screen-saver" );
         
         // Open the DevTools.
@@ -1061,6 +1169,38 @@ class WindowManager {
 
 
     /**
+     * Returns a list of all displays meta information.
+     * 
+     * @returns {DisplayMetaModel[]} Returns an array of display meta data.
+     */
+    getDisplaysMeta() {
+        let displays = screen.getAllDisplays();
+        let primaryDisplay = screen.getPrimaryDisplay();
+
+        let output = displays.map( display => {
+            let output = new DisplayMetaModel();
+
+            output.id = display.id;
+            output.bounds = display.bounds;
+            output.label = display.label;
+            output.isPrimary = display.id === primaryDisplay.id;
+
+            return output;
+        } );
+
+        return output;
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
      * Unloads all windows.
      */
     unload() {
@@ -1069,6 +1209,13 @@ class WindowManager {
         }
         if ( !this.#renderer?.isDestroyed() ) {
             this.#renderer?.close();
+        }
+        if ( this.settingsWindows ) {
+            Object.keys( this.settingsWindows ).forEach( key => {
+                if ( !this.settingsWindows[ key ]?.isDestroyed() ) {
+                    this.settingsWindows[ key ]?.close();
+                }
+            } );
         }
         this.#renderer = null;
     }
@@ -1382,7 +1529,7 @@ class WindowManager {
                 parent: this.#mainWindow.reference,
                 modal: false,
                 show: false,
-                width: 700,
+                width: 732,
                 height: 870,
                 frame: false,
                 webPreferences: {

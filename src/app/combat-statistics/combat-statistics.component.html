@@ -1,0 +1,123 @@
+<mat-toolbar>
+    <span>Combat Statistics</span>
+    <span class="spacer"></span>
+    <mat-form-field>
+        <mat-label></mat-label>
+        <mat-select [(ngModel)]="combatCharacterId" name="combatCharacterId" >
+            <mat-select-trigger>
+                {{getCombatName()}}<small style="float: right; margin-right: 0.5em;">{{getCombatServer()}}</small>
+            </mat-select-trigger>
+            <mat-option [value]="null">Auto</mat-option>
+            <mat-option *ngFor="let option of characterOptions" [value]="option.characterId">{{option.name}}<small style="float: right;">{{option.server}}</small></mat-option>
+        </mat-select>
+        <mat-hint>Combat Character</mat-hint>
+    </mat-form-field>
+    <button mat-icon-button (click)="openCombatStatsSettings()"><mat-icon class="material-icons-outlined" style="opacity: 0.75;">settings</mat-icon></button>
+    <!-- <button mat-button [disabled]="true">Export</button> -->
+    
+    <!-- <button mat-button title="Import settings from another player." class="color-orange"><mat-icon class="material-icons-outlined">cloud_download</mat-icon> Import</button> -->
+    <!-- <button mat-button color="accent"><mat-icon class="material-icons-outlined">add</mat-icon> New</button> -->
+</mat-toolbar>
+<div class="tab-content no-scroller">
+
+    <fieldset>
+        <legend><span class="title">Log Synchronization</span></legend>
+        <div class="fieldset-section">
+            <h3 class="sub-header full-width header-glow">Server</h3>
+            <div class="section-text-content">
+                <div>
+                    <div style="display: flex; flex-flow: row nowrap; justify-content: space-between;">
+                        <div>
+                            <ng-template [ngIf]="!connected">
+                                <h2 style="font-weight: 100; margin-top: 0.55em;">You are not connected to a server.</h2>
+                                <button mat-button class="color-blue" (click)="createChatRoom()"><mat-icon class="material-icons-outlined">public</mat-icon> Start a server</button>
+                                <button mat-button class="color-green" (click)="joinChatRoom()"><mat-icon class="material-icons-outlined">travel_explore</mat-icon> Join a server</button>
+                            </ng-template>
+                            <ng-template [ngIf]="connected">
+                                <h2 style="font-weight: 100; margin-top: 0.55em;">Connected to server.</h2>
+                                <button mat-button class="color-red" (click)="disconnect()"><mat-icon class="material-icons-outlined">public_off</mat-icon> Disconnect from server</button>
+                                <button mat-button class="color-blue" (click)="copyServerLink()" *ngIf="chatRoomId != undefined"><mat-icon class="material-icons-outlined">content_copy</mat-icon> Copy server link</button>
+                            </ng-template>
+                        </div>
+                        <div style="width: 50%;">
+                            <h3 style="font-weight: 100;">Combat Log Sync</h3>
+                            <p>When syncing your combat log, during an encounter you will send and receive overall combat statistics with the group.  This will include, per player, the total damage done, time engaged, dps, heals, and hps.</p>
+                            <p>At the end of an encounter, you will sync with the group by transmitting and receiving the combat logs for the encounter.</p>
+                            <!-- <p>Once an encounter is over, you can then export the combat statistics into a spreadsheet.  You can choose to include shared combat logs at that time.</p> -->
+                        </div>
+                    </div>
+                </div>
+                <div *ngIf="connected">
+                    <h2 style="font-weight: 100;">Connected Peers</h2>
+                    <p *ngIf="connectedPeers.length === 0">You are the only peer connected. Invite some friends!</p>
+                    <div *ngIf="connectedPeers.length > 0" class="connected-peers" [style.maxHeight]="peerHeight + 'px'">
+                        <p *ngFor="let peer of connectedPeers">
+                            {{peer.characterName}}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="fieldset-section">
+            <h3 class="sub-header full-width header-glow">Server Console</h3>
+            <button mat-button (click)="clearConsole()">Clear</button>
+            <button mat-button (click)="scrollToBottom()">Bottom</button>
+            <div>
+                <div class="server-console">
+                    <div class="server-console-lines show-scrollbar" #consoleElement>
+
+                        <div class="server-console-line" *ngFor="let line of lines">
+                            <span class="time-stamp">[{{line.timestamp | date:'MM/dd/yy, hh:mm a'}}]</span>
+                            <p [class]="line.cssClass">{{line.message}}</p>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </fieldset>
+
+    <fieldset>
+        <legend><span class="title">Server Trust</span>
+            <sup class="help-sup"
+                matTooltip="Click here for more help."
+                matTooltipPosition="above"
+                matTooltipClass="tooltip-large"
+                (click)="explainServerTrust()">&nbsp;?</sup></legend>
+
+        <div>
+            <mat-form-field>
+                <mat-label></mat-label>
+                <mat-select [(ngModel)]="serverTrustServer" name="serverTrustServer" style="text-transform: capitalize;">
+                    <mat-option *ngFor="let server of serverTrustServerOptions" [value]="server" style="text-transform: capitalize;">{{server}}</mat-option>
+                </mat-select>
+                <mat-hint>Server</mat-hint>
+            </mat-form-field>
+        </div>
+
+        <div class="server-trust-content">
+            <div>
+                <h3 class="sub-header full-width header-glow">Trusted Players</h3>
+                <mat-form-field style="width: 100%;">
+                    <mat-label></mat-label>
+                    <textarea matInput [(ngModel)]="trustedPlayers" name="trustedPlayers" rows="5" spellcheck="false" ></textarea>
+                    <mat-hint>Add trusted characters to the list, separated by new lines.</mat-hint>
+                </mat-form-field>
+                <p>When any player in this list links to a server, and you are not already connected to one, you will automatically connect to the linked server.</p>
+            </div>
+
+            <div>
+                <h3 class="sub-header full-width header-glow">Blocked Players</h3>
+                <mat-form-field style="width: 100%;">
+                    <mat-label></mat-label>
+                    <textarea matInput [(ngModel)]="blockedPlayers" name="blockedPlayers" rows="5" spellcheck="false" ></textarea>
+                    <mat-hint>Add blocked characters to the list, separated by new lines.</mat-hint>
+                </mat-form-field>
+                <p>Any server linked by a player in the blocked list will be ignored.</p>
+            </div>
+        </div>
+
+    </fieldset>
+
+</div>

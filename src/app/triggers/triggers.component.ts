@@ -2,7 +2,7 @@ import { FlatTreeControl } from '@angular/cdk/tree';
 import { Component, ElementRef, HostListener, NgZone, OnInit, ViewChild } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTreeFlatDataSource, MatTreeFlattener } from '@angular/material/tree';
-import { DeathRecapPreferences, ExternalDataSources, QuickShareFileModel, QuickShareMetaModel, Tag, TriggerFolder, TriggerModel } from '../core.model';
+import { DeathRecapPreferences, ExternalDataSources, QuickShareFileModel, QuickShareMetaModel, Tag, TriggerAction, TriggerFolder, TriggerModel } from '../core.model';
 import { DialogService } from '../dialogs/dialog.service';
 import { IpcService } from '../ipc.service';
 import * as _ from 'lodash-es';
@@ -664,6 +664,46 @@ export class TriggersComponent implements OnInit {
                 } );
             }
         } );
+    }
+
+
+
+
+
+
+
+
+
+    
+    /**
+     * Allows the user to duplicate the given trigger.  The user must choose a new name.
+     * 
+     * @param trigger The trigger to duplicate.
+     */
+    public duplicateTrigger( trigger: TriggerModel ): void {
+        this.dialogService
+            .showInputDialog(
+                'Duplicate Trigger',
+                [ 'Please enter a new name for the duplicate trigger.' ],
+                undefined,
+                'Trigger Name',
+                `${trigger.name} (Copy)` )
+            .subscribe( newName => {
+                if ( newName ) {
+                    
+                    let newTrigger = TriggerModel.duplicateTrigger( trigger, newName );
+
+                    this.ipcService.createNewTrigger( newTrigger ).subscribe( created => {
+                        if ( created ) {
+                            this.snackBar.open( 'Trigger created!', 'Dismiss', { duration: 5000 } );
+                        } else {
+                            this.snackBar.open( 'Could not create trigger!', 'Dismiss', { duration: 5000 } );
+                        }
+                    } );
+                } else {
+                    this.dialogService.showErrorDialog( 'Error', [ 'You must enter a name for the new trigger.' ] );
+                }
+            } );
     }
 
 
@@ -1662,6 +1702,12 @@ export class TriggersComponent implements OnInit {
      */
     public getFolderContextMenu( folderId: string, name: string ): ContextMenuModel[] {
         return [ <ContextMenuModel>{
+            label: 'Comments',
+            action: () => this.showFolderComments( folderId ),
+            disabled: () => false,
+            hide: () => false,
+            matIcon: 'chat',
+        }, <ContextMenuModel>{
             label: 'Rename',
             action: () => this.renameFolder( folderId, name ),
             disabled: () => false,
@@ -1782,6 +1828,38 @@ export class TriggersComponent implements OnInit {
             hide: () => false,
             matIcon: 'clear',
         } ];
+    }
+
+
+
+
+
+
+
+
+
+    
+    /**
+     * Opens the input dialog to allow the user to input or view the comments 
+     * for the specified folder.
+     * 
+     * @param folderId The id of the folder.
+     */
+    showFolderComments( folderId: string ): void {
+        let folder = this.findFolderById( folderId );
+        
+        this.dialogService.showInputDialog(
+            `${folder.name} Comments`,
+            [''],
+            'Comments',
+            'Enter comments for the folder',
+            folder.comments, true
+        ).subscribe( comments => {
+            if ( comments != null ) {
+                folder.comments = comments;
+                this.updateTriggerFolders();
+            }
+         } );
     }
 
 
@@ -1923,6 +2001,12 @@ export class TriggersComponent implements OnInit {
             disabled: () => false,
             hide: () => false,
             matIcon: 'sort',
+        }, {
+            label: 'Duplicate',
+            action: () => this.duplicateTrigger( trigger ),
+            disabled: () => false,
+            hide: () => false,
+            matIcon: 'content_copy',
         }, <ContextMenuModel>{
             label: '-',
             action: () => { },

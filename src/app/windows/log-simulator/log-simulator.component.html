@@ -32,19 +32,25 @@
             </mat-form-field>
 
             <button mat-icon-button class="color-blue" [disabled]="characterId == null || true"><mat-icon>fast_rewind</mat-icon></button>
-            <button mat-icon-button class="material-icons-outlined color-green" [disabled]="characterId == null" (click)="beginSimulation()"><mat-icon>play_circle</mat-icon></button>
-            <button mat-icon-button class="color-red" [disabled]="characterId == null" (click)="stopSimulation()"><mat-icon>stop</mat-icon></button>
+            <button mat-icon-button class="material-icons-outlined color-green" [disabled]="characterId == null || rawData == null" (click)="beginSimulation()"><mat-icon>play_circle</mat-icon></button>
+            <button mat-icon-button class="color-red" [disabled]="characterId == null || rawData == null" (click)="stopSimulation()"><mat-icon>stop</mat-icon></button>
             <button mat-icon-button class="color-yellow" [disabled]="characterId == null || true"><mat-icon>pause</mat-icon></button>
             <button mat-icon-button class="color-blue" [disabled]="characterId == null || true"><mat-icon>fast_forward</mat-icon></button>
 
         </div>
         <div class="table-container">
-            <table>
-                <tr *ngFor="let line of lines; let i = index" #trRef [attr.class]="getTrClass(i, trRef)">
-                    <td class="line-numbers" [ngClass]="{'even': i % 2 === 0, 'odd': i % 2 !== 0}">{{i + 1}}</td>
+            
+            <table (wheel)="onTableScroll($event)" *ngIf="lines?.length < 50000">
+                <!-- [ngClass]="{'current': i === simulationLineIndex}" -->
+                <tr *ngFor="let line of lines | slice:startIndex:endIndex; let i = index" #trRef [attr.class]="getTrClass(i + startIndex, trRef)">
+                    <td class="line-numbers" [ngClass]="{'even': i % 2 === 0, 'odd': i % 2 !== 0}">{{i + startIndex + 1}}</td>
                     <td class="log-text">{{line}}</td>
                 </tr>
             </table>
+            <div *ngIf="lines?.length >= 1000" style="padding-left: 3em;">
+                <h1 style="font-weight: 100;">Data set too large to preview during simulation.</h1>
+                <div style="padding: 0 15px;">Current line: {{simulationLineIndex < 0 ? 0 : simulationLineIndex}}</div>
+            </div>
         </div>
     </section>
     <footer>
