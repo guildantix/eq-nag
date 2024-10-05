@@ -132,6 +132,7 @@ export class TriggerLibraryService {
         data.description = meta.description;
         data.category = meta.category;
         data.tags = meta.tags;
+        data.privatePackage = meta.privatePackage === true;
 
         return this.httpClient.post<TriggerPackageMetaModel>( `${environment.shareServiceUrl}/triggers/${authorId}`, data )
             .pipe(
@@ -222,7 +223,7 @@ export class TriggerLibraryService {
 
 
 
-    
+
     /**
      * Deletes the specified package.
      * 
