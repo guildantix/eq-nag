@@ -2007,6 +2007,7 @@ function displayListAction( res, action, trigger ) {
         list.instanceId = nagId();
         list.trigger = trigger;
         list.action = action;
+        list.state = 'created';
 
         lists.push( list );
         
@@ -2323,7 +2324,12 @@ function displayListAction( res, action, trigger ) {
 
         if ( !list ) {
             throw new Error( 'Unable to execute list action. The list to begin enumeration was not found.' );
+        } else if ( list.state === 'running' ) {
+            // If the list is already running, then we'll ignore this.
+            return;
         }
+
+        list.state = 'running';
 
         if ( list.component.intervalId === -1 ) {
             list.timestamp = 0;
@@ -2352,6 +2358,8 @@ function displayListAction( res, action, trigger ) {
         if ( !list ) {
             throw new Error( 'Unable to execute list action. The list to end enumeration was not found.' );
         }
+
+        list.state = 'stopped';
 
         if ( action.autoEnumerateList && list.component.intervalId !== -1 ) {
             window.clearTimeout( list.component.intervalId );
