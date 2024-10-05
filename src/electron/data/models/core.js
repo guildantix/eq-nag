@@ -92,4 +92,6 @@ class FileReadDelays {
 
 }
 
-module.exports = { StylePropertiesModel, FileReadDelays };
+const nagListNameKey = 'nag_listname';
+
+module.exports = { StylePropertiesModel, FileReadDelays, nagListNameKey };
