@@ -41,12 +41,13 @@ export class TriggerPackageDetailsComponent implements OnInit {
     public isAuthor: boolean = false;
     public isInstalled: boolean = false;
     public get showHistory(): boolean {
-        return _.some( this.package.versionHistory, f => f.notes != null );
+        return _.some( this.package.versionHistory, f => f.notes != null ) || this.isAuthor;
     }
 
     public authorId: string;
     public trustedAuthor: boolean = false;
     @Output() public editPackageId: EventEmitter<string> = new EventEmitter<string>();
+    @Output() public onPackageDeleted: EventEmitter<void> = new EventEmitter<void>();
     @ViewChild( 'newTriggersTable', { static: true } ) newTriggersTable: MatTable<PackageTrigger>;
 
     constructor( private ipcService: IpcService, private dialogService: DialogService, private libraryService: TriggerLibraryService, private settingsService: SettingsService, private snackBar: MatSnackBar ) { }
@@ -293,6 +294,33 @@ export class TriggerPackageDetailsComponent implements OnInit {
             fn();
         }
         
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Deletes the specified trigger package.
+     * 
+     * @param package The package to delete.
+     */
+    deletePackage() {
+        if ( this.isAuthor && this.trustedAuthor && this.package != null && this.package.triggerPackageId != null ) {
+            this.dialogService.showConfirmationDialog( `Are you sure you want to delete the ${this.package.name} package?`, 'Click "Yes" to delete this package', 'Click "No" to close this dialog without deleting this package.' ).subscribe( result => {
+                if ( result === true ) {
+                    this.libraryService.deleteTriggerPackage( this.package.triggerPackageId, this.authorId ).subscribe( () => {
+                        this.snackBar.open( 'Package deleted.', 'OK', { duration: 3000 } );
+                        this.onPackageDeleted.emit();
+                    } );
+                }
+            } );
+        }
     }
 
 
