@@ -664,7 +664,7 @@
             <div class="list-content">
                 <div class="list-items">
                     {{#each items}}
-                        <div class="list-item">
+                        <div class="list-item" data-name="{{this.name}}">
                             <div class="list-item-content">
                                 <span class="list-item-icon {{this.textCssClass}}"><i class="fas {{this.iconCssClass}}"></i></span>
                                 <span class="list-item-title {{this.textCssClass}}">{{this.name}}</span>
