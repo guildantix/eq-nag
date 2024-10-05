@@ -1517,6 +1517,30 @@ function Renderer( originX, originY, glowOnStart ) {
                     if ( model.duration !== null && model.duration !== undefined ) {
                         component.start = DateUtilities.addSeconds( component.start, model.duration );
                     }
+                } else if ( model.updateType === 'list-act-bad' ) {
+                    let c = Object.assign( new RendererComponent(), component );
+                    let listItemDom = component.dom.querySelector( `.list-item[data-name=${c.currentName}]` );
+                    let iconDom = listItemDom.querySelector( '.list-item-icon' );
+                    let textDom = listItemDom.querySelector( '.list-item-title' );
+
+                    iconDom.classList.add( 'error' );
+                    textDom.classList.add( 'error' );
+
+                    iconDom.classList.remove( 'success' );
+                    textDom.classList.remove( 'success' );
+
+                } else if ( model.updateType === 'list-act-good' ) {
+                    let c = Object.assign( new RendererComponent(), component );
+                    let listItemDom = component.dom.querySelector( `.list-item[data-name=${c.currentName}]` );
+                    let iconDom = listItemDom.querySelector( '.list-item-icon' );
+                    let textDom = listItemDom.querySelector( '.list-item-title' );
+
+                    iconDom.classList.add( 'success' );
+                    textDom.classList.add( 'success' );
+
+                    iconDom.classList.remove( 'error' );
+                    textDom.classList.remove( 'error' );
+                    
                 }
             }
         } );
@@ -4594,7 +4618,7 @@ function findComponents( predicate ) {
  * 
  * @description This method will search all overlays.
  * 
- * @returns {OverlayComponent|null} Returns the first overlay components that satisfies the predicate.  Searches all overlays.
+ * @returns {OverlayComponent|RendererComponent|null} Returns the first overlay components that satisfies the predicate.  Searches all overlays.
  * 
  * @param {(component: OverlayComponent) => boolean} predicate Invoked per iteration, if true the component is immediately returned.
  */
