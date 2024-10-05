@@ -265,19 +265,6 @@
                 </div>
             </div>
 
-            <div class="card-property" *ngIf="action.listEnableActionTracking && action.autoEnumerateList">
-                <div class="content-middle">Select the variable that contains the name of the item/player in the list.</div>
-                <div>
-                    <mat-form-field style="width: 100%;">
-                        <mat-label></mat-label>
-                        <mat-select [(ngModel)]="action.listActionTrackingVarName" name="listActionTrackingVarName">
-                            <mat-option *ngFor="let name of actionTrackingVariableNames" [value]="name">{{name}}</mat-option>
-                        </mat-select>
-                        <mat-hint>Value should be a name in the list.</mat-hint>
-                    </mat-form-field>
-                </div>
-            </div>
-
         </div>
 
     </mat-tab>
