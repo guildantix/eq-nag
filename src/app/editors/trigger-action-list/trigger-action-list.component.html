@@ -139,7 +139,7 @@
                 </div>
             </div>
 
-            <div class="card-property" *ngIf="action.enableListEnrollment">
+            <div class="card-property" *ngIf="action.enableListEnrollment && action.autoEnumerateList">
                 <div class="content-top">
                     <mat-checkbox [(ngModel)]="action.listEnrollmentShowTimer" name="listEnrollmentShowTimer">Show Timer</mat-checkbox>
                 </div>
@@ -148,7 +148,7 @@
                 </div>
             </div>
 
-            <div class="card-property" *ngIf="action.enableListEnrollment && action.listEnrollmentShowTimer">
+            <div class="card-property" *ngIf="action.enableListEnrollment && action.listEnrollmentShowTimer && action.autoEnumerateList">
                 <div class="full-width">
                     <mat-form-field style="width: 100%;">
                         <mat-label></mat-label>
@@ -165,7 +165,7 @@
                 </div>
             </div>
 
-            <div class="card-property" *ngIf="action.enableListEnrollment">
+            <div class="card-property" *ngIf="action.enableListEnrollment && action.autoEnumerateList">
                 <div class="full-width">
                     <mat-form-field style="width: 100%;">
                         <mat-label></mat-label>
@@ -178,7 +178,7 @@
                 </div>
             </div>
 
-            <div class="card-property" *ngIf="action.enableListEnrollment">
+            <div class="card-property" *ngIf="action.enableListEnrollment && action.autoEnumerateList">
                 <div class="content-middle">Select the variable that contains the name.</div>
                 <div>
                     <mat-form-field style="width: 100%;">
@@ -243,7 +243,7 @@
                 </div>
             </div>
 
-            <div class="card-property" *ngIf="action.enableListEnrollment">
+            <div class="card-property" *ngIf="action.enableListEnrollment && action.autoEnumerateList">
                 <div class="content-top">
                     <mat-checkbox [(ngModel)]="action.listEnableActionTracking" name="listEnableActionTracking">Enable Action Tracking</mat-checkbox>
                 </div>
@@ -252,7 +252,7 @@
                 </div>
             </div>
 
-            <div class="card-property" *ngIf="action.listEnableActionTracking">
+            <div class="card-property" *ngIf="action.listEnableActionTracking && action.autoEnumerateList">
                 <div class="full-width">
                     <mat-form-field style="width: 100%;">
                         <mat-label></mat-label>
@@ -265,7 +265,7 @@
                 </div>
             </div>
 
-            <div class="card-property" *ngIf="action.listEnableActionTracking">
+            <div class="card-property" *ngIf="action.listEnableActionTracking && action.autoEnumerateList">
                 <div class="content-middle">Select the variable that contains the name of the item/player in the list.</div>
                 <div>
                     <mat-form-field style="width: 100%;">
