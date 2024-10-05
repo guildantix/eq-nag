@@ -12,7 +12,14 @@
 
 <div class="creator-actions">
     <button mat-button color="warn" (click)="cancel()"><mat-icon class="material-icons-outlined">undo</mat-icon> Cancel</button>
-    <span class="spacer"></span>
+    <div>
+        <mat-checkbox [(ngModel)]="package.privatePackage" name="newPackagePrivate" [disabled]="!newPackage">Private Package</mat-checkbox>
+        <sup class="help-sup"
+            matTooltip="Click here for more help."
+            matTooltipPosition="above"
+            matTooltipClass="tooltip-large"
+            (click)="explainWindowPrivatePackage()">&nbsp;&nbsp;?</sup>
+    </div>
     <button mat-button color="accent" (click)="save()">Save Package <mat-icon class="material-icons-outlined">cloud_upload</mat-icon></button>
 </div>
 
@@ -39,14 +46,7 @@
     <mat-hint></mat-hint>
 </mat-form-field>
 
-<div style="width: 100%">
-    <mat-checkbox [(ngModel)]="package.privatePackage" name="newPackagePrivate" [disabled]="!newPackage">Private Package</mat-checkbox>
-    <sup class="help-sup"
-        matTooltip="Click here for more help."
-        matTooltipPosition="above"
-        matTooltipClass="tooltip-large"
-        (click)="explainWindowPrivatePackage()">&nbsp;&nbsp;?</sup>
-</div>
+
 
 <mat-form-field style="width: 100%">
     <mat-label>Update Notes</mat-label>
