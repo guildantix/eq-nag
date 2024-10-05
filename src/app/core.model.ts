@@ -1318,6 +1318,7 @@ export class TriggerPackageListModel {
     public category: string;
     public tags: string[] = [];
     public privatePackage: boolean = false;
+    public isAuthor: boolean = false;
 
 }
 
