@@ -2114,6 +2114,21 @@ function displayListAction( res, action, trigger ) {
                         list.component.intervalId = window.setTimeout( () => {
                             list.updateListFn();
                         }, duration );
+                        
+                        if ( list.action.listEnableActionTracking ) {
+                            let actDuration = Math.max( duration * 0.33, 1000 );
+                            list.actionTrackIntervalId = window.setTimeout( () => {
+                                if ( list.actedName !== list.component.currentName ) {
+                                    ipcRenderer.send( 'renderer:update:component', {
+                                        instanceId: list.component.instanceId,
+                                        updateType: 'list-act-bad',
+                                    } );
+                                }
+                            }, actDuration );
+                        } else {
+                            list.actionTrackIntervalId = -1;
+                        }
+
                     } else {
                         list.updateListFn();
                     }
