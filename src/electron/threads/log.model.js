@@ -74,7 +74,7 @@ class LogList {
     state = 'created';
     /** @type {RendererComponent} */
     component;
-    /** @type {() => void} */
+    /** @type {(options: {setName?: string} | undefined) => void} */
     updateListFn;
     /** @type {number} */
     timestamp;
