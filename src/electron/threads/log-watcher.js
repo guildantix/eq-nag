@@ -2380,7 +2380,7 @@ function displayListAction( res, action, trigger ) {
 
             lists = lists.filter( f => f.instanceId !== list.instanceId );
         }
-    } else if ( action.listManualEnumeratePhrase === res.phraseId ) {
+    } else if ( action.manualEnumerateList && action.listManualEnumeratePhrase === res.phraseId ) {
         let list = lists.find( f => f.action.actionId === action.actionId );
 
         if ( !list ) {
