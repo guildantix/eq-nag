@@ -74,12 +74,16 @@ class LogList {
     state = 'created';
     /** @type {RendererComponent} */
     component;
-    /** @type {(options: {setName?: string} | undefined) => void} */
+    /** @type {(options: {setName?: string, actName?: string} | undefined) => void} */
     updateListFn;
     /** @type {number} */
     timestamp;
     /** @type {string} */
     timerInstanceId;
+    /** @type {number} */
+    actionTrackIntervalId = -1;
+    /** @type {string} */
+    actedName = undefined;
 }
 
 module.exports = { PhraseParse, LogTrigger, LogList };

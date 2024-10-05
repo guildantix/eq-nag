@@ -2062,6 +2062,21 @@ function displayListAction( res, action, trigger ) {
             let now = Math.round( performance.now() );
             let currentIndex = 0;
 
+            if ( opts?.actName ) {
+                // With the act name provided, we only must cancel the timeout for the list and clear the css for the current name.
+                if ( list.actionTrackIntervalId > 0 ) {
+                    window.clearTimeout( list.actionTrackIntervalId );
+                    list.actionTrackIntervalId = -1;
+                }
+
+                ipcRenderer.send( 'renderer:update:component', {
+                    instanceId: list.component.instanceId,
+                    updateType: 'list-act-good',
+                } );
+
+                return;
+            }
+
             if ( !opts?.setName ) {
                 if ( list.component.currentName ) {
                     currentIndex = list.component.listNames.indexOf( list.component.currentName ) + 1;
@@ -2411,6 +2426,20 @@ function displayListAction( res, action, trigger ) {
             list.updateListFn( { setName: res.result.groups[ nagListNameKey ] } );
         } else {
             list.updateListFn();
+        }
+    }
+    
+    // This really needs to mutate the current name of the list, like the skip operation does.
+    if ( action.listActionTrackingPhrase === res.phraseId ) {
+        let list = lists.find( f => f.action.actionId === action.actionId );
+
+        if ( !list ) {
+            throw new Error( 'Unable to execute list action. The list to track actions was not found.' );
+        }
+
+        if ( res.result?.groups && res.result.groups[ nagListNameKey ] ) {
+            list.actedName = res.result.groups[ nagListNameKey ];
+            list.updateListFn( { actName: res.result.groups[ nagListNameKey ] } );
         }
     }
 }
