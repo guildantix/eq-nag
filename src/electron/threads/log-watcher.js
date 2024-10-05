@@ -22,6 +22,7 @@ const { createChatRoomLink } = require( '../utilities/peer-to-peer' );
 const { nagException, nagLog } = require( '../utilities/nag-console' );
 const { nagId } = require( '../utilities/nag-id' );
 const { RendererComponent } = require( '../data/models/renderer' );
+const { nagListNameKey } = require( '../data/models/core' );
 const chunkSize = 512 * 1024;
 
 window.onerror = ( error, url, line ) => {
@@ -2056,21 +2057,25 @@ function displayListAction( res, action, trigger ) {
             res: subRes,
         };
 
-        list.updateListFn = () => {
+        list.updateListFn = ( opts ) => {
             let now = Math.round( performance.now() );
             let currentIndex = 0;
 
-            if ( list.component.currentName ) {
-                currentIndex = list.component.listNames.indexOf( list.component.currentName ) + 1;
-            }
+            if ( !opts?.setName ) {
+                if ( list.component.currentName ) {
+                    currentIndex = list.component.listNames.indexOf( list.component.currentName ) + 1;
+                }
 
-            if ( currentIndex >= list.component.listNames.length ) {
-                currentIndex = 0;
+                if ( currentIndex >= list.component.listNames.length ) {
+                    currentIndex = 0;
+                }
+            } else {
+                currentIndex = list.component.listNames.findIndex( f => f === opts.setName ) ?? 0;
             }
 
             list.component.currentName = list.component.listNames[ currentIndex ];
 
-            if ( list.component.currentName === characterName && !list.component.skipNames.includes( characterName ) ) {
+            if ( list.action.autoEnumerateList && list.component.currentName === characterName && !list.component.skipNames.includes( characterName ) ) {
                 // Reduce the list by the number of skipped names.
                 let skipCount = list.component.skipNames.length;
                 let duration = list.action.duration * list.component.listNames.length;
@@ -2115,6 +2120,10 @@ function displayListAction( res, action, trigger ) {
                 } else {
                     throw new Error( 'Unable to execute list action. The duration for the list enumeration is not set and cannot auto enumerate.' );
                 }
+            } else {
+                ipcRenderer.send( 'overlay:send:component', list.component );
+
+                list.component.intervalId = -1;
             }
 
         };
@@ -2362,6 +2371,23 @@ function displayListAction( res, action, trigger ) {
             ipcRenderer.send( 'overlay:destroy:component', list.instanceId );
 
             lists = lists.filter( f => f.instanceId !== list.instanceId );
+        }
+    } else if ( action.listManualEnumeratePhrase === res.phraseId ) {
+        let list = lists.find( f => f.action.actionId === action.actionId );
+
+        if ( !list ) {
+            throw new Error( 'Unable to execute list action. The list to manually enumerate was not found.' );
+        }
+
+        if ( list.component.intervalId !== -1 ) {
+            window.clearTimeout( list.component.intervalId );
+            list.component.intervalId = -1;
+        }
+
+        if ( res.result?.groups && res.result.groups[ nagListNameKey ] ) {
+            list.updateListFn( { setName: res.result.groups[ nagListNameKey ] } );
+        } else {
+            list.updateListFn();
         }
     }
 }
