@@ -214,6 +214,36 @@ export class TriggerLibraryService {
             .pipe( catchError( error => this.handleError( error ) ) );
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Deletes the specified package.
+     * 
+     * @returns Returns true if the package was successfully deleted.
+     * 
+     * @param packageId The id of the desired package.
+     * @param authorId The id of the author.
+     */
+    deleteTriggerPackage( packageId: string, authorId: string ): Observable<boolean> {
+        return this.httpClient.delete( `${environment.shareServiceUrl}/triggers/${authorId}/${packageId}`, { observe: 'response' } )
+            .pipe(
+                map( response => {
+                    if ( response.status === 204 ) {
+                        return true;
+                    } else {
+                        return false;
+                    }
+                } ),
+                catchError( error => this.handleError( error ) ) );
+    }
+
     // TODO: Remove when recovery options are built-in.
     // getAllFiles(): Observable<PackageFileModel[]> {
         
