@@ -89,7 +89,13 @@ export class TriggerLibraryWindowComponent implements OnInit {
         return this.category === 'installed' ? null : this.category;
     }
 
-    constructor( private ipcService: IpcService, private dialogService: DialogService, private snackBar: MatSnackBar,  private libraryService: TriggerLibraryService, private settingsService: SettingsService ) { }
+    constructor(
+        private readonly ipcService: IpcService,
+        private readonly dialogService: DialogService,
+        private readonly snackBar: MatSnackBar,
+        private readonly libraryService: TriggerLibraryService,
+        private readonly settingsService: SettingsService,
+    ) { }
 
     ngOnInit() {
 
@@ -363,16 +369,8 @@ export class TriggerLibraryWindowComponent implements OnInit {
      * Shows the browse panel.
      */
     showBrowsePackages() {
+        this.loadPackages();
         this.panel = LibraryPanels.browse;
     }
-
-
-
-
-
-
-
-
-
 
 }

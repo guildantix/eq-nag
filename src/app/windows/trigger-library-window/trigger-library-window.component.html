@@ -43,7 +43,7 @@
                             </ng-template>
                             <ng-template [ngIf]="showDetailsModel">
                                 <div><button mat-button class="back-to-list-btn color-green" (click)="showBrowsePackages()"><mat-icon style="transform: rotate(180deg)">forward</mat-icon> Back to List</button></div>
-                                <app-trigger-package-details [packageId]="viewPackageId" (editPackageId)="showEditPackage($event)"></app-trigger-package-details>
+                                <app-trigger-package-details [packageId]="viewPackageId" (editPackageId)="showEditPackage($event)" (onPackageDeleted)="showBrowsePackages()"></app-trigger-package-details>
                             </ng-template>
                             <ng-template [ngIf]="showBrowse">
                                 <div style="display: flex; align-items: center;">
