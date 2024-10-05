@@ -727,6 +727,8 @@ function parseShortCodesToRegex( value, characterName ) {
     // ^(?=.*timer)Halindar (?:start timer|starts*|begins*|timer)(?: a |\s)*(?<timerDuration>[0-9]*?[h|hour|hours|hrs]*\s?[0-9]*?[m|min|mins|minute|minutes]*?\s?[0-9]*?[s|sec|secs|seconds|second]*?|[0-9]*?[m|min|mins|minute|minutes]*?\s?[0-9]*?[s|sec|secs|seconds|second]*?|[0-9]*)(?:\stimer)*(?:for Targeting)*\.$
 
     if ( value ) {
+        // https://regex101.com/r/BpKeMw/1
+        value = value.replace( /{LN}/gi, `(?<nag_listname>[A-Z][a-z]+?)` );
         value = value.replace( /{TS}/i, '(?<timerDuration>[0-9]*?[h|hour|hours|hrs]*\\s?[0-9]*?[m|min|mins|minute|minutes]*?\\s?[0-9]*?[s|sec|secs|seconds|second]*?|[0-9]*?[m|min|mins|minute|minutes]*?\\s?[0-9]*?[s|sec|secs|seconds|second]*?|[0-9]+:[0-9]+:[0-9]+|[0-9]+:[0-9]+|[0-9.]*)' );
         value = value.replace( /{C}/gi, characterName );
         value = value.replace( /\${Character}/gi, characterName );
