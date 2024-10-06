@@ -35,6 +35,7 @@ import { FormInputModule } from './form-inputs/form-inputs.module';
 import { SettingsModule } from './settings/settings.module';
 import { ConsoleProgressComponent } from './debug-console/console-lines/console-progress.component';
 import { CombatStatisticsComponent } from './combat-statistics/combat-statistics.component';
+import { QuickActionsComponent } from './quick-actions/quick-actions.component';
 
 @NgModule( {
     imports: [
@@ -65,6 +66,7 @@ import { CombatStatisticsComponent } from './combat-statistics/combat-statistics
         ConsoleListComponent,
         ConsoleProgressComponent,
         DebugConsoleComponent,
+        QuickActionsComponent,
         MainComponent,
         CharactersListComponent,
         SetupWizardComponent,

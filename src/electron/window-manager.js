@@ -11,6 +11,7 @@ const { LogFileLocation } = require( "./data/log-file-location" );
 const path = require( "path" );
 const ElectronUtilities = require( "./utilities/electron" );
 const CharacterDatabaseStore = require( "./data/character-database" );
+const { RenderTokenModel } = require( "./data/models/renderer" );
 
 /** 
  * We will occassionally need to disable the 'force on top' of the renderer, so 
@@ -68,6 +69,9 @@ class WindowManager {
 
     /** @type {number} */
     #windowIndex = 0;
+
+    /** @type {Record<string, Electron.WebContents>} */
+    #tokenObservers = {};
 
     constructor( dirname ) {
         this.#dirname = dirname;
@@ -152,6 +156,57 @@ class WindowManager {
         ipcMain.handle( 'scraper:get:eqsr-itemClick', async ( event, eqsrUrl ) => {
             return await this.scrapeEqsrResource( eqsrUrl, 'clickEffect' );
         } );
+
+        ipcMain.on( 'renderer:token:create',
+            /**
+             * Sends the given render token to the renderer.
+             * 
+             * @param {Electron.IpcMainEvent} event The event args.
+             * @param {RenderTokenModel} data The token data.
+             */
+            ( event, data ) => {
+                this.#tokenObservers[ data.actionId ] = event.sender;
+                this.#renderer.webContents.send( 'renderer:token:create', data );
+            } );
+
+        ipcMain.on( 'renderer:token:update',
+            /**
+             * Sends the given render token to the renderer.
+             * 
+             * @param {Electron.IpcMainEvent} event The event args.
+             * @param {RenderTokenModel} data The token data.
+             */
+            ( event, data ) => {
+                this.#renderer.webContents.send( 'renderer:token:update', data );
+            } );
+        
+        ipcMain.on( 'renderer:token:move',
+            /**
+             * Forwards the token move event to the observer.
+             * 
+             * @param {Electron.IpcMainEvent} event The event args.
+             * @param {{ actionId: string, bounds: Electron.Rectangle }} data The movement data.
+             */
+            ( event, data ) => {
+                if ( this.#tokenObservers[ data.actionId ] ) {
+                    this.#tokenObservers[ data.actionId ].send( 'renderer:token:move', data );
+                }
+            } );
+        
+        ipcMain.on( 'renderer:token:destroy',
+            /**
+             * Forwards the token destroy event to the renderer.
+             * 
+             * @param {Electron.IpcMainEvent} event The event args.
+             * @param {string} data The action id.
+             */
+            ( event, data ) => {
+                if ( this.#tokenObservers[ data ] ) {
+                    // Remove the observer.
+                    delete this.#tokenObservers[ data ];
+                }
+                this.#renderer.webContents.send( 'renderer:token:destroy', data );
+            } );
 
         ipcMain.on( 'trigger:dialog:new', ( event, arg ) => {
             let triggerWindow = new BrowserWindow( {
@@ -381,6 +436,10 @@ class WindowManager {
             this.#renderer.webContents.send( 'renderer:receive:component', component );
         } );
         
+        ipcMain.on( 'renderer:update:component', ( event, e ) => {
+            this.#renderer.webContents.send( 'renderer:update:component', e );
+        } );
+        
         ipcMain.on( 'overlay:send:secondary-action', ( event, token ) => {
             this.#renderer.webContents.send( 'renderer:receive:secondary-action', token );
         } );
@@ -391,6 +450,10 @@ class WindowManager {
         
         ipcMain.on( 'overlay:destroy:component', ( event, instanceId ) => {
             this.#renderer.webContents.send( 'component:destroy', instanceId );
+        } );
+
+        ipcMain.on( 'renderer:kill:component', ( event, instanceId ) => {
+            this.#renderer.webContents.send( 'renderer:kill:component', instanceId );
         } );
         
         ipcMain.on( 'renderer:stopwatch:stop', ( event, instanceId ) => {

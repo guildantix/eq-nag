@@ -275,6 +275,10 @@ table {
             }
             display: flex;
         }
+        p {
+            margin: 0;
+            padding: 0;
+        }
         flex: 1 0 auto;
         display: block;
         max-width: 50%;
@@ -286,6 +290,12 @@ table {
     }
     >.content-middle {
         align-self: center;
+    }
+    >.content-top {
+        align-self: flex-start;
+        > mat-checkbox {
+            margin-top: 0.35em;
+        }
     }
     >.content-right {
         text-align: right;

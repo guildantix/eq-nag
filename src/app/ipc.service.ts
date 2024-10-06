@@ -3,7 +3,7 @@ import * as Electron from 'electron';
 import { UpdateInfo } from 'electron-updater';
 import { Observable, Observer, Subject } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
-import { DataTickModel, DkpEntryModel, TriggerModel, OverlayWindowModel, ActionTypes, FocusEffectSettings, CharacterModel, BasicError, TriggerFolder, FileModel, Tag, AuthorModel, PackageFileModel, TriggerPackageMetaModel, TriggerPackageVersion, FctStylesModel, OverlayBoundsChangedEventArgs, DialogEventArgs, QuickShareMetaModel, LogFileLocation, IpcMessage, DeathRecapPreferences, QuickShareAuthorListTypes, Progress, QuitFailureData, DuplicateTriggerAction, ScrapedSpell, ScrapedClickEffect, TriggerParseHistoryModel, SimulationProgress, FctCombatGroup, CombatTypes, StylePropertiesModel, CombatAnimations, TriggersProfileModel, ConsoleMessageModel, LogTypes, ServerCombatModel, ProgressModel, ServerConsoleMessage, ChatRoomLinkReceivedEventArgs } from './core.model';
+import { DataTickModel, DkpEntryModel, TriggerModel, OverlayWindowModel, ActionTypes, FocusEffectSettings, CharacterModel, BasicError, TriggerFolder, FileModel, Tag, AuthorModel, PackageFileModel, TriggerPackageMetaModel, TriggerPackageVersion, FctStylesModel, OverlayBoundsChangedEventArgs, DialogEventArgs, QuickShareMetaModel, LogFileLocation, IpcMessage, DeathRecapPreferences, QuickShareAuthorListTypes, Progress, QuitFailureData, DuplicateTriggerAction, ScrapedSpell, ScrapedClickEffect, TriggerParseHistoryModel, SimulationProgress, FctCombatGroup, CombatTypes, StylePropertiesModel, CombatAnimations, TriggersProfileModel, ConsoleMessageModel, LogTypes, ServerCombatModel, ProgressModel, ServerConsoleMessage, ChatRoomLinkReceivedEventArgs, RenderTokenModel, TokenChangeModel } from './core.model';
 import { GinaConfiguration, GinaTriggerGroups } from './gina.model';
 import { ColorUtility } from './utilities';
 import { nagId } from './core/nag-id.util';
@@ -83,6 +83,7 @@ export class IpcService {
     private _onServerEvent: Observer<ServerEventModel>[] = [];
     private _onCombatCharacterChanged: Observer<string>[] = [];
     private _onReceivedChatRoomLink: Observer<ChatRoomLinkReceivedEventArgs>[] = [];
+    private _tokenChangeObservers: Record<string, Observer<TokenChangeModel>[]> = {};
 
     public onCombatGroupsInitialized: Subject<void> = new Subject<void>();
 
@@ -350,6 +351,14 @@ export class IpcService {
                             let m = Object.assign( new ProgressModel(), data );
                             m.logType = LogTypes.info;
                             f.next( m );
+                        } );
+                    } );
+                } );
+
+                window.api.ipc.on( 'renderer:token:move', ( event: any, data: TokenChangeModel ) => {
+                    ngZone.run( () => {
+                        this._tokenChangeObservers[ data.actionId ]?.forEach( f => {
+                            f.next( data );
                         } );
                     } );
                 } );
@@ -905,6 +914,26 @@ export class IpcService {
 
             return obs;
         }
+    }
+
+    public renderActionToken( token: RenderTokenModel ): Observable<TokenChangeModel> {
+        
+        let obs: Observable<TokenChangeModel> = new Observable<TokenChangeModel>( ( observer: Observer<TokenChangeModel> ) => {
+            this._tokenChangeObservers[ token.actionId ] = this._tokenChangeObservers[ token.actionId ] ? this._tokenChangeObservers[ token.actionId ] : [];
+            this._tokenChangeObservers[ token.actionId ].push( observer );
+        } );
+
+        window.api.ipc.send( 'renderer:token:create', token );
+
+        return obs;
+    }
+
+    public updateActionToken( token: RenderTokenModel ): void {
+        window.api.ipc.send( 'renderer:token:update', token );
+    }
+
+    public destroyActionToken( actionId: string ): void {
+        window.api.ipc.send( 'renderer:token:destroy', actionId );
     }
 
     public updateMasterVolume( masterVolume: number ): void {

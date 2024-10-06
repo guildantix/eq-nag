@@ -1,0 +1,319 @@
+<mat-tab-group animationDuration="0ms" [selectedIndex]="0">
+    <mat-tab label="List">
+        
+        <div class="card-tab-content">
+
+            <div class="card-property">
+                <div class="full-width">
+                    <mat-form-field style="width: 100%;">
+                        <mat-label></mat-label>
+                        <input matInput [(ngModel)]="action.displayText" name="txtDisplayText" />
+                        <mat-hint>List Name</mat-hint>
+                    </mat-form-field>
+                </div>
+            </div>
+        
+            <div class="card-property">
+                <div class="full-width">
+                    <mat-form-field style="width: 100%;">
+                        <mat-label></mat-label>
+                        <mat-select [(ngModel)]="action.createListPhrase" name="ddlCreateListPhrase" (ngModelChange)="onListCapturePhraseChange(action.createListPhrase)">
+                            <mat-option *ngFor="let phrase of phrases" [value]="phrase.phraseId">{{phrase.phrase}}</mat-option>
+                        </mat-select>
+                        <mat-hint>Select the capture phrase that will initialize the list.</mat-hint>
+                    </mat-form-field>
+                </div>
+            </div>
+
+            <div class="card-property">
+                <div class="content-middle">Select the variable that contains the list of names.</div>
+                <div>
+                    <mat-form-field style="width: 100%;">
+                        <mat-label></mat-label>
+                        <mat-select [(ngModel)]="action.listRegexVarName" name="listRegexVarName">
+                            <mat-option *ngFor="let name of variableNames" [value]="name">{{name}}</mat-option>
+                        </mat-select>
+                        <mat-hint>Value should be comma-separated list.</mat-hint>
+                    </mat-form-field>
+                </div>
+            </div>
+
+            <div class="card-property" *ngIf="!action.manualEnumerateList">
+                <div class="content-top">
+                    <mat-checkbox [(ngModel)]="action.autoEnumerateList" name="autoEnumerateList">Auto Enumerate List</mat-checkbox>
+                </div>
+                <div class="content-top">
+                    <p>When enabled, the list will automatically enumerate the items on a timer, announcing items per iteration.</p>
+                </div>
+            </div>
+
+            <div class="card-property" *ngIf="!action.autoEnumerateList">
+                <div class="content-top">
+                    <mat-checkbox [(ngModel)]="action.manualEnumerateList" name="manualEnumerateList">Manual Enumerate List</mat-checkbox>
+                </div>
+                <div class="content-top">
+                    <p>When enabled, the list will only enumerate on a capture phrasee.</p>
+                </div>
+            </div>
+
+            <div class="card-property" *ngIf="action.manualEnumerateList">
+                <div class="full-width">
+                    <mat-form-field style="width: 100%;">
+                        <mat-label></mat-label>
+                        <mat-select [(ngModel)]="action.listManualEnumeratePhrase" name="listManualEnumeratePhrase">
+                            <mat-option *ngFor="let phrase of phrases" [value]="phrase.phraseId">{{phrase.phrase}}</mat-option>
+                        </mat-select>
+                        <mat-hint>Select the capture phrase that will move the list value to the next item.</mat-hint>
+                    </mat-form-field>
+                </div>
+            </div>
+
+            <ng-template [ngIf]="action.autoEnumerateList">
+                <div class="card-property" *ngIf="action.autoEnumerateList">
+                    <div class="full-width">
+                        <mat-form-field style="width: 100%;">
+                            <mat-label></mat-label>
+                            <mat-select [(ngModel)]="action.listEnumerateBeginPhrase" name="listEnumerateBeginPhrase">
+                                <mat-option *ngFor="let phrase of phrases" [value]="phrase.phraseId">{{phrase.phrase}}</mat-option>
+                            </mat-select>
+                            <mat-hint>Select the capture phrase that will begin enumeration.</mat-hint>
+                        </mat-form-field>
+                    </div>
+                </div>
+    
+                <div class="card-property" *ngIf="action.autoEnumerateList">
+                    <div class="full-width">
+                        <mat-form-field style="width: 100%;">
+                            <mat-label></mat-label>
+                            <mat-select [(ngModel)]="action.listEnumerateEndPhrase" name="listEnumerateEndPhrase">
+                                <mat-option *ngFor="let phrase of phrases" [value]="phrase.phraseId">{{phrase.phrase}}</mat-option>
+                            </mat-select>
+                            <mat-hint>Select the capture phrase that will end enumeration.</mat-hint>
+                        </mat-form-field>
+                    </div>
+                </div>
+    
+                <div class="card-property" *ngIf="action.autoEnumerateList">
+                    <div class="content-top">
+                        <mat-checkbox [(ngModel)]="action.autoEnumerateUseVariable" name="autoEnumerateUseVariable" (change)="onChangeAutoEnumerationVariable()">User Phrase Timer</mat-checkbox>
+                    </div>
+                    <div class="content-top">
+                        <mat-checkbox [(ngModel)]="action.autoEnumerateSpecifyTime" name="autoEnumerateSpecifyTime" (change)="onChangeAutoEnumerationSpecifyTime()">Specify Timer</mat-checkbox>
+                    </div>
+                </div>
+    
+                <div class="card-property" *ngIf="action.autoEnumerateUseVariable">
+                    <div class="content-top">
+                        <p>The timer between each item will be set by the capture phrase.</p>
+                    </div>
+                    <div class="content-top">
+                        <mat-form-field style="width: 100%;">
+                            <mat-label></mat-label>
+                            <mat-select [(ngModel)]="action.autoEnumerateListTimerName" name="autoEnumerateListTimerName">
+                                <mat-option *ngFor="let name of variableNames" [value]="name">{{name}}</mat-option>
+                            </mat-select>
+                            <mat-hint>Value should be a time stamp.</mat-hint>
+                        </mat-form-field>
+                    </div>
+                </div>
+    
+                <div class="card-property" *ngIf="action.autoEnumerateSpecifyTime">
+                    <div class="content-middle">Timer Duration</div>
+                    <div class="content-right"><app-duration [(ngModel)]="action.duration" name="durActionDuration" style="display: inline-block;" ></app-duration></div>
+                </div>
+            </ng-template>
+
+        </div>
+
+    </mat-tab>
+    <mat-tab label="Enrollment">
+
+        <div class="card-tab-content">
+            
+            <div class="card-property">
+                <div class="content-top">
+                    <mat-checkbox [(ngModel)]="action.enableListEnrollment" name="enableListEnrollment">Enable Enrollment</mat-checkbox>
+                </div>
+                <div class="content-top">
+                    <p>When enabled, users running nag will receive notifications if their name is in the list.</p>
+                </div>
+            </div>
+
+            <div class="card-property" *ngIf="action.enableListEnrollment && action.autoEnumerateList">
+                <div class="content-top">
+                    <mat-checkbox [(ngModel)]="action.listEnrollmentShowTimer" name="listEnrollmentShowTimer">Show Timer</mat-checkbox>
+                </div>
+                <div class="content-top">
+                    <p>When enabled, users will see a timer counting down until their turn in the list.  If the list is modified, this timer duration will update accordingly.</p>
+                </div>
+            </div>
+
+            <div class="card-property" *ngIf="action.enableListEnrollment && action.listEnrollmentShowTimer && action.autoEnumerateList">
+                <div class="full-width">
+                    <mat-form-field style="width: 100%;">
+                        <mat-label></mat-label>
+                        <mat-select [(ngModel)]="action.listTimerActionId" name="listTimerActionId">
+                            <mat-option [value]="null">None</mat-option>
+                            <mat-option *ngFor="let action of timerTypeActions" [value]="action.actionId">
+                                <span>{{action.displayText}}</span>
+                                <span *ngIf="action.actionType === actionTypes.Countdown"> (Countdown)</span>
+                                <span *ngIf="action.actionType === actionTypes.Timer"> (Timer)</span>
+                            </mat-option>
+                        </mat-select>
+                        <mat-hint>Select the timer.</mat-hint>
+                    </mat-form-field>
+                </div>
+            </div>
+
+            <div class="card-property" *ngIf="action.enableListEnrollment && action.autoEnumerateList">
+                <div class="full-width">
+                    <mat-form-field style="width: 100%;">
+                        <mat-label></mat-label>
+                        <mat-select [(ngModel)]="action.listEnrollmentSkipPhrase" name="listEnrollmentSkipPhrase" (ngModelChange)="onSkipCapturePhraseChange(action.listEnrollmentSkipPhrase)">
+                            <mat-option [value]="null">None</mat-option>
+                            <mat-option *ngFor="let phrase of phrases" [value]="phrase.phraseId">{{phrase.phrase}}</mat-option>
+                        </mat-select>
+                        <mat-hint>Select the capture phrase that will skip a name.</mat-hint>
+                    </mat-form-field>
+                </div>
+            </div>
+
+            <div class="card-property" *ngIf="action.enableListEnrollment && action.autoEnumerateList">
+                <div class="content-middle">Select the variable that contains the name.</div>
+                <div>
+                    <mat-form-field style="width: 100%;">
+                        <mat-label></mat-label>
+                        <mat-select [(ngModel)]="action.listEnrollmentSkipVarName" name="listEnrollmentSkipVarName">
+                            <mat-option *ngFor="let name of skipVariableNames" [value]="name">{{name}}</mat-option>
+                        </mat-select>
+                        <mat-hint>Value should be a name in the list.</mat-hint>
+                    </mat-form-field>
+                </div>
+            </div>
+
+            <div class="card-property" *ngIf="action.enableListEnrollment">
+                <div class="full-width">
+                    <mat-form-field style="width: 100%;">
+                        <mat-label></mat-label>
+                        <mat-select [(ngModel)]="action.listEnrollmentRemovePhrase" name="listEnrollmentRemovePhrase" (ngModelChange)="onRemoveCapturePhraseChange(action.listEnrollmentRemovePhrase)">
+                            <mat-option [value]="null">None</mat-option>
+                            <mat-option *ngFor="let phrase of phrases" [value]="phrase.phraseId">{{phrase.phrase}}</mat-option>
+                        </mat-select>
+                        <mat-hint>Select the capture phrase that will remove a name.</mat-hint>
+                    </mat-form-field>
+                </div>
+            </div>
+
+            <div class="card-property" *ngIf="action.enableListEnrollment">
+                <div class="content-middle">Select the variable that contains the name.</div>
+                <div>
+                    <mat-form-field style="width: 100%;">
+                        <mat-label></mat-label>
+                        <mat-select [(ngModel)]="action.listEnrollmentRemoveVarName" name="listEnrollmentRemoveVarName">
+                            <mat-option *ngFor="let name of removeVariableNames" [value]="name">{{name}}</mat-option>
+                        </mat-select>
+                        <mat-hint>Value should be a name in the list.</mat-hint>
+                    </mat-form-field>
+                </div>
+            </div>
+
+            <div class="card-property" *ngIf="action.enableListEnrollment">
+                <div class="full-width">
+                    <mat-form-field style="width: 100%;">
+                        <mat-label></mat-label>
+                        <mat-select [(ngModel)]="action.listEnrollmentAddPhrase" name="listEnrollmentAddPhrase" (ngModelChange)="onAddCapturePhraseChange(action.listEnrollmentAddPhrase)">
+                            <mat-option [value]="null">None</mat-option>
+                            <mat-option *ngFor="let phrase of phrases" [value]="phrase.phraseId">{{phrase.phrase}}</mat-option>
+                        </mat-select>
+                        <mat-hint>Select the capture phrase that will remove a name.</mat-hint>
+                    </mat-form-field>
+                </div>
+            </div>
+
+            <div class="card-property" *ngIf="action.enableListEnrollment">
+                <div class="content-middle">Select the variable that contains the name.</div>
+                <div>
+                    <mat-form-field style="width: 100%;">
+                        <mat-label></mat-label>
+                        <mat-select [(ngModel)]="action.listEnrollmentAddVarName" name="listEnrollmentAddVarName">
+                            <mat-option *ngFor="let name of addVariableNames" [value]="name">{{name}}</mat-option>
+                        </mat-select>
+                        <mat-hint>Value should be a name not in the list.</mat-hint>
+                    </mat-form-field>
+                </div>
+            </div>
+
+            <div class="card-property" *ngIf="action.enableListEnrollment && action.autoEnumerateList">
+                <div class="content-top">
+                    <mat-checkbox [(ngModel)]="action.listEnableActionTracking" name="listEnableActionTracking">Enable Action Tracking</mat-checkbox>
+                </div>
+                <div class="content-top">
+                    <p>When enabled, if the selected phrase is not captured by the end of the timer, the list name will appear as a warning.</p>
+                </div>
+            </div>
+
+            <div class="card-property" *ngIf="action.listEnableActionTracking && action.autoEnumerateList">
+                <div class="full-width">
+                    <mat-form-field style="width: 100%;">
+                        <mat-label></mat-label>
+                        <mat-select [(ngModel)]="action.listActionTrackingPhrase" name="listActionTrackingPhrase" (ngModelChange)="onActionTrackingPhraseChange(action.listActionTrackingPhrase)">
+                            <mat-option [value]="null">None</mat-option>
+                            <mat-option *ngFor="let phrase of phrases" [value]="phrase.phraseId">{{phrase.phrase}}</mat-option>
+                        </mat-select>
+                        <mat-hint>Select the capture phrase that satisfy the list timer.</mat-hint>
+                    </mat-form-field>
+                </div>
+            </div>
+
+        </div>
+
+    </mat-tab>
+    <mat-tab label="Display">
+        <div class="card-tab-content">
+            
+            <div class="card-property">
+                <div class="content-top">
+                    <p>Show a template list that will allow you to place the list on your monitor, as well as see the selected styles.</p>
+                </div>
+                <div class="content-top">
+                    <button mat-button class="color-green" (click)="showRendererToken()" *ngIf="!isRenderingToken">Show List</button>
+                    <button mat-button class="color-red-warn" (click)="destroyRendererToken()" *ngIf="isRenderingToken">Hide List</button>
+                </div>
+            </div>
+
+            <div class="card-property">
+                <div class="content-middle"><mat-checkbox [(ngModel)]="action.useBackground" name="cbxUseCustomFont" (ngModelChange)="updateRenderToken()">Use backdrop</mat-checkbox></div>
+                <div class="content-middle content-right"></div>
+            </div>
+
+            <div class="card-property">
+                <div class="content-middle"><mat-checkbox [(ngModel)]="action.textUseCustomFont" name="cbxUseCustomFont">Custom font</mat-checkbox></div>
+                <div class="content-middle content-right">
+                    <mat-form-field *ngIf="action.textUseCustomFont">
+                        <mat-label></mat-label>
+                        <mat-select class="font-ddl" [(ngModel)]="action.textFont" name="ddlFontFamily" disableOptionCentering style="max-width: unset;" (selectionChange)="onChangeFontFamily()">
+                            <mat-option class="font-option" value="Roboto" style="font-family: Roboto, sans-serif; font-size: 16px;"><small>Roboto</small></mat-option>
+                            <mat-option class="font-option" value="Red Rose" style="font-family: 'Red Rose', sans-serif; font-size: 16px;"><small>Red Rose</small></mat-option>
+                            <mat-option class="font-option" value="Oswald" style="font-family: Oswald, sans-serif; font-size: 16px;"><small>Oswald</small></mat-option>
+                            <mat-option class="font-option" value="Roboto Mono" style="font-family: 'Roboto Mono', sans-serif; font-size: 16px;"><small>Roboto Mono</small></mat-option>
+                            <mat-option class="font-option" value="Open Sans Condensed" style="font-family: 'Open Sans Condensed', sans-serif; font-size: 16px;"><small>Open Sans Condensed</small></mat-option>
+                            <mat-option class="font-option" value="Ranchers" style="font-family: Ranchers, sans-serif; font-size: 16px;"><small>Ranchers</small></mat-option>
+                            <mat-option class="font-option" value="Press Start 2P" style="font-family: 'Press Start 2P', sans-serif; font-size: 14px;"><small>Press Start 2P</small></mat-option>
+                        </mat-select>
+                        <mat-hint>Font</mat-hint>
+                    </mat-form-field>
+                    <mat-slider thumbLabel tickInterval="1" step="1" min="0" [max]="maxFontWeightIndex" style="width: 100%;" [(ngModel)]="fontWeightIndex" name="sldrFontWeight" (change)="onFontWeightChange()" *ngIf="action.textUseCustomFont"></mat-slider>
+                </div>
+            </div>
+
+            <div class="card-property">
+                <div class="content-middle"><mat-checkbox [(ngModel)]="action.textUseCustomSize" name="cbxUseCustomSize">Custom size</mat-checkbox></div>
+                <div class="content-middle content-right">
+                    <label *ngIf="action.textUseCustomSize">Size</label>
+                    <mat-slider thumbLabel tickInterval="1" min="1" max="64" style="width: 100%;" [(ngModel)]="action.textSize" name="sldrFontSize" *ngIf="action.textUseCustomSize" (ngModelChange)="updateRenderToken()"></mat-slider>
+                </div>
+            </div>
+
+        </div>
+    </mat-tab>
+</mat-tab-group>

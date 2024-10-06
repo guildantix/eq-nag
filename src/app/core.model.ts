@@ -3,6 +3,18 @@ import * as _ from 'lodash-es';
 import { nagId } from './core/nag-id.util';
 import { TriggerPackageExportTypes, TriggerPackageProperty } from './core.decorators';
 
+
+export const availableFonts = {
+    'Roboto': [ 100, 300, 400, 500, 700, 900 ],
+    'Red Rose': [ 300, 400, 700 ],
+    'Oswald': [ 200, 300, 400, 500, 600, 700 ],
+    'Roboto Mono': [ 100, 200, 300, 400, 500, 600, 700 ],
+    'Open Sans Condensed': [ 300, 700 ],
+    'Ranchers': [ 400 ],
+    'Press Start 2P': [ 400 ],
+};
+
+
 export const ErrorCodes = {
     EqFolderNotFound: {
         code: 'EQDIRNULL',
@@ -54,6 +66,7 @@ export enum ActionTypes {
     ScreenGlow = 12,
     ClearAll = 13,
     Stopwatch = 14,
+    List = 15,
 
 }
 
@@ -99,6 +112,7 @@ export function ActionTypeLabels(actionType: ActionTypes): string {
         actionType === ActionTypes.ScreenGlow ? 'Screen Glow' :
         actionType === ActionTypes.ClearAll ? 'Clear All' :
         actionType === ActionTypes.Stopwatch ? 'Stopwatch' :
+        actionType === ActionTypes.List ? 'List' :
         'Unset Action';
     
 }
@@ -119,6 +133,7 @@ export function ActionTypeIcons( actionType: ActionTypes ): string {
         actionType === ActionTypes.ScreenGlow ? 'brightness_5' :
         actionType === ActionTypes.ClearAll ? 'layers_clear' :
         actionType === ActionTypes.Stopwatch ? 'timer' :
+        actionType === ActionTypes.List ? 'format_list_numbered' :
         'block';
 }
 
@@ -348,6 +363,15 @@ export class BasicError {
 
 }
 
+export class TriggerHotkey {
+    public hotkeyId: string;
+    public name: string;
+    public description: string;
+    public lines: string[] = [];
+    public simpleCommand: boolean = false;
+    public quickAction: boolean = false;
+}
+
 export class TriggerModel {
     
     public triggerId: string = null;
@@ -370,6 +394,8 @@ export class TriggerModel {
     public cooldownDuration: number = 0;
     public enabled: boolean = true;
     public sequentialRestartBehavior: string = 'none';
+
+    public hotkeys: TriggerHotkey[] = [];
     
     /**
      * Duplicates the given trigger with the given name.
@@ -815,6 +841,31 @@ export class TriggerActionProperties {
     public textGlowIntensity: number = null;
     public textGlowSize: number = null;
 
+    public createListPhrase: string = null;
+    public autoEnumerateList: boolean = false;
+    public manualEnumerateList: boolean = false;
+    public listRegexVarName: string = null;
+    public autoEnumerateSpecifyTime: boolean = false;
+    public autoEnumerateUseVariable: boolean = false;
+    public autoEnumerateListTimerName: string = null;
+    public enableListEnrollment: boolean = false;
+    public listEnrollmentSkipPhrase: string = null;
+    public listEnrollmentSkipVarName: string = null;
+    public listEnrollmentRemovePhrase: string = null;
+    public listEnrollmentRemoveVarName: string = null;
+    public listEnrollmentAddPhrase: string = null;
+    public listEnrollmentAddVarName: string = null;
+    public listEnrollmentShowTimer: boolean = false;
+    public listEnumerateBeginPhrase: string = null;
+    public listEnumerateEndPhrase: string = null;
+    public listManualEnumeratePhrase: string = null;
+    public listEnableActionTracking: boolean = false;
+    public listActionTrackingPhrase: string = null;
+    public listActionTrackingVarName: string = null;
+    public listTimerActionId: string = null;
+    public useBackground: boolean = false;
+    
+    public staticPosition: Rectangle = null;
 }
 
 export class TriggerAction extends TriggerActionProperties {
@@ -1869,5 +1920,41 @@ export class FileReadDelays {
     public readDelayMs: number = 200;
     public readErrorDelayMs: number = 1000;
     public flushDelayMs: number = 1000;
+
+}
+
+export class ListItemModel {
+
+    public name: string;
+    public iconCssClass?: string;
+    public textCssClass?: string;
+
+}
+
+export class ListObjectModel {
+
+    public listCssClass: 'background' | 'no-background' = 'background';
+    public listTitle: string;
+    public fontSize: number = 16;
+    public fontWeight: number = 400;
+    public fontFamily: string = 'Oswald';
+    public items: ListItemModel[] = [];
+    public bounds?: Rectangle;
+
+}
+
+export class RenderTokenModel {
+
+    public triggerId: string;
+    public actionId: string;
+    public actionType: ActionTypes;
+    public objectModel: ListObjectModel;
+
+}
+
+export class TokenChangeModel {
+
+    public actionId: string;
+    public bounds: Rectangle;
 
 }

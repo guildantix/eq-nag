@@ -1,18 +1,8 @@
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { ContextMenuModel } from 'src/app/context-menu/context-menu.model';
 import { ContextService } from 'src/app/context-menu/context.service';
-import { OverlayWindowModel, TriggerAction } from 'src/app/core.model';
+import { availableFonts, OverlayWindowModel, TriggerAction } from 'src/app/core.model';
 import { IpcService } from 'src/app/ipc.service';
-
-const availableFonts = {
-    'Roboto': [ 100, 300, 400, 500, 700, 900 ],
-    'Red Rose': [ 300, 400, 700 ],
-    'Oswald': [ 200, 300, 400, 500, 600, 700 ],
-    'Roboto Mono': [ 100, 200, 300, 400, 500, 600, 700 ],
-    'Open Sans Condensed': [ 300, 700 ],
-    'Ranchers': [ 400 ],
-    'Press Start 2P': [ 400 ],
-};
 
 /**
  * Returns a hex number for the given value.

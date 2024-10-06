@@ -24,6 +24,7 @@ const { overlayZIndex, overlayTopZIndex, imagesPath } = require( '../utilities/c
 const { PlayerDps, DpsMeterSettings, EncounterStats, EncounterStatsEventArgs, PetDps } = require( '../data/models/combat-parser' );
 const { getEverQuestClassIcon, getEverQuestClassAbbreviation, getEverQuestClassColor } = require( '../utilities/everquest' );
 const { lightenColor, darkenColor } = require( '../utilities/colors' );
+const { RenderTokenModel, RendererComponent, ListObjectModel, UpdateComponentArgs } = require( '../data/models/renderer' );
 
 const encounterHistoryLimit = 25;
 
@@ -252,6 +253,8 @@ var dpsWindowTemplate;
 var dpsWindowItemTemplate;
 /** @type {HandlebarsTemplateDelegate<any>} */
 var dropdownMenuTemplate;
+/** @type {HandlebarsTemplateDelegate<any>} */
+var listTemplate;
 var voiceOptions = [];
 /** @type {Record<number, number>} */
 var destroySchedule = {};
@@ -354,6 +357,12 @@ let dpsMeterSettings = new DpsMeterSettings();
 
 /** @type {WinInfo} */
 let activeWinInfo = undefined;
+
+/** @type {RendererComponent[]} */
+let rendererComponents = [];
+
+/** @type {RenderTokenModel[]} */
+let renderTokens = [];
 
 
 
@@ -1041,9 +1050,10 @@ function Renderer( originX, originY, glowOnStart ) {
         dpsWindowTemplate = Handlebars.compile( document.querySelector( '#dpsWindowTemplate' ).innerHTML );
         dpsWindowItemTemplate = Handlebars.compile( document.querySelector( '#dpsWindowItemTemplate' ).innerHTML );
         dropdownMenuTemplate = Handlebars.compile( document.querySelector( '#dropdownMenu' ).innerHTML );
+        listTemplate = Handlebars.compile( document.querySelector( '#listTemplate' ).innerHTML );
 
         logInfo( '[Info:Renderer:Templates] (Renderer docReady) Templates have been compiled!' );
-    
+
         /** Tell the main thread that we need a list of all overlays. */
         ipcRenderer.send( 'overlay:get', null );
 
@@ -1492,6 +1502,53 @@ function Renderer( originX, originY, glowOnStart ) {
             render( model.overlayId, model );
         } );
 
+    ipcRenderer.on( 'renderer:update:component',
+        /**
+         * Handles updating existing components.
+         * 
+         * @param {Electron.IpcRendererEvent} event The event object.
+         * @param {UpdateComponentArgs} model The component args.
+         */
+        function ( event, model ) {
+            let component = findComponent( c => c.instanceId === model.instanceId );
+
+            if ( component ) {
+                if ( model.updateType === 'alter-start' ) {
+                    if ( model.duration !== null && model.duration !== undefined ) {
+                        component.start = DateUtilities.addSeconds( component.start, model.duration );
+                    }
+                } else if ( model.updateType === 'list-act-bad' ) {
+                    let c = Object.assign( new RendererComponent(), component );
+                    let listItemDom = component.dom.querySelector( `.list-item[data-name=${c.currentName}]` );
+                    let iconDom = listItemDom.querySelector( '.list-item-icon' );
+                    let textDom = listItemDom.querySelector( '.list-item-title' );
+
+                    iconDom.classList.add( 'warn' );
+                    textDom.classList.add( 'warn' );
+
+                    iconDom.classList.remove( 'success' );
+                    textDom.classList.remove( 'success' );
+
+                } else if ( model.updateType === 'list-act-good' ) {
+                    let c = Object.assign( new RendererComponent(), component );
+                    let listItemDom = component.dom.querySelector( `.list-item[data-name=${c.currentName}]` );
+                    let iconDom = listItemDom.querySelector( '.list-item-icon' );
+                    let textDom = listItemDom.querySelector( '.list-item-title' );
+
+                    iconDom.classList.add( 'success' );
+                    textDom.classList.add( 'success' );
+
+                    iconDom.classList.remove( 'warn' );
+                    textDom.classList.remove( 'warn' );
+                    
+                } else if ( model.updateType === 'list' ) {
+
+                    renderListAction( Object.assign( new RendererComponent(), model.model ), true );
+
+                }
+            }
+        } );
+
     ipcRenderer.on( 'renderer:receive:secondary-action',
         /**
          * Handles receiving a secondary trigger action.
@@ -1606,6 +1663,51 @@ function Renderer( originX, originY, glowOnStart ) {
         }
     } );
 
+    ipcRenderer.on( 'renderer:kill:component',
+        /**
+         * The kill operation will destroy a component without executing any 
+         * following ended/ending actions.
+         * 
+         * @param {Electron.IpcRendererEvent} e The event args.
+         * @param {string} instanceId The instance id of the component to kill.
+         */
+        ( e, instanceId ) => {
+            for ( let overlayId in overlayInstances ) {
+                if ( overlayInstances.hasOwnProperty( overlayId ) ) {
+                    
+                    if ( overlayInstances[ overlayId ].groupByTarget ) {
+    
+                        for ( let key in overlayInstances[ overlayId ].overlayGroups ) {
+                            if ( overlayInstances[ overlayId ].overlayGroups.hasOwnProperty( key ) ) {
+                        
+                                let i = _.findIndex( overlayInstances[ overlayId ].overlayGroups[ key ].components, comp => comp.instanceId === instanceId );
+                                if ( i > -1 ) {
+                                    let comp = overlayInstances[ overlayId ].overlayGroups[ key ].components[ i ];
+                                    comp.removeComponent();
+                                }
+                        
+                            }
+                        }
+                
+                    } else {
+                        let i = _.findIndex( overlayInstances[ overlayId ].overlayComponents, comp => comp.instanceId === instanceId );
+    
+                        if ( i > -1 ) {
+                            overlayInstances[ overlayId ].overlayComponents[ i ].removeComponent();
+                        }
+    
+                    }
+                }
+            }
+    
+            for ( let i = 0; i < rendererComponents.length; i++ ) {
+                if ( rendererComponents[ i ].instanceId === instanceId ) {
+                    rendererComponents[ i ].removeComponent();
+                    break;
+                }
+            }
+        } );
+
     ipcRenderer.on( 'component:destroy', function ( event, instanceId ) {
         
         for ( let overlayId in overlayInstances ) {
@@ -1650,6 +1752,12 @@ function Renderer( originX, originY, glowOnStart ) {
             }
         }
 
+        for ( let i = 0; i < rendererComponents.length; i++ ) {
+            if ( rendererComponents[ i ].instanceId === instanceId ) {
+                rendererComponents[ i ].removeComponent();
+                break;
+            }
+        }
     } );
 
     ipcRenderer.on( 'renderer:overlay:update',
@@ -1752,6 +1860,50 @@ function Renderer( originX, originY, glowOnStart ) {
     ipcRenderer.on( 'renderer:clear-all', function () {
         clearAll();
     } );
+
+    ipcRenderer.on( 'renderer:token:create',
+        /**
+         * Renders a token. A token is a pre-defined action that is rendered on 
+         * the screen that will send move and resize events to the caller.
+         * 
+         * @param {Electron.IpcRendererEvent} event The event args.
+         * @param {RenderTokenModel} data The render token model.
+         */
+        ( event, data ) => {
+            renderTokens.push( data );
+            renderToken( data );
+        } );
+
+    ipcRenderer.on( 'renderer:token:update',
+        /**
+         * Renders a token. A token is a pre-defined action that is rendered on 
+         * the screen that will send move and resize events to the caller.
+         * 
+         * @param {Electron.IpcRendererEvent} event The event args.
+         * @param {RenderTokenModel} data The render token model.
+         */
+        ( event, data ) => {
+            renderToken( data );
+        } );
+    
+    ipcRenderer.on( 'renderer:token:destroy',
+        /**
+         * Clears a token from the screen.
+         * 
+         * @param {Electron.IpcRendererEvent} event The event args.
+         * @param {string} data The action id of the token to clear.
+         */
+        ( event, data ) => {
+            let existing = renderTokens.find( f => f.actionId === data );
+            if ( existing ) {
+                renderTokens = renderTokens.filter( f => f.actionId !== data );
+                if ( existing.dom ) {
+                    disableMoveResize( existing.dom );
+                    document.body.removeChild( existing.dom );
+                    existing.dom.remove();
+                }
+            }
+        } );
     
     speechSynthesis.onvoiceschanged = () => {
         voiceOptions = speechSynthesis.getVoices();
@@ -1760,6 +1912,79 @@ function Renderer( originX, originY, glowOnStart ) {
     return {
         origin: origin,
     };
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Renders the given token.
+ * 
+ * @param {RenderTokenModel} token The token to render.
+ */
+function renderToken( token ) {
+
+    if ( rendererComponents.findIndex( f => f.actionId === token.actionId ) > -1 ) {
+        logInfo( `[Info:Renderer:Token] (renderToken) There is already an active component on screen with the same action id.` );
+        return;
+    }
+
+    if ( token.actionType === ActionTypes.List && token.objectModel != null ) {
+        
+        let existing = renderTokens.find( f => f.actionId === token.actionId );
+        /** @type {DOMRect} */
+        let existingBounds = undefined;
+        if ( existing ) {
+            // Remove the existing token so we can build a new one.
+            renderTokens = renderTokens.filter( f => f.actionId !== token.actionId );
+            renderTokens.push( token );
+
+            if ( existing.dom ) {
+                existingBounds = existing?.dom.getBoundingClientRect();
+                disableMoveResize( existing.dom );
+                document.body.removeChild( existing.dom );
+            }
+
+        }
+        
+        /** @type {ListObjectModel} */
+        let listObj = token.objectModel;
+        let listHtml = listTemplate( listObj );
+
+        let listDiv = document.createElement( 'div' );
+        listDiv.innerHTML = listHtml;
+        document.body.appendChild( listDiv );
+        token.dom = listDiv;
+
+        listDiv.style.fontSize = `${listObj.fontSize ?? 16}px`;
+        listDiv.style.fontWeight = `${listObj.fontWeight ?? 400}`;
+        listDiv.style.fontFamily = listObj.fontFamily ?? 'Oswald';
+        listDiv.style.position = 'fixed';
+
+        if ( existingBounds != undefined ) {
+            listDiv.style.left = existingBounds.left + 'px';
+            listDiv.style.top = existingBounds.top + 'px';
+        } else if ( listObj.bounds != undefined ) {
+            listDiv.style.left = listObj.bounds.x + 'px';
+            listDiv.style.top = listObj.bounds.y + 'px';
+        } else {
+            // center element on main monitor
+            listDiv.style.left = ( origin.x + ( screen.getPrimaryDisplay().workArea.width / 2 ) - ( listDiv.offsetWidth / 2 ) ) + 'px';
+            listDiv.style.top = ( origin.y + ( screen.getPrimaryDisplay().workArea.height / 2 ) - ( listDiv.offsetHeight / 2 ) ) + 'px';
+        }
+
+        enableMoveResize( listDiv, listDiv.querySelector( '.list-container' ), bounds => {
+            ipcRenderer.send( `renderer:token:move`, { actionId: token.actionId, bounds: bounds } );
+        } );
+        MouseUtilities.refreshDom();
+    }
+
 }
 
 
@@ -3021,6 +3246,10 @@ function render( overlayId, comp ) {
                 renderGlow( comp.action.textColor, comp.action.duration * 1000, comp.action.flash );
 
             }
+        } else if ( comp?.action?.actionType === ActionTypes.List ) {
+            
+            renderListAction( Object.assign( new RendererComponent(), comp ) );
+
         } else {
 
             if ( overlayInstances[ overlayId ] == null ) {
@@ -3134,6 +3363,137 @@ function render( overlayId, comp ) {
         logError( error, 'trigger', overlayId, comp );
     
     }
+    
+}
+
+/**
+ * Renders a list action component.
+ * 
+ * @param {RendererComponent} component The component to render.
+ * @param {boolean} restore If true, the component will be restored to it's previous state.
+ */
+function renderListAction( component, restore ) {
+    restore = restore === true;
+    // iconCssClass: 'fa-chevron-right'
+
+    let existing = rendererComponents.find( f => f.instanceId === component.instanceId );
+    let errors = [];
+    let warns = [];
+    let successes = [];
+
+    if ( existing ) {
+        if ( restore ) {
+            let items = existing.dom?.querySelectorAll( '.list-item' ) ?? [];
+
+            // Get the status of each item.
+            for ( let i = 0; i < items.length; i++ ) {
+                const item = items[ i ];
+                const name = item.getAttribute( 'data-name' );
+                const textDom = item.querySelector( '.list-item-title' );
+
+                if ( textDom.classList.contains( 'error' ) ) {
+                    errors.push( name );
+                } else if ( textDom.classList.contains( 'warn' ) ) {
+                    warns.push( name );
+                } else if ( textDom.classList.contains( 'success' ) ) {
+                    successes.push( name );
+                }
+            }
+        }
+
+        existing.removeComponent();
+        existing = undefined;
+    }
+
+    /** @type {ListObjectModel} */
+    let listObj = new ListObjectModel();
+
+    listObj.listTitle = component.action.displayText;
+    listObj.fontSize = component.action.textSize;
+    listObj.fontFamily = component.action.textFont;
+    listObj.fontWeight = component.action.textWeight;
+    listObj.listCssClass = component.action.useBackground ? 'background' : 'no-background';
+
+    listObj.items = component.listNames.map( name => {
+        return {
+            name: name,
+            textCssClass: component.skipNames.includes( name ) ? 'error' : undefined,
+            iconCssClass: component.currentName === name ? 'fa-chevron-right' : undefined,
+        };
+    } );
+
+    if ( component.action.staticPosition != null ) {
+        listObj.bounds = component.action.staticPosition;
+    }
+
+    let listHtml = listTemplate( listObj );
+    let listDiv = document.createElement( 'div' );
+
+    listDiv.innerHTML = listHtml;
+    document.body.appendChild( listDiv );
+
+    component.dom = listDiv;
+
+    component.dom.style.fontSize = `${listObj.fontSize ?? 16}px`;
+    component.dom.style.fontWeight = `${listObj.fontWeight ?? 400}`;
+    component.dom.style.fontFamily = listObj.fontFamily ?? 'Oswald';
+    component.dom.style.position = 'fixed';
+
+    if ( listObj.bounds != null ) {
+        component.dom.style.left = listObj.bounds.x + 'px';
+        component.dom.style.top = listObj.bounds.y + 'px';
+    } else {
+        // Put it on the center of the main monitor.
+        component.dom.style.left = ( screen.getPrimaryDisplay().workArea.width / 2 ) - ( component.dom.offsetWidth / 2 ) + 'px';
+        component.dom.style.top = ( screen.getPrimaryDisplay().workArea.height / 2 ) - ( component.dom.offsetHeight / 2 ) + 'px';
+    }
+
+    // Re-apply the css classes
+    if ( errors.length > 0 ) {
+        for ( let i = 0; i < errors.length; i++ ) {
+            const name = errors[ i ];
+            const listItemDom = component.dom.querySelector( `.list-item[data-name=${name}]` );
+            const iconDom = listItemDom.querySelector( '.list-item-icon' );
+            const textDom = listItemDom.querySelector( '.list-item-title' );
+
+            iconDom.classList.add( 'error' );
+            textDom.classList.add( 'error' );
+
+        }
+    }
+
+    if ( warns.length > 0 ) {
+        for ( let i = 0; i < warns.length; i++ ) {
+            const name = warns[ i ];
+            const listItemDom = component.dom.querySelector( `.list-item[data-name=${name}]` );
+            const iconDom = listItemDom.querySelector( '.list-item-icon' );
+            const textDom = listItemDom.querySelector( '.list-item-title' );
+
+            iconDom.classList.add( 'warn' );
+            textDom.classList.add( 'warn' );
+
+        }
+    }
+
+    if ( successes.length > 0 ) {
+        for ( let i = 0; i < successes.length; i++ ) {
+            const name = successes[ i ];
+            const listItemDom = component.dom.querySelector( `.list-item[data-name=${name}]` );
+            const iconDom = listItemDom.querySelector( '.list-item-icon' );
+            const textDom = listItemDom.querySelector( '.list-item-title' );
+
+            iconDom.classList.add( 'success' );
+            textDom.classList.add( 'success' );
+
+        }
+    }
+
+    component.removeComponent = () => {
+        component.dom.parentNode && component.dom.parentNode.removeChild( component.dom );
+        ArrayUtilities.remove( rendererComponents, f => f.instanceId === component.instanceId );
+    };
+
+    rendererComponents.push( component );
     
 }
 
@@ -4325,7 +4685,7 @@ function findComponents( predicate ) {
  * 
  * @description This method will search all overlays.
  * 
- * @returns {OverlayComponent|null} Returns the first overlay components that satisfies the predicate.  Searches all overlays.
+ * @returns {OverlayComponent|RendererComponent|null} Returns the first overlay components that satisfies the predicate.  Searches all overlays.
  * 
  * @param {(component: OverlayComponent) => boolean} predicate Invoked per iteration, if true the component is immediately returned.
  */
@@ -4357,6 +4717,13 @@ function findComponent( predicate ) {
         
             }
 
+        }
+    }
+
+    for ( let i = 0; i < rendererComponents.length; i++ ) {
+        const c = rendererComponents[ i ];
+        if ( predicate( c ) ) {
+            return c;
         }
     }
 

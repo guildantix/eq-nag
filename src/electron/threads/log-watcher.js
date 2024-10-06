@@ -3,7 +3,7 @@ const { ipcRenderer } = require( 'electron' );
 const fs = require( 'fs' );
 const { Trigger, TriggerAction, ActionTypes, TriggerConditionTypes, OperatorTypes, CharacterClassLevel, TriggerSubAction, TriggerFolder, TriggerCondition, CapturePhrase, Phrase, TriggerParseHistoryModel, getActionLabel, LogTypes, ErrorMessages } = require( '../data/models/trigger' );
 const { QuickShareAuthorListTypes, SimulationProgress, NConditionalModel } = require( '../data/models/common' );
-const { PhraseParse, LogTrigger } = require( './log.model' );
+const { PhraseParse, LogTrigger, LogList } = require( './log.model' );
 const { OverlayComponent, OverlayWindow, TriggerSecondaryActionModel } = require( '../data/models/overlay-window' );
 const { CharacterModel } = require( '../data/models/character' );
 const customAlphabet = require( 'nanoid' ).customAlphabet;
@@ -20,6 +20,9 @@ const FileMonitor = require( '../utilities/file-monitor' );
 const { LogHistoryManager } = require( '../utilities/log-console' );
 const { createChatRoomLink } = require( '../utilities/peer-to-peer' );
 const { nagException, nagLog } = require( '../utilities/nag-console' );
+const { nagId } = require( '../utilities/nag-id' );
+const { RendererComponent } = require( '../data/models/renderer' );
+const { nagListNameKey } = require( '../data/models/core' );
 const chunkSize = 512 * 1024;
 
 window.onerror = ( error, url, line ) => {
@@ -140,6 +143,9 @@ let onTriggerGenCompleteHandlers = [];
 let triggerGenComplete = false;
     
 let rgxTimestamp = /^\[(.*?)\]\s*/i;
+
+/** @type {LogList[]} */
+let lists = [];
 
 // Common errors:
 //  ${C} instead of {C}
@@ -706,7 +712,7 @@ function LogWatcher(character, logPosition) {
             }
         }
 
-        if ( activeCounters || cancellableComponents?.length > 0 || secondaryTriggerActions?.length > 0 ) {
+        if ( lists.length > 0 || activeCounters || cancellableComponents?.length > 0 || secondaryTriggerActions?.length > 0 ) {
             // We're still alive, don't kill us!
             e.sender.send( 'log:pulse', true );
         } else {
@@ -727,89 +733,7 @@ function LogWatcher(character, logPosition) {
          * @param {{subAction: TriggerSubAction, instanceId: string}} v The values.
          */
         ( e, v ) => {
-            try {
-                
-                let instanceData = actionInstances[ v.instanceId ];
-                if ( instanceData ) {
-                    let action = instanceData.trigger.actions.find( f => f.actionId === v.subAction.actionId );
-                    let deltaTime = 0;
-
-                    if ( v.subAction ) {
-                    
-                        instanceData.res.result.groups = instanceData.res.result.groups ? instanceData.res.result.groups : {};
-                        let expectedDuration = 0;
-            
-                        if ( instanceData.res.result?.groups?.timerDuration ) {
-                            expectedDuration = StringUtilities.getDurationFromLabel( instanceData.res.result?.groups?.timerDuration );
-        
-                        } else {
-                
-                            if ( action.storageDuration && action.storageDuration.indexOf( '[' ) > -1 ) {
-                                let dur = +action.duration;
-                                dur = +getPersistentDictionaryValue( action.storageDuration, instanceData.res, timestamp, action, deltaTime, trigger );
-                                expectedDuration = dur > 0 ? dur / 1000 : +action.duration;
-
-                            } else if ( action.storageDuration ) {
-                                let dur = +action.duration;
-                                dur = +getScalarValue( action.storageDuration, 0 );
-                                expectedDuration = dur > 0 ? dur / 1000 : +action.duration;
-
-                            } else {
-                                expectedDuration = +action.duration;
-
-                            }
-
-                        }
-
-                        v.subAction.variableValues?.forEach( f => {
-                        
-                            let value = f.value;
-                            let name = /\{(?<name>.+?)\}/gi.exec( f.name )?.groups?.name;
-                        
-                            if ( name ) {
-                                value = StringUtilities.parseShortCodeValuesToLiteral( value, characterName, expectedDuration, instanceData.res.result?.groups, instanceData.res.result ? instanceData.res.result[ 0 ] : null );
-                                value = StringUtilities.parseStoredVariablesToLiteral( value, storedVariables );
-                                value = StringUtilities.parseConditionResultsToLiteral( value, instanceData.trigger._conditionResults );
-                                value = StringUtilities.parseMatchesToLiteral( value, instanceData.res.result, deltaTime );
-                                value = StringUtilities.parseCountersToLiteral( value, counters );
-
-                                instanceData.res.result.groups[ name ] = value;
-                            }
-            
-                        } );
-
-                    }
-
-                    enableLogging && sendInformationToLog( `Execute trigger sub-action [${v.instanceId}] : ${ActionTypes[ action.actionType ]}`, 24 );
-
-                    executeTriggerAction( instanceData.trigger, action, new Date(), instanceData.res, deltaTime, false );
-                }
-
-            } catch ( error ) {
-                let instanceData = actionInstances[ v.instanceId ];
-
-                instanceData = instanceData ? instanceData : {
-                    trigger: {
-                        triggerId: 'undefined',
-                        name: 'undefined',
-                        _conditionResults: {},
-                        _deltaTime: 0,
-                    }
-                };
-
-                logHistoryMgr.logError(
-                    error,
-                    'Executing Sub Action',
-                    false,
-                    0,
-                    ErrorMessages.subActionExecution( instanceData?.trigger?.triggerId ),
-                    {
-                        triggerId: instanceData?.trigger?.triggerId,
-                        name: instanceData?.trigger?.name,
-                        _conditionResults: instanceData?.trigger?._conditionResults, 
-                        _deltaTime: instanceData?.trigger?._deltaTime, 
-                    } );
-            }
+            executeSubAction( v );
         } );
     
     ipcRenderer.on( 'log:clear-all:done', () => {
@@ -847,6 +771,113 @@ function LogWatcher(character, logPosition) {
         voiceOptions = speechSynthesis.getVoices();
     };
 
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Executes the given sub-action.
+ * 
+ * @param {{subAction: TriggerSubAction, instanceId: string}} v The values.
+ * @param {{duration?: number, instanceId?: string} | undefined} options The options.
+ */
+function executeSubAction( v, options ) {
+    try {
+
+        let instanceData = actionInstances[ v.instanceId ];
+        if ( instanceData ) {
+            let action = instanceData.trigger.actions.find( f => f.actionId === v.subAction.actionId );
+            let deltaTime = 0;
+
+            if ( v.subAction ) {
+
+                instanceData.res.result.groups = instanceData.res.result.groups ? instanceData.res.result.groups : {};
+                let expectedDuration = 0;
+
+                if ( options?.duration > 0 ) {
+                    expectedDuration = options.duration;
+                    action.duration = options.duration;
+                    
+                } else if ( instanceData.res.result?.groups?.timerDuration ) {
+                    expectedDuration = StringUtilities.getDurationFromLabel( instanceData.res.result?.groups?.timerDuration );
+
+                } else {
+
+                    if ( action.storageDuration && action.storageDuration.indexOf( '[' ) > -1 ) {
+                        let dur = +action.duration;
+                        dur = +getPersistentDictionaryValue( action.storageDuration, instanceData.res, timestamp, action, deltaTime, trigger );
+                        expectedDuration = dur > 0 ? dur / 1000 : +action.duration;
+
+                    } else if ( action.storageDuration ) {
+                        let dur = +action.duration;
+                        dur = +getScalarValue( action.storageDuration, 0 );
+                        expectedDuration = dur > 0 ? dur / 1000 : +action.duration;
+
+                    } else {
+                        expectedDuration = +action.duration;
+
+                    }
+
+                }
+
+                v.subAction.variableValues?.forEach( f => {
+
+                    let value = f.value;
+                    let name = /\{(?<name>.+?)\}/gi.exec( f.name )?.groups?.name;
+
+                    if ( name ) {
+                        value = StringUtilities.parseShortCodeValuesToLiteral( value, characterName, expectedDuration, instanceData.res.result?.groups, instanceData.res.result ? instanceData.res.result[ 0 ] : null );
+                        value = StringUtilities.parseStoredVariablesToLiteral( value, storedVariables );
+                        value = StringUtilities.parseConditionResultsToLiteral( value, instanceData.trigger._conditionResults );
+                        value = StringUtilities.parseMatchesToLiteral( value, instanceData.res.result, deltaTime );
+                        value = StringUtilities.parseCountersToLiteral( value, counters );
+
+                        instanceData.res.result.groups[ name ] = value;
+                    }
+
+                } );
+
+            }
+
+            enableLogging && sendInformationToLog( `Execute trigger sub-action [${v.instanceId}] : ${ActionTypes[ action.actionType ]}`, 24 );
+
+            executeTriggerAction( instanceData.trigger, action, new Date(), instanceData.res, deltaTime, false, options );
+        } else {
+            console.log( 'No instance data', v );
+        }
+
+    } catch ( error ) {
+        let instanceData = actionInstances[ v.instanceId ];
+
+        instanceData = instanceData ? instanceData : {
+            trigger: {
+                triggerId: 'undefined',
+                name: 'undefined',
+                _conditionResults: {},
+                _deltaTime: 0,
+            }
+        };
+
+        logHistoryMgr.logError(
+            error,
+            'Executing Sub Action',
+            false,
+            0,
+            ErrorMessages.subActionExecution( instanceData?.trigger?.triggerId ),
+            {
+                triggerId: instanceData?.trigger?.triggerId,
+                name: instanceData?.trigger?.name,
+                _conditionResults: instanceData?.trigger?._conditionResults,
+                _deltaTime: instanceData?.trigger?._deltaTime,
+            } );
+    }
 }
 
 
@@ -1007,6 +1038,13 @@ function generateTriggerFns() {
                                 
                                 rgxValue = StringUtilities.parseShortCodesToRegex( rgxValue, characterName );
                                 rgxValue = StringUtilities.parseStoredVariablesToRegex( rgxValue, storedVariables );
+
+                                // If the trigger has any List action types.
+                                let listAction = trigger.actions?.find( a => a.actionType === ActionTypes.List );
+                                if ( listAction ) {
+                                    let list = lists.find( f => f.action.actionId === listAction.actionId );
+                                    rgxValue = StringUtilities.parseListCodesToLiteral( rgxValue, list?.component?.listNames ?? [] );
+                                }
     
                                 if ( trigger.captureMethod === 'Sequential' ) {
                                     rgxValue = StringUtilities.parseMatchesToLiteral( rgxValue, { groups: matchGroups }, trigger._deltaTime );
@@ -1702,7 +1740,7 @@ function parseLogEntries( raw, simulating, padTime ) {
                         trigger.actions.forEach( action => {
                             // This used to execute actions if there are no phrases on the action, but now it doesn't because the action may exist only as a subaction
                             // ( action.phrases == null || action.phrases?.length === 0 || action.phrases?.indexOf( res.phraseId ) > -1 )
-                            if ( ( isDev || !action.onlyExecuteInDev ) && action.phrases?.indexOf( res.phraseId ) > -1 ) {
+                            if ( ( isDev || !action.onlyExecuteInDev ) && ( action.actionType === ActionTypes.List || action.phrases?.indexOf( res.phraseId ) > -1 ) ) {
 
                                 enableLogging && sendInformationToLog( `Execute trigger action [${trigger.name}] : ${ActionTypes[ action.actionType ]}`, 24 );
                                 enableLogging && sendInformationToLog( `    ||${raw}||`, 24 );
@@ -1776,8 +1814,9 @@ function parseLogEntries( raw, simulating, padTime ) {
  * @param {PhraseParse} res 
  * @param {number} deltaTime 
  * @param {boolean} simulating
+ * @param {{instanceId?: string} | undefined} options
  */
-function executeTriggerAction( trigger, action, timestamp, res, deltaTime, simulating ) {
+function executeTriggerAction( trigger, action, timestamp, res, deltaTime, simulating, options ) {
 
     if ( action.actionType === ActionTypes.DisplayText ) {
         /* --== Display Text ==-- */
@@ -1826,7 +1865,7 @@ function executeTriggerAction( trigger, action, timestamp, res, deltaTime, simul
     } else if ( action.actionType === ActionTypes.Timer || action.actionType === ActionTypes.Countdown || action.actionType === ActionTypes.Stopwatch ) {
         /* --== Start a Timer/Countdown ==-- */
     
-        let instanceId = displayTimerCountdownComponent( res, timestamp, action, deltaTime, trigger );
+        let instanceId = displayTimerCountdownComponent( res, timestamp, action, deltaTime, trigger, options );
 
         let subRes = _.cloneDeep( res );
         subRes.result.groups = _.cloneDeep( res.result.groups );
@@ -1906,6 +1945,547 @@ function executeTriggerAction( trigger, action, timestamp, res, deltaTime, simul
         /* --== Clear All ==-- */
 
         clearAll();
+    } else if ( action.actionType === ActionTypes.List ) {
+        /* --== List Action ==-- */
+        
+        displayListAction( res, action, trigger );
+    }
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Sends the list action to the renderer.
+ * 
+ * @param {PhraseParse} res The information from the parsed phrase.
+ * @param {TriggerAction} action The screen glow action to render.
+ * @param {Trigger} trigger The action trigger.
+ */
+function displayListAction( res, action, trigger ) {
+
+    /**
+     * Executes the "Show Timer" timer for a list.
+     * 
+     * @param {LogList} list The list to execute.
+     * @param {number} duration The timer duration.
+     */
+    const executeListTimerAction = ( list, duration ) => {
+        let subAct = new TriggerSubAction();
+        subAct.actionId = list.action.listTimerActionId;
+        
+        // We need to create a new instance id for the timer.
+        list.timerInstanceId = nagId();
+
+        executeSubAction( {
+            subAction: subAct,
+            instanceId: list.instanceId,
+        }, {
+            duration: duration,
+            instanceId: list.timerInstanceId,
+        } );
+    };
+
+    if ( action.createListPhrase === res.phraseId ) {
+
+        // Create a new list.
+        let list = lists.find( f => f.action.actionId === action.actionId ) ?? new LogList();
+
+        if ( list.instanceId ) {
+            ipcRenderer.send( 'overlay:destroy:component', list.instanceId );
+            lists = lists.filter( f => f.instanceId !== list.instanceId );
+            list.instanceId = null;
+        }
+
+        list.name = action.listName;
+        list.instanceId = nagId();
+        list.trigger = trigger;
+        list.action = action;
+        list.state = 'created';
+
+        lists.push( list );
+        
+        list.component = new RendererComponent();
+        list.component.instanceId = list.instanceId;
+        list.component.triggerId = trigger.triggerId;
+        list.component.action = action;
+        list.component.matches = res.result;
+        
+        let listSource = '';
+        if ( action.listRegexVarName ) {
+            if ( res.result?.groups && res.result.groups[ action.listRegexVarName ] ) {
+                listSource = res.result.groups[ action.listRegexVarName ];
+            }
+
+            if ( !listSource ) {
+                throw new Error( 'Unable to execute list action. A list variable was specified, but not found in the log entry.' );
+            }
+        } else {
+            // use the first capture group if no name is given.
+            listSource = res.result[ 1 ] ?? '';
+
+            if ( !listSource ) {
+                throw new Error( 'Unable to execute list action. A list could not be generated with the log entry.' );
+            }
+        }
+
+        list.component.listNames = listSource.split( /,/g ).map( s => s.trim() );
+
+        if ( list.component.listNames == null || list.component.listNames.length === 0 ) {
+            throw new Error( 'Unable to execute list action. No items were found in the list from the log entry.' );
+        }
+
+        if ( action.autoEnumerateListTimerName && res.result.groups[ action.autoEnumerateListTimerName ] ) {
+            list.action.duration = StringUtilities.getDurationFromLabel( res.result.groups[ action.autoEnumerateListTimerName ] );
+        }
+
+        // Ensure the duration is at least numerical.
+        list.action.duration = list.action.duration ? list.action.duration : 0;
+        
+        logInstanceIds.push( list.component.instanceId );
+
+        let subRes = _.cloneDeep( res );
+        subRes.result.groups = _.cloneDeep( res.result.groups );
+
+        actionInstances[ list.component.instanceId ] = {
+            trigger: trigger,
+            res: subRes,
+        };
+
+        list.updateListFn = ( opts ) => {
+            let now = Math.round( performance.now() );
+            let currentIndex = 0;
+
+            if ( opts?.actName ) {
+                // With the act name provided, we only must cancel the timeout for the list and clear the css for the current name.
+                if ( list.actionTrackIntervalId > 0 ) {
+                    window.clearTimeout( list.actionTrackIntervalId );
+                    list.actionTrackIntervalId = -1;
+                }
+
+                ipcRenderer.send( 'renderer:update:component', {
+                    instanceId: list.component.instanceId,
+                    updateType: 'list-act-good',
+                } );
+
+                return;
+            }
+
+            if ( !opts?.setName ) {
+                if ( list.component.currentName ) {
+                    currentIndex = list.component.listNames.indexOf( list.component.currentName ) + 1;
+                }
+
+                if ( currentIndex >= list.component.listNames.length ) {
+                    currentIndex = 0;
+                }
+
+                list.actedName = undefined;
+            } else {
+                currentIndex = list.component.listNames.findIndex( f => f === opts.setName ) ?? 0;
+                list.timestamp = 0;
+            }
+
+            list.component.currentName = list.component.listNames[ currentIndex ];
+
+            if ( list.action.autoEnumerateList && list.component.currentName === characterName && !list.component.skipNames.includes( characterName ) ) {
+                // Reduce the list by the number of skipped names.
+                let skipCount = list.component.skipNames.length;
+                let duration = list.action.duration * list.component.listNames.length;
+                if ( skipCount > 0 ) {
+                    duration -= ( skipCount * list.action.duration );
+                }
+                if ( duration > 0 ) {
+                    executeListTimerAction( list, duration );
+                }
+            } else if ( list.action.autoEnumerateList && list.action.listTimerActionId ) {
+                
+                if ( list.timerInstanceId ) {
+                    // Do nothing.
+                } else {
+
+                    let myIndex = list.component.listNames.indexOf( characterName );
+                    let duration = list.action.duration;
+
+                    if ( currentIndex < myIndex ) {
+                        duration = duration * ( myIndex - currentIndex );
+                    } else {
+                        duration = duration * ( list.component.listNames.length - currentIndex + myIndex );
+                    }
+
+                    if ( duration > 0 ) {
+                        executeListTimerAction( list, duration );
+                    }
+                }
+            }
+
+            if ( list.component.skipNames.includes( list.component.currentName ) ) {
+                list.component.skipNames = list.component.skipNames.filter( f => f !== list.component.currentName );
+                list.updateListFn();
+
+            } else if ( list.action.autoEnumerateList ) {
+                ipcRenderer.send( 'overlay:send:component', list.component );
+
+                if ( list.action.duration > 0 ) {
+                    let duration = list.action.duration * 1000;
+
+                    if ( list.timestamp === 0 ) {
+                        list.timestamp = now;
+                    } else {
+                        // set timeout is often a few ms off, to account for this drifting over time we'll alter the timeout duration.
+                        let expected = list.timestamp + duration;
+                        let drift = now - expected;
+                        duration = duration - drift;
+
+                        // Now that we have our duration, we can set our timestamp, nudging it to account for drift.
+                        list.timestamp = now - drift;
+                    }
+                    
+                    if ( duration > 0 ) {
+                        list.component.intervalId = window.setTimeout( () => {
+                            list.updateListFn();
+                        }, duration );
+                        
+                        if ( list.action.listEnableActionTracking ) {
+                            let actDuration = Math.min( duration * 0.33, 1500 );
+                            list.actionTrackIntervalId = window.setTimeout( () => {
+                                if ( list.actedName !== list.component.currentName ) {
+                                    ipcRenderer.send( 'renderer:update:component', {
+                                        instanceId: list.component.instanceId,
+                                        updateType: 'list-act-bad',
+                                    } );
+                                }
+                            }, actDuration );
+                        } else {
+                            list.actionTrackIntervalId = -1;
+                        }
+
+                    } else {
+                        list.updateListFn();
+                    }
+
+                } else {
+                    throw new Error( 'Unable to execute list action. The duration for the list enumeration is not set and cannot auto enumerate.' );
+                }
+            } else {
+                ipcRenderer.send( 'overlay:send:component', list.component );
+
+                list.component.intervalId = -1;
+            }
+
+        };
+        
+        ipcRenderer.send( 'overlay:send:component', list.component );
+
+    } else if ( action.enableListEnrollment && action.listEnrollmentAddPhrase === res.phraseId ) {
+        let list = lists.find( f => f.action.actionId === action.actionId );
+        let addName = null;
+
+        if ( !list ) {
+            throw new Error( 'Unable to execute list action. The list to enroll in was not found.' );
+        }
+
+        if ( action.listEnrollmentAddVarName ) {
+            addName = res.result.groups[ action.listEnrollmentAddVarName ];
+            if ( res.result?.groups && addName ) {
+                list.component.listNames.push( addName );
+            } else {
+                throw new Error( 'Unable to execute list action. The enrollment variable was not found in the log entry.' );
+            }
+        } else if ( res.result[ 1 ] ) {
+            addName = res.result[ 1 ];
+            list.component.listNames.push( addName );
+        }
+
+        ipcRenderer.send( 'renderer:update:component', {
+            instanceId: list.component.instanceId,
+            updateType: 'list',
+            model: list.component,
+        } );
+        
+        if ( list.action.listEnrollmentShowTimer && list.component.intervalId !== -1 ) {
+
+            if ( list.timerInstanceId && list.component.listNames.includes( characterName ) ) {
+                let currentIndex = list.component.listNames.indexOf( list.component.currentName );
+                let myIndex = list.component.listNames.indexOf( characterName );
+
+                if ( currentIndex < myIndex ) {
+                    // Do nothing, we're already ahead of the new name.
+
+                } else {
+                    // We need to increase the time remaining on the timer, so
+                    // we'll add the duration of the list to the timer's start 
+                    // time.
+                    ipcRenderer.send( 'renderer:update:component', {
+                        instanceId: list.timerInstanceId,
+                        updateType: 'alter-start',
+                        duration: list.action.duration,
+                    } );
+                }
+                
+            } else if ( !list.timerInstanceId && addName === characterName ) {
+                // If our name was added, we need to start the timer.
+                let myIndex = list.component.listNames.indexOf( characterName );
+                let now = Math.round( performance.now() );
+
+                let duration = list.timestamp + ( myIndex * list.action.duration * 1000 ) - now;
+
+                if ( duration > 0 ) {
+                    executeListTimerAction( list, Math.round( duration / 1000 ) );
+                }
+
+            }
+
+        }
+
+    } else if ( action.enableListEnrollment && action.listEnrollmentRemovePhrase === res.phraseId ) {
+        let list = lists.find( f => f.action.actionId === action.actionId );
+        let removeName = null;
+        let removedIndex = -1;
+
+        if ( !list ) {
+            throw new Error( 'Unable to execute list action. The list to remove from was not found.' );
+        }
+
+        if ( action.listEnrollmentRemoveVarName ) {
+            removeName = res.result.groups[ action.listEnrollmentRemoveVarName ];
+            if ( res.result?.groups && removeName) {
+                removedIndex = list.component.listNames.indexOf( removeName );
+                list.component.listNames = list.component.listNames.filter( f => f !== removeName );
+            } else {
+                throw new Error( 'Unable to execute list action. The removal variable was not found in the log entry.' );
+            }
+        } else {
+            removeName = res.result[ 1 ];
+            removedIndex = list.component.listNames.indexOf( removeName );
+            list.component.listNames = list.component.listNames.filter( f => f !== removeName );
+        }
+        
+        ipcRenderer.send( 'renderer:update:component', {
+            instanceId: list.component.instanceId,
+            updateType: 'list',
+            model: list.component,
+        } );
+        
+        if ( list.action.listEnrollmentShowTimer && list.component.intervalId !== -1 ) {
+
+            if ( list.timerInstanceId ) {
+                if ( list.component.listNames.length === 0 || removeName === characterName ) {
+                    // If the list is empty, then we'll stop the timer.
+                    ipcRenderer.send( 'renderer:kill:component', list.timerInstanceId );
+                    list.timerInstanceId = null;
+
+                } else {
+                    let currentIndex = list.component.listNames.indexOf( list.component.currentName );
+                    let myIndex = list.component.listNames.indexOf( characterName );
+
+                    if ( currentIndex >= myIndex && currentIndex <= removedIndex ) {
+                        // If the current index is inclusively between mine and
+                        // the removed name, then we'll need to adjust the timer.
+
+                        // We need to reduce the time remaining on the timer, so we'll
+                        // subtract the duration of the list from the timer's start 
+                        // time. That will reduce the time remaining on the timer by 
+                        // one iteration of the list.
+                        ipcRenderer.send( 'renderer:update:component', {
+                            instanceId: list.timerInstanceId,
+                            updateType: 'alter-start',
+                            duration: -1 * list.action.duration,
+                        } );
+                    }
+
+                }
+            }
+
+        }
+
+    } else if ( action.enableListEnrollment && action.listEnrollmentSkipPhrase === res.phraseId ) {
+        let list = lists.find( f => f.action.actionId === action.actionId );
+
+        if ( !list ) {
+            throw new Error( 'Unable to execute list action. The list to skip enrollment in was not found.' );
+        }
+
+        let skipName = '';
+
+        if ( action.listEnrollmentSkipVarName ) {
+            if ( res.result?.groups && res.result.groups[ action.listEnrollmentSkipVarName ] ) {
+                skipName = res.result.groups[ action.listEnrollmentSkipVarName ];
+            } else {
+                throw new Error( 'Unable to execute list action. The skip variable was not found in the log entry.' );
+            }
+        } else {
+            skipName = res.result[ 1 ];
+        }
+
+        if ( !skipName ) {
+            throw new Error( 'Unable to execute list action. The skip name was not found in the log entry.' );
+        }
+
+        list.component.skipNames = list.component.skipNames?.length > 0 ? [ ...list.component.skipNames, skipName ] : [ skipName ];
+        
+        ipcRenderer.send( 'renderer:update:component', {
+            instanceId: list.component.instanceId,
+            updateType: 'list',
+            model: list.component,
+        } );
+
+        if ( list.action.listEnrollmentShowTimer && list.component.intervalId !== -1 ) {
+            let currentIndex = list.component.listNames.indexOf( list.component.currentName );
+            let myIndex = list.component.listNames.indexOf( characterName );
+
+            if ( list.timerInstanceId ) {
+                if ( skipName === characterName ) {
+                    // If we're skipping ourselves, then we need to kill the current timer and start a new one. The duration of this new timer will be a full round, minus our time.
+                    ipcRenderer.send( 'renderer:kill:component', list.timerInstanceId );
+                    list.timerInstanceId = null;
+
+                    let duration = list.action.duration * list.component.listNames.length - list.action.duration;
+
+                    if ( currentIndex < myIndex ) {
+                        // If we're ahead of the current name, then we'll need to add a duration matching the number of names ahead of us.
+                        duration += list.action.duration * ( myIndex - currentIndex );
+                    } else if ( currentIndex >= myIndex ) {
+                        // If we're behind the current name, then we'll need to add a duration matching the number of names ahead of us.
+                        duration += list.action.duration * ( list.component.listNames.length - currentIndex + myIndex );
+                    }
+
+                    // // If our name was added, we need to start the timer.
+                    // let myIndex = list.component.listNames.indexOf( characterName );
+                    let now = Math.round( performance.now() );
+    
+                    duration += ( list.timestamp - now ) / 1000;
+
+                    if ( duration > 0 ) {
+                        executeListTimerAction( list, duration );
+                    }
+
+                } else {
+
+                    // We need to reduce the time remaining on the timer, so we'll
+                    // subtract the duration of the list from the timer's start 
+                    // time. That will reduce the time remaining on the timer by 
+                    // one iteration of the list.
+                    ipcRenderer.send( 'renderer:update:component', {
+                        instanceId: list.timerInstanceId,
+                        updateType: 'alter-start',
+                        duration: -1 * list.action.duration,
+                    } );
+
+                }
+            }
+
+        }
+
+    } else if ( action.autoEnumerateList && action.listEnumerateBeginPhrase === res.phraseId ) {
+        let list = lists.find( f => f.action.actionId === action.actionId );
+
+        if ( !list ) {
+            throw new Error( 'Unable to execute list action. The list to begin enumeration was not found.' );
+        } else if ( list.state === 'running' ) {
+            // If the list is already running, then we'll ignore this.
+            return;
+        }
+
+        list.state = 'running';
+
+        if ( list.component.intervalId === -1 ) {
+            list.timestamp = 0;
+            list.updateListFn();
+        }
+
+    } else if ( action.listEnumerateEndPhrase === res.phraseId ) {
+        let list = lists.find( f => f.action.actionId === action.actionId );
+
+        if ( !list ) {
+            throw new Error( 'Unable to execute list action. The list to end enumeration was not found.' );
+        }
+
+        list.state = 'stopped';
+
+        if ( action.autoEnumerateList && list.component.intervalId !== -1 ) {
+            window.clearTimeout( list.component.intervalId );
+            list.component.intervalId = -1;
+
+            list.component.currentName = undefined;
+
+            ipcRenderer.send( 'overlay:send:component', list.component );
+
+            // If there's a timer, destroy that as well.
+            if ( list.timerInstanceId ) {
+                ipcRenderer.send( 'renderer:kill:component', list.timerInstanceId );
+            }
+            
+        } else {
+            // If the list is already stopped, then we'll delete the list.
+            ipcRenderer.send( 'overlay:destroy:component', list.instanceId );
+
+            lists = lists.filter( f => f.instanceId !== list.instanceId );
+        }
+    } else if ( action.manualEnumerateList && action.listManualEnumeratePhrase === res.phraseId ) {
+        let list = lists.find( f => f.action.actionId === action.actionId );
+
+        if ( !list ) {
+            throw new Error( 'Unable to execute list action. The list to manually enumerate was not found.' );
+        }
+
+        if ( list.component.intervalId !== -1 ) {
+            window.clearTimeout( list.component.intervalId );
+            list.component.intervalId = -1;
+        }
+
+        if ( res.result?.groups && res.result.groups[ nagListNameKey ] ) {
+            list.updateListFn( { setName: res.result.groups[ nagListNameKey ] } );
+        } else {
+            list.updateListFn();
+        }
+    }
+    
+    // This really needs to mutate the current name of the list, like the skip operation does.
+    if ( action.listActionTrackingPhrase === res.phraseId ) {
+        let list = lists.find( f => f.action.actionId === action.actionId );
+
+        if ( !list ) {
+            throw new Error( 'Unable to execute list action. The list to track actions was not found.' );
+        } else if ( list.state !== 'running' ) {
+            return;
+        }
+
+        if ( res.result?.groups && res.result.groups[ nagListNameKey ] ) {
+            const actName = res.result.groups[ nagListNameKey ];
+
+            if ( list.component.currentName === actName ) {
+                // This is the expected character doing their action at the expected time.
+                list.actedName = actName;
+                list.updateListFn( { actName: actName } );
+
+            } else {
+                // If the acted name is not the current name, then we must mutate the list so that the current name is now the acted name.
+                // Because we are changing the current index, first we need to cancel the timer, if there is one.
+                if ( list.timerInstanceId ) {
+                    ipcRenderer.send( 'renderer:kill:component', list.timerInstanceId );
+                    list.timerInstanceId = null;
+                }
+
+                if ( list.component.intervalId > -1 ) {
+                    window.clearTimeout( list.component.intervalId );
+                    list.component.intervalId = -1;
+                }
+
+                list.actedName = actName;
+                list.updateListFn( { setName: actName } );
+
+                // Since we aren't going to re-evaluate this command, we'll immediately follow this up with the act name to send the good css to the renderer.
+                list.updateListFn( { actName: actName } );
+
+            }
+        }
     }
 }
 
@@ -1949,6 +2529,20 @@ function clearAll() {
             backfind().then( () => startParsingLogFile( logFilePath, position >= 0 ? position : null ) );
         } );
     }, logParseTimer );
+
+    for ( let i = 0; i < lists.length; i++ ) {
+        const list = lists[ i ];
+
+        if ( list.component.intervalId !== -1 ) {
+            window.clearTimeout( list.component.intervalId );
+            list.component.intervalId = -1;
+        }
+        
+        if ( list.instanceId ) {
+            ipcRenderer.send( 'overlay:destroy:component', list.instanceId );
+        }
+    }
+    lists = [];
 
     ipcRenderer.send( 'renderer:clear-all', null );
 
@@ -2418,15 +3012,16 @@ function displayDotTimerComponent( res, timestamp, action, deltaTime, trigger ) 
  * @param {TriggerAction} action The trigger's display text action.
  * @param {number} deltaTime The change in time, in milliseconds, since the previous sequential capture.
  * @param {LogTrigger} trigger If true the component is written to the console instead of sent to the overlay window.
+ * @param {{instanceId?: string} | undefined} options
  * 
  * @return {string} Returns the instance id of the renderer component
  */
-function displayTimerCountdownComponent(res, timestamp, action, deltaTime, trigger) {
+function displayTimerCountdownComponent(res, timestamp, action, deltaTime, trigger, options) {
       
     // ${target} has been slain by (.+?)!
     let comp = new OverlayComponent();
 
-    comp.instanceId = nanoid();
+    comp.instanceId = options?.instanceId ?? nagId();
     comp.triggerId = trigger.triggerId;
     comp.triggerName = trigger.name;
     comp.action = Object.assign( new TriggerAction(), action );
@@ -2516,7 +3111,7 @@ function displayTimerCountdownComponent(res, timestamp, action, deltaTime, trigg
     // reset the trigger.
     trigger._reset();
 
-    if ( comp.action.duration > 0 ) {
+    if ( comp.action.duration > 0 || comp.action.actionType === ActionTypes.Stopwatch ) {
         // Timers with zero duration are non-sensical, or "undefined" if you like.
         ipcRenderer.send( 'overlay:send:component', comp );
 
@@ -2570,7 +3165,7 @@ function displayTimerCountdownComponent(res, timestamp, action, deltaTime, trigg
             } );
         }
     } else {
-        log( 'Timer/Countdown/Stopwatch with zero duration will not be rendered.', comp.action );
+        log( 'Timer/Countdown with zero duration will not be rendered.', comp.action );
     }
 
     return comp.instanceId;

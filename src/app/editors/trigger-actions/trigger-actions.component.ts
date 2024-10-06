@@ -71,6 +71,25 @@ export class TriggerActionsComponent implements OnInit {
 
 
 
+
+    /**
+     * Returns true if there are no list actions in the actions array, or if 
+     * the given action already is a list action.
+     * 
+     * @param action The action to check.
+     */
+    public canSelectList( action: TriggerAction ): boolean {
+        return !this.actions.some( f => f.actionId !== action.actionId && f.actionType === ActionTypes.List );
+    }
+
+
+
+
+
+
+
+
+
     
     /**
      * Adds a new empty action.
