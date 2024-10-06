@@ -2085,8 +2085,11 @@ function displayListAction( res, action, trigger ) {
                 if ( currentIndex >= list.component.listNames.length ) {
                     currentIndex = 0;
                 }
+
+                list.actedName = undefined;
             } else {
                 currentIndex = list.component.listNames.findIndex( f => f === opts.setName ) ?? 0;
+                list.timestamp = 0;
             }
 
             list.component.currentName = list.component.listNames[ currentIndex ];
@@ -2100,6 +2103,25 @@ function displayListAction( res, action, trigger ) {
                 }
                 if ( duration > 0 ) {
                     executeListTimerAction( list, duration );
+                }
+            } else if ( list.action.autoEnumerateList && list.action.listTimerActionId ) {
+                
+                if ( list.timerInstanceId ) {
+                    // Do nothing.
+                } else {
+
+                    let myIndex = list.component.listNames.indexOf( characterName );
+                    let duration = list.action.duration;
+
+                    if ( currentIndex < myIndex ) {
+                        duration = duration * ( myIndex - currentIndex );
+                    } else {
+                        duration = duration * ( list.component.listNames.length - currentIndex + myIndex );
+                    }
+
+                    if ( duration > 0 ) {
+                        executeListTimerAction( list, duration );
+                    }
                 }
             }
 
@@ -2376,22 +2398,6 @@ function displayListAction( res, action, trigger ) {
         if ( list.component.intervalId === -1 ) {
             list.timestamp = 0;
             list.updateListFn();
-
-            if ( list.action.listEnrollmentShowTimer && list.action.listTimerActionId ) {
-                // If the list has begun enumeration and the character is in the list, then we'll show the timer.
-                let myIndex = list.component.listNames.indexOf( characterName );
-    
-                let duration = 0;
-                if ( myIndex > 0 ) {
-                    duration = list.action.duration * myIndex;
-                } else if ( myIndex === 0 ) {
-                    duration = list.action.duration * list.component.listNames.length;
-                }
-    
-                if ( duration > 0 ) {
-                    executeListTimerAction( list, duration );
-                }
-            }
         }
 
     } else if ( action.listEnumerateEndPhrase === res.phraseId ) {
@@ -2447,11 +2453,38 @@ function displayListAction( res, action, trigger ) {
 
         if ( !list ) {
             throw new Error( 'Unable to execute list action. The list to track actions was not found.' );
+        } else if ( list.state !== 'running' ) {
+            return;
         }
 
         if ( res.result?.groups && res.result.groups[ nagListNameKey ] ) {
-            list.actedName = res.result.groups[ nagListNameKey ];
-            list.updateListFn( { actName: res.result.groups[ nagListNameKey ] } );
+            const actName = res.result.groups[ nagListNameKey ];
+
+            if ( list.component.currentName === actName ) {
+                // This is the expected character doing their action at the expected time.
+                list.actedName = actName;
+                list.updateListFn( { actName: actName } );
+
+            } else {
+                // If the acted name is not the current name, then we must mutate the list so that the current name is now the acted name.
+                // Because we are changing the current index, first we need to cancel the timer, if there is one.
+                if ( list.timerInstanceId ) {
+                    ipcRenderer.send( 'renderer:kill:component', list.timerInstanceId );
+                    list.timerInstanceId = null;
+                }
+
+                if ( list.component.intervalId > -1 ) {
+                    window.clearTimeout( list.component.intervalId );
+                    list.component.intervalId = -1;
+                }
+
+                list.actedName = actName;
+                list.updateListFn( { setName: actName } );
+
+                // Since we aren't going to re-evaluate this command, we'll immediately follow this up with the act name to send the good css to the renderer.
+                list.updateListFn( { actName: actName } );
+
+            }
         }
     }
 }
