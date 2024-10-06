@@ -3111,7 +3111,7 @@ function displayTimerCountdownComponent(res, timestamp, action, deltaTime, trigg
     // reset the trigger.
     trigger._reset();
 
-    if ( comp.action.duration > 0 ) {
+    if ( comp.action.duration > 0 || comp.action.actionType === ActionTypes.Stopwatch ) {
         // Timers with zero duration are non-sensical, or "undefined" if you like.
         ipcRenderer.send( 'overlay:send:component', comp );
 
@@ -3165,7 +3165,7 @@ function displayTimerCountdownComponent(res, timestamp, action, deltaTime, trigg
             } );
         }
     } else {
-        log( 'Timer/Countdown/Stopwatch with zero duration will not be rendered.', comp.action );
+        log( 'Timer/Countdown with zero duration will not be rendered.', comp.action );
     }
 
     return comp.instanceId;
