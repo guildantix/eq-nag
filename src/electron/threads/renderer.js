@@ -1523,8 +1523,8 @@ function Renderer( originX, originY, glowOnStart ) {
                     let iconDom = listItemDom.querySelector( '.list-item-icon' );
                     let textDom = listItemDom.querySelector( '.list-item-title' );
 
-                    iconDom.classList.add( 'error' );
-                    textDom.classList.add( 'error' );
+                    iconDom.classList.add( 'warn' );
+                    textDom.classList.add( 'warn' );
 
                     iconDom.classList.remove( 'success' );
                     textDom.classList.remove( 'success' );
@@ -1538,9 +1538,13 @@ function Renderer( originX, originY, glowOnStart ) {
                     iconDom.classList.add( 'success' );
                     textDom.classList.add( 'success' );
 
-                    iconDom.classList.remove( 'error' );
-                    textDom.classList.remove( 'error' );
+                    iconDom.classList.remove( 'warn' );
+                    textDom.classList.remove( 'warn' );
                     
+                } else if ( model.updateType === 'list' ) {
+
+                    renderListAction( Object.assign( new RendererComponent(), model.model ), true );
+
                 }
             }
         } );
@@ -3366,14 +3370,37 @@ function render( overlayId, comp ) {
  * Renders a list action component.
  * 
  * @param {RendererComponent} component The component to render.
+ * @param {boolean} restore If true, the component will be restored to it's previous state.
  */
-function renderListAction( component ) {
-
+function renderListAction( component, restore ) {
+    restore = restore === true;
     // iconCssClass: 'fa-chevron-right'
 
     let existing = rendererComponents.find( f => f.instanceId === component.instanceId );
+    let errors = [];
+    let warns = [];
+    let successes = [];
 
     if ( existing ) {
+        if ( restore ) {
+            let items = existing.dom?.querySelectorAll( '.list-item' ) ?? [];
+
+            // Get the status of each item.
+            for ( let i = 0; i < items.length; i++ ) {
+                const item = items[ i ];
+                const name = item.getAttribute( 'data-name' );
+                const textDom = item.querySelector( '.list-item-title' );
+
+                if ( textDom.classList.contains( 'error' ) ) {
+                    errors.push( name );
+                } else if ( textDom.classList.contains( 'warn' ) ) {
+                    warns.push( name );
+                } else if ( textDom.classList.contains( 'success' ) ) {
+                    successes.push( name );
+                }
+            }
+        }
+
         existing.removeComponent();
         existing = undefined;
     }
@@ -3419,6 +3446,46 @@ function renderListAction( component ) {
         // Put it on the center of the main monitor.
         component.dom.style.left = ( screen.getPrimaryDisplay().workArea.width / 2 ) - ( component.dom.offsetWidth / 2 ) + 'px';
         component.dom.style.top = ( screen.getPrimaryDisplay().workArea.height / 2 ) - ( component.dom.offsetHeight / 2 ) + 'px';
+    }
+
+    // Re-apply the css classes
+    if ( errors.length > 0 ) {
+        for ( let i = 0; i < errors.length; i++ ) {
+            const name = errors[ i ];
+            const listItemDom = component.dom.querySelector( `.list-item[data-name=${name}]` );
+            const iconDom = listItemDom.querySelector( '.list-item-icon' );
+            const textDom = listItemDom.querySelector( '.list-item-title' );
+
+            iconDom.classList.add( 'error' );
+            textDom.classList.add( 'error' );
+
+        }
+    }
+
+    if ( warns.length > 0 ) {
+        for ( let i = 0; i < warns.length; i++ ) {
+            const name = warns[ i ];
+            const listItemDom = component.dom.querySelector( `.list-item[data-name=${name}]` );
+            const iconDom = listItemDom.querySelector( '.list-item-icon' );
+            const textDom = listItemDom.querySelector( '.list-item-title' );
+
+            iconDom.classList.add( 'warn' );
+            textDom.classList.add( 'warn' );
+
+        }
+    }
+
+    if ( successes.length > 0 ) {
+        for ( let i = 0; i < successes.length; i++ ) {
+            const name = successes[ i ];
+            const listItemDom = component.dom.querySelector( `.list-item[data-name=${name}]` );
+            const iconDom = listItemDom.querySelector( '.list-item-icon' );
+            const textDom = listItemDom.querySelector( '.list-item-title' );
+
+            iconDom.classList.add( 'success' );
+            textDom.classList.add( 'success' );
+
+        }
     }
 
     component.removeComponent = () => {

@@ -60,6 +60,8 @@ class UpdateComponentArgs {
     updateType;
     /** @type {number} */
     duration;
+    /** @type {any} */
+    model;
 }
 
 module.exports = {
