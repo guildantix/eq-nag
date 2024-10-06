@@ -2131,7 +2131,7 @@ function displayListAction( res, action, trigger ) {
                         }, duration );
                         
                         if ( list.action.listEnableActionTracking ) {
-                            let actDuration = Math.max( duration * 0.33, 1000 );
+                            let actDuration = Math.min( duration * 0.33, 1500 );
                             list.actionTrackIntervalId = window.setTimeout( () => {
                                 if ( list.actedName !== list.component.currentName ) {
                                     ipcRenderer.send( 'renderer:update:component', {
