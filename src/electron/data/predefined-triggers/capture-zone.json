@@ -8,7 +8,7 @@
             "requirePreviousPhrase": false,
             "duration": null,
             "phraseId": "4XE1SERwjEB0rRhc",
-            "phrase": "^You have entered (?!an area where levitation effects do not function)(.*)\\.$"
+            "phrase": "^You have entered ([A-Z].*)\\.$"
         },
         {
             "requirePreviousPhrase": false,
@@ -209,7 +209,7 @@
     "allakhazamUrl": null,
     "classLevels": [],
     "score": 4.843554288349809e-12,
-    "refIndex": 7,
+    "refIndex": 862,
     "ginaTriggerName": null,
     "importIdentifier": null,
     "tagIds": null,
