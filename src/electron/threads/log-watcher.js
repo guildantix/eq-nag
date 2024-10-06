@@ -2181,7 +2181,11 @@ function displayListAction( res, action, trigger ) {
             list.component.listNames.push( addName );
         }
 
-        ipcRenderer.send( 'overlay:send:component', list.component );
+        ipcRenderer.send( 'renderer:update:component', {
+            instanceId: list.component.instanceId,
+            updateType: 'list',
+            model: list.component,
+        } );
         
         if ( list.action.listEnrollmentShowTimer && list.component.intervalId !== -1 ) {
 
@@ -2241,7 +2245,11 @@ function displayListAction( res, action, trigger ) {
             list.component.listNames = list.component.listNames.filter( f => f !== removeName );
         }
         
-        ipcRenderer.send( 'overlay:send:component', list.component );
+        ipcRenderer.send( 'renderer:update:component', {
+            instanceId: list.component.instanceId,
+            updateType: 'list',
+            model: list.component,
+        } );
         
         if ( list.action.listEnrollmentShowTimer && list.component.intervalId !== -1 ) {
 
@@ -2300,7 +2308,11 @@ function displayListAction( res, action, trigger ) {
 
         list.component.skipNames = list.component.skipNames?.length > 0 ? [ ...list.component.skipNames, skipName ] : [ skipName ];
         
-        ipcRenderer.send( 'overlay:send:component', list.component );
+        ipcRenderer.send( 'renderer:update:component', {
+            instanceId: list.component.instanceId,
+            updateType: 'list',
+            model: list.component,
+        } );
 
         if ( list.action.listEnrollmentShowTimer && list.component.intervalId !== -1 ) {
             let currentIndex = list.component.listNames.indexOf( list.component.currentName );
