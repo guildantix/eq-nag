@@ -650,6 +650,8 @@ class Trigger {
     enabled = true;
     /** @type {string} */
     sequentialRestartBehavior = 'none';
+    /** @type {any[]} */
+    hotkeys = [];
 }
 
 class BaseFileModel {
@@ -744,6 +746,8 @@ class PackageTrigger {
     cooldownDuration = 0;
     /** @type {string} */
     sequentialRestartBehavior = 'none';
+    /** @type {any[]} */
+    hotkeys = [];
 
 }
 
