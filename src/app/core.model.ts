@@ -1203,6 +1203,7 @@ export class PackageTrigger {
     public useCooldown: boolean = false;
     public cooldownDuration: number = 0;
     public sequentialRestartBehavior: string = 'none';
+    public hotkeys: TriggerHotkey[] = [];
 
 
 
@@ -1232,8 +1233,19 @@ export class PackageTrigger {
         pTrg.captureMethod = _.cloneDeep( trigger.captureMethod );
         pTrg.conditions = _.cloneDeep( trigger.conditions );
         pTrg.classLevels = _.cloneDeep( trigger.classLevels );
+        pTrg.hotkeys = _.cloneDeep( trigger.hotkeys );
         pTrg.useCooldown = trigger.useCooldown;
         pTrg.cooldownDuration = trigger.cooldownDuration;
+
+        // Reset hotkey quick action status.
+        pTrg.hotkeys.forEach( h => h.quickAction = false );
+
+        pTrg.actions.forEach( action => {
+            // Reset the list position.
+            if ( action.actionType === ActionTypes.List ) {
+                action.staticPosition = undefined;
+            }
+        } );
 
         return pTrg;
     }

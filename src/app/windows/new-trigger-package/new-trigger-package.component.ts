@@ -1,6 +1,6 @@
 import { ChangeDetectorRef, Component, EventEmitter, Input, OnInit, Output, ViewChild } from '@angular/core';
 import { MatTable } from '@angular/material/table';
-import { TriggerFolder, TriggerModel, PackageTrigger, TriggerPackageMetaModel, PackageFolder, PackageFileModel, TriggerPackageModel, TriggerPackageCategories, OverlayWindowModel, TriggerAction, TriggerCondition } from 'src/app/core.model';
+import { TriggerFolder, TriggerModel, PackageTrigger, TriggerPackageMetaModel, PackageFolder, PackageFileModel, TriggerPackageModel, TriggerPackageCategories, OverlayWindowModel, TriggerAction, TriggerCondition, ActionTypes } from 'src/app/core.model';
 import { DialogService } from 'src/app/dialogs/dialog.service';
 import { IpcService } from 'src/app/ipc.service';
 import * as _ from 'lodash-es';
@@ -178,6 +178,16 @@ export class NewTriggerPackageComponent implements OnInit {
                     pkgTrigger.classLevels = _.cloneDeep( trigger.classLevels );
                     pkgTrigger.useCooldown = trigger.useCooldown;
                     pkgTrigger.cooldownDuration = trigger.cooldownDuration;
+                    pkgTrigger.hotkeys = _.cloneDeep( trigger.hotkeys );
+                    // Reset quick action status.
+                    pkgTrigger.hotkeys.forEach( h => h.quickAction = false );
+
+                    pkgTrigger.actions.forEach( action => {
+                        // Reset the list position.
+                        if ( action.actionType === ActionTypes.List ) {
+                            action.staticPosition = undefined;
+                        }
+                    } );
 
                 }
             } );
