@@ -35,7 +35,7 @@ export class QuickActionsComponent implements OnInit {
     public reduceToQuickActions( triggers: TriggerModel[] ): TriggerHotkey[] {
         let quickActionTriggers = triggers.filter( x => x.hotkeys?.some( y => y.simpleCommand ) );
 
-        return quickActionTriggers.map( x => x.hotkeys.filter( y => y.simpleCommand ) ).reduce( ( a, b ) => a.concat( b ), [] );
+        return quickActionTriggers.map( x => x.hotkeys.filter( y => y.simpleCommand && y.quickAction ) ).reduce( ( a, b ) => a.concat( b ), [] );
     }
 
     public executeQuickAction( quickAction: TriggerHotkey ): void {
