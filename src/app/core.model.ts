@@ -394,7 +394,6 @@ export class TriggerModel {
     public cooldownDuration: number = 0;
     public enabled: boolean = true;
     public sequentialRestartBehavior: string = 'none';
-
     public hotkeys: TriggerHotkey[] = [];
     
     /**
