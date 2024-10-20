@@ -1237,7 +1237,7 @@ export class PackageTrigger {
         pTrg.cooldownDuration = trigger.cooldownDuration;
 
         // Reset hotkey quick action status.
-        pTrg.hotkeys.forEach( h => h.quickAction = false );
+        pTrg.hotkeys?.forEach( h => h.quickAction = false );
 
         pTrg.actions.forEach( action => {
             // Reset the list position.

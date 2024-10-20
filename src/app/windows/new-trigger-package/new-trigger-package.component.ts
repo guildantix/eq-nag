@@ -180,7 +180,7 @@ export class NewTriggerPackageComponent implements OnInit {
                     pkgTrigger.cooldownDuration = trigger.cooldownDuration;
                     pkgTrigger.hotkeys = _.cloneDeep( trigger.hotkeys );
                     // Reset quick action status.
-                    pkgTrigger.hotkeys.forEach( h => h.quickAction = false );
+                    pkgTrigger.hotkeys?.forEach( h => h.quickAction = false );
 
                     pkgTrigger.actions.forEach( action => {
                         // Reset the list position.
@@ -828,6 +828,8 @@ export class NewTriggerPackageComponent implements OnInit {
                         //       list are overwritten with the new conditions and 
                         //       not updated by conditionId.
                         let triggerIds = Object.keys( conditionMap );
+
+                        // TODO: Update so that it applies folder conditions to all triggers in the hierarchy.
                         for ( let i = 0; i < triggerIds.length; i++ ) {
                             const triggerId = triggerIds[ i ];
                             const packageTrigger = this.package.model.triggers.find( f => f.triggerId == triggerId );
@@ -962,28 +964,29 @@ export class NewTriggerPackageComponent implements OnInit {
      * Submits the package to the API service.
      */
     savePackage(): void {
-        if ( this._pkgId != null ) {
-            this.libraryService.updatePackage( this.authorId, this.package, this.notes ).subscribe( pkg => {
-                if ( pkg ) {
-                    this.snackBar.open( 'Update successful!', 'dismiss', { duration: 5000 } );
-                    this.triggerPackage.emit( pkg );
-                    this.package = new TriggerPackageMetaModel();
-                    this.package.category = this._selectedCategory;
-                } else {
-                    this.dialogService.showErrorDialog( 'Sync Error', 'Could not update the package' );
-                }
-            } );
-        } else {
-            this.libraryService.createPackage( this.authorId, this.package, this.notes ).subscribe( pkg => {
-                if ( pkg ) {
-                    this.triggerPackage.emit( pkg );
-                    this.package = new TriggerPackageMetaModel();
-                    this.package.category = this._selectedCategory;
-                } else {
-                    this.dialogService.showErrorDialog( 'Sync Error', 'Could not create the package' );
-                }
-            } );
-        }
+        console.log( 'Saving package', this.package );
+        // if ( this._pkgId != null ) {
+        //     this.libraryService.updatePackage( this.authorId, this.package, this.notes ).subscribe( pkg => {
+        //         if ( pkg ) {
+        //             this.snackBar.open( 'Update successful!', 'dismiss', { duration: 5000 } );
+        //             this.triggerPackage.emit( pkg );
+        //             this.package = new TriggerPackageMetaModel();
+        //             this.package.category = this._selectedCategory;
+        //         } else {
+        //             this.dialogService.showErrorDialog( 'Sync Error', 'Could not update the package' );
+        //         }
+        //     } );
+        // } else {
+        //     this.libraryService.createPackage( this.authorId, this.package, this.notes ).subscribe( pkg => {
+        //         if ( pkg ) {
+        //             this.triggerPackage.emit( pkg );
+        //             this.package = new TriggerPackageMetaModel();
+        //             this.package.category = this._selectedCategory;
+        //         } else {
+        //             this.dialogService.showErrorDialog( 'Sync Error', 'Could not create the package' );
+        //         }
+        //     } );
+        // }
     }
 
 
