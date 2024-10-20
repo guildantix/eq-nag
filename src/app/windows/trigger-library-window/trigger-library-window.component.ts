@@ -346,7 +346,7 @@ export class TriggerLibraryWindowComponent implements OnInit {
     loadPackages() {
         this.loadingLibrary = true;
         this.ipcService.getInstalledPackages().subscribe( installed => {
-            this.libraryService.getPackagesList( this.author.authorId, installed.map( f => f.packageId ) ).subscribe( packages => {
+            this.libraryService.getPackagesList( this.author?.authorId, installed.map( f => f.packageId ) ).subscribe( packages => {
                 this.packages = _.orderBy( packages.filter(f => f.name?.length > 0), [ 'name' ] );
                 packages.forEach( pkg => {
                     this.ipcService.isPackageInstalled( pkg.triggerPackageId ).subscribe( installed => this.installedTriggers[ pkg.triggerPackageId ] = installed );

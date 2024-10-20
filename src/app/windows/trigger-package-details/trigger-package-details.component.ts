@@ -54,13 +54,15 @@ export class TriggerPackageDetailsComponent implements OnInit {
 
     ngOnInit() {
         this.ipcService.getAuthor().subscribe( author => {
-            this.authorId = author.authorId;
-            this.settingsService.isTrusted( author.authorId ).subscribe( trusted => {
-                this.trustedAuthor = trusted;
-                if ( this._pkg ) {
-                    this.libraryService.isAuthor( this._pkg.triggerPackageId, this.authorId ).subscribe( isAuth => this.isAuthor = isAuth && this.trustedAuthor );
-                }
-            } );
+            if ( author ) {
+                this.authorId = author.authorId;
+                this.settingsService.isTrusted( author.authorId ).subscribe( trusted => {
+                    this.trustedAuthor = trusted;
+                    if ( this._pkg ) {
+                        this.libraryService.isAuthor( this._pkg.triggerPackageId, this.authorId ).subscribe( isAuth => this.isAuthor = isAuth && this.trustedAuthor );
+                    }
+                } );
+            }
         } );
         
         this.ipcService.missingPackageOverlayFound().subscribe( packageOverlay => {
