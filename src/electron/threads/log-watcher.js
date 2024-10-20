@@ -1730,8 +1730,6 @@ function parseLogEntries( raw, simulating, padTime ) {
         let entryMatched = false;
         triggers.forEach( trigger => {
 
-            // try {
-                
             if ( !!trigger.enabled && !trigger._profileDisabled ) {
                 trigger._parse( log, ( res, deltaTime ) => {
 
@@ -1773,10 +1771,6 @@ function parseLogEntries( raw, simulating, padTime ) {
                     
                 } );
             }
-
-            // } catch ( error ) {
-            //     logHistoryMgr.logError( error, raw, simulating, padTime, ErrorMessages.triggerParse(), trigger );
-            // }
             
         } );
 
