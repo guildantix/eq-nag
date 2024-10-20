@@ -256,7 +256,7 @@
                 <div class="full-width">
                     <mat-form-field style="width: 100%;">
                         <mat-label></mat-label>
-                        <mat-select [(ngModel)]="action.listActionTrackingPhrase" name="listActionTrackingPhrase" (ngModelChange)="onActionTrackingPhraseChange(action.listActionTrackingPhrase)">
+                        <mat-select [(ngModel)]="action.listActionTrackingPhrase" name="listActionTrackingPhrase" multiple (ngModelChange)="onActionTrackingPhraseChange(action.listActionTrackingPhrase)">
                             <mat-option [value]="null">None</mat-option>
                             <mat-option *ngFor="let phrase of phrases" [value]="phrase.phraseId">{{phrase.phrase}}</mat-option>
                         </mat-select>

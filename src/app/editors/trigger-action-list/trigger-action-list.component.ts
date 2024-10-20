@@ -151,19 +151,31 @@ export class TriggerActionListComponent implements OnInit, OnDestroy {
         this.addVariableNames = variables;
     }
 
-    onActionTrackingPhraseChange( phraseId: string ): void {
+    onActionTrackingPhraseChange( phraseIds: string[] ): void {
             
-        if ( !phraseId ) {
+        if ( !phraseIds || phraseIds.length === 0 ) {
             this.actionTrackingVariableNames = [];
             this.action.listActionTrackingVarName = null;
             return;
         }
     
-        const phrase = this.phrases.find( f => f.phraseId === phraseId );
-        // https://regex101.com/r/0oqQFD/1
-        let variables = StringUtility.MatchAll( phrase.phrase, /(?:\(\?\<(?<variableName>\S+?)\>.+?\))/gi, 'variableName' );
-        // https://regex101.com/r/do6cil/2
-        variables = Array.prototype.concat( variables, StringUtility.MatchAll( phrase.phrase, /\{(?<variableName>\S+?)\}/gi, 'variableName' ) );
+        let variables: string[] = [];
+        for ( let i = 0; i < phraseIds.length; i++ ) {
+            const phraseId = phraseIds[ i ];
+            const phrase = this.phrases.find( f => f.phraseId === phraseId );
+
+            // https://regex101.com/r/0oqQFD/1
+            let vs = StringUtility.MatchAll( phrase.phrase, /(?:\(\?\<(?<variableName>\S+?)\>.+?\))/gi, 'variableName' );
+            // https://regex101.com/r/do6cil/2
+            vs = Array.prototype.concat( vs, StringUtility.MatchAll( phrase.phrase, /\{(?<variableName>\S+?)\}/gi, 'variableName' ) );
+
+            for (let vi = 0; vi < vs.length; vi++) {
+                const v = vs[ vi ];
+                if ( i === 0 || variables.includes( v ) ) {
+                    variables.push( v );
+                }
+            }
+        }
     
         this.actionTrackingVariableNames = variables;
     }
