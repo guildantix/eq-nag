@@ -22,7 +22,7 @@ const { createChatRoomLink } = require( '../utilities/peer-to-peer' );
 const { nagException, nagLog } = require( '../utilities/nag-console' );
 const { nagId } = require( '../utilities/nag-id' );
 const { RendererComponent } = require( '../data/models/renderer' );
-const { nagListNameKey } = require( '../data/models/core' );
+const { nagListNameKey, getCharacterName } = require( '../data/models/core' );
 const chunkSize = 512 * 1024;
 
 window.onerror = ( error, url, line ) => {
@@ -2447,7 +2447,7 @@ function displayListAction( res, action, trigger ) {
         }
 
         if ( res.result?.groups && res.result.groups[ nagListNameKey ] ) {
-            list.updateListFn( { setName: res.result.groups[ nagListNameKey ] } );
+            list.updateListFn( { setName: getCharacterName( res.result.groups[ nagListNameKey ], characterName ) } );
         } else {
             list.updateListFn();
         }
@@ -2464,7 +2464,7 @@ function displayListAction( res, action, trigger ) {
         }
 
         if ( res.result?.groups && res.result.groups[ nagListNameKey ] ) {
-            const actName = res.result.groups[ nagListNameKey ];
+            const actName = getCharacterName( res.result.groups[ nagListNameKey ], characterName );
 
             if ( list.component.currentName === actName ) {
                 // This is the expected character doing their action at the expected time.
