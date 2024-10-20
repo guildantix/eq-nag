@@ -2126,7 +2126,8 @@ function displayListAction( res, action, trigger ) {
             }
 
             if ( list.component.skipNames.includes( list.component.currentName ) ) {
-                list.component.skipNames = list.component.skipNames.filter( f => f !== list.component.currentName );
+                let skipIndex = list.component.skipNames.indexOf( list.component.currentName );
+                list.component.skipNames.splice( skipIndex, 1 );
                 list.updateListFn();
 
             } else if ( list.action.autoEnumerateList ) {
@@ -2346,6 +2347,7 @@ function displayListAction( res, action, trigger ) {
                     ipcRenderer.send( 'renderer:kill:component', list.timerInstanceId );
                     list.timerInstanceId = null;
 
+                    let count = list.component.skipNames.filter( f => f === characterName ).length;
                     let duration = list.action.duration * list.component.listNames.length - list.action.duration;
 
                     if ( currentIndex < myIndex ) {
@@ -2361,6 +2363,10 @@ function displayListAction( res, action, trigger ) {
                     let now = Math.round( performance.now() );
     
                     duration += ( list.timestamp - now ) / 1000;
+
+                    if ( count > 1 ) {
+                        duration += list.action.duration * ( count - 1 ) * ( list.component.listNames.length - 1 );
+                    }
 
                     if ( duration > 0 ) {
                         executeListTimerAction( list, duration );
