@@ -2448,7 +2448,7 @@ function displayListAction( res, action, trigger ) {
     }
     
     // This really needs to mutate the current name of the list, like the skip operation does.
-    if ( action.listActionTrackingPhrase === res.phraseId ) {
+    if ( action.listActionTrackingPhrase.includes( res.phraseId ) ) {
         let list = lists.find( f => f.action.actionId === action.actionId );
 
         if ( !list ) {
