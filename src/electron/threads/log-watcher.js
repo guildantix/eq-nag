@@ -1043,7 +1043,7 @@ function generateTriggerFns() {
                                 let listAction = trigger.actions?.find( a => a.actionType === ActionTypes.List );
                                 if ( listAction ) {
                                     let list = lists.find( f => f.action.actionId === listAction.actionId );
-                                    rgxValue = StringUtilities.parseListCodesToLiteral( rgxValue, list?.component?.listNames ?? [] );
+                                    rgxValue = StringUtilities.parseListCodesToLiteral( rgxValue, list?.component?.listNames ?? [], characterName );
                                 }
     
                                 if ( trigger.captureMethod === 'Sequential' ) {
@@ -1099,6 +1099,18 @@ function generateTriggerFns() {
                             } );
                         } else {
                             _phraseParsers.push( ( value, hasGroups, matchGroups ) => {
+
+                                // If the trigger has any List action types.
+                                if ( phrase.phrase.match( /{L([0-9]*?)}/gi ) ) {
+                                    logHistoryMgr.logParseError(
+                                        `List action types are not supported in non-regex capture phrases.`, value, null, null,
+                                        `List action types are not supported in non-regex capture phrases.`,
+                                        trigger, null,
+                                        'Trigger Generation',
+                                        phrase.phrase,
+                                        phrase.phrase );
+                                }
+
                                 if ( value?.length > 0 ) {
                                     // We won't care about case sensitivity.
                                     let _phrs = StringUtilities.parseStoredVariablesToLiteralArray( phrase.phrase, storedVariables );

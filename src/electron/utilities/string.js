@@ -759,8 +759,9 @@ function parseShortCodesToRegex( value, characterName ) {
  * 
  * @param {string} value The phrase to search.
  * @param {string[] | undefined} list The list of values to search for.
+ * @param {string} myCharacterName The name of the current character.
  */
-function parseListCodesToLiteral( value, list ) {
+function parseListCodesToLiteral( value, list, myCharacterName ) {
 
     if ( list != undefined ) {
         let listMatches = [ ...value.matchAll( /{L([0-9]*?)}/gi ) ];
@@ -770,7 +771,13 @@ function parseListCodesToLiteral( value, list ) {
                 let valueIndex = +listMatches[ i ][ 1 ] - 1;
                 let strIndex = listMatches[ i ].index;
                 let length = listMatches[ i ].length + 2;
-                value = value.substring( 0, strIndex ) + ( list[ valueIndex ] ?? '' ) + value.substring( strIndex + length );
+                var v = list[ valueIndex ] ?? '';
+
+                if ( v.toLowerCase() == myCharacterName.toLowerCase() ) {
+                    v = `(?:y|Y)(?:o|O)(?:u|U)`;
+                }
+
+                value = value.substring( 0, strIndex ) + ( v ) + value.substring( strIndex + length );
             }
         }
     }
