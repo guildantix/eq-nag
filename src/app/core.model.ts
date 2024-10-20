@@ -859,7 +859,7 @@ export class TriggerActionProperties {
     public listEnumerateEndPhrase: string = null;
     public listManualEnumeratePhrase: string = null;
     public listEnableActionTracking: boolean = false;
-    public listActionTrackingPhrase: string = null;
+    public listActionTrackingPhrase: string[] = [];
     public listActionTrackingVarName: string = null;
     public listTimerActionId: string = null;
     public useBackground: boolean = false;

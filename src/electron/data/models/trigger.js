@@ -554,8 +554,8 @@ class TriggerAction {
     /** @type {boolean} */
     listEnableActionTracking = false;
 
-    /** @type {string} */
-    listActionTrackingPhrase = null;
+    /** @type {string[]} */
+    listActionTrackingPhrase = [];
 
     /** @type {string} */
     listActionTrackingVarName = null;
