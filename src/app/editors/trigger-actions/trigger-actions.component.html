@@ -2,7 +2,7 @@
 <div class="toolbar-top"><button mat-button color="accent" style="float: right; margin-right: 50px;" (click)="addNewAction()"><mat-icon>add</mat-icon>New</button></div>
 <div class="content" #content>
     <div class="flex-layout">
-        <mat-card class="card action-card" *ngFor="let action of actions; let i = index" style="margin: 20px; width: 550px;" [ngClass]="{'box-shadow-blue': scrollIndex === i}">
+        <mat-card class="card action-card" *ngFor="let action of actions; let i = index" style="margin: 20px; min-width: 550px; width: calc(100% - 6em);" [ngClass]="{'box-shadow-blue': scrollIndex === i}">
             <mat-card-header>
                 <div mat-card-avatar class="action-header-image">
                     <span class="material-icons" *ngIf="action.actionType == null">block</span>
