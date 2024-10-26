@@ -316,4 +316,23 @@
 
         </div>
     </mat-tab>
+    <mat-tab label="Boxing">
+        <div class="card-tab-content">
+            
+            <div class="card-property">
+                <div class="content-top">
+                    <p>Enter the names of your box character that you want to track for this list.</p>
+                    <p><span class="color-red">IMPORTANT:</span> Entering a value for this textbox will only track this character, and will not track yourself.</p>
+                </div>
+                <div class="content-middle">
+                    <mat-form-field>
+                        <mat-label></mat-label>
+                        <input matInput [(ngModel)]="action.listBoxName" name="txtListBoxName" />
+                        <mat-hint>Character Name</mat-hint>
+                    </mat-form-field>
+                </div>
+            </div>
+
+        </div>
+    </mat-tab>
 </mat-tab-group>

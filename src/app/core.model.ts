@@ -863,6 +863,7 @@ export class TriggerActionProperties {
     public listActionTrackingVarName: string = null;
     public listTimerActionId: string = null;
     public useBackground: boolean = false;
+    public listBoxName: string = null;
     
     public staticPosition: Rectangle = null;
 }

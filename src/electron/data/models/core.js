@@ -100,7 +100,7 @@ const nagListNameKey = 'nag_listname';
  * @returns {string | undefined} Returns the character name or undefined if not found.
  * 
  * @param {string | undefined} value The value to check.
- * @param {string} myCharacterName The current log file's character name.
+ * @param {string} myCharacterName The current log file's character name. Read: Not the box character name.
  */
 function getCharacterName( value, myCharacterName ) {
 

@@ -566,6 +566,9 @@ class TriggerAction {
     /** @type {boolean} */
     useBackground = false;
 
+    /** @type {string} */
+    listBoxName = null;
+
     /** @type {Electron.Rectangle} */
     staticPosition = null;
 }

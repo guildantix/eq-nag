@@ -1975,6 +1975,7 @@ function executeTriggerAction( trigger, action, timestamp, res, deltaTime, simul
  * @param {Trigger} trigger The action trigger.
  */
 function displayListAction( res, action, trigger ) {
+    const trackName = action.listBoxName ?? characterName;
 
     /**
      * Executes the "Show Timer" timer for a list.
@@ -2100,7 +2101,7 @@ function displayListAction( res, action, trigger ) {
 
             list.component.currentName = list.component.listNames[ currentIndex ];
 
-            if ( list.action.autoEnumerateList && list.component.currentName === characterName && !list.component.skipNames.includes( characterName ) ) {
+            if ( list.action.autoEnumerateList && list.component.currentName === trackName && !list.component.skipNames.includes( trackName ) ) {
                 // Reduce the list by the number of skipped names.
                 let skipCount = list.component.skipNames.length;
                 let duration = list.action.duration * list.component.listNames.length;
@@ -2116,7 +2117,7 @@ function displayListAction( res, action, trigger ) {
                     // Do nothing.
                 } else {
 
-                    let myIndex = list.component.listNames.indexOf( characterName );
+                    let myIndex = list.component.listNames.indexOf( trackName );
                     let duration = list.action.duration;
 
                     if ( currentIndex < myIndex ) {
@@ -2218,9 +2219,9 @@ function displayListAction( res, action, trigger ) {
         
         if ( list.action.listEnrollmentShowTimer && list.component.intervalId !== -1 ) {
 
-            if ( list.timerInstanceId && list.component.listNames.includes( characterName ) ) {
+            if ( list.timerInstanceId && list.component.listNames.includes( trackName ) ) {
                 let currentIndex = list.component.listNames.indexOf( list.component.currentName );
-                let myIndex = list.component.listNames.indexOf( characterName );
+                let myIndex = list.component.listNames.indexOf( trackName );
 
                 if ( currentIndex < myIndex ) {
                     // Do nothing, we're already ahead of the new name.
@@ -2236,9 +2237,9 @@ function displayListAction( res, action, trigger ) {
                     } );
                 }
                 
-            } else if ( !list.timerInstanceId && addName === characterName ) {
+            } else if ( !list.timerInstanceId && addName === trackName ) {
                 // If our name was added, we need to start the timer.
-                let myIndex = list.component.listNames.indexOf( characterName );
+                let myIndex = list.component.listNames.indexOf( trackName );
                 let now = Math.round( performance.now() );
 
                 let duration = list.timestamp + ( myIndex * list.action.duration * 1000 ) - now;
@@ -2283,14 +2284,14 @@ function displayListAction( res, action, trigger ) {
         if ( list.action.listEnrollmentShowTimer && list.component.intervalId !== -1 ) {
 
             if ( list.timerInstanceId ) {
-                if ( list.component.listNames.length === 0 || removeName === characterName ) {
+                if ( list.component.listNames.length === 0 || removeName === trackName ) {
                     // If the list is empty, then we'll stop the timer.
                     ipcRenderer.send( 'renderer:kill:component', list.timerInstanceId );
                     list.timerInstanceId = null;
 
                 } else {
                     let currentIndex = list.component.listNames.indexOf( list.component.currentName );
-                    let myIndex = list.component.listNames.indexOf( characterName );
+                    let myIndex = list.component.listNames.indexOf( trackName );
 
                     if ( currentIndex >= myIndex && currentIndex <= removedIndex ) {
                         // If the current index is inclusively between mine and
@@ -2345,15 +2346,15 @@ function displayListAction( res, action, trigger ) {
 
         if ( list.action.listEnrollmentShowTimer && list.component.intervalId !== -1 ) {
             let currentIndex = list.component.listNames.indexOf( list.component.currentName );
-            let myIndex = list.component.listNames.indexOf( characterName );
+            let myIndex = list.component.listNames.indexOf( trackName );
 
             if ( list.timerInstanceId ) {
-                if ( skipName === characterName ) {
+                if ( skipName === trackName ) {
                     // If we're skipping ourselves, then we need to kill the current timer and start a new one. The duration of this new timer will be a full round, minus our time.
                     ipcRenderer.send( 'renderer:kill:component', list.timerInstanceId );
                     list.timerInstanceId = null;
 
-                    let count = list.component.skipNames.filter( f => f === characterName ).length;
+                    let count = list.component.skipNames.filter( f => f === trackName ).length;
                     let duration = list.action.duration * list.component.listNames.length - list.action.duration;
 
                     if ( currentIndex < myIndex ) {
@@ -2365,7 +2366,7 @@ function displayListAction( res, action, trigger ) {
                     }
 
                     // // If our name was added, we need to start the timer.
-                    // let myIndex = list.component.listNames.indexOf( characterName );
+                    // let myIndex = list.component.listNames.indexOf( trackName );
                     let now = Math.round( performance.now() );
     
                     duration += ( list.timestamp - now ) / 1000;
