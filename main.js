@@ -1,3 +1,5 @@
+// TODO: Quickshare lists are still sharing the position information.
+
 const { app, BrowserWindow, ipcMain, protocol, session, screen, Tray, Menu, globalShortcut } = require( "electron" );
 const { autoUpdater, updaterSignal } = require('electron-updater');
 const url = require( "url" );

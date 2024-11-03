@@ -255,6 +255,8 @@ var dpsWindowItemTemplate;
 var dropdownMenuTemplate;
 /** @type {HandlebarsTemplateDelegate<any>} */
 var listTemplate;
+/** @type {HandlebarsTemplateDelegate<any>} */
+var listItemTemplate;
 var voiceOptions = [];
 /** @type {Record<number, number>} */
 var destroySchedule = {};
@@ -1051,6 +1053,7 @@ function Renderer( originX, originY, glowOnStart ) {
         dpsWindowItemTemplate = Handlebars.compile( document.querySelector( '#dpsWindowItemTemplate' ).innerHTML );
         dropdownMenuTemplate = Handlebars.compile( document.querySelector( '#dropdownMenu' ).innerHTML );
         listTemplate = Handlebars.compile( document.querySelector( '#listTemplate' ).innerHTML );
+        listItemTemplate = Handlebars.compile( document.querySelector( '#listItemTemplate' ).innerHTML );
 
         logInfo( '[Info:Renderer:Templates] (Renderer docReady) Templates have been compiled!' );
 
@@ -1500,6 +1503,26 @@ function Renderer( originX, originY, glowOnStart ) {
         function ( event, model ) {
             model.added = new Date();
             render( model.overlayId, model );
+        } ); 
+    
+    ipcRenderer.on( 'renderer:execute:list-timer',
+        /**
+         * Handles receiving a new list timer action.
+         * @param {*} event The event object.
+         * @param {{ instanceId: string, name: string, timer: 'top'|'bottom', duration: number}} model The list timer action.
+         */
+        function ( event, model ) {
+            executeListTimer( model.instanceId, model.name, model.timer, model.duration );
+        } );
+    
+    ipcRenderer.on( 'renderer:reset:list-timer',
+        /**
+         * Handles receiving a reset list timer action.
+         * @param {*} event The event object.
+         * @param {{ instanceId: string, timers: 'top'|'bottom'|'both'}} model The list timer action.
+         */
+        function ( event, model ) {
+            resetListTimers( model.instanceId, model.timers );
         } );
 
     ipcRenderer.on( 'renderer:update:component',
@@ -1514,33 +1537,11 @@ function Renderer( originX, originY, glowOnStart ) {
 
             if ( component ) {
                 if ( model.updateType === 'alter-start' ) {
+
                     if ( model.duration !== null && model.duration !== undefined ) {
                         component.start = DateUtilities.addSeconds( component.start, model.duration );
                     }
-                } else if ( model.updateType === 'list-act-bad' ) {
-                    let c = Object.assign( new RendererComponent(), component );
-                    let listItemDom = component.dom.querySelector( `.list-item[data-name=${c.currentName}]` );
-                    let iconDom = listItemDom.querySelector( '.list-item-icon' );
-                    let textDom = listItemDom.querySelector( '.list-item-title' );
-
-                    iconDom.classList.add( 'warn' );
-                    textDom.classList.add( 'warn' );
-
-                    iconDom.classList.remove( 'success' );
-                    textDom.classList.remove( 'success' );
-
-                } else if ( model.updateType === 'list-act-good' ) {
-                    let c = Object.assign( new RendererComponent(), component );
-                    let listItemDom = component.dom.querySelector( `.list-item[data-name=${c.currentName}]` );
-                    let iconDom = listItemDom.querySelector( '.list-item-icon' );
-                    let textDom = listItemDom.querySelector( '.list-item-title' );
-
-                    iconDom.classList.add( 'success' );
-                    textDom.classList.add( 'success' );
-
-                    iconDom.classList.remove( 'warn' );
-                    textDom.classList.remove( 'warn' );
-                    
+                
                 } else if ( model.updateType === 'list' ) {
 
                     renderListAction( Object.assign( new RendererComponent(), model.model ), true );
@@ -3367,6 +3368,73 @@ function render( overlayId, comp ) {
 }
 
 /**
+ * 
+ * @param {string} instanceId The instance id  of the desired list.
+ * @param {string} name The name of the list item.
+ * @param {'top'|'bottom'} timer The timer to update.
+ * @param {number} duration The timer duration.
+ */
+function executeListTimer( instanceId, name, timer, duration ) {
+    const list = rendererComponents.find( f => f.instanceId === instanceId );
+
+    if ( list ) {
+        const listItem = list.dom.querySelector( `.list-item[data-name=${name}]` );
+
+        if ( listItem ) {
+            const timerDom = timer === 'top' ? listItem.querySelector( '.list-determinate.top' ) : timer === 'bottom' ? listItem.querySelector( '.list-determinate.bottom' ) : null;
+            if ( timerDom ) {
+                
+                // Delete all of the animation properties.
+                delete timerDom.style.animation;
+                delete timerDom.style.animationName;
+                delete timerDom.style.animationDuration;
+                delete timerDom.style.animationTimingFunction;
+                delete timerDom.style.animationDelay;
+                delete timerDom.style.animationIterationCount;
+                delete timerDom.style.animationDirection;
+                delete timerDom.style.animationFillMode;
+                delete timerDom.style.animationPlayState;
+
+                timerDom.style.animation = `listtimeranim ${duration * 1000}ms linear`;
+
+                // When the animation ends, set the width to 0.
+                timerDom.addEventListener( 'animationend', () => {
+                    timerDom.style.animation = 'none';
+                } );
+            }
+        }
+    }
+}
+
+/**
+ * Resets the timers for the given list.
+ * 
+ * @param {string} instanceId The instance id  of the desired list.
+ * @param {'top'|'bottom'|'both'} timers The timers to reset.
+ */
+function resetListTimers( instanceId, timers ) {
+    const list = rendererComponents.find( f => f.instanceId === instanceId );
+
+    if ( list ) {
+        const listItems = list.dom.querySelectorAll( '.list-item' );
+
+        for ( let i = 0; i < listItems.length; i++ ) {
+            const listItem = listItems[ i ];
+            const topTimer = listItem.querySelector( '.list-determinate.top' );
+            const bottomTimer = listItem.querySelector( '.list-determinate.bottom' );
+
+            if ( ( timers === 'both' || timers === 'top' ) && topTimer ) {
+                topTimer.style.animation = 'none';
+            }
+
+            if ( ( timers === 'both' || timers === 'bottom' ) && bottomTimer ) {
+                bottomTimer.style.animation = 'none';
+            }
+        }
+    }
+}
+
+/**
  * Renders a list action component.
  * 
  * @param {RendererComponent} component The component to render.
@@ -3377,36 +3445,25 @@ function renderListAction( component, restore ) {
     // iconCssClass: 'fa-chevron-right'
 
     let existing = rendererComponents.find( f => f.instanceId === component.instanceId );
-    let errors = [];
-    let warns = [];
-    let successes = [];
 
     if ( existing ) {
-        if ( restore ) {
-            let items = existing.dom?.querySelectorAll( '.list-item' ) ?? [];
 
-            // Get the status of each item.
-            for ( let i = 0; i < items.length; i++ ) {
-                const item = items[ i ];
-                const name = item.getAttribute( 'data-name' );
-                const textDom = item.querySelector( '.list-item-title' );
-
-                if ( textDom.classList.contains( 'error' ) ) {
-                    errors.push( name );
-                } else if ( textDom.classList.contains( 'warn' ) ) {
-                    warns.push( name );
-                } else if ( textDom.classList.contains( 'success' ) ) {
-                    successes.push( name );
-                }
-            }
-        }
-
-        existing.removeComponent();
-        existing = undefined;
+        existing.listNames = component.listNames;
+        existing.skipNames = component.skipNames;
+        existing.currentName = component.currentName;
+        existing.errorNames = component.errorNames;
+        existing.warnNames = component.warnNames;
+        existing.successNames = component.successNames;
+        
+        component = existing;
+        
     }
 
     /** @type {ListObjectModel} */
-    let listObj = new ListObjectModel();
+    let listObj = existing ? existing.objectModel : new ListObjectModel();
+    let errors = component.errorNames ?? [];
+    let warns = component.warnNames ?? [];
+    let successes = component.successNames ?? [];
 
     listObj.listTitle = component.action.displayText;
     listObj.fontSize = component.action.textSize;
@@ -3426,13 +3483,87 @@ function renderListAction( component, restore ) {
         listObj.bounds = component.action.staticPosition;
     }
 
-    let listHtml = listTemplate( listObj );
-    let listDiv = document.createElement( 'div' );
+    if ( !existing ) {
+        let listHtml = listTemplate( listObj );
+        let listDiv = document.createElement( 'div' );
 
-    listDiv.innerHTML = listHtml;
-    document.body.appendChild( listDiv );
+        listDiv.innerHTML = listHtml;
+        document.body.appendChild( listDiv );
 
-    component.dom = listDiv;
+        component.dom = listDiv;
+    }
+
+    var listItems = component.dom.querySelectorAll( '.list-item' );
+
+    for ( let i = 0; i < listItems.length; i++ ) {
+        let listItem = listItems[ i ];
+        let name = listItem.getAttribute( 'data-name' );
+
+        // If the name is not in the list, remove it.
+        if ( !component.listNames.includes( name ) ) {
+            listItem.parentNode.removeChild( listItem );
+        }
+    }
+
+    for ( let i = 0; i < component.listNames.length; i++ ) {
+        const name = component.listNames[ i ];
+        let listItem = component.dom.querySelector( `.list-item[data-name=${name}]` );
+
+        if ( listItem == null ) {
+            let itemHtml = listItemTemplate( {
+                name: name,
+                textCssClass: component.skipNames.includes( name ) ? 'error' : undefined,
+                iconCssClass: component.currentName === name ? 'fa-chevron-right' : undefined,
+            } );
+
+            let itemDiv = document.createElement( 'div' );
+            itemDiv.innerHTML = itemHtml;
+
+            if ( component.listNames.indexOf( name ) === component.listNames.length - 1 ) {
+                component.dom.appendChild( itemDiv );
+            } else {
+                // Get the index of the previous item.
+                let previousItem = component.dom.querySelector( `.list-item[data-name=${component.listNames[ i - 1 ]}]` );
+                previousItem.after( itemDiv );
+            }
+
+            listItem = itemDiv;
+        }
+
+        const textDom = listItem.querySelector( '.list-item-title' );
+        const iconDom = listItem.querySelector( '.list-item-icon' );
+
+        if ( warns.includes( name ) ) {
+            textDom.classList.add( 'warn' );
+            iconDom.classList.add( 'warn' );
+        } else {
+            textDom.classList.remove( 'warn' );
+            iconDom.classList.remove( 'warn' );
+        }
+
+        if ( errors.includes( name ) || component.skipNames.includes( name ) ) {
+            textDom.classList.add( 'error' );
+            iconDom.classList.add( 'error' );
+        } else {
+            textDom.classList.remove( 'error' );
+            iconDom.classList.remove( 'error' );
+        }
+
+        if ( successes.includes( name ) ) {
+            textDom.classList.add( 'success' );
+            iconDom.classList.add( 'success' );
+        } else {
+            textDom.classList.remove( 'success' );
+            iconDom.classList.remove( 'success' );
+        }
+
+        if ( component.currentName === name ) {
+            iconDom.querySelector( 'i' ).classList.add( 'fa-chevron-right' );
+        } else {
+            iconDom.querySelector( 'i' ).classList.remove( 'fa-chevron-right' );
+        }
+    }
+    
 
     component.dom.style.fontSize = `${listObj.fontSize ?? 16}px`;
     component.dom.style.fontWeight = `${listObj.fontWeight ?? 400}`;
@@ -3493,6 +3624,7 @@ function renderListAction( component, restore ) {
         ArrayUtilities.remove( rendererComponents, f => f.instanceId === component.instanceId );
     };
 
+    component.objectModel = listObj;
     rendererComponents.push( component );
     
 }

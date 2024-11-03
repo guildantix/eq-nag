@@ -1,4 +1,5 @@
-import { Component, Input, OnDestroy, OnInit } from '@angular/core';
+import { Component, Input, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { MatTabGroup } from '@angular/material/tabs';
 import { Subscription } from 'rxjs';
 import { ActionTypes, availableFonts, ListObjectModel, OverlayWindowModel, Phrase, RenderTokenModel, TriggerAction } from 'src/app/core.model';
 import { IpcService } from 'src/app/ipc.service';
@@ -17,6 +18,10 @@ export class TriggerActionListComponent implements OnInit, OnDestroy {
     @Input( 'overlayOptions' ) public timerOverlays: OverlayWindowModel[] = [];
     @Input( 'alertOverlays' ) public alertOverlays: OverlayWindowModel[] = [];
     @Input( 'phrases' ) public phrases: Phrase[] = [];
+
+    public get listPhrases(): Phrase[] {
+        return this.phrases.filter( f => f.phrase?.indexOf( '{LN}' ) > -1 );
+    }
 
     public variableNames: string[] = [];
     public skipVariableNames: string[] = [];
@@ -59,6 +64,8 @@ export class TriggerActionListComponent implements OnInit, OnDestroy {
         }
     }
 
+    @ViewChild( MatTabGroup, { static: true } ) tabGroup: MatTabGroup;
+
     constructor(
         private readonly ipcService: IpcService,
     ) { }
@@ -88,6 +95,29 @@ export class TriggerActionListComponent implements OnInit, OnDestroy {
         if ( this.isRenderingToken ) {
             this.destroyRendererToken();
         }
+    }
+
+    selectTopTimerTab(): void {
+        // window.setTimeout( () => {
+            if ( this.action.listEnableTopTimer ) {
+                this.tabGroup.selectedIndex = 4;
+            } else {
+                // Select the Timers tab.
+                this.tabGroup.selectedIndex = 3;
+            }
+        // }, 100 );
+    }
+
+    selectBottomTimerTab(): void {
+        // window.setTimeout( () => {
+            let i = this.action.listEnableTopTimer ? 5 : 4;
+            if ( this.action.listEnableBottomTimer ) {
+                this.tabGroup.selectedIndex = i;
+            } else {
+                // Select the Timers tab.
+                this.tabGroup.selectedIndex = 3;
+            }
+        // }, 250 );
     }
     
     onListCapturePhraseChange( phraseId: string ): void {

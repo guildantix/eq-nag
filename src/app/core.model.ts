@@ -864,6 +864,18 @@ export class TriggerActionProperties {
     public listTimerActionId: string = null;
     public useBackground: boolean = false;
     public listBoxName: string = null;
+
+    public listEnableTopTimer: boolean = false;
+    public listTopTimerEnum: boolean = false;
+    public listTopTimerPhrase: string[] = [];
+    public listTopTimerDuration: number = null;
+    public listTopHide: boolean = false;
+    
+    public listEnableBottomTimer: boolean = false;
+    public listBottomTimerEnum: boolean = false;
+    public listBottomTimerPhrase: string[] = [];
+    public listBottomTimerDuration: number = null;
+    public listBottomHide: boolean = false;
     
     public staticPosition: Rectangle = null;
 }
@@ -1587,10 +1599,10 @@ export class Range {
     }
     public inclusive: boolean = true;
 
-    public static toArray(value: Range): number[] {
+    public static toArray( value: Range ): number[] {
         let n: number[] = [];
 
-        for ( let i = value.start ?? 0; i <= value.end ?? 0; i++ ) {
+        for ( let i = value.start ?? 0; i <= ( value.end ?? 0 ); i++ ) {
             n.push( i );
         }
 

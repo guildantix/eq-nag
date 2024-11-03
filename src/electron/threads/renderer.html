@@ -595,23 +595,22 @@
         }
 
         .list-content .list-items .list-item {
-            display: flex;
-            align-items: flex-start;
-            justify-content: flex-start;
+            width: 100%;
         }
 
         .list-content .list-items .list-item-content {
             display: flex;
             flex-flow: row nowrap;
             align-items: center;
-            justify-content: space-between;
+            justify-content: flex-start;
             width: 100%;
+            position: relative;
             /* padding: 0.25em 0; */
         }
 
         .list-content .list-items .list-item-content .list-item-title {
             font-size: 1.2em;
-            /* font-weight: bold; */
+            z-index: 1;
         }
 
         .list-content .list-items .list-item-content .list-item-title.error {
@@ -648,9 +647,40 @@
             font-size: 1.2em;
             display: inline-block;
             width: 1.2em;
-            /* height: 1.2em; */
+            z-index: 1;
         }
 
+            .list-content .list-items .list-item-content .list-progress {
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+            }
+
+                .list-content .list-items .list-item-content .list-progress .list-determinate {
+                    display: block;
+                    position: absolute;
+                }
+
+                    .list-content .list-items .list-item-content .list-progress .list-determinate.top {
+                        display: block;
+                        position: absolute;
+                        top: 13%;
+                        bottom: 50%;
+                    }
+
+                    .list-content .list-items .list-item-content .list-progress .list-determinate.bottom {
+                        display: block;
+                        position: absolute;
+                        top: 50%;
+                        bottom: 13%;
+                    }
+
+        @keyframes listtimeranim { 
+            0% { width: 100%; } 
+            100% { width: 0% }
+        }
     </style>
 
     <!-- ======================== -->
@@ -668,9 +698,31 @@
                             <div class="list-item-content">
                                 <span class="list-item-icon {{this.textCssClass}}"><i class="fas {{this.iconCssClass}}"></i></span>
                                 <span class="list-item-title {{this.textCssClass}}">{{this.name}}</span>
+
+                                <div class="list-progress"><p style="margin: 4px;">&nbsp;</p>
+                                    <div class="list-determinate top" style="width: 0%; background-color: #921f1f; z-index: unset;"></div>
+                                    <div class="list-determinate bottom" style="width: 0%; background-color: #0e905e; z-index: unset;"></div>
+                                </div>
                             </div>
                         </div>
                     {{/each}}
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <!-- ============================= -->
+    <!--      List Item Template       -->
+    <!-- ============================= -->
+    <template id="listItemTemplate">
+        <div class="list-item" data-name="{{this.name}}">
+            <div class="list-item-content">
+                <span class="list-item-icon {{this.textCssClass}}"><i class="fas {{this.iconCssClass}}"></i></span>
+                <span class="list-item-title {{this.textCssClass}}">{{this.name}}</span>
+
+                <div class="list-progress"><p style="margin: 4px;">&nbsp;</p>
+                    <div class="list-determinate top" style="width: 0%; background-color: #921f1f; z-index: unset;"></div>
+                    <div class="list-determinate bottom" style="width: 0%; background-color: #0e905e; z-index: unset;"></div>
                 </div>
             </div>
         </div>

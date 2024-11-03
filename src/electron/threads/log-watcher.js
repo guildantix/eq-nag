@@ -21,7 +21,7 @@ const { LogHistoryManager } = require( '../utilities/log-console' );
 const { createChatRoomLink } = require( '../utilities/peer-to-peer' );
 const { nagException, nagLog } = require( '../utilities/nag-console' );
 const { nagId } = require( '../utilities/nag-id' );
-const { RendererComponent } = require( '../data/models/renderer' );
+const { RendererComponent, ListObjectModel } = require( '../data/models/renderer' );
 const { nagListNameKey, getCharacterName } = require( '../data/models/core' );
 const chunkSize = 512 * 1024;
 
@@ -2023,6 +2023,9 @@ function displayListAction( res, action, trigger ) {
         list.component.triggerId = trigger.triggerId;
         list.component.action = action;
         list.component.matches = res.result;
+        list.component.errorNames = [];
+        list.component.successNames = [];
+        list.component.warnNames = [];
         
         let listSource = '';
         if ( action.listRegexVarName ) {
@@ -2076,9 +2079,18 @@ function displayListAction( res, action, trigger ) {
                     list.actionTrackIntervalId = -1;
                 }
 
+                if ( list.component.errorNames.includes( opts.actName ) ) {
+                    list.component.errorNames = list.component.errorNames.filter( f => f !== opts.actName );
+                }
+
+                if ( !list.component.successNames.includes( opts.actName ) ) {
+                    list.component.successNames.push( opts.actName );
+                }
+
                 ipcRenderer.send( 'renderer:update:component', {
                     instanceId: list.component.instanceId,
-                    updateType: 'list-act-good',
+                    updateType: 'list',
+                    model: list.component,
                 } );
 
                 return;
@@ -2099,7 +2111,14 @@ function displayListAction( res, action, trigger ) {
                 list.timestamp = 0;
             }
 
+            let changingCurrent = list.component.currentName !== list.component.listNames[ currentIndex ];
             list.component.currentName = list.component.listNames[ currentIndex ];
+
+            if ( changingCurrent ) {
+                list.component.successNames = [];
+                list.component.errorNames = [];
+                list.component.warnNames = [];
+            }
 
             if ( list.action.autoEnumerateList && list.component.currentName === trackName && !list.component.skipNames.includes( trackName ) ) {
                 // Reduce the list by the number of skipped names.
@@ -2136,6 +2155,7 @@ function displayListAction( res, action, trigger ) {
                 let skipIndex = list.component.skipNames.indexOf( list.component.currentName );
                 list.component.skipNames.splice( skipIndex, 1 );
                 list.updateListFn();
+                return;
 
             } else if ( list.action.autoEnumerateList ) {
                 ipcRenderer.send( 'overlay:send:component', list.component );
@@ -2164,9 +2184,19 @@ function displayListAction( res, action, trigger ) {
                             let actDuration = Math.min( duration * 0.33, 1500 );
                             list.actionTrackIntervalId = window.setTimeout( () => {
                                 if ( list.actedName !== list.component.currentName ) {
+                                    
+                                    if ( list.component.successNames.includes( list.component.currentName ) ) {
+                                        list.component.successNames = list.component.successNames.filter( f => f !== list.component.currentName );
+                                    }
+
+                                    if ( !list.component.warnNames.includes( list.component.currentName ) ) {
+                                        list.component.warnNames.push( list.component.currentName );
+                                    }
+                                    
                                     ipcRenderer.send( 'renderer:update:component', {
                                         instanceId: list.component.instanceId,
-                                        updateType: 'list-act-bad',
+                                        updateType: 'list',
+                                        model: list.component,
                                     } );
                                 }
                             }, actDuration );
@@ -2187,6 +2217,19 @@ function displayListAction( res, action, trigger ) {
                 list.component.intervalId = -1;
             }
 
+            if ( list.action.listEnableActionTracking && changingCurrent ) {
+                const timer = list.action.listBottomTimerEnum ? 'bottom' : list.action.listTopTimerEnum ? 'top' : null;
+
+                if ( timer ) {
+                    ipcRenderer.send( 'renderer:reset:list-timer', { instanceId: list.component.instanceId, timers: timer } );
+                    ipcRenderer.send( 'renderer:execute:list-timer', {
+                        instanceId: list.component.instanceId,
+                        name: list.component.listNames[ currentIndex ],
+                        timer: timer,
+                        duration: list.action.duration,
+                    } );
+                }
+            }
         };
         
         ipcRenderer.send( 'overlay:send:component', list.component );
@@ -2196,7 +2239,7 @@ function displayListAction( res, action, trigger ) {
         let addName = null;
 
         if ( !list ) {
-            throw new Error( 'Unable to execute list action. The list to enroll in was not found.' );
+            return;
         }
 
         if ( action.listEnrollmentAddVarName ) {
@@ -2258,12 +2301,12 @@ function displayListAction( res, action, trigger ) {
         let removedIndex = -1;
 
         if ( !list ) {
-            throw new Error( 'Unable to execute list action. The list to remove from was not found.' );
+            return;
         }
 
         if ( action.listEnrollmentRemoveVarName ) {
             removeName = res.result.groups[ action.listEnrollmentRemoveVarName ];
-            if ( res.result?.groups && removeName) {
+            if ( res.result?.groups && removeName ) {
                 removedIndex = list.component.listNames.indexOf( removeName );
                 list.component.listNames = list.component.listNames.filter( f => f !== removeName );
             } else {
@@ -2317,7 +2360,7 @@ function displayListAction( res, action, trigger ) {
         let list = lists.find( f => f.action.actionId === action.actionId );
 
         if ( !list ) {
-            throw new Error( 'Unable to execute list action. The list to skip enrollment in was not found.' );
+            return;
         }
 
         let skipName = '';
@@ -2400,7 +2443,7 @@ function displayListAction( res, action, trigger ) {
         let list = lists.find( f => f.action.actionId === action.actionId );
 
         if ( !list ) {
-            throw new Error( 'Unable to execute list action. The list to begin enumeration was not found.' );
+            return;
         } else if ( list.state === 'running' ) {
             // If the list is already running, then we'll ignore this.
             return;
@@ -2417,7 +2460,7 @@ function displayListAction( res, action, trigger ) {
         let list = lists.find( f => f.action.actionId === action.actionId );
 
         if ( !list ) {
-            throw new Error( 'Unable to execute list action. The list to end enumeration was not found.' );
+            return;
         }
 
         list.state = 'stopped';
@@ -2441,11 +2484,20 @@ function displayListAction( res, action, trigger ) {
 
             lists = lists.filter( f => f.instanceId !== list.instanceId );
         }
+
+        if ( action.autoEnumerateList ) {
+            const timer = list.action.listBottomTimerEnum ? 'bottom' : list.action.listTopTimerEnum ? 'top' : null;
+
+            if ( timer ) {
+                ipcRenderer.send( 'renderer:reset:list-timer', { instanceId: list.component.instanceId, timers: timer } );
+            }
+        }
+
     } else if ( action.manualEnumerateList && action.listManualEnumeratePhrase === res.phraseId ) {
         let list = lists.find( f => f.action.actionId === action.actionId );
 
         if ( !list ) {
-            throw new Error( 'Unable to execute list action. The list to manually enumerate was not found.' );
+            return;
         }
 
         if ( list.component.intervalId !== -1 ) {
@@ -2458,6 +2510,38 @@ function displayListAction( res, action, trigger ) {
         } else {
             list.updateListFn();
         }
+    } else if ( action.listTopTimerPhrase?.includes( res.phraseId ) ) {
+        let list = lists.find( f => f.action.actionId === action.actionId );
+
+        if ( !list ) {
+            return;
+        }
+
+        const actName = getCharacterName( res.result.groups[ nagListNameKey ], characterName );
+
+        ipcRenderer.send( 'renderer:execute:list-timer', {
+            instanceId: list.component.instanceId,
+            name: actName,
+            timer: 'top',
+            duration: action.listTopTimerDuration,
+        } );
+
+    } else if ( action.listBottomTimerPhrase?.includes( res.phraseId ) ) {
+        let list = lists.find( f => f.action.actionId === action.actionId );
+
+        if ( !list ) {
+            return;
+        }
+
+        const actName = getCharacterName( res.result.groups[ nagListNameKey ], characterName );
+
+        ipcRenderer.send( 'renderer:execute:list-timer', {
+            instanceId: list.component.instanceId,
+            name: actName,
+            timer: 'bottom',
+            duration: action.listBottomTimerDuration,
+        } );
+        
     }
     
     // This really needs to mutate the current name of the list, like the skip operation does.
@@ -2465,7 +2549,7 @@ function displayListAction( res, action, trigger ) {
         let list = lists.find( f => f.action.actionId === action.actionId );
 
         if ( !list ) {
-            throw new Error( 'Unable to execute list action. The list to track actions was not found.' );
+            return;
         } else if ( list.state !== 'running' ) {
             return;
         }

@@ -12,6 +12,12 @@ class RendererComponent extends OverlayComponent {
     skipNames = [];
     /** @type {string} */
     currentName = '';
+    /** @type {string[]} */
+    errorNames = [];
+    /** @type {string[]} */
+    warnNames = [];
+    /** @type {string[]} */
+    successNames = [];
 }
 
 class ListItemModel {

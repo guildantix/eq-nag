@@ -1,4 +1,4 @@
-<mat-tab-group animationDuration="0ms" [selectedIndex]="0">
+<mat-tab-group #tabGroup animationDuration="0ms" [selectedIndex]="0">
     <mat-tab label="List">
         
         <div class="card-tab-content">
@@ -314,6 +314,110 @@
                 </div>
             </div>
 
+        </div>
+    </mat-tab>
+    <mat-tab label="Timers">
+        <div class="card-tab-content">
+
+            <div class="card-property">
+                <div class="content-top">
+                    <p>Each item in the list has a top and bottom timer.</p>
+                    <p>Either timer can be triggered off of a phrase, or can count down the current iteration if using auto enumeration.</p>
+                    <p *ngIf="action.autoEnumerateList">When a timer is triggered off of a phrase, that phrase must include the {{'{LN}'}} snippet.</p>
+                </div>
+                <div class="content-top" style="padding-left: 3em;">
+                    <img src="assets/images/list-timers.png" alt="List Timer" />
+                </div>
+            </div>
+
+            <div class="card-property">
+                <div class="content-top">
+                    <mat-checkbox [(ngModel)]="action.listEnableTopTimer" name="listEnableTopTimer" (ngModelChange)="selectTopTimerTab()">Enable Top Timer</mat-checkbox>
+                </div>
+                <div class="content-top">
+                    <mat-checkbox [(ngModel)]="action.listEnableBottomTimer" name="listEnableBottomTimer" (ngModelChange)="selectBottomTimerTab()">Enable Bottom Timer</mat-checkbox>
+                </div>
+            </div>
+
+        </div>
+    </mat-tab>
+    <mat-tab label="Top Timer" *ngIf="action.listEnableTopTimer">
+        <div class="card-tab-content">
+                
+            <div class="card-property" *ngIf="action.autoEnumerateList">
+                <div class="content-top">
+                    <mat-checkbox [(ngModel)]="action.listTopTimerEnum" name="listTopTimerEnum" [disabled]="action.listBottomTimerEnum">Action Timer</mat-checkbox>
+                </div>
+                <div class="content-top">
+                    <p>Enabling this option will count the time between the start and end of this item's duration.</p>
+                </div>
+            </div>
+
+            <div class="card-property" *ngIf="!action.listTopTimerEnum">
+                <div class="full-width">
+                    <mat-form-field style="width: 100%;">
+                        <mat-label></mat-label>
+                        <mat-select [(ngModel)]="action.listTopTimerPhrase" name="listTopTimerPhrase" multiple>
+                            <mat-option [value]="null">None</mat-option>
+                            <mat-option *ngFor="let phrase of listPhrases" [value]="phrase.phraseId">{{phrase.phrase}}</mat-option>
+                        </mat-select>
+                        <mat-hint>Select the capture phrase(s) that trigger the timer. Must have the {{'{LN}'}} snippet.</mat-hint>
+                    </mat-form-field>
+                </div>
+            </div>
+
+            <div class="card-property" *ngIf="!action.listTopTimerEnum">
+                <div class="content-middle">Timer Duration</div>
+                <div class="content-right"><app-duration [(ngModel)]="action.listTopTimerDuration" name="listTopTimerDuration" style="display: inline-block;" ></app-duration></div>
+            </div>
+
+            <div class="card-property" *ngIf="!action.listTopTimerEnum">
+                <div class="content-top">
+                    <mat-checkbox [(ngModel)]="action.listTopHide" name="listTopHide">Hide Timer</mat-checkbox>
+                </div>
+                <div class="content-top">
+                    <p>Enabling this option will hide this timer while the bottom timer is executing.</p>
+                </div>
+            </div>
+        </div>
+    </mat-tab>
+    <mat-tab label="Bottom Timer" *ngIf="action.listEnableBottomTimer">
+        <div class="card-tab-content">
+            <div class="card-property" *ngIf="action.autoEnumerateList">
+                <div class="content-top">
+                    <mat-checkbox [(ngModel)]="action.listBottomTimerEnum" name="listBottomTimerEnum" [disabled]="action.listTopTimerEnum">Action Timer</mat-checkbox>
+                </div>
+                <div class="content-top">
+                    <p>Enabling this option will count the time between the start and end of this item's duration.</p>
+                </div>
+            </div>
+
+            <div class="card-property" *ngIf="!action.listBottomTimerEnum">
+                <div class="full-width">
+                    <mat-form-field style="width: 100%;">
+                        <mat-label></mat-label>
+                        <mat-select [(ngModel)]="action.listBottomTimerPhrase" name="listBottomTimerPhrase" multiple>
+                            <mat-option [value]="null">None</mat-option>
+                            <mat-option *ngFor="let phrase of listPhrases" [value]="phrase.phraseId">{{phrase.phrase}}</mat-option>
+                        </mat-select>
+                        <mat-hint>Select the capture phrase(s) that trigger the timer. Must have the {{'{LN}'}} snippet.</mat-hint>
+                    </mat-form-field>
+                </div>
+            </div>
+
+            <div class="card-property" *ngIf="!action.listBottomTimerEnum">
+                <div class="content-middle">Timer Duration</div>
+                <div class="content-right"><app-duration [(ngModel)]="action.listBottomTimerDuration" name="listBottomTimerDuration" style="display: inline-block;" ></app-duration></div>
+            </div>
+
+            <div class="card-property" *ngIf="!action.listBottomTimerEnum">
+                <div class="content-top">
+                    <mat-checkbox [(ngModel)]="action.listBottomHide" name="listBottomHide">Hide Timer</mat-checkbox>
+                </div>
+                <div class="content-top">
+                    <p>Enabling this option will hide this timer while the top timer is executing.</p>
+                </div>
+            </div>
         </div>
     </mat-tab>
     <mat-tab label="Boxing">

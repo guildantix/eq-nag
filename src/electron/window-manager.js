@@ -169,6 +169,30 @@ class WindowManager {
                 this.#renderer.webContents.send( 'renderer:token:create', data );
             } );
 
+        ipcMain.on( 'renderer:execute:list-timer',
+            /**
+             * Sends the given render token to the renderer.
+             * 
+             * @param {Electron.IpcMainEvent} event The event args.
+             * @param {any} data The list data.
+             */
+            ( event, data ) => {
+                this.#tokenObservers[ data.actionId ] = event.sender;
+                this.#renderer.webContents.send( 'renderer:execute:list-timer', data );
+            } );
+
+        ipcMain.on( 'renderer:reset:list-timer',
+            /**
+             * Sends the given render token to the renderer.
+             * 
+             * @param {Electron.IpcMainEvent} event The event args.
+             * @param {any} data The list data.
+             */
+            ( event, data ) => {
+                this.#tokenObservers[ data.actionId ] = event.sender;
+                this.#renderer.webContents.send( 'renderer:reset:list-timer', data );
+            } );
+
         ipcMain.on( 'renderer:token:update',
             /**
              * Sends the given render token to the renderer.

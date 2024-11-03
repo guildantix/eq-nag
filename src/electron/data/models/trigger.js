@@ -569,6 +569,36 @@ class TriggerAction {
     /** @type {string} */
     listBoxName = null;
 
+    /** @type {boolean} */
+    listEnableTopTimer = false;
+
+    /** @type {boolean} */
+    listTopTimerEnum = false;
+
+    /** @type {string[]} */
+    listTopTimerPhrase = [];
+
+    /** @type {number} */
+    listTopTimerDuration = null;
+
+    /** @type {boolean} */
+    listTopHide = false;
+
+    /** @type {boolean} */
+    listEnableBottomTimer = false;
+
+    /** @type {boolean} */
+    listBottomTimerEnum = false;
+
+    /** @type {string[]} */
+    listBottomTimerPhrase = [];
+
+    /** @type {number} */
+    listBottomTimerDuration = null;
+
+    /** @type {boolean} */
+    listBottomHide = false;
+
     /** @type {Electron.Rectangle} */
     staticPosition = null;
 }
