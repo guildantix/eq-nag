@@ -97,29 +97,66 @@ export class TriggerActionListComponent implements OnInit, OnDestroy {
         }
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Selects the top timer tab if the top timer is enabled, otherwise
+     * selects the timers tab.
+     */
     selectTopTimerTab(): void {
-        // window.setTimeout( () => {
-            if ( this.action.listEnableTopTimer ) {
-                this.tabGroup.selectedIndex = 4;
-            } else {
-                // Select the Timers tab.
-                this.tabGroup.selectedIndex = 3;
-            }
-        // }, 100 );
+        if ( this.action.listEnableTopTimer ) {
+            this.tabGroup.selectedIndex = 4;
+        } else {
+            // Select the Timers tab.
+            this.tabGroup.selectedIndex = 3;
+        }
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Selects the bottom timer tab if the top timer is disabled, otherwise
+     * selects the top timer tab.
+     */
     selectBottomTimerTab(): void {
-        // window.setTimeout( () => {
-            let i = this.action.listEnableTopTimer ? 5 : 4;
-            if ( this.action.listEnableBottomTimer ) {
-                this.tabGroup.selectedIndex = i;
-            } else {
-                // Select the Timers tab.
-                this.tabGroup.selectedIndex = 3;
-            }
-        // }, 250 );
+        let i = this.action.listEnableTopTimer ? 5 : 4;
+        if ( this.action.listEnableBottomTimer ) {
+            this.tabGroup.selectedIndex = i;
+        } else {
+            // Select the Timers tab.
+            this.tabGroup.selectedIndex = 3;
+        }
     }
     
+
+
+
+
+
+
+
+
+    
+    /**
+     * When the user changes the action to create a list, this sets the
+     * action variable names.
+     * 
+     * @param phraseId The phrase ID that is selected for the action.
+     */
     onListCapturePhraseChange( phraseId: string ): void {
         const phrase = this.phrases.find( f => f.phraseId === phraseId );
         // https://regex101.com/r/0oqQFD/1
@@ -130,6 +167,21 @@ export class TriggerActionListComponent implements OnInit, OnDestroy {
         this.variableNames = variables;
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * When the user changes the action to skip a phrase, this sets the
+     * action variable names.
+     * 
+     * @param phraseId The phrase ID that is selected for the action.
+     */
     onSkipCapturePhraseChange( phraseId: string ): void {
         
         if ( !phraseId ) {
@@ -147,6 +199,21 @@ export class TriggerActionListComponent implements OnInit, OnDestroy {
         this.skipVariableNames = variables;
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * When the user changes the action to remove a phrase, this sets the
+     * action variable names.
+     * 
+     * @param phraseId The phrase ID that is selected for the action.
+     */
     onRemoveCapturePhraseChange( phraseId: string ): void {
 
         if ( !phraseId ) {
@@ -164,6 +231,21 @@ export class TriggerActionListComponent implements OnInit, OnDestroy {
         this.removeVariableNames = variables;
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * When the user changes the action to add a phrase, this sets the
+     * action variable names.
+     * 
+     * @param phraseId The phrase ID that is selected for the action.
+     */
     onAddCapturePhraseChange( phraseId: string ): void {
 
         if ( !phraseId ) {
@@ -181,6 +263,21 @@ export class TriggerActionListComponent implements OnInit, OnDestroy {
         this.addVariableNames = variables;
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * When the user changes the action tracking phrases, this sets the
+     * action tracking variable names.
+     * 
+     * @param phraseIds The phrase IDs that are selected for the action tracking.
+     */
     onActionTrackingPhraseChange( phraseIds: string[] ): void {
             
         if ( !phraseIds || phraseIds.length === 0 ) {
@@ -210,18 +307,58 @@ export class TriggerActionListComponent implements OnInit, OnDestroy {
         this.actionTrackingVariableNames = variables;
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * When the user changes the auto-enumeration time, this sets the 
+     * variable to false.
+     */
     onChangeAutoEnumerationSpecifyTime(): void {
         if ( this.action.autoEnumerateSpecifyTime ) {
             this.action.autoEnumerateUseVariable = false;
         }
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * When the user changes the auto-enumeration variable, this sets the 
+     * specify time to false.
+     */
     onChangeAutoEnumerationVariable(): void {
         if ( this.action.autoEnumerateUseVariable ) {
             this.action.autoEnumerateSpecifyTime = false;
         }
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Creates a new RenderTokenModel for the action.
+     * 
+     * @returns Returns a new RenderTokenModel for the action.
+     */
     private generateRenderToken(): RenderTokenModel {
         let token = new RenderTokenModel();
 
@@ -254,6 +391,18 @@ export class TriggerActionListComponent implements OnInit, OnDestroy {
         return token;
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Shows the renderer token for the action.
+     */
     showRendererToken(): void {
         let token = this.generateRenderToken();
 
@@ -264,12 +413,36 @@ export class TriggerActionListComponent implements OnInit, OnDestroy {
             } );
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Destroys the renderer token and unsubscribes from the token subscription.
+     */
     destroyRendererToken(): void {
         this.tokenSubscription.unsubscribe();
         this.tokenSubscription = null;
         this.ipcService.destroyActionToken( this.action.actionId );
     }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Updates the render token with the latest changes to the action.
+     */
     updateRenderToken(): void {
         if ( !this.isRenderingToken ) {
             return;
@@ -278,6 +451,15 @@ export class TriggerActionListComponent implements OnInit, OnDestroy {
         this.ipcService.updateActionToken( token );
     }
 
+
+
+
+
+
+
+
+
+    
     /**
      * When the user changes the font family, this loads the selected font 
      * family's availabe properties.
@@ -309,6 +491,15 @@ export class TriggerActionListComponent implements OnInit, OnDestroy {
 
         this.updateRenderToken();
     }
+
+
+
+
+
+
+
+
+
 
     /**
      * Changes the preview's font weight value based on the selected font 
