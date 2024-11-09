@@ -1,5 +1,5 @@
 // TODO: Quickshare lists are still sharing the position information.
-// TODO: Fix the enternally repeating update modal.
+// TODO: Fix the enternally repeating update modal, should not be repeatedly adding new modals or when the user chooses no, only ask again after nag restarts.
 
 const { app, BrowserWindow, ipcMain, protocol, session, screen, Tray, Menu, globalShortcut } = require( "electron" );
 const { autoUpdater, updaterSignal } = require('electron-updater');
