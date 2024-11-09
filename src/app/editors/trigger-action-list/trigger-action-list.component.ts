@@ -97,6 +97,26 @@ export class TriggerActionListComponent implements OnInit, OnDestroy {
         }
     }
 
+    onChangeListType(): void {
+        // When changing the type of the list from auto enumeration to none, clear the auto enumeration settings.
+        if ( !this.action.autoEnumerateList ) {
+            this.action.listEnumerateBeginPhrase = null;
+            this.action.listEnumerateEndPhrase = null;
+            this.action.listTimerActionId = null;
+            this.action.listEnrollmentSkipPhrase = null;
+            this.action.listEnrollmentShowTimer = false;
+            this.action.listEnableActionTracking = false;
+            this.action.listActionTrackingPhrase = [];
+            this.action.listTopTimerEnum = false;
+            this.action.listBottomTimerEnum = false;
+        }
+
+        if ( !this.action.manualEnumerateList ) {
+            this.action.listEnumerateBeginPhrase = null;
+            this.action.listEnumerateEndPhrase = null;
+        }
+    }
+
 
 
 

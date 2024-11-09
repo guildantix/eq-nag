@@ -40,7 +40,7 @@
 
             <div class="card-property" *ngIf="!action.manualEnumerateList">
                 <div class="content-top">
-                    <mat-checkbox [(ngModel)]="action.autoEnumerateList" name="autoEnumerateList">Auto Enumerate List</mat-checkbox>
+                    <mat-checkbox [(ngModel)]="action.autoEnumerateList" name="autoEnumerateList" (ngModelChange)="onChangeListType()">Auto Enumerate List</mat-checkbox>
                 </div>
                 <div class="content-top">
                     <p>When enabled, the list will automatically enumerate the items on a timer, announcing items per iteration.</p>
@@ -49,7 +49,7 @@
 
             <div class="card-property" *ngIf="!action.autoEnumerateList">
                 <div class="content-top">
-                    <mat-checkbox [(ngModel)]="action.manualEnumerateList" name="manualEnumerateList">Manual Enumerate List</mat-checkbox>
+                    <mat-checkbox [(ngModel)]="action.manualEnumerateList" name="manualEnumerateList" (ngModelChange)="onChangeListType()">Manual Enumerate List</mat-checkbox>
                 </div>
                 <div class="content-top">
                     <p>When enabled, the list will only enumerate on a capture phrasee.</p>
