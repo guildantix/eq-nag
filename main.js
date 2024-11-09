@@ -1,4 +1,5 @@
 // TODO: Quickshare lists are still sharing the position information.
+// TODO: Fix the enternally repeating update modal.
 
 const { app, BrowserWindow, ipcMain, protocol, session, screen, Tray, Menu, globalShortcut } = require( "electron" );
 const { autoUpdater, updaterSignal } = require('electron-updater');
@@ -222,11 +223,6 @@ function createWindow() {
         } );
 
         checkCombatGroups();
-
-        // nagProcessId = mainWindow.webContents.getOSProcessId();
-        // console.log( 'testing main window things' );
-        // console.log( 'get OS proc id', mainWindow.webContents.getOSProcessId() );
-        // console.log( 'get process id', mainWindow.webContents.getProcessId() );
     } );
 
     mainWindow.once( 'ready-to-show', () => {
