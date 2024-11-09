@@ -1971,9 +1971,11 @@ function renderToken( token ) {
         if ( existingBounds != undefined ) {
             listDiv.style.left = existingBounds.left + 'px';
             listDiv.style.top = existingBounds.top + 'px';
+            listDiv.style.minWidth = existingBounds.width + 'px';
         } else if ( listObj.bounds != undefined ) {
             listDiv.style.left = listObj.bounds.x + 'px';
             listDiv.style.top = listObj.bounds.y + 'px';
+            listDiv.style.minWidth = listObj.bounds.width + 'px';
         } else {
             // center element on main monitor
             listDiv.style.left = ( origin.x + ( screen.getPrimaryDisplay().workArea.width / 2 ) - ( listDiv.offsetWidth / 2 ) ) + 'px';
@@ -3573,6 +3575,7 @@ function renderListAction( component, restore ) {
     if ( listObj.bounds != null ) {
         component.dom.style.left = listObj.bounds.x + 'px';
         component.dom.style.top = listObj.bounds.y + 'px';
+        component.dom.style.minWidth = listObj.bounds.width + 'px';
     } else {
         // Put it on the center of the main monitor.
         component.dom.style.left = ( screen.getPrimaryDisplay().workArea.width / 2 ) - ( component.dom.offsetWidth / 2 ) + 'px';
