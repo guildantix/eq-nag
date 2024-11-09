@@ -2114,7 +2114,7 @@ function displayListAction( res, action, trigger ) {
             let changingCurrent = list.component.currentName !== list.component.listNames[ currentIndex ];
             list.component.currentName = list.component.listNames[ currentIndex ];
 
-            if ( changingCurrent ) {
+            if ( changingCurrent && list.action.autoEnumerateList ) {
                 list.component.successNames = [];
                 list.component.errorNames = [];
                 list.component.warnNames = [];
@@ -2323,6 +2323,19 @@ function displayListAction( res, action, trigger ) {
             updateType: 'list',
             model: list.component,
         } );
+
+        if ( list.action.manualEnumerateList && removeName ) {
+            // Manual enumeration does not have a mechanism that resets these lists, so we need to remove them when the name is removed.
+            if ( list.component.errorNames.includes( removeName ) ) {
+                list.component.errorNames = list.component.errorNames.filter( f => f !== removeName );
+            }
+            if ( list.component.successNames.includes( removeName ) ) {
+                list.component.successNames = list.component.successNames.filter( f => f !== removeName );
+            }
+            if ( list.component.warnNames.includes( removeName ) ) {
+                list.component.warnNames = list.component.warnNames.filter( f => f !== removeName );
+            }
+        }
         
         if ( list.action.listEnrollmentShowTimer && list.component.intervalId !== -1 ) {
 
@@ -2510,7 +2523,78 @@ function displayListAction( res, action, trigger ) {
         } else {
             list.updateListFn();
         }
-    } else if ( action.listTopTimerPhrase?.includes( res.phraseId ) ) {
+    }
+    
+    if ( action.listEnrollmentDeactivatePhrase === res.phraseId ) {
+        // Deactivate the item.
+        let list = lists.find( f => f.action.actionId === action.actionId );
+
+        if ( !list ) {
+            return;
+        }
+
+        if ( res.result?.groups && res.result.groups[ nagListNameKey ] ) {
+            const name = getCharacterName( res.result.groups[ nagListNameKey ], characterName );
+                
+            list.component.errorNames = list.component.errorNames?.length > 0 ? list.component.errorNames : [];
+
+            if ( !list.component.errorNames.includes( name ) ) {
+                
+                list.component.errorNames.push( name );
+            
+                ipcRenderer.send( 'renderer:update:component', {
+                    instanceId: list.component.instanceId,
+                    updateType: 'list',
+                    model: list.component,
+                } );
+
+                const index = list.component.listNames.indexOf( name );
+
+                if ( index > -1 ) {
+                    if ( action.listTopTimerClearOnDeactivate ) {
+                        // Clear the top timer.
+                        ipcRenderer.send( 'renderer:kill:list-timer', { instanceId: list.component.instanceId, timers: 'top', index: index } );
+                    }
+
+                    if ( action.listBottomTimerClearOnDeactivate ) {
+                        // Clear the bottom timer
+                        ipcRenderer.send( 'renderer:kill:list-timer', { instanceId: list.component.instanceId, timers: 'bottom', index: index } );
+                    }
+                }
+            }
+
+        }
+
+    }
+    
+    if ( action.listEnrollmentActivatePhrase === res.phraseId ) {
+        // Activate the item.
+        let list = lists.find( f => f.action.actionId === action.actionId );
+
+        if ( !list ) {
+            return;
+        }
+
+        if ( res.result?.groups && res.result.groups[ nagListNameKey ] ) {
+            const name = getCharacterName( res.result.groups[ nagListNameKey ], characterName );
+            
+            list.component.errorNames = list.component.errorNames?.length > 0 ? list.component.errorNames : [];
+
+            if ( list.component.errorNames.includes( name ) ) {
+    
+                list.component.errorNames = list.component.errorNames.filter( f => f !== name );
+    
+                ipcRenderer.send( 'renderer:update:component', {
+                    instanceId: list.component.instanceId,
+                    updateType: 'list',
+                    model: list.component,
+                } );
+            }
+
+        }
+    }
+    
+    if ( action.listTopTimerPhrase?.includes( res.phraseId ) ) {
         let list = lists.find( f => f.action.actionId === action.actionId );
 
         if ( !list ) {
@@ -2526,7 +2610,9 @@ function displayListAction( res, action, trigger ) {
             duration: action.listTopTimerDuration,
         } );
 
-    } else if ( action.listBottomTimerPhrase?.includes( res.phraseId ) ) {
+    }
+    
+    if ( action.listBottomTimerPhrase?.includes( res.phraseId ) ) {
         let list = lists.find( f => f.action.actionId === action.actionId );
 
         if ( !list ) {
@@ -2543,7 +2629,7 @@ function displayListAction( res, action, trigger ) {
         } );
         
     }
-    
+
     // This really needs to mutate the current name of the list, like the skip operation does.
     if ( action.listActionTrackingPhrase.includes( res.phraseId ) ) {
         let list = lists.find( f => f.action.actionId === action.actionId );

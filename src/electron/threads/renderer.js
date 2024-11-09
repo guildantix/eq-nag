@@ -1519,10 +1519,20 @@ function Renderer( originX, originY, glowOnStart ) {
         /**
          * Handles receiving a reset list timer action.
          * @param {*} event The event object.
-         * @param {{ instanceId: string, timers: 'top'|'bottom'|'both'}} model The list timer action.
+         * @param {{ instanceId: string, timers: 'top'|'bottom'|'both', index: number | undefined}} model The list timer action.
          */
         function ( event, model ) {
-            resetListTimers( model.instanceId, model.timers );
+            resetListTimers( model.instanceId, model.timers, model.index );
+        } );
+    
+    ipcRenderer.on( 'renderer:kill:list-timer',
+        /**
+         * Handles receiving a reset list timer action.
+         * @param {*} event The event object.
+         * @param {{ instanceId: string, timers: 'top'|'bottom'|'both', index: number | undefined}} model The list timer action.
+         */
+        function ( event, model ) {
+            killListTimers( model.instanceId, model.timers, model.index );
         } );
 
     ipcRenderer.on( 'renderer:update:component',
@@ -3413,14 +3423,19 @@ function executeListTimer( instanceId, name, timer, duration ) {
  * 
  * @param {string} instanceId The instance id  of the desired list.
  * @param {'top'|'bottom'|'both'} timers The timers to reset.
+ * @param {number|undefined} index The index of the list item to reset.
  */
-function resetListTimers( instanceId, timers ) {
+function resetListTimers( instanceId, timers, index ) {
     const list = rendererComponents.find( f => f.instanceId === instanceId );
 
     if ( list ) {
         const listItems = list.dom.querySelectorAll( '.list-item' );
 
         for ( let i = 0; i < listItems.length; i++ ) {
+            if ( index != null && i !== index ) {
+                continue;
+            }
+            
             const listItem = listItems[ i ];
             const topTimer = listItem.querySelector( '.list-determinate.top' );
             const bottomTimer = listItem.querySelector( '.list-determinate.bottom' );
@@ -3431,6 +3446,43 @@ function resetListTimers( instanceId, timers ) {
 
             if ( ( timers === 'both' || timers === 'bottom' ) && bottomTimer ) {
                 bottomTimer.style.animation = 'none';
+            }
+        }
+    }
+}
+
+/**
+ * Resets the timers for the given list.
+ * 
+ * @param {string} instanceId The instance id  of the desired list.
+ * @param {'top'|'bottom'|'both'} timers The timers to reset.
+ * @param {number|undefined} index The index of the list item to reset.
+ */
+function killListTimers( instanceId, timers, index ) {
+    const list = rendererComponents.find( f => f.instanceId === instanceId );
+
+    if ( list ) {
+        const listItems = list.dom.querySelectorAll( '.list-item' );
+
+        for ( let i = 0; i < listItems.length; i++ ) {
+            if ( index != null && i !== index ) {
+                continue;
+            }
+
+            const listItem = listItems[ i ];
+            const topTimer = listItem.querySelector( '.list-determinate.top' );
+            const bottomTimer = listItem.querySelector( '.list-determinate.bottom' );
+
+            if ( ( timers === 'both' || timers === 'top' ) && topTimer ) {
+                topTimer.style.animationPlayState = 'paused';
+                topTimer.style.animation = 'none';
+                topTimer.style.width = '0%';
+            }
+
+            if ( ( timers === 'both' || timers === 'bottom' ) && bottomTimer ) {
+                bottomTimer.style.animationPlayState = 'paused';
+                bottomTimer.style.animation = 'none';
+                bottomTimer.style.width = '0%';
             }
         }
     }
@@ -3520,13 +3572,22 @@ function renderListAction( component, restore ) {
 
             let itemDiv = document.createElement( 'div' );
             itemDiv.innerHTML = itemHtml;
+            itemDiv = itemDiv.querySelector( 'div' );
 
             if ( component.listNames.indexOf( name ) === component.listNames.length - 1 ) {
-                component.dom.appendChild( itemDiv );
+
+                const listContainer = component.dom.querySelector( '.list-items' );
+                if ( listContainer == null ) {
+                    console.error( 'Could not find list container!' );
+                    return;
+                }
+                listContainer.appendChild( itemDiv );
+                
             } else {
                 // Get the index of the previous item.
                 let previousItem = component.dom.querySelector( `.list-item[data-name=${component.listNames[ i - 1 ]}]` );
                 previousItem.after( itemDiv );
+                
             }
 
             listItem = itemDiv;

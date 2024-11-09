@@ -569,11 +569,20 @@ class TriggerAction {
     /** @type {string} */
     listBoxName = null;
 
+    /** @type {string} */
+    listEnrollmentDeactivatePhrase = null;
+
+    /** @type {string} */
+    listEnrollmentActivatePhrase = null;
+
     /** @type {boolean} */
     listEnableTopTimer = false;
 
     /** @type {boolean} */
     listTopTimerEnum = false;
+
+    /** @type {boolean} */
+    listTopTimerClearOnDeactivate = false;
 
     /** @type {string[]} */
     listTopTimerPhrase = [];
@@ -589,6 +598,9 @@ class TriggerAction {
 
     /** @type {boolean} */
     listBottomTimerEnum = false;
+
+    /** @type {boolean} */
+    listBottomTimerClearOnDeactivate = false;
 
     /** @type {string[]} */
     listBottomTimerPhrase = [];

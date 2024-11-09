@@ -193,6 +193,18 @@ class WindowManager {
                 this.#renderer.webContents.send( 'renderer:reset:list-timer', data );
             } );
 
+        ipcMain.on( 'renderer:kill:list-timer',
+            /**
+             * Sends the given render token to the renderer.
+             * 
+             * @param {Electron.IpcMainEvent} event The event args.
+             * @param {any} data The list data.
+             */
+            ( event, data ) => {
+                this.#tokenObservers[ data.actionId ] = event.sender;
+                this.#renderer.webContents.send( 'renderer:kill:list-timer', data );
+            } );
+
         ipcMain.on( 'renderer:token:update',
             /**
              * Sends the given render token to the renderer.
