@@ -159,6 +159,11 @@ export class TriggerActionListComponent implements OnInit, OnDestroy {
      */
     onListCapturePhraseChange( phraseId: string ): void {
         const phrase = this.phrases.find( f => f.phraseId === phraseId );
+        
+        if ( !phrase ) {
+            return;
+        }
+
         // https://regex101.com/r/0oqQFD/1
         let variables = StringUtility.MatchAll( phrase.phrase, /(?:\(\?\<(?<variableName>\S+?)\>.+?\))/gi, 'variableName' );
         // https://regex101.com/r/do6cil/2
@@ -191,6 +196,11 @@ export class TriggerActionListComponent implements OnInit, OnDestroy {
         }
 
         const phrase = this.phrases.find( f => f.phraseId === phraseId );
+
+        if ( !phrase ) {
+            return;
+        }
+
         // https://regex101.com/r/0oqQFD/1
         let variables = StringUtility.MatchAll( phrase.phrase, /(?:\(\?\<(?<variableName>\S+?)\>.+?\))/gi, 'variableName' );
         // https://regex101.com/r/do6cil/2
@@ -223,6 +233,11 @@ export class TriggerActionListComponent implements OnInit, OnDestroy {
         }
 
         const phrase = this.phrases.find( f => f.phraseId === phraseId );
+
+        if ( !phrase ) {
+            return;
+        }
+
         // https://regex101.com/r/0oqQFD/1
         let variables = StringUtility.MatchAll( phrase.phrase, /(?:\(\?\<(?<variableName>\S+?)\>.+?\))/gi, 'variableName' );
         // https://regex101.com/r/do6cil/2
@@ -248,6 +263,7 @@ export class TriggerActionListComponent implements OnInit, OnDestroy {
      */
     onAddCapturePhraseChange( phraseId: string ): void {
 
+        
         if ( !phraseId ) {
             this.addVariableNames = [];
             this.action.listEnrollmentAddVarName = null;
@@ -255,6 +271,11 @@ export class TriggerActionListComponent implements OnInit, OnDestroy {
         }
 
         const phrase = this.phrases.find( f => f.phraseId === phraseId );
+
+        if ( !phrase ) {
+            return;
+        }
+
         // https://regex101.com/r/0oqQFD/1
         let variables = StringUtility.MatchAll( phrase.phrase, /(?:\(\?\<(?<variableName>\S+?)\>.+?\))/gi, 'variableName' );
         // https://regex101.com/r/do6cil/2
@@ -290,6 +311,10 @@ export class TriggerActionListComponent implements OnInit, OnDestroy {
         for ( let i = 0; i < phraseIds.length; i++ ) {
             const phraseId = phraseIds[ i ];
             const phrase = this.phrases.find( f => f.phraseId === phraseId );
+
+            if ( !phrase ) {
+                continue;
+            }
 
             // https://regex101.com/r/0oqQFD/1
             let vs = StringUtility.MatchAll( phrase.phrase, /(?:\(\?\<(?<variableName>\S+?)\>.+?\))/gi, 'variableName' );
