@@ -56,20 +56,34 @@
                 </div>
             </div>
 
-            <div class="card-property" *ngIf="action.manualEnumerateList">
-                <div class="full-width">
-                    <mat-form-field style="width: 100%;">
-                        <mat-label></mat-label>
-                        <mat-select [(ngModel)]="action.listManualEnumeratePhrase" name="listManualEnumeratePhrase">
-                            <mat-option *ngFor="let phrase of phrases" [value]="phrase.phraseId">{{phrase.phrase}}</mat-option>
-                        </mat-select>
-                        <mat-hint>Select the capture phrase that will move the list value to the next item.</mat-hint>
-                    </mat-form-field>
+            <ng-template [ngIf]="action.manualEnumerateList">
+                <div class="card-property">
+                    <div class="full-width">
+                        <mat-form-field style="width: 100%;">
+                            <mat-label></mat-label>
+                            <mat-select [(ngModel)]="action.listManualEnumeratePhrase" name="listManualEnumeratePhrase">
+                                <mat-option *ngFor="let phrase of phrases" [value]="phrase.phraseId">{{phrase.phrase}}</mat-option>
+                            </mat-select>
+                            <mat-hint>Select the capture phrase that will move the list value to the next item.</mat-hint>
+                        </mat-form-field>
+                    </div>
                 </div>
-            </div>
+        
+                <div class="card-property">
+                    <div class="full-width">
+                        <mat-form-field style="width: 100%;">
+                            <mat-label></mat-label>
+                            <mat-select [(ngModel)]="action.listEnumerateEndPhrase" name="listEnumerateEndPhrase">
+                                <mat-option *ngFor="let phrase of phrases" [value]="phrase.phraseId">{{phrase.phrase}}</mat-option>
+                            </mat-select>
+                            <mat-hint>Select the capture phrase that will clear the list.</mat-hint>
+                        </mat-form-field>
+                    </div>
+                </div>
+            </ng-template>
 
             <ng-template [ngIf]="action.autoEnumerateList">
-                <div class="card-property" *ngIf="action.autoEnumerateList">
+                <div class="card-property">
                     <div class="full-width">
                         <mat-form-field style="width: 100%;">
                             <mat-label></mat-label>
@@ -81,7 +95,7 @@
                     </div>
                 </div>
     
-                <div class="card-property" *ngIf="action.autoEnumerateList">
+                <div class="card-property">
                     <div class="full-width">
                         <mat-form-field style="width: 100%;">
                             <mat-label></mat-label>
@@ -93,7 +107,7 @@
                     </div>
                 </div>
     
-                <div class="card-property" *ngIf="action.autoEnumerateList">
+                <div class="card-property">
                     <div class="content-top">
                         <mat-checkbox [(ngModel)]="action.autoEnumerateUseVariable" name="autoEnumerateUseVariable" (change)="onChangeAutoEnumerationVariable()">User Phrase Timer</mat-checkbox>
                     </div>
