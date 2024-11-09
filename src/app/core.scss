@@ -260,6 +260,97 @@ table {
 
 ::ng-deep .card-property {
     >div {
+        flex: 1 0 auto;
+        display: block;
+        max-width: 50%;
+        padding: 0 5px;
+
+        &.property-group {
+            max-width: 100%;
+            display: flex;
+            flex-flow: column nowrap;
+
+            h3 {
+                font-weight: 300;
+                color: #f1f1f1;
+                text-shadow: 1px 1px 10px #000, 1px 1px 10px #000;
+                padding-left: 1em;
+                font-size: 1.65em;
+                margin: 0.5em 0 0.25em;
+            }
+
+            .property-group-line {
+                display: flex;
+                flex-flow: row nowrap;
+                padding: 5px 0;
+                align-items: center;
+                justify-content: space-between;
+
+                &.two-column {
+                    > div {
+                        flex: 1 0 auto;
+                        display: block;
+                        max-width: 50%;
+                        padding: 0 5px;
+                    }
+                }
+            }
+
+            p.warning {
+                background-color: #f443361f;
+                padding: 4px 13px;
+                border-left: 0.33em solid #f44336;
+                margin: 0.5em 0;
+                border-radius: 5px;
+            }
+
+            .fill-width {
+                width: 100%;
+            }
+            .align-content-left {
+                text-align: left;
+            }
+            .align-content-justify {
+                .self-center {
+                    align-self: center;
+                }
+                >* {
+                    flex: 1 0 auto;
+                }
+                display: flex;
+            }
+            p {
+                margin: 0;
+                padding: 0;
+            }
+            .content-middle {
+                align-self: center;
+            }
+            .content-top {
+                align-self: flex-start;
+                > mat-checkbox {
+                    margin-top: 0.35em;
+                }
+            }
+            .content-right {
+                text-align: right;
+            }
+            .content-vertical {
+                >.align-left {
+                    align-self: flex-start;
+                }
+                display: flex;
+                flex-direction: column;
+            }
+            .content-top {
+                padding-top: 1em;
+                align-self: flex-start;
+            }
+            .head-room {
+                margin-top: 1em;
+            }
+        }
+
         .fill-width {
             width: 100%;
         }
@@ -279,10 +370,6 @@ table {
             margin: 0;
             padding: 0;
         }
-        flex: 1 0 auto;
-        display: block;
-        max-width: 50%;
-        padding: 0 5px;
     }
     >.full-width {
         max-width:100%;

@@ -864,20 +864,25 @@ export class TriggerActionProperties {
     public listTimerActionId: string = null;
     public useBackground: boolean = false;
     public listBoxName: string = null;
+    public listEnrollmentDeactivatePhrase: string = null;
+    public listEnrollmentActivatePhrase: string = null;
 
     public listEnableTopTimer: boolean = false;
     public listTopTimerEnum: boolean = false;
+    public listTopTimerClearOnDeactivate: boolean = false;
     public listTopTimerPhrase: string[] = [];
     public listTopTimerDuration: number = null;
     public listTopHide: boolean = false;
     
     public listEnableBottomTimer: boolean = false;
     public listBottomTimerEnum: boolean = false;
+    public listBottomTimerClearOnDeactivate: boolean = false
     public listBottomTimerPhrase: string[] = [];
     public listBottomTimerDuration: number = null;
     public listBottomHide: boolean = false;
     
     public staticPosition: Rectangle = null;
+    
 }
 
 export class TriggerAction extends TriggerActionProperties {

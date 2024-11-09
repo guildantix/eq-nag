@@ -64,6 +64,30 @@ export class TriggerActionListComponent implements OnInit, OnDestroy {
         }
     }
 
+    public get invalidDeactivatePhrase(): boolean {
+
+        if ( this.action.listEnrollmentDeactivatePhrase ) {
+            const phrase = this.phrases.find( f => f.phraseId === this.action.listEnrollmentDeactivatePhrase );
+            if ( phrase ) {
+                return phrase.phrase.indexOf( '{LN}' ) === -1;
+            }
+        }
+
+        return false;
+    }
+
+    public get invalidActivatePhrase(): boolean {
+            
+        if ( this.action.listEnrollmentActivatePhrase ) {
+            const phrase = this.phrases.find( f => f.phraseId === this.action.listEnrollmentActivatePhrase );
+            if ( phrase ) {
+                return phrase.phrase.indexOf( '{LN}' ) === -1;
+            }
+        }
+    
+        return false;
+    }
+
     @ViewChild( MatTabGroup, { static: true } ) tabGroup: MatTabGroup;
 
     constructor(
@@ -114,6 +138,8 @@ export class TriggerActionListComponent implements OnInit, OnDestroy {
         if ( !this.action.manualEnumerateList ) {
             this.action.listEnumerateBeginPhrase = null;
             this.action.listEnumerateEndPhrase = null;
+            this.action.listTopTimerClearOnDeactivate = false;
+            this.action.listBottomTimerClearOnDeactivate = false;
         }
     }
 
