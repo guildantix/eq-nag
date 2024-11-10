@@ -55,9 +55,13 @@
         <span class="spacer"></span>
     </div>
     
-    
     <div *ngIf="showHistory">
-        <h4>History</h4>
+        <div class="creator-actions" style="padding: 0; margin-top: 1em;">
+            <h4 style="margin: 0; padding-top: .5em;">History</h4>
+            <span class="spacer"></span>
+            <div><button mat-button color="warn" *ngIf="isAuthor" (click)="deletePackage()"><mat-icon class="material-icons-outlined">clear</mat-icon> Delete Package</button></div>
+        </div>
+
         <div *ngFor="let version of package.versionHistory" class="update-record">
             <div *ngIf="version.notes != null">
                 <span class="color-purple timestamp">{{version.timestamp | date:'short'}}</span>

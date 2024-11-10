@@ -11,7 +11,7 @@ const customAlphabet = require( 'nanoid' ).customAlphabet;
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const nanoid = customAlphabet( alphabet, 16 );
 
-const currentTriggerDbVersion = 91;
+const currentTriggerDbVersion = 94;
 
 
 
@@ -902,6 +902,61 @@ function executeDataMigration( data ) {
         } );
 
         data.version = 91;
+        
+    }
+    if ( data.version < 92 ) {
+        
+
+        data?.triggers?.forEach( trigger => {
+            if ( trigger ) {
+                
+                trigger.actions?.filter( a => a.actionType === ActionTypes.List ).forEach( action => {
+
+                    if ( action.listActionTrackingPhrase == null ) {
+                        action.listActionTrackingPhrase = [];
+                    } else if ( !( Array.isArray( action.listActionTrackingPhrase ) ) ) {
+                        action.listActionTrackingPhrase = [ action.listActionTrackingPhrase ];
+                    }
+
+                } );
+                
+            }
+        } );
+
+        data.version = 92;
+        
+    }
+    if ( data.version < 93 ) {
+        
+
+        data?.triggers?.forEach( trigger => {
+            if ( trigger ) {
+                
+                trigger.actions?.filter( a => a.actionType === ActionTypes.List ).forEach( action => {
+                    action.listBoxName = null;
+                } );
+                
+            }
+        } );
+
+        data.version = 93;
+        
+    }
+    if ( data.version < 94 ) {
+        
+
+        data?.triggers?.forEach( trigger => {
+            if ( trigger ) {
+                
+                trigger.actions?.filter( a => a.actionType === ActionTypes.List ).forEach( action => {
+                    action.listTopTimerPhrase = [];
+                    action.listBottomTimerPhrase = [];
+                } );
+                
+            }
+        } );
+
+        data.version = 94;
         
     }
 

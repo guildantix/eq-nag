@@ -5,18 +5,16 @@ table {
 }
 
 .creator-actions {
-    .spacer {
-        display: flex;
-        flex: 1 0 auto;
-    }
+    display:flex;
+    flex-direction: row;
+    padding:15px;
+    justify-content: space-between;
+    
     button {
         mat-icon {
             margin-top: -4px;
         }
     }
-    display:flex;
-    flex-direction: row;
-    padding:15px;
 }
 
 .with-changes {

@@ -1,0 +1,67 @@
+<fieldset>
+    <legend class="full-width"><span class="title">Hotkeys</span><span class="spacer"></span><button mat-button (click)="addNewHotkey()" color="accent"><mat-icon>add</mat-icon>New</button><small>Quickly create in-game hotkeys to use for this trigger.</small></legend>
+
+    <table mat-table #hotkeysTable="matTable" *ngIf="hotkeys?.length > 0"
+        [dataSource]="hotkeys"
+        class="capture-phrases">
+
+        <ng-container matColumnDef="edit">
+            <th mat-header-cell *matHeaderCellDef style="width: 50px;"></th>
+            <td mat-cell *matCellDef="let element">
+                <button mat-icon-button color="accent" aria-label="Edit this hotkey" 
+                    (click)="editHotkey(element)" 
+                    matTooltip="Edit this hotkey" 
+                    matTooltipShowDelay="500" 
+                    matTooltipPosition="above"><mat-icon>edit_note</mat-icon></button>
+            </td>
+        </ng-container>
+
+        <ng-container matColumnDef="action">
+            <th mat-header-cell *matHeaderCellDef style="text-align: center; width: 90px; vertical-align: top;">  </th>
+            <td mat-cell *matCellDef="let element; let i = index" style="text-align: center; width: 90px; vertical-align: top;">
+                <button mat-icon-button color="accent" aria-label="Edit this hotkey" 
+                    (click)="editHotkey(element)" 
+                    matTooltip="Edit this hotkey" 
+                    matTooltipShowDelay="500" 
+                    matTooltipPosition="above"><mat-icon>edit_note</mat-icon></button>
+
+                <button mat-icon-button color="accent" aria-label="Generate EQ Hotkey" 
+                    (click)="generateEqHotkey(element)" 
+                    matTooltip="Generate EQ Hotkey" 
+                    matTooltipShowDelay="500" 
+                    matTooltipPosition="above"><mat-icon>menu</mat-icon></button>
+                <!-- <button mat-button color="accent" >Generate Hotkey</button> -->
+            </td>
+        </ng-container>
+
+        <ng-container matColumnDef="quickAction">
+            <th mat-header-cell *matHeaderCellDef> Quick Action </th>
+            <td mat-cell *matCellDef="let element" style="vertical-align: top; padding-top: 14px !important;">
+                <mat-checkbox [(ngModel)]="element.quickAction" name="cbxQuickAction" [disabled]="!element.simpleCommand" [matTooltip]="element.simpleCommand ? 'When enabled, Nag will add a quick action button to the bottom right of the main Nag window.' : 'Enable this by enabling the Command option for this hotkey.'"></mat-checkbox>
+            </td>
+        </ng-container>
+
+        <ng-container matColumnDef="name">
+            <th mat-header-cell *matHeaderCellDef> Name </th>
+            <td mat-cell *matCellDef="let element" style="white-space: nowrap; vertical-align: top; padding-top: 14px !important;"> {{element.name}} </td>
+        </ng-container>
+
+        <ng-container matColumnDef="description">
+            <th mat-header-cell *matHeaderCellDef> Description </th>
+            <td mat-cell *matCellDef="let element" style="vertical-align: top; padding-top: 14px !important;"> <span [innerHTML]="element.description | safeHtmlContent"></span> </td>
+        </ng-container>
+
+        <ng-container matColumnDef="delete">
+            <th mat-header-cell *matHeaderCellDef style="text-align: center; width: 50px;">  </th>
+            <td mat-cell *matCellDef="let element; let i = index" style="text-align: center; width: 90px; vertical-align: top;">
+                <button mat-icon-button color="warn" aria-label="Delete this condition." (click)="deleteHotkey(i)">
+                    <mat-icon>clear</mat-icon>
+                </button>
+            </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="hotkeyTableColumns"></tr>
+        <tr mat-row *matRowDef="let element; columns: hotkeyTableColumns;"></tr>
+
+    </table>
+</fieldset>

@@ -33,6 +33,7 @@ var ActionTypes = {
     '12': 'ScreenGlow',
     '13': 'ClearAll',
     '14': 'Stopwatch',
+    '15': 'List',
     DisplayText: 0,
     PlayAudio: 1,
     Speak: 2,
@@ -48,6 +49,7 @@ var ActionTypes = {
     ScreenGlow: 12,
     ClearAll: 13,
     Stopwatch: 14,
+    List: 15,
 
 }
 
@@ -494,6 +496,123 @@ class TriggerAction {
     
     /** @type {number} */
     textGlowSize = null;
+
+    /** @type {string} */
+    createListPhrase = null;
+
+    /** @type {boolean} */
+    autoEnumerateList = false;
+
+    /** @type {boolean} */
+    manualEnumerateList = false;
+
+    /** @type {string} */
+    listRegexVarName = null;
+
+    /** @type {boolean} */
+    autoEnumerateSpecifyTime = false;
+
+    /** @type {boolean} */
+    autoEnumerateUseVariable = false;
+
+    /** @type {string} */
+    autoEnumerateListTimerName = null;
+
+    /** @type {boolean} */
+    enableListEnrollment = false;
+
+    /** @type {string} */
+    listEnrollmentSkipPhrase = null;
+
+    /** @type {string} */
+    listEnrollmentSkipVarName = null;
+
+    /** @type {string} */
+    listEnrollmentRemovePhrase = null;
+
+    /** @type {string} */
+    listEnrollmentRemoveVarName = null;
+
+    /** @type {string} */
+    listEnrollmentAddPhrase = null;
+
+    /** @type {string} */
+    listEnrollmentAddVarName = null;
+
+    /** @type {boolean} */
+    listEnrollmentShowTimer = false;
+
+    /** @type {string} */
+    listEnumerateBeginPhrase = null;
+
+    /** @type {string} */
+    listEnumerateEndPhrase = null;
+
+    /** @type {string} */
+    listManualEnumeratePhrase = null;
+
+    /** @type {boolean} */
+    listEnableActionTracking = false;
+
+    /** @type {string[]} */
+    listActionTrackingPhrase = [];
+
+    /** @type {string} */
+    listActionTrackingVarName = null;
+
+    /** @type {string} */
+    listTimerActionId = null;
+
+    /** @type {boolean} */
+    useBackground = false;
+
+    /** @type {string} */
+    listBoxName = null;
+
+    /** @type {string} */
+    listEnrollmentDeactivatePhrase = null;
+
+    /** @type {string} */
+    listEnrollmentActivatePhrase = null;
+
+    /** @type {boolean} */
+    listEnableTopTimer = false;
+
+    /** @type {boolean} */
+    listTopTimerEnum = false;
+
+    /** @type {boolean} */
+    listTopTimerClearOnDeactivate = false;
+
+    /** @type {string[]} */
+    listTopTimerPhrase = [];
+
+    /** @type {number} */
+    listTopTimerDuration = null;
+
+    /** @type {boolean} */
+    listTopHide = false;
+
+    /** @type {boolean} */
+    listEnableBottomTimer = false;
+
+    /** @type {boolean} */
+    listBottomTimerEnum = false;
+
+    /** @type {boolean} */
+    listBottomTimerClearOnDeactivate = false;
+
+    /** @type {string[]} */
+    listBottomTimerPhrase = [];
+
+    /** @type {number} */
+    listBottomTimerDuration = null;
+
+    /** @type {boolean} */
+    listBottomHide = false;
+
+    /** @type {Electron.Rectangle} */
+    staticPosition = null;
 }
 
 class OwnedTriggerAction extends TriggerAction {
@@ -576,6 +695,8 @@ class Trigger {
     enabled = true;
     /** @type {string} */
     sequentialRestartBehavior = 'none';
+    /** @type {any[]} */
+    hotkeys = [];
 }
 
 class BaseFileModel {
@@ -670,6 +791,8 @@ class PackageTrigger {
     cooldownDuration = 0;
     /** @type {string} */
     sequentialRestartBehavior = 'none';
+    /** @type {any[]} */
+    hotkeys = [];
 
 }
 

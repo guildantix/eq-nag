@@ -1,0 +1,111 @@
+<h2 mat-dialog-title>Edit Trigger Hotkey</h2>
+
+<mat-dialog-content>
+
+    <ng-template [ngIf]="!showRenderedLines">
+        <p>To create a hotkey, enter up to 5 text lines for the commands.</p>
+        <p>You may use interpolation with <code>{{'{{Your Character Name}}'}}</code>.  When using interpolation, the user will be asked to enter values for each variable when they generate a hotkey.  Use descriptive names so that the user intuitively knows what to put in each value.</p>
+        <div>
+            <mat-checkbox [(ngModel)]="model.simpleCommand" name="simpleCommand">Command</mat-checkbox>
+            <ng-template [ngIf]="model.simpleCommand">
+                <p>When the "Command" option is enabled, the hotkey will consist of a single line.</p>
+                <p>When the user executes this hotkey, the line will be copied to the users clipboard without the /hot "Name" command that generates a hotkey.</p>
+            </ng-template>
+        </div>
+    </ng-template>  
+
+    <ng-template [ngIf]="showRenderedLines">
+        <p>Here are the hotkey lines you can copy and paste into EverQuest</p>
+        <p>The first line will include the command to generate your hotkey, paste that into the chat window and hit enter, then place this hotkey on your bar.</p>
+    </ng-template>
+
+    <form *ngIf="showRenderedLines">
+    
+        <div class="trigger-hotkey-inputs">
+    
+            <div>
+                <span>1</span>
+                <input type="text" [(ngModel)]="renderedLines[0]" name="line_{{0}}" [readOnly]="true" />
+                <button mat-icon-button matSuffix (click)="sendToClipboard(renderedLines[0])"><mat-icon>content_copy</mat-icon></button>
+            </div>
+
+            <div>
+                <span>2</span>
+                <input type="text" [(ngModel)]="renderedLines[1]" name="line_{{1}}" [readOnly]="true" />
+                <button mat-icon-button matSuffix (click)="sendToClipboard(renderedLines[1])"><mat-icon>content_copy</mat-icon></button>
+            </div>
+
+            <div>
+                <span>3</span>
+                <input type="text" [(ngModel)]="renderedLines[2]" name="line_{{2}}" [readOnly]="true" />
+                <button mat-icon-button matSuffix (click)="sendToClipboard(renderedLines[2])"><mat-icon>content_copy</mat-icon></button>
+            </div>
+
+            <div>
+                <span>4</span>
+                <input type="text" [(ngModel)]="renderedLines[3]" name="line_{{3}}" [readOnly]="true" />
+                <button mat-icon-button matSuffix (click)="sendToClipboard(renderedLines[3])"><mat-icon>content_copy</mat-icon></button>
+            </div>
+
+            <div>
+                <span>5</span>
+                <input type="text" [(ngModel)]="renderedLines[4]" name="line_{{4}}" [readOnly]="true" />
+                <button mat-icon-button matSuffix (click)="sendToClipboard(renderedLines[4])"><mat-icon>content_copy</mat-icon></button>
+            </div>
+
+        </div>
+
+    </form>
+
+    <form #form="ngForm" *ngIf="!showRenderedLines">
+        <div class="trigger-hotkey-inputs">
+            <mat-form-field>
+                <input matInput type="text" [(ngModel)]="model.name" name="name" required />
+                <mat-hint>Name</mat-hint>
+            </mat-form-field>
+    
+            <mat-form-field>
+                <textarea matInput type="text" [(ngModel)]="model.description" name="description" rows="5" required></textarea>
+                <mat-hint>Description</mat-hint>
+            </mat-form-field>
+        </div>
+    
+        <div class="trigger-hotkey-inputs">
+    
+            <div>
+                <span>1</span>
+                <input type="text" [(ngModel)]="model.lines[0]" name="line_{{0}}" />
+            </div>
+
+            <div *ngIf="!model.simpleCommand">
+                <span>2</span>
+                <input type="text" [(ngModel)]="model.lines[1]" name="line_{{1}}" />
+            </div>
+
+            <div *ngIf="!model.simpleCommand">
+                <span>3</span>
+                <input type="text" [(ngModel)]="model.lines[2]" name="line_{{2}}" />
+            </div>
+
+            <div *ngIf="!model.simpleCommand">
+                <span>4</span>
+                <input type="text" [(ngModel)]="model.lines[3]" name="line_{{3}}" />
+            </div>
+
+            <div *ngIf="!model.simpleCommand">
+                <span>5</span>
+                <input type="text" [(ngModel)]="model.lines[4]" name="line_{{4}}" />
+            </div>
+
+        </div>
+    </form>
+
+</mat-dialog-content>
+
+<mat-dialog-actions>
+    
+    <button mat-button (click)="cancel()" class="t-confirm-no" color="warn">Cancel</button>
+    <button mat-button (click)="accept()" class="t-confirm-no">OK</button>
+
+</mat-dialog-actions>
+

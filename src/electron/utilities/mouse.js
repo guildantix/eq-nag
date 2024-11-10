@@ -155,6 +155,9 @@ const MouseUtilities = {
     getMouseUpdate: getMouseUpdate,
     setHandleMouseEvents: setHandleMouseEvents,
     setIgnoreMouseEvents: setIgnoreMouseEvents,
+    /**
+     * Refreshes the dom elements that are being tracked for mouse events, immediately enabling/disabling mouse events.
+     */
     refreshDom: () => {
         mouseEnabledDoms = undefined;
         _intervalCount = 0;

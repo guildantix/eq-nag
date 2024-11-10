@@ -727,6 +727,8 @@ function parseShortCodesToRegex( value, characterName ) {
     // ^(?=.*timer)Halindar (?:start timer|starts*|begins*|timer)(?: a |\s)*(?<timerDuration>[0-9]*?[h|hour|hours|hrs]*\s?[0-9]*?[m|min|mins|minute|minutes]*?\s?[0-9]*?[s|sec|secs|seconds|second]*?|[0-9]*?[m|min|mins|minute|minutes]*?\s?[0-9]*?[s|sec|secs|seconds|second]*?|[0-9]*)(?:\stimer)*(?:for Targeting)*\.$
 
     if ( value ) {
+        // https://regex101.com/r/BpKeMw/1
+        value = value.replace( /{LN}/gi, `(?<nag_listname>[A-Z][a-z]+?)` );
         value = value.replace( /{TS}/i, '(?<timerDuration>[0-9]*?[h|hour|hours|hrs]*\\s?[0-9]*?[m|min|mins|minute|minutes]*?\\s?[0-9]*?[s|sec|secs|seconds|second]*?|[0-9]*?[m|min|mins|minute|minutes]*?\\s?[0-9]*?[s|sec|secs|seconds|second]*?|[0-9]+:[0-9]+:[0-9]+|[0-9]+:[0-9]+|[0-9.]*)' );
         value = value.replace( /{C}/gi, characterName );
         value = value.replace( /\${Character}/gi, characterName );
@@ -737,6 +739,49 @@ function parseShortCodesToRegex( value, characterName ) {
         // https://regex101.com/r/k4eq0f/1
     }
 
+    return value;
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Updates the given phrase, replacing matching list values with the list 
+ * values by 1-based index.
+ * 
+ * @description https://regex101.com/r/jsiqH1/1
+ * 
+ * @param {string} value The phrase to search.
+ * @param {string[] | undefined} list The list of values to search for.
+ * @param {string} myCharacterName The name of the current character.
+ */
+function parseListCodesToLiteral( value, list, myCharacterName ) {
+
+    if ( list != undefined ) {
+        let listMatches = [ ...value.matchAll( /{L([0-9]*?)}/gi ) ];
+
+        if ( listMatches?.length > 0 ) {
+            for ( let i = listMatches.length - 1; i >= 0; i-- ) {
+                let valueIndex = +listMatches[ i ][ 1 ] - 1;
+                let strIndex = listMatches[ i ].index;
+                let length = listMatches[ i ].length + 2;
+                var v = list[ valueIndex ] ?? '';
+
+                if ( v.toLowerCase() == myCharacterName.toLowerCase() ) {
+                    v = `(?:y|Y)(?:o|O)(?:u|U)`;
+                }
+
+                value = value.substring( 0, strIndex ) + ( v ) + value.substring( strIndex + length );
+            }
+        }
+    }
+    
     return value;
 }
 
@@ -944,6 +989,7 @@ let StringUtilities = {
     parsePhoneticTransformsToLiteral: parsePhoneticTransformsToLiteral,
     parseShortCodeValuesToLiteral: parseShortCodeValuesToLiteral,
     parseShortCodesToRegex: parseShortCodesToRegex,
+    parseListCodesToLiteral: parseListCodesToLiteral,
     parseNConditionalCodesToRegex: parseNConditionalCodesToRegex,
     getDurationFromLabel: getDurationFromLabel,
     compare: compare,

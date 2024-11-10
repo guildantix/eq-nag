@@ -1,6 +1,6 @@
 import { ChangeDetectorRef, Component, EventEmitter, Input, OnInit, Output, ViewChild } from '@angular/core';
 import { MatTable } from '@angular/material/table';
-import { TriggerFolder, TriggerModel, PackageTrigger, TriggerPackageMetaModel, PackageFolder, PackageFileModel, TriggerPackageModel, TriggerPackageCategories, OverlayWindowModel, TriggerAction, TriggerCondition } from 'src/app/core.model';
+import { TriggerFolder, TriggerModel, PackageTrigger, TriggerPackageMetaModel, PackageFolder, PackageFileModel, TriggerPackageModel, TriggerPackageCategories, OverlayWindowModel, TriggerAction, TriggerCondition, ActionTypes } from 'src/app/core.model';
 import { DialogService } from 'src/app/dialogs/dialog.service';
 import { IpcService } from 'src/app/ipc.service';
 import * as _ from 'lodash-es';
@@ -35,6 +35,8 @@ export class NewTriggerPackageComponent implements OnInit {
         this._selectedCategory = value;
         this.package.category = value;
     }
+
+    @Input() public newPackage: boolean = true;
 
     @Input() public authorId: string;
     @Input()
@@ -176,6 +178,16 @@ export class NewTriggerPackageComponent implements OnInit {
                     pkgTrigger.classLevels = _.cloneDeep( trigger.classLevels );
                     pkgTrigger.useCooldown = trigger.useCooldown;
                     pkgTrigger.cooldownDuration = trigger.cooldownDuration;
+                    pkgTrigger.hotkeys = _.cloneDeep( trigger.hotkeys );
+                    // Reset quick action status.
+                    pkgTrigger.hotkeys?.forEach( h => h.quickAction = false );
+
+                    pkgTrigger.actions.forEach( action => {
+                        // Reset the list position.
+                        if ( action.actionType === ActionTypes.List ) {
+                            action.staticPosition = undefined;
+                        }
+                    } );
 
                 }
             } );
@@ -804,7 +816,7 @@ export class NewTriggerPackageComponent implements OnInit {
                             'If you decide to include folder conditions in your package, those conditions will only be added to the triggers for the package.  Your local triggers will not be modified.',
                             'The reason that folder conditions should only be included as trigger conditions is to prevent collisions when multiple authors use the same folder names.',
                             'Important: Conditions will only be added to triggers belonging to each folder\'s family. ex: ',
-                            new ColoredString('*t*tRaids \\ Classic \\ Naggy \\ Fire Breathe', '#e3e3e3'),
+                            new ColoredString( '*t*tRaids \\ Classic \\ Naggy \\ Fire Breathe', '#e3e3e3' ),
                             'The "Fire Breathe" trigger will inherit conditions from Raids, Classic, and Naggy, but will not inherit conditions from Lady Vox or Planes of Power.'
                         ], 'wide' )
                     }
@@ -816,6 +828,8 @@ export class NewTriggerPackageComponent implements OnInit {
                         //       list are overwritten with the new conditions and 
                         //       not updated by conditionId.
                         let triggerIds = Object.keys( conditionMap );
+
+                        // TODO: Update so that it applies folder conditions to all triggers in the hierarchy.
                         for ( let i = 0; i < triggerIds.length; i++ ) {
                             const triggerId = triggerIds[ i ];
                             const packageTrigger = this.package.model.triggers.find( f => f.triggerId == triggerId );
@@ -1054,5 +1068,21 @@ export class NewTriggerPackageComponent implements OnInit {
 
 
 
+
+    /**
+     * Shows a dialog that explains window checking.
+     */
+    explainWindowPrivatePackage() {
+        this.dialogService.showInfoDialog(
+            'Private Package',
+            [
+                'When a trigger package is marked private, the package will only appear for the author and anyone that has installed it.',
+                new ColoredString( 'You can only make this decision when creating a new package. Once a package is created, its visibility cannot be changed.', '#f44336' ),
+                'The only way for a user to install a private package is by having the Nag package link.',
+                new ColoredString( 'Private packages will otherwise work just like any other package.', '#69b2f0' ),
+            ],
+            'wide',
+        );
+    }
 
 }

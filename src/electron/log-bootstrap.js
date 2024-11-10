@@ -74,8 +74,11 @@ let mainWinRef = undefined;
 /** @type {number} The duration to wait between checking for activity on a log file. */
 const checkInterval = 5 * 1000;
 
+/** @type {number} The duration to wait for no log file updates before closing the log file watcher. */
+const killTime = 5 * 60 * 1000;
+
 /** @type {number} If the log file has no updates in the given number of checks, then kill the log watcher window. */
-const killAfterNAttempts = 60 * 1000 / checkInterval;
+const killAfterNAttempts = killTime / checkInterval;
 
 class LogBootstrapper {
 

@@ -1,0 +1,79 @@
+const { OverlayComponent } = require( "./overlay-window" );
+const { ActionTypes } = require( "./trigger" );
+
+class RendererComponent extends OverlayComponent {
+    /** @type {string} */
+    actionId;
+    /** @type {ListObjectModel | OverlayComponent} */
+    objectModel;
+    /** @type {string[]} */
+    listNames = [];
+    /** @type {string[]} */
+    skipNames = [];
+    /** @type {string} */
+    currentName = '';
+    /** @type {string[]} */
+    errorNames = [];
+    /** @type {string[]} */
+    warnNames = [];
+    /** @type {string[]} */
+    successNames = [];
+}
+
+class ListItemModel {
+    /** @type {string} */
+    name;
+    /** @type {string} */
+    iconCssClass;
+    /** @type {string} */
+    textCssClass;
+}
+
+class ListObjectModel {
+    /** @type {'background'|'no-background'} */
+    listCssClass = 'background';
+    /** @type {string} */
+    listTitle = '';
+    /** @type {number} */
+    fontSize = 16;
+    /** @type {number} */
+    fontWeight = 400;
+    /** @type {string} */
+    fontFamily = 'Oswald';
+    /** @type {ListItemModel[]} */
+    items = [];
+    /** @type {Electron.Rectangle | undefined} */
+    bounds = undefined;
+}
+
+class RenderTokenModel {
+    /** @type {string} */
+    triggerId;
+    /** @type {string} */
+    actionId;
+    /** @type {number} Uses the ActionTypes "enum"*/
+    actionType;
+    /** @type {ListObjectModel | OverlayComponent} */
+    objectModel;
+    /** @type {HTMLDivElement | undefined} The containing div element. */
+    dom = undefined;
+}
+
+class UpdateComponentArgs {
+    /** @type {string} */
+    instanceId;
+    /** @type {'alter-start'} */
+    updateType;
+    /** @type {number} */
+    duration;
+    /** @type {any} */
+    model;
+}
+
+module.exports = {
+    ListItemModel,
+    ListObjectModel,
+    RenderTokenModel,
+    RendererComponent,
+    UpdateComponentArgs,
+};

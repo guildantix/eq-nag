@@ -36,14 +36,14 @@
                         <div class="ft-content" style="min-height: 500px; padding: 25px;">
                             
                             <ng-template [ngIf]="showNewTrigger">
-                                <app-new-trigger-package (triggerPackage)="onNewPackage($event)" [authorId]="author?.authorId" [selectedCategory]="selectedCategory"></app-new-trigger-package>
+                                <app-new-trigger-package (triggerPackage)="onNewPackage($event)" [authorId]="author?.authorId" [selectedCategory]="selectedCategory" [newPackage]="true"></app-new-trigger-package>
                             </ng-template>
                             <ng-template [ngIf]="showEditTrigger">
-                                <app-new-trigger-package (triggerPackage)="onSavePackage($event)" [authorId]="author?.authorId" [selectedCategory]="selectedCategory" [packageId]="editPackageId"></app-new-trigger-package>
+                                <app-new-trigger-package (triggerPackage)="onSavePackage($event)" [authorId]="author?.authorId" [selectedCategory]="selectedCategory" [newPackage]="false" [packageId]="editPackageId"></app-new-trigger-package>
                             </ng-template>
                             <ng-template [ngIf]="showDetailsModel">
                                 <div><button mat-button class="back-to-list-btn color-green" (click)="showBrowsePackages()"><mat-icon style="transform: rotate(180deg)">forward</mat-icon> Back to List</button></div>
-                                <app-trigger-package-details [packageId]="viewPackageId" (editPackageId)="showEditPackage($event)"></app-trigger-package-details>
+                                <app-trigger-package-details [packageId]="viewPackageId" (editPackageId)="showEditPackage($event)" (onPackageDeleted)="showBrowsePackages()"></app-trigger-package-details>
                             </ng-template>
                             <ng-template [ngIf]="showBrowse">
                                 <div style="display: flex; align-items: center;">
@@ -63,12 +63,25 @@
                                     <table mat-table #overlaysTable="matTable" style="width: 100%;" [dataSource]="filteredPackages">
                 
                                         <ng-container matColumnDef="name">
-                                            <th mat-header-cell *matHeaderCellDef style="padding-left: 15px;"> Name </th>
-                                            <td mat-cell *matCellDef="let element; let i = index" style="padding-left: 15px;"> {{element.name}} </td>
+                                            <th mat-header-cell *matHeaderCellDef style="padding-left: 15px;">
+                                                <div (click)="changeSort('name')">
+                                                    <span>Name</span>
+                                                    <mat-icon *ngIf="sortColumns[0] === 'name'" style="font-size: 16px;" matSuffix>{{sortDirection == 'asc' ? 'arrow_drop_up' : 'arrow_drop_down'}}</mat-icon>
+                                                </div>
+                                            </th>
+                                            <td mat-cell *matCellDef="let element; let i = index" style="padding-left: 15px; position: relative;">
+                                                <span class="private-package-icon color-green" *ngIf="element.privatePackage" matTooltip="This is a private package."><mat-icon>security</mat-icon></span>
+                                                {{element.name}}
+                                            </td>
                                         </ng-container>
                 
                                         <ng-container matColumnDef="author">
-                                            <th mat-header-cell *matHeaderCellDef style="padding-left: 15px;"> Author </th>
+                                            <th mat-header-cell *matHeaderCellDef style="padding-left: 15px;">
+                                                <div (click)="changeSort('author')">
+                                                    <span>Author</span>
+                                                    <mat-icon *ngIf="sortColumns[0] === 'author'" style="font-size: 16px;" matSuffix>{{sortDirection == 'asc' ? 'arrow_drop_up' : 'arrow_drop_down'}}</mat-icon>
+                                                </div>
+                                            </th>
                                             <td mat-cell *matCellDef="let element; let i = index" style="padding-left: 15px;"> {{element.author}} </td>
                                         </ng-container>
                 
@@ -77,8 +90,8 @@
                                             <td mat-cell *matCellDef="let element; let i = index" style="padding-left: 15px; width: 100px;"> <span title="{{element.timestamp | date:'medium'}}">{{element.timestamp | date:'shortDate'}}</span> </td>
                                         </ng-container>
                 
-                                        <tr mat-header-row *matHeaderRowDef="['name', 'updated']"></tr>
-                                        <tr mat-row *matRowDef="let element; columns: ['name', 'updated'];" class="package-row" (click)="showTriggerDetails(element.triggerPackageId)"></tr>
+                                        <tr mat-header-row *matHeaderRowDef="['name', 'author', 'updated']"></tr>
+                                        <tr mat-row *matRowDef="let element; columns: ['name', 'author', 'updated'];" class="package-row" (click)="showTriggerDetails(element.triggerPackageId)"></tr>
 
                                     </table>
 

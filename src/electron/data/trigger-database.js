@@ -1939,6 +1939,7 @@ class TriggerDatabaseStore extends Store {
         trigger.classLevels = packageTrigger.classLevels;
         trigger.useCooldown = packageTrigger.useCooldown;
         trigger.cooldownDuration = packageTrigger.cooldownDuration;
+        trigger.hotkeys = packageTrigger.hotkeys;
 
     }
 
