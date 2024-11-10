@@ -3379,6 +3379,15 @@ function render( overlayId, comp ) {
     
 }
 
+
+
+
+
+
+
+
+
+
 /**
  * 
  * @param {string} instanceId The instance id  of the desired list.
@@ -3418,6 +3427,15 @@ function executeListTimer( instanceId, name, timer, duration ) {
     }
 }
 
+
+
+
+
+
+
+
+
+
 /**
  * Resets the timers for the given list.
  * 
@@ -3450,6 +3468,15 @@ function resetListTimers( instanceId, timers, index ) {
         }
     }
 }
+
+
+
+
+
+
+
+
+
 
 /**
  * Resets the timers for the given list.
@@ -3487,6 +3514,15 @@ function killListTimers( instanceId, timers, index ) {
         }
     }
 }
+
+
+
+
+
+
+
+
+
 
 /**
  * Renders a list action component.

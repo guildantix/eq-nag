@@ -25,6 +25,15 @@ export class QuickActionsComponent implements OnInit {
         this.ipcService.tickReceived().subscribe( data => this.quickActions = this.reduceToQuickActions( data.triggers ) );
     }
 
+
+
+
+
+
+
+
+
+    
     /**
      * Reduces the triggers to quick actions.
      * 
@@ -38,6 +47,20 @@ export class QuickActionsComponent implements OnInit {
         return quickActionTriggers.map( x => x.hotkeys.filter( y => y.simpleCommand && y.quickAction ) ).reduce( ( a, b ) => a.concat( b ), [] );
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Executes the quick action.
+     * 
+     * @param quickAction The quick action to execute.
+     */
     public executeQuickAction( quickAction: TriggerHotkey ): void {
         this.quickActionService.generateEqHotkey( quickAction );
     }

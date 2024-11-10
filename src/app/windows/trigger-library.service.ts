@@ -11,25 +11,6 @@ import { IpcService } from '../ipc.service';
 export class TriggerLibraryService {
 
     constructor( private httpClient: HttpClient, private dialogService: DialogService, private ipcService: IpcService ) { }
-
-
-
-
-
-
-
-
-
-    
-    // /**
-    //  * Returns all trigger packages.
-    //  * 
-    //  * @deprecated The method should not be used, use getPackagesList instead.
-    //  */
-    // getLibrary(): Observable<TriggerPackageMetaModel[]> {
-    //     return this.httpClient.get<TriggerPackageMetaModel[]>( `${environment.shareServiceUrl}/triggers/library` )
-    //         .pipe( catchError( error => this.handleError( error ) ) );
-    // }
     
 
 
@@ -47,23 +28,6 @@ export class TriggerLibraryService {
         return this.httpClient.post<TriggerPackageListModel[]>( `${environment.shareServiceUrl}/triggers/library/list`, { authorId, installedPackageIds } )
             .pipe( catchError( error => this.handleError( error ) ) );
     }
-    
-
-
-
-
-
-
-
-
-
-    // /**
-    //  * Returns all trigger packages.
-    //  */
-    // getPackagesList_old(): Observable<TriggerPackageListModel[]> {
-    //     return this.httpClient.get<TriggerPackageListModel[]>( `${environment.shareServiceUrl}/triggers/library/list` )
-    //         .pipe( catchError( error => this.handleError( error ) ) );
-    // }
 
 
 
@@ -244,14 +208,6 @@ export class TriggerLibraryService {
                 } ),
                 catchError( error => this.handleError( error ) ) );
     }
-
-    // TODO: Remove when recovery options are built-in.
-    // getAllFiles(): Observable<PackageFileModel[]> {
-        
-    //     return this.httpClient.get<PackageFileModel[]>( `${environment.shareServiceUrl}/triggers/all/files` )
-    //         .pipe( catchError( error => this.handleError( error ) ) );
-        
-    // }
 
 
 

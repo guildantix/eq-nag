@@ -16,6 +16,20 @@ export class QuickActionService {
         private readonly snackBar: MatSnackBar,
     ) { }
 
+
+
+
+
+
+
+
+
+    
+    /**
+     * Generates an EQ hotkey.
+     * 
+     * @param hotkey The hotkey to generate.
+     */
     generateEqHotkey( hotkey: TriggerHotkey ): void {
         if ( hotkey ) {
             let variables: string[] = [];
