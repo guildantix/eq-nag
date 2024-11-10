@@ -964,29 +964,28 @@ export class NewTriggerPackageComponent implements OnInit {
      * Submits the package to the API service.
      */
     savePackage(): void {
-        console.log( 'Saving package', this.package );
-        // if ( this._pkgId != null ) {
-        //     this.libraryService.updatePackage( this.authorId, this.package, this.notes ).subscribe( pkg => {
-        //         if ( pkg ) {
-        //             this.snackBar.open( 'Update successful!', 'dismiss', { duration: 5000 } );
-        //             this.triggerPackage.emit( pkg );
-        //             this.package = new TriggerPackageMetaModel();
-        //             this.package.category = this._selectedCategory;
-        //         } else {
-        //             this.dialogService.showErrorDialog( 'Sync Error', 'Could not update the package' );
-        //         }
-        //     } );
-        // } else {
-        //     this.libraryService.createPackage( this.authorId, this.package, this.notes ).subscribe( pkg => {
-        //         if ( pkg ) {
-        //             this.triggerPackage.emit( pkg );
-        //             this.package = new TriggerPackageMetaModel();
-        //             this.package.category = this._selectedCategory;
-        //         } else {
-        //             this.dialogService.showErrorDialog( 'Sync Error', 'Could not create the package' );
-        //         }
-        //     } );
-        // }
+        if ( this._pkgId != null ) {
+            this.libraryService.updatePackage( this.authorId, this.package, this.notes ).subscribe( pkg => {
+                if ( pkg ) {
+                    this.snackBar.open( 'Update successful!', 'dismiss', { duration: 5000 } );
+                    this.triggerPackage.emit( pkg );
+                    this.package = new TriggerPackageMetaModel();
+                    this.package.category = this._selectedCategory;
+                } else {
+                    this.dialogService.showErrorDialog( 'Sync Error', 'Could not update the package' );
+                }
+            } );
+        } else {
+            this.libraryService.createPackage( this.authorId, this.package, this.notes ).subscribe( pkg => {
+                if ( pkg ) {
+                    this.triggerPackage.emit( pkg );
+                    this.package = new TriggerPackageMetaModel();
+                    this.package.category = this._selectedCategory;
+                } else {
+                    this.dialogService.showErrorDialog( 'Sync Error', 'Could not create the package' );
+                }
+            } );
+        }
     }
 
 
