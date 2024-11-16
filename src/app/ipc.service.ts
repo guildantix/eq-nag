@@ -725,6 +725,10 @@ export class IpcService {
         window.api.ipc.send( 'app:restart', null );
     }
 
+    public stopUpdateCheck(): void {
+        window.api.ipc.send( 'app:stop:update-check', null );
+    }
+
     public logException( ex: any ): void {
         window.api.ipc.send( 'app:log:exception', ex );
     }

@@ -60,6 +60,7 @@ export class MainComponent implements OnInit {
     public archivePercent: number |  null = null;
     public archiveLabel: string = null;
     public closeAfterArchive: boolean = false;
+    public showingUpdateConfirmation: boolean = false;
 
     @ViewChild( 'fileSelector' ) private fileSelector: ElementRef<HTMLInputElement>;
     @ViewChild( 'characterList', { static: true } ) private characterList: CharactersListComponent;
@@ -83,6 +84,12 @@ export class MainComponent implements OnInit {
     ngOnInit(): void {
 
         this.ipcService.updateAvailable().subscribe( updateInfo => {
+            
+            if ( this.showingUpdateConfirmation ) {
+                // If the update confirmation is already showing, then ignore this event.
+                return;
+            }
+
             this.ipcService.logInfo( `captured update info; ${JSON.stringify( updateInfo ?? {} )}` );
             let msg = `Update ${updateInfo.version} is available.  Would you like to install the update now?`;
             this.dialogService.showAskDialog(
@@ -90,8 +97,14 @@ export class MainComponent implements OnInit {
                 confirmed => {
                     if ( confirmed ) {
                         this.ipcService.quitAndInstallUpdate();
+                    } else {
+                        this.ipcService.stopUpdateCheck();
                     }
+
+                    this.showingUpdateConfirmation = false;
                 } );
+            
+            this.showingUpdateConfirmation = true;
         } );
         
         this.ipcService.getSetupCompleted().subscribe( completed => {
