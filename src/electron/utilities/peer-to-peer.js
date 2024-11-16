@@ -125,7 +125,7 @@ class LogSync {
 
     /** @type {boolean} */
     get hasData() {
-        return this.#data?.length > 0;
+        return Object.keys( this.#data ).length > 0;
     }
 
     /**
