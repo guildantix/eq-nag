@@ -947,8 +947,11 @@ function CombatWatcher() {
 }
 
 let processChatRoom = async () => {
+    serverLog( `Processing chat room messages.` );
     if ( logSync?.hasData ) {
         let data = logSync.flushData();
+
+        serverLog( `Received ${Object.keys( data ).length} messages.`, 'blue' );
 
         for ( var peerId in data ) {
             let messages = data[ peerId ];
@@ -1002,6 +1005,8 @@ let processChatRoom = async () => {
             } );
         }
 
+    } else {
+        serverLog( `No messages to process.`, 'yellow' );
     }
 }
 
