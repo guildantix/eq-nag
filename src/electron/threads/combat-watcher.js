@@ -995,7 +995,7 @@ let processChatRoom = async () => {
                     
                 } else if ( m.type === 'disconnect' ) {
                     playerPeers = playerPeers.filter( p => p.peerId !== m.payload.peerId );
-                    serverLog( `${m.payload.characterName} has disconnected from the server.`, 'orange' );
+                    serverLog( `${playerPeer?.characterName ?? 'Unknown Player'} has disconnected from the server.`, 'orange' );
                     serverMessage( 'disconnect', m.payload );
 
                 }
