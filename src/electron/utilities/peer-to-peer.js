@@ -283,7 +283,9 @@ class LogSync {
             if ( !this.#connectedPeers[ peerId ] ) {
                 this.#peers[ peerId ].write( JSON.stringify( message ) );
             } else {
-                this.#peers[ peerId ].send( JSON.stringify( message ) );
+                if ( !this.#peers[ peerId ].destroyed ) {
+                    this.#peers[ peerId ].send( JSON.stringify( message ) );
+                }
             }
         }
     }

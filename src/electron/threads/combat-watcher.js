@@ -132,7 +132,7 @@ let recordEncounters = false;
 /** @type {Date} */
 let lastDpsTransmit = null;
 /** @type {number} */
-const dpsTransmitIntervalMs = 12 * 1000;
+const dpsTransmitIntervalMs = 5 * 1000;
 /** @type {number} */
 const saveEncounterIntervalMs = 24 * 1000; // Generally twice as long as the transmit interval.
 /** @type {DpsMeterSettings} */
@@ -311,7 +311,7 @@ const sendDpsToRenderer = async () => {
     
 };
 
-const transmitEncounterStats = () => {
+const _transmitEncounterStats = () => {
     if ( logSync == null || myCombatParser == null )
         return;
 
@@ -320,6 +320,9 @@ const transmitEncounterStats = () => {
     if ( myStats ) {
         let timestamp = myStats.playerStats.lastEncounterEvent ?? new Date();
         if ( lastTransmitTimestamp != timestamp.getTime() ) {
+
+            serverLog( `Transmitting combat statistics for ${characterName}.` );
+            
             logSync.sendToAll( {
                 type: 'combatStatistics',
                 timestamp: timestamp,
@@ -333,6 +336,16 @@ const transmitEncounterStats = () => {
 
             lastTransmitTimestamp = timestamp.getTime();
         }
+    }
+}
+
+let dpsTransmitTimeoutId = null;
+const transmitEncounterStats = () => {
+    if ( dpsTransmitTimeoutId == null ) {
+        dpsTransmitTimeoutId = window.setTimeout( () => {
+            _transmitEncounterStats();
+            dpsTransmitTimeoutId = null;
+        }, dpsTransmitIntervalMs );
     }
 }
 
@@ -572,6 +585,10 @@ async function startParsingLogFile( logPath, startLogPosition ) {
 
         if ( fcts.length > 0 && enableFct ) {
             ipcRenderer.send( 'overlay:send:fct-component', fcts );
+        }
+
+        if ( dpsTransmitEnabled ) {
+            transmitEncounterStats();
         }
 
         // console.log( 'done processing lines, total time', performance.now() - start );
@@ -1004,6 +1021,8 @@ let processChatRoom = async () => {
                 }
             } );
         }
+                    
+        dpsTrackingEnabled === true && sendDpsToRenderer();
 
     } else {
         serverLog( `No messages to process.`, 'yellow' );

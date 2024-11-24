@@ -795,6 +795,11 @@ class CombatParser {
             
             this._encounterStats.playerEvents[ playerName ] = playerStats;
             this._externalEncounterIds[ externalEncounterId ] = playerName;
+        } else {
+            nagLog( {
+                label: 'Combat Parser',
+                message: `Ignoring player stats import for ${playerName} due to encounter being closed.`,
+            }, true );
         }
 
     }
@@ -2100,7 +2105,9 @@ class CombatParser {
      */
     _refreshEncounter( rec, rawLog ) {
 
-        if ( !rec.corpse && this._charmPets.indexOf( rec.actor ) === -1 && this._charmPets.indexOf( rec.target ) === -1 ) {
+        if ( rec != undefined && !rec.corpse && this._charmPets.indexOf( rec.actor ) === -1 && this._charmPets.indexOf( rec.target ) === -1 ) {
+            this.#restartEncounterTimeout();
+        } else if ( rec == undefined ) {
             this.#restartEncounterTimeout();
         } else if ( this._encounterStats.npcs.length > 0 ) {
             log( 'Not resetting encounter timeout', { actor: rec.actor, target: rec.target, location: '#_refreshEncounter' }, true );
@@ -2167,10 +2174,9 @@ class CombatParser {
         if ( this._encounterStats == undefined ) {
             // Start a new encounter.
             this._encounterStats = new EncounterStats();
+            this._encounterStats.encounterStart = rec?.timestamp || new Date();
             this._externalEncounterIds = {};
-            if ( rec != undefined ) {
-                this._encounterStats.encounterStart = rec?.timestamp || new Date();
-
+            if ( rec != undefined && rawLog != undefined ) {
                 if ( rawLog ) {
                     this._encounterStats.logs.push( rawLog );
                 }
