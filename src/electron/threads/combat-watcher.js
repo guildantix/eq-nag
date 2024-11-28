@@ -964,7 +964,6 @@ function CombatWatcher() {
 }
 
 let processChatRoom = async () => {
-    serverLog( `Processing chat room messages.` );
     if ( logSync?.hasData ) {
         let data = logSync.flushData();
 
@@ -1024,8 +1023,6 @@ let processChatRoom = async () => {
                     
         dpsTrackingEnabled === true && sendDpsToRenderer();
 
-    } else {
-        serverLog( `No messages to process.`, 'yellow' );
     }
 }
 
