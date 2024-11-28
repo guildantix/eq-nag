@@ -5,7 +5,20 @@ const { LogRecord, PlayerEncounterStats } = require( '../data/models/combat-pars
 const { nagLog, nagException } = require( './nag-console' );
 
 const peerOfferIntervalMs = 6 * 1000;
-const p2pVersion = '0.1.1';
+const p2pVersion = '0.1.2';
+
+/**
+ * Sends the given message to the user's server log.
+ * 
+ * @param {string} message The message to log.
+ * @param {undefined | 'red' | 'blue' | 'green' | 'yellow' | 'orange'} color The color of message.
+ */
+const serverLog = ( message, color ) => {
+    ipcRenderer.send( 'chat-room:server-log', {
+        message: message,
+        color: color,
+    } );
+}
 
 // Notes:
 
@@ -125,7 +138,7 @@ class LogSync {
 
     /** @type {boolean} */
     get hasData() {
-        return this.#data?.length > 0;
+        return Object.keys( this.#data ).length > 0;
     }
 
     /**
@@ -222,9 +235,14 @@ class LogSync {
 
     async joinChatRoom( chatRoomId ) {
         try {
+
+            serverLog( `Joining chat room ${chatRoomId}` );
             this.peerId = await this.service.joinChatRoom( chatRoomId );
     
+            serverLog( `Joined chat room ${chatRoomId} as ${this.peerId}` );
             let peerIds = await this.service.getChatRoomPeers( chatRoomId );
+
+            serverLog( `Found ${peerIds.length} peers in chat room ${chatRoomId}. ${JSON.stringify( peerIds )}` );
             
             this.chatRoomId = chatRoomId;
     
@@ -263,9 +281,15 @@ class LogSync {
     sendToAll( message ) {
         for ( let peerId in this.#peers ) {
             if ( !this.#connectedPeers[ peerId ] ) {
+                // Note: If the .send method is called before the peer.on('connect') event has fired,
+                // then an exception will be thrown. Use peer.write(data) (which is inherited 
+                // from the node.js duplex stream interface) if you want this data to be buffered 
+                // instead.
                 this.#peers[ peerId ].write( JSON.stringify( message ) );
             } else {
-                this.#peers[ peerId ].send( JSON.stringify( message ) );
+                if ( !this.#peers[ peerId ].destroyed ) {
+                    this.#peers[ peerId ].send( JSON.stringify( message ) );
+                }
             }
         }
     }
@@ -317,7 +341,6 @@ class LogSync {
     }
 
     // Join chat room, find all existing peers, create peer for each one as initator, send offer to each one.
-    //      Need an internval here to constantly check for new peer offers.
     // When a peer receives an offer, it creates a peer as a receiver and sends an answer back.
     // When a peer receives an answer, it signals the offer and the connection should be complete.
 
@@ -331,6 +354,7 @@ class LogSync {
      * @param {string|undefined} offerId The offer id.
      */
     createPeer( otherPeerId, offer, offerId ) {
+        serverLog( `Creating peer to ${otherPeerId}` );
         const peer = new Peer( {
             initiator: offer == undefined,
             trickle: false,
@@ -346,6 +370,7 @@ class LogSync {
         } );
 
         peer.on( 'signal', data => {
+            serverLog( `Received signal from ${otherPeerId}` );
             this.service.postChatRoomOffer( this.chatRoomId, this.peerId, {
                 PeerId: otherPeerId,
                 Offer: data,
@@ -357,6 +382,7 @@ class LogSync {
         }
 
         peer.on( 'connect', () => {
+            serverLog( `Connected to ${otherPeerId}` );
             this.#connectedPeers[ otherPeerId ] = true;
             this.#onPeerConnectedFn( otherPeerId );
 
@@ -365,7 +391,7 @@ class LogSync {
             payload.peerId = this.peerId;
             payload.characterName = this.characterName;
             payload.serverName = this.serverName;
-
+            
             this.sendToPeer( otherPeerId, {
                 type: 'handshake',
                 timestamp: new Date(),
@@ -382,6 +408,7 @@ class LogSync {
              * @param {string} data The data received.
              */
             ( data ) => {
+                serverLog( `Data received from ${otherPeerId}` );
                 let m = JSON.parse( data );
 
                 this.#data[ otherPeerId ] = this.#data[ otherPeerId ] ?? [];
@@ -400,6 +427,8 @@ class LogSync {
         } );
 
         this.addPeer( otherPeerId, peer );
+        
+        serverLog( `Peer created to ${otherPeerId}` );
 
         return peer;
     }

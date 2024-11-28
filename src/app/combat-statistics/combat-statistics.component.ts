@@ -156,6 +156,7 @@ export class CombatStatisticsComponent implements OnInit, AfterViewChecked {
         this.ipcService.onChatRoomDisconnected().subscribe( () => {
             this.connected = false;
             this.chatRoomId = undefined;
+            this.connectedPeers = [];
         } );
         this.ipcService.onServerEvent().subscribe( data => {
 

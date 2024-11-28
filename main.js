@@ -53,6 +53,7 @@ autoUpdater.logger = log;
 var nagProcessId = undefined;
 const allowMultipleInstances = false;
 const fs = require( 'fs' );
+var doUpdateCheck = true;
 
 
 const configRootPath = path.join( __dirname, 'config.json' );
@@ -98,6 +99,10 @@ function createTray() {
 }
 
 const checkForUpdates = () => {
+    if ( !doUpdateCheck ) {
+        return;
+    }
+    
     autoUpdater.allowPrerelease = userPreferences.allowPrerelease;
     autoUpdater.checkForUpdates();
 }
@@ -675,6 +680,11 @@ autoUpdater.on( 'update-available', info => {
 ipcMain.on( 'app:restart', () => {
     log.info( 'app:restart executed' );
     autoUpdater.quitAndInstall();
+} );
+
+ipcMain.on( 'app:stop:update-check', () => {
+    log.info( 'app:stop:update-check executed' );
+    doUpdateCheck = false;
 } );
 
 ipcMain.on( 'app:isDev', ( event ) => {
