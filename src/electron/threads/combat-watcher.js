@@ -132,7 +132,7 @@ let recordEncounters = false;
 /** @type {Date} */
 let lastDpsTransmit = null;
 /** @type {number} */
-const dpsTransmitIntervalMs = 5 * 1000;
+const dpsTransmitIntervalMs = 6 * 1000;
 /** @type {number} */
 const saveEncounterIntervalMs = 24 * 1000; // Generally twice as long as the transmit interval.
 /** @type {DpsMeterSettings} */
