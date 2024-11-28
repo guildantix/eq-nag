@@ -534,6 +534,13 @@ export class NewTriggerPackageComponent implements OnInit {
         pTrg.useCooldown = trigger.useCooldown;
         pTrg.cooldownDuration = trigger.cooldownDuration;
 
+        // When adding a list action trigger, we want to reset the list position.
+        pTrg.actions.forEach( action => {
+            if (action.actionType === ActionTypes.List) {
+                action.staticPosition = undefined;
+            }
+        } );
+
     }
 
 
