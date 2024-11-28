@@ -281,6 +281,10 @@ class LogSync {
     sendToAll( message ) {
         for ( let peerId in this.#peers ) {
             if ( !this.#connectedPeers[ peerId ] ) {
+                // Note: If the .send method is called before the peer.on('connect') event has fired,
+                // then an exception will be thrown. Use peer.write(data) (which is inherited 
+                // from the node.js duplex stream interface) if you want this data to be buffered 
+                // instead.
                 this.#peers[ peerId ].write( JSON.stringify( message ) );
             } else {
                 if ( !this.#peers[ peerId ].destroyed ) {
