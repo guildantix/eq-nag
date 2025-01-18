@@ -1,7 +1,7 @@
 import { Component, Input, NgZone, OnInit } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { getPackageImportProperties, getTriggerOverlayDescriptors } from '../core.decorators';
-import { actionOverlayMap, OverlayWindowModel, TriggerAction, TriggerModel } from '../core.model';
+import { actionOverlayMap, ActionTypes, ListObjectModel, OverlayWindowModel, RenderTokenModel, TriggerAction, TriggerModel } from '../core.model';
 import { ActionOverlayUseModel } from '../dialogs/action-overlay-reassignment-dialog/action-overlay-reassignment.model';
 import { ColoredString, CustomButton } from '../dialogs/dialog.model';
 import { DialogService } from '../dialogs/dialog.service';
@@ -73,10 +73,100 @@ export class OverlaysComponent implements OnInit {
 
     
     /**
+     * Creates a new RenderTokenModel for the action.
+     * 
+     * @returns Returns a new RenderTokenModel for the action.
+     */
+    private generateRenderToken( triggerId: string, action: TriggerAction ): RenderTokenModel {
+
+        if ( action.actionType !== ActionTypes.List ) {
+            return null;
+        }
+
+        let token = new RenderTokenModel();
+
+        token.actionId = action.actionId;
+        token.triggerId = triggerId;
+        token.actionType = action.actionType;
+
+        if ( action.actionType === ActionTypes.List ) {
+            token.objectModel = new ListObjectModel();
+            token.objectModel.listTitle = action.displayText;
+            token.objectModel.fontSize = action.textSize;
+            token.objectModel.fontFamily = action.textFont;
+            token.objectModel.fontWeight = action.textWeight;
+            token.objectModel.listCssClass = action.useBackground ? 'background' : 'no-background';
+            token.objectModel.items = [
+                { name: 'Player 1', iconCssClass: 'fa-chevron-right', textCssClass: 'success' },
+                { name: 'Player 2' },
+                { name: 'Player 3' },
+                { name: 'Player 4' },
+                { name: 'Player 5' },
+                { name: 'Player 6' },
+                { name: 'Player 7' },
+            ];
+
+            if ( action.staticPosition != null ) {
+                token.objectModel.bounds = action.staticPosition;
+            }
+        }
+
+        return token;
+    }
+
+
+
+
+
+
+
+
+
+    
+    /**
      * Enables the arrange overlays mode, allowing move/resize of all overlays at once.
      */
     public arrangeOverlays() {
-        this.ipcService.showArrangeOverlaysDialog();
+        this.ipcService.getTriggers().subscribe( triggers => {
+            let listTriggers = triggers.filter( t => t.actions.some( a => a.actionType === ActionTypes.List ) );
+            let tokens = [];
+            let subscriptions = [];
+
+            if ( listTriggers.length > 0 ) {
+                for ( let i = 0; i < listTriggers.length; i++ ) {
+                    const trigger = listTriggers[ i ];
+                    const action = trigger.actions.find( a => a.actionType === ActionTypes.List );
+
+                    let token = this.generateRenderToken( trigger.triggerId, action );
+                    
+                    if ( token != null ) {
+                        tokens.push( token );
+
+                        subscriptions.push( this.ipcService
+                            .renderActionToken( token )
+                            .subscribe( changeEventArgs => {
+                                action.staticPosition = changeEventArgs.bounds;
+                            } ) );
+                    }
+                }
+            }
+
+            this.ipcService.showArrangeOverlaysDialog().subscribe( saved => {
+                console.log( 'Saved:', saved );
+                if ( saved ) {
+                    listTriggers.forEach( trigger => {
+                        this.ipcService.updateTrigger( trigger ).subscribe();
+                    } );
+                }
+                
+                subscriptions.forEach( s => s.unsubscribe() );
+                subscriptions = [];
+
+                tokens.forEach( token => {
+                    this.ipcService.destroyActionToken( token.actionId );
+                } );
+            } );
+        } );
     }
 
 
