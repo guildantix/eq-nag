@@ -206,6 +206,12 @@ export class TriggerActionListComponent implements OnInit, OnDestroy {
      * @param phraseId The phrase ID that is selected for the action.
      */
     onListCapturePhraseChange( phraseIds: string[] ): void {
+        if ( !phraseIds || phraseIds.length === 0 ) {
+            this.variableNames = [];
+            this.action.createListPhrases = [];
+            return;
+        }
+        
         /** @type{string[]} */
         let variables = [];
         let validPhrase = true;
