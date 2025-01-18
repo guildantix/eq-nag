@@ -341,7 +341,7 @@ export class SetupWizardComponent implements OnInit {
                 this.ipcService.saveDamageDealtOverlayId( this._fctOutId );
                 this.ipcService.saveDamageReceivedOverlayId( this._fctInId );
 
-                this.ipcService.showArrangeOverlaysDialog();
+                this.ipcService.showArrangeOverlaysDialog().subscribe( () => { } );
 
                 this.ipcService.initializeFctCombatGroups( { fctOutId: this._fctOutId, fctInId: this._fctInId } ).subscribe( () => {
                     this.stepper.next();

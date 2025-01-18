@@ -1751,8 +1751,27 @@ export class IpcService {
         window.api.ipc.send( 'overlay:dialog:edit', overlayId );
     }
 
-    public showArrangeOverlaysDialog(): void {
-        window.api.ipc.send( 'overlay:dialog:arrange' );
+    /**
+     * Shows the overlay arrangement dialog.
+     * 
+     * @returns Returns an observable that will emit a boolean value when the 
+     *  dialog is closed. The value will be true if the user saved the 
+     *  arrangement, false if they canceled.
+     */
+    public showArrangeOverlaysDialog(): Observable<boolean> {
+        let obs: Observable<boolean> = new Observable<boolean>( ( observer: Observer<boolean> ) => {
+            
+            window.api.ipc.once( 'overlay:dialog:arrange-done', ( e, updated: boolean ) => {
+                this.ngZone.run( () => {
+                    observer.next( updated );
+                    observer.complete();
+                } );
+            } );
+            window.api.ipc.send( 'overlay:dialog:arrange' );
+
+        } );
+
+        return obs;
     }
 
     public broadcastOverlayModel( overlay: OverlayWindowModel ): void {
