@@ -1835,6 +1835,7 @@ function Renderer( originX, originY, glowOnStart ) {
          */
         ( event ) => {
             ipcRenderer.send( 'overlay:get:overlayDimensions', null );
+            ipcRenderer.send( 'overlay:arrange:cancelled', null );
         } );
     
     ipcRenderer.on( 'renderer:save:overlayDimensions',
@@ -1861,6 +1862,7 @@ function Renderer( originX, originY, glowOnStart ) {
             }
 
             ipcRenderer.send( 'overlay:set:overlayDimensions', model );
+            ipcRenderer.send( 'overlay:arrange:saved', null );
         } );
     
     ipcRenderer.on( 'fct:change:fctShowCriticalsInline',

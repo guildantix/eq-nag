@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, screen } = require( "electron" );
+const { app, BrowserWindow, ipcMain, screen, WebContents } = require( "electron" );
 const ForwardRef = require( './forward-ref' );
 const OverlayDatabaseStore = require( "./data/overlay-database" );
 const UserPreferencesStore = require( "./data/user-preferences" );
@@ -49,6 +49,9 @@ class WindowManager {
 
     /** @type {BrowserWindow} */
     #deathRecap;
+
+    /** @type {WebContents} */
+    #arrangeCaller;
 
     /** @type {BrowserWindow[]} */
     #openOverlayEditors = [];
@@ -422,6 +425,8 @@ class WindowManager {
         } );
         
         ipcMain.on( 'overlay:dialog:arrange', ( event ) => {
+            this.#arrangeCaller = event.sender;
+
             let overlayMoveDialog = new BrowserWindow( {
                 parent: mainWindowRef.reference,
                 modal: false,
@@ -502,6 +507,14 @@ class WindowManager {
         
         ipcMain.on( 'renderer:save:overlayDimensions', ( event ) => {
             this.#renderer.webContents.send( 'renderer:save:overlayDimensions', null );
+        } );
+
+        ipcMain.on( 'overlay:arrange:saved', ( event ) => {
+            this.#arrangeCaller.send( 'overlay:dialog:arrange-done', true );
+        } );
+
+        ipcMain.on( 'overlay:arrange:cancelled', ( event ) => {
+            this.#arrangeCaller.send( 'overlay:dialog:arrange-done', false );
         } );
 
         ipcMain.on( 'overlay:send-to-origin',
