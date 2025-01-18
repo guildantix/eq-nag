@@ -17,7 +17,7 @@
                 <div class="full-width">
                     <mat-form-field style="width: 100%;">
                         <mat-label></mat-label>
-                        <mat-select [(ngModel)]="action.createListPhrase" name="ddlCreateListPhrase" (ngModelChange)="onListCapturePhraseChange(action.createListPhrase)">
+                        <mat-select [(ngModel)]="action.createListPhrases" name="ddlCreateListPhrase" (ngModelChange)="onListCapturePhraseChange(action.createListPhrases)" multiple>
                             <mat-option *ngFor="let phrase of phrases" [value]="phrase.phraseId">{{phrase.phrase}}</mat-option>
                         </mat-select>
                         <mat-hint>Select the capture phrase that will initialize the list.</mat-hint>

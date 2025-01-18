@@ -2,6 +2,7 @@ import { Component, Input, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { MatTabGroup } from '@angular/material/tabs';
 import { Subscription } from 'rxjs';
 import { ActionTypes, availableFonts, ListObjectModel, OverlayWindowModel, Phrase, RenderTokenModel, TriggerAction } from 'src/app/core.model';
+import { DialogService } from 'src/app/dialogs/dialog.service';
 import { IpcService } from 'src/app/ipc.service';
 import { StringUtility } from 'src/app/utilities';
 
@@ -92,12 +93,13 @@ export class TriggerActionListComponent implements OnInit, OnDestroy {
 
     constructor(
         private readonly ipcService: IpcService,
+        private readonly dialogService: DialogService,
     ) { }
 
     ngOnInit(): void {
         if ( this.action ) {
-            if ( this.action.createListPhrase ) {
-                this.onListCapturePhraseChange( this.action.createListPhrase );
+            if ( this.action.createListPhrases ) {
+                this.onListCapturePhraseChange( this.action.createListPhrases );
             }
             if ( this.action.listEnrollmentSkipPhrase ) {
                 this.onSkipCapturePhraseChange( this.action.listEnrollmentSkipPhrase );
@@ -203,17 +205,31 @@ export class TriggerActionListComponent implements OnInit, OnDestroy {
      * 
      * @param phraseId The phrase ID that is selected for the action.
      */
-    onListCapturePhraseChange( phraseId: string ): void {
-        const phrase = this.phrases.find( f => f.phraseId === phraseId );
+    onListCapturePhraseChange( phraseIds: string[] ): void {
+        /** @type{string[]} */
+        let variables = [];
+        let validPhrase = true;
+        let validVariables = true;
+
+        phraseIds.forEach( phraseId => {
+            const phrase = this.phrases.find( f => f.phraseId === phraseId );
+
+            // https://regex101.com/r/0oqQFD/1
+            let phraseVariables = StringUtility.MatchAll( phrase.phrase, /(?:\(\?\<(?<variableName>\S+?)\>.+?\))/gi, 'variableName' );
+
+            if ( variables.length > 0 ) {
+                validVariables = variables.length === phraseVariables.length && variables.every( v => phraseVariables.includes( v ) );
+            } else {
+                variables = phraseVariables;
+            }
+        } );
         
-        if ( !phrase ) {
+        if ( !validPhrase ) {
+            return;
+        } else if ( !validVariables || variables.length === 0 ) {
+            this.dialogService.showErrorDialog( 'Invalid Phrases', 'The selected phrases must contain at least 1 variable, and must containe the same variables.' );
             return;
         }
-
-        // https://regex101.com/r/0oqQFD/1
-        let variables = StringUtility.MatchAll( phrase.phrase, /(?:\(\?\<(?<variableName>\S+?)\>.+?\))/gi, 'variableName' );
-        // https://regex101.com/r/do6cil/2
-        variables = Array.prototype.concat( variables, StringUtility.MatchAll( phrase.phrase, /\{(?<variableName>\S+?)\}/gi, 'variableName' ) );
 
         this.variableNames = variables;
     }

@@ -1999,7 +1999,7 @@ function displayListAction( res, action, trigger ) {
         } );
     };
 
-    if ( action.createListPhrase === res.phraseId ) {
+    if ( action.createListPhrases.includes( res.phraseId ) ) {
 
         // Create a new list.
         let list = lists.find( f => f.action.actionId === action.actionId ) ?? new LogList();

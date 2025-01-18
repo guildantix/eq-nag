@@ -497,8 +497,8 @@ class TriggerAction {
     /** @type {number} */
     textGlowSize = null;
 
-    /** @type {string} */
-    createListPhrase = null;
+    /** @type {string[]} */
+    createListPhrases = [];
 
     /** @type {boolean} */
     autoEnumerateList = false;

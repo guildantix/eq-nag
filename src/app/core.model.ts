@@ -840,7 +840,7 @@ export class TriggerActionProperties {
     public textGlowIntensity: number = null;
     public textGlowSize: number = null;
 
-    public createListPhrase: string = null;
+    public createListPhrases: string[] = [];
     public autoEnumerateList: boolean = false;
     public manualEnumerateList: boolean = false;
     public listRegexVarName: string = null;
