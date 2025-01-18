@@ -22,10 +22,8 @@ export class OverlaysComponent implements OnInit {
     public overlays: OverlayWindowModel[] = [];
 
     constructor(
-        private snackBar: MatSnackBar,
-        private ipcService: IpcService,
-        private dialogService: DialogService,
-        private ngZone: NgZone
+        private readonly ipcService: IpcService,
+        private readonly dialogService: DialogService,
     ) { }
 
     ngOnInit() {
