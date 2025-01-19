@@ -152,7 +152,6 @@ export class OverlaysComponent implements OnInit {
             }
 
             this.ipcService.showArrangeOverlaysDialog().subscribe( saved => {
-                console.log( 'Saved:', saved );
                 if ( saved ) {
                     listTriggers.forEach( trigger => {
                         this.ipcService.updateTrigger( trigger ).subscribe();
