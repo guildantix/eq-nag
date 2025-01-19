@@ -448,52 +448,6 @@ export class TriggerActionListComponent implements OnInit, OnDestroy {
 
     
     /**
-     * Creates a new RenderTokenModel for the action.
-     * 
-     * @returns Returns a new RenderTokenModel for the action.
-     */
-    private generateRenderToken(): RenderTokenModel {
-        let token = new RenderTokenModel();
-
-        token.actionId = this.action.actionId;
-        token.triggerId = this.triggerId;
-        token.actionType = this.action.actionType;
-
-        if ( this.action.actionType === ActionTypes.List ) {
-            token.objectModel = new ListObjectModel();
-            token.objectModel.listTitle = this.action.displayText;
-            token.objectModel.fontSize = this.action.textSize;
-            token.objectModel.fontFamily = this.action.textFont;
-            token.objectModel.fontWeight = this.action.textWeight;
-            token.objectModel.listCssClass = this.action.useBackground ? 'background' : 'no-background';
-            token.objectModel.items = [
-                { name: 'Player 1', iconCssClass: 'fa-chevron-right', textCssClass: 'success' },
-                { name: 'Player 2' },
-                { name: 'Player 3' },
-                { name: 'Player 4' },
-                { name: 'Player 5' },
-                { name: 'Player 6' },
-                { name: 'Player 7' },
-            ];
-
-            if ( this.action.staticPosition != null ) {
-                token.objectModel.bounds = this.action.staticPosition;
-            }
-        }
-
-        return token;
-    }
-
-
-
-
-
-
-
-
-
-    
-    /**
      * Shows the renderer token for the action.
      */
     showRendererToken(): void {

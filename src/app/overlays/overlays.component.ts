@@ -73,57 +73,6 @@ export class OverlaysComponent implements OnInit {
 
     
     /**
-     * Creates a new RenderTokenModel for the action.
-     * 
-     * @returns Returns a new RenderTokenModel for the action.
-     */
-    private generateRenderToken( triggerId: string, action: TriggerAction ): RenderTokenModel {
-
-        if ( action.actionType !== ActionTypes.List ) {
-            return null;
-        }
-
-        let token = new RenderTokenModel();
-
-        token.actionId = action.actionId;
-        token.triggerId = triggerId;
-        token.actionType = action.actionType;
-
-        if ( action.actionType === ActionTypes.List ) {
-            token.objectModel = new ListObjectModel();
-            token.objectModel.listTitle = action.displayText;
-            token.objectModel.fontSize = action.textSize;
-            token.objectModel.fontFamily = action.textFont;
-            token.objectModel.fontWeight = action.textWeight;
-            token.objectModel.listCssClass = action.useBackground ? 'background' : 'no-background';
-            token.objectModel.items = [
-                { name: 'Player 1', iconCssClass: 'fa-chevron-right', textCssClass: 'success' },
-                { name: 'Player 2' },
-                { name: 'Player 3' },
-                { name: 'Player 4' },
-                { name: 'Player 5' },
-                { name: 'Player 6' },
-                { name: 'Player 7' },
-            ];
-
-            if ( action.staticPosition != null ) {
-                token.objectModel.bounds = action.staticPosition;
-            }
-        }
-
-        return token;
-    }
-
-
-
-
-
-
-
-
-
-    
-    /**
      * Enables the arrange overlays mode, allowing move/resize of all overlays at once.
      */
     public arrangeOverlays() {
