@@ -1979,6 +1979,12 @@ function renderToken( token ) {
         listDiv.style.fontWeight = `${listObj.fontWeight ?? 400}`;
         listDiv.style.fontFamily = listObj.fontFamily ?? 'Oswald';
         listDiv.style.position = 'fixed';
+        
+        if ( listObj.textSpacing != undefined && listObj.textSpacing > 0 ) {
+            listDiv.style.lineHeight = `${( listObj.textSpacing > 10 ? listObj.textSpacing : 90 ) / 100}em`;
+        } else {
+            delete listDiv.style.lineHeight;
+        }
 
         if ( existingBounds != undefined ) {
             listDiv.style.left = existingBounds.left + 'px';
@@ -3562,6 +3568,7 @@ function renderListAction( component, restore ) {
     listObj.fontFamily = component.action.textFont;
     listObj.fontWeight = component.action.textWeight;
     listObj.listCssClass = component.action.useBackground ? 'background' : 'no-background';
+    listObj.textSpacing = component.action.textSpacing || undefined;
 
     listObj.items = component.listNames.map( name => {
         return {
@@ -3670,6 +3677,12 @@ function renderListAction( component, restore ) {
     component.dom.style.fontWeight = `${listObj.fontWeight ?? 400}`;
     component.dom.style.fontFamily = listObj.fontFamily ?? 'Oswald';
     component.dom.style.position = 'fixed';
+
+    if ( listObj.textSpacing != undefined && listObj.textSpacing > 0 ) {
+        component.dom.style.lineHeight = `${( listObj.textSpacing > 10 ? listObj.textSpacing : 90 ) / 100}em`;
+    } else {
+        delete component.dom.style.lineHeight;
+    }
 
     if ( listObj.bounds != null ) {
         component.dom.style.left = listObj.bounds.x + 'px';

@@ -44,6 +44,8 @@ class ListObjectModel {
     items = [];
     /** @type {Electron.Rectangle | undefined} */
     bounds = undefined;
+    /** @type {number | undefined} */
+    textSpacing = undefined;
 }
 
 class RenderTokenModel {
@@ -57,6 +59,8 @@ class RenderTokenModel {
     objectModel;
     /** @type {HTMLDivElement | undefined} The containing div element. */
     dom = undefined;
+    /** @type {number | undefined} */
+    textSpacing = undefined;
 }
 
 class UpdateComponentArgs {

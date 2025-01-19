@@ -1967,6 +1967,7 @@ export class ListObjectModel {
     public fontSize: number = 16;
     public fontWeight: number = 400;
     public fontFamily: string = 'Oswald';
+    public textSpacing?: number;
     public items: ListItemModel[] = [];
     public bounds?: Rectangle;
 

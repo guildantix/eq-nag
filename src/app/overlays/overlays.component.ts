@@ -1,7 +1,7 @@
 import { Component, Input, NgZone, OnInit } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { getPackageImportProperties, getTriggerOverlayDescriptors } from '../core.decorators';
-import { actionOverlayMap, ActionTypes, ListObjectModel, OverlayWindowModel, RenderTokenModel, TriggerAction, TriggerModel } from '../core.model';
+import { actionOverlayMap, ActionTypes, generateRenderToken, ListObjectModel, OverlayWindowModel, RenderTokenModel, TriggerAction, TriggerModel } from '../core.model';
 import { ActionOverlayUseModel } from '../dialogs/action-overlay-reassignment-dialog/action-overlay-reassignment.model';
 import { ColoredString, CustomButton } from '../dialogs/dialog.model';
 import { DialogService } from '../dialogs/dialog.service';
@@ -86,7 +86,7 @@ export class OverlaysComponent implements OnInit {
                     const trigger = listTriggers[ i ];
                     const action = trigger.actions.find( a => a.actionType === ActionTypes.List );
 
-                    let token = this.generateRenderToken( trigger.triggerId, action );
+                    let token = generateRenderToken( trigger.triggerId, action );
                     
                     if ( token != null ) {
                         tokens.push( token );

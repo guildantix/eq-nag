@@ -392,6 +392,8 @@
                 <div class="content-middle content-right">
                     <label *ngIf="action.textUseCustomSize">Size</label>
                     <mat-slider thumbLabel tickInterval="1" min="1" max="64" style="width: 100%;" [(ngModel)]="action.textSize" name="sldrFontSize" *ngIf="action.textUseCustomSize" (ngModelChange)="updateRenderToken()"></mat-slider>
+                    <label *ngIf="action.textUseCustomSize">Spacing</label>
+                    <mat-slider thumbLabel tickInterval="1" step="5" min="10" max="300" style="width: 100%;" [(ngModel)]="action.textSpacing" name="sldrFontSpacing" *ngIf="action.textUseCustomSize" (ngModelChange)="updateRenderToken()"></mat-slider>
                 </div>
             </div>
 

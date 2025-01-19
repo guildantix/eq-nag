@@ -1,7 +1,7 @@
 import { Component, Input, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { MatTabGroup } from '@angular/material/tabs';
 import { Subscription } from 'rxjs';
-import { ActionTypes, availableFonts, ListObjectModel, OverlayWindowModel, Phrase, RenderTokenModel, TriggerAction } from 'src/app/core.model';
+import { ActionTypes, availableFonts, generateRenderToken, ListObjectModel, OverlayWindowModel, Phrase, RenderTokenModel, TriggerAction } from 'src/app/core.model';
 import { DialogService } from 'src/app/dialogs/dialog.service';
 import { IpcService } from 'src/app/ipc.service';
 import { StringUtility } from 'src/app/utilities';
@@ -211,7 +211,7 @@ export class TriggerActionListComponent implements OnInit, OnDestroy {
             this.action.createListPhrases = [];
             return;
         }
-        
+
         /** @type{string[]} */
         let variables = [];
         let validPhrase = true;
@@ -451,7 +451,7 @@ export class TriggerActionListComponent implements OnInit, OnDestroy {
      * Shows the renderer token for the action.
      */
     showRendererToken(): void {
-        let token = this.generateRenderToken();
+        let token = generateRenderToken( this.triggerId, this.action );
 
         this.tokenSubscription = this.ipcService
             .renderActionToken( token )
@@ -494,7 +494,7 @@ export class TriggerActionListComponent implements OnInit, OnDestroy {
         if ( !this.isRenderingToken ) {
             return;
         }
-        let token = this.generateRenderToken();
+        let token = generateRenderToken( this.triggerId, this.action );
         this.ipcService.updateActionToken( token );
     }
 
