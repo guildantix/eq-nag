@@ -1912,8 +1912,18 @@ class TriggerDatabaseStore extends Store {
 
         let i = this.#data.triggers.findIndex( f => f.triggerId === packageTrigger.triggerId );
 
+        /** @type {Record<string, import("electron").Rectangle>} */
+        let listPositions = {};
+
         if ( i > -1 ) {
             trigger = this.#data.triggers.find( f => f.triggerId === packageTrigger.triggerId );
+
+            // If we're updating an existing trigger, we need to keep the
+            // positions of any list actions.
+            let lists = trigger.actions.filter( f => f.actionType === ActionTypes.List );
+            lists.forEach( list => {
+                listPositions[ list.actionId ] = list.staticPosition;
+            } );
 
         } else {
             trigger = new Trigger();
@@ -1940,6 +1950,14 @@ class TriggerDatabaseStore extends Store {
         trigger.useCooldown = packageTrigger.useCooldown;
         trigger.cooldownDuration = packageTrigger.cooldownDuration;
         trigger.hotkeys = packageTrigger.hotkeys;
+
+        // Any list actions should default their position on the screen. If the
+        // list action already exists, then we should keep the position.
+        trigger.actions.forEach( action => {
+            if ( action.actionType === ActionTypes.List ) {
+                action.staticPosition = listPositions[ action.actionId ] ?? null;
+            }
+        } );
 
     }
 
