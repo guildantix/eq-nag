@@ -352,6 +352,8 @@ class TriggerDatabaseStore extends Store {
     /**
      * Finds the specified folder, returns undefined if not found.
      * 
+     * @returns {TriggerFolder | undefined}
+     * 
      * @param {TriggerFolder[]} folders The source to search for folder id.
      * @param {string} folderId The id of the folder to find.
      */
@@ -389,6 +391,12 @@ class TriggerDatabaseStore extends Store {
 
         _fileStore = fileStore;
         _userPreferences = userPreferences;
+
+        ipcMain.on( 'trigger:get:full-name', ( event, triggerId ) => {
+            if ( triggerId ) {
+                event.sender.send( 'trigger:get:full-name', this.getTriggerFullName( triggerId ) );
+            }
+        } );
 
         ipcMain.on( 'trigger:get:history', ( event, triggerId ) => {
             let successful = successfulTriggerExecutions?.filter( f => f.triggerId === triggerId ) ?? [];
@@ -2165,6 +2173,82 @@ class TriggerDatabaseStore extends Store {
 
 
 
+
+    /**
+     * Returns the full folder path and name of the specified trigger.
+     * 
+     * @param {string} triggerId The trigger id.
+     */
+    getTriggerFullName( triggerId ) {
+        // let trigger = this.getTrigger( triggerId );
+        let trigger = this.find( triggerId );
+        return trigger ? this.getFolderFullName( trigger.folderId, this.getFolders() ) + trigger.name : '';
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Recursive function that returns the full folder path of the specified
+     * folder id.
+     * 
+     * @param {string} folderId The folder id.
+     * @param {TriggerFolder[]} folders The list of folders to search.
+     */
+    getFolderFullName( folderId, folders ) {
+        for ( let i = 0; i < folders?.length; i++ ) {
+
+            if ( folders[ i ].folderId === folderId ) {
+                return folders[ i ].name;
+            } else {
+                let fullFolderIds = this._recGetFolderIds( folderId, folders[ i ].children );
+                if ( fullFolderIds ) {
+                    let path = `${folders[ i ].name} / `;
+                    let _fs = folders[ i ].children;
+                    fullFolderIds.forEach( fid => {
+                        let f = _fs.find( f => f.folderId === fid );
+                        path += f.name + ' / ';
+                        _fs = f.children;
+                    } );
+                    return path;
+                }
+            }
+        }
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Returns an array of folder ids that lead to the specified folder id.
+     * 
+     * @param {string} folderId The target folder id.
+     * @param {TriggerFolder[]} folders The folder heirarchy to search.
+     */
+    _recGetFolderIds( folderId, folders ) {
+        for ( let i = 0; i < folders?.length; i++ ) {
+            if ( folders[ i ].folderId === folderId ) {
+                return [ folders[ i ].folderId ];
+            } else {
+                let fullFolderIds = this._recGetFolderIds( folderId, folders[ i ].children );
+                if ( fullFolderIds ) {
+                    return [ folders[ i ].folderId, ...fullFolderIds ];
+                }
+            }
+        }
+    }
 
 }
 

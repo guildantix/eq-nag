@@ -29,6 +29,7 @@ export class TriggerDialogComponent implements OnInit {
     public actionTypes: typeof ActionTypes = ActionTypes;
     public operatorTypes: typeof OperatorTypes = OperatorTypes;
     public isDev: boolean = false;
+    public fullName: string = '';
 
     public get showReimportFromAlla(): boolean {
         return this.model.importType != ImportTypes.None && this.model.allakhazamUrl != null;
@@ -56,6 +57,7 @@ export class TriggerDialogComponent implements OnInit {
                 this.ipcService.getTrigger( this.triggerId ).subscribe( trigger => {
                     this.model = trigger;
                 } );
+                this.ipcService.getTriggerFullName( this.triggerId ).subscribe( fullName => this.fullName = fullName );
             }
 
             // In a real app: dispatch action to load the details here.

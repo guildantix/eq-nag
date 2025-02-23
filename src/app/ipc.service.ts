@@ -2767,4 +2767,20 @@ export class IpcService {
         return obs;
     }
 
+    public getTriggerFullName( triggerId: string ): Observable<string> {
+        let obs: Observable<string> = new Observable<string>( ( observer: Observer<string> ) => {
+                
+            window.api.ipc.once( 'trigger:get:full-name', ( e, data: string ) => {
+                this.ngZone.run( () => {
+                    observer.next( data );
+                    observer.complete();
+                } );
+            } );
+            window.api.ipc.send( 'trigger:get:full-name', triggerId );
+
+        } );
+
+        return obs;
+    }
+
 }
