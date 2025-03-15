@@ -2458,15 +2458,12 @@ function displayListAction( res, action, trigger ) {
         if ( !list ) {
             return;
         } else if ( list.state === 'running' ) {
-            // If the list is already running, then we'll ignore this.
-            return;
-        }
-
-        list.state = 'running';
-
-        if ( list.component.intervalId === -1 ) {
-            list.timestamp = 0;
-            list.updateListFn();
+            if ( list.component.intervalId === -1 ) {
+                list.timestamp = 0;
+                list.updateListFn();
+            }
+        } else {
+            list.state = 'running';
         }
 
     } else if ( action.listEnumerateEndPhrase === res.phraseId ) {
