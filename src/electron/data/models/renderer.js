@@ -46,6 +46,8 @@ class ListObjectModel {
     bounds = undefined;
     /** @type {number | undefined} */
     textSpacing = undefined;
+    /** @type {{name: string, timer: 'top'|'bottom', end: number, dom: Element | null}[]} */
+    listTimers = [];
 }
 
 class RenderTokenModel {

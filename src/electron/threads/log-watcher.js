@@ -1975,7 +1975,7 @@ function executeTriggerAction( trigger, action, timestamp, res, deltaTime, simul
  * @param {Trigger} trigger The action trigger.
  */
 function displayListAction( res, action, trigger ) {
-    const trackName = action.listBoxName ?? characterName;
+    const trackName = StringUtilities.isNullOrWhitespace( action.listBoxName ) ? characterName : action.listBoxName;
 
     /**
      * Executes the "Show Timer" timer for a list.
@@ -2496,7 +2496,7 @@ function displayListAction( res, action, trigger ) {
         }
 
         if ( action.autoEnumerateList ) {
-            const timer = list.action.listBottomTimerEnum ? 'bottom' : list.action.listTopTimerEnum ? 'top' : null;
+            const timer = list.action.listEnableBottomTimer && list.action.listEnableTopTimer ? 'both' : list.action.listEnableBottomTimer ? 'bottom' : list.action.listEnableTopTimer ? 'top' : null;
 
             if ( timer ) {
                 ipcRenderer.send( 'renderer:reset:list-timer', { instanceId: list.component.instanceId, timers: timer } );

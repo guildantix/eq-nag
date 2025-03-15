@@ -15,6 +15,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
 
     <!-- Font Awesome library for guildantix -->
+    <script> FontAwesomeConfig = { autoReplaceSvg: false } </script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.1/css/all.min.css" crossorigin="anonymous">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.1/js/all.min.js" crossorigin="anonymous"></script>
 
@@ -599,6 +600,10 @@
             width: 100%;
         }
 
+            .list-content .list-items .list-item .list-timer-label {
+                position: absolute;
+            }
+
         .list-content .list-items .list-item-content {
             display: flex;
             flex-flow: row nowrap;
@@ -671,12 +676,24 @@
                         bottom: 50%;
                     }
 
+                        .list-content .list-items .list-item-content .list-progress .list-determinate.top .list-timer-label {
+                            left: -25px;
+                            top: -12px;
+                            font-size: .9em;
+                        }
+
                     .list-content .list-items .list-item-content .list-progress .list-determinate.bottom {
                         display: block;
                         position: absolute;
                         top: 50%;
                         bottom: 13%;
                     }
+
+                        .list-content .list-items .list-item-content .list-progress .list-determinate.bottom .list-timer-label {
+                            left: -25px;
+                            top: -4px;
+                            font-size: .9em;
+                        }
 
         @keyframes listtimeranim { 
             0% { width: 100%; } 

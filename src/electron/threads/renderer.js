@@ -3426,10 +3426,61 @@ function executeListTimer( instanceId, name, timer, duration ) {
 
                 timerDom.style.animation = `listtimeranim ${duration * 1000}ms linear`;
 
+                let label = document.createElement( 'span' );
+                label.classList.add( 'list-timer-label' );
+                label.innerHTML = `${getDurationLabel( duration )}`;
+                timerDom.prepend( label );
+
                 // When the animation ends, set the width to 0.
                 timerDom.addEventListener( 'animationend', () => {
                     timerDom.style.animation = 'none';
+                    if ( label ) {
+                        label.parentNode.removeChild( label );
+                    }
                 } );
+
+                let listTimer = list.objectModel.listTimers.find( f => f.name === name && f.timer === timer );
+
+                if ( listTimer ) {
+                    listTimer.end = ( new Date() ).getTime() + ( duration * 1000 );
+                    listTimer.dom = timerDom;
+                } else {
+                    list.objectModel.listTimers.push( {
+                        name: name,
+                        timer: timer,
+                        end: ( new Date() ).getTime() + ( duration * 1000 ),
+                        dom: timerDom,
+                    } );
+                }
+            }
+
+            if ( !list.intervalId || list.intervalId === -1 ) {
+                list.intervalId = setInterval( () => {
+                    if ( list.objectModel.listTimers?.length > 0 ) {
+                        for ( let i = list.objectModel.listTimers.length - 1; i >= 0; i-- ) {
+                            const listTimer = list.objectModel.listTimers[ i ];
+                            const dom = listTimer.dom.querySelector( '.list-timer-label' );
+                            const now = ( new Date() ).getTime();
+                            const remaining = listTimer.end - now;
+                            const seconds = Math.floor( remaining / 1000 );
+
+                            if ( dom ) {
+                                if ( seconds >= 0 ) {
+                                    dom.innerHTML = `${getDurationLabel( seconds )}`;
+                                } else {
+                                    dom.innerHTML = '';
+                                }
+                            } else {
+                                // Remove the timer from the list.
+                                list.objectModel.listTimers.splice( i, 1 );
+                            }
+                        }
+                    } else {
+                        clearInterval( list.intervalId );
+                        list.intervalId = -1;
+                    }
+
+                }, 500 );
             }
         }
     }
@@ -3468,10 +3519,22 @@ function resetListTimers( instanceId, timers, index ) {
 
             if ( ( timers === 'both' || timers === 'top' ) && topTimer ) {
                 topTimer.style.animation = 'none';
+
+                let label = topTimer.querySelector( '.list-timer-label' );
+                if ( label ) {
+                    // Remove the label from the dom
+                    label.parentNode.removeChild( label );
+                }
             }
 
             if ( ( timers === 'both' || timers === 'bottom' ) && bottomTimer ) {
                 bottomTimer.style.animation = 'none';
+
+                let label = bottomTimer.querySelector( '.list-timer-label' );
+                if ( label ) {
+                    // Remove the label from the dom
+                    label.parentNode.removeChild( label );
+                }
             }
         }
     }
@@ -3512,12 +3575,24 @@ function killListTimers( instanceId, timers, index ) {
                 topTimer.style.animationPlayState = 'paused';
                 topTimer.style.animation = 'none';
                 topTimer.style.width = '0%';
+
+                let label = topTimer.querySelector( '.list-timer-label' );
+                if ( label ) {
+                    // Remove the label from the dom
+                    label.parentNode.removeChild( label );
+                }
             }
 
             if ( ( timers === 'both' || timers === 'bottom' ) && bottomTimer ) {
                 bottomTimer.style.animationPlayState = 'paused';
                 bottomTimer.style.animation = 'none';
                 bottomTimer.style.width = '0%';
+
+                let label = bottomTimer.querySelector( '.list-timer-label' );
+                if ( label ) {
+                    // Remove the label from the dom
+                    label.parentNode.removeChild( label );
+                }
             }
         }
     }
@@ -4579,9 +4654,9 @@ function applyTimerSettings( overlayId, contentArea, comp, group ) {
             comp.dom.querySelector( 'span.time-remaining' ).innerHTML = `(??)&nbsp;`;
         } else if ( overlayInstances[ overlayId ].showDuration || comp.action.showDuration ) {
             if ( isStopwatch ) {
-                comp.dom.querySelector( 'span.time-remaining' ).innerHTML = `(${getDurationLabel( overlayId, Math.round( comp.timeRemaining / 1000 ) )})&nbsp;`;
+                comp.dom.querySelector( 'span.time-remaining' ).innerHTML = `(${getDurationLabel( Math.round( comp.timeRemaining / 1000 ) )})&nbsp;`;
             } else {
-                comp.dom.querySelector( 'span.time-remaining' ).innerHTML = `(${getDurationLabel( overlayId, comp.timeRemaining )})&nbsp;`;
+                comp.dom.querySelector( 'span.time-remaining' ).innerHTML = `(${getDurationLabel( comp.timeRemaining )})&nbsp;`;
             }
         } else {
             comp.dom.querySelector( 'span.time-remaining' ).innerHTML = ``;
@@ -5150,10 +5225,9 @@ function speakPhrase( phrase, interruptSpeech, parseResult, timerDuration ) {
 /**
  * Returns a label for the given duration.
  * 
- * @param {string} overlayId The id of the desired overlay.
  * @param {number} duration The duration, in seconds.
  */
-function getDurationLabel( overlayId, duration ) {
+function getDurationLabel( duration ) {
     if ( duration > 60 ) {
         let d = Math.ceil( duration );
         let hrs = Math.floor( d / 3600 );
