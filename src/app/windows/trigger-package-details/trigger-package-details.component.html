@@ -12,7 +12,7 @@
         <mat-chip *ngFor="let tag of package.tags" [value]="tag">{{tag}}</mat-chip>
     </mat-chip-list>
     
-    <p>{{package.description}}</p>
+    <markdown [data]="package.description"></markdown>
     
     <div>
     
