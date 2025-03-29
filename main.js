@@ -590,8 +590,17 @@ function sendTick( delay ) {
     delay = delay === true ? true : false;
     let _triggers = triggerDatabase.getAll();
     let _folders = triggerDatabase.getFolders();
+    const _charOptions = characterDatabase.getAll().map( f => {
+        return {
+            characterId: f.characterId,
+            name: f.name,
+            server: f.server,
+            class: f.class,
+        };
+    } );
+
     let tickData = {
-        characterOptions: characterDatabase.getAll().map( f => { f.characterId, f.name, f.server } ),
+        characterOptions: _charOptions,
         dkpEntries: dkpDatabase.getAllUnentered(),
         logFile: userPreferences.logFile,
         voiceIndex: userPreferences.voiceIndex,
