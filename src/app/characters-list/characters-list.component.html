@@ -6,6 +6,7 @@
         <mat-panel-description>
             <ng-template [ngIf]="character.p99">P1999&nbsp;</ng-template>
             <ng-template [ngIf]="character.takp">TAKP&nbsp;</ng-template>
+            <ng-template [ngIf]="character.thj">THJ&nbsp;</ng-template>
             {{character.server}}
             <button mat-icon-button 
                 [ngClass]="{'color-orange-dark': isCombatCharacter(character)}" 

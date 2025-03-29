@@ -1,3 +1,4 @@
+// TODO: Fix coords being saved in package triggers. Byun 's tank rota.
 // TODO: Quickshare lists are still sharing the position information.
 // TODO: Fix the enternally repeating update modal, should not be repeatedly adding new modals or when the user chooses no, only ask again after nag restarts.
 

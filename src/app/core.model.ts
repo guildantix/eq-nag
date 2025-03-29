@@ -1079,6 +1079,7 @@ export class CharacterModel {
     public p99: boolean = false;
     public takp: boolean = false;
     public daybreak: boolean = false;
+    public thj: boolean = false;
     public triggerProfile: string | undefined = undefined;
     public disabledTriggers: string[] = [];
     public disableTriggersByDefault: boolean = false;

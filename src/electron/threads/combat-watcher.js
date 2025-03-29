@@ -67,6 +67,7 @@ const { OverlayWindow } = require( "../data/models/overlay-window" );
 const { ErrorMessages, TriggerParseHistoryModel, getActionLabel, LogTypes } = require( "../data/models/trigger" );
 const { CombatParser, minifyCombatLogs } = require( "../utilities/combat-parser" );
 const { TakpCombatParser } = require( "../utilities/combat-parser-takp" );
+const { ThjCombatParser } = require( "../utilities/combat-parser-thj" );
 const customAlphabet = require( 'nanoid' ).customAlphabet;
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const nanoid = customAlphabet( alphabet, 16 );
@@ -211,7 +212,7 @@ const logError = ( err, raw, simulating, padTime ) => {
     logParseError( err, raw, simulating, padTime );
 };
 
-/** @type {CombatParser | TakpCombatParser | undefined} */
+/** @type {CombatParser | TakpCombatParser | ThjCombatParser | undefined} */
 let myCombatParser = undefined;
 
 /** @type {string[]} */
@@ -560,6 +561,8 @@ const stopDpsTracking = () => {
     dpsTrackingEnabled = false;
 };
 
+/** @type {string | undefined} */
+var lastCombatLogEntry = undefined;
 /**
  * Starts parsing and watching log file changes for the specified file.
  * 
@@ -572,14 +575,18 @@ async function startParsingLogFile( logPath, startLogPosition ) {
         // let start = performance.now();
         let fcts = [];
 
-        lines.forEach( line => {
+        lines.forEach( ( line, index ) => {
             if ( line && line.length > 0 ) {
-                let fct = parseLogEntries( line );
+                let prevLog = index === 0 ? lastCombatLogEntry : lines[ index - 1 ];
+                let nextLog = index < lines.length - 1 ? lines[ index + 1 ] : undefined;
+                let fct = parseLogEntries( line, false, 0, prevLog, nextLog );
                 if ( fct ) {
                     fcts = fcts.concat( fct );
                 }
             }
         } );
+
+        lastCombatLogEntry = lines[ lines.length - 1 ];
         
         dpsTrackingEnabled === true && sendDpsToRenderer();
 
@@ -610,8 +617,10 @@ async function startParsingLogFile( logPath, startLogPosition ) {
  * @param {string} raw The raw log entry.
  * @param {boolean} simulating If true, only simulates executing triggers via a consol.log call.
  * @param {padTime} padTime The amount of time to add to the timestamps of log entries.
+ * @param {string | undefined} prevLog The previous log entry.
+ * @param {string | undefined} nextLog The next log entry.
  */
-function parseLogEntries( raw, simulating, padTime ) {
+function parseLogEntries( raw, simulating, padTime, prevLog, nextLog ) {
     try {
         /** @type {FctModel[]} */
         let output = [];
@@ -624,8 +633,8 @@ function parseLogEntries( raw, simulating, padTime ) {
             
             if ( myCombatParserCache?.length > 0 ) {
                 // Add cached log entries to the combat tracker.
-                myCombatParserCache.forEach( c => {
-                    let fctModel = myCombatParser?.addCombatEvent( c, padTime );
+                myCombatParserCache.forEach( ( c, i, a ) => {
+                    let fctModel = myCombatParser?.addCombatEvent( c, padTime, i > 0 ? a[ i - 1 ] : undefined, i < a.length - 1 ? a[ i + 1 ] : undefined );
 
                     if ( fctModel ) {
                         output.push( fctModel );
@@ -639,7 +648,7 @@ function parseLogEntries( raw, simulating, padTime ) {
             }
 
             // Add to the combat tracker.
-            let fctModel = myCombatParser?.addCombatEvent( raw, padTime );
+            let fctModel = myCombatParser?.addCombatEvent( raw, padTime, prevLog, nextLog );
 
             if ( fctModel ) {
                 output.push( fctModel );
@@ -695,7 +704,9 @@ function CombatWatcher() {
                 charModel = data.character;
                 characterId = data.character.characterId;
 
-                myCombatParser = charModel.takp ? new TakpCombatParser( characterName, charModel.server ) : new CombatParser( characterName, charModel.server );
+                myCombatParser = charModel.takp ? new TakpCombatParser( characterName, charModel.server ) :
+                    charModel.thj ? new ThjCombatParser( characterName, charModel.server ) :
+                    new CombatParser( characterName, charModel.server );
                 myCombatParser.onEncounterReset = onEncounterReset;
                 startDpsTracking();
 

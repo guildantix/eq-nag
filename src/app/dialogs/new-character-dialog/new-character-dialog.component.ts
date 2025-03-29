@@ -217,6 +217,7 @@ export class NewCharacterDialogComponent implements OnInit {
         this.model.p99 = this.selectedService == 'p99';
         this.model.daybreak = this.selectedService == 'daybreak';
         this.model.takp = this.selectedService == 'takp';
+        this.model.thj = this.selectedService == 'thj';
 
         this.panel = 'modelReview';
     }
@@ -251,6 +252,7 @@ export class NewCharacterDialogComponent implements OnInit {
                 option.takp = false;
                 option.p99 = false;
                 option.daybreak = true;
+                option.thj = false;
 
                 this.model = option;
 
@@ -268,6 +270,7 @@ export class NewCharacterDialogComponent implements OnInit {
                 option.takp = false;
                 option.p99 = true;
                 option.daybreak = false;
+                option.thj = false;
 
                 this.model = option;
 
@@ -284,6 +287,7 @@ export class NewCharacterDialogComponent implements OnInit {
                 option.takp = false;
                 option.p99 = true;
                 option.daybreak = false;
+                option.thj = false;
 
                 this.model = option;
 
@@ -296,11 +300,30 @@ export class NewCharacterDialogComponent implements OnInit {
                 let option: CharacterModel = new CharacterModel();
 
                 option.name = quarm.groups.Character;
-                option.server = 'quarm';
+                option.server = 'quarm'; // TODO: Find where this is used to display a value.
                 option.logFile = `${characterLogPath}`;
                 option.takp = true;
                 option.p99 = false;
                 option.daybreak = false;
+                option.thj = false;
+
+                this.model = option;
+
+            }
+
+            // eqlog_Kaiban_thj.txt
+            let thj = /eqlog_(?<Character>.*)_thj\.txt$/gi.exec( characterLogPath );
+            if ( thj != null && thj?.groups?.Character != null ) {
+
+                let option: CharacterModel = new CharacterModel();
+
+                option.name = thj.groups.Character;
+                option.server = 'thj';
+                option.logFile = `${characterLogPath}`;
+                option.takp = false;
+                option.p99 = false;
+                option.daybreak = false;
+                option.thj = true;
 
                 this.model = option;
 

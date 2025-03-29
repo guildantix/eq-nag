@@ -2,6 +2,8 @@ const _ = require( 'lodash' );
 const { CombatParser } = require( './combat-parser' );
 const { nagLog } = require( './nag-console' );
 
+const renderDebugMessages = false;
+
 // TODO: Zhay`s pet hits Vius Vex for 9075 points of damage.
 
 /**
@@ -140,8 +142,10 @@ class TakpCombatParser extends CombatParser {
      * 
      * @param {string} logLine The log file line to process and add to the combat events.
      * @param {number | undefined} padTime The number of s to add to the time log.
+     * @param {string | undefined} prevLog The previous log line.
+     * @param {string | undefined} nextLog The next log line.
      */
-    addCombatEvent( logLine, padTime ) {
+    addCombatEvent( logLine, padTime, prevLog, nextLog ) {
         let timeLog = /^\[(?<timestamp>.*?)\]\s*(?<log>.*)/gi.exec( logLine )?.groups;
         if ( timeLog ) {
 

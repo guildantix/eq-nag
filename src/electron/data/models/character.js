@@ -60,6 +60,9 @@ class CharacterModel {
     /** @type {boolean} If true, this character is on a TAKP server. */
     takp = false;
 
+    /** @type {boolean} If true, this character is on The Heroe's Journey server. */
+    thj = false;
+
     /** @type {Record<string, number[]>} A record of the combat hits of this character. */
     combatGroupHits = {};
 

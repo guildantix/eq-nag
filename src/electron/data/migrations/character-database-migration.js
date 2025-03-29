@@ -4,7 +4,7 @@ const customAlphabet = require( 'nanoid' ).customAlphabet;
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const nanoid = customAlphabet( alphabet, 16 );
 
-const currentCharacterDbVersion = 10;
+const currentCharacterDbVersion = 11;
 
 /**
  * 
@@ -95,6 +95,20 @@ function executeDataMigration( data ) {
             f.daybreak = f.takp !== true && f.p99 !== true;
         } );
         data.version = 10;
+
+    }
+    if ( !data.version || data.version < 11 ) {
+        data?.characters?.forEach( f => {
+            let thj = /eqlog_(?<Character>.*)_thj\.txt$/gi.exec( f.logFile );
+            if ( thj != null && thj?.groups?.Character == f.name ) {
+                f.thj = true;
+                f.daybreak = false;
+                f.p99 = false;
+                f.takp = false;
+            }
+        } );
+
+        data.version = 11;
 
     }
 

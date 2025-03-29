@@ -44,7 +44,7 @@
             
             <div class="field-list">
                 <div class="field-line"><label>Character Name</label><span>{{model.name}}</span></div>
-                <div class="field-line"><label>Service</label><span *ngIf="model.p99">P1999</span><span *ngIf="model.daybreak">Daybreak</span><span *ngIf="model.takp">TAKP</span></div>
+                <div class="field-line"><label>Service</label><span *ngIf="model.p99">P1999</span><span *ngIf="model.daybreak">Daybreak</span><span *ngIf="model.takp">TAKP</span><span *ngIf="model.thj">THJ</span></div>
                 <div class="field-line"><label>Server</label><span style="text-transform: capitalize;">{{model.server}}</span></div>
                 <div class="field-line"><label>Log file</label><span>{{model.logFile}}</span></div>
             </div>
@@ -69,6 +69,7 @@
                     <mat-option value="p99">P1999</mat-option>
                     <mat-option value="daybreak">Daybreak</mat-option>
                     <mat-option value="takp">TAKP</mat-option>
+                    <mat-option value="thj">THJ</mat-option>
                     <mat-option value="other">Other</mat-option>
                 </mat-select>
                 <mat-hint>Service</mat-hint>

@@ -1134,7 +1134,7 @@ class WindowManager {
 
         let characterModel = this.#characterDatabase.findCharacterByNameAndServer( characterName, serverName );
         
-        deathRecap.loadURL( `file://${__dirname}/windows/death-recap.html?logFilePath=${encodeURI( logFilePath )}&lineNo=${lineNo}&characterName=${encodeURI( characterName )}&messageId=${encodeURI( messageId )}&takp=${characterModel?.takp ? '1' : '0'}` );
+        deathRecap.loadURL( `file://${__dirname}/windows/death-recap.html?logFilePath=${encodeURI( logFilePath )}&lineNo=${lineNo}&characterName=${encodeURI( characterName )}&messageId=${encodeURI( messageId )}&takp=${characterModel?.takp ? '1' : '0'}&thj=${characterModel?.thj ? '1' : '0'}` );
         deathRecap.setAlwaysOnTop( true, "screen-saver" );
         
         // Open the DevTools.
