@@ -164,6 +164,292 @@ const getEverQuestClassColor = ( value ) => {
     }
 }
 
+const eqClassTitleMap = {
+
+    // Bard
+    'Bard': 'Bard',
+    'Minstrel': 'Bard',
+    'Troubadour': 'Bard',
+    'Virtuoso': 'Bard',
+    'Maestro': 'Bard',
+    'Herald': 'Bard',
+    'Lyricist': 'Bard',
+
+    // Beastlord
+    'Beastlord': 'Beastlord',
+    'Primalist': 'Beastlord',
+    'Animist': 'Beastlord',
+    'Savage Lord': 'Beastlord',
+    'Feral Lord': 'Beastlord',
+    'Wildblood': 'Beastlord',
+    'Frostblood': 'Beastlord',
+
+    // Berserker
+    'Brawler': 'Berserker',
+    'Vehement': 'Berserker',
+    'Rager': 'Berserker',
+    'Fury': 'Berserker',
+    'Ravager': 'Berserker',
+    'Juggernaut': 'Berserker',
+
+    // Cleric
+    'Cleric': 'Cleric',
+    'Vicar': 'Cleric',
+    'Templar': 'Cleric',
+    'High Priest': 'Cleric',
+    'Archon': 'Cleric',
+    'Prelate': 'Cleric',
+    'Exemplar': 'Cleric',
+
+    // Druid
+    'Druid': 'Druid',
+    'Wanderer': 'Druid',
+    'Preserver': 'Druid',
+    'Hierophant': 'Druid',
+    'Storm Warden': 'Druid',
+    'Natureguard': 'Druid',
+    'Storm Caller': 'Druid',
+
+    // Enchanter
+    'Enchanter': 'Enchanter',
+    'Illusionist': 'Enchanter',
+    'Beguiler': 'Enchanter',
+    'Phantasmist': 'Enchanter',
+    'Coercer': 'Enchanter',
+    'Bedazzler': 'Enchanter',
+    'Entrancer': 'Enchanter',
+
+    // Magician
+    'Magician': 'Magician',
+    'Elementalist': 'Magician',
+    'Conjurer': 'Magician',
+    'Arch Mage': 'Magician',
+    'Arch Convoker': 'Magician',
+    'Arch Magus': 'Magician',
+    'Grand Summoner': 'Magician',
+
+    // Monk
+    'Monk': 'Monk',
+    'Disciple': 'Monk',
+    'Master': 'Monk',
+    'Grandmaster': 'Monk',
+    'Transcendent': 'Monk',
+    'Stone Fist': 'Monk',
+    'Ashenhand': 'Monk',
+
+    // Necromancer
+    'Necromancer': 'Necromancer',
+    'Heretic': 'Necromancer',
+    'Defiler': 'Necromancer',
+    'Warlock': 'Necromancer',
+    'Arch Lich': 'Necromancer',
+    'Wraith': 'Necromancer',
+    'Deathcaller': 'Necromancer',
+
+    // Paladin
+    'Paladin': 'Paladin',
+    'Cavalier': 'Paladin',
+    'Knight': 'Paladin',
+    'Crusader': 'Paladin',
+    'Lord Protector': 'Paladin',
+    'Saint': 'Paladin',
+    'Holy Defender': 'Paladin',
+
+    // Ranger
+    'Ranger': 'Ranger',
+    'Pathfinder': 'Ranger',
+    'Outrider': 'Ranger',
+    'Warder': 'Ranger',
+    'Forest Stalker': 'Ranger',
+    'Plainswalker': 'Ranger',
+    'Huntmaster': 'Ranger',
+
+    // Rogue
+    'Rogue': 'Rogue',
+    'Rake': 'Rogue',
+    'Blackguard': 'Rogue',
+    'Assassin': 'Rogue',
+    'Deceiver': 'Rogue',
+    'Nemesis': 'Rogue',
+    'Shadowblade': 'Rogue',
+
+    // Shadow Knight
+    'Shadow Knight': 'Shadow Knight',
+    'Reaver': 'Shadow Knight',
+    'Revenant': 'Shadow Knight',
+    'Grave Lord': 'Shadow Knight',
+    'Dread Lord': 'Shadow Knight',
+    'Scourge Knight': 'Shadow Knight',
+    'Bloodreaver': 'Shadow Knight',
+
+    // Shaman
+    'Shaman': 'Shaman',
+    'Mystic': 'Shaman',
+    'Luminary': 'Shaman',
+    'Oracle': 'Shaman',
+    'Prophet': 'Shaman',
+    'Soothsayer': 'Shaman',
+    'Spiritwatcher': 'Shaman',
+
+    // Warrior
+    'Warrior': 'Warrior',
+    'Champion': 'Warrior',
+    'Myrmidon': 'Warrior',
+    'Warlord': 'Warrior',
+    'Overlord': 'Warrior',
+    'Vanquisher': 'Warrior',
+    'Imperator': 'Warrior',
+
+    // Wizard
+    'Wizard': 'Wizard',
+    'Channeler': 'Wizard',
+    'Evoker': 'Wizard',
+    'Sorcerer': 'Wizard',
+    'Archanist': 'Wizard',
+    'Grand Archanist': 'Wizard',
+    'Pyromancer': 'Wizard',
+};
+
+/**
+ * Convertes a class title to its corresponding class name.
+ * 
+ * @param {string | undefined} classTitle The class title to convert.
+ * @returns {string} The corresponding class name.
+ */
+const getEverQuestClassFromTitle = ( classTitle ) => {
+    switch ( classTitle?.toLowerCase() ?? '' ) {
+        case 'bard':
+        case 'minstrel':
+        case 'troubadour':
+        case 'virtuoso':
+        case 'maestro':
+        case 'herald':
+        case 'lyricist':
+            return 'Bard';
+        case 'beastlord':
+        case 'primalist':
+        case 'animist':
+        case 'savage lord':
+        case 'feral lord':
+        case 'wildblood':
+        case 'frostblood':
+            return 'Beastlord';
+        case 'berserker':
+        case 'brawler':
+        case 'vehement':
+        case 'rager':
+        case 'fury':
+        case 'ravager':
+            return 'Berserker';
+        case 'cleric':
+        case 'vicar':
+        case 'templar':
+        case 'high priest':
+        case 'archon':
+        case 'prelate':
+        case 'exemplar':
+            return 'Cleric';
+        case 'druid':
+        case 'wanderer':
+        case 'preserver':
+        case 'hierophant':
+        case 'storm warden':
+        case 'natureguard':
+        case 'storm caller':
+            return 'Druid';
+        case 'enchanter':
+        case 'illusionist':
+        case 'beguiler':
+        case 'phantasmist':
+        case 'coercer':
+        case 'bedazzler':
+        case 'entrancer':
+            return 'Enchanter';
+        case 'magician':
+        case 'elementalist':
+        case 'conjurer':
+        case 'arch mage':
+        case 'arch convoker':
+        case 'arch magus':
+        case 'grand summoner':
+            return 'Magician';
+        case 'monk':
+        case 'disciple':
+        case 'master':
+        case 'grandmaster':
+        case 'transcendent':
+        case 'stone fist':
+        case 'ashenhand':
+            return 'Monk';
+        case 'necromancer':
+        case 'heretic':
+        case 'defiler':
+        case 'warlock':
+        case 'arch lich':
+        case 'wraith':
+        case 'deathcaller':
+            return 'Necromancer';
+        case 'paladin':
+        case 'cavalier':
+        case 'knight':
+        case 'crusader':
+        case 'lord protector':
+        case 'saint':
+        case 'holy defender':
+            return 'Paladin';
+        case 'ranger':
+        case 'pathfinder':
+        case 'outrider':
+        case 'warder':
+        case 'forest stalker':
+        case 'plainswalker':
+        case 'huntmaster':
+            return 'Ranger';
+        case 'rogue':
+        case 'rake':
+        case 'blackguard':
+        case 'assassin':
+        case 'deceiver':
+        case 'nemesis':
+        case 'shadowblade':
+            return 'Rogue';
+        case 'shadow knight':
+        case 'reaver':
+        case 'revenant':
+        case 'grave lord':
+        case 'dread lord':
+        case 'scourge knight':
+        case 'bloodreaver':
+            return 'Shadow Knight';
+        case 'shaman':
+        case 'mystic':
+        case 'luminary':
+        case 'oracle':
+        case 'prophet':
+        case 'soothsayer':
+        case 'spiritwatcher':
+            return 'Shaman';
+        case 'warrior':
+        case 'champion':
+        case 'myrmidon':
+        case 'warlord':
+        case 'overlord':
+        case 'vanquisher':
+        case 'imperator':
+            return 'Warrior';
+        case 'wizard':
+        case 'channeler':
+        case 'evoker':
+        case 'sorcerer':
+        case 'archanist':
+        case 'grand archanist':
+        case 'pyromancer':
+            return 'Wizard';
+        default:
+            return classTitle;
+    }
+}
+
 module.exports = {
     getEverQuestClassAbbreviation,
     getEverQuestClassName,
@@ -186,4 +472,6 @@ module.exports = {
     warriorColor,
     wizardColor,
     classColor,
+    eqClassTitleMap,
+    getEverQuestClassFromTitle,
 }

@@ -83,6 +83,12 @@ export class CharactersListComponent implements OnInit {
         this.ipcService.getTriggerProfiles().subscribe( profiles => this.triggerProfiles = profiles );
         
         this.ipcService.tickReceived().subscribe( tick => {
+
+            tick.characterOptions.forEach( character => {
+                // Update the class for each character.
+                let index = this.characters.findIndex( f => f.characterId === character.characterId );
+                this.characters[ index ].class = character.class;
+            } );
             
             if ( tick.triggerProfileDisabledTriggers?.length > 0 ) {
                 tick.triggerProfileDisabledTriggers.forEach( tp => {

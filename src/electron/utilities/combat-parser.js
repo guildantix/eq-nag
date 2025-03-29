@@ -28,7 +28,7 @@ const {
 const { FctModel } = require( '../data/models/fct' );
 const { CharacterModel } = require( '../data/models/character' );
 const { nagLog, nagException } = require( './nag-console' );
-const { getEverQuestClassName } = require( './everquest' );
+const { getEverQuestClassName, getEverQuestClassFromTitle, getEverQuestClassAbbreviation } = require( './everquest' );
 
 const playerNpcInteractionTimeoutMs = 2000;
 const npcTimeoutMs = 8000;
@@ -1387,13 +1387,25 @@ class CombatParser {
                 if ( this._playerInfos[ playerName ] == null ) {
                     this._playerInfos[ playerName ] = {
                         level: +playerWho.groups.level,
-                        className: playerWho.groups.classRealName ?? playerWho.groups.classTitleOrName,
+                        className: playerWho.groups.classRealName ?? getEverQuestClassFromTitle( playerWho.groups.classTitleOrName ),
                         raceName: playerWho.groups.raceName,
                     };
                 } else {
                     this._playerInfos[ playerName ].level = +playerWho.groups.level;
-                    this._playerInfos[ playerName ].className = playerWho.groups.classRealName ?? playerWho.groups.classTitleOrName;
+                    this._playerInfos[ playerName ].className = playerWho.groups.classRealName ?? getEverQuestClassFromTitle( playerWho.groups.classTitleOrName );
                     this._playerInfos[ playerName ].raceName = playerWho.groups.raceName;
+                }
+
+                // If the player is in the character list, then we need to update their profile if their new class doesn't match their profile.
+                const myCharacter = this._myCharacters.find( f => f.name === playerName && f.server === this._serverName );
+                if ( myCharacter != null ) {
+                    const playerClassAbbr = getEverQuestClassAbbreviation( this._playerInfos[ playerName ].className );
+                    if ( myCharacter.classAbbr !== playerClassAbbr ) {
+                        ipcRenderer.send( 'character:update:class', {
+                            characterId: myCharacter.characterId,
+                            class: playerClassAbbr,
+                        } );
+                    }
                 }
 
                 // Let's remove the player from the pets list, if they are there.

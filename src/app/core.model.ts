@@ -646,12 +646,13 @@ export class CharacterOptionModel {
     public characterId: string;
     public name: string;
     public server: string;
+    public class: string;
     
 }
 
 export class DataTickModel {
 
-    public characters: CharacterOptionModel[] = [];
+    public characterOptions: CharacterOptionModel[] = [];
     public dkpEntries: DkpEntryModel[] = [];
     public logFile: string;
     public voiceIndex: number;

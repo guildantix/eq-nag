@@ -380,6 +380,15 @@ class CharacterDatabaseStore extends Store {
             }
         } );
 
+        ipcMain.on( 'character:update:class', ( event, data ) => {
+            let character = this.find( data.characterId );
+            if ( character ) {
+                character.class = data.class;
+                this.update( character );
+                sendTick();
+            }
+        } );
+
         ipcMain.on( 'character:update', ( event, character ) => {
             event.sender.send( 'character:update', this.update( character ) );
             sendTick();

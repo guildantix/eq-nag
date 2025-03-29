@@ -187,7 +187,7 @@ export class CombatStatisticsComponent implements OnInit, AfterViewChecked {
             this.characterOptions = characters?.length > 0 ? characters
                 .sort( ( a, b ) => a.name.localeCompare( b.name ) )
                 .sort( ( a, b ) => a.server.localeCompare( b.server ) )
-                .map( x => ( { characterId: x.characterId, name: x.name, server: x.server, } ) ) : [];
+                .map( x => ( { characterId: x.characterId, name: x.name, server: x.server, class: x.class, } ) ) : [];
         } );
         this.ipcService.tickReceived().subscribe( data => this.characterOptions = data.characterOptions?.length > 0 ? data.characterOptions : this.characterOptions );
 
