@@ -127,10 +127,54 @@ function getRecordKeys( record ) {
 
 
 
+/**
+ * Returns the bounds for the renderer window.
+ * 
+ * @returns {import("electron").Rectangle}
+ */
+function calculateRendererBounds() {
+        
+    let displays = screen.getAllDisplays();
+    let left = 0, right = 0;
+    let top = 0, bottom = 0;
+
+    displays.forEach( display => {
+
+        let absLeft = display.bounds.x * display.scaleFactor;
+        let absRight = ( display.bounds.x + display.bounds.width ) * display.scaleFactor;
+        let absTop = display.bounds.y * display.scaleFactor;
+        let absBottom = ( display.bounds.y + display.bounds.height ) * display.scaleFactor;
+
+
+        left = absLeft < left ? absLeft : left;
+        right = absRight > right ? absRight : right;
+        top = absTop < top ? absTop : top;
+        bottom = absBottom > bottom ? absBottom : bottom;
+
+    } );
+
+    return {
+        x: left,
+        y: top,
+        width: right - left,
+        height: bottom - top,
+    };
+}
+
+
+
+
+
+
+
+
+
+
 let ElectronUtilities = {
     determineContainingDisplay: determineContainingDisplay,
     getRecordKeys: getRecordKeys,
     compareRectangles: compareRectangles,
+    calculateRendererBounds: calculateRendererBounds,
 };
 
 module.exports = ElectronUtilities;
