@@ -17,4 +17,23 @@ legend.full-width {
     font-weight: 300;
     opacity: 0.8;
     padding-left: 1em;
+    display: flex;
+    flex-flow: row nowrap;
+    overflow: hidden;
+    white-space: nowrap;
+    // text-overflow: ellipsis;
+    
+    .first {
+        max-width: 50%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .second {
+        padding-left: 0.39em;
+        max-width: 50%;
+        direction: rtl;
+        overflow: hidden;
+        white-space: nowrap;
+    }
 }

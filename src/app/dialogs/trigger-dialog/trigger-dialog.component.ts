@@ -29,7 +29,39 @@ export class TriggerDialogComponent implements OnInit {
     public actionTypes: typeof ActionTypes = ActionTypes;
     public operatorTypes: typeof OperatorTypes = OperatorTypes;
     public isDev: boolean = false;
-    public fullName: string = '';
+    private _fullName: string = '';
+    public get fullName(): string {
+        return this._fullName;
+    }
+    public set fullName( value: string ) {
+        this._fullName = value;
+    }
+    public get fullNamePrefix(): string {
+        // Return the first half of the full name, by size.
+        if ( this.fullName.length > 0 ) {
+            let half = Math.floor( this.fullName.length / 2 );
+            // if the first part of the second half is a slash, increment half by 1 to include the slash in the first half.
+            if ( this.fullName[ half ] === '/' ) {
+                half++;
+            }
+            return this.fullName.substring( 0, half );
+        } else {
+            return '';
+        }
+    }
+    public get fullNameSuffix(): string {
+        // Return the second half of the full name, by size.
+        if ( this.fullName.length > 0 ) {
+            let half = Math.floor( this.fullName.length / 2 );
+            // if the first part of the second half is a slash, increment half by 1 to include the slash in the first half.
+            if ( this.fullName[ half ] === '/' ) {
+                half++;
+            }
+            return this.fullName.substring( half );
+        } else {
+            return '';
+        }
+    }
 
     public get showReimportFromAlla(): boolean {
         return this.model.importType != ImportTypes.None && this.model.allakhazamUrl != null;
