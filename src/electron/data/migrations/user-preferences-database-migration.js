@@ -1,3 +1,4 @@
+const ElectronUtilities = require( '../../utilities/electron' );
 const { DpsMeterSettings } = require( '../models/combat-parser' );
 const { UserPreferencesStoreModel, StyleProperties, QuickShareAuthorListTypes } = require( '../models/common' );
 const { FctStylesModel } = require( '../models/fct' );
@@ -6,7 +7,7 @@ const customAlphabet = require( 'nanoid' ).customAlphabet;
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const nanoid = customAlphabet( alphabet, 16 );
 
-const currentUserPreferencesDbVersion = 10;
+const currentUserPreferencesDbVersion = 11;
 
 /**
  * 
@@ -141,6 +142,22 @@ function executeDataMigration( data ) {
         data.dpsMeterSettings.highlightMyName = false;
 
         data.version = 10;
+
+    }
+    if ( !data.version || data.version < 11 ) {
+        
+        // Recalculate the resolution and position of the screenspace for Nag.
+        let savedScreenspace = data.rendererBounds;
+
+        if ( savedScreenspace ) {
+            let newScreenspace = ElectronUtilities.calculateRendererBounds();
+
+            if (!ElectronUtilities.compareRectangles( savedScreenspace, newScreenspace, false )) {
+                data.rendererBounds = newScreenspace;
+            }
+        }
+
+        data.version = 11;
 
     }
     
