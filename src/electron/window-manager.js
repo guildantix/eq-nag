@@ -855,7 +855,7 @@ class WindowManager {
     loadRenderer() {
 
         let savedBounds = this.#userPrefDb.rendererBounds;
-        let bounds = savedBounds == null ? this.calculateRendererBounds() : savedBounds;
+        let bounds = savedBounds == null ? ElectronUtilities.calculateRendererBounds() : savedBounds;
 
         log.info( '[Renderer:loadRenderer] Loading renderer bounds', bounds );
 
@@ -1238,49 +1238,6 @@ class WindowManager {
 
 
     /**
-     * Returns the bounds for the renderer window.
-     * 
-     * @returns {import("electron").Rectangle}
-     */
-    calculateRendererBounds() {
-        
-        let displays = screen.getAllDisplays();
-        let left = 0, right = 0;
-        let top = 0, bottom = 0;
-
-        displays.forEach( display => {
-
-            let absLeft = display.bounds.x;
-            let absRight = display.bounds.x + display.bounds.width;
-            let absTop = display.bounds.y;
-            let absBottom = display.bounds.y + display.bounds.height;
-
-
-            left = absLeft < left ? absLeft : left;
-            right = absRight > right ? absRight : right;
-            top = absTop < top ? absTop : top;
-            bottom = absBottom > bottom ? absBottom : bottom;
-
-        } );
-
-        return {
-            x: left,
-            y: top,
-            width: right - left,
-            height: bottom - top,
-        };
-    }
-
-
-
-
-
-
-
-
-
-
-    /**
      * Returns a list of all displays meta information.
      * 
      * @returns {DisplayMetaModel[]} Returns an array of display meta data.
@@ -1393,7 +1350,7 @@ class WindowManager {
     checkOverlayPositions( showWarning ) {
         showWarning = showWarning === true;
         var currentSize = this.#renderer.getBounds();
-        let newSize = this.calculateRendererBounds();
+        let newSize = ElectronUtilities.calculateRendererBounds();
         const displays = screen.getAllDisplays();
         let overlays = this.#overlayDatabase.getAll();
 
