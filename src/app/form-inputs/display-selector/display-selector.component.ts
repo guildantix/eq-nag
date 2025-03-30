@@ -13,7 +13,7 @@ export class DisplaySelectorComponent implements OnInit {
     @Output() public onMonitorSelect: EventEmitter<Electron.Display> = new EventEmitter<Electron.Display>();
     
     public displays: Electron.Display[] = [];
-    public screenSpace: Electron.Rectangle;
+    public screenSpace: Electron.Rectangle | undefined = undefined;
     public get screenOrigin(): { x: number, y: number } {
         return { x: 0 - this.screenSpace.x, y: 0 - this.screenSpace.y };
     }
@@ -97,7 +97,7 @@ export class DisplaySelectorComponent implements OnInit {
      * @param realWidth The real width.
      */
     getDisplayWidth( realWidth: number ): number {
-        return ( this.renderWidth / this.screenSpace?.width ) * realWidth ?? 0;
+        return this.screenSpace ? ( this.renderWidth / this.screenSpace.width ) * realWidth : 0;
     }
 
 
@@ -115,7 +115,7 @@ export class DisplaySelectorComponent implements OnInit {
      * @param realWidth The real height.
      */
     getDisplayHeight( realHeight: number ): number {
-        return ( this.renderWidth / this.screenSpace?.width ) * realHeight ?? 0;
+        return this.screenSpace ? ( this.renderWidth / this.screenSpace.width ) * realHeight : 0;
     }
 
 
@@ -134,7 +134,7 @@ export class DisplaySelectorComponent implements OnInit {
      */
     getDisplayLeft( realLeft: number ): number {
         let realPosLeft = this.screenOrigin.x + realLeft;
-        return ( this.renderWidth / this.screenSpace?.width ) * realPosLeft ?? 0;
+        return this.screenSpace ? ( this.renderWidth / this.screenSpace?.width ) * realPosLeft : 0;
     }
 
 
@@ -153,7 +153,7 @@ export class DisplaySelectorComponent implements OnInit {
      */
     getDisplayTop( realTop: number ): number {
         let realPosTop = this.screenOrigin.y + realTop;
-        return ( this.renderWidth / this.screenSpace?.width ) * realPosTop ?? 0;
+        return this.screenSpace ? ( this.renderWidth / this.screenSpace.width ) * realPosTop : 0;
     }
 
 }
