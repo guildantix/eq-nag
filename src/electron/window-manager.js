@@ -1357,9 +1357,49 @@ class WindowManager {
         showWarning = showWarning === true;
         var currentSize = this.#renderer.getBounds();
         let newSize = ElectronUtilities.calculateRendererBounds();
-        const displays = screen.getAllDisplays();
         let overlays = this.#overlayDatabase.getAll();
 
+        
+        // If the current size of the renderer doesn't match the calculated size, then we need to resize/move our overlays.
+        if ( !ElectronUtilities.compareRectangles( currentSize, newSize, false ) ) {
+            
+            // Because the size includes the relative position to the primary 
+            // display, we can find the (x0,y0) point of the primary display using 
+            // this simple formula.
+            let newOrigin = { x: 0 - newSize.x, y: 0 - newSize.y };
+        
+            if ( this.#resizeRenderer( newSize ) ) {
+                overlays = this.mutateOverlays( overlays );
+                this.#renderer.webContents.send( 'renderer:resolution-changed', { overlays: overlays, origin: newOrigin } );
+    
+                if ( showWarning ) {
+                    this.#mainWindow.reference.webContents.send( 'dialog:warning', { code: 'Renderer:ResolutionChanged' } );
+                }
+            }
+        }
+
+        this.#userPrefDb.rendererBounds = this.#renderer.getBounds();
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Mutates the overlays to the new display.
+     * 
+     * @returns {OverlayWindow[]} Returns the overlays that were moved.
+     * 
+     * @param {OverlayWindow[]} overlays The overlays to be moved.
+     */
+    mutateOverlays( overlays ) {
+        const displays = screen.getAllDisplays();
+        
         overlays.forEach( overlay => {
             const display = displays.find( f => f.id === overlay.displayId );
 
@@ -1396,26 +1436,8 @@ class WindowManager {
             }
 
         } );
-        
-        // If the current size of the renderer doesn't match the calculated size, then we need to resize/move our overlays.
-        if ( !ElectronUtilities.compareRectangles( currentSize, newSize, false ) ) {
-            
-            // Because the size includes the relative position to the primary 
-            // display, we can find the (x0,y0) point of the primary display using 
-            // this simple formula.
-            let newOrigin = { x: 0 - newSize.x, y: 0 - newSize.y };
-        
-            if ( this.#resizeRenderer( newSize ) ) {
 
-                this.#renderer.webContents.send( 'renderer:resolution-changed', { overlays: overlays, origin: newOrigin } );
-    
-                if ( showWarning ) {
-                    this.#mainWindow.reference.webContents.send( 'dialog:warning', { code: 'Renderer:ResolutionChanged' } );
-                }
-            }
-        }
-
-        this.#userPrefDb.rendererBounds = this.#renderer.getBounds();
+        return overlays;
     }
 
 
