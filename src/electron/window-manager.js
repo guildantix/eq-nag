@@ -854,8 +854,14 @@ class WindowManager {
      */
     loadRenderer() {
 
-        let savedBounds = this.#userPrefDb.rendererBounds;
-        let bounds = savedBounds == null ? ElectronUtilities.calculateRendererBounds() : savedBounds;
+        let bounds = this.#userPrefDb.rendererBounds;
+        let calcBounds = ElectronUtilities.calculateRendererBounds();
+
+        // If the current size of the renderer doesn't match the calculated size, then we need to resize/move our overlays.
+        if ( !ElectronUtilities.compareRectangles( bounds, calcBounds, false ) ) {
+            this.#userPrefDb.rendererBounds = calcBounds;
+            bounds = calcBounds;
+        }
 
         log.info( '[Renderer:loadRenderer] Loading renderer bounds', bounds );
 
