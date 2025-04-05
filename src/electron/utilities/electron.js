@@ -154,10 +154,10 @@ function calculateRendererBounds() {
     } );
 
     return {
-        x: left,
-        y: top,
-        width: right - left,
-        height: bottom - top,
+        x: Math.floor( left),
+        y: Math.floor( top ),
+        width: Math.floor( right - left ),
+        height: Math.floor( bottom - top ),
     };
 }
 
