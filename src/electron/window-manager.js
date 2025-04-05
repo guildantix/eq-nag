@@ -856,10 +856,13 @@ class WindowManager {
 
         let bounds = this.#userPrefDb.rendererBounds;
         let calcBounds = ElectronUtilities.calculateRendererBounds();
+        let executeRendererBoundsChange = false;
 
         // If the current size of the renderer doesn't match the calculated size, then we need to resize/move our overlays.
         if ( !ElectronUtilities.compareRectangles( bounds, calcBounds, false ) ) {
             this.#userPrefDb.rendererBounds = calcBounds;
+            // If the renderer bounds have diverged enough from the calculated bounds, then we need to execute the renderer bounds change.
+            executeRendererBoundsChange = !ElectronUtilities.compareRectangles( bounds, calcBounds, true );
             bounds = calcBounds;
         }
 
@@ -912,6 +915,19 @@ class WindowManager {
         renderer.webContents.once( 'dom-ready', () => {
             renderer.webContents.send( 'fct:change:fctShowCriticalsInline', this.#userPrefDb.fctShowCriticalsInline );
             renderer.webContents.send( 'renderer:combatGroups', this.#overlayDatabase.getCombatGroups() );
+
+            if ( executeRendererBoundsChange ) {
+                let overlays = this.mutateOverlays( this.#overlayDatabase.getAll() );
+                let newOrigin = { x: 0 - bounds.x, y: 0 - bounds.y };
+
+                // Send the mutated overlays to the renderer.
+                this.#renderer.webContents.send( 'renderer:resolution-changed', { overlays: overlays, origin: newOrigin } );
+
+                if ( this.#userPrefDb.enableCheckWindowPosition ) {
+                    // Send a warning to the main window that the resolution has changed.
+                    this.#mainWindow.reference.webContents.send( 'dialog:warning', { code: 'Renderer:ResolutionChanged' } );
+                }
+            }
         } );
 
         this.#renderer = renderer;
