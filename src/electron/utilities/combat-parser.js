@@ -2028,26 +2028,52 @@ class CombatParser {
 
         let actor = rec.actor;
         let target = rec.target;
-        let character = this._fctCharacters.find( f => f.name === actor || f.name === target );
+        let character = this._fctCharacters.find( f => f.server === this._serverName && ( f.name === actor || f.name === target ) );
+        let petActor = this._petOwners[ actor ] != undefined;
+        let petTarget = this._petOwners[ target ] != undefined;
+        let petName = undefined;
 
-        if ( !character )
-            // If no character was found, then this log record will be treated as a non-FCT event.
-            return undefined;
+        if ( !character ) {
+            if ( petActor ) {
+                let petOwner = this._petOwners[ actor ];
+                character = this._fctCharacters.find( f => f.server === this._serverName && f.name === petOwner );
+                petName = actor;
+            } else if ( petTarget ) {
+                let petOwner = this._petOwners[ target ];
+                character = this._fctCharacters.find( f => f.server === this._serverName && f.name === petOwner );
+                petName = target;
+            } else {
+                // If no character was found, and this is not a known pet action, then this log record will be treated as a non-FCT event.
+                return undefined;
+            }
+        }
 
         let myAction = actor === character.name;
         let otherAction = target === character.name;
+        let myPetAction = petActor && actor === petName;
+        let otherPetAction = petTarget && target === petName;
+        
+        if ( otherAction || myAction || myPetAction || otherPetAction ) {
 
-        if ( otherAction || myAction ) {
-
-            if ( rec.attackType === 'melee' ) {
+            if ( ( otherAction || myAction ) && rec.attackType === 'melee' ) {
                 model.combatTypes.myHits = myAction;
                 model.combatTypes.otherHitsOnMe = otherAction;
 
-            } else if ( rec.attackType === 'spell' ) {
+            } else if ( ( otherAction || myAction ) && rec.attackType === 'spell' ) {
                 model.combatTypes.mySpellHits = myAction && !rec.heal && actor !== target;
                 model.combatTypes.otherSpellHitsOnMe = otherAction && !rec.heal;
                 model.combatTypes.myHealing = myAction && rec.heal > 0 && actor !== target;
                 model.combatTypes.otherHealingOnMe = otherAction && rec.heal > 0;
+
+            } else if ( ( myPetAction || otherPetAction ) && rec.attackType === 'melee' ) {
+                model.combatTypes.myPetHits = myPetAction;
+                model.combatTypes.otherHitsOnMyPet = otherPetAction;
+
+            } else if ( ( myPetAction || otherPetAction ) && rec.attackType === 'spell' ) {
+                model.combatTypes.myPetSpellHits = myPetAction && !rec.heal && actor !== target;
+                model.combatTypes.otherSpellHitsOnMyPet = otherPetAction && !rec.heal;
+                model.combatTypes.myPetHealing = myPetAction && rec.heal > 0 && actor !== target;
+                model.combatTypes.otherHealingOnMyPet = otherPetAction && rec.heal > 0;
 
             }
 

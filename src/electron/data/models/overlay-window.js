@@ -221,6 +221,12 @@ const combatTypes = [
     'myHealing',
     'otherHealingOnMe',
     'skillUp',
+    'myPetHits',
+    'otherHitsOnMyPet',
+    'myPetSpellHits',
+    'otherSpellHitsOnMyPet',
+    'myPetHealing',
+    'otherHealingOnMyPet',
 ];
 
 class CombatTypes {
@@ -228,15 +234,27 @@ class CombatTypes {
     /** @type {boolean} */
     myHits = false;
     /** @type {boolean} */
+    myPetHits = false;
+    /** @type {boolean} */
     otherHitsOnMe = false;
+    /** @type {boolean} */
+    otherHitsOnMyPet = false;
     /** @type {boolean} */
     mySpellHits = false;
     /** @type {boolean} */
+    myPetSpellHits = false;
+    /** @type {boolean} */
     otherSpellHitsOnMe = false;
+    /** @type {boolean} */
+    otherSpellHitsOnMyPet = false;
     /** @type {boolean} */
     myHealing = false;
     /** @type {boolean} */
+    myPetHealing = false;
+    /** @type {boolean} */
     otherHealingOnMe = false;
+    /** @type {boolean} */
+    otherHealingOnMyPet = false;
     /** @type {boolean} */
     skillUp = false;
 

@@ -1773,15 +1773,28 @@ export class CombatTypes {
     public myHealing: boolean = false;
     public otherHealingOnMe: boolean = false;
 
+    public myPetHits: boolean = false;
+    public otherHitsOnMyPet: boolean = false;
+    public myPetSpellHits: boolean = false;
+    public otherSpellHitsOnMyPet: boolean = false;
+    public myPetHealing: boolean = false;
+    public otherHealingOnMyPet: boolean = false;
+
     public static getHashValue( combatTypes: CombatTypes ): string {
         let hash = '';
 
         hash += combatTypes.myHits ? '1' : '0';
+        hash += combatTypes.myPetHits ? '1' : '0';
         hash += combatTypes.otherHitsOnMe ? '1' : '0';
+        hash += combatTypes.otherHitsOnMyPet ? '1' : '0';
         hash += combatTypes.mySpellHits ? '1' : '0';
+        hash += combatTypes.myPetSpellHits ? '1' : '0';
         hash += combatTypes.otherSpellHitsOnMe ? '1' : '0';
+        hash += combatTypes.otherSpellHitsOnMyPet ? '1' : '0';
         hash += combatTypes.myHealing ? '1' : '0';
+        hash += combatTypes.myPetHealing ? '1' : '0';
         hash += combatTypes.otherHealingOnMe ? '1' : '0';
+        hash += combatTypes.otherHealingOnMyPet ? '1' : '0';
 
         return hash;
     }

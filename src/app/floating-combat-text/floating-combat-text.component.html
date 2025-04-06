@@ -37,6 +37,13 @@
                     <mat-checkbox [(ngModel)]="group.combatTypes.otherSpellHitsOnMe" name="otherSpellHitsOnMe_{{i}}">You Being Hit by Spells</mat-checkbox>
                     <mat-checkbox [(ngModel)]="group.combatTypes.myHealing" name="myHealing_{{i}}">Your Healing Done</mat-checkbox>
                     <mat-checkbox [(ngModel)]="group.combatTypes.otherHealingOnMe" name="otherHealingOnMe_{{i}}">You Being Healed</mat-checkbox>
+                    <h4 class="sub-header full-width header-glow">Pet Combat Types</h4>
+                    <mat-checkbox [(ngModel)]="group.combatTypes.myPetHits" name="myPetHits_{{i}}">Your Pet's Melee Hits</mat-checkbox>
+                    <mat-checkbox [(ngModel)]="group.combatTypes.otherHitsOnMyPet" name="otherHitsOnMyPet_{{i}}">Pets Being hit by Melee</mat-checkbox>
+                    <mat-checkbox [(ngModel)]="group.combatTypes.myPetSpellHits" name="myPetSpellHits_{{i}}">Your Pet's Spell Hits</mat-checkbox>
+                    <mat-checkbox [(ngModel)]="group.combatTypes.otherSpellHitsOnMyPet" name="otherSpellHitsOnMyPet_{{i}}">Pets Being Hit by Spells</mat-checkbox>
+                    <mat-checkbox [(ngModel)]="group.combatTypes.myPetHealing" name="myPetHealing_{{i}}">Your Pet's Healing Done</mat-checkbox>
+                    <mat-checkbox [(ngModel)]="group.combatTypes.otherHealingOnMyPet" name="otherHealingOnMyPet_{{i}}">Pets Being Healed</mat-checkbox>
                 </div>
                 
                 <div style="padding-left: 25px; min-width: 170px;">
