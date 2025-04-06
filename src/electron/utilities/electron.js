@@ -19,10 +19,38 @@ const NumberUtilities = require( "./numbers" );
  */
 function compareRectangles( a, b, nearlyEqual ) {
     if ( nearlyEqual ) {
-        return a.height === b.height && a.width === b.width && Math.abs( a.x - b.x ) < 5 && Math.abs( a.y - b.y ) < 5;
+        return Math.abs( a.height - b.height ) < 5 && Math.abs( a.width - b.width ) < 5 && Math.abs( a.x - b.x ) < 5 && Math.abs( a.y - b.y ) < 5;
     } else {
         return a.height === b.height && a.width === b.width && a.x === b.x && a.y === b.y;
     }
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Evaluates the given bounds to determine if they are invalid.
+ * 
+ * @returns {boolean} Retturns true if the bounds are invalid.
+ * 
+ * @param {Electron.Rectangle} bounds The bounds to evaluate.
+ */
+function invalidScreenBounds( bounds ) {
+    // Returns true if the bounds are undefined/null or if any values are non-integer.
+    if ( !bounds ) {
+        return true;
+    }
+    if ( bounds.x % 1 !== 0 || bounds.y % 1 !== 0 || bounds.width % 1 !== 0 || bounds.height % 1 !== 0 ) {
+        return true;
+    }
+
+    return false;
 }
 
 
@@ -175,6 +203,7 @@ let ElectronUtilities = {
     getRecordKeys: getRecordKeys,
     compareRectangles: compareRectangles,
     calculateRendererBounds: calculateRendererBounds,
+    invalidScreenBounds: invalidScreenBounds,
 };
 
 module.exports = ElectronUtilities;
