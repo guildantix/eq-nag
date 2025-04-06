@@ -4,7 +4,7 @@ const customAlphabet = require( 'nanoid' ).customAlphabet;
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const nanoid = customAlphabet( alphabet, 16 );
 
-const currentCharacterDbVersion = 11;
+const currentCharacterDbVersion = 13;
 
 /**
  * 
@@ -109,6 +109,22 @@ function executeDataMigration( data ) {
         } );
 
         data.version = 11;
+
+    }
+    // Set 12 was identical to 11, so no need to migrate.
+    if ( !data.version || data.version < 13 ) {
+        data?.characters?.forEach( f => {
+            let thj = /eqlog_(?<Character>.*)_thj\.txt$/gi.exec( f.logFile );
+            if ( thj != null && thj?.groups?.Character == f.name ) {
+                f.thj = true;
+                f.daybreak = false;
+                f.p99 = false;
+                f.takp = false;
+                f.server = 'The Heroes Journey';
+            }
+        } );
+
+        data.version = 13;
 
     }
 
