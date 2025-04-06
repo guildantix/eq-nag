@@ -68,9 +68,9 @@ const combatRgx = {
     // Melee active defense. [https://regex101.com/r/9fsdCJ/2]
     ActiveDefense: /^(?<actor>.*?) (try|tries) to ([a-zA-Z0-9_]*) (?<target>.*), but ((\k<target> (?<defenseType>.*)))![\s]?(\((?<modifiers>.*)?\))?/gi,
 
-    // Direct Damage spell attacks. [https://regex101.com/r/ZsVanA/2]
+    // Direct Damage spell attacks. [https://regex101.com/r/U36Wus/1]
     // Kasimyr hit a corporeal shadow for 1074 points of non-melee damage. (Call of Sky Strike)
-    DirectDamage: /^(?<actor>.*?) hit (?<target>.*) for (?<damage>[0-9]*) points of non-melee damage\. \((?<attackType>.*)\)/gi,
+    DirectDamage: /^(?<actor>.*?)(?: \(Owner: (?<owner>.*?)\))? hit (?<target>.*) for (?<damage>[0-9]*) points of non-melee damage\. \((?<attackType>.*)\)/gi,
 
     // https://regex101.com/r/wHzY36/1
     // You deliver a critical blast! (552) (Touch of the Cursed)
