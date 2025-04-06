@@ -264,7 +264,7 @@ class ThjCombatParser extends CombatParser {
                     this._playerCriticalBlasts.splice( criticalIndex, 1 );
                 }
 
-                return this._addDetrimentalSpellEvent( timestamp, 'You', regxResult.groups.target, +regxResult.groups.damage, regxResult.groups.attackType, null, modifiers );
+                return this._addDetrimentalSpellEvent( timestamp, regxResult.groups.actor, regxResult.groups.target, +regxResult.groups.damage, regxResult.groups.attackType, null, modifiers );
             }
 
             regxResult = executCombatRgx( combatRgx.Healing, entry.log );
