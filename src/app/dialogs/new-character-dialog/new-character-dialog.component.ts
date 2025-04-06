@@ -241,6 +241,24 @@ export class NewCharacterDialogComponent implements OnInit {
             let characterLogPath: string = this.fileSelector.nativeElement.files[ 0 ].path;
             let eqInstallFolder: string = characterLogPath.split( '\\Logs' )[ 0 ];
 
+            // eqlog_Kaiban_thj.txt
+            let thj = /eqlog_(?<Character>.*)_thj\.txt$/gi.exec( characterLogPath );
+            if ( thj != null && thj?.groups?.Character != null ) {
+
+                let option: CharacterModel = new CharacterModel();
+
+                option.name = thj.groups.Character;
+                option.server = 'thj';
+                option.logFile = `${characterLogPath}`;
+                option.takp = false;
+                option.p99 = false;
+                option.daybreak = false;
+                option.thj = true;
+
+                this.model = option;
+
+            }
+
             let results = /eqlog_(?<Character>.*)_(?<Server>[a-z]*)\.txt$/gi.exec( characterLogPath );
             if ( results != null && results?.groups?.Character != null && results?.groups?.Server != null ) {
 
@@ -306,24 +324,6 @@ export class NewCharacterDialogComponent implements OnInit {
                 option.p99 = false;
                 option.daybreak = false;
                 option.thj = false;
-
-                this.model = option;
-
-            }
-
-            // eqlog_Kaiban_thj.txt
-            let thj = /eqlog_(?<Character>.*)_thj\.txt$/gi.exec( characterLogPath );
-            if ( thj != null && thj?.groups?.Character != null ) {
-
-                let option: CharacterModel = new CharacterModel();
-
-                option.name = thj.groups.Character;
-                option.server = 'thj';
-                option.logFile = `${characterLogPath}`;
-                option.takp = false;
-                option.p99 = false;
-                option.daybreak = false;
-                option.thj = true;
 
                 this.model = option;
 
