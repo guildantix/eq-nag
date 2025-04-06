@@ -59,6 +59,7 @@ const combatRgx = {
     MeleeDamage: /^(?<actor>.*?) (?<attackType>backstab|backstabs|bash|bashes|bite|bites|claw|claws|crush|crushes|frenzy|frenzies|gore|gores|hit|hits|kick|kicks|maul|mauls|pierce|pierces|punch|punches|rend|rends|shoot|shoots|slam|slams|slash|slashes|slice|slices|smash|smashes|sting|stings|strike|strikes|sweep|sweeps+?) (?<target>.*) for (?<damage>[0-9]*) points of damage\.[\s]?(\((?<modifiers>.*)?\))?/gi,
     
     // https://regex101.com/r/sYDkzv/1
+    // Webabyss scores a critical hit! (100)
     MeleeCriticalDamage: /^(?<actor>.*?) scores a critical hit! \((?<damage>[0-9]*)\)/gi,
     
     // Melee miss|es. [https://regex101.com/r/1sfdm4/1]
@@ -226,7 +227,7 @@ class ThjCombatParser extends CombatParser {
                 let criticalRegxResult = executCombatRgx( combatRgx.MeleeCriticalDamage, prevEntry.log );
                 let modifiers = '';
 
-                if ( criticalRegxResult !== null && criticalRegxResult.groups.actor === this._characterName ) {
+                if ( criticalRegxResult !== null && criticalRegxResult.groups.actor === regxResult.groups.actor && ( ( +criticalRegxResult.groups.damage ) - ( +regxResult.groups.damage ) ) < 10 ) {
                     modifiers += 'Critical';
                 }
 
