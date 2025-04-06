@@ -203,6 +203,7 @@ class ThjCombatParser extends CombatParser {
             regxResult = regxResult == null ? executCombatRgx( combatRgx.Died, entry.log ) : regxResult;
             if ( regxResult !== null ) {
                 this._addDeathEvent( timestamp, regxResult.groups.target, regxResult.groups.actor, logLine );
+                log( 'Adding death event', { target: regxResult.groups.target, deadNpcs: this._encounterStats.deadNpcs }, true );
                 return undefined;
             }
 
