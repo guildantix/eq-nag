@@ -21,7 +21,7 @@ legend.full-width {
     flex-flow: row nowrap;
     overflow: hidden;
     white-space: nowrap;
-    // text-overflow: ellipsis;
+    width: 100%;
     
     .first {
         max-width: 50%;
@@ -30,7 +30,6 @@ legend.full-width {
         white-space: nowrap;
     }
     .second {
-        padding-left: 0.39em;
         max-width: 50%;
         direction: rtl;
         overflow: hidden;
