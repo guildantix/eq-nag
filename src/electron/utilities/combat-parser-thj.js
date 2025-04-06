@@ -71,6 +71,10 @@ const combatRgx = {
     // Kasimyr hit a corporeal shadow for 1074 points of non-melee damage. (Call of Sky Strike)
     DirectDamage: /^(?<actor>.*?) hit (?<target>.*) for (?<damage>[0-9]*) points of non-melee damage\. \((?<attackType>.*)\)/gi,
 
+    // https://regex101.com/r/wHzY36/1
+    // You deliver a critical blast! (552) (Touch of the Cursed)
+    CriticalDirectDamage: /^You deliver a critical blast! \((?<damage>[0-9]+)\) \((?<attackType>.*)\)/gi,
+
     // https://regex101.com/r/AXNVrc/1
     // You deliver a critical blast! (1074) (Call of Sky Strike)
     CriticalDirectDamage: /^(?<actor>You) deliver a critical blast! \((?<damage>[0-9]*)\) \((?<attackType>.*)\)/gi,
@@ -134,6 +138,8 @@ class ThjCombatParser extends CombatParser {
 
     /** @type {RegExp} */
     _playerWhoRgx;
+
+    _playerCriticalBlasts = [];
 
     /**
      * Constructs a new combat parser.
@@ -232,14 +238,29 @@ class ThjCombatParser extends CombatParser {
             if ( regxResult !== null ) {
                 return this._addMeleeAvoidance( timestamp,  regxResult.groups.actor ,  regxResult.groups.target, regxResult.groups.defenseType, regxResult.groups.attackType, regxResult.groups.modifiers );
             }
+
+            regxResult = executCombatRgx( combatRgx.CriticalDirectDamage, entry.log );
+            if ( regxResult !== null ) {
+                
+                // Add this to the critical blast list, so the next attack can be checked against it.
+                this._playerCriticalBlasts.push( {
+                    attackType: regxResult.groups.attackType,
+                    damage: +regxResult.groups.damage,
+                } );
+                
+                return undefined;
+            }
             
             regxResult = executCombatRgx( combatRgx.DirectDamage, entry.log );
             if ( regxResult !== null ) {
-                let criticalRegxResult = executCombatRgx( combatRgx.CriticalDirectDamage, prevEntry.log );
                 let modifiers = '';
 
-                if ( criticalRegxResult !== null && criticalRegxResult.groups.actor === 'You' && criticalRegxResult.groups.attackType === regxResult.groups.attackType ) {
+                let criticalIndex = this._playerCriticalBlasts.findIndex( ( item ) => {
+                    return item.attackType === regxResult.groups.attackType && item.damage === +regxResult.groups.damage;
+                } );
+                if ( criticalIndex !== -1 ) {
                     modifiers += 'Critical';
+                    this._playerCriticalBlasts.splice( criticalIndex, 1 );
                 }
 
                 return this._addDetrimentalSpellEvent( timestamp, 'You', regxResult.groups.target, +regxResult.groups.damage, regxResult.groups.attackType, null, modifiers );
