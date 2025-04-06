@@ -92,8 +92,8 @@ const combatRgx = {
     // https://regex101.com/r/zL5Mr4/1
     Chat: /\] (?<player>.*) (tells the raid|tells the guild|tells the group),\s+'.*'$/gi,
 
-    // https://regex101.com/r/I4wX9J/1
-    PetLeader: /^(?<pet>.+?) says 'My leader is (?<player>.*)\.'/gi,
+    // https://regex101.com/r/cPfBq5/2
+    PetLeader: /^(?<pet>.+?) says,? 'My leader is (?<player>.*)\.'/i,
 
     // https://regex101.com/r/kOmGrB/2
     Charmed: /^(?<charmPet>.+?) (is|has been) charmed\.$/gi,

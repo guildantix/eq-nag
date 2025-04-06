@@ -243,8 +243,8 @@ const combatRgx = {
     // https://regex101.com/r/e1bXss/1
     LastStand: /^(?<actor>.+?)\b\s{0,1}'{0,1}s{0,1}\b.* steels themselves for a last stand\./i,
 
-    // https://regex101.com/r/cPfBq5/1
-    PetLeader: /^(?<pet>.+?) says, 'My leader is (?<player>.*)\.'/i,
+    // https://regex101.com/r/cPfBq5/2
+    PetLeader: /^(?<pet>.+?) says,? 'My leader is (?<player>.*)\.'/i,
 
     // https://regex101.com/r/Sm6SVR/1
     PetAttack: /^(?<pet>.+?) told you, 'Attacking (?<target>.*) Master\.'/i,
