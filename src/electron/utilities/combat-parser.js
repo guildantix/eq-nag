@@ -302,9 +302,9 @@ class CombatParser {
     _verifiedNpcs = [];
     /** @type {string[]} */
     _verifiedPets = []; // needs to be by server
-    /** @type {Record<string, string[]>} */
+    /** @type {Record<string, string[]>} Maps owner => pets */
     _playerPets = {}; // needs to be by server
-    /** @type {Record<string, string>} */
+    /** @type {Record<string, string>} Maps pet => owner */
     _petOwners = {}; // needs to be by server
     /** @type {Record<string, PlayerInfo>} */
     _playerInfos = {}; // needs to be by server
