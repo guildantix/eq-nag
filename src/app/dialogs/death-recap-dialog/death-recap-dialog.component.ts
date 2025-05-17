@@ -68,7 +68,7 @@ export class DeathRecapDialogComponent implements OnInit {
 
     fileSelected( e: any ) {
         if ( this.fileSelector.nativeElement.files?.length > 0 ) {
-            let characterLogPath: string = this.fileSelector.nativeElement.files[ 0 ].path;
+            const characterLogPath: string = window.api.getPathForFile( this.fileSelector.nativeElement.files[ 0 ] );
 
             let results = /eqlog_(?<Character>.*)_(?<Server>[a-z]*)\.txt$/gi.exec( characterLogPath );
             if ( results != null && results?.groups?.Character != null && results?.groups?.Server != null ) {
