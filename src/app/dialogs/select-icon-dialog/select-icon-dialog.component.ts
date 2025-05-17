@@ -147,7 +147,7 @@ export class SelectIconDialogComponent implements OnInit {
      */
     fileSelected( e: any ) {
         if ( this.fileSelector.nativeElement.files?.length > 0 ) {
-            let eqGamePath: string = this.fileSelector.nativeElement.files[ 0 ].path;
+            const eqGamePath: string = window.api.getPathForFile( this.fileSelector.nativeElement.files[ 0 ] );
             if ( eqGamePath.indexOf( 'eqgame.exe' ) < 0 ) {
                 this.invalidFolderSelected = true;
             } else {
