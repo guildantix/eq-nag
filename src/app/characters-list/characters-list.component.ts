@@ -905,7 +905,7 @@ export class CharactersListComponent implements OnInit {
         if ( this.fileSelector.nativeElement.files?.length > 0 ) {
             
             let index: number = _.findIndex( this.characters, f => f.characterId === characterId );
-            this.characters[ index ].logFile = this.fileSelector.nativeElement.files[ 0 ].path;
+            this.characters[ index ].logFile = window.api.getPathForFile( this.fileSelector.nativeElement.files[ 0 ] );
             this.ipcService.updateCharacter( this.characters[ index ] ).subscribe( updated => {
                 if ( updated ) {
                     this.snackBar.open( 'Character updated!', 'Dismiss', { duration: 2500 } );
