@@ -238,8 +238,8 @@ export class NewCharacterDialogComponent implements OnInit {
      */
     fileSelected( e: any ) {
         if ( this.fileSelector.nativeElement.files?.length > 0 ) {
-            let characterLogPath: string = this.fileSelector.nativeElement.files[ 0 ].path;
-            let eqInstallFolder: string = characterLogPath.split( '\\Logs' )[ 0 ];
+            const characterLogPath = window.api.getPathForFile( this.fileSelector.nativeElement.files[ 0 ] );
+            const eqInstallFolder: string = characterLogPath.split( '\\Logs' )[ 0 ];
 
             // eqlog_Kaiban_thj.txt
             let thj = /eqlog_(?<Character>.*)_thj\.txt$/gi.exec( characterLogPath );
