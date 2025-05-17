@@ -101,10 +101,6 @@
       ".env"
     ],
     "win": {
-      "signingHashAlgorithms": [
-        "sha256"
-      ],
-      "sign": "./sign.js",
       "target": [
         "nsis",
         "portable"
@@ -123,6 +119,7 @@
       "output": "electron/output",
       "buildResources": "electron/buildResources"
     },
+    "afterSign": "sign.js",
     "files": [
       "**/*",
       "!**/node_modules/*/{CHANGELOG.md,README.md,README,readme.md,readme}",
