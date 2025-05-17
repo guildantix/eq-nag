@@ -2,11 +2,30 @@
 // TODO: Quickshare lists are still sharing the position information.
 // TODO: Fix the enternally repeating update modal, should not be repeatedly adding new modals or when the user chooses no, only ask again after nag restarts.
 
+import log from "electron-log";
+log.transports.file.level = 'debug';
+const origLog = console.log;
+console.log = ( ...args ) => {
+    origLog( ...args );
+    log.info( ...args );
+};
+
+log.info( 'Logging initialized' );
+
+process.on( 'uncaughtException', ( err ) => {
+    console.error( 'Uncaught Exception:', err );
+    log.error( 'Uncaught Exception:', err );
+} );
+
+process.on( 'unhandledRejection', ( reason ) => {
+    console.error( 'Unhandled Rejection:', reason );
+    log.error( 'Unhandled Rejection:', reason );
+} );
+
 import { app, BrowserWindow, ipcMain, protocol, session, screen, Tray, Menu, globalShortcut, clipboard, shell } from "electron";
 import * as url from "url";
 import * as path from "path";
 
-import log from "electron-log";
 import unhandled from "electron-unhandled";
 
 import UserPreferencesStore from "./src/electron/data/user-preferences.js";
@@ -51,7 +70,7 @@ const __dirname = path.dirname( __filename );
 
 /** @type {BrowserWindow} */
 var mainWindow, logWatcherWindow, testWindow;
-var enableDevMode = true;
+var enableDevMode = false;
 const updateCheckInterval = 10 * 60 * 1000;
 const winManager = new WindowManager(__dirname);
 const userPreferences = new UserPreferencesStore( {} );
@@ -88,6 +107,8 @@ unhandled( {
     logger: log.error,
     showDialog: false,
 } );
+
+app.isDev = () => enableDevMode === true && process.defaultApp === true;
 
 /**
  * Creates a tray menu for the application.
@@ -265,8 +286,6 @@ function createWindow() {
     
 };
 
-app.isDev = () => enableDevMode === true && process.defaultApp === true;
-
 app.commandLine.appendSwitch( 'enable-speech-dispatcher' );
 
 app.on( 'before-quit', async () => {
@@ -318,10 +337,16 @@ if ( process.argv?.length > 1 && process.argv.includes( '--no-gpu' ) ) {
 
 }
 
+// enable dev mode with --dev
+const runningLocal = process.defaultApp === true;
+if ( runningLocal || ( process.argv?.length > 1 && process.argv.includes( '--dev' ) ) ) {
+    enableDevMode = true;
+    console.log( '[main:app-initialization] Running in development mode.' );
+}
 
 const bootstrapApp = () => {
 
-    app.on( 'ready', function () {
+    app.whenReady().then( () => {
         
         winManager.onReady();
         screen.on( 'display-metrics-changed', ( e, newDisplay ) => {
@@ -391,6 +416,7 @@ const instanceLock = allowMultipleInstances || app.requestSingleInstanceLock();
 
 if ( !allowMultipleInstances && !instanceLock ) {
     app.quit();
+    console.log( '[main:app-initialization] App is already running. Exiting.' );
 } else {
 
     if ( !allowMultipleInstances ) {
@@ -999,7 +1025,7 @@ const scheduler = async () => {
     }, 1000 * 60 );
 };
 
-app.on( 'ready', function () {
+app.whenReady().then( () => {
 
     userPreferences.attachIpcEvents( mainWindowRef, sendTick, logBootstrapRef );
     winManager.attachIpcEvents( mainWindowRef, overlayDatabase, userPreferences, characterDatabase );
