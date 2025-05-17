@@ -10,6 +10,7 @@ export class WindowApi {
     close: () => void;
     setVersionNumberViewed: ( version: string ) => void;
     openPatreon: () => void;
+    getPathForFile: ( file: File ) => string;
     utils: {
         dates: {
             /**

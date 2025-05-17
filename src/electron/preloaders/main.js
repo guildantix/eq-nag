@@ -5,6 +5,7 @@ const StyleSheetUtil = require( '../utilities/style-sheet' );
 const log = require( 'electron-log' );
 const NumberUtilities = require( '../utilities/numbers' );
 const { pSBCr, pSBC, RGB_Linear_Blend, RGB_Linear_Shade, RGB_Log_Blend, RGB_Log_Shade } = require( '../utilities/colors' );
+const { webUtils } = require( 'electron' );
 
 const channelPrefixes = [
     'app',
@@ -125,5 +126,8 @@ contextBridge.exposeInMainWorld( 'api', {
     },
     openPatreon: () => {
         ipcRenderer.send( 'app:open-patreon' );
+    },
+    getPathForFile: ( file ) => {
+        return webUtils.getPathForFile( file );
     },
 } );
