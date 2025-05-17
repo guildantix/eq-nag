@@ -486,7 +486,9 @@ export class MainComponent implements OnInit {
     }
 
     fileSelected( e: any ) {
-        this.ipcService.updateLogFile( this.fileSelector.nativeElement.files[ 0 ].path );
+        // TODO: This is not used any longer. Confirm and remove.
+        const filePath: string = window.api.getPathForFile( this.fileSelector.nativeElement.files[ 0 ] );
+        this.ipcService.updateLogFile( filePath );
     }
 
     onChangeTabs( selectedIndex: number ): void {
