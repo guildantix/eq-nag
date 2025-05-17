@@ -2,32 +2,52 @@
 // TODO: Quickshare lists are still sharing the position information.
 // TODO: Fix the enternally repeating update modal, should not be repeatedly adding new modals or when the user chooses no, only ask again after nag restarts.
 
-const { app, BrowserWindow, ipcMain, protocol, session, screen, Tray, Menu, globalShortcut } = require( "electron" );
-const { autoUpdater, updaterSignal } = require('electron-updater');
-const url = require( "url" );
-const path = require( "path" );
-const log = require( 'electron-log' );
-const unhandled = require('electron-unhandled');
-const { clipboard } = require( 'electron' );
-const UserPreferencesStore = require( './src/electron/data/user-preferences' );
-const DkpDatabaseStore = require( './src/electron/data/dkp-database' );
-const TriggerDatabaseStore = require( './src/electron/data/trigger-database' );
-const OverlayDatabaseStore = require( "./src/electron/data/overlay-database" );
-const ForwardRef = require( './src/electron/forward-ref' );
-const WindowManager = require( './src/electron/window-manager' );
-const CharacterDatabaseStore = require( "./src/electron/data/character-database" );
-const LogBootstrapper = require( './src/electron/log-bootstrap' );
-const GameResources = require( './src/electron/data/game-resources' );
-const FilesDatabaseStore = require( './src/electron/data/files-database' );
-const GinaImporter = require( "./src/electron/gina-importer" );
-const { IpcMessage, Progress, ScheduledTask, LogMaintenanceRules, Version, WinInfo, LogMaintenancePlanTypes } = require( "./src/electron/data/models/common" );
-const { LogFileLocation } = require( "./src/electron/data/log-file-location" );
-const VerifiedPlayersStore = require( "./src/electron/data/verified-players" );
-const cronParser = require( 'cron-parser' );
-const { DateUtilities } = require( "./src/electron/utilities/dates" );
-const CombatDatabase = require( "./src/electron/data/combat-database" );
-const activeWindow = require( "active-win" );
-const hasher = require( 'crypto' ).createHash;
+import { app, BrowserWindow, ipcMain, protocol, session, screen, Tray, Menu, globalShortcut, clipboard, shell } from "electron";
+import * as url from "url";
+import * as path from "path";
+
+import log from "electron-log";
+import unhandled from "electron-unhandled";
+
+import UserPreferencesStore from "./src/electron/data/user-preferences.js";
+import DkpDatabaseStore from "./src/electron/data/dkp-database.js";
+import TriggerDatabaseStore from "./src/electron/data/trigger-database.js";
+import OverlayDatabaseStore from "./src/electron/data/overlay-database.js";
+import ForwardRef from "./src/electron/forward-ref.js";
+import WindowManager from "./src/electron/window-manager.js";
+import CharacterDatabaseStore from "./src/electron/data/character-database.js";
+import LogBootstrapper from "./src/electron/log-bootstrap.js";
+import GameResources from "./src/electron/data/game-resources.js";
+import FilesDatabaseStore from "./src/electron/data/files-database.js";
+import GinaImporter from "./src/electron/gina-importer.js";
+
+import {
+  IpcMessage,
+  Progress,
+  ScheduledTask,
+  LogMaintenanceRules,
+  Version,
+  WinInfo,
+  LogMaintenancePlanTypes
+} from "./src/electron/data/models/common.js";
+
+import { LogFileLocation } from "./src/electron/data/log-file-location.js";
+import * as VerifiedPlayersStore from "./src/electron/data/verified-players.js";
+
+import cronParser from "cron-parser";
+import { DateUtilities } from "./src/electron/utilities/dates.js";
+import CombatDatabase from "./src/electron/data/combat-database.js";
+import activeWindow from "active-win";
+import { createHash as hasher } from "crypto";
+
+import { fileURLToPath } from 'url';
+
+// Fixed: CommonJS interop for electron-updater
+import pkg from "electron-updater";
+const { autoUpdater, updaterSignal } = pkg;
+
+const __filename = fileURLToPath( import.meta.url );
+const __dirname = path.dirname( __filename );
 
 /** @type {BrowserWindow} */
 var mainWindow, logWatcherWindow, testWindow;
@@ -53,15 +73,16 @@ autoUpdater.logger = log;
 /** @type {number | undefined} */
 var nagProcessId = undefined;
 const allowMultipleInstances = false;
-const fs = require( 'fs' );
+const fs = await import( 'fs' );
 var doUpdateCheck = true;
 
 
 const configRootPath = path.join( __dirname, 'config.json' );
 
 const config = JSON.parse( fs.readFileSync( configRootPath, 'utf-8' ) );
-// require( 'dotenv' ).config();
-require( '@electron/remote/main' ).initialize();
+
+import remoteMain from '@electron/remote/main/index.js';
+remoteMain.initialize();
 
 unhandled( {
     logger: log.error,
@@ -180,7 +201,7 @@ function createWindow() {
         show: false,
     } );
 
-    require( "@electron/remote/main" ).enable( mainWindow.webContents );
+    remoteMain.enable( mainWindow.webContents );
 
     mainWindow.setBackgroundColor( '#1a1a1a' );
 
@@ -536,7 +557,7 @@ ipcMain.on( 'app:minimize:tray', ( event, data ) => {
 } );
 
 ipcMain.on( 'app:open-patreon', ( event ) => {
-    require( 'electron' ).shell.openExternal( 'https://www.patreon.com/EverQuestNag' );
+    shell.openExternal('https://www.patreon.com/EverQuestNag');
 } );
 
 ipcMain.on( 'app:request:tick', ( event, data ) => {
