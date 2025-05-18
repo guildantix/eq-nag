@@ -883,6 +883,7 @@ class WindowManager {
             skipTaskbar: true,
             maximizable: false,
             enableLargerThanScreen: true,
+            focusable: false,
         } );
 
         require( "@electron/remote/main" ).enable( renderer.webContents );
