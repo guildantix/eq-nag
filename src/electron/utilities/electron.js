@@ -183,9 +183,9 @@ function calculateRendererBounds() {
 
     return {
         x: Math.floor( left),
-        y: Math.floor( top ),
+        y: Math.floor( top ) - 50,
         width: Math.floor( right - left ),
-        height: Math.floor( bottom - top ),
+        height: Math.floor( bottom - top ) + 50,
     };
 }
 
