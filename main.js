@@ -355,6 +355,7 @@ const bootstrapApp = () => {
                 winManager.checkOverlayPositions( true );
             }
         } );
+        // There is a branch that attempts to migrate away from this interceptor: feature/migrate-interceptor-gross
         protocol.interceptFileProtocol( 'file', ( req, callback ) => {
             let filePath = new url.URL( req.url ).pathname;
             
