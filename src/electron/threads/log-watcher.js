@@ -2,7 +2,7 @@
 const { ipcRenderer } = require( 'electron' );
 const fs = require( 'fs' );
 const { Trigger, TriggerAction, ActionTypes, TriggerConditionTypes, OperatorTypes, CharacterClassLevel, TriggerSubAction, TriggerFolder, TriggerCondition, CapturePhrase, Phrase, TriggerParseHistoryModel, getActionLabel, LogTypes, ErrorMessages } = require( '../data/models/trigger' );
-const { QuickShareAuthorListTypes, SimulationProgress, NConditionalModel } = require( '../data/models/common' );
+const { QuickShareAuthorListTypes, SimulationProgress, NConditionalModel, VConditionalOperationModel, SConditionalModel, LConditionalOperationModel, SConditionalOperationModel } = require( '../data/models/common' );
 const { PhraseParse, LogTrigger, LogList } = require( './log.model' );
 const { OverlayComponent, OverlayWindow, TriggerSecondaryActionModel } = require( '../data/models/overlay-window' );
 const { CharacterModel } = require( '../data/models/character' );
@@ -1004,6 +1004,15 @@ function generateTriggerFns() {
 
                 /** @type {Record<string, NConditionalModel>} */
                 let _phraseNConditionals = {};
+
+                /** @type {Record<string, VConditionalOperationModel[]>} */
+                let _phraseVarConditionals = {};
+
+                /** @type {Record<string, LConditionalOperationModel[]>} */
+                let _phraseListConditionals = {};
+
+                /** @type {Record<string, SConditionalOperationModel[]>} */
+                let _phraseSeqConditionals = {};
     
                 trigger.capturePhrases?.forEach( phrase => {
 
@@ -1023,52 +1032,117 @@ function generateTriggerFns() {
                                 /** @type {NConditionalModel | undefined} */
                                 let nConditionals = undefined;
 
-                                if ( _phraseStaticCache[ phrase.phraseId ] ) {
-                                    rgxValue = _phraseStaticCache[ phrase.phraseId ];
-                                    nConditionals = _phraseNConditionals[ phrase.phraseId ];
+                                if ( _phraseRegEx[ phrase.phraseId ] == null ) {
+                                    if ( _phraseStaticCache[ phrase.phraseId ] ) {
+                                        rgxValue = _phraseStaticCache[ phrase.phraseId ];
+                                        nConditionals = _phraseNConditionals[ phrase.phraseId ];
 
-                                } else {
-                                    nConditionals = StringUtilities.parseNConditionalCodesToRegex( rgxValue, characterName );
-                                    rgxValue = nConditionals?.value ?? rgxValue;
+                                    } else {
+                                        nConditionals = StringUtilities.parseNConditionalCodesToRegex( rgxValue, characterName );
+                                        rgxValue = nConditionals?.value ?? rgxValue;
 
-                                    _phraseStaticCache[ phrase.phraseId ] = rgxValue;
-                                    _phraseNConditionals[ phrase.phraseId ] = nConditionals;
+                                        _phraseStaticCache[ phrase.phraseId ] = rgxValue;
+                                        _phraseNConditionals[ phrase.phraseId ] = nConditionals;
 
-                                }
+                                    }
                                 
-                                rgxValue = StringUtilities.parseShortCodesToRegex( rgxValue, characterName );
-                                rgxValue = StringUtilities.parseStoredVariablesToRegex( rgxValue, storedVariables );
-
-                                // If the trigger has any List action types.
-                                let listAction = trigger.actions?.find( a => a.actionType === ActionTypes.List );
-                                if ( listAction ) {
-                                    let list = lists.find( f => f.action.actionId === listAction.actionId );
-                                    rgxValue = StringUtilities.parseListCodesToLiteral( rgxValue, list?.component?.listNames ?? [], characterName );
-                                }
-    
-                                if ( trigger.captureMethod === 'Sequential' ) {
-                                    rgxValue = StringUtilities.parseMatchesToLiteral( rgxValue, { groups: matchGroups }, trigger._deltaTime );
-                                }
-    
-                                if ( hasGroups === true ) {
-                                    rgxValue = StringUtilities.parseSequentialGroups( rgxValue, matchGroups );
-                                }
+                                    rgxValue = StringUtilities.parseShortCodesToRegex( rgxValue, characterName );
                                 
-                                _renderedPhrases[ phrase.phraseId ] = rgxValue;
-                                // Optimizations:
-                                // Here, we could use formula to add named capture groups for variable insertion, letting the system create one regex once.
-                                // ex: (?<number_VariableName>\d+), (?<string_VariableName>.+), etc.
-                                // If the regex matches, do a simple regex.groups?.string_VariableName == 'value' to determine if the value is a match.
-                                // It is possible that we would need to do an includes or startswith to correctly capture variable values.
+                                    const regexVConditional = StringUtilities.parseStoredVariablesToRegexConditional( rgxValue, storedVariables );
+                                    if ( regexVConditional?.operations.length > 0 ) {
+                                        rgxValue = regexVConditional.value;
+                                        _phraseVarConditionals[ phrase.phraseId ] = _phraseVarConditionals[ phrase.phraseId ]?.length > 0 ? [ ..._phraseVarConditionals[ phrase.phraseId ], ...regexVConditional.operations ] : regexVConditional.operations;
+                                    }
 
-                                // Further, we can do a better job of caching phrases, maybe an array of some type that we can loop through.
+                                    // If the trigger has any List action types.
+                                    let listAction = trigger.actions?.find( a => a.actionType === ActionTypes.List );
+                                    if ( listAction ) {
+                                        const regexLConditional = StringUtilities.parseListCodesToRegexConditionals( rgxValue );
+                                        if ( regexLConditional?.operations.length > 0 ) {
+                                            rgxValue = regexLConditional.value;
+                                            _phraseListConditionals[ phrase.phraseId ] = _phraseListConditionals[ phrase.phraseId ]?.length > 0 ? [ ..._phraseListConditionals[ phrase.phraseId ], ...regexLConditional.operations ] : regexLConditional.operations;
+                                        }
+                                    }
+    
+    
+                                    if ( trigger.captureMethod === 'Sequential' ) {
+                                        const regexSConditional = StringUtilities.parseSequentialGroupsToRegexConditionals( rgxValue );
+                                        if ( regexSConditional?.operations.length > 0 ) {
+                                            rgxValue = regexSConditional.value;
+                                            _phraseSeqConditionals[ phrase.phraseId ] = _phraseSeqConditionals[ phrase.phraseId ]?.length > 0 ? [ ..._phraseSeqConditionals[ phrase.phraseId ], ...regexSConditional.operations ] : regexSConditional.operations;
+                                        }
+                                    }
+                                
+                                    _renderedPhrases[ phrase.phraseId ] = rgxValue;
+                                    // Optimizations:
+                                    // Here, we could use formula to add named capture groups for variable insertion, letting the system create one regex once.
+                                    // ex: (?<number_VariableName>\d+), (?<string_VariableName>.+), etc.
+                                    // If the regex matches, do a simple regex.groups?.string_VariableName == 'value' to determine if the value is a match.
+                                    // It is possible that we would need to do an includes or startswith to correctly capture variable values.
 
-                                // If we really want to, we could divine a way to determine if the variables have changed since last check.
-                                if ( _phraseRegEx[ phrase.phraseId ] == null || phrase.dynamic ) {
+                                    // Further, we can do a better job of caching phrases, maybe an array of some type that we can loop through.
+
+                                    // If we really want to, we could divine a way to determine if the variables have changed since last check.
                                     _phraseRegEx[ phrase.phraseId ] = new RegExp( rgxValue, getPhraseRegexOptions( phrase ) );
                                 }
 
                                 let _res = _phraseRegEx[ phrase.phraseId ].exec( value );
+
+                                // Notes:
+                                //  variable conditional failed for TestRecallVariable with name nag_2WmDJBOlld37UnZ8 with value asdf
+                                //  rgxValue ^Eryndhel recalls (?<nag_2WmDJBOlld37UnZ8>.+?)\.$
+                                //  Variable conditional passed for TestRecallVariable with value testing
+                                //  cleaning up 3eSxSuf9dfI9seZ3
+
+                                if ( _res?.groups ) {
+
+                                    if ( _phraseVarConditionals[ phrase.phraseId ]?.length > 0 ) {
+                                        // If the phrase has variable conditionals, we need to check them.
+                                        for ( let i = 0; i < _phraseVarConditionals[ phrase.phraseId ].length; i++ ) {
+                                            const vCond = _phraseVarConditionals[ phrase.phraseId ][ i ];
+
+                                            // NOTE: This is showing a preference for the stored variables, so if a sequence has a matching value as a stored variable, the stored variable will check first.
+                                            if ( !vCond.validatorFn( _res, storedVariables ) ) {
+                                                if ( trigger.captureMethod === 'Sequential' && matchGroups ) {
+                                                    // If the phrase is sequential and we have sequential regex matches, we need to re-check against the sequential conditionals.
+                                                    if ( !vCond.seqValidatorFn( _res, { groups: matchGroups } ) ) {
+                                                        _res = undefined;
+                                                        break;
+                                                    }
+                                                } else {
+                                                    _res = undefined;
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                    }
+
+                                    if ( _phraseListConditionals[ phrase.phraseId ]?.length > 0 ) {
+                                        // If the phrase has list conditionals, we need to check them.
+                                        for ( let i = 0; i < _phraseListConditionals[ phrase.phraseId ].length; i++ ) {
+                                            const lCond = _phraseListConditionals[ phrase.phraseId ][ i ];
+
+                                            if ( !lCond.validatorFn( _res, lists, characterName ) ) {
+                                                _res = undefined;
+                                                break;
+                                            }
+                                        }
+                                    }
+
+                                    if ( _phraseSeqConditionals[ phrase.phraseId ]?.length > 0 ) {
+                                        // If the phrase has sequential conditionals, we need to check them.
+                                        for ( let i = 0; i < _phraseSeqConditionals[ phrase.phraseId ].length; i++ ) {
+                                            const sCond = _phraseSeqConditionals[ phrase.phraseId ][ i ];
+
+                                            if ( !sCond.validatorFn( _res, { groups: matchGroups } ) ) {
+                                                _res = undefined;
+                                                break;
+                                            }
+                                        }
+                                    }
+
+                                }
+
                                 if ( _res?.length > 0 && nConditionals ) {
                                     for ( let opI = 0; opI < nConditionals.operations.length; opI++ ) {
                                         const op = nConditionals.operations[ opI ];
