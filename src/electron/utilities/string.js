@@ -1,5 +1,15 @@
 const { result } = require( "lodash" );
-const { NConditionalModel, NConditionalOperationModel } = require( "../data/models/common" );
+const {
+    NConditionalModel,
+    NConditionalOperationModel,
+    VConditionalModel,
+    VConditionalOperationModel,
+    LConditionalModel,
+    LConditionalOperationModel,
+    SConditionalModel,
+    SConditionalOperationModel,
+} = require( "../data/models/common" );
+const { nagId } = require( "./nag-id" );
 
 
 
@@ -121,6 +131,84 @@ function parseStoredVariablesToRegex(value, storedVariables) {
         }
     }
     return value;
+}
+
+/**
+ * Parses the given string, inserting regular expression named groups where matched with ?{name_of_var}.
+ * 
+ * @returns {VConditionalModel} Returns an VConditionalModel object.
+ * 
+ * @param {string} value The string value to parse.
+ */
+function parseStoredVariablesToRegexConditional( value ) {
+    // \${(.[^}]*)}     Your ${SpellBeingCast} spell is interrupted.
+    //                      Full match	47-63	{SpellBeingCast}
+    //                      Group 1.	n/a	SpellBeingCast
+    let result = /\${(.[^}]*)}/g.exec( value );
+    const output = {
+        value: value,
+        operations: [],
+    };
+    
+    if ( result?.length > 1 ) {
+        for ( let i = 1; i < result.length; i++ ) {
+
+            // What this will do is create a random name for the capture group and build a validator
+            // function that will check the stored variables for a match.
+            // ex:
+            //      storedVariables['SpellBeingCast'] = ['Envenomed Bolt', 'Pyre of Mori']
+            //      ${SpellBeingCast} => (?<a1b2c3d4e5f6g7>.+?)
+            //      vConditional.key = 'SpellBeingCast'
+            //      vConditional.name = 'a1b2c3d4e5f6g7'
+            //      vConditional.value = value.replace( /\${SpellBeingCast}/g, '(?<a1b2c3d4e5f6g7>.+?)' );
+            //
+            // The validator function will then check the stored variables for a match. If a1b2c3d4e5f6g7 is in SpellBeingCast, it will return true.
+
+            /** @type {VConditionalOperationModel} */
+            const vConditional = {};
+
+            vConditional.key = result[ i ];
+            vConditional.name = 'nag_' + nagId();
+
+            let captureGroupRgx = `(?<${vConditional.name}>.+?)`;
+            output.value = value.replace( RegExp( `\\\${${result[ i ]}}`, 'g' ), captureGroupRgx );
+
+            vConditional.validatorFn = ( match, storedVariables ) => {
+                if ( match?.groups[ vConditional.name ] ) {
+                    const values = storedVariables[ vConditional.key ];
+                    if ( values?.length > 0 ) {
+                        for ( let i = 0; i < values.length; i++ ) {
+                            if ( compare( match.groups[ vConditional.name ], values[ i ] ) ) {
+                                // Update the match group, adding a value for the key.
+                                match.groups[ vConditional.key ] = values[ i ];
+                                return true;
+                            }
+                        }
+                    }
+                }
+                return false;
+            };
+
+            // We are adding a sequential validator function to the vConditional object here because it's already processed the ${name} and cannot do this again.
+            // The difference is the sequential validator function will check the match against the sequentialMatch value, which is another RegExpExecArray.
+            // So, the name is what matched in the log entry, and the key is what matched in a previous log entry on the same sequential trigger.
+            vConditional.seqValidatorFn = ( match, sequentialMatch ) => {
+                if ( match?.groups[ vConditional.name ] ) {
+                    const value = sequentialMatch?.groups[ vConditional.key ];
+                    if ( compare( match.groups[ vConditional.name ], value ) ) {
+                        // Update the match group, adding a value for the key.
+                        match.groups[ vConditional.key ] = value;
+                        return true;
+                    }
+                }
+                return false;
+            }
+            
+            output.operations.push( vConditional );
+        }
+    }
+
+    return output;
 }
 
 
@@ -340,7 +428,7 @@ function parseSequentialGroups( value, groups ) {
     //                      Full match	47-63	{SpellBeingCast}
     //                      Group 1.	n/a	SpellBeingCast
     let namedResults = [ ...value.matchAll( /\?{(.[^}]*)}/g ) ];
-    
+
     if ( namedResults?.length > 0 && groups != null ) {
         for ( let m = 0; m < namedResults.length; m++ ) {
             // ex: groups.player == 'Soandso'
@@ -357,6 +445,59 @@ function parseSequentialGroups( value, groups ) {
     }
     
     return value;
+}
+
+/**
+ * Replaces named group matches in the given string from the dictionary, using static regex named groups and conditionals.
+ * 
+ * @returns {SConditionalModel} Returns an SConditionalModel object.
+ * 
+ * @param {string} value The value that may contain references to regex named groups.
+ */
+function parseSequentialGroupsToRegexConditionals( value ) {
+    /** @type {SConditionalModel} */
+    const output = {
+        value: value,
+        operations: [],
+    };
+
+    // \${(.[^}]*)}     Your ${SpellBeingCast} spell is interrupted.
+    //                      Full match	47-63	{SpellBeingCast}
+    //                      Group 1.	n/a	SpellBeingCast
+    let namedResults = [ ...value.matchAll( /\?{(.[^}]*)}/g ) ];
+
+    // (?<nag_seq_${key}>.+?)
+    // returns a function that takes in the groups, and returns true/false if key matches. This happens after the regex has been executed.
+    
+    if ( namedResults?.length > 0 ) {
+        for ( let m = 0; m < namedResults.length; m++ ) {
+
+            /** @type {SConditionalOperationModel} */
+            const sConditional = {};
+
+            sConditional.key = namedResults[ m ][ 1 ];
+            sConditional.name = 'nag_' + nagId();
+
+            const captureGroupRgx = `(?<${sConditional.name}>.+?)`;
+            output.value = value.replace( RegExp( `\\?{${sConditional.key}}`, 'g' ), captureGroupRgx );
+
+            sConditional.validatorFn = ( match, sequentialMatch ) => {
+                if ( match?.groups[ sConditional.name ] ) {
+                    const value = sequentialMatch?.groups[ sConditional.key ];
+                    if ( compare( match.groups[ sConditional.name ], value ) ) {
+                        // Update the match group, adding a value for the key.
+                        match.groups[ sConditional.key ] = value;
+                        return true;
+                    }
+                }
+                return false;
+            }
+            
+            output.operations.push( sConditional );
+        }
+    }
+    
+    return output;
 }
 
 
@@ -785,6 +926,73 @@ function parseListCodesToLiteral( value, list, myCharacterName ) {
     return value;
 }
 
+/**
+ * Parses the given phrase and converts any list codes into proper regex conditionals.  If a conversion occurs, a list of validation functions will be included in the result.
+ * 
+ * @returns {LConditionalModel} Returns an VConditionalModel object.
+ * 
+ * @param {string} value The phrase to search.
+ */
+function parseListCodesToRegexConditionals( value ) {
+    /** @type {LConditionalModel} */
+    const output = {
+        value: value,
+        operations: [],
+    };
+
+    let listMatches = [ ...value.matchAll( /{L([0-9]*?)}/gi ) ];
+
+    if ( listMatches?.length > 0 ) {
+        for ( let i = listMatches.length - 1; i >= 0; i-- ) {
+            // let valueIndex = +listMatches[ i ][ 1 ] - 1;
+            // let strIndex = listMatches[ i ].index;
+            // let length = listMatches[ i ].length + 2;
+            // var v = list[ valueIndex ] ?? '';
+
+            // if ( v.toLowerCase() == myCharacterName.toLowerCase() ) {
+            //     v = `(?:y|Y)(?:o|O)(?:u|U)`;
+            // }
+
+            // value = value.substring( 0, strIndex ) + ( v ) + value.substring( strIndex + length );
+
+            /** @type {LConditionalOperationModel} */
+            const lConditional = {};
+
+            lConditional.index = +listMatches[ i ][ 1 ] - 1;
+            lConditional.name = 'nag_' + nagId();
+
+            const captureGroupRgx = `(?<${lConditional.name}>.+?)`;
+            output.value = value.replace( RegExp( `{L${lConditional.index + 1}}`, 'g' ), captureGroupRgx );
+
+            lConditional.validatorFn = ( match, list, myCharacterName ) => {
+                if ( match?.groups[ lConditional.name ] ) {
+                    const value = list[ lConditional.index ];
+                    // If the value is the same as the character name, we want to match it as a "you" value.
+                    if ( value.toLowerCase() == myCharacterName.toLowerCase() ) {
+                        if ( compare( match.groups[ lConditional.name ], 'you', false ) ) {
+                            // Update the match group, adding a value for the key.
+                            match.groups[ 'L' + ( lConditional.index + 1 ) ] = 'you';
+                            return true;
+                        }
+                    } else if ( value != null ) {
+                        // Otherwise, we want to compare the value to the match.
+                        if ( compare( match.groups[ lConditional.name ], value ) ) {
+                            // Update the match group, adding a value for the key.
+                            match.groups[ 'L' + ( lConditional.index + 1 ) ] = value;
+                            return true;
+                        }
+                    }
+                }
+                return false;
+            };
+                
+            output.operations.push( lConditional );
+        }
+    }
+
+    return output;
+}
+
 
 
 
@@ -980,6 +1188,7 @@ let StringUtilities = {
     format: format,
     isNullOrWhitespace: isNullOrWhitespace,
     parseStoredVariablesToRegex: parseStoredVariablesToRegex,
+    parseStoredVariablesToRegexConditional: parseStoredVariablesToRegexConditional,
     parseStoredVariablesToLiteral: parseStoredVariablesToLiteral,
     parseStoredVariablesToLiteralArray: parseStoredVariablesToLiteralArray,
     parseConditionResultsToLiteral: parseConditionResultsToLiteral,
@@ -990,6 +1199,8 @@ let StringUtilities = {
     parseShortCodeValuesToLiteral: parseShortCodeValuesToLiteral,
     parseShortCodesToRegex: parseShortCodesToRegex,
     parseListCodesToLiteral: parseListCodesToLiteral,
+    parseSequentialGroupsToRegexConditionals: parseSequentialGroupsToRegexConditionals,
+    parseListCodesToRegexConditionals: parseListCodesToRegexConditionals,
     parseNConditionalCodesToRegex: parseNConditionalCodesToRegex,
     getDurationFromLabel: getDurationFromLabel,
     compare: compare,
