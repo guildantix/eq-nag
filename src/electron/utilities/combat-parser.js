@@ -194,7 +194,7 @@ const combatRgx = {
     // Melee active defense. [https://regex101.com/r/9fsdCJ/2]
     ActiveDefense: /^(?<actor>.*?) (try|tries) to ([a-zA-Z0-9_]*) (?<target>.*), but ((\k<target> (?<defenseType>.*)))![\s]?(\((?<modifiers>.*)?\))?/i,
 
-    // Direct Damage spell attacks. [https://regex101.com/r/XBbPTp/2]
+    // Direct Damage spell attacks. [https://regex101.com/r/U36Wus/2]
     DirectDamage: /^(?<actor>.*) hit (?<target>.*) for (?<damage>[0-9]*) points of (?<resistType>[a-zA-Z0-9_]*) damage by (?<attackType>.*)\.[\s]?(\((?<modifiers>.*)?\))?/i,
 
     // Your Damage Over Time spell reports. [https://regex101.com/r/DaGnUf/2]
