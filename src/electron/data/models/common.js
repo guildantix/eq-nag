@@ -391,6 +391,56 @@ class NConditionalModel {
     operations = [];
 }
 
+class VConditionalOperationModel {
+    /** @type {string} */
+    key;
+    /** @type {string} */
+    name;
+    /** @type {( match: RegExpExecArray, storedVariables: Record<string, string[]> ) => boolean} */
+    validatorFn;
+    /** @type {( match: RegExpExecArray, sequentialMatch: RegExpExecArray ) => boolean} */
+    seqValidatorFn;
+}
+
+class VConditionalModel {
+    /** @type {string} */
+    value;
+    /** @type {VConditionalOperationModel[]} */
+    operations = [];
+}
+
+class SConditionalOperationModel {
+    /** @type {string} */
+    key;
+    /** @type {string} */
+    name;
+    /** @type {( match: RegExpExecArray, sequentialMatch: RegExpExecArray ) => boolean} */
+    validatorFn;
+}
+
+class SConditionalModel {
+    /** @type {string} */
+    value;
+    /** @type {SConditionalOperationModel[]} */
+    operations = [];
+}
+
+class LConditionalOperationModel {
+    /** @type {number} */
+    index;
+    /** @type {string} */
+    name;
+    /** @type {( value: string, listNames: string[], myCharacterName: string ) => boolean} */
+    validatorFn;
+}
+
+class LConditionalModel {
+    /** @type {string} */
+    value;
+    /** @type {LConditionalOperationModel[]} */
+    operations = [];
+}
+
 module.exports = {
     StyleProperties,
     BasicError,
@@ -412,4 +462,10 @@ module.exports = {
     WinInfo, 
     NConditionalOperationModel, 
     NConditionalModel, 
+    VConditionalOperationModel, 
+    VConditionalModel, 
+    SConditionalModel, 
+    SConditionalOperationModel, 
+    LConditionalOperationModel, 
+    LConditionalModel, 
 };
