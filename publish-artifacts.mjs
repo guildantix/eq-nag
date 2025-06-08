@@ -46,22 +46,22 @@ if ( filesToUpload.length === 0 ) {
         try {
             await octokit.git.getRef( {
                 owner: 'guildantix',
-                repo: 'eq-parse',
+                repo: 'eq-nag',
                 ref: `tags/${tag}`
             } );
             console.log( `✅ Tag already exists: ${tag}` );
         } catch {
             console.log( `🏷️  Creating tag ${tag}` );
-            const latestCommit = await octokit.repos.getCommit( {
+            const refData = await octokit.git.getRef( {
                 owner: 'guildantix',
-                repo: 'eq-parse',
-                ref: 'heads/main'
+                repo: 'eq-nag',
+                ref: 'heads/master', // <-- DO NOT escape or prefix with 'refs/'
             } );
             await octokit.git.createRef( {
                 owner: 'guildantix',
-                repo: 'eq-parse',
+                repo: 'eq-nag',
                 ref: `refs/tags/${tag}`,
-                sha: latestCommit.data.sha
+                sha: refData.data.object.sha,
             } );
         }
 
