@@ -25,7 +25,10 @@
     "start:electron": "tsc && ng build --base-href ./ --configuration=production && electron .",
     "build:local": "npm run set-localhost-env && npm run copy-source-maps && electron-builder build --win --publish never",
     "build": "npm run set-production-env && npm run copy-source-maps && electron-builder build --win --publish never",
-    "deploy": "npm run set-production-env && npm run copy-source-maps && electron-builder build --win --publish always"
+    "deploy": "npm run set-production-env && npm run copy-source-maps && electron-builder build --win --publish always",
+    "patch-yml": "node patch-latest-yml.js",
+    "publish": "node publish-artifacts.mjs",
+    "build-publish": "npm run build && npm run patch-yml && npm run publish"
   },
   "private": true,
   "dependencies": {
@@ -40,6 +43,7 @@
     "@angular/platform-browser-dynamic": "^14.1.1",
     "@angular/router": "^14.1.1",
     "@electron/remote": "^2.1.2",
+    "@octokit/rest": "^22.0.0",
     "@types/lodash-es": "^4.17.4",
     "active-win": "^8.1.1",
     "adm-zip": "^0.5.10",
@@ -50,6 +54,7 @@
     "electron-unhandled": "^5.0.0",
     "electron-updater": "^6.6.2",
     "fuse.js": "^6.4.3",
+    "glob": "^10.4.5",
     "handlebars": "^4.7.6",
     "lodash": "^4.17.15",
     "lodash-es": "^4.17.21",
@@ -97,6 +102,7 @@
   "build": {
     "productName": "EQ Nag",
     "appId": "scripter.eqNotificationAgent",
+    "artifactName": "EQ-Nag-Setup-${version}.${ext}",
     "extraResources": [
       ".env"
     ],
@@ -119,7 +125,7 @@
       "output": "electron/output",
       "buildResources": "electron/buildResources"
     },
-    "afterSign": "sign.js",
+    "afterAllArtifactBuild": "./sign-final-artifacts.js",
     "files": [
       "**/*",
       "!**/node_modules/*/{CHANGELOG.md,README.md,README,readme.md,readme}",
