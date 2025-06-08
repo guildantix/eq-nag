@@ -1029,20 +1029,16 @@ function generateTriggerFns() {
                             // Use different parse functions for regex vs normal.
                             _phraseParsers.push( ( value, hasGroups, matchGroups ) => {
                                 let rgxValue = phrase.phrase;
-                                /** @type {NConditionalModel | undefined} */
-                                let nConditionals = undefined;
 
                                 if ( _phraseRegEx[ phrase.phraseId ] == null ) {
                                     if ( _phraseStaticCache[ phrase.phraseId ] ) {
                                         rgxValue = _phraseStaticCache[ phrase.phraseId ];
-                                        nConditionals = _phraseNConditionals[ phrase.phraseId ];
 
                                     } else {
-                                        nConditionals = StringUtilities.parseNConditionalCodesToRegex( rgxValue, characterName );
-                                        rgxValue = nConditionals?.value ?? rgxValue;
+                                        _phraseNConditionals[ phrase.phraseId ] = StringUtilities.parseNConditionalCodesToRegex( rgxValue, characterName );
+                                        rgxValue = _phraseNConditionals[ phrase.phraseId ]?.value ?? rgxValue;
 
                                         _phraseStaticCache[ phrase.phraseId ] = rgxValue;
-                                        _phraseNConditionals[ phrase.phraseId ] = nConditionals;
 
                                     }
                                 
@@ -1143,9 +1139,9 @@ function generateTriggerFns() {
 
                                 }
 
-                                if ( _res?.length > 0 && nConditionals ) {
-                                    for ( let opI = 0; opI < nConditionals.operations.length; opI++ ) {
-                                        const op = nConditionals.operations[ opI ];
+                                if ( _res?.length > 0 && _phraseNConditionals[ phrase.phraseId ] ) {
+                                    for ( let opI = 0; opI < _phraseNConditionals[ phrase.phraseId ].operations.length; opI++ ) {
+                                        const op = _phraseNConditionals[ phrase.phraseId ].operations[ opI ];
                                         let value = op.nIndex == undefined ? +_res.groups.N : +_res.groups[ `N${op.nIndex}` ];
                                         let pass = true;
 
