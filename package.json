@@ -1,6 +1,6 @@
 {
   "name": "electron-angular-eq-parse",
-  "version": "0.2.25",
+  "version": "0.2.26",
   "main": "main.js",
   "description": "An EverQuest Notification AGent",
   "author": {
