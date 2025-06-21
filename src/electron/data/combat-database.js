@@ -97,14 +97,14 @@ class CombatDatabase extends Store {
                 this.#serverDataListeners[ serverName ] = event.sender;
             } );
 
-            ipcMain.on( 'combat-database:get-server-names',
-                /**
-                 * @param {import("electron").IpcMainEvent} event The event args.
-                 * @param {string} serverName The name of the server.
-                 */
-                ( event, serverName ) => {
-                    event.sender.send( 'combat-database:get-server-names', this.#data.servers.map( f => f.server ) );
-                } );
+        ipcMain.on( 'combat-database:get-server-names',
+            /**
+             * @param {import("electron").IpcMainEvent} event The event args.
+             * @param {string} serverName The name of the server.
+             */
+            ( event, serverName ) => {
+                event.sender.send( 'combat-database:get-server-names', this.#data.servers.map( f => f.server ) );
+            } );
          
         ipcMain.on( 'combat-database:get-all',
             /**
