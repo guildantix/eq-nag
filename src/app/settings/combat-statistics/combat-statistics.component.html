@@ -113,8 +113,12 @@
                 </div>
 
                 <div class="server-content-panel">
-                    <h1>Pets</h1>
-
+                    <div class="server-content-panel-header">
+                        <h1>Pets</h1>
+                        <span class="spacer"></span>
+                        <button mat-icon-button (click)="addPet(db.server)"><mat-icon>add</mat-icon></button>
+                    </div>
+                    
                     <table class="pets-table">
                         <tr>
                             <th>Owner</th>

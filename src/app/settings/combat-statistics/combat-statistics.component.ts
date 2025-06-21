@@ -50,34 +50,34 @@ export class CombatStatisticsComponent implements OnInit {
         return pageSize;
     }
 
-    public get dpsShow() : boolean {
+    public get dpsShow(): boolean {
         return this._dpsMeterSettings.show;
     }
-    public set dpsShow(v : boolean) {
+    public set dpsShow( v: boolean ) {
         this._dpsMeterSettings.show = v;
         this.updateSetting( SettingsKeys.dpsMeterSettings, this._dpsMeterSettings, 0 );
     }
     
-    public get dpsAutoFade() : boolean {
+    public get dpsAutoFade(): boolean {
         return this._dpsMeterSettings.autoFade;
     }
-    public set dpsAutoFade(v : boolean) {
+    public set dpsAutoFade( v: boolean ) {
         this._dpsMeterSettings.autoFade = v;
         this.updateSetting( SettingsKeys.dpsMeterSettings, this._dpsMeterSettings, 500 );
     }
     
-    public get dpsShowOnlyInCombat() : boolean {
+    public get dpsShowOnlyInCombat(): boolean {
         return this._dpsMeterSettings.showOnlyInCombat;
     }
-    public set dpsShowOnlyInCombat(v : boolean) {
+    public set dpsShowOnlyInCombat( v: boolean ) {
         this._dpsMeterSettings.showOnlyInCombat = v;
         this.updateSetting( SettingsKeys.dpsMeterSettings, this._dpsMeterSettings, 500 );
     }
 
-    public get dpsOnlyShowWhenFocused() : boolean {
+    public get dpsOnlyShowWhenFocused(): boolean {
         return !this._dpsMeterSettings.keepOnScreen;
     }
-    public set dpsOnlyShowWhenFocused(v : boolean) {
+    public set dpsOnlyShowWhenFocused( v: boolean ) {
         this._dpsMeterSettings.keepOnScreen = !v;
         this.updateSetting( SettingsKeys.dpsMeterSettings, this._dpsMeterSettings, 0 );
     }
@@ -251,19 +251,19 @@ export class CombatStatisticsComponent implements OnInit {
                         'No': 'Default, set to 7 seconds',
                     }
                 ).subscribe( confirmed => {
-                        if ( confirmed === true ) {
-                            this._dpsMeterSettings.playerInactiveDelayMs = v * 1000;
-                            this.updateSetting( SettingsKeys.dpsMeterSettings, this._dpsMeterSettings, 500 );
-                        } else if ( confirmed === false ) {
-                            this._dpsMeterSettings.playerInactiveDelayMs = 7 * 1000;
-                            this.updateSetting( SettingsKeys.dpsMeterSettings, this._dpsMeterSettings, 500 );
-                        } else {
-                            this._dpsMeterSettings.playerInactiveDelayMs = this._dpsPlayerDelayRestoreValue * 1000;
-                            this.updateSetting( SettingsKeys.dpsMeterSettings, this._dpsMeterSettings, 500 );
-                        }
-                        this._dpsPlayerDelayRestoreValue = undefined;
-                        this.changeDetectorRef.detectChanges();
-                    } );
+                    if ( confirmed === true ) {
+                        this._dpsMeterSettings.playerInactiveDelayMs = v * 1000;
+                        this.updateSetting( SettingsKeys.dpsMeterSettings, this._dpsMeterSettings, 500 );
+                    } else if ( confirmed === false ) {
+                        this._dpsMeterSettings.playerInactiveDelayMs = 7 * 1000;
+                        this.updateSetting( SettingsKeys.dpsMeterSettings, this._dpsMeterSettings, 500 );
+                    } else {
+                        this._dpsMeterSettings.playerInactiveDelayMs = this._dpsPlayerDelayRestoreValue * 1000;
+                        this.updateSetting( SettingsKeys.dpsMeterSettings, this._dpsMeterSettings, 500 );
+                    }
+                    this._dpsPlayerDelayRestoreValue = undefined;
+                    this.changeDetectorRef.detectChanges();
+                } );
             }, 2500 );
         } else {
             // this._dpsPlayerDelayRestoreValue = undefined;
@@ -872,5 +872,45 @@ export class CombatStatisticsComponent implements OnInit {
 
 
 
+
+    /**
+     * Starts the process of adding a new pet.
+     * 
+     * @param server The server to add the pet to.
+     */
+    public addPet( server: string ): void {
+        const combatDbIndex = this.combatDatabases.findIndex( f => f.server === server );
+        if ( combatDbIndex < 0 || combatDbIndex >= this.combatDatabases.length ) {
+            this.dialogService.showErrorDialog( 'Invalid Database', 'The specified combat database index is invalid.' );
+            return;
+        }
+
+        // Start by asking the user for the name of the pet.
+        this.dialogService
+            .showInputDialog( 'Add New Pet', [ 'Note: Adding a pet in this manner will bypass any checks for charm pet and move the name, if found in the NPCs list, to the Pets list.' ], undefined, 'Enter the name of the pet', '', false )
+            .subscribe( petName => {
+                if ( petName ) {
+                    // Next we need the name of the owner.
+                    this.dialogService
+                        .showAutocompleteDialog( 'Select Pet Owner', [], this.playerNames[ this.combatDatabases[ combatDbIndex ].server ], undefined, `Enter the owner name for ${petName}` )
+                        .subscribe( ownerName => {
+                            if ( ownerName && ownerName !== 'None' ) {
+                                this.ipcService
+                                    .addPetToCombatServer( petName, ownerName, this.combatDatabases[ combatDbIndex ].server )
+                                    .subscribe( success => {
+                                        if ( success ) {
+                                            this.combatDatabases[ combatDbIndex ].verifiedPets.push( petName );
+                                            this.combatDatabases[ combatDbIndex ].petOwners[ petName ] = ownerName;
+
+                                            this.refreshLists();
+                                        }
+                                    } );
+                            } else {
+                                this.dialogService.showErrorDialog( 'Invalid Owner', `You must enter an owner name to continue.` );
+                            }
+                        } );
+                }
+            } );
+    }
 
 }
