@@ -1410,6 +1410,9 @@ class CombatParser {
             let playerWho = executCombatRgx( this._playerWhoRgx, lines[ i ] );
             if ( playerWho !== null && playerWho.groups != null && playerWho.groups.player != null ) {
                 const playerName = playerWho.groups.player;
+                const playerClassName = playerWho.groups.classAbbrv ?
+                    getEverQuestClassName( playerWho.groups.classAbbrv ) :
+                    ( playerWho.groups.classRealName ?? getEverQuestClassFromTitle( playerWho.groups.classTitleOrName ) );
 
                 if ( this._verifiedPlayers.indexOf( playerName ) === -1 ) {
                     this._verifiedPlayers.push( playerName );
@@ -1422,12 +1425,12 @@ class CombatParser {
                 if ( this._playerInfos[ playerName ] == null ) {
                     this._playerInfos[ playerName ] = {
                         level: +playerWho.groups.level,
-                        className: playerWho.groups.classRealName ?? getEverQuestClassFromTitle( playerWho.groups.classTitleOrName ),
+                        className: playerClassName,
                         raceName: playerWho.groups.raceName,
                     };
                 } else {
                     this._playerInfos[ playerName ].level = +playerWho.groups.level;
-                    this._playerInfos[ playerName ].className = playerWho.groups.classRealName ?? getEverQuestClassFromTitle( playerWho.groups.classTitleOrName );
+                    this._playerInfos[ playerName ].className = playerClassName;
                     this._playerInfos[ playerName ].raceName = playerWho.groups.raceName;
                 }
 

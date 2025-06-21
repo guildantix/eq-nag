@@ -119,7 +119,7 @@ const combatRgx = {
 
     // https://regex101.com/r/cPfBq5/2
     PetLeader: /^(?<pet>.+?) says,? 'My leader is (?<player>.*)\.'/i,
-    
+
     // https://regex101.com/r/cPfBq5/3
     PetOwner: /^(?<player>.*) claims ownership of (?<pet>.+?)\./i,
 
@@ -134,9 +134,8 @@ const combatRgx = {
 
 }
 
-// https://regex101.com/r/cqfoUU/2
-// This won't capture anon people.
-const playerWhoRgx = /^(OFFLINEMODE)?\[(?<level>\d+)\s(?<classTitleOrName>Savage Lord|Arch Arcanist|Arch Animist|Arch Mage|High Priest|Grave Lord|Feral Lord|Storm Warden|Arch Convoker|Arch Lich|Lord Protector|Forest Stalker|Dread Lord|Arch Magus|Stone Fist|Scourge Knight|Grand Archanist|Storm Caller|Grand Summoner|Holy Defender|.+?)\]?\s(:?\((?<classRealName>.*?)\)\])?\s?(?<player>.*?)\s\((?<raceName>.+?)\)\s/i;
+// https://regex101.com/r/cDTOSb/3
+const playerWhoRgx = /^\[(?<player>.*?)\]\s-\s((\[(?<level>\d+)\s(?<classAbbrv>[A-Z]+).*\((?<raceName>.+?)\)\]\s)|(\[ANONYMOUS\]))/i;
 
 class ThjCombatParser extends CombatParser {
 
