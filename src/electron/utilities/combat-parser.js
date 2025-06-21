@@ -245,6 +245,9 @@ const combatRgx = {
 
     // https://regex101.com/r/cPfBq5/2
     PetLeader: /^(?<pet>.+?) says,? 'My leader is (?<player>.*)\.'/i,
+    
+    // https://regex101.com/r/cPfBq5/3
+    PetOwner: /^(?<player>.*) claims ownership of (?<pet>.+?)\./i,
 
     // https://regex101.com/r/Sm6SVR/1
     PetAttack: /^(?<pet>.+?) told you, 'Attacking (?<target>.*) Master\.'/i,
@@ -397,6 +400,8 @@ class CombatParser {
                 }
         
             } );
+        
+
 
         ipcRenderer.on( 'settings:get:dpsMeterSettings:generic',
         /**
@@ -1232,6 +1237,73 @@ class CombatParser {
 
 
     /**
+     * Adds a pet to the combat database.
+     * 
+     * @param {string} petName The name of the pet to add.
+     * @param {string} ownerName The name of the pet's owner.
+     * @param {boolean} forcePet If true, will force the pet to be added even if it is an NPC pet.
+     */
+    addPet( petName, ownerName, forcePet ) {
+        
+        // Ensure the force is a boolean.
+        forcePet = forcePet === true;
+
+        // If the pet name is not defined, then we can't add it.
+        if ( !petName || petName.length === 0 ) {
+            nagException( `addPet: petName is undefined or empty.` );
+            return;
+        }
+
+        // If the pet leader is not in the players list, add them.
+        if ( this._verifiedPlayers.indexOf( ownerName ) === -1 ) {
+            this._verifiedPlayers.push( ownerName );
+            this._updateServerStatistics = true;
+        }
+
+        // Determine if this is an NPC pet (charm).
+        let isNpc = !forcePet && petName.indexOf( ' ' ) > -1;
+        if ( isNpc && this._verifiedNpcs.indexOf( petName ) === -1 ) {
+            this._verifiedNpcs.push( petName );
+            this._updateServerStatistics = true;
+        }
+
+        let petIdx = this._verifiedPets.indexOf( petName );
+        if ( petIdx === -1 && !isNpc ) {
+            // Add this pet to the pets list, if it's not an NPC pet.
+            this._verifiedPets.push( petName );
+            this._updateServerStatistics = true;
+        } else if ( isNpc && petIdx > -1 ) {
+            // If it's already in the pet list as an NPC, then remove it from the pet list.
+            this._verifiedPets.splice( petIdx, 1 );
+            this._updateServerStatistics = true;
+        }
+
+        if ( !this._playerPets[ ownerName ] ) {
+            this._playerPets[ ownerName ] = [];
+            this._updateServerStatistics = true;
+        }
+                
+        if ( this._petOwners[ petName ] !== ownerName ) {
+            this._petOwners[ petName ] = ownerName;
+            this._updateServerStatistics = true;
+        }
+
+        if ( this._playerPets[ ownerName ].indexOf( petName ) === -1 ) {
+            this._playerPets[ ownerName ].push( petName );
+            this._updateServerStatistics = true;
+        }
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
      * Updates entity verification, adding 100% confirmations for players, 
      * pets, and npcs.
      * 
@@ -1318,55 +1390,18 @@ class CombatParser {
             }
 
             if ( !petAssigned ) {
-                let petLeader = executCombatRgx( combatRgx.PetLeader, lines[ i ] );
+                let petLeader = executCombatRgx( combatRgx.PetLeader, lines[ i ] ) || executCombatRgx( combatRgx.PetOwner, lines[ i ] );
                 if ( petLeader !== null && petLeader.groups != null && petLeader.groups.player != null && petLeader.groups.pet != null ) {
                     const ownerName = petLeader.groups.player;
                     petName = petLeader.groups.pet;
 
-                    // If the pet leader is not in the players list, add them.
-                    if ( this._verifiedPlayers.indexOf( ownerName ) === -1 ) {
-                        this._verifiedPlayers.push( ownerName );
-                        this._updateServerStatistics = true;
-                    }
-
-                    // Determine if this is an NPC pet (charm).
-                    let isNpc = petName.indexOf( ' ' ) > -1;
-                    if ( isNpc && this._verifiedNpcs.indexOf( petName ) === -1 ) {
-                        this._verifiedNpcs.push( petName );
-                        this._updateServerStatistics = true;
-                    }
-
-                    let petIdx = this._verifiedPets.indexOf( petName );
-                    if ( petIdx === -1 && !isNpc ) {
-                        // Add this pet to the pets list, if it's not an NPC pet.
-                        this._verifiedPets.push( petName );
-                        this._updateServerStatistics = true;
-                    } else if ( isNpc && petIdx > -1 ) {
-                        // If it's already in the pet list as an NPC, then remove it from the pet list.
-                        this._verifiedPets.splice( petIdx, 1 );
-                        this._updateServerStatistics = true;
-                    }
-
-                    if ( !this._playerPets[ ownerName ] ) {
-                        this._playerPets[ ownerName ] = [];
-                        this._updateServerStatistics = true;
-                    }
-                
-                    if ( this._petOwners[ petName ] !== ownerName ) {
-                        this._petOwners[ petName ] = ownerName;
-                        this._updateServerStatistics = true;
-                    }
-
-                    if ( this._playerPets[ ownerName ].indexOf( petName ) === -1 ) {
-                        this._playerPets[ ownerName ].push( petName );
-                        this._updateServerStatistics = true;
-                    }
+                    this._addPet( petName, ownerName );
 
                 }
             }
 
             if ( petName?.length > 0 ) {
-                let eNpcIdx = this._encounterStats.npcs.indexOf( petName );
+                let eNpcIdx = this._encounterStats?.npcs.indexOf( petName );
                 if ( eNpcIdx > -1 ) {
                     this._encounterStats.npcs.splice( eNpcIdx, 1 );
                 }
@@ -1378,7 +1413,7 @@ class CombatParser {
 
                 if ( this._verifiedPlayers.indexOf( playerName ) === -1 ) {
                     this._verifiedPlayers.push( playerName );
-                    let npcIdx = this._encounterStats.npcs.indexOf( playerName );
+                    let npcIdx = this._encounterStats?.npcs.indexOf( playerName );
                     if ( npcIdx > -1 ) {
                         this._encounterStats.npcs.splice( npcIdx, 1 );
                     }
