@@ -641,6 +641,21 @@ export class IpcService {
         return obs;
     }
 
+    public addPetToCombatServer( petName: string, ownerName: string, serverName: string ): Observable<boolean> {
+        let obs: Observable<boolean> = new Observable<boolean>( ( observer: Observer<boolean> ) => {
+            window.api.ipc.once( 'combat-database:add:pet', ( e, success: boolean ) => {
+                this.ngZone.run( () => {
+                    observer.next( success );
+                    observer.complete();
+                } );
+            } );
+            window.api.ipc.send( 'combat-database:add:pet', { petName: petName, ownerName: ownerName, serverName: serverName } );
+
+        } );
+
+        return obs;
+    }
+
     public getAppVersion(): Observable<string> {
         let obs: Observable<string> = new Observable<string>( ( observer: Observer<string> ) => {
             

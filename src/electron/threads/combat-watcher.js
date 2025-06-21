@@ -683,6 +683,19 @@ function CombatWatcher() {
             dpsMeterSettings = data ?? new DpsMeterSettings();
         } );
     
+    ipcRenderer.on( 'combat-database:add:pet',
+        /**
+         * Handles the add-pet event.
+         * 
+         * @param {Electron.IpcRendererEvent} event The event args.
+         * @param {{petName: string, ownerName: string, forcePet: boolean}} data The data.
+         */
+        ( event, data ) => {
+            if ( myCombatParser != null && data?.petName ) {
+                myCombatParser.addPet( data.petName, data.ownerName, data.forcePet );
+            }
+        } );
+    
     ipcRenderer.on( 'log:character:changed',
         /**
          * Handles the changing of the parse character.
