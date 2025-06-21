@@ -10,6 +10,7 @@ const log = require( 'electron-log' );
 const ForwardRef = require( './forward-ref' );
 const { LogMaintenancePlanTypes, LogMaintenanceRules, ArchiveFilePrefix, SimulationProgress } = require( "./data/models/common" );
 const { nagLog } = require( "./utilities/nag-console" );
+const CombatDatabase = require( "./data/combat-database" );
 const customAlphabet = require( 'nanoid' ).customAlphabet;
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const nanoid = customAlphabet( alphabet, 16 );
@@ -62,6 +63,7 @@ var combatWatcher = {
     window: null,
     characterId: null,
     character: null,
+    server: null,
 };
 
 let cwReady = false;
@@ -124,8 +126,9 @@ class LogBootstrapper {
      * @param {() => void} sendTick The send tick method.
      * @param {UserPreferencesStore} userPreferences The user preferences store.
      * @param {(error: Error) => void} appLogException The application log exception method.
+     * @param {CombatDatabase} combatDb The combat database store.
      */
-    boostrapLogWatchers( mainWindowRef, isDev, characterDatabase, sendTick, userPreferences, appLogException ) {
+    boostrapLogWatchers( mainWindowRef, isDev, characterDatabase, sendTick, userPreferences, appLogException, combatDb ) {
 
         mainWinRef = mainWindowRef;
         this.#userPreferences = userPreferences;
@@ -356,8 +359,8 @@ class LogBootstrapper {
 
                 } else {
                     // logWatchers[ _chr.characterId ].window.webContents.once( 'dom-ready', () => {
-                        logWatchers[ _chr.characterId ].window.webContents.send( 'log:simulate:lines', data );
-                        logWatchers[ _chr.characterId ].simulating = true;
+                    logWatchers[ _chr.characterId ].window.webContents.send( 'log:simulate:lines', data );
+                    logWatchers[ _chr.characterId ].simulating = true;
                     // } );
                 }
 
@@ -445,6 +448,72 @@ class LogBootstrapper {
                     }
                     userSelectedCombatWatcher = true;
                     changeCombatCharacter( character, _stats.size, sendTick );
+                }
+            } );
+        
+        ipcMain.on( 'combat-database:add:pet',
+            /**
+             * Handles the add-pet event.
+             * 
+             * @param {Electron.IpcMainEvent} event The event args.
+             * @param {{petName: string, ownerName: string, serverName: string, forcePet: boolean}} data The data.
+             */
+            ( event, data ) => {
+                if ( combatWatcher.window && combatWatcher.character?.server === data.serverName ) {
+                    // If the active combat watcher is for the same server, then we must send this to the combat watcher.
+                    combatWatcher.window.webContents.send( 'combat-database:add:pet', data );
+                    event.sender.send( 'combat-database:add:pet', true );
+
+                } else {
+                    // Otherwise, we need to add the pet to the combat database ourselves.
+                    console.log( `CombatBootstrap > Adding pet: ${data.petName} owned by ${data.ownerName} on server ${data.serverName}` );
+                    const serverModel = combatDb.getOrInitServer( data.serverName );
+
+                    if ( !serverModel ) {
+                        appLogException( new Error( `Failed to get server model for server: ${data.serverName}` ), true );
+                        return;
+                    }
+
+                    const petName = data.petName.trim();
+                    const ownerName = data.ownerName.trim();
+
+                    // If the pet leader is not in the players list, add them.
+                    if ( serverModel.verifiedPlayers.indexOf( ownerName ) === -1 ) {
+                        serverModel.verifiedPlayers.push( ownerName );
+                    }
+
+                    // Determine if this is an NPC pet (charm).
+                    const isNpc = !data.forcePet && petName.indexOf( ' ' ) > -1;
+                    if ( isNpc && serverModel.verifiedNpcs.indexOf( petName ) === -1 ) {
+                        serverModel.verifiedNpcs.push( petName );
+                    }
+
+                    const petIdx = serverModel.verifiedPets.indexOf( petName );
+                    if ( petIdx === -1 && !isNpc ) {
+                        // Add this pet to the pets list, if it's not an NPC pet.
+                        serverModel.verifiedPets.push( petName );
+                        
+                    } else if ( isNpc && petIdx > -1 ) {
+                        // If it's already in the pet list as an NPC, then remove it from the pet list.
+                        serverModel.verifiedPets.splice( petIdx, 1 );
+                        
+                    }
+                
+                    if ( serverModel.petOwners[ petName ] !== ownerName ) {
+                        serverModel.petOwners[ petName ] = ownerName;
+                    }
+                    
+                    // Save the server model.
+                    combatDb.putServer( serverModel ).then( () => {
+                        log.info( `CombatBootstrap > Added pet: ${petName} owned by ${ownerName} on server ${data.serverName}` );
+                        event.sender.send( 'combat-database:add:pet', true );
+
+                    } ).catch( error => {
+                        log.error( `CombatBootstrap > Failed to add pet: ${petName} owned by ${ownerName} on server ${data.serverName}`, error );
+                        appLogException( error, true );
+                        event.sender.send( 'combat-database:add:pet', false );
+
+                    } );
                 }
             } );
 

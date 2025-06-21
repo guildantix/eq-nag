@@ -1031,14 +1031,14 @@ app.whenReady().then( () => {
     userPreferences.attachIpcEvents( mainWindowRef, sendTick, logBootstrapRef );
     winManager.attachIpcEvents( mainWindowRef, overlayDatabase, userPreferences, characterDatabase );
     dkpDatabase.attachIpcEvents( mainWindowRef, sendTick );
+    combatDatabase.attachIpcEvents( mainWindowRef, sendTick );
     fileDatabase.attachIpcEvents( mainWindowRef );
     triggerDatabase.attachIpcEvents( mainWindowRef, sendTick, fileDatabase, userPreferences );
     overlayDatabase.attachIpcEvents( mainWindowRef, sendTick, triggerDatabase, userPreferences );
     characterDatabase.attachIpcEvents( mainWindowRef, sendTick );
-    logBootstrap.boostrapLogWatchers( mainWindowRef, app.isDev(), characterDatabase, sendTick, userPreferences, appLogException );
+    logBootstrap.boostrapLogWatchers( mainWindowRef, app.isDev(), characterDatabase, sendTick, userPreferences, appLogException, combatDatabase );
     gameResources.attachIpcEvents( mainWindowRef, userPreferences );
     ginaImporter.initGinaImporter( mainWindowRef, app.isDev() );
-    combatDatabase.attachIpcEvents( mainWindowRef, sendTick );
 
     // TODO: Update this method with the new mouse.js implementation.
     // TODO: There may still be some renderer forwarding that needs to be removed.
