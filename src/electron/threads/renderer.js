@@ -1276,7 +1276,6 @@ function Renderer( originX, originY, glowOnStart ) {
                 allDataEncounter.totalEngagementTime = m.totalEngagementTime;
                 allDataEncounter.characterName = data.character;
             } else {
-                console.log( 'encounter reset, times:', m.totalEngagementTime, allDataEncounter.totalEngagementTime );
                 allDataEncounter.totalEngagementTime += m.totalEngagementTime;
             }
 

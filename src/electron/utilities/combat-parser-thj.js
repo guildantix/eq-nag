@@ -68,13 +68,13 @@ const combatRgx = {
     // Melee active defense. [https://regex101.com/r/9fsdCJ/2]
     ActiveDefense: /^(?<actor>.*?) (try|tries) to ([a-zA-Z0-9_]*) (?<target>.*), but ((\k<target> (?<defenseType>.*)))![\s]?(\((?<modifiers>.*)?\))?/gi,
 
-    // Direct Damage spell attacks. [https://regex101.com/r/U36Wus/1]
+    // Direct Damage spell attacks. [https://regex101.com/r/U36Wus/3]
     // Kasimyr hit a corporeal shadow for 1074 points of non-melee damage. (Call of Sky Strike)
     DirectDamage: /^(?<actor>.*?)(?: \(Owner: (?<owner>.*?)\))? hit (?<target>.*) for (?<damage>[0-9]*) points of non-melee damage\. \((?<attackType>.*)\)/gi,
 
-    // https://regex101.com/r/wHzY36/1
-    // You deliver a critical blast! (552) (Touch of the Cursed)
-    CriticalDirectDamage: /^You deliver a critical blast! \((?<damage>[0-9]+)\) \((?<attackType>.*)\)/gi,
+    // // https://regex101.com/r/wHzY36/1
+    // // You deliver a critical blast! (552) (Touch of the Cursed)
+    // CriticalDirectDamage: /^You deliver a critical blast! \((?<damage>[0-9]+)\) \((?<attackType>.*)\)/gi,
 
     // https://regex101.com/r/AXNVrc/1
     // You deliver a critical blast! (1074) (Call of Sky Strike)
@@ -256,6 +256,7 @@ class ThjCombatParser extends CombatParser {
             
             regxResult = executCombatRgx( combatRgx.DirectDamage, entry.log );
             if ( regxResult !== null ) {
+                console.log( 'Direct damage attack found:', regxResult.groups.attackType, regxResult.groups.damage );
                 let modifiers = '';
 
                 let criticalIndex = this._playerCriticalBlasts.findIndex( ( item ) => {

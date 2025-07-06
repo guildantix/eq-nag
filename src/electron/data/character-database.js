@@ -540,17 +540,21 @@ class CharacterDatabaseStore extends Store {
             files.forEach( file => {
                 let results = /eqlog_(?<Character>.*)_(?<Server>[a-z]*)\.txt$/gi.exec( file );
                 if ( results != null && results?.groups?.Character != null && results?.groups?.Server != null ) {
-                    if ( dictionary[ results.groups.Server ] == null ) {
-                        dictionary[ results.groups.Server ] = [];
+                    const thj = results.groups.Server === 'thj';
+                    const key = thj ? 'The Heroe\'s Journey' : results.groups.Server.toUpperCase();
+                    if ( dictionary[ key ] == null ) {
+                        dictionary[ key ] = [];
                     }
                     let option = {};
 
                     option.name = results.groups.Character;
-                    option.server = results.groups.Server;
+                    option.server = key;
                     option.logFile = `${logsPath}\\${file}`;
+                    option.thj = thj === true;
+                    option.daybreak = thj === false && results.groups.Server !== 'p99';
                     option.characterId = this.findCharacterIdByLogFile( option.logFile );
                     
-                    dictionary[ results.groups.Server ].push( option );
+                    dictionary[ key ].push( option );
                 }
 
             } );

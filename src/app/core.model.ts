@@ -1092,6 +1092,7 @@ export class NewCharacterOptionModel {
     
     public server: string;
     public options: CharacterModel[] = [];
+    public service: 'THJ' | 'P99' | 'TAKP' | 'Daybreak' = 'Daybreak';
 
 }
 

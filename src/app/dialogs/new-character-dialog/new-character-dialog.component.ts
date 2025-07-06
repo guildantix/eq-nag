@@ -72,6 +72,7 @@ export class NewCharacterDialogComponent implements OnInit {
                     let option: NewCharacterOptionModel = new NewCharacterOptionModel();
                     option.server = key;
                     option.options = options[ key ];
+                    
                     this.serverOptions.push( option );
                 }
             }
@@ -124,7 +125,12 @@ export class NewCharacterDialogComponent implements OnInit {
     selectModel( e: MatSelectChange, p99: boolean = false, daybreak: boolean = false ): void {
         this.model = e.value;
         this.model.p99 = p99 === true;
-        this.model.daybreak = daybreak === true;
+        this.model.thj = e.value.thj === true;
+        this.model.daybreak = daybreak === true || this.server?.service === 'Daybreak';
+
+        // console.log( 'Selected model:', this.model );
+        // console.log( 'Selected server:', this.server );
+        // this.model.thj = true;
     }
 
 
@@ -143,6 +149,7 @@ export class NewCharacterDialogComponent implements OnInit {
      */
     selectServerModel( e: MatSelectChange ): void {
         this.server = e.value;
+        console.log( 'Selected server:', e.value );
     }
 
 
@@ -241,14 +248,14 @@ export class NewCharacterDialogComponent implements OnInit {
             const characterLogPath = window.api.getPathForFile( this.fileSelector.nativeElement.files[ 0 ] );
             const eqInstallFolder: string = characterLogPath.split( '\\Logs' )[ 0 ];
 
-            // eqlog_Kaiban_thj.txt
+            // eqlog_Erythor_thj.txt
             let thj = /eqlog_(?<Character>.*)_thj\.txt$/gi.exec( characterLogPath );
             if ( thj != null && thj?.groups?.Character != null ) {
 
                 let option: CharacterModel = new CharacterModel();
 
                 option.name = thj.groups.Character;
-                option.server = 'thj';
+                option.server = 'The Heroes Journey';
                 option.logFile = `${characterLogPath}`;
                 option.takp = false;
                 option.p99 = false;
