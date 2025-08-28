@@ -4,10 +4,11 @@
     "enabled": true,
     "capturePhrases": [
         {
+            "ignoreCase": false,
             "useRegEx": true,
             "requirePreviousPhrase": false,
             "duration": null,
-            "phrase": "^You begin casting (.*)\\.",
+            "phrase": "^You begin casting (.*)\\.$",
             "phraseId": "v7GDFrDCcFwhTAOP"
         },
         {
@@ -16,7 +17,7 @@
             "duration": null,
             "phraseId": "1nl8HaPwOjAFOoFO",
             "useRegEx": true,
-            "phrase": "^You activate (.*)\\."
+            "phrase": "^You activate (.*)\\.$"
         },
         {
             "ignoreCase": false,
@@ -24,9 +25,10 @@
             "duration": null,
             "phraseId": "7iax6y76baIan4jq",
             "useRegEx": true,
-            "phrase": "^You begin singing (.*)\\."
+            "phrase": "^You begin singing (.*)\\.$"
         },
         {
+            "ignoreCase": true,
             "useRegEx": true,
             "requirePreviousPhrase": false,
             "duration": null,
@@ -34,6 +36,7 @@
             "phrase": "^Your ${SpellBeingCast} spell is interrupted\\."
         },
         {
+            "ignoreCase": true,
             "useRegEx": true,
             "requirePreviousPhrase": false,
             "duration": null,
@@ -41,13 +44,15 @@
             "phrase": "^(.*) resisted your ${SpellBeingCast}"
         },
         {
+            "ignoreCase": true,
             "useRegEx": true,
             "requirePreviousPhrase": false,
             "duration": null,
             "phraseId": "CC31CtgDiqwi8xV4",
-            "phrase": "^Your ${SpellBeingCast} spell did not take hold\\. \\(Blocked by (.*)\\.\\)"
+            "phrase": "^Your ${SpellBeingCast} spell did not take hold\\."
         },
         {
+            "ignoreCase": true,
             "requirePreviousPhrase": false,
             "duration": null,
             "phraseId": "9ccr5pJj08H9rEi7",
@@ -71,11 +76,14 @@
             "actionId": "xygXKRSFpi3vYQ4D",
             "phraseId": "v7GDFrDCcFwhTAOP",
             "phrases": [
-                "v7GDFrDCcFwhTAOP"
+                "v7GDFrDCcFwhTAOP",
+                "1nl8HaPwOjAFOoFO",
+                "7iax6y76baIan4jq"
             ],
             "restartBehavior": 0,
             "onlyExecuteInDev": false,
-            "onlyStoreUsedValues": true
+            "onlyStoreUsedValues": true,
+            "variableStorageType": "localVariable"
         },
         {
             "actionType": 7,
