@@ -1034,8 +1034,19 @@ class UserPreferencesStore extends Store {
                 fs.mkdirSync( dataPath );
             }
 
-            let now = new Date( Date.now() );
-            let filename = `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDay() + 1}-${now.getSeconds()}-full-backup.zip`;
+            let now = new Date( );
+            const saveSettingPad = (num) => num.toString().padStart(2, '0');
+            
+            let saveSettingYear = now.getFullYear();
+            let saveSettingMonth = saveSettingPad(now.getMonth() + 1);
+            let saveSettingDay = saveSettingPad(now.getDate());
+            let saveSettingHour = saveSettingPad(now.getHours());
+            let saveSettingMinute = saveSettingPad(now.getMinutes());
+            let saveSettingSecond = saveSettingPad(now.getSeconds());
+            
+            let saveSettingTimestamp = `${saveSettingYear}-${saveSettingMonth}-${saveSettingDay}_${saveSettingHour}${saveSettingMinute}${saveSettingSecond}`;
+            
+            let filename = `${saveSettingTimestamp}_full-backup.zip`;
             let dataZip = path.join( this.userDataPath, filename );
             let output = fs.createWriteStream( dataZip );
             let zip = archiver( 'zip' );
