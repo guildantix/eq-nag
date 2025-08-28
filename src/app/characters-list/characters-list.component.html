@@ -240,7 +240,7 @@
                                         <mat-tree-node *matTreeNodeDef="let node;when: hasChild" matTreeNodePadding matTreeNodePaddingIndent="20" class="folder-node">
                                             
                                             <button mat-icon-button color="warn" *ngIf="node?.folderState === 'all'" (click)="onFolderSelectChange(character, node, false)" [disabled]="!node.hasChildren" style="opacity: 0.75;"><mat-icon>disabled_by_default</mat-icon></button>
-                                            <button mat-icon-button color="warn" *ngIf="node?.folderState === 'partial'" (click)="onFolderSelectChange(character, node, true)" [disabled]="!node.hasChildren" style="opacity: 0.75;"><mat-icon>indeterminate_check_box</mat-icon></button>
+                                            <button mat-icon-button *ngIf="node?.folderState === 'partial'" (click)="onFolderSelectChange(character, node, true)" [disabled]="!node.hasChildren" style="color: #FFD600; opacity: 0.75;"><mat-icon>indeterminate_check_box</mat-icon></button>
                                             <button mat-icon-button color="accent" *ngIf="node?.folderState === 'none'" (click)="onFolderSelectChange(character, node, true)" [disabled]="!node.hasChildren" style="opacity: 0.75;"><mat-icon class="material-icons-outlined">check_box</mat-icon></button>
 
                                             <button mat-icon-button matTreeNodeToggle [attr.aria-label]="'Toggle ' + node.name" [disabled]="!node.hasChildren">
