@@ -21,7 +21,9 @@ export class ConditionsComponent implements OnInit {
     public storedVariables: string[] = [];
     public counters: string[] = [];
     public get storedVariableNames(): string[] {
-        return [ ...this.storedVariables, ...this.counters ];
+        return [ ...this.storedVariables, ...this.counters ].sort((a, b) =>
+            a.toLowerCase().localeCompare(b.toLowerCase())
+        );
     }
     public conditionTableColumns = [ 'variable', 'operator', 'value', 'delete' ];
 

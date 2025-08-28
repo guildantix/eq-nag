@@ -26,7 +26,11 @@ export class TriggerActionAudioComponent implements OnInit {
     constructor( private ipcService: IpcService, private dialogService: DialogService, private contextService: ContextService ) { }
 
     ngOnInit() {
-        this.ipcService.getAudioFiles().subscribe( files => this.audioFiles = files );
+        this.ipcService.getAudioFiles().subscribe(files => {
+            this.audioFiles = files.sort((a, b) =>
+                a.fileName.toLowerCase().localeCompare(b.fileName.toLowerCase())
+            );
+        });
     }
 
     public openAudioFileModal() {
