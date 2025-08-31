@@ -4,7 +4,7 @@
     font-family: Consolas, monospace;
     margin: 0;
     padding: 2px 0px;
-    padding-left: 19px;
+    padding-left: 17px;  // Timestamp pixel perfect in column with the word 'Clear' above it
     line-height: 18px;
     border-bottom: 1px solid #323232;
     display: flex;
@@ -19,15 +19,12 @@
         margin-top: -1px;
     }
 
-    &:first-of-type {
-        border-top: 1px solid #323232;
-    }
-
     span.log-timestamp {
         margin-right: 5px;
         flex: 0;
         white-space: nowrap;
-        min-width: 150px;
+        min-width: 79px; // Timestamp a lot shorter. Making width shorter.
+                         // Set to 79. Lets the following link-part have the same gap on both sides of it. Looks good.
     }
 
     span.links {

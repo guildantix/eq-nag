@@ -1,5 +1,5 @@
 <p>
-    <span class="log-timestamp">[{{item.timestamp | date:'M/d/yyyy, h:mm a'}}]</span>
+    <span class="log-timestamp">[{{ item.timestamp | date:'HH:mm:ss' }}]</span>
     <span class="links" style="margin-right: 2px;">
         <!-- <mat-icon [ngClass]="{'color-green': item.logType !== logTypes.error}" title="Show more details" *ngIf="renderPayload" (click)="expanded = !expanded">{{!expanded ? 'expand_more' : 'expand_less'}}</mat-icon> -->
     </span>

@@ -68,7 +68,7 @@
                     <div class="server-console-lines show-scrollbar" #consoleElement>
 
                         <div class="server-console-line" *ngFor="let line of lines">
-                            <span class="time-stamp">[{{line.timestamp | date:'MM/dd/yy, hh:mm a'}}]</span>
+                            <span class="time-stamp">[{{line.timestamp | date:'HH:mm:ss'}}]</span>
                             <p [class]="line.cssClass">{{line.message}}</p>
                         </div>
 
