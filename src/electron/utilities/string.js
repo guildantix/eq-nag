@@ -389,7 +389,7 @@ function parsePhoneticTransformsToLiteral( value, phoneticTransforms ) {
         'III': 'three',
         'IV': 'four',
         'V': 'five',
-        'VI': 'size',
+        'VI': 'six',
         'VII': 'seven',
         'VIII': 'eight',
         'IX': 'nine',
