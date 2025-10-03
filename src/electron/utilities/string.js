@@ -757,7 +757,7 @@ function getDurationLabel( seconds ) {
     if ( seconds > 0 ) {
         let hours = Math.floor( seconds / 3600 );
         let mins = Math.floor( ( seconds % 3600 ) / 60 );
-        let secs = seconds % 3600 % 60;
+        let secs = seconds % 60; // Simplified from 'seconds % 3600 % 60' (mathematically equivalent, but cleaner)
 
         let label = '';
 
@@ -801,23 +801,26 @@ function getDurationLabel( seconds ) {
  */
 function getDurationFromLabel( label ) {
     if ( label ) {
-        let matches = [ ...label.matchAll( /(?<hours>[0-9]+?h)|(?<minutes>[0-9]+?m)|(?<seconds>[0-9]+?s)/gi ) ];
+        let matches = [ ...label.matchAll( /(?<hours>[0-9]+(?:\.[0-9]+)?)\s*h|(?<minutes>[0-9]+(?:\.[0-9]+)?)\s*m|(?<seconds>[0-9]+(?:\.[0-9]+)?)\s*s/gi ) ];
         if ( matches?.length > 0 ) {
             let duration = 0;
 
             matches.forEach( m => {
                 if ( m.groups.hours ) {
-                    duration += parseInt( m.groups.hours ) * 3600;
+                    duration += parseFloat( m.groups.hours ) * 3600;
                 } else if ( m.groups.minutes ) {
-                    duration += parseInt( m.groups.minutes ) * 60;
+                    duration += parseFloat( m.groups.minutes ) * 60;
                 } else if ( m.groups.seconds ) {
-                    duration += parseInt( m.groups.seconds );
+                    duration += parseFloat( m.groups.seconds );
                 }
             } );
 
             return duration;
         }
-        let milMatches = /(?<hours>[0-9]+)?:?(?<minutes>[0-9]+):(?<seconds>[0-9]+)/gi.exec( label );
+        // Fixed: Wrap hours and its colon together in optional group to prevent mismatching.
+        // Before:   (?<hours>[0-9]+)?:?  would match '9' as hours in '90:00' (treating '0' as the optional colon)
+        // After: (?:(?<hours>[0-9]+):)?  requires the colon to be present with hours, so '90:00' correctly matches as MM:SS
+        let milMatches = /(?:(?<hours>[0-9]+):)?(?<minutes>[0-9]+):(?<seconds>[0-9]+)/gi.exec( label );
         if ( milMatches?.length > 0 ) {
             let duration = 0;
             
@@ -859,25 +862,104 @@ function getDurationFromLabel( label ) {
  * @returns 
  */
 function parseShortCodesToRegex( value, characterName ) {
-    // https://regex101.com/r/g9QIL1/3
-    // (?<timerDuration>[0-9]+?[h|hour|hours|hrs]+\s[0-9]*?[m|min|mins|minute|minutes]*?\s?[0-9]+?[s|sec|secs|seconds|second]+?|[0-9]*?[m|min|mins|minute|minutes]*?\s?[0-9]+?[s|sec|secs|seconds|second]+?|[0-9]+:[0-9]+:[0-9]+|[0-9]+)
-    // (?<timerDuration>[0-9]*?[h|hour|hours|hrs]*\s?[0-9]*?[m|min|mins|minute|minutes]*?\s?[0-9]*?[s|sec|secs|seconds|second]*?|[0-9]*?[m|min|mins|minute|minutes]*?\s?[0-9]*?[s|sec|secs|seconds|second]*?|[0-9]*)
-    // (?<timerDuration>[0-9]+?[h|hour|hours|hrs]+\s[0-9]*?[m|min|mins|minute|minutes]*?\s?[0-9]+?[s|sec|secs|seconds|second]+?|[0-9]*?[m|min|mins|minute|minutes]*?\s?[0-9]+?[s|sec|secs|seconds|second]+?|[0-9]+:[0-9]+:[0-9]+|[0-9]+:[0-9]+|[0-9]+)
-    
-    // https://regex101.com/r/e0CFEL/1
-    // ^(?=.*timer)Halindar (?:start timer|starts*|begins*|timer)(?: a |\s)*(?<timerDuration>[0-9]*?[h|hour|hours|hrs]*\s?[0-9]*?[m|min|mins|minute|minutes]*?\s?[0-9]*?[s|sec|secs|seconds|second]*?|[0-9]*?[m|min|mins|minute|minutes]*?\s?[0-9]*?[s|sec|secs|seconds|second]*?|[0-9]*)(?:\stimer)*(?:for Targeting)*\.$
+    // Keep these patterns in sync with src/app/utilities/regex-highlighter.utilities.ts.
 
     if ( value ) {
+        // {LN} => list name
         // https://regex101.com/r/BpKeMw/1
         value = value.replace( /{LN}/gi, `(?<nag_listname>.+?)` );
-        value = value.replace( /{TS}/i, '(?<timerDuration>[0-9]*?[h|hour|hours|hrs]*\\s?[0-9]*?[m|min|mins|minute|minutes]*?\\s?[0-9]*?[s|sec|secs|seconds|second]*?|[0-9]*?[m|min|mins|minute|minutes]*?\\s?[0-9]*?[s|sec|secs|seconds|second]*?|[0-9]+:[0-9]+:[0-9]+|[0-9]+:[0-9]+|[0-9.]*)' );
+
+        // {TS} => timer duration (hours, minutes, seconds, or time formats)
+        // https://regex101.com/r/rsx53o/1
+        // Linearized: (?<timerDuration>(?:\b[0-9]+:[0-9]+(?::[0-9]+)?\b|\b[0-9]+(?:\.[0-9]+)?\s*(?:(?:h(?:ou)?r|min(?:ute)?|sec(?:ond)?)(?:[(]s[)]|s)?|[hms])(?=$|\W)(?:\s*[0-9]+(?:\.[0-9]+)?\s*(?:(?:h(?:ou)?r|min(?:ute)?|sec(?:ond)?)(?:[(]s[)]|s)?|[hms])(?=$|\W))*|\b[0-9]+(?:\.[0-9]+)?\b))
+        // Order of alternation matters here. 1) Time format. 2) Unit based. 3) Plain number.
+        // Matches timer durations in these formats:
+        //  - HH:MM(:SS) with 1+ digits per unit, e.g. "1:23", "12:34:56"
+        //  - Unit-based: "<num><unit>" with optional decimals, spaces, repeats
+        //      e.g. "5h", "10 min", "2.5hours", "1min(s) 30s", "2h30m"
+        //  - Supports plural "s" or "(s)" for hours/minutes/seconds
+        //  - Single-letter units h/m/s (not pluralized)
+        //  - Plain numbers allowed, e.g. "120", for seconds. Optional decimals.
+        const UNIT_PATTERN = 
+            '(?:' +
+                '(?:h(?:ou)?r|min(?:ute)?|sec(?:ond)?)' + // hr, hour | min, minute | sec, second
+                '(?:[(]s[)]|s)?' + // character classes for parenthesis, avoid double escaping, that is just a source for errors 
+            '|' +
+                '[hms]' + // single char units can not be pluralized. Checked separately.
+            ')' +
+            '(?=$|\\W)'; // This was a normal '\b' first, but that was not 110% proof.
+
+        value = value.replace(
+            /{TS}/i,
+            '(?<timerDuration>' +
+                '(?:' +
+                    
+                    // HH:MM:SS or MM:SS format, open for 1+ digit per unit, as the parser accepts that.
+                    '\\b' +
+                    '[0-9]+' +
+                    ':' +
+                    '[0-9]+' +
+                    '(?:' +
+                        ':' +
+                        '[0-9]+' +
+                    ')?' +
+                    '\\b' +
+                    
+                '|' +
+                    
+                    // Unit-based formats
+                    '\\b' +
+                    '[0-9]+' +
+                    '(?:' +
+                        '\\.' +
+                        '[0-9]+' +
+                    ')?' +
+                    '\\s*' +
+                    UNIT_PATTERN +
+                    '(?:' + 
+                        '\\s*' +
+                        '[0-9]+' +
+                        '(?:' +
+                            '\\.' +
+                            '[0-9]+' +
+                        ')?' +
+                        '\\s*' +
+                        UNIT_PATTERN +
+                    ')*' +  // '*' repeat instead of {,2} allows for some fun styling: Mike tells the guild, 'Timer: 1m 2m 3m 4m ten minute break'
+                    
+                '|' +
+                    
+                    // Plain numbers
+                    '\\b' +
+                    '[0-9]+' +
+                    '(?:' +
+                        '\\.' +
+                        '[0-9]+' +
+                    ')?' +
+                    '\\b' +
+                    
+                ')' +
+            ')'
+        );
+
+
+        // {C} => current character name
         value = value.replace( /{C}/gi, characterName );
+
+        // ${Character} => current character name
         value = value.replace( /\${Character}/gi, characterName );
-        // value = value.replace( /{COUNTER}/gi, '' ); // We may add this in the future, just not sure how to accomplish this.  WE use counter names instead of just {COUNTER} however.
-        // value = value.replace( /{N}/gi, '(?<N>[0-9]+?)' );
-        value = value.replace( /{S([0-9]*?)}/gi, '(?<S$1>.+?)' );
-        value = value.replace( /{N([0-9]*?)}/gi, '(?<N$1>[0-9]+?)' );
+
+        // {S}, {S1}, {S2}, etc. => lazy captures
         // https://regex101.com/r/k4eq0f/1
+        value = value.replace( /{S([0-9]*?)}/gi, '(?<S$1>.+?)' );
+
+        // {N}, {N1}, {N2}, etc. => greedy numeric captures
+        value = value.replace( /{N([0-9]*?)}/gi, '(?<N$1>[0-9]+)' );
+
+        /*
+        // We may add this in the future, just not sure how to accomplish this.  WE use counter names instead of just {COUNTER} however.
+        value = value.replace( /{COUNTER}/gi, '' );
+        */
     }
 
     return value;
