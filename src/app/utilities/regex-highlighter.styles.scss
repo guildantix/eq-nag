@@ -1,0 +1,237 @@
+// ===============================
+// Regex Highlighter SCSS Styles
+// ===============================
+
+// ---------- Colors ----------
+$regex-fg:            #d7d7d7;
+$regex-muted:         #9aa3a8;
+$regex-gold:          #ffd166;
+$regex-gold-strong:   #ffda44; // Named groups
+$regex-magenta:       #e73ce4;
+$regex-purple:        #c3a2fd;
+$regex-blue:          #58a6ff;
+$regex-green:         #69cc67;
+$regex-orange:        #f1a500;
+$regex-error-red:     #ff0026;
+$regex-class-content: #88ff88;
+
+$regex-hover-transition: 120ms ease;
+$regex-border-width:     1px;
+$regex-hover-border-opacity: 0.4;
+$regex-hover-radius:       3px;
+
+// ---------- Mixins ----------
+@mixin regex-inline {
+    display: inline;
+    vertical-align: baseline;
+    white-space: pre;
+}
+
+@mixin regex-inline-block {
+    display: inline-block;
+    vertical-align: baseline;
+    white-space: pre;
+}
+
+@mixin regex-bold {
+    font-weight: 700;
+}
+
+@mixin regex-italic {
+    font-style: italic;
+}
+
+@mixin regex-hover-border($color) {
+    transition: border-color $regex-hover-transition;
+    border: $regex-border-width solid transparent;
+    border-radius: $regex-hover-radius;
+    &:hover {
+        border-color: rgba($color, $regex-hover-border-opacity);
+        cursor: default;
+  }
+}
+
+// ---------- Variable Wrappers ----------
+.regex-variable {
+    @include regex-inline-block;
+    @include regex-hover-border($regex-blue);
+    padding: 0 2px;
+    border-radius: $regex-hover-radius;
+    background: rgba($regex-blue, 0.05);
+    color: $regex-blue;
+}
+
+.regex-variable-prefix,
+.regex-variable-name,
+.regex-variable-brace {
+    @include regex-inline;
+    @include regex-bold;
+}
+
+.regex-variable-name {
+    @include regex-italic;
+}
+
+// ---------- Group Wrappers ----------
+.regex-group,
+.regex-named-group,
+.regex-non-capture-group,
+.regex-lookaround-group {
+    @include regex-inline-block;
+    @include regex-hover-border($regex-gold);
+    padding: 0 4px;
+    border-radius: $regex-hover-radius;
+    background: rgba($regex-gold, 0.05);
+    color: $regex-gold;
+}
+
+.regex-group-start,
+.regex-group-end,
+.regex-named-group-start,
+.regex-named-group-end,
+.regex-group-modifier,
+.regex-lookaround-group {
+    @include regex-inline;
+    color: $regex-gold;
+}
+
+.regex-named-group-name {
+    color: $regex-gold-strong;
+    @include regex-bold;
+    @include regex-inline;
+    border-bottom: 1px dotted rgba($regex-gold-strong, 0.6);
+    margin: 0 4px 0 2px;
+}
+
+// ---------- Shortcodes ----------
+.regex-shortcode-advanced {
+    @include regex-inline-block;
+    @include regex-hover-border($regex-magenta);
+    padding: 0 2px;
+    border-radius: $regex-hover-radius;
+    background: rgba($regex-magenta, 0.05);
+    color: $regex-magenta;
+}
+
+.regex-shortcode-advanced-prefix,
+.regex-shortcode-advanced-suffix {
+    @include regex-inline;
+    font-weight: 700;
+}
+
+.regex-shortcode-advanced-content {
+    @include regex-inline;
+    color: lighten($regex-magenta, 15%);
+    @include regex-italic;
+}
+
+// ---------- Token Styles ----------
+.regex-quantifier {
+    color: $regex-orange;
+    @include regex-bold;
+    @include regex-inline;
+}
+
+.regex-alternation {
+    color: $regex-magenta;
+    @include regex-bold;
+    @include regex-inline;
+}
+
+.regex-anchor {
+    color: $regex-gold;
+    @include regex-bold;
+    @include regex-inline;
+}
+
+.regex-special-char {
+    color: $regex-gold;
+    @include regex-bold;
+    @include regex-inline;
+}
+
+// ---------- Character Classes ----------
+.regex-class {
+    @include regex-inline-block;
+    @include regex-hover-border($regex-green);
+    padding: 0 4px;
+    border-radius: $regex-hover-radius;
+    background: rgba($regex-green, 0.05);
+    color: $regex-green;
+}
+
+.regex-class-bracket {
+    @include regex-inline;
+    font-weight: 700;
+}
+
+.regex-class-content {
+    @include regex-inline;
+    color: $regex-class-content;
+}
+
+.regex-class-special {
+    @include regex-inline;
+    color: lighten($regex-green, 15%);
+    font-weight: 700;
+}
+
+// ---------- Literals ----------
+.regex-literal {
+    @include regex-inline;
+    color: $regex-muted;
+}
+
+.regex-literal .regex-space {
+    color: $regex-gold;
+    opacity: 0.7;
+    font-size: 1em;
+}
+
+// ---------- Shorthand & Escape ----------
+.regex-shorthand {
+    @include regex-inline;
+    color: $regex-purple;
+    @include regex-bold;
+}
+
+.regex-escape {
+    @include regex-inline;
+    color: $regex-magenta;
+    @include regex-bold;
+}
+
+// ---------- Errors ----------
+.regex-error {
+    @include regex-inline-block;
+    background-color: rgba($regex-error-red, 0.4);
+    color: #fff;
+    padding: 0 0.12em;
+    border-radius: $regex-hover-radius;
+    border: $regex-border-width solid $regex-error-red;
+    @include regex-hover-border($regex-error-red);
+}
+
+// ---------- Generic reset for alignment and spacing ----------
+.regex-highlighted,
+.regex-literal,
+.regex-shorthand,
+.regex-escape,
+.regex-group,
+.regex-named-group,
+.regex-non-capture-group,
+.regex-noncapture-group,
+.regex-lookaround-group,
+.regex-class,
+.regex-variable,
+.regex-shortcode-advanced,
+.regex-quantifier,
+.regex-anchor,
+.regex-alternation,
+.regex-special-char,
+.regex-error {
+    margin: 0;
+    padding: 0;
+    vertical-align: baseline;
+    box-sizing: border-box;
+}

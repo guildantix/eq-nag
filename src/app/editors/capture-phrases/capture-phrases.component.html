@@ -57,7 +57,9 @@
                         [(ngModel)]="element.phrase"
 
                         (keydown.enter)="$event.preventDefault()"
-                        (ngModelChange)="capturePhrasesChange.emit(capturePhrases)"
+                        (ngModelChange)="onPhraseChange(i)"
+                        (input)="onPhraseChange(i)"
+                        (paste)="onPaste(i)"
 
                         spellcheck="false"
                         autocomplete="off"
@@ -68,14 +70,27 @@
                         cdkAutosizeMaxRows="4">
                     </textarea>
 
-                    <mat-hint>Capture Phrase</mat-hint>
+                    <div class="regex-highlight-inline" *ngIf="overlayOpenIndex === i" [innerHTML]="highlightedPhrases[i]"></div>
+                    <mat-hint style="display: flex; justify-content: space-between; align-items: center;">
+                        <span>Capture Phrase</span>
+                        <span *ngIf="element.useRegEx"
+                            class="toggle-icon"
+                            (click)="toggleOverlay(i)"
+                            role="button"
+                            tabindex="0"
+                            aria-label="Toggle regex highlight overlay"
+                            [attr.aria-pressed]="overlayOpenIndex === i">
+                            Regex Visualizer
+                            <mat-icon>{{ overlayOpenIndex === i ? 'expand_less' : 'expand_more' }}</mat-icon>
+                        </span>
+                    </mat-hint>
                 </mat-form-field>
             </td>
         </ng-container>
 
         <ng-container matColumnDef="regEx">
             <th mat-header-cell *matHeaderCellDef style="text-align: center; width: 50px;"> RegEx </th>
-            <td mat-cell *matCellDef="let element; let i = index"> <div style="text-align: center; padding: 20px;"><mat-checkbox name="cbxUseRegEx_{{i}}" [(ngModel)]="element.useRegEx" (ngModelChange)="capturePhrasesChange.emit(capturePhrases)"></mat-checkbox></div> </td>
+            <td mat-cell *matCellDef="let element; let i = index"> <div style="text-align: center; padding: 20px;"><mat-checkbox name="cbxUseRegEx_{{i}}" [(ngModel)]="element.useRegEx" (ngModelChange)="onRegexChange(i, $event)"></mat-checkbox></div> </td>
         </ng-container>
 
         <ng-container matColumnDef="regExOptions">

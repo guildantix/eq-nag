@@ -28,3 +28,47 @@ mat-form-field {
     flex-direction: row;
 
 }
+
+mat-form-field.consolas {
+  position: relative;
+  width: 100%;
+  font-family: 'Consolas', monospace;
+  font-size: 13px;
+  line-height: 1.3;
+}
+
+.toggle-icon {
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;   // Adjust size as you see fit
+  color: #2bcf7d;
+  user-select: none;
+  margin-left: 20px;
+
+
+  &:hover, &:focus {
+    color: #55ffaa;
+    outline: none;
+  }
+}
+
+textarea.mat-input-element {
+  padding-right: 8px !important;
+  font-family: 'Consolas', monospace !important;
+  font-size: 13px !important;
+  color: #ffffff !important;
+  background: transparent !important;
+  resize: none !important;
+}
+
+.regex-highlight-inline {
+  word-break: normal;
+  overflow-wrap: anywhere;
+  background: #000000;
+  padding: 1px;
+  margin-top: 8px;
+  color: #ccc;
+  border-radius: 4px;
+}
