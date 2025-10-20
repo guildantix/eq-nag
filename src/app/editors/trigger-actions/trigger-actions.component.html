@@ -5,23 +5,23 @@
         <mat-card class="card action-card" *ngFor="let action of actions; let i = index" style="margin: 20px; min-width: 550px; width: calc(100% - 6em);" [ngClass]="{'box-shadow-blue': scrollIndex === i}">
             <mat-card-header>
                 <div mat-card-avatar class="action-header-image">
-                    <span class="material-icons" *ngIf="action.actionType == null">block</span>
-                    <span class="material-icons" *ngIf="action.actionType === actionTypes.DisplayText">text_format</span>
-                    <span class="material-icons" *ngIf="action.actionType === actionTypes.PlayAudio">audiotrack</span>
-                    <span class="material-icons" *ngIf="action.actionType === actionTypes.Speak">volume_up</span>
-                    <span class="material-icons material-icons-outlined" *ngIf="action.actionType === actionTypes.Timer">alarm</span>
-                    <span class="material-icons" *ngIf="action.actionType === actionTypes.Countdown">watch</span>
+                    <span class="material-icons" *ngIf="action.actionType == null">{{actionTypeIcons(null)}}</span>
+                    <span class="material-icons" *ngIf="action.actionType === actionTypes.DisplayText">{{actionTypeIcons(actionTypes.DisplayText)}}</span>
+                    <span class="material-icons" *ngIf="action.actionType === actionTypes.PlayAudio">{{actionTypeIcons(actionTypes.PlayAudio)}}</span>
+                    <span class="material-icons" *ngIf="action.actionType === actionTypes.Speak">{{actionTypeIcons(actionTypes.Speak)}}</span>
+                    <span class="material-icons material-icons-outlined" *ngIf="action.actionType === actionTypes.Timer">{{actionTypeIcons(actionTypes.Timer)}}</span>
+                    <span class="material-icons" *ngIf="action.actionType === actionTypes.Countdown">{{actionTypeIcons(actionTypes.Countdown)}}</span>
                     <span class="material-icons" *ngIf="action.actionType === actionTypes.List">{{actionTypeIcons(actionTypes.List)}}</span>
-                    <span class="material-icons" *ngIf="action.actionType === actionTypes.StoreVariable">sd_storage</span>
-                    <span class="material-icons" *ngIf="action.actionType === actionTypes.ClearVariable">sd_storage</span>
-                    <span class="material-icons" *ngIf="action.actionType === actionTypes.DotTimer">watch_later</span>
-                    <span class="material-icons" *ngIf="action.actionType === actionTypes.Counter">exposure_plus_1</span>
-                    <span class="material-icons" *ngIf="action.actionType === actionTypes.Clipboard">content_copy</span>
-                    <span class="material-icons" *ngIf="action.actionType === actionTypes.BeneficialTimer">watch_later</span>
-                    <span class="material-icons" *ngIf="action.actionType === actionTypes.DisplayDeathRecap">sick</span>
-                    <span class="material-icons" *ngIf="action.actionType === actionTypes.ScreenGlow">brightness_5</span>
-                    <span class="material-icons material-icons-outlined" *ngIf="action.actionType === actionTypes.ClearAll">layers_clear</span>
-                    <span class="material-icons material-icons-outlined" *ngIf="action.actionType === actionTypes.Stopwatch">timer</span>
+                    <span class="material-icons" *ngIf="action.actionType === actionTypes.StoreVariable">{{actionTypeIcons(actionTypes.StoreVariable)}}</span>
+                    <span class="material-icons" *ngIf="action.actionType === actionTypes.ClearVariable">{{actionTypeIcons(actionTypes.ClearVariable)}}</span>
+                    <span class="material-icons" *ngIf="action.actionType === actionTypes.DotTimer">{{actionTypeIcons(actionTypes.DotTimer)}}</span>
+                    <span class="material-icons" *ngIf="action.actionType === actionTypes.Counter">{{actionTypeIcons(actionTypes.Counter)}}</span>
+                    <span class="material-icons" *ngIf="action.actionType === actionTypes.Clipboard">{{actionTypeIcons(actionTypes.Clipboard)}}</span>
+                    <span class="material-icons" *ngIf="action.actionType === actionTypes.BeneficialTimer">{{actionTypeIcons(actionTypes.BeneficialTimer)}}</span>
+                    <span class="material-icons" *ngIf="action.actionType === actionTypes.DisplayDeathRecap">{{actionTypeIcons(actionTypes.DisplayDeathRecap)}}</span>
+                    <span class="material-icons" *ngIf="action.actionType === actionTypes.ScreenGlow">{{actionTypeIcons(actionTypes.ScreenGlow)}}</span>
+                    <span class="material-icons material-icons-outlined" *ngIf="action.actionType === actionTypes.ClearAll">{{actionTypeIcons(actionTypes.ClearAll)}}</span>
+                    <span class="material-icons material-icons-outlined" *ngIf="action.actionType === actionTypes.Stopwatch">{{actionTypeIcons(actionTypes.Stopwatch)}}</span>
                 </div>
                 <mat-card-title>{{action.actionType == null ? 'Unset Action' : actionTypeLabels(action.actionType)}}</mat-card-title>
                 <mat-card-subtitle>
@@ -54,26 +54,73 @@
                 <div>
                     <mat-form-field style="width: 100%;">
                         <mat-label></mat-label>
-                        <mat-select [(ngModel)]="action.actionType" name="ddlActionType_{{i}}">
-                            <mat-option [value]="actionTypes.DisplayText">{{actionTypeLabels(actionTypes.DisplayText)}}</mat-option>
-                            <mat-option [value]="actionTypes.DotTimer">{{actionTypeLabels(actionTypes.DotTimer)}}</mat-option>
-                            <mat-option [value]="actionTypes.PlayAudio">{{actionTypeLabels(actionTypes.PlayAudio)}}</mat-option>
-                            <mat-option [value]="actionTypes.Speak">{{actionTypeLabels(actionTypes.Speak)}}</mat-option>
-                            <mat-option [value]="actionTypes.Timer">{{actionTypeLabels(actionTypes.Timer)}}</mat-option>
-                            <mat-option [value]="actionTypes.Countdown">{{actionTypeLabels(actionTypes.Countdown)}}</mat-option>
-                            <mat-option [value]="actionTypes.List" *ngIf="canSelectList(action)">{{actionTypeLabels(actionTypes.List)}}</mat-option>
-                            <mat-option [value]="actionTypes.StoreVariable">{{actionTypeLabels(actionTypes.StoreVariable)}}</mat-option>
-                            <mat-option [value]="actionTypes.ClearVariable">{{actionTypeLabels(actionTypes.ClearVariable)}}</mat-option>
-                            <mat-option [value]="actionTypes.Counter">{{actionTypeLabels(actionTypes.Counter)}}</mat-option>
-                            <mat-option [value]="actionTypes.Clipboard">{{actionTypeLabels(actionTypes.Clipboard)}}</mat-option>
-                            <mat-option [value]="actionTypes.BeneficialTimer">{{actionTypeLabels(actionTypes.BeneficialTimer)}}</mat-option>
-                            <mat-option [value]="actionTypes.DisplayDeathRecap">{{actionTypeLabels(actionTypes.DisplayDeathRecap)}}</mat-option>
-                            <mat-option [value]="actionTypes.ScreenGlow">{{actionTypeLabels(actionTypes.ScreenGlow)}}</mat-option>
-                            <mat-option [value]="actionTypes.ClearAll">{{actionTypeLabels(actionTypes.ClearAll)}}</mat-option>
-                            <mat-option [value]="actionTypes.Stopwatch">{{actionTypeLabels(actionTypes.Stopwatch)}}</mat-option>
-                        </mat-select>
-                        <mat-hint>Action Type</mat-hint>
+                        <input matInput [value]="actionTypeLabels(action.actionType)" readonly
+                            [matMenuTriggerFor]="multiColumnActionMenu"
+                            #menuTrigger="matMenuTrigger"  placeholder="Select an action type"
+                            attr.aria-label="Action Type Selector for {{ actionTypeLabels(action.actionType) }}">
+                            <mat-hint>Action Type</mat-hint>
                     </mat-form-field>
+
+                    <mat-menu #multiColumnActionMenu="matMenu" class="multi-column-menu-panel">
+                        <ng-template matMenuContent>
+                            <div class="multi-column-container">
+                                <div class="menu-column">
+                                    <button mat-menu-item (click)="selectActionType(action, actionTypes.DisplayText, menuTrigger)">
+                                        <mat-icon>{{actionTypeIcons(actionTypes.DisplayText)}}</mat-icon>{{ actionTypeLabels(actionTypes.DisplayText) }}
+                                    </button>
+                                    <button mat-menu-item (click)="selectActionType(action, actionTypes.Speak, menuTrigger)">
+                                        <mat-icon>{{actionTypeIcons(actionTypes.Speak)}}</mat-icon>{{ actionTypeLabels(actionTypes.Speak) }}
+                                    </button>
+                                    <button mat-menu-item (click)="selectActionType(action, actionTypes.Countdown, menuTrigger)">
+                                        <mat-icon>{{actionTypeIcons(actionTypes.Countdown)}}</mat-icon>{{ actionTypeLabels(actionTypes.Countdown) }}
+                                    </button>
+                                    <button mat-menu-item (click)="selectActionType(action, actionTypes.Timer, menuTrigger)">
+                                        <mat-icon>{{actionTypeIcons(actionTypes.Timer)}}</mat-icon>{{ actionTypeLabels(actionTypes.Timer) }}
+                                    </button>
+                                    <button mat-menu-item (click)="selectActionType(action, actionTypes.DotTimer, menuTrigger)">
+                                        <mat-icon>{{actionTypeIcons(actionTypes.DotTimer)}}</mat-icon>{{ actionTypeLabels(actionTypes.DotTimer) }}
+                                    </button>
+                                    <button mat-menu-item (click)="selectActionType(action, actionTypes.BeneficialTimer, menuTrigger)">
+                                        <mat-icon>{{actionTypeIcons(actionTypes.BeneficialTimer)}}</mat-icon>{{ actionTypeLabels(actionTypes.BeneficialTimer) }}
+                                    </button>
+                                </div>
+                                <div class="menu-column">
+                                    <button mat-menu-item (click)="selectActionType(action, actionTypes.Counter, menuTrigger)">
+                                        <mat-icon>{{actionTypeIcons(actionTypes.Counter)}}</mat-icon>{{ actionTypeLabels(actionTypes.Counter) }}
+                                    </button>
+                                    <button mat-menu-item (click)="selectActionType(action, actionTypes.Clipboard, menuTrigger)">
+                                        <mat-icon>{{actionTypeIcons(actionTypes.Clipboard)}}</mat-icon>{{ actionTypeLabels(actionTypes.Clipboard) }}
+                                    </button>
+                                    <button mat-menu-item (click)="selectActionType(action, actionTypes.StoreVariable, menuTrigger)">
+                                        <mat-icon>{{actionTypeIcons(actionTypes.StoreVariable)}}</mat-icon>{{ actionTypeLabels(actionTypes.StoreVariable) }}
+                                    </button>
+                                    <button mat-menu-item (click)="selectActionType(action, actionTypes.ClearVariable, menuTrigger)">
+                                        <mat-icon>{{actionTypeIcons(actionTypes.ClearVariable)}}</mat-icon>{{ actionTypeLabels(actionTypes.ClearVariable) }}
+                                    </button>
+                                    <button mat-menu-item (click)="selectActionType(action, actionTypes.PlayAudio, menuTrigger)">
+                                        <mat-icon>{{actionTypeIcons(actionTypes.PlayAudio)}}</mat-icon>{{ actionTypeLabels(actionTypes.PlayAudio) }}
+                                    </button>
+                                    <button mat-menu-item (click)="selectActionType(action, actionTypes.Stopwatch, menuTrigger)">
+                                        <mat-icon>{{actionTypeIcons(actionTypes.Stopwatch)}}</mat-icon>{{ actionTypeLabels(actionTypes.Stopwatch) }}
+                                    </button>
+                                </div>
+                                <div class="menu-column">
+                                    <button mat-menu-item (click)="selectActionType(action, actionTypes.List, menuTrigger)" *ngIf="canSelectList(action)">
+                                        <mat-icon>{{actionTypeIcons(actionTypes.List)}}</mat-icon>{{ actionTypeLabels(actionTypes.List) }}
+                                    </button>
+                                    <button mat-menu-item (click)="selectActionType(action, actionTypes.ScreenGlow, menuTrigger)">
+                                        <mat-icon>{{actionTypeIcons(actionTypes.ScreenGlow)}}</mat-icon>{{ actionTypeLabels(actionTypes.ScreenGlow) }}
+                                    </button>
+                                    <button mat-menu-item (click)="selectActionType(action, actionTypes.ClearAll, menuTrigger)">
+                                        <mat-icon>{{actionTypeIcons(actionTypes.ClearAll)}}</mat-icon>{{ actionTypeLabels(actionTypes.ClearAll) }}
+                                    </button>
+                                    <button mat-menu-item (click)="selectActionType(action, actionTypes.DisplayDeathRecap, menuTrigger)">
+                                        <mat-icon>{{actionTypeIcons(actionTypes.DisplayDeathRecap)}}</mat-icon>{{ actionTypeLabels(actionTypes.DisplayDeathRecap) }}
+                                    </button>
+                                </div>
+                            </div>
+                        </ng-template>
+                    </mat-menu>
                 </div>
     
                 <div *ngIf="action.actionType != null && action.actionType != actionTypes.List">

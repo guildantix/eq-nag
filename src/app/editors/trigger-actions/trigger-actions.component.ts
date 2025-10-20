@@ -2,6 +2,7 @@ import { Component, ElementRef, EventEmitter, Input, OnInit, Output, ViewChild }
 import { ActionTypeIcons, ActionTypeLabels, ActionTypes, CapturePhrase, OverlayWindowModel, TriggerAction } from 'src/app/core.model';
 import { DialogService } from 'src/app/dialogs/dialog.service';
 import { IpcService } from 'src/app/ipc.service';
+import { MatMenuTrigger } from '@angular/material/menu';
 
 @Component( {
     selector: 'app-trigger-actions',
@@ -198,6 +199,27 @@ export class TriggerActionsComponent implements OnInit {
             this.scrollIndex = index + 1;
         }
     }
+
+
+
+
+
+
+
+
+
+    /**
+     * Updates the actionType for a specific action and closes the menu.
+     * @param action The TriggerAction object to update.
+     * @param selectedType The new ActionType to set.
+     * @param menuTrigger: The MatMenuTrigger instance to close after selection.
+     */
+    public selectActionType(action: TriggerAction, selectedType: ActionTypes, menuTrigger: MatMenuTrigger): void {
+      action.actionType = selectedType;
+      this.actionsChange.emit( this.actions ); // Force emit the change, let parent component react immediately
+      menuTrigger.closeMenu(); // Close the menu after selection
+    }
+
 
 
 

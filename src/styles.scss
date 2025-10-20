@@ -108,3 +108,51 @@ div.flex-row {
         flex: 1 1 auto;
     }
 }
+
+  .multi-column-menu-panel.mat-menu-panel {
+  max-width: none !important; /* Crucial: Override Material's default max-width to allow horizontal expansion */
+  width: auto !important;     /* Let content dictate the width */
+  padding: 0;                 /* Remove default menu padding, we'll manage it inside */
+  min-width: 376px;           /* Adjust this to ensure enough space for 3 columns */
+}
+
+.multi-column-container {
+  display: flex;
+  gap: 8px; /* Space between columns */
+  padding: 8px; /* Padding inside the custom menu content */
+}
+
+
+.menu-column {
+        flex: 1;
+        border-right: 1px solid #797979;
+
+        &:last-child {
+            border-right: none;
+        }
+
+        button.mat-menu-item {
+            width: 100%;
+            padding: 8px 16px;
+            height: auto;
+            line-height: 1.2;
+            white-space: normal;
+
+            mat-icon {
+                margin-right: 8px;
+                font-size: 18px;
+            }
+
+            &:hover {
+                background-color: #f5f5f5;
+            }
+        }
+    }
+.menu-column button[mat-menu-item] {
+  width: 100%;                  /* Make menu items fill their column */
+  text-align: left;             /* Align text to the left */
+  justify-content: flex-start;  /* Ensure icon/text starts at the left */
+  line-height: 48px;            /* Standard Material menu item height */
+  height: 48px;                 /* Standard Material menu item height */
+  padding: 0 16px;              /* Standard Material menu item padding */
+}
