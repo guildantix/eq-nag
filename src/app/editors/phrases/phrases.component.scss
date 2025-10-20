@@ -2,3 +2,35 @@
 table.capture-phrases {
     width: 100%;
 }
+
+
+table.capture-phrases .material-icons.disabled {
+    cursor: default;
+    opacity: 0.3;
+    pointer-events: none;
+}
+
+
+mat-form-field {
+    font-size: 12px;
+}
+
+
+.move-buttons {
+    display: flex;
+    flex-direction: row;   /* side by side */
+    justify-content: center;
+    align-items: center;
+    gap: 2px;              /* tiny spacing */
+}
+
+.move-buttons .material-icons {
+    cursor: pointer;
+    font-size: 16px;       /* small for tight columns */
+    line-height: 1;
+}
+
+.move-buttons .material-icons.disabled {
+    opacity: 0.3;
+    pointer-events: none;
+}

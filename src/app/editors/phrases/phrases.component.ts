@@ -20,7 +20,7 @@ export class PhrasesComponent implements OnInit {
 
     @ViewChild( 'phrasesTable' ) private phrasesTable: MatTable<any>;
 
-    public phraseTableColumns = [ 'phrase', 'regEx', 'regExOptions', 'delete' ];
+    public phraseTableColumns = [ 'moveIndex', 'phrase', 'regEx', 'regExOptions', 'delete' ];
 
     constructor( private dialogService: DialogService ) { }
 
@@ -56,6 +56,20 @@ export class PhrasesComponent implements OnInit {
 
     public toggleIgnoreCase( phrase: CapturePhrase ): void {
         phrase.ignoreCase = !phrase.ignoreCase;
+    }
+    
+    public movePhraseUp( index: number ): void {
+        if ( index > 0 ) {
+            this.phrases.splice( index - 1, 0, this.phrases.splice( index, 1 )[0] );
+            this.phrasesTable?.renderRows();
+        }
+    }
+
+    public movePhraseDown( index: number ): void {
+        if ( index < this.phrases.length - 1 ) {
+            this.phrases.splice( index + 1, 0, this.phrases.splice( index, 1 )[0] );
+            this.phrasesTable?.renderRows();
+        }
     }
 
 }

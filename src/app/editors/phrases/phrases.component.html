@@ -7,24 +7,51 @@
     [dataSource]="phrases"
     class="capture-phrases">
 
+    <ng-container matColumnDef="moveIndex">
+    <th mat-header-cell *matHeaderCellDef style="width: 20px;"></th>
+    <td mat-cell *matCellDef="let element; let i = index">
+        <div class="move-buttons">
+        <span class="material-icons"
+                (click)="movePhraseUp(i)"
+                [class.disabled]="i === 0"
+                title="Move up">
+            keyboard_arrow_up
+        </span>
+        <span class="material-icons"
+                (click)="movePhraseDown(i)"
+                [class.disabled]="i === phrases.length - 1"
+                title="Move down">
+            keyboard_arrow_down
+        </span>
+        </div>
+    </td>
+    </ng-container>
+
     <ng-container matColumnDef="phrase">
-        <th mat-header-cell *matHeaderCellDef> Phrase </th>
+        <th mat-header-cell *matHeaderCellDef textalign="left"> Phrase </th>
         <td mat-cell *matCellDef="let element; let i = index">
             <mat-form-field style="width: 100%;" class="consolas">
                 <mat-label></mat-label>
-                <input matInput name="txtEndEarlyPhrase" type="text" [(ngModel)]="element.phrase" />
+                <textarea
+                    matInput
+                    cdkTextareaAutosize
+                    cdkAutosizeMinRows="1"
+                    cdkAutosizeMaxRows="3"
+                    name="txtEndEarlyPhrase_{{i}}"
+                    [(ngModel)]="element.phrase">
+                </textarea>
                 <mat-hint>Capture Phrase</mat-hint>
             </mat-form-field>
         </td>
     </ng-container>
 
     <ng-container matColumnDef="regEx">
-        <th mat-header-cell *matHeaderCellDef style="text-align: center; width: 50px;"> RegEx </th>
+        <th mat-header-cell *matHeaderCellDef style="text-align: center; width: 40px;"> RegEx </th>
         <td mat-cell *matCellDef="let element; let i = index"> <div style="text-align: center; padding: 20px;"><mat-checkbox name="cbxEndEarlyUseRegEx" [(ngModel)]="element.useRegEx"></mat-checkbox></div> </td>
     </ng-container>
 
     <ng-container matColumnDef="regExOptions">
-        <th mat-header-cell *matHeaderCellDef style="text-align: center; width: 50px;"> Ops </th>
+        <th mat-header-cell *matHeaderCellDef style="text-align: center; width: 20px;"> Ops </th>
         <td mat-cell *matCellDef="let element; let i = index">
             <div style="text-align: center; padding: 20px;" title="Ignore Case">
                 <span class="regex-option" (click)="toggleIgnoreCase(element)" [ngClass]="{ 'selected': element.ignoreCase }">i</span>
@@ -33,7 +60,7 @@
     </ng-container>
 
     <ng-container matColumnDef="delete">
-        <th mat-header-cell *matHeaderCellDef style="text-align: center; width: 50px;">  </th>
+        <th mat-header-cell *matHeaderCellDef style="text-align: center; width: 20px;">  </th>
         <td mat-cell *matCellDef="let element; let ei = index">
             <button mat-icon-button color="warn" aria-label="Delete this capture phrase" (click)="deletePhrase(ei)">
                 <mat-icon>clear</mat-icon>
@@ -42,6 +69,6 @@
     </ng-container>
 
     <tr mat-header-row *matHeaderRowDef="phraseTableColumns"></tr>
-    <tr mat-row *matRowDef="let element; columns: phraseTableColumns;"></tr>
+    <tr mat-row *matRowDef="let element; let i = index; columns: phraseTableColumns;"></tr>
 
 </table>
