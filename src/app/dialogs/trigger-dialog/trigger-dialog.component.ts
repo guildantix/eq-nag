@@ -192,9 +192,23 @@ export class TriggerDialogComponent implements OnInit {
         this.save().subscribe();
     }
 
-    public copyJson(): void {
-        this.ipcService.sendTextToClipboard( JSON.stringify( this.model ) );
-        this.snackBar.open( 'Trigger details copied!', 'Dismiss', { duration: 5000 } );
+    public copyJson(excludeNull = false, format = false): void {
+        let replacer = null;
+        let space = 0;
+
+        // Set replacer if we need to exclude nulls
+        if (excludeNull) {
+            replacer = (key: string, value: any) => value === null ? undefined : value;
+        }
+
+        // Set indentation if we need to format
+        if (format) {
+            space = 4;
+        }
+
+        // Stringify and copy
+        this.ipcService.sendTextToClipboard(JSON.stringify(this.model, replacer, space));
+        this.snackBar.open('Trigger details copied!', 'Dismiss', { duration: 5000 });
     }
 
     public reimportFromAllakhazam(): void {

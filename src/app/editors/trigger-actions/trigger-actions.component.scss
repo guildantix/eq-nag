@@ -14,7 +14,7 @@ mat-form-field {
 }
 .action-movers {
     display: flex;
-    flex-flow: column nowrap;
+    flex-flow: row; // row vs column makes it a lot easier to not press the wrong arrow when moving an action fast all the way to the top or bottom
     padding: 0 15px;
 
     > button {
@@ -26,27 +26,37 @@ mat-form-field {
 }
 
 .content {
-    overflow: auto;
-    position: fixed;
-    left: 0;
-    right: 0;
-    bottom: 76px;
-    top: 107px;
+    // overflow: auto;
+    position: relative; // Relative position renders it inside parent frame, scrollbar works.
+    margin-left: -30px; // Force it closer to the borders. Result is same margins as the other tabs.
+    margin-right: -30px;
 }
 
 ::ng-deep .card.action-card {
     mat-card-content {
-        padding-top: 50px;
+        padding-top: 10px; // Matches the gap to the dropdown below.
     }
 }
 
-.toolbar-top {
+.toolbar-top { // redundant with +New button
     height: 36px;
     position: fixed;
     left: 0;
     right: 0;
     z-index: 2;
     background-color: #1a1a1a;
+}
+
+.floating-top-right {
+    position: fixed;
+    top: 115px;
+    right: 16px;
+    border-radius: 16px;
+    box-shadow: inset 0px 0px 20px 7px #000000a8; 
+    padding: 4px 8px;
+    backdrop-filter: blur(3px);
+    z-index: 2;
+    background-color: #0b1c0c29;  /* very subtle glow effect around the text */
 }
 
 .flex-layout {

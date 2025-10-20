@@ -1,5 +1,5 @@
 
-<div class="toolbar-top"><button mat-button color="accent" style="float: right; margin-right: 50px;" (click)="addNewAction()"><mat-icon>add</mat-icon>New</button></div>
+<div class="floating-top-right"><button mat-button color="accent" (click)="addNewAction()"><mat-icon>add</mat-icon>New</button></div>
 <div class="content" #content>
     <div class="flex-layout">
         <mat-card class="card action-card" *ngFor="let action of actions; let i = index" style="margin: 20px; min-width: 550px; width: calc(100% - 6em);" [ngClass]="{'box-shadow-blue': scrollIndex === i}">

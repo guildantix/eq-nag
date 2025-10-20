@@ -4,7 +4,7 @@ mat-form-field {
 }
 
 .margin-t-50 {
-    margin-top: 50px;
+    margin-top: 20px;
 }
 
 legend.full-width {
@@ -35,4 +35,69 @@ legend.full-width {
         overflow: hidden;
         white-space: nowrap;
     }
+}
+
+
+.modal {
+    display: flex;
+    flex-direction: column;
+    
+    /* Centering and positioning properties */
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+
+    /* Use calc() to set the responsive size with a fixed pixel margin */
+    width: calc(100% - 12px); /* 6px margin on the left and right */
+    height: calc(100vh - 12px); /* 6px margin on the top and bottom */
+
+    /* Ensure padding and border are included in the size */
+    box-sizing: border-box; 
+    
+    /* Hide any overflow on the modal container itself */
+    overflow: hidden; 
+}
+
+
+
+
+/* Scroll bar stuff*/
+
+/* Section style, to handle internal scrolling */
+.modal section {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-gutter: stable;
+}
+
+.show-scrollbar::-webkit-scrollbar {
+    width: 8px;  /* Make the scrollbar a bit wider for visibility */
+    padding: 0%;
+}
+
+.show-scrollbar::-webkit-scrollbar-track {
+    /* Color of the scrollbar background track */
+    background: #3a3a3a; 
+}
+
+.show-scrollbar::-webkit-scrollbar-thumb {
+    /* Color of the draggable scrollbar thumb */
+    background-color: #5a5a5a; 
+    border-radius: 100px;
+}
+
+.show-scrollbar::-webkit-scrollbar-thumb:hover {
+    /* Color of the thumb when the user hovers over it */
+    background-color: #7a7a7a;
+}
+
+
+
+
+
+
+::ng-deep .mat-tab-header-pagination {
+    display: none !important;
 }
