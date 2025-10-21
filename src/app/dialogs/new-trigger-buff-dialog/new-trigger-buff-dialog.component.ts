@@ -180,7 +180,11 @@ export class NewTriggerBuffDialogComponent implements OnInit {
             trigger = this.data.trigger;
         } else {
             trigger = new TriggerModel();
-            trigger.comments = `Buff timer ${this.spell.name} for others casting on self.`;
+            trigger.comments = (
+                `Auto Generated buff timer, for others casting on self:\n`+
+                `   ${this.spell.name}   -   ${this.url}\n`+
+                `Treat this as a template. Verify all input boxes.\n`
+            );
             trigger.folderId = this.data?.selectedFolderId;
         }
 
@@ -279,16 +283,10 @@ export class NewTriggerBuffDialogComponent implements OnInit {
             buffTimers.forEach( timer => timer.endEarlyPhrases.push( <Phrase>{
                 phraseId: nanoid(),
                 // You have been slain by a lightning warrior staticfist!
-                phrase: '^You have been slain by [^!]*!$',
+                phrase: '^You (?:have been slain by .*!|died\\.)$',
                 useRegEx: true,
+                ignoreCase: false,
             } ) );
-            buffTimers.forEach( timer => timer.endEarlyPhrases.push( <Phrase>{
-                phraseId: nanoid(),
-                // You have been slain by a lightning warrior staticfist!
-                phrase: '^You died\\.$',
-                useRegEx: true,
-            } ) );
-
         }
 
         if ( this.spell.effectFades ) {
@@ -448,7 +446,7 @@ export class NewTriggerBuffDialogComponent implements OnInit {
                 requirePreviousPhrase: false,
                 duration: null,
                 // /^(?<target>.+?)\b\s{0,1}'{0,1}s{0,1}\b is covered in necrotic sores\.$/
-                phrase: this.spell.castOnOther.replace( /\.$/, '\\.$' ).replace( captureReplaceRegex, '^(?!Your\\s)(?<target>.+?)\\b\\s{0,1}\'{0,1}s{0,1}\\b' ),
+                phrase: this.spell.castOnOther.replace( /\.$/, '\\.$' ).replace( captureReplaceRegex, "^(?!Your\\s)(?<target>.+?)\\s?(?:'s\\b)?" ),
             } );
             buffTimerPhrases.push( castOnOtherPhraseId );
         }
@@ -542,48 +540,26 @@ export class NewTriggerBuffDialogComponent implements OnInit {
             buffTimers.forEach( timer => timer.endEarlyPhrases.push( <Phrase>{
                 phraseId: nanoid(),
                 // You have been slain by a lightning warrior staticfist!
-                phrase: '^You have been slain by [^!]*!$',
+                phrase: '^You (?:have been slain by .*!|died\\.)$',
                 useRegEx: true,
+                ignoreCase: false,
             } ) );
-            buffTimers.forEach( timer => timer.endEarlyPhrases.push( <Phrase>{
-                phraseId: nanoid(),
-                // You have been slain by a lightning warrior staticfist!
-                phrase: '^You died\\.$',
-                useRegEx: true,
-            } ) );
-
         }
 
         if ( this.useTargetTimer && this.cancelTimerIfTargetDies ) {
             
             buffTimers.forEach( timer => timer.endEarlyPhrases.push( <Phrase>{
                 phraseId: nanoid(),
-                phrase: '^${target} has been slain by [^!]*!$',
+                phrase: '^${target} (?:has been slain by .*!|died\\.)$',
                 useRegEx: true,
-                ignoreCase: true,
+                ignoreCase: false,
             } ) );
             buffTimers.forEach( timer => timer.endEarlyPhrases.push( <Phrase>{
                 phraseId: nanoid(),
                 phrase: '^You have slain ${target}!$',
                 useRegEx: true,
-                ignoreCase: true,
+                ignoreCase: false,
             } ) );
-            // This is apparently just for players
-            buffTimers.forEach( timer => timer.endEarlyPhrases.push( <Phrase>{
-                phraseId: nanoid(),
-                // Jhinx dies.
-                phrase: '^${target} dies\\.$',
-                useRegEx: true,
-                ignoreCase: true,
-            } ) );
-            buffTimers.forEach( timer => timer.endEarlyPhrases.push( <Phrase>{
-                phraseId: nanoid(),
-                // A Valorian Guardian died.
-                phrase: '^${target} died\\.$',
-                useRegEx: true,
-                ignoreCase: true,
-            } ) );
-
         }
 
         if ( this.spell.effectFades ) {
@@ -596,20 +572,12 @@ export class NewTriggerBuffDialogComponent implements OnInit {
         }
 
         if ( this.spell.targetType !== 'Self' ) {
-            // End when the buff is overwritten.
+            // End when the buff is overwritten or fades.
             buffTimers.forEach( timer => timer.endEarlyPhrases.push( <Phrase>{
                 phraseId: nanoid(),
-                // Your Dead Men Floating spell on Xeraphine has been overwritten.
-                phrase: `^Your ${this.spell.name}(?: Rk\. II| Rk\. III){0,1} spell on \${target} has been overwritten\\.$`,
-                useRegEx: true,
-                ignoreCase: true,
-            } ) );
-
-            // End when the buff fades
-            buffTimers.forEach( timer => timer.endEarlyPhrases.push( <Phrase>{
-                phraseId: nanoid(),
-                // Your Dead Men Floating spell has worn off of Rodus.
-                phrase: `Your ${this.spell.name}(?: Rk\. II| Rk\. III){0,1} spell has worn off of \${target}\\.$`,
+                // Your Spell Name Rk. III spell on Raid boss has been overwritten.
+                // Your Spell Name Rk. III spell has worn off of Raid boss.
+                phrase: `^Your ${this.spell.name}(?: Rk\\. III?)? spell (?:on \${target} has been overwritten|has worn off of \${target})\\.$`,
                 useRegEx: true,
                 ignoreCase: true,
             } ) );
@@ -621,10 +589,9 @@ export class NewTriggerBuffDialogComponent implements OnInit {
             buffTimers.forEach( timer => timer.endEarlyPhrases.push( <Phrase>{
                 phraseId: nanoid(),
                 // Your pet's Sigil of Decay spell has worn off.
-                phrase: `Your pet's ${this.spell.name}(?: Rk\. II| Rk\. III){0,1} spell has worn off\\.$`,
+                phrase: `^Your pet's ${this.spell.name}(?: Rk\\. III?)? spell has worn off\\.$`,
                 useRegEx: true,
             } ) );
-
         }
 
         if ( this.alertWhenBuffFades ) {

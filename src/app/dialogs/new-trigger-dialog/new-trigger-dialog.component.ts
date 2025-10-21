@@ -110,7 +110,11 @@ export class NewTriggerDialogComponent implements OnInit {
             trigger = this.data.trigger;
         } else {
             trigger = new TriggerModel();
-            trigger.comments = `DoT timer for ${this.spell.name}.`;
+            trigger.comments = (
+                `Auto Generated DoT timer for:\n`+
+                `   ${this.spell.name}   -   ${this.url}\n`+
+                `Treat this as a template. Verify all input boxes.`
+            );
             trigger.folderId = this.data?.selectedFolderId;
         }
 
@@ -129,7 +133,7 @@ export class NewTriggerDialogComponent implements OnInit {
             requirePreviousPhrase: false,
             duration: null,
             ///^(?<target>.+?)\s?'s has been poisoned\.
-            phrase: this.spell.castOnOther.replace( /\.$/, '\\.$' ).replace( captureReplaceRegex, '^(?<target>.+?)\\b\\s{0,1}\'{0,1}s{0,1}\\b' ),
+            phrase: this.spell.castOnOther.replace( /\.$/, '\\.$' ).replace( captureReplaceRegex, "^(?<target>.+?)\\s?(?:'s\\b)?" ),
         } );
         trigger.capturePhrases.push( <CapturePhrase>{
             phraseId: nanoid(),
@@ -138,7 +142,7 @@ export class NewTriggerDialogComponent implements OnInit {
             requirePreviousPhrase: false,
             duration: null,
             // ^?{target} has taken (?<damage>[0-9]*) ?damage from your Poison Bolt\.
-            phrase: `^?{target} has taken (?<damage>[0-9]*) ?damage from your ${this.spell.name}(?: Rk\\. II| Rk\\. III){0,1}\\.`,
+            phrase: `^?{target} has taken (?<damage>\\d*) ?damage from your ${this.spell.name}`,
         } );
 
         let originalDotAction: TriggerAction;
@@ -197,7 +201,7 @@ export class NewTriggerDialogComponent implements OnInit {
             actions.forEach( action => action.endEarlyPhrases = [] );
             actions.forEach( action => action.endEarlyPhrases.push( <Phrase>{
                 phraseId: nanoid(),
-                phrase: '^${target} has been slain by [^!]*!$',
+                phrase: '^${target} (?:has been slain by .*!|died\.)$',
                 useRegEx: true,
                 ignoreCase: true,
             } ) );
@@ -209,20 +213,8 @@ export class NewTriggerDialogComponent implements OnInit {
             } ) );
             actions.forEach( action => action.endEarlyPhrases.push( <Phrase>{
                 phraseId: nanoid(),
-                phrase: '^${target} dies\\.$',
-                useRegEx: true,
-                ignoreCase: true,
-            } ) );
-            actions.forEach( action => action.endEarlyPhrases.push( <Phrase>{
-                phraseId: nanoid(),
                 // You have been slain by a lightning warrior staticfist!
-                phrase: '^You have been slain by [^!]*!$',
-                useRegEx: true,
-                ignoreCase: true,
-            } ) );
-            actions.forEach( action => action.endEarlyPhrases.push( <Phrase>{
-                phraseId: nanoid(),
-                phrase: '^${target} died\\.$',
+                phrase: '^You (?:have been slain by .*!|died\.)$',
                 useRegEx: true,
                 ignoreCase: true,
             } ) );

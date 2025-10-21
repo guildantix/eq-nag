@@ -193,12 +193,22 @@ export class NewTriggerRaidAbilityComponent implements OnInit {
      */
     public import(): void {
         let trigger: TriggerModel;
+        const pipeListNpcsWithAbility = [...new Set(
+            this.ability.npcsWithAbility?.map( npc => npc.name.trim() )
+        )].join( '|' );
+
 
         if ( this.data?.trigger?.triggerId != null ) {
             trigger = this.data.trigger;
         } else {
             trigger = new TriggerModel();
-            trigger.comments = `${this.ability.name}.`;
+            trigger.comments = (
+                `Auto Generated Raid trigger for:\n`+
+                `   ${this.ability.name}   -   ${this.url}\n`+
+                `Treat this as a template. Verify all input boxes.\n`+
+                `Raid info source data is hand written in source tables and not always correct.\n`+
+                `(?<caster>${pipeListNpcsWithAbility})\n(?<caster>.+?)`
+            );
             trigger.folderId = this.data?.selectedFolderId;
         }
 
@@ -224,7 +234,7 @@ export class NewTriggerRaidAbilityComponent implements OnInit {
             requirePreviousPhrase: false,
             duration: null,
             // Aaryonar begins casting Cloud of Disempowerment.
-            phrase: `^(?<target>.*) begins casting ${this.ability.name}\\.$`,
+            phrase: `^(?<caster>${pipeListNpcsWithAbility}) begins casting ${this.ability.name}\\.$`,
         } );
         let hitPhraseId = null;
         if ( this.ability.castOnYou ) {
@@ -246,7 +256,7 @@ export class NewTriggerRaidAbilityComponent implements OnInit {
             requirePreviousPhrase: false,
             duration: null,
             // /^You resist (?<caster>.+?)\b\s{0,1}'{0,1}s{0,1}\b Void of Suppression!$/
-            phrase: `^You resist (?<caster>.+?)\\b\\s{0,1}'{0,1}s{0,1}\\b ${this.ability.name}!$`,
+            phrase: `^You resist (?<caster>${pipeListNpcsWithAbility})\\s?'s ${this.ability.name}!$`,
         } );
         let hitOtherPhraseId = null;
         if ( this.ability.castOnOther ) {
@@ -257,7 +267,7 @@ export class NewTriggerRaidAbilityComponent implements OnInit {
                 requirePreviousPhrase: false,
                 duration: null,
                 // /^Your eardrums begin to bleed\.$/
-                phrase: this.ability.castOnOther.replace( /\.$/, '\\.$' ).replace( /soandso's|soandso\s's|soandso/gmi, '^(?<target>.+?)\\b\\s{0,1}\'{0,1}s{0,1}\\b' ),
+                phrase: this.ability.castOnOther.replace( /\.$/, '\\.$' ).replace( /soandso's|soandso\s's|soandso/gmi, "^(?<target>.+?)\\s?(?:'s\\b)?" ),
             } );
         }
 
@@ -295,20 +305,11 @@ export class NewTriggerRaidAbilityComponent implements OnInit {
             trackOtherTimer.endEarlyPhrases = [];
             trackOtherTimer.endEarlyPhrases.push( <Phrase>{
                 phraseId: nagId(),
-                phrase: '^${target} has been slain by [^!]*!$',
+                phrase: '^${target} (?:has been slain by .*!|died\\.)$',
                 useRegEx: true,
-                ignoreCase: true,
-            }, <Phrase>{
-                phraseId: nagId(),
-                phrase: '^${target} dies\\.$',
-                useRegEx: true,
-                ignoreCase: true,
-            }, <Phrase>{
-                phraseId: nanoid(),
-                phrase: '^${target} died\\.$',
-                useRegEx: true,
-                ignoreCase: true,
-            }, <Phrase>{
+                ignoreCase: false,
+            }, 
+            <Phrase>{
                 phraseId: nanoid(),
                 // Alora is cured of Mark of Death by Spoilers.
                 // https://regex101.com/r/WSLpJc/1
@@ -346,12 +347,8 @@ export class NewTriggerRaidAbilityComponent implements OnInit {
             act.phrases.push( resistPhraseId );
 
             act.endEarlyPhrases = [];
-            act.endEarlyPhrases.push( <Phrase>{
-                phraseId: nanoid(),
-                // You have been slain by a lightning warrior staticfist!
-                phrase: '^You have been slain by [^!]*!$',
-                useRegEx: true,
-            } );
+
+
             this.ability.npcsWithAbility?.forEach( npc => {
                 let phrases = this.getRecastTimerEndEarlyPhrases( npc.name );
                 act.endEarlyPhrases = act.endEarlyPhrases.concat( phrases );
@@ -386,13 +383,6 @@ export class NewTriggerRaidAbilityComponent implements OnInit {
                         timerBackgroundColor: ColorUtility.FromHex( '#f57f17' ).darken( 0.93 ).toString( 0.75 ),
                         restartBehavior: TimerRestartBehaviors.RestartTimer,
                     };
-                    
-                    act.endEarlyPhrases.unshift( <Phrase>{
-                        phraseId: nanoid(),
-                        // You have been slain by a lightning warrior staticfist!
-                        phrase: '^You have been slain by (.+?)!',
-                        useRegEx: true,
-                    } );
 
                     recastCountdowns.push( act );
                 }
@@ -469,8 +459,10 @@ export class NewTriggerRaidAbilityComponent implements OnInit {
             let zones = [];
             this.ability.npcsWithAbility.forEach( npc => {
                 npc.zones?.forEach( zone => {
-                    if ( zones.indexOf( zone?.trim() ) === -1 ) {
-                        zones.push( zone?.trim() );
+                    // sanitize: trim and drop anything after a colon
+                    let cleanZone = zone?.split(':')[0].trim();
+                    if ( zones.indexOf( cleanZone ) === -1 ) {
+                        zones.push( cleanZone );
                     }
                 } )
             } );
@@ -480,6 +472,7 @@ export class NewTriggerRaidAbilityComponent implements OnInit {
                 conditionType: TriggerConditionTypes.VariableValue,
                 variableName: 'CurrentZone',
                 operatorType: OperatorTypes.Contains,
+                // Now uses sanitized zone(s)
                 variableValue: zoneText,
             } );
         }
@@ -547,29 +540,17 @@ export class NewTriggerRaidAbilityComponent implements OnInit {
 
         phrases.push( <Phrase>{
             phraseId: nanoid(),
-            phrase: `^${target} has been slain by [^!]*!$`,
+            phrase: `^${target} (?:has been slain by .*!|died\\.)$`,
             useRegEx: true,
-            ignoreCase: true,
+            ignoreCase: false,
         } );
         phrases.push( <Phrase>{
             phraseId: nanoid(),
             phrase: `^You have slain ${target}!`,
             useRegEx: true,
-            ignoreCase: true,
+            ignoreCase: false,
         } );
-        phrases.push( <Phrase>{
-            phraseId: nanoid(),
-            phrase: `^${target} dies\\.$`,
-            useRegEx: true,
-            ignoreCase: true,
-        } );
-        phrases.push( <Phrase>{
-            phraseId: nanoid(),
-            phrase: `^${target} died\\.$`,
-            useRegEx: true,
-            ignoreCase: true,
-        } );
-
+        
         return phrases;
     }
 
