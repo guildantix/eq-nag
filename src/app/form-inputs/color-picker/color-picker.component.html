@@ -1,18 +1,63 @@
 
-<div class="color-picker" [ngClass]="{'color-inline': inline, 'color-stretch': !inline}" #colorInput (click)="toggle()" [style.background-color]="value.toHex()">
-    
-</div>
+<div class="color-picker" [ngClass]="{'color-inline': inline, 'color-stretch': !inline}" #colorInput (click)="toggle()" [style.background-color]="value?.toHex() || 'transparent'"></div>
 
 <div class="color-palette-background" *ngIf="showPopup" (click)="showPopup = false"></div>
 
 <div class="color-palette" *ngIf="showPopup">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+        <button mat-flat-button
+                color="primary"
+                (click)="openNativeColorPicker($event)">
+            🎨 Open Picker
+        </button>
+    </div>
+    <div style="position: absolute; top: 25%; left: 25%; transform: translate(-50%, -50%)">
+        <input #nativeColorInput
+                type="color"
+                style="opacity: 0; width: 1px; height: 1px; position: absolute;"
+                (change)="onNativeColorPicked($event)" />
+    </div>
     <mat-form-field style="width: 100%; background-color: black;">
         <mat-label></mat-label>
         <mat-select [(ngModel)]="paletteName" name="colorType" (ngModelChange)="updateColorPalette()">
             <mat-option value="nag">Nag</mat-option>
             <mat-option value="gina">Gina</mat-option>
+            <mat-option value="palette01">Forest, ocean, space, ice, sunset, pastel</mat-option>
+            <mat-option value="palette02">Dark, medium, bright</mat-option>
+            <mat-option value="palette03">Neon glows</mat-option>
+            <mat-option value="manual">Manual Input</mat-option>
         </mat-select>
-        <mat-hint>Choose a palette</mat-hint>
+        <mat-hint>Use picker above, choose a palette, or enter color code</mat-hint>
     </mat-form-field>
-    <div class="palette-row" *ngFor="let row of colorPalette"><span class="palette-tile" [ngClass]="{selected: color.equals(value)}" *ngFor="let color of row" attr.aria-label="{{color.toHex()}}" aria-selected="false" [style.background-color]="color.toRgb()" (click)="selectColor(color)"></span></div>
+
+  <!-- Manual input textbox, shown only when "manual" palette is selected -->
+  <mat-form-field *ngIf="paletteName === 'manual'" style="width: 100%; background-color: black;">
+    <input matInput
+            placeholder="#RRGGBB, RRGGBBAA, rgb(r,g,b) or rgba(r,g,b,a)"
+            [(ngModel)]="manualColorInput"
+            (ngModelChange)="onManualColorChange($event)"
+            maxlength="25" />
+    <mat-hint>
+        <span [matTooltip]="tooltipText" matTooltipClass="custom-tooltip">Examples💬</span>
+        </mat-hint>
+    <div matSuffix
+        class="color-preview"
+        [style.background-color]="previewColorRgb"
+        aria-label="Color preview"
+        title="Color preview"></div>
+  </mat-form-field>
+
+  <!-- Palette grid rows shown only when NOT in manual mode -->
+    <div *ngIf="paletteName !== 'manual'">
+        <div class="palette-row" *ngFor="let row of colorPalette">
+            <span class="palette-tile"
+                  [ngClass]="{selected: color.equals(value)}"
+                  *ngFor="let color of row"
+                  [attr.aria-label]="color.toHex()"
+                  aria-selected="false"
+                  [style.background-color]="color.toRgb()"
+                  (click)="selectColor(color)">
+            </span>
+        </div>
+    </div>
 </div>

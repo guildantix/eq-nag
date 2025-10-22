@@ -21,7 +21,7 @@
         height: 3rem;
         margin: 0.5rem;
     }
-    
+
     display: inline-block;
     border: 3px solid rgba(0,0,0,0.5);
     cursor: pointer;
@@ -55,4 +55,18 @@
             }
         }
     }
+}
+
+.color-preview {
+    width: 96px;
+    height: 24px;
+    border: 1px solid #ccc;
+    margin-left: 8px;
+    border-radius: 3px;
+    display: inline-block;
+    background-color: rgba(0, 0, 0, 1);
+}
+
+::ng-deep .custom-tooltip {
+  white-space: pre-line;
 }
