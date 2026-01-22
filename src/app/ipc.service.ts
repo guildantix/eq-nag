@@ -1989,8 +1989,11 @@ export class IpcService {
         let obs: Observable<string> = new Observable<string>( ( observer: Observer<string> ) => {
             let name = file.name;
 
-            if ( !name.endsWith( '.mp3' ) )
-                throw 'Only MP3 files are supported!';
+            const allowedExtensions = [ '.mp3', '.ogg', '.m4a', '.opus', '.webm', '.aac' ];
+            const ext = name.slice( name.lastIndexOf( '.' ) ).toLowerCase();
+            if ( !allowedExtensions.includes( ext ) ) {
+                throw `Only audio files of type ${ allowedExtensions.join( ', ' ) } are supported!`;
+            }
 
             let reader = new FileReader();
             reader.onload = () => {

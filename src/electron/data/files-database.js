@@ -132,14 +132,20 @@ class FilesDatabaseStore extends Store {
     /**
      * Saves the posted file to the store.
      * 
-     * @returns {string} Returns the id of the file.
+     * @returns {string|null} Returns the id of the file.
      * 
      * @param {Buffer} buffer The file data.
      * @param {string} name The name of the file.
      */
     storeFile( buffer, name ) {
 
-        if ( !name.endsWith( '.mp3' ) )
+        const allowedExtensions = new Set( [
+            // Only formats that are mp3 or better (smaller size vs quality)
+            '.mp3', '.ogg', '.m4a', '.opus', '.webm', '.aac'
+        ] );
+
+        const ext = path.extname( name ).toLowerCase();
+        if ( !allowedExtensions.has( ext ) )
             return null;
         
         let id = nanoid();
