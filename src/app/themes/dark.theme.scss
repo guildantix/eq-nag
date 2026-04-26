@@ -20,6 +20,7 @@ $color-magenta: #f0698e;
 $color-red-dark: #921f1f;
 $color-titlebar-bg: #4c0e67;
 $color-titlebar-txt: #00000094;
+$color-titlebar-txt-main-hover: #ffffffff;
 $color-titlebar-green: #17e883;
 $color-titlebar-red: #ff432e;
 
@@ -237,6 +238,11 @@ $bg-extreme-dark: #191919;
             >.mat-toolbar.mat-primary {
                 background: $color-titlebar-bg !important;
                 color: $color-titlebar-txt !important;
+                transition: color 0.4s ease-in-out;
+
+                &:hover {
+                    color: $color-titlebar-txt-main-hover !important;
+                }
 
                 .color-green {
                     color: $color-titlebar-green !important;
