@@ -20,7 +20,10 @@
         }
     ],
     "captureMethod": "Any match",
+    "conditions": [],
+    "classLevels": [],
     "predefined": true,
     "onlyExecuteInDev": false,
-    "enabled": true
+    "enabled": true,
+    "sequentialRestartBehavior": "none"
 }
