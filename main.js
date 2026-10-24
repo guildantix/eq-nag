@@ -349,12 +349,14 @@ const bootstrapApp = () => {
     app.whenReady().then( () => {
         
         winManager.onReady();
-        screen.on( 'display-metrics-changed', ( e, newDisplay ) => {
-            if ( userPreferences.enableCheckWindowPosition === true ) {
-                log.info( '[main:display-metrics-changed] Initiating overlay position checks.', e, newDisplay );
-                winManager.checkOverlayPositions( true );
-            }
-        } );
+        for ( const displayEvent of [ 'display-metrics-changed', 'display-added', 'display-removed' ] ) {
+            screen.on( displayEvent, ( e, display ) => {
+                if ( userPreferences.enableCheckWindowPosition === true ) {
+                    log.info( `[main:${displayEvent}] Scheduling overlay position checks.`, display?.id, display?.bounds );
+                    winManager.scheduleOverlayPositionCheck();
+                }
+            } );
+        }
         // There is a branch that attempts to migrate away from this interceptor: feature/migrate-interceptor-gross
         protocol.interceptFileProtocol( 'file', ( req, callback ) => {
             let filePath = new url.URL( req.url ).pathname;

@@ -741,12 +741,16 @@ export class DialogService {
      * Shows a notification dialog to the user.
      * 
      * @param data The dialog display model.
+     * @returns The dialog reference, so callers can close it or react when it closes.
      */
-    public showNotificationDialog( data: NotificationDialogModel ): void {
-        this.dialog.open( NotificationDialogComponent, {
+    public showNotificationDialog( data: NotificationDialogModel ): MatDialogRef<NotificationDialogComponent> {
+        const dialogRef = this.dialog.open( NotificationDialogComponent, {
             data: data,
             panelClass: 'app-dialog',
-        } ).afterClosed().subscribe();
+        } );
+        dialogRef.afterClosed().subscribe();
+
+        return dialogRef;
     }
 
 

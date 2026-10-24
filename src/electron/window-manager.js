@@ -70,6 +70,9 @@ class WindowManager {
     /** @type {NodeJS.Timeout} */
     #resumeRendererMouseForwardingTimeout = null;
 
+    /** @type {NodeJS.Timeout} */
+    #displayCheckTimeout = null;
+
     /** @type {number} */
     #windowIndex = 0;
 
@@ -353,6 +356,11 @@ class WindowManager {
             if ( rendererOnTopId ) {
                 clearInterval( rendererOnTopId );
             }
+        } );
+
+        ipcMain.on( 'renderer:resolution-change-acknowledged', ( event ) => {
+            // The user closed the resolution warning, so the current layout is the new normal.
+            this.#userPrefDb.rendererBounds = ElectronUtilities.calculateRendererBounds();
         } );
 
         ipcMain.on( 'renderer:end-arrange-overlays', ( event ) => {
@@ -1377,26 +1385,52 @@ class WindowManager {
         let newSize = ElectronUtilities.calculateRendererBounds();
         let overlays = this.#overlayDatabase.getAll();
 
-        
+        // The saved bounds are the last layout the user accepted. Returning to
+        // it (e.g. monitors turned back on after sleep) isn't a resolution
+        // change, so the saved bounds are only replaced when the user
+        // acknowledges the warning.
+        const normalSize = this.#userPrefDb.rendererBounds;
+        const backToNormal = !ElectronUtilities.invalidScreenBounds( normalSize ) && ElectronUtilities.compareRectangles( normalSize, newSize, true );
+
         // If the current size of the renderer doesn't match the calculated size, then we need to resize/move our overlays.
         if ( !ElectronUtilities.compareRectangles( currentSize, newSize, false ) ) {
-            
-            // Because the size includes the relative position to the primary 
-            // display, we can find the (x0,y0) point of the primary display using 
+
+            // Because the size includes the relative position to the primary
+            // display, we can find the (x0,y0) point of the primary display using
             // this simple formula.
             let newOrigin = { x: 0 - newSize.x, y: 0 - newSize.y };
-        
+
             if ( this.#resizeRenderer( newSize ) ) {
                 overlays = this.mutateOverlays( overlays );
                 this.#renderer.webContents.send( 'renderer:resolution-changed', { overlays: overlays, origin: newOrigin } );
-    
-                if ( showWarning ) {
+
+                if ( backToNormal ) {
+                    // Close the warning if it's still open.
+                    this.#mainWindow.reference.webContents.send( 'dialog:warning:resolved', { code: 'Renderer:ResolutionChanged' } );
+                } else if ( showWarning ) {
                     this.#mainWindow.reference.webContents.send( 'dialog:warning', { code: 'Renderer:ResolutionChanged' } );
                 }
             }
         }
+    }
 
-        this.#userPrefDb.rendererBounds = this.#renderer.getBounds();
+
+
+
+
+
+
+
+
+
+    /**
+     * Checks overlay positions once the display layout has settled. Monitors
+     * turning off or on fire a burst of display events, so wait until there
+     * have been none for a few seconds.
+     */
+    scheduleOverlayPositionCheck() {
+        clearTimeout( this.#displayCheckTimeout );
+        this.#displayCheckTimeout = setTimeout( () => this.checkOverlayPositions( true ), 3000 );
     }
 
 

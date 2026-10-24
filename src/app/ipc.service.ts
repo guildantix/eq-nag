@@ -61,6 +61,7 @@ export class IpcService {
     private _updateAvailableObservers: Observer<UpdateInfo>[] = [];
     private _overlayBoundsChangedObservers: Observer<OverlayBoundsChangedEventArgs>[] = [];
     private _warningDialogObservers: Observer<DialogEventArgs>[] = [];
+    private _warningResolvedObservers: Observer<DialogEventArgs>[] = [];
     private _onReceivedQuickShare: Observer<string>[] = [];
     private _onReceivedQuickSharePackage: Observer<string>[] = [];
     private _onOrphanedTriggerWarning: Observer<boolean>[] = [];
@@ -234,6 +235,14 @@ export class IpcService {
                 window.api.ipc.on( 'dialog:warning', ( event: any, data: DialogEventArgs ) => {
                     ngZone.run( () => {
                         this._warningDialogObservers?.forEach( f => {
+                            f.next( data );
+                        } );
+                    } );
+                } );
+
+                window.api.ipc.on( 'dialog:warning:resolved', ( event: any, data: DialogEventArgs ) => {
+                    ngZone.run( () => {
+                        this._warningResolvedObservers?.forEach( f => {
                             f.next( data );
                         } );
                     } );
@@ -577,6 +586,26 @@ export class IpcService {
         } );
 
         return obs;
+    }
+
+    /**
+     * Emits when the condition behind a warning dialog has gone away, e.g.
+     * the screens returned to their normal layout, so the dialog can close.
+     */
+    public warningResolved(): Observable<DialogEventArgs> {
+        let obs: Observable<DialogEventArgs> = new Observable<DialogEventArgs>( ( observer: Observer<DialogEventArgs> ) => {
+            this._warningResolvedObservers.push( observer );
+        } );
+
+        return obs;
+    }
+
+    /**
+     * Tells the main process the user acknowledged the resolution change, so
+     * the current screen layout becomes the new normal.
+     */
+    public acknowledgeResolutionChange(): void {
+        window.api.ipc.send( 'renderer:resolution-change-acknowledged' );
     }
 
     public tickReceived(): Observable<DataTickModel> {

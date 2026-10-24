@@ -1,10 +1,12 @@
 import { Component, Input, NgZone, OnInit } from '@angular/core';
+import { MatDialogRef } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { getPackageImportProperties, getTriggerOverlayDescriptors } from '../core.decorators';
 import { actionOverlayMap, ActionTypes, generateRenderToken, ListObjectModel, OverlayWindowModel, RenderTokenModel, TriggerAction, TriggerModel } from '../core.model';
 import { ActionOverlayUseModel } from '../dialogs/action-overlay-reassignment-dialog/action-overlay-reassignment.model';
 import { ColoredString, CustomButton } from '../dialogs/dialog.model';
 import { DialogService } from '../dialogs/dialog.service';
+import { NotificationDialogComponent } from '../dialogs/notification-dialog/notification-dialog.component';
 import { NotificationDialogModel, NotificationTypes } from '../dialogs/notification-dialog/notification-dialog.model';
 import { IpcService } from '../ipc.service';
 
@@ -21,6 +23,11 @@ export class OverlaysComponent implements OnInit {
     public overlayAssignCounts: Record<string, number> = {};
     public overlays: OverlayWindowModel[] = [];
 
+    /** The open "Your resolution has changed!" dialog, if any. */
+    private resolutionDialog: MatDialogRef<NotificationDialogComponent> = null;
+    /** True when Nag closes the dialog itself because the screens are back to normal. */
+    private resolutionDialogResolved: boolean = false;
+
     constructor(
         private readonly ipcService: IpcService,
         private readonly dialogService: DialogService,
@@ -36,9 +43,21 @@ export class OverlaysComponent implements OnInit {
             
         } );
         
+        this.ipcService.warningResolved().subscribe( e => {
+            if ( e.code === 'Renderer:ResolutionChanged' && this.resolutionDialog ) {
+                this.resolutionDialogResolved = true;
+                this.resolutionDialog.close();
+            }
+        } );
+
         this.ipcService.displayWarningDialog().subscribe( e => {
             let dialogArgs = new NotificationDialogModel();
             if ( e.code === 'Renderer:ResolutionChanged' ) {
+                if ( this.resolutionDialog ) {
+                    // Already showing.
+                    return;
+                }
+
                 dialogArgs.message = [
                     new ColoredString( 'The resolution of one or more of your monitors has changed.', '#f0e069', true ),
                     'Your overlay positions have been automatically moved to match.',
@@ -58,7 +77,16 @@ export class OverlaysComponent implements OnInit {
 
                 dialogArgs.customButtons = [ arrangeBtn ];
 
-                this.dialogService.showNotificationDialog( dialogArgs );
+                this.resolutionDialogResolved = false;
+                this.resolutionDialog = this.dialogService.showNotificationDialog( dialogArgs );
+                this.resolutionDialog.afterClosed().subscribe( () => {
+                    // Closing it yourself accepts the new layout; Nag closing
+                    // it because the screens came back doesn't.
+                    if ( !this.resolutionDialogResolved ) {
+                        this.ipcService.acknowledgeResolutionChange();
+                    }
+                    this.resolutionDialog = null;
+                } );
             }
         } );
     }
