@@ -50,3 +50,6 @@ testem.log
 Thumbs.db
 electron/*
 .config-holding/*
+
+# Build source maps (archived locally, not committed)
+/source-maps
