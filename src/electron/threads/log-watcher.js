@@ -1641,8 +1641,10 @@ function parseLogEntries( raw, simulating, padTime ) {
         } else if ( padTime > 0 )
             timestamp = new Date( timestamp.getTime() + ( padTime * 1000 ) );
     
-        let log = raw.replace( rgxTimestamp, '' );
-        
+        // Some entries (e.g. emotes) start with a tilde. Strip it so trigger
+        // phrases written without it still match.
+        let log = raw.replace( rgxTimestamp, '' ).replace( /^~/, '' );
+
         // https://regex101.com/r/FvGiGC/2
         // {NAG:(?<quickShareId>.+?)}
         // TODO: Remove the negative lookahead for package after a few versions.
