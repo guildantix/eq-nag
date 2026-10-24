@@ -3,8 +3,19 @@ mat-form-field {
     font-size: 12px;
 }
 
-.margin-t-50 {
+.margin-t-20 {
     margin-top: 20px;
+}
+
+// Dev mode: the trigger ID is nearly invisible until hovered.
+.trigger-id {
+    color: #00000057;
+    padding-left: 25px;
+    transition: color 0.2s;
+
+    &:hover {
+        color: #ffffffb3;
+    }
 }
 
 legend.full-width {
@@ -98,6 +109,6 @@ legend.full-width {
 
 
 
-::ng-deep .mat-tab-header-pagination {
+:host ::ng-deep .mat-tab-header-pagination {
     display: none !important;
 }

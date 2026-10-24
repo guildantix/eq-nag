@@ -26,7 +26,6 @@ mat-form-field {
 }
 
 .content {
-    // overflow: auto;
     position: relative; // Relative position renders it inside parent frame, scrollbar works.
     margin-left: -30px; // Force it closer to the borders. Result is same margins as the other tabs.
     margin-right: -30px;
@@ -36,15 +35,6 @@ mat-form-field {
     mat-card-content {
         padding-top: 10px; // Matches the gap to the dropdown below.
     }
-}
-
-.toolbar-top { // redundant with +New button
-    height: 36px;
-    position: fixed;
-    left: 0;
-    right: 0;
-    z-index: 2;
-    background-color: #1a1a1a;
 }
 
 .floating-top-right {

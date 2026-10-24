@@ -18,9 +18,9 @@
                 <mat-tab label="Capture">
                     <div class="tab-content">
                         
-                        <fieldset class="margin-t-50">
+                        <fieldset class="margin-t-20">
                             <legend><span class="title">General</span>
-                                <span style="color: #00000057; padding-left: 25px; transition: color 0.2s;" onmouseover="this.style.color='var(--mat-accent)'" onmouseout="this.style.color='#00000057'" *ngIf="isDev">{{ model.triggerId }}</span>
+                                <span class="trigger-id" *ngIf="isDev">{{ model.triggerId }}</span>
                                 <span class="spacer"></span>
                                 <mat-checkbox [(ngModel)]="model.predefined" name="cbxPredefined" *ngIf="isDev">Predefined</mat-checkbox>
                                 <mat-checkbox [(ngModel)]="model.onlyExecuteInDev" name="cbxOnlyShowInDev" *ngIf="isDev && model.predefined">Only execute in dev</mat-checkbox>
