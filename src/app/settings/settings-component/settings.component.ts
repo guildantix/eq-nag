@@ -322,7 +322,8 @@ export class SettingsComponent implements OnInit {
 
         if ( this.deathRecapPreferences.engageMode === 'hotkey' ) {
             this.deathRecapPreferences.hotkeyPhrase = '/hot "Death Recap" /em wonders how they died.';
-            capturePhrase.phrase = '^${Character} wonders how they died\\.$';
+            // Live servers prefix /emote messages with "~ "; emulators don't.
+            capturePhrase.phrase = '^(?:~ )?${Character} wonders how they died\\.$';
 
         } else if ( this.deathRecapPreferences.engageMode === 'automatic' ) {
             capturePhrase.phrase = '^You have been slain by (?<slayer>[^!]*)!$';

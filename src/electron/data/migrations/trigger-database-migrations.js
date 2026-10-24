@@ -11,7 +11,7 @@ const customAlphabet = require( 'nanoid' ).customAlphabet;
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const nanoid = customAlphabet( alphabet, 16 );
 
-const currentTriggerDbVersion = 95;
+const currentTriggerDbVersion = 96;
 
 
 
@@ -973,7 +973,26 @@ function executeDataMigration( data ) {
         } );
 
         data.version = 95;
-        
+
+    }
+    if ( data.version < 96 ) {
+
+        // Live servers now prefix /emote messages with "~ ". Update the
+        // generated Death Recap hotkey trigger so it matches live and emulator
+        // servers. Phrases the user has edited are left alone.
+        const oldDeathRecapPhrase = '^${Character} wonders how they died\\.$';
+        const newDeathRecapPhrase = '^(?:~ )?${Character} wonders how they died\\.$';
+
+        data?.triggers?.forEach( trigger => {
+            trigger?.capturePhrases?.forEach( phrase => {
+                if ( phrase?.phrase === oldDeathRecapPhrase ) {
+                    phrase.phrase = newDeathRecapPhrase;
+                }
+            } );
+        } );
+
+        data.version = 96;
+
     }
 
     return data.version !== startVersion;
