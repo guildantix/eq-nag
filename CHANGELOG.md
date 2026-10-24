@@ -14,10 +14,13 @@ description, which Nag shows in the Update Notes window.
 - **Timer durations (`{TS}`) are read correctly.** Durations with words were misread: "10 minutes" became a 10-second timer and "90:00" became 9 hours, and ordinary words like "soon" could start a broken timer. `{TS}` now understands "5m", "10 min", "2.5 hours", "1h30m", "1 hour 30 minutes", "28 minute(s) 1 seconds", "1:30" and "1:02:03". (Thanks, Maxx!)
 - **`{N}` captures the whole number**, not just its first digits.
 - **"Your resolution has changed!"** no longer appears on a new profile, and if your monitors turn off and come back (for example overnight), the warning now closes by itself once the screens are back to normal.
+- **SVG timer icons now show** in the Timer, DoT Timer and Stopwatch editors. (Thanks, Maxx!)
 
 ### New
 - **Pets in Combat Statistics.** Pets can now be added and assigned to their owner from the Combat Statistics screen, and Nag detects pet ownership from the log, so pet damage is credited to the right player.
 - **Better player identification** in the combat parser, including class abbreviations.
+- **More sound formats.** Sounds can now be `.ogg`, `.m4a`, `.opus`, `.webm` or `.aac` as well as `.mp3`. (Thanks, Maxx!)
+- **Easier to read and use:** a three-column action type picker with icons, phrase boxes that grow as you type, reorderable End Early phrases, a Regex Visualizer for capture phrases, a better color picker (system picker, manual input, more palettes), alphabetically sorted variable and sound lists, shorter console timestamps, and title bar text that brightens on hover. (Thanks, Maxx!)
 
 ### Other changes
 - **Nag is now open source** at https://github.com/guildantix/eq-nag.
