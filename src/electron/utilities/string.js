@@ -871,7 +871,7 @@ function parseShortCodesToRegex( value, characterName ) {
 
         // {TS} => timer duration (hours, minutes, seconds, or time formats)
         // https://regex101.com/r/rsx53o/1
-        // Linearized: (?<timerDuration>(?:\b[0-9]+:[0-9]+(?::[0-9]+)?\b|\b[0-9]+(?:\.[0-9]+)?\s*(?:(?:h(?:ou)?r|min(?:ute)?|sec(?:ond)?)(?:[(]s[)]|s)?|[hms])(?=$|\W)(?:\s*[0-9]+(?:\.[0-9]+)?\s*(?:(?:h(?:ou)?r|min(?:ute)?|sec(?:ond)?)(?:[(]s[)]|s)?|[hms])(?=$|\W))*|\b[0-9]+(?:\.[0-9]+)?\b))
+        // Linearized: (?<timerDuration>(?:\b[0-9]+:[0-9]+(?::[0-9]+)?\b|\b[0-9]+(?:\.[0-9]+)?\s*(?:(?:h(?:ou)?r|min(?:ute)?|sec(?:ond)?)(?:[(]s[)]|s)?|[hms])(?![A-Za-z])(?:\s*[0-9]+(?:\.[0-9]+)?\s*(?:(?:h(?:ou)?r|min(?:ute)?|sec(?:ond)?)(?:[(]s[)]|s)?|[hms])(?![A-Za-z]))*|\b[0-9]+(?:\.[0-9]+)?\b))
         // Order of alternation matters here. 1) Time format. 2) Unit based. 3) Plain number.
         // Matches timer durations in these formats:
         //  - HH:MM(:SS) with 1+ digits per unit, e.g. "1:23", "12:34:56"
@@ -887,7 +887,7 @@ function parseShortCodesToRegex( value, characterName ) {
             '|' +
                 '[hms]' + // single char units can not be pluralized. Checked separately.
             ')' +
-            '(?=$|\\W)'; // This was a normal '\b' first, but that was not 110% proof.
+            '(?![A-Za-z])'; // Not followed by a letter, so "19 more" isn't read as "19 m" but "1h30m" still works.
 
         value = value.replace(
             /{TS}/i,

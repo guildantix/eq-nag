@@ -54,7 +54,7 @@
  * - Unmatched braces for quantifiers ({3, or })
  *
  * CUSTOM SHORTCODES:
- * - {LN}: Named group for list names → (?<nag_listname>[A-Z][a-z]+?)
+ * - {LN}: Named group for list names → (?<nag_listname>.+?)
  * - {TS}: Timer duration pattern → complex time format regex (currently mirrored from string.js)
  * - {C}: Character placeholder → ${Character}
  * - {S1}, {S2}: String capture groups → (?<S1>.+?), (?<S2>.+?)
@@ -667,11 +667,11 @@ function validateBraces( input: string ): number[] {
 function translateShortCodesToRegex( value: string ): string {
     if ( !value ) return '';
 
-    value = value.replace( /{LN}/gi, '(?<nag_listname>[A-Z][a-z]+?)' );
+    value = value.replace( /{LN}/gi, '(?<nag_listname>.+?)' );
     value = value.replace(
         // This regex pattern is the new one, from the fixed {TS} Oct -2025
         /{TS}/gi,
-        '(?<timerDuration>(?:\\b[0-9]+:[0-9]+(?::[0-9]+)?\\b|\\b[0-9]+(?:\\.[0-9]+)?\\s*(?:(?:h(?:ou)?r|min(?:ute)?|sec(?:ond)?)(?:[(]s[)]|s)?|[hms])(?=$|\\W)(?:\\s*[0-9]+(?:\\.[0-9]+)?\\s*(?:(?:h(?:ou)?r|min(?:ute)?|sec(?:ond)?)(?:[(]s[)]|s)?|[hms])(?=$|\\W))*|\\b[0-9]+(?:\\.[0-9]+)?\\b))'
+        '(?<timerDuration>(?:\\b[0-9]+:[0-9]+(?::[0-9]+)?\\b|\\b[0-9]+(?:\\.[0-9]+)?\\s*(?:(?:h(?:ou)?r|min(?:ute)?|sec(?:ond)?)(?:[(]s[)]|s)?|[hms])(?![A-Za-z])(?:\\s*[0-9]+(?:\\.[0-9]+)?\\s*(?:(?:h(?:ou)?r|min(?:ute)?|sec(?:ond)?)(?:[(]s[)]|s)?|[hms])(?![A-Za-z]))*|\\b[0-9]+(?:\\.[0-9]+)?\\b))'
     );
     value = value.replace( /{C}/gi, '${Character}' );
     value = value.replace( /{S(\d*?)}/gi, ( _, n ) => `(?<S${n}>.+?)` );
