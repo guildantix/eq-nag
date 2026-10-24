@@ -28,7 +28,7 @@
     </ng-container>
 
     <ng-container matColumnDef="phrase">
-        <th mat-header-cell *matHeaderCellDef textalign="left"> Phrase </th>
+        <th mat-header-cell *matHeaderCellDef style="text-align: left;"> Phrase </th>
         <td mat-cell *matCellDef="let element; let i = index">
             <mat-form-field style="width: 100%;" class="consolas">
                 <mat-label></mat-label>
@@ -38,7 +38,12 @@
                     cdkAutosizeMinRows="1"
                     cdkAutosizeMaxRows="3"
                     name="txtEndEarlyPhrase_{{i}}"
-                    [(ngModel)]="element.phrase">
+                    [(ngModel)]="element.phrase"
+                    (keydown.enter)="$event.preventDefault()"
+                    spellcheck="false"
+                    autocomplete="off"
+                    autocorrect="off"
+                    autocapitalize="off">
                 </textarea>
                 <mat-hint>Capture Phrase</mat-hint>
             </mat-form-field>
