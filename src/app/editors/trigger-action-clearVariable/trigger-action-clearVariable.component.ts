@@ -16,12 +16,9 @@ export class TriggerActionClearVariableComponent implements OnInit {
     constructor( private ipcService: IpcService ) { }
 
     ngOnInit() {
-        this.ipcService.getStoredVariables().subscribe(variables => {
-            this.storedVariables = variables.sort((a, b) =>
-                a.toLowerCase().localeCompare(b.toLowerCase())
-            );
-        });
+        this.ipcService.getStoredVariables().subscribe( variables => {
+            this.storedVariables = variables.sort( ( a, b ) => ( a ?? '' ).localeCompare( b ?? '', undefined, { sensitivity: 'base' } ) );
+        } );
     }
-
 
 }
