@@ -175,7 +175,7 @@ class TriggerDatabaseStore extends Store {
         this.findOrphanedTriggers();
         this.processPredefinedTriggers();
 
-        app.on( 'ready', () => {
+        app.whenReady().then( () => {
             migrateTriggerData( this.#data, this.configName, data => {
                 this.#data = data;
                 this.storeDataFile( this.#data );

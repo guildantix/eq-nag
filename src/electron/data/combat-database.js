@@ -61,7 +61,7 @@ class CombatDatabase extends Store {
 
         this.#data = this.parseDataFile();
 
-        app.on( 'ready', () => {
+        app.whenReady().then( () => {
             migrateCombatData( this.#data, this.configName, data => {
                 this.#data = data;
                 this.storeDataFile( this.#data );

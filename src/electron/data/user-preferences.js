@@ -593,7 +593,7 @@ class UserPreferencesStore extends Store {
         
         this.#data = this.parseDataFile();
 
-        app.on( 'ready', () => {
+        app.whenReady().then( () => {
             migrateUserPreferencesData( this.#data, this.configName, async ( data ) => {
                 this.#data = data;
                 await this.storeDataFileAsync( this.#data );

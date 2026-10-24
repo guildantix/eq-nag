@@ -120,7 +120,7 @@ class OverlayDatabaseStore extends Store {
 
         this.#data = this.parseDataFile();
 
-        app.on( 'ready', () => {
+        app.whenReady().then( () => {
             migrateOverlayData( this.#data, this.configName, data => {
                 this.#data = data;
                 this.storeDataFile( this.#data );
