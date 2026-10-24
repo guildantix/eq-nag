@@ -14,6 +14,7 @@ description, which Nag shows in the Update Notes window.
 - **Timer durations (`{TS}`) are read correctly.** Durations with words were misread: "10 minutes" became a 10-second timer and "90:00" became 9 hours, and ordinary words like "soon" could start a broken timer. `{TS}` now understands "5m", "10 min", "2.5 hours", "1h30m", "1 hour 30 minutes", "28 minute(s) 1 seconds", "1:30" and "1:02:03". (Thanks, Maxx!)
 - **`{N}` captures the whole number**, not just its first digits.
 - **"Your resolution has changed!"** no longer appears on a new profile, and if your monitors turn off and come back (for example overnight), the warning now closes by itself once the screens are back to normal.
+- **Timers end when an NPC or pet dies on live servers.** Live now reports these deaths as "… was slain by …" instead of "… has been slain by …", so auto-generated DoT, buff and raid timers kept running after the target died. New triggers handle both, and existing ones are updated automatically (End Early phrases that check for "has been slain by"). Emulator servers are unaffected.
 - **SVG timer icons now show** in the Timer, DoT Timer and Stopwatch editors. (Thanks, Maxx!)
 
 ### New
