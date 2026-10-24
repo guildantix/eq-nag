@@ -23,7 +23,7 @@
     "test": "ng test",
     "lint": "ng lint",
     "e2e": "ng e2e",
-    "start:electron": "tsc && ng build --base-href ./ --configuration=production && electron .",
+    "start:electron": "tsc && ng build --configuration=production && electron .",
     "build:local": "npm run set-localhost-env && npm run copy-source-maps && electron-builder build --win --publish never",
     "build": "npm run set-production-env && npm run copy-source-maps && electron-builder build --win --publish never",
     "deploy": "npm run set-production-env && npm run copy-source-maps && electron-builder build --win --publish always"

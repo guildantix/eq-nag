@@ -46,7 +46,7 @@ jobs:
         run: npm run set-production-env
 
       - name: Build Angular (production)
-        run: npx ng build --base-href ./ --configuration=production
+        run: npx ng build --configuration=production
 
       # Build installers and publish them to a draft GitHub Release.
       # electron-builder reads GH_TOKEN and the publish target from package.json
