@@ -49,19 +49,16 @@ legend.full-width {
 }
 
 
+// Pin the editor to the window so its content can't shift sideways.
 .modal {
     display: flex;
     flex-direction: column;
-    
-    /* Centering and positioning properties */
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
 
-    /* Use calc() to set the responsive size with a fixed pixel margin */
-    width: calc(100% - 12px); /* 6px margin on the left and right */
-    height: calc(100vh - 12px); /* 6px margin on the top and bottom */
+    /* Fill the whole window */
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100vh;
 
     /* Ensure padding and border are included in the size */
     box-sizing: border-box; 
