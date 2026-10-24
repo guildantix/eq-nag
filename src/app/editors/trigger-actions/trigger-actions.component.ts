@@ -210,24 +210,15 @@ export class TriggerActionsComponent implements OnInit {
 
     /**
      * Updates the actionType for a specific action and closes the menu.
+     * 
      * @param action The TriggerAction object to update.
      * @param selectedType The new ActionType to set.
-     * @param menuTrigger: The MatMenuTrigger instance to close after selection.
+     * @param menuTrigger The MatMenuTrigger instance to close after selection.
      */
-    public selectActionType(action: TriggerAction, selectedType: ActionTypes, menuTrigger: MatMenuTrigger): void {
-      action.actionType = selectedType;
-      this.actionsChange.emit( this.actions ); // Force emit the change, let parent component react immediately
-      menuTrigger.closeMenu(); // Close the menu after selection
+    public selectActionType( action: TriggerAction, selectedType: ActionTypes, menuTrigger: MatMenuTrigger ): void {
+        action.actionType = selectedType;
+        this.actionsChange.emit( this.actions ); // Let the parent component react immediately.
+        menuTrigger.closeMenu();
     }
-
-
-
-
-
-
-
-
-
-
 
 }
