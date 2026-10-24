@@ -857,6 +857,8 @@ class WindowManager {
         let bounds = this.#userPrefDb.rendererBounds;
         let calcBounds = ElectronUtilities.calculateRendererBounds();
         let executeRendererBoundsChange = false;
+        // A new profile has no saved bounds yet; that isn't a resolution change.
+        const hadSavedBounds = !ElectronUtilities.invalidScreenBounds( bounds );
 
         // If the current size of the renderer doesn't match the calculated size, then we need to resize/move our overlays.
         if ( ElectronUtilities.invalidScreenBounds( bounds ) || !ElectronUtilities.compareRectangles( bounds, calcBounds, true ) ) {
@@ -923,8 +925,7 @@ class WindowManager {
                 // Send the mutated overlays to the renderer.
                 this.#renderer.webContents.send( 'renderer:resolution-changed', { overlays: overlays, origin: newOrigin } );
 
-                if ( this.#userPrefDb.enableCheckWindowPosition ) {
-                    // TODO: This is being called each time.
+                if ( hadSavedBounds && this.#userPrefDb.enableCheckWindowPosition ) {
                     // Send a warning to the main window that the resolution has changed.
                     this.#mainWindow.reference.webContents.send( 'dialog:warning', { code: 'Renderer:ResolutionChanged' } );
                 }
