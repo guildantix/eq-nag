@@ -1,0 +1,57 @@
+name: Release
+
+# Cut a release by pushing a version tag, e.g.:
+#   git tag v0.2.27 && git push origin v0.2.27
+#
+# CI builds the Windows installers and uploads them to a DRAFT GitHub Release.
+# A maintainer then edits the draft to add release notes and clicks "Publish".
+# electron-updater only sees PUBLISHED releases, so users never get pointed at
+# a half-uploaded draft.
+#
+# Only maintainers should be able to push tags — enforce this with a tag
+# protection rule (Settings -> Tags) or branch/ruleset protections in GitHub.
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write   # lets the built-in GITHUB_TOKEN create the release & upload assets
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # extraResources references .env, which is intentionally untracked/empty.
+      - name: Ensure .env exists
+        shell: bash
+        run: touch .env
+
+      # Point the app at the production API (config.json.production -> config.json)
+      - name: Set production config
+        run: npm run set-production-env
+
+      - name: Build Angular (production)
+        run: npx ng build --base-href ./ --configuration=production
+
+      # Build installers and publish them to a draft GitHub Release.
+      # electron-builder reads GH_TOKEN and the publish target from package.json
+      # (build.win.publish -> guildantix/eq-nag, releaseType: draft).
+      - name: Build & publish (draft release)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npx electron-builder build --win --publish always

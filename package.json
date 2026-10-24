@@ -25,10 +25,7 @@
     "start:electron": "tsc && ng build --base-href ./ --configuration=production && electron .",
     "build:local": "npm run set-localhost-env && npm run copy-source-maps && electron-builder build --win --publish never",
     "build": "npm run set-production-env && npm run copy-source-maps && electron-builder build --win --publish never",
-    "deploy": "npm run set-production-env && npm run copy-source-maps && electron-builder build --win --publish always",
-    "patch-yml": "node patch-latest-yml.js",
-    "publish": "node publish-artifacts.mjs",
-    "build-publish": "npm run build && npm run patch-yml && npm run publish"
+    "deploy": "npm run set-production-env && npm run copy-source-maps && electron-builder build --win --publish always"
   },
   "private": true,
   "dependencies": {
@@ -97,7 +94,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/guildantix/eq-parse.git"
+    "url": "https://github.com/guildantix/eq-nag.git"
   },
   "build": {
     "productName": "EQ Nag",
@@ -113,7 +110,10 @@
       ],
       "publish": [
         {
-          "provider": "github"
+          "provider": "github",
+          "owner": "guildantix",
+          "repo": "eq-nag",
+          "releaseType": "draft"
         }
       ],
       "icon": "Nag.ico"
@@ -125,7 +125,6 @@
       "output": "electron/output",
       "buildResources": "electron/buildResources"
     },
-    "afterAllArtifactBuild": "./sign-final-artifacts.js",
     "files": [
       "**/*",
       "!**/node_modules/*/{CHANGELOG.md,README.md,README,readme.md,readme}",
@@ -138,7 +137,6 @@
       "!.angular",
       "!.vscode",
       "!e2e",
-      "!sign.js",
       "!source-maps",
       "package.json",
       "!tsconfig*",
