@@ -6,7 +6,7 @@ import { getRegexHighlightedHtml } from 'src/app/utilities/regex-highlighter.uti
 import { customAlphabet } from 'nanoid';
 
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
-const nanoid = customAlphabet(alphabet, 16);
+const nanoid = customAlphabet( alphabet, 16 );
 
 
 
@@ -23,11 +23,11 @@ const nanoid = customAlphabet(alphabet, 16);
  * Provides functionality to add, edit, delete, and reorder capture phrases,
  * with visual regex pattern highlighting and cooldown configuration.
  */
-@Component({
+@Component( {
     selector: 'app-capture-phrases',
     templateUrl: 'capture-phrases.component.html',
-    styleUrls: ['capture-phrases.component.scss', '../../core.scss', '../../modal.scss']
-})
+    styleUrls: [ 'capture-phrases.component.scss', '../../core.scss', '../../modal.scss' ]
+} )
 export class CapturePhrasesComponent implements OnInit {
 
 
@@ -109,7 +109,7 @@ export class CapturePhrasesComponent implements OnInit {
      * Sets the capture phrases array and updates highlights.
      * @param value - The new capture phrases array
      */
-    @Input() public set capturePhrases(value: CapturePhrase[]) {
+    @Input() public set capturePhrases( value: CapturePhrase[] ) {
         this._capturePhrases = value;
         this.updateAllHighlights();
     }
@@ -248,7 +248,7 @@ export class CapturePhrasesComponent implements OnInit {
     /**
      * Column definitions for the capture phrases table.
      */
-    public capturePhraseTableColumns = ['moveIndex', 'number', 'phrase', 'regEx', 'regExOptions', 'delete'];
+    public capturePhraseTableColumns = [ 'moveIndex', 'number', 'phrase', 'regEx', 'regExOptions', 'delete' ];
 
 
 
@@ -274,7 +274,7 @@ export class CapturePhrasesComponent implements OnInit {
     /**
      * Reference to the Material table for rendering updates.
      */
-    @ViewChild('capturePhrasesTable') private capturePhrasesTable: MatTable<any>;
+    @ViewChild( 'capturePhrasesTable' ) private capturePhrasesTable: MatTable<any>;
 
 
 
@@ -290,7 +290,7 @@ export class CapturePhrasesComponent implements OnInit {
      * Creates an instance of CapturePhrasesComponent.
      * @param dialogService - Service for displaying dialog boxes
      */
-    constructor(private dialogService: DialogService) { }
+    constructor( private dialogService: DialogService ) { }
 
 
 
@@ -307,7 +307,7 @@ export class CapturePhrasesComponent implements OnInit {
      * Adds a new capture phrase if startWithNewPhrase is true.
      */
     ngOnInit() {
-        if (this.startWithNewPhrase) {
+        if ( this.startWithNewPhrase ) {
             this.addNewCapturePhrase();
             this.updateAllHighlights();
         }
@@ -352,8 +352,8 @@ export class CapturePhrasesComponent implements OnInit {
     public addNewCapturePhrase(): void {
         let phrase: CapturePhrase = new CapturePhrase();
         phrase.phraseId = nanoid();
-        this.capturePhrases.push(phrase);
-        this.capturePhrasesChange.emit(this.capturePhrases);
+        this.capturePhrases.push( phrase );
+        this.capturePhrasesChange.emit( this.capturePhrases );
         this.capturePhrasesTable?.renderRows();
         this.updateAllHighlights();
     }
@@ -372,7 +372,7 @@ export class CapturePhrasesComponent implements OnInit {
      * Toggles the case-insensitive flag for a capture phrase.
      * @param phrase - The phrase to toggle case sensitivity for
      */
-    public toggleIgnoreCase(phrase: CapturePhrase): void {
+    public toggleIgnoreCase( phrase: CapturePhrase ): void {
         phrase.ignoreCase = !phrase.ignoreCase;
         this.updateAllHighlights();
     }
@@ -391,20 +391,20 @@ export class CapturePhrasesComponent implements OnInit {
      * Deletes a capture phrase after confirmation dialog.
      * @param index - The index of the phrase to delete
      */
-    public deleteCapturePhrase(index: number): void {
-        if (this.dialogService) {
+    public deleteCapturePhrase( index: number ): void {
+        if ( this.dialogService ) {
             this.dialogService.showConfirmDialog(
                 'Are you certain you want to delete this capture phrase?',
                 'Click "Yes" to delete the capture phrase.',
                 'Click "No" to cancel and close this dialog without deleting the capture phrase.',
-                (confirmed) => {
-                    if (confirmed) {
-                        this.doDelete(index);
+                ( confirmed ) => {
+                    if ( confirmed ) {
+                        this.doDelete( index );
                         this.updateAllHighlights();
                     }
-                });
+                } );
         } else {
-            this.doDelete(index);
+            this.doDelete( index );
             this.updateAllHighlights();
         }
     }
@@ -423,9 +423,9 @@ export class CapturePhrasesComponent implements OnInit {
      * Performs the actual deletion of a capture phrase.
      * @param index - The index of the phrase to delete
      */
-    private doDelete(index: number): void {
-        this.capturePhrases?.splice(index, 1);
-        this.capturePhrasesChange.emit(this.capturePhrases);
+    private doDelete( index: number ): void {
+        this.capturePhrases?.splice( index, 1 );
+        this.capturePhrasesChange.emit( this.capturePhrases );
         this.capturePhrasesTable?.renderRows();
         this.updateAllHighlights();
     }
@@ -444,9 +444,9 @@ export class CapturePhrasesComponent implements OnInit {
      * Moves a capture phrase up one position in the list.
      * @param index - The index of the phrase to move up
      */
-    public movePhraseUp(index: number): void {
-        if (index > 0) {
-            this.capturePhrases.splice(index - 1, 0, this.capturePhrases.splice(index, 1)[0]);
+    public movePhraseUp( index: number ): void {
+        if ( index > 0 ) {
+            this.capturePhrases.splice( index - 1, 0, this.capturePhrases.splice( index, 1 )[ 0 ] );
             this.capturePhrasesTable?.renderRows();
             this.updateAllHighlights();
         }
@@ -466,9 +466,9 @@ export class CapturePhrasesComponent implements OnInit {
      * Moves a capture phrase down one position in the list.
      * @param index - The index of the phrase to move down
      */
-    public movePhraseDown(index: number): void {
-        if (index < this.capturePhrases.length - 1) {
-            this.capturePhrases.splice(index + 1, 0, this.capturePhrases.splice(index, 1)[0]);
+    public movePhraseDown( index: number ): void {
+        if ( index < this.capturePhrases.length - 1 ) {
+            this.capturePhrases.splice( index + 1, 0, this.capturePhrases.splice( index, 1 )[ 0 ] );
             this.capturePhrasesTable?.renderRows();
             this.updateAllHighlights();
         }
@@ -496,7 +496,7 @@ export class CapturePhrasesComponent implements OnInit {
                 'The common way to deal with these abilities is to capture when someone is hit with this ability. However, the size of the raid can make these captures expensive.',
                 'In this example, by enabling capture cooldown and setting the duration to 1 second, the trigger will effectively only capture the first person hit with this ability.',
                 'During the cooldown, the capture phrase regular expressions are not executed.'
-            ]);
+            ] );
     }
 
 
@@ -515,19 +515,19 @@ export class CapturePhrasesComponent implements OnInit {
      * @param index - The index of the phrase being modified
      * @param checked - The new checkbox state
      */
-    public onRegexChange(index: number, checked: boolean) {
-        this.capturePhrases[index].useRegEx = checked;
+    public onRegexChange( index: number, checked: boolean ) {
+        this.capturePhrases[ index ].useRegEx = checked;
 
         // Close overlay if the Regex checkbox gets unchecked
-        if (!checked && this.overlayOpenIndex === index) {
+        if ( !checked && this.overlayOpenIndex === index ) {
             this.overlayOpenIndex = null;
         }
 
         // The highlight depends on useRegEx, so rebuild it for this phrase.
-        const p = this.capturePhrases[index];
-        this.highlightedPhrases[index] = getRegexHighlightedHtml(p.phrase, p.useRegEx);
+        const p = this.capturePhrases[ index ];
+        this.highlightedPhrases[ index ] = getRegexHighlightedHtml( p.phrase, p.useRegEx );
 
-        this.capturePhrasesChange.emit(this.capturePhrases);
+        this.capturePhrasesChange.emit( this.capturePhrases );
     }
 
 
@@ -545,8 +545,8 @@ export class CapturePhrasesComponent implements OnInit {
      * Should be called whenever phrases are modified to keep highlights in sync.
      */
     private updateAllHighlights() {
-        this.highlightedPhrases = (this.capturePhrases ?? []).map(p =>
-            getRegexHighlightedHtml(p.phrase, p.useRegEx)
+        this.highlightedPhrases = ( this.capturePhrases ?? [] ).map( p =>
+            getRegexHighlightedHtml( p.phrase, p.useRegEx )
         );
     }
 
@@ -565,12 +565,12 @@ export class CapturePhrasesComponent implements OnInit {
      * Strips newlines and updates the highlight for the specific phrase.
      * @param index - The index of the phrase that changed
      */
-    public onPhraseChange(index: number) {
-        this.capturePhrases[index].phrase = this.capturePhrases[index].phrase?.replace(/\r?\n|\r/g, ' ') || '';
+    public onPhraseChange( index: number ) {
+        this.capturePhrases[ index ].phrase = this.capturePhrases[ index ].phrase?.replace( /\r?\n|\r/g, ' ' ) || '';
 
-        const p = this.capturePhrases[index];
-        this.highlightedPhrases[index] = getRegexHighlightedHtml(p.phrase, p.useRegEx);
-        this.capturePhrasesChange.emit(this.capturePhrases);
+        const p = this.capturePhrases[ index ];
+        this.highlightedPhrases[ index ] = getRegexHighlightedHtml( p.phrase, p.useRegEx );
+        this.capturePhrasesChange.emit( this.capturePhrases );
     }
 
 
@@ -588,8 +588,8 @@ export class CapturePhrasesComponent implements OnInit {
      * Only one overlay can be open at a time.
      * @param index - The index of the phrase to toggle overlay for
      */
-    public toggleOverlay(index: number) {
-        if (this.overlayOpenIndex === index) {
+    public toggleOverlay( index: number ) {
+        if ( this.overlayOpenIndex === index ) {
             this.overlayOpenIndex = null;
             this.updateAllHighlights();
         } else {
