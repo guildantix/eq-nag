@@ -8,6 +8,7 @@ description, which Nag shows in the Update Notes window.
 ### Fixes
 - **Setup wizard no longer gets stuck.** On a new install, or after Nag's settings files were lost or damaged (for example after a crash), the setup wizard's buttons could stop working, leaving the wizard covering the app. This affected every version since 0.2.23. Nag now correctly upgrades its settings on startup, and anyone already stuck should be fixed automatically after updating.
 - **Clear All works again on live servers.** EverQuest's October 2026 patch puts `~ ` in front of the player's name on `/emote` messages, which stopped the built-in Clear All trigger (`/em clears their mind`) from firing. It now accepts both the new and old formats, so it keeps working on emulator servers. (Thanks, Maxx!)
+- **Death Recap's hotkey works again on live servers.** The `/em wonders how they died.` hotkey had the same problem. Existing Death Recap triggers are updated automatically, unless you've edited the phrase yourself.
 - **If you have your own emote-based triggers** (for example timers started with `/em`), make the new `~ ` optional so they work on both live and emulator servers. For a regular-expression phrase, add `(?:~ )?` right after the `^` at the start.
 - **The Heroes Journey:** fixed THJ character and server detection when adding characters, and fixed direct-damage spell parsing for THJ.
 
