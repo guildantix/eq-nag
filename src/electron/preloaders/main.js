@@ -124,9 +124,6 @@ contextBridge.exposeInMainWorld( 'api', {
     logger: {
         info: log.info,
     },
-    openPatreon: () => {
-        ipcRenderer.send( 'app:open-patreon' );
-    },
     getPathForFile: ( file ) => {
         return webUtils.getPathForFile( file );
     },

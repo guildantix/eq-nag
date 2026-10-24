@@ -401,12 +401,6 @@ export class IpcService {
         }
     }
 
-    public openPatreon(): void {
-        if ( window.api ) {
-            window.api.openPatreon();
-        }
-    }
-
     /**
      * Returns an observable that will emit when the main process requests a 
      * combat group migration.  The value will be true if the user has existing 

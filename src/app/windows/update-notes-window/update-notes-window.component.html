@@ -8,77 +8,12 @@
             </button>
         </mat-toolbar>
     </header>
-    <section #updateNotesElement>
-        <div class="patreon" *ngIf="showPatreonHeader">
-            
-            <h1>We have a Patreon now!</h1>
-            <p>If you'd like to support Nag's continuing development, consider joining our Patreon and help us bring even more features to life!</p>
-
-            <div class="actions">
-                <button mat-button class="color-green" (click)="openPatreon($event)">
-                    <div class="patreon-button">
-                        <div class="logo">
-                            <div class="btn">
-                                <img src="/assets/images/PATREON_SYMBOL_1_WHITE_RGB.svg" />
-                                <img src="/assets/images/PATREON_WORDMARK_1_WHITE_RGB.svg" />
-                            </div>
-                        </div>
-                    </div>
-                    Join Nag on Patreon
-                </button>
-                <span class="spacer"></span>
-                <div><a href="javascript:void(0);" class="color-magenta" (click)="showPatreonHeader = false">Dismiss</a></div>
-            </div>
-
-        </div>
+    <section>
         <div class="update-notes">
-
-            <!-- <div class="patreon-button" (click)="openPatreon($event)" *ngIf="!showPatreonHeader && false">
-                <div class="logo">
-                    <div class="black">
-                        <img src="/assets/images/PATREON_SYMBOL_1_WHITE_RGB.svg" />
-                        <img src="/assets/images/PATREON_WORDMARK_1_WHITE_RGB.svg" />
-                    </div>
-                    <div class="white">
-                        <img src="/assets/images/PATREON_SYMBOL_1_WHITE_RGB.svg" />
-                        <img src="/assets/images/PATREON_WORDMARK_1_WHITE_RGB.svg" />
-                    </div>
-                </div>
-            </div> -->
             <markdown [data]="updateNotes"></markdown>
-        </div>
-        <div class="patreon footer" *ngIf="showBottomPatreon">
-            
-            <p>If you'd like to support Nag's continuing development, consider joining our Patreon and help us bring even more features to life!</p>
-
-            <div class="actions">
-                <button mat-button class="color-green" (click)="openPatreon($event)">
-                    <div class="patreon-button">
-                        <div class="logo">
-                            <div class="btn">
-                                <img src="/assets/images/PATREON_SYMBOL_1_WHITE_RGB.svg" />
-                                <img src="/assets/images/PATREON_WORDMARK_1_WHITE_RGB.svg" />
-                            </div>
-                        </div>
-                    </div>
-                    Join Nag on Patreon
-                </button>
-            </div>
-
         </div>
     </section>
     <footer>
         <button mat-button color="warn" (click)="close()">Close</button>
-        <span class="spacer"></span>
-        <button mat-button class="color-green" (click)="openPatreon($event)" *ngIf="(!showPatreonHeader && showFooterPatreon) || (!showBottomPatreon && !showPatreonHeader)">
-            <div class="patreon-button">
-                <div class="logo">
-                    <div class="btn">
-                        <img src="/assets/images/PATREON_SYMBOL_1_WHITE_RGB.svg" />
-                        <img src="/assets/images/PATREON_WORDMARK_1_WHITE_RGB.svg" />
-                    </div>
-                </div>
-            </div>
-        </button>
     </footer>
 </div>

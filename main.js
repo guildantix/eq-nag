@@ -22,7 +22,7 @@ process.on( 'unhandledRejection', ( reason ) => {
     log.error( 'Unhandled Rejection:', reason );
 } );
 
-import { app, BrowserWindow, ipcMain, protocol, session, screen, Tray, Menu, globalShortcut, clipboard, shell } from "electron";
+import { app, BrowserWindow, ipcMain, protocol, session, screen, Tray, Menu, globalShortcut, clipboard } from "electron";
 import * as url from "url";
 import * as path from "path";
 
@@ -583,9 +583,6 @@ ipcMain.on( 'app:minimize:tray', ( event, data ) => {
     mainWindow.hide();
 } );
 
-ipcMain.on( 'app:open-patreon', ( event ) => {
-    shell.openExternal('https://www.patreon.com/EverQuestNag');
-} );
 
 ipcMain.on( 'app:request:tick', ( event, data ) => {
     sendTick();
