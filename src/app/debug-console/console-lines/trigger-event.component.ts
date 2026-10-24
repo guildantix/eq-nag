@@ -2,6 +2,7 @@ import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { LogTypes, TriggerParseHistoryModel } from 'src/app/core.model';
 import { IpcService } from 'src/app/ipc.service';
+import { sanitizeHtml } from 'src/app/utilities/html.utilities';
 
 @Component( {
     selector: 'console-trigger-event',
@@ -41,7 +42,7 @@ export class ConsoleTriggerEventComponent implements OnInit {
     public renderParseToHtml( obj: TriggerParseHistoryModel ): SafeHtml {
         
         if ( !obj._modelHtml ) {
-            obj._modelHtml = this.renderJsonHtml( obj );
+            obj._modelHtml = sanitizeHtml( this.renderJsonHtml( obj ) );
         }
 
         return this.sanitizer.bypassSecurityTrustHtml( obj._modelHtml );

@@ -7,6 +7,7 @@ const { OverlayDimensions, OverlayWindow, OverlayComponent, TimerSortTypes, Trig
 const { ActionTypes, TriggerAction, TriggerConditionTypes, OperatorTypes, TimerRestartBehaviors } = require( '../data/models/trigger' );
 const { ipcRenderer } = require( 'electron' );
 const Handlebars = require( "handlebars" );
+const { sanitizeHtml } = require( '../utilities/html' );
 const _ = require( 'lodash' );
 const customAlphabet = require( 'nanoid' ).customAlphabet;
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
@@ -619,7 +620,7 @@ function createDpsWindow() {
             let dropdownHtml = dropdownMenuTemplate( menuObject );
 
             let menuDiv = document.createElement( 'div' );
-            menuDiv.innerHTML = dropdownHtml;
+            menuDiv.innerHTML = sanitizeHtml( dropdownHtml );
             document.body.appendChild( menuDiv );
 
             let dropdown = menuDiv.firstElementChild;
@@ -845,7 +846,7 @@ function renderDpsItems( characterName ) {
         dpsItem.dom = createElement( 'div' );
         dpsItem.dom.classList.add( 'dps-item' );
         dpsMeterSettings?.highlightMyName && mine && dpsItem.dom.classList.add( 'mine' );
-        dpsItem.dom.innerHTML = dpsWindowItemTemplate( model );
+        dpsItem.dom.innerHTML = sanitizeHtml( dpsWindowItemTemplate( model ) );
         dpsItemsDom.appendChild( dpsItem.dom );
 
         let bar = dpsItem.dom.querySelector( '.determinate' );
@@ -895,7 +896,7 @@ function renderDpsItems( characterName ) {
         if ( dpsWindowDisplayType === EncounterDisplayTypes.allData ) {
             encounterName.innerHTML = 'All Encounters';
         } else {
-            encounterName.innerHTML = displayedEncounter.npcs.join( ', ' );
+            encounterName.innerHTML = sanitizeHtml( displayedEncounter.npcs.join( ', ' ) );
         }
     }
 
@@ -1970,7 +1971,7 @@ function renderToken( token ) {
         let listHtml = listTemplate( listObj );
 
         let listDiv = document.createElement( 'div' );
-        listDiv.innerHTML = listHtml;
+        listDiv.innerHTML = sanitizeHtml( listHtml );
         document.body.appendChild( listDiv );
         token.dom = listDiv;
 
@@ -2163,7 +2164,7 @@ function initializeOverlay( overlay ) {
     };
 
     overlayInstances[ overlay.overlayId ].encapsulationId = '_' + nanoid();
-    overlayInstances[ overlay.overlayId ].title.innerHTML = overlay.name;
+    overlayInstances[ overlay.overlayId ].title.innerHTML = sanitizeHtml( overlay.name );
 
     div.addEventListener( 'click', function ( e ) {
         moveToTop( div );
@@ -2723,7 +2724,7 @@ function tryAccumulateHit( renderGroup, model ) {
                                 }
 
                                 // Apply the text change.
-                                accumlationTarget.dom.querySelector( '.fctSource' ).innerHTML = `(${c.action})`;
+                                accumlationTarget.dom.querySelector( '.fctSource' ).innerHTML = sanitizeHtml( `(${c.action})` );
                             }
 
                             break;
@@ -2836,7 +2837,7 @@ function renderFct2( model ) {
         let content = fct2Template( { value: text, damageSource: damageSourceText } );
         let div = createElement( 'div' );
 
-        div.innerHTML = content;
+        div.innerHTML = sanitizeHtml( content );
         div.classList.add( 'fct-values' );
 
         /** @type {string} */
@@ -3120,7 +3121,7 @@ function renderFct( overlayId, comp ) {
 
         if ( comp.critical && !showCriticalsInline ) {
             let content = fctCriticalTemplate( { value: comp.text, damageSource: comp.attack } );
-            div.innerHTML = content;
+            div.innerHTML = sanitizeHtml( content );
 
             div.classList.add( 'animate-fade-shrink' );
             div.style.animation = `animate-fadeshrink ${animateFadeShrinkDuration}ms ease-out`;
@@ -3159,7 +3160,7 @@ function renderFct( overlayId, comp ) {
                     
                     let _textEl = overlayInstances[ overlayId ].criticalComp.dom.querySelector( '.fct-text' );
                     if ( _textEl ) {
-                        _textEl.innerHTML = overlayInstances[ overlayId ].criticalComp.text;
+                        _textEl.innerHTML = sanitizeHtml( overlayInstances[ overlayId ].criticalComp.text );
                     }
 
                 }
@@ -3190,7 +3191,7 @@ function renderFct( overlayId, comp ) {
             }
         
             let content = fctTemplate( { value: comp.text, damageSource: damageSourceText } );
-            div.innerHTML = content;
+            div.innerHTML = sanitizeHtml( content );
 
             div.classList.add( 'animate-fade-out' );
             div.style.animation = `animate-fadeout ${animateFadeOutDuration}ms ease`;
@@ -3284,7 +3285,7 @@ function render( overlayId, comp ) {
                 comp.removeAt = new Date( now.setSeconds( comp.action.duration ) );
                 let content = displayTextTemplate( { value: StringUtilities.format( comp.action.displayText, comp.matches ) } );
                 let div = createElement( 'div' );
-                div.innerHTML = content;
+                div.innerHTML = sanitizeHtml( content );
                 div.style.animation = `animate-fadeout ${comp.action.duration * 1.05}s ease`;
                 comp.dom = div;
 
@@ -3660,7 +3661,7 @@ function renderListAction( component, restore ) {
         let listHtml = listTemplate( listObj );
         let listDiv = document.createElement( 'div' );
 
-        listDiv.innerHTML = listHtml;
+        listDiv.innerHTML = sanitizeHtml( listHtml );
         document.body.appendChild( listDiv );
 
         component.dom = listDiv;
@@ -3690,7 +3691,7 @@ function renderListAction( component, restore ) {
             } );
 
             let itemDiv = document.createElement( 'div' );
-            itemDiv.innerHTML = itemHtml;
+            itemDiv.innerHTML = sanitizeHtml( itemHtml );
             itemDiv = itemDiv.querySelector( 'div' );
 
             if ( component.listNames.indexOf( name ) === component.listNames.length - 1 ) {
@@ -4236,11 +4237,11 @@ function createGroupedDotTimer( overlayId, contentArea, group, comp ) {
     let content = targetGroupTimerTemplate( { value: displayText } );
 
     let div = createElement( 'div' );
-    div.innerHTML = content;
+    div.innerHTML = sanitizeHtml( content );
     comp.dom = div;
     
     if ( comp.action.timerIcon != null ) {
-        div.innerHTML = timerIconTemplate( { icon: comp.action.timerIcon, iconStyle: `"style="position: absolute; margin-left: -1.7em;  height: 1.5em;` } ) + div.innerHTML;
+        div.innerHTML = sanitizeHtml( timerIconTemplate( { icon: comp.action.timerIcon, iconStyle: `"style="position: absolute; margin-left: -1.7em;  height: 1.5em;` } ) ) + div.innerHTML;
     }
 
     comp.dom = div;
@@ -4292,11 +4293,11 @@ function createGroupedTimer( overlayId, contentArea, group, comp ) {
     let content = targetGroupTimerTemplate( { value: displayText } );
 
     let div = createElement( 'div' );
-    div.innerHTML = content;
+    div.innerHTML = sanitizeHtml( content );
     comp.dom = div;
     
     if ( comp.action.timerIcon != null ) {
-        div.innerHTML = timerIconTemplate( { icon: comp.action.timerIcon, iconStyle: `"style="position: absolute; margin-left: -1.7em;  height: 1.5em;` } ) + div.innerHTML;
+        div.innerHTML = sanitizeHtml( timerIconTemplate( { icon: comp.action.timerIcon, iconStyle: `"style="position: absolute; margin-left: -1.7em;  height: 1.5em;` } ) ) + div.innerHTML;
     }
 
     comp.dom = div;
@@ -4354,7 +4355,7 @@ function getTimerGroup( overlayId, contentArea, groupName ) {
     let content = targetGroupTemplate( { name: groupName } );
     let div = createElement( 'div' );
     div.classList.add( 'mob-dot-group' );
-    div.innerHTML = content;
+    div.innerHTML = sanitizeHtml( content );
     let h6 = div.querySelector( 'h6' );
 
     h6.style.fontSize = `${overlayInstances[ overlayId ].groupHeaderSize}px`;
@@ -4425,10 +4426,10 @@ function createUngroupedDotTimer( overlayId, contentArea, comp ) {
 
     // Create the component's dom element and append it to the content area.
     let div = createElement( 'div' );
-    div.innerHTML = content;
+    div.innerHTML = sanitizeHtml( content );
     
     if ( comp.action.timerIcon != null ) {
-        div.innerHTML = timerIconTemplate( { icon: comp.action.timerIcon, iconStyle: `"style="position: absolute; margin-left: -1.7em;  height: 1.5em;` } ) + div.innerHTML;
+        div.innerHTML = sanitizeHtml( timerIconTemplate( { icon: comp.action.timerIcon, iconStyle: `"style="position: absolute; margin-left: -1.7em;  height: 1.5em;` } ) ) + div.innerHTML;
     }
 
     comp.dom = div;
@@ -4470,10 +4471,10 @@ function createUngroupedTimer( overlayId, contentArea, comp ) {
 
     // Create the component's dom element and append it to the content area.
     let div = createElement( 'div' );
-    div.innerHTML = content;
+    div.innerHTML = sanitizeHtml( content );
     
     if ( comp.action.timerIcon != null ) {
-        div.innerHTML = timerIconTemplate( { icon: comp.action.timerIcon, iconStyle: `"style="position: absolute; margin-left: -1.7em;  height: 1.5em;` } ) + div.innerHTML;
+        div.innerHTML = sanitizeHtml( timerIconTemplate( { icon: comp.action.timerIcon, iconStyle: `"style="position: absolute; margin-left: -1.7em;  height: 1.5em;` } ) ) + div.innerHTML;
     }
 
     comp.dom = div;

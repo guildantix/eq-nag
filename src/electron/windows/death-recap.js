@@ -1,5 +1,6 @@
 const { ipcRenderer } = require( 'electron' );
 const Handlebars = require( "handlebars" );
+const { sanitizeHtml } = require( '../utilities/html' );
 const _ = require( 'lodash' );
 const { IpcMessage } = require( '../data/models/common' );
 const { CombatParser } = require( '../utilities/combat-parser' );
@@ -107,7 +108,7 @@ function DeathRecap( logFilePath, lineNo, messageId, characterName, serverName, 
         let title = document.querySelector( '#characterName' );
 
         if ( title != null ) {
-            title.innerHTML = characterName;
+            title.innerHTML = sanitizeHtml( characterName );
         }
 
         numberTemplate = Handlebars.compile( document.querySelector( '#numberTemplate' ).innerHTML );
@@ -145,7 +146,7 @@ function DeathRecap( logFilePath, lineNo, messageId, characterName, serverName, 
                             actor: event.actor,
                             description: event.attackType === 'melee' ? 'Melee' : event.attackName,
                         } );
-                        damageLogContainer.innerHTML += stat;
+                        damageLogContainer.innerHTML += sanitizeHtml( stat );
 
                     } else if ( event.healing > 0 ) {
                         let numberFormat = getNumberFormat( event.healing );
@@ -157,7 +158,7 @@ function DeathRecap( logFilePath, lineNo, messageId, characterName, serverName, 
                             actor: event.actor,
                             description: event.attackName,
                         } );
-                        damageLogContainer.innerHTML += stat;
+                        damageLogContainer.innerHTML += sanitizeHtml( stat );
 
                     }
                 }
@@ -176,7 +177,7 @@ function DeathRecap( logFilePath, lineNo, messageId, characterName, serverName, 
                             textCssClass: 'color-orange',
                             description: event.source,
                         } );
-                        damageSourcesContainer.innerHTML += stat;
+                        damageSourcesContainer.innerHTML += sanitizeHtml( stat );
 
                     } else if ( event.healing > 0 ) {
                         let numberFormat = getNumberFormat( event.healing );
@@ -187,7 +188,7 @@ function DeathRecap( logFilePath, lineNo, messageId, characterName, serverName, 
                             textCssClass: 'color-light-blue',
                             description: event.source,
                         } );
-                        damageSourcesContainer.innerHTML += stat;
+                        damageSourcesContainer.innerHTML += sanitizeHtml( stat );
 
                     }
                 }
@@ -237,7 +238,7 @@ function DeathRecap( logFilePath, lineNo, messageId, characterName, serverName, 
                         description: 'Raid Damage',
                     } ) );
                     
-                    encounterStatsContainer.innerHTML += statGroupTemplate( model );
+                    encounterStatsContainer.innerHTML += sanitizeHtml( statGroupTemplate( model ) );
 
                     for ( let i = 0; i < data.encounterStatistics.mobs?.length; i++ ) {
                         const event = data.encounterStatistics.mobs[ i ];
@@ -353,7 +354,7 @@ function DeathRecap( logFilePath, lineNo, messageId, characterName, serverName, 
                             description: 'Wild Rampage',
                         } ) );
                         
-                        encounterStatsContainer.innerHTML += statGroupTemplate( mobModel );
+                        encounterStatsContainer.innerHTML += sanitizeHtml( statGroupTemplate( mobModel ) );
                     }
                 }
             } );

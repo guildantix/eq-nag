@@ -20,6 +20,12 @@ const eqIconPageSize = 256;
 const eqIconSize = 40;
 const filesFolder = 'resource-files';
 
+// Audio types that can be installed from a shared package.  WAV is accepted
+// here so packages made from GINA imports still install; it can't be uploaded
+// from Nag (see storeFile).
+const packageFileExtensions = new Set( [ '.mp3', '.ogg', '.m4a', '.opus', '.webm', '.aac', '.wav' ] );
+const fileIdRegex = /^[A-Za-z0-9_-]{1,64}$/;
+
 class FilesDatabaseStore extends Store {
 
     /** 
@@ -182,9 +188,29 @@ class FilesDatabaseStore extends Store {
         let file = _.remove( this.#data.files, f => f.fileId === fileId );
 
         if ( file?.length > 0 ) {
-            fs.unlink( file[ 0 ].physicalName, () => { } );
+            if ( this.isInFilesFolder( file[ 0 ].physicalName ) ) {
+                fs.unlink( file[ 0 ].physicalName, () => { } );
+            }
             this.storeDataFile( this.#data );
         }
+    }
+
+
+
+
+
+
+
+
+
+    
+    /**
+     * Returns true if the given path is a file directly inside the files folder.
+     * 
+     * @param {string} physicalName The full path of the file.
+     */
+    isInFilesFolder( physicalName ) {
+        return typeof physicalName === 'string' && path.dirname( path.resolve( physicalName ) ) === path.resolve( this.#filePath );
     }
 
 
@@ -203,11 +229,20 @@ class FilesDatabaseStore extends Store {
      */
     importPackageFile( file ) {
 
+        // The file id and name come from the package, so only an id made of
+        // plain characters and a known audio extension may become a file name
+        // in the files folder.
+        const ext = path.extname( `${file?.fileName ?? ''}` ).toLowerCase();
+        if ( !fileIdRegex.test( `${file?.fileId ?? ''}` ) || !packageFileExtensions.has( ext ) || typeof file.contents !== 'string' ) {
+            log.warn( `[files-database:importPackageFile] Skipped package file with an invalid id or type: ${JSON.stringify( `${file?.fileName ?? ''}` )}` );
+            return null;
+        }
+
         // If the file exists, delete it and remove it from the data store.
         let existingIndex = this.#data.files.findIndex( f => f.fileId === file.fileId );
         if ( existingIndex > -1 ) {
             let existing = this.#data.files.splice( existingIndex, 1 )[ 0 ];
-            if ( fs.existsSync( existing.physicalName ) ) {
+            if ( this.isInFilesFolder( existing.physicalName ) && fs.existsSync( existing.physicalName ) ) {
                 fs.unlinkSync( existing.physicalName );
             }
         }
@@ -217,7 +252,7 @@ class FilesDatabaseStore extends Store {
         model.fileId = file.fileId;
         model.mediaType = +file.mediaType;
         model.fileName = file.fileName;
-        model.physicalName = path.join( this.#filePath, `${file.fileId}${path.extname( file.fileName )}` );
+        model.physicalName = path.join( this.#filePath, `${file.fileId}${ext}` );
 
         fs.writeFile( model.physicalName, Buffer.from( file.contents, 'base64' ), () => { } );
 

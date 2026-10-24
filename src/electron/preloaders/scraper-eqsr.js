@@ -1,4 +1,5 @@
 const { contextBridge, ipcRenderer } = require( 'electron' );
+const { sanitizeHtml } = require( '../utilities/html' );
 // const { getCurrentWindow, screen } = require( '@electron/remote' );
 
 const channelPrefixes = [
@@ -22,6 +23,7 @@ contextBridge.exposeInMainWorld( 'api', {
             ipcRenderer.send( 'scraper:error[' + i + ']', error );
         },
     },
+    sanitizeHtml: ( html ) => sanitizeHtml( html ),
     setIndex: ( index ) => {
         i = +index;
     },

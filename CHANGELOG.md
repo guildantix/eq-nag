@@ -17,6 +17,9 @@ description, which Nag shows in the Update Notes window.
 - **Timers end when an NPC or pet dies on live servers.** Live now reports these deaths as "… was slain by …" instead of "… has been slain by …", so auto-generated DoT, buff and raid timers kept running after the target died. New triggers handle both, and existing ones are updated automatically (End Early phrases that check for "has been slain by"). Emulator servers are unaffected.
 - **SVG timer icons now show** in the Timer, DoT Timer and Stopwatch editors. (Thanks, Maxx!)
 
+### Security
+- **Safer shared triggers.** HTML in trigger text, overlay names and log text is now cleaned before it is shown, so formatting and styles still work but nothing in it can run. Overlays no longer load images, sounds or fonts from other websites, and sound files from shared packages and quick-shares are checked before they are saved.
+
 ### New
 - **Pets in Combat Statistics.** Pets can now be added and assigned to their owner from the Combat Statistics screen, and Nag detects pet ownership from the log, so pet damage is credited to the right player.
 - **Better player identification** in the combat parser, including class abbreviations.
@@ -27,6 +30,7 @@ description, which Nag shows in the Update Notes window.
 - **Nag is now open source** at https://github.com/guildantix/eq-nag.
 - **The installer is no longer code-signed.** Windows SmartScreen may show an "unknown publisher" warning the first time you install. Click "More info", then "Run anyway". Updates install as usual.
 - Removed the Patreon banner from the Update Notes window.
+- **Allakhazam trigger generators removed.** Allakhazam doesn't allow automated access to its pages, so the Allakhazam DoT, Buff and Raid Ability generators are gone. The EQ Spell Resources generators are unchanged, and triggers made earlier keep working.
 
 <!-- Maintainer notes, not part of the release description:
 - Store migrations now use app.whenReady() instead of app.on('ready'); the ESM main

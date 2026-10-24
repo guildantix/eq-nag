@@ -1,5 +1,6 @@
 import { Pipe, PipeTransform } from '@angular/core';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import { sanitizeHtml } from '../utilities/html.utilities';
 import { ColoredString } from '../dialogs/dialog.model';
 
 @Pipe( {
@@ -19,7 +20,7 @@ export class ColoredStringPipe implements PipeTransform {
             value = value.replace( /\*t/gi, '<span style="display: inline-block; width: 20px;">&nbsp;</span>' );
             let content = `<span style="color: ${msg.color}; font-weight: ${msg.bold ? 'bold' : 'unset'}">${value}</span>`;
 
-            return this.sanitizer.bypassSecurityTrustHtml( content );
+            return this.sanitizer.bypassSecurityTrustHtml( sanitizeHtml( content ) );
         } else {
             return msg;
         }

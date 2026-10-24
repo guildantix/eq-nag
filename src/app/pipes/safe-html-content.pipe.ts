@@ -1,5 +1,6 @@
 import { Pipe, PipeTransform } from '@angular/core';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import { sanitizeHtml } from '../utilities/html.utilities';
 
 @Pipe( {
     name: 'safeHtmlContent'
@@ -34,7 +35,7 @@ export class SafeHtmlContentPipe implements PipeTransform {
         // Convert line breaks.
         source = source.replace( /\n/gi, '<br />' );
 
-        return this.sanitizer.bypassSecurityTrustHtml( source );
+        return this.sanitizer.bypassSecurityTrustHtml( sanitizeHtml( source ) );
     }
 
 }

@@ -1,6 +1,7 @@
 import { Component, Input, OnInit } from '@angular/core';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { ConsoleMessageModel, LogTypes } from 'src/app/core.model';
+import { escapeHtml, sanitizeHtml } from 'src/app/utilities/html.utilities';
 
 @Component( {
     selector: 'console-message',
@@ -52,7 +53,7 @@ export class ConsoleMessageComponent implements OnInit {
     public renderParseToHtml( obj: any ): void {
         
         if ( !this.payloadHtml ) {
-            this.payloadHtml = this.sanitizer.bypassSecurityTrustHtml( this.renderJsonHtml( obj ) );
+            this.payloadHtml = this.sanitizer.bypassSecurityTrustHtml( sanitizeHtml( this.renderJsonHtml( obj ) ) );
         }
 
     }
@@ -78,15 +79,15 @@ export class ConsoleMessageComponent implements OnInit {
             let html = '<ul>';
 
             if ( json.name ) {
-                html += `<li><b>name</b>: <span class="color-brown">"${json.name}"</span></li>`;
+                html += `<li><b>name</b>: <span class="color-brown">"${escapeHtml( json.name )}"</span></li>`;
             }
             
             if ( json.message ) {
-                html += `<li><b>message</b>: <span class="color-brown">"${json.message}"</span></li>`;
+                html += `<li><b>message</b>: <span class="color-brown">"${escapeHtml( json.message )}"</span></li>`;
             }
 
             if ( json.stack ) {
-                html += `<li><b>stack</b>: <span class="color-brown">"${json.stack}"</span></li>`;
+                html += `<li><b>stack</b>: <span class="color-brown">"${escapeHtml( json.stack )}"</span></li>`;
             }
 
             html += '</ul>';
@@ -95,7 +96,7 @@ export class ConsoleMessageComponent implements OnInit {
         } else if ( typeof json === 'string' && ( this._item.logType === LogTypes.error || this._item.logType === LogTypes.warning ) ) {
             let html = '<ul>';
 
-            html += `<li><b>message</b>: <span class="color-brown">"${json}"</span></li>`;
+            html += `<li><b>message</b>: <span class="color-brown">"${escapeHtml( json )}"</span></li>`;
             
             html += '</ul>';
             

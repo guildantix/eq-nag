@@ -118,7 +118,7 @@ function scrapeItemClickInfo( url ) {
             
             let div = document.createElement( 'div' );
             document.body.appendChild( div );
-            div.innerHTML = this.responseText;
+            div.innerHTML = window.api.sanitizeHtml( this.responseText );
 
 
             let effectLine = document.evaluate( "//div[contains(., 'Effect: ')]", document, null, XPathResult.ANY_TYPE, null ).iterateNext()?.textContent?.split( 'Effect: ' )[ 1 ]?.split( /\r\n|\r|\n/gi )[ 0 ]?.trim();
@@ -188,7 +188,7 @@ function scrapeSpell( url ) {
 
             let div = document.createElement( 'div' );
             document.body.appendChild( div );
-            div.innerHTML = this.responseText;
+            div.innerHTML = window.api.sanitizeHtml( this.responseText );
         
 
             // let test = document.querySelector('tr')

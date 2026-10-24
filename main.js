@@ -297,6 +297,20 @@ app.on( 'child-process-gone', ( event, details ) => {
     log.info( '[main:child-process-gone] Child process gone.', details );
 } );
 
+// Nag's windows only ever load pages from Nag itself (via loadURL), so links
+// in trigger or package text must not open new windows or navigate a window
+// away from Nag.
+app.on( 'web-contents-created', ( event, contents ) => {
+    contents.setWindowOpenHandler( ( { url } ) => {
+        log.warn( `[main:web-contents-created] Blocked opening a window: ${url}` );
+        return { action: 'deny' };
+    } );
+    contents.on( 'will-navigate', ( e, url ) => {
+        log.warn( `[main:web-contents-created] Blocked navigation: ${url}` );
+        e.preventDefault();
+    } );
+} );
+
 // Deprecated: This event is superceded by the child-process-gone event which contains more information about why the child process disappeared. It isn't always because it crashed. The killed boolean can be replaced by checking reason === 'killed' when you switch to that event.
 // app.on('gpu-process-crashed', (event, killed) => {
 
