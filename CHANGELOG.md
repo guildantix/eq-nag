@@ -11,6 +11,9 @@ description, which Nag shows in the Update Notes window.
 - **Death Recap's hotkey works again on live servers.** The `/em wonders how they died.` hotkey had the same problem. Existing Death Recap triggers are updated automatically, unless you've edited the phrase yourself.
 - **If you have your own emote-based triggers** (for example timers started with `/em`), make the new `~ ` optional so they work on both live and emulator servers. For a regular-expression phrase, add `(?:~ )?` right after the `^` at the start.
 - **The Heroes Journey:** fixed THJ character and server detection when adding characters, and fixed direct-damage spell parsing for THJ.
+- **Timer durations (`{TS}`) are read correctly.** Durations with words were misread: "10 minutes" became a 10-second timer and "90:00" became 9 hours, and ordinary words like "soon" could start a broken timer. `{TS}` now understands "5m", "10 min", "2.5 hours", "1h30m", "1 hour 30 minutes", "28 minute(s) 1 seconds", "1:30" and "1:02:03". (Thanks, Maxx!)
+- **`{N}` captures the whole number**, not just its first digits.
+- **"Your resolution has changed!"** no longer appears on a new profile, and if your monitors turn off and come back (for example overnight), the warning now closes by itself once the screens are back to normal.
 
 ### New
 - **Pets in Combat Statistics.** Pets can now be added and assigned to their owner from the Combat Statistics screen, and Nag detects pet ownership from the log, so pet damage is credited to the right player.
