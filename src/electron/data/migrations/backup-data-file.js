@@ -2,6 +2,7 @@ const electron = require( 'electron' );
 const path = require( 'path' );
 const fs = require( 'fs' );
 const archiver = require( 'archiver' );
+const FsUtilities = require( '../../utilities/file-system' );
 
 /**
  * Backs up the given config file.
@@ -18,8 +19,7 @@ function backupDatafile( configName, onComplete ) {
         fs.mkdirSync( path.join( userDataPath, backupFolder ) );
     }
 
-    let now = new Date( Date.now() );
-    let backupFile = path.join( userDataPath, backupFolder, `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDay() + 1}-${now.getSeconds()}-${configName}-backup.zip` );
+    let backupFile = path.join( userDataPath, backupFolder, `${FsUtilities.getFileTimestamp( undefined, 'backup' )}_${configName}-backup.zip` );
     let output = fs.createWriteStream( backupFile );
     let zip = archiver( 'zip' );
 

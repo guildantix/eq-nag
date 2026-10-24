@@ -104,13 +104,20 @@ function pathPrependFilename( filePath, prefix ) {
  * Returns a filename timestamp.
  * 
  * @param {Date|undefined} time The time for the timestamp.  The current time is used if no value is provided.
- * @param {'original'|'readable'|undefined} version The version of the file.
+ * @param {'original'|'readable'|'backup'|undefined} version The version of the file.
+ *  'backup' returns a sortable date and time, e.g. 2025-08-27_135515.
  */
 function getFileTimestamp( time, version ) {
-    
+
     version = version ? version : 'original';
 
-    if ( version === 'readable' ) {
+    if ( version === 'backup' ) {
+        const now = time ? time : new Date( Date.now() );
+        const pad = n => `${n}`.padStart( 2, '0' );
+
+        return `${now.getFullYear()}-${pad( now.getMonth() + 1 )}-${pad( now.getDate() )}_${pad( now.getHours() )}${pad( now.getMinutes() )}${pad( now.getSeconds() )}`;
+
+    } else if ( version === 'readable' ) {
         const now = time ? time : new Date( Date.now() );
         
         const y = `${now.getFullYear()}`.padStart( 4, '0' );

@@ -7,6 +7,7 @@ const { AuthorModel, SharedTriggerPermissions } = require( './models/sharing-ser
 const { FctStylesModel } = require( './models/fct' );
 const { StyleProperties, LogMaintenanceRules, LogMaintenanceHistory, UserPreferencesStoreModel } = require( './models/common' );
 const archiver = require( 'archiver' );
+const FsUtilities = require( '../utilities/file-system' );
 const LogBootstrapper = require( "../log-bootstrap" );
 const { DeathRecapPreferences } = require( '../data/models/death-recap' );
 const { QuickShareAuthorListTypes } = require( '../data/models/common' );
@@ -1034,19 +1035,7 @@ class UserPreferencesStore extends Store {
                 fs.mkdirSync( dataPath );
             }
 
-            let now = new Date( );
-            const saveSettingPad = (num) => num.toString().padStart(2, '0');
-            
-            let saveSettingYear = now.getFullYear();
-            let saveSettingMonth = saveSettingPad(now.getMonth() + 1);
-            let saveSettingDay = saveSettingPad(now.getDate());
-            let saveSettingHour = saveSettingPad(now.getHours());
-            let saveSettingMinute = saveSettingPad(now.getMinutes());
-            let saveSettingSecond = saveSettingPad(now.getSeconds());
-            
-            let saveSettingTimestamp = `${saveSettingYear}-${saveSettingMonth}-${saveSettingDay}_${saveSettingHour}${saveSettingMinute}${saveSettingSecond}`;
-            
-            let filename = `${saveSettingTimestamp}_full-backup.zip`;
+            let filename = `${FsUtilities.getFileTimestamp( undefined, 'backup' )}_full-backup.zip`;
             let dataZip = path.join( this.userDataPath, filename );
             let output = fs.createWriteStream( dataZip );
             let zip = archiver( 'zip' );
