@@ -671,7 +671,7 @@ function translateShortCodesToRegex( value: string ): string {
     value = value.replace(
         // This regex pattern is the new one, from the fixed {TS} Oct -2025
         /{TS}/gi,
-        '(?<timerDuration>(?:\\b[0-9]+:[0-9]+(?::[0-9]+)?\\b|\\b[0-9]+(?:\\.[0-9]+)?\\s*(?:(?:h(?:ou)?r|min(?:ute)?|sec(?:ond)?)(?:[(]s[)]|s)?|[hms])(?![A-Za-z])(?:\\s*[0-9]+(?:\\.[0-9]+)?\\s*(?:(?:h(?:ou)?r|min(?:ute)?|sec(?:ond)?)(?:[(]s[)]|s)?|[hms])(?![A-Za-z]))*|\\b[0-9]+(?:\\.[0-9]+)?\\b))'
+        '(?<timerDuration>(?:\\b[0-9]+:[0-9]+(?::[0-9]+)?\\b|\\b[0-9]+(?:\\.[0-9]+)?\\s*(?:(?:h(?:ou)?r|min(?:ute)?|sec(?:ond)?)(?:[(]s[)]|s)?|[hms])(?![A-Za-z])(?:\\s*[0-9]+(?:\\.[0-9]+)?\\s*(?:(?:h(?:ou)?r|min(?:ute)?|sec(?:ond)?)(?:[(]s[)]|s)?|[hms])(?![A-Za-z]))*(?:\\s*[0-9]+(?:\\.[0-9]+)?\\b)?|\\b[0-9]+(?:\\.[0-9]+)?\\b))'
     );
     value = value.replace( /{C}/gi, '${Character}' );
     value = value.replace( /{S(\d*?)}/gi, ( _, n ) => `(?<S${n}>.+?)` );
