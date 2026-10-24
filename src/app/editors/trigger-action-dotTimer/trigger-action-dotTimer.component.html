@@ -59,7 +59,7 @@
             </div>
 
             <div class="card-property">
-                <div class="content-top">Timer Icon<div style="padding: 20px 15px;"><img *ngIf="action.timerIcon" [src]="action.timerIcon" (click)="openIconFileModal(action)" /></div></div>
+                <div class="content-top">Timer Icon<div style="padding: 20px 15px;"><img *ngIf="action.timerIcon" [src]="action.timerIcon | iconSrc" (click)="openIconFileModal(action)" /></div></div>
                 <div class="content-vertical content-right content-top">
                     
                     <div class="align-left"><button mat-button *ngIf="action.timerIcon == null" (click)="openIconFileModal(action)" color="accent">Select Icon File</button></div>
@@ -315,4 +315,4 @@
         </div>
     </mat-tab>
 </mat-tab-group>
-<input type="file" #iconFileSelector style="display:none;" accept="*.txt" (change)="iconFileSelected($event)" />
+<input type="file" #iconFileSelector style="display:none;" accept="image/png, image/jpeg, image/gif, image/webp, image/svg+xml, .png, .jpg, .jpeg, .gif, .webp, .svg" (change)="iconFileSelected($event)" />
