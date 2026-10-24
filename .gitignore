@@ -53,3 +53,6 @@ electron/*
 
 # Build source maps (archived locally, not committed)
 /source-maps
+
+# Visual Studio workspace data
+.vs/
