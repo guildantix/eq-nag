@@ -1,0 +1,116 @@
+name: Test build
+
+# Builds a testers-only release: Actions -> Test build -> Run workflow, pick the
+# branch and enter a pre-release version such as 0.2.27-beta.1.
+#
+# The release (tag test-<version>) is published but is neither a pre-release nor
+# the latest release, and it has no latest.yml, so no copy of Nag updates to it.
+# Hand the download link to testers.
+#
+# latest.yml and the blockmap are kept as this run's artifact (run summary ->
+# Artifacts). To roll the build out to clients that allow pre-release updates,
+# upload both files to the release and tick "Set as a pre-release". The
+# pre-release flag alone does nothing: those clients take the newest release
+# that has a latest.yml.
+#
+# Only people with write access to the repo can run this workflow.
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Pre-release version, e.g. 0.2.27-beta.1'
+        required: true
+
+permissions:
+  contents: write   # lets the built-in GITHUB_TOKEN create the release & upload assets
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    env:
+      VERSION: ${{ inputs.version }}
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    steps:
+      # A pre-release version sorts below the real release, so testers are
+      # updated to it automatically once it ships.
+      - name: Check the version
+        shell: bash
+        run: |
+          if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+-[0-9A-Za-z.-]+$ ]]; then
+            echo "::error::Use a pre-release version such as 0.2.27-beta.1 (got '$VERSION')."
+            exit 1
+          fi
+          if gh release view "test-$VERSION" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
+            echo "::error::Release test-$VERSION already exists. Use the next number."
+            exit 1
+          fi
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # extraResources references .env, which is intentionally untracked/empty.
+      - name: Ensure .env exists
+        shell: bash
+        run: touch .env
+
+      # Only for this build; nothing is committed.
+      - name: Set the test version
+        shell: bash
+        run: npm version "$VERSION" --no-git-tag-version
+
+      # Point the app at the production API (config.json.production -> config.json)
+      - name: Set production config
+        run: npm run set-production-env
+
+      - name: Build Angular (production)
+        run: npx ng build --configuration=production
+
+      - name: Build installers
+        run: npx electron-builder build --win --publish never
+
+      - name: Keep latest.yml and the blockmap
+        uses: actions/upload-artifact@v4
+        with:
+          name: update-files-${{ inputs.version }}
+          path: |
+            electron/output/latest.yml
+            electron/output/EQ-Nag-Setup-${{ inputs.version }}.exe.blockmap
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Create the testers-only release
+        shell: bash
+        run: |
+          installer="electron/output/EQ-Nag-Setup-$VERSION.exe"
+          portable="electron/output/eq_nag_portable.exe"
+          cat > notes.md <<EOF
+          Test build for testers only. Nag won't update to it automatically.
+
+          The installer isn't code-signed, so Windows SmartScreen may warn the first
+          time: click "More info", then "Run anyway". Once the real release is out,
+          this build updates to it on its own.
+
+          SHA-256:
+          - \`EQ-Nag-Setup-$VERSION.exe\`: \`$(sha256sum "$installer" | cut -d' ' -f1)\`
+          - \`eq_nag_portable.exe\`: \`$(sha256sum "$portable" | cut -d' ' -f1)\`
+
+          Built from $GITHUB_REF_NAME at $GITHUB_SHA.
+          EOF
+          gh release create "test-$VERSION" "$installer" "$portable" \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" \
+            --title "$VERSION test build (testers only)" \
+            --notes-file notes.md \
+            --latest=false
