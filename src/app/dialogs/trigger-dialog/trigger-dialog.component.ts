@@ -64,7 +64,7 @@ export class TriggerDialogComponent implements OnInit {
     }
 
     public get showReimportFromAlla(): boolean {
-        return this.model.importType != ImportTypes.None && this.model.allakhazamUrl != null;
+        return this.model.importType != ImportTypes.None && this.model.allakhazamUrl != null && this.model.externalSource === ExternalDataSources.EqSpellResources;
     }
 
     public get serviceName(): string {
