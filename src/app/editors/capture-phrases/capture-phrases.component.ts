@@ -42,7 +42,7 @@ export class CapturePhrasesComponent implements OnInit {
 
     /**
      * Tracks which phrase overlay is currently open for regex highlighting.
-     * null or -1 indicates no overlay is open.
+     * null indicates no overlay is open.
      */
     overlayOpenIndex: number | null = null;
 
@@ -517,12 +517,16 @@ export class CapturePhrasesComponent implements OnInit {
      */
     public onRegexChange(index: number, checked: boolean) {
         this.capturePhrases[index].useRegEx = checked;
-        
+
         // Close overlay if the Regex checkbox gets unchecked
         if (!checked && this.overlayOpenIndex === index) {
-            this.overlayOpenIndex = -1;
+            this.overlayOpenIndex = null;
         }
-        
+
+        // The highlight depends on useRegEx, so rebuild it for this phrase.
+        const p = this.capturePhrases[index];
+        this.highlightedPhrases[index] = getRegexHighlightedHtml(p.phrase, p.useRegEx);
+
         this.capturePhrasesChange.emit(this.capturePhrases);
     }
 
@@ -541,7 +545,7 @@ export class CapturePhrasesComponent implements OnInit {
      * Should be called whenever phrases are modified to keep highlights in sync.
      */
     private updateAllHighlights() {
-        this.highlightedPhrases = this.capturePhrases.map(p =>
+        this.highlightedPhrases = (this.capturePhrases ?? []).map(p =>
             getRegexHighlightedHtml(p.phrase, p.useRegEx)
         );
     }
@@ -591,26 +595,5 @@ export class CapturePhrasesComponent implements OnInit {
         } else {
             this.overlayOpenIndex = index;
         }
-    }
-
-
-
-
-
-
-
-
-
-
-
-    /**
-     * Handler for paste events on phrase inputs.
-     * Uses setTimeout to ensure pasted content is in the model before processing.
-     * @param index - The index of the phrase being pasted into
-     */
-    public onPaste(index: number) {
-        setTimeout(() => {
-            this.onPhraseChange(index);
-        }, 0);
     }
 }

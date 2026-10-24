@@ -1269,6 +1269,13 @@ export function getRegexHighlightedHtml(
     if ( !phrase ) return '';
     if ( !useRegEx ) return escapeHtml( phrase );
 
+    // The highlighter marks its own HTML and placeholders with '§' (§HTML§,
+    // §VAR0§, §ADVN0§). Phrases can come from shared triggers, so a '§' in
+    // the phrase must never be read as a marker: swap it for a private-use
+    // character first and turn it back into a plain '§' at the end.
+    const sectionSign = '';
+    phrase = phrase.replace( /§/g, sectionSign );
+
     // Step 1: Extract and protect advanced {N} patterns
     const { processedInput: inputAfterAdvancedN, advancedN } =
         extractAdvancedN( phrase );
@@ -1283,5 +1290,5 @@ export function getRegexHighlightedHtml(
     const highlighted = highlightRegexSyntax( processedInput );
 
     // Step 5: Restore protected content
-    return restoreProtected( highlighted, variables, advancedN );
+    return restoreProtected( highlighted, variables, advancedN ).replace( //g, '§' );
 }
