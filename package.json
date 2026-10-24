@@ -3,6 +3,7 @@
   "version": "0.2.26",
   "main": "main.js",
   "description": "An EverQuest Notification AGent",
+  "license": "MIT",
   "author": {
     "name": "Guild Antix",
     "email": "srbmmo@gmail.com"
