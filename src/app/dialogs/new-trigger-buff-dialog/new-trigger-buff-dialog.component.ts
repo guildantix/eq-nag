@@ -283,7 +283,7 @@ export class NewTriggerBuffDialogComponent implements OnInit {
             buffTimers.forEach( timer => timer.endEarlyPhrases.push( <Phrase>{
                 phraseId: nanoid(),
                 // You have been slain by a lightning warrior staticfist!
-                phrase: '^You (?:have been slain by .*!|died\\.)$',
+                phrase: '^You (?:have been slain by [^!]*!|died\\.)$',
                 useRegEx: true,
                 ignoreCase: false,
             } ) );
@@ -540,7 +540,7 @@ export class NewTriggerBuffDialogComponent implements OnInit {
             buffTimers.forEach( timer => timer.endEarlyPhrases.push( <Phrase>{
                 phraseId: nanoid(),
                 // You have been slain by a lightning warrior staticfist!
-                phrase: '^You (?:have been slain by .*!|died\\.)$',
+                phrase: '^You (?:have been slain by [^!]*!|died\\.)$',
                 useRegEx: true,
                 ignoreCase: false,
             } ) );
@@ -550,7 +550,8 @@ export class NewTriggerBuffDialogComponent implements OnInit {
             
             buffTimers.forEach( timer => timer.endEarlyPhrases.push( <Phrase>{
                 phraseId: nanoid(),
-                phrase: '^${target} (?:has been slain by .*!|died\\.)$',
+                // "dies." isn't matched: it also appears in feign death and event messages.
+                phrase: '^${target} (?:has been slain by [^!]*!|died\\.)$',
                 useRegEx: true,
                 ignoreCase: false,
             } ) );

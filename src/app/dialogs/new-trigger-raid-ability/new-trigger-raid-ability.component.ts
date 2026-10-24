@@ -13,6 +13,9 @@ import { nagId } from 'src/app/core/nag-id.util';
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const nanoid = customAlphabet( alphabet, 16 );
 
+/** Escapes regex special characters so a name is matched literally. */
+const escapeRegExp = ( value: string ): string => value.replace( /[.*+?^${}()|[\]\\]/g, '\\$&' );
+
 @Component({
     selector: 'app-new-trigger-raid-ability',
     templateUrl: 'new-trigger-raid-ability.component.html',
@@ -193,9 +196,9 @@ export class NewTriggerRaidAbilityComponent implements OnInit {
      */
     public import(): void {
         let trigger: TriggerModel;
-        const pipeListNpcsWithAbility = [...new Set(
-            this.ability.npcsWithAbility?.map( npc => npc.name.trim() )
-        )].join( '|' );
+        // The known casters as an alternation, or any name when none are known.
+        const casterNames = [ ...new Set( this.ability.npcsWithAbility?.map( npc => npc.name?.trim() ).filter( name => name ) ?? [] ) ];
+        const pipeListNpcsWithAbility = casterNames.length > 0 ? casterNames.map( escapeRegExp ).join( '|' ) : '.+?';
 
 
         if ( this.data?.trigger?.triggerId != null ) {
@@ -305,7 +308,8 @@ export class NewTriggerRaidAbilityComponent implements OnInit {
             trackOtherTimer.endEarlyPhrases = [];
             trackOtherTimer.endEarlyPhrases.push( <Phrase>{
                 phraseId: nagId(),
-                phrase: '^${target} (?:has been slain by .*!|died\\.)$',
+                // "dies." isn't matched: it also appears in feign death and event messages.
+                phrase: '^${target} (?:has been slain by [^!]*!|died\\.)$',
                 useRegEx: true,
                 ignoreCase: false,
             }, 
@@ -346,6 +350,8 @@ export class NewTriggerRaidAbilityComponent implements OnInit {
             }
             act.phrases.push( resistPhraseId );
 
+            // Recast timers deliberately don't end when you die: after a rez you
+            // still need to know when the next cast is coming.
             act.endEarlyPhrases = [];
 
 
@@ -367,7 +373,7 @@ export class NewTriggerRaidAbilityComponent implements OnInit {
                         requirePreviousPhrase: false,
                         duration: null,
                         // /^Overlord Mata Muram begins casting Mark of Death\.$/
-                        phrase: `^${npc.name} begins casting ${this.ability.name}\\.$`
+                        phrase: `^${escapeRegExp( npc.name )} begins casting ${this.ability.name}\\.$`
                     } );
                 
                     let act = <TriggerAction>{
@@ -459,7 +465,8 @@ export class NewTriggerRaidAbilityComponent implements OnInit {
             let zones = [];
             this.ability.npcsWithAbility.forEach( npc => {
                 npc.zones?.forEach( zone => {
-                    // sanitize: trim and drop anything after a colon
+                    // Allakhazam lists event zones as "Zone: Event", but the log
+                    // often uses just the zone, so keep the part before the colon.
                     let cleanZone = zone?.split(':')[0].trim();
                     if ( zones.indexOf( cleanZone ) === -1 ) {
                         zones.push( cleanZone );
@@ -536,11 +543,12 @@ export class NewTriggerRaidAbilityComponent implements OnInit {
      */
     public getRecastTimerEndEarlyPhrases( target: string ): Phrase[] {
         
+        target = escapeRegExp( target );
         let phrases: Phrase[] = [];
 
         phrases.push( <Phrase>{
             phraseId: nanoid(),
-            phrase: `^${target} (?:has been slain by .*!|died\\.)$`,
+            phrase: `^${target} (?:has been slain by [^!]*!|died\\.)$`,
             useRegEx: true,
             ignoreCase: false,
         } );
