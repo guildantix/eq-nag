@@ -221,8 +221,13 @@ export class MainComponent implements OnInit {
                 if ( updateNotesVersion == null ) {
                     // If the version seen is null, show the update notes.
                     this.showLatestUpdateNotes();
+                    return;
                 }
                 let versionCurrent = new VersionNumber( currentVersion );
+                if ( versionCurrent.prerelease ) {
+                    // Test builds have no release notes on GitHub.
+                    return;
+                }
                 let versionNotesLastSeen = new VersionNumber( updateNotesVersion );
 
                 if ( VersionNumber.CompareVersions( versionNotesLastSeen, versionCurrent ) === -1 ) {

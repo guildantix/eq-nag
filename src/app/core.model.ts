@@ -1538,18 +1538,21 @@ export class VersionNumber {
     public major: number;
     public minor: number;
     public revision: number;
+    /** True for pre-release versions, e.g. 0.2.27-beta.1, which come before 0.2.27. */
+    public prerelease: boolean;
 
     constructor( private version: string ) {
         if ( version == null )
             throw new Error( 'Version number not provided!' );
         
-        let parts = version.split( /\./gi );
-        if ( parts?.length !== 3 ) {
+        let parts = /(\d+)\.(\d+)\.(\d+)(-[0-9A-Za-z.-]+)?/.exec( version );
+        if ( !parts ) {
             throw new Error( 'Invalid version number!' );
         }
-        this.major = +parts[ 0 ];
-        this.minor = +parts[ 1 ];
-        this.revision = +parts[ 2 ];
+        this.major = +parts[ 1 ];
+        this.minor = +parts[ 2 ];
+        this.revision = +parts[ 3 ];
+        this.prerelease = !!parts[ 4 ];
     }
 
     /**
@@ -1565,8 +1568,9 @@ export class VersionNumber {
         let bMn = b.minor * 1000;
         let aRv = a.revision;
         let bRv = b.revision;
-        let aV = aMj + aMn + aRv;
-        let bV = bMj + bMn + bRv;
+        // A pre-release sorts just below its release.
+        let aV = ( aMj + aMn + aRv ) * 2 - ( a.prerelease ? 1 : 0 );
+        let bV = ( bMj + bMn + bRv ) * 2 - ( b.prerelease ? 1 : 0 );
         
         if ( aV < bV ) {
             return -1;

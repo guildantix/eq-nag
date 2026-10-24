@@ -324,17 +324,16 @@ class Version {
             revision: +bev.groups.revision,
         };
         
-        let avMajor = av.major === bv.major ? 0 : av.major < bv.major ? -1 : 1;
-        let avMinor = av.minor === bv.minor ? 0 : av.minor < bv.minor ? -1 : 1;
-        let avRevision = av.revision === bv.revision ? 0 : av.revision < bv.revision ? -1 : 1;
-
-        if ( avMajor === 0 && avMinor === 0 && avRevision === 0 ) {
-            return 0;
-        } else if ( avMajor >= 0 && avMinor >= 0 && avRevision >= 0 ) {
-            return 1;
-        } else {
-            return -1;
+        for ( const part of [ 'major', 'minor', 'revision' ] ) {
+            if ( av[ part ] !== bv[ part ] ) {
+                return av[ part ] < bv[ part ] ? -1 : 1;
+            }
         }
+
+        // A pre-release (e.g. 0.2.27-beta.1) comes before its release (0.2.27).
+        let aPre = /^v?\d+\.\d+\.\d+-/.test( a );
+        let bPre = /^v?\d+\.\d+\.\d+-/.test( b );
+        return aPre === bPre ? 0 : aPre ? -1 : 1;
     }
 
 }
