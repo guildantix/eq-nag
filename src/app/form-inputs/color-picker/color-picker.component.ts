@@ -33,26 +33,6 @@ export class ColorPickerComponent implements OnInit, ControlValueAccessor {
 
 
     /**
-     * Opens the native color picker via an anchor/link.
-     *
-     * @param {Event} event - The click event triggered by the link.
-     * @returns {void}
-     */
-    openColorPickerLink( event: Event ) {
-        event.preventDefault();
-        this.openNativeColorPicker( event );
-    }
-
-
-
-
-
-
-
-
-
-
-    /**
      * Opens the native color picker input element.
      *
      * @param {Event} event - The click event that triggered opening the color picker.
@@ -61,17 +41,10 @@ export class ColorPickerComponent implements OnInit, ControlValueAccessor {
     openNativeColorPicker( event: Event ) {
         event.preventDefault();
 
-        let colorToSet = this.manualColorInput;
-
-        if ( !colorToSet && this.value ) {
-            colorToSet = this.value.toHex();
-        }
-
-        if ( !colorToSet ) {
-            colorToSet = '#FFFFFF';
-        }
-
-        this.nativeColorInput.nativeElement.value = colorToSet;
+        // The native picker only accepts #rrggbb, so drop the alpha from
+        // Nag's #rrggbbaa value; otherwise it ignores the value and opens on
+        // black.
+        this.nativeColorInput.nativeElement.value = ( this.value?.toHex() ?? '#ffffff' ).slice( 0, 7 );
         this.nativeColorInput.nativeElement.click();
     }
 
@@ -91,13 +64,13 @@ export class ColorPickerComponent implements OnInit, ControlValueAccessor {
      * @returns {void}
      */
     onNativeColorPicked( event: Event ) {
-        const input = event.target as HTMLInputElement;
-        const colorValue = input.value; // format: #RRGGBB
+        // The native picker returns #rrggbb; keep the current transparency.
+        const picked = ColorUtility.FromHex( ( event.target as HTMLInputElement ).value );
+        picked.a = this.value?.a ?? 1;
+        const hex = picked.toHex();
 
-        this.manualColorInput = colorValue;
-        this.previewColorRgb = colorValue;
-
-        this.onManualColorChange( colorValue );
+        this.manualColorInput = hex;
+        this.onManualColorChange( hex );
     }
 
 
