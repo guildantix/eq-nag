@@ -11,7 +11,7 @@ const customAlphabet = require( 'nanoid' ).customAlphabet;
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const nanoid = customAlphabet( alphabet, 16 );
 
-const currentTriggerDbVersion = 96;
+const currentTriggerDbVersion = 97;
 
 
 
@@ -992,6 +992,28 @@ function executeDataMigration( data ) {
         } );
 
         data.version = 96;
+
+    }
+    if ( data.version < 97 ) {
+
+        // Live servers now report NPC and pet deaths as "<name> was slain by
+        // <slayer>!"; players are still "has been slain by". Update End Early
+        // death phrases (e.g. from the DoT, buff and raid generators) so timers
+        // end on both. Only regex phrases about a target are changed: "You have
+        // been slain" phrases and phrases that already handle "was" are left alone.
+        data?.triggers?.forEach( trigger => {
+            trigger?.actions?.forEach( action => {
+                action?.endEarlyPhrases?.forEach( phrase => {
+                    const text = phrase?.phrase;
+                    if ( phrase?.useRegEx === true && typeof text === 'string' && text.startsWith( '^' ) && !text.startsWith( '^You ' ) &&
+                        text.includes( 'has been slain by' ) && !text.includes( 'was slain by' ) && !text.includes( '(?:has been|was)' ) ) {
+                        phrase.phrase = text.replace( 'has been slain by', '(?:has been|was) slain by' );
+                    }
+                } );
+            } );
+        } );
+
+        data.version = 97;
 
     }
 

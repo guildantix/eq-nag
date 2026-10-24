@@ -551,7 +551,7 @@ export class NewTriggerBuffDialogComponent implements OnInit {
             buffTimers.forEach( timer => timer.endEarlyPhrases.push( <Phrase>{
                 phraseId: nanoid(),
                 // "dies." isn't matched: it also appears in feign death and event messages.
-                phrase: '^${target} (?:has been slain by [^!]*!|died\\.)$',
+                phrase: '^${target} (?:(?:has been|was) slain by [^!]*!|died\\.)$',
                 useRegEx: true,
                 ignoreCase: false,
             } ) );

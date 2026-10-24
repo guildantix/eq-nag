@@ -309,7 +309,7 @@ export class NewTriggerRaidAbilityComponent implements OnInit {
             trackOtherTimer.endEarlyPhrases.push( <Phrase>{
                 phraseId: nagId(),
                 // "dies." isn't matched: it also appears in feign death and event messages.
-                phrase: '^${target} (?:has been slain by [^!]*!|died\\.)$',
+                phrase: '^${target} (?:(?:has been|was) slain by [^!]*!|died\\.)$',
                 useRegEx: true,
                 ignoreCase: false,
             }, 
@@ -548,7 +548,7 @@ export class NewTriggerRaidAbilityComponent implements OnInit {
 
         phrases.push( <Phrase>{
             phraseId: nanoid(),
-            phrase: `^${target} (?:has been slain by [^!]*!|died\\.)$`,
+            phrase: `^${target} (?:(?:has been|was) slain by [^!]*!|died\\.)$`,
             useRegEx: true,
             ignoreCase: false,
         } );
