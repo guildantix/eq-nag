@@ -8,6 +8,11 @@ name: Test build
 # release, and it has no latest.yml, so no copy of Nag updates to it.  Hand the
 # download link to testers; once 0.2.27 is out, their build updates to it.
 #
+# It has two portables and no installer:
+#   eq_nag_portable.exe       the same as a release build (no performance taps)
+#   eq_nag_portable-perf.exe  the same code, always timing itself; it writes
+#                             perf-report.json (tools/perf/README.md)
+#
 # Only people with write access to the repo can run this workflow.
 
 on:
@@ -40,11 +45,33 @@ jobs:
         shell: bash
         run: echo "VERSION=$(python .github/scripts/nag-release.py version test | tr -d '\r')" >> "$GITHUB_ENV"
 
-      - name: Build
+      # Exactly like a release build: the performance taps are removed.
+      - name: Build the portable
         uses: ./.github/actions/build-nag
         with:
           version: ${{ env.VERSION }}
-          perf-taps: 'true'   # testers can run with --perf (tools/perf/README.md)
+          perf-taps: 'false'
+          win-targets: portable
+
+      - name: Keep the portable
+        shell: bash
+        run: |
+          mkdir test-release
+          mv electron/output/eq_nag_portable.exe test-release/eq_nag_portable.exe
+
+      # The same build again with the performance taps, switched on by default.
+      - name: Build the perf portable
+        shell: bash
+        run: |
+          git checkout -- src/electron/utilities/perf-taps.js
+          echo '{}' > src/electron/utilities/perf-always-on.json
+          rm -rf electron/output
+          npx electron-builder build --win portable --publish never
+          if ! npx asar list electron/output/win-unpacked/resources/app.asar | grep -q 'perf-always-on'; then
+            echo "::error::The perf portable doesn't contain the performance taps."
+            exit 1
+          fi
+          mv electron/output/eq_nag_portable.exe test-release/eq_nag_portable-perf.exe
 
       # A GitHub-signed record that these files were built by this workflow
       # from this commit (see "Is this download safe?" in the README).
@@ -52,24 +79,29 @@ jobs:
         uses: actions/attest-build-provenance@v4
         with:
           subject-path: |
-            electron/output/EQ-Nag-Setup-${{ env.VERSION }}.exe
-            electron/output/eq_nag_portable.exe
+            test-release/eq_nag_portable.exe
+            test-release/eq_nag_portable-perf.exe
 
       - name: Create the testers-only release
         shell: bash
         run: |
-          installer="electron/output/EQ-Nag-Setup-$VERSION.exe"
-          portable="electron/output/eq_nag_portable.exe"
+          portable="test-release/eq_nag_portable.exe"
+          perf="test-release/eq_nag_portable-perf.exe"
           cat > notes.md <<EOF
           Test build for testers only. Nag won't update to it automatically.
 
-          The installer isn't code-signed, so Windows SmartScreen may warn the first
-          time: click "More info", then "Run anyway". Once the real release is out,
-          this build updates to it on its own.
+          - **eq_nag_portable.exe**: the build to test.
+          - **eq_nag_portable-perf.exe**: the same build, timing itself while it runs.
+            Use it when Nag seems slow: run it the same way, then send
+            \`perf-report.json\` from \`%APPDATA%\\electron-angular-eq-parse\`. It
+            contains timings and trigger names, nothing else.
+
+          These aren't code-signed, so Windows SmartScreen may warn the first time:
+          click "More info", then "Run anyway".
 
           SHA-256:
-          - \`EQ-Nag-Setup-$VERSION.exe\`: \`$(sha256sum "$installer" | cut -d' ' -f1)\`
           - \`eq_nag_portable.exe\`: \`$(sha256sum "$portable" | cut -d' ' -f1)\`
+          - \`eq_nag_portable-perf.exe\`: \`$(sha256sum "$perf" | cut -d' ' -f1)\`
 
           Built from $GITHUB_REF_NAME at $GITHUB_SHA.
           EOF
@@ -78,7 +110,7 @@ jobs:
           # so remember the current latest release and set it back afterward.
           previous_latest=$(gh release view --repo "$GITHUB_REPOSITORY" --json tagName --jq .tagName 2>/dev/null || true)
 
-          gh release create "test-$VERSION" "$installer" "$portable" \
+          gh release create "test-$VERSION" "$portable" "$perf" \
             --repo "$GITHUB_REPOSITORY" \
             --target "$GITHUB_SHA" \
             --title "$VERSION test build (testers only)" \

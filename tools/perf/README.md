@@ -59,10 +59,14 @@ seconds, with each process's CPU time.
 
 The timing code itself is `perf-taps.js`. **Release and Pre-release builds
 delete it** and check the finished app doesn't contain it
-(`.github/actions/build-nag`). Test builds keep it, so a tester can run
-`eq_nag_portable.exe --perf` and send you `perf-report.json` from
-`%APPDATA%\electron-angular-eq-parse`. It contains timings and trigger
-names, nothing else.
+(`.github/actions/build-nag`).
+
+Each test build has two portables: `eq_nag_portable.exe`, built exactly like
+a release (no taps), and `eq_nag_portable-perf.exe`, the same code with the
+taps switched on by default (the workflow adds `perf-always-on.json`). A
+tester who sees Nag being slow runs the perf portable the same way and sends
+you `perf-report.json` from `%APPDATA%\electron-angular-eq-parse`. It
+contains timings and trigger names, nothing else.
 
 `--perf` itself adds a little work: in a raid replay, about 1.5% of one core
 on top of ~7%. Triggers are timed on one log line in ten (and scaled up) to

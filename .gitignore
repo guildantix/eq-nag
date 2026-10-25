@@ -57,3 +57,5 @@ electron/*
 # Visual Studio workspace data
 .vs/
 __pycache__/
+# Created only by the Test build workflow for its perf portable.
+src/electron/utilities/perf-always-on.json

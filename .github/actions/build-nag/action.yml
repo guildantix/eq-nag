@@ -9,6 +9,10 @@ inputs:
     description: "'true' keeps the performance taps (src/electron/utilities/perf-taps.js). Only test builds keep them; Release and Pre-release builds never ship them."
     required: false
     default: 'false'
+  win-targets:
+    description: Windows targets to build, e.g. "nsis portable" (installer and portable) or "portable".
+    required: false
+    default: 'nsis portable'
 
 runs:
   using: composite
@@ -51,14 +55,16 @@ runs:
     # The workflows create the GitHub release themselves.
     - name: Build installers
       shell: bash
-      run: npx electron-builder build --win --publish never
+      env:
+        TARGETS: ${{ inputs.win-targets }}
+      run: npx electron-builder build --win $TARGETS --publish never
 
     - name: Check the performance taps aren't in the app
       if: inputs.perf-taps != 'true'
       shell: bash
       run: |
-        if npx asar list electron/output/win-unpacked/resources/app.asar | grep -i 'perf-taps'; then
-          echo "::error::perf-taps.js is in the built app, but this build must not include the performance taps."
+        if npx asar list electron/output/win-unpacked/resources/app.asar | grep -iE 'perf-taps|perf-always-on'; then
+          echo "::error::The performance taps are in the built app, but this build must not include them."
           exit 1
         fi
         echo "The performance taps aren't in the app."

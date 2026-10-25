@@ -2,7 +2,8 @@
 //
 // The timing code lives in perf-taps.js, which Release and Pre-release builds
 // remove (see .github/actions/build-nag).  Without it, or when Nag isn't
-// started with --perf, everything here is a no-op: callers check
+// started with --perf (or built with perf-always-on.json, as the Test build
+// workflow's perf portable is), everything here is a no-op: callers check
 // `perf.enabled` (a constant) before timing anything.
 //
 // Usage:
@@ -17,7 +18,15 @@
 
 let taps = null;
 
-if ( process.argv.includes( '--perf' ) ) {
+// The perf test build ships perf-always-on.json so testers don't need --perf.
+let alwaysOn = false;
+try {
+    alwaysOn = !!require( './perf-always-on.json' );
+} catch {
+    // Not a perf build.
+}
+
+if ( alwaysOn || process.argv.includes( '--perf' ) ) {
     // Child processes (log watchers, overlays) inherit this.
     process.env.NAG_PERF = '1';
 }
