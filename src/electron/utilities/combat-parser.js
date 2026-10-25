@@ -1390,12 +1390,14 @@ class CombatParser {
             }
 
             if ( !petAssigned ) {
-                let petLeader = executCombatRgx( combatRgx.PetLeader, lines[ i ] ) || executCombatRgx( combatRgx.PetOwner, lines[ i ] );
+                // PetOwner is only tried on lines that can match: this runs on every log line.
+                let petLeader = executCombatRgx( combatRgx.PetLeader, lines[ i ] ) ||
+                    ( lines[ i ].includes( ' claims ownership of ' ) ? executCombatRgx( combatRgx.PetOwner, lines[ i ] ) : null );
                 if ( petLeader !== null && petLeader.groups != null && petLeader.groups.player != null && petLeader.groups.pet != null ) {
                     const ownerName = petLeader.groups.player;
                     petName = petLeader.groups.pet;
 
-                    this._addPet( petName, ownerName );
+                    this.addPet( petName, ownerName );
 
                 }
             }
