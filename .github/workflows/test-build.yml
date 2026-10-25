@@ -7,11 +7,8 @@ name: Test build
 # the latest release, and it has no latest.yml, so no copy of Nag updates to it.
 # Hand the download link to testers.
 #
-# latest.yml and the blockmap are kept as this run's artifact (run summary ->
-# Artifacts). To roll the build out to clients that allow pre-release updates,
-# upload both files to the release and tick "Set as a pre-release". The
-# pre-release flag alone does nothing: those clients take the newest release
-# that has a latest.yml.
+# After testing, release as usual: push a v<version> tag (release.yml), publish
+# it as a pre-release, then bump the version for the full (Latest) release.
 #
 # Only people with write access to the repo can run this workflow.
 
@@ -79,16 +76,6 @@ jobs:
 
       - name: Build installers
         run: npx electron-builder build --win --publish never
-
-      - name: Keep latest.yml and the blockmap
-        uses: actions/upload-artifact@v6
-        with:
-          name: update-files-${{ inputs.version }}
-          path: |
-            electron/output/latest.yml
-            electron/output/EQ-Nag-Setup-${{ inputs.version }}.exe.blockmap
-          if-no-files-found: error
-          retention-days: 90
 
       - name: Create the testers-only release
         shell: bash
