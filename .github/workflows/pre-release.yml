@@ -1,0 +1,56 @@
+name: Pre-release
+
+# Builds the next version and puts it in a draft pre-release:
+# Actions -> Pre-release -> Run workflow.
+#
+# The draft lists the app changes since the last published release under
+# "Changes to write up".  Rewrite them, add details and screenshots, then
+# click Publish release (it's already labeled Pre-release).  Copies of Nag
+# that allow pre-release updates install it automatically.
+#
+# Running it again before publishing rebuilds the same version from the newer
+# code and adds only the new changes; your edits to the notes are kept.
+#
+# Only people with write access to the repo can run this workflow.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write   # lets the built-in GITHUB_TOKEN create the release & upload assets
+
+# One release workflow at a time, so two runs can't pick the same version.
+concurrency:
+  group: nag-release
+
+jobs:
+  build:
+    runs-on: windows-2022   # windows-latest has Visual Studio 2026, which node-gyp cannot use yet
+
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      PYTHONUTF8: 1
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0   # full history and tags, for the version and the change list
+
+      - name: Choose the version
+        shell: bash
+        run: echo "VERSION=$(python .github/scripts/nag-release.py version pre | tr -d '\r')" >> "$GITHUB_ENV"
+
+      - name: Build
+        uses: ./.github/actions/build-nag
+        with:
+          version: ${{ env.VERSION }}
+
+      - name: Create or update the draft pre-release
+        shell: bash
+        run: |
+          python .github/scripts/nag-release.py draft pre "$VERSION" "$GITHUB_SHA" \
+            "electron/output/EQ-Nag-Setup-$VERSION.exe" \
+            "electron/output/EQ-Nag-Setup-$VERSION.exe.blockmap" \
+            electron/output/eq_nag_portable.exe \
+            electron/output/latest.yml

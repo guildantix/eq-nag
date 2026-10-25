@@ -56,3 +56,4 @@ electron/*
 
 # Visual Studio workspace data
 .vs/
+__pycache__/

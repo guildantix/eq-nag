@@ -1,57 +1,67 @@
 name: Release
 
-# Cut a release by pushing a version tag, e.g.:
-#   git tag v0.2.27 && git push origin v0.2.27
+# Releases the latest pre-release to everyone: Actions -> Release -> Run workflow.
 #
-# CI builds the Windows installers and uploads them to a DRAFT GitHub Release.
-# A maintainer then edits the draft to add release notes and clicks "Publish".
-# electron-updater only sees PUBLISHED releases, so users never get pointed at
-# a half-uploaded draft.
+# Rebuilds the code of the latest published pre-release under the next version
+# number, so what ships is exactly what pre-release users ran.  The draft is
+# filled with the notes of every pre-release since the last full release.
+# Review it, then click Publish release (it's already labeled Latest); every
+# copy of Nag then updates to it.
 #
-# Only maintainers should be able to push tags — enforce this with a tag
-# protection rule (Settings -> Tags) or branch/ruleset protections in GitHub.
+# Only people with write access to the repo can run this workflow.
 
 on:
-  push:
-    tags:
-      - 'v*'
+  workflow_dispatch:
 
 permissions:
   contents: write   # lets the built-in GITHUB_TOKEN create the release & upload assets
+
+# One release workflow at a time, so two runs can't pick the same version.
+concurrency:
+  group: nag-release
 
 jobs:
   build:
     runs-on: windows-2022   # windows-latest has Visual Studio 2026, which node-gyp cannot use yet
 
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      PYTHONUTF8: 1
+
     steps:
       - name: Checkout
         uses: actions/checkout@v5
-
-      - name: Setup Node
-        uses: actions/setup-node@v5
         with:
-          node-version: 18
-          cache: npm
+          fetch-depth: 0   # tags, to find the pre-release
 
-      - name: Install dependencies
-        run: npm ci
-
-      # extraResources references .env, which is intentionally untracked/empty.
-      - name: Ensure .env exists
+      # The helper script and build action come from this branch; the app code
+      # comes from the pre-release.
+      - name: Choose the version and the pre-release to rebuild
         shell: bash
-        run: touch .env
+        run: |
+          cp -r .github "$RUNNER_TEMP/nag-github"
+          echo "VERSION=$(python .github/scripts/nag-release.py version release | tr -d '\r')" >> "$GITHUB_ENV"
+          read -r source_tag source_sha <<< "$(python .github/scripts/nag-release.py release-source | tr -d '\r')"
+          echo "SOURCE_TAG=$source_tag" >> "$GITHUB_ENV"
+          echo "SOURCE_SHA=$source_sha" >> "$GITHUB_ENV"
+          echo "Releasing the code of $source_tag ($source_sha)"
 
-      # Point the app at the production API (config.json.production -> config.json)
-      - name: Set production config
-        run: npm run set-production-env
+      - name: Switch to the pre-release's code
+        shell: bash
+        run: |
+          git checkout --force "$SOURCE_SHA"
+          rm -rf .github && cp -r "$RUNNER_TEMP/nag-github" .github
 
-      - name: Build Angular (production)
-        run: npx ng build --configuration=production
+      - name: Build
+        uses: ./.github/actions/build-nag
+        with:
+          version: ${{ env.VERSION }}
 
-      # Build installers and publish them to a draft GitHub Release.
-      # electron-builder reads GH_TOKEN and the publish target from package.json
-      # (build.win.publish -> guildantix/eq-nag, releaseType: draft).
-      - name: Build & publish (draft release)
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: npx electron-builder build --win --publish always
+      - name: Create or update the draft release
+        shell: bash
+        run: |
+          python .github/scripts/nag-release.py draft release "$VERSION" "$SOURCE_SHA" \
+            "electron/output/EQ-Nag-Setup-$VERSION.exe" \
+            "electron/output/EQ-Nag-Setup-$VERSION.exe.blockmap" \
+            electron/output/eq_nag_portable.exe \
+            electron/output/latest.yml

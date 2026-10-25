@@ -1,81 +1,47 @@
 name: Test build
 
-# Builds a testers-only release: Actions -> Test build -> Run workflow, pick the
-# branch and enter a pre-release version such as 0.2.27-beta.1.
+# Builds a testers-only release: Actions -> Test build -> Run workflow.
 #
-# The release (tag test-<version>) is published but is neither a pre-release nor
-# the latest release, and it has no latest.yml, so no copy of Nag updates to it.
-# Hand the download link to testers.
-#
-# After testing, release as usual: push a v<version> tag (release.yml), publish
-# it as a pre-release, then bump the version for the full (Latest) release.
+# The version is chosen automatically: the next build number with a beta
+# suffix, e.g. 0.2.27-beta.1, then 0.2.27-beta.2.  The release (tag
+# test-<version>) is published but is neither a pre-release nor the latest
+# release, and it has no latest.yml, so no copy of Nag updates to it.  Hand the
+# download link to testers; once 0.2.27 is out, their build updates to it.
 #
 # Only people with write access to the repo can run this workflow.
 
 on:
   workflow_dispatch:
-    inputs:
-      version:
-        description: 'Pre-release version, e.g. 0.2.27-beta.1'
-        required: true
 
 permissions:
   contents: write   # lets the built-in GITHUB_TOKEN create the release & upload assets
+
+# One release workflow at a time, so two runs can't pick the same version.
+concurrency:
+  group: nag-release
 
 jobs:
   build:
     runs-on: windows-2022   # windows-latest has Visual Studio 2026, which node-gyp cannot use yet
 
     env:
-      VERSION: ${{ inputs.version }}
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      PYTHONUTF8: 1
 
     steps:
-      # A pre-release version sorts below the real release, so testers are
-      # updated to it automatically once it ships.
-      - name: Check the version
-        shell: bash
-        run: |
-          if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+-[0-9A-Za-z.-]+$ ]]; then
-            echo "::error::Use a pre-release version such as 0.2.27-beta.1 (got '$VERSION')."
-            exit 1
-          fi
-          if gh release view "test-$VERSION" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
-            echo "::error::Release test-$VERSION already exists. Use the next number."
-            exit 1
-          fi
-
       - name: Checkout
         uses: actions/checkout@v5
-
-      - name: Setup Node
-        uses: actions/setup-node@v5
         with:
-          node-version: 18
-          cache: npm
+          fetch-depth: 0   # tags, to work out the version
 
-      - name: Install dependencies
-        run: npm ci
-
-      # extraResources references .env, which is intentionally untracked/empty.
-      - name: Ensure .env exists
+      - name: Choose the version
         shell: bash
-        run: touch .env
+        run: echo "VERSION=$(python .github/scripts/nag-release.py version test | tr -d '\r')" >> "$GITHUB_ENV"
 
-      # Only for this build; nothing is committed.
-      - name: Set the test version
-        shell: bash
-        run: npm version "$VERSION" --no-git-tag-version
-
-      # Point the app at the production API (config.json.production -> config.json)
-      - name: Set production config
-        run: npm run set-production-env
-
-      - name: Build Angular (production)
-        run: npx ng build --configuration=production
-
-      - name: Build installers
-        run: npx electron-builder build --win --publish never
+      - name: Build
+        uses: ./.github/actions/build-nag
+        with:
+          version: ${{ env.VERSION }}
 
       - name: Create the testers-only release
         shell: bash
@@ -115,4 +81,4 @@ jobs:
             echo "::error::test-$VERSION is marked as the latest release. Edit the previous release and set its Release label to Latest."
             exit 1
           fi
-          echo "Latest release is still $now_latest."
+          echo "Test build $VERSION is ready: https://github.com/$GITHUB_REPOSITORY/releases/tag/test-$VERSION"

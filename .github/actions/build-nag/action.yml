@@ -1,0 +1,45 @@
+name: Build Nag
+description: Builds the Windows installer and portable exe for the given version (set for this build only; nothing is committed).
+
+inputs:
+  version:
+    description: The version to build, e.g. 0.2.27 or 0.2.27-beta.1
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Setup Node
+      uses: actions/setup-node@v5
+      with:
+        node-version: 18
+        cache: npm
+
+    - name: Install dependencies
+      shell: bash
+      run: npm ci
+
+    # extraResources references .env, which is intentionally untracked/empty.
+    - name: Ensure .env exists
+      shell: bash
+      run: touch .env
+
+    - name: Set the version
+      shell: bash
+      env:
+        VERSION: ${{ inputs.version }}
+      run: npm version "$VERSION" --no-git-tag-version --allow-same-version
+
+    # Point the app at the production API (config.json.production -> config.json)
+    - name: Set production config
+      shell: bash
+      run: npm run set-production-env
+
+    - name: Build Angular (production)
+      shell: bash
+      run: npx ng build --configuration=production
+
+    # The workflows create the GitHub release themselves.
+    - name: Build installers
+      shell: bash
+      run: npx electron-builder build --win --publish never
