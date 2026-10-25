@@ -53,11 +53,13 @@ jobs:
           perf-taps: 'false'
           win-targets: portable
 
+      # Outside the project folder: packaging includes every file in it.
       - name: Keep the portable
         shell: bash
         run: |
-          mkdir test-release
-          mv electron/output/eq_nag_portable.exe test-release/eq_nag_portable.exe
+          out="$(cygpath -u "$RUNNER_TEMP")/test-release"
+          mkdir -p "$out"
+          mv electron/output/eq_nag_portable.exe "$out/eq_nag_portable.exe"
 
       # The same build again with the performance taps, switched on by default.
       - name: Build the perf portable
@@ -71,7 +73,11 @@ jobs:
             echo "::error::The perf portable doesn't contain the performance taps."
             exit 1
           fi
-          mv electron/output/eq_nag_portable.exe test-release/eq_nag_portable-perf.exe
+          if npx asar list electron/output/win-unpacked/resources/app.asar | grep -qi 'eq_nag_portable'; then
+            echo "::error::The perf portable contains another portable; keep build outputs outside the project folder."
+            exit 1
+          fi
+          mv electron/output/eq_nag_portable.exe "$(cygpath -u "$RUNNER_TEMP")/test-release/eq_nag_portable-perf.exe"
 
       # A GitHub-signed record that these files were built by this workflow
       # from this commit (see "Is this download safe?" in the README).
@@ -79,14 +85,14 @@ jobs:
         uses: actions/attest-build-provenance@v4
         with:
           subject-path: |
-            test-release/eq_nag_portable.exe
-            test-release/eq_nag_portable-perf.exe
+            ${{ runner.temp }}/test-release/eq_nag_portable.exe
+            ${{ runner.temp }}/test-release/eq_nag_portable-perf.exe
 
       - name: Create the testers-only release
         shell: bash
         run: |
-          portable="test-release/eq_nag_portable.exe"
-          perf="test-release/eq_nag_portable-perf.exe"
+          portable="$(cygpath -u "$RUNNER_TEMP")/test-release/eq_nag_portable.exe"
+          perf="$(cygpath -u "$RUNNER_TEMP")/test-release/eq_nag_portable-perf.exe"
           cat > notes.md <<EOF
           Test build for testers only. Nag won't update to it automatically.
 
