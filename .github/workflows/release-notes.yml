@@ -1,0 +1,91 @@
+name: Release notes
+
+# Adds a "Changes to write up" list to the draft release for a version, built
+# from the commits that changed the app (src/ and main.js) since the previous
+# v* tag: Actions -> Release notes -> Run workflow, enter e.g. 0.2.27.
+#
+# Rewrite or delete the generated lines as you write the real notes; your text
+# is never changed. Running it again only adds commits made since the last run
+# (tracked by a hidden marker at the end of the notes). If no draft exists for
+# v<version>, an empty draft is created.
+#
+# Only people with write access to the repo can run this workflow.
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version, e.g. 0.2.27'
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  notes:
+    runs-on: ubuntu-latest
+
+    env:
+      VERSION: ${{ inputs.version }}
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    steps:
+      - name: Check the version
+        run: |
+          if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+            echo "::error::Use a version such as 0.2.27 (got '$VERSION')."
+            exit 1
+          fi
+
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0   # full history and tags, to find the previous release
+
+      - name: Update the draft release
+        run: |
+          python3 - <<'EOF'
+          import json, os, re, subprocess
+
+          version = os.environ['VERSION']
+          tag = f'v{version}'
+          repo = os.environ['GITHUB_REPOSITORY']
+          head = subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip()
+          marker_re = re.compile(r'\n*<!-- generated through ([0-9a-f]{40}) -->\s*$')
+
+          def gh(*args, data=None):
+              out = subprocess.check_output(['gh', 'api', *args], input=json.dumps(data) if data else None, text=True)
+              return json.loads(out) if out.strip() else None
+
+          # Drafts have no git tag yet, so look the draft up in the release list.
+          releases = [r for page in gh('--paginate', '--slurp', f'repos/{repo}/releases?per_page=100') for r in page]
+          draft = next((r for r in releases if r['tag_name'] == tag and r['draft']), None)
+          if draft is None and any(r['tag_name'] == tag for r in releases):
+              raise SystemExit(f'::error::{tag} is already published; nothing to update.')
+          body = (draft or {}).get('body') or ''
+
+          # Start after the last run, or else after the previous release tag.
+          marker = marker_re.search(body)
+          if marker:
+              since = marker.group(1)
+              body = body[:marker.start()]
+          else:
+              since = subprocess.check_output(['git', 'describe', '--tags', '--abbrev=0', '--match', 'v*', '--exclude', tag, 'HEAD'], text=True).strip()
+
+          log = subprocess.check_output(['git', 'log', '--no-merges', '--reverse', '--format=%s%x1f%an', f'{since}..HEAD', '--', 'src', 'main.js'], text=True, encoding='utf-8')
+          lines = []
+          for entry in log.splitlines():
+              subject, author = entry.split('\x1f')
+              lines.append(f'- {subject}' + ( '' if author == 'Antix Guild' else f' ({author})' ))
+
+          if lines:
+              heading = '### Changes to write up' if not marker else '### More changes to write up'
+              body = body.rstrip() + ( '\n\n' if body.strip() else '' ) + heading + '\n' + '\n'.join(lines)
+          body = body.rstrip() + f'\n\n<!-- generated through {head} -->\n'
+
+          if draft:
+              gh('-X', 'PATCH', f'repos/{draft["url"].split("/repos/")[1]}', '--input', '-', data={'body': body})
+          else:
+              gh('-X', 'POST', f'repos/{repo}/releases', '--input', '-', data={'tag_name': tag, 'target_commitish': 'master', 'name': tag, 'body': body, 'draft': True})
+          print(f'Added {len(lines)} change(s) since {since[:12]} to the {tag} draft.')
+          EOF
