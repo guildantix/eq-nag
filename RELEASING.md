@@ -36,6 +36,23 @@ The release is built from the exact code of the latest pre-release, so it
 ships what pre-release users have been running. Every copy of Nag updates to
 it.
 
+## Starting a new major or minor version
+
+The workflows only ever raise the last number. The first two (the "series",
+e.g. `0.2`) come from the `version` field in `package.json`; the last number
+there is ignored. To start a new series, for example for a big update:
+
+1. Change `"version"` in `package.json` to the new series with a `0` at the
+   end, e.g. `"0.3.0"` (or `"1.0.0"` for a new major version), and commit it
+   to `master`.
+2. Run the workflows as usual. Numbering starts over in the new series:
+   the first pre-release is `0.3.1`, the next build `0.3.2`, and so on, and
+   test builds become `0.3.1-beta.1`, etc.
+
+Only ever move the series up: Nag installs updates with a higher version,
+so a lower series would never reach anyone. The numbering logic lives in
+`.github/scripts/nag-release.py`.
+
 ## Good to know
 
 - The installer isn't code-signed, so Windows SmartScreen may warn on first
