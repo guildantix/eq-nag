@@ -17,6 +17,7 @@ import { NewTriggerFolderDialogComponent } from './new-trigger-folder-dialog/new
 import { SelectTriggerFolderDialogComponent } from './select-trigger-folder-dialog/select-trigger-folder-dialog.component';
 import { ContextMenuModule } from '../context-menu/context-menu.module';
 import { InputDialogComponent } from './input-dialog/input-dialog.component';
+import { EqsrUrlDialogComponent } from './eqsr-url-dialog/eqsr-url-dialog.component';
 import { NotificationDialogComponent } from './notification-dialog/notification-dialog.component';
 import { EditorsModule } from '../editors/editors.module';
 import { AutoCompleteDialogComponent } from './autocomplete-dialog/autocomplete-dialog.component';
@@ -62,6 +63,7 @@ import { TriggerHotkeyDialogComponent } from './trigger-hotkey-dialog/trigger-ho
         NewTriggerFolderDialogComponent,
         SelectTriggerFolderDialogComponent,
         InputDialogComponent,
+        EqsrUrlDialogComponent,
         NotificationDialogComponent,
         AutoCompleteDialogComponent,
         NewTriggerRaidAbilityComponent,
@@ -89,6 +91,7 @@ import { TriggerHotkeyDialogComponent } from './trigger-hotkey-dialog/trigger-ho
         NewTriggerFolderDialogComponent,
         SelectTriggerFolderDialogComponent,
         InputDialogComponent,
+        EqsrUrlDialogComponent,
         NotificationDialogComponent,
         AutoCompleteDialogComponent,
         NewTriggerRaidAbilityComponent,

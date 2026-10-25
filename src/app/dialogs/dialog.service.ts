@@ -11,6 +11,7 @@ import { SelectIconDialogComponent } from './select-icon-dialog/select-icon-dial
 import { NewTriggerFolderDialogComponent } from './new-trigger-folder-dialog/new-trigger-folder-dialog.component';
 import { SelectTriggerFolderDialogComponent } from './select-trigger-folder-dialog/select-trigger-folder-dialog.component';
 import { InputDialogComponent } from './input-dialog/input-dialog.component';
+import { EqsrUrlDialogComponent, EqsrUrlDialogModel } from './eqsr-url-dialog/eqsr-url-dialog.component';
 import { InputDialogModel } from './input-dialog/input-dialog.model';
 import { NotificationDialogModel, NotificationTypes } from './notification-dialog/notification-dialog.model';
 import { NotificationDialogComponent } from './notification-dialog/notification-dialog.component';
@@ -657,6 +658,37 @@ export class DialogService {
 
         return this.dialog.open<InputDialogComponent, any, string>( InputDialogComponent, {
             width: data.useTextArea ? '80vw' : '450px',
+            data: data,
+            panelClass: 'app-dialog',
+        } ).afterClosed();
+        
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Asks for the EQ Spell Resources page of a spell, with links that open
+     * the spell (or a search for it) in the user's browser.
+     * 
+     * @param spellName The spell's name, used to search EQ Spell Resources.
+     * @param spellId The EverQuest spell id, if known.
+     * @returns The EQ Spell Resources url, or null if cancelled.
+     */
+    public showEqsrUrlDialog( spellName: string, spellId: number | null ): Observable<string | null> {
+        let data: EqsrUrlDialogModel = new EqsrUrlDialogModel();
+        
+        data.spellName = spellName;
+        data.spellId = spellId;
+
+        return this.dialog.open<EqsrUrlDialogComponent, EqsrUrlDialogModel, string>( EqsrUrlDialogComponent, {
+            width: '550px',
             data: data,
             panelClass: 'app-dialog',
         } ).afterClosed();

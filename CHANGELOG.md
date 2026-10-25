@@ -30,7 +30,7 @@ description, which Nag shows in the Update Notes window.
 - **Nag is now open source** at https://github.com/guildantix/eq-nag.
 - **The installer is no longer code-signed.** Windows SmartScreen may show an "unknown publisher" warning the first time you install. Click "More info", then "Run anyway". Updates install as usual.
 - Removed the Patreon banner from the Update Notes window.
-- **Allakhazam trigger generators removed.** Allakhazam doesn't allow automated access to its pages, so the Allakhazam DoT, Buff and Raid Ability generators are gone. The EQ Spell Resources generators are unchanged, and triggers made earlier keep working.
+- **Allakhazam trigger generators removed.** Allakhazam doesn't allow automated access to its pages, so the Allakhazam DoT, Buff and Raid Ability generators are gone. The EQ Spell Resources generators are unchanged, and triggers made earlier keep working. DoT and Buff timers made from Allakhazam can be re-imported from EQ Spell Resources: open the trigger and click "Re-import from EQ Spell Resources", which links to the same spell there.
 
 <!-- Maintainer notes, not part of the release description:
 - Store migrations now use app.whenReady() instead of app.on('ready'); the ESM main

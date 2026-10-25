@@ -64,15 +64,20 @@ export class TriggerDialogComponent implements OnInit {
     }
 
     public get showReimportFromAlla(): boolean {
-        return this.model.importType != ImportTypes.None && this.model.allakhazamUrl != null && this.model.externalSource === ExternalDataSources.EqSpellResources;
+        if ( this.model.importType == ImportTypes.None || this.model.allakhazamUrl == null ) {
+            return false;
+        }
+        if ( this.model.externalSource === ExternalDataSources.Allakhazam ) {
+            // Allakhazam triggers move to EQ Spell Resources, which has no raid
+            // ability generator.
+            return this.model.importType !== ImportTypes.Ability;
+        }
+        return this.model.externalSource === ExternalDataSources.EqSpellResources;
     }
 
+    /** Re-imports always come from EQ Spell Resources; Allakhazam is no longer used. */
     public get serviceName(): string {
-        if ( this.model.importType != ImportTypes.None ) {
-            return this.model?.externalSource === ExternalDataSources.Allakhazam ? 'Allakhazam' : 'EQ Spell Resources';
-        } else {
-            return 'None';
-        }
+        return this.model.importType != ImportTypes.None ? 'EQ Spell Resources' : 'None';
     }
 
     constructor( private ipcService: IpcService, private route: ActivatedRoute, public dialogService: DialogService, private snackBar: MatSnackBar ) { }
@@ -212,6 +217,20 @@ export class TriggerDialogComponent implements OnInit {
     }
 
     public reimportFromAllakhazam(): void {
+        if ( this.model.externalSource === ExternalDataSources.Allakhazam ) {
+            // Allakhazam spell ids are EverQuest's own, so EQ Spell Resources
+            // has the same spell under the same id.
+            const spellId = +( /[?&]spell=(\d+)/i.exec( this.model.allakhazamUrl ?? '' )?.[ 1 ] ?? 0 ) || null;
+            this.dialogService.showEqsrUrlDialog( this.model.name, spellId ).subscribe( url => {
+                if ( url ) {
+                    this.model.allakhazamUrl = url;
+                    this.model.externalSource = ExternalDataSources.EqSpellResources;
+                    this.reimportFromAllakhazam();
+                }
+            } );
+            return;
+        }
+
         if ( this.model.importType === ImportTypes.DotTimer ) {
             this.reimportDotTimerFromAllakhazam();
         } else if ( this.model.importType === ImportTypes.Ability ) {

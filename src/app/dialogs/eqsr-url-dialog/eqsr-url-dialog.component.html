@@ -1,0 +1,26 @@
+<h2 mat-dialog-title>Re-import from EQ Spell Resources</h2>
+
+<mat-dialog-content>
+
+    <p>This trigger was made from Allakhazam, which Nag no longer uses. To re-import it, find the spell on EQ Spell Resources and paste the address of its page below.</p>
+
+    <p class="eqsr-links">
+        <button mat-button class="color-blue" *ngIf="data.spellId" (click)="openSpell()"><mat-icon>open_in_new</mat-icon> Open this spell on EQ Spell Resources</button>
+        <button mat-button class="color-blue" (click)="openSearch()"><mat-icon>search</mat-icon> Search EQ Spell Resources<span *ngIf="data.spellName"> for "{{data.spellName}}"</span></button>
+    </p>
+
+    <mat-form-field>
+        <mat-label>EQ Spell Resources address</mat-label>
+        <input matInput [(ngModel)]="url" placeholder="https://spells.eqresource.com/spells.php?id=1447" />
+        <mat-hint *ngIf="!url || urlValid">Copy it from your browser's address bar.</mat-hint>
+        <mat-hint *ngIf="url && !urlValid" class="color-red">That isn't an EQ Spell Resources spell page. It should look like https://spells.eqresource.com/spells.php?id=1447</mat-hint>
+    </mat-form-field>
+
+</mat-dialog-content>
+
+<mat-dialog-actions>
+
+    <button mat-button (click)="cancel()" color="warn">Cancel</button>
+    <button mat-button (click)="accept()" [disabled]="!urlValid">Re-import</button>
+
+</mat-dialog-actions>
