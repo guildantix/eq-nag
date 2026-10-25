@@ -81,7 +81,7 @@ jobs:
         run: npx electron-builder build --win --publish never
 
       - name: Keep latest.yml and the blockmap
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: update-files-${{ inputs.version }}
           path: |
@@ -108,9 +108,24 @@ jobs:
 
           Built from $GITHUB_REF_NAME at $GITHUB_SHA.
           EOF
+          # GitHub can still mark the new release as latest despite
+          # --latest=false (when the latest release was chosen automatically),
+          # so remember the current latest release and set it back afterward.
+          previous_latest=$(gh release view --repo "$GITHUB_REPOSITORY" --json tagName --jq .tagName 2>/dev/null || true)
+
           gh release create "test-$VERSION" "$installer" "$portable" \
             --repo "$GITHUB_REPOSITORY" \
             --target "$GITHUB_SHA" \
             --title "$VERSION test build (testers only)" \
             --notes-file notes.md \
             --latest=false
+
+          if [ -n "$previous_latest" ] && [ "$previous_latest" != "test-$VERSION" ]; then
+            gh release edit "$previous_latest" --repo "$GITHUB_REPOSITORY" --latest
+          fi
+          now_latest=$(gh release view --repo "$GITHUB_REPOSITORY" --json tagName --jq .tagName)
+          if [ "$now_latest" = "test-$VERSION" ]; then
+            echo "::error::test-$VERSION is marked as the latest release. Edit the previous release and set its Release label to Latest."
+            exit 1
+          fi
+          echo "Latest release is still $now_latest."
