@@ -15,6 +15,8 @@ on:
 
 permissions:
   contents: write   # lets the built-in GITHUB_TOKEN create the release & upload assets
+  id-token: write   # build attestations
+  attestations: write
 
 # One release workflow at a time, so two runs can't pick the same version.
 concurrency:
@@ -42,6 +44,15 @@ jobs:
         uses: ./.github/actions/build-nag
         with:
           version: ${{ env.VERSION }}
+
+      # A GitHub-signed record that these files were built by this workflow
+      # from this commit (see "Is this download safe?" in the README).
+      - name: Attest the build
+        uses: actions/attest-build-provenance@v4
+        with:
+          subject-path: |
+            electron/output/EQ-Nag-Setup-${{ env.VERSION }}.exe
+            electron/output/eq_nag_portable.exe
 
       - name: Create the testers-only release
         shell: bash
