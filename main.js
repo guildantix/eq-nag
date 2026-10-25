@@ -3,6 +3,7 @@
 // TODO: Fix the enternally repeating update modal, should not be repeatedly adding new modals or when the user chooses no, only ask again after nag restarts.
 
 import log from "electron-log";
+import perf from "./src/electron/utilities/perf.js";
 log.transports.file.level = 'debug';
 const origLog = console.log;
 console.log = ( ...args ) => {
@@ -363,9 +364,10 @@ if ( process.argv?.length > 1 && process.argv.includes( '--no-gpu' ) ) {
 
 }
 
-// enable dev mode with --dev
+// enable dev mode with --dev; NAG_DEV=0 turns it off when running from source
+// (the performance test uses this, since dev mode opens DevTools windows).
 const runningLocal = process.defaultApp === true;
-if ( runningLocal || ( process.argv?.length > 1 && process.argv.includes( '--dev' ) ) ) {
+if ( process.env.NAG_DEV !== '0' && ( runningLocal || ( process.argv?.length > 1 && process.argv.includes( '--dev' ) ) ) ) {
     enableDevMode = true;
     console.log( '[main:app-initialization] Running in development mode.' );
 }
@@ -706,6 +708,7 @@ function sendTick( delay ) {
     };
 
     const _executeTick = () => {
+        const perfStart = perf.enabled ? perf.now() : 0;
         _tickTriggers = _triggers?.length ?? 0;
         mainWindow.webContents.send( 'tick', tickData );
         logBootstrap.tick( tickData, characterDatabase );
@@ -713,6 +716,7 @@ function sendTick( delay ) {
         if ( winManager.ginaImportWindow != null ) {
             winManager.ginaImportWindow.send( 'tick', tickData );
         }
+        perf.enabled && perf.record( 'main: tick', perfStart );
     };
     
     if (_tickTimeoutId > -1) {

@@ -1,4 +1,5 @@
 const createDOMPurify = require( 'dompurify' );
+const perf = require( './perf' );
 
 /** @type {import('dompurify').DOMPurify} */
 let purifier = null;
@@ -31,8 +32,11 @@ function sanitizeHtml( html ) {
     if ( html === null || html === undefined || html === '' ) {
         return '';
     }
+    const perfStart = perf.enabled ? perf.now() : 0;
     purifier = purifier ?? createDOMPurify( window );
-    return purifier.sanitize( String( html ), sanitizeConfig );
+    const clean = purifier.sanitize( String( html ), sanitizeConfig );
+    perf.enabled && perf.record( 'renderer: sanitize html', perfStart );
+    return clean;
 }
 
 

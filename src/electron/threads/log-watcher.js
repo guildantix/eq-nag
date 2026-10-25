@@ -17,6 +17,10 @@ const { DateUtilities } = require( '../utilities/dates' );
 const { IpcMessage } = require( '../data/models/common' );
 const ArrayUtilities = require( '../utilities/arrays' );
 const FileMonitor = require( '../utilities/file-monitor' );
+const perf = require( '../utilities/perf' );
+// Triggers are timed on one log line in ten (perf-taps.js scales them up), so
+// the per-trigger timing doesn't slow the log watcher down much.
+let perfTriggerSample = 0;
 const { LogHistoryManager } = require( '../utilities/log-console' );
 const { createChatRoomLink } = require( '../utilities/peer-to-peer' );
 const { nagException, nagLog } = require( '../utilities/nag-console' );
@@ -177,7 +181,9 @@ function startParsingLogFile( logPath, startLogPosition ) {
 
         lines.forEach( line => {
             if ( line && line.length > 0 ) {
+                const perfStart = perf.enabled ? perf.now() : 0;
                 parseLogEntries( line );
+                perf.enabled && perf.record( 'log-watcher: line', perfStart );
             }
         } );
         
@@ -676,9 +682,11 @@ function LogWatcher(character, logPosition) {
             }
         }
 
+        const perfStart = perf.enabled ? perf.now() : 0;
         applyFolderConditions( triggerFolders );
         generateTriggerFns();
         initCounters();
+        perf.enabled && perf.record( 'log-watcher: tick (rebuild triggers)', perfStart );
     } );
 
     ipcRenderer.on( 'component:destroy', function ( event, instanceId ) {
@@ -1810,9 +1818,11 @@ function parseLogEntries( raw, simulating, padTime ) {
         }
 
         let entryMatched = false;
+        const perfTriggers = perf.enabled && ++perfTriggerSample % 10 === 0;
         triggers.forEach( trigger => {
 
             if ( !!trigger.enabled && !trigger._profileDisabled ) {
+                const perfStart = perfTriggers ? perf.now() : 0;
                 trigger._parse( log, ( res, deltaTime ) => {
 
                     try {
@@ -1852,6 +1862,7 @@ function parseLogEntries( raw, simulating, padTime ) {
                     }
                     
                 } );
+                perfTriggers && perf.record( trigger._perfName ??= `trigger: ${trigger.name}`, perfStart, 10 );
             }
             
         } );

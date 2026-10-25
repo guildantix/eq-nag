@@ -47,6 +47,7 @@ jobs:
         uses: ./.github/actions/build-nag
         with:
           version: ${{ env.VERSION }}
+          perf-taps: 'false'   # never ship the performance taps
 
       # A GitHub-signed record that these files were built by this workflow
       # from this commit (see "Is this download safe?" in the README).

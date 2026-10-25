@@ -25,6 +25,7 @@
     "e2e": "ng e2e",
     "start:electron": "tsc && ng build --configuration=production && electron .",
     "build:local": "npm run set-localhost-env && npm run copy-source-maps && electron-builder build --win --publish never",
+    "perf": "node tools/perf/perf-test.mjs",
     "build": "npm run set-production-env && npm run copy-source-maps && electron-builder build --win --publish never",
     "deploy": "npm run set-production-env && npm run copy-source-maps && electron-builder build --win --publish always"
   },

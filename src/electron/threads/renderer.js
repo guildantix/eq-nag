@@ -8,6 +8,7 @@ const { ActionTypes, TriggerAction, TriggerConditionTypes, OperatorTypes, TimerR
 const { ipcRenderer } = require( 'electron' );
 const Handlebars = require( "handlebars" );
 const { sanitizeHtml } = require( '../utilities/html' );
+const perf = require( '../utilities/perf' );
 const _ = require( 'lodash' );
 const customAlphabet = require( 'nanoid' ).customAlphabet;
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
@@ -4585,7 +4586,7 @@ function applyTimerSettings( overlayId, contentArea, comp, group ) {
     }
 
     // Set the update method.
-    comp.intervalId = startInterval( () => {
+    comp.intervalId = startInterval( perf.wrap( 'renderer: timer update', () => {
 
         let perc = 0;
         let infinite = false;
@@ -4798,7 +4799,7 @@ function applyTimerSettings( overlayId, contentArea, comp, group ) {
             }
         }
 
-    }, 250 );
+    } ), 250 );
 }
 
 
@@ -5540,5 +5541,10 @@ function clearAll() {
     
     ipcRenderer.send( 'log:clear-all:done', null );
 }
+
+// Performance taps (no-ops unless Nag is started with --perf; see utilities/perf.js).
+render = perf.wrap( 'renderer: render', render );
+renderFct = perf.wrap( 'renderer: render FCT', renderFct );
+renderFct2 = perf.wrap( 'renderer: render FCT2', renderFct2 );
 
 module.exports = Renderer;

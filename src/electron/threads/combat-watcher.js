@@ -75,6 +75,7 @@ const fs = require( 'fs' );
 const { LogSync, createChatRoomLink, parseChatRoomLink, PeerDataPackageModel, CombatStatisticsPayloadModel, CombatEncounterPayloadModel, HandshakePayloadModel } = require( "../utilities/peer-to-peer" );
 const { nagException, nagLog } = require( "../utilities/nag-console" );
 const FileMonitor = require( "../utilities/file-monitor" );
+const perf = require( "../utilities/perf" );
 const { FctModel } = require( "../data/models/fct" );
 
 /**
@@ -648,7 +649,9 @@ function parseLogEntries( raw, simulating, padTime, prevLog, nextLog ) {
             }
 
             // Add to the combat tracker.
+            const perfStart = perf.enabled ? perf.now() : 0;
             let fctModel = myCombatParser?.addCombatEvent( raw, padTime, prevLog, nextLog );
+            perf.enabled && perf.record( 'combat-watcher: line', perfStart );
 
             if ( fctModel ) {
                 output.push( fctModel );
