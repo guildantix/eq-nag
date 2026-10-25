@@ -1,13 +1,5 @@
-import { Component, HostListener, Inject } from '@angular/core';
-import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
-import { IpcService } from 'src/app/ipc.service';
-
-export class EqsrUrlDialogModel {
-    /** The spell's name, used to search EQ Spell Resources. */
-    public spellName: string;
-    /** The EverQuest spell id from the old Allakhazam url, if there was one. */
-    public spellId: number | null = null;
-}
+import { Component, HostListener } from '@angular/core';
+import { MatDialogRef } from '@angular/material/dialog';
 
 /** Accepts EQ Spell Resources spell pages, e.g. https://spells.eqresource.com/spells.php?id=1447 */
 const eqsrSpellUrlRegex = /^https?:\/\/spells\.eqresource\.com\/spells\.php\?id=\d+$/i;
@@ -35,41 +27,7 @@ export class EqsrUrlDialogComponent {
 
     constructor(
         public dialogRef: MatDialogRef<EqsrUrlDialogComponent, string>,
-        @Inject( MAT_DIALOG_DATA ) public data: EqsrUrlDialogModel,
-        private ipcService: IpcService,
     ) { }
-
-
-
-
-
-
-
-
-
-
-    /**
-     * Opens the spell's page on EQ Spell Resources in the user's browser.
-     */
-    public openSpell(): void {
-        this.ipcService.openEqSpellResources( this.data.spellId );
-    }
-
-
-
-
-
-
-
-
-
-
-    /**
-     * Opens an EQ Spell Resources search for the spell in the user's browser.
-     */
-    public openSearch(): void {
-        this.ipcService.openEqSpellResources( null, this.data.spellName );
-    }
 
 
 

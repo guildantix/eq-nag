@@ -22,7 +22,7 @@ process.on( 'unhandledRejection', ( reason ) => {
     log.error( 'Unhandled Rejection:', reason );
 } );
 
-import { app, BrowserWindow, ipcMain, protocol, session, screen, Tray, Menu, globalShortcut, clipboard } from "electron";
+import { app, BrowserWindow, ipcMain, protocol, session, screen, Tray, Menu, globalShortcut, clipboard, shell } from "electron";
 import * as url from "url";
 import * as path from "path";
 
@@ -297,12 +297,24 @@ app.on( 'child-process-gone', ( event, details ) => {
     log.info( '[main:child-process-gone] Child process gone.', details );
 } );
 
+// Websites Nag's own pages link to (target="_blank"); these open in the user's
+// browser.
+const externalLinkOrigins = [ 'https://spells.eqresource.com' ];
+
 // Nag's windows only ever load pages from Nag itself (via loadURL), so links
 // in trigger or package text must not open new windows or navigate a window
 // away from Nag.
 app.on( 'web-contents-created', ( event, contents ) => {
     contents.setWindowOpenHandler( ( { url } ) => {
-        log.warn( `[main:web-contents-created] Blocked opening a window: ${url}` );
+        let origin = null;
+        try {
+            origin = new URL( url ).origin;
+        } catch { }
+        if ( externalLinkOrigins.includes( origin ) ) {
+            shell.openExternal( url );
+        } else {
+            log.warn( `[main:web-contents-created] Blocked opening a window: ${url}` );
+        }
         return { action: 'deny' };
     } );
     contents.on( 'will-navigate', ( e, url ) => {

@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, screen, shell, WebContents } = require( "electron" );
+const { app, BrowserWindow, ipcMain, screen, WebContents } = require( "electron" );
 const ForwardRef = require( './forward-ref' );
 const OverlayDatabaseStore = require( "./data/overlay-database" );
 const UserPreferencesStore = require( "./data/user-preferences" );
@@ -163,22 +163,6 @@ class WindowManager {
             return await this.scrapeEqsrResource( eqsrUrl, 'clickEffect' );
         } );
 
-        ipcMain.on( 'window:open:eqsr',
-            /**
-             * Opens EQ Spell Resources in the user's browser: the spell with the
-             * given id, or else a search for the given spell name.  The url is
-             * built here so the renderer can't open anything else.
-             *
-             * @param {Electron.IpcMainEvent} event The event args.
-             * @param {{spellId?: number, name?: string}} arg The spell to show.
-             */
-            ( event, arg ) => {
-                const spellId = Number.parseInt( arg?.spellId );
-                const url = Number.isInteger( spellId ) && spellId > 0
-                    ? `https://spells.eqresource.com/spells.php?id=${spellId}`
-                    : `https://spells.eqresource.com/spellsearch.php?name=${encodeURIComponent( `${arg?.name ?? ''}`.slice( 0, 100 ) )}`;
-                shell.openExternal( url );
-            } );
 
         ipcMain.on( 'renderer:token:create',
             /**

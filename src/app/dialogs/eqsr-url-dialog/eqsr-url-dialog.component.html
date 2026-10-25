@@ -2,12 +2,7 @@
 
 <mat-dialog-content>
 
-    <p>This trigger was made from Allakhazam, which Nag no longer uses. To re-import it, find the spell on EQ Spell Resources and paste the address of its page below.</p>
-
-    <p class="eqsr-links">
-        <button mat-button class="color-blue" *ngIf="data.spellId" (click)="openSpell()"><mat-icon>open_in_new</mat-icon> Open this spell on EQ Spell Resources</button>
-        <button mat-button class="color-blue" (click)="openSearch()"><mat-icon>search</mat-icon> Search EQ Spell Resources<span *ngIf="data.spellName"> for "{{data.spellName}}"</span></button>
-    </p>
+    <p>This trigger was made from Allakhazam, which Nag no longer uses. To re-import it, find the spell on <a class="color-blue" href="https://spells.eqresource.com/spellsearch.php" target="_blank">EQ Spell Resources</a> and paste the address of its page below.</p>
 
     <mat-form-field>
         <mat-label>EQ Spell Resources address</mat-label>

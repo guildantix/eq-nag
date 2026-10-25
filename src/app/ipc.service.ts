@@ -2236,17 +2236,6 @@ export class IpcService {
         return obs;
     }
 
-    /**
-     * Opens EQ Spell Resources in the user's browser, on the given spell, or
-     * else on a search for the given spell name.
-     *
-     * @param spellId The EverQuest spell id.
-     * @param name The spell name to search for when there's no id.
-     */
-    public openEqSpellResources( spellId: number | null, name?: string ): void {
-        window.api.ipc.send( 'window:open:eqsr', { spellId, name } );
-    }
-
     public scrapeEqSpellResourceSpell( url: string ): Observable<ScrapedSpell> {
         let obs: Observable<ScrapedSpell> = new Observable<ScrapedSpell>( ( observer: Observer<ScrapedSpell> ) => {
 

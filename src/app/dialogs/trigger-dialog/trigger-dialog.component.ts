@@ -218,10 +218,7 @@ export class TriggerDialogComponent implements OnInit {
 
     public reimportFromAllakhazam(): void {
         if ( this.model.externalSource === ExternalDataSources.Allakhazam ) {
-            // Allakhazam spell ids are EverQuest's own, so EQ Spell Resources
-            // has the same spell under the same id.
-            const spellId = +( /[?&]spell=(\d+)/i.exec( this.model.allakhazamUrl ?? '' )?.[ 1 ] ?? 0 ) || null;
-            this.dialogService.showEqsrUrlDialog( this.model.name, spellId ).subscribe( url => {
+            this.dialogService.showEqsrUrlDialog().subscribe( url => {
                 if ( url ) {
                     this.model.allakhazamUrl = url;
                     this.model.externalSource = ExternalDataSources.EqSpellResources;
