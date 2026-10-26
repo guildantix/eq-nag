@@ -6,6 +6,7 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { AppComponent } from './app.component';
 import { FormsModule } from '@angular/forms';
 import { MainComponent } from './main.component';
+import { RollsComponent } from './rolls/rolls.component';
 import { RouterModule, Routes } from '@angular/router';
 import { appRoutes } from './ng.routes';
 import { HttpClientModule } from '@angular/common/http';
@@ -72,6 +73,7 @@ import { QuickActionsComponent } from './quick-actions/quick-actions.component';
         SetupWizardComponent,
         FloatingCombatTextComponent,
         CombatStatisticsComponent,
+        RollsComponent,
     ],
     providers: [
         ScraperService,

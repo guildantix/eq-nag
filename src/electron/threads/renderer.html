@@ -517,6 +517,29 @@
         }
 
     </style>
+
+    <style>
+        .roll-panel { position: absolute; display: none; width: 320px; box-sizing: border-box; font-family: Roboto, sans-serif; color: #e8e8ea; font-size: 14px; }
+        .roll-card { background: rgba(22, 20, 28, 0.92); border: 1px solid #34303f; border-radius: 8px; overflow: hidden; }
+        .roll-card + .roll-card { margin-top: 8px; }
+        .roll-title { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 7px 12px; background: #2a1236; }
+        .roll-title-name { font-weight: 700; }
+        .roll-title-info { font-size: 12px; color: #d6c9e0; white-space: nowrap; }
+        .roll-rows { display: flex; flex-direction: column; gap: 4px; padding: 8px 10px 6px; }
+        .roll-row { display: flex; align-items: center; gap: 8px; padding: 5px 8px; background: #1f1c27; border-radius: 6px; }
+        .roll-row.leader { background: rgba(242, 201, 76, 0.14); border: 1px solid #b8962e; }
+        .roll-rank { width: 20px; height: 20px; flex: none; border-radius: 10px; background: #3a3547; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+        .roll-row.leader .roll-rank { background: #f2c94c; color: #1a1408; }
+        .roll-player { flex: 1 1 auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .roll-row.leader .roll-player { font-weight: 700; }
+        .roll-tie { font-size: 10px; font-weight: 700; color: #1a1408; background: #e0a458; border-radius: 4px; padding: 1px 5px; }
+        .roll-value { font-family: 'Roboto Mono', monospace; font-weight: 700; }
+        .roll-row.leader .roll-value { color: #f2c94c; }
+        .roll-footer { display: flex; flex-wrap: wrap; gap: 2px 12px; padding: 0 12px 8px; font-size: 12px; color: #a9a4b4; }
+        .roll-collapsed { display: flex; justify-content: space-between; gap: 10px; padding: 7px 12px; font-size: 12px; color: #a9a4b4; }
+        .roll-collapsed strong { color: #e8e8ea; }
+        .roll-panel.arranging .roll-card { border-style: dashed; border-color: #8b4fb3; }
+    </style>
 </head>
 <body>
 

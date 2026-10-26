@@ -993,6 +993,20 @@ class LogBootstrapper {
         combatWatcher.window?.webContents.send( channel, value );
     }
 
+    /**
+     * Speaks the given phrase using the first log watcher's voice settings.
+     *
+     * @param {string} phrase The phrase to speak.
+     */
+    speakPhrase( phrase ) {
+        for ( let key in logWatchers ) {
+            if ( logWatchers.hasOwnProperty( key ) && logWatchers[ key ].window != null ) {
+                logWatchers[ key ].window.webContents.send( 'log:speak:phrase', { phrase: phrase, interruptSpeech: false } );
+                break;
+            }
+        }
+    }
+
 }
 
 

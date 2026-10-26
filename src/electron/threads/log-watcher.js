@@ -147,6 +147,7 @@ let onTriggerGenCompleteHandlers = [];
 let triggerGenComplete = false;
     
 let rgxTimestamp = /^\[(.*?)\]\s*/i;
+const rgxRandomRoll = /^\*\*A Magic Die is rolled by (?<player>.+?)\. It could have been any number from (?<min>\d+) to (?<max>\d+), but this time it turned up a (?<roll>\d+)\./;
 
 /** @type {LogList[]} */
 let lists = [];
@@ -1650,6 +1651,19 @@ function parseLogEntries( raw, simulating, padTime ) {
             timestamp = new Date( timestamp.getTime() + ( padTime * 1000 ) );
     
         let log = raw.replace( rgxTimestamp, '' );
+
+        if ( !simulating && log.startsWith( '**A Magic Die' ) ) {
+            const randomRoll = rgxRandomRoll.exec( log );
+            if ( randomRoll ) {
+                ipcRenderer.send( 'rolls:roll', {
+                    player: randomRoll.groups.player,
+                    roll: +randomRoll.groups.roll,
+                    min: +randomRoll.groups.min,
+                    max: +randomRoll.groups.max,
+                    timestamp: timestamp.getTime(),
+                } );
+            }
+        }
         
         // https://regex101.com/r/FvGiGC/2
         // {NAG:(?<quickShareId>.+?)}

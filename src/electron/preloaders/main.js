@@ -49,6 +49,7 @@ const channelPrefixes = [
     'chat-room',
     'combat',
     'show-settings',
+    'rolls',
 ];
 
 const styleSheetUtil = new StyleSheetUtil();

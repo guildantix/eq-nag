@@ -522,6 +522,24 @@ class UserPreferencesStore extends Store {
         this.storeDataFile( this.#data );
     }
 
+    /** @type {import('electron').Rectangle} */
+    get rollTrackerPosition() {
+        return this.#data.rollTrackerPosition;
+    }
+    set rollTrackerPosition( val ) {
+        this.#data.rollTrackerPosition = val;
+        this.storeDataFile( this.#data );
+    }
+
+    /** @type {import('../roll-tracker').RollTrackerSettings} */
+    get rollTrackerSettings() {
+        return this.#data.rollTrackerSettings;
+    }
+    set rollTrackerSettings( val ) {
+        this.#data.rollTrackerSettings = val;
+        this.storeDataFile( this.#data );
+    }
+
     /** @type {number} */
     get dpsEncounterResetTimeMs() {
         return this.#data.dpsMeterSettings.encounterResetDelayMs ?? 30000;
