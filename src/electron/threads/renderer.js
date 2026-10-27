@@ -555,6 +555,223 @@ function moveResizeDomElement( dom, bounds ) {
 
 
 
+/** @type {HTMLDivElement} The roll tracker panel. */
+let rollPanel = undefined;
+/** @type {HTMLDivElement} The panel's content, rebuilt on each render. */
+let rollContent = undefined;
+/** The last state sent by the roll tracker. */
+let rollState = undefined;
+let rollArranging = false;
+/** @type {number | null} */
+let rollCountdownId = null;
+/** The open contest whose countdown is shown. */
+let rollCountdownContest = undefined;
+
+/**
+ * Creates the roll tracker panel.  It is display only: outside of arrange
+ * mode it never has the dynamic-mouse class, so it never takes clicks meant
+ * for the game.
+ *
+ * @returns {HTMLDivElement} Returns the panel.
+ */
+function createRollPanel() {
+    let div = document.createElement( 'div' );
+    div.classList.add( 'roll-panel' );
+    div.style.zIndex = overlayTopZIndex + 1;
+
+    rollContent = document.createElement( 'div' );
+    div.appendChild( rollContent );
+    document.body.appendChild( div );
+
+    ipcRenderer.invoke( 'rolls:position:get' ).then( bounds => {
+        if ( bounds ) {
+            div.style.left = bounds.x + 'px';
+            div.style.top = bounds.y + 'px';
+            div.style.width = bounds.width + 'px';
+
+            waitForDisplaysLoaded( () => {
+                if ( !verifyDomRectOnDisplay( { x: bounds.x, y: bounds.y, width: bounds.width, height: 200 } ) ) {
+                    placeRollPanelDefault( div );
+                }
+            } );
+        } else {
+            placeRollPanelDefault( div );
+        }
+    } );
+
+    return div;
+}
+
+/**
+ * Places the roll panel on the left side of the primary monitor.
+ *
+ * @param {HTMLDivElement} div The panel.
+ */
+function placeRollPanelDefault( div ) {
+    const workArea = screen.getPrimaryDisplay().workArea;
+    div.style.left = ( origin.x + Math.round( workArea.width * 0.15 ) ) + 'px';
+    div.style.top = ( origin.y + Math.round( workArea.height * 0.2 ) ) + 'px';
+}
+
+/**
+ * Returns a new element with the given class and text.
+ *
+ * @param {string} tagName The tag name.
+ * @param {string | null} className The class name.
+ * @param {string | undefined} text The text content.
+ */
+function rollElement( tagName, className, text ) {
+    let el = document.createElement( tagName );
+    className && ( el.className = className );
+    text != null && ( el.textContent = text );
+    return el;
+}
+
+/**
+ * Returns the time left before the contest closes, as m:ss.
+ */
+function getRollCountdownText( contest ) {
+    const remaining = Math.max( 0, rollState.settings.closeAfterSeconds * 1000 - ( Date.now() - contest.lastRollAt ) );
+    const seconds = Math.ceil( remaining / 1000 );
+    return `${Math.floor( seconds / 60 )}:${`${seconds % 60}`.padStart( 2, '0' )}`;
+}
+
+/**
+ * Updates only the countdown text once a second while a contest is open.
+ */
+function startRollCountdown() {
+    if ( rollCountdownId == null ) {
+        rollCountdownId = window.setInterval( () => {
+            const el = rollContent.querySelector( '.roll-countdown' );
+            if ( el && rollCountdownContest ) {
+                el.textContent = getRollCountdownText( rollCountdownContest );
+            }
+        }, 1000 );
+    }
+}
+
+function stopRollCountdown() {
+    if ( rollCountdownId != null ) {
+        window.clearInterval( rollCountdownId );
+        rollCountdownId = null;
+    }
+    rollCountdownContest = undefined;
+}
+
+/**
+ * Renders the roll tracker panel from the last state.  Player names come
+ * from the log, so everything is set as text, never as html.
+ */
+function renderRollPanel() {
+    if ( !rollPanel ) {
+        return;
+    }
+
+    const minRollers = rollState?.minRollers ?? 2;
+    const contests = rollState?.settings?.enabled === false ? [] : ( rollState?.contests ?? [] ).filter( c => c.ranked.length >= minRollers );
+    const open = contests.filter( c => c.closedAt == null ).sort( ( a, b ) => b.lastRollAt - a.lastRollAt );
+    const shown = open[ 0 ] ?? contests.find( c => c.closedAt != null && !c.dismissed );
+
+    rollContent.replaceChildren();
+    rollPanel.classList.toggle( 'arranging', rollArranging );
+
+    if ( !shown && !rollArranging ) {
+        rollPanel.style.display = 'none';
+        stopRollCountdown();
+        return;
+    }
+    rollPanel.style.display = 'block';
+
+    let card = rollElement( 'div', 'roll-card' );
+    let title = rollElement( 'div', 'roll-title' );
+    card.appendChild( title );
+    rollContent.appendChild( card );
+
+    if ( !shown ) {
+        title.appendChild( rollElement( 'span', 'roll-title-name', 'Rolls' ) );
+        title.appendChild( rollElement( 'span', 'roll-title-info', 'Drag to place' ) );
+        stopRollCountdown();
+        return;
+    }
+
+    const ranked = shown.ranked;
+    title.appendChild( rollElement( 'span', 'roll-title-name', `Rolls ${shown.min}–${shown.max}` ) );
+    let info = rollElement( 'span', 'roll-title-info' );
+    title.appendChild( info );
+
+    if ( shown.closedAt == null ) {
+        info.append( `${ranked.length} rolls · closes in ` );
+        info.appendChild( rollElement( 'span', 'roll-countdown roll-value', getRollCountdownText( shown ) ) );
+        rollCountdownContest = shown;
+        startRollCountdown();
+    } else {
+        const winners = ranked.filter( r => r.rank === 1 );
+        info.textContent = winners.length > 1 ? `${ranked.length} rolls · tie` : `${ranked.length} rolls · winner`;
+        stopRollCountdown();
+    }
+
+    let rows = rollElement( 'div', 'roll-rows' );
+    ranked.filter( r => r.rank <= rollState.settings.topCount ).forEach( r => {
+        const tie = ranked.some( o => o !== r && o.roll === r.roll );
+        let row = rollElement( 'div', r.rank === 1 ? 'roll-row leader' : 'roll-row' );
+        row.appendChild( rollElement( 'span', 'roll-rank', `${r.rank}` ) );
+        row.appendChild( rollElement( 'span', 'roll-player', r.player ) );
+        tie && row.appendChild( rollElement( 'span', 'roll-tie', 'TIE' ) );
+        row.appendChild( rollElement( 'span', 'roll-value', `${r.roll}` ) );
+        rows.appendChild( row );
+    } );
+    card.appendChild( rows );
+
+    const more = ranked.filter( r => r.rank > rollState.settings.topCount ).length;
+    const rerolls = shown.rolls.filter( r => r.status === 'reroll' ).length;
+    if ( more + rerolls > 0 ) {
+        let footer = rollElement( 'div', 'roll-footer' );
+        more > 0 && footer.appendChild( rollElement( 'span', null, `+${more} more` ) );
+        rerolls > 0 && footer.appendChild( rollElement( 'span', null, `${rerolls} ${rerolls === 1 ? 'reroll' : 'rerolls'} ignored` ) );
+        rerolls > 0 && footer.appendChild( rollElement( 'span', null, 'details in Nag › Rolls' ) );
+        card.appendChild( footer );
+    }
+
+    open.filter( c => c !== shown ).forEach( c => {
+        let other = rollElement( 'div', 'roll-card roll-collapsed' );
+        other.appendChild( rollElement( 'span', null, `Rolls ${c.min}–${c.max}` ) );
+        let lead = rollElement( 'span', null, `${c.ranked.length} rolls · leader ` );
+        c.ranked[ 0 ] && lead.appendChild( rollElement( 'strong', null, `${c.ranked[ 0 ].player} ${c.ranked[ 0 ].roll}` ) );
+        other.appendChild( lead );
+        rollContent.appendChild( other );
+    } );
+}
+
+/**
+ * Lets the roll panel be dragged while overlays are being arranged.
+ */
+function beginArrangeRollPanel() {
+    rollArranging = true;
+    renderRollPanel();
+    enableMoveResize( rollPanel, null, bounds => {
+        ipcRenderer.send( 'rolls:position:set', bounds );
+    } );
+}
+
+/**
+ * Makes the roll panel display only again.
+ */
+function endArrangeRollPanel() {
+    rollArranging = false;
+    disableMoveResize( rollPanel );
+    rollPanel.style.height = '';
+    renderRollPanel();
+}
+
+
+
+
+
+
+
+
+
+
 /**
  * Creates a new dps window.
  * 
@@ -1068,6 +1285,8 @@ function Renderer( originX, originY, glowOnStart ) {
         MouseUtilities.trackDynamicMouse( origin );
                 
         dpsWindow = createDpsWindow();
+        rollPanel = createRollPanel();
+        ipcRenderer.send( 'rolls:get' );
 
         ipcRenderer.send( 'main:active-window:subscribe', undefined );
 
@@ -1642,6 +1861,7 @@ function Renderer( originX, originY, glowOnStart ) {
         eachOverlay( function ( overlay ) {
             enableMoveResize( overlay.dom );
         } );
+        rollPanel && beginArrangeRollPanel();
         MouseUtilities.refreshDom();
     } );
 
@@ -1649,7 +1869,13 @@ function Renderer( originX, originY, glowOnStart ) {
         eachOverlay( function ( overlay ) {
             disableMoveResize( overlay.dom );
         } );
+        rollPanel && endArrangeRollPanel();
         MouseUtilities.refreshDom();
+    } );
+
+    ipcRenderer.on( 'rolls:state', function ( event, state ) {
+        rollState = state;
+        renderRollPanel();
     } );
 
     ipcRenderer.on( 'renderer:window:highlight', function ( event, overlayId ) {

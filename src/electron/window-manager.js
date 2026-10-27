@@ -1336,6 +1336,27 @@ class WindowManager {
      * 
      * @param {( window: BrowserWindow, identifier: string ) => void} fn Iteratee
      */
+    /**
+     * Sends the given message to the overlay renderer.
+     *
+     * @param {string} channel The ipc channel.
+     * @param {any} data The message data.
+     */
+    sendToRenderer( channel, data ) {
+        if ( this.#renderer && !this.#renderer.isDestroyed() ) {
+            this.#renderer.webContents.send( channel, data );
+        }
+    }
+
+
+
+
+
+
+
+
+
+
     eachWindow( fn ) {
 
         if ( this.ginaImportWindow ) {
