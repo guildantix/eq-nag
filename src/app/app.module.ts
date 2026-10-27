@@ -15,6 +15,7 @@ import { CharactersListComponent } from './characters-list/characters-list.compo
 import { ContextMenuModule } from './context-menu/context-menu.module';
 import { TriggersComponent } from './triggers/triggers.component';
 import { ClassNamePipe } from './pipes/class-name.pipe';
+import { LocaleTimePipe } from './pipes/locale-time.pipe';
 import { WindowsModule } from './windows/windows.module';
 import { IpcService } from './ipc.service';
 import { CoreModule } from './core/core.module';
@@ -59,6 +60,7 @@ import { QuickActionsComponent } from './quick-actions/quick-actions.component';
     declarations: [
         AppComponent,
         ClassNamePipe,
+        LocaleTimePipe,
         FolderConditionsDialogComponent,
         TriggersComponent,
         OverlaysComponent,

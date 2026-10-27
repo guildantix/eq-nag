@@ -230,6 +230,32 @@ div.tab-content {
     }
 }
 
+.phrases {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-left: 28px;
+}
+
+.phrase-row {
+    flex-wrap: nowrap;
+
+    label {
+        flex: 0 0 90px;
+    }
+
+    input {
+        flex: 1 1 auto;
+        width: auto;
+        min-width: 0;
+    }
+}
+
+.hint {
+    font-size: 12px;
+    color: #a9a4b4;
+}
+
 .setting-group {
     display: flex;
     flex-direction: column;

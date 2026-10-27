@@ -34,9 +34,14 @@ export interface RollTrackerSettings {
     rerollRule: 'first' | 'highest';
     copyOnClose: boolean;
     speakWinner: boolean;
+    speakWinnerPhrase: string;
+    speakTiePhrase: string;
     /** How long a closed contest stays on the overlay; 0 keeps it there. */
     resultSeconds: number;
 }
+
+const defaultWinnerPhrase = '${winner} wins with ${roll}';
+const defaultTiePhrase = 'Tie at ${roll} between ${winners}';
 
 interface RollRow {
     rank: number | null;
@@ -63,6 +68,7 @@ export class RollsComponent implements OnInit, OnDestroy {
     public rows: RollRow[] = [];
     public resultText: string = '';
     public now: number = Date.now();
+    public placeholderHint: string = '${winner} ${winners} ${roll} ${min} ${max} ${count}';
 
     private clockId: number | null = null;
 
@@ -112,6 +118,14 @@ export class RollsComponent implements OnInit, OnDestroy {
         window.api.ipc.send( 'rolls:settings:set', changes );
     }
 
+    public previewWinnerPhrase( phrase: string ): void {
+        this.speakPreview( phrase, defaultWinnerPhrase );
+    }
+
+    public previewTiePhrase( phrase: string ): void {
+        this.speakPreview( phrase, defaultTiePhrase );
+    }
+
     /**
      * Returns the input value as a whole number of seconds, never negative.
      */
@@ -132,6 +146,21 @@ export class RollsComponent implements OnInit, OnDestroy {
         }
         const who = top.length > 1 ? `tie ${top.map( r => r.player ).join( ' / ' )}` : top[ 0 ].player;
         return `${contest.closedAt == null ? 'leader' : 'winner'} ${who} ${top[ 0 ].roll}`;
+    }
+
+    /**
+     * Speaks the phrase with sample values, using the fallback when the phrase is blank.
+     */
+    private speakPreview( phrase: string | undefined, fallback: string ): void {
+        const sample: Record<string, string> = { winner: 'Soandso', winners: 'Soandso, Fakename', roll: '692', min: '0', max: '1000', count: '3' };
+        const text = phrase?.trim() ? phrase : fallback;
+        try {
+            const utterance = new SpeechSynthesisUtterance( text.replace( /\$\{(winner|winners|roll|min|max|count)\}/g, ( match, key ) => sample[ key ] ) );
+            window.speechSynthesis.cancel();
+            window.speechSynthesis.speak( utterance );
+        } catch ( error ) {
+            console.error( 'Rolls > Failed to speak the preview', error );
+        }
     }
 
     /**

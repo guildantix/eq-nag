@@ -17,7 +17,7 @@
             <span class="contest-head">
                 <span class="contest-range">{{ contest.min }}–{{ contest.max }}</span>
                 <span class="contest-status open" *ngIf="contest.closedAt == null">OPEN · {{ countdown( contest ) }}</span>
-                <span class="contest-status" *ngIf="contest.closedAt != null">{{ contest.closedAt | date:'shortTime' }}</span>
+                <span class="contest-status" *ngIf="contest.closedAt != null">{{ contest.closedAt | localeTime:'short' }}</span>
             </span>
             <span class="contest-info">{{ contest.ranked.length }} {{ contest.ranked.length === 1 ? 'roll' : 'rolls' }} · {{ leaderText( contest ) }}</span>
         </button>
@@ -28,9 +28,9 @@
             <div>
                 <h1>Rolls {{ contest.min }}–{{ contest.max }}</h1>
                 <div class="detail-info">
-                    Started {{ contest.startedAt | date:'mediumTime' }} · {{ contest.ranked.length }} counted
+                    Started {{ contest.startedAt | localeTime }} · {{ contest.ranked.length }} counted
                     <ng-container *ngIf="contest.closedAt == null"> · closes after {{ settings?.closeAfterSeconds }} s with no new rolls</ng-container>
-                    <ng-container *ngIf="contest.closedAt != null"> · closed {{ contest.closedAt | date:'mediumTime' }}</ng-container>
+                    <ng-container *ngIf="contest.closedAt != null"> · closed {{ contest.closedAt | localeTime }}</ng-container>
                 </div>
             </div>
             <div class="detail-actions">
@@ -55,7 +55,7 @@
                         <td class="rank">{{ row.rank ?? '–' }}</td>
                         <td>{{ row.player }}</td>
                         <td class="roll">{{ row.roll }}</td>
-                        <td class="time">{{ row.timestamp | date:'mediumTime' }}</td>
+                        <td class="time">{{ row.timestamp | localeTime }}</td>
                         <td>
                             <span class="tie" *ngIf="row.tie">TIE</span>
                             <strong *ngIf="row.label">{{ row.label }}</strong> {{ row.note }}
@@ -95,11 +95,28 @@
         </div>
 
         <mat-checkbox [checked]="settings.copyOnClose" (change)="updateSettings( { copyOnClose: $event.checked } )">Copy the top rolls to the clipboard when a contest closes</mat-checkbox>
-        <mat-checkbox [checked]="settings.speakWinner" (change)="updateSettings( { speakWinner: $event.checked } )">Speak the winner when a contest closes</mat-checkbox>
 
         <div class="setting-row">
             <label for="rolls-result">Hide the result this many seconds after a contest closes (0 keeps it on screen)</label>
             <input id="rolls-result" type="number" min="0" max="600" [value]="settings.resultSeconds" (change)="updateSettings( { resultSeconds: toSeconds( $any( $event.target ).value ) } )">
+        </div>
+
+        <mat-checkbox [checked]="settings.speakWinner" (change)="updateSettings( { speakWinner: $event.checked } )">Speak the winner when a contest closes</mat-checkbox>
+
+        <div class="phrases" *ngIf="settings.speakWinner">
+            <div class="setting-row phrase-row">
+                <label for="rolls-winner-phrase">Winner phrase</label>
+                <input #winPhrase id="rolls-winner-phrase" type="text" placeholder="Empty = default" [value]="settings.speakWinnerPhrase" (change)="updateSettings( { speakWinnerPhrase: $any( $event.target ).value } )">
+                <button mat-icon-button type="button" aria-label="Preview the winner phrase" (click)="previewWinnerPhrase( winPhrase.value )"><mat-icon>play_arrow</mat-icon></button>
+            </div>
+
+            <div class="setting-row phrase-row">
+                <label for="rolls-tie-phrase">Tie phrase</label>
+                <input #tiePhrase id="rolls-tie-phrase" type="text" placeholder="Empty = default" [value]="settings.speakTiePhrase" (change)="updateSettings( { speakTiePhrase: $any( $event.target ).value } )">
+                <button mat-icon-button type="button" aria-label="Preview the tie phrase" (click)="previewTiePhrase( tiePhrase.value )"><mat-icon>play_arrow</mat-icon></button>
+            </div>
+
+            <div class="hint">Placeholders: {{ placeholderHint }}</div>
         </div>
     </section>
 

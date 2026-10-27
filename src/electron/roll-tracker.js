@@ -8,6 +8,9 @@ const duplicateWindowMs = 3 * 1000;
 const maxContestHistory = 25;
 /** A contest shows on the overlay, and is copied or spoken when it closes, only once this many players have rolled. */
 const minRollers = 2;
+/** Spoken when a contest closes; ${...} placeholders are filled in. Used when the setting is blank. */
+const defaultWinnerPhrase = '${winner} wins with ${roll}';
+const defaultTiePhrase = 'Tie at ${roll} between ${winners}';
 
 class RollTrackerSettings {
     enabled = true;
@@ -17,6 +20,8 @@ class RollTrackerSettings {
     rerollRule = 'first';
     copyOnClose = true;
     speakWinner = false;
+    speakWinnerPhrase = defaultWinnerPhrase;
+    speakTiePhrase = defaultTiePhrase;
     /** How long a closed contest stays on the overlay; 0 keeps it there. */
     resultSeconds = 10;
 }
@@ -228,10 +233,31 @@ class RollTracker {
 
         if ( settings.speakWinner ) {
             const tied = ranked.filter( r => r.rank === 1 );
+            const data = {
+                winner: ranked[ 0 ].player,
+                winners: tied.map( r => r.player ).join( ', ' ),
+                roll: ranked[ 0 ].roll,
+                min: contest.min,
+                max: contest.max,
+                count: ranked.length,
+            };
             this.#speak( tied.length > 1 ?
-                `Tie at ${tied[ 0 ].roll} between ${tied.map( r => r.player ).join( ' and ' )}` :
-                `${ranked[ 0 ].player} wins with ${ranked[ 0 ].roll}` );
+                this.#formatPhrase( settings.speakTiePhrase, defaultTiePhrase, data ) :
+                this.#formatPhrase( settings.speakWinnerPhrase, defaultWinnerPhrase, data ) );
         }
+    }
+
+    /**
+     * Fills the placeholders in the phrase template, using the fallback when the template is blank.
+     *
+     * @param {string} template The phrase template.
+     * @param {string} fallback The template used when the given one is blank.
+     * @param {Record<string, string | number>} data The placeholder values.
+     * @returns {string} Returns the phrase to speak.
+     */
+    #formatPhrase( template, fallback, data ) {
+        const text = typeof template === 'string' && template.trim() !== '' ? template : fallback;
+        return text.replace( /\$\{(winner|winners|roll|min|max|count)\}/g, ( match, key ) => `${data[ key ]}` );
     }
 
     /**
