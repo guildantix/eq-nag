@@ -3,6 +3,8 @@
 <mat-dialog-content>
     
     <input type="hidden" />
+
+    <div class="share-author" *ngFor="let author of fileShareAuthors">Shared by {{author}} (unverified, from a file)</div>
     
     <div class="tree-container">
         <mat-tree [dataSource]="dataSource" [treeControl]="treeControl" #tree>

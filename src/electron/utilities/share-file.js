@@ -6,20 +6,28 @@ const AdmZip = require( 'adm-zip' );
 
 /** @type {string[]} The file extensions that can be imported. */
 const allowedExtensions = [ '.nag', '.zip', '.json' ];
-/** The largest file, in bytes, that will be opened. */
-const maxFileBytes = 25 * 1024 * 1024;
+/** The most sound, in bytes before encoding, a share may hold. */
+const soundShareCapBytes = 25 * 1024 * 1024;
+/** The room, in bytes, a share's trigger json needs beyond its base64 encoded sounds. */
+const jsonAllowanceBytes = 7 * 1024 * 1024;
+/** The room, in bytes, a zip's manifest needs beyond the share entry. */
+const manifestAllowanceBytes = 1024 * 1024;
+/** The largest size, in bytes, a single zip entry may inflate to. */
+const maxEntryBytes = Math.ceil( soundShareCapBytes * 4 / 3 ) + jsonAllowanceBytes;
+/** The largest file, in bytes, that will be opened. A zip is never larger than what it unpacks to. */
+const maxFileBytes = maxEntryBytes;
 /** The largest total declared uncompressed size, in bytes, of a zip's entries. */
-const maxUnpackedBytes = 50 * 1024 * 1024;
+const maxUnpackedBytes = maxEntryBytes + manifestAllowanceBytes;
 /** The most entries a zip may contain. */
 const maxZipEntries = 20;
-/** The largest size, in bytes, a single zip entry may inflate to. */
-const maxEntryBytes = 25 * 1024 * 1024;
 /** The most folder levels a share may nest. */
 const maxFolderDepth = 50;
 /** JSON keys that are dropped while parsing. */
 const forbiddenKeys = [ '__proto__', 'constructor', 'prototype' ];
 /** The most unknown action keys reported in a warning. */
 const maxReportedKeys = 10;
+/** @type {Set<string> | null | undefined} */
+let knownActionKeys;
 
 /**
  * @typedef {object} ShareManifest
@@ -240,7 +248,7 @@ function normalizePayload( payload ) {
         // Ids from the file are ignored so an import can never replace an installed share.
         quickShare.quickShareId = `file-${contentId}`;
         quickShare.versionId = contentId;
-quickShare.author = typeof quickShare.author === 'string' ? quickShare.author : '';
+        quickShare.author = typeof quickShare.author === 'string' ? quickShare.author : '';
         quickShare.authorDiscord = typeof quickShare.authorDiscord === 'string' ? quickShare.authorDiscord : '';
         quickShare.trustedAuthor = false;
         quickShare.stageNewTriggers = false;
@@ -325,12 +333,18 @@ function isNewerVersion( a, b ) {
  */
 function findUnknownActionKeys( payload ) {
 
-    /** @type {Set<string>} */
-    let known;
-    try {
-        const { TriggerAction } = require( '../data/models/trigger' );
-        known = new Set( Object.keys( new TriggerAction() ) );
-    } catch ( error ) {
+    if ( knownActionKeys === undefined ) {
+        try {
+            const { TriggerAction } = require( '../data/models/trigger' );
+            knownActionKeys = new Set( Object.keys( new TriggerAction() ) );
+        } catch ( error ) {
+            knownActionKeys = null;
+        }
+    }
+
+    let known = knownActionKeys;
+
+    if ( !known ) {
         return [];
     }
 
@@ -469,7 +483,15 @@ function unpackEntry( buffer, entry ) {
         throw failWith( 'damaged', 'The entry is encrypted.' );
     }
 
+    if ( typeof header.loadDataHeaderFromBinary !== 'function' ) {
+        throw failWith( 'zipUnsupported', 'The zip library no longer provides the entry header reader.' );
+    }
+
     header.loadDataHeaderFromBinary( buffer );
+
+    if ( !Number.isFinite( header.realDataOffset ) ) {
+        throw failWith( 'zipUnsupported', 'The zip library no longer provides the entry data offset.' );
+    }
 
     let start = header.realDataOffset;
     let end = start + header.compressedSize;
@@ -559,6 +581,9 @@ function readZipEntries( buffer, fileName ) {
     } catch ( error ) {
         if ( error?.code === 'unpackTooLarge' ) {
             return fail( 'unpackTooLarge', fileName, 'The zip unpacks larger than allowed.' );
+        }
+        if ( error?.code === 'zipUnsupported' ) {
+            return fail( 'damaged', fileName, 'zip support unavailable' );
         }
         return fail( 'damaged', fileName, 'The zip entries could not be unpacked.' );
     }
@@ -705,14 +730,14 @@ function readShareFileChecked( filePath, appVersion ) {
 
 
 /**
- * Returns the first argument that looks like a share file path.
+ * Returns the first command line argument that is a .nag share file path.
  *
  * @returns {string | undefined}
  *
  * @param {string[]} argv The command line arguments.
  */
 function findShareFileArg( argv ) {
-    return ( argv ?? [] ).slice( 1 ).find( arg => typeof arg === 'string' && !arg.startsWith( '-' ) && allowedExtensions.includes( path.extname( arg ).toLowerCase() ) );
+    return ( argv ?? [] ).slice( 1 ).find( arg => typeof arg === 'string' && !arg.startsWith( '-' ) && path.extname( arg ).toLowerCase() === '.nag' );
 }
 
 

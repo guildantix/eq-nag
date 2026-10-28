@@ -913,12 +913,26 @@ ipcMain.handle( 'fileshare:open',
                 return { ok: false, code: 'cancelled', fileName: '' };
             }
 
-            return ShareFile.readShareFile( result.filePaths[ 0 ], app.getVersion() );
+            return logShareResult( ShareFile.readShareFile( result.filePaths[ 0 ], app.getVersion() ) );
         } catch ( error ) {
             log.error( '[fileshare:open] Failed to open the share file.', error );
             return { ok: false, code: 'damaged', fileName: '', details: 'The file could not be read.' };
         }
     } );
+
+/**
+ * Logs a share file read that failed because the zip library is unsupported, and returns the result unchanged.
+ *
+ * @returns {object} Returns the same result.
+ *
+ * @param {object} result The share file read result.
+ */
+function logShareResult( result ) {
+    if ( result?.details === 'zip support unavailable' ) {
+        log.error( '[fileshare] The zip library does not provide the expected internals. Share files cannot be read.' );
+    }
+    return result;
+}
 
 ipcMain.handle( 'fileshare:read-path',
     /**
@@ -933,7 +947,7 @@ ipcMain.handle( 'fileshare:read-path',
                 return { ok: false, code: 'damaged', fileName: '', details: 'The path is not valid.' };
             }
 
-            return ShareFile.readShareFile( filePath, app.getVersion() );
+            return logShareResult( ShareFile.readShareFile( filePath, app.getVersion() ) );
         } catch ( error ) {
             log.error( '[fileshare:read-path] Failed to read the share file.', error );
             return { ok: false, code: 'damaged', fileName: '', details: 'The file could not be read.' };

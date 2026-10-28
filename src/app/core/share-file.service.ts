@@ -147,7 +147,7 @@ export class ShareFileService {
         if ( newerVersion ) {
             let unknownKeys = newerVersion.unknownKeys ?? [];
             let message = [
-                `This file was made with a newer version of Nag (${newerVersion.fileVersion}). It can still be imported, but ${unknownKeys.length} setting${unknownKeys.length === 1 ? '' : 's'} this version doesn't recognize will be skipped.`,
+                `This file was made with a newer version of Nag (${newerVersion.fileVersion}). It can still be imported, but ${unknownKeys.length} setting${unknownKeys.length === 1 ? '' : 's'} this version doesn't recognize ${unknownKeys.length === 1 ? 'is' : 'are'} kept and may not take effect.`,
             ];
 
             if ( unknownKeys.length > 0 ) {

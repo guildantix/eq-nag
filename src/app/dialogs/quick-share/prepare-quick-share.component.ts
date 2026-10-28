@@ -72,7 +72,7 @@ export class PrepareQuickShareDialogComponent implements OnInit {
     public saveAsFile: boolean = false;
     /** The id of the share uploaded in this dialog, so a retry of a cancelled save does not upload again. */
     private _uploadedQuickShareId: string = null;
-public readonly shareCodeExample: string = '{NAG:quick-share/...}';
+    public readonly shareCodeExample: string = '{NAG:quick-share/...}';
     public get shareButtonLabel(): string {
         return this.shareToServer && this.saveAsFile ? 'Share and Save' : this.saveAsFile ? 'Save File...' : 'Copy to Clipboard';
     }
@@ -577,7 +577,16 @@ public readonly shareCodeExample: string = '{NAG:quick-share/...}';
                         this.dialogRef.close( quickShareId );
                     }
 
-                }, () => this.creatingQuickShare = false );
+                }, () => {
+
+                    // QuickShareService.handleError shows the error dialog, so the snackbar only offers the file save as an alternative.
+                    if ( !this.saveAsFile ) {
+                        this.snackBar.open( 'Couldn\'t upload the share. You can still save it as a file.', 'Dismiss', { duration: 5000 } );
+                    }
+
+                    this.creatingQuickShare = false;
+
+                } );
 
             }, ( err: HttpErrorResponse | string ) => {
                 

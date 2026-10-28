@@ -31,7 +31,7 @@
         <mat-checkbox [(ngModel)]="shareToServer">Share to server</mat-checkbox>
         <div class="share-option-hint">Uploads to the share server and copies a {{shareCodeExample}} code to your clipboard</div>
         <mat-checkbox [(ngModel)]="saveAsFile">Save as file</mat-checkbox>
-        <div class="share-option-hint">Saves a .nag file you can send on Discord, a forum, or keep as a backup</div>
+        <div class="share-option-hint">Saves a .nag file you can send on Discord, a forum, or keep as a backup. Includes your author name and Discord handle.</div>
         <div class="share-option-hint share-option-warning" *ngIf="!canShare">Pick at least one way to share.</div>
     </div>
 
