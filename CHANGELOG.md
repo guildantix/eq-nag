@@ -19,6 +19,7 @@ description, which Nag shows in the Update Notes window.
 
 ### Security
 - **Safer shared triggers.** HTML in trigger text, overlay names and log text is now cleaned before it is shown, so formatting and styles still work but nothing in it can run. Overlays no longer load images, sounds or fonts from other websites, and sound files from shared packages and quick-shares are checked before they are saved.
+- **Timer icons in shares** must be embedded images (PNG, JPEG, GIF, WebP or SVG) up to 256 KB. Other icons are dropped when a share or package is installed, and Nag warns you when you share a trigger that has one.
 
 ### New
 - **Pets in Combat Statistics.** Pets can now be added and assigned to their owner from the Combat Statistics screen, and Nag detects pet ownership from the log, so pet damage is credited to the right player.

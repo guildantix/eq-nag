@@ -11,6 +11,7 @@ import { MatChipInputEvent } from '@angular/material/chips';
 import { getPackageImportProperties } from 'src/app/core.decorators';
 import { ColoredString } from 'src/app/dialogs/dialog.model';
 import { nagId } from 'src/app/core/nag-id.util';
+import { findUnshareableIconTriggers } from 'src/app/utilities/timer-icons';
 
 @Component( {
     selector: 'app-new-trigger-package',
@@ -25,6 +26,8 @@ export class NewTriggerPackageComponent implements OnInit {
     private triggerFolders: TriggerFolder[];
     private ancestryMap: Record<string, string> = {};
     private _pkgId: string;
+    /** Names the triggers whose timer icon the receiver of the package would drop. */
+    private iconWarning: string = '';
     public triggerUpdates: Record<string, string[]> = {};
     public deletedTriggerIds: string[] = [];
     public categories: string[] = TriggerPackageCategories;
@@ -948,6 +951,10 @@ export class NewTriggerPackageComponent implements OnInit {
                     this.package.model.textOverlayId = textOverlayId;
                     this.package.model.primaryDisplaySize = primaryDisplay.size;
 
+                    // The receiver drops timer icons that are not embedded images up to 256 KB.
+                    let iconTriggers = findUnshareableIconTriggers( this.package.model.triggers );
+                    this.iconWarning = iconTriggers.length > 0 ? `The timer icon of ${iconTriggers.slice( 0, 5 ).map( f => `"${f}"` ).join( ', ' )}${iconTriggers.length > 5 ? ' and more' : ''} is not an embedded image up to 256 KB, so the receiver will not get it.` : '';
+
                     this.savePackage();
 
                 } );
@@ -974,7 +981,7 @@ export class NewTriggerPackageComponent implements OnInit {
         if ( this._pkgId != null ) {
             this.libraryService.updatePackage( this.authorId, this.package, this.notes ).subscribe( pkg => {
                 if ( pkg ) {
-                    this.snackBar.open( 'Update successful!', 'dismiss', { duration: 5000 } );
+                    this.snackBar.open( `Update successful!  ${this.iconWarning}`.trim(), 'dismiss', { duration: this.iconWarning ? 15000 : 5000 } );
                     this.triggerPackage.emit( pkg );
                     this.package = new TriggerPackageMetaModel();
                     this.package.category = this._selectedCategory;
@@ -985,6 +992,9 @@ export class NewTriggerPackageComponent implements OnInit {
         } else {
             this.libraryService.createPackage( this.authorId, this.package, this.notes ).subscribe( pkg => {
                 if ( pkg ) {
+                    if ( this.iconWarning ) {
+                        this.snackBar.open( `Package created.  ${this.iconWarning}`, 'dismiss', { duration: 15000 } );
+                    }
                     this.triggerPackage.emit( pkg );
                     this.package = new TriggerPackageMetaModel();
                     this.package.category = this._selectedCategory;

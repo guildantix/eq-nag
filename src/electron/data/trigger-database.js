@@ -24,6 +24,7 @@ const {
     TriggerParseHistoryModel,
 } = require( './models/trigger' );
 const ForwardRef = require( '../forward-ref' );
+const { sanitizeTriggerIcons } = require( '../utilities/icons' );
 const customAlphabet = require( 'nanoid' ).customAlphabet;
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const idLen = 16;
@@ -499,6 +500,7 @@ class TriggerDatabaseStore extends Store {
             ( event, triggers ) => {
                 let triggerIds = [];
                 for ( let i = 0; i < triggers?.length; i++ ) {
+                    sanitizeTriggerIcons( triggers[ i ] );
                     triggerIds.push( this.add( triggers[ i ], i === triggers.length - 1 ) );
                 }
                 event.sender.send( 'trigger:mass-create', triggerIds );
@@ -2051,6 +2053,8 @@ class TriggerDatabaseStore extends Store {
             onCreatedHandlers.forEach( fn => fn( trigger ) );
 
         }
+
+        sanitizeTriggerIcons( packageTrigger );
 
         trigger.name = packageTrigger.name;
         trigger.capturePhrases = packageTrigger.capturePhrases;
