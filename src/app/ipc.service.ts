@@ -3,7 +3,7 @@ import * as Electron from 'electron';
 import { UpdateInfo } from 'electron-updater';
 import { Observable, Observer, Subject } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
-import { DataTickModel, DkpEntryModel, TriggerModel, OverlayWindowModel, ActionTypes, FocusEffectSettings, CharacterModel, BasicError, TriggerFolder, FileModel, Tag, AuthorModel, PackageFileModel, TriggerPackageMetaModel, TriggerPackageVersion, FctStylesModel, OverlayBoundsChangedEventArgs, DialogEventArgs, QuickShareMetaModel, LogFileLocation, IpcMessage, DeathRecapPreferences, QuickShareAuthorListTypes, Progress, QuitFailureData, DuplicateTriggerAction, ScrapedSpell, ScrapedClickEffect, TriggerParseHistoryModel, SimulationProgress, FctCombatGroup, CombatTypes, StylePropertiesModel, CombatAnimations, TriggersProfileModel, ConsoleMessageModel, LogTypes, ServerCombatModel, ProgressModel, ServerConsoleMessage, ChatRoomLinkReceivedEventArgs, RenderTokenModel, TokenChangeModel, ShareInstallResult, SanitizedQuickShare, PushRecapPreferences } from './core.model';
+import { DataTickModel, DkpEntryModel, TriggerModel, OverlayWindowModel, ActionTypes, FocusEffectSettings, CharacterModel, BasicError, TriggerFolder, FileModel, Tag, AuthorModel, PackageFileModel, TriggerPackageMetaModel, TriggerPackageVersion, FctStylesModel, OverlayBoundsChangedEventArgs, DialogEventArgs, QuickShareMetaModel, LogFileLocation, IpcMessage, DeathRecapPreferences, QuickShareAuthorListTypes, Progress, QuitFailureData, DuplicateTriggerAction, ScrapedSpell, ScrapedClickEffect, TriggerParseHistoryModel, SimulationProgress, FctCombatGroup, CombatTypes, StylePropertiesModel, CombatAnimations, TriggersProfileModel, ConsoleMessageModel, LogTypes, ServerCombatModel, ProgressModel, ServerConsoleMessage, ChatRoomLinkReceivedEventArgs, RenderTokenModel, TokenChangeModel, ShareInstallResult, SanitizedQuickShare, PushRecapPreferences, ShareFilePayload, ShareFileReadResult, ShareFileSaveResult } from './core.model';
 import { GinaConfiguration, GinaTriggerGroups } from './gina.model';
 import { ColorUtility } from './utilities';
 import { nagId } from './core/nag-id.util';
@@ -64,6 +64,7 @@ export class IpcService {
     private _warningResolvedObservers: Observer<DialogEventArgs>[] = [];
     private _onReceivedQuickShare: Observer<string>[] = [];
     private _onReceivedQuickSharePackage: Observer<string>[] = [];
+    private _onShareFilePathReceived: Observer<string>[] = [];
     private _onOrphanedTriggerWarning: Observer<boolean>[] = [];
     private _onMissingPackageOverlay: Observer<OverlayWindowModel>[] = [];
     private _onQuitFalure: Observer<QuitFailureData>[] = [];
@@ -207,6 +208,14 @@ export class IpcService {
                     ngZone.run( () => {
                         this._onReceivedQuickShare?.forEach( f => {
                             f.next( quickShareId );
+                        } );
+                    } );
+                } );
+
+                window.api.ipc.on( 'fileshare:open-path', ( event: any, filePath: string ) => {
+                    ngZone.run( () => {
+                        this._onShareFilePathReceived?.forEach( f => {
+                            f.next( filePath );
                         } );
                     } );
                 } );
@@ -554,6 +563,97 @@ export class IpcService {
     public quickShareCaptured(): Observable<string> {
         let obs: Observable<string> = new Observable<string>( ( observer: Observer<string> ) => {
             this._onReceivedQuickShare.push( observer );
+        } );
+
+        return obs;
+    }
+
+    /**
+     * Emits the path of a share file that Nag was asked to open, from a double click or the command line.
+     */
+    public shareFilePathReceived(): Observable<string> {
+        let obs: Observable<string> = new Observable<string>( ( observer: Observer<string> ) => {
+            this._onShareFilePathReceived.push( observer );
+        } );
+
+        return obs;
+    }
+
+    /**
+     * Asks the user where to save a .nag file and writes the share to it.
+     *
+     * @param payload The share payload, in the shape of the receive quick share dialog.
+     * @param suggestedName The suggested file name.
+     */
+    public saveShareFile( payload: ShareFilePayload, suggestedName: string ): Observable<ShareFileSaveResult> {
+        let obs: Observable<ShareFileSaveResult> = new Observable<ShareFileSaveResult>( ( observer: Observer<ShareFileSaveResult> ) => {
+
+            window.api.ipc.invoke<ShareFileSaveResult>( 'fileshare:save', payload, suggestedName )
+                .then( result => {
+                    this.ngZone.run( () => {
+                        observer.next( result );
+                        observer.complete();
+                    } );
+                } )
+                .catch( () => {
+                    this.ngZone.run( () => {
+                        observer.next( Object.assign( new ShareFileSaveResult(), { ok: false, code: 'writeFailed' } ) );
+                        observer.complete();
+                    } );
+                } );
+
+        } );
+
+        return obs;
+    }
+
+    /**
+     * Asks the user to pick a share file, then reads and validates it.
+     */
+    public openShareFile(): Observable<ShareFileReadResult> {
+        let obs: Observable<ShareFileReadResult> = new Observable<ShareFileReadResult>( ( observer: Observer<ShareFileReadResult> ) => {
+
+            window.api.ipc.invoke<ShareFileReadResult>( 'fileshare:open' )
+                .then( result => {
+                    this.ngZone.run( () => {
+                        observer.next( result );
+                        observer.complete();
+                    } );
+                } )
+                .catch( () => {
+                    this.ngZone.run( () => {
+                        observer.next( Object.assign( new ShareFileReadResult(), { ok: false, code: 'damaged', fileName: '', details: 'The file could not be read.' } ) );
+                        observer.complete();
+                    } );
+                } );
+
+        } );
+
+        return obs;
+    }
+
+    /**
+     * Reads and validates the share file at the given absolute path.
+     *
+     * @param filePath The absolute file path.
+     */
+    public readShareFilePath( filePath: string ): Observable<ShareFileReadResult> {
+        let obs: Observable<ShareFileReadResult> = new Observable<ShareFileReadResult>( ( observer: Observer<ShareFileReadResult> ) => {
+
+            window.api.ipc.invoke<ShareFileReadResult>( 'fileshare:read-path', filePath )
+                .then( result => {
+                    this.ngZone.run( () => {
+                        observer.next( result );
+                        observer.complete();
+                    } );
+                } )
+                .catch( () => {
+                    this.ngZone.run( () => {
+                        observer.next( Object.assign( new ShareFileReadResult(), { ok: false, code: 'damaged', fileName: '', details: 'The file could not be read.' } ) );
+                        observer.complete();
+                    } );
+                } );
+
         } );
 
         return obs;

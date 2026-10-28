@@ -897,18 +897,22 @@ export class DialogService {
      * @param title The dialog title.
      * @param message The message(s) to display to the user.
      */
-    public showErrorDialog( title: string, message: string | ( string | ColoredString )[] ): void {
+    public showErrorDialog( title: string, message: string | ( string | ColoredString )[] ): Observable<any> {
         let data: NotificationDialogModel = new NotificationDialogModel();
-        
+
         data.title = title;
         data.message = message;
         data.notificationType = NotificationTypes.Error;
 
-        this.dialog.open( NotificationDialogComponent, {
+        let closed = this.dialog.open( NotificationDialogComponent, {
             width: '450px',
             data: data,
             panelClass: 'app-dialog',
-        } ).afterClosed().subscribe();
+        } ).afterClosed();
+
+        closed.subscribe();
+
+        return closed;
     }
     
 

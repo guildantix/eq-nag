@@ -223,3 +223,49 @@ button.connected-button {
         }
     }
 }
+
+div.drop-overlay {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background-color: #000000b3;
+    pointer-events: none;
+
+    .drop-overlay-box {
+        display: flex;
+        flex-flow: column nowrap;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        height: 100%;
+        border: 3px dashed #69f0ae;
+        border-radius: 12px;
+        color: #69f0ae;
+
+        mat-icon {
+            font-size: 64px;
+            line-height: 64px;
+            width: 64px;
+            height: 64px;
+        }
+
+        .drop-overlay-title {
+            margin-top: 12px;
+            font-size: 24px;
+            font-weight: 500;
+        }
+
+        .drop-overlay-sub {
+            margin-top: 6px;
+            font-size: 14px;
+            color: rgba(255,255,255,.7);
+        }
+    }
+}

@@ -1,4 +1,4 @@
-import { Component, ViewChild, ElementRef, OnInit } from '@angular/core';
+import { Component, ViewChild, ElementRef, OnInit, HostListener } from '@angular/core';
 import * as _ from 'lodash-es';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { IpcService } from './ipc.service';
@@ -12,6 +12,7 @@ import { forkJoin, Observable, timer } from 'rxjs';
 import { ColoredString } from './dialogs/dialog.model';
 import { SettingsComponent } from './settings/settings-component/settings.component';
 import { QuickShareService } from './core/quick-share.service';
+import { ShareFileService } from './core/share-file.service';
 import { TriggersComponent } from './triggers/triggers.component';
 import { JoinChatRoomDialogResult } from './dialogs/join-chat-room-dialog/join-chat-room-dialog.component';
 
@@ -62,6 +63,8 @@ export class MainComponent implements OnInit {
     public archiveLabel: string = null;
     public closeAfterArchive: boolean = false;
     public showingUpdateConfirmation: boolean = false;
+    public dropActive: boolean = false;
+    private _dragDepth: number = 0;
 
     @ViewChild( 'fileSelector' ) private fileSelector: ElementRef<HTMLInputElement>;
     @ViewChild( 'characterList', { static: true } ) private characterList: CharactersListComponent;
@@ -79,8 +82,124 @@ export class MainComponent implements OnInit {
         private readonly setupService: SetupService,
         private readonly libraryService: TriggerLibraryService,
         private readonly quickShareService: QuickShareService,
+        private readonly shareFileService: ShareFileService,
     ) {
     }
+
+    /**
+     * Returns true if the drag event carries files.
+     *
+     * @param event The drag event.
+     */
+    private isFileDrag( event: DragEvent ): boolean {
+        return Array.from( event.dataTransfer?.types ?? [] ).includes( 'Files' );
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Shows the drop overlay when files are dragged over the window.
+     *
+     * @param event The drag event.
+     */
+    @HostListener( 'window:dragenter', [ '$event' ] )
+    onDragEnter( event: DragEvent ): void {
+        if ( this.isFileDrag( event ) ) {
+            event.preventDefault();
+            this._dragDepth++;
+            this.dropActive = true;
+        }
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Allows files to be dropped on the window.
+     *
+     * @param event The drag event.
+     */
+    @HostListener( 'window:dragover', [ '$event' ] )
+    onDragOver( event: DragEvent ): void {
+        if ( this.isFileDrag( event ) ) {
+            event.preventDefault();
+        }
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Hides the drop overlay once the dragged files leave the window.
+     *
+     * @param event The drag event.
+     */
+    @HostListener( 'window:dragleave', [ '$event' ] )
+    onDragLeave( event: DragEvent ): void {
+        if ( this.isFileDrag( event ) ) {
+            this._dragDepth = Math.max( 0, this._dragDepth - 1 );
+            if ( this._dragDepth === 0 ) {
+                this.dropActive = false;
+            }
+        }
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Queues an import for each dropped file.
+     *
+     * @param event The drag event.
+     */
+    @HostListener( 'window:drop', [ '$event' ] )
+    onDrop( event: DragEvent ): void {
+        if ( this.isFileDrag( event ) ) {
+            event.preventDefault();
+            this._dragDepth = 0;
+            this.dropActive = false;
+
+            let paths = Array.from( event.dataTransfer.files )
+                .map( file => window.api.getPathForFile( file ) )
+                .filter( filePath => !!filePath );
+
+            paths.forEach( filePath => this.shareFileService.importFromPath( filePath ) );
+        }
+    }
+
+
+
+
+
+
+
+
+
 
     ngOnInit(): void {
 
@@ -135,6 +254,10 @@ export class MainComponent implements OnInit {
         this.ipcService.getAppIsDev().subscribe( isDev => this.isDev = isDev );
         
         this.checkForTriggerUpdates();
+
+        // Subscribed before the ready signal, since the main process sends a pending path as soon as it sees it.
+        this.ipcService.shareFilePathReceived().subscribe( filePath => this.shareFileService.importFromPath( filePath ) );
+
         this.ipcService.mainWindowAngularReady();
 
         this.ipcService.quickShareCaptured().subscribe( quickShareId => {

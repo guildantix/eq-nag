@@ -14,6 +14,7 @@ import { CdkVirtualScrollViewport } from '@angular/cdk/scrolling';
 import { BehaviorSubject, forkJoin, Observable, timer } from 'rxjs';
 import { TriggerLibraryService } from '../windows/trigger-library.service';
 import { QuickShareService } from '../core/quick-share.service';
+import { ShareFileService } from '../core/share-file.service';
 import { FolderConditionsDialogComponent } from './folder-conditions-dialog/folder-conditions-dialog.component';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
@@ -103,6 +104,7 @@ export class TriggersComponent implements OnInit {
         private readonly ngZone: NgZone,
         private readonly libraryService: TriggerLibraryService,
         private readonly quickShareService: QuickShareService,
+        private readonly shareFileService: ShareFileService,
         private readonly dialog: MatDialog,
     ) {
         
@@ -2078,6 +2080,22 @@ export class TriggersComponent implements OnInit {
      */
     openDeathRecap() {
         this.dialogService.showDeathRecapDialog();
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Lets the user pick a share file and opens the import review for it.
+     */
+    importFromFile() {
+        this.shareFileService.importFromDialog();
     }
 
 

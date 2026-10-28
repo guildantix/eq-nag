@@ -27,6 +27,7 @@ const channelPrefixes = [
     'game-resources',
     'audio-file',
     'file',
+    'fileshare',
     'pkg',
     'quickShare',
     'tags',

@@ -70,6 +70,7 @@ import GameResources from "./src/electron/data/game-resources.js";
 import FilesDatabaseStore from "./src/electron/data/files-database.js";
 import GinaImporter from "./src/electron/gina-importer.js";
 import RollTracker from "./src/electron/roll-tracker.js";
+import ShareFile from "./src/electron/utilities/share-file.js";
 
 import {
   IpcMessage,
@@ -480,6 +481,21 @@ const bootstrapApp = () => {
     
 }
 
+/** A share file path, from the command line, that has not been sent to the main window yet. */
+let pendingSharePath = ShareFile.findShareFileArg( process.argv );
+/** True once the main window's Angular app is ready to receive a share file path. */
+let shareFileRendererReady = false;
+
+/**
+ * Sends the pending share file path to the main window, once the window is ready.
+ */
+function sendPendingSharePath() {
+    if ( pendingSharePath && shareFileRendererReady && mainWindow && !mainWindow.isDestroyed() ) {
+        mainWindow.webContents.send( 'fileshare:open-path', pendingSharePath );
+        pendingSharePath = null;
+    }
+}
+
 // Using the instance lock we can prevent multiple Nag instances from opening.
 const instanceLock = allowMultipleInstances || app.requestSingleInstanceLock();
 
@@ -503,7 +519,13 @@ if ( !allowMultipleInstances && !instanceLock ) {
                 mainWindow.show();
                 mainWindow.setAlwaysOnTop( false );
                 mainWindow.focus();
-            
+
+            }
+
+            let sharePath = ShareFile.findShareFileArg( argv );
+            if ( sharePath ) {
+                pendingSharePath = sharePath;
+                sendPendingSharePath();
             }
         } );
     }
@@ -832,6 +854,91 @@ ipcMain.on( 'quickshare_captured', ( event, quickShareId ) => {
 ipcMain.on( 'quicksharePackage_captured', ( event, packageId ) => {
     mainWindow.webContents.send( 'quicksharePackage_captured', packageId );
 } );
+
+ipcMain.on( 'main:angular-ready', () => {
+    shareFileRendererReady = true;
+    sendPendingSharePath();
+} );
+
+ipcMain.handle( 'fileshare:save',
+    /**
+     * Asks the user where to save a .nag file, then writes the share to it.
+     *
+     * @param {Electron.IpcMainInvokeEvent} event The event args.
+     * @param {any} payload The share payload.
+     * @param {string} suggestedName The suggested file name.
+     */
+    async ( event, payload, suggestedName ) => {
+        try {
+            let baseName = String( suggestedName ?? '' ).replace( /\.nag$/i, '' ).replace( /[<>:"/\\|?*\x00-\x1f]/g, '_' ).trim();
+            let result = await dialog.showSaveDialog( BrowserWindow.fromWebContents( event.sender ), {
+                title: 'Save trigger share',
+                defaultPath: `${baseName || 'Nag triggers'}.nag`,
+                filters: [ { name: 'Nag trigger files', extensions: [ 'nag' ] } ],
+            } );
+
+            if ( result.canceled || !result.filePath ) {
+                return { ok: false, code: 'cancelled' };
+            }
+
+            let filePath = path.extname( result.filePath ).toLowerCase() === '.nag' ? result.filePath : `${result.filePath}.nag`;
+            let writeResult = ShareFile.writeShareFile( filePath, payload, app.getVersion() );
+
+            if ( !writeResult.ok ) {
+                return { ok: false, code: writeResult.code };
+            }
+
+            return { ok: true, filePath: filePath };
+        } catch ( error ) {
+            log.error( '[fileshare:save] Failed to save the share file.', error );
+            return { ok: false, code: 'writeFailed', details: error?.message };
+        }
+    } );
+
+ipcMain.handle( 'fileshare:open',
+    /**
+     * Asks the user for a share file, then reads and validates it.
+     *
+     * @param {Electron.IpcMainInvokeEvent} event The event args.
+     */
+    async ( event ) => {
+        try {
+            let result = await dialog.showOpenDialog( BrowserWindow.fromWebContents( event.sender ), {
+                title: 'Import trigger share',
+                properties: [ 'openFile' ],
+                filters: [ { name: 'Nag trigger files', extensions: [ 'nag', 'zip', 'json' ] } ],
+            } );
+
+            if ( result.canceled || !result.filePaths?.length ) {
+                return { ok: false, code: 'cancelled', fileName: '' };
+            }
+
+            return ShareFile.readShareFile( result.filePaths[ 0 ], app.getVersion() );
+        } catch ( error ) {
+            log.error( '[fileshare:open] Failed to open the share file.', error );
+            return { ok: false, code: 'damaged', fileName: '', details: 'The file could not be read.' };
+        }
+    } );
+
+ipcMain.handle( 'fileshare:read-path',
+    /**
+     * Reads and validates the share file at the given absolute path.
+     *
+     * @param {Electron.IpcMainInvokeEvent} event The event args.
+     * @param {string} filePath The absolute file path, from a drag and drop.
+     */
+    async ( event, filePath ) => {
+        try {
+            if ( typeof filePath !== 'string' || !path.isAbsolute( filePath ) ) {
+                return { ok: false, code: 'damaged', fileName: '', details: 'The path is not valid.' };
+            }
+
+            return ShareFile.readShareFile( filePath, app.getVersion() );
+        } catch ( error ) {
+            log.error( '[fileshare:read-path] Failed to read the share file.', error );
+            return { ok: false, code: 'damaged', fileName: '', details: 'The file could not be read.' };
+        }
+    } );
 
 var pseudoClipboard = {};
 ipcMain.on( 'context:store:pseudo-clipboard', ( event, model ) => {

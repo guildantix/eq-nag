@@ -103,6 +103,13 @@
     "productName": "EQ Nag",
     "appId": "scripter.eqNotificationAgent",
     "artifactName": "EQ-Nag-Setup-${version}.${ext}",
+    "fileAssociations": [
+      {
+        "ext": "nag",
+        "name": "EQ Nag trigger file",
+        "description": "EQ Nag trigger file"
+      }
+    ],
     "extraResources": [
       ".env"
     ],
