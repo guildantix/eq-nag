@@ -1,5 +1,5 @@
 {
-    "triggerId": "trGkfio6z2xs6hAh",
+    "triggerId": "CaptureSpellCast",
     "name": "Capture spell casting",
     "enabled": true,
     "capturePhrases": [
@@ -8,62 +8,30 @@
             "useRegEx": true,
             "requirePreviousPhrase": false,
             "duration": null,
-            "phrase": "^You begin casting (.*)\\.$",
-            "phraseId": "v7GDFrDCcFwhTAOP"
-        },
-        {
-            "ignoreCase": false,
-            "requirePreviousPhrase": false,
-            "duration": null,
-            "phraseId": "1nl8HaPwOjAFOoFO",
-            "useRegEx": true,
-            "phrase": "^You activate (.*)\\.$"
-        },
-        {
-            "ignoreCase": false,
-            "requirePreviousPhrase": false,
-            "duration": null,
-            "phraseId": "7iax6y76baIan4jq",
-            "useRegEx": true,
-            "phrase": "^You begin singing (.*)\\.$"
+            "phrase": "^You (?:begin (?:cast|sing)ing|activate) (.*)\\.$",
+            "phraseId": "PhraseForCasting"
         },
         {
             "ignoreCase": true,
             "useRegEx": true,
             "requirePreviousPhrase": false,
             "duration": null,
-            "phraseId": "SmZAE0oEzuhq1cqh",
-            "phrase": "^Your ${SpellBeingCast} spell is interrupted\\."
+            "phraseId": "Phrase4Interrupt",
+            "phrase": "^Your ${SpellBeingCast} spell (?:is interrupted|did not take hold|fizzles)"
         },
         {
             "ignoreCase": true,
             "useRegEx": true,
             "requirePreviousPhrase": false,
             "duration": null,
-            "phraseId": "iNy1LoUUFcXnaHws",
-            "phrase": "^(.*) resisted your ${SpellBeingCast}"
-        },
-        {
-            "ignoreCase": true,
-            "useRegEx": true,
-            "requirePreviousPhrase": false,
-            "duration": null,
-            "phraseId": "CC31CtgDiqwi8xV4",
-            "phrase": "^Your ${SpellBeingCast} spell did not take hold\\."
+            "phraseId": "PhraseForResists",
+            "phrase": "^(.{0,40}) resisted your ${SpellBeingCast}"
         },
         {
             "ignoreCase": true,
             "requirePreviousPhrase": false,
             "duration": null,
-            "phraseId": "9ccr5pJj08H9rEi7",
-            "phrase": "^Your ${SpellBeingCast} spell fizzles!$",
-            "useRegEx": true
-        },
-        {
-            "ignoreCase": true,
-            "requirePreviousPhrase": false,
-            "duration": null,
-            "phraseId": "z4i5GLKVp79M5FAV",
+            "phraseId": "PhraseForReflect",
             "phrase": "^${Character}'s ${SpellBeingCast} spell has been reflected",
             "useRegEx": true
         }
@@ -73,12 +41,10 @@
         {
             "actionType": 5,
             "variableName": "SpellBeingCast",
-            "actionId": "xygXKRSFpi3vYQ4D",
-            "phraseId": "v7GDFrDCcFwhTAOP",
+            "actionId": "ActStoreVarSpell",
+            "phraseId": "PhraseForCasting",
             "phrases": [
-                "v7GDFrDCcFwhTAOP",
-                "1nl8HaPwOjAFOoFO",
-                "7iax6y76baIan4jq"
+                "PhraseForCasting"
             ],
             "restartBehavior": 0,
             "onlyExecuteInDev": false,
@@ -87,17 +53,14 @@
         },
         {
             "actionType": 7,
-            "phraseId": "SmZAE0oEzuhq1cqh",
+            "phraseId": "Phrase4Interrupt",
             "overlayId": "gx4ySJU9Cj35xR1n",
             "duration": 15,
-            "displayText": "Spell ${SpellBeingCast} was interrupted.",
-            "actionId": "2779yyKWjlmJvIhn",
+            "actionId": "ActClearVarSpell",
             "phrases": [
-                "SmZAE0oEzuhq1cqh",
-                "iNy1LoUUFcXnaHws",
-                "CC31CtgDiqwi8xV4",
-                "9ccr5pJj08H9rEi7",
-                "z4i5GLKVp79M5FAV"
+                "Phrase4Interrupt",
+                "PhraseForResists",
+                "PhraseForReflect"
             ],
             "variableName": "SpellBeingCast",
             "restartBehavior": 0,
