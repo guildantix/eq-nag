@@ -17,7 +17,7 @@
             "requirePreviousPhrase": false,
             "duration": null,
             "phraseId": "Phrase4Interrupt",
-            "phrase": "^Your ${SpellBeingCast} spell (?:is interrupted|did not take hold|fizzles!)\\."
+            "phrase": "^Your ${SpellBeingCast} spell (?:is interrupted|did not take hold|fizzles)"
         },
         {
             "ignoreCase": true,
