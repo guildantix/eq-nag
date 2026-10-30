@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnIni
 import { Subscription } from 'rxjs';
 import { DialogService } from '../dialogs/dialog.service';
 import { IpcService } from '../ipc.service';
-import { CharacterModel, PushRecapProc, PushRecapSummary } from '../core.model';
+import { CharacterModel, PushRecapProc, PushRecapSummary, PushScanStatus } from '../core.model';
 
 /**
  * One cell of the player by spell grid.
@@ -61,6 +61,23 @@ export class PushTrackerComponent implements OnInit, OnDestroy {
         { label: '1B+', value: 1000000000 },
     ];
 
+    public source: 'saved' | 'scan' = 'saved';
+    public characters: CharacterModel[] = [];
+    public scanCharacterId: string | null = null;
+    public scanStatus: PushScanStatus | null = null;
+    public scanResults: PushRecapSummary[] = [];
+    public scanStartMessage: string = '';
+    public savedKeys: Set<string> = new Set<string>();
+
+    public readonly scanFloorOptions: { label: string, value: number }[] = [
+        { label: '10K', value: 10000 },
+        { label: '100K', value: 100000 },
+        { label: '1M', value: 1000000 },
+        { label: '10M', value: 10000000 },
+        { label: '100M', value: 100000000 },
+    ];
+
+    public scanFloor: number = 1000000;
     public minDamage: number = 0;
     public namedOnly: boolean = false;
     public mobFilter: string = '';
@@ -74,7 +91,6 @@ export class PushTrackerComponent implements OnInit, OnDestroy {
     public gridSpells: string[] = [];
     public gridSpellPush: Map<string, number | null> = new Map<string, number | null>();
     public gridRows: PushGridRow[] = [];
-    public characters: CharacterModel[] = [];
 
     private subscription: Subscription = new Subscription();
     private detailSubscription: Subscription | null = null;
@@ -97,10 +113,32 @@ export class PushTrackerComponent implements OnInit, OnDestroy {
 
     ngOnInit(): void {
         this.subscription.add( this.ipcService.onPushRecapsChanged().subscribe( () => this.load() ) );
+        this.subscription.add( this.ipcService.onPushScanProgress().subscribe( progress => {
+            if ( this.scanStatus != null ) {
+                Object.assign( this.scanStatus, progress );
+                this.changeDetector.markForCheck();
+            }
+        } ) );
+        this.subscription.add( this.ipcService.onPushScanDone().subscribe( status => {
+            this.scanStatus = status;
+            this.loadScanResults();
+        } ) );
         this.load();
         this.ipcService.getCharacters().subscribe( characters => {
-            this.characters = ( characters ?? [] ).filter( c => c.logFile );
+            this.characters = characters.filter( c => c.logFile );
+            this.scanCharacterId = this.scanCharacterId ?? this.characters[ 0 ]?.characterId ?? null;
             this.changeDetector.markForCheck();
+        } );
+        this.ipcService.getPushScanStatus().subscribe( status => {
+            this.scanStatus = status;
+            if ( status.status !== 'idle' ) {
+                this.scanCharacterId = status.characterId;
+                if ( this.scanFloorOptions.some( o => o.value === status.minDamage ) ) {
+                    this.scanFloor = status.minDamage;
+                }
+                this.source = status.status === 'running' ? 'scan' : this.source;
+                this.loadScanResults();
+            }
         } );
     }
 
@@ -156,21 +194,33 @@ export class PushTrackerComponent implements OnInit, OnDestroy {
         return typeof value === 'string' ? value : value.name;
     }
 
+    public get scanRunning(): boolean {
+        return this.scanStatus?.status === 'running';
+    }
 
+    public get scanPercent(): number {
+        return this.scanStatus != null && this.scanStatus.total > 0 ? Math.min( 100, Math.floor( this.scanStatus.bytes * 100 / this.scanStatus.total ) ) : 0;
+    }
 
+    public get scanNotice(): string {
+        let status = this.scanStatus;
+        if ( this.scanStartMessage !== '' ) {
+            return this.scanStartMessage;
+        }
+        if ( status == null || status.status === 'idle' || status.status === 'running' ) {
+            return '';
+        }
+        if ( status.status !== 'done' || status.message !== '' ) {
+            return status.message;
+        }
+        let seconds = Math.max( 1, Math.round( status.elapsedMs / 1000 ) );
+        return `${status.kills} ${status.kills === 1 ? 'kill' : 'kills'} found in ${this.formatLength( seconds )}${status.resumed ? ', continuing the last scan of this log' : ''}.  Fights with ${this.formatDamage( status.minDamage )} or more damage taken are listed.${status.capped ? '  Only the most recent 300 are kept.' : ''}`;
+    }
 
+    public get scanFailed(): boolean {
+        return this.scanStartMessage !== '' || this.scanStatus?.status === 'error';
+    }
 
-
-
-
-
-
-    /**
-     * Names a character in the open menu, with the server so same-named characters
-     * can be told apart.
-     *
-     * @param character The character to label.
-     */
     public characterLabel( character: CharacterModel ): string {
         return character.server ? `${character.name} (${character.server})` : character.name;
     }
@@ -237,36 +287,50 @@ export class PushTrackerComponent implements OnInit, OnDestroy {
         return ( proc.push !== null && proc.push !== undefined ) ? `${round( proc.count * proc.push )}` : `~${round( proc.count * proc.pushMin )}\u2013${round( proc.count * proc.pushMax )}`;
     }
 
+    public onSourceChange(): void {
+        this.selected = null;
+        this.applyFilters();
+    }
 
-
-
-
-
-
-
-
-
-    /**
-     * Re-applies the filters after the damage, named or mob filter changed.
-     */
     public onFilterChange(): void {
         this.applyFilters();
     }
 
+    public startScan(): void {
+        if ( this.scanCharacterId == null || this.scanRunning ) {
+            return;
+        }
+        this.scanStartMessage = '';
+        this.ipcService.startPushScan( this.scanCharacterId, this.scanFloor ).subscribe( reply => {
+            if ( reply.started ) {
+                this.ipcService.getPushScanStatus().subscribe( status => {
+                    this.scanStatus = status;
+                    this.loadScanResults();
+                } );
+            } else {
+                this.scanStartMessage = reply.message;
+                this.changeDetector.markForCheck();
+            }
+        } );
+    }
 
+    public cancelScan(): void {
+        this.ipcService.cancelPushScan();
+    }
 
+    public isSaved( recap: PushRecapSummary ): boolean {
+        return this.savedKeys.has( this.recapKey( recap ) );
+    }
 
+    public saveScanned( recap: PushRecapSummary, event: Event ): void {
+        event.stopPropagation();
+        this.ipcService.getPushScanResult( recap.id ).subscribe( full => {
+            if ( full != null ) {
+                this.ipcService.savePushRecap( Object.assign( {}, full, { id: '' } ) );
+            }
+        } );
+    }
 
-
-
-
-
-
-    /**
-     * Picks the recap whose details are shown.
-     *
-     * @param recap The recap that was clicked.
-     */
     public select( recap: PushRecapSummary ): void {
         this.selected = recap;
         this.loadDetail();
@@ -421,37 +485,31 @@ export class PushTrackerComponent implements OnInit, OnDestroy {
     private load(): void {
         this.ipcService.getPushRecaps().subscribe( recaps => {
             this.recaps = ( recaps ?? [] ).slice().sort( ( a, b ) => b.killTime.localeCompare( a.killTime ) );
-            this.showCharacter = new Set( this.recaps.map( r => r.characterName ) ).size > 1;
+            this.savedKeys = new Set( this.recaps.map( r => this.recapKey( r ) ) );
             this.loaded = true;
             this.applyFilters();
         } );
     }
 
+    private recapKey( recap: PushRecapSummary ): string {
+        return `${recap.characterName}|${recap.mob}|${recap.killTime}`;
+    }
 
-
-
-
-
-
-
-
-
-    /**
-     * Filters the recap list and keeps the selection only if it is still shown.
-     */
-    private applyFilters(): void {
-        const mob = this.mobFilter.trim().toLowerCase();
-        this.rows = this.recaps.filter( r => {
-            return r.damageTaken >= this.minDamage
-                && ( !this.namedOnly || r.named )
-                && ( mob === '' || r.mob.toLowerCase().indexOf( mob ) > -1 );
+    private loadScanResults(): void {
+        this.ipcService.getPushScanResults().subscribe( results => {
+            this.scanResults = ( results ?? [] ).slice().sort( ( a, b ) => b.killTime.localeCompare( a.killTime ) );
+            this.applyFilters();
         } );
-        const selectedId = this.selected?.id;
-        const stillListed = this.rows.find( r => r.id === selectedId ) ?? null;
-        this.selected = ( this.selected === null || this.selected === undefined ) ? null : stillListed;
-        const selectionChanged = this.selected === null || this.selected === undefined
-            || this.selected.id !== this.detail?.id || this.selected.savedAt !== this.detail?.savedAt;
-        if ( selectionChanged ) {
+    }
+
+    private applyFilters(): void {
+        let mob = this.mobFilter.trim().toLowerCase();
+        let items = this.source === 'scan' ? this.scanResults : this.recaps;
+        this.showCharacter = this.source === 'saved' && new Set( this.recaps.map( r => r.characterName ) ).size > 1;
+        this.rows = items.filter( r => r.damageTaken >= this.minDamage && ( !this.namedOnly || r.named ) && ( mob === '' || r.mob.toLowerCase().indexOf( mob ) > -1 ) );
+        let selectedId = this.selected?.id;
+        this.selected = this.selected == null ? null : this.rows.find( r => r.id === selectedId ) ?? null;
+        if ( this.selected == null || this.selected.id !== this.detail?.id || this.selected.savedAt !== this.detail?.savedAt ) {
             this.loadDetail();
         } else {
             this.changeDetector.markForCheck();
@@ -476,8 +534,9 @@ export class PushTrackerComponent implements OnInit, OnDestroy {
         this.detailSubscription = null;
         this.detail = null;
         this.buildGrid();
-        if ( this.selected !== null && this.selected !== undefined ) {
-            this.detailSubscription = this.ipcService.getPushRecap( this.selected.id ).subscribe( recap => {
+        if ( this.selected != null ) {
+            let request = this.source === 'scan' ? this.ipcService.getPushScanResult( this.selected.id ) : this.ipcService.getPushRecap( this.selected.id );
+            this.detailSubscription = request.subscribe( recap => {
                 this.detail = recap;
                 this.buildGrid();
             } );

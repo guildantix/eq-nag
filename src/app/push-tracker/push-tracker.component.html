@@ -7,15 +7,50 @@
         <button mat-menu-item *ngFor="let character of characters" (click)="openPushRecap( character )">{{characterLabel( character )}}</button>
     </mat-menu>
     <button mat-button (click)="copySummary()" [disabled]="detail == null"><mat-icon class="material-icons-outlined">content_copy</mat-icon> Copy summary</button>
-    <button mat-button class="color-red" (click)="clearAll()" [disabled]="recaps.length === 0"><mat-icon class="material-icons-outlined">delete_sweep</mat-icon> Clear all</button>
+    <button mat-button class="color-red" (click)="clearAll()" [disabled]="source !== 'saved' || recaps.length === 0"><mat-icon class="material-icons-outlined">delete_sweep</mat-icon> Clear all</button>
 </mat-toolbar>
 <div class="tab-content">
 
-    <ng-template [ngIf]="loaded && recaps.length === 0">
+    <div class="filters" *ngIf="loaded">
+        <mat-form-field>
+            <mat-label>Source</mat-label>
+            <mat-select [(ngModel)]="source" name="source" (selectionChange)="onSourceChange()">
+                <mat-option value="saved">Saved recaps</mat-option>
+                <mat-option value="scan">Scan a log</mat-option>
+            </mat-select>
+        </mat-form-field>
+    </div>
+
+    <ng-template [ngIf]="loaded && source === 'saved' && recaps.length === 0">
         <p class="empty">No push recaps are saved yet.  Turn on the Push Recap hotkey in Settings, then press it in EverQuest after a kill.  Each recap you view is saved here.</p>
     </ng-template>
 
-    <ng-template [ngIf]="recaps.length > 0">
+    <ng-template [ngIf]="loaded && source === 'scan'">
+        <div class="filters">
+            <mat-form-field>
+                <mat-label>Character</mat-label>
+                <mat-select [(ngModel)]="scanCharacterId" name="scanCharacter" [disabled]="scanRunning">
+                    <mat-option *ngFor="let character of characters" [value]="character.characterId">{{characterLabel( character )}}</mat-option>
+                </mat-select>
+            </mat-form-field>
+            <mat-form-field>
+                <mat-label>Fights over</mat-label>
+                <mat-select [(ngModel)]="scanFloor" name="scanFloor" [disabled]="scanRunning">
+                    <mat-option *ngFor="let option of scanFloorOptions" [value]="option.value">{{option.label}} damage</mat-option>
+                </mat-select>
+            </mat-form-field>
+            <button mat-flat-button color="primary" (click)="startScan()" [disabled]="scanRunning || scanCharacterId == null">Scan</button>
+            <button mat-button *ngIf="scanRunning" (click)="cancelScan()">Cancel</button>
+        </div>
+        <div class="scan-progress" *ngIf="scanRunning">
+            <mat-progress-bar mode="determinate" [value]="scanPercent"></mat-progress-bar>
+            <span>{{scanPercent}}% &middot; {{scanStatus.kills}} {{scanStatus.kills === 1 ? 'kill' : 'kills'}} found</span>
+        </div>
+        <p class="note" [class.error]="scanFailed" *ngIf="scanNotice !== ''">{{scanNotice}}</p>
+        <p class="empty" *ngIf="characters.length === 0">No characters with a log file were found.</p>
+    </ng-template>
+
+    <ng-template [ngIf]="loaded && ( source === 'scan' || recaps.length > 0 )">
 
         <div class="filters">
             <mat-form-field>
@@ -57,9 +92,15 @@
                     <td class="num">{{recap.pushValue}}</td>
                     <td class="num">{{recap.unattributed.events}}</td>
                     <td>{{recap.topPusher || '-'}}</td>
-                    <td class="actions"><button mat-icon-button (click)="remove( recap, $event )" matTooltip="Delete this recap"><mat-icon class="material-icons-outlined">delete</mat-icon></button></td>
+                    <td class="actions">
+                        <button mat-icon-button *ngIf="source === 'saved'" (click)="remove( recap, $event )" matTooltip="Delete this recap"><mat-icon class="material-icons-outlined">delete</mat-icon></button>
+                        <ng-template [ngIf]="source === 'scan'">
+                            <span class="saved" *ngIf="isSaved( recap )">Saved</span>
+                            <button mat-button *ngIf="!isSaved( recap )" (click)="saveScanned( recap, $event )" matTooltip="Keep this fight in the saved recaps">Save</button>
+                        </ng-template>
+                    </td>
                 </tr>
-                <tr *ngIf="rows.length === 0"><td [attr.colspan]="showCharacter ? 10 : 9" class="empty">No fights match the filter.</td></tr>
+                <tr *ngIf="rows.length === 0"><td [attr.colspan]="showCharacter ? 10 : 9" class="empty">{{source === 'scan' && scanResults.length === 0 ? 'No scanned fights to show.' : 'No fights match the filter.'}}</td></tr>
             </tbody>
         </table>
 
