@@ -2,6 +2,7 @@ const { ipcRenderer } = require( 'electron' );
 const { loadPushSpells } = require( '../data/push-spells' );
 const { readSession, summarize, analyzeKill, buildLandingIndex } = require( '../utilities/push-recap-parser' );
 const { buildSavedSummary, notNamedNpcRgx } = require( '../utilities/push-recap-summary' );
+const { buildTimelineModel, buildBars, barEvents, axisStep, formatOffset, formatClock } = require( '../utilities/push-timeline' );
 
 
 
@@ -321,6 +322,229 @@ function showMessage( text, isError ) {
 
 
 
+const svgNs = 'http://www.w3.org/2000/svg';
+const chartSeries = [
+    { key: 'player', name: 'Players', color: '#3987e5' },
+    { key: 'proc', name: 'Procs, no player named', color: '#d95926' },
+    { key: 'possible', name: 'Possible procs', color: '#199e70' },
+];
+const kindLabels = [ 'Hit', 'Cast, assumed ~', 'Proc', 'Possible proc' ];
+const kindColors = [ '#3987e5', '#3987e5', '#d95926', '#199e70' ];
+
+/** @type {{ update: ( summary: any, hidden: Set<string> ) => void, reset: () => void } | null} */
+let timeline = null;
+
+
+
+
+
+
+
+
+
+
+/**
+ * Creates an SVG element.
+ *
+ * @returns {SVGElement} The element.
+ *
+ * @param {string} tag The tag name.
+ * @param {Object<string, string | number>} attributes The attributes.
+ * @param {string} [text] The text content.
+ */
+function svgEl( tag, attributes, text ) {
+    let node = document.createElementNS( svgNs, tag );
+    Object.keys( attributes ).forEach( key => node.setAttribute( key, `${attributes[ key ]}` ) );
+    if ( text != null ) {
+        node.textContent = text;
+    }
+    return node;
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Wires the push timeline: a column chart of the push hits over the fight, and a list of what landed in the selected column.
+ *
+ * @returns {{ update: ( summary: any, hidden: Set<string> ) => void, reset: () => void }} The timeline.
+ */
+function createTimeline() {
+
+    let section = document.getElementById( 'timeline' );
+    let note = document.getElementById( 'timelineNote' );
+    let svg = document.getElementById( 'chart' );
+    let tip = document.getElementById( 'chartTip' );
+    let measureButtons = Array.from( document.querySelectorAll( '#measure button' ) );
+    let possibleToggle = document.getElementById( 'showPossible' );
+    let table = document.getElementById( 'drill' );
+    let measure = 'hits';
+    let selected = -1;
+    let current = null;
+
+    let show = ( bar, event ) => {
+        let a = bar * current.model.bucket;
+        let z = Math.min( current.model.seconds, a + current.model.bucket );
+        let clock = formatClock( current.model.fightStart, a );
+        tip.textContent = '';
+        tip.appendChild( el( 'div', 'tip-title', `${formatOffset( a )}–${formatOffset( z )}${clock === '' ? '' : ` · ${clock}`}` ) );
+        chartSeries.filter( s => s.key !== 'possible' || possibleToggle.checked ).forEach( s => {
+            let row = el( 'div', 'tip-row' );
+            row.appendChild( el( 'span', null, s.name ) );
+            row.appendChild( el( 'b', null, `${Math.round( current.bars[ bar ][ s.key ] * 100 ) / 100}` ) );
+            tip.appendChild( row );
+        } );
+        tip.style.display = 'block';
+        tip.style.left = `${Math.min( event.clientX + 14, window.innerWidth - 220 )}px`;
+        tip.style.top = `${event.clientY + 14}px`;
+    };
+
+    let drill = () => {
+        let body = table.querySelector( 'tbody' );
+        body.textContent = '';
+        let title = document.getElementById( 'drillTitle' );
+        let summary = document.getElementById( 'drillNote' );
+        if ( selected === -1 ) {
+            table.hidden = true;
+            title.textContent = 'Click a bar to see what landed';
+            summary.textContent = '';
+            return;
+        }
+        let model = current.model;
+        let a = selected * model.bucket;
+        let z = Math.min( model.seconds, a + model.bucket );
+        let list = barEvents( model, selected, possibleToggle.checked );
+        let counted = list.filter( e => e.kind !== 3 );
+        let clock = formatClock( model.fightStart, a );
+        title.textContent = `${formatOffset( a )}–${formatOffset( z )} into the fight${clock === '' ? '' : ` (${clock})`}`;
+        summary.textContent = `${counted.length} hits · ${Math.round( counted.reduce( ( sum, e ) => sum + e.push, 0 ) * 100 ) / 100} push`;
+        list.forEach( e => {
+            let tr = el( 'tr', e.kind === 3 ? 'dimmed' : null );
+            let eventClock = formatClock( model.fightStart, e.time );
+            tr.appendChild( el( 'td', null, `${formatOffset( e.time )}${eventClock === '' ? '' : ` · ${eventClock}`}` ) );
+            tr.appendChild( el( 'td', null, e.who === '' ? '—' : e.who ) );
+            tr.appendChild( el( 'td', null, e.kind < 2 ? e.spell : `${e.spell}${e.text === '' ? '' : ` …${e.text}`}` ) );
+            tr.appendChild( el( 'td', 'num', `${e.kind === 3 ? '~' : ''}${e.push}` ) );
+            let kind = el( 'td', 'kind' );
+            let chip = el( 'i' );
+            chip.style.background = kindColors[ e.kind ];
+            kind.appendChild( chip );
+            kind.appendChild( document.createTextNode( kindLabels[ e.kind ] ) );
+            tr.appendChild( kind );
+            body.appendChild( tr );
+        } );
+        table.hidden = false;
+    };
+
+    let draw = () => {
+        svg.textContent = '';
+        let { model } = current;
+        let showPossible = possibleToggle.checked;
+        let bars = buildBars( model, measure, showPossible );
+        current.bars = bars;
+        let width = 1000, height = 260, left = 44, right = 8, top = 10, bottom = 28, plotWidth = width - left - right, plotHeight = height - top - bottom;
+        let max = Math.max( 1, ...bars.map( b => b.player + b.proc + b.possible ) );
+        let step = axisStep( max );
+        let ceiling = Math.ceil( max / step ) * step;
+
+        for ( let v = 0; v <= ceiling + step / 2; v += step ) {
+            let y = top + plotHeight - v / ceiling * plotHeight;
+            svg.appendChild( svgEl( 'line', { x1: left, x2: width - right, y1: y, y2: y, stroke: v === 0 ? '#383835' : '#2c2c2a', 'stroke-width': 1 } ) );
+            svg.appendChild( svgEl( 'text', { x: left - 8, y: y + 4, 'text-anchor': 'end', class: 'tick' }, `${Math.round( v * 100 ) / 100}` ) );
+        }
+        for ( let s = 0; s <= model.seconds; s += 30 ) {
+            svg.appendChild( svgEl( 'text', { x: left + s / model.seconds * plotWidth, y: height - 8, 'text-anchor': s === 0 ? 'start' : s === model.seconds ? 'end' : 'middle', class: 'tick' }, formatOffset( s ) ) );
+        }
+
+        let barWidth = plotWidth / model.count;
+        let gap = Math.min( 2, barWidth * 0.2 );
+        bars.forEach( ( b, i ) => {
+            let y0 = top + plotHeight;
+            let x = left + i * barWidth + gap / 2;
+            let w = barWidth - gap;
+            let parts = chartSeries.filter( s => b[ s.key ] > 0 && ( s.key !== 'possible' || showPossible ) );
+            parts.forEach( ( s, j ) => {
+                let h = b[ s.key ] / ceiling * plotHeight;
+                let isTop = j === parts.length - 1;
+                let y = y0 - h;
+                let r = isTop ? Math.min( 4, w / 2, h ) : 0;
+                let d = r > 0 ? `M${x},${y0} V${y + r} Q${x},${y} ${x + r},${y} H${x + w - r} Q${x + w},${y} ${x + w},${y + r} V${y0} Z` : `M${x},${y0} V${y} H${x + w} V${y0} Z`;
+                svg.appendChild( svgEl( 'path', { d: d, fill: s.color, opacity: selected === -1 || selected === i ? 1 : 0.35 } ) );
+                y0 = y - ( isTop ? 0 : 2 );
+            } );
+            let area = svgEl( 'rect', { x: left + i * barWidth, y: top, width: barWidth, height: plotHeight, fill: 'transparent', style: 'cursor: pointer' } );
+            area.addEventListener( 'mousemove', event => show( i, event ) );
+            area.addEventListener( 'mouseleave', () => tip.style.display = 'none' );
+            area.addEventListener( 'click', () => {
+                selected = selected === i ? -1 : i;
+                draw();
+                drill();
+            } );
+            svg.appendChild( area );
+        } );
+
+        document.getElementById( 'chartHint' ).textContent = `Each bar is ${model.bucket} ${model.bucket === 1 ? 'second' : 'seconds'}. ${measure === 'hits' ? 'Height = push hits.' : 'Height = push value added up.'}`;
+
+        let legend = document.getElementById( 'legend' );
+        legend.textContent = '';
+        chartSeries.filter( s => s.key !== 'possible' || showPossible ).forEach( s => {
+            let item = el( 'span' );
+            let chip = el( 'i' );
+            chip.style.background = s.color;
+            item.appendChild( chip );
+            item.appendChild( document.createTextNode( s.name ) );
+            legend.appendChild( item );
+        } );
+    };
+
+    measureButtons.forEach( button => button.addEventListener( 'click', () => {
+        measure = button.dataset.measure;
+        measureButtons.forEach( b => b.classList.toggle( 'on', b === button ) );
+        if ( current != null ) {
+            draw();
+        }
+    } ) );
+    possibleToggle.addEventListener( 'change', () => {
+        if ( current != null ) {
+            draw();
+            drill();
+        }
+    } );
+
+    return {
+        update: ( summary, hidden ) => {
+            let model = buildTimelineModel( summary, hidden );
+            section.hidden = model == null;
+            note.hidden = model != null;
+            tip.style.display = 'none';
+            current = model == null ? null : { model: model, bars: [] };
+            if ( current != null ) {
+                selected = Math.min( selected, model.count - 1 );
+                draw();
+                drill();
+            }
+        },
+        reset: () => {
+            selected = -1;
+        },
+    };
+}
+
+
+
+
+
+
+
+
+
+
 /**
  * Fills a proc table.  The procs with a hidden message are left out and counted in the hint.
  *
@@ -457,7 +681,9 @@ function render( summary, hidden ) {
     cutOffHint.hidden = summary.startsAtLogEdge !== true;
     cutOffHint.textContent = summary.reachedStart ? 'The log starts during this fight, so earlier pushes are missing.' : 'This fight began before the part of the log that was read, so earlier pushes are not counted.';
 
-    const hasNpc = Array.isArray( summary.npcAbilities );
+    timeline.update( summary, hidden );
+
+    let hasNpc = Array.isArray( summary.npcAbilities );
     document.getElementById( 'npcToggleLabel' ).hidden = !hasNpc;
     document.getElementById( 'npcAbilities' ).hidden = !hasNpc || !document.getElementById( 'npcToggle' ).checked;
     const npcRows = document.getElementById( 'npcRows' );
@@ -514,6 +740,7 @@ async function PushRecap( params ) {
     } );
 
     let hidden = new Set();
+    timeline = createTimeline();
     ipcRenderer.on( 'push-recap:hidden-changed', ( event, texts ) => {
         hidden = new Set( texts );
         if ( shown !== null && shown !== undefined ) {
@@ -547,6 +774,7 @@ async function PushRecap( params ) {
 
     const show = ( summary, saved ) => {
         shown = summary;
+        timeline.reset();
         state = saved ? 'saved' : 'unsaved';
         document.getElementById( 'copyButton' ).textContent = 'Copy summary';
         showSaveState();

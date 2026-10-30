@@ -149,6 +149,100 @@
             text-align: right;
             color: rgb(204, 204, 204);
         }
+        .timeline {
+            margin-bottom: 18px;
+        }
+        .timeline .toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 8px;
+        }
+        .seg {
+            display: inline-flex;
+            border: 1px solid #ffffff1a;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+        .seg button {
+            background-color: transparent;
+            color: rgb(195, 194, 183);
+            padding: 4px 12px;
+            font-size: 13px;
+            border-radius: 0;
+        }
+        .seg button.on {
+            background-color: #ffffff14;
+            color: rgb(240, 239, 236);
+        }
+        .timeline label {
+            font-size: 13px;
+            cursor: pointer;
+        }
+        .legend {
+            display: flex;
+            gap: 16px;
+            margin-left: auto;
+            font-size: 13px;
+        }
+        .legend i, td.kind i {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            margin-right: 6px;
+            border-radius: 2px;
+        }
+        td.kind {
+            font-size: 12px;
+        }
+        #chart {
+            display: block;
+            width: 100%;
+            height: auto;
+        }
+        #chart .tick {
+            fill: #898781;
+            font-size: 11px;
+            font-variant-numeric: tabular-nums;
+        }
+        .chart-hint {
+            margin-top: 6px;
+            font-size: 13px;
+            color: rgb(137, 135, 129);
+        }
+        .drill-title {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin: 14px 0 4px;
+        }
+        .chart-tip {
+            position: fixed;
+            display: none;
+            min-width: 160px;
+            padding: 8px 10px;
+            pointer-events: none;
+            background-color: #0b0b0bf0;
+            border: 1px solid #ffffff1a;
+            border-radius: 6px;
+            font-size: 13px;
+            z-index: 5;
+        }
+        .chart-tip .tip-title {
+            margin-bottom: 4px;
+        }
+        .chart-tip .tip-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 16px;
+            color: rgb(195, 194, 183);
+        }
+        .chart-tip .tip-row b {
+            font-weight: 500;
+            color: rgb(240, 239, 236);
+            font-variant-numeric: tabular-nums;
+        }
         .dimmed {
             opacity: 0.6;
         }
@@ -247,6 +341,25 @@
                     <div class="tile"><div class="value" id="tilePlayers"></div><div class="label">players pushing</div></div>
                     <div class="tile"><div class="value" id="tileValue"></div><div class="label">push value, for reference</div></div>
                 </div>
+
+                <div class="timeline" id="timeline" hidden>
+                    <div class="toolbar">
+                        <span class="seg" id="measure"><button type="button" data-measure="hits" class="on">Push hits</button><button type="button" data-measure="push">Push value</button></span>
+                        <label><input type="checkbox" id="showPossible" /> Show possible procs</label>
+                        <div class="legend" id="legend"></div>
+                    </div>
+                    <svg id="chart" viewBox="0 0 1000 260" role="img" aria-label="Push over the fight"></svg>
+                    <div class="chart-hint" id="chartHint"></div>
+                    <div class="drill-title"><b id="drillTitle">Click a bar to see what landed</b><span class="note" id="drillNote"></span></div>
+                    <table id="drill" hidden>
+                        <thead>
+                            <tr><th>Time</th><th>Who</th><th>Spell</th><th class="num">Push</th><th>Kind</th></tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+                <div class="note" id="timelineNote" hidden>Scan the log again to see the timeline for this fight.</div>
+                <div class="chart-tip" id="chartTip"></div>
 
                 <table>
                     <thead>

@@ -1,0 +1,38 @@
+<ng-template [ngIf]="available">
+    <div class="toolbar">
+        <span class="seg">
+            <button type="button" [class.on]="measure === 'hits'" (click)="setMeasure( 'hits' )">Push hits</button>
+            <button type="button" [class.on]="measure === 'push'" (click)="setMeasure( 'push' )">Push value</button>
+        </span>
+        <label class="chk"><input type="checkbox" [checked]="showPossible" (change)="togglePossible()" /> Show possible procs</label>
+        <div class="legend"><span *ngFor="let s of visibleSeries()"><i [style.background]="s.color"></i>{{s.name}}</span></div>
+    </div>
+    <svg viewBox="0 0 1000 260" role="img" aria-label="Push over the fight">
+        <svg:line *ngFor="let g of grid" x1="44" x2="992" [attr.y1]="g.y" [attr.y2]="g.y" [attr.stroke]="g.axis ? '#383835' : '#2c2c2a'" stroke-width="1" />
+        <svg:text *ngFor="let t of yTicks" class="tick" [attr.x]="t.x" [attr.y]="t.y" [attr.text-anchor]="t.anchor">{{t.value}}</svg:text>
+        <svg:text *ngFor="let t of xTicks" class="tick" [attr.x]="t.x" [attr.y]="t.y" [attr.text-anchor]="t.anchor">{{t.value}}</svg:text>
+        <ng-container *ngFor="let bar of bars; let i = index">
+            <svg:path *ngFor="let part of bar.parts" [attr.d]="part.d" [attr.fill]="part.color" [attr.opacity]="barOpacity( i )" />
+            <svg:rect class="hit" [attr.x]="bar.x" y="10" [attr.width]="bar.width" height="222" fill="transparent" (mousemove)="showTip( $event, i )" (mouseleave)="hideTip()" (click)="select( i )" />
+        </ng-container>
+    </svg>
+    <div class="chart-hint">{{hint}}</div>
+    <div class="drill-title"><b>{{drillTitle}}</b><span class="note">{{drillNote}}</span></div>
+    <table class="drill" *ngIf="drillRows.length > 0">
+        <thead><tr><th>Time</th><th>Who</th><th>Spell</th><th class="num">Push</th><th>Kind</th></tr></thead>
+        <tbody>
+            <tr *ngFor="let row of drillRows" [class.dim]="row.kind === 3">
+                <td>{{row.time}}</td>
+                <td>{{row.who}}</td>
+                <td>{{row.spell}}</td>
+                <td class="num">{{row.push}}</td>
+                <td class="kind"><i [style.background]="kindColors[ row.kind ]"></i>{{kindLabels[ row.kind ]}}</td>
+            </tr>
+        </tbody>
+    </table>
+    <div class="tip" *ngIf="tip != null" [style.left.px]="tip.x" [style.top.px]="tip.y">
+        <div class="tip-title">{{tip.title}}</div>
+        <div class="tip-row" *ngFor="let row of tip.rows"><span>{{row.name}}</span><b>{{row.value}}</b></div>
+    </div>
+</ng-template>
+<p class="note" *ngIf="!available && recap != null">Scan the log again to see the timeline for this fight.</p>

@@ -1,0 +1,146 @@
+:host {
+    display: block;
+    margin-bottom: 1em;
+}
+
+.toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 16px;
+    max-width: 1000px;
+    margin-bottom: 8px;
+}
+
+.seg {
+    display: inline-flex;
+    border: 1px solid #ffffff1a;
+    border-radius: 6px;
+    overflow: hidden;
+
+    button {
+        background: transparent;
+        color: #c3c2b7;
+        border: 0;
+        padding: 4px 12px;
+        font: inherit;
+        font-size: 13px;
+        cursor: pointer;
+    }
+    button.on {
+        background: #ffffff14;
+        color: #f0efec;
+    }
+}
+
+.chk {
+    font-size: 13px;
+    display: inline-flex;
+    gap: 6px;
+    align-items: center;
+    cursor: pointer;
+}
+
+.legend {
+    display: flex;
+    gap: 16px;
+    margin-left: auto;
+    font-size: 13px;
+}
+
+.legend i, td.kind i {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    margin-right: 6px;
+    border-radius: 2px;
+}
+
+svg {
+    display: block;
+    width: 100%;
+    height: auto;
+    max-width: 1000px;
+
+    .tick {
+        fill: #898781;
+        font-size: 11px;
+        font-variant-numeric: tabular-nums;
+    }
+    .hit {
+        cursor: pointer;
+    }
+}
+
+.chart-hint {
+    margin-top: 6px;
+    font-size: 13px;
+    color: #898781;
+}
+
+.drill-title {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    max-width: 1000px;
+    margin: 14px 0 4px;
+}
+
+table.drill {
+    border-collapse: collapse;
+    width: 100%;
+    max-width: 1000px;
+
+    th, td {
+        padding: 6px 10px;
+        text-align: left;
+        border-bottom: 1px solid #ffffff1a;
+    }
+    th {
+        font-weight: 400;
+        opacity: 0.7;
+    }
+    th.num, td.num {
+        text-align: right;
+    }
+    td.kind {
+        font-size: 12px;
+    }
+    tr.dim td {
+        opacity: 0.6;
+    }
+}
+
+.note {
+    font-weight: 300;
+    font-size: 12px;
+    opacity: 0.75;
+}
+
+.tip {
+    position: fixed;
+    pointer-events: none;
+    min-width: 160px;
+    padding: 8px 10px;
+    background: #0b0b0bf0;
+    border: 1px solid #ffffff1a;
+    border-radius: 6px;
+    font-size: 13px;
+    z-index: 1000;
+
+    .tip-title {
+        margin-bottom: 4px;
+    }
+    .tip-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        color: #c3c2b7;
+
+        b {
+            font-weight: 500;
+            color: #f0efec;
+            font-variant-numeric: tabular-nums;
+        }
+    }
+}

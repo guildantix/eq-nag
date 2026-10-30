@@ -20,7 +20,7 @@ const notNamedNpcRgx = /^(?:A\s|An\s|a\s|an\s|[a-z])/;
  * @param {string} characterName The name of the character.
  */
 function buildSavedSummary( result, characterName ) {
-    return {
+    let summary = {
         characterName: characterName,
         mob: result.boss,
         killTime: new Date( result.killTime ).toISOString(),
@@ -62,6 +62,26 @@ function buildSavedSummary( result, characterName ) {
         startsAtLogEdge: result.startsAtLogEdge,
         reachedStart: result.reachedStart,
     };
+
+    if ( Array.isArray( result.timeline ) ) {
+        let texts = [];
+        let textIndex = new Map();
+        summary.fightStart = new Date( result.startTime ).toISOString();
+        summary.timeline = result.timeline.map( e => {
+            if ( e[ 1 ] < 2 ) {
+                return e;
+            }
+            let index = textIndex.get( e[ 3 ] );
+            if ( index === undefined ) {
+                index = texts.push( e[ 3 ] ) - 1;
+                textIndex.set( e[ 3 ], index );
+            }
+            return [ e[ 0 ], e[ 1 ], e[ 2 ], index, e[ 4 ] ];
+        } );
+        summary.timelineTexts = texts;
+    }
+
+    return summary;
 }
 
 

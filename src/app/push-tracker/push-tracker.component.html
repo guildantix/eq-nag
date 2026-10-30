@@ -116,6 +116,7 @@
             <button mat-icon-button (click)="closeDetails()" matTooltip="Close the details"><mat-icon class="material-icons-outlined">close</mat-icon></button>
         </div>
         <div class="panel-body nag-scrollbar">
+            <app-push-timeline [recap]="detail" [hiddenTexts]="hiddenTexts"></app-push-timeline>
             <div class="detail-layout">
                 <div class="detail-grid">
                     <div class="grid-scroll nag-scrollbar">
