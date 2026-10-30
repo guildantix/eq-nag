@@ -3,7 +3,7 @@ const path = require( 'path' );
 const readline = require( 'readline' );
 
 const cacheFileName = 'push-spells.json';
-const cacheVersion = 5;
+const cacheVersion = 6;
 const maxNoPushNames = 3;
 const rankRgx = / Rk\. ?I+$/i;
 
@@ -13,6 +13,8 @@ const rankRgx = / Rk\. ?I+$/i;
  * @property {number} pushUp The push up value.
  * @property {number} castTime The cast time in milliseconds.
  * @property {string} landText The text that follows the target name when the spell lands, if any.
+ * @property {boolean} [instantDamage] True when the spell has no duration and does direct damage, so it always logs a damage line naming its caster.
+ * @property {string[]} [variantTexts] The landing texts of spells with no push that have the same name, when they differ from landText.
  */
 
 /**
@@ -31,6 +33,33 @@ const rankRgx = / Rk\. ?I+$/i;
  */
 function stripRank( name ) {
     return name.replace( rankRgx, '' );
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Tells whether the given line of spells_us.txt is a spell with no duration that does direct damage.
+ *
+ * @returns {boolean} True for an instant damage spell.
+ *
+ * @param {string} line The line.
+ */
+function isInstantDamage( line ) {
+    let f = line.split( '^' );
+    if ( f[ 11 ] !== '0' || f[ 12 ] !== '0' ) {
+        return false;
+    }
+    return ( f[ 165 ] ?? '' ).split( '$' ).some( effect => {
+        let e = effect.split( '|' );
+        return ( e[ 1 ] === '0' || e[ 1 ] === '79' ) && +e[ 2 ] < 0;
+    } );
 }
 
 
@@ -111,8 +140,8 @@ function streamLines( filePath, onLine ) {
  */
 async function buildPushSpellTable( spellsFile, stringsFile ) {
 
-    /** @type {Record<string, { id: string, push: number, pushUp: number, castTime: number }[]>} */
-    const rowsByName = {};
+    /** @type {Record<string, { id: string, push: number, pushUp: number, castTime: number, instant: boolean }[]>} */
+    let rowsByName = {};
     /** @type {Record<string, boolean>} */
     let pushIds = {};
     /** @type {Record<string, string>} */
@@ -129,15 +158,15 @@ async function buildPushSpellTable( spellsFile, stringsFile ) {
             return;
         }
         pushIds[ f[ 0 ] ] = true;
-        ( rowsByName[ f[ 1 ] ] ??= [] ).push( {
-            id: f[ 0 ], push: push, pushUp: parseFloat( f[ 7 ] ) || 0, castTime: parseInt( f[ 8 ] ) || 0
-        } );
+        ( rowsByName[ f[ 1 ] ] ??= [] ).push( { id: f[ 0 ], push: push, pushUp: parseFloat( f[ 7 ] ) || 0, castTime: parseInt( f[ 8 ] ) || 0, instant: isInstantDamage( line ) } );
     } );
 
     /** @type {Record<string, string>} */
     let landTexts = {};
     /** @type {Map<string, Set<string>>} */
     let otherTexts = new Map();
+    /** @type {Map<string, Set<string>>} */
+    let sameNameTexts = new Map();
     let pushBases = new Set( Object.keys( rowsByName ).map( name => stripRank( name ) ) );
     if ( fs.existsSync( stringsFile ) ) {
         await streamLines( stringsFile, line => {
@@ -147,7 +176,14 @@ async function buildPushSpellTable( spellsFile, stringsFile ) {
                     landTexts[ f[ 0 ] ] = f[ 4 ];
                 } else {
                     let base = stripRank( otherNames[ f[ 0 ] ] ?? '' );
-                    if ( !pushBases.has( base ) ) {
+                    if ( pushBases.has( base ) ) {
+                        let texts = sameNameTexts.get( base );
+                        if ( texts == null ) {
+                            texts = new Set();
+                            sameNameTexts.set( base, texts );
+                        }
+                        texts.add( f[ 4 ] );
+                    } else {
                         let names = otherTexts.get( f[ 4 ] );
                         if ( names == null ) {
                             names = new Set();
@@ -166,10 +202,18 @@ async function buildPushSpellTable( spellsFile, stringsFile ) {
     /** @type {Record<string, PushSpell>} */
     const byName = {};
     Object.keys( rowsByName ).forEach( name => {
-        const rows = rowsByName[ name ];
-        const best = rows.reduce( ( a, b ) => b.push > a.push ? b : a );
-        const landId = landTexts[ best.id ] ? best.id : rows.find( r => landTexts[ r.id ] )?.id;
-        byName[ name ] = { push: best.push, pushUp: best.pushUp, castTime: best.castTime, landText: landId ? landTexts[ landId ] : '' };
+        let rows = rowsByName[ name ];
+        let best = rows.reduce( ( a, b ) => b.push > a.push ? b : a );
+        let landId = landTexts[ best.id ] ? best.id : rows.find( r => landTexts[ r.id ] )?.id;
+        let landText = landId ? landTexts[ landId ] : '';
+        byName[ name ] = { push: best.push, pushUp: best.pushUp, castTime: best.castTime, landText: landText };
+        if ( best.instant ) {
+            byName[ name ].instantDamage = true;
+        }
+        let variants = Array.from( sameNameTexts.get( stripRank( name ) ) ?? [] ).filter( text => text !== landText ).sort();
+        if ( variants.length > 0 ) {
+            byName[ name ].variantTexts = variants;
+        }
     } );
 
     /** @type {Record<string, string[]>} */

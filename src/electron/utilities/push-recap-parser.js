@@ -9,6 +9,8 @@ const maxFightList = 60;
 const bigFightRatio = 0.2;
 const interruptGraceMs = 1000;
 const landingGraceMs = 3000;
+const strictLandingGraceMs = 2000;
+const claimGraceMs = 1000;
 const monthIndex = { Jan: 0, Feb: 1, Mar: 2, Apr: 3, May: 4, Jun: 5, Jul: 6, Aug: 7, Sep: 8, Oct: 9, Nov: 10, Dec: 11 };
 
 // Lines that can matter are kept, e.g. "Soandso hit a gnoll for 5 points of magic damage by
@@ -671,6 +673,7 @@ function analyzeKill( session, summary, table, landing, kill, quietGapSeconds ) 
     let unattributedProcs = new Map();
     let possibleEvents = 0;
     let possibleProcs = new Map();
+    let unmatched = [];
     let npcAbilities = new Map();
 
     const cancelCast = ( player, time ) => {
@@ -734,7 +737,7 @@ function analyzeKill( session, summary, table, landing, kill, quietGapSeconds ) 
                 lastCast.set( player, null );
                 continue;
             }
-            const ev = { kind: 'cast', state: 'assumed', time: time, castTime: spell.castTime, player: player, spellName: m.groups.spell, spell: spell, landed: false };
+            let ev = { kind: 'cast', state: 'assumed', time: time, castTime: spell.castTime, player: player, spellName: m.groups.spell, spell: spell, landed: false, strict: spell.variantTexts?.length > 0 };
             events.push( ev );
             lastCast.set( player, ev );
 
@@ -764,7 +767,7 @@ function analyzeKill( session, summary, table, landing, kill, quietGapSeconds ) 
                 if ( time - ev.time > ev.castTime + landingGraceMs + 10000 ) {
                     break;
                 }
-                if ( ev.state !== 'cancelled' && !ev.landed && names.indexOf( stripRank( ev.spellName ) ) > -1 && time - ev.time <= ev.castTime + landingGraceMs ) {
+                if ( ev.state !== 'cancelled' && !ev.landed && names.indexOf( stripRank( ev.spellName ) ) > -1 && time - ev.time <= ev.castTime + ( ev.strict ? strictLandingGraceMs : landingGraceMs ) ) {
                     ev.landed = true;
                     ev.state = 'confirmed';
                     matched = true;
@@ -772,32 +775,61 @@ function analyzeKill( session, summary, table, landing, kill, quietGapSeconds ) 
                 }
             }
             if ( !matched ) {
-                let key = text.substring( boss.length );
-                let also = landing.noPush.get( key );
-                let shared = also != null;
-                if ( shared ) {
-                    possibleEvents++;
-                } else {
-                    unattributed.events++;
-                    unattributed.pushValue += table.spells[ names[ 0 ] ]?.push ?? 0;
-                }
-                let procMap = shared ? possibleProcs : unattributedProcs;
-                let proc = procMap.get( key );
-                if ( proc == null ) {
-                    proc = buildProc( key, names, table );
-                    if ( shared ) {
-                        proc.alsoNames = also.names;
-                        proc.alsoCount = also.count;
-                    }
-                    procMap.set( key, proc );
-                }
-                proc.count++;
+                unmatched.push( { time: time, key: text.substring( boss.length ), names: names, claimed: false } );
             }
         }
     }
 
-    // Keyed by player name.
-    const players = new Map();
+    // A cast of a spell that shares its name with spells that land differently counts only when its own landing was seen.
+    events.forEach( ev => {
+        if ( ev.strict && ev.state === 'assumed' ) {
+            ev.state = 'cancelled';
+        }
+    } );
+
+    // Instant damage spells always log a damage line naming the caster, so with the hits of others in the log
+    // a landing that no hit claimed is not one of them.  The damage line can come before or after its landing.
+    let othersSeen = summary.othersSeen === true;
+    if ( othersSeen ) {
+        unmatched.forEach( u => {
+            let claimer = events.find( ev => ev.kind === 'damage' && ev.state !== 'cancelled' && !ev.landed && u.names.indexOf( stripRank( ev.spellName ) ) > -1 && Math.abs( ev.time - u.time ) <= claimGraceMs );
+            if ( claimer != null ) {
+                claimer.landed = true;
+                u.claimed = true;
+            }
+            u.names = u.names.filter( n => !table.spells[ n ]?.instantDamage );
+        } );
+    }
+
+    unmatched.forEach( u => {
+        if ( u.claimed || u.names.length === 0 ) {
+            return;
+        }
+        let key = u.key;
+        let names = u.names;
+        let also = landing.noPush.get( key );
+        let shared = also != null;
+        if ( shared ) {
+            possibleEvents++;
+        } else {
+            unattributed.events++;
+            unattributed.pushValue += table.spells[ names[ 0 ] ]?.push ?? 0;
+        }
+        let procMap = shared ? possibleProcs : unattributedProcs;
+        let proc = procMap.get( key );
+        if ( proc == null ) {
+            proc = buildProc( key, names, table );
+            if ( shared ) {
+                proc.alsoNames = also.names;
+                proc.alsoCount = also.count;
+            }
+            procMap.set( key, proc );
+        }
+        proc.count++;
+    } );
+
+    /** @type {Map<string, PushPlayer>} */
+    let players = new Map();
     events.forEach( ev => {
         if ( ev.state === 'cancelled' ) {
             return;
