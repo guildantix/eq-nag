@@ -3009,24 +3009,8 @@ export class IpcService {
         } );
     }
 
-
-
-
-
-
-
-
-
-
-    /**
-     * Opens the Push Recap pop-up for the last boss kill in a character's log.
-     *
-     * @param logFilePath The log file to read.
-     * @param characterName The character the log belongs to.
-     * @param serverName The character's server.
-     */
-    public showPushRecap( logFilePath: string, characterName: string, serverName: string ): void {
-        const message = new IpcMessage( { logFilePath: logFilePath, characterName: characterName, serverName: serverName } );
+    public showPushRecap( logFilePath: string, characterName: string, serverName: string, recap?: PushRecapSummary, saved?: boolean ): void {
+        let message = new IpcMessage( { logFilePath: logFilePath, characterName: characterName, serverName: serverName, recap: recap, saved: saved } );
         window.api.ipc.send( 'window:push-recap', message );
     }
 

@@ -1,8 +1,9 @@
 <mat-toolbar>
     <span>Push</span>
     <span class="spacer"></span>
-    <button mat-button [matMenuTriggerFor]="characterMenu" [disabled]="characters.length === 0" *ngIf="characters.length > 1" matTooltip="Open the Push Recap pop-up for the last boss kill in a character's log"><mat-icon class="material-icons-outlined">open_in_new</mat-icon> Open Push Recap</button>
-    <button mat-button (click)="openPushRecap( characters[ 0 ] )" [disabled]="characters.length === 0" *ngIf="characters.length <= 1" matTooltip="Open the Push Recap pop-up for the last boss kill in the character's log"><mat-icon class="material-icons-outlined">open_in_new</mat-icon> Open Push Recap</button>
+    <button mat-button (click)="openSelectedFight()" *ngIf="detail != null" matTooltip="Open this fight in the Push Recap"><mat-icon class="material-icons-outlined">open_in_new</mat-icon> Open Push Recap</button>
+    <button mat-button [matMenuTriggerFor]="characterMenu" [disabled]="characters.length === 0" *ngIf="detail == null && characters.length > 1" matTooltip="Open the Push Recap pop-up for the last boss kill in a character's log"><mat-icon class="material-icons-outlined">open_in_new</mat-icon> Open Push Recap</button>
+    <button mat-button (click)="openPushRecap( characters[ 0 ] )" [disabled]="characters.length === 0" *ngIf="detail == null && characters.length <= 1" matTooltip="Open the Push Recap pop-up for the last boss kill in the character's log"><mat-icon class="material-icons-outlined">open_in_new</mat-icon> Open Push Recap</button>
     <mat-menu #characterMenu="matMenu">
         <button mat-menu-item *ngFor="let character of characters" (click)="openPushRecap( character )">{{characterLabel( character )}}</button>
     </mat-menu>

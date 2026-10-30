@@ -9,6 +9,8 @@ const maxRecaps = 200;
 const maxPlayers = 60;
 const maxSpells = 30;
 const maxProcs = 200;
+const maxProcNames = 40;
+const maxNpcAbilities = 100;
 
 /**
  * @typedef {Object} PushRecapSpellCount
@@ -29,10 +31,19 @@ const maxProcs = 200;
 /**
  * @typedef {Object} PushRecapProc
  * @property {string} name The label of the proc.
+ * @property {string[]} [names] The spells the landing message can belong to.
  * @property {number | null} push The push value of one hit, or null when the spell is ambiguous.
  * @property {number | null} pushMin The lowest push value the proc can have.
  * @property {number | null} pushMax The highest push value the proc can have.
  * @property {number} count The number of times the proc landed.
+ */
+
+/**
+ * @typedef {Object} PushRecapNpcAbility
+ * @property {string} actor The NPC that used the ability.
+ * @property {string} name The name of the ability.
+ * @property {number} count The number of times it was used.
+ * @property {number} push The push value of one use.
  */
 
 /**
@@ -50,8 +61,11 @@ const maxProcs = 200;
  * @property {number} pushValue The total push value.
  * @property {string | null} topPusher The player with the most events.
  * @property {PushRecapPlayerSummary[]} players The players that pushed.
- * @property {{ events: number, pushValue: number, procs?: PushRecapProc[] }} unattributed
- *     The events with no player.
+ * @property {{ events: number, pushValue: number, procs?: PushRecapProc[] }} unattributed The events with no player.
+ * @property {PushRecapNpcAbility[]} [npcAbilities] The push abilities the NPCs used.
+ * @property {boolean} [othersSeen] True when hits from other players were in the log.
+ * @property {boolean} [startsAtLogEdge] True when the fight may have started before the part of the log that was read.
+ * @property {boolean} [reachedStart] True when the part of the log that was read began at the start of the log.
  */
 
 
@@ -167,16 +181,22 @@ function sanitize( data ) {
 
     const unattributed = { events: toCount( data.unattributed?.events ), pushValue: toCount( data.unattributed?.pushValue ) };
     if ( Array.isArray( data.unattributed?.procs ) ) {
-        unattributed.procs = data.unattributed.procs.slice( 0, maxProcs ).map( p => ( {
-            name: toText( p?.name ),
-            push: toOptionalCount( p?.push ),
-            pushMin: toOptionalCount( p?.pushMin ),
-            pushMax: toOptionalCount( p?.pushMax ),
-            count: toCount( p?.count ),
-        } ) );
+        unattributed.procs = data.unattributed.procs.slice( 0, maxProcs ).map( p => {
+            let proc = {
+                name: toText( p?.name ),
+                push: toOptionalCount( p?.push ),
+                pushMin: toOptionalCount( p?.pushMin ),
+                pushMax: toOptionalCount( p?.pushMax ),
+                count: toCount( p?.count ),
+            };
+            if ( Array.isArray( p?.names ) ) {
+                proc.names = p.names.slice( 0, maxProcNames ).map( toText );
+            }
+            return proc;
+        } );
     }
 
-    return {
+    let summary = {
         id: typeof data.id === 'string' && data.id !== '' ? data.id.substring( 0, 64 ) : crypto.randomUUID(),
         savedAt: new Date().toISOString(),
         characterName: toText( data.characterName ),
@@ -192,6 +212,17 @@ function sanitize( data ) {
         players: players,
         unattributed: unattributed,
     };
+
+    if ( Array.isArray( data.npcAbilities ) ) {
+        summary.npcAbilities = data.npcAbilities.slice( 0, maxNpcAbilities ).map( a => ( { actor: toText( a?.actor ), name: toText( a?.name ), count: toCount( a?.count ), push: toCount( a?.push ) } ) );
+    }
+    [ 'othersSeen', 'startsAtLogEdge', 'reachedStart' ].forEach( key => {
+        if ( typeof data[ key ] === 'boolean' ) {
+            summary[ key ] = data[ key ];
+        }
+    } );
+
+    return summary;
 }
 
 
@@ -310,19 +341,15 @@ class PushRecapStore {
 
 
     /**
-     * Returns the saved recaps without their players and proc breakdown.
+     * Returns the saved recaps without their players, procs and NPC abilities.
      *
-     * @returns {Promise<Omit<PushRecapSummary, 'players'>[]>} The recaps.
+     * @returns {Promise<Omit<PushRecapSummary, 'players' | 'npcAbilities'>[]>} The recaps.
      */
     async list() {
         if ( !await this.#load() ) {
             return [];
         }
-        // The list view needs only the totals, so the per-player detail stays out of the IPC reply.
-        return this.#recaps.map( ( { players, unattributed, ...row } ) => ( {
-            ...row,
-            unattributed: { events: unattributed.events, pushValue: unattributed.pushValue }
-        } ) );
+        return this.#recaps.map( ( { players, npcAbilities, unattributed, ...row } ) => ( { ...row, unattributed: { events: unattributed.events, pushValue: unattributed.pushValue } } ) );
     }
 
 

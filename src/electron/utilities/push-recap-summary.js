@@ -39,10 +39,12 @@ function buildSavedSummary( result, characterName ) {
         unattributed: {
             events: result.unattributed.events,
             pushValue: result.unattributed.pushValue,
-            procs: result.unattributed.procs.map( p => {
-                return { name: p.name, push: p.push, pushMin: p.pushMin, pushMax: p.pushMax, count: p.count };
-            } ),
+            procs: result.unattributed.procs.map( p => ( { name: p.name, names: p.names, push: p.push, pushMin: p.pushMin, pushMax: p.pushMax, count: p.count } ) ),
         },
+        npcAbilities: result.npcAbilities.map( a => ( { actor: a.actor, name: a.name, count: a.count, push: a.push } ) ),
+        othersSeen: result.othersSeen,
+        startsAtLogEdge: result.startsAtLogEdge,
+        reachedStart: result.reachedStart,
     };
 }
 

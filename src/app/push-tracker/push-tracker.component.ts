@@ -310,21 +310,12 @@ export class PushTrackerComponent implements OnInit, OnDestroy {
         this.ipcService.showPushRecap( character.logFile, character.name, character.server );
     }
 
+    public openSelectedFight(): void {
+        if ( this.detail != null && this.selected != null ) {
+            this.ipcService.showPushRecap( '', this.detail.characterName, '', this.detail, this.source === 'saved' || this.isSaved( this.selected ) );
+        }
+    }
 
-
-
-
-
-
-
-
-
-    /**
-     * Shows the push of one proc hit, as a range when the landing message fits spells
-     * with different values.
-     *
-     * @param proc The proc to describe.
-     */
     public procPush( proc: PushRecapProc ): string {
         if ( proc.pushMin === null || proc.pushMin === undefined ) {
             return '-';

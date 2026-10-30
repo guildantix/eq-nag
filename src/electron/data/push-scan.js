@@ -65,8 +65,8 @@ function isValidResult( r ) {
     return ( r !== null && r !== undefined ) && typeof r === 'object' && typeof r.mob === 'string' && r.mob !== '' && typeof r.killTime === 'string' && !isNaN( new Date( r.killTime ).getTime() )
         && typeof r.characterName === 'string' && Number.isFinite( r.fightSeconds ) && Number.isFinite( r.damageTaken ) && Number.isFinite( r.events )
         && Number.isFinite( r.assumed ) && Number.isFinite( r.pushValue ) && typeof r.named === 'boolean'
-        && Array.isArray( r.players ) && r.players.every( p => ( p !== null && p !== undefined ) && typeof p === 'object' && typeof p.name === 'string' && Number.isFinite( p.events ) && p.spells !== null && p.spells !== undefined && typeof p.spells === 'object' )
-        && r.unattributed !== null && r.unattributed !== undefined && typeof r.unattributed === 'object';
+        && Array.isArray( r.players ) && r.players.every( p => p != null && typeof p === 'object' && typeof p.name === 'string' && Number.isFinite( p.events ) && p.spells != null && typeof p.spells === 'object' )
+        && r.unattributed != null && typeof r.unattributed === 'object' && Array.isArray( r.npcAbilities );
 }
 
 
@@ -237,14 +237,12 @@ class PushScanService {
 
 
     /**
-     * Returns the scanned recaps without their players and proc breakdown.
+     * Returns the scanned recaps without their players, procs and NPC abilities.
      *
      * @returns {any[]} The recaps.
      */
     getRows() {
-        return this.#results.map( ( { players, unattributed, ...row } ) => {
-            return { ...row, unattributed: { events: unattributed.events, pushValue: unattributed.pushValue } };
-        } );
+        return this.#results.map( ( { players, npcAbilities, unattributed, ...row } ) => ( { ...row, unattributed: { events: unattributed.events, pushValue: unattributed.pushValue } } ) );
     }
 
 

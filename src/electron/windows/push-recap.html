@@ -78,17 +78,6 @@
             margin: 4px 0 12px 0;
             color: rgb(150, 150, 150);
         }
-        .fight-picker {
-            margin-bottom: 15px;
-        }
-        .fight-picker select {
-            background-color: #1a1a1a;
-            color: rgb(204, 204, 204);
-            border: 1px solid rgb(77, 77, 77);
-            padding: 5px 8px;
-            font-size: 14px;
-            min-width: 420px;
-        }
         .tiles {
             display: flex;
             gap: 12px;
@@ -232,11 +221,6 @@
                 <h2 class="boss-name" id="bossName"></h2>
                 <div class="boss-meta" id="bossMeta"></div>
 
-                <div class="fight-picker">
-                    <label for="fightSelect">Fight </label>
-                    <select id="fightSelect"></select>
-                </div>
-
                 <div class="tiles">
                     <div class="tile"><div class="value" id="tileEvents"></div><div class="label">push hits</div></div>
                     <div class="tile"><div class="value" id="tileTop"></div><div class="label" id="tileTopLabel">top pusher</div></div>
@@ -268,13 +252,14 @@
                     </table>
                     <div class="note">Weapon procs whose landing message names no caster. Not part of the player totals.</div>
                 </div>
+                <div class="note" id="procsFallback" hidden></div>
 
                 <div class="hint" id="cutOffHint" hidden></div>
                 <div class="hint" id="othersHint" hidden>No hits from other players were found in this fight. Turn on others' hits in EverQuest to see the whole raid.</div>
 
                 <div class="actions">
-                    <label><input type="checkbox" id="npcToggle" /> Show NPC abilities</label>
-                    <button type="button" id="saveButton">Save to Push tab</button>
+                    <label id="npcToggleLabel"><input type="checkbox" id="npcToggle" /> Show NPC abilities</label>
+                    <button type="button" id="saveButton" hidden>Save to Push tab</button>
                     <button type="button" id="copyButton">Copy summary</button>
                 </div>
 
@@ -300,6 +285,7 @@
             userData: urlParams.get( 'userData' ),
             quietGapSeconds: +urlParams.get( 'quietGap' ),
             saveRecaps: urlParams.get( 'saveRecaps' ) !== 'false',
+            snapshot: urlParams.get( 'snapshot' ) === 'true',
         } );
     </script>
 

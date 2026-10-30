@@ -60,25 +60,67 @@ function formatDuration( seconds ) {
 
 
 /**
- * Describes the spells of a player, e.g. Color Flux XVIII (push 0.5) ×71,
- * Docility XII (push 0.5) ~×25.
+ * Lists the spells of a player, most hits first.
+ *
+ * @returns {{ name: string, confirmed: number, assumed: number, push: number | undefined }[]} The spells.
+ *
+ * @param {any} player The saved player.
+ */
+function listSpells( player ) {
+    return Object.keys( player.spells ?? {} ).map( name => {
+        let s = player.spells[ name ];
+        return { name: name, confirmed: Math.max( 0, s.events - s.assumed ), assumed: s.assumed, push: s.push };
+    } ).sort( ( x, y ) => ( y.confirmed + y.assumed ) - ( x.confirmed + x.assumed ) );
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Describes the spells of a player, e.g. Color Flux XVIII (push 0.5) ×71, Docility XII (push 0.5) ~×25.
  *
  * @returns {string} The description.
  *
- * @param {any} player The player result.
+ * @param {any} player The saved player.
  * @param {number} max The maximum number of spells to list.
  */
 function describeSources( player, max ) {
-    return player.spells.slice( 0, max ).map( s => {
-        const counts = [];
+    return listSpells( player ).slice( 0, max ).map( s => {
+        let counts = [];
         if ( s.confirmed > 0 ) {
             counts.push( `×${s.confirmed}` );
         }
         if ( s.assumed > 0 ) {
             counts.push( `~×${s.assumed}` );
         }
-        return `${s.name} (push ${s.push}) ${counts.join( ' ' )}`;
+        return `${s.name}${s.push != null ? ` (push ${s.push})` : ''} ${counts.join( ' ' )}`;
     } ).join( ', ' );
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Formats the kill time of the given summary as HH:MM:SS.  The kill time holds the clock of the log as UTC.
+ *
+ * @returns {string} The clock.
+ *
+ * @param {any} summary The saved summary.
+ */
+function formatKillClock( summary ) {
+    return new Date( summary.killTime ).toISOString().substring( 11, 19 );
 }
 
 
@@ -142,20 +184,20 @@ function formatProcTotal( proc ) {
  *
  * @returns {string} The summary.
  *
- * @param {any} result The recap result.
+ * @param {any} summary The saved summary.
  */
-function buildSummaryText( result ) {
-    const lines = [
-        `Push Recap - ${result.boss}, killed ${result.killClock}, fight ${formatDuration( result.durationSeconds )}`,
-        `${result.totalEvents} push hits, ${result.players.length} players pushing`,
+function buildSummaryText( summary ) {
+    let lines = [
+        `Push Recap - ${summary.mob}, killed ${formatKillClock( summary )}, fight ${formatDuration( summary.fightSeconds )}`,
+        `${summary.events} push hits, ${summary.players.length} players pushing`,
     ];
-    result.players.forEach( ( p, i ) => {
-        const share = result.totalEvents > 0 ? Math.round( p.events * 100 / result.totalEvents ) : 0;
+    summary.players.forEach( ( p, i ) => {
+        let share = summary.events > 0 ? Math.round( p.events * 100 / summary.events ) : 0;
         lines.push( `${i + 1}. ${p.name} - ${p.events} (${share}%)${p.assumed > 0 ? ` ~${p.assumed} assumed` : ''}` );
     } );
-    if ( result.unattributed.events > 0 ) {
-        const top = result.unattributed.procs.slice( 0, 5 ).map( p => `${p.name} ${p.count}` ).join( ', ' );
-        lines.push( `Procs with no player named: ${result.unattributed.events} (${top})` );
+    if ( summary.unattributed.events > 0 ) {
+        let top = ( summary.unattributed.procs ?? [] ).slice( 0, 5 ).map( p => `${p.name} ${p.count}` ).join( ', ' );
+        lines.push( `Procs with no player named: ${summary.unattributed.events}${top === '' ? '' : ` (${top})`}` );
     }
     return lines.join( '\n' );
 }
@@ -222,28 +264,35 @@ function showMessage( text, isError ) {
 
 
 /**
- * Renders the given recap result.
+ * Renders the given saved summary.  The pop-up only ever draws a summary, so a recap saved
+ * by an older version, which lacks some fields, draws without those sections.
  *
- * @param {any} result The recap result.
+ * @param {any} summary The saved summary.
  */
-function render( result ) {
+function render( summary ) {
     document.getElementById( 'message' ).hidden = true;
     document.getElementById( 'recap' ).hidden = false;
 
-    document.getElementById( 'bossName' ).textContent = result.boss;
-    document.getElementById( 'bossMeta' ).textContent = `Killed ${result.killClock} · fight ${formatDuration( result.durationSeconds )} · ${formatDamage( result.damageTaken )} damage taken (HP estimate)${notNamedNpcRgx.test( result.boss ) ? '' : ' · named'}`;
+    let players = summary.players ?? [];
+    let procs = summary.unattributed?.procs;
+    let procHits = summary.unattributed?.events ?? 0;
+    let topPlayer = players.find( p => p.name === summary.topPusher );
+    let topPercent = topPlayer != null && summary.events > 0 ? Math.round( topPlayer.events * 100 / summary.events ) : 0;
 
-    document.getElementById( 'tileEvents' ).textContent = `${result.totalEvents}`;
-    document.getElementById( 'tileTop' ).textContent = result.topPlayer ?? '-';
-    document.getElementById( 'tileTopLabel' ).textContent = result.topPlayer ? `top pusher · ${result.topPercent}% of hits` : 'top pusher';
-    document.getElementById( 'tilePlayers' ).textContent = `${result.players.length}`;
-    document.getElementById( 'tileValue' ).textContent = `${result.totalPush}`;
+    document.getElementById( 'bossName' ).textContent = summary.mob;
+    document.getElementById( 'bossMeta' ).textContent = `Killed ${formatKillClock( summary )} · fight ${formatDuration( summary.fightSeconds )} · ${formatDamage( summary.damageTaken )} damage taken (HP estimate)${summary.named ? ' · named' : ''}`;
+
+    document.getElementById( 'tileEvents' ).textContent = `${summary.events}`;
+    document.getElementById( 'tileTop' ).textContent = summary.topPusher ?? '-';
+    document.getElementById( 'tileTopLabel' ).textContent = summary.topPusher ? `top pusher · ${topPercent}% of hits` : 'top pusher';
+    document.getElementById( 'tilePlayers' ).textContent = `${players.length}`;
+    document.getElementById( 'tileValue' ).textContent = `${summary.pushValue}`;
 
     const rows = document.getElementById( 'playerRows' );
     rows.textContent = '';
-    result.players.forEach( p => {
-        const share = result.totalEvents > 0 ? p.events * 100 / result.totalEvents : 0;
-        const tr = el( 'tr' );
+    players.forEach( p => {
+        let share = summary.events > 0 ? p.events * 100 / summary.events : 0;
+        let tr = el( 'tr' );
         tr.appendChild( el( 'td', 'player', p.name ) );
 
         const events = el( 'td', 'num', `${p.events}` );
@@ -268,52 +317,63 @@ function render( result ) {
         rows.appendChild( tr );
     } );
 
-    if ( result.players.length === 0 ) {
-        const tr = el( 'tr' );
-        const cell = el( 'td', null, 'No push events were found in this fight.' );
+    if ( players.length === 0 ) {
+        let tr = el( 'tr' );
+        let cell = el( 'td', null, 'No push events were found in this fight.' );
         cell.colSpan = 5;
         tr.appendChild( cell );
         rows.appendChild( tr );
     }
 
-    document.getElementById( 'procs' ).hidden = result.unattributed.procs.length === 0;
-    const procRows = document.getElementById( 'procRows' );
+    let hasProcs = Array.isArray( procs ) && procs.length > 0;
+    document.getElementById( 'procs' ).hidden = !hasProcs;
+    let procRows = document.getElementById( 'procRows' );
     procRows.textContent = '';
-    result.unattributed.procs.forEach( p => {
-        const tr = el( 'tr' );
-        const name = el( 'td', null, p.name );
-        if ( p.names.length > 1 ) {
-            name.title = p.names.join( ', ' );
-        }
-        tr.appendChild( name );
-        tr.appendChild( el( 'td', 'num', formatProcPush( p ) ) );
-        tr.appendChild( el( 'td', 'num', `${p.count}` ) );
-        tr.appendChild( el( 'td', 'num', formatProcTotal( p ) ) );
-        procRows.appendChild( tr );
-    } );
+    if ( hasProcs ) {
+        procs.forEach( p => {
+            let tr = el( 'tr' );
+            let name = el( 'td', null, p.name );
+            if ( p.names?.length > 1 ) {
+                name.title = p.names.join( ', ' );
+            }
+            tr.appendChild( name );
+            tr.appendChild( el( 'td', 'num', formatProcPush( p ) ) );
+            tr.appendChild( el( 'td', 'num', `${p.count}` ) );
+            tr.appendChild( el( 'td', 'num', formatProcTotal( p ) ) );
+            procRows.appendChild( tr );
+        } );
+    }
+    let procsFallback = document.getElementById( 'procsFallback' );
+    procsFallback.hidden = hasProcs || procHits <= 0;
+    procsFallback.textContent = `${procHits} more hits came from procs with no player named. Re-scan the log to see which procs they were.`;
 
-    document.getElementById( 'othersHint' ).hidden = result.othersSeen;
+    document.getElementById( 'othersHint' ).hidden = summary.othersSeen !== false;
 
-    const cutOffHint = document.getElementById( 'cutOffHint' );
-    cutOffHint.hidden = !result.startsAtLogEdge;
-    cutOffHint.textContent = result.reachedStart ? 'The log starts during this fight, so earlier pushes are missing.' : 'This fight began more than 30 minutes before the hotkey, so earlier pushes are not counted.';
+    let cutOffHint = document.getElementById( 'cutOffHint' );
+    cutOffHint.hidden = summary.startsAtLogEdge !== true;
+    cutOffHint.textContent = summary.reachedStart ? 'The log starts during this fight, so earlier pushes are missing.' : 'This fight began before the part of the log that was read, so earlier pushes are not counted.';
 
-    const npcRows = document.getElementById( 'npcRows' );
+    let hasNpc = Array.isArray( summary.npcAbilities );
+    document.getElementById( 'npcToggleLabel' ).hidden = !hasNpc;
+    document.getElementById( 'npcAbilities' ).hidden = !hasNpc || !document.getElementById( 'npcToggle' ).checked;
+    let npcRows = document.getElementById( 'npcRows' );
     npcRows.textContent = '';
-    result.npcAbilities.forEach( a => {
-        const tr = el( 'tr' );
-        tr.appendChild( el( 'td', null, a.actor ) );
-        tr.appendChild( el( 'td', null, a.name ) );
-        tr.appendChild( el( 'td', 'num', `${a.count}` ) );
-        tr.appendChild( el( 'td', 'num', `${a.push}` ) );
-        npcRows.appendChild( tr );
-    } );
-    if ( result.npcAbilities.length === 0 ) {
-        const tr = el( 'tr' );
-        const cell = el( 'td', null, 'No NPC push abilities were found in this fight.' );
-        cell.colSpan = 4;
-        tr.appendChild( cell );
-        npcRows.appendChild( tr );
+    if ( hasNpc ) {
+        summary.npcAbilities.forEach( a => {
+            let tr = el( 'tr' );
+            tr.appendChild( el( 'td', null, a.actor ) );
+            tr.appendChild( el( 'td', null, a.name ) );
+            tr.appendChild( el( 'td', 'num', `${a.count}` ) );
+            tr.appendChild( el( 'td', 'num', `${a.push}` ) );
+            npcRows.appendChild( tr );
+        } );
+        if ( summary.npcAbilities.length === 0 ) {
+            let tr = el( 'tr' );
+            let cell = el( 'td', null, 'No NPC push abilities were found in this fight.' );
+            cell.colSpan = 4;
+            tr.appendChild( cell );
+            npcRows.appendChild( tr );
+        }
     }
 }
 
@@ -327,11 +387,10 @@ function render( result ) {
 
 
 /**
- * The push recap screen.  Reads the spell data and the end of the log once, then
- * only recounts when another fight is picked.
+ * The push recap screen.  Shows a snapshot of one fight and never refreshes it.  The snapshot is
+ * either handed over by the Push tab, or built from the end of the log once, when there is none.
  *
- * @param {{ logFilePath: string, characterName: string, eqFolder: string, userData: string,
- *     quietGapSeconds: number, saveRecaps: boolean }} params The window parameters.
+ * @param {{ logFilePath: string, characterName: string, eqFolder: string, userData: string, quietGapSeconds: number, saveRecaps: boolean, snapshot: boolean }} params The window parameters.
  */
 async function PushRecap( params ) {
 
@@ -339,41 +398,59 @@ async function PushRecap( params ) {
     document.getElementById( 'closeButton' ).addEventListener( 'click', () => ipcRenderer.send( 'window:child:close' ) );
     document.getElementById( 'npcToggle' ).addEventListener( 'change', e => document.getElementById( 'npcAbilities' ).hidden = !e.target.checked );
 
-    const quietGapSeconds = params.quietGapSeconds >= 5 && params.quietGapSeconds <= 300 ? params.quietGapSeconds : 30;
-    let result = null;
+    let quietGapSeconds = params.quietGapSeconds >= 5 && params.quietGapSeconds <= 300 ? params.quietGapSeconds : 30;
+    let shown = null;
 
     document.getElementById( 'copyButton' ).addEventListener( 'click', () => {
-        if ( result !== null && result !== undefined ) {
-            ipcRenderer.send( 'clipboard:writeText', buildSummaryText( result ) );
+        if ( shown != null ) {
+            ipcRenderer.send( 'clipboard:writeText', buildSummaryText( shown ) );
             document.getElementById( 'copyButton' ).textContent = 'Copied';
         }
     } );
 
-    const saved = new Set();
-    const pending = new Set();
-    const failed = new Set();
-    let shownIndex = -1;
-    const saveButton = document.getElementById( 'saveButton' );
-    const showSaveState = () => {
-        saveButton.textContent = saved.has( shownIndex ) ? 'Saved' : pending.has( shownIndex ) ? 'Saving...' : failed.has( shownIndex ) ? "Couldn't save - try again" : 'Save to Push tab';
-        saveButton.disabled = saved.has( shownIndex ) || pending.has( shownIndex );
+    let state = 'unsaved';
+    let clicked = false;
+    let saveButton = document.getElementById( 'saveButton' );
+    let showSaveState = () => {
+        saveButton.textContent = state === 'saved' ? 'Saved' : state === 'pending' ? 'Saving...' : state === 'failed' ? "Couldn't save - try again" : 'Save to Push tab';
+        saveButton.disabled = state === 'saved' || state === 'pending';
+        saveButton.hidden = shown == null || ( !clicked && ( state === 'saved' || state === 'pending' ) );
     };
-    const save = () => {
-        if ( result !== null && result !== undefined && !saved.has( shownIndex ) && !pending.has( shownIndex ) ) {
-            pending.add( shownIndex );
-            failed.delete( shownIndex );
-            ipcRenderer.send( 'push-recaps:save', Object.assign( buildSavedSummary( result, params.characterName ), { saveKey: shownIndex } ) );
+    let save = () => {
+        if ( shown != null && state !== 'saved' && state !== 'pending' ) {
+            state = 'pending';
+            ipcRenderer.send( 'push-recaps:save', Object.assign( {}, shown, { id: '', saveKey: 0 } ) );
             showSaveState();
         }
     };
-    saveButton.addEventListener( 'click', save );
+    saveButton.addEventListener( 'click', () => {
+        clicked = true;
+        save();
+    } );
     ipcRenderer.on( 'push-recaps:saved', ( event, reply ) => {
-        pending.delete( reply.key );
-        ( reply.ok ? saved : failed ).add( reply.key );
+        state = reply.ok ? 'saved' : 'failed';
         showSaveState();
     } );
 
+    let show = ( summary, saved ) => {
+        shown = summary;
+        state = saved ? 'saved' : 'unsaved';
+        document.getElementById( 'copyButton' ).textContent = 'Copy summary';
+        showSaveState();
+        render( summary );
+    };
+
     try {
+        if ( params.snapshot ) {
+            let snapshot = await ipcRenderer.invoke( 'push-recap:snapshot' );
+            if ( snapshot?.recap == null || typeof snapshot.recap !== 'object' ) {
+                showMessage( 'There is no fight to show. Pick one in the Push tab.', false );
+                return;
+            }
+            show( snapshot.recap, snapshot.saved === true );
+            return;
+        }
+
         showMessage( 'Loading spell data...', false );
         const table = await loadPushSpells( params.logFilePath, params.eqFolder, params.userData );
         const landing = buildLandingIndex( table );
@@ -387,24 +464,7 @@ async function PushRecap( params ) {
             return;
         }
 
-        const select = document.getElementById( 'fightSelect' );
-        select.textContent = '';
-        summary.kills.forEach( ( kill, i ) => {
-            const option = el( 'option', null, `${kill.name} · ${kill.clock} · ${formatDamage( kill.damage )} damage` );
-            option.value = `${i}`;
-            select.appendChild( option );
-        } );
-        select.value = `${summary.defaultKill}`;
-
-        const show = index => {
-            result = analyzeKill( session, summary, table, landing, summary.kills[ index ], quietGapSeconds );
-            shownIndex = index;
-            document.getElementById( 'copyButton' ).textContent = 'Copy summary';
-            showSaveState();
-            render( result );
-        };
-        select.addEventListener( 'change', () => show( +select.value ) );
-        show( summary.defaultKill );
+        show( buildSavedSummary( analyzeKill( session, summary, table, landing, summary.kills[ summary.defaultKill ], quietGapSeconds ), params.characterName ), false );
         if ( params.saveRecaps ) {
             save();
         }
