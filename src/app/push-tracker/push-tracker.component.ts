@@ -1,9 +1,10 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
 import { MAT_FORM_FIELD_DEFAULT_OPTIONS } from '@angular/material/form-field';
-import { Subscription } from 'rxjs';
+import { forkJoin, Subscription } from 'rxjs';
 import { DialogService } from '../dialogs/dialog.service';
 import { IpcService } from '../ipc.service';
 import { CharacterModel, PushRecapPreferences, PushRecapProc, PushRecapSummary, PushScanStatus } from '../core.model';
+import { aggregateFights, axisStep, describeTotals, nightKey, PushTotals } from './push-totals';
 
 /**
  * One cell of the player by spell grid.
@@ -15,18 +16,28 @@ export interface PushGridCell {
     tooltip: string;
 }
 
+export interface PushTotalsRow {
+    name: string;
+    fights: number;
+    events: number;
+    assumed: number;
+    pushValue: number;
+    cells: PushGridCell[];
+}
 
+export interface PushFightBar {
+    d: string;
+    x: number;
+    width: number;
+}
 
+export interface PushChartTick {
+    value: string;
+    x: number;
+    y: number;
+    anchor: string;
+}
 
-
-
-
-
-
-
-/**
- * One player row of the grid.
- */
 export interface PushGridRow {
     name: string;
     events: number;
@@ -90,6 +101,21 @@ export class PushTrackerComponent implements OnInit, OnDestroy {
     public rows: PushRecapSummary[] = [];
     public showCharacter: boolean = false;
     public selected: PushRecapSummary | null = null;
+    public selection: PushRecapSummary[] = [];
+    public selectedIds: Set<string> = new Set<string>();
+    public multi: boolean = false;
+    public dateFilter: string = '';
+    public dateOptions: string[] = [];
+    public totals: PushTotals | null = null;
+    public totalsLoading: boolean = false;
+    public totalsTitle: string = '';
+    public totalsMeasure: 'hits' | 'push' = 'hits';
+    public totalsRows: PushTotalsRow[] = [];
+    public fightBars: PushFightBar[] = [];
+    public fightGrid: number[] = [];
+    public fightYTicks: PushChartTick[] = [];
+    public fightXTicks: PushChartTick[] = [];
+    public fightTip: { x: number, y: number, title: string, value: string } | null = null;
     public detail: PushRecapSummary | null = null;
     public gridSpells: string[] = [];
     public gridSpellPush: Map<string, number | null> = new Map<string, number | null>();
@@ -102,6 +128,9 @@ export class PushTrackerComponent implements OnInit, OnDestroy {
 
     private subscription: Subscription = new Subscription();
     private detailSubscription: Subscription | null = null;
+    private totalsSubscription: Subscription | null = null;
+    private detailCache: Map<string, PushRecapSummary> = new Map<string, PushRecapSummary>();
+    private anchorId: string | null = null;
 
     constructor(
         private readonly ipcService: IpcService,
@@ -164,6 +193,7 @@ export class PushTrackerComponent implements OnInit, OnDestroy {
     ngOnDestroy(): void {
         this.subscription.unsubscribe();
         this.detailSubscription?.unsubscribe();
+        this.totalsSubscription?.unsubscribe();
     }
 
 
@@ -531,7 +561,8 @@ export class PushTrackerComponent implements OnInit, OnDestroy {
      * Switches between the saved recaps and the scan results, dropping the other list selection.
      */
     public onSourceChange(): void {
-        this.selected = null;
+        this.selectedIds = new Set<string>();
+        this.anchorId = null;
         this.applyFilters();
     }
 
@@ -639,43 +670,63 @@ export class PushTrackerComponent implements OnInit, OnDestroy {
         } );
     }
 
-
-
-
-
-
-
-
-
-
-    /**
-     * Picks the recap whose details are shown, and scrolls its row into view.
-     *
-     * @param recap The recap that was clicked.
-     * @param event The click event, used to find the row.
-     */
-    public select( recap: PushRecapSummary, event: Event ): void {
-        const row = event.currentTarget as HTMLElement;
-        this.selected = recap;
-        this.loadDetail();
+    public select( recap: PushRecapSummary, event: MouseEvent ): void {
+        let row = event.currentTarget as HTMLElement;
+        let anchor = this.rows.findIndex( r => r.id === this.anchorId );
+        if ( event.ctrlKey || event.metaKey ) {
+            if ( this.selectedIds.has( recap.id ) ) {
+                this.selectedIds.delete( recap.id );
+            } else {
+                this.selectedIds.add( recap.id );
+            }
+            this.anchorId = recap.id;
+        } else if ( event.shiftKey && anchor > -1 ) {
+            let to = this.rows.indexOf( recap );
+            this.selectedIds = new Set( this.rows.slice( Math.min( anchor, to ), Math.max( anchor, to ) + 1 ).map( r => r.id ) );
+        } else {
+            this.selectedIds = new Set<string>( [ recap.id ] );
+            this.anchorId = recap.id;
+        }
+        this.applySelection();
         setTimeout( () => row.scrollIntoView( { block: 'nearest' } ) );
     }
 
+    public selectAllShown(): void {
+        this.selectedIds = new Set( this.rows.map( r => r.id ) );
+        this.anchorId = this.rows[ 0 ]?.id ?? null;
+        this.applySelection();
+    }
 
-
-
-
-
-
-
-
-
-    /**
-     * Closes the docked details panel and drops the selection.
-     */
     public closeDetails(): void {
-        this.selected = null;
-        this.loadDetail();
+        this.selectedIds = new Set<string>();
+        this.applySelection();
+    }
+
+    public selectFight( id: string ): void {
+        this.selectedIds = new Set<string>( [ id ] );
+        this.anchorId = id;
+        this.applySelection();
+    }
+
+    public setTotalsMeasure( measure: 'hits' | 'push' ): void {
+        this.totalsMeasure = measure;
+        this.buildFightChart();
+        this.changeDetector.markForCheck();
+    }
+
+    public showFightTip( event: MouseEvent, index: number ): void {
+        let fight = this.totals.perFight[ index ];
+        let value = this.totalsMeasure === 'hits' ? fight.hits : fight.pushValue;
+        this.fightTip = {
+            x: Math.min( event.clientX + 14, window.innerWidth - 240 ),
+            y: event.clientY + 14,
+            title: `${fight.mob} \u00b7 ${fight.killTime.substring( 11, 16 )}`,
+            value: `${value} ${this.totalsMeasure === 'hits' ? 'push hits' : 'push'}`,
+        };
+    }
+
+    public hideFightTip(): void {
+        this.fightTip = null;
     }
 
 
@@ -750,8 +801,14 @@ export class PushTrackerComponent implements OnInit, OnDestroy {
      * Copies a short text version of the selected recap, for pasting into chat.
      */
     public copySummary(): void {
-        const recap = this.detail;
-        if ( recap === null || recap === undefined ) {
+        if ( this.multi && this.totals != null ) {
+            let first = nightKey( this.totals.firstKill );
+            let last = nightKey( this.totals.lastKill );
+            this.ipcService.sendTextToClipboard( describeTotals( this.totals, first === last ? first : `${first} to ${last}`, this.formatLength( this.totals.seconds ) ) );
+            return;
+        }
+        let recap = this.detail;
+        if ( recap == null ) {
             return;
         }
         const lines = [
@@ -854,6 +911,7 @@ export class PushTrackerComponent implements OnInit, OnDestroy {
      */
     private load(): void {
         this.ipcService.getPushRecaps().subscribe( recaps => {
+            this.detailCache.clear();
             this.recaps = ( recaps ?? [] ).slice().sort( ( a, b ) => b.killTime.localeCompare( a.killTime ) );
             this.savedKeys = new Set( this.recaps.map( r => this.recapKey( r ) ) );
             this.loaded = true;
@@ -878,6 +936,9 @@ export class PushTrackerComponent implements OnInit, OnDestroy {
     private setHiddenTexts( prefs: PushRecapPreferences | null ): void {
         this.hiddenTexts = new Set( Array.isArray( prefs?.hiddenProcTexts ) ? prefs.hiddenProcTexts : [] );
         this.buildProcs();
+        if ( this.multi && this.totals != null ) {
+            this.buildTotals();
+        }
         this.changeDetector.markForCheck();
     }
 
@@ -934,6 +995,7 @@ export class PushTrackerComponent implements OnInit, OnDestroy {
      */
     private loadScanResults(): void {
         this.ipcService.getPushScanResults().subscribe( results => {
+            this.detailCache.clear();
             this.scanResults = ( results ?? [] ).slice().sort( ( a, b ) => b.killTime.localeCompare( a.killTime ) );
             this.applyFilters();
         } );
@@ -955,21 +1017,131 @@ export class PushTrackerComponent implements OnInit, OnDestroy {
         const mob = this.mobFilter.trim().toLowerCase();
         const items = this.source === 'scan' ? this.scanResults : this.recaps;
         this.showCharacter = this.source === 'saved' && new Set( this.recaps.map( r => r.characterName ) ).size > 1;
-        this.rows = items.filter( r => {
-            return r.damageTaken >= this.minDamage
-                && ( !this.namedOnly || r.named )
-                && ( mob === '' || r.mob.toLowerCase().indexOf( mob ) > -1 );
-        } );
-        const selectedId = this.selected?.id;
-        const stillListed = this.rows.find( r => r.id === selectedId ) ?? null;
-        this.selected = ( this.selected === null || this.selected === undefined ) ? null : stillListed;
-        const selectionChanged = this.selected === null || this.selected === undefined
-            || this.selected.id !== this.detail?.id || this.selected.savedAt !== this.detail?.savedAt;
-        if ( selectionChanged ) {
-            this.loadDetail();
-        } else {
-            this.changeDetector.markForCheck();
+        this.dateOptions = Array.from( new Set( items.map( r => nightKey( r.killTime ) ) ) ).sort().reverse();
+        if ( this.dateFilter !== '' && this.dateOptions.indexOf( this.dateFilter ) === -1 ) {
+            this.dateFilter = '';
         }
+        this.rows = items.filter( r => r.damageTaken >= this.minDamage && ( !this.namedOnly || r.named ) && ( mob === '' || r.mob.toLowerCase().indexOf( mob ) > -1 ) && ( this.dateFilter === '' || nightKey( r.killTime ) === this.dateFilter ) );
+        this.applySelection();
+    }
+
+    private applySelection(): void {
+        this.selection = this.rows.filter( r => this.selectedIds.has( r.id ) );
+        this.selectedIds = new Set( this.selection.map( r => r.id ) );
+        if ( this.anchorId != null && this.rows.every( r => r.id !== this.anchorId ) ) {
+            this.anchorId = null;
+        }
+        this.selected = this.selection.length === 1 ? this.selection[ 0 ] : null;
+        this.multi = this.selection.length > 1;
+        this.totalsSubscription?.unsubscribe();
+        this.totalsSubscription = null;
+        if ( this.multi ) {
+            this.loadDetail();
+            this.loadTotals();
+        } else {
+            this.totals = null;
+            this.totalsLoading = false;
+            if ( this.selected == null || this.selected.id !== this.detail?.id || this.selected.savedAt !== this.detail?.savedAt ) {
+                this.loadDetail();
+            } else {
+                this.changeDetector.markForCheck();
+            }
+        }
+    }
+
+    private cacheKey( recap: PushRecapSummary ): string {
+        return `${this.source}|${recap.id}|${recap.savedAt ?? ''}`;
+    }
+
+    private loadTotals(): void {
+        let missing = this.selection.filter( r => !this.detailCache.has( this.cacheKey( r ) ) );
+        if ( missing.length === 0 ) {
+            this.totalsLoading = false;
+            this.buildTotals();
+            return;
+        }
+        this.totals = null;
+        this.totalsLoading = true;
+        this.changeDetector.markForCheck();
+        let requests = missing.map( r => this.source === 'scan' ? this.ipcService.getPushScanResult( r.id ) : this.ipcService.getPushRecap( r.id ) );
+        this.totalsSubscription = forkJoin( requests ).subscribe( results => {
+            results.forEach( ( full, i ) => full != null && this.detailCache.set( this.cacheKey( missing[ i ] ), full ) );
+            this.totalsLoading = false;
+            this.buildTotals();
+        } );
+    }
+
+    private buildTotals(): void {
+        let details = this.selection.map( r => this.detailCache.get( this.cacheKey( r ) ) ).filter( r => r != null );
+        let totals = aggregateFights( details, this.hiddenTexts );
+        this.totals = totals;
+
+        let first = nightKey( totals.firstKill );
+        let last = nightKey( totals.lastKill );
+        let clock = ( time: string ) => time.substring( 11, 16 );
+        let range = first === last ? `${first} ${clock( totals.firstKill )}\u2013${clock( totals.lastKill )}` : `${first} ${clock( totals.firstKill )} \u2013 ${last} ${clock( totals.lastKill )}`;
+        this.totalsTitle = `${totals.fights} fights \u00b7 ${range} \u00b7 ${this.formatLength( totals.seconds )} of fighting`;
+
+        let max = 0;
+        totals.players.forEach( p => p.spells.forEach( s => max = Math.max( max, s.events ) ) );
+        this.totalsRows = totals.players.map( p => ( {
+            name: p.name,
+            fights: p.fights,
+            events: p.events,
+            assumed: p.assumed,
+            pushValue: p.pushValue,
+            cells: totals.spells.map( s => {
+                let count = p.spells.get( s );
+                return count == null || count.events <= 0
+                    ? null
+                    : {
+                        events: count.events,
+                        assumed: count.assumed,
+                        background: `rgba( 105, 240, 174, ${( 0.12 + 0.6 * count.events / max ).toFixed( 2 )} )`,
+                        tooltip: this.cellTooltip( count.events, count.assumed, totals.spellPush.get( s ) ?? undefined ),
+                    };
+            } ),
+        } ) );
+        this.buildFightChart();
+        this.changeDetector.markForCheck();
+    }
+
+    private buildFightChart(): void {
+        this.fightBars = [];
+        this.fightGrid = [];
+        this.fightYTicks = [];
+        this.fightXTicks = [];
+        if ( this.totals == null || this.totals.perFight.length === 0 ) {
+            return;
+        }
+        let fights = this.totals.perFight;
+        let width = 1000, height = 150, left = 44, right = 8, top = 20, bottom = 30;
+        let plotWidth = width - left - right;
+        let plotHeight = height - top - bottom;
+        let values = fights.map( f => this.totalsMeasure === 'hits' ? f.hits : f.pushValue );
+        let max = Math.max( 1, ...values );
+        let step = axisStep( max );
+        let ceiling = Math.ceil( max / step ) * step;
+        for ( let v = 0; v <= ceiling + step / 2; v += step ) {
+            let y = top + plotHeight - v / ceiling * plotHeight;
+            this.fightGrid.push( y );
+            this.fightYTicks.push( { value: `${Math.round( v * 100 ) / 100}`, x: left - 8, y: y + 4, anchor: 'end' } );
+        }
+        let barWidth = plotWidth / fights.length;
+        let gap = Math.min( 2, barWidth * 0.2 );
+        this.fightBars = values.map( ( value, i ) => {
+            let x = left + i * barWidth + gap / 2;
+            let w = barWidth - gap;
+            let h = value / ceiling * plotHeight;
+            let y = top + plotHeight - h;
+            let y0 = top + plotHeight;
+            let r = Math.min( 3, w / 2, h );
+            let d = h <= 0 ? '' : r > 0 ? `M${x},${y0} V${y + r} Q${x},${y} ${x + r},${y} H${x + w - r} Q${x + w},${y} ${x + w},${y + r} V${y0} Z` : `M${x},${y0} V${y} H${x + w} V${y0} Z`;
+            return { d: d, x: left + i * barWidth, width: barWidth };
+        } );
+        let clock = ( time: string ) => time.substring( 11, 16 );
+        let ticks = fights.length > 1 ? [ [ 0, 'start' ], [ ( fights.length - 1 ) / 2, 'middle' ], [ fights.length - 1, 'end' ] ] : [ [ 0, 'start' ] ];
+        this.fightXTicks = ticks.map( ( [ index, anchor ] ) => ( { value: clock( fights[ Math.round( index as number ) ].killTime ), x: anchor === 'start' ? left : anchor === 'end' ? width - right : left + plotWidth / 2, y: height - 10, anchor: anchor as string } ) );
     }
 
 

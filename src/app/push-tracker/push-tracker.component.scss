@@ -148,6 +148,7 @@ table.procs {
 
 table.fights {
     tbody tr {
+        user-select: none;
         cursor: pointer;
         scroll-margin: 8px 0;
     }
@@ -168,6 +169,81 @@ table.fights {
             padding: 0 10px;
         }
     }
+}
+
+.totals-tiles {
+    display: flex;
+    flex-flow: row wrap;
+    gap: 12px;
+    margin: 10px 0 14px 0;
+
+    .tile {
+        flex: 1 1 150px;
+        padding: 10px 14px;
+        background-color: #ffffff0f;
+        border-left: 3px solid #3987e5;
+
+        .value {
+            font-size: 22px;
+        }
+        .label {
+            font-size: 12px;
+            opacity: 0.75;
+        }
+    }
+}
+
+.totals-chart {
+    position: relative;
+    max-width: 1000px;
+
+    svg {
+        display: block;
+        width: 100%;
+        height: auto;
+
+        .tick {
+            fill: #898781;
+            font-size: 11px;
+            font-variant-numeric: tabular-nums;
+        }
+        .hit {
+            cursor: pointer;
+        }
+    }
+}
+
+.seg {
+    display: inline-flex;
+    border: 1px solid #ffffff1a;
+    border-radius: 6px;
+    overflow: hidden;
+    margin-bottom: 8px;
+
+    button {
+        background: transparent;
+        color: #c3c2b7;
+        border: 0;
+        padding: 4px 12px;
+        font: inherit;
+        font-size: 13px;
+        cursor: pointer;
+    }
+    button.on {
+        background: #ffffff14;
+        color: #f0efec;
+    }
+}
+
+.chart-tip {
+    position: fixed;
+    pointer-events: none;
+    padding: 8px 10px;
+    background: #0b0b0bf0;
+    border: 1px solid #ffffff1a;
+    border-radius: 6px;
+    font-size: 13px;
+    z-index: 1000;
 }
 
 .grid-title {

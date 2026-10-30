@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, Input, OnChanges } from '@angular/core';
 import { PushRecapSummary } from '../core.model';
+import { axisStep } from './push-totals';
 
 interface TimelineEvent {
     time: number;
@@ -352,42 +353,6 @@ export class PushTimelineComponent implements OnChanges {
         this.selected = Math.min( this.selected, this.count - 1 );
     }
 
-
-
-
-
-
-
-
-
-
-    /**
-     * Picks a tick step of 1, 2 or 5 times a power of ten that gives at most six ticks.
-     *
-     * @param max The largest value on the axis.
-     */
-    private axisStep( max: number ): number {
-        for ( let scale = 1; ; scale *= 10 ) {
-            for ( const base of [ 1, 2, 5 ] ) {
-                if ( Math.ceil( max / ( base * scale ) ) <= 6 ) {
-                    return base * scale;
-                }
-            }
-        }
-    }
-
-
-
-
-
-
-
-
-
-
-    /**
-     * Rebuilds everything the template draws, and tells Angular to check it.
-     */
     private draw(): void {
         this.bars = [];
         this.grid = [];
@@ -422,9 +387,9 @@ export class PushTimelineComponent implements OnChanges {
                 this.totals[ this.barOf( e ) ][ e.kind === 3 ? 'possible' : e.kind === 2 ? 'proc' : 'player' ] += this.measure === 'hits' ? 1 : e.push;
             }
         } );
-        const max = Math.max( 1, ...this.totals.map( b => b.player + b.proc + b.possible ) );
-        const step = this.axisStep( max );
-        const ceiling = Math.ceil( max / step ) * step;
+        let max = Math.max( 1, ...this.totals.map( b => b.player + b.proc + b.possible ) );
+        let step = axisStep( max );
+        let ceiling = Math.ceil( max / step ) * step;
 
         for ( let v = 0; v <= ceiling + step / 2; v += step ) {
             const y = top + plotHeight - v / ceiling * plotHeight;

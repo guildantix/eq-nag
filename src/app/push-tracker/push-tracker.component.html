@@ -2,12 +2,14 @@
     <span>Push</span>
     <span class="spacer"></span>
     <button mat-button (click)="openSelectedFight()" *ngIf="( detail !== null && detail !== undefined )" matTooltip="Open this fight in the Push Recap"><mat-icon class="material-icons-outlined">open_in_new</mat-icon> Open Push Recap</button>
-    <button mat-button [matMenuTriggerFor]="characterMenu" [disabled]="characters.length === 0" *ngIf="( detail === null || detail === undefined ) && characters.length > 1" matTooltip="Open the Push Recap pop-up for the last boss kill in a character's log"><mat-icon class="material-icons-outlined">open_in_new</mat-icon> Open Push Recap</button>
-    <button mat-button (click)="openPushRecap( characters[ 0 ] )" [disabled]="characters.length === 0" *ngIf="( detail === null || detail === undefined ) && characters.length <= 1" matTooltip="Open the Push Recap pop-up for the last boss kill in the character's log"><mat-icon class="material-icons-outlined">open_in_new</mat-icon> Open Push Recap</button>
+    <span *ngIf="multi" matTooltip="Select one fight"><button mat-button disabled><mat-icon class="material-icons-outlined">open_in_new</mat-icon> Open Push Recap</button></span>
+    <button mat-button [matMenuTriggerFor]="characterMenu" [disabled]="characters.length === 0" *ngIf="( detail === null || detail === undefined ) && !multi && characters.length > 1" matTooltip="Open the Push Recap pop-up for the last boss kill in a character's log"><mat-icon class="material-icons-outlined">open_in_new</mat-icon> Open Push Recap</button>
+    <button mat-button (click)="openPushRecap( characters[ 0 ] )" [disabled]="characters.length === 0" *ngIf="( detail === null || detail === undefined ) && !multi && characters.length <= 1" matTooltip="Open the Push Recap pop-up for the last boss kill in the character's log"><mat-icon class="material-icons-outlined">open_in_new</mat-icon> Open Push Recap</button>
     <mat-menu #characterMenu="matMenu">
         <button mat-menu-item *ngFor="let character of characters" (click)="openPushRecap( character )">{{characterLabel( character )}}</button>
     </mat-menu>
-    <button mat-button (click)="copySummary()" [disabled]="( detail === null || detail === undefined )"><mat-icon class="material-icons-outlined">content_copy</mat-icon> Copy summary</button>
+    <button mat-button (click)="selectAllShown()" [disabled]="rows.length === 0" matTooltip="Select every fight that passes the filters"><mat-icon class="material-icons-outlined">select_all</mat-icon> Select all shown</button>
+    <button mat-button (click)="copySummary()" [disabled]="( detail === null || detail === undefined ) && ( totals === null || totals === undefined )"><mat-icon class="material-icons-outlined">content_copy</mat-icon> Copy summary</button>
     <button mat-button class="color-red" (click)="clearAll()" [disabled]="source !== 'saved' || recaps.length === 0"><mat-icon class="material-icons-outlined">delete_sweep</mat-icon> Clear all</button>
 </mat-toolbar>
 <div class="tab-content nag-scrollbar">
@@ -62,6 +64,13 @@
                         <mat-option *ngFor="let option of minDamageOptions" [value]="option.value">{{option.label}}</mat-option>
                     </mat-select>
                 </mat-form-field>
+                <mat-form-field>
+                    <mat-label>Date</mat-label>
+                    <mat-select [(ngModel)]="dateFilter" name="dateFilter" (selectionChange)="onFilterChange()" matTooltip="A night runs from 06:00 to 06:00">
+                        <mat-option value="">Any</mat-option>
+                        <mat-option *ngFor="let date of dateOptions" [value]="date">{{date}}</mat-option>
+                    </mat-select>
+                </mat-form-field>
                 <mat-checkbox [(ngModel)]="namedOnly" name="namedOnly" (change)="onFilterChange()">Named only</mat-checkbox>
                 <mat-form-field>
                     <mat-label>Mob name</mat-label>
@@ -85,7 +94,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <tr *ngFor="let recap of rows; trackBy: trackById" [class.selected]="recap === selected" (click)="select( recap, $event )">
+                    <tr *ngFor="let recap of rows; trackBy: trackById" [class.selected]="selectedIds.has( recap.id )" (click)="select( recap, $event )">
                         <td>{{formatTime( recap )}}</td>
                         <td *ngIf="showCharacter">{{recap.characterName}}</td>
                         <td>{{recap.mob}}</td>
@@ -107,6 +116,131 @@
                 </tbody>
             </table>
         </ng-template>
+    </div>
+
+    <div class="detail-panel" *ngIf="multi" nagResizeable location="top" resizeVisibility="hidden" resizeMax="80%">
+        <div class="panel-head">
+            <h3 class="grid-title">{{totalsLoading || ( totals === null || totals === undefined ) ? selection.length + ' fights selected' : totalsTitle}}</h3>
+            <span class="spacer"></span>
+            <button mat-button (click)="copySummary()" [disabled]="( totals === null || totals === undefined )">Copy summary</button>
+            <button mat-icon-button (click)="closeDetails()" matTooltip="Close the details"><mat-icon class="material-icons-outlined">close</mat-icon></button>
+        </div>
+        <div class="panel-body nag-scrollbar">
+            <p class="note" *ngIf="totalsLoading">Loading the selected fights...</p>
+            <ng-template [ngIf]="( totals !== null && totals !== undefined )">
+                <div class="totals-tiles">
+                    <div class="tile"><div class="value">{{totals.hits}}</div><div class="label">push hits</div></div>
+                    <div class="tile"><div class="value">{{totals.pushValue}}</div><div class="label">total push</div></div>
+                    <div class="tile"><div class="value">{{totals.topPlayer || '-'}}</div><div class="label">top pusher &middot; {{totals.topPercent}}% of hits</div></div>
+                    <div class="tile"><div class="value">{{totals.procHits}}</div><div class="label">procs, no player named</div></div>
+                </div>
+
+                <div class="totals-chart">
+                    <span class="seg">
+                        <button type="button" [class.on]="totalsMeasure === 'hits'" (click)="setTotalsMeasure( 'hits' )">Push hits</button>
+                        <button type="button" [class.on]="totalsMeasure === 'push'" (click)="setTotalsMeasure( 'push' )">Push value</button>
+                    </span>
+                    <svg viewBox="0 0 1000 150" role="img" aria-label="Push per fight">
+                        <svg:line *ngFor="let y of fightGrid; let i = index" x1="44" x2="992" [attr.y1]="y" [attr.y2]="y" [attr.stroke]="i === 0 ? '#383835' : '#2c2c2a'" stroke-width="1" />
+                        <svg:text *ngFor="let t of fightYTicks" class="tick" [attr.x]="t.x" [attr.y]="t.y" [attr.text-anchor]="t.anchor">{{t.value}}</svg:text>
+                        <svg:text *ngFor="let t of fightXTicks" class="tick" [attr.x]="t.x" [attr.y]="t.y" [attr.text-anchor]="t.anchor">{{t.value}}</svg:text>
+                        <ng-container *ngFor="let bar of fightBars; let i = index">
+                            <svg:path *ngIf="bar.d !== ''" [attr.d]="bar.d" fill="#3987e5" />
+                            <svg:rect class="hit" [attr.x]="bar.x" y="20" [attr.width]="bar.width" height="100" fill="transparent" (mousemove)="showFightTip( $event, i )" (mouseleave)="hideFightTip()" (click)="selectFight( totals.perFight[ i ].id )" />
+                        </ng-container>
+                    </svg>
+                    <p class="note">One bar per fight, in time order. Hover for the mob and time. Click a bar to open just that fight.</p>
+                    <div class="chart-tip" *ngIf="( fightTip !== null && fightTip !== undefined )" [style.left.px]="fightTip.x" [style.top.px]="fightTip.y"><div>{{fightTip.title}}</div><div>{{fightTip.value}}</div></div>
+                </div>
+
+                <div class="detail-layout">
+                    <div class="detail-grid">
+                        <div class="grid-scroll nag-scrollbar">
+                            <table class="grid">
+                                <thead>
+                                    <tr>
+                                        <th>Player</th>
+                                        <th class="num">Fights</th>
+                                        <th *ngFor="let spell of totals.spells" class="num">{{( totals.spellPush.get( spell ) ?? null ) === null ? spell : spell + ' (' + totals.spellPush.get( spell ) + ')'}}</th>
+                                        <th class="num">Hits</th>
+                                        <th class="num">Push</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr *ngFor="let row of totalsRows; trackBy: trackByName">
+                                        <td>{{row.name}}</td>
+                                        <td class="num">{{row.fights}}</td>
+                                        <td *ngFor="let cell of row.cells" class="num cell" [style.background-color]="cell?.background" [matTooltip]="cell?.tooltip">
+                                            <ng-template [ngIf]="( cell !== null && cell !== undefined )">{{cell.events}}<span class="assumed" *ngIf="cell.assumed > 0"> ~{{cell.assumed}}</span></ng-template>
+                                        </td>
+                                        <td class="num total">{{row.events}}<span class="assumed" *ngIf="row.assumed > 0"> ~{{row.assumed}}</span></td>
+                                        <td class="num total">{{row.pushValue}}</td>
+                                    </tr>
+                                    <tr *ngIf="totalsRows.length === 0"><td [attr.colspan]="totals.spells.length + 4" class="empty">No push events were found in these fights.</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <p class="note">Added up over the selected fights. &quot;Fights&quot; counts the fights each player pushed in. <span class="assumed">~</span> marks casts assumed to have landed.</p>
+                    </div>
+
+                    <div class="detail-procs" *ngIf="totals.procs.length > 0 || totals.hiddenProcs > 0">
+                        <h3 class="grid-title">Procs with no player named</h3>
+                        <table class="procs" *ngIf="totals.procs.length > 0">
+                            <thead>
+                                <tr>
+                                    <th>Hit message</th>
+                                    <th>Push spells using it</th>
+                                    <th class="num">Push each</th>
+                                    <th class="num">Landed</th>
+                                    <th class="num">Total push</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr *ngFor="let proc of totals.procs; trackBy: trackByProc">
+                                    <td>{{messageText( proc )}}</td>
+                                    <td [matTooltip]="proc.names?.length > 1 ? proc.names.join( ', ' ) : ''">{{proc.name}}</td>
+                                    <td class="num">{{procPush( proc )}}</td>
+                                    <td class="num">{{proc.count}}</td>
+                                    <td class="num">{{procTotal( proc )}}</td>
+                                    <td class="num"><button type="button" class="hide-message" *ngIf="proc.text" (click)="hideProc( proc )" matTooltip="Hide this message from the proc tables">&times;</button></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <p class="note">Weapon procs whose landing message names no caster. Not part of the player totals.{{hiddenNote( totals.hiddenProcs )}}</p>
+                    </div>
+
+                    <div class="detail-procs possible" *ngIf="totals.possible.length > 0 || totals.hiddenPossible > 0">
+                        <h3 class="grid-title">Possible procs</h3>
+                        <table class="procs" *ngIf="totals.possible.length > 0">
+                            <thead>
+                                <tr>
+                                    <th>Hit message</th>
+                                    <th class="dim">Push spells using it</th>
+                                    <th>Also used by (no push)</th>
+                                    <th class="num dim">Push each</th>
+                                    <th class="num">Landed</th>
+                                    <th class="num dim">Total push</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr *ngFor="let proc of totals.possible; trackBy: trackByProc">
+                                    <td>{{messageText( proc )}}</td>
+                                    <td class="dim" [matTooltip]="proc.names?.length > 1 ? proc.names.join( ', ' ) : ''">{{proc.name}}</td>
+                                    <td class="also">{{alsoText( proc )}}</td>
+                                    <td class="num dim">{{procPush( proc )}}</td>
+                                    <td class="num">{{proc.count}}</td>
+                                    <td class="num dim">{{possibleTotal( proc )}}</td>
+                                    <td class="num"><button type="button" class="hide-message" *ngIf="proc.text" (click)="hideProc( proc )" matTooltip="Hide this message from the proc tables">&times;</button></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <p class="note">Spells with no push use the same landing message, so these may not be push. Not in any totals.{{hiddenNote( totals.hiddenPossible )}}</p>
+                    </div>
+                </div>
+            </ng-template>
+        </div>
     </div>
 
     <div class="detail-panel" *ngIf="( selected !== null && selected !== undefined )" nagResizeable location="top" resizeVisibility="hidden" resizeMax="80%">
