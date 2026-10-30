@@ -187,11 +187,12 @@ function formatProcTotal( proc ) {
  * @param {any} summary The saved summary.
  */
 function buildSummaryText( summary ) {
+    let players = summary.players ?? [];
     let lines = [
         `Push Recap - ${summary.mob}, killed ${formatKillClock( summary )}, fight ${formatDuration( summary.fightSeconds )}`,
-        `${summary.events} push hits, ${summary.players.length} players pushing`,
+        `${summary.events} push hits, ${players.length} players pushing`,
     ];
-    summary.players.forEach( ( p, i ) => {
+    players.forEach( ( p, i ) => {
         let share = summary.events > 0 ? Math.round( p.events * 100 / summary.events ) : 0;
         lines.push( `${i + 1}. ${p.name} - ${p.events} (${share}%)${p.assumed > 0 ? ` ~${p.assumed} assumed` : ''}` );
     } );
