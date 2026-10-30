@@ -62,6 +62,9 @@ class WindowManager {
     /** @type {BrowserWindow} */
     #deathRecap;
 
+    /** @type {BrowserWindow} */
+    #pushRecap = null;
+
     /** @type {WebContents} */
     #arrangeCaller;
 
@@ -360,6 +363,18 @@ class WindowManager {
              */
             ( event, arg ) => {
                 this.loadLastDeathRecap( arg.value.logFilePath, arg.id, arg.value.characterName, arg.value.serverName );
+            }
+        );
+
+        ipcMain.on( 'window:push-recap',
+            /**
+             * Loads the push recap for the last boss kill.
+             *
+             * @param {any} event Event args.
+             * @param {IpcMessage<{logFilePath: string, characterName: string, serverName: string}>} arg The log file and character.
+             */
+            ( event, arg ) => {
+                this.loadPushRecap( arg.value.logFilePath, arg.value.characterName, arg.value.serverName );
             }
         );
 
@@ -1297,6 +1312,76 @@ class WindowManager {
 
         this.#deathRecap = deathRecap;
         this.configureRendererMouseBlockingOnMoveResize( this.#deathRecap );
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Loads the push recap window, reusing it when it is already open.
+     *
+     * @param {string} logFilePath The full path to the log file.
+     * @param {string} characterName The name of the character.
+     * @param {string} serverName The name of the server.
+     */
+    loadPushRecap( logFilePath, characterName, serverName ) {
+
+        let pushRecap = this.#pushRecap;
+        let recapPrefs = this.#userPrefDb.pushRecap;
+        let query = `logFilePath=${encodeURIComponent( logFilePath )}&characterName=${encodeURIComponent( characterName )}&eqFolder=${encodeURIComponent( this.#userPrefDb.everquestInstallFolder ?? '' )}&userData=${encodeURIComponent( app.getPath( 'userData' ) )}&quietGap=${encodeURIComponent( recapPrefs?.quietGapSeconds ?? 30 )}`;
+
+        if ( pushRecap != null && !pushRecap.isDestroyed() ) {
+            if ( pushRecap.isMinimized() ) {
+                pushRecap.restore();
+            }
+            pushRecap.loadURL( `file://${__dirname}/windows/push-recap.html?${query}` );
+            pushRecap.focus();
+            return;
+        }
+
+        pushRecap = new BrowserWindow( {
+            transparent: true,
+            frame: false,
+            resizable: true,
+            movable: true,
+            webPreferences: {
+                nodeIntegration: false,
+                contextIsolation: true,
+                devTools: app.isDev(),
+                sandbox: false,
+                preload: path.join( __dirname, '/preloaders/push-recap.js' ),
+            },
+            skipTaskbar: false,
+            maximizable: true,
+            minimizable: true,
+        } );
+
+        let size = { width: 1000, height: 720 };
+        let workAreaSize = screen.getPrimaryDisplay().workAreaSize;
+
+        pushRecap.setBounds( {
+            width: size.width,
+            height: size.height,
+            x: ( workAreaSize.width - size.width ) / 2,
+            y: ( workAreaSize.height - size.height ) / 2,
+        } );
+
+        pushRecap.loadURL( `file://${__dirname}/windows/push-recap.html?${query}` );
+
+        pushRecap.on( 'closed', () => {
+            if ( this.#pushRecap === pushRecap ) {
+                this.#pushRecap = null;
+            }
+        } );
+
+        this.#pushRecap = pushRecap;
+        this.configureRendererMouseBlockingOnMoveResize( pushRecap );
     }
 
 

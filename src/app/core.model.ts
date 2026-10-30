@@ -96,6 +96,7 @@ export enum ActionTypes {
     ClearAll = 13,
     Stopwatch = 14,
     List = 15,
+    DisplayPushRecap = 16,
 
 }
 
@@ -138,6 +139,7 @@ export function ActionTypeLabels(actionType: ActionTypes): string {
         actionType === ActionTypes.Clipboard ? 'Clipboard' :
         actionType === ActionTypes.BeneficialTimer ? 'Beneficial Timer' :
         actionType === ActionTypes.DisplayDeathRecap ? 'Display Death Recap' :
+        actionType === ActionTypes.DisplayPushRecap ? 'Display Push Recap' :
         actionType === ActionTypes.ScreenGlow ? 'Screen Glow' :
         actionType === ActionTypes.ClearAll ? 'Clear All' :
         actionType === ActionTypes.Stopwatch ? 'Stopwatch' :
@@ -159,6 +161,7 @@ export function ActionTypeIcons( actionType: ActionTypes ): string {
         actionType === ActionTypes.Clipboard ? 'content_copy' :
         actionType === ActionTypes.BeneficialTimer ? 'watch_later' :
         actionType === ActionTypes.DisplayDeathRecap ? 'sick' :
+        actionType === ActionTypes.DisplayPushRecap ? 'open_with' :
         actionType === ActionTypes.ScreenGlow ? 'brightness_5' :
         actionType === ActionTypes.ClearAll ? 'layers_clear' :
         actionType === ActionTypes.Stopwatch ? 'timer' :
@@ -1732,6 +1735,16 @@ export class DeathRecapPreferences {
     triggerId: string;
     engageMode: 'hotkey' | 'automatic';
     hotkeyPhrase: string;
+}
+
+const pushRecapEmote = 'wonders who is pushing';
+export const pushRecapHotkeyCommand = `/hot "Push Recap" /em ${pushRecapEmote}.`;
+export const pushRecapCapturePattern = '^(?:~ )?${Character} ' + pushRecapEmote + '\\.$';
+
+export class PushRecapPreferences {
+    triggerId: string;
+    enabled: boolean = false;
+    quietGapSeconds: number = 30;
 }
 
 export class VersionNumber {

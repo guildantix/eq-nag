@@ -3,7 +3,7 @@ import * as Electron from 'electron';
 import { UpdateInfo } from 'electron-updater';
 import { Observable, Observer, Subject } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
-import { DataTickModel, DkpEntryModel, TriggerModel, OverlayWindowModel, ActionTypes, FocusEffectSettings, CharacterModel, BasicError, TriggerFolder, FileModel, Tag, AuthorModel, PackageFileModel, TriggerPackageMetaModel, TriggerPackageVersion, FctStylesModel, OverlayBoundsChangedEventArgs, DialogEventArgs, QuickShareMetaModel, LogFileLocation, IpcMessage, DeathRecapPreferences, QuickShareAuthorListTypes, Progress, QuitFailureData, DuplicateTriggerAction, ScrapedSpell, ScrapedClickEffect, TriggerParseHistoryModel, SimulationProgress, FctCombatGroup, CombatTypes, StylePropertiesModel, CombatAnimations, TriggersProfileModel, ConsoleMessageModel, LogTypes, ServerCombatModel, ProgressModel, ServerConsoleMessage, ChatRoomLinkReceivedEventArgs, RenderTokenModel, TokenChangeModel, ShareInstallResult, SanitizedQuickShare } from './core.model';
+import { DataTickModel, DkpEntryModel, TriggerModel, OverlayWindowModel, ActionTypes, FocusEffectSettings, CharacterModel, BasicError, TriggerFolder, FileModel, Tag, AuthorModel, PackageFileModel, TriggerPackageMetaModel, TriggerPackageVersion, FctStylesModel, OverlayBoundsChangedEventArgs, DialogEventArgs, QuickShareMetaModel, LogFileLocation, IpcMessage, DeathRecapPreferences, QuickShareAuthorListTypes, Progress, QuitFailureData, DuplicateTriggerAction, ScrapedSpell, ScrapedClickEffect, TriggerParseHistoryModel, SimulationProgress, FctCombatGroup, CombatTypes, StylePropertiesModel, CombatAnimations, TriggersProfileModel, ConsoleMessageModel, LogTypes, ServerCombatModel, ProgressModel, ServerConsoleMessage, ChatRoomLinkReceivedEventArgs, RenderTokenModel, TokenChangeModel, ShareInstallResult, SanitizedQuickShare, PushRecapPreferences } from './core.model';
 import { GinaConfiguration, GinaTriggerGroups } from './gina.model';
 import { ColorUtility } from './utilities';
 import { nagId } from './core/nag-id.util';
@@ -2693,6 +2693,26 @@ export class IpcService {
     
     public updateDeathRecapPreferences( model: DeathRecapPreferences ): void {
         window.api.ipc.send( 'settings:set:deathRecap', model );
+    }
+
+    public updatePushRecapPreferences( model: PushRecapPreferences ): void {
+        window.api.ipc.send( 'settings:set:pushRecap', model );
+    }
+
+    public getPushRecapPreferences(): Observable<PushRecapPreferences> {
+        let obs: Observable<PushRecapPreferences> = new Observable<PushRecapPreferences>( ( observer: Observer<PushRecapPreferences> ) => {
+
+            window.api.ipc.once( 'settings:get:pushRecap', ( e, model: PushRecapPreferences ) => {
+                this.ngZone.run( () => {
+                    observer.next( model );
+                    observer.complete();
+                } );
+            } );
+            window.api.ipc.send( 'settings:get:pushRecap', null );
+
+        } );
+
+        return obs;
     }
 
     public getDeathRecapPreferences(): Observable<DeathRecapPreferences> {

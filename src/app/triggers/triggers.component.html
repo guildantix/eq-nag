@@ -34,6 +34,10 @@
             <!-- <mat-icon>system_update_alt</mat-icon> -->
             <span>Clear All</span>
         </button>
+        <button mat-menu-item (click)="copyPushRecapHotkey()" [disabled]="!pushRecapPreferences?.enabled">
+            <!-- <mat-icon>system_update_alt</mat-icon> -->
+            <span>Push Recap</span>
+        </button>
     </mat-menu>
     <mat-menu #menu="matMenu" class="trigger-main-menu" xPosition="before">
         <button mat-menu-item [matMenuTriggerFor]="autoGenMenu">

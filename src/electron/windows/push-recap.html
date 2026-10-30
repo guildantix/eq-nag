@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Push Recap</title>
+
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+        }
+        body {
+            background-color: #000000d9;
+            color: rgb(204, 204, 204);
+            font-family: Roboto, "Segoe UI", Arial, sans-serif;
+            font-size: 14px;
+            overflow: hidden;
+        }
+        .window {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            box-sizing: border-box;
+        }
+        .title-bar {
+            display: flex;
+            align-items: center;
+            padding: 10px 20px;
+            -webkit-app-region: drag;
+            border-bottom: 3px solid rgb(77, 77, 77);
+        }
+        .title-bar h1 {
+            margin: 0;
+            flex: 1 1 auto;
+            font-size: 24px;
+            font-weight: 400;
+            color: rgb(66, 165, 245);
+        }
+        .title-bar .character-name {
+            margin-right: 20px;
+            color: #14cc73;
+        }
+        a.close-button {
+            -webkit-app-region: no-drag;
+            text-decoration: none !important;
+            padding: 7px 16px;
+            background-color: #b71c1c1c;
+            color: #b71c1cb3;
+            font-weight: bold;
+            border-radius: 2px;
+        }
+        a.close-button:hover {
+            color: #b71c1c;
+            background-color: #b71c1c36;
+        }
+        .content {
+            flex: 1 1 auto;
+            overflow-y: auto;
+            padding: 15px 25px 25px 25px;
+        }
+        .message {
+            padding: 40px 0;
+            text-align: center;
+            font-size: 16px;
+        }
+        .message.error {
+            color: rgb(239, 83, 80);
+        }
+        .boss-name {
+            margin: 0;
+            font-size: 26px;
+            font-weight: 400;
+            color: rgb(255, 255, 255);
+        }
+        .boss-meta {
+            margin: 4px 0 12px 0;
+            color: rgb(150, 150, 150);
+        }
+        .fight-picker {
+            margin-bottom: 15px;
+        }
+        .fight-picker select {
+            background-color: #1a1a1a;
+            color: rgb(204, 204, 204);
+            border: 1px solid rgb(77, 77, 77);
+            padding: 5px 8px;
+            font-size: 14px;
+            min-width: 420px;
+        }
+        .tiles {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 18px;
+        }
+        .tile {
+            flex: 1 1 0;
+            padding: 10px 14px;
+            background-color: #ffffff0f;
+            border-left: 3px solid rgb(66, 165, 245);
+        }
+        .tile .value {
+            font-size: 24px;
+            color: rgb(255, 255, 255);
+        }
+        .tile .label {
+            color: rgb(150, 150, 150);
+            font-size: 12px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th {
+            text-align: left;
+            padding: 6px 8px;
+            color: rgb(150, 150, 150);
+            font-weight: 400;
+            border-bottom: 2px solid rgb(77, 77, 77);
+        }
+        td {
+            padding: 7px 8px;
+            border-bottom: 1px solid #ffffff14;
+            vertical-align: middle;
+        }
+        th.num, td.num {
+            text-align: right;
+            white-space: nowrap;
+        }
+        td.player {
+            color: rgb(255, 255, 255);
+            font-weight: 500;
+        }
+        td.sources {
+            color: rgb(170, 170, 170);
+            font-size: 13px;
+        }
+        .assumed {
+            color: rgb(255, 238, 88);
+        }
+        .share {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-width: 170px;
+        }
+        .share .bar {
+            flex: 1 1 auto;
+            height: 8px;
+            background-color: #ffffff14;
+        }
+        .share .bar span {
+            display: block;
+            height: 100%;
+            background-color: rgb(66, 165, 245);
+        }
+        .share .pct {
+            width: 40px;
+            text-align: right;
+            color: rgb(204, 204, 204);
+        }
+        tr.unattributed td {
+            color: rgb(150, 150, 150);
+            font-style: italic;
+        }
+        .note {
+            margin-top: 12px;
+            color: rgb(150, 150, 150);
+            font-size: 13px;
+        }
+        .hint {
+            margin-top: 12px;
+            padding: 8px 12px;
+            background-color: #f57f1726;
+            color: rgb(255, 183, 77);
+        }
+        .actions {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            margin-top: 18px;
+        }
+        .actions label {
+            cursor: pointer;
+        }
+        button {
+            background-color: #42a5f51f;
+            color: rgb(66, 165, 245);
+            border: 0;
+            padding: 7px 16px;
+            font-size: 14px;
+            border-radius: 2px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #42a5f542;
+        }
+        .npc-abilities {
+            margin-top: 15px;
+        }
+        .npc-abilities h3 {
+            margin: 0 0 6px 0;
+            font-size: 15px;
+            font-weight: 400;
+            color: rgb(239, 83, 80);
+        }
+        [hidden] {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="window">
+        <div class="title-bar">
+            <h1>Push Recap</h1>
+            <span class="character-name" id="characterName"></span>
+            <a class="close-button" href="javascript:void(0)" id="closeButton">Close</a>
+        </div>
+
+        <div class="content">
+            <div class="message" id="message">Loading...</div>
+
+            <div id="recap" hidden>
+                <h2 class="boss-name" id="bossName"></h2>
+                <div class="boss-meta" id="bossMeta"></div>
+
+                <div class="fight-picker">
+                    <label for="fightSelect">Fight </label>
+                    <select id="fightSelect"></select>
+                </div>
+
+                <div class="tiles">
+                    <div class="tile"><div class="value" id="tileEvents"></div><div class="label">push events</div></div>
+                    <div class="tile"><div class="value" id="tileTop"></div><div class="label" id="tileTopLabel">top pusher</div></div>
+                    <div class="tile"><div class="value" id="tilePlayers"></div><div class="label">players pushing</div></div>
+                    <div class="tile"><div class="value" id="tileValue"></div><div class="label">push value, for reference</div></div>
+                </div>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Player</th>
+                            <th class="num">Events</th>
+                            <th>Share of events</th>
+                            <th class="num">Push value</th>
+                            <th>Main sources</th>
+                        </tr>
+                    </thead>
+                    <tbody id="playerRows"></tbody>
+                </table>
+
+                <div class="note">Counts the hits and casts in your log. <span class="assumed">~</span> marks casts assumed to have landed.</div>
+                <div class="hint" id="cutOffHint" hidden></div>
+                <div class="hint" id="othersHint" hidden>No hits from other players were found in this fight. Turn on others' hits in EverQuest to see the whole raid.</div>
+
+                <div class="actions">
+                    <label><input type="checkbox" id="npcToggle" /> Show NPC abilities</label>
+                    <button type="button" id="copyButton">Copy summary</button>
+                </div>
+
+                <div class="npc-abilities" id="npcAbilities" hidden>
+                    <h3>NPC push abilities</h3>
+                    <table>
+                        <thead>
+                            <tr><th>NPC</th><th>Ability</th><th class="num">Times</th><th class="num">Push</th></tr>
+                        </thead>
+                        <tbody id="npcRows"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="text/javascript">
+        const urlParams = new URLSearchParams( window.location.search );
+        window.api.getPushRecap()( {
+            logFilePath: urlParams.get( 'logFilePath' ),
+            characterName: urlParams.get( 'characterName' ),
+            eqFolder: urlParams.get( 'eqFolder' ),
+            userData: urlParams.get( 'userData' ),
+            quietGapSeconds: +urlParams.get( 'quietGap' ),
+        } );
+    </script>
+
+</body>
+</html>

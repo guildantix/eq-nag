@@ -2,7 +2,7 @@ import { FlatTreeControl } from '@angular/cdk/tree';
 import { Component, ElementRef, HostListener, NgZone, OnInit, ViewChild } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTreeFlatDataSource, MatTreeFlattener } from '@angular/material/tree';
-import { DeathRecapPreferences, ExternalDataSources, QuickShareFileModel, QuickShareMetaModel, Tag, TriggerAction, TriggerFolder, TriggerModel, ShareInstallResult } from '../core.model';
+import { DeathRecapPreferences, ExternalDataSources, QuickShareFileModel, QuickShareMetaModel, Tag, TriggerAction, TriggerFolder, TriggerModel, ShareInstallResult, PushRecapPreferences, pushRecapHotkeyCommand } from '../core.model';
 import { DialogService } from '../dialogs/dialog.service';
 import { IpcService } from '../ipc.service';
 import * as _ from 'lodash-es';
@@ -95,6 +95,7 @@ export class TriggersComponent implements OnInit {
     private triggerFolders: TriggerFolder[] = [];
 
     public deathRecapPreferences: DeathRecapPreferences = null;
+    public pushRecapPreferences: PushRecapPreferences = null;
     
     constructor(
         private readonly snackBar: MatSnackBar,
@@ -144,6 +145,7 @@ export class TriggersComponent implements OnInit {
         } );
 
         this.ipcService.getDeathRecapPreferences().subscribe( recapPrefs => this.deathRecapPreferences = recapPrefs ?? null );
+        this.ipcService.getPushRecapPreferences().subscribe( recapPrefs => this.pushRecapPreferences = recapPrefs ?? null );
         this.ipcService.getAppIsDev().subscribe( isDev => this.isDev = isDev );
         this.ipcService.getTriggerFolders().subscribe( folders => {
             this.updateViewTriggerData( folders );
@@ -347,6 +349,22 @@ export class TriggersComponent implements OnInit {
 
 
     
+    /**
+     * Copies the push recap hotbutton to the clipboard.
+     */
+    public copyPushRecapHotkey(): void {
+        this.copyHotkey( pushRecapHotkeyCommand );
+    }
+
+
+
+
+
+
+
+
+
+
     /**
      * Copies the clear all hotbutton to the clipboard.
      */

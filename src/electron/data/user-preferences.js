@@ -10,6 +10,7 @@ const archiver = require( 'archiver' );
 const FsUtilities = require( '../utilities/file-system' );
 const LogBootstrapper = require( "../log-bootstrap" );
 const { DeathRecapPreferences } = require( '../data/models/death-recap' );
+const { PushRecapPreferences } = require( '../data/models/push-recap' );
 const { QuickShareAuthorListTypes } = require( '../data/models/common' );
 const { GinaToNagOverlay } = require( "./models/trigger" );
 const log = require( 'electron-log' );
@@ -140,6 +141,15 @@ class UserPreferencesStore extends Store {
     }
     set deathRecap( val ) {
         this.#data.deathRecap = val;
+        this.storeDataFile( this.#data );
+    }
+
+    /** @type {PushRecapPreferences} */
+    get pushRecap() {
+        return this.#data.pushRecap;
+    }
+    set pushRecap( val ) {
+        this.#data.pushRecap = val;
         this.storeDataFile( this.#data );
     }
 
@@ -1002,6 +1012,14 @@ class UserPreferencesStore extends Store {
 
         ipcMain.on( 'settings:get:deathRecap', ( event ) => {
             event.sender.send( 'settings:get:deathRecap', this.deathRecap );
+        } );
+
+        ipcMain.on( 'settings:set:pushRecap', ( event, pushRecap ) => {
+            this.pushRecap = pushRecap;
+        } );
+
+        ipcMain.on( 'settings:get:pushRecap', ( event ) => {
+            event.sender.send( 'settings:get:pushRecap', this.pushRecap );
         } );
 
         ipcMain.on( 'settings:set:detrimentalOverlayId', ( event, detrimentalOverlayId ) => {

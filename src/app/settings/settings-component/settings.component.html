@@ -486,6 +486,42 @@
         </div>
     </section>
 
+    <section class="pane" [class.pane-hidden]="section !== 'push'">
+        <h2 class="pane-title">Push recap
+            <span class="spacer"></span>
+            <span class="custom-dot" *ngIf="!advancedOpen && customised( 'push' )" matTooltip="Some advanced settings are changed"></span>
+            <mat-slide-toggle [checked]="advancedOpen" (change)="toggleAdvanced()">Advanced</mat-slide-toggle>
+        </h2>
+
+        <p>The push recap window can tell you who pushed the boss.  After a fight, it reads your log backwards to the last boss kill and ranks every player by the number of push events, with the spells behind them.
+        <br />Nothing runs while you fight.  The log is only read when you press the hotkey.</p>
+        <p>To enable the Push Recap window, turn it on below.  Nag will create a trigger, and you can make an EQ <span class="color-blue" style="font-weight: 400;">Hotkey</span> that when pressed, will display the recap of your last boss kill.
+        <br />Turn on other players' hits and spell messages in EverQuest to see the whole raid.  The spell data is read from your EverQuest folder, so set it in Settings first.</p>
+
+        <div class="formless-hint full-width">
+            <div class="formless-input"><mat-checkbox [(ngModel)]="pushRecapPreferences.enabled" name="cbxPushRecapEnabled" (change)="onPushRecapPrefsChange()">Enable the Push Recap hotkey.</mat-checkbox></div>
+            <mat-hint>Creates a trigger that opens the recap when it sees your hotkey in the log.</mat-hint>
+        </div>
+
+        <ng-template [ngIf]="pushRecapPreferences.enabled">
+            <p>To create a hotkey, copy the command below and paste it into EverQuest and hit enter.</p>
+            <code style="margin-left: 25px; margin-bottom: 25px;">{{ pushRecapHotkeyCommand }}</code>
+            <button type="button" style="margin-left: 10px; color: #69b2f0;" mat-button (click)="onCopyPushRecapHotkeyCommand()">Create in-game hotkey</button>
+        </ng-template>
+
+        <div class="advanced-block" *ngIf="advancedOpen">
+            <h3 class="group-title">Fight length</h3>
+            <div class="group">
+                <div class="formless-hint full-width">
+                    <mat-form-field style="width: 320px;">
+                        <mat-label>A fight ends after this many seconds with no combat</mat-label>
+                        <input matInput type="number" min="5" max="300" [(ngModel)]="pushRecapPreferences.quietGapSeconds" name="txtPushRecapQuietGap" (change)="onPushRecapGapChange()" />
+                    </mat-form-field>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <section class="pane" [class.pane-hidden]="section !== 'combat'">
         <h2 class="pane-title">Combat</h2>
 
