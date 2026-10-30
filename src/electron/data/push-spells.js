@@ -1,11 +1,9 @@
-const crypto = require( 'crypto' );
 const fs = require( 'fs' );
 const path = require( 'path' );
 const readline = require( 'readline' );
 
-const legacyCacheFileName = 'push-spells.json';
-const cacheVersion = 2;
-// e.g. "Color Flux Rk. II" becomes "Color Flux".
+const cacheFileName = 'push-spells.json';
+const cacheVersion = 3;
 const rankRgx = / Rk\. ?I+$/i;
 
 /**
@@ -19,8 +17,8 @@ const rankRgx = / Rk\. ?I+$/i;
 /**
  * @typedef {Object} PushSpellTable
  * @property {Record<string, PushSpell>} spells Spells by name, ranks merged under the base name.
- * @property {Record<string, PushSpell>} exact Per-rank entries for the families whose ranks
- *     differ in push.
+ * @property {Record<string, PushSpell>} exact Per-rank entries for the families whose ranks differ in push.
+ * @property {string[]} noPushTexts The landing texts that a push spell shares with a spell that does not push.
  */
 
 /**
@@ -130,12 +128,18 @@ async function buildPushSpellTable( spellsFile, stringsFile ) {
     } );
 
     /** @type {Record<string, string>} */
-    const landTexts = {};
+    let landTexts = {};
+    /** @type {Set<string>} */
+    let otherTexts = new Set();
     if ( fs.existsSync( stringsFile ) ) {
         await streamLines( stringsFile, line => {
-            const f = readFields( line, 5 );
-            if ( f.length === 5 && f[ 4 ] && pushIds[ f[ 0 ] ] ) {
-                landTexts[ f[ 0 ] ] = f[ 4 ];
+            let f = readFields( line, 5 );
+            if ( f.length === 5 && f[ 4 ] ) {
+                if ( pushIds[ f[ 0 ] ] ) {
+                    landTexts[ f[ 0 ] ] = f[ 4 ];
+                } else {
+                    otherTexts.add( f[ 4 ] );
+                }
             }
         } );
     }
@@ -155,7 +159,7 @@ async function buildPushSpellTable( spellsFile, stringsFile ) {
     Object.keys( byName ).forEach( name => ( families[ stripRank( name ) ] ??= [] ).push( name ) );
 
     /** @type {PushSpellTable} */
-    const table = { spells: {}, exact: {} };
+    let table = { spells: {}, exact: {}, noPushTexts: [] };
     Object.keys( families ).forEach( base => {
         const names = families[ base ];
         const best = names.map( n => byName[ n ] ).reduce( ( a, b ) => b.push > a.push ? b : a );
@@ -164,6 +168,9 @@ async function buildPushSpellTable( spellsFile, stringsFile ) {
             names.forEach( n => table.exact[ n ] = byName[ n ] );
         }
     } );
+
+    let pushTexts = new Set( Object.keys( byName ).map( name => byName[ name ].landText ) );
+    table.noPushTexts = Array.from( otherTexts ).filter( text => pushTexts.has( text ) );
 
     return table;
 }
@@ -199,88 +206,40 @@ function findPushSpell( table, name ) {
 
 
 /**
- * Lists the folders that hold spell data for a character, best candidate first.  The install that
- * holds the character's log wins, so a beta or test character reads its own spells and not the
- * live ones; the configured folder is the fallback for logs that live elsewhere.
- *
- * @returns {string[]} The folders that contain spells_us.txt.
- *
- * @param {string} logFilePath The character's log file, e.g. "<install>\Logs\eqlog_Soandso.txt".
- * @param {string} configuredFolder The EverQuest folder Nag found, if any.
- */
-function listSpellFolders( logFilePath, configuredFolder ) {
-    const candidates = [];
-    if ( logFilePath ) {
-        candidates.push( path.dirname( path.dirname( logFilePath ) ) );
-    }
-    if ( configuredFolder && !candidates.some( folder => folder.toLowerCase() === configuredFolder.toLowerCase() ) ) {
-        candidates.push( configuredFolder );
-    }
-    return candidates.filter( folder => fs.existsSync( path.join( folder, 'spells_us.txt' ) ) );
-}
-
-
-
-
-
-
-
-
-
-
-/**
- * Tells whether the table holds at least one push spell.  A table without any means the file
- * is in a layout the parser does not understand, such as an older or emulator client.
- *
- * @returns {boolean} True when the table is usable.
- *
- * @param {PushSpellTable} table The push spell table.
- */
-function hasPushSpells( table ) {
-    return Object.keys( table.spells ).length > 0;
-}
-
-
-
-
-
-
-
-
-
-
-/**
- * Loads the push spell table of one install, from the cache when spells_us.txt has not changed.
+ * Loads the push spell table, from the cache when spells_us.txt has not changed.
  * Reading the 35 MB spell file happens only the first time, or after a patch.
  *
- * @returns {Promise<PushSpellTable>} The push spell table, possibly without any push spell.
+ * @returns {Promise<PushSpellTable>} The push spell table.
  *
- * @param {string} spellFolder The install folder that contains spells_us.txt.
+ * @param {string} eqFolder The EverQuest installation folder.
  * @param {string} cacheFolder The folder to keep the cache file in.
  */
-async function loadFolderTable( spellFolder, cacheFolder ) {
+async function loadPushSpells( eqFolder, cacheFolder ) {
 
-    const spellsFile = path.join( spellFolder, 'spells_us.txt' );
+    if ( !eqFolder || !fs.existsSync( eqFolder ) ) {
+        const error = new Error( 'The EverQuest folder is not set.  Set the EverQuest folder in Nag Settings so the spell data can be read.' );
+        error.code = 'no-folder';
+        throw error;
+    }
+
+    const spellsFile = path.join( eqFolder, 'spells_us.txt' );
+    if ( !fs.existsSync( spellsFile ) ) {
+        const error = new Error( 'spells_us.txt was not found in the EverQuest folder.  Check that the EverQuest folder is set correctly in Nag Settings.' );
+        error.code = 'no-file';
+        throw error;
+    }
+
     const stat = fs.statSync( spellsFile );
-    const stringsFile = path.join( spellFolder, 'spells_us_str.txt' );
+    const stringsFile = path.join( eqFolder, 'spells_us_str.txt' );
     const stringsStat = fs.existsSync( stringsFile ) ? fs.statSync( stringsFile ) : null;
     const stringsMtimeMs = stringsStat?.mtimeMs ?? null;
     const stringsSize = stringsStat?.size ?? null;
-    // One cache per install, so switching beta and live characters doesn't rebuild it.
-    const installKey = crypto.createHash( 'sha1' ).update( spellsFile.toLowerCase() ).digest( 'hex' ).slice( 0, 12 );
-    const cacheFile = path.join( cacheFolder, `push-spells-${installKey}.json` );
+    const cacheFile = path.join( cacheFolder, cacheFileName );
 
     try {
-        const cached = JSON.parse( fs.readFileSync( cacheFile, 'utf8' ) );
-        // Windows paths differ in case between the log's location and the settings.
-        const sourceUnchanged = cached.version === cacheVersion
-            && typeof cached.sourcePath === 'string' && cached.sourcePath.toLowerCase() === spellsFile.toLowerCase()
-            && cached.sourceMtimeMs === stat.mtimeMs && cached.sourceSize === stat.size
-            && cached.stringsMtimeMs === stringsMtimeMs && cached.stringsSize === stringsSize;
-        const tablesPresent = cached.spells !== null && cached.spells !== undefined && typeof cached.spells === 'object'
-            && cached.exact !== null && cached.exact !== undefined && typeof cached.exact === 'object';
-        if ( sourceUnchanged && tablesPresent ) {
-            return { spells: cached.spells, exact: cached.exact };
+        let cached = JSON.parse( fs.readFileSync( cacheFile, 'utf8' ) );
+        if ( cached.version === cacheVersion && cached.sourceMtimeMs === stat.mtimeMs && cached.sourceSize === stat.size && cached.stringsMtimeMs === stringsMtimeMs && cached.stringsSize === stringsSize && cached.spells != null && typeof cached.spells === 'object' && cached.exact != null && typeof cached.exact === 'object' && Array.isArray( cached.noPushTexts ) ) {
+            return { spells: cached.spells, exact: cached.exact, noPushTexts: cached.noPushTexts };
         }
     } catch ( error ) {
         // No usable cache; rebuild below.
@@ -288,23 +247,8 @@ async function loadFolderTable( spellFolder, cacheFolder ) {
 
     const table = await buildPushSpellTable( spellsFile, stringsFile );
 
-    // A table without push spells is never cached, so a parser fix takes effect without a patch.
-    if ( !hasPushSpells( table ) ) {
-        return table;
-    }
-
     try {
-        fs.writeFileSync( cacheFile, JSON.stringify( {
-            version: cacheVersion,
-            sourcePath: spellsFile,
-            sourceMtimeMs: stat.mtimeMs,
-            sourceSize: stat.size,
-            stringsMtimeMs: stringsMtimeMs,
-            stringsSize: stringsSize,
-            spells: table.spells,
-            exact: table.exact
-        } ) );
-        fs.rmSync( path.join( cacheFolder, legacyCacheFileName ), { force: true } );
+        fs.writeFileSync( cacheFile, JSON.stringify( { version: cacheVersion, sourceMtimeMs: stat.mtimeMs, sourceSize: stat.size, stringsMtimeMs: stringsMtimeMs, stringsSize: stringsSize, spells: table.spells, exact: table.exact, noPushTexts: table.noPushTexts } ) );
     } catch ( error ) {
         // The cache is optional.
     }
@@ -312,55 +256,4 @@ async function loadFolderTable( spellFolder, cacheFolder ) {
     return table;
 }
 
-
-
-
-
-
-
-
-
-
-/**
- * Loads the push spell table for a character.  A candidate install whose spell file yields no
- * push spells is skipped, so the next candidate gets its turn.
- *
- * @returns {Promise<PushSpellTable>} The push spell table.
- *
- * @param {string} logFilePath The character's log file, used to find the install it belongs to.
- * @param {string} eqFolder The EverQuest folder Nag found, used when the log's install has no
- *     usable spell data.
- * @param {string} cacheFolder The folder to keep the cache file in.
- */
-async function loadPushSpells( logFilePath, eqFolder, cacheFolder ) {
-
-    const spellFolders = listSpellFolders( logFilePath, eqFolder );
-    if ( spellFolders.length === 0 ) {
-        const folderExists = !!eqFolder && fs.existsSync( eqFolder );
-        const error = new Error( "Nag couldn't find the EverQuest spell data (spells_us.txt) next to this character's log or in the EverQuest folder it found." );
-        error.code = folderExists ? 'no-file' : 'no-folder';
-        throw error;
-    }
-
-    for ( const spellFolder of spellFolders ) {
-        const table = await loadFolderTable( spellFolder, cacheFolder );
-        if ( hasPushSpells( table ) ) {
-            return table;
-        }
-    }
-
-    const error = new Error( "Nag couldn't read the spell data (spells_us.txt) in this EverQuest install. It may be an older or emulator client, whose spell file format Push Recap doesn't support." );
-    error.code = 'no-push-spells';
-    throw error;
-}
-
-
-
-
-
-
-
-
-
-
-module.exports = { loadPushSpells, listSpellFolders, buildPushSpellTable, findPushSpell, stripRank };
+module.exports = { loadPushSpells, buildPushSpellTable, findPushSpell, stripRank };

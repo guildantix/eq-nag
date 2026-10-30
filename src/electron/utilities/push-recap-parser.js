@@ -203,8 +203,7 @@ function formatClock( ms ) {
 /**
  * Builds the lookup used to recognize spell landing messages.
  *
- * @returns {{ map: Map<string, string[]>, suffixes: Set<string>,
- *     suffixLength: number }} The landing index.
+ * @returns {{ map: Map<string, string[]>, noPush: Set<string>, suffixes: Set<string>, suffixLength: number }} The landing index.
  *
  * @param {import('../data/push-spells').PushSpellTable} table The push spell table.
  */
@@ -230,7 +229,7 @@ function buildLandingIndex( table ) {
     const suffixes = new Set();
     map.forEach( ( names, text ) => suffixes.add( text.slice( -minLength ) ) );
 
-    return { map: map, suffixes: suffixes, suffixLength: minLength };
+    return { map: map, noPush: new Set( table.noPushTexts ?? [] ), suffixes: suffixes, suffixLength: minLength };
 }
 
 
@@ -641,7 +640,7 @@ function involvesBoss( text, boss, landing ) {
  * @param {PushSession} session The session.
  * @param {PushSummary} summary The session summary.
  * @param {import('../data/push-spells').PushSpellTable} table The push spell table.
- * @param {{ map: Map<string, string[]> }} landing The landing index.
+ * @param {{ map: Map<string, string[]>, noPush: Set<string> }} landing The landing index.
  * @param {PushKill} kill The kill to analyze.
  * @param {number} quietGapSeconds Seconds without combat that separate fights.
  */
@@ -768,7 +767,7 @@ function analyzeKill( session, summary, table, landing, kill, quietGapSeconds ) 
                     break;
                 }
             }
-            if ( !matched ) {
+            if ( !matched && !landing.noPush.has( text.substring( boss.length ) ) ) {
                 unattributed.events++;
                 unattributed.pushValue += table.spells[ names[ 0 ] ]?.push ?? 0;
                 const key = text.substring( boss.length );
