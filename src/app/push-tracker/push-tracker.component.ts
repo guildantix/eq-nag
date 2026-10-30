@@ -466,23 +466,21 @@ export class PushTrackerComponent implements OnInit, OnDestroy {
         } );
     }
 
-
-
-
-
-
-
-
-
-
-    /**
-     * Picks the recap whose details are shown.
-     *
-     * @param recap The recap that was clicked.
-     */
-    public select( recap: PushRecapSummary ): void {
+    public select( recap: PushRecapSummary, event: Event ): void {
+        let row = event.currentTarget as HTMLElement;
         this.selected = recap;
         this.loadDetail();
+        setTimeout( () => row.scrollIntoView( { block: 'nearest' } ) );
+    }
+
+    public closeDetails(): void {
+        this.selected = null;
+        this.loadDetail();
+    }
+
+    public spellHeader( spell: string ): string {
+        let push = this.gridSpellPush.get( spell );
+        return push == null ? spell : `${spell} (${push})`;
     }
 
 

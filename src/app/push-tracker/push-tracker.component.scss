@@ -1,11 +1,62 @@
 div.tab-content {
-    overflow-y: scroll;
+    overflow-y: auto;
     position: fixed;
     left: 0;
     right: 0;
-    bottom: 0;
+    bottom: var(--nag-console-height, 24px);
     top: 226px;
-    padding: 20px 1em 20px 1em !important;
+    display: flex;
+    flex-direction: column;
+    padding: 0 !important;
+}
+
+.list-area {
+    flex: 1 1 0;
+    min-height: 80px;
+    overflow-y: auto;
+    padding: 20px 1em 20px 1em;
+}
+
+.detail-panel {
+    flex: 0 0 auto;
+    display: flex;
+    flex-direction: column;
+    height: 50%;
+    min-height: 120px;
+    max-height: calc( 100% - 120px );
+    box-sizing: border-box;
+    border-top: 2px solid #ffffff26;
+
+    .panel-head {
+        display: flex;
+        align-items: center;
+        flex: 0 0 auto;
+        padding: 0 0.5em 0 1em;
+    }
+
+    .panel-body {
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow-y: auto;
+        padding: 0 1em 1em 1em;
+    }
+}
+
+.detail-layout {
+    display: flex;
+    flex-flow: row wrap;
+    align-items: flex-start;
+    gap: 0 2em;
+}
+
+.detail-grid {
+    flex: 0 1 auto;
+    min-width: 0;
+    max-width: 100%;
+}
+
+.detail-procs {
+    flex: 0 0 auto;
 }
 
 .spacer {
@@ -59,11 +110,6 @@ table {
     th {
         font-weight: 400;
         opacity: 0.7;
-
-        .sub {
-            font-size: 11px;
-            opacity: 0.75;
-        }
     }
     th.num, td.num {
         text-align: right;
@@ -78,6 +124,7 @@ table.procs {
 table.fights {
     tbody tr {
         cursor: pointer;
+        scroll-margin: 8px 0;
     }
     tbody tr:hover {
         background-color: #ffffff0d;
@@ -100,7 +147,11 @@ table.fights {
 
 .grid-title {
     font-weight: 300;
-    margin: 1.5em 0 0.5em 0;
+    margin: 0.75em 0 0.5em 0;
+}
+
+.detail-procs .grid-title {
+    margin-top: 0;
 }
 
 .grid-scroll {
