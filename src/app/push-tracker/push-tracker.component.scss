@@ -1,0 +1,107 @@
+div.tab-content {
+    overflow-y: scroll;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    top: 226px;
+    padding: 20px 1em 20px 1em !important;
+}
+
+.spacer {
+    flex: 1 1 auto;
+}
+
+p.empty, td.empty {
+    font-weight: 300;
+    color: #eeeeee;
+    opacity: 0.75;
+}
+
+.filters {
+    display: flex;
+    flex-flow: row wrap;
+    align-items: center;
+    gap: 2em;
+    margin-bottom: 1em;
+
+    mat-form-field {
+        width: 14em;
+    }
+}
+
+table {
+    border-collapse: collapse;
+    width: 100%;
+
+    th, td {
+        padding: 6px 10px;
+        text-align: left;
+        white-space: nowrap;
+        border-bottom: 1px solid #ffffff1a;
+    }
+    th {
+        font-weight: 400;
+        opacity: 0.7;
+    }
+    th.num, td.num {
+        text-align: right;
+    }
+}
+
+table.fights {
+    tbody tr {
+        cursor: pointer;
+    }
+    tbody tr:hover {
+        background-color: #ffffff0d;
+    }
+    tbody tr.selected {
+        background-color: #69b2f024;
+    }
+    td.actions {
+        width: 48px;
+        padding: 0;
+        text-align: right;
+    }
+}
+
+.grid-title {
+    font-weight: 300;
+    margin: 1.5em 0 0.5em 0;
+}
+
+.grid-scroll {
+    overflow-x: auto;
+}
+
+table.grid {
+    width: auto;
+
+    td.cell {
+        min-width: 3em;
+    }
+    td.total {
+        font-weight: 500;
+    }
+}
+
+.pill {
+    font-size: 11px;
+    border-radius: 9px;
+    padding: 1px 7px;
+    margin-left: 4px;
+    background-color: #69b2f033;
+    color: #69b2f0;
+}
+
+.assumed {
+    opacity: 0.65;
+    font-size: 0.9em;
+}
+
+.note {
+    font-weight: 300;
+    font-size: 12px;
+    opacity: 0.75;
+}

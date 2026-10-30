@@ -171,6 +171,44 @@ function buildSummaryText( result ) {
 
 
 /**
+ * Builds the summary of the recap that is kept in the Push tab.
+ *
+ * @returns {any} The summary.
+ *
+ * @param {any} result The recap result.
+ * @param {string} characterName The name of the character.
+ */
+function buildSavedSummary( result, characterName ) {
+    return {
+        characterName: characterName,
+        mob: result.boss,
+        killTime: new Date( result.killTime ).toISOString(),
+        fightSeconds: result.durationSeconds,
+        damageTaken: result.damageTaken,
+        named: !notNamedNpcRgx.test( result.boss ),
+        events: result.totalEvents,
+        assumed: result.players.reduce( ( sum, p ) => sum + p.assumed, 0 ),
+        pushValue: result.totalPush,
+        topPusher: result.topPlayer,
+        players: result.players.map( p => {
+            let spells = {};
+            p.spells.forEach( s => spells[ s.name ] = { events: s.confirmed + s.assumed, assumed: s.assumed } );
+            return { name: p.name, events: p.events, assumed: p.assumed, pushValue: p.pushValue, spells: spells };
+        } ),
+        unattributed: { events: result.unattributed.events, pushValue: result.unattributed.pushValue },
+    };
+}
+
+
+
+
+
+
+
+
+
+
+/**
  * Creates an element with the given class and text.
  *
  * @returns {HTMLElement} The element.
@@ -331,8 +369,7 @@ function render( result ) {
  * The push recap screen.  Reads the spell data and the end of the log once, then
  * only recounts when another fight is picked.
  *
- * @param {{ logFilePath: string, characterName: string, eqFolder: string, userData: string,
- *     quietGapSeconds: number }} params The window parameters.
+ * @param {{ logFilePath: string, characterName: string, eqFolder: string, userData: string, quietGapSeconds: number, saveRecaps: boolean }} params The window parameters.
  */
 async function PushRecap( params ) {
 
@@ -348,6 +385,30 @@ async function PushRecap( params ) {
             ipcRenderer.send( 'clipboard:writeText', buildSummaryText( result ) );
             document.getElementById( 'copyButton' ).textContent = 'Copied';
         }
+    } );
+
+    let saved = new Set();
+    let pending = new Set();
+    let failed = new Set();
+    let shownIndex = -1;
+    let saveButton = document.getElementById( 'saveButton' );
+    let showSaveState = () => {
+        saveButton.textContent = saved.has( shownIndex ) ? 'Saved' : pending.has( shownIndex ) ? 'Saving...' : failed.has( shownIndex ) ? "Couldn't save - try again" : 'Save to Push tab';
+        saveButton.disabled = saved.has( shownIndex ) || pending.has( shownIndex );
+    };
+    let save = () => {
+        if ( result != null && !saved.has( shownIndex ) && !pending.has( shownIndex ) ) {
+            pending.add( shownIndex );
+            failed.delete( shownIndex );
+            ipcRenderer.send( 'push-recaps:save', Object.assign( buildSavedSummary( result, params.characterName ), { saveKey: shownIndex } ) );
+            showSaveState();
+        }
+    };
+    saveButton.addEventListener( 'click', save );
+    ipcRenderer.on( 'push-recaps:saved', ( event, reply ) => {
+        pending.delete( reply.key );
+        ( reply.ok ? saved : failed ).add( reply.key );
+        showSaveState();
     } );
 
     try {
@@ -375,11 +436,16 @@ async function PushRecap( params ) {
 
         const show = index => {
             result = analyzeKill( session, summary, table, landing, summary.kills[ index ], quietGapSeconds );
+            shownIndex = index;
             document.getElementById( 'copyButton' ).textContent = 'Copy summary';
+            showSaveState();
             render( result );
         };
         select.addEventListener( 'change', () => show( +select.value ) );
         show( summary.defaultKill );
+        if ( params.saveRecaps ) {
+            save();
+        }
 
     } catch ( error ) {
         showMessage( error.code === 'no-folder' || error.code === 'no-file' || error.code === 'no-push-spells' ? error.message : `The push recap could not be built: ${error.message}`, true );

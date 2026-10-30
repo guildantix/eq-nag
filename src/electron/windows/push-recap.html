@@ -197,6 +197,11 @@
         button:hover {
             background-color: #42a5f542;
         }
+        button:disabled {
+            opacity: 0.6;
+            cursor: default;
+            background-color: #42a5f51f;
+        }
         .npc-abilities {
             margin-top: 15px;
         }
@@ -269,6 +274,7 @@
 
                 <div class="actions">
                     <label><input type="checkbox" id="npcToggle" /> Show NPC abilities</label>
+                    <button type="button" id="saveButton">Save to Push tab</button>
                     <button type="button" id="copyButton">Copy summary</button>
                 </div>
 
@@ -293,6 +299,7 @@
             eqFolder: urlParams.get( 'eqFolder' ),
             userData: urlParams.get( 'userData' ),
             quietGapSeconds: +urlParams.get( 'quietGap' ),
+            saveRecaps: urlParams.get( 'saveRecaps' ) !== 'false',
         } );
     </script>
 

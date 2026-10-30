@@ -1853,6 +1853,8 @@ export const pushRecapHotkeyCommand = `/hot "Push Recap" /em ${pushRecapEmote}.`
  */
 export class PushRecapPreferences {
     quietGapSeconds: number = 30;
+    showTab: boolean = false;
+    saveRecaps: boolean = true;
 }
 
 export class VersionNumber {
@@ -2363,4 +2365,35 @@ export class TokenChangeModel {
     public actionId: string;
     public bounds: Rectangle;
 
+}
+
+export interface PushRecapSpellCount {
+    events: number;
+    assumed: number;
+}
+
+export interface PushRecapPlayerSummary {
+    name: string;
+    events: number;
+    assumed: number;
+    pushValue: number;
+    spells: Record<string, PushRecapSpellCount>;
+}
+
+export interface PushRecapSummary {
+    id: string;
+    savedAt: string;
+    characterName: string;
+    mob: string;
+    killTime: string;
+    fightSeconds: number;
+    damageTaken: number;
+    named: boolean;
+    events: number;
+    assumed: number;
+    pushValue: number;
+    topPusher: string | null;
+    /** Only on a recap fetched by id, not in the list. */
+    players?: PushRecapPlayerSummary[];
+    unattributed: { events: number, pushValue: number };
 }

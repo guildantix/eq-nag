@@ -1,0 +1,87 @@
+<mat-toolbar>
+    <span>Push</span>
+    <span class="spacer"></span>
+    <button mat-button (click)="copySummary()" [disabled]="detail == null"><mat-icon class="material-icons-outlined">content_copy</mat-icon> Copy summary</button>
+    <button mat-button class="color-red" (click)="clearAll()" [disabled]="recaps.length === 0"><mat-icon class="material-icons-outlined">delete_sweep</mat-icon> Clear all</button>
+</mat-toolbar>
+<div class="tab-content">
+
+    <ng-template [ngIf]="loaded && recaps.length === 0">
+        <p class="empty">No push recaps are saved yet.  Turn on the Push Recap hotkey in Settings, then press it in EverQuest after a kill.  Each recap you view is saved here.</p>
+    </ng-template>
+
+    <ng-template [ngIf]="recaps.length > 0">
+
+        <div class="filters">
+            <mat-form-field>
+                <mat-label>Min damage taken</mat-label>
+                <mat-select [(ngModel)]="minDamage" name="minDamage" (selectionChange)="onFilterChange()">
+                    <mat-option *ngFor="let option of minDamageOptions" [value]="option.value">{{option.label}}</mat-option>
+                </mat-select>
+            </mat-form-field>
+            <mat-checkbox [(ngModel)]="namedOnly" name="namedOnly" (change)="onFilterChange()">Named only</mat-checkbox>
+            <mat-form-field>
+                <mat-label>Mob name</mat-label>
+                <input matInput type="text" [(ngModel)]="mobFilter" name="mobFilter" (input)="onFilterChange()" />
+            </mat-form-field>
+        </div>
+
+        <table class="fights">
+            <thead>
+                <tr>
+                    <th>Time</th>
+                    <th *ngIf="showCharacter">Character</th>
+                    <th>Mob</th>
+                    <th class="num">Length</th>
+                    <th class="num">Damage taken</th>
+                    <th class="num">Events</th>
+                    <th class="num">Push value</th>
+                    <th>Top pusher</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr *ngFor="let recap of rows; trackBy: trackById" [class.selected]="recap === selected" (click)="select( recap )">
+                    <td>{{formatTime( recap )}}</td>
+                    <td *ngIf="showCharacter">{{recap.characterName}}</td>
+                    <td>{{recap.mob}} <span class="pill" *ngIf="recap.named">named</span></td>
+                    <td class="num">{{formatLength( recap.fightSeconds )}}</td>
+                    <td class="num">{{formatDamage( recap.damageTaken )}}</td>
+                    <td class="num">{{recap.events}}<span class="assumed" *ngIf="recap.assumed > 0"> ~{{recap.assumed}}</span></td>
+                    <td class="num">{{recap.pushValue}}</td>
+                    <td>{{recap.topPusher || '-'}}</td>
+                    <td class="actions"><button mat-icon-button (click)="remove( recap, $event )" matTooltip="Delete this recap"><mat-icon class="material-icons-outlined">delete</mat-icon></button></td>
+                </tr>
+                <tr *ngIf="rows.length === 0"><td [attr.colspan]="showCharacter ? 9 : 8" class="empty">No fights match the filter.</td></tr>
+            </tbody>
+        </table>
+
+        <ng-template [ngIf]="selected != null">
+            <h3 class="grid-title">Push events by player and spell &middot; {{selected.mob}} {{formatTime( selected )}}</h3>
+            <div class="grid-scroll">
+                <table class="grid">
+                    <thead>
+                        <tr>
+                            <th>Player</th>
+                            <th *ngFor="let spell of gridSpells" class="num">{{spell}}</th>
+                            <th class="num">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngFor="let row of gridRows; trackBy: trackByName">
+                            <td>{{row.name}}</td>
+                            <td *ngFor="let cell of row.cells" class="num cell" [style.background-color]="cell?.background">
+                                <ng-template [ngIf]="cell != null">{{cell.events}}<span class="assumed" *ngIf="cell.assumed > 0"> ~{{cell.assumed}}</span></ng-template>
+                            </td>
+                            <td class="num total">{{row.events}}<span class="assumed" *ngIf="row.assumed > 0"> ~{{row.assumed}}</span></td>
+                        </tr>
+                        <tr *ngIf="detail != null && gridRows.length === 0"><td [attr.colspan]="gridSpells.length + 2" class="empty">No push events were found in this fight.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <p class="note"><span class="assumed">~</span> marks casts assumed to have landed.<span *ngIf="selected.unattributed.events > 0"> {{selected.unattributed.events}} more events came from procs with no player named and are not in the totals.</span></p>
+        </ng-template>
+
+    </ng-template>
+
+</div>

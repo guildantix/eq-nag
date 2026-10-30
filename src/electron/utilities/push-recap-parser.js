@@ -742,6 +742,7 @@ function analyzeKill( session, summary, table, landing, kill, quietGapSeconds ) 
     return {
         boss: boss,
         killClock: kill.clock,
+        killTime: kill.time,
         startClock: formatClock( session.times[ startIndex ] ),
         durationSeconds: Math.round( ( kill.time - session.times[ startIndex ] ) / 1000 ),
         damageTaken: kill.damage,

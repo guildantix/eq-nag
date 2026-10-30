@@ -3,7 +3,7 @@ import * as Electron from 'electron';
 import { UpdateInfo } from 'electron-updater';
 import { Observable, Observer, Subject } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
-import { DataTickModel, DkpEntryModel, TriggerModel, OverlayWindowModel, ActionTypes, FocusEffectSettings, CharacterModel, BasicError, TriggerFolder, FileModel, Tag, AuthorModel, PackageFileModel, TriggerPackageMetaModel, TriggerPackageVersion, FctStylesModel, OverlayBoundsChangedEventArgs, DialogEventArgs, QuickShareMetaModel, LogFileLocation, IpcMessage, DeathRecapPreferences, QuickShareAuthorListTypes, Progress, QuitFailureData, DuplicateTriggerAction, ScrapedSpell, ScrapedClickEffect, TriggerParseHistoryModel, SimulationProgress, FctCombatGroup, CombatTypes, StylePropertiesModel, CombatAnimations, TriggersProfileModel, ConsoleMessageModel, LogTypes, ServerCombatModel, ProgressModel, ServerConsoleMessage, ChatRoomLinkReceivedEventArgs, RenderTokenModel, TokenChangeModel, ShareInstallResult, SanitizedQuickShare, PushRecapPreferences, ShareFilePayload, ShareFileReadResult, ShareFileSaveResult } from './core.model';
+import { DataTickModel, DkpEntryModel, TriggerModel, OverlayWindowModel, ActionTypes, FocusEffectSettings, CharacterModel, BasicError, TriggerFolder, FileModel, Tag, AuthorModel, PackageFileModel, TriggerPackageMetaModel, TriggerPackageVersion, FctStylesModel, OverlayBoundsChangedEventArgs, DialogEventArgs, QuickShareMetaModel, LogFileLocation, IpcMessage, DeathRecapPreferences, QuickShareAuthorListTypes, Progress, QuitFailureData, DuplicateTriggerAction, ScrapedSpell, ScrapedClickEffect, TriggerParseHistoryModel, SimulationProgress, FctCombatGroup, CombatTypes, StylePropertiesModel, CombatAnimations, TriggersProfileModel, ConsoleMessageModel, LogTypes, ServerCombatModel, ProgressModel, ServerConsoleMessage, ChatRoomLinkReceivedEventArgs, RenderTokenModel, TokenChangeModel, ShareInstallResult, SanitizedQuickShare, PushRecapPreferences, ShareFilePayload, ShareFileReadResult, ShareFileSaveResult, PushRecapSummary } from './core.model';
 import { GinaConfiguration, GinaTriggerGroups } from './gina.model';
 import { ColorUtility } from './utilities';
 import { nagId } from './core/nag-id.util';
@@ -88,6 +88,10 @@ export class IpcService {
     private _tokenChangeObservers: Record<string, Observer<TokenChangeModel>[]> = {};
 
     public onCombatGroupsInitialized: Subject<void> = new Subject<void>();
+    private _pushRecapsChanged: Subject<void> = new Subject<void>();
+    private _pushRecapReplies: Map<number, ( data: any ) => void> = new Map<number, ( data: any ) => void>();
+    private _pushRecapRequestId: number = 0;
+    private _pushRecapPreferencesChanged: Subject<PushRecapPreferences> = new Subject<PushRecapPreferences>();
 
     private _ginaConfigCache: GinaConfiguration = null;
 
@@ -102,6 +106,18 @@ export class IpcService {
 
         if ( window.api ) {
             try {
+
+                window.api.ipc.on( 'push-recaps:changed', () => {
+                    ngZone.run( () => this._pushRecapsChanged.next() );
+                } );
+
+                window.api.ipc.on( 'push-recaps:reply', ( event: any, reply: { requestId: number, data: any } ) => {
+                    ngZone.run( () => this._pushRecapReplies.get( reply?.requestId )?.( reply.data ) );
+                } );
+
+                window.api.ipc.on( 'settings:changed:pushRecap', ( event: any, data: PushRecapPreferences ) => {
+                    ngZone.run( () => this._pushRecapPreferencesChanged.next( data ) );
+                } );
 
                 window.api.ipc.on( 'ask_combat_group_migration', ( event: any, data: boolean ) => {
                     ngZone.run( () => {
@@ -2876,6 +2892,46 @@ export class IpcService {
         } );
 
         return obs;
+    }
+
+    public onPushRecapPreferencesChanged(): Observable<PushRecapPreferences> {
+        return this._pushRecapPreferencesChanged.asObservable();
+    }
+
+    public onPushRecapsChanged(): Observable<void> {
+        return this._pushRecapsChanged.asObservable();
+    }
+
+    public getPushRecaps(): Observable<PushRecapSummary[]> {
+        return this.requestPushRecaps<PushRecapSummary[]>( 'push-recaps:list', {} );
+    }
+
+    public getPushRecap( id: string ): Observable<PushRecapSummary | null> {
+        return this.requestPushRecaps<PushRecapSummary | null>( 'push-recaps:get', { id: id } );
+    }
+
+    private requestPushRecaps<T>( channel: string, request: { id?: string } ): Observable<T> {
+        return new Observable<T>( ( observer: Observer<T> ) => {
+
+            let requestId = ++this._pushRecapRequestId;
+            this._pushRecapReplies.set( requestId, ( data: T ) => {
+                this._pushRecapReplies.delete( requestId );
+                observer.next( data );
+                observer.complete();
+            } );
+            window.api.ipc.send( channel, Object.assign( { requestId: requestId }, request ) );
+
+            return () => this._pushRecapReplies.delete( requestId );
+
+        } );
+    }
+
+    public deletePushRecap( id: string ): void {
+        window.api.ipc.send( 'push-recaps:delete', id );
+    }
+
+    public clearPushRecaps(): void {
+        window.api.ipc.send( 'push-recaps:clear', null );
     }
 
     public getDeathRecapPreferences(): Observable<DeathRecapPreferences> {
