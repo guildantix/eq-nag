@@ -2370,6 +2370,17 @@ export class TokenChangeModel {
 export interface PushRecapSpellCount {
     events: number;
     assumed: number;
+    /** The push value of one hit. Missing on recaps saved by older versions. */
+    push?: number;
+}
+
+export interface PushRecapProc {
+    name: string;
+    /** The push value of one hit, or null when the landing message fits spells with different values. */
+    push: number | null;
+    pushMin: number | null;
+    pushMax: number | null;
+    count: number;
 }
 
 export interface PushRecapPlayerSummary {
@@ -2395,5 +2406,6 @@ export interface PushRecapSummary {
     topPusher: string | null;
     /** Only on a recap fetched by id, not in the list. */
     players?: PushRecapPlayerSummary[];
-    unattributed: { events: number, pushValue: number };
+    /** The procs are only on a recap fetched by id, and not on recaps saved by older versions. */
+    unattributed: { events: number, pushValue: number, procs?: PushRecapProc[] };
 }

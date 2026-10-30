@@ -192,10 +192,14 @@ function buildSavedSummary( result, characterName ) {
         topPusher: result.topPlayer,
         players: result.players.map( p => {
             let spells = {};
-            p.spells.forEach( s => spells[ s.name ] = { events: s.confirmed + s.assumed, assumed: s.assumed } );
+            p.spells.forEach( s => spells[ s.name ] = { events: s.confirmed + s.assumed, assumed: s.assumed, push: s.push } );
             return { name: p.name, events: p.events, assumed: p.assumed, pushValue: p.pushValue, spells: spells };
         } ),
-        unattributed: { events: result.unattributed.events, pushValue: result.unattributed.pushValue },
+        unattributed: {
+            events: result.unattributed.events,
+            pushValue: result.unattributed.pushValue,
+            procs: result.unattributed.procs.map( p => ( { name: p.name, push: p.push, pushMin: p.pushMin, pushMax: p.pushMax, count: p.count } ) ),
+        },
     };
 }
 

@@ -2926,6 +2926,11 @@ export class IpcService {
         } );
     }
 
+    public showPushRecap( logFilePath: string, characterName: string, serverName: string ): void {
+        let message = new IpcMessage( { logFilePath: logFilePath, characterName: characterName, serverName: serverName } );
+        window.api.ipc.send( 'window:push-recap', message );
+    }
+
     public deletePushRecap( id: string ): void {
         window.api.ipc.send( 'push-recaps:delete', id );
     }

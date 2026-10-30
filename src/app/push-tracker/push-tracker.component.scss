@@ -43,10 +43,20 @@ table {
     th {
         font-weight: 400;
         opacity: 0.7;
+
+        .sub {
+            font-size: 11px;
+            opacity: 0.75;
+        }
     }
     th.num, td.num {
         text-align: right;
     }
+}
+
+table.procs {
+    width: auto;
+    min-width: 28em;
 }
 
 table.fights {
@@ -84,15 +94,6 @@ table.grid {
     td.total {
         font-weight: 500;
     }
-}
-
-.pill {
-    font-size: 11px;
-    border-radius: 9px;
-    padding: 1px 7px;
-    margin-left: 4px;
-    background-color: #69b2f033;
-    color: #69b2f0;
 }
 
 .assumed {

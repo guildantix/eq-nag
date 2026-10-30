@@ -8,11 +8,13 @@ const badFileName = 'push-recaps.json.bad';
 const maxRecaps = 200;
 const maxPlayers = 60;
 const maxSpells = 30;
+const maxProcs = 200;
 
 /**
  * @typedef {Object} PushRecapSpellCount
  * @property {number} events The number of push events.
  * @property {number} assumed The number of events that were assumed to have landed.
+ * @property {number} [push] The push value of one hit, when known.
  */
 
 /**
@@ -22,6 +24,15 @@ const maxSpells = 30;
  * @property {number} assumed The number of assumed events.
  * @property {number} pushValue The total push value.
  * @property {Object<string, PushRecapSpellCount>} spells The counts by spell name.
+ */
+
+/**
+ * @typedef {Object} PushRecapProc
+ * @property {string} name The label of the proc.
+ * @property {number | null} push The push value of one hit, or null when the spell is ambiguous.
+ * @property {number | null} pushMin The lowest push value the proc can have.
+ * @property {number | null} pushMax The highest push value the proc can have.
+ * @property {number} count The number of times the proc landed.
  */
 
 /**
@@ -39,7 +50,7 @@ const maxSpells = 30;
  * @property {number} pushValue The total push value.
  * @property {string | null} topPusher The player with the most events.
  * @property {PushRecapPlayerSummary[]} players The players that pushed.
- * @property {{ events: number, pushValue: number }} unattributed The events with no player.
+ * @property {{ events: number, pushValue: number, procs?: PushRecapProc[] }} unattributed The events with no player.
  */
 
 
@@ -61,6 +72,27 @@ const maxSpells = 30;
 function toCount( value ) {
     let n = +value;
     return Number.isFinite( n ) && n > 0 ? n : 0;
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Returns the given value as a finite, non-negative number, or null when it is missing.
+ *
+ * @returns {number | null} The number.
+ *
+ * @param {any} value The value.
+ */
+function toOptionalCount( value ) {
+    let n = value == null ? NaN : +value;
+    return Number.isFinite( n ) && n >= 0 ? n : null;
 }
 
 
@@ -115,11 +147,27 @@ function sanitize( data ) {
         let spells = {};
         Object.keys( p?.spells ?? {} ).slice( 0, maxSpells ).forEach( name => {
             if ( name !== '__proto__' ) {
-                spells[ name.substring( 0, 200 ) ] = { events: toCount( p.spells[ name ]?.events ), assumed: toCount( p.spells[ name ]?.assumed ) };
+                let spell = { events: toCount( p.spells[ name ]?.events ), assumed: toCount( p.spells[ name ]?.assumed ) };
+                let push = toOptionalCount( p.spells[ name ]?.push );
+                if ( push != null ) {
+                    spell.push = push;
+                }
+                spells[ name.substring( 0, 200 ) ] = spell;
             }
         } );
         return { name: toText( p?.name ), events: toCount( p?.events ), assumed: toCount( p?.assumed ), pushValue: toCount( p?.pushValue ), spells: spells };
     } );
+
+    let unattributed = { events: toCount( data.unattributed?.events ), pushValue: toCount( data.unattributed?.pushValue ) };
+    if ( Array.isArray( data.unattributed?.procs ) ) {
+        unattributed.procs = data.unattributed.procs.slice( 0, maxProcs ).map( p => ( {
+            name: toText( p?.name ),
+            push: toOptionalCount( p?.push ),
+            pushMin: toOptionalCount( p?.pushMin ),
+            pushMax: toOptionalCount( p?.pushMax ),
+            count: toCount( p?.count ),
+        } ) );
+    }
 
     return {
         id: typeof data.id === 'string' && data.id !== '' ? data.id.substring( 0, 64 ) : crypto.randomUUID(),
@@ -135,7 +183,7 @@ function sanitize( data ) {
         pushValue: toCount( data.pushValue ),
         topPusher: data.topPusher == null ? null : toText( data.topPusher ),
         players: players,
-        unattributed: { events: toCount( data.unattributed?.events ), pushValue: toCount( data.unattributed?.pushValue ) },
+        unattributed: unattributed,
     };
 }
 
@@ -226,7 +274,7 @@ class PushRecapStore {
     }
 
     /**
-     * Returns the saved recaps without their players.
+     * Returns the saved recaps without their players and proc breakdown.
      *
      * @returns {Promise<Omit<PushRecapSummary, 'players'>[]>} The recaps.
      */
@@ -234,7 +282,7 @@ class PushRecapStore {
         if ( !await this.#load() ) {
             return [];
         }
-        return this.#recaps.map( ( { players, ...row } ) => row );
+        return this.#recaps.map( ( { players, unattributed, ...row } ) => ( { ...row, unattributed: { events: unattributed.events, pushValue: unattributed.pushValue } } ) );
     }
 
     /**

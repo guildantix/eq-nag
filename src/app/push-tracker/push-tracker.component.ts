@@ -2,18 +2,20 @@ import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnIni
 import { Subscription } from 'rxjs';
 import { DialogService } from '../dialogs/dialog.service';
 import { IpcService } from '../ipc.service';
-import { PushRecapSummary } from '../core.model';
+import { CharacterModel, PushRecapProc, PushRecapSummary } from '../core.model';
 
 export interface PushGridCell {
     events: number;
     assumed: number;
     background: string;
+    tooltip: string;
 }
 
 export interface PushGridRow {
     name: string;
     events: number;
     assumed: number;
+    pushValue: number;
     cells: PushGridCell[];
 }
 
@@ -43,7 +45,9 @@ export class PushTrackerComponent implements OnInit, OnDestroy {
     public selected: PushRecapSummary | null = null;
     public detail: PushRecapSummary | null = null;
     public gridSpells: string[] = [];
+    public gridSpellPush: Map<string, number | null> = new Map<string, number | null>();
     public gridRows: PushGridRow[] = [];
+    public characters: CharacterModel[] = [];
 
     private subscription: Subscription = new Subscription();
     private detailSubscription: Subscription | null = null;
@@ -58,6 +62,10 @@ export class PushTrackerComponent implements OnInit, OnDestroy {
     ngOnInit(): void {
         this.subscription.add( this.ipcService.onPushRecapsChanged().subscribe( () => this.load() ) );
         this.load();
+        this.ipcService.getCharacters().subscribe( characters => {
+            this.characters = ( characters ?? [] ).filter( c => c.logFile );
+            this.changeDetector.markForCheck();
+        } );
     }
 
     ngOnDestroy(): void {
@@ -71,6 +79,29 @@ export class PushTrackerComponent implements OnInit, OnDestroy {
 
     public trackByName( index: number, value: { name: string } | string ): string {
         return typeof value === 'string' ? value : value.name;
+    }
+
+    public characterLabel( character: CharacterModel ): string {
+        return character.server ? `${character.name} (${character.server})` : character.name;
+    }
+
+    public openPushRecap( character: CharacterModel ): void {
+        this.ipcService.showPushRecap( character.logFile, character.name, character.server );
+    }
+
+    public procPush( proc: PushRecapProc ): string {
+        if ( proc.pushMin == null ) {
+            return '-';
+        }
+        return proc.push != null ? `${proc.push}` : `${proc.pushMin}\u2013${proc.pushMax}`;
+    }
+
+    public procTotal( proc: PushRecapProc ): string {
+        if ( proc.pushMin == null ) {
+            return '-';
+        }
+        let round = ( value: number ) => Math.round( value * 100 ) / 100;
+        return proc.push != null ? `${round( proc.count * proc.push )}` : `~${round( proc.count * proc.pushMin )}\u2013${round( proc.count * proc.pushMax )}`;
     }
 
     public onFilterChange(): void {
@@ -102,14 +133,15 @@ export class PushTrackerComponent implements OnInit, OnDestroy {
         }
         let lines = [
             `Push Recap - ${recap.mob}, killed ${this.formatTime( recap )}, fight ${this.formatLength( recap.fightSeconds )}`,
-            `${recap.events} push events, ${recap.players.length} players pushing`,
+            `${recap.events} push hits, ${recap.players.length} players pushing`,
         ];
         recap.players.forEach( ( p, i ) => {
             let share = recap.events > 0 ? Math.round( p.events * 100 / recap.events ) : 0;
             lines.push( `${i + 1}. ${p.name} - ${p.events} (${share}%)${p.assumed > 0 ? ` ~${p.assumed} assumed` : ''}` );
         } );
         if ( recap.unattributed.events > 0 ) {
-            lines.push( `Unattributed procs: ${recap.unattributed.events}` );
+            let top = ( recap.unattributed.procs ?? [] ).slice( 0, 5 ).map( p => `${p.name} ${p.count}` ).join( ', ' );
+            lines.push( `Procs with no player named: ${recap.unattributed.events}${top === '' ? '' : ` (${top})`}` );
         }
         this.ipcService.sendTextToClipboard( lines.join( '\n' ) );
     }
@@ -171,6 +203,7 @@ export class PushTrackerComponent implements OnInit, OnDestroy {
     private buildGrid(): void {
         let recap = this.detail;
         this.gridSpells = [];
+        this.gridSpellPush = new Map<string, number | null>();
         this.gridRows = [];
 
         if ( recap != null ) {
@@ -179,6 +212,9 @@ export class PushTrackerComponent implements OnInit, OnDestroy {
             recap.players.forEach( p => Object.keys( p.spells ).forEach( s => {
                 totals.set( s, ( totals.get( s ) ?? 0 ) + p.spells[ s ].events );
                 max = Math.max( max, p.spells[ s ].events );
+                if ( this.gridSpellPush.get( s ) == null ) {
+                    this.gridSpellPush.set( s, p.spells[ s ].push ?? null );
+                }
             } ) );
             this.gridSpells = Array.from( totals.keys() ).sort( ( a, b ) => totals.get( b ) - totals.get( a ) || a.localeCompare( b ) );
 
@@ -186,16 +222,29 @@ export class PushTrackerComponent implements OnInit, OnDestroy {
                 name: p.name,
                 events: p.events,
                 assumed: p.assumed,
+                pushValue: p.pushValue,
                 cells: this.gridSpells.map( s => {
                     let count = Object.prototype.hasOwnProperty.call( p.spells, s ) ? p.spells[ s ] : null;
                     return count == null || count.events <= 0
                         ? null
-                        : { events: count.events, assumed: count.assumed, background: `rgba( 105, 240, 174, ${( 0.12 + 0.6 * count.events / max ).toFixed( 2 )} )` };
+                        : {
+                            events: count.events,
+                            assumed: count.assumed,
+                            background: `rgba( 105, 240, 174, ${( 0.12 + 0.6 * count.events / max ).toFixed( 2 )} )`,
+                            tooltip: this.cellTooltip( count.events, count.assumed, count.push ),
+                        };
                 } ),
             } ) );
         }
 
         this.changeDetector.markForCheck();
+    }
+
+    private cellTooltip( events: number, assumed: number, push: number | undefined ): string {
+        let text = push == null
+            ? `${events} hits`
+            : `${events} hits \u00d7 ${push} push = ${Math.round( events * push * 100 ) / 100} push`;
+        return assumed > 0 ? `${text}, ${assumed} assumed` : text;
     }
 
 }
