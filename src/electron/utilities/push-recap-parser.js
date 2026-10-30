@@ -433,6 +433,32 @@ function roundPush( value ) {
 
 
 
+
+/**
+ * Describes a weapon proc whose landing message names no caster.
+ *
+ * @returns {{ name: string, names: string[], push: number | null, pushMin: number | null, pushMax: number | null, count: number }} The proc.
+ *
+ * @param {string[]} names The candidate spell names of the landing message.
+ * @param {any} table The push spell table.
+ */
+function buildProc( names, table ) {
+    let pushes = names.map( n => table.spells[ n ]?.push ).filter( p => p != null );
+    let pushMin = pushes.length > 0 ? Math.min( ...pushes ) : null;
+    let pushMax = pushes.length > 0 ? Math.max( ...pushes ) : null;
+    let name = names.length <= 3 ? names.join( ' / ' ) : `${names[ 0 ]} +${names.length - 1} more`;
+    return { name: name, names: names, push: pushMin === pushMax ? pushMin : null, pushMin: pushMin, pushMax: pushMax, count: 0 };
+}
+
+
+
+
+
+
+
+
+
+
 /**
  * @typedef {Object} PushPlayer
  * @property {string} name The player name.
@@ -505,6 +531,7 @@ function analyzeKill( session, summary, table, landing, kill, quietGapSeconds ) 
     let events = [];
     let lastCast = new Map();
     let unattributed = { events: 0, pushValue: 0 };
+    let unattributedProcs = new Map();
     let npcAbilities = new Map();
 
     let cancelCast = ( player, time ) => {
@@ -608,6 +635,13 @@ function analyzeKill( session, summary, table, landing, kill, quietGapSeconds ) 
             if ( !matched ) {
                 unattributed.events++;
                 unattributed.pushValue += table.spells[ names[ 0 ] ]?.push ?? 0;
+                let key = text.substring( boss.length );
+                let proc = unattributedProcs.get( key );
+                if ( proc == null ) {
+                    proc = buildProc( names, table );
+                    unattributedProcs.set( key, proc );
+                }
+                proc.count++;
             }
         }
     }
@@ -656,7 +690,11 @@ function analyzeKill( session, summary, table, landing, kill, quietGapSeconds ) 
         durationSeconds: Math.round( ( kill.time - session.times[ startIndex ] ) / 1000 ),
         damageTaken: kill.damage,
         players: list,
-        unattributed: { events: unattributed.events, pushValue: roundPush( unattributed.pushValue ) },
+        unattributed: {
+            events: unattributed.events,
+            pushValue: roundPush( unattributed.pushValue ),
+            procs: Array.from( unattributedProcs.values() ).sort( ( a, b ) => b.count - a.count || a.name.localeCompare( b.name ) ),
+        },
         npcAbilities: Array.from( npcAbilities.values() ).sort( ( a, b ) => b.count - a.count ),
         totalEvents: totalEvents,
         totalPush: totalPush,

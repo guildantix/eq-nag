@@ -61,7 +61,7 @@ function formatDuration( seconds ) {
 
 
 /**
- * Describes the spells of a player, e.g. Color Flux XVIII x71 (0.5), Docility XII ~x25 (0.5).
+ * Describes the spells of a player, e.g. Color Flux XVIII (push 0.5) ×71, Docility XII (push 0.5) ~×25.
  *
  * @returns {string} The description.
  *
@@ -77,8 +77,55 @@ function describeSources( player, max ) {
         if ( s.assumed > 0 ) {
             counts.push( `~×${s.assumed}` );
         }
-        return `${s.name} ${counts.join( ' ' )} (${s.push})`;
+        return `${s.name} (push ${s.push}) ${counts.join( ' ' )}`;
     } ).join( ', ' );
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Formats the push of one hit of a proc, e.g. 5 or 3–5.
+ *
+ * @returns {string} The text.
+ *
+ * @param {any} proc The proc.
+ */
+function formatProcPush( proc ) {
+    if ( proc.pushMin == null ) {
+        return '—';
+    }
+    return proc.push != null ? `${proc.push}` : `${proc.pushMin}–${proc.pushMax}`;
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Formats the total push of a proc, e.g. 50 or ~30–50 when the spell is ambiguous.
+ *
+ * @returns {string} The text.
+ *
+ * @param {any} proc The proc.
+ */
+function formatProcTotal( proc ) {
+    if ( proc.pushMin == null ) {
+        return '—';
+    }
+    let round = value => Math.round( value * 100 ) / 100;
+    return proc.push != null ? `${round( proc.count * proc.push )}` : `~${round( proc.count * proc.pushMin )}–${round( proc.count * proc.pushMax )}`;
 }
 
 
@@ -100,14 +147,15 @@ function describeSources( player, max ) {
 function buildSummaryText( result ) {
     let lines = [
         `Push Recap - ${result.boss}, killed ${result.killClock}, fight ${formatDuration( result.durationSeconds )}`,
-        `${result.totalEvents} push events, ${result.players.length} players pushing`,
+        `${result.totalEvents} push hits, ${result.players.length} players pushing`,
     ];
     result.players.forEach( ( p, i ) => {
         let share = result.totalEvents > 0 ? Math.round( p.events * 100 / result.totalEvents ) : 0;
         lines.push( `${i + 1}. ${p.name} - ${p.events} (${share}%)${p.assumed > 0 ? ` ~${p.assumed} assumed` : ''}` );
     } );
     if ( result.unattributed.events > 0 ) {
-        lines.push( `Unattributed procs: ${result.unattributed.events}` );
+        let top = result.unattributed.procs.slice( 0, 5 ).map( p => `${p.name} ${p.count}` ).join( ', ' );
+        lines.push( `Procs with no player named: ${result.unattributed.events} (${top})` );
     }
     return lines.join( '\n' );
 }
@@ -187,7 +235,7 @@ function render( result ) {
 
     document.getElementById( 'tileEvents' ).textContent = `${result.totalEvents}`;
     document.getElementById( 'tileTop' ).textContent = result.topPlayer ?? '-';
-    document.getElementById( 'tileTopLabel' ).textContent = result.topPlayer ? `top pusher · ${result.topPercent}% of events` : 'top pusher';
+    document.getElementById( 'tileTopLabel' ).textContent = result.topPlayer ? `top pusher · ${result.topPercent}% of hits` : 'top pusher';
     document.getElementById( 'tilePlayers' ).textContent = `${result.players.length}`;
     document.getElementById( 'tileValue' ).textContent = `${result.totalPush}`;
 
@@ -220,16 +268,6 @@ function render( result ) {
         rows.appendChild( tr );
     } );
 
-    if ( result.unattributed.events > 0 ) {
-        let tr = el( 'tr', 'unattributed' );
-        tr.appendChild( el( 'td', null, 'Unattributed procs' ) );
-        tr.appendChild( el( 'td', 'num', `${result.unattributed.events}` ) );
-        tr.appendChild( el( 'td', null, '—' ) );
-        tr.appendChild( el( 'td', 'num', `~${result.unattributed.pushValue}` ) );
-        tr.appendChild( el( 'td', 'sources', 'Landing messages from weapon procs with no player named. Not part of the player totals above.' ) );
-        rows.appendChild( tr );
-    }
-
     if ( result.players.length === 0 ) {
         let tr = el( 'tr' );
         let cell = el( 'td', null, 'No push events were found in this fight.' );
@@ -237,6 +275,22 @@ function render( result ) {
         tr.appendChild( cell );
         rows.appendChild( tr );
     }
+
+    document.getElementById( 'procs' ).hidden = result.unattributed.procs.length === 0;
+    let procRows = document.getElementById( 'procRows' );
+    procRows.textContent = '';
+    result.unattributed.procs.forEach( p => {
+        let tr = el( 'tr' );
+        let name = el( 'td', null, p.name );
+        if ( p.names.length > 1 ) {
+            name.title = p.names.join( ', ' );
+        }
+        tr.appendChild( name );
+        tr.appendChild( el( 'td', 'num', formatProcPush( p ) ) );
+        tr.appendChild( el( 'td', 'num', `${p.count}` ) );
+        tr.appendChild( el( 'td', 'num', formatProcTotal( p ) ) );
+        procRows.appendChild( tr );
+    } );
 
     document.getElementById( 'othersHint' ).hidden = result.othersSeen;
 

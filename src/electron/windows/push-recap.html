@@ -160,9 +160,10 @@
             text-align: right;
             color: rgb(204, 204, 204);
         }
-        tr.unattributed td {
-            color: rgb(150, 150, 150);
-            font-style: italic;
+        #procs h3 {
+            margin: 20px 0 8px;
+            font-size: 15px;
+            font-weight: 500;
         }
         .note {
             margin-top: 12px;
@@ -232,7 +233,7 @@
                 </div>
 
                 <div class="tiles">
-                    <div class="tile"><div class="value" id="tileEvents"></div><div class="label">push events</div></div>
+                    <div class="tile"><div class="value" id="tileEvents"></div><div class="label">push hits</div></div>
                     <div class="tile"><div class="value" id="tileTop"></div><div class="label" id="tileTopLabel">top pusher</div></div>
                     <div class="tile"><div class="value" id="tilePlayers"></div><div class="label">players pushing</div></div>
                     <div class="tile"><div class="value" id="tileValue"></div><div class="label">push value, for reference</div></div>
@@ -242,9 +243,9 @@
                     <thead>
                         <tr>
                             <th>Player</th>
-                            <th class="num">Events</th>
-                            <th>Share of events</th>
-                            <th class="num">Push value</th>
+                            <th class="num">Hits</th>
+                            <th>Share of hits</th>
+                            <th class="num">Total push</th>
                             <th>Main sources</th>
                         </tr>
                     </thead>
@@ -252,6 +253,17 @@
                 </table>
 
                 <div class="note">Counts the hits and casts in your log. <span class="assumed">~</span> marks casts assumed to have landed.</div>
+                <div id="procs" hidden>
+                    <h3>Procs with no player named</h3>
+                    <table>
+                        <thead>
+                            <tr><th>Proc</th><th class="num">Push each</th><th class="num">Landed</th><th class="num">Total push</th></tr>
+                        </thead>
+                        <tbody id="procRows"></tbody>
+                    </table>
+                    <div class="note">Weapon procs whose landing message names no caster. Not part of the player totals.</div>
+                </div>
+
                 <div class="hint" id="cutOffHint" hidden></div>
                 <div class="hint" id="othersHint" hidden>No hits from other players were found in this fight. Turn on others' hits in EverQuest to see the whole raid.</div>
 
