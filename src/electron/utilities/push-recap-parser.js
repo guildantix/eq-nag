@@ -663,11 +663,13 @@ function analyzeKill( session, summary, table, landing, kill, quietGapSeconds ) 
         }
     }
 
-    const events = [];
-    const lastCast = new Map();
-    const unattributed = { events: 0, pushValue: 0 };
-    const unattributedProcs = new Map();
-    const npcAbilities = new Map();
+    let events = [];
+    let lastCast = new Map();
+    let unattributed = { events: 0, pushValue: 0 };
+    let unattributedProcs = new Map();
+    let possibleEvents = 0;
+    let possibleProcs = new Map();
+    let npcAbilities = new Map();
 
     const cancelCast = ( player, time ) => {
         const ev = lastCast.get( player );
@@ -767,14 +769,20 @@ function analyzeKill( session, summary, table, landing, kill, quietGapSeconds ) 
                     break;
                 }
             }
-            if ( !matched && !landing.noPush.has( text.substring( boss.length ) ) ) {
-                unattributed.events++;
-                unattributed.pushValue += table.spells[ names[ 0 ] ]?.push ?? 0;
-                const key = text.substring( boss.length );
-                let proc = unattributedProcs.get( key );
-                if ( proc === null || proc === undefined ) {
+            if ( !matched ) {
+                let key = text.substring( boss.length );
+                let shared = landing.noPush.has( key );
+                if ( shared ) {
+                    possibleEvents++;
+                } else {
+                    unattributed.events++;
+                    unattributed.pushValue += table.spells[ names[ 0 ] ]?.push ?? 0;
+                }
+                let procMap = shared ? possibleProcs : unattributedProcs;
+                let proc = procMap.get( key );
+                if ( proc == null ) {
                     proc = buildProc( names, table );
-                    unattributedProcs.set( key, proc );
+                    procMap.set( key, proc );
                 }
                 proc.count++;
             }
@@ -830,6 +838,8 @@ function analyzeKill( session, summary, table, landing, kill, quietGapSeconds ) 
             events: unattributed.events,
             pushValue: roundPush( unattributed.pushValue ),
             procs: Array.from( unattributedProcs.values() ).sort( ( a, b ) => b.count - a.count || a.name.localeCompare( b.name ) ),
+            possibleEvents: possibleEvents,
+            possible: Array.from( possibleProcs.values() ).sort( ( a, b ) => b.count - a.count || a.name.localeCompare( b.name ) ),
         },
         npcAbilities: Array.from( npcAbilities.values() ).sort( ( a, b ) => b.count - a.count ),
         totalEvents: totalEvents,

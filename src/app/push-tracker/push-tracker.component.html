@@ -166,6 +166,29 @@
                     </table>
                     <p class="note">Weapon procs whose landing message names no caster. Not part of the player totals.</p>
                 </div>
+
+                <div class="detail-procs possible" *ngIf="detail?.unattributed?.possible?.length > 0">
+                    <h3 class="grid-title">Possible procs</h3>
+                    <table class="procs">
+                        <thead>
+                            <tr>
+                                <th>Proc</th>
+                                <th class="num">Push each</th>
+                                <th class="num">Landed</th>
+                                <th class="num">Total push</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr *ngFor="let proc of detail.unattributed.possible; trackBy: trackByName">
+                                <td>{{proc.name}}</td>
+                                <td class="num">{{procPush( proc )}}</td>
+                                <td class="num">{{proc.count}}</td>
+                                <td class="num">{{possibleTotal( proc )}}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <p class="note">Spells with no push use the same landing message, so these may not be push. Not in any totals.</p>
+                </div>
             </div>
             <p class="note" *ngIf="!( detail?.unattributed?.procs?.length > 0 ) && selected.unattributed.events > 0">{{selected.unattributed.events}} more hits came from procs with no player named and are not in the totals.</p>
         </div>

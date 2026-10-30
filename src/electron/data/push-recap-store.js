@@ -62,8 +62,7 @@ const maxNpcAbilities = 100;
  * @property {number} pushValue The total push value.
  * @property {string | null} topPusher The player with the most events.
  * @property {PushRecapPlayerSummary[]} players The players that pushed.
- * @property {{ events: number, pushValue: number, procs?: PushRecapProc[] }} unattributed
- *     The events with no player.
+ * @property {{ events: number, pushValue: number, procs?: PushRecapProc[], possibleEvents?: number, possible?: PushRecapProc[] }} unattributed The events with no player.
  * @property {PushRecapNpcAbility[]} [npcAbilities] The push abilities the NPCs used.
  * @property {boolean} [othersSeen] True when hits from other players were in the log.
  * @property {boolean} [startsAtLogEdge] True when the fight may have begun before the part read.
@@ -181,21 +180,26 @@ function sanitize( data ) {
         };
     } );
 
-    const unattributed = { events: toCount( data.unattributed?.events ), pushValue: toCount( data.unattributed?.pushValue ) };
+    let unattributed = { events: toCount( data.unattributed?.events ), pushValue: toCount( data.unattributed?.pushValue ) };
+    let toProc = p => {
+        let proc = {
+            name: toText( p?.name ),
+            push: toOptionalCount( p?.push ),
+            pushMin: toOptionalCount( p?.pushMin ),
+            pushMax: toOptionalCount( p?.pushMax ),
+            count: toCount( p?.count ),
+        };
+        if ( Array.isArray( p?.names ) ) {
+            proc.names = p.names.slice( 0, maxProcNames ).map( toText );
+        }
+        return proc;
+    };
     if ( Array.isArray( data.unattributed?.procs ) ) {
-        unattributed.procs = data.unattributed.procs.slice( 0, maxProcs ).map( p => {
-            const proc = {
-                name: toText( p?.name ),
-                push: toOptionalCount( p?.push ),
-                pushMin: toOptionalCount( p?.pushMin ),
-                pushMax: toOptionalCount( p?.pushMax ),
-                count: toCount( p?.count ),
-            };
-            if ( Array.isArray( p?.names ) ) {
-                proc.names = p.names.slice( 0, maxProcNames ).map( toText );
-            }
-            return proc;
-        } );
+        unattributed.procs = data.unattributed.procs.slice( 0, maxProcs ).map( toProc );
+    }
+    if ( Array.isArray( data.unattributed?.possible ) ) {
+        unattributed.possibleEvents = toCount( data.unattributed.possibleEvents );
+        unattributed.possible = data.unattributed.possible.slice( 0, maxProcs ).map( toProc );
     }
 
     const summary = {

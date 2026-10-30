@@ -149,7 +149,11 @@
             text-align: right;
             color: rgb(204, 204, 204);
         }
-        #procs h3 {
+        #possible {
+            opacity: 0.6;
+        }
+        #procs h3,
+        #possible h3 {
             margin: 20px 0 8px;
             font-size: 15px;
             font-weight: 500;
@@ -251,6 +255,16 @@
                         <tbody id="procRows"></tbody>
                     </table>
                     <div class="note">Weapon procs whose landing message names no caster. Not part of the player totals.</div>
+                </div>
+                <div id="possible" hidden>
+                    <h3>Possible procs</h3>
+                    <table>
+                        <thead>
+                            <tr><th>Proc</th><th class="num">Push each</th><th class="num">Landed</th><th class="num">Total push</th></tr>
+                        </thead>
+                        <tbody id="possibleRows"></tbody>
+                    </table>
+                    <div class="note">Spells with no push use the same landing message, so these may not be push. Not in any totals.</div>
                 </div>
                 <div class="note" id="procsFallback" hidden></div>
 

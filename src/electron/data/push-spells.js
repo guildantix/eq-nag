@@ -3,7 +3,7 @@ const path = require( 'path' );
 const readline = require( 'readline' );
 
 const cacheFileName = 'push-spells.json';
-const cacheVersion = 3;
+const cacheVersion = 4;
 const rankRgx = / Rk\. ?I+$/i;
 
 /**
@@ -18,7 +18,7 @@ const rankRgx = / Rk\. ?I+$/i;
  * @typedef {Object} PushSpellTable
  * @property {Record<string, PushSpell>} spells Spells by name, ranks merged under the base name.
  * @property {Record<string, PushSpell>} exact Per-rank entries for the families whose ranks differ in push.
- * @property {string[]} noPushTexts The landing texts that a push spell shares with a spell that does not push.
+ * @property {string[]} noPushTexts The landing texts that a push spell shares with a differently named spell that does not push.
  */
 
 /**
@@ -113,12 +113,18 @@ async function buildPushSpellTable( spellsFile, stringsFile ) {
     /** @type {Record<string, { id: string, push: number, pushUp: number, castTime: number }[]>} */
     const rowsByName = {};
     /** @type {Record<string, boolean>} */
-    const pushIds = {};
+    let pushIds = {};
+    /** @type {Record<string, string>} */
+    let otherNames = {};
 
     await streamLines( spellsFile, line => {
-        const f = readFields( line, 9 );
-        const push = parseFloat( f[ 6 ] );
-        if ( !( push > 0 ) || !f[ 1 ] ) {
+        let f = readFields( line, 9 );
+        let push = parseFloat( f[ 6 ] );
+        if ( !f[ 1 ] ) {
+            return;
+        }
+        if ( !( push > 0 ) ) {
+            otherNames[ f[ 0 ] ] = f[ 1 ];
             return;
         }
         pushIds[ f[ 0 ] ] = true;
@@ -131,13 +137,14 @@ async function buildPushSpellTable( spellsFile, stringsFile ) {
     let landTexts = {};
     /** @type {Set<string>} */
     let otherTexts = new Set();
+    let pushBases = new Set( Object.keys( rowsByName ).map( name => stripRank( name ) ) );
     if ( fs.existsSync( stringsFile ) ) {
         await streamLines( stringsFile, line => {
             let f = readFields( line, 5 );
             if ( f.length === 5 && f[ 4 ] ) {
                 if ( pushIds[ f[ 0 ] ] ) {
                     landTexts[ f[ 0 ] ] = f[ 4 ];
-                } else {
+                } else if ( !pushBases.has( stripRank( otherNames[ f[ 0 ] ] ?? '' ) ) ) {
                     otherTexts.add( f[ 4 ] );
                 }
             }

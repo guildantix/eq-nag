@@ -7,7 +7,7 @@ const { Worker } = require( 'worker_threads' );
 
 const cacheFileName = 'push-scan-cache.json';
 const badCacheFileName = 'push-scan-cache.json.bad';
-const cacheVersion = 1;
+const cacheVersion = 2;
 const maxCachedLogs = 10;
 const maxResults = 300;
 const defaultDamage = 1000000;

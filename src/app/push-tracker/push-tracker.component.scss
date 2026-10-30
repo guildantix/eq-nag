@@ -57,6 +57,10 @@ div.tab-content {
 
 .detail-procs {
     flex: 0 0 auto;
+
+    &.possible {
+        opacity: 0.6;
+    }
 }
 
 .spacer {
