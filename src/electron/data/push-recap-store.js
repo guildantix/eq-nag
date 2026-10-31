@@ -218,6 +218,15 @@ class PushRecapStore {
     /** @type {any} */
     #mainWindowRef = null;
 
+
+
+
+
+
+
+
+
+
     /**
      * @param {string} directory The folder to keep the file in.
      */
@@ -225,6 +234,15 @@ class PushRecapStore {
         this.#path = path.join( directory, fileName );
         this.#badPath = path.join( directory, badFileName );
     }
+
+
+
+
+
+
+
+
+
 
     /**
      * Attaches the ipc events of the store.
@@ -273,6 +291,15 @@ class PushRecapStore {
 
     }
 
+
+
+
+
+
+
+
+
+
     /**
      * Returns the saved recaps without their players and proc breakdown.
      *
@@ -284,6 +311,15 @@ class PushRecapStore {
         }
         return this.#recaps.map( ( { players, unattributed, ...row } ) => ( { ...row, unattributed: { events: unattributed.events, pushValue: unattributed.pushValue } } ) );
     }
+
+
+
+
+
+
+
+
+
 
     /**
      * Returns the recap with the given id, with its players.
@@ -298,6 +334,15 @@ class PushRecapStore {
         }
         return this.#recaps.find( r => r.id === id ) ?? null;
     }
+
+
+
+
+
+
+
+
+
 
     /**
      * Saves the given recap, replacing a recap of the same character, mob and kill time.
@@ -328,6 +373,15 @@ class PushRecapStore {
         return true;
     }
 
+
+
+
+
+
+
+
+
+
     /**
      * Deletes the recap with the given id.
      *
@@ -348,6 +402,15 @@ class PushRecapStore {
         return true;
     }
 
+
+
+
+
+
+
+
+
+
     /**
      * Deletes all saved recaps.
      */
@@ -358,6 +421,15 @@ class PushRecapStore {
         this.#recaps = [];
         this.#persist();
     }
+
+
+
+
+
+
+
+
+
 
     /**
      * Resolves when all pending writes are done.
@@ -370,6 +442,15 @@ class PushRecapStore {
         }
     }
 
+
+
+
+
+
+
+
+
+
     /**
      * Tells the main window that the saved recaps changed.
      */
@@ -379,6 +460,15 @@ class PushRecapStore {
             win.webContents.send( 'push-recaps:changed' );
         }
     }
+
+
+
+
+
+
+
+
+
 
     /**
      * Writes any pending change right away.  For use when the app quits.
@@ -400,6 +490,15 @@ class PushRecapStore {
         }
     }
 
+
+
+
+
+
+
+
+
+
     /**
      * Loads the file once.  A missing file gives an empty list.  A file that cannot be read
      * leaves the store unloaded, so nothing is written over it and the next request tries again.
@@ -416,6 +515,15 @@ class PushRecapStore {
         }
         return this.#loading;
     }
+
+
+
+
+
+
+
+
+
 
     /**
      * Reads the file.
@@ -462,6 +570,15 @@ class PushRecapStore {
         return true;
     }
 
+
+
+
+
+
+
+
+
+
     /**
      * Returns a temp file name that no other write uses.
      *
@@ -470,6 +587,15 @@ class PushRecapStore {
     #nextTempPath() {
         return `${this.#path}.${process.pid}.${++this.#tempCounter}.tmp`;
     }
+
+
+
+
+
+
+
+
+
 
     /**
      * Writes the file, one write at a time.  Changes made during a write are written right after.
@@ -496,7 +622,8 @@ class PushRecapStore {
                         await fsp.rm( tempPath, { force: true } );
                         break;
                     }
-                    await fsp.rename( tempPath, this.#path );
+                    // Synchronous, so a quit cannot slip in between the check above and the rename.
+                    fs.renameSync( tempPath, this.#path );
                 } catch ( error ) {
                     console.error( 'Could not save the push recaps.', error );
                     await fsp.rm( tempPath, { force: true } ).catch( () => { } );
