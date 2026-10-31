@@ -496,7 +496,8 @@
         <p>The push recap window can tell you who pushed the boss.  After a fight, it reads your log backwards to the last boss kill and ranks every player by the number of push events, with the spells behind them.
         <br />Nothing runs while you fight.  The log is only read when you press the hotkey.</p>
         <p>To enable the Push Recap window, turn it on below.  Nag will create a trigger, and you can make an EQ <span class="color-blue" style="font-weight: 400;">Hotkey</span> that when pressed, will display the recap of your last boss kill.
-        <br />Turn on other players' hits and spell messages in EverQuest to see the whole raid.  The spell data is read from your EverQuest folder, so set it in Settings first.</p>
+        <br />Turn on other players' hits and spell messages in EverQuest to see the whole raid.  The spell data is read from your EverQuest folder, so set it in Settings first.
+        <br />Hits are counted from spell damage messages like "... points of ... damage by &lt;spell&gt;.".  Other players' spell damage messages must be on in EverQuest's chat filters to see their hits.</p>
 
         <div class="formless-hint full-width">
             <div class="formless-input"><mat-checkbox [(ngModel)]="pushRecapPreferences.enabled" name="cbxPushRecapEnabled" (change)="onPushRecapPrefsChange()">Enable the Push Recap hotkey.</mat-checkbox></div>

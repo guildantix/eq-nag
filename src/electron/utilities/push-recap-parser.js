@@ -184,7 +184,7 @@ async function readSession( logFilePath, characterName, landing ) {
                 leftover = null;
             }
 
-            let chunkLines = region.toString( 'utf8' ).split( '\n' );
+            let chunkLines = region.toString( 'latin1' ).split( '\n' );
 
             for ( let i = chunkLines.length - 1; i >= 0; i-- ) {
                 let line = chunkLines[ i ];

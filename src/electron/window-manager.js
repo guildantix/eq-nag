@@ -374,7 +374,12 @@ class WindowManager {
              * @param {IpcMessage<{logFilePath: string, characterName: string, serverName: string}>} arg The log file and character.
              */
             ( event, arg ) => {
-                this.loadPushRecap( arg.value.logFilePath, arg.value.characterName, arg.value.serverName );
+                let value = arg?.value ?? {};
+                if ( typeof value.logFilePath !== 'string' || value.logFilePath.length === 0 ) {
+                    return;
+                }
+
+                this.loadPushRecap( value.logFilePath, value.characterName, value.serverName );
             }
         );
 
@@ -1368,8 +1373,8 @@ class WindowManager {
         pushRecap.setBounds( {
             width: size.width,
             height: size.height,
-            x: ( workAreaSize.width - size.width ) / 2,
-            y: ( workAreaSize.height - size.height ) / 2,
+            x: Math.round( ( workAreaSize.width - size.width ) / 2 ),
+            y: Math.round( ( workAreaSize.height - size.height ) / 2 ),
         } );
 
         pushRecap.loadURL( `file://${__dirname}/windows/push-recap.html?${query}` );
