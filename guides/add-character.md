@@ -1,5 +1,4 @@
 ---
-outdated: true
 title: Adding a character
 parent: How-to guides
 nav_order: 1
@@ -8,20 +7,21 @@ redirect_from:
   - /add-character.html
 ---
 
-## Adding a character
+# Adding a character
 
-Start by navigating to the characters tab.
+Add another character to Nag.
 
-![image](https://user-images.githubusercontent.com/66176124/136665410-19443229-e94e-487a-8cc3-1345c54c785d.png)
+1. Click the **Characters** tab.
+2. Click **New Character**.
+3. Open **Server** and pick your server.
+4. Open **Character** and pick your character.
+5. Click **Create**.
 
-Then click on the "New Character" button on the right.  This opens the Add Character dialog. 
+You will see **Character added!** and the character in the list. Then click its name and pick its **Character Class** on the **Settings** tab.
 
-![image](https://user-images.githubusercontent.com/66176124/136665498-35a2eafc-14d2-4fec-90b0-51fbace6af8f.png)
+If your character is not in the list, or Nag cannot find your EverQuest folder, click **Select Log File** and pick the character's `eqlog_` file from the `Logs` folder.
 
-*If this is the **first** character you are adding to Nag, then you'll need to select their log file.*
+{: .note }
+Turn on logging in EverQuest first: type `/log on` once for each character.
 
-After you have selected your character, they will be added to the characters list.
-
-In the character display, select your new character and then select their Class and any focus effects.  These values are used to automatically track buff timers.
-
-![image](https://user-images.githubusercontent.com/66176124/136665586-9279e380-8641-4319-adb3-989f05be40cd.png)
+The full walk-through, with focus effects, is in [Add your character]({{ '/get-started/first-character' | relative_url }}).

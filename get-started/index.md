@@ -1,11 +1,12 @@
 ---
 title: "Get started"
 nav_order: 2
+has_children: true
 hide_meta: true
 ---
 
 # Get started
 
-Everything a new player needs to install Nag, add a character and make a first trigger.
+Four short pages take you from the download to your first alert on screen. Do them in order.
 
-Coming soon. For now, start with [Adding a character]({{ '/guides/add-character' | relative_url }}).
+Already use GINA? Skip to [Coming from GINA]({{ '/get-started/from-gina' | relative_url }}).
