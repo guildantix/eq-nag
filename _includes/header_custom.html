@@ -1,3 +1,45 @@
+<div class="nag-nav-group">
+  <button type="button" class="nag-nav-toggle" id="nag-nav-toggle" aria-expanded="true" aria-label="Hide navigation" data-home="{% if page.nav_collapsed %}true{% else %}false{% endif %}">
+    <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false"><path d="M3 6h18M3 12h18M3 18h18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+  </button>
+  <a href="{{ '/' | relative_url }}" class="nag-nav-title">{{ site.title }}</a>
+</div>
+<script>
+  ( function () {
+    var button = document.getElementById( 'nag-nav-toggle' );
+    var root = document.documentElement;
+    var sidebar = document.querySelector( '.side-bar' );
+
+    if ( !button || button.hasAttribute( 'data-ready' ) ) {
+      return;
+    }
+    button.setAttribute( 'data-ready', 'true' );
+
+    if ( sidebar ) {
+      sidebar.id = 'nag-sidebar';
+      button.setAttribute( 'aria-controls', 'nag-sidebar' );
+    }
+
+    function render() {
+      var closed = root.classList.contains( 'nag-nav-closed' );
+      button.setAttribute( 'aria-expanded', closed ? 'false' : 'true' );
+      button.setAttribute( 'aria-label', closed ? 'Show navigation' : 'Hide navigation' );
+    }
+
+    button.addEventListener( 'click', function () {
+      var closed = root.classList.toggle( 'nag-nav-closed' );
+      if ( button.getAttribute( 'data-home' ) !== 'true' ) {
+        try {
+          localStorage.setItem( 'nag-nav', closed ? 'closed' : 'open' );
+        } catch ( error ) {
+        }
+      }
+      render();
+    } );
+
+    render();
+  } )();
+</script>
 <button type="button" class="theme-toggle" id="nag-theme-toggle">
   <span class="theme-toggle-icon" aria-hidden="true"></span>
   <span class="theme-toggle-label"></span>

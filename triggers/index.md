@@ -1,6 +1,7 @@
 ---
 title: "Triggers & Regex"
-nav_order: 3
+parent: Documentation
+nav_order: 1
 has_children: true
 hide_meta: true
 ---

@@ -1,6 +1,6 @@
 ---
 title: "Troubleshooting & FAQ"
-nav_order: 6
+nav_order: 4
 hide_meta: true
 ---
 

@@ -1,6 +1,7 @@
 ---
 title: Home
 nav_order: 1
+nav_collapsed: true
 hide_meta: true
 ---
 
@@ -29,6 +30,8 @@ An EverQuest notification agent.
 [Death Recap]({{ '/guides/death-recap' | relative_url }})
 
 ## Documentation
+
+[Documentation]({{ '/documentation/' | relative_url }}): the details of every advanced feature.
 
 [Advanced Trigger Mechanics]({{ '/guides/advanced-triggers' | relative_url }})
 

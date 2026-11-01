@@ -8,15 +8,26 @@ by GitHub Pages. This file is not part of the site.
 
 Each top-level section is a folder with an `index.md` that has
 `has_children: true`. Pages inside the folder name that section in `parent`.
+The casual sections come first; `documentation/` holds the details of the
+advanced features. Its sub-sections are a third navigation level: their pages
+set `parent` to the sub-section and `grand_parent` to Documentation.
 
 | Section | Folder | Holds |
 |---|---|---|
 | Get started | `get-started/` | Install, first character, first trigger |
-| Triggers & Regex | `triggers/` | How triggers, phrases, conditions and actions work |
 | How-to guides | `guides/` | Step-by-step tasks |
-| Reference | `reference/` | Lookup pages |
 | Troubleshooting & FAQ | `help/` | Problems and questions |
+| Documentation | `documentation/` | Hub page for the advanced features |
+| Documentation > Triggers & Regex | `triggers/` | How triggers, phrases, conditions and actions work |
+| Documentation > Reference | `reference/` | Lookup pages |
 | What's new | `whats-new/` | Release notes |
+
+The Documentation hub lists every child section and page with a one-line
+description. Add a line there when you add a page under it.
+
+The sidebar can be collapsed with the hamburger button in the header. The home
+page starts collapsed (`nav_collapsed: true` in its front matter); other pages
+start open, or as the reader last left them.
 
 Keep a page at its current path once it is published; other sites and players
 link to it. If a page has to move, add the old path to `redirect_from`.
@@ -38,13 +49,15 @@ redirect_from:
 | Field | Meaning |
 |---|---|
 | `title` | Page title, also shown in the navigation |
-| `parent` | Title of the section page. Use `grand_parent` as well for a third level |
+| `parent` | Title of the section page |
+| `grand_parent` | Title of the top-level section, for pages on the third level |
 | `nav_order` | Position among its siblings |
 | `applies_to` | Nag version the steps were checked against. Defaults to the value in `_config.yml` |
 | `last_verified` | Date someone followed the page in the app. Defaults to the value in `_config.yml` |
 | `redirect_from` | Old paths that should lead to this page |
 | `nav_exclude: true` | Keeps the page out of the navigation |
 | `hide_meta: true` | Hides the "Applies to / Last verified" badges |
+| `nav_collapsed: true` | Starts the page with the sidebar collapsed (used by the home page) |
 
 ## Callouts
 

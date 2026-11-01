@@ -1,6 +1,7 @@
 ---
 title: "Reference"
-nav_order: 5
+parent: Documentation
+nav_order: 2
 hide_meta: true
 ---
 

@@ -2,6 +2,7 @@
 outdated: true
 title: Advanced Trigger Mechanics
 parent: "Triggers & Regex"
+grand_parent: Documentation
 nav_order: 1
 ---
 
