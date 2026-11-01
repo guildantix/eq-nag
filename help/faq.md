@@ -102,7 +102,12 @@ In a folder called `electron-angular-eq-parse` inside your Windows `AppData\Roam
 <script>
   ( function () {
     function openTarget() {
-      var id = decodeURIComponent( window.location.hash.slice( 1 ) );
+      var id;
+      try {
+        id = decodeURIComponent( window.location.hash.slice( 1 ) );
+      } catch ( error ) {
+        return;
+      }
       var el = id ? document.getElementById( id ) : null;
       if ( el && el.tagName === 'DETAILS' ) {
         el.open = true;
