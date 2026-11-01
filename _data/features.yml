@@ -102,37 +102,50 @@
   status: documented
 - id: trigger-actions
   feature: "Trigger actions"
-  page: guides/advanced-triggers.md
-  status: outdated
-  note: "About 11 of 16 action types are documented."
+  page: triggers/actions.md
+  status: documented
+  note: "All 16 action types in the picker."
 - id: action-screen-glow
   feature: "Screen Glow action"
-  page: null
-  status: missing
+  page: triggers/actions.md
+  status: documented
 - id: action-stopwatch
   feature: "Stopwatch action"
-  page: null
-  status: missing
+  page: triggers/timers.md
+  status: documented
 - id: action-list
   feature: "List action"
-  page: null
-  status: missing
+  page: triggers/actions.md
+  status: documented
+  note: "Summary of the tabs. The in-app hints are the detailed reference."
 - id: action-clear-all
   feature: "Clear All action"
-  page: null
-  status: missing
+  page: triggers/actions.md
+  status: documented
 - id: action-display-death-recap
   feature: "Display Death Recap action"
-  page: null
-  status: missing
+  page: triggers/actions.md
+  status: documented
 - id: action-speak-options
   feature: "Speak options (rate, volume, speak next, interrupt)"
-  page: null
-  status: missing
+  page: triggers/actions.md
+  status: documented
+- id: timers-in-depth
+  feature: "Timers: restart behavior, Ending, Ended, End Early, focus effects, hide conditions"
+  page: triggers/timers.md
+  status: documented
 - id: trigger-hotkeys
   feature: "Trigger hotkeys"
-  page: null
-  status: missing
+  page: triggers/hotkeys.md
+  status: documented
+- id: trigger-cookbook
+  feature: "Trigger cookbook"
+  page: triggers/cookbook.md
+  status: documented
+- id: trigger-troubleshooting
+  feature: "Why didn't my trigger fire? checklist"
+  page: triggers/why-didnt-it-fire.md
+  status: documented
 - id: combat-statistics
   feature: "Combat Statistics, DPS meter and pets"
   page: null

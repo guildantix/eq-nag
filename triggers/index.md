@@ -17,5 +17,8 @@ Start with Triggers 101, then read the page that matches what you are stuck on.
 - [Regex for Nag]({{ '/triggers/regex' | relative_url }}): the few regex symbols you need, with a live tester.
 - [Snippets and variables]({{ '/triggers/snippets' | relative_url }}): every code in curly braces, one entry each.
 - [Conditions and variables]({{ '/triggers/conditions' | relative_url }}): variable, counter, class, folder and hide conditions.
-
-For the actions a trigger can run, see [Advanced Trigger Mechanics]({{ '/guides/advanced-triggers' | relative_url }}). More focused pages are coming soon.
+- [Actions reference]({{ '/triggers/actions' | relative_url }}): every action type and its settings.
+- [Timers in depth]({{ '/triggers/timers' | relative_url }}): Timer, Countdown, DoT, Beneficial and Stopwatch: restart behavior, ending and ended events, End Early, hide conditions, focus effects.
+- [Trigger hotkeys]({{ '/triggers/hotkeys' | relative_url }}): hotkey lines and the values Nag asks for.
+- [Cookbook]({{ '/triggers/cookbook' | relative_url }}): worked recipes from log line to alert.
+- [Why didn't my trigger fire?]({{ '/triggers/why-didnt-it-fire' | relative_url }}): a checklist for triggers that stay silent.
