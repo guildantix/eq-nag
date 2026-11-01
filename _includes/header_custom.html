@@ -57,7 +57,7 @@
       var isDark = current() === 'nag-dark';
       button.querySelector( '.theme-toggle-icon' ).textContent = isDark ? '☾' : '☀';
       button.querySelector( '.theme-toggle-label' ).textContent = isDark ? 'Dark' : 'Light';
-      button.setAttribute( 'aria-label', isDark ? 'Switch to light theme' : 'Switch to dark theme' );
+      button.setAttribute( 'aria-label', isDark ? 'Dark theme, switch to light' : 'Light theme, switch to dark' );
     }
 
     button.addEventListener( 'click', function () {

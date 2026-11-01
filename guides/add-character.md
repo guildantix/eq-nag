@@ -5,6 +5,7 @@ parent: How-to guides
 nav_order: 1
 redirect_from:
   - /add-character/
+  - /add-character.html
 ---
 
 ## Adding a character
