@@ -21,6 +21,18 @@ const { RenderTokenModel } = require( "./data/models/renderer" );
  */
 let rendererOnTopId = null;
 
+/**
+ * Interval that sends the cursor position to the renderer, which uses it to
+ * decide whether the overlays should take mouse input.
+ *
+ * @type {number}
+ */
+let rendererCursorId = null;
+const rendererCursorPollMs = 33;
+// Resend an unchanged position this often, so an overlay that appears or
+// disappears under a still cursor is still picked up.
+const rendererCursorResendMs = 500;
+
 class WindowManager {
 
     /** @type {BrowserWindow} */
@@ -949,6 +961,24 @@ class WindowManager {
             this.#renderer.setFullScreenable( false );
         }, 1000 );
 
+        // Reading the cursor here is cheap; the renderer used to ask for it
+        // 30 times a second through @electron/remote, which cost CPU in both
+        // processes even with nothing on screen.
+        let lastCursor = null;
+        let lastCursorSent = 0;
+        rendererCursorId = setInterval( () => {
+            if ( this.#renderer?.isDestroyed() !== false ) {
+                return;
+            }
+            const cursor = screen.getCursorScreenPoint();
+            const now = Date.now();
+            if ( cursor.x !== lastCursor?.x || cursor.y !== lastCursor?.y || now - lastCursorSent >= rendererCursorResendMs ) {
+                lastCursor = cursor;
+                lastCursorSent = now;
+                this.#renderer.webContents.send( 'renderer:cursor', cursor );
+            }
+        }, rendererCursorPollMs );
+
         ipcMain.once( 'main:angular-ready', () => {
             if ( this.#userPrefDb.enableCheckWindowPosition ) {
                 log.info( '[WindowManager:main:angular-ready] Initiating overlay position checks.' );
@@ -1308,6 +1338,10 @@ class WindowManager {
     unload() {
         if ( rendererOnTopId ) {
             clearTimeout( rendererOnTopId );
+        }
+        if ( rendererCursorId ) {
+            clearInterval( rendererCursorId );
+            rendererCursorId = null;
         }
         if ( !this.#renderer?.isDestroyed() ) {
             this.#renderer?.close();
