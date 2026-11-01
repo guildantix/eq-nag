@@ -1188,7 +1188,7 @@ class CombatParser {
                 }
                 regxResult = regxResult == null ? executCombatRgx( combatRgx.SelfDot, logs[ i ] ) : regxResult;
                 if ( regxResult !== null ) {
-                    this._addDetrimentalSpellEvent( timestamp, 'You', regxResult.groups.target, +regxResult.groups.damage, regxResult.groups.attackType, regxResult.groups.resistType, regxResult.groups.modifiers, logLine );
+                    this._addDetrimentalSpellEvent( timestamp, 'You', regxResult.groups.target, +regxResult.groups.damage, regxResult.groups.attackType, regxResult.groups.resistType, regxResult.groups.modifiers );
                     continue;
                 }
                 
