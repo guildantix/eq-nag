@@ -53,6 +53,8 @@ A window called **Update Notes** opens the first time you run Nag, and once afte
 
 Nag only offers test versions if you turn on **Allow Pre-release.** under **Update Settings** in the **Settings** tab.
 
+![The Settings tab of Nag, with the Notes link at the top right and Allow Pre-release. under Update Settings]({{ '/assets/images/install/settings-update.png' | relative_url }})
+
 {: .tip }
 If an update does not install, download the newest installer from the [releases page](https://github.com/guildantix/eq-nag/releases/latest) and run it again.
 

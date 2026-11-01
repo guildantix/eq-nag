@@ -33,7 +33,11 @@ Copy the page of the **spell**, not an item or a scroll. The address has `spells
 3. Click the three dots at the top right.
 4. Click **Auto Generation**, then under **EQ Spell Resources** click **DoT Timer**.
 
+   ![The three-dot menu in the Triggers tab, open on Auto Generation, then EQ Spell Resources, with DoT Timer and Buff Timer]({{ '/assets/images/add-dot-timer/triggers-menu.png' | relative_url }})
+
 You will see a window called **Import DoT Timer (EQ Spell Resources)**.
+
+![The Import DoT Timer (EQ Spell Resources) window on the Scrape step, with a spell page address in the EQ Spell Resources URL box]({{ '/assets/images/add-dot-timer/dot-import-step1.png' | relative_url }})
 
 ## 3. Paste the address
 

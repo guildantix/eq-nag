@@ -10,9 +10,18 @@ A package is a ready-made set of triggers that another player shared. Install on
 
 1. Click the **Triggers** tab.
 2. Click the blue **Trigger Library** button. A window called **Trigger Library** opens.
+
+   ![The Trigger Library window with Categories on the left and the Browse Packages list on the right]({{ '/assets/images/download-packages/library-categories.png' | relative_url }})
+
 3. On the left, under **Categories**, click a category. **Installed** shows what you already have.
 4. Click a package in the list. The list shows **Name**, **Author** and **Last Updated**. Click **Name** or **Author** to sort by it.
+
+   ![The Trigger Library with the Spells category picked and its packages listed by Name, Author and Last Updated]({{ '/assets/images/download-packages/library-spells-list.png' | relative_url }})
+
 5. Look at the package page. You will see its name, a description and every trigger in it.
+
+   ![A package page in the Trigger Library, with its description, its triggers, and the Install Package and Copy Quick Share Code buttons]({{ '/assets/images/download-packages/library-package-page.png' | relative_url }})
+
 6. To read more about one trigger, hover over the note icon at the end of its row.
 7. Scroll down and click the green **Install Package** button.
 

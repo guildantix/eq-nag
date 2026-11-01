@@ -28,10 +28,12 @@ You will see the folder highlighted.
 
 ## 3. Say what Nag should look for
 
-1. Under **Phrases**, click **New**. A new row appears.
+1. Under **Phrases**, find the row that is already there. Click **New** only if you want a second phrase.
 2. Click the **Capture Phrase** box in that row.
 3. Type `tells you,`
 4. Leave the **RegEx** box unticked. It is for advanced patterns. See the [Documentation]({{ '/documentation/' | relative_url }}) if you are curious.
+
+   ![The Capture tab of the Trigger window with the name Tell alert and one phrase row, tells you,]({{ '/assets/images/first-trigger/trigger-capture-tab.png' | relative_url }})
 
 Nag looks for these words anywhere in a log line. It ignores capital letters. Any line containing `tells you,` counts.
 
@@ -39,10 +41,16 @@ Nag looks for these words anywhere in a log line. It ignores capital letters. An
 
 1. Click the **Actions** tab.
 2. Click **New**. A card appears.
-3. Click the box that says **Select an action type**, then click **Display Text**.
+3. Click the **Action Type** box, which says **Unset Action**, then click **Display Text**.
+
+   ![The Actions tab with the action type list open: Display Text, Speak, Countdown, Timer and more]({{ '/assets/images/first-trigger/trigger-action-picker.png' | relative_url }})
+
 4. Open **Trigger on phrase** and pick `tells you,`.
 5. In **Display Text**, type `You got a tell!`
 6. Open **Overlay Window** and pick **Text Notifications**. An overlay is the on-screen box where Nag shows text and timers.
+7. Next to **Overlay Window**, type `8` in the **Sec** box. The text stays on screen for that many seconds. If you leave it empty, the text vanishes at once.
+
+   ![The Display Text action with Trigger on phrase set to tells you, the text You got a tell!, Overlay Window set to Text Notifications and 8 in the Sec box]({{ '/assets/images/first-trigger/trigger-display-text-action.png' | relative_url }})
 
 {: .warning }
 Do not skip **Trigger on phrase**. Without it, the action never runs.
@@ -51,12 +59,17 @@ Do not skip **Trigger on phrase**. Without it, the action never runs.
 
 Click **Save**. The window closes and your trigger is in the list. A check mark next to it means it is turned on.
 
+![The Triggers tab with the folder My Triggers highlighted and the trigger Tell alert in the list with its check mark on]({{ '/assets/images/first-trigger/triggers-list.png' | relative_url }})
+
 ## 6. Test it
 
 You can test without logging in to the game.
 
 1. In the **Triggers** tab, click the three dots at the top right.
 2. Click **Simulate Log**. A window called **Log Simulation** opens.
+
+   ![The three-dot menu at the top right of the Triggers tab, with Simulate Log in the list]({{ '/assets/images/first-trigger/triggers-menu.png' | relative_url }})
+
 3. Click **Paste Log Entries**.
 4. Paste this line, then click **OK**:
 
@@ -64,10 +77,16 @@ You can test without logging in to the game.
    [Sun Nov 01 20:15:02 2026] Fizzlethorp tells you, 'Ready for invite?'
    ```
 
+   ![The Paste Log Entries window with one log line typed in and an OK button]({{ '/assets/images/first-trigger/simulate-paste.png' | relative_url }})
+
 5. Open the character list and pick your character.
 6. Click the green play button.
 
 You will see **You got a tell!** on your screen in the **Text Notifications** overlay. The test also shows how long it has left in the **Log Simulation** window.
+
+![The Log Simulation window after the test, with the pasted line shown in green]({{ '/assets/images/first-trigger/simulate-played.png' | relative_url }})
+
+![The alert You got a tell! as it shows on screen in the Text Notifications overlay]({{ '/assets/images/first-trigger/overlay-text-notification.png' | relative_url }})
 
 {: .note }
 Start each line with the date and time in square brackets, like the example. A line without them borrows the time of the nearest line that has them. If no line has a time, Nag throws them all away. Nag plays the lines back with the same gaps as their times.
