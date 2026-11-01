@@ -5,7 +5,7 @@
         
         <mat-form-field>
             <mat-label></mat-label>
-            <mat-select [(ngModel)]="characterId" name="characterId" placeholder="Character">
+            <mat-select [(ngModel)]="characterId" name="characterId" placeholder="Character" matTooltip="Filters trigger matches; app messages always show">
                 <mat-option [value]="null">All Characters</mat-option>
                 <mat-option *ngFor="let option of characterOptions" [value]="option.id">{{option.server}} | {{option.name}}</mat-option>
             </mat-select>
@@ -21,13 +21,13 @@
         <span style="flex: 1 1 auto;"></span>
 
         <mat-form-field>
-            <input matInput type="text" [(ngModel)]="searchText" name="searchText" />
+            <input matInput type="text" [ngModel]="searchText" (ngModelChange)="onSearchTextChanged($event)" name="searchText" />
             <mat-icon matPrefix style="opacity: 0.5;">search</mat-icon>
         </mat-form-field>
 
     </div>
 
-    <console-list #consoleList (onListUpdated)="onListUpdated($event.scrollBottom)"></console-list>
+    <console-list #consoleList [searchText]="appliedSearchText" [characterId]="characterId" (onListUpdated)="onListUpdated($event.scrollBottom)"></console-list>
 
     <div class="console-bottom-buttons" *ngIf="showBottomTools">
         <button mat-button (click)="scrollToBottom()" *ngIf="!atBottom">Jump to bottom</button>

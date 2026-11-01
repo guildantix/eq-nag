@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, HostListener, Input, OnInit, Output } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, HostListener, Input, OnChanges, OnInit, Output, SimpleChanges } from '@angular/core';
 import { ConsoleMessageModel, LogTypes, ProgressModel, TriggerParseHistoryModel } from '../core.model';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import * as _ from 'lodash-es';
@@ -10,7 +10,7 @@ import { IpcService } from '../ipc.service';
     styleUrls: [ 'console-list.component.scss' ],
     changeDetection: ChangeDetectionStrategy.OnPush,
 } )
-export class ConsoleListComponent implements OnInit {
+export class ConsoleListComponent implements OnInit, OnChanges {
 
     public showTriggerHistory: boolean = false;
     public parseType: 'successful' | 'failed' = 'successful';
@@ -34,6 +34,23 @@ export class ConsoleListComponent implements OnInit {
         private readonly sanitizer: DomSanitizer,
         private readonly changeDetector: ChangeDetectorRef,
     ) { }
+
+    ngOnChanges( changes: SimpleChanges ) {
+        if ( Object.values( changes ).every( change => change.firstChange ) ) {
+            return;
+        }
+
+        this.renderHistory( false );
+    }
+
+
+
+
+
+
+
+
+
 
     ngOnInit() {
 
@@ -227,10 +244,10 @@ export class ConsoleListComponent implements OnInit {
         let search = this.searchText?.toLowerCase();
         this.history = this.history.filter( x => {
             if ( x instanceof TriggerParseHistoryModel ) {
-                return ( !search || x.rawLogEntry.toLowerCase().indexOf( search.toLowerCase() ) > -1 ) &&
+                return ( !search || String( x.rawLogEntry ?? '' ).toLowerCase().indexOf( search ) > -1 ) &&
                     ( !this.characterId || x.characterId === this.characterId );
             } else {
-                return ( !search || x.message.toLowerCase().indexOf( search.toLowerCase() ) > -1 );
+                return ( !search || String( x.message ?? '' ).toLowerCase().indexOf( search ) > -1 );
             }
         } );
         

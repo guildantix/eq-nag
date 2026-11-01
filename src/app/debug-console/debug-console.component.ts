@@ -1,4 +1,4 @@
-import { Component, DoCheck, ElementRef, HostListener, OnInit, ViewChild } from '@angular/core';
+import { Component, DoCheck, ElementRef, HostListener, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { IpcService } from '../ipc.service';
 import * as _ from 'lodash-es';
 import { ConsoleListComponent } from './console-list.component';
@@ -8,7 +8,7 @@ import { ConsoleListComponent } from './console-list.component';
     templateUrl: 'debug-console.component.html',
     styleUrls: [ 'debug-console.component.scss' ],
 } )
-export class DebugConsoleComponent implements OnInit, DoCheck {
+export class DebugConsoleComponent implements OnInit, OnDestroy, DoCheck {
 
     public show: boolean = false;
     public showInput: boolean = true;
@@ -17,6 +17,10 @@ export class DebugConsoleComponent implements OnInit, DoCheck {
     public characterId: string = null;
     // public parseType: 'successful' | 'failed' = 'successful';
     public searchText: string = null;
+    /** The search text applied to the filter after the typing delay. */
+    public appliedSearchText: string = null;
+    /** The timeout id of the pending search text update. */
+    private _searchTimeoutId: any = null;
     public characterOptions: { id: string, name: string, server: string }[] = [];
     private _atBottom: boolean = true;
     public get atBottom(): boolean {
@@ -59,10 +63,43 @@ export class DebugConsoleComponent implements OnInit, DoCheck {
 
     }
 
+    ngOnDestroy(): void {
+        clearTimeout( this._searchTimeoutId );
+    }
+
+
+
+
+
+
+
+
+
+
     ngDoCheck(): void {
         if ( this.container?.nativeElement ) {
             this._atBottom = this.container.nativeElement.scrollTop >= this.container.nativeElement.scrollHeight - this.container.nativeElement.offsetHeight;
         }
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Applies the search text to the list after the user stops typing.
+     *
+     * @param value The current search text.
+     */
+    public onSearchTextChanged( value: string ): void {
+        this.searchText = value;
+        clearTimeout( this._searchTimeoutId );
+        this._searchTimeoutId = setTimeout( () => this.appliedSearchText = this.searchText, 150 );
     }
 
 
