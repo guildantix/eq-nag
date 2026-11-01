@@ -75,15 +75,42 @@ $nag-callouts: (
 }
 
 @include mq(md) {
+  .side-bar {
+    width: $nav-width-md;
+    min-width: 0;
+    align-items: flex-start;
+  }
+
+  .side-bar + .main {
+    margin-left: $nav-width-md;
+  }
+
+  .main {
+    max-width: none;
+  }
+
+  .main-content-wrap {
+    max-width: calc(56rem + #{$gutter-spacing * 2});
+    margin-right: auto;
+    margin-left: auto;
+  }
+
+  .site-title {
+    padding-left: 3.5rem;
+  }
+
   .nag-nav-group {
     display: flex;
     order: -1;
     align-items: center;
     gap: 0.25rem;
-    padding-left: 0.75rem;
   }
 
   .nag-nav-toggle {
+    position: fixed;
+    top: calc((#{$header-height} - 2.375rem) / 2);
+    left: 0.75rem;
+    z-index: 3;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -107,7 +134,7 @@ $nag-callouts: (
 
   .nag-nav-title {
     display: none;
-    padding: 0 0.5rem;
+    padding: 0 0.5rem 0 0;
     color: $body-heading-color;
     font-size: 1.125rem;
     white-space: nowrap;
@@ -128,12 +155,30 @@ $nag-callouts: (
     }
 
     .side-bar + .main {
-      margin-left: auto;
-      max-width: 60rem;
+      margin-left: 0;
+    }
+
+    .main-content-wrap {
+      padding-right: 4rem;
+      padding-left: 4rem;
+    }
+
+    .nag-nav-group {
+      padding-left: 3.5rem;
     }
 
     .nag-nav-title {
       display: inline-block;
     }
+  }
+}
+
+@include mq(lg) {
+  .side-bar {
+    width: $nav-width;
+  }
+
+  .side-bar + .main {
+    margin-left: $nav-width;
   }
 }
