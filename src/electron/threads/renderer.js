@@ -4252,7 +4252,7 @@ function createGroupedDotTimer( overlayId, contentArea, group, comp ) {
     let groupKey = group.name;
     comp.removeComponent = () => {
         comp.dom.parentNode && comp.dom.parentNode.removeChild( comp.dom );
-        window.clearInterval( comp.intervalId );
+        stopTimerTick( comp );
         ArrayUtilities.remove( overlayInstances[ overlayId ].overlayGroups[ groupKey ].components, f => f.instanceId == comp.instanceId );
 
         window.setTimeout( () => {
@@ -4308,7 +4308,7 @@ function createGroupedTimer( overlayId, contentArea, group, comp ) {
     let groupKey = group.name;
     comp.removeComponent = () => {
         comp.dom.parentNode && comp.dom.parentNode.removeChild( comp.dom );
-        window.clearInterval( comp.intervalId );
+        stopTimerTick( comp );
         ArrayUtilities.remove( overlayInstances[ overlayId ].overlayGroups[ groupKey ]?.components, f => f.instanceId == comp.instanceId );
 
         window.setTimeout( () => {
@@ -4439,7 +4439,7 @@ function createUngroupedDotTimer( overlayId, contentArea, comp ) {
     // Create a method that will remove the component from the overlay.
     comp.removeComponent = () => {
         comp.dom.parentNode && comp.dom.parentNode.removeChild( comp.dom );
-        window.clearInterval( comp.intervalId );
+        stopTimerTick( comp );
         ArrayUtilities.remove( overlayInstances[ overlayId ].overlayComponents, f => f.instanceId == comp.instanceId );
     };
     
@@ -4484,7 +4484,7 @@ function createUngroupedTimer( overlayId, contentArea, comp ) {
     // Create a method that will remove the component from the overlay.
     comp.removeComponent = () => {
         comp.dom.parentNode && comp.dom.parentNode.removeChild( comp.dom );
-        window.clearInterval( comp.intervalId );
+        stopTimerTick( comp );
         ArrayUtilities.remove( overlayInstances[ overlayId ].overlayComponents, f => f.instanceId == comp.instanceId );
     };
     
@@ -4497,6 +4497,108 @@ function createUngroupedTimer( overlayId, contentArea, comp ) {
 
 
 
+
+
+
+
+
+
+
+var timerTickComponents = [];
+var timerTickIntervalId = null;
+
+/**
+ * Registers a timer component with the shared timer ticker.
+ *
+ * @param {OverlayComponent} comp The timer component.
+ * @param {() => void} tick The per-tick update function.
+ */
+function startTimerTick( comp, tick ) {
+    comp.tick = tick;
+    timerTickComponents.push( comp );
+    window.setTimeout( () => {
+        if ( timerTickComponents.includes( comp ) ) {
+            tick();
+        }
+    } );
+
+    if ( timerTickIntervalId == null ) {
+        timerTickIntervalId = window.setInterval( runTimerTicks, 250 );
+    }
+}
+
+/**
+ * Removes a timer component from the shared timer ticker and stops the ticker when no timers remain.
+ *
+ * @param {OverlayComponent} comp The timer component.
+ */
+function stopTimerTick( comp ) {
+    const index = timerTickComponents.indexOf( comp );
+
+    if ( index > -1 ) {
+        timerTickComponents.splice( index, 1 );
+    }
+
+    if ( timerTickComponents.length === 0 && timerTickIntervalId != null ) {
+        window.clearInterval( timerTickIntervalId );
+        timerTickIntervalId = null;
+    }
+}
+
+/**
+ * Updates every live timer component in a single pass.
+ */
+function runTimerTicks() {
+    timerTickComponents.slice().forEach( comp => {
+        if ( timerTickComponents.includes( comp ) ) {
+            try {
+                comp.tick();
+            } catch ( error ) {
+                console.error( error );
+            }
+        }
+    } );
+}
+
+/**
+ * Sets the fill of a timer bar.
+ *
+ * @param {OverlayComponent} comp The timer component.
+ * @param {number} fraction The filled fraction, from 0 to 1.
+ * @param {boolean} jump When true, the bar moves without a transition.
+ */
+function setTimerBar( comp, fraction, jump ) {
+    const f = fraction > 0 ? Math.min( 1, fraction ) : 0;
+
+    if ( !jump && comp.barFraction === f ) {
+        return;
+    }
+
+    comp.barFraction = f;
+    const bar = comp.dom.querySelector( 'div.determinate' );
+
+    if ( jump ) {
+        bar.style.transition = 'none';
+        bar.style.transform = `scaleX( ${f} )`;
+        void bar.offsetWidth;
+        bar.style.transition = '';
+    } else {
+        bar.style.transform = `scaleX( ${f} )`;
+    }
+}
+
+/**
+ * Sets the time label of a timer component when it differs from the last written text.
+ *
+ * @param {OverlayComponent} comp The timer component.
+ * @param {string} text The label text.
+ */
+function setTimerLabel( comp, text ) {
+    if ( comp.labelText !== text ) {
+        comp.labelText = text;
+        comp.dom.querySelector( 'span.time-remaining' ).textContent = text;
+    }
+}
 
 
 
@@ -4534,11 +4636,11 @@ function applyTimerSettings( overlayId, contentArea, comp, group ) {
     comp.stopwatchState = 'running';
 
     if ( comp.start == null ) {
-        comp.dom.querySelector( 'span.time-remaining' ).innerHTML = `(??)&nbsp;`;
+        setTimerLabel( comp, '(??)\u00a0' );
     } else if ( overlayInstances[ overlayId ].showDuration || comp.action.showDuration ) {
-        comp.dom.querySelector( 'span.time-remaining' ).innerHTML = `(${comp.action.duration})&nbsp;`;
+        setTimerLabel( comp, `(${comp.action.duration})\u00a0` );
     } else {
-        comp.dom.querySelector( 'span.time-remaining' ).innerHTML = ``;
+        setTimerLabel( comp, '' );
     }
 
     // Update visibility
@@ -4579,14 +4681,10 @@ function applyTimerSettings( overlayId, contentArea, comp, group ) {
 
     // Setting the initial state of the determinate will prevent the progress 
     // bar from jumping from the end to the beginning when shown.
-    if ( comp.action.actionType === ActionTypes.Countdown || comp.action.actionType === ActionTypes.BeneficialTimer ) {
-        comp.dom.querySelector( 'div.determinate' ).style.width = `100%`;
-    } else {
-        comp.dom.querySelector( 'div.determinate' ).style.width = `0%`;
-    }
+    setTimerBar( comp, comp.action.actionType === ActionTypes.Countdown || comp.action.actionType === ActionTypes.BeneficialTimer ? 1 : 0, true );
 
     // Set the update method.
-    comp.intervalId = startInterval( perf.wrap( 'renderer: timer update', () => {
+    startTimerTick( comp, perf.wrap( 'renderer: timer update', () => {
 
         let perc = 0;
         let infinite = false;
@@ -4646,21 +4744,21 @@ function applyTimerSettings( overlayId, contentArea, comp, group ) {
         if ( infinite ) {
             // Do nothing.
         } else if ( comp.action.actionType === ActionTypes.Countdown || comp.action.actionType === ActionTypes.BeneficialTimer ) {
-            comp.dom.querySelector( 'div.determinate' ).style.width = `${100 - ( perc * 100 )}%`;
+            setTimerBar( comp, 1 - perc );
         } else {
-            comp.dom.querySelector( 'div.determinate' ).style.width = `${perc * 100}%`;
+            setTimerBar( comp, perc );
         }
 
         if ( infinite ) {
-            comp.dom.querySelector( 'span.time-remaining' ).innerHTML = `(??)&nbsp;`;
+            setTimerLabel( comp, '(??)\u00a0' );
         } else if ( overlayInstances[ overlayId ].showDuration || comp.action.showDuration ) {
             if ( isStopwatch ) {
-                comp.dom.querySelector( 'span.time-remaining' ).innerHTML = `(${getDurationLabel( Math.round( comp.timeRemaining / 1000 ) )})&nbsp;`;
+                setTimerLabel( comp, `(${getDurationLabel( Math.round( comp.timeRemaining / 1000 ) )})\u00a0` );
             } else {
-                comp.dom.querySelector( 'span.time-remaining' ).innerHTML = `(${getDurationLabel( comp.timeRemaining )})&nbsp;`;
+                setTimerLabel( comp, `(${getDurationLabel( comp.timeRemaining )})\u00a0` );
             }
         } else {
-            comp.dom.querySelector( 'span.time-remaining' ).innerHTML = ``;
+            setTimerLabel( comp, '' );
         }
 
         const allowEndingSoon = [ ActionTypes.Timer, ActionTypes.Countdown, ActionTypes.BeneficialTimer, ActionTypes.DotTimer ].includes( comp.action.actionType );
@@ -4799,7 +4897,7 @@ function applyTimerSettings( overlayId, contentArea, comp, group ) {
             }
         }
 
-    } ), 250 );
+    } ) );
 }
 
 
@@ -4883,6 +4981,8 @@ function resetTimerComponentClock( overlayId, comp, repeatCount ) {
             comp.dom.querySelector( '.progress' ).style.backgroundColor = 'rgba(0,33,0,.75)';
         }
     }
+
+    setTimerBar( comp, comp.action.actionType === ActionTypes.Countdown || comp.action.actionType === ActionTypes.BeneficialTimer ? 1 : 0, true );
 
     return comp;
 }
@@ -5478,19 +5578,6 @@ function createElement( tagName, id ) {
 
 
 
-
-/**
- * Executes fn and sets an interval for continuous execution.
- * 
- * @returns {number} Returns the interval id.
- * 
- * @param {() => void} fn The interval function.
- * @param {number} delay The delay, in milliseconds.
- */
-function startInterval(fn, delay) {
-    window.setTimeout( fn );
-    return window.setInterval( fn, delay );
-}
 
 
 

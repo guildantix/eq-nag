@@ -244,6 +244,12 @@
             margin-bottom: 0.4em;
         }
 
+        .overlay-content-area .progress .determinate {
+            width: 100%;
+            transform-origin: left center;
+            transition: transform .25s linear;
+        }
+
         .overlay-content-area.timer {
             overflow: visible;
         }
@@ -1241,7 +1247,7 @@
         <p class="dot-text ungrouped"><span class="time-remaining"></span>{{{value}}}</p>
         <!-- Background color of .progress is 13% of the .determinate color. -->
         <div class="progress" style="background-color: rgba(0,33,0,.75)"><p style="margin: 4px;">&nbsp;</p>
-            <div class="determinate" style="width: 0%; background-color: #008000;"></div>
+            <div class="determinate" style="background-color: #008000;"></div>
         </div>
     </template>
 
@@ -1267,7 +1273,7 @@
         <p class="dot-text"><span class="time-remaining"></span>{{{value}}}</p>
         <!-- Background color of .progress is 13% of the .determinate color. -->
         <div class="progress" style="background-color: rgba(0,33,0,.75)"><p style="margin: 4px;">&nbsp;</p>
-            <div class="determinate" style="width: 40%; background-color: #008000;"></div>
+            <div class="determinate" style="background-color: #008000;"></div>
         </div>
     </template>
 
