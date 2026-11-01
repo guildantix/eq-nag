@@ -66,27 +66,40 @@
   status: documented
 - id: regex-visualizer
   feature: "Regex Visualizer"
-  page: null
-  status: missing
+  page: triggers/capture-phrases.md
+  status: documented
 - id: capture-phrases
   feature: "Capture phrases"
-  page: guides/advanced-triggers.md
+  page: triggers/capture-phrases.md
   status: documented
-  note: "Part of the Advanced Trigger Mechanics page."
 - id: snippets
   feature: "Capture and render snippets"
-  page: guides/advanced-triggers.md
-  status: outdated
-  note: "Misses number range checks, ${deltaTime}, indexed groups and {LN}."
+  page: triggers/snippets.md
+  status: documented
 - id: named-group-conditions
   feature: "Named group and hide conditions"
-  page: null
-  status: missing
+  page: triggers/conditions.md
+  status: documented
 - id: conditions-and-variables
   feature: "Conditions and variable storage"
-  page: guides/advanced-triggers.md
+  page: triggers/conditions.md
   status: documented
-  note: "Part of the Advanced Trigger Mechanics page."
+- id: triggers-101
+  feature: "How a trigger works"
+  page: triggers/triggers-101.md
+  status: documented
+- id: regex-primer
+  feature: "Regex primer and live regex tester"
+  page: triggers/regex.md
+  status: documented
+- id: counter-conditions
+  feature: "Counter conditions"
+  page: triggers/conditions.md
+  status: documented
+- id: class-folder-conditions
+  feature: "Class and folder conditions"
+  page: triggers/conditions.md
+  status: documented
 - id: trigger-actions
   feature: "Trigger actions"
   page: guides/advanced-triggers.md

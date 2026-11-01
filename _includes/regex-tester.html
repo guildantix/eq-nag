@@ -1,0 +1,93 @@
+<section class="rx-tester" data-regex-tester data-preset="{{ include.preset | default: 'tell' }}" aria-label="Regex tester">
+  <div class="rx-head">
+    <div class="rx-title">Anatomy of a match</div>
+    <div class="rx-presets" data-role="presets" role="group" aria-label="Examples"></div>
+  </div>
+  <div class="rx-static" data-role="static">
+    <p>This tester needs JavaScript. Here is one worked example. Turn JavaScript on to edit the log line, the phrase and the text, or to try the other examples.</p>
+    <table>
+      <tbody>
+        <tr><th scope="row">Log line</th><td><code>Fizzlethorp tells you, 'Can I get a port to the Nexus?'</code></td></tr>
+        <tr><th scope="row">Capture phrase (RegEx ticked)</th><td><code>^{S1} tells you, '{S2}'$</code></td></tr>
+        <tr><th scope="row">What Nag runs</th><td><code>^(?&lt;S1&gt;.+?) tells you, '(?&lt;S2&gt;.+?)'$</code></td></tr>
+        <tr><th scope="row">Captured</th><td><code>{S1}</code> = Fizzlethorp, <code>{S2}</code> = Can I get a port to the Nexus?</td></tr>
+        <tr><th scope="row">Display Text</th><td><code>Tell from {S1}: {S2}</code></td></tr>
+        <tr><th scope="row">Shown on the overlay</th><td>Tell from Fizzlethorp: Can I get a port to the Nexus?</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="rx-live" data-role="live" hidden>
+    <div class="rx-block">
+      <label class="rx-field">
+        <span class="rx-lab">Log line</span>
+        <input class="rx-input" data-role="log" type="text" spellcheck="false" autocomplete="off">
+      </label>
+      <div class="rx-statusrow">
+        <span class="status" data-role="status" role="status"></span>
+        <span class="rx-note" data-role="stripped"></span>
+      </div>
+      <div class="logline" data-role="log-view"></div>
+    </div>
+    <div class="rx-block">
+      <div class="rx-labrow">
+        <label class="rx-lab" for="rx-phrase-{{ include.preset | default: 'tell' }}">Capture phrase (RegEx ticked)</label>
+        <label class="rx-check"><input type="checkbox" data-role="ignore-case"> Ignore case (the <b>i</b> in the Ops column)</label>
+      </div>
+      <input class="rx-input" id="rx-phrase-{{ include.preset | default: 'tell' }}" data-role="phrase" type="text" spellcheck="false" autocomplete="off">
+      <div class="phrase-view rx" data-role="phrase-view"></div>
+    </div>
+    <div class="rx-two">
+      <div class="rx-block">
+        <div class="rx-lab">Captured values</div>
+        <div class="rx-tablewrap">
+          <table class="rx-table">
+            <thead><tr><th scope="col">Chip</th><th scope="col">Captured</th><th scope="col">Use in text as</th></tr></thead>
+            <tbody data-role="table"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="rx-block">
+        <label class="rx-field">
+          <span class="rx-lab">Text (Display Text, timer name or Speak)</span>
+          <input class="rx-input" data-role="text" type="text" spellcheck="false" autocomplete="off">
+        </label>
+        <div class="rx-lab">Rendered text</div>
+        <div class="rendered" data-role="rendered"></div>
+      </div>
+    </div>
+    <details class="rx-more">
+      <summary>What Nag actually runs (the expanded regular expression)</summary>
+      <pre><code data-role="expanded"></code></pre>
+    </details>
+    <details class="rx-more">
+      <summary>Demo settings: your character, stored variables, counters</summary>
+      <div class="rx-settings">
+        <label class="rx-field">
+          <span class="rx-lab">Your character (what <code>{C}</code> means)</span>
+          <input class="rx-input" data-role="character" type="text" value="Soandso" spellcheck="false" autocomplete="off">
+        </label>
+        <label class="rx-field">
+          <span class="rx-lab">Text goes to</span>
+          <select class="rx-input" data-role="mode">
+            <option value="timer">Timer name or Speak ({TS} is the captured duration)</option>
+            <option value="display">Display Text ({TS} is the action's own Duration)</option>
+          </select>
+        </label>
+        <label class="rx-field">
+          <span class="rx-lab">The action's Duration, in seconds</span>
+          <input class="rx-input" data-role="duration" type="number" min="0" step="1" value="5">
+        </label>
+        <label class="rx-field">
+          <span class="rx-lab">Stored variables (one per line: <code>Name=value|value</code>)</span>
+          <textarea class="rx-input" data-role="variables" rows="2" spellcheck="false"></textarea>
+        </label>
+        <label class="rx-field">
+          <span class="rx-lab">Counters (one per line: <code>Name=number</code>)</span>
+          <textarea class="rx-input" data-role="counters" rows="2" spellcheck="false"></textarea>
+        </label>
+      </div>
+    </details>
+    <p class="rx-foot">The colors match the app's Regex Visualizer, except that the Visualizer shows all groups in gold. Here each capture slot has its own color so you can follow it from the phrase to the log line to the table. The tester does not apply Speak's pronunciation changes, so Speak may say some words differently, for example roman numerals.</p>
+  </div>
+  <script src="{{ '/assets/js/regex-tester.js' | relative_url }}" defer></script>
+</section>
