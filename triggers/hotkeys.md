@@ -51,12 +51,12 @@ When you click **Generate EQ Hotkey**, Nag opens a box titled **Seconds** that s
 
 - Use short, descriptive names. They are the only prompt you get.
 - Nag remembers your last answer for each name on that hotkey, until Nag closes, and offers it again.
-- Leaving a box empty cancels. Nothing is generated.
+- Leaving a box empty cancels. Nothing is generated. The next time you use the hotkey, that box may be filled in with `n/a`; replace it with the real value.
 - A name that appears twice makes Nag ask twice, and only the first copy in each line is replaced. Use each name once per line.
 
 ## Command and Quick Action
 
-Tick **Command** for a single line that you want copied as it is, without the `/hot "Name"` part that creates an EverQuest hotkey.
+Tick **Command** for a single line that you want to use as a **Quick Action**. A Quick Action copies the line as it is, without the `/hot "Name"` part that creates an EverQuest hotkey. **Generate EQ Hotkey** still adds `/hot "Name"` in front, even with **Command** on.
 
 Once **Command** is on, the **Quick Action** checkbox in the **Hotkeys** table becomes available. With **Quick Action** on, Nag adds a button with the hotkey's name to the bottom right of the main Nag window. Click that button when you want the line.
 
