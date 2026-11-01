@@ -51,6 +51,8 @@ const log = ( message, payload ) => {
 var overlays = [];
 /** @type {LogTrigger[]} */
 var triggers = [];
+/** @type {LogTrigger[]} The triggers that are enabled for this character, rebuilt on each tick. */
+var activeTriggers = [];
 /** @type {TriggerFolder[]} */
 var triggerFolders = [];
 /** @type {Record<string, string[]>} */
@@ -158,6 +160,31 @@ let lists = [];
 //  Forgetting to check the box for regex.
 //  Choosing the wrong phrase for an action.
 //      If the display text has {C} or {TS} in it, but the trigger phrase selected doesn't contain either option.
+
+
+
+
+
+
+
+
+
+
+let _lowerCaseSource = undefined;
+let _lowerCaseValue = undefined;
+/**
+ * Returns the given value in lower case.  Every trigger phrase checks the same
+ * log line, so the last result is reused.
+ * 
+ * @param {string} value The value.
+ */
+function toLowerCached( value ) {
+    if ( value !== _lowerCaseSource ) {
+        _lowerCaseSource = value;
+        _lowerCaseValue = value.toLowerCase();
+    }
+    return _lowerCaseValue;
+}
 
 
 
@@ -685,6 +712,7 @@ function LogWatcher(character, logPosition) {
         const perfStart = perf.enabled ? perf.now() : 0;
         applyFolderConditions( triggerFolders );
         generateTriggerFns();
+        activeTriggers = triggers.filter( trigger => !!trigger.enabled && !trigger._profileDisabled );
         initCounters();
         perf.enabled && perf.record( 'log-watcher: tick (rebuild triggers)', perfStart );
     } );
@@ -1176,10 +1204,15 @@ function generateTriggerFns() {
                                 };
                             } );
                         } else {
+                            // These only depend on the phrase, so work them out once instead of on every log line.
+                            const hasListShortCode = typeof phrase.phrase === 'string' && /{L([0-9]*?)}/i.test( phrase.phrase );
+                            const staticLiterals = typeof phrase.phrase === 'string' && !phrase.phrase.includes( '${' ) ? [ phrase.phrase ] : null;
+                            const staticLiteralsLower = staticLiterals?.map( p => p.toLowerCase() );
+
                             _phraseParsers.push( ( value, hasGroups, matchGroups ) => {
 
                                 // If the trigger has any List action types.
-                                if ( phrase.phrase.match( /{L([0-9]*?)}/gi ) ) {
+                                if ( hasListShortCode ) {
                                     logHistoryMgr.logParseError(
                                         `List action types are not supported in non-regex capture phrases.`, value, null, null,
                                         `List action types are not supported in non-regex capture phrases.`,
@@ -1191,12 +1224,13 @@ function generateTriggerFns() {
 
                                 if ( value?.length > 0 ) {
                                     // We won't care about case sensitivity.
-                                    let _phrs = StringUtilities.parseStoredVariablesToLiteralArray( phrase.phrase, storedVariables );
+                                    let _phrs = staticLiterals ?? StringUtilities.parseStoredVariablesToLiteralArray( phrase.phrase, storedVariables );
                                     let matched = false;
+                                    const valueLower = toLowerCached( value );
     
                                     if ( _phrs?.length > 0 ) {
                                         for ( let i = 0; i < _phrs.length; i++ ) {
-                                            if ( value.toLowerCase().indexOf( _phrs[ i ].toLowerCase() ) > -1 ) {
+                                            if ( valueLower.indexOf( staticLiteralsLower?.[ i ] ?? _phrs[ i ].toLowerCase() ) > -1 ) {
                                                 matched = true;
                                                 break;
                                             }
@@ -1671,8 +1705,11 @@ function parseLogEntries( raw, simulating, padTime ) {
         // https://regex101.com/r/n9aOlR/1
         // ^(?<author>Name|Name2) .*{NAG:(?<quickShareId>.+?)}
 
+        // Every share link contains {NAG:, so most lines can skip these checks.
+        const hasNagLink = log.includes( '{NAG:' );
+
         // Capture quickshares, when enabled.
-        let quickShare = !enableQuickShareImports ? null : quickShareRegx.exec( log );
+        let quickShare = !enableQuickShareImports || !hasNagLink ? null : quickShareRegx.exec( log );
         if ( quickShare && quickShare.groups?.quickShareId ) {
             if ( quickShareAuthorsListType === QuickShareAuthorListTypes.Whitelist && quickShare.groups?.author ) {
                 // Whitelist will only share if the author is known and in the
@@ -1697,7 +1734,7 @@ function parseLogEntries( raw, simulating, padTime ) {
 
         }
 
-        let p2p = p2pRegex.exec( log );
+        let p2p = hasNagLink ? p2pRegex.exec( log ) : null;
         if ( p2p && p2p.groups?.chatRoomId && p2p.groups?.player != 'You' && p2p.groups?.player != 'you' && p2p.groups?.player != characterName ) {
             let link = createChatRoomLink( p2p.groups.chatRoomId );
             ipcRenderer.send( 'chat-room:link-received', {
@@ -1707,7 +1744,7 @@ function parseLogEntries( raw, simulating, padTime ) {
             } );
         }
 
-        let quickSharePackage = packageShareRegx.exec( log );
+        let quickSharePackage = hasNagLink ? packageShareRegx.exec( log ) : null;
         if ( quickSharePackage && quickSharePackage.groups?.packageId ) {
             ipcRenderer.send( 'quicksharePackage_captured', quickSharePackage.groups.packageId );
         }
@@ -1819,7 +1856,7 @@ function parseLogEntries( raw, simulating, padTime ) {
 
         let entryMatched = false;
         const perfTriggers = perf.enabled && ++perfTriggerSample % 10 === 0;
-        triggers.forEach( trigger => {
+        activeTriggers.forEach( trigger => {
 
             if ( !!trigger.enabled && !trigger._profileDisabled ) {
                 const perfStart = perfTriggers ? perf.now() : 0;
