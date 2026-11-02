@@ -1,0 +1,34 @@
+<button type="button" class="theme-toggle" id="nag-theme-toggle">
+  <span class="theme-toggle-icon" aria-hidden="true"></span>
+  <span class="theme-toggle-label"></span>
+</button>
+<script>
+  ( function () {
+    var button = document.getElementById( 'nag-theme-toggle' );
+    var root = document.documentElement;
+
+    function current() {
+      return root.getAttribute( 'data-nag-theme' ) === 'nag-light' ? 'nag-light' : 'nag-dark';
+    }
+
+    function render() {
+      var isDark = current() === 'nag-dark';
+      button.querySelector( '.theme-toggle-icon' ).textContent = isDark ? '☾' : '☀';
+      button.querySelector( '.theme-toggle-label' ).textContent = isDark ? 'Dark' : 'Light';
+      button.setAttribute( 'aria-label', isDark ? 'Switch to light theme' : 'Switch to dark theme' );
+    }
+
+    button.addEventListener( 'click', function () {
+      var next = current() === 'nag-dark' ? 'nag-light' : 'nag-dark';
+      jtd.setTheme( next );
+      root.setAttribute( 'data-nag-theme', next );
+      try {
+        localStorage.setItem( 'nag-theme', next );
+      } catch ( error ) {
+      }
+      render();
+    } );
+
+    render();
+  } )();
+</script>

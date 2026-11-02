@@ -1,3 +1,10 @@
+---
+outdated: true
+title: Downloading trigger packages
+parent: How-to guides
+nav_order: 2
+---
+
 ## Downloading Trigger Packages
 
 Start by navigating to the Triggers tab and clicking on the blue **\[Trigger Library\]** button.

@@ -1,0 +1,10 @@
+{%- unless page.hide_meta or page.applies_to == nil -%}
+<div class="page-meta">
+  {%- if page.outdated %}
+  <span class="page-meta-badge page-meta-outdated">Being updated: parts of this page describe an older version</span>
+  {%- else %}
+  <span class="page-meta-badge">Applies to v{{ page.applies_to }}</span>
+  <span class="page-meta-badge">Last verified {{ page.last_verified | date: "%Y-%m-%d" }}</span>
+  {%- endif %}
+</div>
+{%- endunless -%}

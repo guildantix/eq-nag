@@ -1,3 +1,10 @@
+---
+outdated: true
+title: Add a DoT timer
+parent: How-to guides
+nav_order: 7
+---
+
 ## Adding a DoT Timer
 
 DoT timer triggers will only activate on your spells and will ignore the same spell cast by other players.  They are easy to add with the DoT timer wizard. Start by finding the spell details page on alla and copying the URL.

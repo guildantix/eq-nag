@@ -1,3 +1,12 @@
+---
+outdated: true
+title: Adding a character
+parent: How-to guides
+nav_order: 1
+redirect_from:
+  - /add-character/
+---
+
 ## Adding a character
 
 Start by navigating to the characters tab.

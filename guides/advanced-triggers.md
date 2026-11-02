@@ -1,3 +1,10 @@
+---
+outdated: true
+title: Advanced Trigger Mechanics
+parent: "Triggers & Regex"
+nav_order: 1
+---
+
 ## Advanced Trigger Mechanics
 
 <!---

@@ -1,3 +1,9 @@
+---
+title: Quick Share
+parent: How-to guides
+nav_order: 8
+---
+
 # Quick Sharing
 
 ## Enable/Disable

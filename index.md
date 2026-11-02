@@ -1,27 +1,36 @@
+---
+title: Home
+nav_order: 1
+hide_meta: true
+---
+
+# EQ Nag
+An EverQuest notification agent.
+{: .fs-6 .fw-300 }
+
 ## Nag Guides
 
-[Adding a character to Nag](/eq-nag/guides/add-character)
+[Adding a character to Nag]({{ '/guides/add-character' | relative_url }})
 
-[Downloading trigger packages](/eq-nag/guides/download-packages)
+[Downloading trigger packages]({{ '/guides/download-packages' | relative_url }})
 
-[Searching your triggers](/eq-nag/guides/find-a-trigger)
+[Searching your triggers]({{ '/guides/find-a-trigger' | relative_url }})
 
-[Disabling specific triggers](/eq-nag/guides/disabling-triggers)
+[Disabling specific triggers]({{ '/guides/disabling-triggers' | relative_url }})
 
-[Arrange your overlays](/eq-nag/guides/arrange-overlays)
+[Arrange your overlays]({{ '/guides/arrange-overlays' | relative_url }})
 
-[Add a buff timer](/eq-nag/guides/add-buff-timer)
+[Add a buff timer]({{ '/guides/add-buff-timer' | relative_url }})
 
-[Add a DoT timer](/eq-nag/guides/add-dot-timer)
+[Add a DoT timer]({{ '/guides/add-dot-timer' | relative_url }})
 
-[Quick Share](/eq-nag/guides/quick-share)
+[Quick Share]({{ '/guides/quick-share' | relative_url }})
 
-[Death Recap](/eq-nag/guides/death-recap)
-<!-- ![new](https://user-images.githubusercontent.com/66176124/193346159-c4652bf7-7d83-4aad-87d3-2a6b69548ec3.png) -->
+[Death Recap]({{ '/guides/death-recap' | relative_url }})
 
 ## Documentation
 
-[Advanced Trigger Mechanics](/eq-nag/guides/advanced-triggers)
+[Advanced Trigger Mechanics]({{ '/guides/advanced-triggers' | relative_url }})
 
 ## Download
 
@@ -34,27 +43,3 @@ Join our discord server: [https://discord.gg/e3Z8PR8EXE](https://discord.gg/e3Z8
 ## Support
 
 If you would like to support the development of Nag, you can do that on Patreon: [https://www.patreon.com/EverQuestNag](https://www.patreon.com/EverQuestNag).
-
-<!-- 
-## Road Map
-
-### Currently in Development
-
-- [ ] Death Recap - Detailed description of what killed you.
-- [ ] Creating a self-signed installation certificate.
-- [ ] Adding more organization options to the trigger library.
-- [ ] Quickshare to allow users to quickly share their triggers or installed packages with another player.
-
-### On the Horizon
-- [ ] Adding categories and search features to the package manager. Additionally, segregating installed packages from available packages.
-- [ ] Adding healing done and healing received to the floating combat text.
-- [ ] Adding more options to the buff timer wizard.
-
-### Odds and Ends
-- [ ] Sortable trigger folders.
-- [ ] Default trigger folder sort (None, Alpha, Reverse Alpha)
-
-
-*Odds and ends can be done at any time*
- -->
- 

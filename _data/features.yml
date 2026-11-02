@@ -1,0 +1,155 @@
+# Coverage map: feature, page that documents it, status.
+# Status: documented | outdated | missing. Update this file when a page changes.
+- id: install-smartscreen
+  feature: "Install and Windows SmartScreen"
+  page: null
+  status: missing
+- id: setup-wizard
+  feature: "Setup wizard"
+  page: null
+  status: missing
+- id: add-character
+  feature: "Add a character"
+  page: guides/add-character.md
+  status: outdated
+  note: "Misses the setup wizard, the automatic EQ folder search, the Service choice and /log on."
+- id: download-packages
+  feature: "Download trigger packages"
+  page: guides/download-packages.md
+  status: outdated
+  note: "Still says the screen will change soon."
+- id: find-a-trigger
+  feature: "Search triggers"
+  page: guides/find-a-trigger.md
+  status: documented
+  note: "Screenshots need a refresh."
+- id: disable-triggers
+  feature: "Disable triggers"
+  page: guides/disabling-triggers.md
+  status: documented
+  note: "Screenshots need a refresh."
+- id: arrange-overlays
+  feature: "Arrange overlays"
+  page: guides/arrange-overlays.md
+  status: documented
+  note: "Screenshots need a refresh."
+- id: buff-timer-generator
+  feature: "Buff timer generator"
+  page: guides/add-buff-timer.md
+  status: outdated
+  note: "Describes the removed Allakhazam flow; use Auto Generation, EQ Spell Resources."
+- id: dot-timer-generator
+  feature: "DoT timer generator"
+  page: guides/add-dot-timer.md
+  status: outdated
+  note: "Describes the removed Allakhazam flow; use Auto Generation, EQ Spell Resources."
+- id: eqsr-reimport
+  feature: "Re-import timers from EQ Spell Resources"
+  page: null
+  status: missing
+- id: quick-share
+  feature: "Quick Share"
+  page: guides/quick-share.md
+  status: documented
+  note: "Misses the author allow and block list."
+- id: death-recap
+  feature: "Death Recap"
+  page: guides/death-recap.md
+  status: outdated
+  note: "Misses the Hotkeys menu entry, the live emote change and the Display Death Recap action."
+- id: first-trigger
+  feature: "Make and test a first trigger"
+  page: null
+  status: missing
+- id: simulate-log
+  feature: "Test with Simulate Log"
+  page: null
+  status: missing
+- id: gina-import
+  feature: "Import from GINA"
+  page: null
+  status: missing
+- id: regex-visualizer
+  feature: "Regex Visualizer"
+  page: null
+  status: missing
+- id: capture-phrases
+  feature: "Capture phrases"
+  page: guides/advanced-triggers.md
+  status: documented
+  note: "Part of the Advanced Trigger Mechanics page."
+- id: snippets
+  feature: "Capture and render snippets"
+  page: guides/advanced-triggers.md
+  status: outdated
+  note: "Misses number range checks, ${deltaTime}, indexed groups and {LN}."
+- id: named-group-conditions
+  feature: "Named group and hide conditions"
+  page: null
+  status: missing
+- id: conditions-and-variables
+  feature: "Conditions and variable storage"
+  page: guides/advanced-triggers.md
+  status: documented
+  note: "Part of the Advanced Trigger Mechanics page."
+- id: trigger-actions
+  feature: "Trigger actions"
+  page: guides/advanced-triggers.md
+  status: outdated
+  note: "About 11 of 16 action types are documented."
+- id: action-screen-glow
+  feature: "Screen Glow action"
+  page: null
+  status: missing
+- id: action-stopwatch
+  feature: "Stopwatch action"
+  page: null
+  status: missing
+- id: action-list
+  feature: "List action"
+  page: null
+  status: missing
+- id: action-clear-all
+  feature: "Clear All action"
+  page: null
+  status: missing
+- id: action-display-death-recap
+  feature: "Display Death Recap action"
+  page: null
+  status: missing
+- id: action-speak-options
+  feature: "Speak options (rate, volume, speak next, interrupt)"
+  page: null
+  status: missing
+- id: trigger-hotkeys
+  feature: "Trigger hotkeys"
+  page: null
+  status: missing
+- id: combat-statistics
+  feature: "Combat Statistics, DPS meter and pets"
+  page: null
+  status: missing
+- id: floating-combat-text
+  feature: "Floating combat text"
+  page: null
+  status: missing
+- id: combat-log-sync
+  feature: "Combat Log Sync"
+  page: null
+  status: missing
+- id: settings
+  feature: "Settings window"
+  page: null
+  status: missing
+- id: hotkey-menu
+  feature: "Hotkeys menu"
+  page: null
+  status: missing
+- id: supported-servers
+  feature: "Supported servers"
+  page: null
+  status: missing
+- id: update-notes
+  feature: "Update Notes window"
+  page: null
+  status: missing

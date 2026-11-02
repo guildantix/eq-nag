@@ -1,3 +1,9 @@
+---
+title: Searching your triggers
+parent: How-to guides
+nav_order: 3
+---
+
 ## Finding a Trigger
 
 After a while, there can be a lot of triggers and finding a specific trigger can be rather daunting even with everything organized into folders.  We can use the Search function on the Triggers tab to find a specific trigger.

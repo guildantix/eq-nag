@@ -1,3 +1,10 @@
+---
+outdated: true
+title: Death Recap
+parent: How-to guides
+nav_order: 9
+---
+
 ## Death Recap
 
 ![image](https://user-images.githubusercontent.com/66176124/193347315-c9a108c7-4492-4c04-bff6-27b544685e25.png)

@@ -1,0 +1,14 @@
+<script>
+  ( function () {
+    try {
+      var saved = localStorage.getItem( 'nag-theme' );
+      if ( saved === 'nag-light' || saved === 'nag-dark' ) {
+        document.documentElement.setAttribute( 'data-nag-theme', saved );
+        if ( saved !== 'nag-dark' ) {
+          jtd.setTheme( saved );
+        }
+      }
+    } catch ( error ) {
+    }
+  } )();
+</script>
