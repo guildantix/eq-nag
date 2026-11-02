@@ -32,7 +32,7 @@ Copy the page of the **spell**, not an item or a scroll. The address has `spells
 3. Click the three dots at the top right.
 4. Click **Auto Generation**, then under **EQ Spell Resources** click **Buff Timer**.
 
-   ![The three-dot menu in the Triggers tab, open on Auto Generation, then EQ Spell Resources, with DoT Timer and Buff Timer]({{ '/assets/images/add-buff-timer/triggers-menu.png' | relative_url }})
+   ![The three-dot menu in the Triggers tab, open on Auto Generation, then EQ Spell Resources, with DoT Timer and Buff Timer]({{ '/assets/images/first-trigger/triggers-menu.png' | relative_url }})
 
 You will see a window called **Import Buff Timer (EQ Spell Resources)**.
 

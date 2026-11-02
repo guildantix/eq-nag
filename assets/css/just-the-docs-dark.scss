@@ -1,3 +1,5 @@
 ---
 ---
+// Replaces the theme's stock dark stylesheet. custom.scss is compiled into every theme
+// stylesheet and needs the nag-* colour variables, which only the Nag schemes define.
 {% include css/just-the-docs.scss.liquid color_scheme="nag-dark" %}

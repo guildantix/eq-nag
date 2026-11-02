@@ -162,6 +162,7 @@ $nag-callouts: (
     }
 
     .main-content-wrap {
+      max-width: calc(56rem + 8rem);
       padding-right: 4rem;
       padding-left: 4rem;
     }
@@ -183,5 +184,11 @@ $nag-callouts: (
 
   .side-bar + .main {
     margin-left: $nav-width;
+  }
+}
+
+@media print {
+  .side-bar {
+    width: 100%;
   }
 }
