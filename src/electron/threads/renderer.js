@@ -9,6 +9,7 @@ const { ipcRenderer } = require( 'electron' );
 const Handlebars = require( "handlebars" );
 const { sanitizeHtml } = require( '../utilities/html' );
 const perf = require( '../utilities/perf' );
+const triggerPerformance = require( '../utilities/trigger-performance' );
 const _ = require( 'lodash' );
 const customAlphabet = require( 'nanoid' ).customAlphabet;
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
@@ -1503,8 +1504,8 @@ function Renderer( originX, originY, glowOnStart ) {
          */
         function ( event, model ) {
             model.added = new Date();
-            render( model.overlayId, model );
-        } ); 
+            measureDraw( () => getComponentEntry( model, triggerPerformance.MeasureKinds.draw ), () => render( model.overlayId, model ) );
+        } );
     
     ipcRenderer.on( 'renderer:execute:list-timer',
         /**
@@ -1555,7 +1556,9 @@ function Renderer( originX, originY, glowOnStart ) {
                 
                 } else if ( model.updateType === 'list' ) {
 
-                    renderListAction( Object.assign( new RendererComponent(), model.model ), true );
+                    measureDraw(
+                        () => getComponentEntry( model.model, triggerPerformance.MeasureKinds.draw ),
+                        () => renderListAction( Object.assign( new RendererComponent(), model.model ), true ) );
 
                 }
             }
@@ -1597,11 +1600,13 @@ function Renderer( originX, originY, glowOnStart ) {
             model.added = new Date();
             // renderFct( model.overlayId, model );
 
-            if ( Array.isArray( model ) ) {
-                model.forEach( m => renderFct2( m ) );
-            } else {
-                renderFct2( model );
-            }
+            measureDraw( getCombatTextEntry, () => {
+                if ( Array.isArray( model ) ) {
+                    model.forEach( m => renderFct2( m ) );
+                } else {
+                    renderFct2( model );
+                }
+            } );
 
             // console.log( 'fct render time:', Array.isArray( model ) ? model.length : 'naa', performance.now() - now );
         } );
@@ -3456,7 +3461,7 @@ function executeListTimer( instanceId, name, timer, duration ) {
             }
 
             if ( !list.intervalId || list.intervalId === -1 ) {
-                list.intervalId = setInterval( () => {
+                list.intervalId = setInterval( measureUpdates( list, () => {
                     if ( list.objectModel.listTimers?.length > 0 ) {
                         for ( let i = list.objectModel.listTimers.length - 1; i >= 0; i-- ) {
                             const listTimer = list.objectModel.listTimers[ i ];
@@ -3481,7 +3486,7 @@ function executeListTimer( instanceId, name, timer, duration ) {
                         list.intervalId = -1;
                     }
 
-                }, 500 );
+                } ), 500 );
             }
         }
     }
@@ -4586,7 +4591,7 @@ function applyTimerSettings( overlayId, contentArea, comp, group ) {
     }
 
     // Set the update method.
-    comp.intervalId = startInterval( perf.wrap( 'renderer: timer update', () => {
+    comp.intervalId = startInterval( measureUpdates( comp, perf.wrap( 'renderer: timer update', () => {
 
         let perc = 0;
         let infinite = false;
@@ -4801,7 +4806,7 @@ function applyTimerSettings( overlayId, contentArea, comp, group ) {
             }
         }
 
-    } ), 250 );
+    } ) ), 250 );
 }
 
 
@@ -5544,9 +5549,132 @@ function clearAll() {
     ipcRenderer.send( 'log:clear-all:done', null );
 }
 
+
+
+
+
+
+
+
+
+
+/**
+ * Runs the given drawing work, timing it for the Performance Monitor when
+ * the monitor is on.
+ *
+ * @param {() => import('../utilities/trigger-performance').MeasureEntry} getEntry Returns the row to record the time on.
+ * @param {() => void} draw The drawing work.
+ */
+function measureDraw( getEntry, draw ) {
+    if ( !triggerPerformance.enabled ) {
+        draw();
+        return;
+    }
+
+    const startTime = triggerPerformance.now();
+
+    try {
+        draw();
+    } finally {
+        triggerPerformance.record( getEntry(), startTime );
+    }
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Returns a version of a component's repeating update (e.g. a timer's
+ * countdown) that's timed for the Performance Monitor when the monitor is
+ * on. The monitor can be turned on while the timer runs, so this checks on
+ * each update.
+ *
+ * @param {OverlayComponent} comp The component being updated.
+ * @param {() => void} update The update work.
+ * @returns {() => void}
+ */
+function measureUpdates( comp, update ) {
+    return () => measureDraw( () => getComponentEntry( comp, triggerPerformance.MeasureKinds.update ), update );
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Returns the Performance Monitor row for drawing or updating the given
+ * component's trigger action.
+ *
+ * @param {OverlayComponent} comp The component.
+ * @param {string} kind MeasureKinds.draw or MeasureKinds.update.
+ * @returns {import('../utilities/trigger-performance').MeasureEntry}
+ */
+function getComponentEntry( comp, kind ) {
+    return triggerPerformance.getEntry(
+        { triggerId: comp?.triggerId ?? 'unknown' },
+        kind,
+        comp?.action?.actionId ?? comp?.actionId ?? 'unknown',
+        triggerPerformance.describeAction( comp?.action ) );
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Returns the Performance Monitor row for combat text (FCT), which isn't a
+ * trigger's.
+ *
+ * @returns {import('../utilities/trigger-performance').MeasureEntry}
+ */
+function getCombatTextEntry() {
+    return triggerPerformance.getEntry( { triggerId: 'combat-text', triggerName: 'Combat text (FCT)' }, triggerPerformance.MeasureKinds.draw, 'combat-text', 'Combat text' );
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Returns the Performance Monitor row for the DPS meter, which isn't a
+ * trigger's.
+ *
+ * @returns {import('../utilities/trigger-performance').MeasureEntry}
+ */
+function getDpsMeterEntry() {
+    return triggerPerformance.getEntry( { triggerId: 'dps-meter', triggerName: 'DPS meter' }, triggerPerformance.MeasureKinds.draw, 'dps-meter', 'DPS meter' );
+}
+
 // Performance taps (no-ops unless Nag is started with --perf; see utilities/perf.js).
 render = perf.wrap( 'renderer: render', render );
 renderFct = perf.wrap( 'renderer: render FCT', renderFct );
 renderFct2 = perf.wrap( 'renderer: render FCT2', renderFct2 );
+
+// The DPS meter is redrawn from several places, so it's timed here.
+const drawDpsItems = renderDpsItems;
+renderDpsItems = characterName => measureDraw( getDpsMeterEntry, () => drawDpsItems( characterName ) );
+
+triggerPerformance.start( 'Overlays' );
 
 module.exports = Renderer;

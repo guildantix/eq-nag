@@ -1,4 +1,5 @@
 import { Injectable, NgZone } from '@angular/core';
+import { TriggerPerformanceState } from './dialogs/trigger-performance-dialog/trigger-performance.model';
 import * as Electron from 'electron';
 import { UpdateInfo } from 'electron-updater';
 import { Observable, Observer, Subject } from 'rxjs';
@@ -2822,6 +2823,127 @@ export class IpcService {
         } );
 
         return obs;
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Returns the Performance Monitor's numbers: each window's trigger
+     * timings, each process's CPU use and the trace recording.
+     */
+    public getTriggerPerformance(): Promise<TriggerPerformanceState> {
+        return this.invokeTriggerPerformance( 'trigger:performance:get-state' );
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Turns the Performance Monitor on or off. It's always off when Nag
+     * starts.
+     *
+     * @param enabled True to turn it on.
+     */
+    public setTriggerPerformanceEnabled( enabled: boolean ): Promise<TriggerPerformanceState> {
+        return this.invokeTriggerPerformance( 'trigger:performance:set-enabled', enabled );
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Clears the Performance Monitor's numbers and starts measuring again.
+     */
+    public resetTriggerPerformance(): Promise<TriggerPerformanceState> {
+        return this.invokeTriggerPerformance( 'trigger:performance:reset' );
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Starts recording a Chromium trace of every Nag process.
+     */
+    public startPerformanceTrace(): Promise<TriggerPerformanceState> {
+        return this.invokeTriggerPerformance( 'trigger:performance:start-trace' );
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Stops recording the Chromium trace and saves it.
+     */
+    public stopPerformanceTrace(): Promise<TriggerPerformanceState> {
+        return this.invokeTriggerPerformance( 'trigger:performance:stop-trace' );
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Opens the folder with the last saved trace in File Explorer.
+     */
+    public showPerformanceTraceFile(): void {
+        window.api.ipc.send( 'trigger:performance:show-trace' );
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Sends a Performance Monitor request to the main process and returns
+     * its answer inside Angular's zone, so the window updates.
+     *
+     * @param channel The request channel.
+     * @param value The request's value, if any.
+     */
+    private invokeTriggerPerformance( channel: string, value?: boolean ): Promise<TriggerPerformanceState> {
+        return window.api.ipc.invoke<TriggerPerformanceState>( channel, value )
+            .then( state => this.ngZone.run( () => state ) );
     }
 
 }

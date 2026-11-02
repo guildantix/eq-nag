@@ -40,6 +40,7 @@ import LogBootstrapper from "./src/electron/log-bootstrap.js";
 import GameResources from "./src/electron/data/game-resources.js";
 import FilesDatabaseStore from "./src/electron/data/files-database.js";
 import GinaImporter from "./src/electron/gina-importer.js";
+import TriggerPerformanceMonitor from './src/electron/trigger-performance-monitor.js';
 
 import {
   IpcMessage,
@@ -85,6 +86,7 @@ const fileDatabase = new FilesDatabaseStore();
 const ginaImporter = new GinaImporter();
 // const verifiedPlayersDatabase = new VerifiedPlayersStore();
 const combatDatabase = new CombatDatabase();
+const triggerPerformanceMonitor = new TriggerPerformanceMonitor();
 /** @type {Tray} */
 var trayMenu = null;
 /** @type {string | undefined} */
@@ -1068,6 +1070,7 @@ app.whenReady().then( () => {
     logBootstrap.boostrapLogWatchers( mainWindowRef, app.isDev(), characterDatabase, sendTick, userPreferences, appLogException, combatDatabase );
     gameResources.attachIpcEvents( mainWindowRef, userPreferences );
     ginaImporter.initGinaImporter( mainWindowRef, app.isDev() );
+    triggerPerformanceMonitor.attachIpcEvents();
 
     // TODO: Update this method with the new mouse.js implementation.
     // TODO: There may still be some renderer forwarding that needs to be removed.

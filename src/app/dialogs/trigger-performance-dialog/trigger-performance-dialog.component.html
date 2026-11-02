@@ -1,0 +1,134 @@
+<h2 mat-dialog-title>Performance Monitor</h2>
+
+<mat-dialog-content>
+
+    <p class="intro">
+        Shows how much time each trigger takes: checking its phrases against every log line, running its actions, and drawing them on your overlays.
+        Measuring adds a little work of its own, so turn it off when you're done. It's always off when Nag starts.
+    </p>
+
+    <div class="controls">
+        <mat-slide-toggle [checked]="state?.enabled" (change)="setEnabled( $event.checked )" [disabled]="!state">Measure trigger performance</mat-slide-toggle>
+        <span class="elapsed" *ngIf="state?.enabled">Measuring for {{ formatDuration( state.elapsedSeconds ) }}</span>
+        <span class="spacer"></span>
+        <button mat-button (click)="reset()" [disabled]="!state?.enabled">Reset</button>
+        <button mat-button (click)="copyReport()" [disabled]="!state?.enabled">Copy report</button>
+    </div>
+
+    <ng-container *ngIf="state?.enabled">
+
+        <p class="empty" *ngIf="groups.length === 0">Waiting for log lines… Numbers appear here as you play.</p>
+
+        <table class="performance-table" *ngFor="let group of groups">
+            <thead>
+                <tr>
+                    <th class="name">{{ group.title }}</th>
+                    <th matTooltip="Checking the trigger's conditions and phrases against log lines.">Matching</th>
+                    <th matTooltip="Running the trigger's actions when it matches.">Actions</th>
+                    <th matTooltip="Drawing the actions on your overlays, including timer countdowns.">Drawing</th>
+                    <th>Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                <ng-container *ngFor="let row of group.rows">
+                    <tr class="trigger-row" (click)="toggleDetails( row.triggerId )">
+                        <td class="name">
+                            <mat-icon class="expand-icon">{{ expandedTriggerIds.has( row.triggerId ) ? 'expand_more' : 'chevron_right' }}</mat-icon>
+                            {{ row.name }}
+                        </td>
+                        <td>{{ formatTime( row.matchingMilliseconds ) }}</td>
+                        <td>{{ formatTime( row.actionMilliseconds ) }}</td>
+                        <td>{{ formatTime( row.drawingMilliseconds ) }}</td>
+                        <td class="total">{{ formatTime( row.totalMilliseconds ) }}</td>
+                    </tr>
+                    <tr class="details-row" *ngIf="expandedTriggerIds.has( row.triggerId )">
+                        <td colspan="5">
+                            <table class="details-table">
+                                <thead>
+                                    <tr>
+                                        <th>What</th>
+                                        <th class="label">Phrase or action</th>
+                                        <th>Times</th>
+                                        <th matTooltip="Phrases: times it matched. Conditions: times they passed.">Matched</th>
+                                        <th>Total</th>
+                                        <th>Average</th>
+                                        <th>Slowest</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr *ngFor="let detail of row.details">
+                                        <td>{{ describeKind( detail ) }}</td>
+                                        <td class="label" [matTooltip]="detail.label">{{ detail.label }}</td>
+                                        <td>{{ detail.count }}</td>
+                                        <td>{{ showsMatches( detail ) ? detail.matches : '' }}</td>
+                                        <td>{{ formatTime( detail.totalMilliseconds ) }}</td>
+                                        <td>{{ formatAverage( detail ) }}</td>
+                                        <td>{{ formatTime( detail.maximumMilliseconds ) }}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </td>
+                    </tr>
+                </ng-container>
+            </tbody>
+        </table>
+
+        <h3>Windows</h3>
+        <p class="hint">Time measured in each of Nag's background windows.</p>
+        <table class="performance-table compact">
+            <tbody>
+                <tr *ngFor="let source of getSourceTotals()">
+                    <td class="name">{{ source.source }}</td>
+                    <td class="total">{{ formatTime( source.milliseconds ) }}</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>Processes</h3>
+        <p class="hint">
+            CPU use of each of Nag's processes, as a share of your whole PC like Task Manager shows it.
+            Time a process spends that isn't in the tables above (for example in the graphics process) is the cost of drawing and of Nag itself.
+        </p>
+        <table class="performance-table compact">
+            <thead>
+                <tr>
+                    <th class="name">Process</th>
+                    <th>CPU now</th>
+                    <th>CPU average</th>
+                    <th>Memory</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr *ngFor="let process of state.processes">
+                    <td class="name">{{ process.label }}</td>
+                    <td>{{ formatPercent( process.currentPercent ) }}</td>
+                    <td>{{ formatPercent( process.averagePercent ) }}</td>
+                    <td>{{ process.memoryMegabytes }} MB</td>
+                </tr>
+            </tbody>
+        </table>
+
+    </ng-container>
+
+    <h3>Advanced: record a trace</h3>
+    <p class="hint">
+        Records a detailed timeline of everything Nag does for {{ state?.trace.durationSeconds ?? 30 }} seconds, including drawing and graphics.
+        It's meant for developers: send the file to the Nag team, or open it yourself at ui.perfetto.dev. Recording slows Nag down a little while it runs.
+    </p>
+    <div class="controls">
+        <button mat-stroked-button (click)="toggleTrace()" [disabled]="!state">{{ state?.trace.recording ? 'Stop recording' : 'Record trace' }}</button>
+        <span class="elapsed" *ngIf="state?.trace.recording">Recording… {{ formatDuration( state.trace.elapsedSeconds ) }}</span>
+        <ng-container *ngIf="!state?.trace.recording && state?.trace.lastFilePath">
+            <span class="elapsed">Saved {{ state.trace.lastFilePath }}</span>
+            <button mat-button (click)="showTraceFile()">Show file</button>
+        </ng-container>
+    </div>
+    <p class="color-red" *ngIf="state?.trace.error">{{ state.trace.error }}</p>
+
+</mat-dialog-content>
+
+<mat-dialog-actions>
+
+    <button mat-button (click)="dialogRef.close()">Close</button>
+
+</mat-dialog-actions>

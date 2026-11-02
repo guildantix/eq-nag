@@ -12,6 +12,7 @@ import { NewTriggerFolderDialogComponent } from './new-trigger-folder-dialog/new
 import { SelectTriggerFolderDialogComponent } from './select-trigger-folder-dialog/select-trigger-folder-dialog.component';
 import { InputDialogComponent } from './input-dialog/input-dialog.component';
 import { EqsrUrlDialogComponent } from './eqsr-url-dialog/eqsr-url-dialog.component';
+import { TriggerPerformanceDialogComponent } from './trigger-performance-dialog/trigger-performance-dialog.component';
 import { InputDialogModel } from './input-dialog/input-dialog.model';
 import { NotificationDialogModel, NotificationTypes } from './notification-dialog/notification-dialog.model';
 import { NotificationDialogComponent } from './notification-dialog/notification-dialog.component';
@@ -684,6 +685,28 @@ export class DialogService {
             panelClass: 'app-dialog',
         } ).afterClosed();
         
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Opens the Performance Monitor, which shows how much time each trigger
+     * takes.
+     */
+    public showTriggerPerformanceDialog(): void {
+        this.dialog.open( TriggerPerformanceDialogComponent, {
+            width: '1000px',
+            maxWidth: '95vw',
+            maxHeight: '90vh',
+            panelClass: 'app-dialog',
+        } );
     }
 
 

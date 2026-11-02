@@ -21,6 +21,7 @@ const perf = require( '../utilities/perf' );
 // Triggers are timed on one log line in ten (perf-taps.js scales them up), so
 // the per-trigger timing doesn't slow the log watcher down much.
 let perfTriggerSample = 0;
+const triggerPerformance = require( '../utilities/trigger-performance' );
 const { LogHistoryManager } = require( '../utilities/log-console' );
 const { createChatRoomLink } = require( '../utilities/peer-to-peer' );
 const { nagException, nagLog } = require( '../utilities/nag-console' );
@@ -775,6 +776,13 @@ function LogWatcher(character, logPosition) {
 
     ipcRenderer.send( 'settings:get:persistent-storage', null );
 
+    // The Performance Monitor's timing is added to the triggers when they're
+    // built, so turning it on or off rebuilds them.
+    triggerPerformance.start( `Log watcher (${characterName})`, () => {
+        generateTriggerFns();
+        initCounters();
+    } );
+
     speechSynthesis.onvoiceschanged = () => {
         voiceOptions = speechSynthesis.getVoices();
     };
@@ -969,6 +977,16 @@ function initCounters() {
                             }
                         }
                     };
+
+                    if ( triggerPerformance.enabled && resetsOnPhrases ) {
+                        const entry = triggerPerformance.getEntry(
+                            getPerformanceTrigger( trigger ),
+                            triggerPerformance.MeasureKinds.watchedPhrases,
+                            `counter-reset-${action.actionId}`,
+                            `Counter reset phrases: ${action.displayText}` );
+                        const counter = counters[ action.displayText ];
+                        counter._parse = triggerPerformance.timeFunction( entry, counter._parse );
+                    }
                 }
             } );
         }
@@ -1404,7 +1422,28 @@ function generateTriggerFns() {
                         }
                     }
                 } );
-                
+
+                if ( triggerPerformance.enabled ) {
+                    // Time each phrase and the trigger's conditions for the
+                    // Performance Monitor. Only phrases with text have parsers,
+                    // in the same order as the trigger's phrases.
+                    const performanceTrigger = getPerformanceTrigger( trigger );
+                    const phrasesWithParsers = trigger.capturePhrases.filter( phrase => phrase.phrase?.length > 0 );
+
+                    _phraseParsers = _phraseParsers.map( ( parser, index ) => {
+                        const phrase = phrasesWithParsers[ index ];
+                        const entry = triggerPerformance.getEntry(
+                            performanceTrigger,
+                            triggerPerformance.MeasureKinds.phrase,
+                            phrase.phraseId,
+                            phrase.phrase );
+                        return triggerPerformance.timeFunction( entry, parser );
+                    } );
+
+                    const conditionsEntry = triggerPerformance.getEntry( performanceTrigger, triggerPerformance.MeasureKinds.conditions, 'conditions', 'Conditions' );
+                    trigger._checkConditions = triggerPerformance.timeFunction( conditionsEntry, trigger._checkConditions );
+                }
+
                 // Any match.
                 if ( trigger.captureMethod === 'Any match' ) {
     
@@ -1718,7 +1757,7 @@ function parseLogEntries( raw, simulating, padTime ) {
             cancellableComponents.forEach( token => {
 
                 try {
-                    if ( token._parse( log ) ) {
+                    if ( parseWatchedPhrases( token, 'end-early', 'End Early phrases', log ) ) {
                         // Broadcast the remove action.
                         ipcRenderer.send( 'overlay:destroy:component', token.instanceId );
     
@@ -1742,7 +1781,7 @@ function parseLogEntries( raw, simulating, padTime ) {
                 const token = secondaryTriggerActions[ i ];
                 try {
 
-                    if ( token._parse( log ) ) {
+                    if ( parseWatchedPhrases( token, 'secondary', 'Secondary action phrases', log ) ) {
 
                         try {
                             token._trigger( token.instanceId, timestamp );
@@ -1767,7 +1806,7 @@ function parseLogEntries( raw, simulating, padTime ) {
                 const token = dotWornOffTracking[ i ];
                 try {
 
-                    if ( token._parse( log ) ) {
+                    if ( parseWatchedPhrases( token, 'dot-worn-off', 'DoT worn off phrases', log ) ) {
 
                         try {
                             token._trigger( token.instanceId, timestamp );
@@ -1894,16 +1933,119 @@ function parseLogEntries( raw, simulating, padTime ) {
 
 
 /**
- * 
- * @param {LogTrigger} trigger 
- * @param {TriggerAction} action 
- * @param {Date} timestamp 
- * @param {PhraseParse} res 
- * @param {number} deltaTime 
- * @param {boolean} simulating
- * @param {{instanceId?: string} | undefined} options
+ * Executes the given trigger action, timing it for the Performance Monitor
+ * when the monitor is on.
+ *
+ * @param {LogTrigger} trigger The trigger the action belongs to.
+ * @param {TriggerAction} action The action to execute.
+ * @param {Date} timestamp The timestamp of the log entry.
+ * @param {PhraseParse} res The information from the parsed phrase.
+ * @param {number} deltaTime The time since the previous sequential match, in milliseconds.
+ * @param {boolean} simulating True when the log entry is being simulated.
+ * @param {{instanceId?: string} | undefined} options The sub-action options.
  */
 function executeTriggerAction( trigger, action, timestamp, res, deltaTime, simulating, options ) {
+    if ( !triggerPerformance.enabled ) {
+        runTriggerAction( trigger, action, timestamp, res, deltaTime, simulating, options );
+        return;
+    }
+
+    const startTime = triggerPerformance.now();
+
+    try {
+        runTriggerAction( trigger, action, timestamp, res, deltaTime, simulating, options );
+    } finally {
+        const entry = triggerPerformance.getEntry(
+            getPerformanceTrigger( trigger ),
+            triggerPerformance.MeasureKinds.action,
+            action.actionId,
+            triggerPerformance.describeAction( action ) );
+        triggerPerformance.record( entry, startTime );
+    }
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Returns the trigger details the Performance Monitor shows next to its
+ * numbers.
+ *
+ * @param {LogTrigger} trigger The trigger.
+ * @returns {{ triggerId: string, triggerName: string, predefined: boolean }}
+ */
+function getPerformanceTrigger( trigger ) {
+    return {
+        triggerId: trigger?.triggerId ?? 'unknown',
+        triggerName: trigger?.name ?? 'Unknown trigger',
+        predefined: trigger?.predefined === true,
+    };
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Checks the given log entry against an active timer's watched phrases (End
+ * Early, secondary action or DoT worn off phrases), timing it for the
+ * Performance Monitor when the monitor is on.
+ *
+ * @param {{ _parse: (logEntry: string) => boolean, instanceId: string }} token The active timer's phrase checker.
+ * @param {string} id Which kind of watched phrases these are, e.g. "end-early".
+ * @param {string} label What the Performance Monitor calls these phrases.
+ * @param {string} logEntry The log entry, without its timestamp.
+ * @returns {boolean} True when a phrase matched.
+ */
+function parseWatchedPhrases( token, id, label, logEntry ) {
+    if ( !triggerPerformance.enabled ) {
+        return token._parse( logEntry );
+    }
+
+    const startTime = triggerPerformance.now();
+    const matched = token._parse( logEntry );
+    const entry = triggerPerformance.getEntry(
+        getPerformanceTrigger( actionInstances[ token.instanceId ]?.trigger ),
+        triggerPerformance.MeasureKinds.watchedPhrases,
+        id,
+        label );
+    triggerPerformance.record( entry, startTime, matched === true );
+
+    return matched;
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Executes the given trigger action.
+ *
+ * @param {LogTrigger} trigger The trigger the action belongs to.
+ * @param {TriggerAction} action The action to execute.
+ * @param {Date} timestamp The timestamp of the log entry.
+ * @param {PhraseParse} res The information from the parsed phrase.
+ * @param {number} deltaTime The time since the previous sequential match, in milliseconds.
+ * @param {boolean} simulating True when the log entry is being simulated.
+ * @param {{instanceId?: string} | undefined} options The sub-action options.
+ */
+function runTriggerAction( trigger, action, timestamp, res, deltaTime, simulating, options ) {
 
     if ( action.actionType === ActionTypes.DisplayText ) {
         /* --== Display Text ==-- */

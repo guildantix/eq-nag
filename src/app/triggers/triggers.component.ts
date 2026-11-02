@@ -2074,6 +2074,23 @@ export class TriggersComponent implements OnInit {
 
 
     /**
+     * Opens the Performance Monitor, which shows how much time each trigger
+     * takes.
+     */
+    public openPerformanceMonitor(): void {
+        this.dialogService.showTriggerPerformanceDialog();
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
      * Opens a model to allow the user to paste in quick share codes.
      */
     installMultiCode() {

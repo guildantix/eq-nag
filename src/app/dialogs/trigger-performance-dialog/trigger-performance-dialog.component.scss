@@ -1,0 +1,141 @@
+.intro,
+.hint {
+    color: #b0b0b0;
+    font-size: 13px;
+}
+
+h3 {
+    margin: 24px 0 4px;
+    font-weight: 300;
+}
+
+.controls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 8px 0 16px;
+}
+
+.spacer {
+    flex: 1;
+}
+
+.elapsed {
+    color: #b0b0b0;
+    font-size: 13px;
+    word-break: break-all;
+}
+
+.empty {
+    color: #b0b0b0;
+    font-style: italic;
+}
+
+// The dialog content has 24px of padding on each side. The tables reach past
+// it to the dialog's edges, so the row backgrounds fill the whole width, and
+// the outer cells get that space back as padding, so the text doesn't move.
+$dialog-padding: 24px;
+
+.performance-table {
+    width: calc( 100% + #{ $dialog-padding * 2 } );
+    margin: 0 ( -$dialog-padding ) 16px;
+    border-collapse: collapse;
+    font-size: 13px;
+
+    th,
+    td {
+        padding: 4px 8px;
+        text-align: right;
+        white-space: nowrap;
+    }
+
+    > thead > tr > :first-child,
+    > tbody > tr > :first-child {
+        padding-left: $dialog-padding + 8px;
+    }
+
+    > thead > tr > :last-child,
+    > tbody > tr > :last-child {
+        padding-right: $dialog-padding + 8px;
+    }
+
+    th {
+        font-weight: 500;
+        color: #d0d0d0;
+        border-bottom: 1px solid #3a3a3a;
+    }
+
+    .name {
+        text-align: left;
+        width: 100%;
+        white-space: normal;
+    }
+
+    .total {
+        font-weight: 500;
+    }
+
+    &.compact {
+        width: auto;
+        min-width: calc( 50% + #{ $dialog-padding } );
+    }
+}
+
+.trigger-row {
+    cursor: pointer;
+
+    &:hover {
+        background-color: rgba( 255, 255, 255, 0.05 );
+    }
+}
+
+.expand-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+    vertical-align: middle;
+}
+
+// The details reach the dialog's edges too; their first column keeps the
+// 26px indent under the trigger name as padding instead.
+$details-indent: 26px;
+
+.performance-table > tbody > .details-row > td {
+    padding: 0 0 8px;
+}
+
+.details-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+    color: #c8c8c8;
+
+    th,
+    td {
+        padding: 2px 8px;
+        text-align: right;
+        white-space: nowrap;
+    }
+
+    th:nth-child( 1 ),
+    td:nth-child( 1 ) {
+        width: 120px + $dialog-padding + $details-indent;
+        padding-left: $dialog-padding + $details-indent + 8px;
+        text-align: left;
+    }
+
+    th:last-child,
+    td:last-child {
+        padding-right: $dialog-padding + 8px;
+    }
+
+    // Long phrases are cut off here; the whole phrase shows when you point
+    // at it.
+    .label {
+        width: 32%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        text-align: left;
+        font-family: Consolas, monospace;
+    }
+}
