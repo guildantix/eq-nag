@@ -1,8 +1,8 @@
 # Writing the Nag docs
 
 The docs are a [Jekyll](https://jekyllrb.com/) site using the
-[Just the Docs](https://just-the-docs.com/) theme, published from this folder
-by GitHub Pages. This file is not part of the site.
+[Just the Docs](https://just-the-docs.com/) theme, published from the
+`gh-pages` branch by GitHub Pages. This file is not part of the site.
 
 ## How pages are organised
 
@@ -82,7 +82,7 @@ spelling to match the app. Show phrases exactly as typed in Nag.
 - Use made-up names only, such as `Soandso` for a character and `Testserver`
   for a server. No real characters, guilds, chat, user paths or emails.
 - Crop to the panel or dialog, not the whole desktop.
-- Save PNG files under `docs/assets/images/`, and link them with
+- Save PNG files under `assets/images/`, and link them with
   `{{ '/assets/images/name.png' | relative_url }}`.
 - Give every image alt text that says what it shows and what to look at.
 - Retake a screenshot when the UI changes, and bump `last_verified` on the page.
@@ -104,7 +104,6 @@ version, also change `applies_to`.
 You don't need Ruby to contribute; GitHub builds the site. To preview:
 
 ```
-cd docs
 bundle install
 bundle exec jekyll serve --baseurl /eq-nag
 ```
