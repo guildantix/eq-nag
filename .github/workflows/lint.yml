@@ -1,0 +1,36 @@
+name: Code style
+
+# Checks every pull request against "Code Styles.md": ESLint (eslint.config.js)
+# plus the 10-empty-lines rule, on the lines the pull request adds or changes
+# only. Problems show up on the pull request's "Files changed" tab.
+#
+# Run the same check locally with `npm run lint`.
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0   # history, to compare with the base branch
+
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 18
+          cache: npm
+
+      # Only the linter is needed: skip install scripts (Electron download, native builds).
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Check changed lines
+        run: node tools/lint/lint-changed.mjs --base "${{ github.event.pull_request.base.sha }}"
