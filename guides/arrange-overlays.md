@@ -1,3 +1,9 @@
+---
+title: Arrange your overlays
+parent: How-to guides
+nav_order: 5
+---
+
 ## Arrange your Overlays
 
 Start by navigating to the Overlays tab.

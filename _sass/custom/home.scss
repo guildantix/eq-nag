@@ -1,0 +1,123 @@
+.nag-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+  margin: 2rem 0 3rem;
+
+  .btn {
+    margin: 0;
+  }
+}
+
+.nag-small {
+  font-size: 0.8125rem;
+  color: $nag-muted;
+}
+
+.nag-steps,
+.nag-cards {
+  display: grid;
+  gap: 1.5rem;
+  margin: 1.5rem 0 3.5rem;
+  padding: 0;
+  list-style: none;
+}
+
+.nag-steps {
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  counter-reset: nag-step;
+}
+
+.nag-cards {
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+}
+
+a.nag-step,
+a.nag-card {
+  display: block;
+  height: 100%;
+  padding: 1.5rem;
+  border: 1px solid $border-color;
+  border-radius: 6px;
+  background-color: $nag-surface;
+  color: $body-text-color;
+  text-decoration: none;
+
+  &:hover {
+    border-color: $link-color;
+    text-decoration: none;
+  }
+
+  &:focus-visible {
+    outline: 2px solid $link-color;
+    outline-offset: 2px;
+  }
+}
+
+a.nag-step {
+  counter-increment: nag-step;
+}
+
+a.nag-step::before {
+  content: counter(nag-step);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  margin-bottom: 0.75rem;
+  border-radius: 50%;
+  background-color: $btn-primary-color;
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.nag-card-title {
+  display: block;
+  margin-bottom: 0.25rem;
+  color: $body-heading-color;
+  font-weight: 700;
+}
+
+.nag-card-text {
+  display: block;
+  color: $nag-muted;
+  font-size: 0.875rem;
+}
+
+.nag-whatsnew {
+  margin: 0 0 3.5rem;
+  padding: 1.5rem;
+  border: 1px solid $border-color;
+  border-radius: 6px;
+  background-color: $nag-surface;
+
+  ul {
+    margin: 1rem 0 0;
+  }
+
+  li {
+    margin-bottom: 0.5rem;
+  }
+}
+
+.nag-whatsnew-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+  margin: 0;
+}
+
+.nag-badge {
+  padding: 0.125rem 0.625rem;
+  border: 1px solid $nag-warning;
+  border-radius: 999px;
+  color: $nag-warning;
+  font-size: 0.75rem;
+}
+
+.nag-more {
+  margin-left: auto;
+}

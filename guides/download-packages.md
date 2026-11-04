@@ -1,27 +1,45 @@
-## Downloading Trigger Packages
+---
+title: Downloading trigger packages
+parent: How-to guides
+nav_order: 2
+---
 
-Start by navigating to the Triggers tab and clicking on the blue **\[Trigger Library\]** button.
+# Downloading trigger packages
 
-![image](https://user-images.githubusercontent.com/66176124/136665955-e9b25032-2e33-4ee4-bafd-43b32be7585d.png)
+A package is a ready-made set of triggers that another player shared. Install one from the Trigger Library.
 
-This will open the trigger library dialog.
+1. Click the **Triggers** tab.
+2. Click the blue **Trigger Library** button. A window called **Trigger Library** opens.
 
-![image](https://user-images.githubusercontent.com/66176124/136666015-0af5b4a8-3bad-4f2b-b067-a982e4b8c1a1.png)
+   ![The Trigger Library window with Categories on the left and the Browse Packages list on the right]({{ '/assets/images/download-packages/library-categories.png' | relative_url }})
 
-On the left, you'll find the available trigger packages.
+3. On the left, under **Categories**, click a category. **Installed** shows what you already have.
+4. Click a package in the list. The list shows **Name**, **Author** and **Last Updated**. Click **Name** or **Author** to sort by it.
 
-*This will change relatively soon(ish) to include categories and search features.*
+   ![The Trigger Library with the Spells category picked and its packages listed by Name, Author and Last Updated]({{ '/assets/images/download-packages/library-spells-list.png' | relative_url }})
 
-Select the desired package on the left to view the details of the package.
+5. Look at the package page. You will see its name, a description and every trigger in it.
 
-The top of the package details will show the package name, a quick description of the package, and then begin listing out all of the triggers in the package.
+   ![A package page in the Trigger Library, with its description, its triggers, and the Install Package and Copy Quick Share Code buttons]({{ '/assets/images/download-packages/library-package-page.png' | relative_url }})
 
-![image](https://user-images.githubusercontent.com/66176124/136666099-de4db079-98e3-4098-8ea3-7b46c583119c.png)
+6. To read more about one trigger, hover over the note icon at the end of its row.
+7. Scroll down and click the green **Install Package** button.
 
-If you want to know more about a specific trigger, hover over the note icon.
+You will see the package's triggers in your **Triggers** tab. The button becomes **Uninstall Package**.
 
-![image](https://user-images.githubusercontent.com/66176124/136666125-45116304-e6f9-4b6e-a854-9daf60467a67.png)
+Under the buttons, **History** lists what changed in each version of the package.
 
-At the bottom, often "below the fold", you'll find the green **\[Install Package\]** button and the package update history.
+## If Nag asks about a missing overlay
 
-![image](https://user-images.githubusercontent.com/66176124/136666182-a33a95ed-001a-47fe-be54-56843979a1aa.png)
+An overlay is the on-screen box where timers and alerts show up. Some packages use an overlay you do not have. Nag then opens a window called **Missing an Overlay**.
+
+- Click **Use Existing**, pick one of your overlays under **Existing Overlay**, then click **Use this overlay**.
+- Or click **Copy** to make a copy of the package's overlay. Move and resize it, then click **Done**.
+
+{: .warning }
+If you click **Cancel**, the package is not installed.
+
+{: .tip }
+Click **Back to List** to return to the package list.
+
+To share a package with a friend, click **Copy Quick Share Code** and send them the code. See [Quick Share]({{ '/guides/quick-share' | relative_url }}).

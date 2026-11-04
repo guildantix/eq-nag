@@ -1,0 +1,176 @@
+# Coverage map: feature, page that documents it, status.
+# Status: documented | outdated | missing. Update this file when a page changes.
+- id: install-smartscreen
+  feature: "Install and Windows SmartScreen"
+  page: get-started/install.md
+  status: documented
+- id: setup-wizard
+  feature: "Setup wizard"
+  page: get-started/first-character.md
+  status: documented
+- id: add-character
+  feature: "Add a character"
+  page: get-started/first-character.md
+  status: documented
+- id: download-packages
+  feature: "Download trigger packages"
+  page: guides/download-packages.md
+  status: documented
+- id: find-a-trigger
+  feature: "Search triggers"
+  page: guides/find-a-trigger.md
+  status: documented
+  note: "Screenshots need a refresh."
+- id: disable-triggers
+  feature: "Disable triggers"
+  page: guides/disabling-triggers.md
+  status: documented
+  note: "Screenshots need a refresh."
+- id: arrange-overlays
+  feature: "Arrange overlays"
+  page: guides/arrange-overlays.md
+  status: documented
+  note: "Screenshots need a refresh."
+- id: buff-timer-generator
+  feature: "Buff timer generator"
+  page: guides/add-buff-timer.md
+  status: documented
+- id: dot-timer-generator
+  feature: "DoT timer generator"
+  page: guides/add-dot-timer.md
+  status: documented
+- id: eqsr-reimport
+  feature: "Re-import timers from EQ Spell Resources"
+  page: guides/reimport-allakhazam.md
+  status: documented
+- id: quick-share
+  feature: "Quick Share"
+  page: guides/quick-share.md
+  status: documented
+  note: "Misses the author allow and block list."
+- id: death-recap
+  feature: "Death Recap"
+  page: guides/death-recap.md
+  status: documented
+- id: first-trigger
+  feature: "Make and test a first trigger"
+  page: get-started/first-trigger.md
+  status: documented
+- id: simulate-log
+  feature: "Test with Simulate Log"
+  page: get-started/first-trigger.md
+  status: documented
+- id: gina-import
+  feature: "Import from GINA"
+  page: get-started/from-gina.md
+  status: documented
+- id: regex-visualizer
+  feature: "Regex Visualizer"
+  page: triggers/capture-phrases.md
+  status: documented
+- id: capture-phrases
+  feature: "Capture phrases"
+  page: triggers/capture-phrases.md
+  status: documented
+- id: snippets
+  feature: "Capture and render snippets"
+  page: triggers/snippets.md
+  status: documented
+- id: named-group-conditions
+  feature: "Named group and hide conditions"
+  page: triggers/conditions.md
+  status: documented
+- id: conditions-and-variables
+  feature: "Conditions and variable storage"
+  page: triggers/conditions.md
+  status: documented
+- id: triggers-101
+  feature: "How a trigger works"
+  page: triggers/triggers-101.md
+  status: documented
+- id: regex-primer
+  feature: "Regex primer and live regex tester"
+  page: triggers/regex.md
+  status: documented
+- id: counter-conditions
+  feature: "Counter conditions"
+  page: triggers/conditions.md
+  status: documented
+- id: class-folder-conditions
+  feature: "Class and folder conditions"
+  page: triggers/conditions.md
+  status: documented
+- id: trigger-actions
+  feature: "Trigger actions"
+  page: triggers/actions.md
+  status: documented
+  note: "All 16 action types in the picker."
+- id: action-screen-glow
+  feature: "Screen Glow action"
+  page: triggers/actions.md
+  status: documented
+- id: action-stopwatch
+  feature: "Stopwatch action"
+  page: triggers/timers.md
+  status: documented
+- id: action-list
+  feature: "List action"
+  page: triggers/actions.md
+  status: documented
+  note: "Summary of the tabs. The in-app hints are the detailed reference."
+- id: action-clear-all
+  feature: "Clear All action"
+  page: triggers/actions.md
+  status: documented
+- id: action-display-death-recap
+  feature: "Display Death Recap action"
+  page: triggers/actions.md
+  status: documented
+- id: action-speak-options
+  feature: "Speak options (rate, volume, speak next, interrupt)"
+  page: triggers/actions.md
+  status: documented
+- id: timers-in-depth
+  feature: "Timers: restart behavior, Ending, Ended, End Early, focus effects, hide conditions"
+  page: triggers/timers.md
+  status: documented
+- id: trigger-hotkeys
+  feature: "Trigger hotkeys"
+  page: triggers/hotkeys.md
+  status: documented
+- id: trigger-cookbook
+  feature: "Trigger cookbook"
+  page: triggers/cookbook.md
+  status: documented
+- id: trigger-troubleshooting
+  feature: "Why didn't my trigger fire? checklist"
+  page: triggers/why-didnt-it-fire.md
+  status: documented
+- id: combat-statistics
+  feature: "Combat Statistics, DPS meter and pets"
+  page: null
+  status: missing
+- id: floating-combat-text
+  feature: "Floating combat text"
+  page: null
+  status: missing
+- id: combat-log-sync
+  feature: "Combat Log Sync"
+  page: null
+  status: missing
+- id: settings
+  feature: "Settings window"
+  page: null
+  status: missing
+- id: hotkey-menu
+  feature: "Hotkeys menu"
+  page: null
+  status: missing
+- id: supported-servers
+  feature: "Supported servers"
+  page: null
+  status: missing
+- id: update-notes
+  feature: "Update Notes window"
+  page: whats-new/index.md
+  status: documented
