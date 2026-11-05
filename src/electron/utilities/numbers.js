@@ -32,9 +32,9 @@ function toShorthandString( value ) {
         } else if ( numeric >= 100000 && numeric < 1000000 ) {
             return `${round(numeric / 1000, 0)}k`;
         } else if ( numeric >= 1000000 && numeric < 10000000 ) {
-            return `${round(numeric / 1000000, 1)}m`;
+            return `${round(numeric / 1000000, 1)}M`;
         } else if ( numeric >= 10000000 ) {
-            return `${round(numeric / 1000000, 0).toString().replace( /\B(?=(\d{3})+(?!\d))/g, "," )}m`;
+            return `${round(numeric / 1000000, 0).toString().replace( /\B(?=(\d{3})+(?!\d))/g, "," )}M`;
         }
     }
 }
