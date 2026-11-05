@@ -25,7 +25,7 @@ let rendererOnTopId = null;
  * Interval that sends the cursor position to the renderer, which uses it to
  * decide whether the overlays should take mouse input.
  *
- * @type {number}
+ * @type {NodeJS.Timeout}
  */
 let rendererCursorId = null;
 const rendererCursorPollMs = 33;

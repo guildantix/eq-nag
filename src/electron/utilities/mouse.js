@@ -146,7 +146,6 @@ ipcRenderer.on( 'renderer:cursor', ( event, cursor ) => {
 
 const MouseUtilities = {
     mouseEnabled: mouseEnabled,
-    dynamicMouseIntervalId: null,
     /**
      * Enables dynamic mouse tracking.
      * @param {{x: number, y: number}} screenOrigin The screen coordinates of the origin of the window.
