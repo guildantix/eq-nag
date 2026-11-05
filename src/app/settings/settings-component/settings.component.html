@@ -5,6 +5,13 @@
 </mat-toolbar>
 <div class="tab-content">
 
+    <div class="help-row">
+        <mat-icon class="material-icons-outlined">menu_book</mat-icon>
+        <span class="help-text"><strong>Help &amp; guides</strong> Getting started, triggers and regex, troubleshooting.</span>
+        <span class="spacer"></span>
+        <a class="color-blue" [href]="guidesUrl" target="_blank" rel="noopener">Open the guides <mat-icon class="help-external">open_in_new</mat-icon></a>
+    </div>
+
     <fieldset>
         <legend><span class="title">Log File Maintenance</span></legend>
         <div class="card-property">
