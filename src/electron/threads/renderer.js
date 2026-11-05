@@ -4504,7 +4504,9 @@ function createUngroupedTimer( overlayId, contentArea, comp ) {
 
 
 
+/** @type {OverlayComponent[]} */
 var timerTickComponents = [];
+/** @type {number | null} */
 var timerTickIntervalId = null;
 
 /**
