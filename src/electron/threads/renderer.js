@@ -1815,7 +1815,7 @@ function Renderer( originX, originY, glowOnStart ) {
             
             if ( component ) {
                 if ( model.action === 'setStart' ) {
-                    component.start = model.timestamp;
+                    restartTimerFromStart( component, model.timestamp );
                 } else if ( model.action === 'extendDuration' ) {
                     component.start = DateUtilities.addSeconds( component.start, model.duration );
                 } else if ( model.action === 'clipTimer' ) {
@@ -4858,6 +4858,65 @@ function setTimerLabel( comp, text ) {
 
 
 
+
+
+
+/**
+ * Hides the timer when its action is hidden until ending soon or ended and the hide conditions are met.
+ *
+ * @param {OverlayComponent} comp The timer component.
+ * @returns {boolean} True when the timer was hidden.
+ */
+function applyTimerHidden( comp ) {
+    if ( !comp.action.hideTimer ) {
+        return false;
+    }
+
+    let doHide = true;
+
+    if ( comp.action.hideConditions?.length > 0 ) {
+        let namedGroups = Object.keys( comp.matches?.groups );
+
+        for ( let i = 0; i < comp.action.hideConditions.length; i++ ) {
+            let hc = comp.action.hideConditions[ i ];
+
+            if ( hc.operatorType === OperatorTypes.Equals ) {
+                // If it does not exist or the values do not match, then bad.
+                if ( namedGroups.indexOf( hc.variableName ) === -1 || !StringUtilities.compare( hc.variableValue, comp.matches.groups[ hc.variableName ] ) ) {
+                    doHide = false;
+                    break;
+                }
+
+            } else if ( hc.operatorType === OperatorTypes.DoesNotEqual ) {
+                // If it exists and the value matches, then bad.
+                if ( namedGroups.indexOf( hc.variableName ) > -1 && StringUtilities.compare( hc.variableValue, comp.matches.groups[ hc.variableName ] ) ) {
+                    doHide = false;
+                    break;
+                }
+
+            }
+
+        }
+
+    }
+
+    if ( doHide ) {
+        comp.hidden = comp.action.hideTimer;
+        comp.dom.style.display = 'none';
+    }
+
+    return doHide;
+}
+
+
+
+
+
+
+
+
+
+
 /**
  * Applies the general timer settings to the given component.
  * 
@@ -4896,40 +4955,7 @@ function applyTimerSettings( overlayId, contentArea, comp, group ) {
     }
 
     // Update visibility
-    if ( comp.action.hideTimer ) {
-        let doHide = true;
-
-        if ( comp.action.hideConditions?.length > 0 ) {
-            let namedGroups = Object.keys( comp.matches?.groups );
-
-            for ( let i = 0; i < comp.action.hideConditions.length; i++ ) {
-                let hc = comp.action.hideConditions[ i ];
-
-                if ( hc.operatorType === OperatorTypes.Equals ) {
-                    // If it does not exist or the values do not match, then bad.
-                    if ( namedGroups.indexOf( hc.variableName ) === -1 || !StringUtilities.compare( hc.variableValue, comp.matches.groups[ hc.variableName ] ) ) {
-                        doHide = false;
-                        break;
-                    }
-
-                } else if ( hc.operatorType === OperatorTypes.DoesNotEqual ) {
-                    // If it exists and the value matches, then bad.
-                    if ( namedGroups.indexOf( hc.variableName ) > -1 && StringUtilities.compare( hc.variableValue, comp.matches.groups[ hc.variableName ] ) ) {
-                        doHide = false;
-                        break;
-                    }
-
-                }
-
-            }
-
-        }
-
-        if ( doHide ) {
-            comp.hidden = comp.action.hideTimer;
-            comp.dom.style.display = 'none';
-        }
-    }
+    applyTimerHidden( comp );
 
     // Setting the initial state of the determinate will prevent the progress 
     // bar from jumping from the end to the beginning when shown.
@@ -5209,6 +5235,67 @@ function resetTimerComponentClock( overlayId, comp, repeatCount ) {
 
     // Reset the start duration
     comp.start = new Date( comp.timestamp.getTime() + ( repeatCount * comp.action.duration ) * 1000 );
+    resetTimerComponentState( overlayId, comp );
+
+    return comp;
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Restarts a running timer from the given time, as when the first damage of a DoT arrives.
+ *
+ * @param {OverlayComponent} comp The overlay component to restart.
+ * @param {Date} start The new start time.
+ */
+function restartTimerFromStart( comp, start ) {
+    if ( destroySchedule[ comp.instanceId ] ) {
+        window.clearTimeout( destroySchedule[ comp.instanceId ] );
+        destroySchedule[ comp.instanceId ] = null;
+    }
+
+    comp.timestamp = start;
+    comp.start = start;
+    comp.repeatCount = 0;
+    comp.endingAudioPlayed = false;
+    comp.endingCopied = false;
+    comp.endedAudioPlayed = false;
+    comp.endedCopied = false;
+    resetTimerComponentState( comp.overlayId, comp );
+
+    if ( !comp.hidden && applyTimerHidden( comp ) ) {
+        const overlayInstance = overlayInstances[ comp.overlayId ];
+        const target = comp.matches?.groups?.target;
+
+        if ( overlayInstance?.groupByTarget && target != null ) {
+            overlayInstance.overlayGroups[ target ]?.updateVisibility();
+        }
+    }
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Resets the remaining time, sub action flags and styles of a timer component.
+ *
+ * @param {string} overlayId The id of the desired overlay.
+ * @param {OverlayComponent} comp The overlay component to reset.
+ */
+function resetTimerComponentState( overlayId, comp ) {
     comp.timeRemaining = comp.action.duration;
 
     // Reset the ending conditions
@@ -5237,8 +5324,6 @@ function resetTimerComponentClock( overlayId, comp, repeatCount ) {
     }
 
     setTimerBar( comp, comp.action.actionType === ActionTypes.Countdown || comp.action.actionType === ActionTypes.BeneficialTimer ? 1 : 0, true );
-
-    return comp;
 }
 
 
