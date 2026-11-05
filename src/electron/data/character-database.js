@@ -538,29 +538,63 @@ class CharacterDatabaseStore extends Store {
         if ( fs.existsSync( logsPath ) ) {
             var files = await fs.promises.readdir( logsPath );
             files.forEach( file => {
+                let quarm = /eqlog_(?<Character>.*)_pq\.proj\.txt$/gi.exec( file );
+                if ( quarm != null && quarm?.groups?.Character != null ) {
+                    this.#addCharacterOption( dictionary, 'QUARM', logsPath, file, quarm.groups.Character, 'quarm', { thj: false, takp: true, p99: false, daybreak: false } );
+                    return;
+                }
+
+                let p99Results = /eqlog_(?<Character>.*)_P1999(?<Server>[a-z]*)\.txt$/gi.exec( file );
+                if ( p99Results != null && p99Results?.groups?.Character != null ) {
+                    this.#addCharacterOption( dictionary, 'P99', logsPath, file, p99Results.groups.Character, p99Results.groups.Server, { thj: false, takp: false, p99: true, daybreak: false } );
+                    return;
+                }
+
+                let p99Special = /eqlog_(?<Character>.*)_project1999\.txt$/gi.exec( file );
+                if ( p99Special != null && p99Special?.groups?.Character != null ) {
+                    this.#addCharacterOption( dictionary, 'P99', logsPath, file, p99Special.groups.Character, 'project1999', { thj: false, takp: false, p99: true, daybreak: false } );
+                    return;
+                }
+
                 let results = /eqlog_(?<Character>.*)_(?<Server>[a-z]*)\.txt$/gi.exec( file );
                 if ( results != null && results?.groups?.Character != null && results?.groups?.Server != null ) {
                     const thj = results.groups.Server === 'thj';
                     const key = thj ? 'The Heroe\'s Journey' : results.groups.Server.toUpperCase();
-                    if ( dictionary[ key ] == null ) {
-                        dictionary[ key ] = [];
-                    }
-                    let option = {};
-
-                    option.name = results.groups.Character;
-                    option.server = key;
-                    option.logFile = `${logsPath}\\${file}`;
-                    option.thj = thj === true;
-                    option.daybreak = thj === false && results.groups.Server !== 'p99';
-                    option.characterId = this.findCharacterIdByLogFile( option.logFile );
-                    
-                    dictionary[ key ].push( option );
+                    this.#addCharacterOption( dictionary, key, logsPath, file, results.groups.Character, key, { thj: thj === true, daybreak: thj === false && results.groups.Server !== 'p99' } );
                 }
 
             } );
         }
         
         return dictionary;
+    }
+
+
+    /**
+     * Adds a character option to the dictionary under the given key.
+     * 
+     * @param {Object} dictionary The options by server key.
+     * @param {string} key The dictionary key.
+     * @param {string} logsPath The path to the logs folder.
+     * @param {string} file The log file name.
+     * @param {string} name The character name.
+     * @param {string} server The server value saved on the character.
+     * @param {Object} flags The service flags for the character.
+     */
+    #addCharacterOption( dictionary, key, logsPath, file, name, server, flags ) {
+        if ( dictionary[ key ] == null ) {
+            dictionary[ key ] = [];
+        }
+
+        let option = {};
+
+        option.name = name;
+        option.server = server;
+        option.logFile = `${logsPath}\\${file}`;
+        Object.assign( option, flags );
+        option.characterId = this.findCharacterIdByLogFile( option.logFile );
+
+        dictionary[ key ].push( option );
     }
 
 

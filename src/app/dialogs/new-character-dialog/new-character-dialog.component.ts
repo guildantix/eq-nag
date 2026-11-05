@@ -117,16 +117,16 @@ export class NewCharacterDialogComponent implements OnInit {
 
     
     /**
+     * Uses the service flags of the selected character option for the model.
      * 
      * @param e The mat select change event args.
-     * @param p99 If true, the selected character is on the p99 service.
-     * @param daybreak If  true, the selected character is on the daybreak service.
      */
-    selectModel( e: MatSelectChange, p99: boolean = false, daybreak: boolean = false ): void {
+    selectModel( e: MatSelectChange ): void {
         this.model = e.value;
-        this.model.p99 = p99 === true;
+        this.model.p99 = e.value.p99 === true;
+        this.model.takp = e.value.takp === true;
         this.model.thj = e.value.thj === true;
-        this.model.daybreak = daybreak === true || this.server?.service === 'Daybreak';
+        this.model.daybreak = e.value.daybreak === true;
 
         // console.log( 'Selected model:', this.model );
         // console.log( 'Selected server:', this.server );
