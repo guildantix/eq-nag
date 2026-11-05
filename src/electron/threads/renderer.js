@@ -4786,7 +4786,9 @@ function applyTimerSettings( overlayId, contentArea, comp, group ) {
             // When conditions met that require the timer be removed from the 
             // overlay, then call the remove comonponent method.
             
-            delayRemoveComponent( overlayId, comp );
+            // A timer with no ended actions has nothing left to show at zero, so remove it right away.
+            let plainEnd = !isStopwatch && !comp.action.remainAfterEnded && !comp.action.notifyWhenEnded && !comp.action.repeatTimer;
+            delayRemoveComponent( overlayId, comp, plainEnd ? 1 : undefined );
 
         } else if ( comp.timeRemaining <= 0 && comp.action.repeatTimer ) {
             
