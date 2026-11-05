@@ -1,0 +1,41 @@
+name: Sync master
+
+# When a full release is published, moves master up to the code that was
+# released, so master always matches what everyone is running.
+#
+# Pull requests go into development; master only ever moves forward to a
+# released commit from development.  If someone commits to master directly,
+# master can't move forward and this fails: merge master into development,
+# release again, or move master by hand.
+
+on:
+  release:
+    types: [ published ]
+
+permissions:
+  contents: write   # lets the built-in GITHUB_TOKEN push to master
+
+jobs:
+  sync:
+    # Pre-releases and test builds (tag test-*) don't move master.
+    if: ${{ !github.event.release.prerelease && startsWith( github.event.release.tag_name, 'v' ) }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0   # master's history, to check it can move forward
+
+      - name: Move master to the release
+        shell: bash
+        run: |
+          tag="${{ github.event.release.tag_name }}"
+          sha=$(git rev-list -n 1 "$tag")
+          if ! git merge-base --is-ancestor origin/master "$sha"; then
+            echo "::error::master has commits that aren't in $tag, so it can't move forward. Merge master into development, or move master by hand."
+            exit 1
+          fi
+          # Not a force push: GitHub refuses it if master moved in the meantime.
+          git push origin "$sha:refs/heads/master"
+          echo "master is now at $tag ($sha)."

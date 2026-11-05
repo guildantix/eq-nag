@@ -1,7 +1,8 @@
 name: Pre-release
 
-# Builds the next version and puts it in a draft pre-release:
-# Actions -> Pre-release -> Run workflow.
+# Builds the next version from the development branch and puts it in a draft
+# pre-release: Actions -> Pre-release -> Run workflow, using the workflow from
+# development.
 #
 # The draft lists the app changes since the last published release under
 # "Changes to write up".  Rewrite them, add details and screenshots, then
@@ -34,6 +35,15 @@ jobs:
       PYTHONUTF8: 1
 
     steps:
+      # Releases are built from development; master only ever gets what was
+      # released (see sync-master.yml).
+      - name: Check the branch
+        if: github.ref_name != 'development'
+        shell: bash
+        run: |
+          echo "::error::Run this workflow from the development branch (Use workflow from: development), not ${{ github.ref_name }}."
+          exit 1
+
       - name: Checkout
         uses: actions/checkout@v5
         with:
