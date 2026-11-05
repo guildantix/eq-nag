@@ -13,17 +13,45 @@ console.log = ( ...args ) => {
 
 log.info( 'Logging initialized' );
 
+let storeReadFailureShown = false;
+
+/**
+ * Tells the user a data file could not be read and exits, so the file is never replaced with defaults.
+ *
+ * @param {any} err The error to check.
+ * @returns {boolean} Returns true if the error was a data file read failure and the app is exiting.
+ */
+function handleStoreReadFailure( err ) {
+    if ( err?.name !== 'StoreReadError' ) {
+        return false;
+    }
+
+    if ( !storeReadFailureShown ) {
+        storeReadFailureShown = true;
+        dialog.showErrorBox(
+            'Nag could not read its data',
+            `Nag could not read this file (${err.code || 'unknown error'}):\n\n${err.filePath}\n\n` +
+            'Nag closed so your data is not overwritten. Check that the file is not locked or blocked, for example by antivirus, then start Nag again.'
+        );
+    }
+
+    app.exit( 1 );
+    return true;
+}
+
 process.on( 'uncaughtException', ( err ) => {
     console.error( 'Uncaught Exception:', err );
     log.error( 'Uncaught Exception:', err );
+    handleStoreReadFailure( err );
 } );
 
 process.on( 'unhandledRejection', ( reason ) => {
     console.error( 'Unhandled Rejection:', reason );
     log.error( 'Unhandled Rejection:', reason );
+    handleStoreReadFailure( reason );
 } );
 
-import { app, BrowserWindow, ipcMain, protocol, session, screen, Tray, Menu, globalShortcut, clipboard, shell } from "electron";
+import { app, BrowserWindow, ipcMain, protocol, session, screen, Tray, Menu, globalShortcut, clipboard, shell, dialog } from "electron";
 import * as url from "url";
 import * as path from "path";
 
