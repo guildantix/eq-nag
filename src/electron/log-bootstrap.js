@@ -425,6 +425,39 @@ class LogBootstrapper {
             }
         } );
 
+        ipcMain.on( 'log:pulse',
+            /**
+             * Closes the log watcher window that replied that it is no longer alive.
+             *
+             * @param {Electron.IpcMainEvent} event The event args.
+             * @param {boolean} alive True if the log watcher is still alive.
+             */
+            ( event, alive ) => {
+                if ( alive ) {
+                    return;
+                }
+
+                // Find the character whose window sent the reply.
+                const characterId = Object.keys( logWatchers ).find( key => {
+                    const win = logWatchers[ key ].window;
+                    return win != null && !win.isDestroyed() && win.webContents.id === event.sender.id;
+                } );
+
+                if ( characterId === undefined ) {
+                    return;
+                }
+
+                // Notify the main window.
+                mainWindowRef.reference.webContents.send( 'log:character:deactivated', characterId );
+
+                logWatchers[ characterId ].window.close();
+                logWatchers[ characterId ].window = null;
+
+                if ( this.onLogWatcherWindowClosed ) {
+                    this.onLogWatcherWindowClosed( characterId );
+                }
+            } );
+
         ipcMain.on( 'log:clear-all:done', function ( event, instanceId ) {
             for ( let key in logWatchers ) {
                 if ( logWatchers.hasOwnProperty( key ) && logWatchers[ key ].window != null ) {
@@ -810,23 +843,6 @@ class LogBootstrapper {
                 if (  !block && !logWatchers[ characterId ].simulating && logWatchers[ characterId ].nullAttemptCount >= killAfterNAttempts ) {
                     
                     logWatchers[ characterId ].window.send( 'log:check:pulse', null );
-                    ipcMain.once( 'log:pulse', function ( e, alive ) {
-                        if ( !alive ) {
-                            
-                            // Notify the main window.
-                            mainWindowRef.reference.webContents.send( 'log:character:deactivated', characterId );
-
-                            if ( logWatchers[ characterId ].window != null && !logWatchers[ characterId ].window.isDestroyed() ) {
-                                logWatchers[ characterId ].window.close();
-                                logWatchers[ characterId ].window = null;
-
-                                if ( this.onLogWatcherWindowClosed ) {
-                                    this.onLogWatcherWindowClosed( characterId );
-                                }
-                            }
-
-                        }
-                    } );
 
                 }
             }
