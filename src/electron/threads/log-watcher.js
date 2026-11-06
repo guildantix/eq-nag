@@ -1578,7 +1578,7 @@ function generateTriggerFns() {
         
                                     // Remove any sequences.
                                     for ( let i = removeSequenceIndices.length - 1; i >= 0; i-- ) {
-                                        _sequentialMatchs.splice( i, 1 );
+                                        _sequentialMatchs.splice( removeSequenceIndices[ i ], 1 );
                                     }
                                     
                                 }
