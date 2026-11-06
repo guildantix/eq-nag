@@ -359,6 +359,13 @@ let currentEncounterId = undefined;
 /** @type {DpsMeterSettings} */
 let dpsMeterSettings = new DpsMeterSettings();
 
+/** Live encounter updates redraw the dps window at most this often. */
+const dpsLiveRenderMs = 1000;
+/** @type {number | null} */
+let dpsLiveRenderTimeoutId = null;
+/** @type {string | undefined} */
+let dpsLiveRenderCharacter = undefined;
+
 /** @type {WinInfo} */
 let activeWinInfo = undefined;
 
@@ -784,8 +791,25 @@ function clearDpsItems() {
 
 
 /**
+ * Renders the dps items for a live encounter update, at most once every
+ * dpsLiveRenderMs.  The combat watcher sends updates several times a second
+ * during combat, and each render rebuilds every row in the dps window.
+ *
+ * @param {string} characterName The name of the character. Used to highlight the character's name.
+ */
+function scheduleLiveDpsRender( characterName ) {
+    dpsLiveRenderCharacter = characterName;
+    if ( dpsLiveRenderTimeoutId == null ) {
+        dpsLiveRenderTimeoutId = window.setTimeout( () => {
+            dpsLiveRenderTimeoutId = null;
+            renderDpsItems( dpsLiveRenderCharacter );
+        }, dpsLiveRenderMs );
+    }
+}
+
+/**
  * Renders the current dps items.
- * 
+ *
  * @param {string} characterName The name of the character. Used to highlight the character's name.
  */
 function renderDpsItems( characterName ) {
@@ -1246,8 +1270,8 @@ function Renderer( originX, originY, glowOnStart ) {
 
             // Update the current encounter id.
             currentEncounterId = data.encounter.encounterId;
-    
-            renderDpsItems( data.characterName );
+
+            scheduleLiveDpsRender( data.characterName );
         } );
     
     ipcRenderer.on( 'renderer:encounter-reset',
