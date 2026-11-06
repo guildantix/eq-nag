@@ -18,6 +18,10 @@ class LogHistoryManager {
     batchTriggerParseHistoryTimeoutId = null;
     /** @type {string[]} */
     errorHashes = [];
+    /** @type {string} */
+    characterId = null;
+    /** @type {string} */
+    characterName = null;
 
     #counters = () => { };
     get counters() {
@@ -49,6 +53,8 @@ class LogHistoryManager {
         getStoredVariables,
         getTriggers,
     ) {
+        this.characterId = characterId;
+        this.characterName = characterName;
         this.#counters = getCounters;
         this.#storedVariables = getStoredVariables;
         this.#triggers = getTriggers;
