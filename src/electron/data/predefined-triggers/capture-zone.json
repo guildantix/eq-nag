@@ -5,15 +5,11 @@
     "capturePhrases": [
         {
             "useRegEx": true,
-            "requirePreviousPhrase": false,
-            "duration": null,
             "phraseId": "4XE1SERwjEB0rRhc",
             "phrase": "^You have entered ([A-Z].*)\\.$",
             "ignoreCase": false
         },
         {
-            "requirePreviousPhrase": false,
-            "duration": null,
             "phraseId": "pOZDiwwJdb8VPfXm",
             "phrase": "^LOADING, PLEASE WAIT\\.\\.\\.",
             "useRegEx": true,
@@ -26,24 +22,16 @@
             "phrases": [
                 "4XE1SERwjEB0rRhc"
             ],
-            "onlyExecuteInDev": false,
-            "useCustomColor": false,
             "actionType": 0,
             "overlayId": "hQqWbu1vumF9GRJv",
             "displayText": "You have entered {1}.",
             "duration": 5,
-            "actionId": "3irHXDSvHQFf3LZ5",
-            "textUseCustomBorder": false,
-            "textUseCustomColor": false,
-            "textUseCustomFont": false,
-            "textUseCustomGlow": false,
-            "textUseCustomSize": false
+            "actionId": "3irHXDSvHQFf3LZ5"
         },
         {
             "phrases": [
                 "pOZDiwwJdb8VPfXm"
             ],
-            "onlyExecuteInDev": false,
             "actionType": 7,
             "variableName": "CurrentZone",
             "actionId": "sDiYPmjxrFRg5pI9"
@@ -52,7 +40,6 @@
             "phrases": [
                 "4XE1SERwjEB0rRhc"
             ],
-            "onlyExecuteInDev": false,
             "actionType": 5,
             "variableName": "CurrentZone",
             "actionId": "IW03jfBt5cdqU2CX",
@@ -61,12 +48,8 @@
         }
     ],
     "captureMethod": "Any match",
-    "conditions": [],
     "predefined": true,
     "onlyExecuteInDev": false,
-    "classLevels": [],
-    "score": 4.843554288349809e-12,
-    "refIndex": 862,
     "importType": 0,
     "folderId": "njGANuCzIncWIMzU"
 }
