@@ -14,9 +14,15 @@
             "phraseId": "PhraseLoadingPls",
             "phrase": "^LOADING, PLEASE WAIT\\.\\.\\.",
             "ignoreCase": false
+        },
+        {
+            "useRegEx": true,
+            "phraseId": "PhraseCharInZone",
+            "phrase": "^\\[\\d.*\\] ${Character} .*ZONE: (.*) \\(\\w+\\)$",
+            "ignoreCase": false
         }
     ],
-    "comments": "Captures entering/leaving zones.",
+    "comments": "Sets your characters variable ${CurrentZone} from:\n- The Zone in message.\n- A normal, non anon, /who message.",
     "actions": [
         {
             "phrases": [
@@ -30,7 +36,8 @@
         },
         {
             "phrases": [
-                "PhraseLoadingPls"
+                "PhraseLoadingPls",
+                "PhraseCharInZone"
             ],
             "actionType": 7,
             "variableName": "CurrentZone",
@@ -38,7 +45,8 @@
         },
         {
             "phrases": [
-                "PhraseEnterZoneX"
+                "PhraseEnterZoneX",
+                "PhraseCharInZone"
             ],
             "actionType": 5,
             "variableName": "CurrentZone",
