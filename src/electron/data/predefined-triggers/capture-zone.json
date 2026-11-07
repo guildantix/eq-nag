@@ -10,9 +10,9 @@
             "ignoreCase": false
         },
         {
+            "useRegEx": true,
             "phraseId": "PhraseLoadingPls",
             "phrase": "^LOADING, PLEASE WAIT\\.\\.\\.",
-            "useRegEx": true,
             "ignoreCase": false
         }
     ],
