@@ -2,28 +2,42 @@
     <span>Rolls</span>
 </mat-toolbar>
 
-<div class="tab-content nag-scrollbar">
+<div class="tab-content">
 <div class="rolls">
 
     <section class="contests" aria-label="Contests">
-        <h2 class="section-label">CONTESTS</h2>
+        <div class="contests-head">
+            <h2 class="section-label">CONTESTS</h2>
+            <button type="button" class="link-button" *ngIf="contests.length > 0" (click)="clearContests()">Clear all</button>
+        </div>
 
-        <p class="empty" *ngIf="contests.length === 0">
-            No rolls yet. When someone uses /random, the contest shows up here and on the roll panel.
-            Use Overlays › Arrange Overlays to move the roll panel.
-        </p>
+        <div class="contest-list nag-scrollbar">
+            <p class="empty" *ngIf="contests.length === 0">
+                No rolls yet. When someone uses /random, the contest shows up here and on the roll panel.
+                Use Overlays › Arrange Overlays to move the roll panel.
+            </p>
 
-        <button type="button" class="contest" *ngFor="let contest of contests" [class.selected]="contest === selected" (click)="selectContest( contest )">
-            <span class="contest-head">
-                <span class="contest-range">{{ contest.min }}–{{ contest.max }}</span>
-                <span class="contest-status open" *ngIf="contest.closedAt == null">OPEN · {{ countdown( contest ) }}</span>
-                <span class="contest-status" *ngIf="contest.closedAt != null">{{ contest.closedAt | localeTime:'short' }}</span>
-            </span>
-            <span class="contest-info">{{ contest.ranked.length }} {{ contest.ranked.length === 1 ? 'roll' : 'rolls' }} · {{ leaderText( contest ) }}</span>
-        </button>
+            <div class="contest-item" *ngFor="let contest of contests">
+                <button type="button" class="contest" [class.selected]="contest === selected" (click)="selectContest( contest )">
+                    <span class="contest-head">
+                        <span class="contest-range">{{ contest.min }}–{{ contest.max }}</span>
+                        <span class="contest-status open" *ngIf="contest.closedAt == null">OPEN · {{ countdown( contest ) }}</span>
+                        <span class="contest-status" *ngIf="contest.closedAt != null">{{ contest.closedAt | localeTime:'short' }}</span>
+                    </span>
+                    <span class="contest-info">
+                        {{ contest.ranked.length }} {{ contest.ranked.length === 1 ? 'roll' : 'rolls' }} ·
+                        <ng-container *ngIf="leader( contest ) as lead; else noLeader">
+                            {{ lead.label }} <span class="winner-name">{{ lead.who }}</span>&nbsp;<span class="winner-roll">{{ lead.roll }}</span>
+                        </ng-container>
+                        <ng-template #noLeader>no counted rolls</ng-template>
+                    </span>
+                </button>
+                <button type="button" class="contest-remove" aria-label="Remove this contest" title="Remove this contest" (click)="removeContest( contest )">×</button>
+            </div>
+        </div>
     </section>
 
-    <section class="detail" aria-label="Contest detail" *ngIf="selected as contest">
+    <section class="detail nag-scrollbar" aria-label="Contest detail" *ngIf="selected as contest; else noContest">
         <div class="detail-head">
             <div>
                 <h1>Rolls {{ contest.min }}–{{ contest.max }}</h1>
@@ -35,6 +49,7 @@
             </div>
             <div class="detail-actions">
                 <button mat-stroked-button type="button" *ngIf="contest.closedAt == null" (click)="closeContest( contest )">Close now</button>
+                <button mat-stroked-button type="button" [disabled]="settings?.enabled === false || testRunning" title="Plays a made-up contest (1–15) so you can place the roll panel" (click)="testOverlay()">Test overlay</button>
                 <button mat-flat-button color="primary" type="button" (click)="copyResult( contest )">Copy top {{ settings?.topCount }}</button>
             </div>
         </div>
@@ -53,7 +68,7 @@
                 <tbody>
                     <tr *ngFor="let row of rows" [class.leader]="row.leader" [class.flagged]="row.flagged">
                         <td class="rank">{{ row.rank ?? '–' }}</td>
-                        <td>{{ row.player }}</td>
+                        <td class="player">{{ row.player }}</td>
                         <td class="roll">{{ row.roll }}</td>
                         <td class="time">{{ row.timestamp | localeTime }}</td>
                         <td>
@@ -66,59 +81,19 @@
         </div>
 
         <div class="result">
-            <h2 class="section-label">COPIED TEXT (PASTE INTO /RS OR /GU)</h2>
-            <div class="result-text">{{ resultText }}</div>
+            <h2 class="section-label">COPIED TEXT (PASTE INTO CHAT)</h2>
+            <div class="result-text">{{ contest.resultText }}</div>
         </div>
+
+        <p class="settings-note">Roll tracker settings are in <strong>Settings › Roll Tracker</strong>.</p>
     </section>
 
-    <section class="settings" aria-label="Roll tracker settings" *ngIf="settings">
-        <h2 class="section-label">SETTINGS</h2>
-
-        <mat-slide-toggle [checked]="settings.enabled" (change)="updateSettings( { enabled: $event.checked } )">Track /random rolls</mat-slide-toggle>
-
-        <div class="setting-row">
-            <label for="rolls-top">Rows on the overlay</label>
-            <input id="rolls-top" type="number" min="1" max="20" [value]="settings.topCount" (change)="updateSettings( { topCount: +$any( $event.target ).value || 4 } )">
-        </div>
-
-        <div class="setting-row">
-            <label for="rolls-close">Close after this many seconds with no new rolls</label>
-            <input id="rolls-close" type="number" min="10" max="600" [value]="settings.closeAfterSeconds" (change)="updateSettings( { closeAfterSeconds: +$any( $event.target ).value || 60 } )">
-        </div>
-
-        <div class="setting-group">
-            <span id="rolls-reroll-label">If someone rolls twice in the same contest</span>
-            <mat-radio-group aria-labelledby="rolls-reroll-label" [value]="settings.rerollRule" (change)="updateSettings( { rerollRule: $event.value } )">
-                <mat-radio-button value="first">First roll counts, later ones are flagged</mat-radio-button>
-                <mat-radio-button value="highest">Highest roll counts</mat-radio-button>
-            </mat-radio-group>
-        </div>
-
-        <mat-checkbox [checked]="settings.copyOnClose" (change)="updateSettings( { copyOnClose: $event.checked } )">Copy the top rolls to the clipboard when a contest closes</mat-checkbox>
-
-        <div class="setting-row">
-            <label for="rolls-result">Hide the result this many seconds after a contest closes (0 keeps it on screen)</label>
-            <input id="rolls-result" type="number" min="0" max="600" [value]="settings.resultSeconds" (change)="updateSettings( { resultSeconds: toSeconds( $any( $event.target ).value ) } )">
-        </div>
-
-        <mat-checkbox [checked]="settings.speakWinner" (change)="updateSettings( { speakWinner: $event.checked } )">Speak the winner when a contest closes</mat-checkbox>
-
-        <div class="phrases" *ngIf="settings.speakWinner">
-            <div class="setting-row phrase-row">
-                <label for="rolls-winner-phrase">Winner phrase</label>
-                <input #winPhrase id="rolls-winner-phrase" type="text" placeholder="Empty = default" [value]="settings.speakWinnerPhrase" (change)="updateSettings( { speakWinnerPhrase: $any( $event.target ).value } )">
-                <button mat-icon-button type="button" aria-label="Preview the winner phrase" (click)="previewWinnerPhrase( winPhrase.value )"><mat-icon>play_arrow</mat-icon></button>
-            </div>
-
-            <div class="setting-row phrase-row">
-                <label for="rolls-tie-phrase">Tie phrase</label>
-                <input #tiePhrase id="rolls-tie-phrase" type="text" placeholder="Empty = default" [value]="settings.speakTiePhrase" (change)="updateSettings( { speakTiePhrase: $any( $event.target ).value } )">
-                <button mat-icon-button type="button" aria-label="Preview the tie phrase" (click)="previewTiePhrase( tiePhrase.value )"><mat-icon>play_arrow</mat-icon></button>
-            </div>
-
-            <div class="hint">Placeholders: {{ placeholderHint }}</div>
-        </div>
-    </section>
+    <ng-template #noContest>
+        <section class="detail" aria-label="Roll tracker">
+            <button mat-stroked-button type="button" [disabled]="settings?.enabled === false || testRunning" title="Plays a made-up contest (1–15) so you can place the roll panel" (click)="testOverlay()">Test overlay</button>
+            <p class="settings-note">Roll tracker settings are in <strong>Settings › Roll Tracker</strong>.</p>
+        </section>
+    </ng-template>
 
 </div>
 </div>

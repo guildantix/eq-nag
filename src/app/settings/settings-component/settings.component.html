@@ -118,6 +118,69 @@
         </div>
     </fieldset>
 
+    <fieldset class="roll-tracker" *ngIf="rollSettings as roll">
+        <legend><span class="title">Roll Tracker</span></legend>
+        <div class="roll-columns" [class.collapsed]="!roll.advancedOpen">
+            <div class="roll-column">
+                <h3 class="roll-heading">EVERYDAY</h3>
+                <mat-slide-toggle [checked]="roll.enabled" (change)="updateRollSettings( { enabled: $event.checked } )">Track /random rolls</mat-slide-toggle>
+                <mat-slide-toggle [checked]="roll.copyOnClose" (change)="updateRollSettings( { copyOnClose: $event.checked } )">Copy the result when a contest closes</mat-slide-toggle>
+                <mat-slide-toggle [checked]="roll.speakWinner" (change)="updateRollSettings( { speakWinner: $event.checked } )">Speak the winner</mat-slide-toggle>
+                <div class="roll-row">
+                    <label for="roll-prefix">Paste prefix</label>
+                    <button type="button" class="roll-link" (click)="updateRollSettings( { pastePrefix: null } )">Reset</button>
+                    <input id="roll-prefix" type="text" class="roll-short" placeholder="e.g. /rs" [value]="roll.pastePrefix" (change)="saveRollText( $any( $event.target ), 'pastePrefix' )">
+                </div>
+            </div>
+            <div class="roll-column advanced">
+                <h3 class="roll-heading">ADVANCED
+                    <button type="button" class="roll-link" (click)="updateRollSettings( { advancedOpen: !roll.advancedOpen } )">{{ roll.advancedOpen ? '▴ Hide' : '▸ Show' }}</button>
+                </h3>
+                <ng-container *ngIf="roll.advancedOpen">
+                    <div class="roll-row">
+                        <label for="roll-close">Close after (s, no new rolls)</label>
+                        <button type="button" class="roll-link" (click)="updateRollSettings( { closeAfterSeconds: null } )">Reset</button>
+                        <input id="roll-close" type="number" min="10" max="600" class="roll-short" [value]="roll.closeAfterSeconds" (change)="updateRollSettings( { closeAfterSeconds: toRollNumber( $any( $event.target ).value, 10, 600 ) } )">
+                    </div>
+                    <div class="roll-row">
+                        <label for="roll-top">Rows on the overlay</label>
+                        <input id="roll-top" type="number" min="1" max="20" class="roll-short" [value]="roll.topCount" (change)="updateRollSettings( { topCount: toRollNumber( $any( $event.target ).value, 1, 20 ) } )">
+                    </div>
+                    <div class="roll-row">
+                        <label for="roll-result">Hide overlay result after (s, 0 = keep)</label>
+                        <input id="roll-result" type="number" min="0" max="600" class="roll-short" [value]="roll.resultSeconds" (change)="updateRollSettings( { resultSeconds: toRollNumber( $any( $event.target ).value, 0, 600 ) } )">
+                    </div>
+                    <div class="roll-row">
+                        <label for="roll-reroll">Someone rolls twice</label>
+                        <select id="roll-reroll" [value]="roll.rerollRule" (change)="updateRollSettings( { rerollRule: $any( $event.target ).value } )">
+                            <option value="first">First roll counts</option>
+                            <option value="highest">Highest roll counts</option>
+                        </select>
+                    </div>
+                    <div class="roll-row">
+                        <label for="roll-template">Paste text</label>
+                        <button type="button" class="roll-link" (click)="updateRollSettings( { pasteTemplate: null } )">Reset</button>
+                        <input id="roll-template" type="text" class="roll-wide" [value]="roll.pasteTemplate" (change)="saveRollText( $any( $event.target ), 'pasteTemplate' )">
+                        <span class="roll-play-spacer"></span>
+                    </div>
+                    <div class="roll-row">
+                        <label for="roll-winner">Winner phrase</label>
+                        <button type="button" class="roll-link" (click)="updateRollSettings( { speakWinnerPhrase: null } )">Reset</button>
+                        <input #winnerInput id="roll-winner" type="text" class="roll-wide" [value]="roll.speakWinnerPhrase" (change)="saveRollText( $any( $event.target ), 'speakWinnerPhrase' )">
+                        <button type="button" class="roll-play" aria-label="Preview the winner phrase" (click)="previewRollPhrase( winnerInput.value, 'winner' )">▶</button>
+                    </div>
+                    <div class="roll-row">
+                        <label for="roll-tie">Tie phrase</label>
+                        <button type="button" class="roll-link" (click)="updateRollSettings( { speakTiePhrase: null } )">Reset</button>
+                        <input #tieInput id="roll-tie" type="text" class="roll-wide" [value]="roll.speakTiePhrase" (change)="saveRollText( $any( $event.target ), 'speakTiePhrase' )">
+                        <button type="button" class="roll-play" aria-label="Preview the tie phrase" (click)="previewRollPhrase( tieInput.value, 'tie' )">▶</button>
+                    </div>
+                    <div class="roll-hint">Paste text: {{ '${min} ${max} ${count} ${ranked}' }}. Phrases: {{ '${winner} ${winners} ${roll} ${min} ${max} ${count}' }}.</div>
+                </ng-container>
+            </div>
+        </div>
+    </fieldset>
+
     <fieldset #combatStatisticsGroup>
         <legend><span class="title">Combat Statistics</span></legend>
         

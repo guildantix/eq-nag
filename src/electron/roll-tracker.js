@@ -11,11 +11,19 @@ const minRollers = 2;
 /** Spoken when a contest closes; ${...} placeholders are filled in. Used when the setting is blank. */
 const defaultWinnerPhrase = '${winner} wins with ${roll}';
 const defaultTiePhrase = 'Tie at ${roll} between ${winners}';
+/** The pasted line is the prefix followed by this template. */
+const defaultResultTemplate = 'Rolls ${min}-${max} (${count}): ${ranked}';
+/** The clock gap between a roll's log time and now that is still treated as log delay. */
+const maxLogLagMs = 10 * 1000;
+/** Rolls the test simulation makes, as made-up players. */
+const testPlayers = [ 'Soandso', 'Brindle', 'Kazzik', 'Oolin' ];
+const testRange = { min: 1, max: 15 };
+const testRollGapMs = 700;
 
 class RollTrackerSettings {
     enabled = true;
     topCount = 4;
-    closeAfterSeconds = 60;
+    closeAfterSeconds = 30;
     /** @type {'first' | 'highest'} */
     rerollRule = 'first';
     copyOnClose = true;
@@ -24,6 +32,11 @@ class RollTrackerSettings {
     speakTiePhrase = defaultTiePhrase;
     /** How long a closed contest stays on the overlay; 0 keeps it there. */
     resultSeconds = 10;
+    /** Pasted before the result text, e.g. /rs. Empty pastes the result text alone. */
+    pastePrefix = '';
+    pasteTemplate = defaultResultTemplate;
+    /** Whether the Advanced column of Settings > Roll Tracker is open. */
+    advancedOpen = false;
 }
 
 /**
@@ -43,7 +56,7 @@ class RollTrackerSettings {
  * @property {number} min
  * @property {number} max
  * @property {number} startedAt Log timestamp of the first roll, in ms.
- * @property {number} lastRollAt Wall clock time of the last roll, in ms.
+ * @property {number} lastRollAt Wall clock time the last roll was written to the log, in ms.
  * @property {number | null} closedAt
  * @property {RollModel[]} rolls
  */
@@ -68,6 +81,8 @@ class RollTracker {
     /** @type {(phrase: string) => void} */
     #speak;
     #timerId = null;
+    /** @type {NodeJS.Timeout[]} Pending rolls of the test simulation. */
+    #testTimers = [];
 
     /**
      * Attaches the ipc events.
@@ -102,13 +117,30 @@ class RollTracker {
             }
         } );
 
+        ipcMain.on( 'rolls:remove', ( event, contestId ) => {
+            const removed = this.#contests.find( c => c.contestId === contestId );
+            if ( removed?.min === testRange.min && removed?.max === testRange.max ) {
+                this.#cancelTest();
+            }
+            this.#contests = this.#contests.filter( c => c.contestId !== contestId );
+            this.#broadcast();
+        } );
+
+        ipcMain.on( 'rolls:clear', ( event ) => {
+            this.#cancelTest();
+            this.#contests = [];
+            this.#broadcast();
+        } );
+
+        ipcMain.on( 'rolls:test', ( event ) => this.#simulateContest() );
+
         ipcMain.on( 'rolls:dismiss', ( event ) => {
             this.#contests.forEach( c => c.dismissed = c.closedAt != null ? true : c.dismissed );
             this.#broadcast();
         } );
 
         ipcMain.on( 'rolls:settings:set', ( event, settings ) => {
-            this.#userPreferences.rollTrackerSettings = Object.assign( this.#settings, settings );
+            this.#storeSettings( settings );
             this.#ensureTimer();
             this.#broadcast();
         } );
@@ -118,6 +150,56 @@ class RollTracker {
         } );
 
         ipcMain.handle( 'rolls:position:get', () => this.#userPreferences.rollTrackerPosition );
+    }
+
+    /**
+     * Stores the changed settings; a null value removes the stored one so the default applies again.
+     *
+     * @param {Record<string, any>} changes The changed settings.
+     */
+    #storeSettings( changes ) {
+        const known = Object.keys( new RollTrackerSettings() );
+        const stored = { ...( this.#userPreferences.rollTrackerSettings ?? {} ) };
+        Object.entries( changes ?? {} ).filter( ( [ key ] ) => known.includes( key ) ).forEach( ( [ key, value ] ) => {
+            if ( value === null ) {
+                delete stored[ key ];
+            } else {
+                stored[ key ] = value;
+            }
+        } );
+        this.#userPreferences.rollTrackerSettings = stored;
+    }
+
+    /**
+     * Rolls 1-15 for made-up players, a moment apart, through the normal roll path.
+     */
+    #simulateContest() {
+        if ( this.#testTimers.length > 0 ) {
+            return;
+        }
+        this.#contests = this.#contests.filter( c => c.closedAt != null || c.min !== testRange.min || c.max !== testRange.max );
+        testPlayers.forEach( ( player, i ) => {
+            const timerId = setTimeout( () => {
+                this.#testTimers = this.#testTimers.filter( t => t !== timerId );
+                this.#addRoll( {
+                    player,
+                    roll: 1 + Math.floor( Math.random() * testRange.max ),
+                    min: testRange.min,
+                    max: testRange.max,
+                    timestamp: Date.now(),
+                } );
+            }, i * testRollGapMs );
+            this.#testTimers.push( timerId );
+        } );
+        this.#broadcast();
+    }
+
+    /**
+     * Stops the rolls the test simulation has not made yet.
+     */
+    #cancelTest() {
+        this.#testTimers.forEach( t => clearTimeout( t ) );
+        this.#testTimers = [];
     }
 
     /** @type {RollTrackerSettings} */
@@ -150,6 +232,7 @@ class RollTracker {
             return;
         }
         this.#recentRolls.push( { ...data, seenAt: now } );
+        const lastRollAt = this.#getLastRollAt( data.timestamp, settings );
 
         /** @type {RollModel} */
         const roll = { player: data.player, roll: data.roll, min: data.min, max: data.max, timestamp: data.timestamp, status: 'counted' };
@@ -157,9 +240,9 @@ class RollTracker {
         const sameRange = open.find( c => c.min === roll.min && c.max === roll.max );
 
         if ( sameRange ) {
-            this.#addToContest( sameRange, roll, settings );
+            this.#addToContest( sameRange, roll, settings, lastRollAt );
         } else {
-            this.#startContest( roll );
+            this.#startContest( roll, lastRollAt );
         }
 
         this.#ensureTimer();
@@ -167,18 +250,34 @@ class RollTracker {
     }
 
     /**
+     * Returns the wall clock time the roll happened at, so contests close the same moment whatever the
+     * log write interval. The gap to the log time is only trusted up to a limit, so clock differences
+     * can neither close a contest at once nor keep it open.
+     *
+     * @param {number} timestamp The roll's log timestamp, in ms.
+     * @param {RollTrackerSettings} settings The settings.
+     * @returns {number} Returns the time in ms.
+     */
+    #getLastRollAt( timestamp, settings ) {
+        const now = Date.now();
+        const lag = Number.isFinite( timestamp ) ? now - timestamp : 0;
+        return now - Math.max( 0, Math.min( lag, maxLogLagMs, settings.closeAfterSeconds * 500 ) );
+    }
+
+    /**
      * Starts a new contest with the given roll.
      *
      * @param {RollModel} roll The first roll.
+     * @param {number} lastRollAt Wall clock time of the roll, in ms.
      */
-    #startContest( roll ) {
+    #startContest( roll, lastRollAt ) {
         /** @type {ContestModel} */
         const contest = {
             contestId: `roll-${Date.now()}-${++contestCounter}`,
             min: roll.min,
             max: roll.max,
             startedAt: roll.timestamp,
-            lastRollAt: Date.now(),
+            lastRollAt,
             closedAt: null,
             rolls: [ roll ],
         };
@@ -193,9 +292,10 @@ class RollTracker {
      * @param {ContestModel} contest The contest.
      * @param {RollModel} roll The roll.
      * @param {RollTrackerSettings} settings The settings.
+     * @param {number} lastRollAt Wall clock time of the roll, in ms.
      */
-    #addToContest( contest, roll, settings ) {
-        contest.lastRollAt = Date.now();
+    #addToContest( contest, roll, settings, lastRollAt ) {
+        contest.lastRollAt = Math.max( contest.lastRollAt, lastRollAt );
         const previous = contest.rolls.find( r => r.status === 'counted' && r.player === roll.player );
 
         if ( previous ) {
@@ -257,7 +357,7 @@ class RollTracker {
      */
     #formatPhrase( template, fallback, data ) {
         const text = typeof template === 'string' && template.trim() !== '' ? template : fallback;
-        return text.replace( /\$\{(winner|winners|roll|min|max|count)\}/g, ( match, key ) => `${data[ key ]}` );
+        return text.replace( /\$\{(\w+)\}/g, ( match, key ) => Object.hasOwn( data, key ) ? `${data[ key ]}` : match );
     }
 
     /**
@@ -267,10 +367,17 @@ class RollTracker {
      */
     #getResultText( contest ) {
         const ranked = rankRolls( contest );
-        const top = ranked.filter( r => r.rank <= this.#settings.topCount );
+        const settings = this.#settings;
+        const top = ranked.filter( r => r.rank <= settings.topCount );
         const ties = new Set( ranked.filter( r => ranked.some( o => o !== r && o.roll === r.roll ) ).map( r => r.player ) );
         const parts = top.map( r => `${r.rank}) ${r.player} ${r.roll}${ties.has( r.player ) ? ' TIE' : ''}` );
-        return `Rolls ${contest.min}-${contest.max} (${ranked.length}): ${parts.join( '  ' )}`;
+        const text = this.#formatPhrase( settings.pasteTemplate, defaultResultTemplate, {
+            min: contest.min,
+            max: contest.max,
+            count: ranked.length,
+            ranked: parts.join( '  ' ),
+        } );
+        return `${settings.pastePrefix ?? ''} ${text}`.trim();
     }
 
     /**
@@ -310,9 +417,11 @@ class RollTracker {
     #getState() {
         return {
             settings: this.#settings,
+            defaults: { ...new RollTrackerSettings() },
             serverNow: Date.now(),
             minRollers: minRollers,
-            contests: this.#contests.map( c => ( { ...c, rolls: c.rolls.slice(), ranked: rankRolls( c ) } ) ),
+            testRunning: this.#testTimers.length > 0,
+            contests: this.#contests.map( c => ( { ...c, rolls: c.rolls.slice(), ranked: rankRolls( c ), resultText: this.#getResultText( c ) } ) ),
         };
     }
 
