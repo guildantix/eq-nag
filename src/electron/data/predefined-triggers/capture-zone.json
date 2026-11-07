@@ -5,12 +5,12 @@
     "capturePhrases": [
         {
             "useRegEx": true,
-            "phraseId": "4XE1SERwjEB0rRhc",
+            "phraseId": "PhraseEnterZoneX",
             "phrase": "^You have entered ([A-Z].*)\\.$",
             "ignoreCase": false
         },
         {
-            "phraseId": "pOZDiwwJdb8VPfXm",
+            "phraseId": "PhraseLoadingPls",
             "phrase": "^LOADING, PLEASE WAIT\\.\\.\\.",
             "useRegEx": true,
             "ignoreCase": false
@@ -20,29 +20,29 @@
     "actions": [
         {
             "phrases": [
-                "4XE1SERwjEB0rRhc"
+                "PhraseEnterZoneX"
             ],
             "actionType": 0,
             "overlayId": "hQqWbu1vumF9GRJv",
             "displayText": "You have entered {1}.",
             "duration": 5,
-            "actionId": "3irHXDSvHQFf3LZ5"
+            "actionId": "ActionTextEnterd"
         },
         {
             "phrases": [
-                "pOZDiwwJdb8VPfXm"
+                "PhraseLoadingPls"
             ],
             "actionType": 7,
             "variableName": "CurrentZone",
-            "actionId": "sDiYPmjxrFRg5pI9"
+            "actionId": "ActionClearZoneV"
         },
         {
             "phrases": [
-                "4XE1SERwjEB0rRhc"
+                "PhraseEnterZoneX"
             ],
             "actionType": 5,
             "variableName": "CurrentZone",
-            "actionId": "IW03jfBt5cdqU2CX",
+            "actionId": "ActionSetZoneVar",
             "loopBackForValue": true,
             "variableStorageType": "localVariable"
         }
