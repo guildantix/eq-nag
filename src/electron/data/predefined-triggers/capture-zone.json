@@ -5,68 +5,59 @@
     "capturePhrases": [
         {
             "useRegEx": true,
-            "requirePreviousPhrase": false,
-            "duration": null,
-            "phraseId": "4XE1SERwjEB0rRhc",
+            "phraseId": "PhraseEnterZoneX",
             "phrase": "^You have entered ([A-Z].*)\\.$",
             "ignoreCase": false
         },
         {
-            "requirePreviousPhrase": false,
-            "duration": null,
-            "phraseId": "pOZDiwwJdb8VPfXm",
-            "phrase": "^LOADING, PLEASE WAIT\\.\\.\\.",
             "useRegEx": true,
+            "phraseId": "PhraseLoadingPls",
+            "phrase": "^LOADING, PLEASE WAIT\\.\\.\\.",
+            "ignoreCase": false
+        },
+        {
+            "useRegEx": true,
+            "phraseId": "PhraseCharInZone",
+            "phrase": "^\\[\\d.*\\] ${Character} .*ZONE: (.*) \\(\\w+\\)$",
             "ignoreCase": false
         }
     ],
-    "comments": "Captures entering/leaving zones.",
+    "comments": "Sets your characters variable ${CurrentZone} from:\n- The Zone in message.\n- A normal, non anon, /who message.",
     "actions": [
         {
             "phrases": [
-                "4XE1SERwjEB0rRhc"
+                "PhraseEnterZoneX"
             ],
-            "onlyExecuteInDev": false,
-            "useCustomColor": false,
             "actionType": 0,
             "overlayId": "hQqWbu1vumF9GRJv",
             "displayText": "You have entered {1}.",
             "duration": 5,
-            "actionId": "3irHXDSvHQFf3LZ5",
-            "textUseCustomBorder": false,
-            "textUseCustomColor": false,
-            "textUseCustomFont": false,
-            "textUseCustomGlow": false,
-            "textUseCustomSize": false
+            "actionId": "ActionTextEnterd"
         },
         {
             "phrases": [
-                "pOZDiwwJdb8VPfXm"
+                "PhraseLoadingPls",
+                "PhraseCharInZone"
             ],
-            "onlyExecuteInDev": false,
             "actionType": 7,
             "variableName": "CurrentZone",
-            "actionId": "sDiYPmjxrFRg5pI9"
+            "actionId": "ActionClearZoneV"
         },
         {
             "phrases": [
-                "4XE1SERwjEB0rRhc"
+                "PhraseEnterZoneX",
+                "PhraseCharInZone"
             ],
-            "onlyExecuteInDev": false,
             "actionType": 5,
             "variableName": "CurrentZone",
-            "actionId": "IW03jfBt5cdqU2CX",
+            "actionId": "ActionSetZoneVar",
             "loopBackForValue": true,
             "variableStorageType": "localVariable"
         }
     ],
     "captureMethod": "Any match",
-    "conditions": [],
     "predefined": true,
     "onlyExecuteInDev": false,
-    "classLevels": [],
-    "score": 4.843554288349809e-12,
-    "refIndex": 862,
     "importType": 0,
     "folderId": "njGANuCzIncWIMzU"
 }
