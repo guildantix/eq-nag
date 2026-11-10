@@ -18,7 +18,7 @@
         {
             "useRegEx": true,
             "phraseId": "PhraseCharInZone",
-            "phrase": "^\\[\\d.*\\] ${Character} .*ZONE: (.*) \\(\\w+\\)$",
+            "phrase": "^\\[\\d.*\\] ${Character} .*ZONE: (.*) \\(\\w+\\)\\s*$",
             "ignoreCase": false
         }
     ],
