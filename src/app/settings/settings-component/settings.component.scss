@@ -159,7 +159,7 @@ h3 {
 
 .roll-field-row {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 8px;
 
     .roll-field {
@@ -183,9 +183,14 @@ h3 {
     }
 }
 
-.roll-play {
+.roll-play, .roll-play-spacer {
     flex: 0 0 18px;
     width: 18px;
+}
+
+.roll-play {
+    height: 24px;
+    margin-top: 14px;
     padding: 0;
     font-size: 14px;
     color: #7fb2ff;
