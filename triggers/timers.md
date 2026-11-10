@@ -137,7 +137,7 @@ What your trigger must provide:
 
 How the clock works:
 
-- If you pick a tick phrase in the **Timer** tab, the bar waits ("(??)") until the first tick of damage, then starts counting. The tick phrase can use `?{target}` to mean "the same target as phrase 1" when the trigger is **Sequential**.
+- The bar starts counting down when the spell is cast. If you pick a tick phrase in the **Timer** tab, the first matching damage line restarts the bar from that moment. If that line never comes, for example because the spell was resisted, the bar still runs down and ends. The tick phrase can use `?{target}` to mean "the same target as phrase 1" when the trigger is **Sequential**.
 - With a tick phrase, the first "worn off" message after the bar starts ends it at that moment, as if it had run out. Its **Timer Ended** settings still run.
 - If you pick no tick phrase, the clock starts when the main phrase matches, and there is no worn-off check.
 

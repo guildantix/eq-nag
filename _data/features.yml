@@ -146,6 +146,18 @@
   feature: "Why didn't my trigger fire? checklist"
   page: triggers/why-didnt-it-fire.md
   status: documented
+- id: roll-tracker
+  feature: "Roll Tracker"
+  page: guides/roll-tracker.md
+  status: documented
+- id: data-safety
+  feature: "Crash-safe saves and the startup read error"
+  page: help/faq.md
+  status: documented
+- id: settings-help-link
+  feature: "Help & guides link in Settings"
+  page: help/faq.md
+  status: documented
 - id: combat-statistics
   feature: "Combat Statistics, DPS meter and pets"
   page: null
