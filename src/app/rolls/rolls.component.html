@@ -90,8 +90,9 @@
 
     <ng-template #noContest>
         <section class="detail" aria-label="Roll tracker">
+            <p class="settings-note" *ngIf="settings?.enabled === false">Roll Tracker is off. Turn it on in <strong>Settings › Roll Tracker</strong>.</p>
             <button mat-stroked-button type="button" [disabled]="settings?.enabled === false || testRunning" title="Plays a made-up contest (1–15) so you can place the roll panel" (click)="testOverlay()">Test overlay</button>
-            <p class="settings-note">Roll tracker settings are in <strong>Settings › Roll Tracker</strong>.</p>
+            <p class="settings-note" *ngIf="settings?.enabled !== false">Roll tracker settings are in <strong>Settings › Roll Tracker</strong>.</p>
         </section>
     </ng-template>
 
