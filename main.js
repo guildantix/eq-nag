@@ -330,7 +330,7 @@ app.on( 'child-process-gone', ( event, details ) => {
 
 // Websites Nag's own pages link to (target="_blank"); these open in the user's
 // browser.
-const externalLinkOrigins = [ 'https://spells.eqresource.com' ];
+const externalLinkOrigins = [ 'https://spells.eqresource.com', 'https://guildantix.github.io' ];
 
 // Nag's windows only ever load pages from Nag itself (via loadURL), so links
 // in trigger or package text must not open new windows or navigate a window

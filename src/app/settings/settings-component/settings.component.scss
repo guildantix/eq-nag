@@ -9,6 +9,30 @@ div.tab-content {
     > fieldset:not(:first-child) {
         margin-top: 50px;
     }
+    > .help-row + fieldset {
+        margin-top: 24px;
+    }
+    .help-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin: 0 2px;
+        padding: 10px 14px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 4px;
+        .spacer {
+            flex: 1;
+        }
+        .help-text strong {
+            margin-right: 8px;
+        }
+        .help-external {
+            font-size: 15px;
+            width: 15px;
+            height: 15px;
+            vertical-align: -2px;
+        }
+    }
     fieldset {
         p {
             font-weight: 300;

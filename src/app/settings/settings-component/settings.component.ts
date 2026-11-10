@@ -32,6 +32,7 @@ export class SettingsComponent implements OnInit {
     public phoneticTransforms: IPhoneticTransform[] = [];
     public phoneticTransformsModified: boolean = false;
     public version: string;
+    public guidesUrl: string = 'https://guildantix.github.io/eq-nag/';
     public masterVolume: number = 100;
     public speechVolume: number = 100;
     public audioVolume: number = 100;
