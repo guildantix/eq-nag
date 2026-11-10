@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, ElementRef, Input, OnInit, ViewChild } from '@angular/core';
+import { ChangeDetectorRef, Component, ElementRef, Input, NgZone, OnInit, ViewChild } from '@angular/core';
 import { DialogService } from 'src/app/dialogs/dialog.service';
 import { IpcService } from 'src/app/ipc.service';
 import { MatTable } from '@angular/material/table';
@@ -14,6 +14,7 @@ import { CharactersListComponent } from 'src/app/characters-list/characters-list
 import { nagId } from 'src/app/core/nag-id.util';
 import { DateUtilities } from 'src/app/utilities/date.utilities';
 import { MathUtilities } from 'src/app/utilities/math.utilities';
+import { RollTrackerSettings } from 'src/app/rolls/rolls.component';
 
 interface IPhoneticTransform {
     id: string;
@@ -62,6 +63,8 @@ export class SettingsComponent implements OnInit {
     public baseSpeakingRate: number = 1;
     public utter: SpeechSynthesisUtterance | undefined = undefined;
     public updatedSettings: string[] = [];
+    public rollSettings: RollTrackerSettings | null = null;
+    public rollDefaults: RollTrackerSettings | null = null;
 
     public get timerOverlays(): OverlayWindowModel[] {
         return this.overlays?.filter( m => m.overlayType === 'Timer' );
@@ -82,6 +85,7 @@ export class SettingsComponent implements OnInit {
         private readonly settingsService: SettingsService,
         private readonly snackBar: MatSnackBar,
         private readonly setupService: SetupService,
+        private readonly ngZone: NgZone,
     ) {
         speechSynthesis.onvoiceschanged = () => {
             this.voiceOptions = speechSynthesis.getVoices();
@@ -109,7 +113,58 @@ export class SettingsComponent implements OnInit {
 
         } );
 
+        window.api.ipc.on( 'rolls:state', ( event: any, state: { settings: RollTrackerSettings, defaults: RollTrackerSettings } ) => {
+            this.ngZone.run( () => {
+                this.rollSettings = state.settings;
+                this.rollDefaults = state.defaults;
+            } );
+        } );
+        window.api.ipc.send( 'rolls:get', null );
+
         this.loadSettings();
+    }
+
+    /**
+     * Saves changed roll tracker settings; a null value restores that setting's default.
+     */
+    updateRollSettings( changes: { [ K in keyof RollTrackerSettings ]?: RollTrackerSettings[ K ] | null } ): void {
+        window.api.ipc.send( 'rolls:settings:set', changes );
+    }
+
+    /**
+     * Saves a roll tracker text setting; a blank value restores the default, which is shown in the box again.
+     */
+    saveRollText( input: HTMLInputElement, key: 'pastePrefix' | 'pasteTemplate' | 'speakWinnerPhrase' | 'speakTiePhrase' ): void {
+        if ( input.value.trim() === '' ) {
+            input.value = this.rollDefaults?.[ key ] ?? '';
+            this.updateRollSettings( { [ key ]: null } );
+        } else {
+            this.updateRollSettings( { [ key ]: key === 'pastePrefix' ? input.value.trim() : input.value } );
+        }
+    }
+
+    /**
+     * Speaks the phrase with sample values, using the default phrase when it is blank.
+     */
+    previewRollPhrase( phrase: string, kind: 'winner' | 'tie' ): void {
+        const fallback = ( kind === 'winner' ? this.rollDefaults?.speakWinnerPhrase : this.rollDefaults?.speakTiePhrase ) ?? '';
+        const sample: Record<string, string> = { winner: 'Soandso', winners: 'Soandso, Brindle', roll: '692', min: '0', max: '1000', count: '3' };
+        const text = phrase?.trim() ? phrase : fallback;
+        try {
+            const utterance = new SpeechSynthesisUtterance( text.replace( /\$\{(winner|winners|roll|min|max|count)\}/g, ( match, key ) => sample[ key ] ) );
+            window.speechSynthesis.cancel();
+            window.speechSynthesis.speak( utterance );
+        } catch ( error ) {
+            console.error( 'Roll Tracker > Failed to speak the preview', error );
+        }
+    }
+
+    /**
+     * Returns the input value as a whole number between min and max, or null, which restores the default, when it is not a number.
+     */
+    toRollNumber( value: string, min: number, max: number ): number | null {
+        const parsed = Math.round( +value );
+        return value.trim() === '' || isNaN( parsed ) ? null : Math.min( max, Math.max( min, parsed ) );
     }
 
 

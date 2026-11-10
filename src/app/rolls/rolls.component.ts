@@ -25,6 +25,8 @@ export interface RollContestModel {
     dismissed?: boolean;
     rolls: RollModel[];
     ranked: RankedRollModel[];
+    /** The line pasted into chat, prefix included. */
+    resultText: string;
 }
 
 export interface RollTrackerSettings {
@@ -38,10 +40,16 @@ export interface RollTrackerSettings {
     speakTiePhrase: string;
     /** How long a closed contest stays on the overlay; 0 keeps it there. */
     resultSeconds: number;
+    pastePrefix: string;
+    pasteTemplate: string;
+    advancedOpen: boolean;
 }
 
-const defaultWinnerPhrase = '${winner} wins with ${roll}';
-const defaultTiePhrase = 'Tie at ${roll} between ${winners}';
+export interface RollLeader {
+    label: string;
+    who: string;
+    roll: number;
+}
 
 interface RollRow {
     rank: number | null;
@@ -66,9 +74,8 @@ export class RollsComponent implements OnInit, OnDestroy {
     public settings: RollTrackerSettings | null = null;
     public selectedContestId: string | null = null;
     public rows: RollRow[] = [];
-    public resultText: string = '';
     public now: number = Date.now();
-    public placeholderHint: string = '${winner} ${winners} ${roll} ${min} ${max} ${count}';
+    public testRunning: boolean = false;
 
     private clockId: number | null = null;
 
@@ -79,10 +86,11 @@ export class RollsComponent implements OnInit, OnDestroy {
     constructor( private ngZone: NgZone ) { }
 
     ngOnInit(): void {
-        window.api.ipc.on( 'rolls:state', ( event: any, state: { settings: RollTrackerSettings, contests: RollContestModel[] } ) => {
+        window.api.ipc.on( 'rolls:state', ( event: any, state: { settings: RollTrackerSettings, contests: RollContestModel[], testRunning: boolean } ) => {
             this.ngZone.run( () => {
                 this.contests = state.contests;
                 this.settings = state.settings;
+                this.testRunning = state.testRunning;
                 this.refreshSelected();
             } );
         } );
@@ -114,63 +122,40 @@ export class RollsComponent implements OnInit, OnDestroy {
         window.api.ipc.send( 'rolls:copy', contest.contestId );
     }
 
-    public updateSettings( changes: Partial<RollTrackerSettings> ): void {
-        window.api.ipc.send( 'rolls:settings:set', changes );
+    public removeContest( contest: RollContestModel ): void {
+        window.api.ipc.send( 'rolls:remove', contest.contestId );
     }
 
-    public previewWinnerPhrase( phrase: string ): void {
-        this.speakPreview( phrase, defaultWinnerPhrase );
+    public clearContests(): void {
+        window.api.ipc.send( 'rolls:clear', null );
     }
 
-    public previewTiePhrase( phrase: string ): void {
-        this.speakPreview( phrase, defaultTiePhrase );
-    }
-
-    /**
-     * Returns the input value as a whole number of seconds, never negative.
-     */
-    public toSeconds( value: string ): number {
-        return Math.max( 0, Math.round( +value || 0 ) );
+    public testOverlay(): void {
+        window.api.ipc.send( 'rolls:test', null );
     }
 
     public countdown( contest: RollContestModel ): string {
-        const remaining = Math.max( 0, ( this.settings?.closeAfterSeconds ?? 60 ) * 1000 - ( this.now - contest.lastRollAt ) );
+        const remaining = Math.max( 0, ( this.settings?.closeAfterSeconds ?? 30 ) * 1000 - ( this.now - contest.lastRollAt ) );
         const seconds = Math.ceil( remaining / 1000 );
         return `${Math.floor( seconds / 60 )}:${`${seconds % 60}`.padStart( 2, '0' )}`;
     }
 
-    public leaderText( contest: RollContestModel ): string {
+    public leader( contest: RollContestModel ): RollLeader | null {
         const top = contest.ranked.filter( r => r.rank === 1 );
         if ( top.length === 0 ) {
-            return 'no counted rolls';
+            return null;
         }
         const who = top.length > 1 ? `tie ${top.map( r => r.player ).join( ' / ' )}` : top[ 0 ].player;
-        return `${contest.closedAt == null ? 'leader' : 'winner'} ${who} ${top[ 0 ].roll}`;
+        return { label: contest.closedAt == null ? 'leader' : 'winner', who, roll: top[ 0 ].roll };
     }
 
     /**
-     * Speaks the phrase with sample values, using the fallback when the phrase is blank.
-     */
-    private speakPreview( phrase: string | undefined, fallback: string ): void {
-        const sample: Record<string, string> = { winner: 'Soandso', winners: 'Soandso, Fakename', roll: '692', min: '0', max: '1000', count: '3' };
-        const text = phrase?.trim() ? phrase : fallback;
-        try {
-            const utterance = new SpeechSynthesisUtterance( text.replace( /\$\{(winner|winners|roll|min|max|count)\}/g, ( match, key ) => sample[ key ] ) );
-            window.speechSynthesis.cancel();
-            window.speechSynthesis.speak( utterance );
-        } catch ( error ) {
-            console.error( 'Rolls > Failed to speak the preview', error );
-        }
-    }
-
-    /**
-     * Builds the table rows and the result text for the selected contest.
+     * Builds the table rows for the selected contest.
      */
     private refreshSelected(): void {
         const contest = this.selected;
         if ( !contest ) {
             this.rows = [];
-            this.resultText = '';
             return;
         }
 
@@ -198,10 +183,6 @@ export class RollsComponent implements OnInit, OnDestroy {
             note: r.note ?? '',
         } ) );
         this.rows = [ ...counted, ...flagged ];
-
-        const topCount = this.settings?.topCount ?? 4;
-        const parts = contest.ranked.filter( r => r.rank <= topCount ).map( r => `${r.rank}) ${r.player} ${r.roll}${isTie( r ) ? ' TIE' : ''}` );
-        this.resultText = `Rolls ${contest.min}-${contest.max} (${contest.ranked.length}): ${parts.join( '  ' )}`;
     }
 
 }

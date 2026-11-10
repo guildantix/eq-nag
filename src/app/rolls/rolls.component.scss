@@ -1,5 +1,5 @@
 div.tab-content {
-    overflow-y: auto;
+    overflow: hidden;
     position: fixed;
     left: 0;
     right: 0;
@@ -9,10 +9,10 @@ div.tab-content {
 
 .rolls {
     display: flex;
-    flex-wrap: wrap;
+    height: 100%;
+    box-sizing: border-box;
     gap: 20px;
     padding: 20px;
-    align-items: flex-start;
 }
 
 .section-label {
@@ -23,11 +23,71 @@ div.tab-content {
     color: #a9a4b4;
 }
 
+$gold: #ffd166;
+$green: #5fd38d;
+
 .contests {
-    flex: 1 1 220px;
+    flex: 0 0 230px;
+    width: 230px;
+    min-height: 0;
     display: flex;
     flex-direction: column;
     gap: 8px;
+}
+
+.contests-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+
+    .section-label {
+        margin: 0;
+    }
+}
+
+.link-button {
+    padding: 0;
+    font: inherit;
+    font-size: 12px;
+    color: #7fb2ff;
+    background: none;
+    border: none;
+    cursor: pointer;
+
+    &:hover {
+        text-decoration: underline;
+    }
+}
+
+.contest-list,
+.detail {
+    &::-webkit-scrollbar {
+        display: block;
+        width: 8px;
+    }
+
+    &::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    &::-webkit-scrollbar-thumb {
+        background-color: #4a4455;
+        border-radius: 4px;
+
+        &:hover {
+            background-color: #6a6275;
+        }
+    }
+}
+
+.contest-list {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding-right: 6px;
 }
 
 .empty {
@@ -37,11 +97,18 @@ div.tab-content {
     color: #a9a4b4;
 }
 
+.contest-item {
+    position: relative;
+    flex: 0 0 auto;
+}
+
 .contest {
     display: flex;
     flex-direction: column;
     gap: 2px;
-    padding: 10px 12px;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 10px 28px 10px 12px;
     text-align: left;
     font: inherit;
     color: inherit;
@@ -53,6 +120,27 @@ div.tab-content {
     &.selected {
         background: #231b2d;
         border-color: #8b4fb3;
+    }
+}
+
+.contest-remove {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 22px;
+    height: 22px;
+    padding: 0;
+    font-size: 16px;
+    line-height: 20px;
+    color: #a9a4b4;
+    background: none;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+
+    &:hover {
+        color: #ffffff;
+        background: #3d3747;
     }
 }
 
@@ -72,7 +160,7 @@ div.tab-content {
 
     &.open {
         font-weight: 700;
-        color: #7fd1a0;
+        color: $green;
     }
 }
 
@@ -81,15 +169,30 @@ div.tab-content {
     color: #a9a4b4;
 }
 
+.winner-name {
+    font-weight: 700;
+    color: $gold;
+}
+
+.winner-roll {
+    font-weight: 700;
+    color: $green;
+}
+
 .detail {
-    flex: 999 1 520px;
+    flex: 1 1 auto;
     min-width: 0;
+    min-height: 0;
+    overflow-y: auto;
     display: flex;
     flex-direction: column;
+    align-items: flex-start;
     gap: 14px;
+    padding-right: 6px;
 }
 
 .detail-head {
+    align-self: stretch;
     display: flex;
     flex-wrap: wrap;
     align-items: center;
@@ -116,13 +219,12 @@ div.tab-content {
 }
 
 .table-box {
+    max-width: 100%;
     overflow-x: auto;
     border: 1px solid #2c2834;
     border-radius: 8px;
 
     table {
-        width: 100%;
-        min-width: 480px;
         border-collapse: collapse;
         font-size: 14px;
     }
@@ -140,27 +242,31 @@ div.tab-content {
         border-top: 1px solid #2c2834;
     }
 
-    .rank {
-        width: 48px;
-    }
-
     .roll {
-        width: 64px;
         text-align: right;
         font-family: 'Roboto Mono', monospace;
+        font-variant-numeric: tabular-nums;
         font-weight: 700;
     }
 
     .time {
-        width: 110px;
+        white-space: nowrap;
         color: #a9a4b4;
     }
 
     tr.leader {
         background: rgba(242, 201, 76, 0.12);
 
-        .rank, .roll, strong {
-            color: #f2c94c;
+        .rank, strong, .player {
+            color: $gold;
+        }
+
+        .player {
+            font-weight: 700;
+        }
+
+        .roll {
+            color: $green;
         }
     }
 
@@ -188,7 +294,14 @@ div.tab-content {
     border-radius: 4px;
 }
 
+.result {
+    max-width: 100%;
+}
+
 .result-text {
+    display: inline-block;
+    max-width: 100%;
+    box-sizing: border-box;
     padding: 12px 14px;
     font-family: 'Roboto Mono', monospace;
     font-size: 13px;
@@ -199,71 +312,13 @@ div.tab-content {
     user-select: text;
 }
 
-.settings {
-    flex: 1 1 100%;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    padding: 14px;
-    border: 1px solid #2c2834;
-    border-radius: 6px;
-    max-width: 640px;
-}
-
-.setting-row {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-
-    input {
-        width: 80px;
-        min-height: 36px;
-        box-sizing: border-box;
-        padding: 0 10px;
-        font: inherit;
-        color: inherit;
-        background: #16141b;
-        border: 1px solid #3d3747;
-        border-radius: 6px;
-    }
-}
-
-.phrases {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    margin-left: 28px;
-}
-
-.phrase-row {
-    flex-wrap: nowrap;
-
-    label {
-        flex: 0 0 90px;
-    }
-
-    input {
-        flex: 1 1 auto;
-        width: auto;
-        min-width: 0;
-    }
-}
-
-.hint {
+.settings-note {
+    margin: 0;
     font-size: 12px;
     color: #a9a4b4;
-}
 
-.setting-group {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-
-    mat-radio-group {
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
+    strong {
+        font-weight: 500;
+        color: #e8e8ea;
     }
 }
