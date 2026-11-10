@@ -22,7 +22,9 @@
             "ignoreCase": false
         }
     ],
-    "comments": "Sets your characters variable ${CurrentZone} from:\n- The Zone in message.\n- A normal, non anon, /who message.",
+    "comments": "Sets your character's ${CurrentZone} variable from:\n- The 'You have entered' message.\n- Your own non-anon /who line.",
+    "conditions": [],
+    "classLevels": [],
     "actions": [
         {
             "phrases": [
