@@ -3054,7 +3054,7 @@ function displayDotTimerComponent( res, timestamp, action, deltaTime, trigger ) 
     comp.action.displayText = `${trigger.name} --== ${res.result.groups.target} ==--`;
     comp.overlayId = action.overlayId;
     comp.matches = res.result;
-    comp.timestamp = comp.action.secondaryPhrases?.length > 0 ? null : timestamp;
+    comp.timestamp = timestamp;
     comp.voiceIndex = voiceIndex;
     
     logInstanceIds.push( comp.instanceId );
