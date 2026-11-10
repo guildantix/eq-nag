@@ -91,12 +91,55 @@ Detection of The Heroes' Journey characters was fixed in 0.2.27. In **New Charac
 `.mp3`, `.ogg`, `.m4a`, `.opus`, `.webm` and `.aac`. The extra formats arrived in 0.2.27.
 </details>
 
+<details id="dps-takp" markdown="1">
+<summary>My spell damage is missing or credited to the wrong name in the DPS meter</summary>
+
+On Project Quarm and TAKP servers, spell damage is logged in a different form from live servers. Nag read some of those lines wrongly. Spell damage you cast is now credited to you, and other players' spell damage is credited to them, or to the pet's owner. Chat lines that quote combat text no longer count as damage. Update Nag.
+</details>
+
+<details id="dot-bar-wait" markdown="1">
+<summary>My DoT timer shows "(??)" or waits before it starts</summary>
+
+Nag now starts a DoT timer when the spell is cast. If you chose a first damage phrase, the bar restarts from the moment of the first damage line. If that line never comes, for example because the spell was resisted, the bar still counts down and ends. See [Timers in depth]({{ '/triggers/timers' | relative_url }}#dot-timer).
+</details>
+
+<details id="console-filter" markdown="1">
+<summary>The Console search box or character list does nothing</summary>
+
+This was a bug. Typing in the search box, or picking a character, now filters the Console. The character list filters trigger matches only. Messages from Nag itself always show. See [Why didn't my trigger fire?]({{ '/triggers/why-didnt-it-fire' | relative_url }}#read-the-console).
+</details>
+
+<details id="zone-who" markdown="1">
+<summary>My zone trigger does not work in an instance</summary>
+
+Nag also reads your zone from your own `/who` line, and `/who` can add an instance number, such as "Chardok 19". A condition set to **Equals** "Chardok" does not match that. Use **Contains** with the base zone name. See [Conditions and variables]({{ '/triggers/conditions' | relative_url }}#zone-conditions).
+</details>
+
 ## Your data
 
 <details id="data-folder" markdown="1">
 <summary>Where does Nag keep my settings and triggers?</summary>
 
 In a folder called `electron-angular-eq-parse` inside your Windows `AppData\Roaming` folder. Type `%APPDATA%` in the Windows File Explorer address bar and press **Enter** to get there. Close Nag before you copy anything. Do not edit these files by hand.
+</details>
+
+<details id="could-not-read" markdown="1">
+<summary>Nag says "Nag could not read its data" and closes</summary>
+
+Nag could not open one of its settings files. It names the file in the message. Nag closes on purpose, so it does not replace your triggers and settings with empty ones.
+
+1. Check that the named file is not locked. Antivirus programs and cloud sync tools sometimes lock files.
+2. Start Nag again.
+
+If a file is damaged, Nag renames it to `<file>.corrupt-` followed by a time stamp and a random part, keeps it, and starts with fresh settings for that file. Your damaged copy stays in the same folder, so you can ask for help in the [Discord](https://discord.gg/e3Z8PR8EXE) before you delete anything.
+
+Saves are also crash-safe now. Nag writes a new copy and swaps it in, so a crash or power loss while saving no longer cuts a settings file short.
+</details>
+
+<details id="help-link" markdown="1">
+<summary>Where do I find these guides from inside Nag?</summary>
+
+Open the **Settings** tab. The **Help & guides** row at the top has an **Open the guides** link. It opens this site in your browser.
 </details>
 
 <script>

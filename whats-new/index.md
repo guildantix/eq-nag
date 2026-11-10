@@ -8,6 +8,29 @@ hide_meta: true
 
 What changed in each Nag release. You can also open the **Update Notes** window from the **Settings** tab, by clicking **Notes** at the top.
 
+## Coming after 0.2.27
+
+These changes are in the development version and are not in a release yet.
+
+### New
+
+- **Roll Tracker.** Nag follows `/random` rolls, ranks them, handles ties and can copy or speak the result. It has a **Rolls** tab, a roll panel on screen, a **Test overlay** button and a **Roll Tracker** section in **Settings**. See [Roll Tracker]({{ '/guides/roll-tracker' | relative_url }}).
+- **Help & guides link** at the top of **Settings**. It opens this site.
+- **Your zone from `/who`.** The built-in Capture Zone trigger also sets `CurrentZone` from your own `/who` line. See [Conditions and variables]({{ '/triggers/conditions' | relative_url }}#zone-conditions).
+
+### Fixes
+
+- **DoT timers start at once.** They count down from the cast, and restart from the first damage line if you chose one. They no longer sit at "(??)".
+- **Quarm and TAKP spell damage in the DPS meter** is credited to the right caster.
+- **Spell import reads tick durations correctly.** "12 ticks" is 72 seconds, not 12.
+- **The Console search box and character list work.**
+- **Settings are saved safely.** A crash or power loss can no longer cut a settings file short. If Nag cannot read a file it shows "Nag could not read its data" and closes, so nothing is overwritten. See the [FAQ]({{ '/help/faq' | relative_url }}#could-not-read).
+- **Plain timers leave the overlay as soon as they reach zero**, instead of showing "0s" for a second.
+- **Millions show as "1.5M"** in the DPS meter and floating combat text. It used to be a lowercase m.
+- **The ending and ended sound buttons** in the DoT Timer editor work.
+- **Sequential triggers** remove the finished sequence, not another one.
+- **Death Recap** no longer fails on damage lines from your own DoTs.
+
 ## v0.2.27 (not released yet)
 
 ### Fixes

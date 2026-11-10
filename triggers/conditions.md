@@ -51,11 +51,16 @@ Testvale Caverns|Plane of Time
 
 The zone variable is filled from the line "You have entered Zone Name." That name is not always the one on the map, so read the exact text in your log after you zone.
 
+<a id="zone-conditions"></a>
+
+{: .tip }
+For a zone condition, use **Contains** with the base zone name, for example `Chardok`. Your own `/who` line can add an instance number, such as "Chardok 19", and **Equals** would not match it.
+
 ### Variables Nag already keeps
 
 | Variable | Filled by |
 |---|---|
-| `CurrentZone` | The **Capture Zone** trigger that comes with Nag. It stores the zone on "You have entered ..." and clears it on "LOADING, PLEASE WAIT...". |
+| `CurrentZone` | The **Capture Zone** trigger that comes with Nag. It stores the zone on "You have entered ..." and on your own `/who` line (not anonymous), and clears it on "LOADING, PLEASE WAIT...". |
 | `SpellBeingCast` | The **Capture spell casting** trigger that comes with Nag. It stores the spell on "You begin casting ..." (and on "You activate ..." and "You begin singing ..."), and clears it when the spell is interrupted, resisted, does not take hold, fizzles or is reflected. |
 | `Character` | Your character name. Always set. |
 

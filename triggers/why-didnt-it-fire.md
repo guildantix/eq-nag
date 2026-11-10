@@ -112,5 +112,6 @@ The **Console** button at the bottom right of the main window opens Nag's Consol
 - If it does not show up, the line did not match, or a condition failed.
 - Click the trigger's name in a Console line to open it. Click the filter icon to list only that trigger's lines.
 - Errors in a phrase, such as a regular expression with a missing bracket, also appear in the Console.
+- Type in the search box to show only lines that contain your text. Pick a character in the list to show only that character's trigger matches. Messages from Nag itself always show.
 
 The **Regex Visualizer** is under a RegEx phrase in the **Capture** tab. Click it to color the pattern. Red marks a mistake.

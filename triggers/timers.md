@@ -35,7 +35,7 @@ Timers and countdowns take their length from the **Timer duration** you set. If 
 
 | Property | Used by | Description |
 |---|---|---|
-| Tick damage phrase (hint: "Select the capture phrase for the dot's tick damage (not the initial damage).") | DoT | Starts the clock on the first tick. See [DoT Timer](#dot-timer). |
+| Tick damage phrase (hint: "Select the capture phrase for the dot's tick damage (not the initial damage).") | DoT | Restarts the clock, which already started at the cast, on the first tick. See [DoT Timer](#dot-timer). |
 | **Overlay Window** | All | The Timer overlay that shows the bar. |
 | **Timer name** (**Stopwatch name**) | Timer, Countdown, Beneficial, Stopwatch | The label on the bar. On a Timer, Countdown or Stopwatch, snippets are filled in, and a name that was never filled in falls back to the trigger's name. On a Beneficial Timer it is the spell's name (see [Beneficial Timer](#beneficial-timer)). DoT timers have no name box. |
 | **Timer duration** | Timer, Countdown, DoT, Beneficial | The length. On a DoT Timer the label also shows the number of ticks. The **Storage Formula** link on a Timer or Countdown takes the length from a stored variable or Persistent Dictionary instead. A Beneficial Timer shows the link but does not use it. |
@@ -137,7 +137,7 @@ What your trigger must provide:
 
 How the clock works:
 
-- If you pick a tick phrase in the **Timer** tab, the bar waits ("(??)") until the first tick of damage, then starts counting. The tick phrase can use `?{target}` to mean "the same target as phrase 1" when the trigger is **Sequential**.
+- The bar starts counting down when the spell is cast. If you pick a tick phrase in the **Timer** tab, the first matching damage line restarts the bar from that moment. If that line never comes, for example because the spell was resisted, the bar still runs down and ends. The tick phrase can use `?{target}` to mean "the same target as phrase 1" when the trigger is **Sequential**.
 - With a tick phrase, the first "worn off" message after the bar starts ends it at that moment, as if it had run out. Its **Timer Ended** settings still run.
 - If you pick no tick phrase, the clock starts when the main phrase matches, and there is no worn-off check.
 

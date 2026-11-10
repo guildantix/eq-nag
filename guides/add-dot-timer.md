@@ -9,6 +9,9 @@ nav_order: 7
 Make a timer that counts down your damage-over-time spell on each target. Nag builds it from the spell's page on EQ Spell Resources.
 
 {: .note }
+Spell durations given in ticks are read correctly. A spell of "12 ticks" gets a 72 second timer, since a tick is 6 seconds.
+
+{: .note }
 On Nag 0.2.26 and earlier you could also use Allakhazam. That option was removed because Allakhazam does not allow automated access. Timers you made that way still work. To refresh one, see [Re-import a timer from EQ Spell Resources]({{ '/guides/reimport-allakhazam' | relative_url }}).
 
 ## Before you start

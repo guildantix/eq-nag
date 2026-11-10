@@ -116,7 +116,7 @@ The `|` separates alternatives, and there are no spaces around it. Nag does not 
 
 In Fizzlethorp Keep or Fizzlethorp Depths, the overlay shows the warning and Nag speaks. In any other zone nothing happens, even if the line appears.
 
-`CurrentZone` is set by Nag's built-in **Capture Zone** trigger from the line `You have entered <zone>.`. Keep that trigger enabled. **Equals** is exact and case sensitive, so type the zone as the log writes it. Use **Contains** to match part of a name without caring about capitals. If any condition fails, the trigger does not run at all.
+`CurrentZone` is set by Nag's built-in **Capture Zone** trigger from the line `You have entered <zone>.` and from your own non-anonymous `/who` line. Keep that trigger enabled. **Equals** is exact and case sensitive, so type the zone as the log writes it. Use **Contains** to match part of a name without caring about capitals. If any condition fails, the trigger does not run at all.
 
 ## Death counter
 
@@ -196,7 +196,7 @@ A cave lurker was slain by Soandso!
 
 **What fires**
 
-The bar **Fizzlethorp's Venom --== A cave lurker ==--** shows "(??)" until the first tick of damage, then counts down from 60 seconds. When the cave lurker dies, by either "was slain by" or "has been slain by" wording, the bar disappears. A second mob gets its own bar.
+The bar **Fizzlethorp's Venom --== A cave lurker ==--** counts down from 60 seconds from the cast, and restarts from the first tick of damage. When the cave lurker dies, by either "was slain by" or "has been slain by" wording, the bar disappears. A second mob gets its own bar.
 
 - `${target}` in an End Early phrase is replaced by the text phrase 1 captured. End Early phrases cannot capture new text.
 - The **i** button matters because the same mob is "A cave lurker" at the start of a line and "a cave lurker" in "You have slain a cave lurker!".
