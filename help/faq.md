@@ -131,7 +131,7 @@ Nag could not open one of its settings files. It names the file in the message. 
 1. Check that the named file is not locked. Antivirus programs and cloud sync tools sometimes lock files.
 2. Start Nag again.
 
-If a file is damaged, Nag renames it to a name ending in `.corrupt-` and a time, keeps it, and starts with fresh settings for that file. Your damaged copy stays in the same folder, so you can ask for help in the [Discord](https://discord.gg/e3Z8PR8EXE) before you delete anything.
+If a file is damaged, Nag renames it to `<file>.corrupt-` followed by a time stamp and a random part, keeps it, and starts with fresh settings for that file. Your damaged copy stays in the same folder, so you can ask for help in the [Discord](https://discord.gg/e3Z8PR8EXE) before you delete anything.
 
 Saves are also crash-safe now. Nag writes a new copy and swaps it in, so a crash or power loss while saving no longer cuts a settings file short.
 </details>

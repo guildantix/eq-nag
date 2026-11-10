@@ -35,7 +35,7 @@ Timers and countdowns take their length from the **Timer duration** you set. If 
 
 | Property | Used by | Description |
 |---|---|---|
-| Tick damage phrase (hint: "Select the capture phrase for the dot's tick damage (not the initial damage).") | DoT | Starts the clock on the first tick. See [DoT Timer](#dot-timer). |
+| Tick damage phrase (hint: "Select the capture phrase for the dot's tick damage (not the initial damage).") | DoT | Restarts the clock, which already started at the cast, on the first tick. See [DoT Timer](#dot-timer). |
 | **Overlay Window** | All | The Timer overlay that shows the bar. |
 | **Timer name** (**Stopwatch name**) | Timer, Countdown, Beneficial, Stopwatch | The label on the bar. On a Timer, Countdown or Stopwatch, snippets are filled in, and a name that was never filled in falls back to the trigger's name. On a Beneficial Timer it is the spell's name (see [Beneficial Timer](#beneficial-timer)). DoT timers have no name box. |
 | **Timer duration** | Timer, Countdown, DoT, Beneficial | The length. On a DoT Timer the label also shows the number of ticks. The **Storage Formula** link on a Timer or Countdown takes the length from a stored variable or Persistent Dictionary instead. A Beneficial Timer shows the link but does not use it. |
