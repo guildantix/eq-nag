@@ -102,17 +102,21 @@ h3 {
 
 .roll-columns {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+    grid-template-columns: 420px 520px;
     gap: 0 40px;
     padding-bottom: 8px;
 
     &.collapsed {
-        grid-template-columns: minmax(0, 1fr) auto;
+        grid-template-columns: 420px auto;
     }
 
     @media (max-width: 900px) {
         grid-template-columns: minmax(0, 1fr);
         gap: 24px 0;
+
+        &.collapsed {
+            grid-template-columns: minmax(0, 1fr);
+        }
 
         .advanced {
             padding-left: 0;
@@ -144,40 +148,22 @@ h3 {
     color: #a9a4b4;
 }
 
-.roll-row {
+.roll-field {
+    width: 100%;
+}
+
+.roll-field-number {
+    width: 260px;
+    max-width: 100%;
+}
+
+.roll-field-row {
     display: flex;
     align-items: center;
-    gap: 12px;
-    min-height: 40px;
+    gap: 8px;
 
-    label {
+    .roll-field {
         flex: 1 1 auto;
-    }
-
-    select, input {
-        min-height: 40px;
-        box-sizing: border-box;
-        padding: 0 12px;
-        font: inherit;
-        color: inherit;
-        background: #16141b;
-        border: 1px solid #3d3747;
-        border-radius: 6px;
-    }
-
-    select {
-        padding: 0 8px;
-    }
-
-    .roll-short {
-        flex: 0 0 80px;
-        width: 80px;
-        text-align: center;
-    }
-
-    .roll-wide {
-        flex: 0 1 62%;
-        width: 62%;
         min-width: 0;
     }
 }
@@ -197,12 +183,9 @@ h3 {
     }
 }
 
-.roll-play, .roll-play-spacer {
+.roll-play {
     flex: 0 0 18px;
     width: 18px;
-}
-
-.roll-play {
     padding: 0;
     font-size: 14px;
     color: #7fb2ff;

@@ -21,7 +21,7 @@ const testRange = { min: 1, max: 15 };
 const testRollGapMs = 700;
 
 class RollTrackerSettings {
-    enabled = true;
+    enabled = false;
     topCount = 4;
     closeAfterSeconds = 30;
     /** @type {'first' | 'highest'} */
