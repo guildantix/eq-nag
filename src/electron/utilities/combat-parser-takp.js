@@ -67,6 +67,9 @@ const combatRgx = {
     // Direct Damage spell attacks. [https://regex101.com/r/K5N1Ss/1]
     DirectDamage: /^(?<target>.*) was hit by non-melee for (?<damage>[0-9]*) points of damage\./gi,
 
+    // Direct Damage spell attacks by another caster or pet.
+    OtherDirectDamage: /^(?<actor>.+?) hit (?<target>.+) for (?<damage>[0-9]+) points of non-melee damage\./g,
+
     // Your Damage Over Time spell reports. [https://regex101.com/r/DaGnUf/2]
     YourDoT: /^(?<target>.*) has taken (?<damage>[0-9]*) damage from (?<actor>you)r (?<attackType>.*)\.[\s]?(\((?<modifiers>.*)?\))?/gi,
 
@@ -185,6 +188,21 @@ class TakpCombatParser extends CombatParser {
                 return undefined;
             }
 
+            // Chat lines can contain damage-shaped text.
+            if ( entry.log.indexOf( ", '" ) > -1 ) {
+                return undefined;
+            }
+
+            regxResult = executCombatRgx( combatRgx.DirectDamage, entry.log );
+            if ( regxResult !== null ) {
+                return this._addDetrimentalSpellEvent( timestamp, 'You', regxResult.groups.target, +regxResult.groups.damage, 'Non-melee', null, null );
+            }
+
+            regxResult = executCombatRgx( combatRgx.OtherDirectDamage, entry.log );
+            if ( regxResult !== null ) {
+                return this._addDetrimentalSpellEvent( timestamp, regxResult.groups.actor, regxResult.groups.target, +regxResult.groups.damage, 'Non-melee', null, null );
+            }
+
             regxResult = executCombatRgx( combatRgx.MeleeDamage, entry.log );
             if ( regxResult !== null ) {
                 return this._addMeleeEvent( timestamp, regxResult.groups.actor, regxResult.groups.target, +regxResult.groups.damage, regxResult.groups.attackType, regxResult.groups.modifiers );
@@ -196,11 +214,6 @@ class TakpCombatParser extends CombatParser {
                 return this._addMeleeAvoidance( timestamp,  regxResult.groups.actor ,  regxResult.groups.target, regxResult.groups.defenseType, regxResult.groups.attackType, regxResult.groups.modifiers );
             }
             
-            regxResult = executCombatRgx( combatRgx.DirectDamage, entry.log );
-            if ( regxResult !== null ) {
-                return this._addDetrimentalSpellEvent( timestamp, 'You', regxResult.groups.target, +regxResult.groups.damage, 'Non-melee', null, null );
-            }
-
             regxResult = executCombatRgx( combatRgx.YourDoT, entry.log );
             if ( regxResult !== null ) {
                 return this._addDetrimentalSpellEvent( timestamp, regxResult.groups.actor, regxResult.groups.target, +regxResult.groups.damage, regxResult.groups.attackType, regxResult.groups.resistType, regxResult.groups.modifiers );
