@@ -145,6 +145,15 @@ export class SettingsComponent implements OnInit {
     }
 
     /**
+     * Saves a roll tracker number setting clamped to min and max; a blank value restores the default. The box shows the saved value.
+     */
+    saveRollNumber( input: HTMLInputElement, key: 'closeAfterSeconds' | 'topCount' | 'resultSeconds', min: number, max: number ): void {
+        const value = this.toRollNumber( input.value, min, max );
+        input.value = String( value ?? this.rollDefaults?.[ key ] ?? '' );
+        this.updateRollSettings( { [ key ]: value } );
+    }
+
+    /**
      * Speaks the phrase with sample values, using the default phrase when it is blank.
      */
     previewRollPhrase( phrase: string, kind: 'winner' | 'tie' ): void {

@@ -147,18 +147,18 @@
                 <ng-container *ngIf="roll.advancedOpen">
                     <mat-form-field class="roll-field roll-field-number">
                         <mat-label>Close after (seconds)</mat-label>
-                        <input matInput id="roll-close" type="number" min="10" max="600" [value]="roll.closeAfterSeconds" (change)="updateRollSettings( { closeAfterSeconds: toRollNumber( $any( $event.target ).value, 10, 600 ) } )">
+                        <input matInput id="roll-close" type="number" min="10" max="600" [value]="roll.closeAfterSeconds" (change)="saveRollNumber( $any( $event.target ), 'closeAfterSeconds', 10, 600 )">
                         <button type="button" matSuffix class="roll-link" (click)="updateRollSettings( { closeAfterSeconds: null } )">Reset</button>
                         <mat-hint>Closes when no new rolls arrive.</mat-hint>
                     </mat-form-field>
                     <mat-form-field class="roll-field roll-field-number">
                         <mat-label>Rows on the overlay</mat-label>
-                        <input matInput id="roll-top" type="number" min="1" max="20" [value]="roll.topCount" (change)="updateRollSettings( { topCount: toRollNumber( $any( $event.target ).value, 1, 20 ) } )">
+                        <input matInput id="roll-top" type="number" min="1" max="20" [value]="roll.topCount" (change)="saveRollNumber( $any( $event.target ), 'topCount', 1, 20 )">
                         <mat-hint>Players shown on the roll panel.</mat-hint>
                     </mat-form-field>
                     <mat-form-field class="roll-field roll-field-number">
                         <mat-label>Hide overlay result after (seconds)</mat-label>
-                        <input matInput id="roll-result" type="number" min="0" max="600" [value]="roll.resultSeconds" (change)="updateRollSettings( { resultSeconds: toRollNumber( $any( $event.target ).value, 0, 600 ) } )">
+                        <input matInput id="roll-result" type="number" min="0" max="600" [value]="roll.resultSeconds" (change)="saveRollNumber( $any( $event.target ), 'resultSeconds', 0, 600 )">
                         <mat-hint>0 keeps it on screen.</mat-hint>
                     </mat-form-field>
                     <mat-form-field class="roll-field roll-field-number">
