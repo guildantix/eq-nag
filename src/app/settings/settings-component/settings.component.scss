@@ -102,8 +102,9 @@ h3 {
 
 .roll-columns {
     display: grid;
-    grid-template-columns: 420px 520px;
+    grid-template-columns: 420px minmax(0, 1fr);
     gap: 0 40px;
+    max-width: 980px;
     padding-bottom: 8px;
 
     &.collapsed {
@@ -189,6 +190,7 @@ h3 {
 }
 
 .roll-play {
+    /* Lines the arrow up with the input line of the form field, not the hint below it. */
     height: 24px;
     margin-top: 14px;
     padding: 0;

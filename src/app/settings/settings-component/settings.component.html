@@ -135,7 +135,7 @@
                 <mat-slide-toggle [checked]="roll.speakWinner" (change)="updateRollSettings( { speakWinner: $event.checked } )">Speak the winner</mat-slide-toggle>
                 <mat-form-field class="roll-field">
                     <mat-label>Paste prefix</mat-label>
-                    <input matInput id="roll-prefix" type="text" placeholder="e.g. /rs" [value]="roll.pastePrefix" (change)="saveRollText( $any( $event.target ), 'pastePrefix' )">
+                    <input matInput type="text" placeholder="e.g. /rs" [value]="roll.pastePrefix" (change)="saveRollText( $any( $event.target ), 'pastePrefix' )">
                     <button type="button" matSuffix class="roll-link" (click)="updateRollSettings( { pastePrefix: null } )">Reset</button>
                     <mat-hint>Added in front of the copied result.</mat-hint>
                 </mat-form-field>
@@ -147,23 +147,23 @@
                 <ng-container *ngIf="roll.advancedOpen">
                     <mat-form-field class="roll-field roll-field-number">
                         <mat-label>Close after (seconds)</mat-label>
-                        <input matInput id="roll-close" type="number" min="10" max="600" [value]="roll.closeAfterSeconds" (change)="saveRollNumber( $any( $event.target ), 'closeAfterSeconds', 10, 600 )">
+                        <input matInput type="number" min="10" max="600" [value]="roll.closeAfterSeconds" (change)="saveRollNumber( $any( $event.target ), 'closeAfterSeconds', 10, 600 )">
                         <button type="button" matSuffix class="roll-link" (click)="updateRollSettings( { closeAfterSeconds: null } )">Reset</button>
                         <mat-hint>Closes when no new rolls arrive.</mat-hint>
                     </mat-form-field>
                     <mat-form-field class="roll-field roll-field-number">
                         <mat-label>Rows on the overlay</mat-label>
-                        <input matInput id="roll-top" type="number" min="1" max="20" [value]="roll.topCount" (change)="saveRollNumber( $any( $event.target ), 'topCount', 1, 20 )">
+                        <input matInput type="number" min="1" max="20" [value]="roll.topCount" (change)="saveRollNumber( $any( $event.target ), 'topCount', 1, 20 )">
                         <mat-hint>Players shown on the roll panel.</mat-hint>
                     </mat-form-field>
                     <mat-form-field class="roll-field roll-field-number">
                         <mat-label>Hide overlay result after (seconds)</mat-label>
-                        <input matInput id="roll-result" type="number" min="0" max="600" [value]="roll.resultSeconds" (change)="saveRollNumber( $any( $event.target ), 'resultSeconds', 0, 600 )">
+                        <input matInput type="number" min="0" max="600" [value]="roll.resultSeconds" (change)="saveRollNumber( $any( $event.target ), 'resultSeconds', 0, 600 )">
                         <mat-hint>0 keeps it on screen.</mat-hint>
                     </mat-form-field>
                     <mat-form-field class="roll-field roll-field-number">
                         <mat-label>Someone rolls twice</mat-label>
-                        <mat-select id="roll-reroll" [value]="roll.rerollRule" (selectionChange)="updateRollSettings( { rerollRule: $event.value } )">
+                        <mat-select [value]="roll.rerollRule" (selectionChange)="updateRollSettings( { rerollRule: $event.value } )">
                             <mat-option value="first">First roll counts</mat-option>
                             <mat-option value="highest">Highest roll counts</mat-option>
                         </mat-select>
@@ -172,7 +172,7 @@
                     <div class="roll-field-row">
                         <mat-form-field class="roll-field">
                             <mat-label>Paste text</mat-label>
-                            <input matInput id="roll-template" type="text" [value]="roll.pasteTemplate" (change)="saveRollText( $any( $event.target ), 'pasteTemplate' )">
+                            <input matInput type="text" [value]="roll.pasteTemplate" (change)="saveRollText( $any( $event.target ), 'pasteTemplate' )">
                             <button type="button" matSuffix class="roll-link" (click)="updateRollSettings( { pasteTemplate: null } )">Reset</button>
                             <mat-hint>Text copied when a contest closes.</mat-hint>
                         </mat-form-field>
@@ -181,7 +181,7 @@
                     <div class="roll-field-row">
                         <mat-form-field class="roll-field">
                             <mat-label>Winner phrase</mat-label>
-                            <input matInput #winnerInput id="roll-winner" type="text" [value]="roll.speakWinnerPhrase" (change)="saveRollText( $any( $event.target ), 'speakWinnerPhrase' )">
+                            <input matInput #winnerInput type="text" [value]="roll.speakWinnerPhrase" (change)="saveRollText( $any( $event.target ), 'speakWinnerPhrase' )">
                             <button type="button" matSuffix class="roll-link" (click)="updateRollSettings( { speakWinnerPhrase: null } )">Reset</button>
                             <mat-hint>Spoken when someone wins.</mat-hint>
                         </mat-form-field>
@@ -190,7 +190,7 @@
                     <div class="roll-field-row">
                         <mat-form-field class="roll-field">
                             <mat-label>Tie phrase</mat-label>
-                            <input matInput #tieInput id="roll-tie" type="text" [value]="roll.speakTiePhrase" (change)="saveRollText( $any( $event.target ), 'speakTiePhrase' )">
+                            <input matInput #tieInput type="text" [value]="roll.speakTiePhrase" (change)="saveRollText( $any( $event.target ), 'speakTiePhrase' )">
                             <button type="button" matSuffix class="roll-link" (click)="updateRollSettings( { speakTiePhrase: null } )">Reset</button>
                             <mat-hint>Spoken on a tie.</mat-hint>
                         </mat-form-field>
