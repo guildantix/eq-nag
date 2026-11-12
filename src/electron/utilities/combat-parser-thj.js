@@ -121,7 +121,7 @@ const combatRgx = {
     PetLeader: /^(?<pet>.+?) says,? 'My leader is (?<player>.*)\.'/i,
 
     // https://regex101.com/r/cPfBq5/3
-    PetOwner: /^(?<player>.*) claims ownership of (?<pet>.+?)\./i,
+    PetOwner: /^(?:~ )?(?<player>.*) claims ownership of (?<pet>.+?)\./i,
 
     // https://regex101.com/r/kOmGrB/2
     Charmed: /^(?<charmPet>.+?) (is|has been) charmed\.$/gi,

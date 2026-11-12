@@ -9,6 +9,30 @@ div.tab-content {
     > fieldset:not(:first-child) {
         margin-top: 50px;
     }
+    > .help-row + fieldset {
+        margin-top: 24px;
+    }
+    .help-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin: 0 2px;
+        padding: 10px 14px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 4px;
+        .spacer {
+            flex: 1;
+        }
+        .help-text strong {
+            margin-right: 8px;
+        }
+        .help-external {
+            font-size: 15px;
+            width: 15px;
+            height: 15px;
+            vertical-align: -2px;
+        }
+    }
     fieldset {
         p {
             font-weight: 300;
@@ -74,6 +98,116 @@ h3 {
     > mat-button-toggle { 
         width: 57px;
     }
+}
+
+.roll-columns {
+    display: grid;
+    grid-template-columns: 420px minmax(0, 1fr);
+    gap: 0 40px;
+    max-width: 980px;
+    padding-bottom: 8px;
+
+    &.collapsed {
+        grid-template-columns: 420px auto;
+    }
+
+    @media (max-width: 900px) {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 24px 0;
+
+        &.collapsed {
+            grid-template-columns: minmax(0, 1fr);
+        }
+
+        .advanced {
+            padding-left: 0;
+            border-left: none;
+        }
+    }
+}
+
+.roll-column {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-width: 0;
+
+    &.advanced {
+        padding-left: 40px;
+        border-left: 1px dotted #4a4455;
+    }
+}
+
+.roll-heading {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    margin: 0 0 4px;
+    font-size: 13px;
+    font-weight: 400;
+    letter-spacing: 0.08em;
+    color: #a9a4b4;
+}
+
+.roll-field {
+    width: 100%;
+}
+
+.roll-field-number {
+    width: 260px;
+    max-width: 100%;
+}
+
+.roll-field-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+
+    .roll-field {
+        flex: 1 1 auto;
+        min-width: 0;
+    }
+}
+
+.roll-link {
+    padding: 0;
+    font: inherit;
+    font-size: 14px;
+    letter-spacing: 0;
+    color: #7fb2ff;
+    background: none;
+    border: none;
+    cursor: pointer;
+
+    &:hover {
+        text-decoration: underline;
+    }
+}
+
+.roll-play, .roll-play-spacer {
+    flex: 0 0 18px;
+    width: 18px;
+}
+
+.roll-play {
+    /* Lines the arrow up with the input line of the form field, not the hint below it. */
+    height: 24px;
+    margin-top: 14px;
+    padding: 0;
+    font-size: 14px;
+    color: #7fb2ff;
+    background: none;
+    border: none;
+    cursor: pointer;
+
+    &:hover {
+        color: #ffffff;
+    }
+}
+
+.roll-hint {
+    font-size: 12px;
+    color: #a9a4b4;
 }
 
 .archiveTimeOfDay {

@@ -126,7 +126,7 @@ jobs:
           if [ -n "$previous_latest" ] && [ "$previous_latest" != "test-$VERSION" ]; then
             gh release edit "$previous_latest" --repo "$GITHUB_REPOSITORY" --latest
           fi
-          now_latest=$(gh release view --repo "$GITHUB_REPOSITORY" --json tagName --jq .tagName)
+          now_latest=$(gh release view --repo "$GITHUB_REPOSITORY" --json tagName --jq .tagName 2>/dev/null || true)
           if [ "$now_latest" = "test-$VERSION" ]; then
             echo "::error::test-$VERSION is marked as the latest release. Edit the previous release and set its Release label to Latest."
             exit 1

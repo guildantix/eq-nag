@@ -359,6 +359,13 @@ let currentEncounterId = undefined;
 /** @type {DpsMeterSettings} */
 let dpsMeterSettings = new DpsMeterSettings();
 
+/** Live encounter updates redraw the dps window at most this often. */
+const dpsLiveRenderMs = 1000;
+/** @type {number | null} */
+let dpsLiveRenderTimeoutId = null;
+/** @type {string | undefined} */
+let dpsLiveRenderCharacter = undefined;
+
 /** @type {WinInfo} */
 let activeWinInfo = undefined;
 
@@ -544,6 +551,223 @@ function moveResizeDomElement( dom, bounds ) {
     dom.style.top = bounds.y + 'px';
     dom.style.width = bounds.width + 'px';
     dom.style.height = bounds.height + 'px';
+}
+
+
+
+
+
+
+
+
+
+
+/** @type {HTMLDivElement} The roll tracker panel. */
+let rollPanel = undefined;
+/** @type {HTMLDivElement} The panel's content, rebuilt on each render. */
+let rollContent = undefined;
+/** The last state sent by the roll tracker. */
+let rollState = undefined;
+let rollArranging = false;
+/** @type {number | null} */
+let rollCountdownId = null;
+/** The open contest whose countdown is shown. */
+let rollCountdownContest = undefined;
+
+/**
+ * Creates the roll tracker panel.  It is display only: outside of arrange
+ * mode it never has the dynamic-mouse class, so it never takes clicks meant
+ * for the game.
+ *
+ * @returns {HTMLDivElement} Returns the panel.
+ */
+function createRollPanel() {
+    let div = document.createElement( 'div' );
+    div.classList.add( 'roll-panel' );
+    div.style.zIndex = overlayTopZIndex + 1;
+
+    rollContent = document.createElement( 'div' );
+    div.appendChild( rollContent );
+    document.body.appendChild( div );
+
+    ipcRenderer.invoke( 'rolls:position:get' ).then( bounds => {
+        if ( bounds ) {
+            div.style.left = bounds.x + 'px';
+            div.style.top = bounds.y + 'px';
+            div.style.width = bounds.width + 'px';
+
+            waitForDisplaysLoaded( () => {
+                if ( !verifyDomRectOnDisplay( { x: bounds.x, y: bounds.y, width: bounds.width, height: 200 } ) ) {
+                    placeRollPanelDefault( div );
+                }
+            } );
+        } else {
+            placeRollPanelDefault( div );
+        }
+    } );
+
+    return div;
+}
+
+/**
+ * Places the roll panel on the left side of the primary monitor.
+ *
+ * @param {HTMLDivElement} div The panel.
+ */
+function placeRollPanelDefault( div ) {
+    const workArea = screen.getPrimaryDisplay().workArea;
+    div.style.left = ( origin.x + Math.round( workArea.width * 0.15 ) ) + 'px';
+    div.style.top = ( origin.y + Math.round( workArea.height * 0.2 ) ) + 'px';
+}
+
+/**
+ * Returns a new element with the given class and text.
+ *
+ * @param {string} tagName The tag name.
+ * @param {string | null} className The class name.
+ * @param {string | undefined} text The text content.
+ */
+function rollElement( tagName, className, text ) {
+    let el = document.createElement( tagName );
+    className && ( el.className = className );
+    text != null && ( el.textContent = text );
+    return el;
+}
+
+/**
+ * Returns the time left before the contest closes, as m:ss.
+ */
+function getRollCountdownText( contest ) {
+    const remaining = Math.max( 0, rollState.settings.closeAfterSeconds * 1000 - ( Date.now() - contest.lastRollAt ) );
+    const seconds = Math.ceil( remaining / 1000 );
+    return `${Math.floor( seconds / 60 )}:${`${seconds % 60}`.padStart( 2, '0' )}`;
+}
+
+/**
+ * Updates only the countdown text once a second while a contest is open.
+ */
+function startRollCountdown() {
+    if ( rollCountdownId == null ) {
+        rollCountdownId = window.setInterval( () => {
+            const el = rollContent.querySelector( '.roll-countdown' );
+            if ( el && rollCountdownContest ) {
+                el.textContent = getRollCountdownText( rollCountdownContest );
+            }
+        }, 1000 );
+    }
+}
+
+function stopRollCountdown() {
+    if ( rollCountdownId != null ) {
+        window.clearInterval( rollCountdownId );
+        rollCountdownId = null;
+    }
+    rollCountdownContest = undefined;
+}
+
+/**
+ * Renders the roll tracker panel from the last state.  Player names come
+ * from the log, so everything is set as text, never as html.
+ */
+function renderRollPanel() {
+    if ( !rollPanel ) {
+        return;
+    }
+
+    const minRollers = rollState?.minRollers ?? 2;
+    const contests = rollState?.settings?.enabled === false ? [] : ( rollState?.contests ?? [] ).filter( c => c.ranked.length >= minRollers );
+    const open = contests.filter( c => c.closedAt == null ).sort( ( a, b ) => b.lastRollAt - a.lastRollAt );
+    const shown = open[ 0 ] ?? contests.find( c => c.closedAt != null && !c.dismissed );
+
+    rollContent.replaceChildren();
+    rollPanel.classList.toggle( 'arranging', rollArranging );
+
+    if ( !shown && !rollArranging ) {
+        rollPanel.style.display = 'none';
+        stopRollCountdown();
+        return;
+    }
+    rollPanel.style.display = 'block';
+
+    let card = rollElement( 'div', 'roll-card' );
+    let title = rollElement( 'div', 'roll-title' );
+    card.appendChild( title );
+    rollContent.appendChild( card );
+
+    if ( !shown ) {
+        title.appendChild( rollElement( 'span', 'roll-title-name', 'Rolls' ) );
+        title.appendChild( rollElement( 'span', 'roll-title-info', 'Drag to place' ) );
+        stopRollCountdown();
+        return;
+    }
+
+    const ranked = shown.ranked;
+    title.appendChild( rollElement( 'span', 'roll-title-name', `Rolls ${shown.min}–${shown.max}` ) );
+    let info = rollElement( 'span', 'roll-title-info' );
+    title.appendChild( info );
+
+    if ( shown.closedAt == null ) {
+        info.append( `${ranked.length} rolls · closes in ` );
+        info.appendChild( rollElement( 'span', 'roll-countdown roll-value', getRollCountdownText( shown ) ) );
+        rollCountdownContest = shown;
+        startRollCountdown();
+    } else {
+        const winners = ranked.filter( r => r.rank === 1 );
+        info.textContent = winners.length > 1 ? `${ranked.length} rolls · tie` : `${ranked.length} rolls · winner`;
+        stopRollCountdown();
+    }
+
+    let rows = rollElement( 'div', 'roll-rows' );
+    ranked.filter( r => r.rank <= rollState.settings.topCount ).forEach( r => {
+        const tie = ranked.some( o => o !== r && o.roll === r.roll );
+        let row = rollElement( 'div', r.rank === 1 ? 'roll-row leader' : 'roll-row' );
+        row.appendChild( rollElement( 'span', 'roll-rank', `${r.rank}` ) );
+        row.appendChild( rollElement( 'span', 'roll-player', r.player ) );
+        tie && row.appendChild( rollElement( 'span', 'roll-tie', 'TIE' ) );
+        row.appendChild( rollElement( 'span', 'roll-value', `${r.roll}` ) );
+        rows.appendChild( row );
+    } );
+    card.appendChild( rows );
+
+    const more = ranked.filter( r => r.rank > rollState.settings.topCount ).length;
+    const rerolls = shown.rolls.filter( r => r.status === 'reroll' ).length;
+    if ( more + rerolls > 0 ) {
+        let footer = rollElement( 'div', 'roll-footer' );
+        more > 0 && footer.appendChild( rollElement( 'span', null, `+${more} more` ) );
+        rerolls > 0 && footer.appendChild( rollElement( 'span', null, `${rerolls} ${rerolls === 1 ? 'reroll' : 'rerolls'} ignored` ) );
+        rerolls > 0 && footer.appendChild( rollElement( 'span', null, 'details in Nag › Rolls' ) );
+        card.appendChild( footer );
+    }
+
+    open.filter( c => c !== shown ).forEach( c => {
+        let other = rollElement( 'div', 'roll-card roll-collapsed' );
+        other.appendChild( rollElement( 'span', null, `Rolls ${c.min}–${c.max}` ) );
+        let lead = rollElement( 'span', null, `${c.ranked.length} rolls · leader ` );
+        c.ranked[ 0 ] && lead.appendChild( rollElement( 'strong', null, `${c.ranked[ 0 ].player} ${c.ranked[ 0 ].roll}` ) );
+        other.appendChild( lead );
+        rollContent.appendChild( other );
+    } );
+}
+
+/**
+ * Lets the roll panel be dragged while overlays are being arranged.
+ */
+function beginArrangeRollPanel() {
+    rollArranging = true;
+    renderRollPanel();
+    enableMoveResize( rollPanel, null, bounds => {
+        ipcRenderer.send( 'rolls:position:set', bounds );
+    } );
+}
+
+/**
+ * Makes the roll panel display only again.
+ */
+function endArrangeRollPanel() {
+    rollArranging = false;
+    disableMoveResize( rollPanel );
+    rollPanel.style.height = '';
+    renderRollPanel();
 }
 
 
@@ -784,8 +1008,25 @@ function clearDpsItems() {
 
 
 /**
+ * Renders the dps items for a live encounter update, at most once every
+ * dpsLiveRenderMs.  The combat watcher sends updates several times a second
+ * during combat, and each render rebuilds every row in the dps window.
+ *
+ * @param {string} characterName The name of the character. Used to highlight the character's name.
+ */
+function scheduleLiveDpsRender( characterName ) {
+    dpsLiveRenderCharacter = characterName;
+    if ( dpsLiveRenderTimeoutId == null ) {
+        dpsLiveRenderTimeoutId = window.setTimeout( () => {
+            dpsLiveRenderTimeoutId = null;
+            renderDpsItems( dpsLiveRenderCharacter );
+        }, dpsLiveRenderMs );
+    }
+}
+
+/**
  * Renders the current dps items.
- * 
+ *
  * @param {string} characterName The name of the character. Used to highlight the character's name.
  */
 function renderDpsItems( characterName ) {
@@ -1068,6 +1309,8 @@ function Renderer( originX, originY, glowOnStart ) {
         MouseUtilities.trackDynamicMouse( origin );
                 
         dpsWindow = createDpsWindow();
+        rollPanel = createRollPanel();
+        ipcRenderer.send( 'rolls:get' );
 
         ipcRenderer.send( 'main:active-window:subscribe', undefined );
 
@@ -1246,8 +1489,8 @@ function Renderer( originX, originY, glowOnStart ) {
 
             // Update the current encounter id.
             currentEncounterId = data.encounter.encounterId;
-    
-            renderDpsItems( data.characterName );
+
+            scheduleLiveDpsRender( data.characterName );
         } );
     
     ipcRenderer.on( 'renderer:encounter-reset',
@@ -1572,7 +1815,7 @@ function Renderer( originX, originY, glowOnStart ) {
             
             if ( component ) {
                 if ( model.action === 'setStart' ) {
-                    component.start = model.timestamp;
+                    restartTimerFromStart( component, model.timestamp );
                 } else if ( model.action === 'extendDuration' ) {
                     component.start = DateUtilities.addSeconds( component.start, model.duration );
                 } else if ( model.action === 'clipTimer' ) {
@@ -1642,6 +1885,7 @@ function Renderer( originX, originY, glowOnStart ) {
         eachOverlay( function ( overlay ) {
             enableMoveResize( overlay.dom );
         } );
+        rollPanel && beginArrangeRollPanel();
         MouseUtilities.refreshDom();
     } );
 
@@ -1649,7 +1893,13 @@ function Renderer( originX, originY, glowOnStart ) {
         eachOverlay( function ( overlay ) {
             disableMoveResize( overlay.dom );
         } );
+        rollPanel && endArrangeRollPanel();
         MouseUtilities.refreshDom();
+    } );
+
+    ipcRenderer.on( 'rolls:state', function ( event, state ) {
+        rollState = state;
+        renderRollPanel();
     } );
 
     ipcRenderer.on( 'renderer:window:highlight', function ( event, overlayId ) {
@@ -4252,7 +4502,7 @@ function createGroupedDotTimer( overlayId, contentArea, group, comp ) {
     let groupKey = group.name;
     comp.removeComponent = () => {
         comp.dom.parentNode && comp.dom.parentNode.removeChild( comp.dom );
-        window.clearInterval( comp.intervalId );
+        stopTimerTick( comp );
         ArrayUtilities.remove( overlayInstances[ overlayId ].overlayGroups[ groupKey ].components, f => f.instanceId == comp.instanceId );
 
         window.setTimeout( () => {
@@ -4308,7 +4558,7 @@ function createGroupedTimer( overlayId, contentArea, group, comp ) {
     let groupKey = group.name;
     comp.removeComponent = () => {
         comp.dom.parentNode && comp.dom.parentNode.removeChild( comp.dom );
-        window.clearInterval( comp.intervalId );
+        stopTimerTick( comp );
         ArrayUtilities.remove( overlayInstances[ overlayId ].overlayGroups[ groupKey ]?.components, f => f.instanceId == comp.instanceId );
 
         window.setTimeout( () => {
@@ -4439,7 +4689,7 @@ function createUngroupedDotTimer( overlayId, contentArea, comp ) {
     // Create a method that will remove the component from the overlay.
     comp.removeComponent = () => {
         comp.dom.parentNode && comp.dom.parentNode.removeChild( comp.dom );
-        window.clearInterval( comp.intervalId );
+        stopTimerTick( comp );
         ArrayUtilities.remove( overlayInstances[ overlayId ].overlayComponents, f => f.instanceId == comp.instanceId );
     };
     
@@ -4484,7 +4734,7 @@ function createUngroupedTimer( overlayId, contentArea, comp ) {
     // Create a method that will remove the component from the overlay.
     comp.removeComponent = () => {
         comp.dom.parentNode && comp.dom.parentNode.removeChild( comp.dom );
-        window.clearInterval( comp.intervalId );
+        stopTimerTick( comp );
         ArrayUtilities.remove( overlayInstances[ overlayId ].overlayComponents, f => f.instanceId == comp.instanceId );
     };
     
@@ -4493,6 +4743,169 @@ function createUngroupedTimer( overlayId, contentArea, comp ) {
     contentArea.appendChild( comp.dom );
     overlayInstances[ overlayId ].overlayComponents.push( comp );
 
+}
+
+
+
+
+
+
+
+
+
+
+/** @type {OverlayComponent[]} */
+var timerTickComponents = [];
+/** @type {number | null} */
+var timerTickIntervalId = null;
+
+/**
+ * Registers a timer component with the shared timer ticker.
+ *
+ * @param {OverlayComponent} comp The timer component.
+ * @param {() => void} tick The per-tick update function.
+ */
+function startTimerTick( comp, tick ) {
+    comp.tick = tick;
+    timerTickComponents.push( comp );
+    window.setTimeout( () => {
+        if ( timerTickComponents.includes( comp ) ) {
+            tick();
+        }
+    } );
+
+    if ( timerTickIntervalId == null ) {
+        timerTickIntervalId = window.setInterval( runTimerTicks, 250 );
+    }
+}
+
+/**
+ * Removes a timer component from the shared timer ticker and stops the ticker when no timers remain.
+ *
+ * @param {OverlayComponent} comp The timer component.
+ */
+function stopTimerTick( comp ) {
+    const index = timerTickComponents.indexOf( comp );
+
+    if ( index > -1 ) {
+        timerTickComponents.splice( index, 1 );
+    }
+
+    if ( timerTickComponents.length === 0 && timerTickIntervalId != null ) {
+        window.clearInterval( timerTickIntervalId );
+        timerTickIntervalId = null;
+    }
+}
+
+/**
+ * Updates every live timer component in a single pass.
+ */
+function runTimerTicks() {
+    timerTickComponents.slice().forEach( comp => {
+        if ( timerTickComponents.includes( comp ) ) {
+            try {
+                comp.tick();
+            } catch ( error ) {
+                console.error( error );
+            }
+        }
+    } );
+}
+
+/**
+ * Sets the fill of a timer bar.
+ *
+ * @param {OverlayComponent} comp The timer component.
+ * @param {number} fraction The filled fraction, from 0 to 1.
+ * @param {boolean} jump When true, the bar moves without a transition.
+ */
+function setTimerBar( comp, fraction, jump ) {
+    const f = fraction > 0 ? Math.min( 1, fraction ) : 0;
+
+    if ( !jump && comp.barFraction === f ) {
+        return;
+    }
+
+    comp.barFraction = f;
+    const bar = comp.dom.querySelector( 'div.determinate' );
+
+    if ( jump ) {
+        bar.style.transition = 'none';
+        bar.style.transform = `scaleX( ${f} )`;
+        void bar.offsetWidth;
+        bar.style.transition = '';
+    } else {
+        bar.style.transform = `scaleX( ${f} )`;
+    }
+}
+
+/**
+ * Sets the time label of a timer component when it differs from the last written text.
+ *
+ * @param {OverlayComponent} comp The timer component.
+ * @param {string} text The label text.
+ */
+function setTimerLabel( comp, text ) {
+    if ( comp.labelText !== text ) {
+        comp.labelText = text;
+        comp.dom.querySelector( 'span.time-remaining' ).textContent = text;
+    }
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Hides the timer when its action is hidden until ending soon or ended and the hide conditions are met.
+ *
+ * @param {OverlayComponent} comp The timer component.
+ * @returns {boolean} True when the timer was hidden.
+ */
+function applyTimerHidden( comp ) {
+    if ( !comp.action.hideTimer ) {
+        return false;
+    }
+
+    let doHide = true;
+
+    if ( comp.action.hideConditions?.length > 0 ) {
+        let namedGroups = Object.keys( comp.matches?.groups );
+
+        for ( let i = 0; i < comp.action.hideConditions.length; i++ ) {
+            let hc = comp.action.hideConditions[ i ];
+
+            if ( hc.operatorType === OperatorTypes.Equals ) {
+                // If it does not exist or the values do not match, then bad.
+                if ( namedGroups.indexOf( hc.variableName ) === -1 || !StringUtilities.compare( hc.variableValue, comp.matches.groups[ hc.variableName ] ) ) {
+                    doHide = false;
+                    break;
+                }
+
+            } else if ( hc.operatorType === OperatorTypes.DoesNotEqual ) {
+                // If it exists and the value matches, then bad.
+                if ( namedGroups.indexOf( hc.variableName ) > -1 && StringUtilities.compare( hc.variableValue, comp.matches.groups[ hc.variableName ] ) ) {
+                    doHide = false;
+                    break;
+                }
+
+            }
+
+        }
+
+    }
+
+    if ( doHide ) {
+        comp.hidden = comp.action.hideTimer;
+        comp.dom.style.display = 'none';
+    }
+
+    return doHide;
 }
 
 
@@ -4534,59 +4947,22 @@ function applyTimerSettings( overlayId, contentArea, comp, group ) {
     comp.stopwatchState = 'running';
 
     if ( comp.start == null ) {
-        comp.dom.querySelector( 'span.time-remaining' ).innerHTML = `(??)&nbsp;`;
+        setTimerLabel( comp, '(??)\u00a0' );
     } else if ( overlayInstances[ overlayId ].showDuration || comp.action.showDuration ) {
-        comp.dom.querySelector( 'span.time-remaining' ).innerHTML = `(${comp.action.duration})&nbsp;`;
+        setTimerLabel( comp, `(${comp.action.duration})\u00a0` );
     } else {
-        comp.dom.querySelector( 'span.time-remaining' ).innerHTML = ``;
+        setTimerLabel( comp, '' );
     }
 
     // Update visibility
-    if ( comp.action.hideTimer ) {
-        let doHide = true;
-
-        if ( comp.action.hideConditions?.length > 0 ) {
-            let namedGroups = Object.keys( comp.matches?.groups );
-
-            for ( let i = 0; i < comp.action.hideConditions.length; i++ ) {
-                let hc = comp.action.hideConditions[ i ];
-
-                if ( hc.operatorType === OperatorTypes.Equals ) {
-                    // If it does not exist or the values do not match, then bad.
-                    if ( namedGroups.indexOf( hc.variableName ) === -1 || !StringUtilities.compare( hc.variableValue, comp.matches.groups[ hc.variableName ] ) ) {
-                        doHide = false;
-                        break;
-                    }
-
-                } else if ( hc.operatorType === OperatorTypes.DoesNotEqual ) {
-                    // If it exists and the value matches, then bad.
-                    if ( namedGroups.indexOf( hc.variableName ) > -1 && StringUtilities.compare( hc.variableValue, comp.matches.groups[ hc.variableName ] ) ) {
-                        doHide = false;
-                        break;
-                    }
-
-                }
-
-            }
-
-        }
-
-        if ( doHide ) {
-            comp.hidden = comp.action.hideTimer;
-            comp.dom.style.display = 'none';
-        }
-    }
+    applyTimerHidden( comp );
 
     // Setting the initial state of the determinate will prevent the progress 
     // bar from jumping from the end to the beginning when shown.
-    if ( comp.action.actionType === ActionTypes.Countdown || comp.action.actionType === ActionTypes.BeneficialTimer ) {
-        comp.dom.querySelector( 'div.determinate' ).style.width = `100%`;
-    } else {
-        comp.dom.querySelector( 'div.determinate' ).style.width = `0%`;
-    }
+    setTimerBar( comp, comp.action.actionType === ActionTypes.Countdown || comp.action.actionType === ActionTypes.BeneficialTimer ? 1 : 0, true );
 
     // Set the update method.
-    comp.intervalId = startInterval( perf.wrap( 'renderer: timer update', () => {
+    startTimerTick( comp, perf.wrap( 'renderer: timer update', () => {
 
         let perc = 0;
         let infinite = false;
@@ -4646,21 +5022,21 @@ function applyTimerSettings( overlayId, contentArea, comp, group ) {
         if ( infinite ) {
             // Do nothing.
         } else if ( comp.action.actionType === ActionTypes.Countdown || comp.action.actionType === ActionTypes.BeneficialTimer ) {
-            comp.dom.querySelector( 'div.determinate' ).style.width = `${100 - ( perc * 100 )}%`;
+            setTimerBar( comp, 1 - perc );
         } else {
-            comp.dom.querySelector( 'div.determinate' ).style.width = `${perc * 100}%`;
+            setTimerBar( comp, perc );
         }
 
         if ( infinite ) {
-            comp.dom.querySelector( 'span.time-remaining' ).innerHTML = `(??)&nbsp;`;
+            setTimerLabel( comp, '(??)\u00a0' );
         } else if ( overlayInstances[ overlayId ].showDuration || comp.action.showDuration ) {
             if ( isStopwatch ) {
-                comp.dom.querySelector( 'span.time-remaining' ).innerHTML = `(${getDurationLabel( Math.round( comp.timeRemaining / 1000 ) )})&nbsp;`;
+                setTimerLabel( comp, `(${getDurationLabel( Math.round( comp.timeRemaining / 1000 ) )})\u00a0` );
             } else {
-                comp.dom.querySelector( 'span.time-remaining' ).innerHTML = `(${getDurationLabel( comp.timeRemaining )})&nbsp;`;
+                setTimerLabel( comp, `(${getDurationLabel( comp.timeRemaining )})\u00a0` );
             }
         } else {
-            comp.dom.querySelector( 'span.time-remaining' ).innerHTML = ``;
+            setTimerLabel( comp, '' );
         }
 
         const allowEndingSoon = [ ActionTypes.Timer, ActionTypes.Countdown, ActionTypes.BeneficialTimer, ActionTypes.DotTimer ].includes( comp.action.actionType );
@@ -4786,7 +5162,9 @@ function applyTimerSettings( overlayId, contentArea, comp, group ) {
             // When conditions met that require the timer be removed from the 
             // overlay, then call the remove comonponent method.
             
-            delayRemoveComponent( overlayId, comp );
+            // A timer with no ended actions has nothing left to show at zero, so remove it right away.
+            let plainEnd = !isStopwatch && !comp.action.remainAfterEnded && !comp.action.notifyWhenEnded && !comp.action.repeatTimer;
+            delayRemoveComponent( overlayId, comp, plainEnd ? 1 : undefined );
 
         } else if ( comp.timeRemaining <= 0 && comp.action.repeatTimer ) {
             
@@ -4799,7 +5177,7 @@ function applyTimerSettings( overlayId, contentArea, comp, group ) {
             }
         }
 
-    } ), 250 );
+    } ) );
 }
 
 
@@ -4857,6 +5235,67 @@ function resetTimerComponentClock( overlayId, comp, repeatCount ) {
 
     // Reset the start duration
     comp.start = new Date( comp.timestamp.getTime() + ( repeatCount * comp.action.duration ) * 1000 );
+    resetTimerComponentState( overlayId, comp );
+
+    return comp;
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Restarts a running timer from the given time, as when the first damage of a DoT arrives.
+ *
+ * @param {OverlayComponent} comp The overlay component to restart.
+ * @param {Date} start The new start time.
+ */
+function restartTimerFromStart( comp, start ) {
+    if ( destroySchedule[ comp.instanceId ] ) {
+        window.clearTimeout( destroySchedule[ comp.instanceId ] );
+        destroySchedule[ comp.instanceId ] = null;
+    }
+
+    comp.timestamp = start;
+    comp.start = start;
+    comp.repeatCount = 0;
+    comp.endingAudioPlayed = false;
+    comp.endingCopied = false;
+    comp.endedAudioPlayed = false;
+    comp.endedCopied = false;
+    resetTimerComponentState( comp.overlayId, comp );
+
+    if ( !comp.hidden && applyTimerHidden( comp ) ) {
+        const overlayInstance = overlayInstances[ comp.overlayId ];
+        const target = comp.matches?.groups?.target;
+
+        if ( overlayInstance?.groupByTarget && target != null ) {
+            overlayInstance.overlayGroups[ target ]?.updateVisibility();
+        }
+    }
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Resets the remaining time, sub action flags and styles of a timer component.
+ *
+ * @param {string} overlayId The id of the desired overlay.
+ * @param {OverlayComponent} comp The overlay component to reset.
+ */
+function resetTimerComponentState( overlayId, comp ) {
     comp.timeRemaining = comp.action.duration;
 
     // Reset the ending conditions
@@ -4884,7 +5323,7 @@ function resetTimerComponentClock( overlayId, comp, repeatCount ) {
         }
     }
 
-    return comp;
+    setTimerBar( comp, comp.action.actionType === ActionTypes.Countdown || comp.action.actionType === ActionTypes.BeneficialTimer ? 1 : 0, true );
 }
 
 
@@ -5478,19 +5917,6 @@ function createElement( tagName, id ) {
 
 
 
-
-/**
- * Executes fn and sets an interval for continuous execution.
- * 
- * @returns {number} Returns the interval id.
- * 
- * @param {() => void} fn The interval function.
- * @param {number} delay The delay, in milliseconds.
- */
-function startInterval(fn, delay) {
-    window.setTimeout( fn );
-    return window.setInterval( fn, delay );
-}
 
 
 

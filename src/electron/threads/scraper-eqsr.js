@@ -352,35 +352,23 @@ function parseClasses( classes ) {
  */
 function durationTextToSeconds( text ) {
 
-    if ( text?.indexOf( 'ticks' ) > -1 ) {
-        return parseFloat( /([0-9]\sticks)(?!.*([0-9]\sticks))/.exec( text )[ 1 ] ) * 6;
+    let ticks = [ ...( text ?? '' ).matchAll( /(\d+)\sticks?\b/gi ) ];
+
+    if ( ticks.length > 0 ) {
+        return parseFloat( ticks[ ticks.length - 1 ][ 1 ] ) * 6;
 
     } else {
-        // https://regex101.com/r/RbW5DM/1
-        let hours = /(?<hours>\d*\.?\d*)h\s?/gi.exec( text );
-        let minutes = /(?<minutes>\d*\.?\d*)m\s?/gi.exec( text );
-        let seconds = /(?<seconds>\d*\.?\d*)s\s?/gi.exec( text );
-        let d = 0;
-
-        console.log( 'hours', hours );
-        console.log( 'minutes', minutes );
-
-        if ( hours?.groups?.hours ) {
-            d += parseFloat( hours.groups.hours ) * 60 * 60;
-        }
-
-        if ( minutes?.groups?.minutes ) {
-            d += parseFloat( minutes.groups.minutes ) * 60;
-        }
-
-        if ( seconds?.groups?.seconds ) {
-            d += parseFloat( seconds.groups.seconds );
-        }
+        let unitSeconds = unit => {
+            let match = new RegExp( `(?<![\\d.])(?<value>\\d*\\.?\\d+)\\s?${unit}(?![a-z])`, 'i' ).exec( text );
+            return match ? parseFloat( match.groups.value ) : 0;
+        };
+        let d = unitSeconds( 'd' ) * 24 * 60 * 60 + unitSeconds( 'h' ) * 60 * 60 + unitSeconds( 'm' ) * 60 + unitSeconds( 's' );
 
         if ( d > 0 ) {
             return d;
         } else {
-            return parseFloat( text ) * 10 * 6;
+            let fallback = parseFloat( text ) * 10 * 6;
+            return isNaN( fallback ) ? 0 : fallback;
         }
 
     }

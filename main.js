@@ -13,17 +13,45 @@ console.log = ( ...args ) => {
 
 log.info( 'Logging initialized' );
 
+let storeReadFailureShown = false;
+
+/**
+ * Tells the user a data file could not be read and exits, so the file is never replaced with defaults.
+ *
+ * @param {any} err The error to check.
+ * @returns {boolean} Returns true if the error was a data file read failure and the app is exiting.
+ */
+function handleStoreReadFailure( err ) {
+    if ( err?.name !== 'StoreReadError' ) {
+        return false;
+    }
+
+    if ( !storeReadFailureShown ) {
+        storeReadFailureShown = true;
+        dialog.showErrorBox(
+            'Nag could not read its data',
+            `Nag could not read this file (${err.code || 'unknown error'}):\n\n${err.filePath}\n\n` +
+            'Nag closed so your data is not overwritten. Check that the file is not locked or blocked, for example by antivirus, then start Nag again.'
+        );
+    }
+
+    app.exit( 1 );
+    return true;
+}
+
 process.on( 'uncaughtException', ( err ) => {
     console.error( 'Uncaught Exception:', err );
     log.error( 'Uncaught Exception:', err );
+    handleStoreReadFailure( err );
 } );
 
 process.on( 'unhandledRejection', ( reason ) => {
     console.error( 'Unhandled Rejection:', reason );
     log.error( 'Unhandled Rejection:', reason );
+    handleStoreReadFailure( reason );
 } );
 
-import { app, BrowserWindow, ipcMain, protocol, session, screen, Tray, Menu, globalShortcut, clipboard, shell } from "electron";
+import { app, BrowserWindow, ipcMain, protocol, session, screen, Tray, Menu, globalShortcut, clipboard, shell, dialog } from "electron";
 import * as url from "url";
 import * as path from "path";
 
@@ -40,6 +68,7 @@ import LogBootstrapper from "./src/electron/log-bootstrap.js";
 import GameResources from "./src/electron/data/game-resources.js";
 import FilesDatabaseStore from "./src/electron/data/files-database.js";
 import GinaImporter from "./src/electron/gina-importer.js";
+import RollTracker from "./src/electron/roll-tracker.js";
 
 import {
   IpcMessage,
@@ -83,6 +112,7 @@ const logBootstrap = new LogBootstrapper();
 const gameResources = new GameResources();
 const fileDatabase = new FilesDatabaseStore();
 const ginaImporter = new GinaImporter();
+const rollTracker = new RollTracker();
 // const verifiedPlayersDatabase = new VerifiedPlayersStore();
 const combatDatabase = new CombatDatabase();
 /** @type {Tray} */
@@ -300,7 +330,7 @@ app.on( 'child-process-gone', ( event, details ) => {
 
 // Websites Nag's own pages link to (target="_blank"); these open in the user's
 // browser.
-const externalLinkOrigins = [ 'https://spells.eqresource.com' ];
+const externalLinkOrigins = [ 'https://spells.eqresource.com', 'https://guildantix.github.io' ];
 
 // Nag's windows only ever load pages from Nag itself (via loadURL), so links
 // in trigger or package text must not open new windows or navigate a window
@@ -1068,6 +1098,7 @@ app.whenReady().then( () => {
     logBootstrap.boostrapLogWatchers( mainWindowRef, app.isDev(), characterDatabase, sendTick, userPreferences, appLogException, combatDatabase );
     gameResources.attachIpcEvents( mainWindowRef, userPreferences );
     ginaImporter.initGinaImporter( mainWindowRef, app.isDev() );
+    rollTracker.attachIpcEvents( mainWindowRef, userPreferences, ( channel, data ) => winManager.sendToRenderer( channel, data ), phrase => logBootstrap.speakPhrase( phrase ) );
 
     // TODO: Update this method with the new mouse.js implementation.
     // TODO: There may still be some renderer forwarding that needs to be removed.
