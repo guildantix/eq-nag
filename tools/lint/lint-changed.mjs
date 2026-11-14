@@ -122,10 +122,10 @@ function changedLines( base ) {
 
 
 /**
- * Finds summaries (/**) on changed lines that follow another member without
- * exactly 10 empty lines in between. A summary counts as following a member
- * when the last non-empty line before it is a closing brace at the same
- * indentation.
+ * Finds summaries (/**) that follow another member without exactly 10 empty
+ * lines in between, where the summary or one of the empty lines above it was
+ * changed. A summary counts as following a member when the last non-empty line
+ * before it is a closing brace at the same indentation.
  *
  * @param {string} file The file, relative to the repository.
  * @param {Set<number>} lines The changed line numbers.
@@ -134,7 +134,7 @@ function checkMemberSpacing( file, lines ) {
     const problems = [];
     const text = fs.readFileSync( path.join( repo, file ), 'utf8' ).split( /\r?\n/ );
 
-    for ( const lineNumber of lines ) {
+    for ( let lineNumber = 1; lineNumber <= text.length; lineNumber++ ) {
         const summary = /^(\s*)\/\*\*/.exec( text[ lineNumber - 1 ] ?? '' );
         if ( !summary ) {
             continue;
@@ -145,6 +145,19 @@ function checkMemberSpacing( file, lines ) {
             previous--;
         }
         const emptyLines = lineNumber - 2 - previous;
+
+        // Adding empty lines above a summary that didn't change still changes the gap,
+        // so check the gap when any line from the first empty line to the summary changed.
+        let isGapChanged = false;
+        for ( let gapLine = previous + 2; gapLine <= lineNumber; gapLine++ ) {
+            if ( lines.has( gapLine ) ) {
+                isGapChanged = true;
+            }
+        }
+        if ( !isGapChanged ) {
+            continue;
+        }
+
         const closesMember = previous >= 0 && new RegExp( `^${summary[ 1 ]}\\}[);]*$` ).test( text[ previous ] );
 
         if ( closesMember && emptyLines !== emptyLinesBetweenMembers ) {
