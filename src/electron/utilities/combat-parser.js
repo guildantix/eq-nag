@@ -247,7 +247,7 @@ const combatRgx = {
     PetLeader: /^(?<pet>.+?) says,? 'My leader is (?<player>.*)\.'/i,
     
     // https://regex101.com/r/cPfBq5/3
-    PetOwner: /^(?<player>.*) claims ownership of (?<pet>.+?)\./i,
+    PetOwner: /^(?:~ )?(?<player>.*) claims ownership of (?<pet>.+?)\./i,
 
     // https://regex101.com/r/Sm6SVR/1
     PetAttack: /^(?<pet>.+?) told you, 'Attacking (?<target>.*) Master\.'/i,
@@ -1188,7 +1188,7 @@ class CombatParser {
                 }
                 regxResult = regxResult == null ? executCombatRgx( combatRgx.SelfDot, logs[ i ] ) : regxResult;
                 if ( regxResult !== null ) {
-                    this._addDetrimentalSpellEvent( timestamp, 'You', regxResult.groups.target, +regxResult.groups.damage, regxResult.groups.attackType, regxResult.groups.resistType, regxResult.groups.modifiers, logLine );
+                    this._addDetrimentalSpellEvent( timestamp, 'You', regxResult.groups.target, +regxResult.groups.damage, regxResult.groups.attackType, regxResult.groups.resistType, regxResult.groups.modifiers );
                     continue;
                 }
                 

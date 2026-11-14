@@ -1,0 +1,100 @@
+<mat-toolbar>
+    <span>Rolls</span>
+</mat-toolbar>
+
+<div class="tab-content">
+<div class="rolls">
+
+    <section class="contests" aria-label="Contests">
+        <div class="contests-head">
+            <h2 class="section-label">CONTESTS</h2>
+            <button type="button" class="link-button" *ngIf="contests.length > 0" (click)="clearContests()">Clear all</button>
+        </div>
+
+        <div class="contest-list nag-scrollbar">
+            <p class="empty" *ngIf="contests.length === 0">
+                No rolls yet. When someone uses /random, the contest shows up here and on the roll panel.
+                Use Overlays › Arrange Overlays to move the roll panel.
+            </p>
+
+            <div class="contest-item" *ngFor="let contest of contests">
+                <button type="button" class="contest" [class.selected]="contest === selected" (click)="selectContest( contest )">
+                    <span class="contest-head">
+                        <span class="contest-range">{{ contest.min }}–{{ contest.max }}</span>
+                        <span class="contest-status open" *ngIf="contest.closedAt == null">OPEN · {{ countdown( contest ) }}</span>
+                        <span class="contest-status" *ngIf="contest.closedAt != null">{{ contest.closedAt | localeTime:'short' }}</span>
+                    </span>
+                    <span class="contest-info">
+                        {{ contest.ranked.length }} {{ contest.ranked.length === 1 ? 'roll' : 'rolls' }} ·
+                        <ng-container *ngIf="leader( contest ) as lead; else noLeader">
+                            {{ lead.label }} <span class="winner-name">{{ lead.who }}</span>&nbsp;<span class="winner-roll">{{ lead.roll }}</span>
+                        </ng-container>
+                        <ng-template #noLeader>no counted rolls</ng-template>
+                    </span>
+                </button>
+                <button type="button" class="contest-remove" aria-label="Remove this contest" title="Remove this contest" (click)="removeContest( contest )">×</button>
+            </div>
+        </div>
+    </section>
+
+    <section class="detail nag-scrollbar" aria-label="Contest detail" *ngIf="selected as contest; else noContest">
+        <div class="detail-head">
+            <div>
+                <h1>Rolls {{ contest.min }}–{{ contest.max }}</h1>
+                <div class="detail-info">
+                    Started {{ contest.startedAt | localeTime }} · {{ contest.ranked.length }} counted
+                    <ng-container *ngIf="contest.closedAt == null"> · closes after {{ settings?.closeAfterSeconds }} s with no new rolls</ng-container>
+                    <ng-container *ngIf="contest.closedAt != null"> · closed {{ contest.closedAt | localeTime }}</ng-container>
+                </div>
+            </div>
+            <div class="detail-actions">
+                <button mat-stroked-button type="button" *ngIf="contest.closedAt == null" (click)="closeContest( contest )">Close now</button>
+                <button mat-stroked-button type="button" [disabled]="settings?.enabled === false || testRunning" title="Plays a made-up contest (1–15) so you can place the roll panel" (click)="testOverlay()">Test overlay</button>
+                <button mat-flat-button color="primary" type="button" (click)="copyResult( contest )">Copy top {{ settings?.topCount }}</button>
+            </div>
+        </div>
+
+        <div class="table-box nag-scrollbar">
+            <table>
+                <thead>
+                    <tr>
+                        <th scope="col" class="rank">Rank</th>
+                        <th scope="col">Player</th>
+                        <th scope="col" class="roll">Roll</th>
+                        <th scope="col" class="time">Time</th>
+                        <th scope="col">Note</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr *ngFor="let row of rows" [class.leader]="row.leader" [class.flagged]="row.flagged">
+                        <td class="rank">{{ row.rank ?? '–' }}</td>
+                        <td class="player">{{ row.player }}</td>
+                        <td class="roll">{{ row.roll }}</td>
+                        <td class="time">{{ row.timestamp | localeTime }}</td>
+                        <td>
+                            <span class="tie" *ngIf="row.tie">TIE</span>
+                            <strong *ngIf="row.label">{{ row.label }}</strong> {{ row.note }}
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="result">
+            <h2 class="section-label">COPIED TEXT (PASTE INTO CHAT)</h2>
+            <div class="result-text">{{ contest.resultText }}</div>
+        </div>
+
+        <p class="settings-note">Roll tracker settings are in <strong>Settings › Roll Tracker</strong>.</p>
+    </section>
+
+    <ng-template #noContest>
+        <section class="detail" aria-label="Roll tracker">
+            <p class="settings-note" *ngIf="settings?.enabled === false">Roll Tracker is off. Turn it on in <strong>Settings › Roll Tracker</strong>.</p>
+            <button mat-stroked-button type="button" [disabled]="settings?.enabled === false || testRunning" title="Plays a made-up contest (1–15) so you can place the roll panel" (click)="testOverlay()">Test overlay</button>
+            <p class="settings-note" *ngIf="settings?.enabled !== false">Roll tracker settings are in <strong>Settings › Roll Tracker</strong>.</p>
+        </section>
+    </ng-template>
+
+</div>
+</div>

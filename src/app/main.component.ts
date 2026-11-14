@@ -499,7 +499,7 @@ export class MainComponent implements OnInit {
     onChangeTabs( selectedIndex: number ): void {
         this.showConsole = selectedIndex === 0;
 
-        if ( selectedIndex === 4 ) {
+        if ( selectedIndex === 5 ) {
             this.settingsPanel.loadSettings();
         }
     }

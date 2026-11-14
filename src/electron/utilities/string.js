@@ -84,7 +84,7 @@ function compare( a, b, caseSensitive ) {
  * @param {string} value The value to evaluate.
  */
 function isNullOrWhitespace( value ) {
-    if ( value === null || value === undefined || value.replace( /\s+/gi, '' ).length === 0 ) {
+    if ( value === null || value === undefined || value.trim().length === 0 ) {
         return true;
     }
 }
