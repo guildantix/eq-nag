@@ -582,43 +582,61 @@ let rollCountdownContest = undefined;
  * @returns {HTMLDivElement} Returns the panel.
  */
 function createRollPanel() {
-    let div = document.createElement( 'div' );
-    div.classList.add( 'roll-panel' );
-    div.style.zIndex = overlayTopZIndex + 1;
+    const panelElement = document.createElement( 'div' );
+    panelElement.classList.add( 'roll-panel' );
+    panelElement.style.zIndex = overlayTopZIndex + 1;
 
     rollContent = document.createElement( 'div' );
-    div.appendChild( rollContent );
-    document.body.appendChild( div );
+    panelElement.appendChild( rollContent );
+    document.body.appendChild( panelElement );
 
     ipcRenderer.invoke( 'rolls:position:get' ).then( bounds => {
         if ( bounds ) {
-            div.style.left = bounds.x + 'px';
-            div.style.top = bounds.y + 'px';
-            div.style.width = bounds.width + 'px';
+            panelElement.style.left = bounds.x + 'px';
+            panelElement.style.top = bounds.y + 'px';
+            panelElement.style.width = bounds.width + 'px';
 
             waitForDisplaysLoaded( () => {
                 if ( !verifyDomRectOnDisplay( { x: bounds.x, y: bounds.y, width: bounds.width, height: 200 } ) ) {
-                    placeRollPanelDefault( div );
+                    placeRollPanelDefault( panelElement );
                 }
             } );
         } else {
-            placeRollPanelDefault( div );
+            placeRollPanelDefault( panelElement );
         }
     } );
 
-    return div;
+    return panelElement;
 }
+
+
+
+
+
+
+
+
+
 
 /**
  * Places the roll panel on the left side of the primary monitor.
  *
- * @param {HTMLDivElement} div The panel.
+ * @param {HTMLDivElement} panelElement The panel.
  */
-function placeRollPanelDefault( div ) {
+function placeRollPanelDefault( panelElement ) {
     const workArea = screen.getPrimaryDisplay().workArea;
-    div.style.left = ( origin.x + Math.round( workArea.width * 0.15 ) ) + 'px';
-    div.style.top = ( origin.y + Math.round( workArea.height * 0.2 ) ) + 'px';
+    panelElement.style.left = ( origin.x + Math.round( workArea.width * 0.15 ) ) + 'px';
+    panelElement.style.top = ( origin.y + Math.round( workArea.height * 0.2 ) ) + 'px';
 }
+
+
+
+
+
+
+
+
+
 
 /**
  * Returns a new element with the given class and text.
@@ -626,16 +644,36 @@ function placeRollPanelDefault( div ) {
  * @param {string} tagName The tag name.
  * @param {string | null} className The class name.
  * @param {string | undefined} text The text content.
+ * @returns {HTMLElement} The new element.
  */
 function rollElement( tagName, className, text ) {
-    let el = document.createElement( tagName );
-    className && ( el.className = className );
-    text != null && ( el.textContent = text );
-    return el;
+    const element = document.createElement( tagName );
+
+    if ( className ) {
+        element.className = className;
+    }
+
+    if ( text !== null && text !== undefined ) {
+        element.textContent = text;
+    }
+
+    return element;
 }
+
+
+
+
+
+
+
+
+
 
 /**
  * Returns the time left before the contest closes, as m:ss.
+ *
+ * @param {object} contest The roll contest to count down for.
+ * @returns {string} The time left, as m:ss.
  */
 function getRollCountdownText( contest ) {
     const remaining = Math.max( 0, rollState.settings.closeAfterSeconds * 1000 - ( Date.now() - contest.lastRollAt ) );
@@ -643,27 +681,57 @@ function getRollCountdownText( contest ) {
     return `${Math.floor( seconds / 60 )}:${`${seconds % 60}`.padStart( 2, '0' )}`;
 }
 
+
+
+
+
+
+
+
+
+
 /**
  * Updates only the countdown text once a second while a contest is open.
  */
 function startRollCountdown() {
-    if ( rollCountdownId == null ) {
+    if ( rollCountdownId === null ) {
         rollCountdownId = window.setInterval( () => {
-            const el = rollContent.querySelector( '.roll-countdown' );
-            if ( el && rollCountdownContest ) {
-                el.textContent = getRollCountdownText( rollCountdownContest );
+            const countdownElement = rollContent.querySelector( '.roll-countdown' );
+            if ( countdownElement && rollCountdownContest ) {
+                countdownElement.textContent = getRollCountdownText( rollCountdownContest );
             }
         }, 1000 );
     }
 }
 
+
+
+
+
+
+
+
+
+
+/**
+ * Stops the countdown timer and forgets the contest it was counting down for.
+ */
 function stopRollCountdown() {
-    if ( rollCountdownId != null ) {
+    if ( rollCountdownId !== null ) {
         window.clearInterval( rollCountdownId );
         rollCountdownId = null;
     }
     rollCountdownContest = undefined;
 }
+
+
+
+
+
+
+
+
+
 
 /**
  * Renders the roll tracker panel from the last state.  Player names come
@@ -675,9 +743,15 @@ function renderRollPanel() {
     }
 
     const minRollers = rollState?.minRollers ?? 2;
-    const contests = rollState?.settings?.enabled === false ? [] : ( rollState?.contests ?? [] ).filter( c => c.ranked.length >= minRollers );
-    const open = contests.filter( c => c.closedAt == null ).sort( ( a, b ) => b.lastRollAt - a.lastRollAt );
-    const shown = open[ 0 ] ?? contests.find( c => c.closedAt != null && !c.dismissed );
+    const contests = rollState?.settings?.enabled === false
+        ? []
+        : ( rollState?.contests ?? [] ).filter( contest => contest.ranked.length >= minRollers );
+    const open = contests
+        .filter( contest => contest.closedAt === null || contest.closedAt === undefined )
+        .sort( ( first, second ) => second.lastRollAt - first.lastRollAt );
+    const shown = open[ 0 ] ?? contests.find(
+        contest => contest.closedAt !== null && contest.closedAt !== undefined && !contest.dismissed
+    );
 
     rollContent.replaceChildren();
     rollPanel.classList.toggle( 'arranging', rollArranging );
@@ -689,8 +763,8 @@ function renderRollPanel() {
     }
     rollPanel.style.display = 'block';
 
-    let card = rollElement( 'div', 'roll-card' );
-    let title = rollElement( 'div', 'roll-title' );
+    const card = rollElement( 'div', 'roll-card' );
+    const title = rollElement( 'div', 'roll-title' );
     card.appendChild( title );
     rollContent.appendChild( card );
 
@@ -703,51 +777,68 @@ function renderRollPanel() {
 
     const ranked = shown.ranked;
     title.appendChild( rollElement( 'span', 'roll-title-name', `Rolls ${shown.min}–${shown.max}` ) );
-    let info = rollElement( 'span', 'roll-title-info' );
+    const info = rollElement( 'span', 'roll-title-info' );
     title.appendChild( info );
 
-    if ( shown.closedAt == null ) {
+    if ( shown.closedAt === null || shown.closedAt === undefined ) {
         info.append( `${ranked.length} rolls · closes in ` );
         info.appendChild( rollElement( 'span', 'roll-countdown roll-value', getRollCountdownText( shown ) ) );
         rollCountdownContest = shown;
         startRollCountdown();
     } else {
-        const winners = ranked.filter( r => r.rank === 1 );
+        const winners = ranked.filter( entry => entry.rank === 1 );
         info.textContent = winners.length > 1 ? `${ranked.length} rolls · tie` : `${ranked.length} rolls · winner`;
         stopRollCountdown();
     }
 
-    let rows = rollElement( 'div', 'roll-rows' );
-    ranked.filter( r => r.rank <= rollState.settings.topCount ).forEach( r => {
-        const tie = ranked.some( o => o !== r && o.roll === r.roll );
-        let row = rollElement( 'div', r.rank === 1 ? 'roll-row leader' : 'roll-row' );
-        row.appendChild( rollElement( 'span', 'roll-rank', `${r.rank}` ) );
-        row.appendChild( rollElement( 'span', 'roll-player', r.player ) );
-        tie && row.appendChild( rollElement( 'span', 'roll-tie', 'TIE' ) );
-        row.appendChild( rollElement( 'span', 'roll-value', `${r.roll}` ) );
+    const rows = rollElement( 'div', 'roll-rows' );
+    ranked.filter( entry => entry.rank <= rollState.settings.topCount ).forEach( entry => {
+        const isTie = ranked.some( other => other !== entry && other.roll === entry.roll );
+        const row = rollElement( 'div', entry.rank === 1 ? 'roll-row leader' : 'roll-row' );
+        row.appendChild( rollElement( 'span', 'roll-rank', `${entry.rank}` ) );
+        row.appendChild( rollElement( 'span', 'roll-player', entry.player ) );
+        if ( isTie ) {
+            row.appendChild( rollElement( 'span', 'roll-tie', 'TIE' ) );
+        }
+        row.appendChild( rollElement( 'span', 'roll-value', `${entry.roll}` ) );
         rows.appendChild( row );
     } );
     card.appendChild( rows );
 
-    const more = ranked.filter( r => r.rank > rollState.settings.topCount ).length;
-    const rerolls = shown.rolls.filter( r => r.status === 'reroll' ).length;
+    const more = ranked.filter( entry => entry.rank > rollState.settings.topCount ).length;
+    const rerolls = shown.rolls.filter( roll => roll.status === 'reroll' ).length;
     if ( more + rerolls > 0 ) {
-        let footer = rollElement( 'div', 'roll-footer' );
-        more > 0 && footer.appendChild( rollElement( 'span', null, `+${more} more` ) );
-        rerolls > 0 && footer.appendChild( rollElement( 'span', null, `${rerolls} ${rerolls === 1 ? 'reroll' : 'rerolls'} ignored` ) );
-        rerolls > 0 && footer.appendChild( rollElement( 'span', null, 'details in Nag › Rolls' ) );
+        const footer = rollElement( 'div', 'roll-footer' );
+        if ( more > 0 ) {
+            footer.appendChild( rollElement( 'span', null, `+${more} more` ) );
+        }
+        if ( rerolls > 0 ) {
+            footer.appendChild( rollElement( 'span', null, `${rerolls} ${rerolls === 1 ? 'reroll' : 'rerolls'} ignored` ) );
+            footer.appendChild( rollElement( 'span', null, 'details in Nag › Rolls' ) );
+        }
         card.appendChild( footer );
     }
 
-    open.filter( c => c !== shown ).forEach( c => {
-        let other = rollElement( 'div', 'roll-card roll-collapsed' );
-        other.appendChild( rollElement( 'span', null, `Rolls ${c.min}–${c.max}` ) );
-        let lead = rollElement( 'span', null, `${c.ranked.length} rolls · leader ` );
-        c.ranked[ 0 ] && lead.appendChild( rollElement( 'strong', null, `${c.ranked[ 0 ].player} ${c.ranked[ 0 ].roll}` ) );
-        other.appendChild( lead );
-        rollContent.appendChild( other );
+    open.filter( contest => contest !== shown ).forEach( contest => {
+        const collapsedCard = rollElement( 'div', 'roll-card roll-collapsed' );
+        collapsedCard.appendChild( rollElement( 'span', null, `Rolls ${contest.min}–${contest.max}` ) );
+        const lead = rollElement( 'span', null, `${contest.ranked.length} rolls · leader ` );
+        if ( contest.ranked[ 0 ] ) {
+            lead.appendChild( rollElement( 'strong', null, `${contest.ranked[ 0 ].player} ${contest.ranked[ 0 ].roll}` ) );
+        }
+        collapsedCard.appendChild( lead );
+        rollContent.appendChild( collapsedCard );
     } );
 }
+
+
+
+
+
+
+
+
+
 
 /**
  * Lets the roll panel be dragged while overlays are being arranged.
@@ -759,6 +850,15 @@ function beginArrangeRollPanel() {
         ipcRenderer.send( 'rolls:position:set', bounds );
     } );
 }
+
+
+
+
+
+
+
+
+
 
 /**
  * Makes the roll panel display only again.
@@ -1016,7 +1116,7 @@ function clearDpsItems() {
  */
 function scheduleLiveDpsRender( characterName ) {
     dpsLiveRenderCharacter = characterName;
-    if ( dpsLiveRenderTimeoutId == null ) {
+    if ( dpsLiveRenderTimeoutId === null ) {
         dpsLiveRenderTimeoutId = window.setTimeout( () => {
             dpsLiveRenderTimeoutId = null;
             renderDpsItems( dpsLiveRenderCharacter );
@@ -1885,7 +1985,9 @@ function Renderer( originX, originY, glowOnStart ) {
         eachOverlay( function ( overlay ) {
             enableMoveResize( overlay.dom );
         } );
-        rollPanel && beginArrangeRollPanel();
+        if ( rollPanel ) {
+            beginArrangeRollPanel();
+        }
         MouseUtilities.refreshDom();
     } );
 
@@ -1893,7 +1995,9 @@ function Renderer( originX, originY, glowOnStart ) {
         eachOverlay( function ( overlay ) {
             disableMoveResize( overlay.dom );
         } );
-        rollPanel && endArrangeRollPanel();
+        if ( rollPanel ) {
+            endArrangeRollPanel();
+        }
         MouseUtilities.refreshDom();
     } );
 
@@ -4755,9 +4859,9 @@ function createUngroupedTimer( overlayId, contentArea, comp ) {
 
 
 /** @type {OverlayComponent[]} */
-var timerTickComponents = [];
+const timerTickComponents = [];
 /** @type {number | null} */
-var timerTickIntervalId = null;
+let timerTickIntervalId = null;
 
 /**
  * Registers a timer component with the shared timer ticker.
@@ -4774,13 +4878,23 @@ function startTimerTick( comp, tick ) {
         }
     } );
 
-    if ( timerTickIntervalId == null ) {
+    if ( timerTickIntervalId === null ) {
         timerTickIntervalId = window.setInterval( runTimerTicks, 250 );
     }
 }
 
+
+
+
+
+
+
+
+
+
 /**
- * Removes a timer component from the shared timer ticker and stops the ticker when no timers remain.
+ * Removes a timer component from the shared timer ticker and stops the ticker when no timers
+ * remain.
  *
  * @param {OverlayComponent} comp The timer component.
  */
@@ -4791,11 +4905,20 @@ function stopTimerTick( comp ) {
         timerTickComponents.splice( index, 1 );
     }
 
-    if ( timerTickComponents.length === 0 && timerTickIntervalId != null ) {
+    if ( timerTickComponents.length === 0 && timerTickIntervalId !== null ) {
         window.clearInterval( timerTickIntervalId );
         timerTickIntervalId = null;
     }
 }
+
+
+
+
+
+
+
+
+
 
 /**
  * Updates every live timer component in a single pass.
@@ -4811,6 +4934,15 @@ function runTimerTicks() {
         }
     } );
 }
+
+
+
+
+
+
+
+
+
 
 /**
  * Sets the fill of a timer bar.
@@ -4839,6 +4971,15 @@ function setTimerBar( comp, fraction, jump ) {
     }
 }
 
+
+
+
+
+
+
+
+
+
 /**
  * Sets the time label of a timer component when it differs from the last written text.
  *
@@ -4862,7 +5003,8 @@ function setTimerLabel( comp, text ) {
 
 
 /**
- * Hides the timer when its action is hidden until ending soon or ended and the hide conditions are met.
+ * Hides the timer when its action is hidden until ending soon or ended and the hide conditions
+ * are met.
  *
  * @param {OverlayComponent} comp The timer component.
  * @returns {boolean} True when the timer was hidden.
@@ -4875,21 +5017,23 @@ function applyTimerHidden( comp ) {
     let doHide = true;
 
     if ( comp.action.hideConditions?.length > 0 ) {
-        let namedGroups = Object.keys( comp.matches?.groups );
+        const namedGroups = Object.keys( comp.matches?.groups );
 
         for ( let i = 0; i < comp.action.hideConditions.length; i++ ) {
-            let hc = comp.action.hideConditions[ i ];
+            const hideCondition = comp.action.hideConditions[ i ];
 
-            if ( hc.operatorType === OperatorTypes.Equals ) {
+            if ( hideCondition.operatorType === OperatorTypes.Equals ) {
                 // If it does not exist or the values do not match, then bad.
-                if ( namedGroups.indexOf( hc.variableName ) === -1 || !StringUtilities.compare( hc.variableValue, comp.matches.groups[ hc.variableName ] ) ) {
+                if ( namedGroups.indexOf( hideCondition.variableName ) === -1
+                    || !StringUtilities.compare( hideCondition.variableValue, comp.matches.groups[ hideCondition.variableName ] ) ) {
                     doHide = false;
                     break;
                 }
 
-            } else if ( hc.operatorType === OperatorTypes.DoesNotEqual ) {
+            } else if ( hideCondition.operatorType === OperatorTypes.DoesNotEqual ) {
                 // If it exists and the value matches, then bad.
-                if ( namedGroups.indexOf( hc.variableName ) > -1 && StringUtilities.compare( hc.variableValue, comp.matches.groups[ hc.variableName ] ) ) {
+                if ( namedGroups.indexOf( hideCondition.variableName ) > -1
+                    && StringUtilities.compare( hideCondition.variableValue, comp.matches.groups[ hideCondition.variableName ] ) ) {
                     doHide = false;
                     break;
                 }
@@ -4959,7 +5103,9 @@ function applyTimerSettings( overlayId, contentArea, comp, group ) {
 
     // Setting the initial state of the determinate will prevent the progress 
     // bar from jumping from the end to the beginning when shown.
-    setTimerBar( comp, comp.action.actionType === ActionTypes.Countdown || comp.action.actionType === ActionTypes.BeneficialTimer ? 1 : 0, true );
+    const startsFull = comp.action.actionType === ActionTypes.Countdown
+        || comp.action.actionType === ActionTypes.BeneficialTimer;
+    setTimerBar( comp, startsFull ? 1 : 0, true );
 
     // Set the update method.
     startTimerTick( comp, perf.wrap( 'renderer: timer update', () => {
@@ -5162,8 +5308,9 @@ function applyTimerSettings( overlayId, contentArea, comp, group ) {
             // When conditions met that require the timer be removed from the 
             // overlay, then call the remove comonponent method.
             
-            // A timer with no ended actions has nothing left to show at zero, so remove it right away.
-            let plainEnd = !isStopwatch && !comp.action.remainAfterEnded && !comp.action.notifyWhenEnded && !comp.action.repeatTimer;
+            // A timer with no ended actions has nothing left to show at zero, so remove it right
+            // away.
+            const plainEnd = !isStopwatch && !comp.action.remainAfterEnded && !comp.action.notifyWhenEnded && !comp.action.repeatTimer;
             delayRemoveComponent( overlayId, comp, plainEnd ? 1 : undefined );
 
         } else if ( comp.timeRemaining <= 0 && comp.action.repeatTimer ) {
@@ -5274,7 +5421,7 @@ function restartTimerFromStart( comp, start ) {
         const overlayInstance = overlayInstances[ comp.overlayId ];
         const target = comp.matches?.groups?.target;
 
-        if ( overlayInstance?.groupByTarget && target != null ) {
+        if ( overlayInstance?.groupByTarget && target !== null && target !== undefined ) {
             overlayInstance.overlayGroups[ target ]?.updateVisibility();
         }
     }
@@ -5323,7 +5470,9 @@ function resetTimerComponentState( overlayId, comp ) {
         }
     }
 
-    setTimerBar( comp, comp.action.actionType === ActionTypes.Countdown || comp.action.actionType === ActionTypes.BeneficialTimer ? 1 : 0, true );
+    const startsFull = comp.action.actionType === ActionTypes.Countdown
+        || comp.action.actionType === ActionTypes.BeneficialTimer;
+    setTimerBar( comp, startsFull ? 1 : 0, true );
 }
 
 

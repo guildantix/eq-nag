@@ -3,12 +3,12 @@ const { ipcRenderer } = require( 'electron' );
 const { mouseZIndex } = require( './constants' );
 
 var mouseEnabled = false;
-var trackingDynamicMouse = false;
+let trackingDynamicMouse = false;
 var origin = { x: 0, y: 0 };
-const _domRefreshMs = 5000;
-var _lastDomRefresh = 0;
+const domRefreshIntervalMs = 5000;
+let lastDomRefreshTime = 0;
 /** @type {{x: number, y: number} | null} The last cursor position sent by the main process. */
-var _lastCursor = null;
+let lastCursorPosition = null;
 /** @type {NodeListOf<Element> | undefined} */
 var mouseEnabledDoms = undefined;
 
@@ -89,18 +89,18 @@ function getMouseUpdate() {
  * Dynamically tracks the mouse, and enables/disables mouse events based on the mouse's position.
  */
 function trackDynamicMouse() {
-    if ( _lastCursor == null ) {
+    if ( lastCursorPosition === null || lastCursorPosition === undefined ) {
         return;
     }
-    if ( Date.now() - _lastDomRefresh > _domRefreshMs ) {
+    if ( Date.now() - lastDomRefreshTime > domRefreshIntervalMs ) {
         mouseEnabledDoms = undefined;
     }
-    if ( mouseEnabledDoms == null ) {
+    if ( mouseEnabledDoms === null || mouseEnabledDoms === undefined ) {
         mouseEnabledDoms = document.querySelectorAll( '.dynamic-mouse' );
-        _lastDomRefresh = Date.now();
+        lastDomRefreshTime = Date.now();
     }
     mouseEnabledDoms.forEach( dom => dom.style.zIndex = dom.classList.contains('overlay-container') ? dom.style.zIndex : undefined );
-    let mouseCoords = _lastCursor;
+    const mouseCoords = lastCursorPosition;
 
     // If the mouse is over a dynamic-mouse element, then we want to set the mouse events to be handled.
     let mouseEnabled = false;
@@ -129,7 +129,7 @@ function trackDynamicMouse() {
 // The main process sends the cursor position when it moves (and every half
 // second regardless), so the check only runs when there's something to check.
 ipcRenderer.on( 'renderer:cursor', ( event, cursor ) => {
-    _lastCursor = cursor;
+    lastCursorPosition = cursor;
     if ( trackingDynamicMouse ) {
         trackDynamicMouse();
     }
