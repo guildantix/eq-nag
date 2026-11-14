@@ -3,6 +3,9 @@ import { IpcService } from '../ipc.service';
 import * as _ from 'lodash-es';
 import { ConsoleListComponent } from './console-list.component';
 
+/**
+ * The debug console panel: the search box, filters, command input and scrolling around the list.
+ */
 @Component( {
     selector: 'app-debug-console',
     templateUrl: 'debug-console.component.html',
@@ -33,6 +36,11 @@ export class DebugConsoleComponent implements OnInit, OnDestroy, DoCheck {
     @ViewChild( 'consoleList', { static: false } ) consoleList: ConsoleListComponent;
     @ViewChild( 'container', { static: false } ) container: ElementRef<HTMLDivElement>;
     
+    /**
+     * Shows or hides the debug console when F12 is released.
+     *
+     * @param event The keyboard event.
+     */
     @HostListener( 'document:keyup', [ '$event' ] ) onKeydownHandler( event: KeyboardEvent ) {
         if ( event.key === 'F12' ) {
             this.show = !this.show;
@@ -41,6 +49,12 @@ export class DebugConsoleComponent implements OnInit, OnDestroy, DoCheck {
 
     public scrolling: boolean = false;
 
+    /**
+     * Tracks whether the user has scrolled up from the bottom, so new messages don't pull the
+     * view down.
+     *
+     * @param event The wheel event.
+     */
     @HostListener( 'wheel', [ '$event' ] ) onScroll( event: Event ) {
         
         if ( this.container.nativeElement.scrollTop >= this.container.nativeElement.scrollHeight - this.container.nativeElement.offsetHeight ) {

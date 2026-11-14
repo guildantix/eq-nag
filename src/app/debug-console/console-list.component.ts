@@ -4,6 +4,9 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import * as _ from 'lodash-es';
 import { IpcService } from '../ipc.service';
 
+/**
+ * Lists the console messages, progress bars and trigger parse history in the debug console.
+ */
 @Component( {
     selector: 'console-list',
     templateUrl: 'console-list.component.html',
@@ -42,15 +45,6 @@ export class ConsoleListComponent implements OnInit, OnChanges {
 
         this.renderHistory( false );
     }
-
-
-
-
-
-
-
-
-
 
     ngOnInit() {
 
