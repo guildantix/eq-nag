@@ -3602,12 +3602,12 @@ function render( overlayId, comp ) {
                     let group;
             
                     if ( comp.action.actionType === ActionTypes.DotTimer || comp.action.actionType === ActionTypes.BeneficialTimer ) {
-                        group = getTimerGroup( overlayId, contentArea, comp.matches.groups.target );
+                        group = getTimerGroup( overlayId, contentArea, getTimerGroupName( comp ) );
             
                         createGroupedDotTimer( overlayId, contentArea, group, comp );
 
                     } else {
-                        group = getTimerGroup( overlayId, contentArea, 'General' );
+                        group = getTimerGroup( overlayId, contentArea, getTimerGroupName( comp ) );
                 
                         createGroupedTimer( overlayId, contentArea, group, comp );
                 
@@ -4588,6 +4588,31 @@ function createGroupedTimer( overlayId, contentArea, group, comp ) {
 
 
 /**
+ * Returns the name of the group a timer belongs in on an overlay that groups by target. DoT and
+ * beneficial timers go under their target; every other timer, and a DoT or beneficial timer whose
+ * phrase has no (?<target>...) group, goes under General. Both placing and restarting a timer use
+ * this, so they always agree on the group.
+ *
+ * @param {OverlayComponent} comp The timer component.
+ * @returns {string} The group name.
+ */
+function getTimerGroupName( comp ) {
+    const isTargetTimer = comp.action.actionType === ActionTypes.DotTimer
+        || comp.action.actionType === ActionTypes.BeneficialTimer;
+
+    return isTargetTimer ? comp.matches?.groups?.target ?? 'General' : 'General';
+}
+
+
+
+
+
+
+
+
+
+
+/**
  * Returns the group for the specified name.  If the group is not found, 
  * then a new group is created.
  * 
@@ -4875,7 +4900,9 @@ function applyTimerHidden( comp ) {
     let doHide = true;
 
     if ( comp.action.hideConditions?.length > 0 ) {
-        let namedGroups = Object.keys( comp.matches?.groups );
+        // A trigger phrase without named groups like (?<target>...) has no groups object, so treat
+        // it as having no variables instead of letting Object.keys throw.
+        const namedGroups = Object.keys( comp.matches?.groups ?? {} );
 
         for ( let i = 0; i < comp.action.hideConditions.length; i++ ) {
             let hc = comp.action.hideConditions[ i ];
@@ -5272,10 +5299,10 @@ function restartTimerFromStart( comp, start ) {
 
     if ( !comp.hidden && applyTimerHidden( comp ) ) {
         const overlayInstance = overlayInstances[ comp.overlayId ];
-        const target = comp.matches?.groups?.target;
+        const groupName = getTimerGroupName( comp );
 
-        if ( overlayInstance?.groupByTarget && target != null ) {
-            overlayInstance.overlayGroups[ target ]?.updateVisibility();
+        if ( overlayInstance?.groupByTarget ) {
+            overlayInstance.overlayGroups[ groupName ]?.updateVisibility();
         }
     }
 }
@@ -5348,7 +5375,11 @@ function restartTimerComponent( overlayId, comp ) {
     if ( comp.action.restartBehavior === TimerRestartBehaviors.RestartOnDuplicate ) {
         
         if ( comp.action.actionType === ActionTypes.BeneficialTimer || comp.action.actionType === ActionTypes.DotTimer ) {
-            destroyComponents( overlayId, c => c.action.actionId == comp.action.actionId && c.matches.groups?.target === comp.matches.groups?.target );
+            destroyComponents(
+                overlayId,
+                existing => existing.action.actionId === comp.action.actionId
+                    && existing.matches?.groups?.target === comp.matches?.groups?.target
+            );
 
         } else if ( comp.action.actionType === ActionTypes.Timer || comp.action.actionType === ActionTypes.Countdown ) {
             // If a timer's displayText property was not supplied by the user, 
