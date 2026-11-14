@@ -10,6 +10,15 @@ const jsdoc = require( 'eslint-plugin-jsdoc' );
 const tsParser = require( '@typescript-eslint/parser' );
 const globals = require( 'globals' );
 
+/**
+ * Angular's lifecycle handlers. "Code Styles.md" keeps them short, right below the constructor,
+ * with no summary, so the summary rule skips them.
+ */
+const angularLifecycleHandlers = [
+    'ngOnChanges', 'ngOnInit', 'ngDoCheck', 'ngAfterContentInit', 'ngAfterContentChecked',
+    'ngAfterViewInit', 'ngAfterViewChecked', 'ngOnDestroy',
+];
+
 /** Rules shared by the JavaScript and TypeScript code. */
 const styleRules = {
     // Readability
@@ -53,7 +62,9 @@ const styleRules = {
 
     // Everything gets a summary
     'jsdoc/require-jsdoc': [ 'error', {
-        require: { FunctionDeclaration: true, MethodDefinition: true, ClassDeclaration: true },
+        require: { FunctionDeclaration: true, MethodDefinition: false, ClassDeclaration: true },
+        // Every method except Angular's lifecycle handlers, which get no summary.
+        contexts: [ `MethodDefinition:not([key.name=/^(?:${angularLifecycleHandlers.join( '|' )})$/]) > FunctionExpression` ],
         checkConstructors: false,
     } ],
     'jsdoc/require-description': 'error',
