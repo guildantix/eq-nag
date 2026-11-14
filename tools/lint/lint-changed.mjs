@@ -1,6 +1,6 @@
 // Checks the lines you changed against "Code Styles.md".
 //
-//   npm run lint                      compares your work with origin/master
+//   npm run lint                      compares your work with origin/development
 //   npm run lint -- --base <commit>   compares with another commit
 //
 // Runs ESLint (eslint.config.js) on the changed files and reports only the
@@ -49,14 +49,14 @@ function git( args ) {
 
 
 /**
- * The commit to compare with: --base, or where this branch left origin/master.
+ * The commit to compare with: --base, or where this branch left origin/development.
  */
 function findBase() {
     const index = process.argv.indexOf( '--base' );
     if ( index > -1 ) {
         return process.argv[ index + 1 ];
     }
-    return git( [ 'merge-base', 'HEAD', 'origin/master' ] ).trim();
+    return git( [ 'merge-base', 'HEAD', 'origin/development' ] ).trim();
 }
 
 

@@ -47,6 +47,14 @@ rule would make it harder to read.
   `@param` descriptions. Comments explain why, not what; complex code
   (regular expressions, timing math) gets an explanation and an example.
 - 10 empty lines between methods, functions and classes.
+- Class order: properties (with `@Input` / `@Output`), then the constructor
+  (every Angular component has one, even empty), then lifecycle handlers
+  (`ngOnInit` etc.: no summary, one empty line apart, under 10 lines each),
+  then methods.
+- No commented-out code.
+- Comments wrap at 100 characters (code at 140); wrapped lines line up with the text above,
+  e.g. a long `@param` continues under its description. For an exceptionally long name or
+  type, indent the wrapped lines 8 spaces from the start of the tag instead.
 - 4-space indents; spaces inside parentheses, brackets and braces:
   `fn( a, b )`, `list[ 0 ]`, `{ key: value }`; empty ones stay closed:
   `fn()`, `[]`. No space after a function name; a space after `function`

@@ -190,11 +190,61 @@ Put **10 empty lines** between methods, functions and classes, counting from
 the end of one to the summary of the next. It makes each one easy to find
 when scrolling.
 
+### Order of class members
+
+Classes are laid out the same way everywhere, so the code reads as if one
+developer wrote it:
+
+1. Properties and fields, including `@Input`, `@Output` and `@ViewChild`.
+2. The constructor. Every Angular component has one, even if it's empty.
+3. Angular's lifecycle handlers (`ngOnInit`, `ngOnChanges`, `ngOnDestroy`,
+   etc.), right below the constructor with one empty line between each and
+   no summary. Keep each one under 10 lines; move anything longer into a
+   method with a name that says what it does.
+4. Methods, each with a summary and 10 empty lines before it.
+
+```ts
+/**
+ * A right-click menu that opens at the mouse.
+ */
+export class ContextMenuComponent implements OnInit, OnDestroy {
+
+    @Input() public menu: ContextMenuModel[];
+    @ViewChild( 'mainBackground' ) mainBackground: ElementRef<HTMLElement>;
+
+    public isOpen: boolean = false;
+
+    constructor( private contextService: ContextService ) { }
+
+    ngOnInit() {
+        this.contextService.register( this );
+    }
+
+    ngOnDestroy() {
+        this.close();
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Closes the context menu and cleans up its subscriptions.
+     */
+    public close(): void {
+```
+
 ### Indentation and whitespace
 
 - Indent with **4 spaces**, never tabs.
 - No spaces at the end of a line, and every file ends with a newline.
-- Files are UTF-8.
+- Files are UTF-8, with Windows line endings (CRLF). `.gitattributes` makes
+  git check them out that way, so you don't need to set anything up.
 
 ### Spaces inside parentheses and brackets
 
@@ -239,6 +289,33 @@ sensibly be split are the exception.
 if ( trigger.captureMethod === 'Sequential'
     && trigger.capturePhrases.length > 1
     && !trigger.isOnCooldown ) {
+```
+
+Comments wrap at **100 characters**, counting the indent. Wrapped lines line
+up with the start of the text above them, so each paragraph reads as a block.
+For `@param`, `@property` and similar tags, that's where the description
+starts, after the parameter's name (and its type, in JavaScript):
+
+```ts
+/**
+ * Executes the action associated with the given menu item. If the menu item has children, it
+ * will keep the context menu open and position the submenu accordingly.
+ *
+ * @param menuItem The menu item whose action is to be executed.
+ * @param subMenu The HTML element representing the submenu, if applicable. This is used for
+ *                positioning the submenu when the menu item has children.
+ */
+```
+
+The exception is an exceptionally long name or type, where lining up would
+leave only a narrow column for the text. Then indent the wrapped lines
+**8 spaces** (two indents) from the start of the tag instead:
+
+```ts
+/**
+ * @param thisIsAVeryLongAndDescriptiveNameForReasons Here's the comment that would explain what
+ *         this does and why the long name is the best fit.
+ */
 ```
 
 ---

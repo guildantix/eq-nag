@@ -42,6 +42,8 @@ const styleRules = {
     '@stylistic/eol-last': 'error',
     '@stylistic/max-len': [ 'error', {
         code: 140,
+        // Comment-only lines wrap sooner, so paragraphs stay easy to read.
+        comments: 100,
         ignoreUrls: true,
         ignoreStrings: true,
         ignoreTemplateLiterals: true,

@@ -1,0 +1,4 @@
+# Git stores text files with LF and checks them out with Windows line endings
+# (CRLF) on every computer, whatever its own settings. Binary files are
+# detected and left alone.
+* text=auto eol=crlf
