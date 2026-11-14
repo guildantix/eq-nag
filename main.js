@@ -16,7 +16,8 @@ log.info( 'Logging initialized' );
 let storeReadFailureShown = false;
 
 /**
- * Tells the user a data file could not be read and exits, so the file is never replaced with defaults.
+ * Tells the user a data file could not be read and exits, so the file is never replaced with
+ * defaults.
  *
  * @param {any} err The error to check.
  * @returns {boolean} Returns true if the error was a data file read failure and the app is exiting.
