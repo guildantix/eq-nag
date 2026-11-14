@@ -125,15 +125,39 @@ export class SettingsComponent implements OnInit {
         this.loadSettings();
     }
 
+
+
+
+
+
+
+
+
+
     /**
      * Saves changed roll tracker settings; a null value restores that setting's default.
+     *
+     * @param changes The settings to change; a null value restores that setting's default.
      */
     updateRollSettings( changes: { [ K in keyof RollTrackerSettings ]?: RollTrackerSettings[ K ] | null } ): void {
         window.api.ipc.send( 'rolls:settings:set', changes );
     }
 
+
+
+
+
+
+
+
+
+
     /**
-     * Saves a roll tracker text setting; a blank value restores the default, which is shown in the box again.
+     * Saves a roll tracker text setting; a blank value restores the default, which is shown in the
+     * box again.
+     *
+     * @param input The text box the value was typed in.
+     * @param key The setting to save.
      */
     saveRollText( input: HTMLInputElement, key: 'pastePrefix' | 'pasteTemplate' | 'speakWinnerPhrase' | 'speakTiePhrase' ): void {
         if ( input.value.trim() === '' ) {
@@ -144,8 +168,23 @@ export class SettingsComponent implements OnInit {
         }
     }
 
+
+
+
+
+
+
+
+
+
     /**
-     * Saves a roll tracker number setting clamped to min and max; a blank value restores the default. The box shows the saved value.
+     * Saves a roll tracker number setting clamped to min and max; a blank value restores the
+     * default. The box shows the saved value.
+     *
+     * @param input The number box the value was typed in.
+     * @param key The setting to save.
+     * @param min The lowest value allowed.
+     * @param max The highest value allowed.
      */
     saveRollNumber( input: HTMLInputElement, key: 'closeAfterSeconds' | 'topCount' | 'resultSeconds', min: number, max: number ): void {
         const value = this.toRollNumber( input.value, min, max );
@@ -153,8 +192,20 @@ export class SettingsComponent implements OnInit {
         this.updateRollSettings( { [ key ]: value } );
     }
 
+
+
+
+
+
+
+
+
+
     /**
      * Speaks the phrase with sample values, using the default phrase when it is blank.
+     *
+     * @param phrase The phrase typed in the box.
+     * @param kind Which default phrase to use when the box is blank.
      */
     previewRollPhrase( phrase: string, kind: 'winner' | 'tie' ): void {
         const fallback = ( kind === 'winner' ? this.rollDefaults?.speakWinnerPhrase : this.rollDefaults?.speakTiePhrase ) ?? '';
@@ -169,8 +220,23 @@ export class SettingsComponent implements OnInit {
         }
     }
 
+
+
+
+
+
+
+
+
+
     /**
-     * Returns the input value as a whole number between min and max, or null, which restores the default, when it is not a number.
+     * Returns the input value as a whole number between min and max, or null, which restores the
+     * default, when it is not a number.
+     *
+     * @param value The text typed in the number box.
+     * @param min The lowest value allowed.
+     * @param max The highest value allowed.
+     * @returns The whole number, or null when the text is not a number.
      */
     toRollNumber( value: string, min: number, max: number ): number | null {
         const parsed = Math.round( +value );
