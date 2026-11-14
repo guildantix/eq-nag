@@ -189,33 +189,41 @@ class UserPreferencesStore extends Store {
     }
 
     get windowHeight() {
-        return this.#data.windowBounds.height;
+        return this.#data.windowBounds?.height;
     }
     set windowHeight( val ) {
+        // Older or hand-edited profiles may have no saved window size.
+        this.#data.windowBounds ??= {};
         this.#data.windowBounds.height = val;
         this.storeDataFile( this.#data );
     }
 
     get windowWidth() {
-        return this.#data.windowBounds.width;
+        return this.#data.windowBounds?.width;
     }
     set windowWidth( val ) {
+        // Older or hand-edited profiles may have no saved window size.
+        this.#data.windowBounds ??= {};
         this.#data.windowBounds.width = val;
         this.storeDataFile( this.#data );
     }
 
     get windowX() {
-        return this.#data.windowBounds.x;
+        return this.#data.windowBounds?.x;
     }
     set windowX( val ) {
+        // Older or hand-edited profiles may have no saved window size.
+        this.#data.windowBounds ??= {};
         this.#data.windowBounds.x = val;
         this.storeDataFile( this.#data );
     }
 
     get windowY() {
-        return this.#data.windowBounds.y;
+        return this.#data.windowBounds?.y;
     }
     set windowY( val ) {
+        // Older or hand-edited profiles may have no saved window size.
+        this.#data.windowBounds ??= {};
         this.#data.windowBounds.y = val;
         this.storeDataFile( this.#data );
     }
