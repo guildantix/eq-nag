@@ -55,7 +55,11 @@ class TriggerPerformanceMonitor {
     /** When the monitor was turned on or last reset, in milliseconds. */
     #startedAt = 0;
 
-    /** @type {Map<number, { source: string, entries: any[] }>} The latest numbers from each window, by web contents id. */
+    /**
+     * The latest numbers from each window, by web contents id.
+     *
+     * @type {Map<number, { source: string, entries: any[] }>}
+     */
     #reports = new Map();
 
     /**
@@ -66,7 +70,17 @@ class TriggerPerformanceMonitor {
      */
     #cpuAtStart = new Map();
 
-    /** @type {{ recording: boolean, startedAt: number, stopTimeout: NodeJS.Timeout, lastFilePath: string, error: string }} */
+    /**
+     * The trace being recorded, or the last one saved.
+     *
+     * @type {{
+     *     recording: boolean,
+     *     startedAt: number,
+     *     stopTimeout: NodeJS.Timeout,
+     *     lastFilePath: string,
+     *     error: string,
+     * }}
+     */
     #trace = { recording: false, startedAt: 0, stopTimeout: null, lastFilePath: null, error: null };
 
 

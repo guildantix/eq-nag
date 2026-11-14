@@ -86,4 +86,52 @@ class LogList {
     actedName = undefined;
 }
 
-module.exports = { PhraseParse, LogTrigger, LogList };
+
+
+
+
+
+
+
+
+
+/**
+ * Phrases an active timer watches the log for after it starts: its End Early phrases, its
+ * secondary action phrases or its DoT worn off phrase.
+ */
+class WatchedPhrases {
+
+    /** The instance id of the overlay component the phrases belong to. */
+    instanceId = '';
+
+    /**
+     * Checks the given log entry against the phrases.
+     *
+     * @type {(logEntry: string) => boolean}
+     */
+    _parse;
+
+    /**
+     * Runs when a phrase matches: starts the secondary action, or ends the DoT timer. End Early
+     * phrases don't have one; the log watcher removes their component instead.
+     *
+     * @type {((instanceId: string, timestamp: Date) => void) | undefined}
+     */
+    _trigger;
+
+    /**
+     * Creates the watched phrases for an overlay component.
+     *
+     * @param {string} instanceId The instance id of the overlay component the phrases belong to.
+     * @param {(logEntry: string) => boolean} parse Checks a log entry against the phrases, and
+     *                                              returns true when one matched.
+     * @param {(instanceId: string, timestamp: Date) => void} [trigger] Runs when a phrase matches.
+     */
+    constructor( instanceId, parse, trigger ) {
+        this.instanceId = instanceId;
+        this._parse = parse;
+        this._trigger = trigger;
+    }
+}
+
+module.exports = { PhraseParse, LogTrigger, LogList, WatchedPhrases };

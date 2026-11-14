@@ -3,7 +3,7 @@ const { ipcRenderer } = require( 'electron' );
 const fs = require( 'fs' );
 const { Trigger, TriggerAction, ActionTypes, TriggerConditionTypes, OperatorTypes, CharacterClassLevel, TriggerSubAction, TriggerFolder, TriggerCondition, CapturePhrase, Phrase, TriggerParseHistoryModel, getActionLabel, LogTypes, ErrorMessages } = require( '../data/models/trigger' );
 const { QuickShareAuthorListTypes, SimulationProgress, NConditionalModel, VConditionalOperationModel, SConditionalModel, LConditionalOperationModel, SConditionalOperationModel } = require( '../data/models/common' );
-const { PhraseParse, LogTrigger, LogList } = require( './log.model' );
+const { PhraseParse, LogTrigger, LogList, WatchedPhrases } = require( './log.model' );
 const { OverlayComponent, OverlayWindow, TriggerSecondaryActionModel } = require( '../data/models/overlay-window' );
 const { CharacterModel } = require( '../data/models/character' );
 const customAlphabet = require( 'nanoid' ).customAlphabet;
@@ -22,6 +22,7 @@ const perf = require( '../utilities/perf' );
 // the per-trigger timing doesn't slow the log watcher down much.
 let perfTriggerSample = 0;
 const triggerPerformance = require( '../utilities/trigger-performance' );
+const { PerformanceTrigger } = triggerPerformance;
 const { LogHistoryManager } = require( '../utilities/log-console' );
 const { createChatRoomLink } = require( '../utilities/peer-to-peer' );
 const { nagException, nagLog } = require( '../utilities/nag-console' );
@@ -60,11 +61,11 @@ var storedVariables = {};
 var logInstanceIds = [];
 /** @type {Record<string, {value: number, lastUpdate: Date, resetDelay: number, _parse: (logEntry: string) => boolean}>} */
 var counters = {};
-/** @type {{_parse: (logEntry: string) => boolean, instanceId: string}[]} */
+/** @type {WatchedPhrases[]} */
 var cancellableComponents = [];
-/** @type {{_parse: (logEntry: string) => boolean, _trigger: (instanceId: string, timestamp: Date) => void, instanceId: string}[]} */
+/** @type {WatchedPhrases[]} */
 var secondaryTriggerActions = [];
-/** @type {{_parse: (logEntry: string) => boolean, _trigger: (instanceId: string, timestamp: Date) => void, instanceId: string}[]} */
+/** @type {WatchedPhrases[]} */
 var dotWornOffTracking = [];
 /** @type {Record<string, string[]>} */
 var usedConditionValues = {};
@@ -1978,14 +1979,10 @@ function executeTriggerAction( trigger, action, timestamp, res, deltaTime, simul
  * numbers.
  *
  * @param {LogTrigger} trigger The trigger.
- * @returns {{ triggerId: string, triggerName: string, predefined: boolean }}
+ * @returns {PerformanceTrigger}
  */
 function getPerformanceTrigger( trigger ) {
-    return {
-        triggerId: trigger?.triggerId ?? 'unknown',
-        triggerName: trigger?.name ?? 'Unknown trigger',
-        predefined: trigger?.predefined === true,
-    };
+    return new PerformanceTrigger( trigger?.triggerId ?? 'unknown', trigger?.name ?? 'Unknown trigger', trigger?.predefined );
 }
 
 
@@ -2002,7 +1999,7 @@ function getPerformanceTrigger( trigger ) {
  * Early, secondary action or DoT worn off phrases), timing it for the
  * Performance Monitor when the monitor is on.
  *
- * @param {{ _parse: (logEntry: string) => boolean, instanceId: string }} token The active timer's phrase checker.
+ * @param {WatchedPhrases} token The active timer's phrases.
  * @param {string} id Which kind of watched phrases these are, e.g. "end-early".
  * @param {string} label What the Performance Monitor calls these phrases.
  * @param {string} logEntry The log entry, without its timestamp.
@@ -3056,8 +3053,9 @@ function displayBeneficialTimerComponent( res, timestamp, action, trigger, spell
         /** @type {RegExp[]} */
         let renderedRegExs = [];
 
-        cancellableComponents.push( {
-            _parse: ( logEntry ) => {
+        cancellableComponents.push( new WatchedPhrases(
+            comp.instanceId,
+            ( logEntry ) => {
                 let matched = false;
                 
                 renderedPhrases.forEach( ( phrase, i ) => {
@@ -3087,9 +3085,7 @@ function displayBeneficialTimerComponent( res, timestamp, action, trigger, spell
                 } );
 
                 return matched;
-            },
-            instanceId: comp.instanceId
-        } );
+            } ) );
     }
 
     return comp.instanceId;
@@ -3227,8 +3223,9 @@ function displayDotTimerComponent( res, timestamp, action, deltaTime, trigger ) 
         /** @type {RegExp[]} */
         let renderedRegExs = [];
 
-        cancellableComponents.push( {
-            _parse: ( logEntry ) => {
+        cancellableComponents.push( new WatchedPhrases(
+            comp.instanceId,
+            ( logEntry ) => {
                 let matched = false;
                 
                 renderedPhrases.forEach( ( phrase, i ) => {
@@ -3258,9 +3255,7 @@ function displayDotTimerComponent( res, timestamp, action, deltaTime, trigger ) 
                 } );
 
                 return matched;
-            },
-            instanceId: comp.instanceId
-        } );
+            } ) );
     }
 
     if ( comp.action.secondaryPhrases?.length > 0 ) {
@@ -3269,14 +3264,9 @@ function displayDotTimerComponent( res, timestamp, action, deltaTime, trigger ) 
         /** @type {RegExp[]} */
         let renderedRegExs = [];
 
-        secondaryTriggerActions.push( {
-            /**
-             * Returns true if the given log entry matches the phrases.
-             * 
-             * @param {string} logEntry The log entry to parse.
-             * @returns {boolean}
-             */
-            _parse: ( logEntry ) => {
+        secondaryTriggerActions.push( new WatchedPhrases(
+            comp.instanceId,
+            ( logEntry ) => {
                 let matched = false;
                 
                 renderedPhrases.forEach( ( phrase, i ) => {
@@ -3306,13 +3296,7 @@ function displayDotTimerComponent( res, timestamp, action, deltaTime, trigger ) 
 
                 return matched;
             },
-            /**
-             * Executes this component's secondary action.
-             * 
-             * @param {string} instanceId The instance id of the component.
-             * @param {Date} timestamp The timestamp of the log entry.
-             */
-            _trigger: ( instanceId, timestamp ) => {
+            ( instanceId, timestamp ) => {
                 let m = new TriggerSecondaryActionModel();
                 m.instanceId = instanceId;
                 m.timestamp = timestamp;
@@ -3321,9 +3305,7 @@ function displayDotTimerComponent( res, timestamp, action, deltaTime, trigger ) 
                 logInstanceIds.push( m.instanceId );
                 
                 ipcRenderer.send( 'overlay:send:secondary-action', m );
-            },
-            instanceId: comp.instanceId
-        } );
+            } ) );
 
         let wornOffPhrase = new Phrase();
         // https://regex101.com/r/zp2l25/1
@@ -3336,14 +3318,9 @@ function displayDotTimerComponent( res, timestamp, action, deltaTime, trigger ) 
         /** @type {RegExp[]} */
         let renderedWornOffRegExs = [];
         
-        dotWornOffTracking.push( {
-            /**
-             * Returns true if the given log entry matches the phrases.
-             * 
-             * @param {string} logEntry The log entry to parse.
-             * @returns {boolean}
-             */
-            _parse: ( logEntry ) => {
+        dotWornOffTracking.push( new WatchedPhrases(
+            comp.instanceId,
+            ( logEntry ) => {
                 
                 for ( let i = 0; i < renderedWornOffPhrases.length; i++ ) {
                     const phrase = renderedWornOffPhrases[ i ];
@@ -3374,13 +3351,7 @@ function displayDotTimerComponent( res, timestamp, action, deltaTime, trigger ) 
 
                 return false;
             },
-            /**
-             * Executes this component's secondary action.
-             * 
-             * @param {string} instanceId The instance id of the component.
-             * @param {Date} timestamp The timestamp of the log entry.
-             */
-            _trigger: ( instanceId, timestamp ) => {
+            ( instanceId, timestamp ) => {
                 let m = new TriggerSecondaryActionModel();
                 m.instanceId = instanceId;
                 m.action = 'clipTimer';
@@ -3389,9 +3360,7 @@ function displayDotTimerComponent( res, timestamp, action, deltaTime, trigger ) 
                 logInstanceIds.push( m.instanceId );
                 
                 ipcRenderer.send( 'overlay:send:secondary-action', m );
-            },
-            instanceId: comp.instanceId,
-        } );
+            } ) );
         
     }
 
@@ -3523,8 +3492,9 @@ function displayTimerCountdownComponent(res, timestamp, action, deltaTime, trigg
             /** @type {RegExp[]} */
             let renderedRegExs = [];
 
-            cancellableComponents.push( {
-                _parse: ( logEntry ) => {
+            cancellableComponents.push( new WatchedPhrases(
+                comp.instanceId,
+                ( logEntry ) => {
                     let matched = false;
 
                     for ( let i = 0; i < renderedPhrases.length; i++ ) {
@@ -3563,9 +3533,7 @@ function displayTimerCountdownComponent(res, timestamp, action, deltaTime, trigg
                     }
 
                     return matched;
-                },
-                instanceId: comp.instanceId
-            } );
+                } ) );
         }
     } else {
         log( 'Timer/Countdown with zero duration will not be rendered.', comp.action );

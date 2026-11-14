@@ -10,6 +10,7 @@ const Handlebars = require( "handlebars" );
 const { sanitizeHtml } = require( '../utilities/html' );
 const perf = require( '../utilities/perf' );
 const triggerPerformance = require( '../utilities/trigger-performance' );
+const { PerformanceTrigger, MeasureEntry } = triggerPerformance;
 const _ = require( 'lodash' );
 const customAlphabet = require( 'nanoid' ).customAlphabet;
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
@@ -5562,7 +5563,7 @@ function clearAll() {
  * Runs the given drawing work, timing it for the Performance Monitor when
  * the monitor is on.
  *
- * @param {() => import('../utilities/trigger-performance').MeasureEntry} getEntry Returns the row to record the time on.
+ * @param {() => MeasureEntry} getEntry Returns the row to record the time on.
  * @param {() => void} draw The drawing work.
  */
 function measureDraw( getEntry, draw ) {
@@ -5618,11 +5619,11 @@ function measureUpdates( comp, update ) {
  *
  * @param {OverlayComponent} comp The component.
  * @param {string} kind MeasureKinds.draw or MeasureKinds.update.
- * @returns {import('../utilities/trigger-performance').MeasureEntry}
+ * @returns {MeasureEntry}
  */
 function getComponentEntry( comp, kind ) {
     return triggerPerformance.getEntry(
-        { triggerId: comp?.triggerId ?? 'unknown' },
+        new PerformanceTrigger( comp?.triggerId ?? 'unknown' ),
         kind,
         comp?.action?.actionId ?? comp?.actionId ?? 'unknown',
         triggerPerformance.describeAction( comp?.action ) );
@@ -5641,10 +5642,14 @@ function getComponentEntry( comp, kind ) {
  * Returns the Performance Monitor row for combat text (FCT), which isn't a
  * trigger's.
  *
- * @returns {import('../utilities/trigger-performance').MeasureEntry}
+ * @returns {MeasureEntry}
  */
 function getCombatTextEntry() {
-    return triggerPerformance.getEntry( { triggerId: 'combat-text', triggerName: 'Combat text (FCT)' }, triggerPerformance.MeasureKinds.draw, 'combat-text', 'Combat text' );
+    return triggerPerformance.getEntry(
+        new PerformanceTrigger( 'combat-text', 'Combat text (FCT)' ),
+        triggerPerformance.MeasureKinds.draw,
+        'combat-text',
+        'Combat text' );
 }
 
 
@@ -5660,10 +5665,14 @@ function getCombatTextEntry() {
  * Returns the Performance Monitor row for the DPS meter, which isn't a
  * trigger's.
  *
- * @returns {import('../utilities/trigger-performance').MeasureEntry}
+ * @returns {MeasureEntry}
  */
 function getDpsMeterEntry() {
-    return triggerPerformance.getEntry( { triggerId: 'dps-meter', triggerName: 'DPS meter' }, triggerPerformance.MeasureKinds.draw, 'dps-meter', 'DPS meter' );
+    return triggerPerformance.getEntry(
+        new PerformanceTrigger( 'dps-meter', 'DPS meter' ),
+        triggerPerformance.MeasureKinds.draw,
+        'dps-meter',
+        'DPS meter' );
 }
 
 // Performance taps (no-ops unless Nag is started with --perf; see utilities/perf.js).
