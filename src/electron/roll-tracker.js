@@ -122,7 +122,7 @@ class RollTracker {
         ipcMain.on( 'rolls:get', ( event ) => event.sender.send( 'rolls:state', this.#getState() ) );
 
         ipcMain.on( 'rolls:close', ( event, contestId ) => {
-            const contest = this.#contests.find( c => c.contestId === contestId );
+            const contest = this.#contests.find( candidate => candidate.contestId === contestId );
             if ( contest && contest.closedAt === null ) {
                 this.#closeContest( contest );
                 this.#broadcast();
@@ -130,18 +130,18 @@ class RollTracker {
         } );
 
         ipcMain.on( 'rolls:copy', ( event, contestId ) => {
-            const contest = this.#contests.find( c => c.contestId === contestId );
+            const contest = this.#contests.find( candidate => candidate.contestId === contestId );
             if ( contest ) {
                 clipboard.writeText( this.#getResultText( contest ) );
             }
         } );
 
         ipcMain.on( 'rolls:remove', ( event, contestId ) => {
-            const removed = this.#contests.find( c => c.contestId === contestId );
+            const removed = this.#contests.find( candidate => candidate.contestId === contestId );
             if ( removed?.min === testRange.min && removed?.max === testRange.max ) {
                 this.#cancelTest();
             }
-            this.#contests = this.#contests.filter( c => c.contestId !== contestId );
+            this.#contests = this.#contests.filter( contest => contest.contestId !== contestId );
             this.#broadcast();
         } );
 
@@ -224,7 +224,7 @@ class RollTracker {
         );
         testPlayers.forEach( ( player, i ) => {
             const timerId = setTimeout( () => {
-                this.#testTimers = this.#testTimers.filter( t => t !== timerId );
+                this.#testTimers = this.#testTimers.filter( pendingTimerId => pendingTimerId !== timerId );
                 this.#addRoll( {
                     player,
                     roll: 1 + Math.floor( Math.random() * testRange.max ),
@@ -251,7 +251,7 @@ class RollTracker {
      * Stops the rolls the test simulation has not made yet.
      */
     #cancelTest() {
-        this.#testTimers.forEach( t => clearTimeout( t ) );
+        this.#testTimers.forEach( pendingTimerId => clearTimeout( pendingTimerId ) );
         this.#testTimers = [];
     }
 
@@ -303,7 +303,7 @@ class RollTracker {
 
         // Boxed characters see the same roll in each log.
         const now = Date.now();
-        this.#recentRolls = this.#recentRolls.filter( r => now - r.seenAt < duplicateWindowMs );
+        this.#recentRolls = this.#recentRolls.filter( recent => now - recent.seenAt < duplicateWindowMs );
         const isDuplicate = this.#recentRolls.some( recent => recent.player === data.player
             && recent.roll === data.roll
             && recent.min === data.min
@@ -325,7 +325,7 @@ class RollTracker {
             status: 'counted',
         };
         const open = this.#contests.filter( contest => contest.closedAt === null );
-        const sameRange = open.find( c => c.min === roll.min && c.max === roll.max );
+        const sameRange = open.find( contest => contest.min === roll.min && contest.max === roll.max );
 
         if ( sameRange ) {
             this.#addToContest( sameRange, roll, settings, lastRollAt );
@@ -411,7 +411,7 @@ class RollTracker {
      */
     #addToContest( contest, roll, settings, lastRollAt ) {
         contest.lastRollAt = Math.max( contest.lastRollAt, lastRollAt );
-        const previous = contest.rolls.find( r => r.status === 'counted' && r.player === roll.player );
+        const previous = contest.rolls.find( earlierRoll => earlierRoll.status === 'counted' && earlierRoll.player === roll.player );
 
         if ( previous ) {
             if ( settings.rerollRule === 'highest' && roll.roll > previous.roll ) {
@@ -456,10 +456,10 @@ class RollTracker {
         }
 
         if ( settings.speakWinner ) {
-            const tied = ranked.filter( r => r.rank === 1 );
+            const tied = ranked.filter( rankedRoll => rankedRoll.rank === 1 );
             const data = {
                 winner: ranked[ 0 ].player,
-                winners: tied.map( r => r.player ).join( ', ' ),
+                winners: tied.map( rankedRoll => rankedRoll.player ).join( ', ' ),
                 roll: ranked[ 0 ].roll,
                 min: contest.min,
                 max: contest.max,
@@ -511,9 +511,11 @@ class RollTracker {
     #getResultText( contest ) {
         const ranked = rankRolls( contest );
         const settings = this.#settings;
-        const top = ranked.filter( r => r.rank <= settings.topCount );
-        const ties = new Set( ranked.filter( r => ranked.some( o => o !== r && o.roll === r.roll ) ).map( r => r.player ) );
-        const parts = top.map( r => `${r.rank}) ${r.player} ${r.roll}${ties.has( r.player ) ? ' TIE' : ''}` );
+        const top = ranked.filter( rankedRoll => rankedRoll.rank <= settings.topCount );
+        const ties = new Set( ranked
+            .filter( rankedRoll => ranked.some( otherRoll => otherRoll !== rankedRoll && otherRoll.roll === rankedRoll.roll ) )
+            .map( rankedRoll => rankedRoll.player ) );
+        const parts = top.map( rankedRoll => `${rankedRoll.rank}) ${rankedRoll.player} ${rankedRoll.roll}${ties.has( rankedRoll.player ) ? ' TIE' : ''}` );
         const text = this.#formatPhrase( settings.pasteTemplate, defaultResultTemplate, {
             min: contest.min,
             max: contest.max,
