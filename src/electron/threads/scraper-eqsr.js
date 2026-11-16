@@ -352,22 +352,22 @@ function parseClasses( classes ) {
  */
 function durationTextToSeconds( text ) {
 
-    let ticks = [ ...( text ?? '' ).matchAll( /(\d+)\sticks?\b/gi ) ];
+    const ticks = [ ...( text ?? '' ).matchAll( /(\d+)\sticks?\b/gi ) ];
 
     if ( ticks.length > 0 ) {
         return parseFloat( ticks[ ticks.length - 1 ][ 1 ] ) * 6;
 
     } else {
-        let unitSeconds = unit => {
-            let match = new RegExp( `(?<![\\d.])(?<value>\\d*\\.?\\d+)\\s?${unit}(?![a-z])`, 'i' ).exec( text );
+        const unitSeconds = unit => {
+            const match = new RegExp( `(?<![\\d.])(?<value>\\d*\\.?\\d+)\\s?${unit}(?![a-z])`, 'i' ).exec( text );
             return match ? parseFloat( match.groups.value ) : 0;
         };
-        let d = unitSeconds( 'd' ) * 24 * 60 * 60 + unitSeconds( 'h' ) * 60 * 60 + unitSeconds( 'm' ) * 60 + unitSeconds( 's' );
+        const d = unitSeconds( 'd' ) * 24 * 60 * 60 + unitSeconds( 'h' ) * 60 * 60 + unitSeconds( 'm' ) * 60 + unitSeconds( 's' );
 
         if ( d > 0 ) {
             return d;
         } else {
-            let fallback = parseFloat( text ) * 10 * 6;
+            const fallback = parseFloat( text ) * 10 * 6;
             return isNaN( fallback ) ? 0 : fallback;
         }
 

@@ -52,7 +52,7 @@ var overlays = [];
 /** @type {LogTrigger[]} */
 var triggers = [];
 /** @type {LogTrigger[]} The triggers that are enabled for this character, rebuilt on each tick. */
-var activeTriggers = [];
+let activeTriggers = [];
 /** @type {TriggerFolder[]} */
 var triggerFolders = [];
 /** @type {Record<string, string[]>} */
@@ -1205,7 +1205,8 @@ function generateTriggerFns() {
                                 };
                             } );
                         } else {
-                            // These only depend on the phrase, so work them out once instead of on every log line.
+                            // These only depend on the phrase, so work them out once instead of
+                            // on every log line.
                             const hasListShortCode = typeof phrase.phrase === 'string' && /{L([0-9]*?)}/i.test( phrase.phrase );
                             const staticLiterals = typeof phrase.phrase === 'string' && !phrase.phrase.includes( '${' ) ? [ phrase.phrase ] : null;
                             const staticLiteralsLower = staticLiterals?.map( p => p.toLowerCase() );
@@ -1225,7 +1226,8 @@ function generateTriggerFns() {
 
                                 if ( value?.length > 0 ) {
                                     // We won't care about case sensitivity.
-                                    let _phrs = staticLiterals ?? StringUtilities.parseStoredVariablesToLiteralArray( phrase.phrase, storedVariables );
+                                    const _phrs = staticLiterals
+                                        ?? StringUtilities.parseStoredVariablesToLiteralArray( phrase.phrase, storedVariables );
                                     let matched = false;
                                     const valueLower = toLowerCached( value );
     
@@ -1723,7 +1725,7 @@ function parseLogEntries( raw, simulating, padTime ) {
         const hasNagLink = log.includes( '{NAG:' );
 
         // Capture quickshares, when enabled.
-        let quickShare = !enableQuickShareImports || !hasNagLink ? null : quickShareRegx.exec( log );
+        const quickShare = !enableQuickShareImports || !hasNagLink ? null : quickShareRegx.exec( log );
         if ( quickShare && quickShare.groups?.quickShareId ) {
             if ( quickShareAuthorsListType === QuickShareAuthorListTypes.Whitelist && quickShare.groups?.author ) {
                 // Whitelist will only share if the author is known and in the
@@ -1748,7 +1750,7 @@ function parseLogEntries( raw, simulating, padTime ) {
 
         }
 
-        let p2p = hasNagLink ? p2pRegex.exec( log ) : null;
+        const p2p = hasNagLink ? p2pRegex.exec( log ) : null;
         if ( p2p && p2p.groups?.chatRoomId && p2p.groups?.player != 'You' && p2p.groups?.player != 'you' && p2p.groups?.player != characterName ) {
             let link = createChatRoomLink( p2p.groups.chatRoomId );
             ipcRenderer.send( 'chat-room:link-received', {
@@ -1758,7 +1760,7 @@ function parseLogEntries( raw, simulating, padTime ) {
             } );
         }
 
-        let quickSharePackage = hasNagLink ? packageShareRegx.exec( log ) : null;
+        const quickSharePackage = hasNagLink ? packageShareRegx.exec( log ) : null;
         if ( quickSharePackage && quickSharePackage.groups?.packageId ) {
             ipcRenderer.send( 'quicksharePackage_captured', quickSharePackage.groups.packageId );
         }
