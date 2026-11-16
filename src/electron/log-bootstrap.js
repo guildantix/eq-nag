@@ -440,7 +440,7 @@ class LogBootstrapper {
                 // Find the character whose window sent the reply.
                 const characterId = Object.keys( logWatchers ).find( key => {
                     const win = logWatchers[ key ].window;
-                    return win != null && !win.isDestroyed() && win.webContents.id === event.sender.id;
+                    return win !== null && win !== undefined && !win.isDestroyed() && win.webContents.id === event.sender.id;
                 } );
 
                 if ( characterId === undefined ) {
@@ -1009,14 +1009,25 @@ class LogBootstrapper {
         combatWatcher.window?.webContents.send( channel, value );
     }
 
+
+
+
+
+
+
+
+
+
     /**
      * Speaks the given phrase using the first log watcher's voice settings.
      *
      * @param {string} phrase The phrase to speak.
      */
     speakPhrase( phrase ) {
-        for ( let key in logWatchers ) {
-            if ( logWatchers.hasOwnProperty( key ) && logWatchers[ key ].window != null ) {
+        for ( const key in logWatchers ) {
+            if ( logWatchers.hasOwnProperty( key )
+                && logWatchers[ key ].window !== null
+                && logWatchers[ key ].window !== undefined ) {
                 logWatchers[ key ].window.webContents.send( 'log:speak:phrase', { phrase: phrase, interruptSpeech: false } );
                 break;
             }

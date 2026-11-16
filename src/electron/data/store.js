@@ -20,7 +20,19 @@ function sleepSync( ms ) {
     Atomics.wait( new Int32Array( new SharedArrayBuffer( 4 ) ), 0, 0, ms );
 }
 
-/** Thrown when a data file exists but cannot be read, so the caller can stop instead of overwriting it. */
+
+
+
+
+
+
+
+
+
+/**
+ * Thrown when a data file exists but cannot be read, so the caller can stop instead of
+ * overwriting it.
+ */
 class StoreReadError extends Error {
     constructor( filePath, cause ) {
         super( `Could not read ${filePath}: ${cause?.code || cause?.message}` );
@@ -55,13 +67,23 @@ class Store {
         // this.data = parseDataFile( this.path, opts.defaults );
         this.#removeStaleTempFiles();
     }
-    
+
+
+
+
+
+
+
+
+
 
     /**
-     * Reads the data file, returning the defaults when it is missing and moving it aside when it is corrupt.
-     * Any other read error is retried briefly and then thrown, so the defaults never replace a valid file.
+     * Reads the data file, returning the defaults when it is missing and moving it aside when it is
+     * corrupt. Any other read error is retried briefly and then thrown, so the defaults never
+     * replace a valid file.
      *
-     * @returns {any} Returns the parsed data, or the defaults if the file does not exist or was corrupt.
+     * @returns {any} Returns the parsed data, or the defaults if the file does not exist or was
+     *          corrupt.
      */
     parseDataFile() {
         // We'll try/catch it in case the file doesn't exist yet, which will be the case on the first application run.
@@ -95,7 +117,7 @@ class Store {
             }
 
             // The file is not valid JSON, so move it aside before the next save overwrites it.
-            let corruptPath = `${this.#path}.corrupt-${FsUtilities.getFileTimestamp()}-${Math.random().toString( 36 ).slice( 2, 8 )}`;
+            const corruptPath = `${this.#path}.corrupt-${FsUtilities.getFileTimestamp()}-${Math.random().toString( 36 ).slice( 2, 8 )}`;
 
             try {
                 fs.renameSync( this.#path, corruptPath );
@@ -108,14 +130,23 @@ class Store {
         }
     }
 
+
+
+
+
+
+
+
+
+
     /**
      * Deletes leftover temporary files from interrupted saves.
      */
     #removeStaleTempFiles() {
         try {
-            let prefix = `${path.basename( this.#path )}.`;
+            const prefix = `${path.basename( this.#path )}.`;
 
-            for ( let name of fs.readdirSync( this.userDataPath ) ) {
+            for ( const name of fs.readdirSync( this.userDataPath ) ) {
                 if ( name.startsWith( prefix ) && name.endsWith( '.tmp' ) ) {
                     fs.rmSync( path.join( this.userDataPath, name ), { force: true } );
                 }
@@ -124,6 +155,15 @@ class Store {
             // Stale temporary files are harmless.
         }
     }
+
+
+
+
+
+
+
+
+
 
     /**
      * Clones the given data and strips the virtual properties so it is ready to be written.
@@ -151,6 +191,15 @@ class Store {
         return storeData;
     }
 
+
+
+
+
+
+
+
+
+
     /**
      * Returns a unique temporary file path next to the data file.
      *
@@ -160,16 +209,25 @@ class Store {
         return `${this.#path}.${process.pid}-${Date.now()}-${Math.random().toString( 36 ).slice( 2 )}.tmp`;
     }
 
+
+
+
+
+
+
+
+
+
     /**
-     * Writes the data file by writing a temporary file and renaming it over the data file.
-     * If the rename keeps failing, the data file is written directly. Failures are logged, not thrown.
+     * Writes the data file by writing a temporary file and renaming it over the data file. If the
+     * rename keeps failing, the data file is written directly. Failures are logged, not thrown.
      *
      * @param {any} data The data to store.
      */
     storeDataFile( data ) {
 
-        let json = JSON.stringify( this.#prepareStoreData( data ) );
-        let tempPath = this.#getTempPath();
+        const json = JSON.stringify( this.#prepareStoreData( data ) );
+        const tempPath = this.#getTempPath();
 
         try {
             fs.writeFileSync( tempPath, json );
@@ -203,17 +261,27 @@ class Store {
         }
     }
 
+
+
+
+
+
+
+
+
+
     /**
-     * Writes the data file asynchronously by writing a temporary file and renaming it over the data file.
-     * If the rename keeps failing, the data file is written directly.
+     * Writes the data file asynchronously by writing a temporary file and renaming it over the data
+     * file. If the rename keeps failing, the data file is written directly.
      *
      * @param {any} data The data to store.
-     * @returns {Promise<void>} Returns a promise that resolves when the data file is written and rejects if it could not be written.
+     * @returns {Promise<void>} Returns a promise that resolves when the data file is written and
+     *          rejects if it could not be written.
      */
     async storeDataFileAsync( data ) {
 
-        let json = JSON.stringify( this.#prepareStoreData( data ) );
-        let tempPath = this.#getTempPath();
+        const json = JSON.stringify( this.#prepareStoreData( data ) );
+        const tempPath = this.#getTempPath();
 
         try {
             await fsp.writeFile( tempPath, json );
