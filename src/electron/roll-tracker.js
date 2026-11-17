@@ -6,9 +6,15 @@ const UserPreferencesStore = require( './data/user-preferences' );
 const duplicateWindowMs = 3 * 1000;
 /** Closed contests kept in memory for the Rolls tab. */
 const maxContestHistory = 25;
-/** A contest shows on the overlay, and is copied or spoken when it closes, only once this many players have rolled. */
+/**
+ * A contest shows on the overlay, and is copied or spoken when it closes, only once this many
+ * players have rolled.
+ */
 const minRollers = 2;
-/** Spoken when a contest closes; ${...} placeholders are filled in. Used when the setting is blank. */
+/**
+ * Spoken when a contest closes; ${...} placeholders are filled in. Used when the setting is
+ * blank.
+ */
 const defaultWinnerPhrase = '${winner} wins with ${roll}';
 const defaultTiePhrase = 'Tie at ${roll} between ${winners}';
 /** The pasted line is the prefix followed by this template. */
@@ -20,6 +26,9 @@ const testPlayers = [ 'Soandso', 'Brindle', 'Kazzik', 'Oolin' ];
 const testRange = { min: 1, max: 15 };
 const testRollGapMs = 700;
 
+/**
+ * The Roll Tracker settings, with the value each one has until the user changes it.
+ */
 class RollTrackerSettings {
     enabled = false;
     topCount = 4;
@@ -38,6 +47,15 @@ class RollTrackerSettings {
     /** Whether the Advanced column of Settings > Roll Tracker is open. */
     advancedOpen = false;
 }
+
+
+
+
+
+
+
+
+
 
 /**
  * @typedef {object} RollModel
@@ -89,7 +107,8 @@ class RollTracker {
      *
      * @param {ForwardRef} mainWindowRef The main window.
      * @param {UserPreferencesStore} userPreferences The user preferences.
-     * @param {(channel: string, data: any) => void} sendToRenderer Sends a message to the overlay renderer.
+     * @param {(channel: string, data: any) => void} sendToRenderer Sends a message to the overlay
+     *        renderer.
      * @param {(phrase: string) => void} speak Speaks the given phrase.
      */
     attachIpcEvents( mainWindowRef, userPreferences, sendToRenderer, speak ) {
@@ -103,26 +122,26 @@ class RollTracker {
         ipcMain.on( 'rolls:get', ( event ) => event.sender.send( 'rolls:state', this.#getState() ) );
 
         ipcMain.on( 'rolls:close', ( event, contestId ) => {
-            const contest = this.#contests.find( c => c.contestId === contestId );
-            if ( contest && contest.closedAt == null ) {
+            const contest = this.#contests.find( candidate => candidate.contestId === contestId );
+            if ( contest && contest.closedAt === null ) {
                 this.#closeContest( contest );
                 this.#broadcast();
             }
         } );
 
         ipcMain.on( 'rolls:copy', ( event, contestId ) => {
-            const contest = this.#contests.find( c => c.contestId === contestId );
+            const contest = this.#contests.find( candidate => candidate.contestId === contestId );
             if ( contest ) {
                 clipboard.writeText( this.#getResultText( contest ) );
             }
         } );
 
         ipcMain.on( 'rolls:remove', ( event, contestId ) => {
-            const removed = this.#contests.find( c => c.contestId === contestId );
+            const removed = this.#contests.find( candidate => candidate.contestId === contestId );
             if ( removed?.min === testRange.min && removed?.max === testRange.max ) {
                 this.#cancelTest();
             }
-            this.#contests = this.#contests.filter( c => c.contestId !== contestId );
+            this.#contests = this.#contests.filter( contest => contest.contestId !== contestId );
             this.#broadcast();
         } );
 
@@ -135,7 +154,11 @@ class RollTracker {
         ipcMain.on( 'rolls:test', ( event ) => this.#simulateContest() );
 
         ipcMain.on( 'rolls:dismiss', ( event ) => {
-            this.#contests.forEach( c => c.dismissed = c.closedAt != null ? true : c.dismissed );
+            this.#contests.forEach( contest => {
+                if ( contest.closedAt !== null ) {
+                    contest.dismissed = true;
+                }
+            } );
             this.#broadcast();
         } );
 
@@ -152,8 +175,18 @@ class RollTracker {
         ipcMain.handle( 'rolls:position:get', () => this.#userPreferences.rollTrackerPosition );
     }
 
+
+
+
+
+
+
+
+
+
     /**
-     * Stores the changed settings; a null value removes the stored one so the default applies again.
+     * Stores the changed settings; a null value removes the stored one so the default applies
+     * again.
      *
      * @param {Record<string, any>} changes The changed settings.
      */
@@ -170,6 +203,15 @@ class RollTracker {
         this.#userPreferences.rollTrackerSettings = stored;
     }
 
+
+
+
+
+
+
+
+
+
     /**
      * Rolls 1-15 for made-up players, a moment apart, through the normal roll path.
      */
@@ -177,10 +219,12 @@ class RollTracker {
         if ( this.#testTimers.length > 0 ) {
             return;
         }
-        this.#contests = this.#contests.filter( c => c.closedAt != null || c.min !== testRange.min || c.max !== testRange.max );
+        this.#contests = this.#contests.filter(
+            contest => contest.closedAt !== null || contest.min !== testRange.min || contest.max !== testRange.max
+        );
         testPlayers.forEach( ( player, i ) => {
             const timerId = setTimeout( () => {
-                this.#testTimers = this.#testTimers.filter( t => t !== timerId );
+                this.#testTimers = this.#testTimers.filter( pendingTimerId => pendingTimerId !== timerId );
                 this.#addRoll( {
                     player,
                     roll: 1 + Math.floor( Math.random() * testRange.max ),
@@ -194,19 +238,41 @@ class RollTracker {
         this.#broadcast();
     }
 
+
+
+
+
+
+
+
+
+
     /**
      * Stops the rolls the test simulation has not made yet.
      */
     #cancelTest() {
-        this.#testTimers.forEach( t => clearTimeout( t ) );
+        this.#testTimers.forEach( pendingTimerId => clearTimeout( pendingTimerId ) );
         this.#testTimers = [];
     }
 
-    /** @type {RollTrackerSettings} */
+
+
+
+
+
+
+
+
+
+    /**
+     * The settings the user stored, with the defaults for the ones they did not change.
+     *
+     * @type {RollTrackerSettings}
+     */
     get #settings() {
         const stored = this.#userPreferences.rollTrackerSettings ?? {};
         const settings = Object.assign( new RollTrackerSettings(), stored );
-        if ( stored.resultSeconds == null && stored.keepResult === true ) {
+        if ( ( stored.resultSeconds === null || stored.resultSeconds === undefined ) && stored.keepResult === true ) {
             settings.resultSeconds = 0;
         }
         delete settings.keepResult;
@@ -214,10 +280,20 @@ class RollTracker {
         return settings;
     }
 
+
+
+
+
+
+
+
+
+
     /**
      * Adds a roll seen in a log file.
      *
-     * @param {{player: string, roll: number, min: number, max: number, timestamp: number}} data The roll.
+     * @param {{player: string, roll: number, min: number, max: number, timestamp: number}} data
+     *        The roll.
      */
     #addRoll( data ) {
         const settings = this.#settings;
@@ -227,17 +303,29 @@ class RollTracker {
 
         // Boxed characters see the same roll in each log.
         const now = Date.now();
-        this.#recentRolls = this.#recentRolls.filter( r => now - r.seenAt < duplicateWindowMs );
-        if ( this.#recentRolls.some( r => r.player === data.player && r.roll === data.roll && r.min === data.min && r.max === data.max && Math.abs( r.timestamp - data.timestamp ) < duplicateWindowMs ) ) {
+        this.#recentRolls = this.#recentRolls.filter( recent => now - recent.seenAt < duplicateWindowMs );
+        const isDuplicate = this.#recentRolls.some( recent => recent.player === data.player
+            && recent.roll === data.roll
+            && recent.min === data.min
+            && recent.max === data.max
+            && Math.abs( recent.timestamp - data.timestamp ) < duplicateWindowMs );
+        if ( isDuplicate ) {
             return;
         }
         this.#recentRolls.push( { ...data, seenAt: now } );
         const lastRollAt = this.#getLastRollAt( data.timestamp, settings );
 
         /** @type {RollModel} */
-        const roll = { player: data.player, roll: data.roll, min: data.min, max: data.max, timestamp: data.timestamp, status: 'counted' };
-        const open = this.#contests.filter( c => c.closedAt == null );
-        const sameRange = open.find( c => c.min === roll.min && c.max === roll.max );
+        const roll = {
+            player: data.player,
+            roll: data.roll,
+            min: data.min,
+            max: data.max,
+            timestamp: data.timestamp,
+            status: 'counted',
+        };
+        const open = this.#contests.filter( contest => contest.closedAt === null );
+        const sameRange = open.find( contest => contest.min === roll.min && contest.max === roll.max );
 
         if ( sameRange ) {
             this.#addToContest( sameRange, roll, settings, lastRollAt );
@@ -249,10 +337,19 @@ class RollTracker {
         this.#broadcast();
     }
 
+
+
+
+
+
+
+
+
+
     /**
-     * Returns the wall clock time the roll happened at, so contests close the same moment whatever the
-     * log write interval. The gap to the log time is only trusted up to a limit, so clock differences
-     * can neither close a contest at once nor keep it open.
+     * Returns the wall clock time the roll happened at, so contests close the same moment whatever
+     * the log write interval. The gap to the log time is only trusted up to a limit, so clock
+     * differences can neither close a contest at once nor keep it open.
      *
      * @param {number} timestamp The roll's log timestamp, in ms.
      * @param {RollTrackerSettings} settings The settings.
@@ -263,6 +360,15 @@ class RollTracker {
         const lag = Number.isFinite( timestamp ) ? now - timestamp : 0;
         return now - Math.max( 0, Math.min( lag, maxLogLagMs, settings.closeAfterSeconds * 500 ) );
     }
+
+
+
+
+
+
+
+
+
 
     /**
      * Starts a new contest with the given roll.
@@ -286,6 +392,15 @@ class RollTracker {
         return contest;
     }
 
+
+
+
+
+
+
+
+
+
     /**
      * Adds a roll in the contest's range, applying the reroll rule.
      *
@@ -296,7 +411,7 @@ class RollTracker {
      */
     #addToContest( contest, roll, settings, lastRollAt ) {
         contest.lastRollAt = Math.max( contest.lastRollAt, lastRollAt );
-        const previous = contest.rolls.find( r => r.status === 'counted' && r.player === roll.player );
+        const previous = contest.rolls.find( earlierRoll => earlierRoll.status === 'counted' && earlierRoll.player === roll.player );
 
         if ( previous ) {
             if ( settings.rerollRule === 'highest' && roll.roll > previous.roll ) {
@@ -312,6 +427,15 @@ class RollTracker {
 
         contest.rolls.push( roll );
     }
+
+
+
+
+
+
+
+
+
 
     /**
      * Closes the contest, copying and speaking the result as the settings say.
@@ -332,10 +456,10 @@ class RollTracker {
         }
 
         if ( settings.speakWinner ) {
-            const tied = ranked.filter( r => r.rank === 1 );
+            const tied = ranked.filter( rankedRoll => rankedRoll.rank === 1 );
             const data = {
                 winner: ranked[ 0 ].player,
-                winners: tied.map( r => r.player ).join( ', ' ),
+                winners: tied.map( rankedRoll => rankedRoll.player ).join( ', ' ),
                 roll: ranked[ 0 ].roll,
                 min: contest.min,
                 max: contest.max,
@@ -346,6 +470,15 @@ class RollTracker {
                 this.#formatPhrase( settings.speakWinnerPhrase, defaultWinnerPhrase, data ) );
         }
     }
+
+
+
+
+
+
+
+
+
 
     /**
      * Fills the placeholders in the phrase template, using the fallback when the template is blank.
@@ -360,17 +493,29 @@ class RollTracker {
         return text.replace( /\$\{(\w+)\}/g, ( match, key ) => Object.hasOwn( data, key ) ? `${data[ key ]}` : match );
     }
 
+
+
+
+
+
+
+
+
+
     /**
      * Returns the result line to paste into chat.
      *
      * @param {ContestModel} contest The contest.
+     * @returns {string} Returns the line to paste.
      */
     #getResultText( contest ) {
         const ranked = rankRolls( contest );
         const settings = this.#settings;
-        const top = ranked.filter( r => r.rank <= settings.topCount );
-        const ties = new Set( ranked.filter( r => ranked.some( o => o !== r && o.roll === r.roll ) ).map( r => r.player ) );
-        const parts = top.map( r => `${r.rank}) ${r.player} ${r.roll}${ties.has( r.player ) ? ' TIE' : ''}` );
+        const top = ranked.filter( rankedRoll => rankedRoll.rank <= settings.topCount );
+        const ties = new Set( ranked
+            .filter( rankedRoll => ranked.some( otherRoll => otherRoll !== rankedRoll && otherRoll.roll === rankedRoll.roll ) )
+            .map( rankedRoll => rankedRoll.player ) );
+        const parts = top.map( rankedRoll => `${rankedRoll.rank}) ${rankedRoll.player} ${rankedRoll.roll}${ties.has( rankedRoll.player ) ? ' TIE' : ''}` );
         const text = this.#formatPhrase( settings.pasteTemplate, defaultResultTemplate, {
             min: contest.min,
             max: contest.max,
@@ -379,6 +524,15 @@ class RollTracker {
         } );
         return `${settings.pastePrefix ?? ''} ${text}`.trim();
     }
+
+
+
+
+
+
+
+
+
 
     /**
      * Closes contests that have had no new rolls for closeAfterSeconds, and
@@ -390,30 +544,61 @@ class RollTracker {
         let changed = false;
 
         this.#contests.forEach( contest => {
-            if ( contest.closedAt == null && now - contest.lastRollAt >= settings.closeAfterSeconds * 1000 ) {
+            if ( contest.closedAt === null && now - contest.lastRollAt >= settings.closeAfterSeconds * 1000 ) {
                 this.#closeContest( contest );
                 changed = true;
             }
-            if ( settings.resultSeconds > 0 && contest.closedAt != null && !contest.dismissed && now - contest.closedAt >= settings.resultSeconds * 1000 ) {
+            if ( settings.resultSeconds > 0
+                && contest.closedAt !== null
+                && !contest.dismissed
+                && now - contest.closedAt >= settings.resultSeconds * 1000 ) {
                 contest.dismissed = true;
                 changed = true;
             }
         } );
 
-        changed && this.#broadcast();
+        if ( changed ) {
+            this.#broadcast();
+        }
 
-        if ( !this.#contests.some( c => c.closedAt == null || ( !c.dismissed && settings.resultSeconds > 0 ) ) ) {
+        if ( !this.#contests.some( contest => contest.closedAt === null || ( !contest.dismissed && settings.resultSeconds > 0 ) ) ) {
             clearInterval( this.#timerId );
             this.#timerId = null;
         }
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Starts the once a second timer that closes contests, unless it is already running.
+     */
     #ensureTimer() {
-        if ( this.#timerId == null ) {
+        if ( this.#timerId === null ) {
             this.#timerId = setInterval( () => this.#tick(), 1000 );
         }
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Returns everything the Rolls tab and the overlay show.
+     *
+     * @returns {object} The settings, the contests and what the test simulation is doing.
+     */
     #getState() {
         return {
             settings: this.#settings,
@@ -421,10 +606,27 @@ class RollTracker {
             serverNow: Date.now(),
             minRollers: minRollers,
             testRunning: this.#testTimers.length > 0,
-            contests: this.#contests.map( c => ( { ...c, rolls: c.rolls.slice(), ranked: rankRolls( c ), resultText: this.#getResultText( c ) } ) ),
+            contests: this.#contests.map( contest => ( {
+                ...contest,
+                rolls: contest.rolls.slice(),
+                ranked: rankRolls( contest ),
+                resultText: this.#getResultText( contest ),
+            } ) ),
         };
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Sends the current state to the Rolls tab and the overlay.
+     */
     #broadcast() {
         const state = this.#getState();
         this.#mainWindowRef?.reference?.webContents.send( 'rolls:state', state );
@@ -433,6 +635,15 @@ class RollTracker {
 
 }
 
+
+
+
+
+
+
+
+
+
 /**
  * Returns the counted rolls, highest first, with equal rolls sharing a rank.
  *
@@ -440,8 +651,10 @@ class RollTracker {
  * @returns {(RollModel & {rank: number})[]}
  */
 function rankRolls( contest ) {
-    const counted = contest.rolls.filter( r => r.status === 'counted' ).sort( ( a, b ) => b.roll - a.roll || a.timestamp - b.timestamp );
-    return counted.map( ( r, i ) => ( { ...r, rank: counted.findIndex( o => o.roll === r.roll ) + 1 } ) );
+    const counted = contest.rolls
+        .filter( roll => roll.status === 'counted' )
+        .sort( ( a, b ) => b.roll - a.roll || a.timestamp - b.timestamp );
+    return counted.map( roll => ( { ...roll, rank: counted.findIndex( otherRoll => otherRoll.roll === roll.roll ) + 1 } ) );
 }
 
 module.exports = RollTracker;

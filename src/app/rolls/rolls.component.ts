@@ -79,75 +79,233 @@ export class RollsComponent implements OnInit, OnDestroy {
 
     private clockId: number | null = null;
 
+    /**
+     * The contest shown in the table: the one picked, or the newest when none is picked.
+     */
     public get selected(): RollContestModel | undefined {
-        return this.contests.find( c => c.contestId === this.selectedContestId ) ?? this.contests[ 0 ];
+        return this.contests.find( contest => contest.contestId === this.selectedContestId ) ?? this.contests[ 0 ];
     }
 
     constructor( private ngZone: NgZone ) { }
 
     ngOnInit(): void {
-        window.api.ipc.on( 'rolls:state', ( event: any, state: { settings: RollTrackerSettings, contests: RollContestModel[], testRunning: boolean } ) => {
-            this.ngZone.run( () => {
-                this.contests = state.contests;
-                this.settings = state.settings;
-                this.testRunning = state.testRunning;
-                this.refreshSelected();
-            } );
-        } );
+        this.listenForRollState();
         window.api.ipc.send( 'rolls:get', null );
+        this.startClock();
+    }
 
+    ngOnDestroy(): void {
+        if ( this.clockId !== null ) {
+            window.clearInterval( this.clockId );
+        }
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Keeps the contests and settings up to date with what the main process sends.
+     */
+    private listenForRollState(): void {
+        window.api.ipc.on(
+            'rolls:state',
+            ( event: any, state: { settings: RollTrackerSettings, contests: RollContestModel[], testRunning: boolean } ) => {
+                this.ngZone.run( () => {
+                    this.contests = state.contests;
+                    this.settings = state.settings;
+                    this.testRunning = state.testRunning;
+                    this.refreshSelected();
+                } );
+            }
+        );
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Ticks the clock every second while a contest is open, so its countdown keeps moving.
+     */
+    private startClock(): void {
         this.ngZone.runOutsideAngular( () => {
             this.clockId = window.setInterval( () => {
-                if ( this.contests.some( c => c.closedAt == null ) ) {
+                if ( this.contests.some( contest => contest.closedAt === null ) ) {
                     this.ngZone.run( () => this.now = Date.now() );
                 }
             }, 1000 );
         } );
     }
 
-    ngOnDestroy(): void {
-        this.clockId != null && window.clearInterval( this.clockId );
-    }
 
+
+
+
+
+
+
+
+
+    /**
+     * Shows the given contest in the table.
+     *
+     * @param contest The contest to show.
+     */
     public selectContest( contest: RollContestModel ): void {
         this.selectedContestId = contest.contestId;
         this.refreshSelected();
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Closes the contest now, instead of waiting for the countdown.
+     *
+     * @param contest The contest to close.
+     */
     public closeContest( contest: RollContestModel ): void {
         window.api.ipc.send( 'rolls:close', contest.contestId );
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Copies the contest's result line to the clipboard.
+     *
+     * @param contest The contest to copy.
+     */
     public copyResult( contest: RollContestModel ): void {
         window.api.ipc.send( 'rolls:copy', contest.contestId );
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Removes the contest from the list.
+     *
+     * @param contest The contest to remove.
+     */
     public removeContest( contest: RollContestModel ): void {
         window.api.ipc.send( 'rolls:remove', contest.contestId );
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Removes every contest from the list.
+     */
     public clearContests(): void {
         window.api.ipc.send( 'rolls:clear', null );
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Starts a made-up contest, to try the overlay without waiting for real rolls.
+     */
     public testOverlay(): void {
         window.api.ipc.send( 'rolls:test', null );
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Returns the time left before the contest closes, as minutes and seconds.
+     *
+     * @param contest The open contest.
+     * @returns The time left, like 0:25.
+     */
     public countdown( contest: RollContestModel ): string {
         const remaining = Math.max( 0, ( this.settings?.closeAfterSeconds ?? 30 ) * 1000 - ( this.now - contest.lastRollAt ) );
         const seconds = Math.ceil( remaining / 1000 );
         return `${Math.floor( seconds / 60 )}:${`${seconds % 60}`.padStart( 2, '0' )}`;
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Returns who is leading the contest, or who won it once it is closed.
+     *
+     * @param contest The contest.
+     * @returns The leader, or null when nobody has rolled yet.
+     */
     public leader( contest: RollContestModel ): RollLeader | null {
-        const top = contest.ranked.filter( r => r.rank === 1 );
+        const top = contest.ranked.filter( roll => roll.rank === 1 );
         if ( top.length === 0 ) {
             return null;
         }
-        const who = top.length > 1 ? `tie ${top.map( r => r.player ).join( ' / ' )}` : top[ 0 ].player;
-        return { label: contest.closedAt == null ? 'leader' : 'winner', who, roll: top[ 0 ].roll };
+        const who = top.length > 1 ? `tie ${top.map( roll => roll.player ).join( ' / ' )}` : top[ 0 ].player;
+        return { label: contest.closedAt === null ? 'leader' : 'winner', who, roll: top[ 0 ].roll };
     }
+
+
+
+
+
+
+
+
+
 
     /**
      * Builds the table rows for the selected contest.
@@ -159,28 +317,28 @@ export class RollsComponent implements OnInit, OnDestroy {
             return;
         }
 
-        const isTie = ( r: RollModel ) => contest.ranked.some( o => o !== r && o.roll === r.roll );
-        const counted: RollRow[] = contest.ranked.map( r => ( {
-            rank: r.rank,
-            player: r.player,
-            roll: r.roll,
-            timestamp: r.timestamp,
+        const isTie = ( roll: RollModel ) => contest.ranked.some( otherRoll => otherRoll !== roll && otherRoll.roll === roll.roll );
+        const counted: RollRow[] = contest.ranked.map( roll => ( {
+            rank: roll.rank,
+            player: roll.player,
+            roll: roll.roll,
+            timestamp: roll.timestamp,
             flagged: false,
-            tie: isTie( r ),
-            leader: r.rank === 1,
-            label: r.rank === 1 ? ( contest.closedAt == null ? 'Leader' : 'Winner' ) : '',
+            tie: isTie( roll ),
+            leader: roll.rank === 1,
+            label: roll.rank === 1 ? ( contest.closedAt === null ? 'Leader' : 'Winner' ) : '',
             note: '',
         } ) );
-        const flagged: RollRow[] = contest.rolls.filter( r => r.status !== 'counted' ).map( r => ( {
+        const flagged: RollRow[] = contest.rolls.filter( roll => roll.status !== 'counted' ).map( roll => ( {
             rank: null,
-            player: r.player,
-            roll: r.roll,
-            timestamp: r.timestamp,
+            player: roll.player,
+            roll: roll.roll,
+            timestamp: roll.timestamp,
             flagged: true,
             tie: false,
             leader: false,
             label: 'Reroll ignored:',
-            note: r.note ?? '',
+            note: roll.note ?? '',
         } ) );
         this.rows = [ ...counted, ...flagged ];
     }

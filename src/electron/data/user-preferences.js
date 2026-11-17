@@ -522,19 +522,75 @@ class UserPreferencesStore extends Store {
         this.storeDataFile( this.#data );
     }
 
-    /** @type {import('electron').Rectangle} */
+
+
+
+
+
+
+
+
+
+    /**
+     * The position and size of the Roll Tracker overlay window.
+     *
+     * @type {import('electron').Rectangle}
+     */
     get rollTrackerPosition() {
         return this.#data.rollTrackerPosition;
     }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Stores the position and size of the Roll Tracker overlay window.
+     *
+     * @param {import('electron').Rectangle} val The window bounds.
+     */
     set rollTrackerPosition( val ) {
         this.#data.rollTrackerPosition = val;
         this.storeDataFile( this.#data );
     }
 
-    /** @type {import('../roll-tracker').RollTrackerSettings} */
+
+
+
+
+
+
+
+
+
+    /**
+     * The Roll Tracker settings the user changed; settings not stored here use their defaults.
+     *
+     * @type {import('../roll-tracker').RollTrackerSettings}
+     */
     get rollTrackerSettings() {
         return this.#data.rollTrackerSettings;
     }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Stores the Roll Tracker settings the user changed.
+     *
+     * @param {import('../roll-tracker').RollTrackerSettings} val The changed settings.
+     */
     set rollTrackerSettings( val ) {
         this.#data.rollTrackerSettings = val;
         this.storeDataFile( this.#data );
