@@ -2,7 +2,7 @@ import { FlatTreeControl } from '@angular/cdk/tree';
 import { Component, ElementRef, HostListener, NgZone, OnInit, ViewChild } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTreeFlatDataSource, MatTreeFlattener } from '@angular/material/tree';
-import { DeathRecapPreferences, ExternalDataSources, QuickShareFileModel, QuickShareMetaModel, Tag, TriggerAction, TriggerFolder, TriggerModel } from '../core.model';
+import { DeathRecapPreferences, ExternalDataSources, QuickShareFileModel, QuickShareMetaModel, Tag, TriggerAction, TriggerFolder, TriggerModel, ShareInstallResult } from '../core.model';
 import { DialogService } from '../dialogs/dialog.service';
 import { IpcService } from '../ipc.service';
 import * as _ from 'lodash-es';
@@ -2193,8 +2193,11 @@ export class TriggersComponent implements OnInit {
                             // Finally, we can install the package itself after all of the package files have been installed.
                             forkJoin( importTasks ).subscribe( results => {
                                 // Missing package overlays are caught in the main component's ngInit event.
-                                this.ipcService.installTriggerPackage( pkg ).subscribe( installComplete => {
-                                    this.snackBar.open( 'Package install complete!', 'dismiss', { duration: 2500 } );
+                                this.ipcService.installTriggerPackage( pkg ).subscribe( installResult => {
+                                    const successMessage = 'Package install complete!';
+                                    const message = ShareInstallResult.describeOutcome( installResult, successMessage );
+
+                                    this.snackBar.open( message, 'dismiss', { duration: message === successMessage ? 2500 : 8000 } );
                                     this.ipcService.requestTick();
                                 } );
                             } );
