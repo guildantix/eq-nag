@@ -31,10 +31,10 @@ const maxPartialLine = 8 * 1024 * 1024;
  * @param {number} length The number of bytes to read.
  */
 async function readRange( handle, position, length ) {
-    let chunk = Buffer.allocUnsafe( length );
+    const chunk = Buffer.allocUnsafe( length );
     let read = 0;
     while ( read < length ) {
-        let result = await handle.read( chunk, read, length - read, position + read );
+        const result = await handle.read( chunk, read, length - read, position + read );
         if ( result.bytesRead === 0 ) {
             break;
         }
@@ -55,13 +55,13 @@ async function readRange( handle, position, length ) {
 /**
  * Returns the hash of the start of the file, used to tell a continued log from a replaced one.
  *
- * @returns {Promise<{ head: string, headLength: number }>} The hash and the number of bytes it covers.
+ * @returns {Promise<{ head: string, headLength: number }>} The hash and how many bytes it covers.
  *
  * @param {import('fs').promises.FileHandle} handle The open file.
  * @param {number} length The number of bytes to cover, at most the head size.
  */
 async function hashHead( handle, length ) {
-    let bytes = await readRange( handle, 0, Math.min( headBytes, length ) );
+    const bytes = await readRange( handle, 0, Math.min( headBytes, length ) );
     return { head: crypto.createHash( 'sha1' ).update( bytes ).digest( 'hex' ), headLength: bytes.length };
 }
 
@@ -79,60 +79,69 @@ async function hashHead( handle, length ) {
  *
  * @returns {Promise<any>} The scan result.
  *
- * @param {{ logFilePath: string, characterName: string, eqFolder: string, userData: string, quietGapSeconds: number, minDamage: number, cache: any }} params The scan parameters.
+ * @param {any} params The scan parameters: log path, character name, EverQuest and user data
+ *     folders, quiet gap, smallest damage and the cache entry of the log.
  */
 async function scanLog( params ) {
 
-    let startedAt = Date.now();
-    let table = await loadPushSpells( params.eqFolder, params.userData );
-    let landing = buildLandingIndex( table );
+    const startedAt = Date.now();
+    const table = await loadPushSpells( params.eqFolder, params.userData );
+    const landing = buildLandingIndex( table );
 
-    let handle = await fs.promises.open( params.logFilePath, 'r' );
+    const handle = await fs.promises.open( params.logFilePath, 'r' );
     try {
-        let size = ( await handle.stat() ).size;
-        let headInfo = await hashHead( handle, size );
+        const size = ( await handle.stat() ).size;
+        const headInfo = await hashHead( handle, size );
 
         let results = [];
         let startOffset = 0;
         let resumed = false;
-        let cache = params.cache;
-        if ( cache != null && size >= cache.size && cache.resumeOffset <= size ) {
-            let cachedHead = await hashHead( handle, cache.headLength );
-            let previous = cache.resumeOffset > 0 ? await readRange( handle, cache.resumeOffset - 1, 1 ) : null;
-            if ( cachedHead.head === cache.head && ( previous == null || previous[ 0 ] === 10 ) ) {
+        const cache = params.cache;
+        if ( cache !== null && cache !== undefined && size >= cache.size && cache.resumeOffset <= size ) {
+            const cachedHead = await hashHead( handle, cache.headLength );
+            const previous = cache.resumeOffset > 0 ? await readRange( handle, cache.resumeOffset - 1, 1 ) : null;
+            if ( cachedHead.head === cache.head && ( ( previous === null || previous === undefined ) || previous[ 0 ] === 10 ) ) {
                 startOffset = cache.resumeOffset;
                 results = cache.results.slice();
                 resumed = true;
             }
         }
         let capped = resumed && cache.capped === true;
-        let seen = new Set( results.map( r => `${r.mob}|${r.killTime}` ) );
+        const seen = new Set( results.map( r => `${r.mob}|${r.killTime}` ) );
 
-        let lines = [];
-        let times = [];
-        let offsets = [];
+        const lines = [];
+        const times = [];
+        const offsets = [];
         let head = 0;
         let trimmed = false;
-        let damage = new Map();
-        let npcSeen = new Set();
+        const damage = new Map();
+        const npcSeen = new Set();
         let analyzed = 0;
         let lastPost = 0;
 
-        let post = ( bytes ) => {
+        const post = ( bytes ) => {
             lastPost = Date.now();
             parentPort.postMessage( { type: 'progress', bytes: bytes - startOffset, total: size - startOffset, kills: results.length } );
         };
 
-        let analyze = ( time ) => {
+        const analyze = ( time ) => {
             analyzed++;
-            let session = { characterName: params.characterName, anchorTime: time, lines: lines.slice( head ), times: times.slice( head ), oldestTime: times[ head ], reachedStart: startOffset === 0 && !trimmed };
-            let summary = summarize( session );
-            let kill = summary.kills[ 0 ];
-            if ( kill == null || kill.index !== session.lines.length - 1 || kill.damage < params.minDamage ) {
+            const session = {
+                characterName: params.characterName,
+                anchorTime: time,
+                lines: lines.slice( head ),
+                times: times.slice( head ),
+                oldestTime: times[ head ],
+                reachedStart: startOffset === 0 && !trimmed,
+            };
+            const summary = summarize( session );
+            const kill = summary.kills[ 0 ];
+            if ( ( kill === null || kill === undefined ) || kill.index !== session.lines.length - 1 || kill.damage < params.minDamage ) {
                 return;
             }
-            let saved = buildSavedSummary( analyzeKill( session, summary, table, landing, kill, params.quietGapSeconds ), params.characterName );
-            let key = `${saved.mob}|${saved.killTime}`;
+            const analysis = analyzeKill( session, summary, table, landing, kill, params.quietGapSeconds );
+            const saved = buildSavedSummary( analysis, params.characterName );
+            const key = `${saved.mob}|${saved.killTime}`;
             if ( seen.has( key ) ) {
                 return;
             }
@@ -145,15 +154,15 @@ async function scanLog( params ) {
             }
         };
 
-        let handleLine = ( buffer, start, end, offset ) => {
+        const handleLine = ( buffer, start, end, offset ) => {
             if ( end > start && buffer[ end - 1 ] === 13 ) {
                 end--;
             }
             if ( end - start < textOffset || buffer[ start ] !== 91 ) {
                 return;
             }
-            let line = buffer.toString( 'latin1', start, end );
-            let time = parseTimestamp( line );
+            const line = buffer.toString( 'latin1', start, end );
+            const time = parseTimestamp( line );
             if ( time !== time || !isRelevantLine( line, landing ) ) {
                 return;
             }
@@ -172,33 +181,33 @@ async function scanLog( params ) {
                 head = 0;
             }
 
-            let m = matchCombat( line.substring( textOffset ) );
-            if ( m == null ) {
+            const m = matchCombat( line.substring( textOffset ) );
+            if ( m === null || m === undefined ) {
                 return;
             }
-            let target = m.groups.target;
+            const target = m.groups.target;
             if ( m.groups.damage !== undefined ) {
                 damage.set( target, ( damage.get( target ) ?? 0 ) + +m.groups.damage );
-                let actor = m.groups.actor;
-                let actorMine = actor === 'You' || isPetName( actor );
-                let targetMine = target === 'You' || isPetName( target );
+                const actor = m.groups.actor;
+                const actorMine = actor === 'You' || isPetName( actor );
+                const targetMine = target === 'You' || isPetName( target );
                 if ( actorMine && !targetMine ) {
                     npcSeen.add( target );
                 } else if ( targetMine && !actorMine ) {
                     npcSeen.add( actor );
                 }
             } else {
-                let taken = damage.get( target ) ?? 0;
+                const taken = damage.get( target ) ?? 0;
                 damage.delete( target );
-                let killer = m.groups.actor ?? 'You';
-                let certain = m.groups.verb !== 'has been' && m.groups.verb !== 'have been';
-                let pet = isPetName( target );
+                const killer = m.groups.actor ?? 'You';
+                const certain = m.groups.verb !== 'has been' && m.groups.verb !== 'have been';
+                const pet = isPetName( target );
                 if ( certain && !pet ) {
                     npcSeen.add( target );
                 } else if ( !certain && ( target === 'You' || pet ) && isPlayerName( killer ) ) {
                     npcSeen.add( killer );
                 }
-                let possible = isPossibleKill( target, killer, certain, pet );
+                const possible = isPossibleKill( target, killer, certain, pet );
                 if ( possible && !certain ) {
                     npcSeen.add( target );
                 }
@@ -209,7 +218,7 @@ async function scanLog( params ) {
         };
 
         // Player deaths are not kills, so they are not worth the cost of a summary.
-        let isPossibleKill = ( target, killer, certain, pet ) => {
+        const isPossibleKill = ( target, killer, certain, pet ) => {
             if ( pet || ( !certain && target === 'You' ) ) {
                 return false;
             }
@@ -230,7 +239,7 @@ async function scanLog( params ) {
 
             // A line longer than the limit is dropped up to its end.
             if ( skipping ) {
-                let newline = chunk.indexOf( 10 );
+                const newline = chunk.indexOf( 10 );
                 if ( newline === -1 ) {
                     continue;
                 }
@@ -239,16 +248,16 @@ async function scanLog( params ) {
                 chunkOffset += newline + 1;
             }
 
-            let data = leftover.length > 0 ? Buffer.concat( [ leftover, chunk ] ) : chunk;
-            let dataOffset = chunkOffset - leftover.length;
+            const data = leftover.length > 0 ? Buffer.concat( [ leftover, chunk ] ) : chunk;
+            const dataOffset = chunkOffset - leftover.length;
 
-            let last = data.lastIndexOf( 10 );
+            const last = data.lastIndexOf( 10 );
             if ( last === -1 ) {
                 leftover = data;
             } else {
                 let start = 0;
                 while ( start <= last ) {
-                    let end = data.indexOf( 10, start );
+                    const end = data.indexOf( 10, start );
                     handleLine( data, start, end, dataOffset + start );
                     start = end + 1;
                 }
@@ -273,14 +282,24 @@ async function scanLog( params ) {
         }
 
         let resumeOffset = head < lines.length ? offsets[ head ] : size;
-        if ( remainderStart != null ) {
+        if ( remainderStart !== null && remainderStart !== undefined ) {
             resumeOffset = Math.min( resumeOffset, remainderStart );
         }
         if ( skipping ) {
             resumeOffset = Math.min( resumeOffset, skipStart );
         }
 
-        return { results: results, capped: capped, resumed: resumed, size: size, head: headInfo.head, headLength: headInfo.headLength, resumeOffset: resumeOffset, analyzed: analyzed, elapsedMs: Date.now() - startedAt };
+        return {
+            results: results,
+            capped: capped,
+            resumed: resumed,
+            size: size,
+            head: headInfo.head,
+            headLength: headInfo.headLength,
+            resumeOffset: resumeOffset,
+            analyzed: analyzed,
+            elapsedMs: Date.now() - startedAt,
+        };
 
     } finally {
         await handle.close();

@@ -3030,42 +3030,163 @@ export class IpcService {
         window.api.ipc.send( 'window:push-recap', message );
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Keeps a recap in the Push tab, for a fight found by a log scan.
+     *
+     * @param recap The recap to keep.
+     */
     public savePushRecap( recap: PushRecapSummary ): void {
         window.api.ipc.send( 'push-recaps:save', recap );
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Emits while a log scan runs, so the Push tab can show how far it is.
+     */
     public onPushScanProgress(): Observable<PushScanProgress> {
         return this._pushScanProgress.asObservable();
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Emits once when a log scan ends, whether it finished, stopped or failed.
+     */
     public onPushScanDone(): Observable<PushScanStatus> {
         return this._pushScanDone.asObservable();
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Asks the main process to scan a character's log for boss kills.
+     *
+     * @param characterId The character whose log is scanned.
+     * @param minDamage The smallest damage taken that a listed fight has.
+     */
     public startPushScan( characterId: string, minDamage: number ): Observable<{ started: boolean, message: string }> {
         return this.requestPushScan<{ started: boolean, message: string }>( 'push-scan:start', { characterId: characterId, minDamage: minDamage } );
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Asks the main process to stop the running scan.
+     */
     public cancelPushScan(): void {
         window.api.ipc.send( 'push-scan:cancel', null );
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Fetches the state of the scan, for a tab that opened while a scan was running.
+     */
     public getPushScanStatus(): Observable<PushScanStatus> {
         return this.requestPushScan<PushScanStatus>( 'push-scan:status', {} );
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Fetches the fights the last scan found, without their per-player detail.
+     */
     public getPushScanResults(): Observable<PushRecapSummary[]> {
         return this.requestPushScan<PushRecapSummary[]>( 'push-scan:results', {} );
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Fetches one scanned fight with its per-player detail.
+     *
+     * @param id The scanned fight id.
+     */
     public getPushScanResult( id: string ): Observable<PushRecapSummary | null> {
         return this.requestPushScan<PushRecapSummary | null>( 'push-scan:get', { id: id } );
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Sends a request to the scan service and waits for the reply that carries the same request id.
+     *
+     * @param channel The ipc channel of the request.
+     * @param request The request body.
+     * @param request.id The scanned fight to fetch, for a request of one fight.
+     * @param request.characterId The character to scan, for a request to start a scan.
+     * @param request.minDamage The smallest damage taken that a listed fight has, to start a scan.
+     */
     private requestPushScan<T>( channel: string, request: { id?: string, characterId?: string, minDamage?: number } ): Observable<T> {
         return new Observable<T>( ( observer: Observer<T> ) => {
 
-            let requestId = ++this._pushScanRequestId;
+            const requestId = ++this._pushScanRequestId;
             this._pushScanReplies.set( requestId, ( data: T ) => {
                 this._pushScanReplies.delete( requestId );
                 observer.next( data );
@@ -3078,6 +3199,20 @@ export class IpcService {
         } );
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Deletes one saved recap.
+     *
+     * @param id The recap id.
+     */
     public deletePushRecap( id: string ): void {
         window.api.ipc.send( 'push-recaps:delete', id );
     }

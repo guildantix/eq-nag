@@ -396,8 +396,8 @@ class PushRecapStore {
 
 
     /**
-     * Replaces the saved recaps that match one of the given summaries by the summary, keeping their id and save date.
-     * Recaps that are not saved yet are not added.
+     * Replaces the saved recaps that match one of the given summaries by the summary,
+     * keeping their id and save date.  Recaps that are not saved yet are not added.
      *
      * @returns {Promise<number>} The number of recaps that changed.
      *
@@ -409,11 +409,13 @@ class PushRecapStore {
         }
         let count = 0;
         summaries.forEach( data => {
-            let summary = sanitize( data );
-            if ( summary == null ) {
+            const summary = sanitize( data );
+            if ( summary === null || summary === undefined ) {
                 return;
             }
-            let index = this.#recaps.findIndex( r => r.characterName === summary.characterName && r.mob === summary.mob && r.killTime === summary.killTime );
+            const index = this.#recaps.findIndex( r => {
+                return r.characterName === summary.characterName && r.mob === summary.mob && r.killTime === summary.killTime;
+            } );
             if ( index > -1 ) {
                 summary.id = this.#recaps[ index ].id;
                 summary.savedAt = this.#recaps[ index ].savedAt;

@@ -401,25 +401,25 @@ function summarize( session ) {
     let othersSeen = false;
 
     for ( let i = 0; i < session.lines.length; i++ ) {
-        let text = session.lines[ i ].substring( textOffset );
-        let m = matchCombat( text );
+        const text = session.lines[ i ].substring( textOffset );
+        const m = matchCombat( text );
 
-        if ( m == null ) {
+        if ( m === null || m === undefined ) {
             continue;
         }
 
-        let target = m.groups.target;
+        const target = m.groups.target;
         if ( m.groups.damage === undefined ) {
             candidates.push( { index: i, time: session.times[ i ], name: target, killer: m.groups.actor ?? 'You', certain: m.groups.verb !== 'has been' && m.groups.verb !== 'have been', damage: damage.get( target ) ?? 0 } );
             damage.delete( target );
             continue;
         }
 
-        let actor = m.groups.actor;
+        const actor = m.groups.actor;
         damage.set( target, ( damage.get( target ) ?? 0 ) + +m.groups.damage );
 
-        let actorMine = actor === 'You' || rgx.PetName.test( actor );
-        let targetMine = target === 'You' || rgx.PetName.test( target );
+        const actorMine = actor === 'You' || rgx.PetName.test( actor );
+        const targetMine = target === 'You' || rgx.PetName.test( target );
         if ( actorMine && !targetMine ) {
             npcNames.add( target );
         } else if ( targetMine && !actorMine ) {
@@ -428,7 +428,7 @@ function summarize( session ) {
 
         if ( rgx.PlayerName.test( actor ) ) {
             let targets = actorTargets.get( actor );
-            if ( targets == null ) {
+            if ( targets === null || targets === undefined ) {
                 targets = new Set();
                 actorTargets.set( actor, targets );
             }
@@ -843,4 +843,7 @@ function analyzeKill( session, summary, table, landing, kill, quietGapSeconds ) 
     };
 }
 
-module.exports = { readSession, summarize, analyzeKill, buildLandingIndex, parseTimestamp, isRelevantLine, matchCombat, isPlayerName, isPetName, textOffset, lookbackMs };
+module.exports = {
+    readSession, summarize, analyzeKill, buildLandingIndex, parseTimestamp, isRelevantLine, matchCombat,
+    isPlayerName, isPetName, textOffset, lookbackMs,
+};

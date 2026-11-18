@@ -62,11 +62,11 @@ function idleStatus() {
  * @param {any} r The cached result.
  */
 function isValidResult( r ) {
-    return r != null && typeof r === 'object' && typeof r.mob === 'string' && r.mob !== '' && typeof r.killTime === 'string' && !isNaN( new Date( r.killTime ).getTime() )
+    return ( r !== null && r !== undefined ) && typeof r === 'object' && typeof r.mob === 'string' && r.mob !== '' && typeof r.killTime === 'string' && !isNaN( new Date( r.killTime ).getTime() )
         && typeof r.characterName === 'string' && Number.isFinite( r.fightSeconds ) && Number.isFinite( r.damageTaken ) && Number.isFinite( r.events )
         && Number.isFinite( r.assumed ) && Number.isFinite( r.pushValue ) && typeof r.named === 'boolean'
-        && Array.isArray( r.players ) && r.players.every( p => p != null && typeof p === 'object' && typeof p.name === 'string' && Number.isFinite( p.events ) && p.spells != null && typeof p.spells === 'object' )
-        && r.unattributed != null && typeof r.unattributed === 'object';
+        && Array.isArray( r.players ) && r.players.every( p => ( p !== null && p !== undefined ) && typeof p === 'object' && typeof p.name === 'string' && Number.isFinite( p.events ) && p.spells !== null && p.spells !== undefined && typeof p.spells === 'object' )
+        && r.unattributed !== null && r.unattributed !== undefined && typeof r.unattributed === 'object';
 }
 
 
@@ -139,6 +139,8 @@ class PushScanService {
 
 
     /**
+     * Creates the scan service.
+     *
      * @param {string} directory The folder to keep the cache file in.
      * @param {any} characterDatabase The character database.
      * @param {any} userPreferences The user preferences.
@@ -187,7 +189,7 @@ class PushScanService {
         const { ipcMain } = require( 'electron' );
         this.#mainWindowRef = mainWindowRef;
 
-        let reply = ( event, request, data ) => {
+        const reply = ( event, request, data ) => {
             if ( !event.sender.isDestroyed() ) {
                 event.sender.send( 'push-scan:reply', { requestId: request?.requestId, data: data } );
             }
@@ -240,7 +242,9 @@ class PushScanService {
      * @returns {any[]} The recaps.
      */
     getRows() {
-        return this.#results.map( ( { players, unattributed, ...row } ) => ( { ...row, unattributed: { events: unattributed.events, pushValue: unattributed.pushValue } } ) );
+        return this.#results.map( ( { players, unattributed, ...row } ) => {
+            return { ...row, unattributed: { events: unattributed.events, pushValue: unattributed.pushValue } };
+        } );
     }
 
 
@@ -275,44 +279,44 @@ class PushScanService {
     /**
      * Starts a scan of the log of the given character.  Only one scan runs at a time.
      *
-     * @returns {Promise<{ started: boolean, message: string }>} Whether the scan started, and why not if it did not.
+     * @returns {Promise<{ started: boolean, message: string }>} Whether it started, and why not.
      *
      * @param {any} characterId The id of the character.
      * @param {any} minDamage The smallest damage taken a fight needs to be listed.
      */
     async start( characterId, minDamage ) {
 
-        if ( this.#worker != null || this.#starting ) {
+        if ( ( this.#worker !== null && this.#worker !== undefined ) || this.#starting ) {
             return { started: false, message: 'A scan is already running.  Wait for it to finish or cancel it.' };
         }
 
-        let character = typeof characterId === 'string' ? this.#characterDatabase.find( characterId ) : null;
-        if ( character == null || typeof character.logFile !== 'string' || character.logFile === '' ) {
+        const character = typeof characterId === 'string' ? this.#characterDatabase.find( characterId ) : null;
+        if ( ( character === null || character === undefined ) || typeof character.logFile !== 'string' || character.logFile === '' ) {
             return { started: false, message: 'That character has no log file.' };
         }
         if ( !fs.existsSync( character.logFile ) ) {
             return { started: false, message: `The log file of ${character.name} was not found.` };
         }
 
-        let floor = Number.isFinite( minDamage ) && minDamage >= 1 ? Math.floor( minDamage ) : defaultDamage;
+        const floor = Number.isFinite( minDamage ) && minDamage >= 1 ? Math.floor( minDamage ) : defaultDamage;
         let quietGap = this.#userPreferences.pushRecap?.quietGapSeconds;
         quietGap = quietGap >= 5 && quietGap <= 300 ? quietGap : 30;
 
         this.#starting = true;
         try {
             let logs = await this.#readCache();
-            let entry = logs?.[ character.logFile ];
-            let valid = entry != null && Array.isArray( entry.results ) && Number.isFinite( entry.size ) && Number.isFinite( entry.resumeOffset ) && typeof entry.head === 'string' && Number.isFinite( entry.headLength ) && entry.results.every( isValidResult );
-            if ( entry != null && !valid ) {
+            const entry = logs?.[ character.logFile ];
+            const valid = ( entry !== null && entry !== undefined ) && Array.isArray( entry.results ) && Number.isFinite( entry.size ) && Number.isFinite( entry.resumeOffset ) && typeof entry.head === 'string' && Number.isFinite( entry.headLength ) && entry.results.every( isValidResult );
+            if ( entry !== null && entry !== undefined && !valid ) {
                 logs = this.#dropCache( logs, character.logFile );
             }
-            let cache = valid && entry.quietGap === quietGap && entry.minDamage === floor ? entry : null;
+            const cache = valid && entry.quietGap === quietGap && entry.minDamage === floor ? entry : null;
 
             this.#results = [];
-            this.#partial = cache != null ? cache.results.slice() : [];
+            this.#partial = ( cache !== null && cache !== undefined ) ? cache.results.slice() : [];
             this.#status = Object.assign( idleStatus(), { status: 'running', characterId: character.characterId, characterName: character.name, minDamage: floor } );
 
-            let worker = new Worker( workerPath, { workerData: {
+            const worker = new Worker( workerPath, { workerData: {
                 logFilePath: character.logFile,
                 characterName: character.name,
                 eqFolder: this.#userPreferences.everquestInstallFolder ?? '',
@@ -360,8 +364,8 @@ class PushScanService {
      * Stops the running scan.
      */
     cancel() {
-        let worker = this.#worker;
-        if ( worker != null ) {
+        const worker = this.#worker;
+        if ( worker !== null && worker !== undefined ) {
             this.#finish( worker, 'cancelled', 'The scan was cancelled.' );
         }
     }
@@ -402,7 +406,7 @@ class PushScanService {
      * @param {any} logs The cached logs.
      */
     #onMessage( worker, message, character, quietGap, floor, logs ) {
-        let logFile = character.logFile;
+        const logFile = character.logFile;
         if ( worker !== this.#worker ) {
             return;
         }
@@ -414,7 +418,7 @@ class PushScanService {
             this.#send( 'push-scan:progress', { bytes: message.bytes, total: message.total, kills: message.kills } );
 
         } else if ( message.type === 'kill' ) {
-            let key = `${message.summary.mob}|${message.summary.killTime}`;
+            const key = `${message.summary.mob}|${message.summary.killTime}`;
             this.#partial = this.#partial.filter( r => `${r.mob}|${r.killTime}` !== key );
             this.#partial.push( message.summary );
             if ( this.#partial.length > maxResults ) {
@@ -422,8 +426,9 @@ class PushScanService {
             }
 
         } else if ( message.type === 'done' ) {
-            let result = message.result;
-            if ( this.#characterDatabase.find( character.characterId ) == null ) {
+            const result = message.result;
+            const stillKnown = this.#characterDatabase.find( character.characterId );
+            if ( stillKnown === null || stillKnown === undefined ) {
                 this.#status.kills = 0;
                 this.#finish( worker, 'done', 'The character was removed during the scan, so the results were discarded.' );
                 return;
@@ -467,8 +472,8 @@ class PushScanService {
 
 
     /**
-     * Ends the scan with the given outcome, stops the worker and tells the main window.  Does nothing
-     * when the scan has already ended.
+     * Ends the scan with the given outcome, stops the worker and tells the main window.
+     * Does nothing when the scan has already ended.
      *
      * @param {Worker} worker The worker.
      * @param {'done' | 'cancelled' | 'error'} status The outcome.
@@ -503,7 +508,8 @@ class PushScanService {
 
 
     /**
-     * Gives the scanned recaps to the results listener.  A failing listener does not affect the scan.
+     * Gives the scanned recaps to the results listener.
+     * A failing listener does not affect the scan.
      *
      * @param {any[]} results The scanned recaps.
      */
@@ -531,8 +537,8 @@ class PushScanService {
      * @param {any} data The data of the event.
      */
     #send( channel, data ) {
-        let win = this.#mainWindowRef?.reference;
-        if ( win != null && !win.isDestroyed() ) {
+        const win = this.#mainWindowRef?.reference;
+        if ( win !== null && win !== undefined && !win.isDestroyed() ) {
             win.webContents.send( channel, data );
         }
     }
@@ -547,7 +553,8 @@ class PushScanService {
 
 
     /**
-     * Reads the cached logs.  A missing file gives no logs.  A file that is not a valid cache is moved aside.
+     * Reads the cached logs.  A missing file gives no logs.
+     * A file that is not a valid cache is moved aside.
      * Returns null, and writes nothing later, when the file cannot be read.
      *
      * @returns {Promise<Object<string, any> | null>} The cached logs by log path, or null.
@@ -567,7 +574,7 @@ class PushScanService {
         } catch ( error ) {
             data = null;
         }
-        if ( data != null && data.version === cacheVersion && data.logs != null && typeof data.logs === 'object' ) {
+        if ( data !== null && data !== undefined && data.version === cacheVersion && data.logs !== null && data.logs !== undefined && typeof data.logs === 'object' ) {
             return data.logs;
         }
 
@@ -594,15 +601,15 @@ class PushScanService {
      *
      * @returns {Object<string, any> | null} The cached logs without that log.
      *
-     * @param {Object<string, any> | null} logs The logs that were read from the file, or null when it could not be read.
+     * @param {Object<string, any> | null} logs The cached logs, or null when unreadable.
      * @param {string} logFile The log path.
      */
     #dropCache( logs, logFile ) {
-        if ( logs == null ) {
+        if ( logs === null || logs === undefined ) {
             return logs;
         }
         this.#storeCache( logs, logFile, null );
-        let rest = Object.assign( {}, logs );
+        const rest = Object.assign( {}, logs );
         delete rest[ logFile ];
         return rest;
     }
@@ -619,23 +626,24 @@ class PushScanService {
     /**
      * Keeps the result of the given log in the cache file, and drops the logs scanned longest ago.
      *
-     * @param {Object<string, any> | null} logs The logs that were read from the file, or null when it could not be read.
+     * @param {Object<string, any> | null} logs The cached logs, or null when unreadable.
      * @param {string} logFile The log path.
      * @param {any} entry The cache entry of the log.
      */
     #storeCache( logs, logFile, entry ) {
-        if ( logs == null ) {
+        if ( logs === null || logs === undefined ) {
             return;
         }
-        let kept = Object.assign( {}, logs );
+        const kept = Object.assign( {}, logs );
         delete kept[ logFile ];
-        if ( entry != null ) {
+        if ( entry !== null && entry !== undefined ) {
             kept[ logFile ] = entry;
         }
-        Object.keys( kept ).sort( ( a, b ) => ( kept[ b ].scannedAt ?? 0 ) - ( kept[ a ].scannedAt ?? 0 ) ).slice( maxCachedLogs ).forEach( key => delete kept[ key ] );
+        const newestFirst = Object.keys( kept ).sort( ( a, b ) => ( kept[ b ].scannedAt ?? 0 ) - ( kept[ a ].scannedAt ?? 0 ) );
+        newestFirst.slice( maxCachedLogs ).forEach( key => delete kept[ key ] );
 
         this.#writing = this.#writing.then( async () => {
-            let tempPath = `${this.#cachePath}.${process.pid}.${++this.#tempCounter}.tmp`;
+            const tempPath = `${this.#cachePath}.${process.pid}.${++this.#tempCounter}.tmp`;
             try {
                 await fsp.mkdir( path.dirname( this.#cachePath ), { recursive: true } );
                 await fsp.writeFile( tempPath, JSON.stringify( { version: cacheVersion, logs: kept } ) );

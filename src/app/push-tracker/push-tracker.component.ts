@@ -114,7 +114,7 @@ export class PushTrackerComponent implements OnInit, OnDestroy {
     ngOnInit(): void {
         this.subscription.add( this.ipcService.onPushRecapsChanged().subscribe( () => this.load() ) );
         this.subscription.add( this.ipcService.onPushScanProgress().subscribe( progress => {
-            if ( this.scanStatus != null ) {
+            if ( this.scanStatus !== null && this.scanStatus !== undefined ) {
                 Object.assign( this.scanStatus, progress );
                 this.changeDetector.markForCheck();
             }
@@ -194,33 +194,100 @@ export class PushTrackerComponent implements OnInit, OnDestroy {
         return typeof value === 'string' ? value : value.name;
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * True while a log scan is in progress, so the scan button and progress bar follow it.
+     */
     public get scanRunning(): boolean {
         return this.scanStatus?.status === 'running';
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * How much of the log has been read, as a whole percent for the progress bar.
+     */
     public get scanPercent(): number {
-        return this.scanStatus != null && this.scanStatus.total > 0 ? Math.min( 100, Math.floor( this.scanStatus.bytes * 100 / this.scanStatus.total ) ) : 0;
+        const status = this.scanStatus;
+        if ( status === null || status === undefined || status.total <= 0 ) {
+            return 0;
+        }
+        return Math.min( 100, Math.floor( status.bytes * 100 / status.total ) );
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * The message under the scan controls: why the scan did not start or stop, or what it found.
+     */
     public get scanNotice(): string {
-        let status = this.scanStatus;
+        const status = this.scanStatus;
         if ( this.scanStartMessage !== '' ) {
             return this.scanStartMessage;
         }
-        if ( status == null || status.status === 'idle' || status.status === 'running' ) {
+        if ( ( status === null || status === undefined ) || status.status === 'idle' || status.status === 'running' ) {
             return '';
         }
         if ( status.status !== 'done' || status.message !== '' ) {
             return status.message;
         }
-        let seconds = Math.max( 1, Math.round( status.elapsedMs / 1000 ) );
+        const seconds = Math.max( 1, Math.round( status.elapsedMs / 1000 ) );
         return `${status.kills} ${status.kills === 1 ? 'kill' : 'kills'} found in ${this.formatLength( seconds )}${status.resumed ? ', continuing the last scan of this log' : ''}.  Fights with ${this.formatDamage( status.minDamage )} or more damage taken are listed.${status.capped ? '  Only the most recent 300 are kept.' : ''}`;
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * True when the scan notice is a problem, so it can be shown in the error color.
+     */
     public get scanFailed(): boolean {
         return this.scanStartMessage !== '' || this.scanStatus?.status === 'error';
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Names a character in the open menu, with the server so same-named characters
+     * can be told apart.
+     *
+     * @param character The character to label.
+     */
     public characterLabel( character: CharacterModel ): string {
         return character.server ? `${character.name} (${character.server})` : character.name;
     }
@@ -287,17 +354,53 @@ export class PushTrackerComponent implements OnInit, OnDestroy {
         return ( proc.push !== null && proc.push !== undefined ) ? `${round( proc.count * proc.push )}` : `~${round( proc.count * proc.pushMin )}\u2013${round( proc.count * proc.pushMax )}`;
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Switches between the saved recaps and the scan results, dropping the other list selection.
+     */
     public onSourceChange(): void {
         this.selected = null;
         this.applyFilters();
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Re-applies the filters after the damage, named or mob filter changed.
+     */
     public onFilterChange(): void {
         this.applyFilters();
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Starts scanning the chosen character's log for boss kills, and shows why it could not start.
+     */
     public startScan(): void {
-        if ( this.scanCharacterId == null || this.scanRunning ) {
+        if ( ( this.scanCharacterId === null || this.scanCharacterId === undefined ) || this.scanRunning ) {
             return;
         }
         this.scanStartMessage = '';
@@ -314,23 +417,78 @@ export class PushTrackerComponent implements OnInit, OnDestroy {
         } );
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Stops the running scan.
+     */
     public cancelScan(): void {
         this.ipcService.cancelPushScan();
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Tells whether a scanned fight is already among the saved recaps, so it is not offered twice.
+     *
+     * @param recap The scanned fight.
+     */
     public isSaved( recap: PushRecapSummary ): boolean {
         return this.savedKeys.has( this.recapKey( recap ) );
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Saves a scanned fight with its per-player detail, without also selecting its row.
+     *
+     * @param recap The scanned fight.
+     * @param event The click event, stopped so the row is not selected.
+     */
     public saveScanned( recap: PushRecapSummary, event: Event ): void {
         event.stopPropagation();
         this.ipcService.getPushScanResult( recap.id ).subscribe( full => {
-            if ( full != null ) {
+            if ( full !== null && full !== undefined ) {
                 this.ipcService.savePushRecap( Object.assign( {}, full, { id: '' } ) );
             }
         } );
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Picks the recap whose details are shown.
+     *
+     * @param recap The recap that was clicked.
+     */
     public select( recap: PushRecapSummary ): void {
         this.selected = recap;
         this.loadDetail();
@@ -491,10 +649,36 @@ export class PushTrackerComponent implements OnInit, OnDestroy {
         } );
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Builds the key that tells a scanned fight and a saved one apart from other fights.
+     *
+     * @param recap The fight to key.
+     */
     private recapKey( recap: PushRecapSummary ): string {
         return `${recap.characterName}|${recap.mob}|${recap.killTime}`;
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Loads the fights the last scan found, newest first.
+     */
     private loadScanResults(): void {
         this.ipcService.getPushScanResults().subscribe( results => {
             this.scanResults = ( results ?? [] ).slice().sort( ( a, b ) => b.killTime.localeCompare( a.killTime ) );
@@ -502,14 +686,33 @@ export class PushTrackerComponent implements OnInit, OnDestroy {
         } );
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Filters the list of the chosen source and keeps the selection only if it is still shown.
+     */
     private applyFilters(): void {
-        let mob = this.mobFilter.trim().toLowerCase();
-        let items = this.source === 'scan' ? this.scanResults : this.recaps;
+        const mob = this.mobFilter.trim().toLowerCase();
+        const items = this.source === 'scan' ? this.scanResults : this.recaps;
         this.showCharacter = this.source === 'saved' && new Set( this.recaps.map( r => r.characterName ) ).size > 1;
-        this.rows = items.filter( r => r.damageTaken >= this.minDamage && ( !this.namedOnly || r.named ) && ( mob === '' || r.mob.toLowerCase().indexOf( mob ) > -1 ) );
-        let selectedId = this.selected?.id;
-        this.selected = this.selected == null ? null : this.rows.find( r => r.id === selectedId ) ?? null;
-        if ( this.selected == null || this.selected.id !== this.detail?.id || this.selected.savedAt !== this.detail?.savedAt ) {
+        this.rows = items.filter( r => {
+            return r.damageTaken >= this.minDamage
+                && ( !this.namedOnly || r.named )
+                && ( mob === '' || r.mob.toLowerCase().indexOf( mob ) > -1 );
+        } );
+        const selectedId = this.selected?.id;
+        const stillListed = this.rows.find( r => r.id === selectedId ) ?? null;
+        this.selected = ( this.selected === null || this.selected === undefined ) ? null : stillListed;
+        const selectionChanged = this.selected === null || this.selected === undefined
+            || this.selected.id !== this.detail?.id || this.selected.savedAt !== this.detail?.savedAt;
+        if ( selectionChanged ) {
             this.loadDetail();
         } else {
             this.changeDetector.markForCheck();
@@ -534,8 +737,8 @@ export class PushTrackerComponent implements OnInit, OnDestroy {
         this.detailSubscription = null;
         this.detail = null;
         this.buildGrid();
-        if ( this.selected != null ) {
-            let request = this.source === 'scan' ? this.ipcService.getPushScanResult( this.selected.id ) : this.ipcService.getPushRecap( this.selected.id );
+        if ( this.selected !== null && this.selected !== undefined ) {
+            const request = this.source === 'scan' ? this.ipcService.getPushScanResult( this.selected.id ) : this.ipcService.getPushRecap( this.selected.id );
             this.detailSubscription = request.subscribe( recap => {
                 this.detail = recap;
                 this.buildGrid();
