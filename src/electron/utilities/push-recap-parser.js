@@ -791,10 +791,46 @@ function analyzeKill( session, summary, table, landing, kill, quietGapSeconds ) 
     // a landing that no hit claimed is not one of them.  The damage line can come before or after its landing.
     let othersSeen = summary.othersSeen === true;
     if ( othersSeen ) {
+        // The damage events by spell, in time order, so a landing only looks at the ones within a second of it.
+        let bySpell = new Map();
+        events.forEach( ( ev, index ) => {
+            if ( ev.kind === 'damage' && ev.state !== 'cancelled' ) {
+                let base = stripRank( ev.spellName );
+                let list = bySpell.get( base );
+                if ( list == null ) {
+                    list = [];
+                    bySpell.set( base, list );
+                }
+                list.push( { ev: ev, index: index } );
+            }
+        } );
+        bySpell.forEach( list => list.sort( ( a, b ) => a.ev.time - b.ev.time || a.index - b.index ) );
+
         unmatched.forEach( u => {
-            let claimer = events.find( ev => ev.kind === 'damage' && ev.state !== 'cancelled' && !ev.landed && u.names.indexOf( stripRank( ev.spellName ) ) > -1 && Math.abs( ev.time - u.time ) <= claimGraceMs );
+            let claimer = null;
+            u.names.forEach( name => {
+                let list = bySpell.get( name );
+                if ( list == null ) {
+                    return;
+                }
+                let low = 0;
+                let high = list.length;
+                while ( low < high ) {
+                    let mid = ( low + high ) >> 1;
+                    if ( list[ mid ].ev.time < u.time - claimGraceMs ) {
+                        low = mid + 1;
+                    } else {
+                        high = mid;
+                    }
+                }
+                for ( let i = low; i < list.length && list[ i ].ev.time <= u.time + claimGraceMs; i++ ) {
+                    if ( !list[ i ].ev.landed && ( claimer == null || list[ i ].index < claimer.index ) ) {
+                        claimer = list[ i ];
+                    }
+                }
+            } );
             if ( claimer != null ) {
-                claimer.landed = true;
+                claimer.ev.landed = true;
                 u.claimed = true;
             }
             u.names = u.names.filter( n => !table.spells[ n ]?.instantDamage );
