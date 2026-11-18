@@ -18,7 +18,7 @@
                 (change)="onNativeColorPicked($event)" />
     </div>
     <mat-form-field style="width: 100%; background-color: black;">
-        <mat-label></mat-label>
+        <mat-label>Color palette</mat-label>
         <mat-select [(ngModel)]="paletteName" name="colorType" (ngModelChange)="updateColorPalette()">
             <mat-option value="nag">Nag</mat-option>
             <mat-option value="gina">Gina</mat-option>

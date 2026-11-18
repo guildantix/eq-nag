@@ -1,23 +1,31 @@
+$color-light: #ffffffde;
+$color-green: #69f0ae;
+$color-orange: #f0c669;
+$color-red: #f06969;
+$option-odd: #202020;
+$option-selected: #242424;
+$bg-label-dark: #151515;
+
 div.tab-content {
-    overflow-y: scroll;
     position: fixed;
     left: 0;
     right: 0;
-    bottom: 0;
+    bottom: var(--nag-console-height, 24px);
     top: 176px;
+    padding: 0;
+    overflow: hidden;
 
-    > fieldset:not(:first-child) {
-        margin-top: 50px;
-    }
-    > .help-row + fieldset {
-        margin-top: 24px;
+    .settings-shell {
+        display: flex;
+        height: 100%;
     }
     .help-row {
         display: flex;
         align-items: center;
         gap: 12px;
-        margin: 0 2px;
-        padding: 10px 14px;
+        margin: 16px 0 0;
+        padding: 12px 16px;
+        font-size: 14px;
         border: 1px solid rgba(255, 255, 255, 0.2);
         border-radius: 4px;
         .spacer {
@@ -33,62 +41,227 @@ div.tab-content {
             vertical-align: -2px;
         }
     }
-    fieldset {
-        p {
-            font-weight: 300;
-            color: #eeeeee;
-        }
-        .card-property {
-            margin-left: -12px;
-            margin-right: -12px;
+    p {
+        font-weight: 400;
+        color: #eeeeee;
+    }
+}
+
+.settings-nav {
+    flex: 0 0 200px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 16px 8px;
+    overflow-y: auto;
+    border-right: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.nav-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 10px 12px;
+    font: inherit;
+    font-size: 14px;
+    text-align: left;
+    color: $color-light;
+    background: none;
+    border: none;
+    border-left: 3px solid transparent;
+    border-radius: 4px;
+    cursor: pointer;
+
+    &:hover {
+        background: rgba(255, 255, 255, 0.06);
+    }
+    &.on {
+        color: $color-light;
+        background: $option-selected;
+        border-left-color: $color-green;
+    }
+}
+
+.settings-content {
+    flex: 1 1 auto;
+    min-width: 0;
+    padding: 16px 24px 24px;
+    overflow-y: auto;
+}
+
+.pane {
+    max-width: 980px;
+
+    &.pane-hidden {
+        display: none;
+    }
+}
+
+.pane-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    height: 40px;
+    margin: 0 0 16px;
+    font-size: 20px;
+    font-weight: 500;
+
+    .spacer {
+        flex: 1 1 auto;
+    }
+    mat-slide-toggle {
+        font-size: 14px;
+        font-weight: 500;
+    }
+}
+
+.pane-note {
+    margin: -8px 0 16px;
+    font-size: 13px;
+    color: #ffffff99;
+}
+
+.group-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 24px 0 8px;
+    font-size: 16px;
+    font-weight: 500;
+    color: $color-light;
+
+    .spacer {
+        flex: 1 1 auto;
+    }
+    &.danger {
+        color: $color-red;
+    }
+}
+
+.group {
+    padding: 4px 0 0;
+
+    &.narrow {
+        max-width: 460px;
+    }
+    &.default-overlays {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0 16px;
+
+        mat-form-field {
+            flex: 1 1 260px;
+            min-width: 0;
         }
     }
 }
 
-.header-glow {
-    text-shadow: 0 0 7px #000000, 0 0 10px #000, 0 0 21px #000, 0 0 42px #000, 0 0 82px #000, 0 0 92px #020202, 0 0 102px #000, 0 0 151px #000;
+.group button + button {
+    margin-left: 8px;
 }
 
-h2 {
-    &.header-glow {
-        margin-top: -15px;
-        font-size: 21px;
-        font-weight: 300;
+.maintenance {
+    max-width: 560px;
+
+    .maintenance-question {
+        margin: 16px 0 8px;
     }
-    &.sub-header {
-        font-weight: 100;
-        opacity: 0.9;
-        margin-top: -16px;
-        padding-bottom: 6px;
-        font-size: 22px;
-        padding-bottom: 4px;
-        position: relative;
-        padding-right: 11px;
-        text-align: right;
 
-        &.half-width {
-            width: calc(50% - 11px);
-        }
-        &.full-width {
-            width: calc(100% - 11px);
-        }
-
-        &::before {
-            content: "";
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            height: 18px;
-            z-index: -1;
-            background-color: #0000002e;
-        }
+    mat-radio-group {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 16px;
     }
 }
 
-h3 {
-    &.sub-header {
-        font-weight: 100;
+.advanced-block {
+    margin-top: 32px;
+    padding-top: 4px;
+    border-top: 1px dotted #4a4455;
+}
+
+.two-columns {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+    gap: 0 32px;
+}
+
+.custom-dot {
+    flex: 0 0 8px;
+    width: 8px;
+    height: 8px;
+    background: $color-orange;
+    border-radius: 50%;
+}
+
+.status-card {
+    padding: 16px;
+    background: $option-odd;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 6px;
+}
+
+.status-main {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    .spacer {
+        flex: 1 1 auto;
+    }
+}
+
+.status-dot {
+    flex: 0 0 12px;
+    width: 12px;
+    height: 12px;
+    background: #888888;
+    border-radius: 50%;
+
+    &.ok {
+        background: $color-green;
+    }
+}
+
+.status-headline {
+    font-size: 16px;
+}
+
+.status-hint {
+    margin-top: 2px;
+    font-size: 12px;
+    color: #ffffff99;
+}
+
+.status-tiles {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    margin-top: 16px;
+}
+
+.status-tile {
+    padding: 10px 12px;
+    background: $bg-label-dark;
+    border-radius: 4px;
+
+    .tile-label {
+        font-size: 12px;
+        color: #ffffff99;
+    }
+    .tile-value {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: 4px;
+        font-size: 16px;
+
+        small {
+            font-size: 12px;
+            color: #ffffff99;
+        }
     }
 }
 
@@ -108,7 +281,7 @@ h3 {
     padding-bottom: 8px;
 
     &.collapsed {
-        grid-template-columns: 420px auto;
+        grid-template-columns: 420px;
     }
 
     @media (max-width: 900px) {
@@ -143,10 +316,8 @@ h3 {
     align-items: baseline;
     gap: 10px;
     margin: 0 0 4px;
-    font-size: 13px;
-    font-weight: 400;
-    letter-spacing: 0.08em;
-    color: #a9a4b4;
+    font-size: 14px;
+    font-weight: 500;
 }
 
 .roll-field {
@@ -214,4 +385,35 @@ h3 {
     width: 125px; 
     margin-left: 15px;
     float: right;
+}
+
+.pane div.formless-hint {
+    display: block;
+    margin: 0 0 12px;
+    padding: 0;
+    background: none;
+    border: none;
+
+    > .formless-input {
+        height: auto;
+        min-height: 32px;
+    }
+
+    > mat-hint {
+        position: static;
+        padding: 0 0 0 32px;
+        font-size: 12px;
+        background: none !important;
+    }
+}
+
+.pane mat-radio-group.inline {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 24px;
+    margin-bottom: 8px;
+
+    mat-radio-button {
+        margin: 0;
+    }
 }

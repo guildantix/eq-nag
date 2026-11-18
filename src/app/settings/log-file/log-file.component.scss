@@ -1,0 +1,47 @@
+.log-file-card {
+    padding: 16px;
+    background: #202020;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 6px;
+
+    .warning-text {
+        margin: 0 0 12px;
+        padding: 8px 12px;
+        font-size: 14px;
+        font-weight: 400;
+        color: #f0c669;
+        background: rgba(240, 198, 105, 0.12);
+        border-left: 4px solid #f0c669;
+        border-radius: 2px;
+    }
+}
+
+.log-file-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 16px 32px;
+
+    h4 {
+        margin: 0 0 8px;
+        font-size: 14px;
+        font-weight: 500;
+    }
+
+    .slider-label {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+
+        small {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.7);
+        }
+    }
+}
+
+.log-file-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 16px;
+}

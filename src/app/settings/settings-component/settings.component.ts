@@ -1,9 +1,9 @@
-import { ChangeDetectorRef, Component, ElementRef, Input, NgZone, OnInit, ViewChild } from '@angular/core';
+import { ChangeDetectorRef, Component, Input, NgZone, OnDestroy, OnInit } from '@angular/core';
 import { DialogService } from 'src/app/dialogs/dialog.service';
 import { IpcService } from 'src/app/ipc.service';
 import { MatTable } from '@angular/material/table';
 import { customAlphabet } from 'nanoid';
-import { ActionTypes, AuthorModel, CapturePhrase, DeathRecapPreferences, LogMaintenanceRules, LogMaintenancePlanTypes, OverlayWindowModel, QuickShareAuthorListTypes, TriggerAction, TriggerModel, ScheduledTask, Range, SettingsKeys, SharedTriggerPermissions, DpsMeterSettings } from 'src/app/core.model';
+import { ActionTypes, AuthorModel, CapturePhrase, DeathRecapPreferences, LogMaintenanceRules, LogMaintenancePlanTypes, OverlayWindowModel, QuickShareAuthorListTypes, TriggerAction, TriggerModel, ScheduledTask, Range, SettingsKeys, SharedTriggerPermissions, DpsMeterSettings, FileReadDelays } from 'src/app/core.model';
 import { SettingsService } from '../settings-http.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { SetupService } from 'src/app/setup/setup.service';
@@ -22,13 +22,52 @@ interface IPhoneticTransform {
     phoneticText?: string;
 }
 
+interface IWatchStatus {
+    characterId: string;
+    name: string;
+    class: string | null;
+    watching: boolean;
+    lastLineAt: number | null;
+}
+
+interface ISettingsSection {
+    id: string;
+    label: string;
+}
+
+const advancedStorageKey = 'nagSettingsAdvanced';
+
+/**
+ * The Settings tab: a list of sections, each with an everyday part and an Advanced part.
+ */
 @Component( {
     selector: 'app-settings',
     templateUrl: 'settings.component.html', 
     styleUrls: [ 'settings.component.scss', '../../core.scss' ],
 } )
-export class SettingsComponent implements OnInit {
-    
+export class SettingsComponent implements OnInit, OnDestroy {
+
+    public readonly sections: ISettingsSection[] = [
+        { id: 'status', label: 'Status' },
+        { id: 'characters', label: 'Characters & log' },
+        { id: 'overlays', label: 'Overlays' },
+        { id: 'sound', label: 'Sound & voice' },
+        { id: 'sharing', label: 'Sharing' },
+        { id: 'rolls', label: 'Roll tracker' },
+        { id: 'death', label: 'Death recap' },
+        { id: 'combat', label: 'Combat' },
+        { id: 'advanced', label: 'Advanced' },
+        { id: 'diagnostics', label: 'Diagnostics' },
+    ];
+    public section: string = 'status';
+    public advancedOpen: boolean = false;
+    public watchStatus: IWatchStatus[] = [];
+    public statusNow: number = Date.now();
+    public triggerCount: number = 0;
+    public activeTriggerCount: number = 0;
+    private statusTimerId: any = null;
+    private statusActive: boolean = false;
+
     public phoneticTransforms: IPhoneticTransform[] = [];
     public phoneticTransformsModified: boolean = false;
     public version: string;
@@ -38,7 +77,6 @@ export class SettingsComponent implements OnInit {
     public audioVolume: number = 100;
     public voiceOptions: SpeechSynthesisVoice[] = [];
     public voiceIndex: number = null;
-    public loadingGinaConfig: boolean = false;
     public author: AuthorModel = new AuthorModel();
     public trustedAuthor: boolean = false;
     public detrimentalOverlayId: string = null;
@@ -66,6 +104,9 @@ export class SettingsComponent implements OnInit {
     public updatedSettings: string[] = [];
     public rollSettings: RollTrackerSettings | null = null;
     public rollDefaults: RollTrackerSettings | null = null;
+    private fileReadDelays: FileReadDelays | null = null;
+    private rollAdvancedChecked: boolean = false;
+    private hasStoredAdvanced: boolean = false;
 
     public get timerOverlays(): OverlayWindowModel[] {
         return this.overlays?.filter( m => m.overlayType === 'Timer' );
@@ -78,7 +119,6 @@ export class SettingsComponent implements OnInit {
     private overlays: OverlayWindowModel[] = [];
 
     @Input() public characterList: CharactersListComponent;
-    @ViewChild( 'combatStatisticsGroup', { static: true } ) public combatStatisticsGroup: ElementRef<HTMLFieldSetElement>;
 
     constructor(
         private readonly ipcService: IpcService,
@@ -95,6 +135,13 @@ export class SettingsComponent implements OnInit {
 
     ngOnInit() {
 
+        let storedAdvanced: any = null;
+        try {
+            storedAdvanced = JSON.parse( localStorage.getItem( advancedStorageKey ) );
+        } catch ( error ) { }
+        this.hasStoredAdvanced = storedAdvanced !== null && storedAdvanced !== undefined;
+        this.advancedOpen = storedAdvanced === true;
+
         this.ipcService.getAppVersion().subscribe( version => this.version = version );
         
         this.ipcService.tickReceived().subscribe( data => {
@@ -104,7 +151,10 @@ export class SettingsComponent implements OnInit {
             this.baseSpeakingRate = data.baseSpeakingRate;
             this.voiceIndex = data.voiceIndex;
             this.overlays = data.overlays;
-            
+            const userTriggers = data.triggers?.filter( t => !t.predefined ) ?? [];
+            this.triggerCount = userTriggers.length;
+            this.activeTriggerCount = userTriggers.filter( t => t.enabled !== false ).length;
+
             this.phoneticTransforms = [];
             if ( data.phoneticTransforms ) {
                 for ( let key of Object.keys( data.phoneticTransforms ) ) {
@@ -118,6 +168,14 @@ export class SettingsComponent implements OnInit {
             this.ngZone.run( () => {
                 this.rollSettings = state.settings;
                 this.rollDefaults = state.defaults;
+                if ( !this.rollAdvancedChecked ) {
+                    this.rollAdvancedChecked = true;
+                    if ( !this.hasStoredAdvanced ) {
+                        this.advancedOpen = state.settings?.advancedOpen === true;
+                    } else if ( ( state.settings?.advancedOpen === true ) !== this.advancedOpen ) {
+                        this.updateRollSettings( { advancedOpen: this.advancedOpen } );
+                    }
+                }
             } );
         } );
         window.api.ipc.send( 'rolls:get', null );
@@ -304,6 +362,7 @@ export class SettingsComponent implements OnInit {
             this.quickShareAuthorList = f == null ? '' : f.join( '\r\n' );
         } );
 
+        this.ipcService.getSetting<FileReadDelays>( 'fileReadDelays', false ).subscribe( f => this.fileReadDelays = f );
         this.ipcService.getSetting<boolean>( SettingsKeys.allowPrerelease ).subscribe( f => this.allowPrerelease = f );
         this.ipcService.getSetting<boolean>( SettingsKeys.enableCheckWindowPosition ).subscribe( f => this.enableCheckWindowPosition = f );
 
@@ -489,7 +548,7 @@ export class SettingsComponent implements OnInit {
             
         } else {
 
-            this.dialogService.showSelectTriggerFolderDialog( null, 'Select Trigger Folder', 'Select the folder that will contain the generated trigger.' ).subscribe( folderId => {
+            this.dialogService.showSelectTriggerFolderDialog( null, 'Choose a folder', 'Select the folder that will contain the generated trigger.' ).subscribe( folderId => {
                 if ( folderId ) {
                     
                     // Initialize a new trigger model.
@@ -514,6 +573,12 @@ export class SettingsComponent implements OnInit {
 
                         this.ipcService.updateDeathRecapPreferences( this.deathRecapPreferences );
                         this.snackBar.open( 'The death recap trigger has been created!', 'Dismiss', { duration: 5000 } );
+                    } );
+                } else {
+
+                    // Nothing was saved, so show the saved choice again instead of an unsaved one.
+                    this.ipcService.getDeathRecapPreferences().subscribe( savedPrefs => {
+                        this.deathRecapPreferences = savedPrefs ?? new DeathRecapPreferences();
                     } );
                 }
             } );
@@ -548,6 +613,240 @@ export class SettingsComponent implements OnInit {
 
 
     
+    /**
+     * Shows one section of the page.
+     *
+     * @param id The id of the section to show.
+     */
+    selectSection( id: string ): void {
+        this.section = id;
+        this.updateStatusTimer();
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Shows or hides the Advanced part of every section; the choice is remembered.
+     */
+    toggleAdvanced(): void {
+        this.setAdvanced( !this.advancedOpen );
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Sets the Advanced state of every section; the choice is remembered.
+     *
+     * @param open True to show the Advanced part of every section.
+     */
+    setAdvanced( open: boolean ): void {
+        this.advancedOpen = open;
+        this.hasStoredAdvanced = true;
+        try {
+            localStorage.setItem( advancedStorageKey, JSON.stringify( this.advancedOpen ) );
+        } catch ( error ) { }
+        if ( this.rollSettings ) {
+            this.updateRollSettings( { advancedOpen: this.advancedOpen } );
+        }
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Tells the page whether the Settings tab is on screen, so the Status card only
+     * reads the log files then.
+     *
+     * @param active True while the Settings tab is the visible tab.
+     */
+    setActive( active: boolean ): void {
+        this.statusActive = active;
+        this.updateStatusTimer();
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Starts or stops the Status card refresh, which only runs while the Status section is visible.
+     */
+    private updateStatusTimer(): void {
+        const needed = this.statusActive && this.section === 'status';
+        if ( needed && ( this.statusTimerId === null || this.statusTimerId === undefined ) ) {
+            this.refreshStatus();
+            this.statusTimerId = setInterval( () => this.refreshStatus(), 3000 );
+        } else if ( !needed && this.statusTimerId !== null && this.statusTimerId !== undefined ) {
+            clearInterval( this.statusTimerId );
+            this.statusTimerId = null;
+        }
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Reads which characters are being watched and when their log files last changed.
+     */
+    private refreshStatus(): void {
+        window.api.ipc.invoke( 'app:status:watching' )?.then( ( status: IWatchStatus[] ) => {
+            this.ngZone.run( () => {
+                this.watchStatus = status ?? [];
+                this.statusNow = Date.now();
+            } );
+        } ).catch( () => { } );
+    }
+
+
+
+
+
+
+
+
+
+
+    ngOnDestroy(): void {
+        // Stop the Status card refresh when the page is destroyed.
+        if ( this.statusTimerId !== null && this.statusTimerId !== undefined ) {
+            clearInterval( this.statusTimerId );
+        }
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * The characters whose log is being read now.
+     */
+    get watchedCharacters(): IWatchStatus[] {
+        return this.watchStatus.filter( status => status.watching );
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Tells whether a setting hidden behind a section's Advanced switch differs from its default.
+     *
+     * @param id The id of the section to check.
+     */
+    customised( id: string ): boolean {
+        if ( id === 'characters' ) {
+            const delays = this.fileReadDelays;
+            if ( delays === null || delays === undefined ) {
+                return false;
+            }
+            return delays.readDelayMs !== 200 || delays.readErrorDelayMs !== 1000 || delays.flushDelayMs !== 1000;
+        }
+        if ( id === 'overlays' ) {
+            return this.enableCheckWindowPosition === false;
+        }
+        if ( id === 'sound' ) {
+            const volumesChanged = this.speechVolume !== 100 || this.audioVolume !== 100;
+            return volumesChanged || this.baseSpeakingRate !== 1 || this.phoneticTransforms.length > 0;
+        }
+        if ( id === 'sharing' ) {
+            const listType = this.quickShareAuthorListType;
+            const listEnabled = listType !== null && listType !== undefined && listType !== QuickShareAuthorListTypes.Disabled;
+            const permissions = this.sharedTriggerPermissions;
+            return listEnabled || permissions.disableSharedGlowEffects === true || permissions.disableAllGlowEffects === true;
+        }
+        if ( id === 'rolls' ) {
+            const roll = this.rollSettings;
+            const defaults = this.rollDefaults;
+            if ( roll === null || roll === undefined || defaults === null || defaults === undefined ) {
+                return false;
+            }
+            const advancedKeys = [
+                'closeAfterSeconds', 'topCount', 'resultSeconds', 'rerollRule',
+                'pasteTemplate', 'speakWinnerPhrase', 'speakTiePhrase',
+            ] as ( keyof RollTrackerSettings )[];
+            return advancedKeys.some( key => roll[ key ] !== defaults[ key ] );
+        }
+        return false;
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Describes how long ago the newest log file change was, or null when there is none.
+     */
+    get lastLineAge(): string | null {
+        const times = this.watchedCharacters.map( status => status.lastLineAt ).filter( time => time !== null && time !== undefined );
+        if ( times.length === 0 ) {
+            return null;
+        }
+        const seconds = Math.max( 0, Math.round( ( this.statusNow - Math.max( ...times ) ) / 1000 ) );
+        if ( seconds < 60 ) {
+            return `${seconds} s ago`;
+        } else if ( seconds < 3600 ) {
+            return `${Math.floor( seconds / 60 )} min ago`;
+        } else if ( seconds < 86400 ) {
+            return `${Math.floor( seconds / 3600 )} h ago`;
+        }
+        return `${Math.floor( seconds / 86400 )} d ago`;
+    }
+
+
+
+
+
+
+
+
+
+
     /**
      * Allows the user to save a copy of their current log file, in zip form.
      */
@@ -722,18 +1021,6 @@ export class SettingsComponent implements OnInit {
 
 
     
-    /**
-     * Opens the GINA import dialog.
-     */
-    openImportGinaDialog(): void {
-        this.loadingGinaConfig = true;
-        this.ipcService.showGinaImportWindow().subscribe( loaded => {
-            this.loadingGinaConfig = false;
-            if ( !loaded ) {
-                this.dialogService.showErrorDialog( 'GINA Import', 'Could not load GINA data.' );
-            }
-        } );
-    }
 
 
 

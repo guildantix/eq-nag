@@ -479,37 +479,99 @@ $bg-extreme-dark: #191919;
     mat-form-field {
         .mat-form-field-infix {
             border-top: none !important;
+            padding: 6px 0 !important;
+            width: auto;
+        }
+        .mat-form-field-flex {
+            align-items: center;
+            box-sizing: border-box;
+            min-height: 36px;
+            padding: 0 8px;
+            border: 1px solid rgba(255, 255, 255, .16);
+            border-radius: 4px;
+            background-color: rgba(0, 0, 0, .18);
         }
         .mat-form-field-underline {
-            background-color: #00000052 !important;
-            border-top: 2px solid transparent !important;
+            display: none;
+        }
+        .mat-form-field-wrapper {
+            padding-bottom: 0;
+        }
+        .mat-form-field-subscript-wrapper {
+            position: static;
+            margin-top: 4px;
+            padding: 0;
+            font-size: 12px;
+        }
+        .mat-hint {
+            color: rgba($text, .7);
         }
         input.mat-input-element {
             color: $text;
         }
-        &.mat-form-field-disabled {
-            .mat-form-field-underline {
-                background-color: #4a4a4a52 !important;
-                background-image: unset !important;
-            }
-            border-color: #4848486b;
-            background-color: #2222222e;
+        &.mat-form-field-has-label {
+            padding-top: 18px;
+        }
+        &.mat-focused .mat-form-field-flex {
+            border-color: $color-green;
+        }
+        &.mat-form-field-disabled .mat-form-field-flex {
+            border-color: rgba(255, 255, 255, .08);
+            background-color: rgba(255, 255, 255, .03);
         }
         &.mat-form-field-invalid {
-            .mat-form-field-ripple, 
-            .mat-form-field-ripple.mat-accent {
-                background-color: unset !important;
+            .mat-form-field-flex {
+                border-color: rgba($color-red-warn, .6);
             }
             .mat-select.mat-select-invalid .mat-select-arrow {
                 color: unset !important;
             }
-            .mat-form-field-underline {
-                background-color: rgba($color-red-warn, 0.09) !important;
-            }
-            border-color: rgba($color-red-warn, 0.4196078431);
         }
-        border: 2px solid #0000006b;
-        background-color: #0000002e;
+        margin: 4px 0;
+        padding: 0;
+        border: none;
+        background: none;
+    }
+
+    mat-toolbar mat-form-field.toolbar-field {
+        &.mat-form-field-has-label {
+            padding-top: 0;
+        }
+        .mat-form-field-wrapper {
+            padding-bottom: 0;
+        }
+        .mat-form-field-subscript-wrapper {
+            display: none;
+        }
+        .mat-form-field-infix {
+            display: flex;
+            align-items: center;
+            padding: 0 !important;
+        }
+        input.mat-input-element {
+            display: block;
+        }
+        &.mat-form-field-appearance-legacy.mat-form-field-can-float {
+            .mat-form-field-label-wrapper {
+                position: static;
+                order: -1;
+                width: auto;
+                height: auto;
+                padding: 0;
+                overflow: visible;
+            }
+            .mat-form-field-label {
+                position: static;
+                width: auto;
+                margin-left: 0;
+                margin-right: 8px;
+                color: rgba($text, .7);
+                font-size: 13px;
+                transform: none !important;
+            }
+        }
+        margin: 0 8px 0 16px;
+        padding: 0;
     }
 
     .mat-table {
@@ -1022,10 +1084,10 @@ h3 {
     &.header-glow {
         margin-top: -15px;
         font-size: 21px;
-        font-weight: 300;
+        font-weight: 500;
     }
     &.sub-header {
-        font-weight: 100;
+        font-weight: 500;
         opacity: 0.9;
         margin-top: -16px;
         padding-bottom: 6px;
@@ -1042,7 +1104,7 @@ h3 {
             width: calc(100% - 11px);
         }
         &.warning {
-            font-weight: 300;
+            font-weight: 400;
             color: $color-titlebar-red;
         }
 

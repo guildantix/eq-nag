@@ -1,24 +1,13 @@
+<div class="log-file-card" *ngIf="!showSettings">
+    <p class="warning-text">Changing any settings in this section may drastically alter your performance.</p>
 
-<div *ngIf="!showSettings">
-    <div style="text-align: right;">
-        <h2 class="sub-header full-width">Show Settings</h2>
-
-        <p class="danger">Changing any settings in this section may drastically alter your performance.</p>
-
-        <mat-checkbox [(ngModel)]="showSettings" name="showSettings" style="width: 100%;">I aim to misbehave, show me the settings!</mat-checkbox>
-
-    </div>
+    <mat-checkbox [(ngModel)]="showSettings" name="showSettings">Show log file settings</mat-checkbox>
 </div>
-<div *ngIf="showSettings">
-    <h2 class="sub-header full-width">Log File Settings</h2>
-
-</div>
-<div class="fifty-grid" *ngIf="showSettings">
+<div class="log-file-grid" *ngIf="showSettings">
     <div>
-        <h3 class="sub-header">Read Settings</h3>
-        <div class="flex-row">
-            <span>Read Delay</span>
-            <span class="spacer"></span>
+        <h4>Read settings</h4>
+        <div class="slider-label">
+            <span>Read delay</span>
             <small>How often should Nag check for new log entries.</small>
         </div>
         <mat-slider [(ngModel)]="readDelay" thumbLabel step="10" tickInterval="1" min="50" max="1000" style="width: 100%;" (change)="onSettingsChanged()" ></mat-slider>
@@ -30,16 +19,15 @@
         <mat-slider [(ngModel)]="flushDelay" thumbLabel step="10" tickInterval="1" min="50" max="1000" style="width: 100%;" (change)="onSettingsChanged()" ></mat-slider> -->
     </div>
     <div>
-        <h3 class="sub-header">Error Settings</h3>
-        <div class="flex-row">
-            <span>Error Delay</span>
-            <span class="spacer"></span>
+        <h4>Error settings</h4>
+        <div class="slider-label">
+            <span>Error delay</span>
             <small>How long to wait before retrying a read operation after an error.</small>
         </div>
         <mat-slider [(ngModel)]="readErrorDelay" thumbLabel step="10" tickInterval="1" min="50" max="1000" style="width: 100%;" (change)="onSettingsChanged()" ></mat-slider>
     </div>
 </div>
-<div style="text-align: right;" *ngIf="showSaveButton">
-    <button mat-button class="color-yellow" (click)="saveSettings()">Save Changes</button>
-    <button mat-button class="color-green" (click)="cancelSettings()">Nevermind, get me out of here!</button>
+<div class="log-file-actions" *ngIf="showSaveButton">
+    <button mat-stroked-button (click)="cancelSettings()">Cancel</button>
+    <button mat-flat-button color="primary" (click)="saveSettings()">Save changes</button>
 </div>

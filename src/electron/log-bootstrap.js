@@ -15,6 +15,15 @@ const customAlphabet = require( 'nanoid' ).customAlphabet;
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const nanoid = customAlphabet( alphabet, 16 );
 
+/**
+ * @typedef {object} WatchStatus
+ * @property {string} characterId The character id.
+ * @property {string} name The character name, or the id when the character is unknown.
+ * @property {string|null} class The character class.
+ * @property {boolean} watching True while a log watcher window is reading the log.
+ * @property {number|null} lastLineAt When the log file last changed, in epoch milliseconds.
+ */
+
 class LogWatcherMeta {
     /** @type {BrowserWindow|null} */
     window;
@@ -550,7 +559,46 @@ class LogBootstrapper {
                 }
             } );
 
+        ipcMain.handle( 'app:status:watching', () => $this.getWatchStatus( characterDatabase ) );
+
         startCombatWatcherWindow( isDev );
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Lists the characters Nag reads logs for, with whether each is being read now and
+     * when its log file last changed. The Settings Status card polls this, so a stat that
+     * fails must not break the whole list.
+     *
+     * @param {CharacterDatabaseStore} characterDatabase The character database.
+     * @returns {Promise<WatchStatus[]>} One entry per character with a log watcher.
+     */
+    async getWatchStatus( characterDatabase ) {
+        return Promise.all( Object.keys( logWatchers ).map( async characterId => {
+            const character = characterDatabase.find( characterId );
+            const logFile = logWatchers[ characterId ].logFile;
+            let lastLineAt = null;
+            try {
+                lastLineAt = ( await fsp.stat( logFile ) ).mtimeMs;
+            } catch ( error ) {
+                lastLineAt = null;
+            }
+            return {
+                characterId: characterId,
+                name: character?.name ?? characterId,
+                class: character?.class ?? null,
+                watching: logWatchers[ characterId ].window !== null && logWatchers[ characterId ].window !== undefined,
+                lastLineAt: lastLineAt,
+            };
+        } ) );
     }
 
 

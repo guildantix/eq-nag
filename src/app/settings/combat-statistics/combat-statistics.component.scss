@@ -1,14 +1,34 @@
+.section-heading {
+    margin: 0 0 8px;
+    padding: 0;
+    font-size: 16px;
+    font-weight: 500;
+    text-align: left;
+}
+
 .players-table,
 .pets-table,
 .npcs-table {
-    width: unset;
+    width: 100%;
+    border-collapse: collapse;
 
     tr {
         th {
             font-weight: 500;
             opacity: 0.6;
+            text-align: left;
+            padding: 4px 8px;
         }
         td {
+            padding: 0 8px;
+            height: 40px;
+            vertical-align: middle;
+
+            &:last-child {
+                width: 48px;
+                text-align: right;
+            }
+
             .dim {
                 opacity: 0.4;
 
@@ -52,10 +72,6 @@
 
 :host ::ng-deep {
 
-    .mat-tab-label-content {
-        text-transform: capitalize;
-    }
-    
     .players-table,
     .pets-table,
     .npcs-table {
@@ -89,17 +105,6 @@
     flex-flow: row wrap;
     align-items: flex-start;
 
-    h1, h2 {
-        font-weight: 100;
-        padding: 0;
-    }
-    h1 {
-        margin: 10px 15px;
-    }
-    h2 {
-        margin: 3px 15px;
-    }
-
     .server-search {
         width: 100%;
         margin: 10px;
@@ -121,12 +126,19 @@
 
     .server-content-panel {
         margin: 10px;
+        padding: 16px;
+        flex: 1 1 320px;
         background-color: #3a3a3a;
 
         .server-content-panel-header {
             display: flex;
             flex-flow: row nowrap;
             align-items: center;
+            min-height: 48px;
+
+            .section-heading {
+                margin: 0;
+            }
 
             .spacer {
                 flex: 1 1 auto;
@@ -147,11 +159,10 @@
     }
 
     h2 {
-        font-weight: 100;
+        font-weight: 500;
         opacity: 0.9;
         margin: 0 1em;
-        padding-bottom: 6px;
-        font-size: 22px;
+        font-size: 16px;
         padding-bottom: 4px;
         position: relative;
         padding-right: 11px;

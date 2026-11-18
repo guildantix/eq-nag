@@ -17,6 +17,7 @@ import { JoinChatRoomDialogResult } from './dialogs/join-chat-room-dialog/join-c
 
 const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const nanoid = customAlphabet( alphabet, 16 );
+const settingsTabIndex = 5;
 const updateIntervalDuration = 5 * 60 * 1000;
 
 @Component( {
@@ -498,8 +499,9 @@ export class MainComponent implements OnInit {
 
     onChangeTabs( selectedIndex: number ): void {
         this.showConsole = selectedIndex === 0;
+        this.settingsPanel.setActive( selectedIndex === settingsTabIndex );
 
-        if ( selectedIndex === 5 ) {
+        if ( selectedIndex === settingsTabIndex ) {
             this.settingsPanel.loadSettings();
         }
     }
