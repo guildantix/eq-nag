@@ -653,13 +653,16 @@ export class PushTrackerComponent implements OnInit, OnDestroy {
             const share = recap.events > 0 ? Math.round( p.events * 100 / recap.events ) : 0;
             lines.push( `${i + 1}. ${p.name} - ${p.events} (${share}%)${p.assumed > 0 ? ` ~${p.assumed} assumed` : ''}` );
         } );
-        if ( recap.unattributed.events > 0 ) {
-            const top = ( recap.unattributed.procs ?? [] ).slice( 0, 5 ).map( p => `${p.name} ${p.count}` ).join( ', ' );
-            lines.push( `Procs with no player named: ${recap.unattributed.events}${top === '' ? '' : ` (${top})`}` );
+        let hiddenCount = ( list: PushRecapProc[] | undefined ) => ( list ?? [] ).filter( p => this.hiddenTexts.has( p.text ) ).reduce( ( sum, p ) => sum + p.count, 0 );
+        let procHits = recap.unattributed.events - hiddenCount( recap.unattributed.procs );
+        if ( procHits > 0 ) {
+            let top = this.procRows.slice( 0, 5 ).map( p => `${p.name} ${p.count}` ).join( ', ' );
+            lines.push( `Procs with no player named: ${procHits}${top === '' ? '' : ` (${top})`}` );
         }
-        if ( ( recap.unattributed.possibleEvents ?? 0 ) > 0 ) {
-            const top = ( recap.unattributed.possible ?? [] ).slice( 0, 5 ).map( p => `${p.name} ${p.count}` ).join( ', ' );
-            lines.push( `Possible procs: ${recap.unattributed.possibleEvents}${top === '' ? '' : ` (${top})`}` );
+        let possibleHits = ( recap.unattributed.possibleEvents ?? 0 ) - hiddenCount( recap.unattributed.possible );
+        if ( possibleHits > 0 ) {
+            let top = this.possibleRows.slice( 0, 5 ).map( p => `${p.name} ${p.count}` ).join( ', ' );
+            lines.push( `Possible procs: ${possibleHits}${top === '' ? '' : ` (${top})`}` );
         }
         this.ipcService.sendTextToClipboard( lines.join( '\n' ) );
     }

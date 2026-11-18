@@ -222,10 +222,11 @@ function formatAlso( proc ) {
  * @returns {string} The summary.
  *
  * @param {any} summary The saved summary.
+ * @param {Set<string>} hidden The landing messages that are hidden.
  */
-function buildSummaryText( summary ) {
-    const players = summary.players ?? [];
-    const lines = [
+function buildSummaryText( summary, hidden ) {
+    let players = summary.players ?? [];
+    let lines = [
         `Push Recap - ${summary.mob}, killed ${formatKillClock( summary )}, fight ${formatDuration( summary.fightSeconds )}`,
         `${summary.events} push ${summary.events === 1 ? 'hit' : 'hits'}, ${players.length} ${players.length === 1 ? 'player' : 'players'} pushing`,
     ];
@@ -233,13 +234,18 @@ function buildSummaryText( summary ) {
         const share = summary.events > 0 ? Math.round( p.events * 100 / summary.events ) : 0;
         lines.push( `${i + 1}. ${p.name} - ${p.events} (${share}%)${p.assumed > 0 ? ` ~${p.assumed} assumed` : ''}` );
     } );
-    if ( summary.unattributed.events > 0 ) {
-        const top = ( summary.unattributed.procs ?? [] ).slice( 0, 5 ).map( p => `${p.name} ${p.count}` ).join( ', ' );
-        lines.push( `Procs with no player named: ${summary.unattributed.events}${top === '' ? '' : ` (${top})`}` );
+    let hiddenCount = list => ( list ?? [] ).filter( p => hidden.has( p.text ) ).reduce( ( sum, p ) => sum + p.count, 0 );
+    let procs = ( summary.unattributed.procs ?? [] ).filter( p => !hidden.has( p.text ) );
+    let procHits = summary.unattributed.events - hiddenCount( summary.unattributed.procs );
+    if ( procHits > 0 ) {
+        let top = procs.slice( 0, 5 ).map( p => `${p.name} ${p.count}` ).join( ', ' );
+        lines.push( `Procs with no player named: ${procHits}${top === '' ? '' : ` (${top})`}` );
     }
-    if ( ( summary.unattributed?.possibleEvents ?? 0 ) > 0 ) {
-        const top = ( summary.unattributed.possible ?? [] ).slice( 0, 5 ).map( p => `${p.name} ${p.count}` ).join( ', ' );
-        lines.push( `Possible procs: ${summary.unattributed.possibleEvents}${top === '' ? '' : ` (${top})`}` );
+    let possible = ( summary.unattributed.possible ?? [] ).filter( p => !hidden.has( p.text ) );
+    let possibleHits = ( summary.unattributed.possibleEvents ?? 0 ) - hiddenCount( summary.unattributed.possible );
+    if ( possibleHits > 0 ) {
+        let top = possible.slice( 0, 5 ).map( p => `${p.name} ${p.count}` ).join( ', ' );
+        lines.push( `Possible procs: ${possibleHits}${top === '' ? '' : ` (${top})`}` );
     }
     return lines.join( '\n' );
 }
@@ -486,8 +492,8 @@ async function PushRecap( params ) {
     let shown = null;
 
     document.getElementById( 'copyButton' ).addEventListener( 'click', () => {
-        if ( shown !== null && shown !== undefined ) {
-            ipcRenderer.send( 'clipboard:writeText', buildSummaryText( shown ) );
+        if ( shown != null ) {
+            ipcRenderer.send( 'clipboard:writeText', buildSummaryText( shown, hidden ) );
             document.getElementById( 'copyButton' ).textContent = 'Copied';
         }
     } );
