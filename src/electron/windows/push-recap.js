@@ -190,7 +190,7 @@ function buildSummaryText( summary ) {
     let players = summary.players ?? [];
     let lines = [
         `Push Recap - ${summary.mob}, killed ${formatKillClock( summary )}, fight ${formatDuration( summary.fightSeconds )}`,
-        `${summary.events} push hits, ${players.length} players pushing`,
+        `${summary.events} push ${summary.events === 1 ? 'hit' : 'hits'}, ${players.length} ${players.length === 1 ? 'player' : 'players'} pushing`,
     ];
     players.forEach( ( p, i ) => {
         let share = summary.events > 0 ? Math.round( p.events * 100 / summary.events ) : 0;
@@ -346,7 +346,7 @@ function render( summary ) {
     }
     let procsFallback = document.getElementById( 'procsFallback' );
     procsFallback.hidden = hasProcs || procHits <= 0;
-    procsFallback.textContent = `${procHits} more hits came from procs with no player named. Re-scan the log to see which procs they were.`;
+    procsFallback.textContent = `${procHits} more ${procHits === 1 ? 'hit' : 'hits'} came from procs with no player named. Re-scan the log to see which procs they were.`;
 
     document.getElementById( 'othersHint' ).hidden = summary.othersSeen !== false;
 
