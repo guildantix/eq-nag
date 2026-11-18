@@ -126,6 +126,17 @@ class PushScanService {
     #tempCounter = 0;
     /** @type {PushScanStatus} */
     #status = idleStatus();
+    /** @type {((results: any[]) => any) | null} */
+    #resultsListener = null;
+
+
+
+
+
+
+
+
+
 
     /**
      * @param {string} directory The folder to keep the cache file in.
@@ -138,6 +149,33 @@ class PushScanService {
         this.#characterDatabase = characterDatabase;
         this.#userPreferences = userPreferences;
     }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Sets the function that is called with the scanned recaps when a scan is done.
+     *
+     * @param {((results: any[]) => any) | null} listener The function.
+     */
+    setResultsListener( listener ) {
+        this.#resultsListener = listener;
+    }
+
+
+
+
+
+
+
+
+
 
     /**
      * Attaches the ipc events of the service.
@@ -169,6 +207,15 @@ class PushScanService {
 
     }
 
+
+
+
+
+
+
+
+
+
     /**
      * Returns the state of the scan.
      *
@@ -178,6 +225,15 @@ class PushScanService {
         return this.#status;
     }
 
+
+
+
+
+
+
+
+
+
     /**
      * Returns the scanned recaps without their players and proc breakdown.
      *
@@ -186,6 +242,15 @@ class PushScanService {
     getRows() {
         return this.#results.map( ( { players, unattributed, ...row } ) => ( { ...row, unattributed: { events: unattributed.events, pushValue: unattributed.pushValue } } ) );
     }
+
+
+
+
+
+
+
+
+
 
     /**
      * Returns the scanned recap with the given id, with its players.
@@ -197,6 +262,15 @@ class PushScanService {
     getResult( id ) {
         return this.#results.find( r => r.id === id ) ?? null;
     }
+
+
+
+
+
+
+
+
+
 
     /**
      * Starts a scan of the log of the given character.  Only one scan runs at a time.
@@ -273,6 +347,15 @@ class PushScanService {
         return { started: true, message: '' };
     }
 
+
+
+
+
+
+
+
+
+
     /**
      * Stops the running scan.
      */
@@ -283,12 +366,30 @@ class PushScanService {
         }
     }
 
+
+
+
+
+
+
+
+
+
     /**
      * Stops the running scan, for use when the app quits.
      */
     shutdown() {
         this.cancel();
     }
+
+
+
+
+
+
+
+
+
 
     /**
      * Handles a message of the worker.
@@ -346,6 +447,7 @@ class PushScanService {
                 results: result.results,
             } );
             this.#finish( worker, 'done', '' );
+            this.#notifyResults( result.results );
 
         } else if ( message.type === 'error' ) {
             if ( message.code !== 'no-folder' && message.code !== 'no-file' ) {
@@ -354,6 +456,15 @@ class PushScanService {
             this.#finish( worker, 'error', message.message );
         }
     }
+
+
+
+
+
+
+
+
+
 
     /**
      * Ends the scan with the given outcome, stops the worker and tells the main window.  Does nothing
@@ -382,6 +493,37 @@ class PushScanService {
         this.#send( 'push-scan:done', this.#status );
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Gives the scanned recaps to the results listener.  A failing listener does not affect the scan.
+     *
+     * @param {any[]} results The scanned recaps.
+     */
+    #notifyResults( results ) {
+        try {
+            Promise.resolve( this.#resultsListener?.( results ) ).catch( error => console.error( 'The push scan results listener failed.', error ) );
+        } catch ( error ) {
+            console.error( 'The push scan results listener failed.', error );
+        }
+    }
+
+
+
+
+
+
+
+
+
+
     /**
      * Sends the given event to the main window.
      *
@@ -394,6 +536,15 @@ class PushScanService {
             win.webContents.send( channel, data );
         }
     }
+
+
+
+
+
+
+
+
+
 
     /**
      * Reads the cached logs.  A missing file gives no logs.  A file that is not a valid cache is moved aside.
@@ -429,6 +580,15 @@ class PushScanService {
         return {};
     }
 
+
+
+
+
+
+
+
+
+
     /**
      * Removes the given log from the cache file.
      *
@@ -446,6 +606,15 @@ class PushScanService {
         delete rest[ logFile ];
         return rest;
     }
+
+
+
+
+
+
+
+
+
 
     /**
      * Keeps the result of the given log in the cache file, and drops the logs scanned longest ago.

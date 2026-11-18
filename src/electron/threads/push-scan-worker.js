@@ -152,7 +152,7 @@ async function scanLog( params ) {
             if ( end - start < textOffset || buffer[ start ] !== 91 ) {
                 return;
             }
-            let line = buffer.toString( 'utf8', start, end );
+            let line = buffer.toString( 'latin1', start, end );
             let time = parseTimestamp( line );
             if ( time !== time || !isRelevantLine( line, landing ) ) {
                 return;
