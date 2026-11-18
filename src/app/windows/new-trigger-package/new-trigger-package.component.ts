@@ -952,7 +952,7 @@ export class NewTriggerPackageComponent implements OnInit {
                     this.package.model.primaryDisplaySize = primaryDisplay.size;
 
                     // The receiver drops timer icons that are not embedded images up to 256 KB.
-                    let iconTriggers = findUnshareableIconTriggers( this.package.model.triggers );
+                    const iconTriggers = findUnshareableIconTriggers( this.package.model.triggers );
                     this.iconWarning = iconTriggers.length > 0 ? `The timer icon of ${iconTriggers.slice( 0, 5 ).map( f => `"${f}"` ).join( ', ' )}${iconTriggers.length > 5 ? ' and more' : ''} is not an embedded image up to 256 KB, so the receiver will not get it.` : '';
 
                     this.savePackage();

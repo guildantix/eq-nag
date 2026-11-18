@@ -4586,9 +4586,9 @@ function getTimerLabel( overlayId, comp ) {
  * @param {string} icon The icon of the timer action.
  */
 function prependTimerIcon( div, icon ) {
-    let source = sanitizeTimerIcon( icon, Infinity );
+    const source = sanitizeTimerIcon( icon, Infinity );
     if ( source !== null ) {
-        let img = document.createElement( 'img' );
+        const img = document.createElement( 'img' );
         img.src = source;
         img.classList.add( 'dot-icon' );
         img.style.cssText = 'position: absolute; margin-left: -1.7em;  height: 1.5em;';
