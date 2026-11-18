@@ -21,6 +21,7 @@ const { parseConditionValues } = require( '../utilities/condition-values' );
 const perf = require( '../utilities/perf' );
 const TriggerPrefilter = require( '../utilities/trigger-prefilter' );
 const { detectPersonaClassCode, detectOwnWhoClassCode } = require( '../utilities/persona-class' );
+const { TriggerGate, storeHasValue: storeHasValueIn, storeContainsValue: storeContainsValueIn } = require( '../utilities/trigger-gate' );
 // Triggers are timed on one log line in ten (perf-taps.js scales them up), so
 // the per-trigger timing doesn't slow the log watcher down much.
 let perfTriggerSample = 0;
@@ -74,6 +75,31 @@ let triggerPrefilterStamp = 0;
  * every trigger on every line.
  */
 const isTriggerPrefilterDisabled = process.env.NAG_NO_TRIGGER_PREFILTER === '1' || process.argv.includes( '--no-trigger-prefilter' );
+/**
+ * Which of activeTriggers can fire with the current zone, variables, counters
+ * and class; null runs all of them.
+ *
+ * @type {TriggerGate|null}
+ */
+let triggerGate = null;
+/** @type {number|null} The timer that rebuilds the prefilter at the end of a batch of log lines. */
+let triggerGateTimer = null;
+/** @type {number} The open trigger count last written to the console, so it only logs changes. */
+let triggerGateLoggedCount = -1;
+/** @type {boolean} Whether the zone changed since the console last showed the trigger count. */
+let hasTriggerGateZoneChanged = false;
+/**
+ * @type {boolean}
+ * The kill switch: --no-trigger-gate or NAG_NO_TRIGGER_GATE=1 runs every
+ * trigger the way the prefilter alone would.
+ */
+const isTriggerGateDisabled = process.env.NAG_NO_TRIGGER_GATE === '1' || process.argv.includes( '--no-trigger-gate' );
+/**
+ * Matches the line EverQuest writes when the character zones in, so the zone
+ * is known even without a Capture Zone trigger.  Example log line:
+ * You have entered Crystal Caverns.
+ */
+const enteredZonePattern = /^You have entered ([A-Z].*)\.$/;
 /** @type {TriggerFolder[]} */
 var triggerFolders = [];
 /** @type {Record<string, string[]>} */
@@ -236,6 +262,8 @@ function startParsingLogFile( logPath, startLogPosition ) {
             }
         } );
         
+        flushTriggerGate();
+
         // console.log( 'done processing lines, total time', performance.now() - start, 'line count', lines.length );
     }, startLogPosition )
         .then( () => {
@@ -323,6 +351,7 @@ function simulateLogEntries( lines, timestamp, lastBlock, padTime ) {
         
         parseLogEntries( lines[ i ], false, padTime );
     }
+    flushTriggerGate();
     if ( lastBlock ) {
         speakPhrase( 'Simulation ended', false, false, {}, false, {}, 0, 0, 100, 1, () => ipcRenderer.send( 'log:simulate:done', characterId ) );
     }
@@ -461,6 +490,8 @@ function LogWatcher(character, logPosition) {
                 storedVariables = simulationCache[ 'storedVariables' ];
                 counters = simulationCache[ 'counters' ];
                 usedConditionValues = simulationCache[ 'usedConditionValues' ];
+                allVariablesChanged();
+                flushTriggerGate();
                 
                 if ( simTimerId ) {
                     ipcRenderer.send( 'overlay:destroy:component', simTimerId );
@@ -737,8 +768,10 @@ function LogWatcher(character, logPosition) {
         applyFolderConditions( triggerFolders );
         generateTriggerFns();
         activeTriggers = triggers.filter( trigger => !!trigger.enabled && !trigger._profileDisabled );
-        buildTriggerPrefilter();
         initCounters();
+        buildTriggerGate();
+        buildTriggerPrefilter();
+        logTriggerGate();
         perf.enabled && perf.record( 'log-watcher: tick (rebuild triggers)', perfStart );
     } );
 
@@ -1132,11 +1165,13 @@ function getTriggerPrefilter( trigger ) {
             return null;
         }
 
-        // Variable conditions refresh trigger._conditionResults on every line,
-        // so those triggers always run.
-        const conditions = [ ...( trigger.conditions ?? [] ), ...( trigger._folderConditions ?? [] ) ];
-        if ( conditions.some( condition => condition.conditionType === TriggerConditionTypes.VariableValue ) ) {
-            return null;
+        // Without the trigger gate, variable conditions are only checked when the
+        // trigger runs, so those triggers always run.
+        if ( isTriggerGateDisabled ) {
+            const conditions = [ ...( trigger.conditions ?? [] ), ...( trigger._folderConditions ?? [] ) ];
+            if ( conditions.some( condition => condition.conditionType === TriggerConditionTypes.VariableValue ) ) {
+                return null;
+            }
         }
 
         // A sequential trigger only needs its first phrase while no sequence is in progress.
@@ -1212,6 +1247,10 @@ function buildTriggerPrefilter() {
     let alwaysTriggerCount = 0;
 
     activeTriggers.forEach( ( trigger, index ) => {
+        if ( triggerGate && !triggerGate.open[ index ] ) {
+            return;
+        }
+
         const prefilterInfo = trigger._prefilter;
         if ( !prefilterInfo || prefilterInfo.always || !trigger._parse ) {
             alwaysRun[ index ] = 1;
@@ -1240,6 +1279,171 @@ function buildTriggerPrefilter() {
             literals: entries.length,
             automatonNodes: triggerPrefilter.automaton.nodeCount,
         } );
+    }
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Builds the trigger gate for activeTriggers.  It runs before the prefilter is
+ * built because the prefilter only takes the triggers the gate leaves open.
+ */
+function buildTriggerGate() {
+    triggerGate = null;
+    if ( isTriggerGateDisabled ) {
+        return;
+    }
+
+    triggerGate = new TriggerGate(
+        () => ( { storedVariables: storedVariables, counters: counters, characterClass: charModel?.class } ),
+        index => {
+            // The prefilter doesn't know about a trigger that just opened, so
+            // it runs on every line until the next rebuild.
+            if ( triggerPrefilter ) {
+                triggerPrefilter.alwaysRun[ index ] = 1;
+            }
+        } );
+    triggerGate.build( activeTriggers );
+    triggerGate.acknowledge();
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Writes the number of triggers that can fire to the console, when it changed.
+ */
+function logTriggerGate() {
+    if ( triggerGate && ( triggerGate.openCount !== triggerGateLoggedCount || hasTriggerGateZoneChanged ) ) {
+        triggerGateLoggedCount = triggerGate.openCount;
+        hasTriggerGateZoneChanged = false;
+        log( `Triggers active in this zone: ${triggerGate.openCount} of ${activeTriggers.length}` );
+    }
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Rebuilds the prefilter for the triggers that are open now.  Does nothing if
+ * the gate didn't change.
+ */
+function flushTriggerGate() {
+    if ( triggerGateTimer !== null ) {
+        clearTimeout( triggerGateTimer );
+        triggerGateTimer = null;
+    }
+
+    if ( triggerGate?.changed ) {
+        triggerGate.acknowledge();
+        buildTriggerPrefilter();
+    }
+
+    logTriggerGate();
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Called after a stored variable or counter changed; the prefilter is rebuilt
+ * at the end of the current batch of log lines.
+ */
+function triggerGateChanged() {
+    if ( ( triggerGate?.changed || hasTriggerGateZoneChanged ) && triggerGateTimer === null ) {
+        triggerGateTimer = setTimeout( flushTriggerGate, 0 );
+    }
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Tells the gate that a stored variable changed, so the triggers that use it
+ * are checked again.
+ *
+ * @param {string} key The name of the stored variable that changed.
+ */
+function variableChanged( key ) {
+    if ( triggerGate ) {
+        triggerGate.variableChanged( key );
+        if ( key === 'CurrentZone' ) {
+            hasTriggerGateZoneChanged = true;
+        }
+        triggerGateChanged();
+    }
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Tells the gate that a counter changed, so the triggers that use it are
+ * checked again.
+ *
+ * @param {string} key The name of the counter that changed.
+ */
+function counterChanged( key ) {
+    if ( triggerGate ) {
+        triggerGate.counterChanged( key );
+        triggerGateChanged();
+    }
+}
+
+
+
+
+
+
+
+
+
+
+/**
+ * Tells the gate that every stored variable and counter may have changed, such
+ * as after loading the cached variables or restoring a simulation.
+ */
+function allVariablesChanged() {
+    if ( triggerGate ) {
+        triggerGate.allChanged();
+        triggerGateChanged();
     }
 }
 
@@ -2133,6 +2337,7 @@ function parseLogEntries( raw, simulating, padTime ) {
                         let timeSinceLastUpdate = Math.abs( ( new Date() ) - counters[ key ].lastUpdate ) / 1000;
                         if ( timeSinceLastUpdate >= counters[ key ].resetDelay ) {
                             counters[ key ].value = 0;
+                            counterChanged( key );
                             // If the timer is reset, no need to check the reset 
                             // phrases.
                             continue;
@@ -2141,6 +2346,7 @@ function parseLogEntries( raw, simulating, padTime ) {
                         // Parse the current log entry for any reset phrase matches.
                         if ( counters[ key ]._parse( log ) ) {
                             counters[ key ].value = 0;
+                            counterChanged( key );
                         }
                     }
 
@@ -2155,6 +2361,7 @@ function parseLogEntries( raw, simulating, padTime ) {
         const perfTriggers = perf.enabled && ++perfTriggerSample % 10 === 0;
 
         const prefilter = triggerPrefilter;
+        const gate = triggerGate;
         let stamp = 0;
         if ( prefilter ) {
             const perfPrefilterStart = perf.enabled ? perf.now() : 0;
@@ -2170,13 +2377,16 @@ function parseLogEntries( raw, simulating, padTime ) {
         }
 
         // Perf builds only: on 1 line in 100, also parse the triggers the
-        // prefilter skipped, to count any it wrongly skipped.
-        const perfPrefilterCheck = perf.enabled && prefilter && ++perfPrefilterLines % 100 === 0;
+        // prefilter or gate skipped, to count any they wrongly skipped.
+        const perfPrefilterCheck = perf.enabled && ( prefilter || gate ) && ++perfPrefilterLines % 100 === 0;
 
         activeTriggers.forEach( ( trigger, index ) => {
 
-            if ( prefilter && prefilter.marks[ index ] !== stamp && !prefilter.alwaysRun[ index ] && !trigger._hasSequence?.() ) {
-                if ( perfPrefilterCheck && !!trigger.enabled && !trigger._profileDisabled ) {
+            const isGateClosed = gate && !gate.open[ index ] && !trigger._hasSequence?.();
+            const isSkippedByPrefilter = prefilter && prefilter.marks[ index ] !== stamp &&
+                !prefilter.alwaysRun[ index ] && !trigger._hasSequence?.();
+            if ( isGateClosed || isSkippedByPrefilter ) {
+                if ( perfPrefilterCheck && !!trigger.enabled && !trigger._profileDisabled && typeof trigger._parse === 'function' ) {
                     trigger._parse( log, () => {
                         perfPrefilterMisses++;
                         const now = Date.now();
@@ -2184,7 +2394,8 @@ function parseLogEntries( raw, simulating, padTime ) {
                             perfPrefilterLastWarning = now;
                             nagLog( {
                                 label: 'Log Watcher',
-                                message: `Trigger prefilter miss: trigger "${trigger.name}" (${trigger.triggerId}) matched a line it was skipped for.`,
+                                message: `Trigger ${isGateClosed ? 'gate' : 'prefilter'} miss: trigger ` +
+                                    `"${trigger.name}" (${trigger.triggerId}) matched a line it was skipped for.`,
                             } );
                         }
                     } );
@@ -2242,8 +2453,23 @@ function parseLogEntries( raw, simulating, padTime ) {
             
         } );
 
+        // Char code 89 is "Y": a cheap test so only lines starting with "You" run the regex.
+        if ( !isTriggerGateDisabled && log.charCodeAt( 0 ) === 89 ) {
+            const enteredZone = enteredZonePattern.exec( log );
+            if ( enteredZone ) {
+                const current = storedVariables[ 'CurrentZone' ];
+                // The Capture Zone trigger stores the zone too (after the LOADING line cleared it),
+                // so skip a second store of the same value.  Without a LOADING line the trigger
+                // appends to the old zone; replacing it here keeps one current zone, as the
+                // gate's zone conditions expect.
+                if ( !( current?.length === 1 && current[ 0 ] === enteredZone[ 1 ] ) ) {
+                    saveScalarVariable( 'CurrentZone', enteredZone[ 1 ] );
+                }
+            }
+        }
+
         if ( perfPrefilterCheck ) {
-            perf.note?.( 'prefilter misses', perfPrefilterMisses );
+            perf.note?.( 'prefilter and gate misses', perfPrefilterMisses );
             perf.note?.( 'prefilter average candidates per line', Math.round( perfPrefilterCandidates / perfPrefilterLines * 10 ) / 10 );
         }
 
@@ -3154,11 +3380,13 @@ function clearAll() {
 
     for ( const key of Object.keys( counters ) ) {
         counters[ key ].value = 0;
+        counterChanged( key );
     }
 
     // storedVariableHash = {};
     for ( const key of Object.keys( storedVariables ) ) {
         storedVariables[ key ] = [];
+        variableChanged( key );
     }
 
     let len = audioPlayers?.length ?? 0;
@@ -4013,6 +4241,8 @@ function loadCachedStoredVariables( callback ) {
             storedVariables = {};
         }
 
+        allVariablesChanged();
+
         if ( callback ) {
             callback();
         }
@@ -4048,6 +4278,7 @@ function saveVariable( key, value, restricted ) {
     if ( storeValue ) {
         storedVariables[ key ] = storedVariables[ key ]?.length > 0 ? storedVariables[ key ] : [];
         storedVariables[ key ].push( value );
+        variableChanged( key );
 
         enableLogging && sendInformationToLog( `Storing value [${value}] into [${key}]`, 12 );
         enableLogging && sendInformationToLog( `Current values are: ${storedVariables[ key ].join( '|' )}` );
@@ -4078,6 +4309,7 @@ function incrementCounter( key ) {
     } else {
         counters[ key ].value += 1;
         counters[ key ].lastUpdate = new Date();
+        counterChanged( key );
     }
 }
 
@@ -4098,6 +4330,7 @@ function incrementCounter( key ) {
  */
 function saveScalarVariable( key, value ) {
     storedVariables[ key ] = [ value ];
+    variableChanged( key );
 
     enableLogging && sendInformationToLog( `Storing scalar value [${value}] into [${key}]`, 12 );
     enableLogging && sendInformationToLog( `Current values are: ${storedVariables[ key ].join( '|' )}` );
@@ -4143,23 +4376,7 @@ function getScalarValue( key, defaultValue ) {
  * @param {any|any[]} value The value to check.
  */
 function storeHasValue( key, value ) {
-    
-    if ( storedVariables[ key ]?.length > 0 ) {
-        if ( value instanceof Array ) {
-            for ( let i = 0; i < value.length; i++ ) {
-                let index = storedVariables[ key ].indexOf( value[ i ] );
-                if ( index > -1 ) {
-                    return { exists: true, value: value[ i ] };
-                }
-            }
-        } else {
-            let index = storedVariables[ key ].indexOf( value );
-            return index > -1 ? { exists: true, value: value } : { exists: false };
-        }
-    }
-
-    return { exists: false };
-    
+    return storeHasValueIn( storedVariables, key, value );
 }
 
 
@@ -4180,28 +4397,7 @@ function storeHasValue( key, value ) {
  * @param {any|any[]} value The value to check.
  */
 function storeContainsValue( key, value ) {
-    
-    if ( storedVariables[ key ]?.length > 0 && value?.length > 0 ) {
-        if ( value instanceof Array ) {
-            let values = value.map( v => v.toLowerCase() );
-            for ( let i = 0; i < storedVariables[ key ].length; i++ ) {
-                for ( let v = 0; v < values.length; v++ ) {
-                    if ( storedVariables[ key ][ i ].toLowerCase().indexOf( values[ v ] ) > -1 ) {
-                        return { exists: true, value: storedVariables[ key ][ i ] };
-                    }
-                }
-            }
-        } else {
-            let v = value.toLowerCase();
-            for ( let i = 0; i < storedVariables[ key ].length; i++ ) {
-                if ( storedVariables[ key ][ i ].toLowerCase().indexOf( v ) > -1 ) {
-                    return { exists: true, value: storedVariables[ key ][ i ] };
-                }
-            }
-        }
-    }
-
-    return { exists: false };
+    return storeContainsValueIn( storedVariables, key, value );
 }
 
 
@@ -4237,6 +4433,7 @@ function clearStoredVariable( key, value ) {
         }
     }
 
+    variableChanged( key );
     clearCachedStoredVariables();
 
 }
@@ -4257,6 +4454,7 @@ function clearStoredVariable( key, value ) {
  */
 function clearAllStoredValuesInVariable( key ) {
     storedVariables[ key ] = [];
+    variableChanged( key );
     cacheStoredVariables();
 }
 
@@ -4662,6 +4860,8 @@ async function backfind() {
 
         return valuesMissing();
     } );
+
+    flushTriggerGate();
 }
 
 
