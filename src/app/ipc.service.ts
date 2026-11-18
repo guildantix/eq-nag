@@ -3232,11 +3232,11 @@ export class IpcService {
     }
 
     public setPushProcHidden( text: string, hidden: boolean ): void {
-        window.api.ipc.send( 'push-recap:hidden:set', { text: text, hidden: hidden } );
+        window.api.ipc.send( 'push-recaps:hidden:set', { text: text, hidden: hidden } );
     }
 
     public clearHiddenPushProcTexts(): void {
-        window.api.ipc.send( 'push-recap:hidden:set', { clear: true } );
+        window.api.ipc.send( 'push-recaps:hidden:set', { clear: true } );
     }
 
     public clearPushRecaps(): void {

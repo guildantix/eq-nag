@@ -338,7 +338,7 @@ function renderProcRows( bodyId, hintId, procs, hidden, possible ) {
             let button = el( 'button', 'hide-message', '×' );
             button.type = 'button';
             button.title = 'Hide this message from the proc tables';
-            button.addEventListener( 'click', () => ipcRenderer.send( 'push-recap:hidden:set', { text: p.text, hidden: true } ) );
+            button.addEventListener( 'click', () => ipcRenderer.send( 'push-recaps:hidden:set', { text: p.text, hidden: true } ) );
             action.appendChild( button );
         }
         tr.appendChild( action );
@@ -533,7 +533,7 @@ async function PushRecap( params ) {
     };
 
     try {
-        hidden = new Set( await ipcRenderer.invoke( 'push-recap:hidden:get' ).catch( () => [] ) );
+        hidden = new Set( await ipcRenderer.invoke( 'push-recaps:hidden:get' ).catch( () => [] ) );
         if ( params.snapshot ) {
             const snapshot = await ipcRenderer.invoke( 'push-recap:snapshot' );
             if ( ( snapshot?.recap === null || snapshot?.recap === undefined ) || typeof snapshot.recap !== 'object' ) {

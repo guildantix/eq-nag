@@ -394,9 +394,9 @@ class WindowManager {
 
         ipcMain.handle( 'push-recap:snapshot', () => this.#pushRecapSnapshot );
 
-        ipcMain.handle( 'push-recap:hidden:get', () => this.#userPrefDb.hiddenProcTexts );
+        ipcMain.handle( 'push-recaps:hidden:get', () => this.#userPrefDb.hiddenProcTexts );
 
-        ipcMain.on( 'push-recap:hidden:set',
+        ipcMain.on( 'push-recaps:hidden:set',
             /**
              * Hides or shows a push recap message, and tells the windows that show it.
              *
