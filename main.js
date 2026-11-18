@@ -389,6 +389,10 @@ const checkCombatGroups = () => {
 // --== App Initialization ==--
 // --========================--
 
+if ( process.argv?.includes( '--no-trigger-prefilter' ) ) {
+    process.env.NAG_NO_TRIGGER_PREFILTER = '1';
+}
+
 if ( process.argv?.length > 1 && process.argv.includes( '--no-gpu' ) ) {
     
     log.info( '[main:app-initialization] Disabling hardware acceleration. --no-gpu' );
