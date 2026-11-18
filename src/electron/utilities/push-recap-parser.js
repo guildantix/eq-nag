@@ -11,23 +11,44 @@ const interruptGraceMs = 1000;
 const landingGraceMs = 3000;
 const monthIndex = { Jan: 0, Feb: 1, Mar: 2, Apr: 3, May: 4, Jun: 5, Jul: 6, Aug: 7, Sep: 8, Oct: 9, Nov: 10, Dec: 11 };
 
-// Lines that can matter are kept; everything else is dropped before any other work.
+// Lines that can matter are kept, e.g. "Soandso hit a gnoll for 5 points of magic damage by
+// Color Flux."; everything else is dropped before any other work.
 const prefilterRgx = / points of | damage from | hit | slain|casting|interrupted|fizzles|resisted/;
 
 // The damage patterns mirror the ones in the combat parser.
 const rgx = {
+    // Soandso slashes a gnoll for 5 points of damage.
     MeleeDamage: /^(?<actor>.*?) (?<attackType>(?:b(?:a(?:ckstabs?|sh(?:es)?)|ites?))|c(?:laws?|rush(?:es)?)|frenz(?:y|ies)|gores?|hits?|kicks?|mauls?|p(?:ierces?|unch(?:es)?)|rends?|s(?:hoots?|l(?:a(?:ms?|sh(?:es)?)|ices?)|mash(?:es)?|t(?:ings?|rikes?)|weeps?)) (on\s)?(?<target>.*) for (?<damage>[0-9]*) points of damage\./i,
+    // Soandso hit a gnoll for 5 points of magic damage by Color Flux.
     DirectDamage: /^(?<actor>.*) hit (?<target>.*) for (?<damage>[0-9]*) points of (?<resistType>[a-zA-Z0-9_]*) damage by (?<attackType>.*)\./i,
+    // A gnoll has taken 5 damage from your Pyre of Va Xakra.
     YourDoT: /^(?<target>.*) has taken (?<damage>[0-9]*) damage from (?<actor>you)r (?<attackType>.*)\./i,
+    // A gnoll has taken 5 damage from Pyre of Va Xakra by Soandso.
     OtherDoT: /^(?<target>.*) (has|have) taken (?<damage>[0-9]*) damage from (?<attackType>.*) by (?<actor>.*)\./i,
+    // A gnoll was slain by Soandso!
     Slain: /^(?<target>.+?) (?<verb>was|has been|have been) slain by (?<actor>.+?)!/,
+    // You have slain a gnoll!
     YouHaveSlain: /^You have slain (?<target>.+?)!/,
+    // Soandso begins casting Color Flux.
     Cast: /^(?:You begin|(?<actor>.+?) begins) casting (?<spell>.+)\.$/,
+    // Soandso's casting is interrupted!
     OtherInterrupt: /^(?<actor>.+?)'s (?:casting is interrupted|spell fizzles)!$/,
+    // Your target resisted the Color Flux spell.
     Resisted: /^Your target resisted the (?<spell>.+) spell\.$/,
+    // Soandso
     PlayerName: /^[A-Z][a-z]+$/,
+    // Soandso`s pet
     PetName: /^(?<owner>[A-Z][a-z]+)`s (?:pet|warder|familiar)$/,
 };
+
+
+
+
+
+
+
+
+
 
 /**
  * @typedef {Object} PushSession
@@ -36,7 +57,8 @@ const rgx = {
  * @property {string[]} lines The kept log lines, oldest first.
  * @property {number[]} times The time of each kept line, in ms.
  * @property {number} oldestTime The time of the oldest timestamped line read, in ms.
- * @property {boolean} reachedStart True when the read got to the start of the log file inside the lookback window.
+ * @property {boolean} reachedStart True when the read got to the start of the log file
+ *     inside the lookback window.
  */
 
 /**
@@ -51,11 +73,14 @@ function parseTimestamp( line ) {
     if ( line.length < textOffset || line.charCodeAt( 0 ) !== 91 || line.charCodeAt( 25 ) !== 93 ) {
         return NaN;
     }
-    let month = monthIndex[ line.substring( 5, 8 ) ];
+    const month = monthIndex[ line.substring( 5, 8 ) ];
     if ( month === undefined ) {
         return NaN;
     }
-    return Date.UTC( +line.substring( 21, 25 ), month, +line.substring( 9, 11 ), +line.substring( 12, 14 ), +line.substring( 15, 17 ), +line.substring( 18, 20 ) );
+    return Date.UTC(
+        +line.substring( 21, 25 ), month, +line.substring( 9, 11 ),
+        +line.substring( 12, 14 ), +line.substring( 15, 17 ), +line.substring( 18, 20 )
+    );
 }
 
 
@@ -90,20 +115,21 @@ function formatClock( ms ) {
 /**
  * Builds the lookup used to recognize spell landing messages.
  *
- * @returns {{ map: Map<string, string[]>, suffixes: Set<string>, suffixLength: number }} The landing index.
+ * @returns {{ map: Map<string, string[]>, suffixes: Set<string>,
+ *     suffixLength: number }} The landing index.
  *
  * @param {import('../data/push-spells').PushSpellTable} table The push spell table.
  */
 function buildLandingIndex( table ) {
-    let map = new Map();
+    const map = new Map();
     let minLength = 8;
-    let add = ( name, spell ) => {
+    const add = ( name, spell ) => {
         if ( !spell.landText ) {
             return;
         }
-        let base = stripRank( name );
-        let list = map.get( spell.landText );
-        if ( list == null ) {
+        const base = stripRank( name );
+        const list = map.get( spell.landText );
+        if ( list === null || list === undefined ) {
             map.set( spell.landText, [ base ] );
         } else if ( list.indexOf( base ) === -1 ) {
             list.push( base );
@@ -113,7 +139,7 @@ function buildLandingIndex( table ) {
     Object.keys( table.spells ).forEach( name => add( name, table.spells[ name ] ) );
     Object.keys( table.exact ).forEach( name => add( name, table.exact[ name ] ) );
 
-    let suffixes = new Set();
+    const suffixes = new Set();
     map.forEach( ( names, text ) => suffixes.add( text.slice( -minLength ) ) );
 
     return { map: map, suffixes: suffixes, suffixLength: minLength };
@@ -140,40 +166,40 @@ function buildLandingIndex( table ) {
  */
 async function readSession( logFilePath, characterName, landing ) {
 
-    let lines = [];
-    let times = [];
+    const lines = [];
+    const times = [];
     let anchorTime = null;
     let newestTime = null;
     let oldestTime = null;
     let reachedStart = true;
-    let hotkeyLine = `${characterName}${hotkeyText}`;
+    const hotkeyLine = `${characterName}${hotkeyText}`;
 
-    let handle = await fs.promises.open( logFilePath, 'r' );
+    const handle = await fs.promises.open( logFilePath, 'r' );
     try {
         let position = ( await handle.stat() ).size;
         let leftover = null;
         let done = false;
 
         while ( position > 0 && !done ) {
-            let length = Math.min( chunkSize, position );
+            const length = Math.min( chunkSize, position );
             position -= length;
 
-            let chunk = Buffer.allocUnsafe( length );
+            const chunk = Buffer.allocUnsafe( length );
             let read = 0;
             while ( read < length ) {
-                let result = await handle.read( chunk, read, length - read, position + read );
+                const result = await handle.read( chunk, read, length - read, position + read );
                 if ( result.bytesRead === 0 ) {
                     break;
                 }
                 read += result.bytesRead;
             }
 
-            let combined = leftover ? Buffer.concat( [ chunk, leftover ] ) : chunk;
+            const combined = leftover ? Buffer.concat( [ chunk, leftover ] ) : chunk;
             let region = combined;
 
             if ( position > 0 ) {
                 // The first line of the chunk may continue in the previous chunk.
-                let newline = combined.indexOf( 10 );
+                const newline = combined.indexOf( 10 );
                 if ( newline === -1 ) {
                     leftover = combined;
                     continue;
@@ -184,7 +210,7 @@ async function readSession( logFilePath, characterName, landing ) {
                 leftover = null;
             }
 
-            let chunkLines = region.toString( 'latin1' ).split( '\n' );
+            const chunkLines = region.toString( 'latin1' ).split( '\n' );
 
             for ( let i = chunkLines.length - 1; i >= 0; i-- ) {
                 let line = chunkLines[ i ];
@@ -192,7 +218,7 @@ async function readSession( logFilePath, characterName, landing ) {
                     line = line.substring( 0, line.length - 1 );
                 }
 
-                let time = parseTimestamp( line );
+                const time = parseTimestamp( line );
                 if ( time !== time ) {
                     continue;
                 }
@@ -201,7 +227,7 @@ async function readSession( logFilePath, characterName, landing ) {
                 }
 
                 if ( anchorTime === null && line.endsWith( hotkeyText ) ) {
-                    let text = line.substring( textOffset );
+                    const text = line.substring( textOffset );
                     if ( text === hotkeyLine || text === `~ ${hotkeyLine}` ) {
                         // Anything after the hotkey press is not part of the recap.
                         anchorTime = time;
@@ -232,7 +258,14 @@ async function readSession( logFilePath, characterName, landing ) {
     lines.reverse();
     times.reverse();
 
-    return { characterName: characterName, anchorTime: anchorTime ?? newestTime, lines: lines, times: times, oldestTime: oldestTime, reachedStart: reachedStart };
+    return {
+        characterName: characterName,
+        anchorTime: anchorTime ?? newestTime,
+        lines: lines,
+        times: times,
+        oldestTime: oldestTime,
+        reachedStart: reachedStart
+    };
 }
 
 
@@ -273,14 +306,14 @@ async function readSession( logFilePath, characterName, landing ) {
  */
 function summarize( session ) {
 
-    let damage = new Map();
-    let candidates = [];
-    let npcNames = new Set();
-    let actorTargets = new Map();
+    const damage = new Map();
+    const candidates = [];
+    const npcNames = new Set();
+    const actorTargets = new Map();
     let othersSeen = false;
 
     for ( let i = 0; i < session.lines.length; i++ ) {
-        let text = session.lines[ i ].substring( textOffset );
+        const text = session.lines[ i ].substring( textOffset );
         let m = null;
 
         if ( text.indexOf( ' points of ' ) > -1 ) {
@@ -289,8 +322,8 @@ function summarize( session ) {
             m = rgx.YourDoT.exec( text ) ?? rgx.OtherDoT.exec( text );
         } else if ( text.indexOf( ' slain' ) > -1 ) {
             m = rgx.Slain.exec( text ) ?? rgx.YouHaveSlain.exec( text );
-            if ( m != null ) {
-                let target = m.groups.target;
+            if ( m !== null && m !== undefined ) {
+                const target = m.groups.target;
                 candidates.push( { index: i, time: session.times[ i ], name: target, killer: m.groups.actor ?? 'You', certain: m.groups.verb !== 'has been' && m.groups.verb !== 'have been', damage: damage.get( target ) ?? 0 } );
                 damage.delete( target );
             }
@@ -299,13 +332,13 @@ function summarize( session ) {
             continue;
         }
 
-        if ( m != null ) {
-            let target = m.groups.target;
-            let actor = m.groups.actor;
+        if ( m !== null && m !== undefined ) {
+            const target = m.groups.target;
+            const actor = m.groups.actor;
             damage.set( target, ( damage.get( target ) ?? 0 ) + +m.groups.damage );
 
-            let actorMine = actor === 'You' || rgx.PetName.test( actor );
-            let targetMine = target === 'You' || rgx.PetName.test( target );
+            const actorMine = actor === 'You' || rgx.PetName.test( actor );
+            const targetMine = target === 'You' || rgx.PetName.test( target );
             if ( actorMine && !targetMine ) {
                 npcNames.add( target );
             } else if ( targetMine && !actorMine ) {
@@ -314,7 +347,7 @@ function summarize( session ) {
 
             if ( rgx.PlayerName.test( actor ) ) {
                 let targets = actorTargets.get( actor );
-                if ( targets == null ) {
+                if ( targets === null || targets === undefined ) {
                     targets = new Set();
                     actorTargets.set( actor, targets );
                 }
@@ -327,11 +360,12 @@ function summarize( session ) {
         }
     }
 
-    // "was slain by" is an NPC kill.  Servers that word every death "has been slain by" are trusted only when a
-    // player-side name did the killing, so a wipe is never listed as kills.
-    let slain = new Set();
+    // "was slain by" is an NPC kill.  Servers that word every death "has been slain by"
+    // are trusted only when a player-side name did the killing, so a wipe is never
+    // listed as kills.
+    const slain = new Set();
     let kills = [];
-    let fallback = [];
+    const fallback = [];
     candidates.forEach( k => {
         if ( !k.certain ) {
             fallback.push( k );
@@ -348,13 +382,17 @@ function summarize( session ) {
         }
     } );
 
-    let playerNames = new Set();
+    const playerNames = new Set();
     actorTargets.forEach( ( targets, actor ) => {
-        targets.forEach( t => npcNames.has( t ) && playerNames.add( actor ) );
+        targets.forEach( t => {
+            if ( npcNames.has( t ) ) {
+                playerNames.add( actor );
+            }
+        } );
     } );
 
     fallback.forEach( k => {
-        let playerSide = npcNames.has( k.name ) || k.killer === 'You' || rgx.PetName.test( k.killer ) || ( playerNames.has( k.killer ) && !npcNames.has( k.killer ) );
+        const playerSide = npcNames.has( k.name ) || k.killer === 'You' || rgx.PetName.test( k.killer ) || ( playerNames.has( k.killer ) && !npcNames.has( k.killer ) );
         if ( k.name !== 'You' && !rgx.PetName.test( k.name ) && playerSide ) {
             slain.add( k.name );
             npcNames.add( k.name );
@@ -362,15 +400,23 @@ function summarize( session ) {
         }
     } );
 
-    kills = kills.sort( ( x, y ) => x.index - y.index ).map( k => ( { index: k.index, time: k.time, clock: formatClock( k.time ), name: k.name, damage: k.damage } ) );
+    kills = kills.sort( ( x, y ) => x.index - y.index ).map( k => ( {
+        index: k.index, time: k.time, clock: formatClock( k.time ), name: k.name, damage: k.damage
+    } ) );
 
     kills.reverse();
-    let largest = kills.reduce( ( max, k ) => Math.max( max, k.damage ), 0 );
+    const largest = kills.reduce( ( max, k ) => Math.max( max, k.damage ), 0 );
 
     let defaultKill = kills.findIndex( k => k.damage > 0 && k.damage >= largest * bigFightRatio );
     defaultKill = defaultKill === -1 ? 0 : defaultKill;
 
-    return { kills: kills.slice( 0, Math.max( maxFightList, defaultKill + 1 ) ), defaultKill: defaultKill, slain: slain, npcNames: npcNames, othersSeen: othersSeen };
+    return {
+        kills: kills.slice( 0, Math.max( maxFightList, defaultKill + 1 ) ),
+        defaultKill: defaultKill,
+        slain: slain,
+        npcNames: npcNames,
+        othersSeen: othersSeen
+    };
 }
 
 
@@ -397,7 +443,7 @@ function resolvePlayer( actor, ctx ) {
     let name = actor;
     if ( !rgx.PlayerName.test( name ) ) {
         name = rgx.PetName.exec( actor )?.groups.owner;
-        if ( name == null ) {
+        if ( name === null || name === undefined ) {
             return null;
         }
     }
@@ -433,20 +479,20 @@ function roundPush( value ) {
 
 
 
-
 /**
  * Describes a weapon proc whose landing message names no caster.
  *
- * @returns {{ name: string, names: string[], push: number | null, pushMin: number | null, pushMax: number | null, count: number }} The proc.
+ * @returns {{ name: string, names: string[], push: number | null, pushMin: number | null,
+ *     pushMax: number | null, count: number }} The proc.
  *
  * @param {string[]} names The candidate spell names of the landing message.
  * @param {any} table The push spell table.
  */
 function buildProc( names, table ) {
-    let pushes = names.map( n => table.spells[ n ]?.push ).filter( p => p != null );
-    let pushMin = pushes.length > 0 ? Math.min( ...pushes ) : null;
-    let pushMax = pushes.length > 0 ? Math.max( ...pushes ) : null;
-    let name = names.length <= 3 ? names.join( ' / ' ) : `${names[ 0 ]} +${names.length - 1} more`;
+    const pushes = names.map( n => table.spells[ n ]?.push ).filter( p => ( p !== null && p !== undefined ) );
+    const pushMin = pushes.length > 0 ? Math.min( ...pushes ) : null;
+    const pushMax = pushes.length > 0 ? Math.max( ...pushes ) : null;
+    const name = names.length <= 3 ? names.join( ' / ' ) : `${names[ 0 ]} +${names.length - 1} more`;
     return { name: name, names: names, push: pushMin === pushMax ? pushMin : null, pushMin: pushMin, pushMax: pushMax, count: 0 };
 }
 
@@ -466,7 +512,8 @@ function buildProc( names, table ) {
  * @property {number} confirmed The number of confirmed events.
  * @property {number} assumed The number of assumed events.
  * @property {number} pushValue The summed push value.
- * @property {{ name: string, confirmed: number, assumed: number, push: number }[]} spells The spells, most used first.
+ * @property {{ name: string, confirmed: number, assumed: number, push: number }[]} spells
+ *     The spells, most used first.
  */
 
 /**
@@ -494,8 +541,17 @@ function involvesBoss( text, boss, landing ) {
     } else if ( text.startsWith( boss ) ) {
         return landing.map.has( text.substring( boss.length ) );
     }
-    return m != null && ( m.groups.actor === boss || m.groups.target === boss );
+    return ( m !== null && m !== undefined ) && ( m.groups.actor === boss || m.groups.target === boss );
 }
+
+
+
+
+
+
+
+
+
 
 /**
  * Counts who pushed the given kill.
@@ -511,9 +567,9 @@ function involvesBoss( text, boss, landing ) {
  */
 function analyzeKill( session, summary, table, landing, kill, quietGapSeconds ) {
 
-    let boss = kill.name;
-    let ctx = { characterName: session.characterName, boss: boss, npcNames: summary.npcNames };
-    let gapMs = quietGapSeconds * 1000;
+    const boss = kill.name;
+    const ctx = { characterName: session.characterName, boss: boss, npcNames: summary.npcNames };
+    const gapMs = quietGapSeconds * 1000;
 
     // The fight starts at the earliest line about the boss, with no quiet gap in between.
     let startIndex = kill.index;
@@ -528,43 +584,43 @@ function analyzeKill( session, summary, table, landing, kill, quietGapSeconds ) 
         }
     }
 
-    let events = [];
-    let lastCast = new Map();
-    let unattributed = { events: 0, pushValue: 0 };
-    let unattributedProcs = new Map();
-    let npcAbilities = new Map();
+    const events = [];
+    const lastCast = new Map();
+    const unattributed = { events: 0, pushValue: 0 };
+    const unattributedProcs = new Map();
+    const npcAbilities = new Map();
 
-    let cancelCast = ( player, time ) => {
-        let ev = lastCast.get( player );
-        if ( ev != null && ev.state !== 'cancelled' && time - ev.time <= ev.castTime + interruptGraceMs ) {
+    const cancelCast = ( player, time ) => {
+        const ev = lastCast.get( player );
+        if ( ev !== null && ev !== undefined && ev.state !== 'cancelled' && time - ev.time <= ev.castTime + interruptGraceMs ) {
             ev.state = 'cancelled';
         }
         lastCast.delete( player );
     };
 
     for ( let i = startIndex; i < kill.index; i++ ) {
-        let text = session.lines[ i ].substring( textOffset );
-        let time = session.times[ i ];
+        const text = session.lines[ i ].substring( textOffset );
+        const time = session.times[ i ];
         let m = null;
 
-        if ( text.indexOf( ' damage by ' ) > -1 && ( m = rgx.DirectDamage.exec( text ) ) != null ) {
-            let spellName = m.groups.attackType;
-            let spell = findPushSpell( table, spellName );
-            if ( spell == null ) {
+        if ( text.indexOf( ' damage by ' ) > -1 && ( m = rgx.DirectDamage.exec( text ) ) !== null ) {
+            const spellName = m.groups.attackType;
+            const spell = findPushSpell( table, spellName );
+            if ( spell === null || spell === undefined ) {
                 continue;
             }
-            let player = resolvePlayer( m.groups.actor, ctx );
-            if ( player == null ) {
-                let key = `${m.groups.actor}\u0000${spellName}`;
-                let entry = npcAbilities.get( key ) ?? { actor: m.groups.actor, name: spellName, count: 0, push: spell.push };
+            const player = resolvePlayer( m.groups.actor, ctx );
+            if ( player === null || player === undefined ) {
+                const key = `${m.groups.actor}\u0000${spellName}`;
+                const entry = npcAbilities.get( key ) ?? { actor: m.groups.actor, name: spellName, count: 0, push: spell.push };
                 entry.count++;
                 npcAbilities.set( key, entry );
             } else if ( m.groups.target === boss ) {
                 // A cast waiting for its landing becomes this damage event.
-                let base = stripRank( spellName );
+                const base = stripRank( spellName );
                 let pending = null;
                 for ( let j = events.length - 1; j >= 0; j-- ) {
-                    let ev = events[ j ];
+                    const ev = events[ j ];
                     if ( time - ev.time > ev.castTime + landingGraceMs + 10000 ) {
                         break;
                     }
@@ -573,7 +629,7 @@ function analyzeKill( session, summary, table, landing, kill, quietGapSeconds ) 
                         break;
                     }
                 }
-                if ( pending != null ) {
+                if ( pending !== null && pending !== undefined ) {
                     pending.kind = 'damage';
                     pending.state = 'confirmed';
                     pending.time = time;
@@ -585,43 +641,43 @@ function analyzeKill( session, summary, table, landing, kill, quietGapSeconds ) 
                 }
             }
 
-        } else if ( text.indexOf( 'casting' ) > -1 && ( m = rgx.Cast.exec( text ) ) != null ) {
-            let player = resolvePlayer( m.groups.actor ?? 'You', ctx );
-            if ( player == null ) {
+        } else if ( text.indexOf( 'casting' ) > -1 && ( m = rgx.Cast.exec( text ) ) !== null ) {
+            const player = resolvePlayer( m.groups.actor ?? 'You', ctx );
+            if ( player === null || player === undefined ) {
                 continue;
             }
-            let spell = findPushSpell( table, m.groups.spell );
-            if ( spell == null ) {
+            const spell = findPushSpell( table, m.groups.spell );
+            if ( spell === null || spell === undefined ) {
                 lastCast.set( player, null );
                 continue;
             }
-            let ev = { kind: 'cast', state: 'assumed', time: time, castTime: spell.castTime, player: player, spellName: m.groups.spell, spell: spell, landed: false };
+            const ev = { kind: 'cast', state: 'assumed', time: time, castTime: spell.castTime, player: player, spellName: m.groups.spell, spell: spell, landed: false };
             events.push( ev );
             lastCast.set( player, ev );
 
         } else if ( text === 'Your spell is interrupted.' || text === 'Your spell fizzles!' ) {
             cancelCast( ctx.characterName, time );
 
-        } else if ( text.indexOf( "'s " ) > -1 && ( m = rgx.OtherInterrupt.exec( text ) ) != null ) {
-            let player = resolvePlayer( m.groups.actor, ctx );
-            if ( player != null ) {
+        } else if ( text.indexOf( "'s " ) > -1 && ( m = rgx.OtherInterrupt.exec( text ) ) !== null ) {
+            const player = resolvePlayer( m.groups.actor, ctx );
+            if ( player !== null && player !== undefined ) {
                 cancelCast( player, time );
             }
 
-        } else if ( text.indexOf( 'resisted' ) > -1 && ( m = rgx.Resisted.exec( text ) ) != null ) {
-            let ev = lastCast.get( ctx.characterName );
-            if ( ev != null && stripRank( ev.spellName ) === stripRank( m.groups.spell ) ) {
+        } else if ( text.indexOf( 'resisted' ) > -1 && ( m = rgx.Resisted.exec( text ) ) !== null ) {
+            const ev = lastCast.get( ctx.characterName );
+            if ( ev !== null && ev !== undefined && stripRank( ev.spellName ) === stripRank( m.groups.spell ) ) {
                 cancelCast( ctx.characterName, time );
             }
 
         } else if ( text.startsWith( boss ) ) {
-            let names = landing.map.get( text.substring( boss.length ) );
-            if ( names == null ) {
+            const names = landing.map.get( text.substring( boss.length ) );
+            if ( names === null || names === undefined ) {
                 continue;
             }
             let matched = false;
             for ( let j = events.length - 1; j >= 0; j-- ) {
-                let ev = events[ j ];
+                const ev = events[ j ];
                 if ( time - ev.time > ev.castTime + landingGraceMs + 10000 ) {
                     break;
                 }
@@ -635,9 +691,9 @@ function analyzeKill( session, summary, table, landing, kill, quietGapSeconds ) 
             if ( !matched ) {
                 unattributed.events++;
                 unattributed.pushValue += table.spells[ names[ 0 ] ]?.push ?? 0;
-                let key = text.substring( boss.length );
+                const key = text.substring( boss.length );
                 let proc = unattributedProcs.get( key );
-                if ( proc == null ) {
+                if ( proc === null || proc === undefined ) {
                     proc = buildProc( names, table );
                     unattributedProcs.set( key, proc );
                 }
@@ -646,19 +702,19 @@ function analyzeKill( session, summary, table, landing, kill, quietGapSeconds ) 
         }
     }
 
-    /** @type {Map<string, PushPlayer>} */
-    let players = new Map();
+    // Keyed by player name.
+    const players = new Map();
     events.forEach( ev => {
         if ( ev.state === 'cancelled' ) {
             return;
         }
         let player = players.get( ev.player );
-        if ( player == null ) {
+        if ( player === null || player === undefined ) {
             player = { name: ev.player, events: 0, confirmed: 0, assumed: 0, pushValue: 0, spells: [] };
             players.set( ev.player, player );
         }
         let spell = player.spells.find( s => s.name === ev.spellName );
-        if ( spell == null ) {
+        if ( spell === null || spell === undefined ) {
             spell = { name: ev.spellName, confirmed: 0, assumed: 0, push: ev.spell.push };
             player.spells.push( spell );
         }
@@ -673,15 +729,15 @@ function analyzeKill( session, summary, table, landing, kill, quietGapSeconds ) 
         }
     } );
 
-    let list = Array.from( players.values() );
+    const list = Array.from( players.values() );
     list.forEach( p => {
         p.pushValue = roundPush( p.pushValue );
         p.spells.sort( ( a, b ) => ( b.confirmed + b.assumed ) - ( a.confirmed + a.assumed ) );
     } );
     list.sort( ( a, b ) => b.events - a.events || a.name.localeCompare( b.name ) );
 
-    let totalEvents = list.reduce( ( sum, p ) => sum + p.events, 0 );
-    let totalPush = roundPush( list.reduce( ( sum, p ) => sum + p.pushValue, 0 ) );
+    const totalEvents = list.reduce( ( sum, p ) => sum + p.events, 0 );
+    const totalPush = roundPush( list.reduce( ( sum, p ) => sum + p.pushValue, 0 ) );
 
     return {
         boss: boss,

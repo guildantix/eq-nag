@@ -61,7 +61,8 @@ function formatDuration( seconds ) {
 
 
 /**
- * Describes the spells of a player, e.g. Color Flux XVIII (push 0.5) ×71, Docility XII (push 0.5) ~×25.
+ * Describes the spells of a player, e.g. Color Flux XVIII (push 0.5) ×71,
+ * Docility XII (push 0.5) ~×25.
  *
  * @returns {string} The description.
  *
@@ -70,7 +71,7 @@ function formatDuration( seconds ) {
  */
 function describeSources( player, max ) {
     return player.spells.slice( 0, max ).map( s => {
-        let counts = [];
+        const counts = [];
         if ( s.confirmed > 0 ) {
             counts.push( `×${s.confirmed}` );
         }
@@ -98,10 +99,10 @@ function describeSources( player, max ) {
  * @param {any} proc The proc.
  */
 function formatProcPush( proc ) {
-    if ( proc.pushMin == null ) {
+    if ( proc.pushMin === null || proc.pushMin === undefined ) {
         return '—';
     }
-    return proc.push != null ? `${proc.push}` : `${proc.pushMin}–${proc.pushMax}`;
+    return ( proc.push !== null && proc.push !== undefined ) ? `${proc.push}` : `${proc.pushMin}–${proc.pushMax}`;
 }
 
 
@@ -121,11 +122,11 @@ function formatProcPush( proc ) {
  * @param {any} proc The proc.
  */
 function formatProcTotal( proc ) {
-    if ( proc.pushMin == null ) {
+    if ( proc.pushMin === null || proc.pushMin === undefined ) {
         return '—';
     }
-    let round = value => Math.round( value * 100 ) / 100;
-    return proc.push != null ? `${round( proc.count * proc.push )}` : `~${round( proc.count * proc.pushMin )}–${round( proc.count * proc.pushMax )}`;
+    const round = value => Math.round( value * 100 ) / 100;
+    return ( proc.push !== null && proc.push !== undefined ) ? `${round( proc.count * proc.push )}` : `~${round( proc.count * proc.pushMin )}–${round( proc.count * proc.pushMax )}`;
 }
 
 
@@ -145,16 +146,16 @@ function formatProcTotal( proc ) {
  * @param {any} result The recap result.
  */
 function buildSummaryText( result ) {
-    let lines = [
+    const lines = [
         `Push Recap - ${result.boss}, killed ${result.killClock}, fight ${formatDuration( result.durationSeconds )}`,
         `${result.totalEvents} push hits, ${result.players.length} players pushing`,
     ];
     result.players.forEach( ( p, i ) => {
-        let share = result.totalEvents > 0 ? Math.round( p.events * 100 / result.totalEvents ) : 0;
+        const share = result.totalEvents > 0 ? Math.round( p.events * 100 / result.totalEvents ) : 0;
         lines.push( `${i + 1}. ${p.name} - ${p.events} (${share}%)${p.assumed > 0 ? ` ~${p.assumed} assumed` : ''}` );
     } );
     if ( result.unattributed.events > 0 ) {
-        let top = result.unattributed.procs.slice( 0, 5 ).map( p => `${p.name} ${p.count}` ).join( ', ' );
+        const top = result.unattributed.procs.slice( 0, 5 ).map( p => `${p.name} ${p.count}` ).join( ', ' );
         lines.push( `Procs with no player named: ${result.unattributed.events} (${top})` );
     }
     return lines.join( '\n' );
@@ -179,11 +180,11 @@ function buildSummaryText( result ) {
  * @param {string | null} text The text content.
  */
 function el( tag, className, text ) {
-    let node = document.createElement( tag );
+    const node = document.createElement( tag );
     if ( className ) {
         node.className = className;
     }
-    if ( text != null ) {
+    if ( text !== null && text !== undefined ) {
         node.textContent = text;
     }
     return node;
@@ -205,7 +206,7 @@ function el( tag, className, text ) {
  * @param {boolean} isError True when the message is an error.
  */
 function showMessage( text, isError ) {
-    let message = document.getElementById( 'message' );
+    const message = document.getElementById( 'message' );
     message.textContent = text;
     message.className = isError ? 'message error' : 'message';
     message.hidden = false;
@@ -239,24 +240,24 @@ function render( result ) {
     document.getElementById( 'tilePlayers' ).textContent = `${result.players.length}`;
     document.getElementById( 'tileValue' ).textContent = `${result.totalPush}`;
 
-    let rows = document.getElementById( 'playerRows' );
+    const rows = document.getElementById( 'playerRows' );
     rows.textContent = '';
     result.players.forEach( p => {
-        let share = result.totalEvents > 0 ? p.events * 100 / result.totalEvents : 0;
-        let tr = el( 'tr' );
+        const share = result.totalEvents > 0 ? p.events * 100 / result.totalEvents : 0;
+        const tr = el( 'tr' );
         tr.appendChild( el( 'td', 'player', p.name ) );
 
-        let events = el( 'td', 'num', `${p.events}` );
+        const events = el( 'td', 'num', `${p.events}` );
         if ( p.assumed > 0 ) {
             events.appendChild( el( 'span', 'assumed', ` ~${p.assumed}` ) );
         }
         tr.appendChild( events );
 
-        let bar = el( 'span' );
+        const bar = el( 'span' );
         bar.style.width = `${share}%`;
-        let shareCell = el( 'td' );
-        let shareBox = el( 'div', 'share' );
-        let barBox = el( 'div', 'bar' );
+        const shareCell = el( 'td' );
+        const shareBox = el( 'div', 'share' );
+        const barBox = el( 'div', 'bar' );
         barBox.appendChild( bar );
         shareBox.appendChild( barBox );
         shareBox.appendChild( el( 'div', 'pct', `${Math.round( share )}%` ) );
@@ -269,19 +270,19 @@ function render( result ) {
     } );
 
     if ( result.players.length === 0 ) {
-        let tr = el( 'tr' );
-        let cell = el( 'td', null, 'No push events were found in this fight.' );
+        const tr = el( 'tr' );
+        const cell = el( 'td', null, 'No push events were found in this fight.' );
         cell.colSpan = 5;
         tr.appendChild( cell );
         rows.appendChild( tr );
     }
 
     document.getElementById( 'procs' ).hidden = result.unattributed.procs.length === 0;
-    let procRows = document.getElementById( 'procRows' );
+    const procRows = document.getElementById( 'procRows' );
     procRows.textContent = '';
     result.unattributed.procs.forEach( p => {
-        let tr = el( 'tr' );
-        let name = el( 'td', null, p.name );
+        const tr = el( 'tr' );
+        const name = el( 'td', null, p.name );
         if ( p.names.length > 1 ) {
             name.title = p.names.join( ', ' );
         }
@@ -294,14 +295,14 @@ function render( result ) {
 
     document.getElementById( 'othersHint' ).hidden = result.othersSeen;
 
-    let cutOffHint = document.getElementById( 'cutOffHint' );
+    const cutOffHint = document.getElementById( 'cutOffHint' );
     cutOffHint.hidden = !result.startsAtLogEdge;
     cutOffHint.textContent = result.reachedStart ? 'The log starts during this fight, so earlier pushes are missing.' : 'This fight began more than 30 minutes before the hotkey, so earlier pushes are not counted.';
 
-    let npcRows = document.getElementById( 'npcRows' );
+    const npcRows = document.getElementById( 'npcRows' );
     npcRows.textContent = '';
     result.npcAbilities.forEach( a => {
-        let tr = el( 'tr' );
+        const tr = el( 'tr' );
         tr.appendChild( el( 'td', null, a.actor ) );
         tr.appendChild( el( 'td', null, a.name ) );
         tr.appendChild( el( 'td', 'num', `${a.count}` ) );
@@ -309,8 +310,8 @@ function render( result ) {
         npcRows.appendChild( tr );
     } );
     if ( result.npcAbilities.length === 0 ) {
-        let tr = el( 'tr' );
-        let cell = el( 'td', null, 'No NPC push abilities were found in this fight.' );
+        const tr = el( 'tr' );
+        const cell = el( 'td', null, 'No NPC push abilities were found in this fight.' );
         cell.colSpan = 4;
         tr.appendChild( cell );
         npcRows.appendChild( tr );
@@ -330,7 +331,8 @@ function render( result ) {
  * The push recap screen.  Reads the spell data and the end of the log once, then
  * only recounts when another fight is picked.
  *
- * @param {{ logFilePath: string, characterName: string, eqFolder: string, userData: string, quietGapSeconds: number }} params The window parameters.
+ * @param {{ logFilePath: string, characterName: string, eqFolder: string, userData: string,
+ *     quietGapSeconds: number }} params The window parameters.
  */
 async function PushRecap( params ) {
 
@@ -338,11 +340,11 @@ async function PushRecap( params ) {
     document.getElementById( 'closeButton' ).addEventListener( 'click', () => ipcRenderer.send( 'window:child:close' ) );
     document.getElementById( 'npcToggle' ).addEventListener( 'change', e => document.getElementById( 'npcAbilities' ).hidden = !e.target.checked );
 
-    let quietGapSeconds = params.quietGapSeconds >= 5 && params.quietGapSeconds <= 300 ? params.quietGapSeconds : 30;
+    const quietGapSeconds = params.quietGapSeconds >= 5 && params.quietGapSeconds <= 300 ? params.quietGapSeconds : 30;
     let result = null;
 
     document.getElementById( 'copyButton' ).addEventListener( 'click', () => {
-        if ( result != null ) {
+        if ( result !== null && result !== undefined ) {
             ipcRenderer.send( 'clipboard:writeText', buildSummaryText( result ) );
             document.getElementById( 'copyButton' ).textContent = 'Copied';
         }
@@ -350,28 +352,28 @@ async function PushRecap( params ) {
 
     try {
         showMessage( 'Loading spell data...', false );
-        let table = await loadPushSpells( params.eqFolder, params.userData );
-        let landing = buildLandingIndex( table );
+        const table = await loadPushSpells( params.eqFolder, params.userData );
+        const landing = buildLandingIndex( table );
 
         showMessage( 'Reading the log...', false );
-        let session = await readSession( params.logFilePath, params.characterName, landing );
-        let summary = summarize( session );
+        const session = await readSession( params.logFilePath, params.characterName, landing );
+        const summary = summarize( session );
 
         if ( summary.kills.length === 0 ) {
             showMessage( 'No kills were found in the 30 minutes of log before the hotkey.', false );
             return;
         }
 
-        let select = document.getElementById( 'fightSelect' );
+        const select = document.getElementById( 'fightSelect' );
         select.textContent = '';
         summary.kills.forEach( ( kill, i ) => {
-            let option = el( 'option', null, `${kill.name} · ${kill.clock} · ${formatDamage( kill.damage )} damage` );
+            const option = el( 'option', null, `${kill.name} · ${kill.clock} · ${formatDamage( kill.damage )} damage` );
             option.value = `${i}`;
             select.appendChild( option );
         } );
         select.value = `${summary.defaultKill}`;
 
-        let show = index => {
+        const show = index => {
             result = analyzeKill( session, summary, table, landing, summary.kills[ index ], quietGapSeconds );
             document.getElementById( 'copyButton' ).textContent = 'Copy summary';
             render( result );

@@ -378,7 +378,10 @@ export class SettingsComponent implements OnInit, OnDestroy {
         this.ipcService.getEnableQuickShareImports().subscribe( enabled => this.enableQuickShareImports = enabled );
         this.ipcService.getMinimizeToTrayOnLoad().subscribe( enabled => this.minimizeToTrayOnLoad = enabled );
         this.ipcService.getDeathRecapPreferences().subscribe( recapPrefs => this.deathRecapPreferences = recapPrefs ?? new DeathRecapPreferences() );
-        this.ipcService.getPushRecapPreferences().subscribe( recapPrefs => this.pushRecapPreferences = Object.assign( new PushRecapPreferences(), recapPrefs ) );
+        this.ipcService.getPushRecapPreferences().subscribe( recapPrefs => {
+            // Fills in defaults for fields an older saved file doesn't have yet.
+            this.pushRecapPreferences = Object.assign( new PushRecapPreferences(), recapPrefs );
+        } );
         this.ipcService.getEnableGlowOnStartup().subscribe( f => this.glowOnStartup = f );
         this.ipcService.getQuickShareAuthorsListType().subscribe( f => this.quickShareAuthorListType = f );
         this.ipcService.getQuickShareAuthorsList().subscribe( f => {
@@ -622,7 +625,7 @@ export class SettingsComponent implements OnInit, OnDestroy {
      * Builds the capture phrase for the push recap hotkey trigger.
      */
     private buildPushRecapCapturePhrase(): CapturePhrase {
-        let capturePhrase = new CapturePhrase();
+        const capturePhrase = new CapturePhrase();
         capturePhrase.phraseId = nagId();
         capturePhrase.requirePreviousPhrase = false;
         capturePhrase.useRegEx = true;
@@ -647,13 +650,13 @@ export class SettingsComponent implements OnInit, OnDestroy {
      * @param trigger The generated push recap trigger.
      */
     private applyPushRecapTrigger( trigger: TriggerModel ): void {
-        let capturePhrase = this.buildPushRecapCapturePhrase();
+        const capturePhrase = this.buildPushRecapCapturePhrase();
 
         trigger.name = 'Push Recap [Hotkey]';
         trigger.capturePhrases = [ capturePhrase ];
         trigger.enabled = this.pushRecapPreferences.enabled;
 
-        let action = new TriggerAction();
+        const action = new TriggerAction();
         action.phrases = [ capturePhrase.phraseId ];
         action.actionType = ActionTypes.DisplayPushRecap;
         action.actionId = nagId();
@@ -675,11 +678,11 @@ export class SettingsComponent implements OnInit, OnDestroy {
      */
     onPushRecapPrefsChange(): void {
 
-        if ( this.pushRecapPreferences.triggerId != null ) {
+        if ( this.pushRecapPreferences.triggerId !== null && this.pushRecapPreferences.triggerId !== undefined ) {
 
             this.ipcService.getTrigger( this.pushRecapPreferences.triggerId ).subscribe( trigger => {
 
-                if ( trigger == null ) {
+                if ( trigger === null || trigger === undefined ) {
                     // The generated trigger was deleted by the user.
                     this.pushRecapPreferences.triggerId = null;
                     this.onPushRecapPrefsChange();
@@ -699,7 +702,7 @@ export class SettingsComponent implements OnInit, OnDestroy {
             this.dialogService.showSelectTriggerFolderDialog( null, 'Select Trigger Folder', 'Select the folder that will contain the generated trigger.' ).subscribe( folderId => {
                 if ( folderId ) {
 
-                    let trigger = new TriggerModel();
+                    const trigger = new TriggerModel();
                     trigger.folderId = folderId;
                     this.applyPushRecapTrigger( trigger );
 
@@ -733,7 +736,7 @@ export class SettingsComponent implements OnInit, OnDestroy {
      * Saves changes to the push recap quiet gap.
      */
     onPushRecapGapChange(): void {
-        let gap = Math.round( +this.pushRecapPreferences.quietGapSeconds );
+        const gap = Math.round( +this.pushRecapPreferences.quietGapSeconds );
         this.pushRecapPreferences.quietGapSeconds = isNaN( gap ) ? 30 : Math.min( 300, Math.max( 5, gap ) );
         this.ipcService.updatePushRecapPreferences( this.pushRecapPreferences );
     }

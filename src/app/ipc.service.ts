@@ -2695,12 +2695,38 @@ export class IpcService {
         window.api.ipc.send( 'settings:set:deathRecap', model );
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Saves the Push Recap settings in the main process.
+     *
+     * @param model The settings to store.
+     */
     public updatePushRecapPreferences( model: PushRecapPreferences ): void {
         window.api.ipc.send( 'settings:set:pushRecap', model );
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Asks the main process for the stored Push Recap settings.
+     */
     public getPushRecapPreferences(): Observable<PushRecapPreferences> {
-        let obs: Observable<PushRecapPreferences> = new Observable<PushRecapPreferences>( ( observer: Observer<PushRecapPreferences> ) => {
+        const obs: Observable<PushRecapPreferences> = new Observable<PushRecapPreferences>( ( observer ) => {
 
             window.api.ipc.once( 'settings:get:pushRecap', ( e, model: PushRecapPreferences ) => {
                 this.ngZone.run( () => {

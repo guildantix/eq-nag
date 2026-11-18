@@ -371,10 +371,11 @@ class WindowManager {
              * Loads the push recap for the last boss kill.
              *
              * @param {any} event Event args.
-             * @param {IpcMessage<{logFilePath: string, characterName: string, serverName: string}>} arg The log file and character.
+             * @param {IpcMessage<{logFilePath: string, characterName: string,
+             *     serverName: string}>} arg The log file and character.
              */
             ( event, arg ) => {
-                let value = arg?.value ?? {};
+                const value = arg?.value ?? {};
                 if ( typeof value.logFilePath !== 'string' || value.logFilePath.length === 0 ) {
                     return;
                 }
@@ -1338,10 +1339,10 @@ class WindowManager {
     loadPushRecap( logFilePath, characterName, serverName ) {
 
         let pushRecap = this.#pushRecap;
-        let recapPrefs = this.#userPrefDb.pushRecap;
-        let query = `logFilePath=${encodeURIComponent( logFilePath )}&characterName=${encodeURIComponent( characterName )}&eqFolder=${encodeURIComponent( this.#userPrefDb.everquestInstallFolder ?? '' )}&userData=${encodeURIComponent( app.getPath( 'userData' ) )}&quietGap=${encodeURIComponent( recapPrefs?.quietGapSeconds ?? 30 )}`;
+        const recapPrefs = this.#userPrefDb.pushRecap;
+        const query = `logFilePath=${encodeURIComponent( logFilePath )}&characterName=${encodeURIComponent( characterName )}&eqFolder=${encodeURIComponent( this.#userPrefDb.everquestInstallFolder ?? '' )}&userData=${encodeURIComponent( app.getPath( 'userData' ) )}&quietGap=${encodeURIComponent( recapPrefs?.quietGapSeconds ?? 30 )}`;
 
-        if ( pushRecap != null && !pushRecap.isDestroyed() ) {
+        if ( pushRecap !== null && pushRecap !== undefined && !pushRecap.isDestroyed() ) {
             if ( pushRecap.isMinimized() ) {
                 pushRecap.restore();
             }
@@ -1367,8 +1368,8 @@ class WindowManager {
             minimizable: true,
         } );
 
-        let size = { width: 1000, height: 720 };
-        let workAreaSize = screen.getPrimaryDisplay().workAreaSize;
+        const size = { width: 1000, height: 720 };
+        const workAreaSize = screen.getPrimaryDisplay().workAreaSize;
 
         pushRecap.setBounds( {
             width: size.width,

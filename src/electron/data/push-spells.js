@@ -4,6 +4,7 @@ const readline = require( 'readline' );
 
 const cacheFileName = 'push-spells.json';
 const cacheVersion = 2;
+// e.g. "Color Flux Rk. II" becomes "Color Flux".
 const rankRgx = / Rk\. ?I+$/i;
 
 /**
@@ -17,7 +18,8 @@ const rankRgx = / Rk\. ?I+$/i;
 /**
  * @typedef {Object} PushSpellTable
  * @property {Record<string, PushSpell>} spells Spells by name, ranks merged under the base name.
- * @property {Record<string, PushSpell>} exact Per-rank entries for the families whose ranks differ in push.
+ * @property {Record<string, PushSpell>} exact Per-rank entries for the families whose ranks
+ *     differ in push.
  */
 
 /**
@@ -49,10 +51,10 @@ function stripRank( name ) {
  * @param {number} count How many fields to read.
  */
 function readFields( line, count ) {
-    let fields = [];
+    const fields = [];
     let start = 0;
     for ( let i = 0; i < count; i++ ) {
-        let end = line.indexOf( '^', start );
+        const end = line.indexOf( '^', start );
         if ( end === -1 ) {
             fields.push( line.substring( start ) );
             break;
@@ -82,8 +84,8 @@ function readFields( line, count ) {
  */
 function streamLines( filePath, onLine ) {
     return new Promise( ( resolve, reject ) => {
-        let stream = fs.createReadStream( filePath, { encoding: 'latin1' } );
-        let rl = readline.createInterface( { input: stream, crlfDelay: Infinity } );
+        const stream = fs.createReadStream( filePath, { encoding: 'latin1' } );
+        const rl = readline.createInterface( { input: stream, crlfDelay: Infinity } );
         stream.on( 'error', reject );
         rl.on( 'line', onLine );
         rl.on( 'close', resolve );
@@ -110,25 +112,27 @@ function streamLines( filePath, onLine ) {
 async function buildPushSpellTable( spellsFile, stringsFile ) {
 
     /** @type {Record<string, { id: string, push: number, pushUp: number, castTime: number }[]>} */
-    let rowsByName = {};
+    const rowsByName = {};
     /** @type {Record<string, boolean>} */
-    let pushIds = {};
+    const pushIds = {};
 
     await streamLines( spellsFile, line => {
-        let f = readFields( line, 9 );
-        let push = parseFloat( f[ 6 ] );
+        const f = readFields( line, 9 );
+        const push = parseFloat( f[ 6 ] );
         if ( !( push > 0 ) || !f[ 1 ] ) {
             return;
         }
         pushIds[ f[ 0 ] ] = true;
-        ( rowsByName[ f[ 1 ] ] ??= [] ).push( { id: f[ 0 ], push: push, pushUp: parseFloat( f[ 7 ] ) || 0, castTime: parseInt( f[ 8 ] ) || 0 } );
+        ( rowsByName[ f[ 1 ] ] ??= [] ).push( {
+            id: f[ 0 ], push: push, pushUp: parseFloat( f[ 7 ] ) || 0, castTime: parseInt( f[ 8 ] ) || 0
+        } );
     } );
 
     /** @type {Record<string, string>} */
-    let landTexts = {};
+    const landTexts = {};
     if ( fs.existsSync( stringsFile ) ) {
         await streamLines( stringsFile, line => {
-            let f = readFields( line, 5 );
+            const f = readFields( line, 5 );
             if ( f.length === 5 && f[ 4 ] && pushIds[ f[ 0 ] ] ) {
                 landTexts[ f[ 0 ] ] = f[ 4 ];
             }
@@ -137,23 +141,23 @@ async function buildPushSpellTable( spellsFile, stringsFile ) {
 
     // Duplicate names keep the highest pushback.
     /** @type {Record<string, PushSpell>} */
-    let byName = {};
+    const byName = {};
     Object.keys( rowsByName ).forEach( name => {
-        let rows = rowsByName[ name ];
-        let best = rows.reduce( ( a, b ) => b.push > a.push ? b : a );
-        let landId = landTexts[ best.id ] ? best.id : rows.find( r => landTexts[ r.id ] )?.id;
+        const rows = rowsByName[ name ];
+        const best = rows.reduce( ( a, b ) => b.push > a.push ? b : a );
+        const landId = landTexts[ best.id ] ? best.id : rows.find( r => landTexts[ r.id ] )?.id;
         byName[ name ] = { push: best.push, pushUp: best.pushUp, castTime: best.castTime, landText: landId ? landTexts[ landId ] : '' };
     } );
 
     /** @type {Record<string, string[]>} */
-    let families = {};
+    const families = {};
     Object.keys( byName ).forEach( name => ( families[ stripRank( name ) ] ??= [] ).push( name ) );
 
     /** @type {PushSpellTable} */
-    let table = { spells: {}, exact: {} };
+    const table = { spells: {}, exact: {} };
     Object.keys( families ).forEach( base => {
-        let names = families[ base ];
-        let best = names.map( n => byName[ n ] ).reduce( ( a, b ) => b.push > a.push ? b : a );
+        const names = families[ base ];
+        const best = names.map( n => byName[ n ] ).reduce( ( a, b ) => b.push > a.push ? b : a );
         table.spells[ base ] = best;
         if ( names.some( n => byName[ n ].push !== best.push ) ) {
             names.forEach( n => table.exact[ n ] = byName[ n ] );
@@ -205,38 +209,51 @@ function findPushSpell( table, name ) {
 async function loadPushSpells( eqFolder, cacheFolder ) {
 
     if ( !eqFolder || !fs.existsSync( eqFolder ) ) {
-        let error = new Error( 'The EverQuest folder is not set.  Set the EverQuest folder in Nag Settings so the spell data can be read.' );
+        const error = new Error( 'The EverQuest folder is not set.  Set the EverQuest folder in Nag Settings so the spell data can be read.' );
         error.code = 'no-folder';
         throw error;
     }
 
-    let spellsFile = path.join( eqFolder, 'spells_us.txt' );
+    const spellsFile = path.join( eqFolder, 'spells_us.txt' );
     if ( !fs.existsSync( spellsFile ) ) {
-        let error = new Error( 'spells_us.txt was not found in the EverQuest folder.  Check that the EverQuest folder is set correctly in Nag Settings.' );
+        const error = new Error( 'spells_us.txt was not found in the EverQuest folder.  Check that the EverQuest folder is set correctly in Nag Settings.' );
         error.code = 'no-file';
         throw error;
     }
 
-    let stat = fs.statSync( spellsFile );
-    let stringsFile = path.join( eqFolder, 'spells_us_str.txt' );
-    let stringsStat = fs.existsSync( stringsFile ) ? fs.statSync( stringsFile ) : null;
-    let stringsMtimeMs = stringsStat?.mtimeMs ?? null;
-    let stringsSize = stringsStat?.size ?? null;
-    let cacheFile = path.join( cacheFolder, cacheFileName );
+    const stat = fs.statSync( spellsFile );
+    const stringsFile = path.join( eqFolder, 'spells_us_str.txt' );
+    const stringsStat = fs.existsSync( stringsFile ) ? fs.statSync( stringsFile ) : null;
+    const stringsMtimeMs = stringsStat?.mtimeMs ?? null;
+    const stringsSize = stringsStat?.size ?? null;
+    const cacheFile = path.join( cacheFolder, cacheFileName );
 
     try {
-        let cached = JSON.parse( fs.readFileSync( cacheFile, 'utf8' ) );
-        if ( cached.version === cacheVersion && cached.sourceMtimeMs === stat.mtimeMs && cached.sourceSize === stat.size && cached.stringsMtimeMs === stringsMtimeMs && cached.stringsSize === stringsSize && cached.spells != null && typeof cached.spells === 'object' && cached.exact != null && typeof cached.exact === 'object' ) {
+        const cached = JSON.parse( fs.readFileSync( cacheFile, 'utf8' ) );
+        const sourceUnchanged = cached.version === cacheVersion
+            && cached.sourceMtimeMs === stat.mtimeMs && cached.sourceSize === stat.size
+            && cached.stringsMtimeMs === stringsMtimeMs && cached.stringsSize === stringsSize;
+        const tablesPresent = cached.spells !== null && cached.spells !== undefined && typeof cached.spells === 'object'
+            && cached.exact !== null && cached.exact !== undefined && typeof cached.exact === 'object';
+        if ( sourceUnchanged && tablesPresent ) {
             return { spells: cached.spells, exact: cached.exact };
         }
     } catch ( error ) {
         // No usable cache; rebuild below.
     }
 
-    let table = await buildPushSpellTable( spellsFile, stringsFile );
+    const table = await buildPushSpellTable( spellsFile, stringsFile );
 
     try {
-        fs.writeFileSync( cacheFile, JSON.stringify( { version: cacheVersion, sourceMtimeMs: stat.mtimeMs, sourceSize: stat.size, stringsMtimeMs: stringsMtimeMs, stringsSize: stringsSize, spells: table.spells, exact: table.exact } ) );
+        fs.writeFileSync( cacheFile, JSON.stringify( {
+            version: cacheVersion,
+            sourceMtimeMs: stat.mtimeMs,
+            sourceSize: stat.size,
+            stringsMtimeMs: stringsMtimeMs,
+            stringsSize: stringsSize,
+            spells: table.spells,
+            exact: table.exact
+        } ) );
     } catch ( error ) {
         // The cache is optional.
     }

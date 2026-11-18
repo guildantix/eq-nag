@@ -144,14 +144,51 @@ class UserPreferencesStore extends Store {
         this.storeDataFile( this.#data );
     }
 
-    /** @type {PushRecapPreferences} */
+
+
+
+
+
+
+
+
+
+    /**
+     * The Push Recap pop-up settings.
+     *
+     * @type {PushRecapPreferences}
+     */
     get pushRecap() {
         return this.#data.pushRecap;
     }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Stores the Push Recap pop-up settings.
+     *
+     * @param {PushRecapPreferences} val The settings to store.
+     */
     set pushRecap( val ) {
         this.#data.pushRecap = val;
         this.storeDataFile( this.#data );
     }
+
+
+
+
+
+
+
+
+
 
     /** @type {string} */
     get detrimentalOverlayId() {
