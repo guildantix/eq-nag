@@ -35,4 +35,5 @@
         <div class="tip-row" *ngFor="let row of tip.rows"><span>{{row.name}}</span><b>{{row.value}}</b></div>
     </div>
 </ng-template>
+<p class="note" *ngIf="available && recap?.timelineTruncated">Long fight: the timeline shows only {{recap?.timeline?.length}} entries, so some are left out.</p>
 <p class="note" *ngIf="!available && recap != null">Scan the log again to see the timeline for this fight.</p>

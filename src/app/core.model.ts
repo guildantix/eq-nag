@@ -2443,6 +2443,8 @@ export interface PushRecapSummary {
     timeline?: [ number, number, number, string | number, number ][];
     /** The landing messages the timeline refers to. */
     timelineTexts?: string[];
+    /** True when a long fight had entries left out of the timeline. */
+    timelineTruncated?: boolean;
 }
 
 export interface PushScanProgress {

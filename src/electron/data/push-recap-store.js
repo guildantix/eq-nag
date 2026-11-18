@@ -3,7 +3,7 @@ const fsp = fs.promises;
 const path = require( 'path' );
 const crypto = require( 'crypto' );
 const log = require( 'electron-log' );
-const { buildListRow } = require( '../utilities/push-recap-summary' );
+const { buildListRow, maxTimeline, maxTimelineTexts } = require( '../utilities/push-recap-summary' );
 
 const fileName = 'push-recaps.json';
 const badFileName = 'push-recaps.json.bad';
@@ -13,8 +13,6 @@ const maxSpells = 30;
 const maxProcs = 200;
 const maxProcNames = 40;
 const maxAlsoNames = 3;
-const maxTimeline = 5000;
-const maxTimelineTexts = 400;
 const maxNpcAbilities = 100;
 
 /**
@@ -81,6 +79,7 @@ const maxNpcAbilities = 100;
  * @property {string} [fightStart] When the fight started, as an ISO date.
  * @property {any[][]} [timeline] Every counted hit, in fight order: [ seconds into the fight, kind (0 hit, 1 assumed cast, 2 proc, 3 possible proc), index in players or -1, spell name or index in timelineTexts, push ].
  * @property {string[]} [timelineTexts] The landing messages the timeline refers to.
+ * @property {boolean} [timelineTruncated] True when a long fight had entries left out of the timeline.
  */
 
 
@@ -290,9 +289,13 @@ function sanitize( data ) {
         summary.fightStart = new Date( data.fightStart ).toISOString();
     }
     if ( Array.isArray( data.timeline ) ) {
-        let texts = ( Array.isArray( data.timelineTexts ) ? data.timelineTexts : [] ).slice( 0, maxTimelineTexts ).map( toText );
+        let rawTexts = Array.isArray( data.timelineTexts ) ? data.timelineTexts : [];
+        let texts = rawTexts.slice( 0, maxTimelineTexts ).map( toText );
         summary.timelineTexts = texts;
         summary.timeline = data.timeline.slice( 0, maxTimeline ).map( e => toTimelineEntry( e, players.length, texts.length ) ).filter( e => e != null );
+        if ( data.timelineTruncated === true || data.timeline.length > maxTimeline || rawTexts.length > maxTimelineTexts ) {
+            summary.timelineTruncated = true;
+        }
     }
     [ 'othersSeen', 'startsAtLogEdge', 'reachedStart' ].forEach( key => {
         if ( typeof data[ key ] === 'boolean' ) {

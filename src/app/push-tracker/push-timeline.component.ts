@@ -254,7 +254,7 @@ export class PushTimelineComponent implements OnChanges {
         let counted = list.filter( e => e.kind !== 3 );
         let clock = this.clock( a );
         this.drillTitle = `${this.offset( a )}–${this.offset( z )} into the fight${clock === '' ? '' : ` (${clock})`}`;
-        this.drillNote = `${counted.length} hits · ${Math.round( counted.reduce( ( sum, e ) => sum + e.push, 0 ) * 100 ) / 100} push`;
+        this.drillNote = `${counted.length} ${counted.length === 1 ? 'hit' : 'hits'} · ${Math.round( counted.reduce( ( sum, e ) => sum + e.push, 0 ) * 100 ) / 100} push`;
         this.drillRows = list.map( e => ( {
             time: `${this.offset( e.time )}${this.clock( e.time ) === '' ? '' : ` · ${this.clock( e.time )}`}`,
             who: e.who === '' ? '—' : e.who,
