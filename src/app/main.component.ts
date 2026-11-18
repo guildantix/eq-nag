@@ -652,8 +652,8 @@ export class MainComponent implements OnInit {
 
     /**
      * Hides the console panel off the first tab and reloads Settings when it opens.
-     * The tab is matched by its label because the Push tab can be switched off, which
-     * moves the index of every tab after it.
+     * The tab is matched by its label rather than its index so it keeps working if the
+     * tab order changes.
      *
      * @param event The tab change event.
      */
