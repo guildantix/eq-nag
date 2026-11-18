@@ -67,9 +67,9 @@ function isValidResult( r ) {
     return ( r !== null && r !== undefined ) && typeof r === 'object' && typeof r.mob === 'string' && r.mob !== '' && typeof r.killTime === 'string' && !isNaN( new Date( r.killTime ).getTime() )
         && typeof r.characterName === 'string' && Number.isFinite( r.fightSeconds ) && Number.isFinite( r.damageTaken ) && Number.isFinite( r.events )
         && Number.isFinite( r.assumed ) && Number.isFinite( r.pushValue ) && typeof r.named === 'boolean'
-        && Array.isArray( r.players ) && r.players.every( p => p != null && typeof p === 'object' && typeof p.name === 'string' && Number.isFinite( p.events ) && p.spells != null && typeof p.spells === 'object' )
-        && r.unattributed != null && typeof r.unattributed === 'object' && Array.isArray( r.npcAbilities )
-        && ( r.timeline == null || ( Array.isArray( r.timeline ) && Array.isArray( r.timelineTexts ) ) );
+        && Array.isArray( r.players ) && r.players.every( p => ( p !== null && p !== undefined ) && typeof p === 'object' && typeof p.name === 'string' && Number.isFinite( p.events ) && p.spells !== null && p.spells !== undefined && typeof p.spells === 'object' )
+        && r.unattributed !== null && r.unattributed !== undefined && typeof r.unattributed === 'object' && Array.isArray( r.npcAbilities )
+        && ( ( r.timeline === null || r.timeline === undefined ) || ( Array.isArray( r.timeline ) && Array.isArray( r.timelineTexts ) ) );
 }
 
 

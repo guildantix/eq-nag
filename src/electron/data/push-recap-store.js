@@ -74,12 +74,15 @@ const maxNpcAbilities = 100;
  *     possible?: PushRecapProc[] }} unattributed The events with no player.
  * @property {PushRecapNpcAbility[]} [npcAbilities] The push abilities the NPCs used.
  * @property {boolean} [othersSeen] True when spell damage from other players was in the log.
- * @property {boolean} [startsAtLogEdge] True when the fight may have started before the part of the log that was read.
- * @property {boolean} [reachedStart] True when the part of the log that was read began at the start of the log.
+ * @property {boolean} [startsAtLogEdge] True when the fight may have begun before the part read.
+ * @property {boolean} [reachedStart] True when the part read began at the start of the log.
  * @property {string} [fightStart] When the fight started, as an ISO date.
- * @property {any[][]} [timeline] Every counted hit, in fight order: [ seconds into the fight, kind (0 hit, 1 assumed cast, 2 proc, 3 possible proc), index in players or -1, spell name or index in timelineTexts, push ].
+ * @property {any[][]} [timeline] Every counted hit, in fight order: [ seconds into the fight, kind
+ *     (0 hit, 1 assumed cast, 2 proc, 3 possible proc), index in players or -1, spell name or index
+ *     in timelineTexts, push ].
  * @property {string[]} [timelineTexts] The landing messages the timeline refers to.
- * @property {boolean} [timelineTruncated] True when a long fight had entries left out of the timeline.
+ * @property {boolean} [timelineTruncated] True when a long fight had entries left out of the
+ *     timeline.
  */
 
 
@@ -167,7 +170,9 @@ function toTimelineEntry( entry, playerCount, textCount ) {
         return null;
     }
     let [ time, kind, who, ref, push ] = entry;
-    if ( !Number.isFinite( time ) || time < 0 || !Number.isInteger( kind ) || kind < 0 || kind > 3 || !Number.isFinite( push ) || push < 0 ) {
+    const badTime = !Number.isFinite( time ) || time < 0;
+    const badKind = !Number.isInteger( kind ) || kind < 0 || kind > 3;
+    if ( badTime || badKind || !Number.isFinite( push ) || push < 0 ) {
         return null;
     }
     if ( kind < 2 ) {
@@ -289,10 +294,12 @@ function sanitize( data ) {
         summary.fightStart = new Date( data.fightStart ).toISOString();
     }
     if ( Array.isArray( data.timeline ) ) {
-        let rawTexts = Array.isArray( data.timelineTexts ) ? data.timelineTexts : [];
-        let texts = rawTexts.slice( 0, maxTimelineTexts ).map( toText );
+        const rawTexts = Array.isArray( data.timelineTexts ) ? data.timelineTexts : [];
+        const texts = rawTexts.slice( 0, maxTimelineTexts ).map( toText );
         summary.timelineTexts = texts;
-        summary.timeline = data.timeline.slice( 0, maxTimeline ).map( e => toTimelineEntry( e, players.length, texts.length ) ).filter( e => e != null );
+        summary.timeline = data.timeline.slice( 0, maxTimeline )
+            .map( e => toTimelineEntry( e, players.length, texts.length ) )
+            .filter( e => ( e !== null && e !== undefined ) );
         if ( data.timelineTruncated === true || data.timeline.length > maxTimeline || rawTexts.length > maxTimelineTexts ) {
             summary.timelineTruncated = true;
         }

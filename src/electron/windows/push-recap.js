@@ -353,9 +353,9 @@ let timeline = null;
  * @param {string} [text] The text content.
  */
 function svgEl( tag, attributes, text ) {
-    let node = document.createElementNS( svgNs, tag );
+    const node = document.createElementNS( svgNs, tag );
     Object.keys( attributes ).forEach( key => node.setAttribute( key, `${attributes[ key ]}` ) );
-    if ( text != null ) {
+    if ( text !== null && text !== undefined ) {
         node.textContent = text;
     }
     return node;
@@ -371,32 +371,34 @@ function svgEl( tag, attributes, text ) {
 
 
 /**
- * Wires the push timeline: a column chart of the push hits over the fight, and a list of what landed in the selected column.
+ * Wires the push timeline: a column chart of the push hits over the fight, and a list of what
+ * landed in the selected column.
  *
- * @returns {{ update: ( summary: any, hidden: Set<string> ) => void, reset: () => void }} The timeline.
+ * @returns {{ update: ( summary: any, hidden: Set<string> ) => void, reset: () => void }} The
+ *     timeline.
  */
 function createTimeline() {
 
-    let section = document.getElementById( 'timeline' );
-    let note = document.getElementById( 'timelineNote' );
-    let truncatedNote = document.getElementById( 'truncatedNote' );
-    let svg = document.getElementById( 'chart' );
-    let tip = document.getElementById( 'chartTip' );
-    let measureButtons = Array.from( document.querySelectorAll( '#measure button' ) );
-    let possibleToggle = document.getElementById( 'showPossible' );
-    let table = document.getElementById( 'drill' );
+    const section = document.getElementById( 'timeline' );
+    const note = document.getElementById( 'timelineNote' );
+    const truncatedNote = document.getElementById( 'truncatedNote' );
+    const svg = document.getElementById( 'chart' );
+    const tip = document.getElementById( 'chartTip' );
+    const measureButtons = Array.from( document.querySelectorAll( '#measure button' ) );
+    const possibleToggle = document.getElementById( 'showPossible' );
+    const table = document.getElementById( 'drill' );
     let measure = 'hits';
     let selected = -1;
     let current = null;
 
-    let show = ( bar, event ) => {
-        let a = bar * current.model.bucket;
-        let z = Math.min( current.model.seconds, a + current.model.bucket );
-        let clock = formatClock( current.model.fightStart, a );
+    const show = ( bar, event ) => {
+        const a = bar * current.model.bucket;
+        const z = Math.min( current.model.seconds, a + current.model.bucket );
+        const clock = formatClock( current.model.fightStart, a );
         tip.textContent = '';
         tip.appendChild( el( 'div', 'tip-title', `${formatOffset( a )}–${formatOffset( z )}${clock === '' ? '' : ` · ${clock}`}` ) );
         chartSeries.filter( s => s.key !== 'possible' || possibleToggle.checked ).forEach( s => {
-            let row = el( 'div', 'tip-row' );
+            const row = el( 'div', 'tip-row' );
             row.appendChild( el( 'span', null, s.name ) );
             row.appendChild( el( 'b', null, `${Math.round( current.bars[ bar ][ s.key ] * 100 ) / 100}` ) );
             tip.appendChild( row );
@@ -406,34 +408,34 @@ function createTimeline() {
         tip.style.top = `${event.clientY + 14}px`;
     };
 
-    let drill = () => {
-        let body = table.querySelector( 'tbody' );
+    const drill = () => {
+        const body = table.querySelector( 'tbody' );
         body.textContent = '';
-        let title = document.getElementById( 'drillTitle' );
-        let summary = document.getElementById( 'drillNote' );
+        const title = document.getElementById( 'drillTitle' );
+        const summary = document.getElementById( 'drillNote' );
         if ( selected === -1 ) {
             table.hidden = true;
             title.textContent = 'Click a bar to see what landed';
             summary.textContent = '';
             return;
         }
-        let model = current.model;
-        let a = selected * model.bucket;
-        let z = Math.min( model.seconds, a + model.bucket );
-        let list = barEvents( model, selected, possibleToggle.checked );
-        let counted = list.filter( e => e.kind !== 3 );
-        let clock = formatClock( model.fightStart, a );
+        const model = current.model;
+        const a = selected * model.bucket;
+        const z = Math.min( model.seconds, a + model.bucket );
+        const list = barEvents( model, selected, possibleToggle.checked );
+        const counted = list.filter( e => e.kind !== 3 );
+        const clock = formatClock( model.fightStart, a );
         title.textContent = `${formatOffset( a )}–${formatOffset( z )} into the fight${clock === '' ? '' : ` (${clock})`}`;
         summary.textContent = `${counted.length} ${counted.length === 1 ? 'hit' : 'hits'} · ${Math.round( counted.reduce( ( sum, e ) => sum + e.push, 0 ) * 100 ) / 100} push`;
         list.forEach( e => {
-            let tr = el( 'tr', e.kind === 3 ? 'dimmed' : null );
-            let eventClock = formatClock( model.fightStart, e.time );
+            const tr = el( 'tr', e.kind === 3 ? 'dimmed' : null );
+            const eventClock = formatClock( model.fightStart, e.time );
             tr.appendChild( el( 'td', null, `${formatOffset( e.time )}${eventClock === '' ? '' : ` · ${eventClock}`}` ) );
             tr.appendChild( el( 'td', null, e.who === '' ? '—' : e.who ) );
             tr.appendChild( el( 'td', null, e.kind < 2 ? e.spell : `${e.spell}${e.text === '' ? '' : ` …${e.text}`}` ) );
             tr.appendChild( el( 'td', 'num', `${e.kind === 3 ? '~' : ''}${e.push}` ) );
-            let kind = el( 'td', 'kind' );
-            let chip = el( 'i' );
+            const kind = el( 'td', 'kind' );
+            const chip = el( 'i' );
             chip.style.background = kindColors[ e.kind ];
             kind.appendChild( chip );
             kind.appendChild( document.createTextNode( kindLabels[ e.kind ] ) );
@@ -443,19 +445,26 @@ function createTimeline() {
         table.hidden = false;
     };
 
-    let draw = () => {
+    const draw = () => {
         svg.textContent = '';
-        let { model } = current;
-        let showPossible = possibleToggle.checked;
-        let bars = buildBars( model, measure, showPossible );
+        const { model } = current;
+        const showPossible = possibleToggle.checked;
+        const bars = buildBars( model, measure, showPossible );
         current.bars = bars;
-        let width = 1000, height = 260, left = 44, right = 8, top = 10, bottom = 28, plotWidth = width - left - right, plotHeight = height - top - bottom;
-        let max = Math.max( 1, ...bars.map( b => b.player + b.proc + b.possible ) );
-        let step = axisStep( max );
-        let ceiling = Math.ceil( max / step ) * step;
+        const width = 1000;
+        const height = 260;
+        const left = 44;
+        const right = 8;
+        const top = 10;
+        const bottom = 28;
+        const plotWidth = width - left - right;
+        const plotHeight = height - top - bottom;
+        const max = Math.max( 1, ...bars.map( b => b.player + b.proc + b.possible ) );
+        const step = axisStep( max );
+        const ceiling = Math.ceil( max / step ) * step;
 
         for ( let v = 0; v <= ceiling + step / 2; v += step ) {
-            let y = top + plotHeight - v / ceiling * plotHeight;
+            const y = top + plotHeight - v / ceiling * plotHeight;
             svg.appendChild( svgEl( 'line', { x1: left, x2: width - right, y1: y, y2: y, stroke: v === 0 ? '#383835' : '#2c2c2a', 'stroke-width': 1 } ) );
             svg.appendChild( svgEl( 'text', { x: left - 8, y: y + 4, 'text-anchor': 'end', class: 'tick' }, `${Math.round( v * 100 ) / 100}` ) );
         }
@@ -463,23 +472,23 @@ function createTimeline() {
             svg.appendChild( svgEl( 'text', { x: left + s / model.seconds * plotWidth, y: height - 8, 'text-anchor': s === 0 ? 'start' : s === model.seconds ? 'end' : 'middle', class: 'tick' }, formatOffset( s ) ) );
         }
 
-        let barWidth = plotWidth / model.count;
-        let gap = Math.min( 2, barWidth * 0.2 );
+        const barWidth = plotWidth / model.count;
+        const gap = Math.min( 2, barWidth * 0.2 );
         bars.forEach( ( b, i ) => {
             let y0 = top + plotHeight;
-            let x = left + i * barWidth + gap / 2;
-            let w = barWidth - gap;
-            let parts = chartSeries.filter( s => b[ s.key ] > 0 && ( s.key !== 'possible' || showPossible ) );
+            const x = left + i * barWidth + gap / 2;
+            const w = barWidth - gap;
+            const parts = chartSeries.filter( s => b[ s.key ] > 0 && ( s.key !== 'possible' || showPossible ) );
             parts.forEach( ( s, j ) => {
-                let h = b[ s.key ] / ceiling * plotHeight;
-                let isTop = j === parts.length - 1;
-                let y = y0 - h;
-                let r = isTop ? Math.min( 4, w / 2, h ) : 0;
-                let d = r > 0 ? `M${x},${y0} V${y + r} Q${x},${y} ${x + r},${y} H${x + w - r} Q${x + w},${y} ${x + w},${y + r} V${y0} Z` : `M${x},${y0} V${y} H${x + w} V${y0} Z`;
+                const h = b[ s.key ] / ceiling * plotHeight;
+                const isTop = j === parts.length - 1;
+                const y = y0 - h;
+                const r = isTop ? Math.min( 4, w / 2, h ) : 0;
+                const d = r > 0 ? `M${x},${y0} V${y + r} Q${x},${y} ${x + r},${y} H${x + w - r} Q${x + w},${y} ${x + w},${y + r} V${y0} Z` : `M${x},${y0} V${y} H${x + w} V${y0} Z`;
                 svg.appendChild( svgEl( 'path', { d: d, fill: s.color, opacity: selected === -1 || selected === i ? 1 : 0.35 } ) );
                 y0 = y - ( isTop ? 0 : 2 );
             } );
-            let area = svgEl( 'rect', { x: left + i * barWidth, y: top, width: barWidth, height: plotHeight, fill: 'transparent', style: 'cursor: pointer' } );
+            const area = svgEl( 'rect', { x: left + i * barWidth, y: top, width: barWidth, height: plotHeight, fill: 'transparent', style: 'cursor: pointer' } );
             area.addEventListener( 'mousemove', event => show( i, event ) );
             area.addEventListener( 'mouseleave', () => tip.style.display = 'none' );
             area.addEventListener( 'click', () => {
@@ -492,11 +501,11 @@ function createTimeline() {
 
         document.getElementById( 'chartHint' ).textContent = `Each bar is ${model.bucket} ${model.bucket === 1 ? 'second' : 'seconds'}. ${measure === 'hits' ? 'Height = push hits.' : 'Height = push value added up.'}`;
 
-        let legend = document.getElementById( 'legend' );
+        const legend = document.getElementById( 'legend' );
         legend.textContent = '';
         chartSeries.filter( s => s.key !== 'possible' || showPossible ).forEach( s => {
-            let item = el( 'span' );
-            let chip = el( 'i' );
+            const item = el( 'span' );
+            const chip = el( 'i' );
             chip.style.background = s.color;
             item.appendChild( chip );
             item.appendChild( document.createTextNode( s.name ) );
@@ -507,12 +516,12 @@ function createTimeline() {
     measureButtons.forEach( button => button.addEventListener( 'click', () => {
         measure = button.dataset.measure;
         measureButtons.forEach( b => b.classList.toggle( 'on', b === button ) );
-        if ( current != null ) {
+        if ( current !== null && current !== undefined ) {
             draw();
         }
     } ) );
     possibleToggle.addEventListener( 'change', () => {
-        if ( current != null ) {
+        if ( current !== null && current !== undefined ) {
             draw();
             drill();
         }
@@ -520,14 +529,14 @@ function createTimeline() {
 
     return {
         update: ( summary, hidden ) => {
-            let model = buildTimelineModel( summary, hidden );
-            section.hidden = model == null;
-            note.hidden = model != null;
-            truncatedNote.hidden = model == null || summary.timelineTruncated !== true;
+            const model = buildTimelineModel( summary, hidden );
+            section.hidden = ( model === null || model === undefined );
+            note.hidden = ( model !== null && model !== undefined );
+            truncatedNote.hidden = ( model === null || model === undefined ) || summary.timelineTruncated !== true;
             truncatedNote.textContent = `Long fight: the timeline shows only ${summary.timeline?.length ?? 0} entries, so some are left out.`;
             tip.style.display = 'none';
-            current = model == null ? null : { model: model, bars: [] };
-            if ( current != null ) {
+            current = ( model === null || model === undefined ) ? null : { model: model, bars: [] };
+            if ( current !== null && current !== undefined ) {
                 selected = Math.min( selected, model.count - 1 );
                 draw();
                 drill();
@@ -686,7 +695,7 @@ function render( summary, hidden ) {
 
     timeline.update( summary, hidden );
 
-    let hasNpc = Array.isArray( summary.npcAbilities );
+    const hasNpc = Array.isArray( summary.npcAbilities );
     document.getElementById( 'npcToggleLabel' ).hidden = !hasNpc;
     document.getElementById( 'npcAbilities' ).hidden = !hasNpc || !document.getElementById( 'npcToggle' ).checked;
     const npcRows = document.getElementById( 'npcRows' );

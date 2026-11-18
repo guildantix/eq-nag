@@ -43,6 +43,19 @@ const right = 8;
 const top = 10;
 const bottom = 28;
 
+
+
+
+
+
+
+
+
+
+/**
+ * Draws the push of one fight over time as stacked bars, and lists what landed in a clicked bar.
+ * The chart is plain SVG so it needs no charting library.
+ */
 @Component( {
     selector: 'app-push-timeline',
     templateUrl: './push-timeline.component.html',
@@ -83,11 +96,10 @@ export class PushTimelineComponent implements OnChanges {
     private totals: { player: number, proc: number, possible: number }[] = [];
     private lastId: string | null = null;
 
-    constructor( private readonly changeDetector: ChangeDetectorRef ) {
-    }
+    constructor( private readonly changeDetector: ChangeDetectorRef ) { }
 
     ngOnChanges(): void {
-        let id = this.recap?.id ?? null;
+        const id = this.recap?.id ?? null;
         if ( id !== this.lastId ) {
             this.selected = -1;
             this.lastId = id;
@@ -96,25 +108,80 @@ export class PushTimelineComponent implements OnChanges {
         this.draw();
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Switches the bar height between the number of hits and the push they added.
+     *
+     * @param measure The new measure.
+     */
     public setMeasure( measure: 'hits' | 'push' ): void {
         this.measure = measure;
         this.draw();
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Shows or hides the possible procs, which are not in any total.
+     */
     public togglePossible(): void {
         this.showPossible = !this.showPossible;
         this.draw();
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Clicks a bar to list what landed in it, and clicks it again to close the list.
+     *
+     * @param index The bar that was clicked.
+     */
     public select( index: number ): void {
         this.selected = this.selected === index ? -1 : index;
         this.draw();
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Shows the tooltip with the totals of one bar next to the mouse.
+     *
+     * @param event The mouse event, for the tooltip position.
+     * @param index The bar under the mouse.
+     */
     public showTip( event: MouseEvent, index: number ): void {
-        let a = index * this.bucket;
-        let z = Math.min( this.seconds, a + this.bucket );
-        let clock = this.clock( a );
+        const a = index * this.bucket;
+        const z = Math.min( this.seconds, a + this.bucket );
+        const clock = this.clock( a );
         this.tip = {
             x: Math.min( event.clientX + 14, window.innerWidth - 220 ),
             y: event.clientY + 14,
@@ -123,45 +190,153 @@ export class PushTimelineComponent implements OnChanges {
         };
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Hides the tooltip when the mouse leaves a bar.
+     */
     public hideTip(): void {
         this.tip = null;
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Lists the series that are drawn, which leave out the possible procs until they are switched
+     * on.
+     */
     public visibleSeries(): { key: SeriesKey, name: string, color: string }[] {
         return this.series.filter( s => s.key !== 'possible' || this.showPossible );
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Explains what one bar and its height stand for, which depends on the fight length and the
+     * measure.
+     */
     public get hint(): string {
         return `Each bar is ${this.bucket} ${this.bucket === 1 ? 'second' : 'seconds'}. ${this.measure === 'hits' ? 'Height = push hits.' : 'Height = push value added up.'}`;
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Dims the bars next to the clicked one so it stands out.
+     *
+     * @param index The bar to dim or not.
+     */
     public barOpacity( index: number ): number {
         return this.selected === -1 || this.selected === index ? 1 : 0.35;
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Formats seconds into the fight as minutes and seconds.
+     *
+     * @param seconds The seconds into the fight.
+     */
     private offset( seconds: number ): string {
         return `${Math.floor( seconds / 60 )}:${String( seconds % 60 ).padStart( 2, '0' )}`;
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Formats the log clock time of a moment in the fight, or nothing when the start of the fight
+     * is unknown.
+     *
+     * @param seconds The seconds into the fight.
+     */
     private clock( seconds: number ): string {
-        let start = this.fightStart == null ? NaN : Date.parse( this.fightStart );
+        const start = ( this.fightStart === null || this.fightStart === undefined ) ? NaN : Date.parse( this.fightStart );
         return isNaN( start ) ? '' : new Date( start + seconds * 1000 ).toISOString().substring( 11, 19 );
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Finds the bar an event falls in.
+     *
+     * @param event The timeline event.
+     */
     private barOf( event: TimelineEvent ): number {
         return Math.min( this.count - 1, Math.floor( event.time / this.bucket ) );
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Turns the saved timeline into events, without the hidden messages, and sizes the bars to the
+     * fight.
+     */
     private read(): void {
-        let recap = this.recap;
+        const recap = this.recap;
         this.available = Array.isArray( recap?.timeline );
         this.events = [];
         if ( !this.available ) {
             return;
         }
-        let players = recap.players ?? [];
-        let texts = recap.timelineTexts ?? [];
-        let labels = new Map<string, string>();
+        const players = recap.players ?? [];
+        const texts = recap.timelineTexts ?? [];
+        const labels = new Map<string, string>();
         [ ...( recap.unattributed?.procs ?? [] ), ...( recap.unattributed?.possible ?? [] ) ].forEach( p => labels.set( p.text, p.name ) );
         recap.timeline.forEach( ( [ time, kind, who, ref, push ] ) => {
             if ( kind < 2 ) {
@@ -177,9 +352,23 @@ export class PushTimelineComponent implements OnChanges {
         this.selected = Math.min( this.selected, this.count - 1 );
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Picks a tick step of 1, 2 or 5 times a power of ten that gives at most six ticks.
+     *
+     * @param max The largest value on the axis.
+     */
     private axisStep( max: number ): number {
         for ( let scale = 1; ; scale *= 10 ) {
-            for ( let base of [ 1, 2, 5 ] ) {
+            for ( const base of [ 1, 2, 5 ] ) {
                 if ( Math.ceil( max / ( base * scale ) ) <= 6 ) {
                     return base * scale;
                 }
@@ -187,6 +376,18 @@ export class PushTimelineComponent implements OnChanges {
         }
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Rebuilds everything the template draws, and tells Angular to check it.
+     */
     private draw(): void {
         this.bars = [];
         this.grid = [];
@@ -200,21 +401,33 @@ export class PushTimelineComponent implements OnChanges {
         this.changeDetector.markForCheck();
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Builds the bars, gridlines and axis ticks from the events.
+     */
     private drawChart(): void {
-        let plotWidth = chartWidth - left - right;
-        let plotHeight = chartHeight - top - bottom;
+        const plotWidth = chartWidth - left - right;
+        const plotHeight = chartHeight - top - bottom;
         this.totals = Array.from( { length: this.count }, () => ( { player: 0, proc: 0, possible: 0 } ) );
         this.events.forEach( e => {
             if ( e.kind !== 3 || this.showPossible ) {
                 this.totals[ this.barOf( e ) ][ e.kind === 3 ? 'possible' : e.kind === 2 ? 'proc' : 'player' ] += this.measure === 'hits' ? 1 : e.push;
             }
         } );
-        let max = Math.max( 1, ...this.totals.map( b => b.player + b.proc + b.possible ) );
-        let step = this.axisStep( max );
-        let ceiling = Math.ceil( max / step ) * step;
+        const max = Math.max( 1, ...this.totals.map( b => b.player + b.proc + b.possible ) );
+        const step = this.axisStep( max );
+        const ceiling = Math.ceil( max / step ) * step;
 
         for ( let v = 0; v <= ceiling + step / 2; v += step ) {
-            let y = top + plotHeight - v / ceiling * plotHeight;
+            const y = top + plotHeight - v / ceiling * plotHeight;
             this.grid.push( { y: y, axis: v === 0 } );
             this.yTicks.push( { value: `${Math.round( v * 100 ) / 100}`, x: left - 8, y: y + 4, anchor: 'end' } );
         }
@@ -222,19 +435,19 @@ export class PushTimelineComponent implements OnChanges {
             this.xTicks.push( { value: this.offset( s ), x: left + s / this.seconds * plotWidth, y: chartHeight - 8, anchor: s === 0 ? 'start' : s === this.seconds ? 'end' : 'middle' } );
         }
 
-        let barWidth = plotWidth / this.count;
-        let gap = Math.min( 2, barWidth * 0.2 );
+        const barWidth = plotWidth / this.count;
+        const gap = Math.min( 2, barWidth * 0.2 );
         this.bars = this.totals.map( ( b, i ) => {
             let y0 = top + plotHeight;
-            let x = left + i * barWidth + gap / 2;
-            let w = barWidth - gap;
-            let shown = this.visibleSeries().filter( s => b[ s.key ] > 0 );
-            let parts = shown.map( ( s, j ) => {
-                let h = b[ s.key ] / ceiling * plotHeight;
-                let y = y0 - h;
-                let isTop = j === shown.length - 1;
-                let r = isTop ? Math.min( 4, w / 2, h ) : 0;
-                let d = r > 0 ? `M${x},${y0} V${y + r} Q${x},${y} ${x + r},${y} H${x + w - r} Q${x + w},${y} ${x + w},${y + r} V${y0} Z` : `M${x},${y0} V${y} H${x + w} V${y0} Z`;
+            const x = left + i * barWidth + gap / 2;
+            const w = barWidth - gap;
+            const shown = this.visibleSeries().filter( s => b[ s.key ] > 0 );
+            const parts = shown.map( ( s, j ) => {
+                const h = b[ s.key ] / ceiling * plotHeight;
+                const y = y0 - h;
+                const isTop = j === shown.length - 1;
+                const r = isTop ? Math.min( 4, w / 2, h ) : 0;
+                const d = r > 0 ? `M${x},${y0} V${y + r} Q${x},${y} ${x + r},${y} H${x + w - r} Q${x + w},${y} ${x + w},${y + r} V${y0} Z` : `M${x},${y0} V${y} H${x + w} V${y0} Z`;
                 y0 = y - ( isTop ? 0 : 2 );
                 return { d: d, color: s.color };
             } );
@@ -242,17 +455,29 @@ export class PushTimelineComponent implements OnChanges {
         } );
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Builds the list of what landed in the clicked bar.
+     */
     private drawDrill(): void {
         if ( this.selected === -1 ) {
             this.drillTitle = 'Click a bar to see what landed';
             this.drillNote = '';
             return;
         }
-        let a = this.selected * this.bucket;
-        let z = Math.min( this.seconds, a + this.bucket );
-        let list = this.events.filter( e => this.barOf( e ) === this.selected && ( e.kind !== 3 || this.showPossible ) );
-        let counted = list.filter( e => e.kind !== 3 );
-        let clock = this.clock( a );
+        const a = this.selected * this.bucket;
+        const z = Math.min( this.seconds, a + this.bucket );
+        const list = this.events.filter( e => this.barOf( e ) === this.selected && ( e.kind !== 3 || this.showPossible ) );
+        const counted = list.filter( e => e.kind !== 3 );
+        const clock = this.clock( a );
         this.drillTitle = `${this.offset( a )}–${this.offset( z )} into the fight${clock === '' ? '' : ` (${clock})`}`;
         this.drillNote = `${counted.length} ${counted.length === 1 ? 'hit' : 'hits'} · ${Math.round( counted.reduce( ( sum, e ) => sum + e.push, 0 ) * 100 ) / 100} push`;
         this.drillRows = list.map( e => ( {

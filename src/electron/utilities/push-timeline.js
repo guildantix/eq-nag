@@ -41,7 +41,8 @@ function formatOffset( seconds ) {
 
 
 /**
- * Formats the clock time of the given second of the fight as HH:MM:SS, or an empty string when the start is unknown.
+ * Formats the clock time of the given second of the fight as HH:MM:SS, or an empty string when the
+ * start is unknown.
  *
  * @returns {string} The text.
  *
@@ -49,7 +50,7 @@ function formatOffset( seconds ) {
  * @param {number} seconds The seconds into the fight.
  */
 function formatClock( fightStart, seconds ) {
-    let start = fightStart == null ? NaN : Date.parse( fightStart );
+    const start = ( fightStart === null || fightStart === undefined ) ? NaN : Date.parse( fightStart );
     return isNaN( start ) ? '' : new Date( start + seconds * 1000 ).toISOString().substring( 11, 19 );
 }
 
@@ -74,14 +75,14 @@ function buildTimelineModel( summary, hidden ) {
     if ( !Array.isArray( summary?.timeline ) ) {
         return null;
     }
-    let players = summary.players ?? [];
-    let texts = summary.timelineTexts ?? [];
-    let labels = new Map();
+    const players = summary.players ?? [];
+    const texts = summary.timelineTexts ?? [];
+    const labels = new Map();
     [ ...( summary.unattributed?.procs ?? [] ), ...( summary.unattributed?.possible ?? [] ) ].forEach( p => labels.set( p.text, p.name ) );
 
-    let events = [];
+    const events = [];
     summary.timeline.forEach( e => {
-        let [ time, kind, who, ref, push ] = e;
+        const [ time, kind, who, ref, push ] = e;
         if ( kind < 2 ) {
             events.push( { time: time, kind: kind, who: players[ who ]?.name ?? '', spell: ref, text: '', push: push } );
         } else if ( !hidden.has( texts[ ref ] ) ) {
@@ -89,9 +90,10 @@ function buildTimelineModel( summary, hidden ) {
         }
     } );
 
-    let seconds = Math.max( 1, summary.fightSeconds ?? 1, ...events.map( e => e.time ) );
-    let bucket = Math.max( 1, Math.round( seconds / targetBars ) );
-    return { events: events, seconds: seconds, bucket: bucket, count: Math.ceil( seconds / bucket ), fightStart: summary.fightStart ?? null };
+    const seconds = Math.max( 1, summary.fightSeconds ?? 1, ...events.map( e => e.time ) );
+    const bucket = Math.max( 1, Math.round( seconds / targetBars ) );
+    const count = Math.ceil( seconds / bucket );
+    return { events: events, seconds: seconds, bucket: bucket, count: count, fightStart: summary.fightStart ?? null };
 }
 
 
@@ -134,7 +136,7 @@ function barOf( model, event ) {
  * @param {boolean} showPossible True to include the possible procs.
  */
 function buildBars( model, measure, showPossible ) {
-    let bars = Array.from( { length: model.count }, () => ( { player: 0, proc: 0, possible: 0 } ) );
+    const bars = Array.from( { length: model.count }, () => ( { player: 0, proc: 0, possible: 0 } ) );
     model.events.forEach( e => {
         if ( e.kind !== 3 || showPossible ) {
             bars[ barOf( model, e ) ][ e.kind === 3 ? 'possible' : e.kind === 2 ? 'proc' : 'player' ] += measure === 'hits' ? 1 : e.push;
@@ -183,7 +185,7 @@ function barEvents( model, index, showPossible ) {
  */
 function axisStep( max ) {
     for ( let scale = 1; ; scale *= 10 ) {
-        for ( let base of stepBases ) {
+        for ( const base of stepBases ) {
             if ( Math.ceil( max / ( base * scale ) ) <= 6 ) {
                 return base * scale;
             }

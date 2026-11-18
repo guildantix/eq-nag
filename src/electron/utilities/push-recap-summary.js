@@ -1,5 +1,7 @@
 const maxTimeline = 5000;
 const maxTimelineTexts = 400;
+// Common mobs have an article or a lowercase start, as in "a goblin scout" or "An orc pawn".
+// Bosses are proper names such as "Soandso the Fierce".  The Push tab filters on this.
 const notNamedNpcRgx = /^(?:A\s|An\s|a\s|an\s|[a-z])/;
 
 
@@ -12,16 +14,18 @@ const notNamedNpcRgx = /^(?:A\s|An\s|a\s|an\s|[a-z])/;
 
 
 /**
- * Caps the timeline of a recap.  Counted hits are kept first, then procs, then possible procs, and the latest entries of a
+ * Caps the timeline of a recap.  Counted hits are kept first, then procs, then possible procs, and
+ * the latest entries of a
  * kind go first.  Entries whose landing message would be past the text limit are dropped too.
  *
- * @returns {{ timeline: any[][], texts: string[], truncated: boolean }} The capped timeline, with the messages it refers to.
+ * @returns {{ timeline: any[][], texts: string[], truncated: boolean }} The capped timeline, with
+ *     the messages it refers to.
  *
  * @param {any[][]} entries The timeline, in fight order.
  */
 function capTimeline( entries ) {
-    let rank = e => e[ 1 ] < 2 ? 0 : e[ 1 ] === 2 ? 1 : 2;
-    let keep = new Array( entries.length ).fill( false );
+    const rank = e => e[ 1 ] < 2 ? 0 : e[ 1 ] === 2 ? 1 : 2;
+    const keep = new Array( entries.length ).fill( false );
     let room = maxTimeline;
     for ( let r = 0; r < 3 && room > 0; r++ ) {
         for ( let i = 0; i < entries.length && room > 0; i++ ) {
@@ -32,9 +36,9 @@ function capTimeline( entries ) {
         }
     }
 
-    let texts = [];
-    let textIndex = new Map();
-    let timeline = [];
+    const texts = [];
+    const textIndex = new Map();
+    const timeline = [];
     entries.forEach( ( e, i ) => {
         if ( !keep[ i ] ) {
             return;
@@ -57,6 +61,15 @@ function capTimeline( entries ) {
     return { timeline: timeline, texts: texts, truncated: timeline.length < entries.length };
 }
 
+
+
+
+
+
+
+
+
+
 /**
  * Builds the summary of the recap that is kept in the Push tab.
  *
@@ -66,7 +79,7 @@ function capTimeline( entries ) {
  * @param {string} characterName The name of the character.
  */
 function buildSavedSummary( result, characterName ) {
-    let summary = {
+    const summary = {
         characterName: characterName,
         mob: result.boss,
         killTime: new Date( result.killTime ).toISOString(),
@@ -110,7 +123,7 @@ function buildSavedSummary( result, characterName ) {
     };
 
     if ( Array.isArray( result.timeline ) ) {
-        let capped = capTimeline( result.timeline );
+        const capped = capTimeline( result.timeline );
         summary.fightStart = new Date( result.startTime ).toISOString();
         summary.timeline = capped.timeline;
         summary.timelineTexts = capped.texts;

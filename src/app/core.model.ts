@@ -2439,7 +2439,11 @@ export interface PushRecapSummary {
     reachedStart?: boolean;
     /** When the fight started, as an ISO date that holds the log's clock as UTC. */
     fightStart?: string;
-    /** Every counted hit: seconds into the fight, kind (0 hit, 1 assumed cast, 2 proc, 3 possible proc), index in players or -1, spell name or index in timelineTexts, push. Only on a recap fetched by id, and not on recaps saved by older versions. */
+    /**
+     * Every counted hit: seconds into the fight, kind (0 hit, 1 assumed cast, 2 proc,
+     * 3 possible proc), index in players or -1, spell name or index in timelineTexts, push.
+     * Only on a recap fetched by id, and not on older saved recaps.
+     */
     timeline?: [ number, number, number, string | number, number ][];
     /** The landing messages the timeline refers to. */
     timelineTexts?: string[];
