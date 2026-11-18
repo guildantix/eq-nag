@@ -2419,7 +2419,7 @@ export interface PushRecapSummary {
     unattributed: { events: number, pushValue: number, procs?: PushRecapProc[], possibleEvents?: number, possible?: PushRecapProc[] };
     /** The NPC abilities are only on a recap fetched by id, and not on recaps saved by older versions. */
     npcAbilities?: PushRecapNpcAbility[];
-    /** False when no hits from other players were in the log. Missing on older saved recaps. */
+    /** False when no spell damage from other players was in the log. Missing on recaps saved by older versions. */
     othersSeen?: boolean;
     /** True when the fight may have started before the part of the log that was read. */
     startsAtLogEdge?: boolean;

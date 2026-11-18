@@ -64,9 +64,9 @@ const maxNpcAbilities = 100;
  * @property {PushRecapPlayerSummary[]} players The players that pushed.
  * @property {{ events: number, pushValue: number, procs?: PushRecapProc[], possibleEvents?: number, possible?: PushRecapProc[] }} unattributed The events with no player.
  * @property {PushRecapNpcAbility[]} [npcAbilities] The push abilities the NPCs used.
- * @property {boolean} [othersSeen] True when hits from other players were in the log.
- * @property {boolean} [startsAtLogEdge] True when the fight may have begun before the part read.
- * @property {boolean} [reachedStart] True when the part read began at the start of the log.
+ * @property {boolean} [othersSeen] True when spell damage from other players was in the log.
+ * @property {boolean} [startsAtLogEdge] True when the fight may have started before the part of the log that was read.
+ * @property {boolean} [reachedStart] True when the part of the log that was read began at the start of the log.
  */
 
 

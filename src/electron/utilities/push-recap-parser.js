@@ -383,7 +383,7 @@ async function readSession( logFilePath, characterName, landing ) {
  * @property {number} defaultKill The index in kills of the kill to show first.
  * @property {Set<string>} slain The names of the NPCs slain in the window.
  * @property {Set<string>} npcNames The names known to be NPCs.
- * @property {boolean} othersSeen True when hits by players other than the character exist.
+ * @property {boolean} othersSeen True when spell damage by players other than the character exists.
  */
 
 /**
@@ -438,7 +438,7 @@ function summarize( session ) {
             targets.add( target );
         }
 
-        if ( !othersSeen && actor !== 'You' && ( rgx.PlayerName.test( actor ) || rgx.PetName.test( actor ) ) && target !== 'You' && !rgx.PlayerName.test( target ) ) {
+        if ( !othersSeen && text.indexOf( ' points of damage' ) === -1 && actor !== 'You' && ( rgx.PlayerName.test( actor ) || rgx.PetName.test( actor ) ) && target !== 'You' && !rgx.PlayerName.test( target ) ) {
             othersSeen = true;
         }
     }
