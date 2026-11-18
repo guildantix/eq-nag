@@ -2,7 +2,7 @@ import { Component, ViewChild, ElementRef, OnInit } from '@angular/core';
 import * as _ from 'lodash-es';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { IpcService } from './ipc.service';
-import { DkpEntryModel, OverlayWindowModel, FocusEffectSettings, StylePropertiesModel, FctStylesModel, QuickShareMetaModel, QuickShareFileModel, TriggerPackageMetaModel, VersionNumber, AuthorModel, SettingsKeys } from './core.model';
+import { DkpEntryModel, OverlayWindowModel, FocusEffectSettings, StylePropertiesModel, FctStylesModel, QuickShareMetaModel, QuickShareFileModel, TriggerPackageMetaModel, VersionNumber, AuthorModel, SettingsKeys, ShareInstallResult } from './core.model';
 import { DialogService } from './dialogs/dialog.service';
 import { customAlphabet } from 'nanoid';
 import { SetupService } from './setup/setup.service';
@@ -411,6 +411,7 @@ export class MainComponent implements OnInit {
                             .getPackage( packagesWithUpdates )
                             .subscribe( packages => {
                                 let installedCount = 0;
+                                const updateResults: ShareInstallResult[] = [];
 
                                 const installPackage = ( pkg: TriggerPackageMetaModel ) => {
                                     this.libraryService
@@ -431,13 +432,19 @@ export class MainComponent implements OnInit {
         
                                                 forkJoin( importTasks ).subscribe( results => {
                                                     // Missing package overlays are caught in the main component's ngInit event.
-                                                    this.ipcService.installTriggerPackage( pkg ).subscribe( installComplete => {
+                                                    this.ipcService.installTriggerPackage( pkg ).subscribe( installResult => {
                                                         installedCount += 1;
+                                                        updateResults.push( installResult );
                                                         if ( installedCount < packages?.length ) {
                                                             installPackage( packages[ installedCount ] );
                                                         } else {
                                                             sb?.dismiss();
-                                                            this.snackBar.open( 'All updates installed successfully!', 'dismiss', { duration: 5000 } );
+                                                            const successMessage = 'All updates installed successfully!';
+                                                            const total = ShareInstallResult.combine( updateResults );
+                                                            const message = ShareInstallResult.describeOutcome( total, successMessage );
+
+                                                            const duration = message === successMessage ? 5000 : 10000;
+                                                            this.snackBar.open( message, 'dismiss', { duration: duration } );
                                                             this.ipcService.requestTick();
                                                             window.setTimeout( () => this.checkForTriggerUpdates(), updateIntervalDuration );
                                                         }

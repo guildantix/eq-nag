@@ -29,6 +29,8 @@ const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz
 const idLen = 16;
 const nanoid = customAlphabet( alphabet, 16 );
 const ArrayUtilities = require( '../utilities/arrays' );
+const { normalizeSharedModel, normalizeSharedOverlayInput } = require( '../utilities/share-trigger-fields' );
+const log = require( 'electron-log' );
 const StringUtilities = require( "../utilities/string" );
 const Fuse = require( 'fuse.js' );
 const eqZones = require( './models/everquest-zones' );
@@ -592,8 +594,21 @@ class TriggerDatabaseStore extends Store {
                 this.emitInstalledIds();
             } );
 
+        // The receive dialog reads the share's triggers before they are installed, so it asks for
+        // them to be cleaned first.
+        ipcMain.on( 'quickShare:sanitize', ( event, quickShares ) => {
+            const sanitizedShares = ( Array.isArray( quickShares ) ? quickShares : [] ).map( quickShare => {
+                const repairReport = normalizeSharedModel( quickShare?.model );
+                this.logShareRepairs( 'quickShare:sanitize', repairReport );
+                return { model: repairReport.isUsable ? quickShare.model : null, repairReport: repairReport };
+            } );
+
+            event.sender.send( 'quickShare:sanitize', sanitizedShares );
+        } );
+
         ipcMain.on( 'quickShare:install', async ( event, quickShare ) => {
-            event.sender.send( 'quickShare:install', await this.installQuickshare( quickShare, event ) );
+            const installResult = await this.installQuickshare( quickShare, event );
+            event.sender.send( 'quickShare:install', installResult.installComplete, installResult.repairReport );
             this.emitInstalledIds();
         } );
 
@@ -1529,7 +1544,14 @@ class TriggerDatabaseStore extends Store {
      * @param {(overlayMap: Record<string, string>) => void} callback The callback function executed after all overlay maps have been completed.
      */
     installPackagedOverlays( packageId, packageOverlays, defaultOverlayIds, packagePrimaryDisplaySize, event, callback ) {
-        let overlayMap = this.#data.packageOverlayMap ?? {};
+        // The overlays come from a share, so every value is checked before it is used.
+        const cleanedOverlayInput = normalizeSharedOverlayInput( packageOverlays, defaultOverlayIds, packagePrimaryDisplaySize );
+        packageOverlays = cleanedOverlayInput.packageOverlays;
+        defaultOverlayIds = cleanedOverlayInput.defaultOverlayIds;
+        packagePrimaryDisplaySize = cleanedOverlayInput.primaryDisplaySize;
+
+        // No prototype, so an id such as toString never reads an inherited member.
+        const overlayMap = Object.assign( Object.create( null ), this.#data.packageOverlayMap );
         
         let finalize = () => {
             this.#data.packageOverlayMap = overlayMap;
@@ -1538,14 +1560,23 @@ class TriggerDatabaseStore extends Store {
             this.storeDataFile( this.#data );
         }
 
-        overlayMap[ defaultOverlayIds.detrimentalOverlayId ] = _userPreferences.detrimentalOverlayId;
-        overlayMap[ defaultOverlayIds.beneficialOverlayId ] = _userPreferences.beneficialOverlayId;
+        // A share without a default id must not write a key named "undefined".
+        if ( defaultOverlayIds.detrimentalOverlayId ) {
+            overlayMap[ defaultOverlayIds.detrimentalOverlayId ] = _userPreferences.detrimentalOverlayId;
+        }
+        if ( defaultOverlayIds.beneficialOverlayId ) {
+            overlayMap[ defaultOverlayIds.beneficialOverlayId ] = _userPreferences.beneficialOverlayId;
+        }
         // This was added after the original feature and may be null for older trigger packages.
         overlayMap[ defaultOverlayIds.textOverlayId ? defaultOverlayIds.textOverlayId : _userPreferences.alertOverlayId ] = _userPreferences.alertOverlayId;
         
         let missingOverlays = packageOverlays?.filter( f => overlayMap[ f.overlayId ] == null ) ?? [];
         let myDisplaySize = screen.getPrimaryDisplay().size;
-        let sizeRatio = { heightRatio: myDisplaySize.height / packagePrimaryDisplaySize?.height ?? 1, widthRatio: myDisplaySize.width / packagePrimaryDisplaySize?.width ?? 1 };
+        // Without the size of the sharer's display there is nothing to scale by, so the ratio is 1.
+        const sizeRatio = {
+            heightRatio: packagePrimaryDisplaySize ? myDisplaySize.height / packagePrimaryDisplaySize.height : 1,
+            widthRatio: packagePrimaryDisplaySize ? myDisplaySize.width / packagePrimaryDisplaySize.width : 1,
+        };
         
         let installOverlay =
             /**
@@ -1614,6 +1645,31 @@ class TriggerDatabaseStore extends Store {
 
     
     /**
+     * Writes a line to the log when a share was rejected or had triggers corrected or skipped.
+     * Only counts and the reason are logged, never what the triggers contain.
+     *
+     * @param {string} source The name of the step that cleaned the share.
+     * @param {object} repairReport The result of cleaning the share, with isUsable, failureReason,
+     * fixedCount and skippedCount.
+     */
+    logShareRepairs( source, repairReport ) {
+        if ( !repairReport.isUsable ) {
+            log.warn( `[trigger-database:${source}] Share rejected (${repairReport.failureReason}); ${repairReport.skippedCount} trigger(s) skipped.` );
+        } else if ( repairReport.fixedCount > 0 || repairReport.skippedCount > 0 ) {
+            log.warn( `[trigger-database:${source}] Share cleaned: ${repairReport.fixedCount} trigger(s) corrected, ${repairReport.skippedCount} skipped.` );
+        }
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
      * Installs the given trigger package.
      * 
      * @note Files are installed in the Angular, prior to calling this function.
@@ -1625,6 +1681,15 @@ class TriggerDatabaseStore extends Store {
         
         if ( this.#data.triggers === null || this.#data.triggers === undefined ) {
             throw 'Trigger database not loaded!';
+        }
+
+        // The package comes from a server, so its triggers are cleaned first.
+        const repairReport = normalizeSharedModel( pkg?.model );
+        this.logShareRepairs( 'installTriggerPkg', repairReport );
+
+        if ( !repairReport.isUsable ) {
+            event.sender.send( 'pkg:install', false, repairReport );
+            return;
         }
 
         let defaultOverlayIds = {
@@ -1694,7 +1759,7 @@ class TriggerDatabaseStore extends Store {
             this.processPredefinedTriggers();
             this.storeDataFile( this.#data );
             
-            event.sender.send( 'pkg:install', true );
+            event.sender.send( 'pkg:install', true, repairReport );
         } );
 
     }
@@ -1711,8 +1776,9 @@ class TriggerDatabaseStore extends Store {
     /**
      * Installs the given quickshare triggers, folders, and files.
      * 
-     * @returns {Promise<boolean>} Returns a buffer.
-     * 
+     * @returns {Promise<{ installComplete: boolean, repairReport: object }>} Resolves when the
+     * install is done, with how many triggers were corrected or skipped.
+     *
      * @param {QuickShareMetaModel} quickShare The quickshare to install.
      * @param {Electron.IpcMainEvent} event The event args.
      */
@@ -1720,6 +1786,14 @@ class TriggerDatabaseStore extends Store {
         
         if ( this.#data.triggers === null || this.#data.triggers === undefined ) {
             throw 'Trigger database not loaded!';
+        }
+
+        // The quick share comes from a server, so its triggers are cleaned first.
+        const repairReport = normalizeSharedModel( quickShare?.model );
+        this.logShareRepairs( 'installQuickshare', repairReport );
+
+        if ( !repairReport.isUsable ) {
+            return Promise.resolve( { installComplete: false, repairReport: repairReport } );
         }
 
         let defaultOverlayIds = {
@@ -1774,7 +1848,7 @@ class TriggerDatabaseStore extends Store {
                 this.processPredefinedTriggers();
                 this.storeDataFile( this.#data );
     
-                resolve( true );
+                resolve( { installComplete: true, repairReport: repairReport } );
             } );
 
         } );
@@ -2009,7 +2083,7 @@ class TriggerDatabaseStore extends Store {
     installPackageFolders( packageFolders ) {
         let folders = this.getFolders();
         /** @type {Record<string, string>} */
-        let folderMap = {};
+        const folderMap = Object.create( null );
 
         packageFolders?.forEach( pkgFolder => {
             
@@ -2157,7 +2231,8 @@ class TriggerDatabaseStore extends Store {
      */
     removeOverlayMapping( overlayId ) {
         for ( let key in this.#data.packageOverlayMap ) {
-            if ( this.#data.packageOverlayMap.hasOwnProperty( key ) && this.#data.packageOverlayMap[ key ] === overlayId ) {
+            // Right after an install the map has no prototype, so it has no hasOwnProperty method.
+            if ( Object.hasOwn( this.#data.packageOverlayMap, key ) && this.#data.packageOverlayMap[ key ] === overlayId ) {
                 this.#data.packageOverlayMap[ key ] = null;
             }
         }

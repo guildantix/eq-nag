@@ -1,6 +1,6 @@
 import { Component, EventEmitter, Input, OnInit, Output, ViewChild } from '@angular/core';
 import { MatTable } from '@angular/material/table';
-import { PackageFileModel, PackageFolder, PackageTrigger, TriggerPackageMetaModel } from 'src/app/core.model';
+import { PackageFileModel, PackageFolder, PackageTrigger, TriggerPackageMetaModel, ShareInstallResult } from 'src/app/core.model';
 import { DialogService } from 'src/app/dialogs/dialog.service';
 import { IpcService } from 'src/app/ipc.service';
 import * as _ from 'lodash-es';
@@ -253,10 +253,13 @@ export class TriggerPackageDetailsComponent implements OnInit {
         
         forkJoin( importTasks ).subscribe( results => {
             // Missing package overlays are caught in the this component's ngInit event.
-            this.ipcService.installTriggerPackage( triggerPackage ).subscribe( installComplete => {
-                this.snackBar.open( 'Package install complete!', 'dismiss', { duration: 2500 } );
+            this.ipcService.installTriggerPackage( triggerPackage ).subscribe( installResult => {
+                const successMessage = 'Package install complete!';
+                const message = ShareInstallResult.describeOutcome( installResult, successMessage );
+
+                this.snackBar.open( message, 'dismiss', { duration: message === successMessage ? 2500 : 8000 } );
                 this.ipcService.requestTick();
-                this.isInstalled = true;
+                this.isInstalled = installResult.installComplete;
             } );
         } );
     }

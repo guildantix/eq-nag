@@ -3,7 +3,7 @@ import { FlatTreeControl } from '@angular/cdk/tree';
 import { Component, OnInit, Inject } from '@angular/core';
 import { MatDialog, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { MatTreeFlattener, MatTreeFlatDataSource } from '@angular/material/tree';
-import { PackageFolder, PackageTrigger, QuickShareFileModel, QuickShareMetaModel, QuickShareModel, TriggerFolder, TriggerModel } from 'src/app/core.model';
+import { PackageFolder, PackageTrigger, QuickShareFileModel, QuickShareMetaModel, QuickShareModel, TriggerFolder, TriggerModel, ShareInstallResult } from 'src/app/core.model';
 import * as _ from 'lodash-es';
 import { IpcService } from 'src/app/ipc.service';
 import { combineLatest, forkJoin, Observable, timer } from 'rxjs';
@@ -115,6 +115,8 @@ export class ReceiveQuickShareDialogComponent implements OnInit {
     private packageTriggerOriginalFolderIds: Record<string, string> = {};
     private _realTriggers: TriggerModel[] = [];
     private _realFolders: TriggerFolder[] = [];
+    /** What was corrected or skipped in each share, before the dialog was shown. */
+    private sanitizeReports: ShareInstallResult[] = [];
 
     constructor(
         public dialogRef: MatDialogRef<ReceiveQuickShareDialogComponent, boolean>,
@@ -125,6 +127,49 @@ export class ReceiveQuickShareDialogComponent implements OnInit {
     ) { }
 
     ngOnInit(): void {
+
+        // Clean the shares first, because the dialog reads their triggers right away and a damaged
+        // share could break that.
+
+        this.ipcService.sanitizeQuickShares( this.data.quickShares ).subscribe( sanitizedShares => {
+
+            const usableShares: QuickShareMetaModel[] = [];
+
+            this.data.quickShares.forEach( ( quickShare, index ) => {
+                if ( sanitizedShares[ index ]?.model !== null && sanitizedShares[ index ]?.model !== undefined ) {
+                    quickShare.model = sanitizedShares[ index ].model;
+                    usableShares.push( quickShare );
+                    this.sanitizeReports.push( sanitizedShares[ index ].repairReport );
+                }
+            } );
+
+            this.data.quickShares = usableShares;
+
+            if ( usableShares.length === 0 ) {
+                this.snackBar.open( 'This quick share can not be imported because its data is damaged.', 'dismiss', { duration: 8000 } );
+                this.dialogRef.close( false );
+                return;
+            }
+
+            this.loadQuickShareData();
+
+        } );
+
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Loads the existing triggers and folders and builds the list of shared triggers to pick from.
+     */
+    private loadQuickShareData(): void {
         
         forkJoin( {
             folders: this.ipcService.getTriggerFolders(),
@@ -636,7 +681,12 @@ export class ReceiveQuickShareDialogComponent implements OnInit {
             } );
 
             forkJoin( installTasks ).subscribe( results => {
-                this.snackBar.open( 'Quick Share(s) installed!', 'dismiss', { duration: 2500 } );
+                // The first result belongs to the timer that keeps the list from being empty.
+                const installResult = ShareInstallResult.combine( this.sanitizeReports.concat( results.slice( 1 ) ) );
+                const successMessage = 'Quick Share(s) installed!';
+                const message = ShareInstallResult.describeOutcome( installResult, successMessage );
+
+                this.snackBar.open( message, 'dismiss', { duration: message === successMessage ? 2500 : 8000 } );
                 this.ipcService.requestTick();
                 
                 this.dialogRef.close( true );
