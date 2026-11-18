@@ -641,6 +641,22 @@ export class MainComponent implements OnInit {
         this.ipcService.updateLogFile( filePath );
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Hides the console panel off the first tab and reloads Settings when it opens.
+     * The tab is matched by its label because the Push tab can be switched off, which
+     * moves the index of every tab after it.
+     *
+     * @param event The tab change event.
+     */
     onChangeTabs( event: MatTabChangeEvent ): void {
         const isSettingsTab = event.tab.textLabel === 'Settings';
 

@@ -2894,26 +2894,93 @@ export class IpcService {
         return obs;
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Emits when the Push Recap settings change anywhere in the app.
+     */
     public onPushRecapPreferencesChanged(): Observable<PushRecapPreferences> {
         return this._pushRecapPreferencesChanged.asObservable();
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Emits when a recap is saved, deleted or cleared, so the Push tab can reload.
+     */
     public onPushRecapsChanged(): Observable<void> {
         return this._pushRecapsChanged.asObservable();
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Lists the saved recaps without the per-player detail, which is fetched on demand.
+     */
     public getPushRecaps(): Observable<PushRecapSummary[]> {
         return this.requestPushRecaps<PushRecapSummary[]>( 'push-recaps:list', {} );
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Fetches one saved recap with its per-player detail.
+     *
+     * @param id The recap id.
+     */
     public getPushRecap( id: string ): Observable<PushRecapSummary | null> {
         return this.requestPushRecaps<PushRecapSummary | null>( 'push-recaps:get', { id: id } );
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Sends a request to the recap store and matches the reply by request id, so overlapping
+     * requests are not mixed up.
+     *
+     * @param channel The IPC channel to ask.
+     * @param request The request body.
+     * @param request.id The recap id, when the request is about one recap.
+     */
     private requestPushRecaps<T>( channel: string, request: { id?: string } ): Observable<T> {
         return new Observable<T>( ( observer: Observer<T> ) => {
 
-            let requestId = ++this._pushRecapRequestId;
+            const requestId = ++this._pushRecapRequestId;
             this._pushRecapReplies.set( requestId, ( data: T ) => {
                 this._pushRecapReplies.delete( requestId );
                 observer.next( data );
@@ -2926,15 +2993,57 @@ export class IpcService {
         } );
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Opens the Push Recap pop-up for the last boss kill in a character's log.
+     *
+     * @param logFilePath The log file to read.
+     * @param characterName The character the log belongs to.
+     * @param serverName The character's server.
+     */
     public showPushRecap( logFilePath: string, characterName: string, serverName: string ): void {
-        let message = new IpcMessage( { logFilePath: logFilePath, characterName: characterName, serverName: serverName } );
+        const message = new IpcMessage( { logFilePath: logFilePath, characterName: characterName, serverName: serverName } );
         window.api.ipc.send( 'window:push-recap', message );
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Deletes one saved recap.
+     *
+     * @param id The recap id.
+     */
     public deletePushRecap( id: string ): void {
         window.api.ipc.send( 'push-recaps:delete', id );
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Deletes every saved recap.
+     */
     public clearPushRecaps(): void {
         window.api.ipc.send( 'push-recaps:clear', null );
     }

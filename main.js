@@ -67,7 +67,7 @@ import WindowManager from "./src/electron/window-manager.js";
 import CharacterDatabaseStore from "./src/electron/data/character-database.js";
 import LogBootstrapper from "./src/electron/log-bootstrap.js";
 import GameResources from "./src/electron/data/game-resources.js";
-import PushRecapStore from "./src/electron/data/push-recap-store.js";
+import PushRecapStore from './src/electron/data/push-recap-store.js';
 import FilesDatabaseStore from "./src/electron/data/files-database.js";
 import GinaImporter from "./src/electron/gina-importer.js";
 import RollTracker from "./src/electron/roll-tracker.js";

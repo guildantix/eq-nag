@@ -191,14 +191,16 @@ function buildSavedSummary( result, characterName ) {
         pushValue: result.totalPush,
         topPusher: result.topPlayer,
         players: result.players.map( p => {
-            let spells = {};
+            const spells = {};
             p.spells.forEach( s => spells[ s.name ] = { events: s.confirmed + s.assumed, assumed: s.assumed, push: s.push } );
             return { name: p.name, events: p.events, assumed: p.assumed, pushValue: p.pushValue, spells: spells };
         } ),
         unattributed: {
             events: result.unattributed.events,
             pushValue: result.unattributed.pushValue,
-            procs: result.unattributed.procs.map( p => ( { name: p.name, push: p.push, pushMin: p.pushMin, pushMax: p.pushMax, count: p.count } ) ),
+            procs: result.unattributed.procs.map( p => ( {
+                name: p.name, push: p.push, pushMin: p.pushMin, pushMax: p.pushMax, count: p.count
+            } ) ),
         },
     };
 }
@@ -373,7 +375,8 @@ function render( result ) {
  * The push recap screen.  Reads the spell data and the end of the log once, then
  * only recounts when another fight is picked.
  *
- * @param {{ logFilePath: string, characterName: string, eqFolder: string, userData: string, quietGapSeconds: number, saveRecaps: boolean }} params The window parameters.
+ * @param {{ logFilePath: string, characterName: string, eqFolder: string, userData: string,
+ *     quietGapSeconds: number, saveRecaps: boolean }} params The window parameters.
  */
 async function PushRecap( params ) {
 
@@ -391,17 +394,17 @@ async function PushRecap( params ) {
         }
     } );
 
-    let saved = new Set();
-    let pending = new Set();
-    let failed = new Set();
+    const saved = new Set();
+    const pending = new Set();
+    const failed = new Set();
     let shownIndex = -1;
-    let saveButton = document.getElementById( 'saveButton' );
-    let showSaveState = () => {
+    const saveButton = document.getElementById( 'saveButton' );
+    const showSaveState = () => {
         saveButton.textContent = saved.has( shownIndex ) ? 'Saved' : pending.has( shownIndex ) ? 'Saving...' : failed.has( shownIndex ) ? "Couldn't save - try again" : 'Save to Push tab';
         saveButton.disabled = saved.has( shownIndex ) || pending.has( shownIndex );
     };
-    let save = () => {
-        if ( result != null && !saved.has( shownIndex ) && !pending.has( shownIndex ) ) {
+    const save = () => {
+        if ( result !== null && result !== undefined && !saved.has( shownIndex ) && !pending.has( shownIndex ) ) {
             pending.add( shownIndex );
             failed.delete( shownIndex );
             ipcRenderer.send( 'push-recaps:save', Object.assign( buildSavedSummary( result, params.characterName ), { saveKey: shownIndex } ) );

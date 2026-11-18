@@ -2376,7 +2376,7 @@ export interface PushRecapSpellCount {
 
 export interface PushRecapProc {
     name: string;
-    /** The push value of one hit, or null when the landing message fits spells with different values. */
+    /** The push of one hit, or null when the landing message fits spells with different values. */
     push: number | null;
     pushMin: number | null;
     pushMax: number | null;
