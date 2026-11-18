@@ -58,8 +58,29 @@ div.tab-content {
 .detail-procs {
     flex: 0 0 auto;
 
-    &.possible {
+    .dim {
         opacity: 0.6;
+    }
+
+    td.also {
+        opacity: 0.75;
+        white-space: normal;
+        max-width: 22em;
+    }
+
+    button.hide-message {
+        cursor: pointer;
+        padding: 0 7px;
+        line-height: 18px;
+        color: inherit;
+        opacity: 0.7;
+        background: transparent;
+        border: 1px solid #ffffff1a;
+        border-radius: 3px;
+    }
+    button.hide-message:hover {
+        opacity: 1;
+        background-color: #ffffff1a;
     }
 }
 

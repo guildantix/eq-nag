@@ -149,8 +149,24 @@
             text-align: right;
             color: rgb(204, 204, 204);
         }
-        #possible {
+        .dimmed {
             opacity: 0.6;
+        }
+        td.hit-message {
+            color: rgb(255, 255, 255);
+        }
+        button.hide-message {
+            padding: 0 7px;
+            font-size: 13px;
+            line-height: 18px;
+            color: rgb(150, 150, 150);
+            background-color: transparent;
+            border: 1px solid #ffffff1a;
+            border-radius: 3px;
+        }
+        button.hide-message:hover {
+            color: rgb(204, 204, 204);
+            background-color: #ffffff1a;
         }
         #procs h3,
         #possible h3 {
@@ -250,21 +266,21 @@
                     <h3>Procs with no player named</h3>
                     <table>
                         <thead>
-                            <tr><th>Proc</th><th class="num">Push each</th><th class="num">Landed</th><th class="num">Total push</th></tr>
+                            <tr><th>Hit message</th><th>Push spells using it</th><th class="num">Push each</th><th class="num">Landed</th><th class="num">Total push</th><th></th></tr>
                         </thead>
                         <tbody id="procRows"></tbody>
                     </table>
-                    <div class="note">Weapon procs whose landing message names no caster. Not part of the player totals.</div>
+                    <div class="note">Weapon procs whose landing message names no caster. Not part of the player totals.<span id="procsHidden" hidden></span></div>
                 </div>
                 <div id="possible" hidden>
                     <h3>Possible procs</h3>
                     <table>
                         <thead>
-                            <tr><th>Proc</th><th class="num">Push each</th><th class="num">Landed</th><th class="num">Total push</th></tr>
+                            <tr><th>Hit message</th><th class="dimmed">Push spells using it</th><th>Also used by (no push)</th><th class="num dimmed">Push each</th><th class="num">Landed</th><th class="num dimmed">Total push</th><th></th></tr>
                         </thead>
                         <tbody id="possibleRows"></tbody>
                     </table>
-                    <div class="note">Spells with no push use the same landing message, so these may not be push. Not in any totals.</div>
+                    <div class="note">Spells with no push use the same landing message, so these may not be push. Not in any totals.<span id="possibleHidden" hidden></span></div>
                 </div>
                 <div class="note" id="procsFallback" hidden></div>
 

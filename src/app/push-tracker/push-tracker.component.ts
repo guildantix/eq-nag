@@ -3,7 +3,7 @@ import { MAT_FORM_FIELD_DEFAULT_OPTIONS } from '@angular/material/form-field';
 import { Subscription } from 'rxjs';
 import { DialogService } from '../dialogs/dialog.service';
 import { IpcService } from '../ipc.service';
-import { CharacterModel, PushRecapProc, PushRecapSummary, PushScanStatus } from '../core.model';
+import { CharacterModel, PushRecapPreferences, PushRecapProc, PushRecapSummary, PushScanStatus } from '../core.model';
 
 /**
  * One cell of the player by spell grid.
@@ -94,6 +94,11 @@ export class PushTrackerComponent implements OnInit, OnDestroy {
     public gridSpells: string[] = [];
     public gridSpellPush: Map<string, number | null> = new Map<string, number | null>();
     public gridRows: PushGridRow[] = [];
+    public hiddenTexts: Set<string> = new Set<string>();
+    public procRows: PushRecapProc[] = [];
+    public possibleRows: PushRecapProc[] = [];
+    public hiddenProcCount: number = 0;
+    public hiddenPossibleCount: number = 0;
 
     private subscription: Subscription = new Subscription();
     private detailSubscription: Subscription | null = null;
@@ -126,6 +131,8 @@ export class PushTrackerComponent implements OnInit, OnDestroy {
             this.scanStatus = status;
             this.loadScanResults();
         } ) );
+        this.subscription.add( this.ipcService.onPushRecapPreferencesChanged().subscribe( prefs => this.setHiddenTexts( prefs ) ) );
+        this.ipcService.getPushRecapPreferences().subscribe( prefs => this.setHiddenTexts( prefs ) );
         this.load();
         this.ipcService.getCharacters().subscribe( characters => {
             this.characters = characters.filter( c => c.logFile );
@@ -197,18 +204,10 @@ export class PushTrackerComponent implements OnInit, OnDestroy {
         return typeof value === 'string' ? value : value.name;
     }
 
+    public trackByProc( index: number, proc: PushRecapProc ): string {
+        return proc.text ?? proc.name;
+    }
 
-
-
-
-
-
-
-
-
-    /**
-     * True while a log scan is in progress, so the scan button and progress bar follow it.
-     */
     public get scanRunning(): boolean {
         return this.scanStatus?.status === 'running';
     }
@@ -395,18 +394,33 @@ export class PushTrackerComponent implements OnInit, OnDestroy {
         return total.startsWith( '~' ) || total === '-' ? total : `~${total}`;
     }
 
+    public messageText( proc: PushRecapProc ): string {
+        return proc.text ? `…${proc.text}` : '—';
+    }
 
+    public alsoText( proc: PushRecapProc ): string {
+        let names = proc.alsoNames ?? [];
+        if ( names.length === 0 ) {
+            return '—';
+        }
+        let more = ( proc.alsoCount ?? 0 ) - names.length;
+        return `${names.join( ', ' )}${more > 0 ? ` +${more} more` : ''}`;
+    }
 
+    public hideProc( proc: PushRecapProc ): void {
+        this.ipcService.setPushProcHidden( proc.text, true );
+    }
 
+    /** The procs with no player named in a fights list row, without the hidden messages. */
+    public procCount( recap: PushRecapSummary ): number {
+        let hidden = ( recap.unattributed.procs ?? [] ).filter( p => this.hiddenTexts.has( p.text ) ).reduce( ( sum, p ) => sum + p.count, 0 );
+        return Math.max( 0, recap.unattributed.events - hidden );
+    }
 
+    public hiddenNote( count: number ): string {
+        return count > 0 ? ` ${count} ${count === 1 ? 'message' : 'messages'} hidden (Settings › Push Recap).` : '';
+    }
 
-
-
-
-
-    /**
-     * Switches between the saved recaps and the scan results, dropping the other list selection.
-     */
     public onSourceChange(): void {
         this.selected = null;
         this.applyFilters();
@@ -733,20 +747,21 @@ export class PushTrackerComponent implements OnInit, OnDestroy {
         } );
     }
 
+    private setHiddenTexts( prefs: PushRecapPreferences | null ): void {
+        this.hiddenTexts = new Set( Array.isArray( prefs?.hiddenProcTexts ) ? prefs.hiddenProcTexts : [] );
+        this.buildProcs();
+        this.changeDetector.markForCheck();
+    }
 
+    private buildProcs(): void {
+        let procs = this.detail?.unattributed?.procs ?? [];
+        let possible = this.detail?.unattributed?.possible ?? [];
+        this.procRows = procs.filter( p => !this.hiddenTexts.has( p.text ) );
+        this.possibleRows = possible.filter( p => !this.hiddenTexts.has( p.text ) );
+        this.hiddenProcCount = procs.length - this.procRows.length;
+        this.hiddenPossibleCount = possible.length - this.possibleRows.length;
+    }
 
-
-
-
-
-
-
-
-    /**
-     * Builds the key that tells a scanned fight and a saved one apart from other fights.
-     *
-     * @param recap The fight to key.
-     */
     private recapKey( recap: PushRecapSummary ): string {
         return `${recap.characterName}|${recap.mob}|${recap.killTime}`;
     }
@@ -847,6 +862,7 @@ export class PushTrackerComponent implements OnInit, OnDestroy {
         this.gridSpells = [];
         this.gridSpellPush = new Map<string, number | null>();
         this.gridRows = [];
+        this.buildProcs();
 
         if ( recap !== null && recap !== undefined ) {
             const totals: Map<string, number> = new Map<string, number>();

@@ -3231,18 +3231,14 @@ export class IpcService {
         window.api.ipc.send( 'push-recaps:delete', id );
     }
 
+    public setPushProcHidden( text: string, hidden: boolean ): void {
+        window.api.ipc.send( 'push-recap:hidden:set', { text: text, hidden: hidden } );
+    }
 
+    public clearHiddenPushProcTexts(): void {
+        window.api.ipc.send( 'push-recap:hidden:set', { clear: true } );
+    }
 
-
-
-
-
-
-
-
-    /**
-     * Deletes every saved recap.
-     */
     public clearPushRecaps(): void {
         window.api.ipc.send( 'push-recaps:clear', null );
     }

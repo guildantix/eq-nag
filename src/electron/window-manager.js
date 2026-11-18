@@ -394,6 +394,26 @@ class WindowManager {
 
         ipcMain.handle( 'push-recap:snapshot', () => this.#pushRecapSnapshot );
 
+        ipcMain.handle( 'push-recap:hidden:get', () => this.#userPrefDb.hiddenProcTexts );
+
+        ipcMain.on( 'push-recap:hidden:set',
+            /**
+             * Hides or shows a push recap message, and tells the windows that show it.
+             *
+             * @param {any} event Event args.
+             * @param {{ text?: string, hidden?: boolean, clear?: boolean }} arg The change.
+             */
+            ( event, arg ) => {
+                let hidden = this.#userPrefDb.changeHiddenProcTexts( arg );
+                if ( this.#renderer && !this.#renderer.isDestroyed() ) {
+                    this.#renderer.webContents.send( 'settings:changed:pushRecap', this.#userPrefDb.pushRecap );
+                }
+                if ( this.#pushRecap != null && !this.#pushRecap.isDestroyed() ) {
+                    this.#pushRecap.webContents.send( 'push-recap:hidden-changed', hidden );
+                }
+            }
+        );
+
         ipcMain.on( 'renderer:arrange-overlays', ( event ) => {
             this.#renderer.webContents.send( 'renderer:arrange-overlays' );
 

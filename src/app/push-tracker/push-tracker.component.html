@@ -93,7 +93,7 @@
                         <td class="num">{{formatDamage( recap.damageTaken )}}</td>
                         <td class="num">{{recap.events}}<span class="assumed" *ngIf="recap.assumed > 0"> ~{{recap.assumed}}</span></td>
                         <td class="num">{{recap.pushValue}}</td>
-                        <td class="num">{{recap.unattributed.events}}</td>
+                        <td class="num">{{procCount( recap )}}</td>
                         <td>{{recap.topPusher || '-'}}</td>
                         <td class="actions">
                             <button mat-icon-button *ngIf="source === 'saved'" (click)="remove( recap, $event )" matTooltip="Delete this recap"><mat-icon class="material-icons-outlined">delete</mat-icon></button>
@@ -146,48 +146,58 @@
 
                 <div class="detail-procs" *ngIf="detail?.unattributed?.procs?.length > 0">
                     <h3 class="grid-title">Procs with no player named</h3>
-                    <table class="procs">
+                    <table class="procs" *ngIf="procRows.length > 0">
                         <thead>
                             <tr>
-                                <th>Proc</th>
+                                <th>Hit message</th>
+                                <th>Push spells using it</th>
                                 <th class="num">Push each</th>
                                 <th class="num">Landed</th>
                                 <th class="num">Total push</th>
+                                <th></th>
                             </tr>
                         </thead>
                         <tbody>
-                            <tr *ngFor="let proc of detail.unattributed.procs; trackBy: trackByName">
-                                <td>{{proc.name}}</td>
+                            <tr *ngFor="let proc of procRows; trackBy: trackByProc">
+                                <td>{{messageText( proc )}}</td>
+                                <td [matTooltip]="proc.names?.length > 1 ? proc.names.join( ', ' ) : ''">{{proc.name}}</td>
                                 <td class="num">{{procPush( proc )}}</td>
                                 <td class="num">{{proc.count}}</td>
                                 <td class="num">{{procTotal( proc )}}</td>
+                                <td class="num"><button type="button" class="hide-message" *ngIf="proc.text" (click)="hideProc( proc )" matTooltip="Hide this message from the proc tables">&times;</button></td>
                             </tr>
                         </tbody>
                     </table>
-                    <p class="note">Weapon procs whose landing message names no caster. Not part of the player totals.</p>
+                    <p class="note">Weapon procs whose landing message names no caster. Not part of the player totals.{{hiddenNote( hiddenProcCount )}}</p>
                 </div>
 
                 <div class="detail-procs possible" *ngIf="detail?.unattributed?.possible?.length > 0">
                     <h3 class="grid-title">Possible procs</h3>
-                    <table class="procs">
+                    <table class="procs" *ngIf="possibleRows.length > 0">
                         <thead>
                             <tr>
-                                <th>Proc</th>
-                                <th class="num">Push each</th>
+                                <th>Hit message</th>
+                                <th class="dim">Push spells using it</th>
+                                <th>Also used by (no push)</th>
+                                <th class="num dim">Push each</th>
                                 <th class="num">Landed</th>
-                                <th class="num">Total push</th>
+                                <th class="num dim">Total push</th>
+                                <th></th>
                             </tr>
                         </thead>
                         <tbody>
-                            <tr *ngFor="let proc of detail.unattributed.possible; trackBy: trackByName">
-                                <td>{{proc.name}}</td>
-                                <td class="num">{{procPush( proc )}}</td>
+                            <tr *ngFor="let proc of possibleRows; trackBy: trackByProc">
+                                <td>{{messageText( proc )}}</td>
+                                <td class="dim" [matTooltip]="proc.names?.length > 1 ? proc.names.join( ', ' ) : ''">{{proc.name}}</td>
+                                <td class="also">{{alsoText( proc )}}</td>
+                                <td class="num dim">{{procPush( proc )}}</td>
                                 <td class="num">{{proc.count}}</td>
-                                <td class="num">{{possibleTotal( proc )}}</td>
+                                <td class="num dim">{{possibleTotal( proc )}}</td>
+                                <td class="num"><button type="button" class="hide-message" *ngIf="proc.text" (click)="hideProc( proc )" matTooltip="Hide this message from the proc tables">&times;</button></td>
                             </tr>
                         </tbody>
                     </table>
-                    <p class="note">Spells with no push use the same landing message, so these may not be push. Not in any totals.</p>
+                    <p class="note">Spells with no push use the same landing message, so these may not be push. Not in any totals.{{hiddenNote( hiddenPossibleCount )}}</p>
                 </div>
             </div>
             <p class="note" *ngIf="!( detail?.unattributed?.procs?.length > 0 ) && selected.unattributed.events > 0">{{selected.unattributed.events}} more hits came from procs with no player named and are not in the totals.</p>
