@@ -33,15 +33,18 @@ const maxNpcAbilities = 100;
 
 /**
  * @typedef {Object} PushRecapProc
- * @property {string} [text] The landing message, after the name of the mob.  Missing on recaps saved by older versions.
+ * @property {string} [text] The landing message, after the name of the mob.  Missing on recaps
+ *     saved by older versions.
  * @property {string} name The label of the proc.
  * @property {string[]} [names] The spells the landing message can belong to.
  * @property {number | null} push The push value of one hit, or null when the spell is ambiguous.
  * @property {number | null} pushMin The lowest push value the proc can have.
  * @property {number | null} pushMax The highest push value the proc can have.
  * @property {number} count The number of times the proc landed.
- * @property {string[]} [alsoNames] For a possible proc, the first spells with no push that use the same message.
- * @property {number} [alsoCount] For a possible proc, how many spells with no push use the same message.
+ * @property {string[]} [alsoNames] For a possible proc, the first spells with no push that use the
+ *     same message.
+ * @property {number} [alsoCount] For a possible proc, how many spells with no push use the same
+ *     message.
  */
 
 /**

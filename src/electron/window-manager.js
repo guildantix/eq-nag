@@ -409,11 +409,14 @@ class WindowManager {
                 } else if ( typeof arg?.text !== 'string' || typeof arg?.hidden !== 'boolean' ) {
                     return;
                 }
-                let hidden = this.#userPrefDb.changeHiddenProcTexts( arg );
-                if ( this.#renderer && !this.#renderer.isDestroyed() ) {
-                    this.#renderer.webContents.send( 'settings:changed:pushRecap', this.#userPrefDb.pushRecap );
+                const hidden = this.#userPrefDb.changeHiddenProcTexts( arg );
+                // The Push tab and Settings live in the main window.
+                // The overlay window shows no push recap settings.
+                const mainWindow = this.#mainWindow.reference;
+                if ( mainWindow !== null && mainWindow !== undefined && !mainWindow.isDestroyed() ) {
+                    mainWindow.webContents.send( 'settings:changed:pushRecap', this.#userPrefDb.pushRecap );
                 }
-                if ( this.#pushRecap != null && !this.#pushRecap.isDestroyed() ) {
+                if ( this.#pushRecap !== null && this.#pushRecap !== undefined && !this.#pushRecap.isDestroyed() ) {
                     this.#pushRecap.webContents.send( 'push-recap:hidden-changed', hidden );
                 }
             }

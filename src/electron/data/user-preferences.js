@@ -181,6 +181,15 @@ class UserPreferencesStore extends Store {
         this.storeDataFile( this.#data );
     }
 
+
+
+
+
+
+
+
+
+
     /**
      * Returns the push recap messages that are hidden from the proc tables.
      *
@@ -190,6 +199,15 @@ class UserPreferencesStore extends Store {
         return sanitizeHiddenProcTexts( this.#data.pushRecap?.hiddenProcTexts );
     }
 
+
+
+
+
+
+
+
+
+
     /**
      * Hides or shows a push recap message, or shows all of them.
      *
@@ -198,15 +216,24 @@ class UserPreferencesStore extends Store {
      * @param {{ text?: string, hidden?: boolean, clear?: boolean }} change The change.
      */
     changeHiddenProcTexts( change ) {
-        let texts = change?.clear === true ? [] : this.hiddenProcTexts.filter( t => t !== change?.text );
+        const texts = change?.clear === true ? [] : this.hiddenProcTexts.filter( t => t !== change?.text );
         if ( change?.clear !== true && change?.hidden === true ) {
             texts.push( change.text );
         }
-        let prefs = Object.assign( new PushRecapPreferences(), this.#data.pushRecap );
+        const prefs = Object.assign( new PushRecapPreferences(), this.#data.pushRecap );
         prefs.hiddenProcTexts = sanitizeHiddenProcTexts( texts );
         this.pushRecap = prefs;
         return prefs.hiddenProcTexts;
     }
+
+
+
+
+
+
+
+
+
 
     /** @type {string} */
     get detrimentalOverlayId() {
@@ -1071,7 +1098,7 @@ class UserPreferencesStore extends Store {
 
         ipcMain.on( 'settings:set:pushRecap', ( event, pushRecap ) => {
             this.pushRecap = Object.assign( {}, pushRecap, { hiddenProcTexts: this.hiddenProcTexts } );
-            if ( mainWindowRef.reference != null && !mainWindowRef.reference.isDestroyed() ) {
+            if ( mainWindowRef.reference !== null && mainWindowRef.reference !== undefined && !mainWindowRef.reference.isDestroyed() ) {
                 mainWindowRef.reference.webContents.send( 'settings:changed:pushRecap', this.pushRecap );
             }
         } );

@@ -3231,14 +3231,53 @@ export class IpcService {
         window.api.ipc.send( 'push-recaps:delete', id );
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Hides or shows the landing message of a proc in the Push tab and the pop-up.
+     *
+     * @param text The landing message.
+     * @param hidden True to hide the message, false to show it again.
+     */
     public setPushProcHidden( text: string, hidden: boolean ): void {
         window.api.ipc.send( 'push-recaps:hidden:set', { text: text, hidden: hidden } );
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Shows every hidden landing message again.
+     */
     public clearHiddenPushProcTexts(): void {
         window.api.ipc.send( 'push-recaps:hidden:set', { clear: true } );
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Deletes every saved recap.
+     */
     public clearPushRecaps(): void {
         window.api.ipc.send( 'push-recaps:clear', null );
     }

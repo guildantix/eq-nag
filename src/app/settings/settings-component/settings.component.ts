@@ -207,7 +207,9 @@ export class SettingsComponent implements OnInit, OnDestroy {
 
         this.loadHiddenMessages();
         // Subscribed once here, not in loadSettings, which runs on every visit to the tab.
-        this.pushRecapSubscription.add( this.ipcService.onPushRecapPreferencesChanged().subscribe( recapPrefs => this.pushRecapPreferences.hiddenProcTexts = recapPrefs?.hiddenProcTexts ?? [] ) );
+        this.pushRecapSubscription.add( this.ipcService.onPushRecapPreferencesChanged().subscribe( recapPrefs => {
+            this.pushRecapPreferences.hiddenProcTexts = recapPrefs?.hiddenProcTexts ?? [];
+        } ) );
 
         this.loadSettings();
     }

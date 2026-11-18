@@ -204,10 +204,37 @@ export class PushTrackerComponent implements OnInit, OnDestroy {
         return typeof value === 'string' ? value : value.name;
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Keeps the proc rows stable while the hidden messages change.
+     *
+     * @param index The row position, unused.
+     * @param proc The proc in the row.
+     */
     public trackByProc( index: number, proc: PushRecapProc ): string {
         return proc.text ?? proc.name;
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * True while a log scan is in progress, so the scan button and progress bar follow it.
+     */
     public get scanRunning(): boolean {
         return this.scanStatus?.status === 'running';
     }
@@ -394,33 +421,115 @@ export class PushTrackerComponent implements OnInit, OnDestroy {
         return total.startsWith( '~' ) || total === '-' ? total : `~${total}`;
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Shows the landing message of a proc, which the log prints after the name of the mob.
+     *
+     * @param proc The proc to describe.
+     */
     public messageText( proc: PushRecapProc ): string {
         return proc.text ? `…${proc.text}` : '—';
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Names the spells with no push that share a possible proc's landing message.
+     *
+     * @param proc The possible proc to describe.
+     */
     public alsoText( proc: PushRecapProc ): string {
-        let names = proc.alsoNames ?? [];
+        const names = proc.alsoNames ?? [];
         if ( names.length === 0 ) {
             return '—';
         }
-        let more = ( proc.alsoCount ?? 0 ) - names.length;
+        const more = ( proc.alsoCount ?? 0 ) - names.length;
         return `${names.join( ', ' )}${more > 0 ? ` +${more} more` : ''}`;
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Hides a proc's landing message everywhere, without changing the saved data.
+     *
+     * @param proc The proc whose message to hide.
+     */
     public hideProc( proc: PushRecapProc ): void {
         this.ipcService.setPushProcHidden( proc.text, true );
     }
 
-    /** The procs with no player named in a fights list row, without the hidden messages. */
+
+
+
+
+
+
+
+
+
+    /**
+     * Counts the procs with no player named in a fights list row, without the hidden messages.
+     *
+     * @param recap The fights list row.
+     */
     public procCount( recap: PushRecapSummary ): number {
-        let hidden = ( recap.unattributed.procs ?? [] ).filter( p => this.hiddenTexts.has( p.text ) ).reduce( ( sum, p ) => sum + p.count, 0 );
+        const hiddenProcs = ( recap.unattributed.procs ?? [] ).filter( p => this.hiddenTexts.has( p.text ) );
+        const hidden = hiddenProcs.reduce( ( sum, p ) => sum + p.count, 0 );
         return Math.max( 0, recap.unattributed.events - hidden );
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Tells how many messages are hidden in a proc table, so a missing row is explained.
+     *
+     * @param count The number of hidden messages.
+     */
     public hiddenNote( count: number ): string {
         return count > 0 ? ` ${count} ${count === 1 ? 'message' : 'messages'} hidden (Settings › Push Recap).` : '';
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Switches between the saved recaps and the scan results, dropping the other list selection.
+     */
     public onSourceChange(): void {
         this.selected = null;
         this.applyFilters();
@@ -653,15 +762,17 @@ export class PushTrackerComponent implements OnInit, OnDestroy {
             const share = recap.events > 0 ? Math.round( p.events * 100 / recap.events ) : 0;
             lines.push( `${i + 1}. ${p.name} - ${p.events} (${share}%)${p.assumed > 0 ? ` ~${p.assumed} assumed` : ''}` );
         } );
-        let hiddenCount = ( list: PushRecapProc[] | undefined ) => ( list ?? [] ).filter( p => this.hiddenTexts.has( p.text ) ).reduce( ( sum, p ) => sum + p.count, 0 );
-        let procHits = recap.unattributed.events - hiddenCount( recap.unattributed.procs );
+        const hiddenCount = ( list: PushRecapProc[] | undefined ) => {
+            return ( list ?? [] ).filter( p => this.hiddenTexts.has( p.text ) ).reduce( ( sum, p ) => sum + p.count, 0 );
+        };
+        const procHits = recap.unattributed.events - hiddenCount( recap.unattributed.procs );
         if ( procHits > 0 ) {
-            let top = this.procRows.slice( 0, 5 ).map( p => `${p.name} ${p.count}` ).join( ', ' );
+            const top = this.procRows.slice( 0, 5 ).map( p => `${p.name} ${p.count}` ).join( ', ' );
             lines.push( `Procs with no player named: ${procHits}${top === '' ? '' : ` (${top})`}` );
         }
-        let possibleHits = ( recap.unattributed.possibleEvents ?? 0 ) - hiddenCount( recap.unattributed.possible );
+        const possibleHits = ( recap.unattributed.possibleEvents ?? 0 ) - hiddenCount( recap.unattributed.possible );
         if ( possibleHits > 0 ) {
-            let top = this.possibleRows.slice( 0, 5 ).map( p => `${p.name} ${p.count}` ).join( ', ' );
+            const top = this.possibleRows.slice( 0, 5 ).map( p => `${p.name} ${p.count}` ).join( ', ' );
             lines.push( `Possible procs: ${possibleHits}${top === '' ? '' : ` (${top})`}` );
         }
         this.ipcService.sendTextToClipboard( lines.join( '\n' ) );
@@ -750,21 +861,61 @@ export class PushTrackerComponent implements OnInit, OnDestroy {
         } );
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Takes the hidden messages from the preferences and rebuilds the proc tables.
+     *
+     * @param prefs The Push Recap preferences, or null when they are not loaded yet.
+     */
     private setHiddenTexts( prefs: PushRecapPreferences | null ): void {
         this.hiddenTexts = new Set( Array.isArray( prefs?.hiddenProcTexts ) ? prefs.hiddenProcTexts : [] );
         this.buildProcs();
         this.changeDetector.markForCheck();
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Builds the proc tables of the selected fight without the hidden messages.
+     */
     private buildProcs(): void {
-        let procs = this.detail?.unattributed?.procs ?? [];
-        let possible = this.detail?.unattributed?.possible ?? [];
+        const procs = this.detail?.unattributed?.procs ?? [];
+        const possible = this.detail?.unattributed?.possible ?? [];
         this.procRows = procs.filter( p => !this.hiddenTexts.has( p.text ) );
         this.possibleRows = possible.filter( p => !this.hiddenTexts.has( p.text ) );
         this.hiddenProcCount = procs.length - this.procRows.length;
         this.hiddenPossibleCount = possible.length - this.possibleRows.length;
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Builds the key that tells a scanned fight and a saved one apart from other fights.
+     *
+     * @param recap The fight to key.
+     */
     private recapKey( recap: PushRecapSummary ): string {
         return `${recap.characterName}|${recap.mob}|${recap.killTime}`;
     }
