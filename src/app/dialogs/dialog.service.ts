@@ -904,7 +904,7 @@ export class DialogService {
         data.message = message;
         data.notificationType = NotificationTypes.Error;
 
-        let closed = this.dialog.open( NotificationDialogComponent, {
+        const closed = this.dialog.open( NotificationDialogComponent, {
             width: '450px',
             data: data,
             panelClass: 'app-dialog',

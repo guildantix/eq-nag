@@ -5,10 +5,17 @@ import { DialogService } from '../dialogs/dialog.service';
 import { IpcService } from '../ipc.service';
 import { ShareFileReadResult } from '../core.model';
 
+/**
+ * Imports .nag share files one at a time, so two files opened together do not show their
+ * dialogs on top of each other.
+ */
 @Injectable( { providedIn: 'root' } )
 export class ShareFileService {
 
-    /** The pending imports. Each one reads a share file and shows its dialogs before the next one starts. */
+    /**
+     * The pending imports. Each one reads a share file and shows its dialogs before the next
+     * one starts.
+     */
     private _queue: ( () => Observable<ShareFileReadResult> )[] = [];
     private _busy: boolean = false;
 
@@ -86,9 +93,9 @@ export class ShareFileService {
         }
 
         this._busy = true;
-        let source = this._queue.shift();
+        const source = this._queue.shift();
         let finished = false;
-        let finish = () => {
+        const finish = () => {
             if ( !finished ) {
                 finished = true;
                 this._busy = false;
@@ -125,8 +132,10 @@ export class ShareFileService {
 
 
 
+
     /**
-     * Handles the result of opening or reading a share file. Shows the receive quick share dialog for a valid file, or an error for an invalid one.
+     * Handles the result of opening or reading a share file. Shows the receive quick share
+     * dialog for a valid file, or an error for an invalid one.
      *
      * @returns Returns an observable that completes once the user is done with the result.
      *
@@ -142,11 +151,11 @@ export class ShareFileService {
             return this.showReadError( result );
         }
 
-        let newerVersion = result.warnings?.find( f => f.code === 'newerVersion' );
+        const newerVersion = result.warnings?.find( f => f.code === 'newerVersion' );
 
         if ( newerVersion ) {
-            let unknownKeys = newerVersion.unknownKeys ?? [];
-            let message = [
+            const unknownKeys = newerVersion.unknownKeys ?? [];
+            const message = [
                 `This file was made with a newer version of Nag (${newerVersion.fileVersion}). It can still be imported, but ${unknownKeys.length} setting${unknownKeys.length === 1 ? '' : 's'} this version doesn't recognize ${unknownKeys.length === 1 ? 'is' : 'are'} kept and may not take effect.`,
             ];
 
@@ -221,9 +230,9 @@ export class ShareFileService {
      */
     private showReadError( result: ShareFileReadResult ): Observable<void> {
 
-        let name = `“${result.fileName}”`;
-        let bytes = +( /(\d+) bytes/.exec( result.details ?? '' )?.[ 1 ] ?? NaN );
-        let size = isNaN( bytes ) ? null : this.formatSize( bytes );
+        const name = `“${result.fileName}”`;
+        const bytes = +( /(\d+) bytes/.exec( result.details ?? '' )?.[ 1 ] ?? NaN );
+        const size = isNaN( bytes ) ? null : this.formatSize( bytes );
         let message: string;
 
         switch ( result.code ) {

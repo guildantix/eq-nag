@@ -70,12 +70,31 @@ export class PrepareQuickShareDialogComponent implements OnInit {
     public creatingQuickShare: boolean = false;
     public shareToServer: boolean = true;
     public saveAsFile: boolean = false;
-    /** The id of the share uploaded in this dialog, so a retry of a cancelled save does not upload again. */
+    /**
+     * The id of the share uploaded in this dialog, so a retry of a cancelled save does not
+     * upload again.
+     */
     private _uploadedQuickShareId: string = null;
     public readonly shareCodeExample: string = '{NAG:quick-share/...}';
+    /**
+     * The label of the main button, which depends on whether the share is uploaded, saved, or both.
+     */
     public get shareButtonLabel(): string {
         return this.shareToServer && this.saveAsFile ? 'Share and Save' : this.saveAsFile ? 'Save File...' : 'Copy to Clipboard';
     }
+
+
+
+
+
+
+
+
+
+
+    /**
+     * True when at least one share target is chosen, so the main button can be enabled.
+     */
     public get canShare(): boolean {
         return this.shareToServer || this.saveAsFile;
     }
@@ -409,16 +428,23 @@ export class PrepareQuickShareDialogComponent implements OnInit {
      * @param triggers The triggers in the quickshare.
      * @param quickShareId The server quickshare id, if the share was also uploaded.
      */
-    private saveShareFile( author: AuthorModel, quickShare: QuickShareModel, files: QuickShareFileModel[], folders: PackageFolder[], triggers: PackageTrigger[], quickShareId: string ): void {
+    private saveShareFile(
+        author: AuthorModel,
+        quickShare: QuickShareModel,
+        files: QuickShareFileModel[],
+        folders: PackageFolder[],
+        triggers: PackageTrigger[],
+        quickShareId: string
+    ): void {
 
-        let payload: ShareFilePayload = {
+        const payload: ShareFilePayload = {
             quickShares: [ Object.assign( new QuickShareMetaModel(), { author: author?.name ?? '', authorDiscord: author?.discord ?? '', model: quickShare } ) ],
             files: files,
         };
 
-        let now = new Date();
-        let date = `${now.getFullYear()}-${String( now.getMonth() + 1 ).padStart( 2, '0' )}-${String( now.getDate() ).padStart( 2, '0' )}`;
-        let name = triggers.length === 1 ? triggers[ 0 ].name : folders[ 0 ]?.name ?? triggers[ 0 ]?.name ?? 'triggers';
+        const now = new Date();
+        const date = `${now.getFullYear()}-${String( now.getMonth() + 1 ).padStart( 2, '0' )}-${String( now.getDate() ).padStart( 2, '0' )}`;
+        const name = triggers.length === 1 ? triggers[ 0 ].name : folders[ 0 ]?.name ?? triggers[ 0 ]?.name ?? 'triggers';
 
         this.ipcService.saveShareFile( payload, `Nag - ${name} - ${date}.nag` ).subscribe( result => {
 
@@ -557,8 +583,8 @@ export class PrepareQuickShareDialogComponent implements OnInit {
 
                 // Submits the final quickshare to the server to generate a
                 // quickShareId, when sharing to the server.
-                let alreadyUploaded = this.shareToServer && !!this._uploadedQuickShareId;
-                let upload: Observable<string> = this.shareToServer && !alreadyUploaded ?
+                const alreadyUploaded = this.shareToServer && !!this._uploadedQuickShareId;
+                const upload: Observable<string> = this.shareToServer && !alreadyUploaded ?
                     this.quickShareService.createQuickShare( author.authorId, quickShare, quickShareFiles, null ) :
                     of( this.shareToServer ? this._uploadedQuickShareId : null );
 
@@ -579,7 +605,8 @@ export class PrepareQuickShareDialogComponent implements OnInit {
 
                 }, () => {
 
-                    // QuickShareService.handleError shows the error dialog, so the snackbar only offers the file save as an alternative.
+                    // QuickShareService.handleError shows the error dialog, so the snackbar only
+                    // offers the file save as an alternative.
                     if ( !this.saveAsFile ) {
                         this.snackBar.open( 'Couldn\'t upload the share. You can still save it as a file.', 'Dismiss', { duration: 5000 } );
                     }

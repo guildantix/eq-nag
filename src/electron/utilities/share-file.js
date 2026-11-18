@@ -14,7 +14,10 @@ const jsonAllowanceBytes = 7 * 1024 * 1024;
 const manifestAllowanceBytes = 1024 * 1024;
 /** The largest size, in bytes, a single zip entry may inflate to. */
 const maxEntryBytes = Math.ceil( soundShareCapBytes * 4 / 3 ) + jsonAllowanceBytes;
-/** The largest file, in bytes, that will be opened. A zip is never larger than what it unpacks to. */
+/**
+ * The largest file, in bytes, that will be opened. A zip is never larger than what it
+ * unpacks to.
+ */
 const maxFileBytes = maxEntryBytes;
 /** The largest total declared uncompressed size, in bytes, of a zip's entries. */
 const maxUnpackedBytes = maxEntryBytes + manifestAllowanceBytes;
@@ -55,7 +58,8 @@ let knownActionKeys;
  * @property {SharePayload} [payload] The share payload, when ok.
  * @property {ShareManifest | null} [manifest] The manifest, or null for a raw json file, when ok.
  * @property {ShareWarning[]} [warnings] Non-fatal warnings, when ok.
- * @property {string} [code] One of wrongType, tooLarge, unpackTooLarge, notNagFile, damaged, when not ok.
+ * @property {string} [code] One of wrongType, tooLarge, unpackTooLarge, notNagFile, damaged,
+ * when not ok.
  * @property {string} fileName The name of the file, without its folder.
  * @property {string} [details] A short description of the failure, when not ok.
  */
@@ -103,7 +107,8 @@ function isObject( value ) {
 
 
 /**
- * Returns null when the payload has the structure the receive quick share dialog needs, otherwise a description of the problem.
+ * Returns null when the payload has the structure the receive quick share dialog needs,
+ * otherwise a description of the problem.
  *
  * @returns {string | null}
  *
@@ -145,7 +150,7 @@ function checkPayloadShape( payload ) {
             }
         }
 
-        let folderProblem = checkFolders( quickShare.model.folders );
+        const folderProblem = checkFolders( quickShare.model.folders );
         if ( folderProblem ) {
             return folderProblem;
         }
@@ -176,7 +181,8 @@ function checkPayloadShape( payload ) {
 
 
 /**
- * Returns null if every folder in the hierarchy has an id and a valid children list, otherwise a description of the problem.
+ * Returns null if every folder in the hierarchy has an id and a valid children list,
+ * otherwise a description of the problem.
  * The hierarchy is walked without recursion and may not nest deeper than the maximum folder depth.
  *
  * @returns {string | null}
@@ -186,10 +192,10 @@ function checkPayloadShape( payload ) {
 function checkFolders( folders ) {
 
     /** @type {{ list: any[], depth: number }[]} */
-    let pending = [ { list: folders, depth: 1 } ];
+    const pending = [ { list: folders, depth: 1 } ];
 
     while ( pending.length > 0 ) {
-        let { list, depth } = pending.pop();
+        const { list, depth } = pending.pop();
 
         if ( list.length === 0 ) {
             continue;
@@ -226,7 +232,8 @@ function checkFolders( folders ) {
 
 
 /**
- * Fills in the fields the receive quick share dialog and installer expect, so a share without a server record can be imported.
+ * Fills in the fields the receive quick share dialog and installer expect, so a share
+ * without a server record can be imported.
  * Shares from a file are never marked as trusted.
  *
  * @returns {SharePayload} Returns the same payload, normalized.
@@ -239,7 +246,7 @@ function normalizePayload( payload ) {
 
     for ( const quickShare of payload.quickShares ) {
 
-        let contentId = crypto
+        const contentId = crypto
             .createHash( 'sha256' )
             .update( JSON.stringify( { triggers: quickShare.model.triggers, folders: quickShare.model.folders } ) )
             .digest( 'hex' )
@@ -277,7 +284,7 @@ function normalizePayload( payload ) {
  * @param {string} version The version text.
  */
 function parseVersion( version ) {
-    let match = /(\d+)\.(\d+)\.(\d+)/.exec( version );
+    const match = /(\d+)\.(\d+)\.(\d+)/.exec( version );
     return match ? [ +match[ 1 ], +match[ 2 ], +match[ 3 ] ] : null;
 }
 
@@ -299,8 +306,8 @@ function parseVersion( version ) {
  * @param {string} b The second version.
  */
 function isNewerVersion( a, b ) {
-    let av = parseVersion( a );
-    let bv = parseVersion( b );
+    const av = parseVersion( a );
+    const bv = parseVersion( b );
 
     if ( !av || !bv ) {
         return false;
@@ -342,14 +349,23 @@ function findUnknownActionKeys( payload ) {
         }
     }
 
-    let known = knownActionKeys;
+    const known = knownActionKeys;
 
     if ( !known ) {
         return [];
     }
 
+
+
+
+
+
+
+
+
+
     /** @type {Set<string>} */
-    let unknown = new Set();
+    const unknown = new Set();
 
     for ( const quickShare of payload.quickShares ) {
         for ( const trigger of quickShare.model.triggers ) {
@@ -384,15 +400,24 @@ function findUnknownActionKeys( payload ) {
  */
 function buildShareBuffer( payload, appVersion ) {
 
-    let problem = checkPayloadShape( payload );
+    const problem = checkPayloadShape( payload );
     if ( problem ) {
         throw new Error( `Invalid share payload. ${problem}` );
     }
 
-    /** @type {ShareManifest} */
-    let manifest = { app: 'EQNAG', version: appVersion, type: 'triggers' };
 
-    let zip = new AdmZip();
+
+
+
+
+
+
+
+
+    /** @type {ShareManifest} */
+    const manifest = { app: 'EQNAG', version: appVersion, type: 'triggers' };
+
+    const zip = new AdmZip();
     zip.addFile( 'manifest.json', Buffer.from( JSON.stringify( manifest, null, 2 ), 'utf8' ) );
     zip.addFile( 'share.json', Buffer.from( JSON.stringify( normalizePayload( payload ) ), 'utf8' ) );
 
@@ -412,7 +437,8 @@ function buildShareBuffer( payload, appVersion ) {
 /**
  * Writes a .nag file.
  *
- * @returns {{ ok: boolean, code?: string }} Returns ok, or the tooLarge code if the file would be too big to import again.
+ * @returns {{ ok: boolean, code?: string }} Returns ok, or the tooLarge code if the file
+ * would be too big to import again.
  *
  * @param {string} filePath The full file path.
  * @param {SharePayload} payload The share payload, in the shape of the receive quick share dialog.
@@ -420,7 +446,7 @@ function buildShareBuffer( payload, appVersion ) {
  */
 function writeShareFile( filePath, payload, appVersion ) {
 
-    let buffer = buildShareBuffer( payload, appVersion );
+    const buffer = buildShareBuffer( payload, appVersion );
 
     if ( buffer.length > maxFileBytes ) {
         return { ok: false, code: 'tooLarge' };
@@ -442,7 +468,8 @@ function writeShareFile( filePath, payload, appVersion ) {
 
 
 /**
- * Parses json text, ignoring a leading byte order mark and dropping keys that could alter object prototypes.
+ * Parses json text, ignoring a leading byte order mark and dropping keys that could alter
+ * object prototypes.
  *
  * @returns {any} Returns the parsed value. Throws if the text is not valid json.
  *
@@ -465,15 +492,16 @@ function parseJson( text ) {
  * Returns the uncompressed contents of a zip entry, never inflating more than the entry size limit.
  * The entry's own decompression is not used, since it trusts the sizes declared in the zip.
  *
- * @returns {Buffer} Returns the entry contents. Throws an error with a code of unpackTooLarge or damaged.
+ * @returns {Buffer} Returns the entry contents. Throws an error with a code of
+ * unpackTooLarge or damaged.
  *
  * @param {Buffer} buffer The zip file contents.
  * @param {AdmZip.IZipEntry} entry The zip entry.
  */
 function unpackEntry( buffer, entry ) {
 
-    let header = entry.header;
-    let failWith = ( code, message ) => Object.assign( new Error( message ), { code: code } );
+    const header = entry.header;
+    const failWith = ( code, message ) => Object.assign( new Error( message ), { code: code } );
 
     if ( header.size > maxEntryBytes ) {
         throw failWith( 'unpackTooLarge', 'The entry declares more than the limit.' );
@@ -493,14 +521,14 @@ function unpackEntry( buffer, entry ) {
         throw failWith( 'zipUnsupported', 'The zip library no longer provides the entry data offset.' );
     }
 
-    let start = header.realDataOffset;
-    let end = start + header.compressedSize;
+    const start = header.realDataOffset;
+    const end = start + header.compressedSize;
 
     if ( start < 0 || end > buffer.length ) {
         throw failWith( 'damaged', 'The entry is outside the file.' );
     }
 
-    let compressed = buffer.subarray( start, end );
+    const compressed = buffer.subarray( start, end );
     let data;
 
     if ( header.method === 0 ) {
@@ -535,7 +563,8 @@ function unpackEntry( buffer, entry ) {
 /**
  * Reads the manifest and share entries of a zip without extracting anything to disk.
  *
- * @returns {{ manifestText: string, shareText: string } | ShareFileResult} Returns the entry texts, or a failed result.
+ * @returns {{ manifestText: string, shareText: string } | ShareFileResult} Returns the entry
+ * texts, or a failed result.
  *
  * @param {Buffer} buffer The zip file contents.
  * @param {string} fileName The file name.
@@ -557,21 +586,21 @@ function readZipEntries( buffer, fileName ) {
     }
 
     // Declared sizes come from the entry headers, so nothing is inflated before this check.
-    let declaredBytes = entries.reduce( ( total, entry ) => total + entry.header.size, 0 );
+    const declaredBytes = entries.reduce( ( total, entry ) => total + entry.header.size, 0 );
     if ( declaredBytes > maxUnpackedBytes ) {
         return fail( 'unpackTooLarge', fileName, `The zip declares ${declaredBytes} bytes unpacked.` );
     }
 
-    let manifestEntry = entries.find( entry => !entry.isDirectory && entry.entryName === 'manifest.json' );
-    let shareEntry = entries.find( entry => !entry.isDirectory && entry.entryName === 'share.json' );
+    const manifestEntry = entries.find( entry => !entry.isDirectory && entry.entryName === 'manifest.json' );
+    const shareEntry = entries.find( entry => !entry.isDirectory && entry.entryName === 'share.json' );
 
     if ( !manifestEntry || !shareEntry ) {
         return fail( 'notNagFile', fileName, 'The zip has no manifest.json and share.json.' );
     }
 
     try {
-        let manifestData = unpackEntry( buffer, manifestEntry );
-        let shareData = unpackEntry( buffer, shareEntry );
+        const manifestData = unpackEntry( buffer, manifestEntry );
+        const shareData = unpackEntry( buffer, shareEntry );
 
         if ( manifestData.length + shareData.length > maxUnpackedBytes ) {
             return fail( 'unpackTooLarge', fileName, 'The zip unpacks larger than allowed.' );
@@ -636,8 +665,8 @@ function readShareFile( filePath, appVersion ) {
  */
 function readShareFileChecked( filePath, appVersion ) {
 
-    let fileName = path.basename( String( filePath ?? '' ) );
-    let extension = path.extname( fileName ).toLowerCase();
+    const fileName = path.basename( String( filePath ?? '' ) );
+    const extension = path.extname( fileName ).toLowerCase();
 
     if ( !allowedExtensions.includes( extension ) ) {
         return fail( 'wrongType', fileName, `Files of type ${extension || 'none'} cannot be imported.` );
@@ -671,7 +700,7 @@ function readShareFileChecked( filePath, appVersion ) {
     try {
 
         if ( extension === '.json' ) {
-            let parsed = parseJson( buffer.toString( 'utf8' ) );
+            const parsed = parseJson( buffer.toString( 'utf8' ) );
 
             if ( isObject( parsed ) && isObject( parsed.manifest ) && parsed.share !== undefined ) {
                 manifest = parsed.manifest;
@@ -681,7 +710,7 @@ function readShareFileChecked( filePath, appVersion ) {
             }
 
         } else {
-            let entries = readZipEntries( buffer, fileName );
+            const entries = readZipEntries( buffer, fileName );
 
             if ( entries.ok === false ) {
                 return entries;
@@ -704,13 +733,22 @@ function readShareFileChecked( filePath, appVersion ) {
         }
     }
 
-    let problem = checkPayloadShape( sharePayload );
+    const problem = checkPayloadShape( sharePayload );
     if ( problem ) {
         return fail( 'notNagFile', fileName, problem );
     }
 
+
+
+
+
+
+
+
+
+
     /** @type {ShareWarning[]} */
-    let warnings = [];
+    const warnings = [];
 
     if ( typeof manifest?.version === 'string' && isNewerVersion( manifest.version, appVersion ) ) {
         warnings.push( { code: 'newerVersion', fileVersion: manifest.version, unknownKeys: findUnknownActionKeys( sharePayload ) } );

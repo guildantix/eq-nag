@@ -568,16 +568,35 @@ export class IpcService {
         return obs;
     }
 
+
+
+
+
+
+
+
+
+
     /**
-     * Emits the path of a share file that Nag was asked to open, from a double click or the command line.
+     * Emits the path of a share file that Nag was asked to open, from a double click or the
+     * command line.
      */
     public shareFilePathReceived(): Observable<string> {
-        let obs: Observable<string> = new Observable<string>( ( observer: Observer<string> ) => {
+        const obs: Observable<string> = new Observable<string>( ( observer: Observer<string> ) => {
             this._onShareFilePathReceived.push( observer );
         } );
 
         return obs;
     }
+
+
+
+
+
+
+
+
+
 
     /**
      * Asks the user where to save a .nag file and writes the share to it.
@@ -586,7 +605,7 @@ export class IpcService {
      * @param suggestedName The suggested file name.
      */
     public saveShareFile( payload: ShareFilePayload, suggestedName: string ): Observable<ShareFileSaveResult> {
-        let obs: Observable<ShareFileSaveResult> = new Observable<ShareFileSaveResult>( ( observer: Observer<ShareFileSaveResult> ) => {
+        const obs: Observable<ShareFileSaveResult> = new Observable<ShareFileSaveResult>( ( observer: Observer<ShareFileSaveResult> ) => {
 
             window.api.ipc.invoke<ShareFileSaveResult>( 'fileshare:save', payload, suggestedName )
                 .then( result => {
@@ -607,11 +626,20 @@ export class IpcService {
         return obs;
     }
 
+
+
+
+
+
+
+
+
+
     /**
      * Asks the user to pick a share file, then reads and validates it.
      */
     public openShareFile(): Observable<ShareFileReadResult> {
-        let obs: Observable<ShareFileReadResult> = new Observable<ShareFileReadResult>( ( observer: Observer<ShareFileReadResult> ) => {
+        const obs: Observable<ShareFileReadResult> = new Observable<ShareFileReadResult>( ( observer: Observer<ShareFileReadResult> ) => {
 
             window.api.ipc.invoke<ShareFileReadResult>( 'fileshare:open' )
                 .then( result => {
@@ -632,13 +660,22 @@ export class IpcService {
         return obs;
     }
 
+
+
+
+
+
+
+
+
+
     /**
      * Reads and validates the share file at the given absolute path.
      *
      * @param filePath The absolute file path.
      */
     public readShareFilePath( filePath: string ): Observable<ShareFileReadResult> {
-        let obs: Observable<ShareFileReadResult> = new Observable<ShareFileReadResult>( ( observer: Observer<ShareFileReadResult> ) => {
+        const obs: Observable<ShareFileReadResult> = new Observable<ShareFileReadResult>( ( observer: Observer<ShareFileReadResult> ) => {
 
             window.api.ipc.invoke<ShareFileReadResult>( 'fileshare:read-path', filePath )
                 .then( result => {
