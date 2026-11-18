@@ -331,6 +331,7 @@ function LogWatcher(character, logPosition) {
         logHistoryMgr = new LogHistoryManager( character.characterId, character.name, () => counters, () => storedVariables, () => triggers );
         fileMonitor = new FileMonitor( character.logFile );
         logHistoryMgr.startBatchTriggerParseHistory();
+        reportedInvalidPatternKeys.clear();
     }
 
     loadCachedStoredVariables( () => {
@@ -950,6 +951,71 @@ function getPhraseRegexOptions( phrase ) {
 
 
 
+/** Matches nothing. Stands in for a pattern that does not compile, so its trigger stays quiet. */
+const neverMatchingPattern = /(?!)/;
+
+/** Why each invalid pattern failed, keyed by flags and source, so it compiles only once. */
+const invalidPatternMessages = new Map();
+
+/** Trigger and pattern pairs already in the debug console: once per watcher start. */
+const reportedInvalidPatternKeys = new Set();
+
+
+
+
+
+
+
+
+
+
+/**
+ * Compiles a pattern written by a player. A pattern that is not valid JavaScript, such as
+ * Python's (?P<name>...) group, used to be recompiled and throw on every log line.
+ * It now matches nothing, is never compiled again, and its trigger is reported once.
+ * 
+ * @param {string} patternSource The pattern text.
+ * @param {string | undefined} patternFlags The pattern flags, from getPhraseRegexOptions.
+ * @param {LogTrigger | undefined} owningTrigger The trigger that owns it, for the debug console.
+ * @returns {RegExp} The compiled pattern, or a pattern that never matches.
+ */
+function compilePlayerPattern( patternSource, patternFlags, owningTrigger ) {
+    const patternKey = `${patternFlags ?? ''}/${patternSource}`;
+
+    if ( !invalidPatternMessages.has( patternKey ) ) {
+        try {
+            return new RegExp( patternSource, patternFlags );
+        } catch ( error ) {
+            invalidPatternMessages.set( patternKey, error.message );
+        }
+    }
+
+    // The reason is kept per pattern, so every trigger using it reports the real reason.
+    const compileErrorMessage = invalidPatternMessages.get( patternKey );
+    const reportKey = ( owningTrigger?.triggerId ?? '' ) + '|' + patternKey;
+    if ( !reportedInvalidPatternKeys.has( reportKey ) ) {
+        reportedInvalidPatternKeys.add( reportKey );
+        log( `Skipping a trigger pattern that is not valid: ${patternSource}`, compileErrorMessage );
+        logHistoryMgr.logParseError(
+            `The pattern is not valid: ${compileErrorMessage}`, null, null, null,
+            'The pattern is not a valid regular expression, so this trigger will not match.',
+            owningTrigger, null,
+            'Trigger Pattern',
+            patternSource,
+            patternSource );
+    }
+    return neverMatchingPattern;
+}
+
+
+
+
+
+
+
+
+
+
 /**
  * Initializes all counter trigger actions.
  */
@@ -972,7 +1038,8 @@ function initCounters() {
                                 let matched = false;
                                 
                                 renderedPhrases.forEach( ( phrase, i ) => {
-                                    renderedPhraseRegExps[ i ] = renderedPhraseRegExps[ i ] ?? new RegExp( phrase, getPhraseRegexOptions( action.resetCounterPhrases[ i ] ) );
+                                    renderedPhraseRegExps[ i ] = renderedPhraseRegExps[ i ] ?? compilePlayerPattern(
+                                        phrase, getPhraseRegexOptions( action.resetCounterPhrases[ i ] ), trigger );
                                     let _res = renderedPhraseRegExps[ i ].exec( logEntry );
                                     if ( _res?.length > 0 ) {
                                         matched = true;
@@ -1116,7 +1183,8 @@ function generateTriggerFns() {
                                     // Further, we can do a better job of caching phrases, maybe an array of some type that we can loop through.
 
                                     // If we really want to, we could divine a way to determine if the variables have changed since last check.
-                                    _phraseRegEx[ phrase.phraseId ] = new RegExp( rgxValue, getPhraseRegexOptions( phrase ) );
+                                    _phraseRegEx[ phrase.phraseId ] = compilePlayerPattern(
+                                        rgxValue, getPhraseRegexOptions( phrase ), trigger );
                                 }
 
                                 let _res = _phraseRegEx[ phrase.phraseId ].exec( value );
@@ -2032,7 +2100,10 @@ function executeTriggerAction( trigger, action, timestamp, res, deltaTime, simul
         /* --== Buff Timers ==-- */
     
         let spellName = trigger?._conditionResults?.SpellBeingCast ?? action.displayText;
-        buffRegExs[ spellName ] = buffRegExs[ spellName ] ?? new RegExp( `^You begin casting ${spellName}\\.$`, 'mi' );
+        // A spell name is plain text; unescaped, a paren in it would throw.  String() keeps a
+        // missing name matching the literal text "undefined", as before, instead of throwing.
+        const escapedSpellName = String( spellName ).replace( /[.*+?^${}()|[\]\\]/g, '\\$&' );
+        buffRegExs[ spellName ] = buffRegExs[ spellName ] ?? new RegExp( `^You begin casting ${escapedSpellName}\\.$`, 'mi' );
         rgx = buffRegExs[ spellName ];
         let time = timestamp.getTime();
         let _t = timestamp.getTime();
@@ -2972,7 +3043,8 @@ function displayBeneficialTimerComponent( res, timestamp, action, trigger, spell
                 let matched = false;
                 
                 renderedPhrases.forEach( ( phrase, i ) => {
-                    renderedRegExs[ i ] = renderedRegExs[ i ] ?? new RegExp( phrase, getPhraseRegexOptions( comp.action.endEarlyPhrases[ i ] ) );
+                    renderedRegExs[ i ] = renderedRegExs[ i ] ?? compilePlayerPattern(
+                        phrase, getPhraseRegexOptions( comp.action.endEarlyPhrases[ i ] ), trigger );
                     let _res = renderedRegExs[ i ].exec( logEntry );
                     if ( _res?.length > 0 ) {
                         enableLogging && sendInformationToLog( `DoT Timer ended early: [${logEntry}]` );
@@ -3034,7 +3106,9 @@ function displayDotTimerComponent( res, timestamp, action, deltaTime, trigger ) 
             let exclude = false;
 
             if ( action.excludeTargets[ i ].useRegEx ) {
-                exclude = res.result[ 1 ].match( new RegExp( action.excludeTargets[ i ].phrase, getPhraseRegexOptions( action.excludeTargets[ i ] ) ) )?.length > 0;
+                const excludeTarget = action.excludeTargets[ i ];
+                const excludePattern = compilePlayerPattern( excludeTarget.phrase, getPhraseRegexOptions( excludeTarget ), trigger );
+                exclude = res.result[ 1 ].match( excludePattern )?.length > 0;
             } else {
                 let _rgx = new RegExp( '^' + action.excludeTargets[ i ].phrase.replace( /[.*+?^${}()|[\]\\]/g, '\\$&' ) + '$', 'i' );
                 exclude = res.result[ 1 ].match( _rgx )?.length > 0;
@@ -3143,7 +3217,8 @@ function displayDotTimerComponent( res, timestamp, action, deltaTime, trigger ) 
                 let matched = false;
                 
                 renderedPhrases.forEach( ( phrase, i ) => {
-                    renderedRegExs[ i ] = renderedRegExs[ i ] ?? new RegExp( phrase, getPhraseRegexOptions( comp.action.endEarlyPhrases[ i ] ) );
+                    renderedRegExs[ i ] = renderedRegExs[ i ] ?? compilePlayerPattern(
+                        phrase, getPhraseRegexOptions( comp.action.endEarlyPhrases[ i ] ), trigger );
                     let _res = renderedRegExs[ i ].exec( logEntry );
                     if ( _res?.length > 0 ) {
                         enableLogging && sendInformationToLog( `DoT Timer ended early: [${logEntry}]` );
@@ -3191,7 +3266,8 @@ function displayDotTimerComponent( res, timestamp, action, deltaTime, trigger ) 
                 let matched = false;
                 
                 renderedPhrases.forEach( ( phrase, i ) => {
-                    renderedRegExs[ i ] = renderedRegExs[ i ] ?? new RegExp( phrase, getPhraseRegexOptions( phrases[ i ] ) );
+                    renderedRegExs[ i ] = renderedRegExs[ i ] ?? compilePlayerPattern(
+                        phrase, getPhraseRegexOptions( phrases[ i ] ), trigger );
                     let _res = renderedRegExs[ i ].exec( logEntry );
                     if ( _res?.length > 0 ) {
                         enableLogging && sendInformationToLog( `DoT Timer secondary action: [${logEntry}]` );
@@ -3258,7 +3334,8 @@ function displayDotTimerComponent( res, timestamp, action, deltaTime, trigger ) 
                 
                 for ( let i = 0; i < renderedWornOffPhrases.length; i++ ) {
                     const phrase = renderedWornOffPhrases[ i ];
-                    renderedWornOffRegExs[ i ] = renderedWornOffRegExs[ i ] ?? new RegExp( phrase, getPhraseRegexOptions( wornOffPhrase ) );
+                    renderedWornOffRegExs[ i ] = renderedWornOffRegExs[ i ] ?? compilePlayerPattern(
+                        phrase, getPhraseRegexOptions( wornOffPhrase ), trigger );
                     let _res = renderedWornOffRegExs[ i ].exec( logEntry );
                     if ( _res?.length > 0 ) {
                         enableLogging && sendInformationToLog( `DoT Timer worn off: [${logEntry}]` );
@@ -3440,7 +3517,8 @@ function displayTimerCountdownComponent(res, timestamp, action, deltaTime, trigg
 
                     for ( let i = 0; i < renderedPhrases.length; i++ ) {
                         const phrase = renderedPhrases[ i ];
-                        renderedRegExs[ i ] = renderedRegExs[ i ] ?? new RegExp( phrase, getPhraseRegexOptions( comp.action.endEarlyPhrases[ i ] ) );
+                        renderedRegExs[ i ] = renderedRegExs[ i ] ?? compilePlayerPattern(
+                            phrase, getPhraseRegexOptions( comp.action.endEarlyPhrases[ i ] ), trigger );
                         let _res = renderedRegExs[ i ].exec( logEntry );
                         if ( _res?.length > 0 ) {
                             enableLogging && sendInformationToLog( `Timer/Countdown/Stopwatch ended early: [${logEntry}]` );
