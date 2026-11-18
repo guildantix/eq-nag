@@ -375,11 +375,38 @@ export class PushTrackerComponent implements OnInit, OnDestroy {
         return ( proc.push !== null && proc.push !== undefined ) ? `${round( proc.count * proc.push )}` : `~${round( proc.count * proc.pushMin )}\u2013${round( proc.count * proc.pushMax )}`;
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Shows the push a possible proc may have added, always as an estimate because it may not be
+     * push at all.
+     *
+     * @param proc The possible proc to describe.
+     */
     public possibleTotal( proc: PushRecapProc ): string {
-        let total = this.procTotal( proc );
+        const total = this.procTotal( proc );
         return total.startsWith( '~' ) || total === '-' ? total : `~${total}`;
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Switches between the saved recaps and the scan results, dropping the other list selection.
+     */
     public onSourceChange(): void {
         this.selected = null;
         this.applyFilters();
@@ -617,7 +644,7 @@ export class PushTrackerComponent implements OnInit, OnDestroy {
             lines.push( `Procs with no player named: ${recap.unattributed.events}${top === '' ? '' : ` (${top})`}` );
         }
         if ( ( recap.unattributed.possibleEvents ?? 0 ) > 0 ) {
-            let top = ( recap.unattributed.possible ?? [] ).slice( 0, 5 ).map( p => `${p.name} ${p.count}` ).join( ', ' );
+            const top = ( recap.unattributed.possible ?? [] ).slice( 0, 5 ).map( p => `${p.name} ${p.count}` ).join( ', ' );
             lines.push( `Possible procs: ${recap.unattributed.possibleEvents}${top === '' ? '' : ` (${top})`}` );
         }
         this.ipcService.sendTextToClipboard( lines.join( '\n' ) );

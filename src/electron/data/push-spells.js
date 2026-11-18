@@ -13,15 +13,20 @@ const rankRgx = / Rk\. ?I+$/i;
  * @property {number} pushUp The push up value.
  * @property {number} castTime The cast time in milliseconds.
  * @property {string} landText The text that follows the target name when the spell lands, if any.
- * @property {boolean} [instantDamage] True when the spell has no duration and does direct damage, so it always logs a damage line naming its caster.
- * @property {string[]} [variantTexts] The landing texts of spells with no push that have the same name, when they differ from landText.
+ * @property {boolean} [instantDamage] True when the spell has no duration and does direct damage,
+ *     so it always logs a damage line naming its caster.
+ * @property {string[]} [variantTexts] The landing texts of spells with no push that have the same
+ *     name, when they differ from landText.
  */
 
 /**
  * @typedef {Object} PushSpellTable
  * @property {Record<string, PushSpell>} spells Spells by name, ranks merged under the base name.
- * @property {Record<string, PushSpell>} exact Per-rank entries for the families whose ranks differ in push.
- * @property {Record<string, { names: string[], count: number }>} noPushTexts The landing texts that a push spell shares with a differently named spell that does not push, with the first names of those spells and how many there are.
+ * @property {Record<string, PushSpell>} exact Per-rank entries for the families whose ranks differ
+ *     in push.
+ * @property {Record<string, { names: string[], count: number }>} noPushTexts
+ *     The landing texts that a push spell shares with a differently named spell that does not push,
+ *     with the first names of those spells and how many there are.
  */
 
 /**
@@ -45,19 +50,20 @@ function stripRank( name ) {
 
 
 /**
- * Tells whether the given line of spells_us.txt is a spell with no duration that does direct damage.
+ * Tells whether the given line of spells_us.txt is a spell with no duration that does direct
+ * damage.
  *
  * @returns {boolean} True for an instant damage spell.
  *
  * @param {string} line The line.
  */
 function isInstantDamage( line ) {
-    let f = line.split( '^' );
+    const f = line.split( '^' );
     if ( f[ 11 ] !== '0' || f[ 12 ] !== '0' ) {
         return false;
     }
     return ( f[ 165 ] ?? '' ).split( '$' ).some( effect => {
-        let e = effect.split( '|' );
+        const e = effect.split( '|' );
         return ( e[ 1 ] === '0' || e[ 1 ] === '79' ) && +e[ 2 ] < 0;
     } );
 }
@@ -140,16 +146,19 @@ function streamLines( filePath, onLine ) {
  */
 async function buildPushSpellTable( spellsFile, stringsFile ) {
 
-    /** @type {Record<string, { id: string, push: number, pushUp: number, castTime: number, instant: boolean }[]>} */
-    let rowsByName = {};
+    /**
+     * @type {Record<string, { id: string, push: number, pushUp: number, castTime: number,
+     *     instant: boolean }[]>}
+     */
+    const rowsByName = {};
     /** @type {Record<string, boolean>} */
-    let pushIds = {};
+    const pushIds = {};
     /** @type {Record<string, string>} */
-    let otherNames = {};
+    const otherNames = {};
 
     await streamLines( spellsFile, line => {
-        let f = readFields( line, 9 );
-        let push = parseFloat( f[ 6 ] );
+        const f = readFields( line, 9 );
+        const push = parseFloat( f[ 6 ] );
         if ( !f[ 1 ] ) {
             return;
         }
@@ -158,34 +167,40 @@ async function buildPushSpellTable( spellsFile, stringsFile ) {
             return;
         }
         pushIds[ f[ 0 ] ] = true;
-        ( rowsByName[ f[ 1 ] ] ??= [] ).push( { id: f[ 0 ], push: push, pushUp: parseFloat( f[ 7 ] ) || 0, castTime: parseInt( f[ 8 ] ) || 0, instant: isInstantDamage( line ) } );
+        ( rowsByName[ f[ 1 ] ] ??= [] ).push( {
+            id: f[ 0 ],
+            push: push,
+            pushUp: parseFloat( f[ 7 ] ) || 0,
+            castTime: parseInt( f[ 8 ] ) || 0,
+            instant: isInstantDamage( line ),
+        } );
     } );
 
     /** @type {Record<string, string>} */
-    let landTexts = {};
+    const landTexts = {};
     /** @type {Map<string, Set<string>>} */
-    let otherTexts = new Map();
+    const otherTexts = new Map();
     /** @type {Map<string, Set<string>>} */
-    let sameNameTexts = new Map();
-    let pushBases = new Set( Object.keys( rowsByName ).map( name => stripRank( name ) ) );
+    const sameNameTexts = new Map();
+    const pushBases = new Set( Object.keys( rowsByName ).map( name => stripRank( name ) ) );
     if ( fs.existsSync( stringsFile ) ) {
         await streamLines( stringsFile, line => {
-            let f = readFields( line, 5 );
+            const f = readFields( line, 5 );
             if ( f.length === 5 && f[ 4 ] ) {
                 if ( pushIds[ f[ 0 ] ] ) {
                     landTexts[ f[ 0 ] ] = f[ 4 ];
                 } else {
-                    let base = stripRank( otherNames[ f[ 0 ] ] ?? '' );
+                    const base = stripRank( otherNames[ f[ 0 ] ] ?? '' );
                     if ( pushBases.has( base ) ) {
                         let texts = sameNameTexts.get( base );
-                        if ( texts == null ) {
+                        if ( texts === null || texts === undefined ) {
                             texts = new Set();
                             sameNameTexts.set( base, texts );
                         }
                         texts.add( f[ 4 ] );
                     } else {
                         let names = otherTexts.get( f[ 4 ] );
-                        if ( names == null ) {
+                        if ( names === null || names === undefined ) {
                             names = new Set();
                             otherTexts.set( f[ 4 ], names );
                         }
@@ -202,15 +217,15 @@ async function buildPushSpellTable( spellsFile, stringsFile ) {
     /** @type {Record<string, PushSpell>} */
     const byName = {};
     Object.keys( rowsByName ).forEach( name => {
-        let rows = rowsByName[ name ];
-        let best = rows.reduce( ( a, b ) => b.push > a.push ? b : a );
-        let landId = landTexts[ best.id ] ? best.id : rows.find( r => landTexts[ r.id ] )?.id;
-        let landText = landId ? landTexts[ landId ] : '';
+        const rows = rowsByName[ name ];
+        const best = rows.reduce( ( a, b ) => b.push > a.push ? b : a );
+        const landId = landTexts[ best.id ] ? best.id : rows.find( r => landTexts[ r.id ] )?.id;
+        const landText = landId ? landTexts[ landId ] : '';
         byName[ name ] = { push: best.push, pushUp: best.pushUp, castTime: best.castTime, landText: landText };
         if ( best.instant ) {
             byName[ name ].instantDamage = true;
         }
-        let variants = Array.from( sameNameTexts.get( stripRank( name ) ) ?? [] ).filter( text => text !== landText ).sort();
+        const variants = Array.from( sameNameTexts.get( stripRank( name ) ) ?? [] ).filter( text => text !== landText ).sort();
         if ( variants.length > 0 ) {
             byName[ name ].variantTexts = variants;
         }
@@ -221,7 +236,7 @@ async function buildPushSpellTable( spellsFile, stringsFile ) {
     Object.keys( byName ).forEach( name => ( families[ stripRank( name ) ] ??= [] ).push( name ) );
 
     /** @type {PushSpellTable} */
-    let table = { spells: {}, exact: {}, noPushTexts: {} };
+    const table = { spells: {}, exact: {}, noPushTexts: {} };
     Object.keys( families ).forEach( base => {
         const names = families[ base ];
         const best = names.map( n => byName[ n ] ).reduce( ( a, b ) => b.push > a.push ? b : a );
@@ -231,7 +246,7 @@ async function buildPushSpellTable( spellsFile, stringsFile ) {
         }
     } );
 
-    let pushTexts = new Set( Object.keys( byName ).map( name => byName[ name ].landText ) );
+    const pushTexts = new Set( Object.keys( byName ).map( name => byName[ name ].landText ) );
     otherTexts.forEach( ( names, text ) => {
         if ( pushTexts.has( text ) ) {
             table.noPushTexts[ text ] = { names: Array.from( names ).sort().slice( 0, maxNoPushNames ), count: names.size };
@@ -303,25 +318,32 @@ async function loadPushSpells( eqFolder, cacheFolder ) {
     const cacheFile = path.join( cacheFolder, cacheFileName );
 
     try {
-        let cached = JSON.parse( fs.readFileSync( cacheFile, 'utf8' ) );
-        if ( cached.version === cacheVersion && cached.sourceMtimeMs === stat.mtimeMs && cached.sourceSize === stat.size && cached.stringsMtimeMs === stringsMtimeMs && cached.stringsSize === stringsSize && cached.spells != null && typeof cached.spells === 'object' && cached.exact != null && typeof cached.exact === 'object' && cached.noPushTexts != null && typeof cached.noPushTexts === 'object' && !Array.isArray( cached.noPushTexts ) ) {
+        const cached = JSON.parse( fs.readFileSync( cacheFile, 'utf8' ) );
+        if ( cached.version === cacheVersion && cached.sourceMtimeMs === stat.mtimeMs && cached.sourceSize === stat.size && cached.stringsMtimeMs === stringsMtimeMs && cached.stringsSize === stringsSize && cached.spells !== null && cached.spells !== undefined && typeof cached.spells === 'object' && cached.exact !== null && cached.exact !== undefined && typeof cached.exact === 'object' && cached.noPushTexts !== null && cached.noPushTexts !== undefined && typeof cached.noPushTexts === 'object' && !Array.isArray( cached.noPushTexts ) ) {
             return { spells: cached.spells, exact: cached.exact, noPushTexts: cached.noPushTexts };
         }
     } catch ( error ) {
         // No usable cache; rebuild below.
     }
 
-    let table = await buildPushSpellTable( spellsFile, stringsFile );
-    let spellCount = Object.keys( table.spells ).length;
-    let instantCount = Object.values( table.spells ).filter( s => s.instantDamage === true ).length;
+    const table = await buildPushSpellTable( spellsFile, stringsFile );
+    const spellCount = Object.keys( table.spells ).length;
+    const instantCount = Object.values( table.spells ).filter( s => s.instantDamage === true ).length;
     if ( spellCount > 0 && instantCount === 0 ) {
         console.warn( `Push table built: ${spellCount} spells, 0 instant damage. The spell file format may have changed.` );
-    } else {
-        console.log( `Push table built: ${spellCount} spells, ${instantCount} instant damage.` );
     }
 
     try {
-        fs.writeFileSync( cacheFile, JSON.stringify( { version: cacheVersion, sourceMtimeMs: stat.mtimeMs, sourceSize: stat.size, stringsMtimeMs: stringsMtimeMs, stringsSize: stringsSize, spells: table.spells, exact: table.exact, noPushTexts: table.noPushTexts } ) );
+        fs.writeFileSync( cacheFile, JSON.stringify( {
+            version: cacheVersion,
+            sourceMtimeMs: stat.mtimeMs,
+            sourceSize: stat.size,
+            stringsMtimeMs: stringsMtimeMs,
+            stringsSize: stringsSize,
+            spells: table.spells,
+            exact: table.exact,
+            noPushTexts: table.noPushTexts,
+        } ) );
     } catch ( error ) {
         // The cache is optional.
     }

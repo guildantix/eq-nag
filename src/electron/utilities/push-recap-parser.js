@@ -205,7 +205,8 @@ function formatClock( ms ) {
 /**
  * Builds the lookup used to recognize spell landing messages.
  *
- * @returns {{ map: Map<string, string[]>, noPush: Map<string, { names: string[], count: number }>, suffixes: Set<string>, suffixLength: number }} The landing index.
+ * @returns {{ map: Map<string, string[]>, noPush: Map<string, { names: string[], count: number }>,
+ *     suffixes: Set<string>, suffixLength: number }} The landing index.
  *
  * @param {import('../data/push-spells').PushSpellTable} table The push spell table.
  */
@@ -231,7 +232,11 @@ function buildLandingIndex( table ) {
     const suffixes = new Set();
     map.forEach( ( names, text ) => suffixes.add( text.slice( -minLength ) ) );
 
-    let noPush = new Map( Array.isArray( table.noPushTexts ) ? table.noPushTexts.map( text => [ text, { names: [], count: 0 } ] ) : Object.entries( table.noPushTexts ?? {} ) );
+    // A table cached by an older version lists only the texts, so those get no names.
+    const noPushEntries = Array.isArray( table.noPushTexts )
+        ? table.noPushTexts.map( text => [ text, { names: [], count: 0 } ] )
+        : Object.entries( table.noPushTexts ?? {} );
+    const noPush = new Map( noPushEntries );
 
     return { map: map, noPush: noPush, suffixes: suffixes, suffixLength: minLength };
 }
@@ -565,18 +570,20 @@ function roundPush( value ) {
 /**
  * Describes a weapon proc whose landing message names no caster.
  *
- * @returns {{ text: string, name: string, names: string[], push: number | null, pushMin: number | null, pushMax: number | null, count: number }} The proc.
+ * @returns {{ text: string, name: string, names: string[], push: number | null,
+ *     pushMin: number | null, pushMax: number | null, count: number }} The proc.
  *
  * @param {string} text The landing message, after the name of the mob.
  * @param {string[]} names The candidate spell names of the landing message.
  * @param {any} table The push spell table.
  */
 function buildProc( text, names, table ) {
-    let pushes = names.map( n => table.spells[ n ]?.push ).filter( p => p != null );
-    let pushMin = pushes.length > 0 ? Math.min( ...pushes ) : null;
-    let pushMax = pushes.length > 0 ? Math.max( ...pushes ) : null;
-    let name = names.length <= 3 ? names.join( ' / ' ) : `${names[ 0 ]} +${names.length - 1} more`;
-    return { text: text, name: name, names: names, push: pushMin === pushMax ? pushMin : null, pushMin: pushMin, pushMax: pushMax, count: 0 };
+    const pushes = names.map( n => table.spells[ n ]?.push ).filter( p => ( p !== null && p !== undefined ) );
+    const pushMin = pushes.length > 0 ? Math.min( ...pushes ) : null;
+    const pushMax = pushes.length > 0 ? Math.max( ...pushes ) : null;
+    const name = names.length <= 3 ? names.join( ' / ' ) : `${names[ 0 ]} +${names.length - 1} more`;
+    const push = pushMin === pushMax ? pushMin : null;
+    return { text: text, name: name, names: names, push: push, pushMin: pushMin, pushMax: pushMax, count: 0 };
 }
 
 
@@ -644,7 +651,7 @@ function involvesBoss( text, boss, landing ) {
  * @param {PushSession} session The session.
  * @param {PushSummary} summary The session summary.
  * @param {import('../data/push-spells').PushSpellTable} table The push spell table.
- * @param {{ map: Map<string, string[]>, noPush: Map<string, { names: string[], count: number }> }} landing The landing index.
+ * @param {any} landing The landing index, with the messages that spells with no push share.
  * @param {PushKill} kill The kill to analyze.
  * @param {number} quietGapSeconds Seconds without combat that separate fights.
  */
@@ -667,16 +674,16 @@ function analyzeKill( session, summary, table, landing, kill, quietGapSeconds ) 
         }
     }
 
-    let events = [];
-    let lastCast = new Map();
-    let unattributed = { events: 0, pushValue: 0 };
-    let unattributedProcs = new Map();
+    const events = [];
+    const lastCast = new Map();
+    const unattributed = { events: 0, pushValue: 0 };
+    const unattributedProcs = new Map();
     let possibleEvents = 0;
-    let possibleProcs = new Map();
-    let unmatched = [];
-    let npcAbilities = new Map();
-    let othersSeen = summary.othersSeen === true;
-    let damageShown = player => player === ctx.characterName || othersSeen;
+    const possibleProcs = new Map();
+    const unmatched = [];
+    const npcAbilities = new Map();
+    const othersSeen = summary.othersSeen === true;
+    const damageShown = player => player === ctx.characterName || othersSeen;
 
     const cancelCast = ( player, time ) => {
         const ev = lastCast.get( player );
@@ -739,7 +746,7 @@ function analyzeKill( session, summary, table, landing, kill, quietGapSeconds ) 
                 lastCast.set( player, null );
                 continue;
             }
-            let ev = { kind: 'cast', state: 'assumed', time: time, castTime: spell.castTime, player: player, spellName: m.groups.spell, spell: spell, landed: false, strict: spell.variantTexts?.length > 0 };
+            const ev = { kind: 'cast', state: 'assumed', time: time, castTime: spell.castTime, player: player, spellName: m.groups.spell, spell: spell, landed: false, strict: spell.variantTexts?.length > 0 };
             events.push( ev );
             lastCast.set( player, ev );
 
@@ -785,29 +792,32 @@ function analyzeKill( session, summary, table, landing, kill, quietGapSeconds ) 
         }
     }
 
-    // A cast of a spell that shares its name with spells that land differently counts only when its own landing was seen.
+    // A cast of a spell that shares its name with spells that land differently counts only when
+    // its own landing was seen.
     events.forEach( ev => {
         if ( ev.strict && ev.state === 'assumed' ) {
             ev.state = 'cancelled';
         }
     } );
 
-    // Instant damage spells always log a damage line naming the caster, so a cast with no damage line did not hit the boss.
+    // Instant damage spells always log a damage line naming the caster, so a cast with no
+    // damage line did not hit the boss.
     events.forEach( ev => {
         if ( ev.kind === 'cast' && ev.state !== 'cancelled' && ev.spell.instantDamage && damageShown( ev.player ) ) {
             ev.state = 'cancelled';
         }
     } );
 
-    // A landing that no damage line claimed is not an instant damage spell of a caster whose damage lines are in the log.
-    // The damage line can come before or after its landing.
-    // The damage events by spell, in time order, so a landing only looks at the ones within a second of it.
-    let bySpell = new Map();
+    // A landing that no damage line claimed is not an instant damage spell of a caster whose
+    // damage lines are in the log.  The damage line can come before or after its landing.
+    // The damage events by spell, in time order, so a landing only looks at the ones within a
+    // second of it.
+    const bySpell = new Map();
     events.forEach( ( ev, index ) => {
         if ( ev.kind === 'damage' && ev.state !== 'cancelled' ) {
-            let base = stripRank( ev.spellName );
+            const base = stripRank( ev.spellName );
             let list = bySpell.get( base );
-            if ( list == null ) {
+            if ( list === null || list === undefined ) {
                 list = [];
                 bySpell.set( base, list );
             }
@@ -819,14 +829,14 @@ function analyzeKill( session, summary, table, landing, kill, quietGapSeconds ) 
     unmatched.forEach( u => {
         let claimer = null;
         u.names.forEach( name => {
-            let list = bySpell.get( name );
-            if ( list == null ) {
+            const list = bySpell.get( name );
+            if ( list === null || list === undefined ) {
                 return;
             }
             let low = 0;
             let high = list.length;
             while ( low < high ) {
-                let mid = ( low + high ) >> 1;
+                const mid = ( low + high ) >> 1;
                 if ( list[ mid ].ev.time < u.time - claimGraceMs ) {
                     low = mid + 1;
                 } else {
@@ -834,12 +844,12 @@ function analyzeKill( session, summary, table, landing, kill, quietGapSeconds ) 
                 }
             }
             for ( let i = low; i < list.length && list[ i ].ev.time <= u.time + claimGraceMs; i++ ) {
-                if ( !list[ i ].ev.landed && ( claimer == null || list[ i ].index < claimer.index ) ) {
+                if ( !list[ i ].ev.landed && ( ( claimer === null || claimer === undefined ) || list[ i ].index < claimer.index ) ) {
                     claimer = list[ i ];
                 }
             }
         } );
-        if ( claimer != null ) {
+        if ( claimer !== null && claimer !== undefined ) {
             claimer.ev.landed = true;
             u.claimed = true;
         }
@@ -852,19 +862,19 @@ function analyzeKill( session, summary, table, landing, kill, quietGapSeconds ) 
         if ( u.claimed || u.names.length === 0 ) {
             return;
         }
-        let key = u.key;
-        let names = u.names;
-        let also = landing.noPush.get( key );
-        let shared = also != null;
+        const key = u.key;
+        const names = u.names;
+        const also = landing.noPush.get( key );
+        const shared = ( also !== null && also !== undefined );
         if ( shared ) {
             possibleEvents++;
         } else {
             unattributed.events++;
             unattributed.pushValue += table.spells[ names[ 0 ] ]?.push ?? 0;
         }
-        let procMap = shared ? possibleProcs : unattributedProcs;
+        const procMap = shared ? possibleProcs : unattributedProcs;
         let proc = procMap.get( key );
-        if ( proc == null ) {
+        if ( proc === null || proc === undefined ) {
             proc = buildProc( key, names, table );
             if ( shared ) {
                 proc.alsoNames = also.names;
@@ -876,7 +886,7 @@ function analyzeKill( session, summary, table, landing, kill, quietGapSeconds ) 
     } );
 
     /** @type {Map<string, PushPlayer>} */
-    let players = new Map();
+    const players = new Map();
     events.forEach( ev => {
         if ( ev.state === 'cancelled' ) {
             return;
