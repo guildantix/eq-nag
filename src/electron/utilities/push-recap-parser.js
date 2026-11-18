@@ -203,7 +203,7 @@ function formatClock( ms ) {
 /**
  * Builds the lookup used to recognize spell landing messages.
  *
- * @returns {{ map: Map<string, string[]>, noPush: Set<string>, suffixes: Set<string>, suffixLength: number }} The landing index.
+ * @returns {{ map: Map<string, string[]>, noPush: Map<string, { names: string[], count: number }>, suffixes: Set<string>, suffixLength: number }} The landing index.
  *
  * @param {import('../data/push-spells').PushSpellTable} table The push spell table.
  */
@@ -229,7 +229,9 @@ function buildLandingIndex( table ) {
     const suffixes = new Set();
     map.forEach( ( names, text ) => suffixes.add( text.slice( -minLength ) ) );
 
-    return { map: map, noPush: new Set( table.noPushTexts ?? [] ), suffixes: suffixes, suffixLength: minLength };
+    let noPush = new Map( Array.isArray( table.noPushTexts ) ? table.noPushTexts.map( text => [ text, { names: [], count: 0 } ] ) : Object.entries( table.noPushTexts ?? {} ) );
+
+    return { map: map, noPush: noPush, suffixes: suffixes, suffixLength: minLength };
 }
 
 
@@ -561,18 +563,18 @@ function roundPush( value ) {
 /**
  * Describes a weapon proc whose landing message names no caster.
  *
- * @returns {{ name: string, names: string[], push: number | null, pushMin: number | null,
- *     pushMax: number | null, count: number }} The proc.
+ * @returns {{ text: string, name: string, names: string[], push: number | null, pushMin: number | null, pushMax: number | null, count: number }} The proc.
  *
+ * @param {string} text The landing message, after the name of the mob.
  * @param {string[]} names The candidate spell names of the landing message.
  * @param {any} table The push spell table.
  */
-function buildProc( names, table ) {
-    const pushes = names.map( n => table.spells[ n ]?.push ).filter( p => ( p !== null && p !== undefined ) );
-    const pushMin = pushes.length > 0 ? Math.min( ...pushes ) : null;
-    const pushMax = pushes.length > 0 ? Math.max( ...pushes ) : null;
-    const name = names.length <= 3 ? names.join( ' / ' ) : `${names[ 0 ]} +${names.length - 1} more`;
-    return { name: name, names: names, push: pushMin === pushMax ? pushMin : null, pushMin: pushMin, pushMax: pushMax, count: 0 };
+function buildProc( text, names, table ) {
+    let pushes = names.map( n => table.spells[ n ]?.push ).filter( p => p != null );
+    let pushMin = pushes.length > 0 ? Math.min( ...pushes ) : null;
+    let pushMax = pushes.length > 0 ? Math.max( ...pushes ) : null;
+    let name = names.length <= 3 ? names.join( ' / ' ) : `${names[ 0 ]} +${names.length - 1} more`;
+    return { text: text, name: name, names: names, push: pushMin === pushMax ? pushMin : null, pushMin: pushMin, pushMax: pushMax, count: 0 };
 }
 
 
@@ -640,7 +642,7 @@ function involvesBoss( text, boss, landing ) {
  * @param {PushSession} session The session.
  * @param {PushSummary} summary The session summary.
  * @param {import('../data/push-spells').PushSpellTable} table The push spell table.
- * @param {{ map: Map<string, string[]>, noPush: Set<string> }} landing The landing index.
+ * @param {{ map: Map<string, string[]>, noPush: Map<string, { names: string[], count: number }> }} landing The landing index.
  * @param {PushKill} kill The kill to analyze.
  * @param {number} quietGapSeconds Seconds without combat that separate fights.
  */
@@ -771,7 +773,8 @@ function analyzeKill( session, summary, table, landing, kill, quietGapSeconds ) 
             }
             if ( !matched ) {
                 let key = text.substring( boss.length );
-                let shared = landing.noPush.has( key );
+                let also = landing.noPush.get( key );
+                let shared = also != null;
                 if ( shared ) {
                     possibleEvents++;
                 } else {
@@ -781,7 +784,11 @@ function analyzeKill( session, summary, table, landing, kill, quietGapSeconds ) 
                 let procMap = shared ? possibleProcs : unattributedProcs;
                 let proc = procMap.get( key );
                 if ( proc == null ) {
-                    proc = buildProc( names, table );
+                    proc = buildProc( key, names, table );
+                    if ( shared ) {
+                        proc.alsoNames = also.names;
+                        proc.alsoCount = also.count;
+                    }
                     procMap.set( key, proc );
                 }
                 proc.count++;

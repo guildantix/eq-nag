@@ -3,7 +3,8 @@ const path = require( 'path' );
 const readline = require( 'readline' );
 
 const cacheFileName = 'push-spells.json';
-const cacheVersion = 4;
+const cacheVersion = 5;
+const maxNoPushNames = 3;
 const rankRgx = / Rk\. ?I+$/i;
 
 /**
@@ -18,7 +19,7 @@ const rankRgx = / Rk\. ?I+$/i;
  * @typedef {Object} PushSpellTable
  * @property {Record<string, PushSpell>} spells Spells by name, ranks merged under the base name.
  * @property {Record<string, PushSpell>} exact Per-rank entries for the families whose ranks differ in push.
- * @property {string[]} noPushTexts The landing texts that a push spell shares with a differently named spell that does not push.
+ * @property {Record<string, { names: string[], count: number }>} noPushTexts The landing texts that a push spell shares with a differently named spell that does not push, with the first names of those spells and how many there are.
  */
 
 /**
@@ -135,8 +136,8 @@ async function buildPushSpellTable( spellsFile, stringsFile ) {
 
     /** @type {Record<string, string>} */
     let landTexts = {};
-    /** @type {Set<string>} */
-    let otherTexts = new Set();
+    /** @type {Map<string, Set<string>>} */
+    let otherTexts = new Map();
     let pushBases = new Set( Object.keys( rowsByName ).map( name => stripRank( name ) ) );
     if ( fs.existsSync( stringsFile ) ) {
         await streamLines( stringsFile, line => {
@@ -144,8 +145,18 @@ async function buildPushSpellTable( spellsFile, stringsFile ) {
             if ( f.length === 5 && f[ 4 ] ) {
                 if ( pushIds[ f[ 0 ] ] ) {
                     landTexts[ f[ 0 ] ] = f[ 4 ];
-                } else if ( !pushBases.has( stripRank( otherNames[ f[ 0 ] ] ?? '' ) ) ) {
-                    otherTexts.add( f[ 4 ] );
+                } else {
+                    let base = stripRank( otherNames[ f[ 0 ] ] ?? '' );
+                    if ( !pushBases.has( base ) ) {
+                        let names = otherTexts.get( f[ 4 ] );
+                        if ( names == null ) {
+                            names = new Set();
+                            otherTexts.set( f[ 4 ], names );
+                        }
+                        if ( base !== '' ) {
+                            names.add( base );
+                        }
+                    }
                 }
             }
         } );
@@ -166,7 +177,7 @@ async function buildPushSpellTable( spellsFile, stringsFile ) {
     Object.keys( byName ).forEach( name => ( families[ stripRank( name ) ] ??= [] ).push( name ) );
 
     /** @type {PushSpellTable} */
-    let table = { spells: {}, exact: {}, noPushTexts: [] };
+    let table = { spells: {}, exact: {}, noPushTexts: {} };
     Object.keys( families ).forEach( base => {
         const names = families[ base ];
         const best = names.map( n => byName[ n ] ).reduce( ( a, b ) => b.push > a.push ? b : a );
@@ -177,7 +188,11 @@ async function buildPushSpellTable( spellsFile, stringsFile ) {
     } );
 
     let pushTexts = new Set( Object.keys( byName ).map( name => byName[ name ].landText ) );
-    table.noPushTexts = Array.from( otherTexts ).filter( text => pushTexts.has( text ) );
+    otherTexts.forEach( ( names, text ) => {
+        if ( pushTexts.has( text ) ) {
+            table.noPushTexts[ text ] = { names: Array.from( names ).sort().slice( 0, maxNoPushNames ), count: names.size };
+        }
+    } );
 
     return table;
 }
@@ -245,7 +260,7 @@ async function loadPushSpells( eqFolder, cacheFolder ) {
 
     try {
         let cached = JSON.parse( fs.readFileSync( cacheFile, 'utf8' ) );
-        if ( cached.version === cacheVersion && cached.sourceMtimeMs === stat.mtimeMs && cached.sourceSize === stat.size && cached.stringsMtimeMs === stringsMtimeMs && cached.stringsSize === stringsSize && cached.spells != null && typeof cached.spells === 'object' && cached.exact != null && typeof cached.exact === 'object' && Array.isArray( cached.noPushTexts ) ) {
+        if ( cached.version === cacheVersion && cached.sourceMtimeMs === stat.mtimeMs && cached.sourceSize === stat.size && cached.stringsMtimeMs === stringsMtimeMs && cached.stringsSize === stringsSize && cached.spells != null && typeof cached.spells === 'object' && cached.exact != null && typeof cached.exact === 'object' && cached.noPushTexts != null && typeof cached.noPushTexts === 'object' && !Array.isArray( cached.noPushTexts ) ) {
             return { spells: cached.spells, exact: cached.exact, noPushTexts: cached.noPushTexts };
         }
     } catch ( error ) {
