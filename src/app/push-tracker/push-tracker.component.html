@@ -128,6 +128,7 @@
         <div class="panel-body nag-scrollbar">
             <p class="note" *ngIf="totalsLoading">Loading the selected fights...</p>
             <ng-template [ngIf]="( totals !== null && totals !== undefined )">
+                <p class="note" *ngIf="totalsNote !== ''">{{totalsNote}}</p>
                 <div class="totals-tiles">
                     <div class="tile"><div class="value">{{totals.hits}}</div><div class="label">push hits</div></div>
                     <div class="tile"><div class="value">{{totals.pushValue}}</div><div class="label">total push</div></div>
@@ -335,7 +336,7 @@
                     <p class="note">Spells with no push use the same landing message, so these may not be push. Not in any totals.{{hiddenNote( hiddenPossibleCount )}}</p>
                 </div>
             </div>
-            <p class="note" *ngIf="!( detail?.unattributed?.procs?.length > 0 ) && selected.unattributed.events > 0">{{selected.unattributed.events}} more hits came from procs with no player named and are not in the totals.</p>
+            <p class="note" *ngIf="!( detail?.unattributed?.procs?.length > 0 ) && selected.unattributed.events > 0">{{selected.unattributed.events}} more {{selected.unattributed.events === 1 ? 'hit' : 'hits'}} came from procs with no player named and are not in the totals.</p>
         </div>
     </div>
 

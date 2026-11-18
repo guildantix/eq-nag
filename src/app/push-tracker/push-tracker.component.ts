@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
 import { MAT_FORM_FIELD_DEFAULT_OPTIONS } from '@angular/material/form-field';
-import { forkJoin, Subscription } from 'rxjs';
+import { forkJoin, of, Subscription } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import { DialogService } from '../dialogs/dialog.service';
 import { IpcService } from '../ipc.service';
 import { CharacterModel, PushRecapPreferences, PushRecapProc, PushRecapSummary, PushScanStatus } from '../core.model';
@@ -108,6 +109,7 @@ export class PushTrackerComponent implements OnInit, OnDestroy {
     public dateOptions: string[] = [];
     public totals: PushTotals | null = null;
     public totalsLoading: boolean = false;
+    public totalsNote: string = '';
     public totalsTitle: string = '';
     public totalsMeasure: 'hits' | 'push' = 'hits';
     public totalsRows: PushTotalsRow[] = [];
@@ -130,6 +132,7 @@ export class PushTrackerComponent implements OnInit, OnDestroy {
     private detailSubscription: Subscription | null = null;
     private totalsSubscription: Subscription | null = null;
     private detailCache: Map<string, PushRecapSummary> = new Map<string, PushRecapSummary>();
+    private detailStale = false;
     private anchorId: string | null = null;
 
     constructor(
@@ -813,7 +816,7 @@ export class PushTrackerComponent implements OnInit, OnDestroy {
         }
         const lines = [
             `Push Recap - ${recap.mob}, killed ${this.formatTime( recap )}, fight ${this.formatLength( recap.fightSeconds )}`,
-            `${recap.events} push hits, ${recap.players.length} players pushing`,
+            `${recap.events} push ${recap.events === 1 ? 'hit' : 'hits'}, ${recap.players.length} ${recap.players.length === 1 ? 'player' : 'players'} pushing`,
         ];
         recap.players.forEach( ( p, i ) => {
             const share = recap.events > 0 ? Math.round( p.events * 100 / recap.events ) : 0;
@@ -914,6 +917,7 @@ export class PushTrackerComponent implements OnInit, OnDestroy {
             this.detailCache.clear();
             this.recaps = ( recaps ?? [] ).slice().sort( ( a, b ) => b.killTime.localeCompare( a.killTime ) );
             this.savedKeys = new Set( this.recaps.map( r => this.recapKey( r ) ) );
+            this.detailStale = this.detailStale || this.source === 'saved';
             this.loaded = true;
             this.applyFilters();
         } );
@@ -1041,7 +1045,7 @@ export class PushTrackerComponent implements OnInit, OnDestroy {
         } else {
             this.totals = null;
             this.totalsLoading = false;
-            if ( this.selected == null || this.selected.id !== this.detail?.id || this.selected.savedAt !== this.detail?.savedAt ) {
+            if ( this.detailStale || this.selected == null || this.selected.id !== this.detail?.id || this.selected.savedAt !== this.detail?.savedAt ) {
                 this.loadDetail();
             } else {
                 this.changeDetector.markForCheck();
@@ -1063,7 +1067,7 @@ export class PushTrackerComponent implements OnInit, OnDestroy {
         this.totals = null;
         this.totalsLoading = true;
         this.changeDetector.markForCheck();
-        let requests = missing.map( r => this.source === 'scan' ? this.ipcService.getPushScanResult( r.id ) : this.ipcService.getPushRecap( r.id ) );
+        let requests = missing.map( r => ( this.source === 'scan' ? this.ipcService.getPushScanResult( r.id ) : this.ipcService.getPushRecap( r.id ) ).pipe( catchError( () => of( null ) ) ) );
         this.totalsSubscription = forkJoin( requests ).subscribe( results => {
             results.forEach( ( full, i ) => full != null && this.detailCache.set( this.cacheKey( missing[ i ] ), full ) );
             this.totalsLoading = false;
@@ -1075,6 +1079,7 @@ export class PushTrackerComponent implements OnInit, OnDestroy {
         let details = this.selection.map( r => this.detailCache.get( this.cacheKey( r ) ) ).filter( r => r != null );
         let totals = aggregateFights( details, this.hiddenTexts );
         this.totals = totals;
+        this.totalsNote = details.length < this.selection.length ? 'Some fights could not be loaded.' : '';
 
         let first = nightKey( totals.firstKill );
         let last = nightKey( totals.lastKill );
@@ -1158,6 +1163,7 @@ export class PushTrackerComponent implements OnInit, OnDestroy {
      * not returned.
      */
     private loadDetail(): void {
+        this.detailStale = false;
         this.detailSubscription?.unsubscribe();
         this.detailSubscription = null;
         this.detail = null;
@@ -1241,9 +1247,9 @@ export class PushTrackerComponent implements OnInit, OnDestroy {
      * @param push The push value of one hit, if known.
      */
     private cellTooltip( events: number, assumed: number, push: number | undefined ): string {
-        const text = ( push === null || push === undefined )
-            ? `${events} hits`
-            : `${events} hits \u00d7 ${push} push = ${Math.round( events * push * 100 ) / 100} push`;
+        let text = push == null
+            ? `${events} ${events === 1 ? 'hit' : 'hits'}`
+            : `${events} ${events === 1 ? 'hit' : 'hits'} \u00d7 ${push} push = ${Math.round( events * push * 100 ) / 100} push`;
         return assumed > 0 ? `${text}, ${assumed} assumed` : text;
     }
 

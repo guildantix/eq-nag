@@ -166,11 +166,11 @@ export function aggregateFights( recaps: PushRecapSummary[], hidden: Set<string>
 export function describeTotals( totals: PushTotals, label: string, fightingTime: string ): string {
     let lines = [
         `Push Recap - ${label}, ${totals.fights} fights, ${fightingTime} of fighting`,
-        `${totals.hits} push hits, ${totals.pushValue} push, ${totals.players.length} players pushing`,
+        `${totals.hits} push ${totals.hits === 1 ? 'hit' : 'hits'}, ${totals.pushValue} push, ${totals.players.length} ${totals.players.length === 1 ? 'player' : 'players'} pushing`,
     ];
     totals.players.slice( 0, 10 ).forEach( ( p, i ) => {
         let share = totals.hits > 0 ? Math.round( p.events * 100 / totals.hits ) : 0;
-        lines.push( `${i + 1}. ${p.name} - ${p.events} (${share}%)${p.assumed > 0 ? ` ~${p.assumed} assumed` : ''}, ${p.pushValue} push, ${p.fights} fights` );
+        lines.push( `${i + 1}. ${p.name} - ${p.events} (${share}%)${p.assumed > 0 ? ` ~${p.assumed} assumed` : ''}, ${p.pushValue} push, ${p.fights} ${p.fights === 1 ? 'fight' : 'fights'}` );
     } );
     if ( totals.procHits > 0 ) {
         let top = totals.procs.slice( 0, 5 ).map( p => `${p.name} ${p.count}` ).join( ', ' );
