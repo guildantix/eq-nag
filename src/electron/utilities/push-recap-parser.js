@@ -675,6 +675,8 @@ function analyzeKill( session, summary, table, landing, kill, quietGapSeconds ) 
     let possibleProcs = new Map();
     let unmatched = [];
     let npcAbilities = new Map();
+    let othersSeen = summary.othersSeen === true;
+    let damageShown = player => player === ctx.characterName || othersSeen;
 
     const cancelCast = ( player, time ) => {
         const ev = lastCast.get( player );
@@ -767,6 +769,9 @@ function analyzeKill( session, summary, table, landing, kill, quietGapSeconds ) 
                 if ( time - ev.time > ev.castTime + landingGraceMs + 10000 ) {
                     break;
                 }
+                if ( ev.kind === 'cast' && ev.spell.instantDamage && damageShown( ev.player ) ) {
+                    continue;
+                }
                 if ( ev.state !== 'cancelled' && !ev.landed && names.indexOf( stripRank( ev.spellName ) ) > -1 && time - ev.time <= ev.castTime + ( ev.strict ? strictLandingGraceMs : landingGraceMs ) ) {
                     ev.landed = true;
                     ev.state = 'confirmed';
@@ -787,55 +792,61 @@ function analyzeKill( session, summary, table, landing, kill, quietGapSeconds ) 
         }
     } );
 
-    // Instant damage spells always log a damage line naming the caster, so with the hits of others in the log
-    // a landing that no hit claimed is not one of them.  The damage line can come before or after its landing.
-    let othersSeen = summary.othersSeen === true;
-    if ( othersSeen ) {
-        // The damage events by spell, in time order, so a landing only looks at the ones within a second of it.
-        let bySpell = new Map();
-        events.forEach( ( ev, index ) => {
-            if ( ev.kind === 'damage' && ev.state !== 'cancelled' ) {
-                let base = stripRank( ev.spellName );
-                let list = bySpell.get( base );
-                if ( list == null ) {
-                    list = [];
-                    bySpell.set( base, list );
-                }
-                list.push( { ev: ev, index: index } );
-            }
-        } );
-        bySpell.forEach( list => list.sort( ( a, b ) => a.ev.time - b.ev.time || a.index - b.index ) );
+    // Instant damage spells always log a damage line naming the caster, so a cast with no damage line did not hit the boss.
+    events.forEach( ev => {
+        if ( ev.kind === 'cast' && ev.state !== 'cancelled' && ev.spell.instantDamage && damageShown( ev.player ) ) {
+            ev.state = 'cancelled';
+        }
+    } );
 
-        unmatched.forEach( u => {
-            let claimer = null;
-            u.names.forEach( name => {
-                let list = bySpell.get( name );
-                if ( list == null ) {
-                    return;
-                }
-                let low = 0;
-                let high = list.length;
-                while ( low < high ) {
-                    let mid = ( low + high ) >> 1;
-                    if ( list[ mid ].ev.time < u.time - claimGraceMs ) {
-                        low = mid + 1;
-                    } else {
-                        high = mid;
-                    }
-                }
-                for ( let i = low; i < list.length && list[ i ].ev.time <= u.time + claimGraceMs; i++ ) {
-                    if ( !list[ i ].ev.landed && ( claimer == null || list[ i ].index < claimer.index ) ) {
-                        claimer = list[ i ];
-                    }
-                }
-            } );
-            if ( claimer != null ) {
-                claimer.ev.landed = true;
-                u.claimed = true;
+    // A landing that no damage line claimed is not an instant damage spell of a caster whose damage lines are in the log.
+    // The damage line can come before or after its landing.
+    // The damage events by spell, in time order, so a landing only looks at the ones within a second of it.
+    let bySpell = new Map();
+    events.forEach( ( ev, index ) => {
+        if ( ev.kind === 'damage' && ev.state !== 'cancelled' ) {
+            let base = stripRank( ev.spellName );
+            let list = bySpell.get( base );
+            if ( list == null ) {
+                list = [];
+                bySpell.set( base, list );
             }
-            u.names = u.names.filter( n => !table.spells[ n ]?.instantDamage );
+            list.push( { ev: ev, index: index } );
+        }
+    } );
+    bySpell.forEach( list => list.sort( ( a, b ) => a.ev.time - b.ev.time || a.index - b.index ) );
+
+    unmatched.forEach( u => {
+        let claimer = null;
+        u.names.forEach( name => {
+            let list = bySpell.get( name );
+            if ( list == null ) {
+                return;
+            }
+            let low = 0;
+            let high = list.length;
+            while ( low < high ) {
+                let mid = ( low + high ) >> 1;
+                if ( list[ mid ].ev.time < u.time - claimGraceMs ) {
+                    low = mid + 1;
+                } else {
+                    high = mid;
+                }
+            }
+            for ( let i = low; i < list.length && list[ i ].ev.time <= u.time + claimGraceMs; i++ ) {
+                if ( !list[ i ].ev.landed && ( claimer == null || list[ i ].index < claimer.index ) ) {
+                    claimer = list[ i ];
+                }
+            }
         } );
-    }
+        if ( claimer != null ) {
+            claimer.ev.landed = true;
+            u.claimed = true;
+        }
+        if ( othersSeen ) {
+            u.names = u.names.filter( n => !table.spells[ n ]?.instantDamage );
+        }
+    } );
 
     unmatched.forEach( u => {
         if ( u.claimed || u.names.length === 0 ) {
