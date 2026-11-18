@@ -353,6 +353,18 @@ export class PushTimelineComponent implements OnChanges {
         this.selected = Math.min( this.selected, this.count - 1 );
     }
 
+
+
+
+
+
+
+
+
+
+    /**
+     * Rebuilds everything the template draws, and tells Angular to check it.
+     */
     private draw(): void {
         this.bars = [];
         this.grid = [];
@@ -387,9 +399,9 @@ export class PushTimelineComponent implements OnChanges {
                 this.totals[ this.barOf( e ) ][ e.kind === 3 ? 'possible' : e.kind === 2 ? 'proc' : 'player' ] += this.measure === 'hits' ? 1 : e.push;
             }
         } );
-        let max = Math.max( 1, ...this.totals.map( b => b.player + b.proc + b.possible ) );
-        let step = axisStep( max );
-        let ceiling = Math.ceil( max / step ) * step;
+        const max = Math.max( 1, ...this.totals.map( b => b.player + b.proc + b.possible ) );
+        const step = axisStep( max );
+        const ceiling = Math.ceil( max / step ) * step;
 
         for ( let v = 0; v <= ceiling + step / 2; v += step ) {
             const y = top + plotHeight - v / ceiling * plotHeight;
