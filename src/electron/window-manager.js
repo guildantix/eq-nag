@@ -404,6 +404,11 @@ class WindowManager {
              * @param {{ text?: string, hidden?: boolean, clear?: boolean }} arg The change.
              */
             ( event, arg ) => {
+                if ( arg?.clear === true ) {
+                    arg = { clear: true };
+                } else if ( typeof arg?.text !== 'string' || typeof arg?.hidden !== 'boolean' ) {
+                    return;
+                }
                 let hidden = this.#userPrefDb.changeHiddenProcTexts( arg );
                 if ( this.#renderer && !this.#renderer.isDestroyed() ) {
                     this.#renderer.webContents.send( 'settings:changed:pushRecap', this.#userPrefDb.pushRecap );
